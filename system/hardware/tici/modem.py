@@ -8,7 +8,8 @@ import subprocess
 import tempfile
 import termios
 import time
-import threading
+
+from enum import Enum
 
 from openpilot.common.swaglog import cloudlog
 
@@ -32,13 +33,23 @@ CHAT = (
 )
 
 
+class State(Enum):
+  WAITING_PORT = "waiting_port"
+  INIT = "init"
+  REGISTERING = "registering"
+  CONNECTING = "connecting"
+  CONNECTED = "connected"
+  RECONNECTING = "reconnecting"
+
+
 class Modem:
   def __init__(self):
     self._ser = None
-    self.running = True
     self._ppp = None
-    self._reset = threading.Event()
     self._cid = 1
+    self._ppp_fails = 0
+    self._sim_change = False
+    self.running = True
     self.S = {
       "state": "init",
       "connected": False,
@@ -60,6 +71,8 @@ class Modem:
       "error": "",
     }
 
+  # -- state file --
+
   def _ws(self):
     fd = tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False)
     json.dump(self.S, fd)
@@ -69,6 +82,8 @@ class Modem:
     tmp = fd.name
     fd.close()
     os.replace(tmp, STATE_PATH)
+
+  # -- AT commands --
 
   def _at(self, cmd):
     """Send AT command, return response lines. [] on error or if LPA holds port."""
@@ -94,7 +109,7 @@ class Modem:
           raise RuntimeError(line)
         if "+QUSIM:" in line:
           cloudlog.warning(f"modem URC: {line}")
-          self._reset.set()
+          self._sim_change = True
           os.system("sudo killall -9 pppd 2>/dev/null")
         lines.append(line)
       return lines
@@ -111,89 +126,25 @@ class Modem:
         return line.split(":", 1)[1].strip()
     return None
 
-  def _init(self):
-    for c in AT_INIT + ["AT$QCSIMSLEEP=0", "AT$QCSIMCFG=SimPowerSave,0", "AT+CREG=2", "AT+CGREG=2"]:
-      self._at(c)
+  # -- teardown helpers --
 
-    try:
-      with open("/sys/firmware/devicetree/base/model") as f:
-        device = f.read().strip('\x00').split('comma ')[-1]
-    except Exception:
-      device = ""
-
-    if device == "tizi":
-      for c in [
-        "AT+QSIMDET=1,0", "AT+QSIMSTAT=1",
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]:
-        self._at(c)
-    else:
-      self._at('AT$QCPCFG=usbNet,1')
-
-    r = self._at("AT+CGSN")
-    if r:
-      self.S["imei"] = r[0].strip()
-    v = self._atv("AT+QCCID", "+QCCID:")
-    if v:
-      self.S["iccid"] = v
-    r = self._at("AT+GMR")
-    if r:
-      self.S["modem_version"] = r[0].strip()
-
-  def _pdp(self):
-    self._cid = 1
-    best = None
-    for line in self._at("AT+CGDCONT?"):
-      if "+CGDCONT:" not in line:
-        continue
-      p = line.split(":", 1)[1].strip().split(",")
-      if len(p) >= 3:
-        c, a = int(p[0]), p[2].strip('"')
-        if a and a != "ims":
-          best = (c, a)
-    if best:
-      self._cid = best[0]
-      cloudlog.info(f"modem APN '{best[1]}' CID {self._cid}")
-    else:
-      self._at('AT+CGDCONT=1,"IP",""')
-      cloudlog.warning("modem no APN found, using CID 1")
-
-  def _wait_reg(self, timeout=60):
-    t = time.monotonic()
-    while time.monotonic() - t < timeout:
-      v = self._atv("AT+CREG?", "+CREG:")
-      if v:
-        try:
-          reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
-        except (ValueError, IndexError):
-          reg = "unknown"
-        if reg in ("home", "roaming"):
-          self.S["registration"] = reg
-          return True
-      time.sleep(0.5)
-    return False
-
-  def _boot(self):
-    if self._ser:
+  def _kill_ppp(self):
+    os.system("sudo killall -9 pppd 2>/dev/null")
+    if self._ppp:
       try:
-        self._ser.close()
-      except Exception:
+        self._ppp.wait(timeout=5)
+      except subprocess.TimeoutExpired:
         pass
-    self._ser = serial.Serial(AT_PORT, 9600, timeout=5)
-    time.sleep(1)
-    self._init()
-    self._pdp()
-    if not self._wait_reg(timeout=30):
-      return False
-    self.S["state"] = "connecting"
-    self._ws()
-    self._start_ppp()
-    t = time.monotonic()
-    while not self.S["connected"] and time.monotonic() - t < 30:
-      time.sleep(0.2)
-    return self.S["connected"]
+      self._ppp = None
+
+  def _cleanup_routes(self):
+    subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
+    subprocess.run(["sudo", "ip", "route", "flush", "table", "1000"], capture_output=True)
+    while True:
+      r = subprocess.run(["ip", "rule", "show", "table", "1000"], capture_output=True, text=True, timeout=2)
+      if not r.stdout.strip():
+        break
+      subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True)
 
   @staticmethod
   def _reset_data_port():
@@ -214,85 +165,7 @@ class Modem:
     except Exception as e:
       cloudlog.warning(f"modem data port reset failed: {e}")
 
-  def _cleanup_routes(self):
-    """Remove stale ppp0 routes and ip rules."""
-    subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
-    subprocess.run(["sudo", "ip", "route", "flush", "table", "1000"], capture_output=True)
-    # remove all ip rules pointing to table 1000
-    while True:
-      r = subprocess.run(["ip", "rule", "show", "table", "1000"], capture_output=True, text=True, timeout=2)
-      if not r.stdout.strip():
-        break
-      subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True)
-
-  def _kill_ppp(self):
-    os.system("sudo killall -9 pppd 2>/dev/null")
-    if self._ppp and self._ppp.is_alive():
-      self._ppp.join(timeout=5)
-
-  def _start_ppp(self):
-    with open("/dev/shm/modem_chat", "w") as f:
-      f.write(CHAT.format(cid=self._cid))
-
-    def run():
-      fails = 0
-      while self.running and not self._reset.is_set():
-        if fails > 0:
-          self._reset_data_port()
-        cloudlog.info(f"modem PPP dialing CID {self._cid}")
-        try:
-          proc = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-          ok = False
-          ip = None
-          assert proc.stdout is not None
-          for raw in proc.stdout:
-            line = raw.decode(errors="ignore").strip()
-            if not line:
-              continue
-            cloudlog.debug(f"pppd: {line}")
-            if "local  IP address" in line:
-              ip = line.split("local  IP address")[-1].strip()
-              self.S.update(ip_address=ip, connected=True, state="connected")
-            elif "remote IP address" in line and ip:
-              peer = line.split("remote IP address")[-1].strip()
-              self._cleanup_routes()
-              # high-metric default route as fallback when wifi is down
-              subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
-                             capture_output=True)
-              # source-based routing so ppp0-bound traffic uses ppp0
-              subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
-                             capture_output=True)
-              subprocess.run(["sudo", "ip", "rule", "add", "from", ip, "table", "1000"],
-                             capture_output=True)
-              self._ws()
-              ok, fails = True, 0
-            elif "Connection terminated" in line or "Modem hangup" in line:
-              self.S.update(connected=False, state="disconnected", ip_address="")
-              self._ws()
-          proc.wait()
-          if not ok:
-            fails += 1
-            cloudlog.warning(f"modem PPP fail {fails}/3")
-        except Exception as e:
-          cloudlog.exception(f"modem PPP error: {e}")
-          fails += 1
-        if fails >= 3:
-          self._reset.set()
-          return
-
-    self._ppp = threading.Thread(target=run, daemon=True)
-    self._ppp.start()
-
-  def _wait_port(self, timeout=30):
-    t = time.monotonic()
-    while time.monotonic() - t < timeout:
-      if os.path.exists(AT_PORT):
-        return True
-      time.sleep(1)
-    return False
-
-  def _reconnect(self):
-    cloudlog.warning("modem reconnecting")
+  def _clear_state(self):
     self.S.update(
       state="reconnecting", connected=False, ip_address="",
       iccid="", imei="", modem_version="",
@@ -301,16 +174,174 @@ class Modem:
       registration="unknown", temperatures=[], extra="",
       tx_bytes=0, rx_bytes=0, error="",
     )
+
+  # -- state handlers --
+
+  def _do_waiting_port(self):
+    if os.path.exists(AT_PORT):
+      return State.INIT
+    time.sleep(1)
+    return State.WAITING_PORT
+
+  def _do_init(self):
+    if self._ser:
+      try:
+        self._ser.close()
+      except Exception:
+        pass
+    try:
+      self._ser = serial.Serial(AT_PORT, 9600, timeout=5)
+    except (OSError, serial.SerialException):
+      return State.WAITING_PORT
+    time.sleep(1)
+
+    # AT init
+    for c in AT_INIT + ["AT$QCSIMSLEEP=0", "AT$QCSIMCFG=SimPowerSave,0", "AT+CREG=2", "AT+CGREG=2"]:
+      self._at(c)
+
+    # device-specific config
+    try:
+      with open("/sys/firmware/devicetree/base/model") as f:
+        device = f.read().strip('\x00').split('comma ')[-1]
+    except Exception:
+      device = ""
+    if device == "tizi":
+      for c in [
+        "AT+QSIMDET=1,0", "AT+QSIMSTAT=1",
+        'AT+QNVW=5280,0,"0102000000000000"',
+        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+      ]:
+        self._at(c)
+    else:
+      self._at('AT$QCPCFG=usbNet,1')
+
+    # read identity
+    r = self._at("AT+CGSN")
+    if r:
+      self.S["imei"] = r[0].strip()
+    v = self._atv("AT+QCCID", "+QCCID:")
+    if v:
+      self.S["iccid"] = v
+    r = self._at("AT+GMR")
+    if r:
+      self.S["modem_version"] = r[0].strip()
+
+    # find APN
+    self._cid = 1
+    best = None
+    for line in self._at("AT+CGDCONT?"):
+      if "+CGDCONT:" not in line:
+        continue
+      p = line.split(":", 1)[1].strip().split(",")
+      if len(p) >= 3:
+        c, a = int(p[0]), p[2].strip('"')
+        if a and a != "ims":
+          best = (c, a)
+    if best:
+      self._cid = best[0]
+      cloudlog.info(f"modem APN '{best[1]}' CID {self._cid}")
+    else:
+      self._at('AT+CGDCONT=1,"IP",""')
+      cloudlog.warning("modem no APN found, using CID 1")
+
     self._ws()
-    self._reset.set()
+    return State.REGISTERING
+
+  def _do_registering(self):
+    v = self._atv("AT+CREG?", "+CREG:")
+    if v:
+      try:
+        reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
+      except (ValueError, IndexError):
+        reg = "unknown"
+      if reg in ("home", "roaming"):
+        self.S["registration"] = reg
+        return State.CONNECTING
+    if self._sim_change or not os.path.exists(AT_PORT):
+      return State.RECONNECTING
+    time.sleep(0.5)
+    return State.REGISTERING
+
+  def _do_connecting(self):
+    self.S["state"] = "connecting"
+    self._ws()
+    self._ppp_fails = 0
+    self._sim_change = False
+
+    # write chat script
+    with open("/dev/shm/modem_chat", "w") as f:
+      f.write(CHAT.format(cid=self._cid))
+
+    # start pppd
+    self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    cloudlog.info(f"modem PPP dialing CID {self._cid}")
+    return State.CONNECTED
+
+  def _do_connected(self):
+    # read pppd output (non-blocking via readline with timeout from pipe)
+    if self._ppp and self._ppp.stdout:
+      while True:
+        raw = self._ppp.stdout.readline()
+        if not raw:
+          break
+        line = raw.decode(errors="ignore").strip()
+        if not line:
+          continue
+        cloudlog.debug(f"pppd: {line}")
+        if "local  IP address" in line:
+          ip = line.split("local  IP address")[-1].strip()
+          self.S.update(ip_address=ip, connected=True, state="connected")
+        elif "remote IP address" in line and self.S["ip_address"]:
+          peer = line.split("remote IP address")[-1].strip()
+          self._cleanup_routes()
+          subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
+                         capture_output=True)
+          subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
+                         capture_output=True)
+          subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
+                         capture_output=True)
+          self._ws()
+        elif "Connection terminated" in line or "Modem hangup" in line:
+          self.S.update(connected=False, state="disconnected", ip_address="")
+          self._ws()
+
+    # check if pppd exited
+    if self._ppp and self._ppp.poll() is not None:
+      self._ppp = None
+      if self._sim_change or not os.path.exists(AT_PORT):
+        return State.RECONNECTING
+      self._ppp_fails += 1
+      if self._ppp_fails >= 3:
+        cloudlog.warning(f"modem PPP fail {self._ppp_fails}/3, reconnecting")
+        return State.RECONNECTING
+      cloudlog.warning(f"modem PPP fail {self._ppp_fails}/3, retrying")
+      self._reset_data_port()
+      if not os.path.exists(AT_PORT):
+        return State.RECONNECTING
+      self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      cloudlog.info(f"modem PPP dialing CID {self._cid}")
+      return State.CONNECTED
+
+    # check for SIM change or port loss
+    if self._sim_change or not os.path.exists(AT_PORT):
+      return State.RECONNECTING
+
+    # poll modem status every pass (main loop sleeps 2s)
+    self._poll()
+    return State.CONNECTED
+
+  def _do_reconnecting(self):
+    cloudlog.warning("modem reconnecting")
+    self._clear_state()
+    self._ws()
     self._kill_ppp()
     self._cleanup_routes()
     self._reset_data_port()
-    if not self._wait_port():
-      cloudlog.warning("modem AT port not found, waiting...")
-      self._wait_port(timeout=60)
-    self._reset.clear()
-    self._boot()
+    self._sim_change = False
+    return State.WAITING_PORT
+
+  # -- poll --
 
   def _poll(self):
     v = self._atv("AT+CSQ", "+CSQ:")
@@ -376,29 +407,41 @@ class Modem:
 
     self._ws()
 
+  # -- main loop --
+
   def run(self):
     cloudlog.info(f"modem starting {time.strftime('%H:%M:%S')}")
     os.system("sudo systemctl mask ModemManager 2>/dev/null")
     os.system("sudo systemctl stop ModemManager 2>/dev/null")
     os.system("sudo killall pppd 2>/dev/null")
-    self._boot()
 
-    last_poll = 0.0
+    state = State.INIT
+
+    handlers = {
+      State.WAITING_PORT: self._do_waiting_port,
+      State.INIT: self._do_init,
+      State.REGISTERING: self._do_registering,
+      State.CONNECTING: self._do_connecting,
+      State.CONNECTED: self._do_connected,
+      State.RECONNECTING: self._do_reconnecting,
+    }
+
     while self.running:
       try:
-        if not os.path.exists(AT_PORT) or self._reset.is_set():
-          self._reconnect()
-          last_poll = time.monotonic()
-        elif time.monotonic() - last_poll >= 10:
-          self._poll()
-          last_poll = time.monotonic()
+        prev = state
+        state = handlers[state]()
+        self.S["state"] = state.value
+        if state != prev:
+          cloudlog.info(f"modem {prev.value} -> {state.value}")
       except Exception as e:
-        cloudlog.exception(f"modem error: {e}")
-      time.sleep(2)
+        cloudlog.exception(f"modem error in {state.value}: {e}")
+        state = State.RECONNECTING
+      # don't spin — sleep unless we're in a state that handles its own timing
+      if state not in (State.REGISTERING, State.WAITING_PORT):
+        time.sleep(2)
 
   def stop(self):
     self.running = False
-    self._reset.set()
     self._kill_ppp()
     if self._ser:
       self._ser.close()
