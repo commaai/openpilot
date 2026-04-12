@@ -23,16 +23,13 @@ AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
 PPPD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
-  "nodefaultroute", "connect", "/usr/sbin/chat -v -f /dev/shm/modem_chat",
+  "nodefaultroute", "connect",
+  "/usr/sbin/chat -v ABORT 'NO CARRIER' ABORT 'NO DIALTONE' ABORT 'BUSY' " +
+  "ABORT 'NO ANSWER' ABORT 'ERROR' TIMEOUT 5 '' AT OK ATD*99***1# CONNECT ''",
   "lcp-echo-interval", "30", "lcp-echo-failure", "4", "mtu", "1500", "mru", "1500",
   "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
   "user", '""', "password", '""',
 ]
-CHAT = (
-  "ABORT 'NO CARRIER'\nABORT 'NO DIALTONE'\nABORT 'BUSY'\n" +
-  "ABORT 'NO ANSWER'\nABORT 'ERROR'\nTIMEOUT 5\n" +
-  "'' AT\nOK ATD*99***{cid}#\nCONNECT ''\n"
-)
 
 
 class State(Enum):
@@ -49,9 +46,9 @@ class Modem:
     self._ser = None
     self._ppp = None
     self._ppp_lines = queue.Queue()
-    self._cid = 1
     self._ppp_fails = 0
     self._sim_change = False
+    self._apn = ""
     self.running = True
     self.S = {
       "state": "init",
@@ -230,23 +227,11 @@ class Modem:
     if r:
       self.S["modem_version"] = r[0].strip()
 
-    # find APN
-    self._cid = 1
-    best = None
-    for line in self._at("AT+CGDCONT?"):
-      if "+CGDCONT:" not in line:
-        continue
-      p = line.split(":", 1)[1].strip().split(",")
-      if len(p) >= 3:
-        c, a = int(p[0]), p[2].strip('"')
-        if a and a != "ims":
-          best = (c, a)
-    if best:
-      self._cid = best[0]
-      cloudlog.info(f"modem APN '{best[1]}' CID {self._cid}")
-    else:
-      self._at('AT+CGDCONT=1,"IP",""')
-      cloudlog.warning("modem no APN found, using CID 1")
+    # configure APN on CID 1 — use custom APN from param, or empty to let network assign
+    from openpilot.common.params import Params
+    self._apn = Params().get("GsmApn", encoding="utf-8") or ""
+    self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
+    cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1")
 
     self._ws()
     return State.REGISTERING
@@ -272,10 +257,6 @@ class Modem:
     self._ppp_fails = 0
     self._sim_change = False
 
-    # write chat script
-    with open("/dev/shm/modem_chat", "w") as f:
-      f.write(CHAT.format(cid=self._cid))
-
     # start pppd with a reader thread to avoid blocking
     self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     self._ppp_lines = queue.Queue()
@@ -290,7 +271,7 @@ class Modem:
         cloudlog.warning(f"modem pppd reader error: {e}")
 
     threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
-    cloudlog.info(f"modem PPP dialing CID {self._cid}")
+    cloudlog.info("modem PPP dialing")
     return State.CONNECTED
 
   def _do_connected(self):
@@ -336,11 +317,16 @@ class Modem:
       if not os.path.exists(AT_PORT):
         return State.RECONNECTING
       self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      cloudlog.info(f"modem PPP dialing CID {self._cid}")
+      cloudlog.info("modem PPP dialing")
       return State.CONNECTED
 
-    # check for SIM change or port loss
+    # check for SIM change, port loss, or APN change
     if self._sim_change or not os.path.exists(AT_PORT):
+      return State.RECONNECTING
+    from openpilot.common.params import Params
+    new_apn = Params().get("GsmApn", encoding="utf-8") or ""
+    if new_apn != self._apn:
+      cloudlog.info(f"modem APN changed: '{self._apn}' -> '{new_apn}'")
       return State.RECONNECTING
 
     # poll modem status every pass (main loop sleeps 2s)
