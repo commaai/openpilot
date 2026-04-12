@@ -250,7 +250,8 @@ class Modem:
         reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
       except (ValueError, IndexError):
         reg = "unknown"
-      if reg in ("home", "roaming"):
+      roaming_allowed = self._read_param("GsmRoaming") != "0"
+      if reg == "home" or (reg == "roaming" and roaming_allowed):
         self.S["registration"] = reg
         return State.CONNECTING
     if self._sim_change or not os.path.exists(AT_PORT):
