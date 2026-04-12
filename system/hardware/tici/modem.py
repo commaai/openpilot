@@ -2,12 +2,13 @@
 import fcntl
 import json
 import os
-import select
+import queue
 import serial
 import signal
 import subprocess
 import tempfile
 import termios
+import threading
 import time
 
 from enum import Enum
@@ -47,6 +48,7 @@ class Modem:
   def __init__(self):
     self._ser = None
     self._ppp = None
+    self._ppp_lines = queue.Queue()
     self._cid = 1
     self._ppp_fails = 0
     self._sim_change = False
@@ -274,21 +276,30 @@ class Modem:
     with open("/dev/shm/modem_chat", "w") as f:
       f.write(CHAT.format(cid=self._cid))
 
-    # start pppd
+    # start pppd with a reader thread to avoid blocking
     self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    self._ppp_lines = queue.Queue()
+
+    def _read_pppd(proc, q):
+      assert proc.stdout is not None
+      for raw in proc.stdout:
+        q.put(raw)
+      proc.stdout.close()
+
+    threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
     cloudlog.info(f"modem PPP dialing CID {self._cid}")
     return State.CONNECTED
 
   def _do_connected(self):
-    # read pppd output non-blocking
-    if self._ppp and self._ppp.stdout:
-      while select.select([self._ppp.stdout], [], [], 0)[0]:
-        raw = self._ppp.stdout.readline()
-        if not raw:
-          break
-        line = raw.decode(errors="ignore").strip()
-        if not line:
-          continue
+    # drain pppd output from queue
+    while not self._ppp_lines.empty():
+      try:
+        raw = self._ppp_lines.get_nowait()
+      except queue.Empty:
+        break
+      line = raw.decode(errors="ignore").strip()
+      if not line:
+        continue
         cloudlog.debug(f"pppd: {line}")
         if "local  IP address" in line:
           ip = line.split("local  IP address")[-1].strip()
