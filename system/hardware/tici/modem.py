@@ -20,7 +20,7 @@ AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
 PPPD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
-  "defaultroute", "replacedefaultroute", "connect", "/usr/sbin/chat -v -f /dev/shm/modem_chat",
+  "nodefaultroute", "connect", "/usr/sbin/chat -v -f /dev/shm/modem_chat",
   "lcp-echo-interval", "30", "lcp-echo-failure", "4", "mtu", "1500", "mru", "1500",
   "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
   "user", '""', "password", '""',
@@ -239,6 +239,8 @@ class Modem:
             cloudlog.debug(f"pppd: {line}")
             if "local  IP address" in line:
               ip = line.split("local  IP address")[-1].strip()
+              subprocess.run(["sudo", "ip", "route", "add", "default", "dev", "ppp0", "metric", "1000"],
+                             capture_output=True)
               self.S.update(ip_address=ip, connected=True, state="connected")
               self._ws()
               ok, fails = True, 0
@@ -318,6 +320,10 @@ class Modem:
       ip = next((l.strip().split()[1].split("/")[0] for l in r.stdout.splitlines() if "inet " in l), None)
       if ip:
         self.S.update(ip_address=ip, connected=True, state="connected")
+        # ensure ppp0 has a high-metric default route (wifi at ~600 wins when available)
+        rt = subprocess.run(["ip", "route", "show", "default", "dev", "ppp0"], capture_output=True, text=True, timeout=2)
+        if not rt.stdout.strip():
+          subprocess.run(["sudo", "ip", "route", "add", "default", "dev", "ppp0", "metric", "1000"], capture_output=True)
       elif self.S["connected"]:
         self.S.update(connected=False, state="registered", ip_address="")
     except Exception:
