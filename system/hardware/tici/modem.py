@@ -273,16 +273,43 @@ class Modem:
         except (ValueError, IndexError):
           pass
       print(f"[modem] _do_registering: creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
-      if reg in ("home", "roaming") and greg in ("home", "roaming"):
-        if not self._roaming_allowed and (reg == "roaming" or greg == "roaming"):
-          self._update(registration=reg, error="roaming_disabled")
-        else:
+
+      # check roaming policy
+      if reg in ("home", "roaming") and not self._roaming_allowed and reg == "roaming":
+        self._update(registration=reg, error="roaming_disabled")
+        time.sleep(0.5)
+        return State.REGISTERING
+
+      if reg in ("home", "roaming"):
+        if greg in ("home", "roaming"):
+          # both circuit and packet registered — ready to connect
           self._update(registration=reg, error="")
           return State.CONNECTING
-      elif reg == "roaming" and not self._roaming_allowed:
-        self._update(registration=reg, error="roaming_disabled")
+
+        # circuit registered but packet not attached
+        if not hasattr(self, '_ps_wait_start'):
+          self._ps_wait_start = time.monotonic()
+
+        elapsed = time.monotonic() - self._ps_wait_start
+        if elapsed > 10 and not hasattr(self, '_ps_attach_tried'):
+          # mimic MM: force PS attach after 10s
+          print(f"[modem] _do_registering: forcing PS attach (waited {elapsed:.0f}s)")
+          self._at("AT+CGATT=1")
+          self._ps_attach_tried = True
+        elif elapsed > 30:
+          # give up waiting for PS, try connecting anyway
+          print(f"[modem] _do_registering: PS attach timeout ({elapsed:.0f}s), proceeding")
+          cloudlog.warning("modem packet service not attached, proceeding anyway")
+          self._update(registration=reg, error="")
+          return State.CONNECTING
     else:
       print("[modem] _do_registering: CREG returned None")
+      # reset PS wait tracking if we lose circuit registration
+      if hasattr(self, '_ps_wait_start'):
+        del self._ps_wait_start
+      if hasattr(self, '_ps_attach_tried'):
+        del self._ps_attach_tried
+
     if self._sim_change or not os.path.exists(AT_PORT):
       print(f"[modem] _do_registering: -> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
       return State.RECONNECTING
@@ -310,6 +337,10 @@ class Modem:
     self._update(state="connecting")
     self._ppp_fails = 0
     self._sim_change = False
+    # clean up PS wait tracking from registering
+    for attr in ('_ps_wait_start', '_ps_attach_tried'):
+      if hasattr(self, attr):
+        delattr(self, attr)
     self._start_pppd()
     return State.CONNECTED
 
