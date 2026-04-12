@@ -8,7 +8,6 @@ if USBGPU:
   os.environ['DEV'] = 'AMD'
   os.environ['AMD_IFACE'] = 'USB'
 from tinygrad.tensor import Tensor
-from tinygrad import Device
 import time
 import pickle
 import numpy as np
@@ -196,7 +195,7 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
     vision_output, on_policy_output, off_policy_output = self.run_policy(
-      **{k: v.to(Device.DEFAULT) if v.device == 'NPY' else v for k, v in self.bufs.items()},
+      **self.bufs, **{k: Tensor(v) for k, v in self.npy.items()},
       frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 
