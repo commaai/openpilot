@@ -26,8 +26,8 @@ PPPD = [
   "user", '""', "password", '""',
 ]
 CHAT = (
-  "ABORT 'NO CARRIER'\nABORT 'NO DIALTONE'\nABORT 'BUSY'\n"
-  "ABORT 'NO ANSWER'\nABORT 'ERROR'\nTIMEOUT 5\n"
+  "ABORT 'NO CARRIER'\nABORT 'NO DIALTONE'\nABORT 'BUSY'\n" +
+  "ABORT 'NO ANSWER'\nABORT 'ERROR'\nTIMEOUT 5\n" +
   "'' AT\nOK ATD*99***{cid}#\nCONNECT ''\n"
 )
 
@@ -232,6 +232,7 @@ class Modem:
         try:
           proc = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
           ok = False
+          assert proc.stdout is not None
           for raw in proc.stdout:
             line = raw.decode(errors="ignore").strip()
             if not line:
