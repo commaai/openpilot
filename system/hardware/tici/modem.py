@@ -118,7 +118,7 @@ class Modem:
         if "+QUSIM:" in line:
           cloudlog.warning(f"modem URC: {line}")
           self._sim_change = True
-          os.system("sudo killall -9 pppd 2>/dev/null")
+          subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
         lines.append(line)
       return lines
     except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
@@ -137,7 +137,7 @@ class Modem:
   # -- teardown helpers --
 
   def _kill_ppp(self):
-    os.system("sudo killall -9 pppd 2>/dev/null")
+    subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
     if self._ppp:
       try:
         self._ppp.wait(timeout=5)
@@ -419,9 +419,9 @@ class Modem:
 
   def run(self):
     cloudlog.info(f"modem starting {time.strftime('%H:%M:%S')}")
-    os.system("sudo systemctl mask ModemManager 2>/dev/null")
-    os.system("sudo systemctl stop ModemManager 2>/dev/null")
-    os.system("sudo killall pppd 2>/dev/null")
+    subprocess.run(["sudo", "systemctl", "mask", "ModemManager"], capture_output=True)
+    subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
+    subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
 
     state = State.INIT
 
@@ -454,8 +454,8 @@ class Modem:
     if self._ser:
       self._ser.close()
     self._cleanup_routes()
-    os.system("sudo systemctl unmask ModemManager 2>/dev/null")
-    os.system("sudo systemctl start ModemManager 2>/dev/null")
+    subprocess.run(["sudo", "systemctl", "unmask", "ModemManager"], capture_output=True)
+    subprocess.run(["sudo", "systemctl", "start", "ModemManager"], capture_output=True)
 
 
 def main():
