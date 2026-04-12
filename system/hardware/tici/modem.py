@@ -283,13 +283,25 @@ class Modem:
     self._ppp = threading.Thread(target=run, daemon=True)
     self._ppp.start()
 
+  def _wait_port(self, timeout=30):
+    t = time.monotonic()
+    while time.monotonic() - t < timeout:
+      if os.path.exists(AT_PORT):
+        return True
+      time.sleep(1)
+    return False
+
   def _reconnect(self):
     cloudlog.warning("modem reconnecting")
     self.S.update(state="reconnecting", connected=False, ip_address="")
     self._ws()
     self._reset.set()
     self._kill_ppp()
+    self._cleanup_routes()
     self._reset_data_port()
+    if not self._wait_port():
+      cloudlog.warning("modem AT port not found, waiting...")
+      self._wait_port(timeout=60)
     self._reset.clear()
     self._boot()
 
