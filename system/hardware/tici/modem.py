@@ -2,6 +2,7 @@
 import fcntl
 import json
 import os
+import select
 import serial
 import signal
 import subprocess
@@ -279,9 +280,9 @@ class Modem:
     return State.CONNECTED
 
   def _do_connected(self):
-    # read pppd output (non-blocking via readline with timeout from pipe)
+    # read pppd output non-blocking
     if self._ppp and self._ppp.stdout:
-      while True:
+      while select.select([self._ppp.stdout], [], [], 0)[0]:
         raw = self._ppp.stdout.readline()
         if not raw:
           break
