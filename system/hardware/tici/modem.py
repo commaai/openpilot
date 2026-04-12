@@ -214,6 +214,17 @@ class Modem:
     except Exception as e:
       cloudlog.warning(f"modem data port reset failed: {e}")
 
+  def _cleanup_routes(self):
+    """Remove stale ppp0 routes and ip rules."""
+    subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
+    subprocess.run(["sudo", "ip", "route", "flush", "table", "1000"], capture_output=True)
+    # remove all ip rules pointing to table 1000
+    while True:
+      r = subprocess.run(["ip", "rule", "show", "table", "1000"], capture_output=True, text=True, timeout=2)
+      if not r.stdout.strip():
+        break
+      subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True)
+
   def _kill_ppp(self):
     os.system("sudo killall -9 pppd 2>/dev/null")
     if self._ppp and self._ppp.is_alive():
@@ -244,6 +255,7 @@ class Modem:
               self.S.update(ip_address=ip, connected=True, state="connected")
             elif "remote IP address" in line and ip:
               peer = line.split("remote IP address")[-1].strip()
+              self._cleanup_routes()
               # high-metric default route as fallback when wifi is down
               subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
                              capture_output=True)
@@ -371,11 +383,7 @@ class Modem:
     self._kill_ppp()
     if self._ser:
       self._ser.close()
-    # clean up routes
-    if self.S["ip_address"]:
-      subprocess.run(["sudo", "ip", "rule", "del", "from", self.S["ip_address"], "table", "1000"], capture_output=True)
-    subprocess.run(["sudo", "ip", "route", "flush", "table", "1000"], capture_output=True)
-    subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
+    self._cleanup_routes()
     os.system("sudo systemctl unmask ModemManager 2>/dev/null")
     os.system("sudo systemctl start ModemManager 2>/dev/null")
 
