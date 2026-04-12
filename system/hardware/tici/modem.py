@@ -237,6 +237,7 @@ class Modem:
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
     cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
 
+    self._sim_change = False  # clear — we just re-read identity with the new SIM
     self._update(imei=imei, iccid=iccid, modem_version=modem_version)
     return State.REGISTERING
 
