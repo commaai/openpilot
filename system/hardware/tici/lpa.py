@@ -441,4 +441,3 @@ class TiciLPA(LPABase):
         code = self._enable_profile(iccid)
       if code not in (PROFILE_OK, PROFILE_NOT_IN_DISABLED_STATE):
         raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
-    # no CFUN needed — refreshFlag=0 in _enable_profile triggers modem to detect the change
