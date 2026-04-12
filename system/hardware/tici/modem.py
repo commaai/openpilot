@@ -80,9 +80,9 @@ class Modem:
     except FileNotFoundError:
       return ""
 
-  # -- state file --
-
-  def _ws(self):
+  def _update(self, **kwargs):
+    """Update state and atomically write to disk."""
+    self.S.update(kwargs)
     fd = tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False)
     json.dump(self.S, fd)
     fd.flush()
@@ -174,16 +174,6 @@ class Modem:
     except Exception as e:
       cloudlog.warning(f"modem data port reset failed: {e}")
 
-  def _clear_state(self):
-    self.S.update(
-      state="reconnecting", connected=False, ip_address="",
-      iccid="", imei="", modem_version="",
-      signal_strength=0, signal_quality=0,
-      network_type="unknown", operator="", band="", channel=0,
-      registration="unknown", temperatures=[], extra="",
-      tx_bytes=0, rx_bytes=0, error="",
-    )
-
   # -- state handlers --
 
   def _do_waiting_port(self):
@@ -226,23 +216,24 @@ class Modem:
       self._at('AT$QCPCFG=usbNet,1')
 
     # read identity
+    imei, iccid, modem_version = "", "", ""
     r = self._at("AT+CGSN")
     if r:
-      self.S["imei"] = r[0].strip()
+      imei = r[0].strip()
     v = self._atv("AT+QCCID", "+QCCID:")
     if v:
-      self.S["iccid"] = v
+      iccid = v
     r = self._at("AT+GMR")
     if r:
-      self.S["modem_version"] = r[0].strip()
+      modem_version = r[0].strip()
 
-    # configure APN on CID 1 — use custom APN from param, or empty to let network assign
+    # configure APN on CID 1
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
     cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
 
-    self._ws()
+    self._update(imei=imei, iccid=iccid, modem_version=modem_version)
     return State.REGISTERING
 
   def _do_registering(self):
@@ -258,21 +249,18 @@ class Modem:
         reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
       except (ValueError, IndexError):
         reg = "unknown"
-      self.S["registration"] = reg
       if reg == "home" or (reg == "roaming" and self._roaming_allowed):
-        self.S["error"] = ""
+        self._update(registration=reg, error="")
         return State.CONNECTING
       if reg == "roaming" and not self._roaming_allowed:
-        self.S["error"] = "roaming_disabled"
-        self._ws()
+        self._update(registration=reg, error="roaming_disabled")
     if self._sim_change or not os.path.exists(AT_PORT):
       return State.RECONNECTING
     time.sleep(0.5)
     return State.REGISTERING
 
   def _do_connecting(self):
-    self.S["state"] = "connecting"
-    self._ws()
+    self._update(state="connecting")
     self._ppp_fails = 0
     self._sim_change = False
 
@@ -306,7 +294,7 @@ class Modem:
       cloudlog.info(f"pppd: {line}")
       if "local  IP address" in line:
         ip = line.split("local  IP address")[-1].strip()
-        self.S.update(ip_address=ip, connected=True, state="connected")
+        self._update(ip_address=ip, connected=True, state="connected")
       elif "remote IP address" in line and self.S["ip_address"]:
         peer = line.split("remote IP address")[-1].strip()
         self._cleanup_routes()
@@ -317,10 +305,8 @@ class Modem:
         subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
                        capture_output=True)
         cloudlog.info(f"modem route set up for {self.S['ip_address']} via {peer}")
-        self._ws()
       elif "Connection terminated" in line or "Modem hangup" in line:
-        self.S.update(connected=False, state="disconnected", ip_address="")
-        self._ws()
+        self._update(connected=False, state="disconnected", ip_address="")
 
     # check if pppd exited
     if self._ppp and self._ppp.poll() is not None:
@@ -339,7 +325,7 @@ class Modem:
       cloudlog.info("modem PPP dialing")
       return State.CONNECTED
 
-    # check for SIM change, port loss, or APN change
+    # check for SIM change, port loss, or param changes
     if self._sim_change or not os.path.exists(AT_PORT):
       return State.RECONNECTING
     new_apn = self._read_param("GsmApn")
@@ -351,14 +337,20 @@ class Modem:
       cloudlog.info(f"modem roaming changed: {self._roaming_allowed} -> {new_roaming}")
       return State.RECONNECTING
 
-    # poll modem status every pass (main loop sleeps 2s)
+    # poll modem status
     self._poll()
     return State.CONNECTED
 
   def _do_reconnecting(self):
     cloudlog.warning("modem reconnecting")
-    self._clear_state()
-    self._ws()
+    self._update(
+      state="reconnecting", connected=False, ip_address="",
+      iccid="", imei="", modem_version="",
+      signal_strength=0, signal_quality=0,
+      network_type="unknown", operator="", band="", channel=0,
+      registration="unknown", temperatures=[], extra="",
+      tx_bytes=0, rx_bytes=0, error="",
+    )
     self._kill_ppp()
     self._cleanup_routes()
     self._reset_data_port()
@@ -368,13 +360,15 @@ class Modem:
   # -- poll --
 
   def _poll(self):
+    s = {}
+
     v = self._atv("AT+CSQ", "+CSQ:")
     if v:
       try:
         rssi = int(v.split(",")[0])
         if rssi != 99:
-          self.S["signal_strength"] = rssi
-          self.S["signal_quality"] = min(100, int(rssi / 31 * 100))
+          s["signal_strength"] = rssi
+          s["signal_quality"] = min(100, int(rssi / 31 * 100))
       except (ValueError, IndexError):
         pass
 
@@ -383,9 +377,9 @@ class Modem:
       p = v.split(",")
       try:
         if len(p) >= 3:
-          self.S["operator"] = p[2].strip('"')
+          s["operator"] = p[2].strip('"')
         if len(p) >= 4:
-          self.S["network_type"] = {0: "gsm", 2: "utran", 7: "lte"}.get(int(p[3]), "unknown")
+          s["network_type"] = {0: "gsm", 2: "utran", 7: "lte"}.get(int(p[3]), "unknown")
       except (ValueError, IndexError):
         pass
 
@@ -394,19 +388,19 @@ class Modem:
       info = v.replace('"', '').split(",")
       try:
         if len(info) >= 4:
-          self.S["band"] = info[2]
-          self.S["channel"] = int(info[3])
+          s["band"] = info[2]
+          s["channel"] = int(info[3])
       except (ValueError, IndexError):
         pass
 
     v = self._atv('AT+QENG="servingcell"', "+QENG:")
     if v:
-      self.S["extra"] = v.replace('"', '')
+      s["extra"] = v.replace('"', '')
 
     v = self._atv("AT+QTEMP", "+QTEMP:")
     if v:
       try:
-        self.S["temperatures"] = [t for t in (int(x) for x in v.split(",") if x.strip()) if t != 255]
+        s["temperatures"] = [t for t in (int(x) for x in v.split(",") if x.strip()) if t != 255]
       except (ValueError, IndexError):
         pass
 
@@ -415,21 +409,21 @@ class Modem:
       r = subprocess.run(["ip", "-4", "addr", "show", "ppp0"], capture_output=True, text=True, timeout=2)
       ip = next((l.strip().split()[1].split("/")[0] for l in r.stdout.splitlines() if "inet " in l), None)
       if ip:
-        self.S.update(ip_address=ip, connected=True, state="connected")
+        s.update(ip_address=ip, connected=True, state="connected")
       elif self.S["connected"]:
-        self.S.update(connected=False, state="registered", ip_address="")
+        s.update(connected=False, state="registered", ip_address="")
     except Exception:
       pass
 
     try:
       with open("/sys/class/net/ppp0/statistics/tx_bytes") as f:
-        self.S["tx_bytes"] = int(f.read().strip())
+        s["tx_bytes"] = int(f.read().strip())
       with open("/sys/class/net/ppp0/statistics/rx_bytes") as f:
-        self.S["rx_bytes"] = int(f.read().strip())
+        s["rx_bytes"] = int(f.read().strip())
     except Exception:
       pass
 
-    self._ws()
+    self._update(**s)
 
   # -- main loop --
 
@@ -460,7 +454,6 @@ class Modem:
       except Exception as e:
         cloudlog.exception(f"modem error in {state.value}: {e}")
         state = State.RECONNECTING
-      # don't spin — sleep unless we're in a state that handles its own timing
       if state not in (State.REGISTERING, State.WAITING_PORT):
         time.sleep(2)
 
