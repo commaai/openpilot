@@ -383,6 +383,9 @@ function op_switch() {
   git submodule update --init --recursive
   git submodule foreach git reset --hard
   git submodule foreach git clean -df
+
+  # remove openpilot update flag if present
+  rm -f .overlay_init
 }
 
 function op_start() {

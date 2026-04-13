@@ -48,7 +48,7 @@ Font font_display;
 const bool tici_device = Hardware::get_device_type() == cereal::InitData::DeviceType::TICI ||
                          Hardware::get_device_type() == cereal::InitData::DeviceType::TIZI;
 
-std::vector<std::string> tici_prebuilt_branches = {"release3", "release-tizi", "release3-staging", "nightly", "nightly-dev"};
+std::vector<std::string> tici_prebuilt_branches = {"release3", "release-tici", "release3-staging", "nightly", "nightly-dev"};
 std::string migrated_branch;
 
 void branchMigration() {
@@ -144,6 +144,7 @@ int cachedFetch(const std::string &cache) {
   LOGD("Fetching with cache: %s", cache.c_str());
 
   run(util::string_format("cp -rp %s %s", cache.c_str(), TMP_INSTALL_PATH).c_str());
+  run(util::string_format("cd %s && git remote set-url origin %s", TMP_INSTALL_PATH, GIT_URL.c_str()).c_str());
   run(util::string_format("cd %s && git remote set-branches --add origin %s", TMP_INSTALL_PATH, migrated_branch.c_str()).c_str());
 
   renderProgress(10);
