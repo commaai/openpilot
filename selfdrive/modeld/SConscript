@@ -24,7 +24,7 @@ if 'CUDA' in available:
   tg_flags = f'DEV={tg_backend}'
 elif 'QCOM' in available:
   tg_backend = 'QCOM'
-  tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
+  tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1 NO_MEMORY_PLANNER=1'
 else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   tg_flags = f'DEV={tg_backend} THREADS=0'
