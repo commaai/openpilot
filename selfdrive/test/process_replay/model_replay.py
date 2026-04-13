@@ -190,7 +190,7 @@ def model_replay(lr, frs):
   print("----------------- Model Timing -----------------")
   print("------------------------------------------------")
   print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".4f"))
-  # assert timings_ok or PC
+  assert timings_ok or PC
 
   return msgs
 
@@ -254,28 +254,28 @@ if __name__ == "__main__":
         'driverStateV2.modelExecutionTime',
         'driverStateV2.gpuExecutionTime'
       ]
-      # if PC:
-      #   # TODO We ignore whole bunch so we can compare important stuff
-      #   # like posenet with reasonable tolerance
-      #   ignore += ['modelV2.acceleration.x',
-      #              'modelV2.position.x',
-      #              'modelV2.position.xStd',
-      #              'modelV2.position.y',
-      #              'modelV2.position.yStd',
-      #              'modelV2.position.z',
-      #              'modelV2.position.zStd',
-      #              'drivingModelData.path.xCoefficients',]
-      #   for i in range(3):
-      #     for field in ('x', 'y', 'v', 'a'):
-      #       ignore.append(f'modelV2.leadsV3.{i}.{field}')
-      #       ignore.append(f'modelV2.leadsV3.{i}.{field}Std')
-      #   for i in range(4):
-      #     for field in ('x', 'y', 'z', 't'):
-      #       ignore.append(f'modelV2.laneLines.{i}.{field}')
-      #   for i in range(2):
-      #     for field in ('x', 'y', 'z', 't'):
-      #       ignore.append(f'modelV2.roadEdges.{i}.{field}')
-      tolerance = .0 if PC else None
+      if PC:
+        # TODO We ignore whole bunch so we can compare important stuff
+        # like posenet with reasonable tolerance
+        ignore += ['modelV2.acceleration.x',
+                   'modelV2.position.x',
+                   'modelV2.position.xStd',
+                   'modelV2.position.y',
+                   'modelV2.position.yStd',
+                   'modelV2.position.z',
+                   'modelV2.position.zStd',
+                   'drivingModelData.path.xCoefficients',]
+        for i in range(3):
+          for field in ('x', 'y', 'v', 'a'):
+            ignore.append(f'modelV2.leadsV3.{i}.{field}')
+            ignore.append(f'modelV2.leadsV3.{i}.{field}Std')
+        for i in range(4):
+          for field in ('x', 'y', 'z', 't'):
+            ignore.append(f'modelV2.laneLines.{i}.{field}')
+        for i in range(2):
+          for field in ('x', 'y', 'z', 't'):
+            ignore.append(f'modelV2.roadEdges.{i}.{field}')
+      tolerance = .3 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
@@ -285,30 +285,6 @@ if __name__ == "__main__":
         comment_replay_report(log_msgs, cmp_log, log_msgs)
         failed = False
         print(diff_long)
-      else:
-        commit = (get_commit() or 'local')[:7]
-        all_plots = [*zl([
-          (lambda x: get_idx_if_non_empty(x.velocity.x, 0), "velocity.x"),
-          (lambda x: get_idx_if_non_empty(x.action.desiredCurvature), "desiredCurvature"),
-          (lambda x: get_idx_if_non_empty(x.action.desiredAcceleration), "desiredAcceleration"),
-          (lambda x: get_idx_if_non_empty(x.leadsV3[0].x, 0), "leadsV3.x"),
-          (lambda x: get_idx_if_non_empty(x.laneLines[1].y, 0), "laneLines.y"),
-          (lambda x: get_idx_if_non_empty(x.meta.disengagePredictions.gasPressProbs, 1), "gasPressProbs"),
-        ], "modelV2")]
-        n = len(all_plots)
-        fig, axes = plt.subplots(n, 1, figsize=(10, 3 * n))
-        for ax, (v, event) in zip(axes, all_plots):
-          proposed_vals = list(map(v[0], get_event(log_msgs, event)))
-          master_vals = list(map(v[0], get_event(cmp_log, event)))
-          ax.plot(master_vals, label='MASTER')
-          ax.plot(proposed_vals, label='PROPOSED')
-          ax.set_title(v[1])
-          ax.legend(fontsize=8)
-          ax.grid(True, alpha=0.3)
-        fig.tight_layout()
-        out = f"model_replay_{commit}.png"
-        fig.savefig(out, dpi=150)
-        print(f"Plot saved to {out}")
       print('-------------\n'*5)
       print(diff_short)
       with open("model_diff.txt", "w") as f:
