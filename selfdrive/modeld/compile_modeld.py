@@ -174,7 +174,7 @@ def compile_modeld(cam_w, cam_h):
     vision_metadata = pickle.load(f)
     vision_features_slice = vision_metadata['output_slices']['hidden_state']
     vision_input_shapes = vision_metadata['input_shapes']
-  with open(MODELS_DIR / 'driving_on_policy_metadata.pkl', 'rb') as f:
+  with open(MODELS_DIR / 'driving_policy_metadata.pkl', 'rb') as f:
     policy_input_shapes = pickle.load(f)['input_shapes']
 
   frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
