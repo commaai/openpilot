@@ -145,7 +145,6 @@ class ModelState:
       self.vision_input_shapes =  vision_metadata['input_shapes']
       self.vision_input_names = list(self.vision_input_shapes.keys())
       self.vision_output_slices = vision_metadata['output_slices']
-      vision_output_size = vision_metadata['output_shapes']['outputs'][1]
 
     with open(OFF_POLICY_METADATA_PATH, 'rb') as f:
       off_policy_metadata = pickle.load(f)

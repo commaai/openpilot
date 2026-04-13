@@ -203,7 +203,8 @@ def compile_modeld(cam_w, cam_h):
       outs = fn(**{**bufs, 'frame': frame, 'big_frame': big_frame})
       mt = time.perf_counter()
       # .realize() not needed (and harmless?) once jitted, but needed for unjitted fn
-      for o in outs: o.realize()
+      for o in outs:
+        o.realize()
       Device.default.synchronize()
       et = time.perf_counter()
       print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
@@ -223,8 +224,10 @@ def compile_modeld(cam_w, cam_h):
 
   print('pickle round trip')
   pkl_path = policy_pkl_path(cam_w, cam_h)
-  with open(pkl_path, "wb") as f: pickle.dump(run_policy_jit, f)
-  with open(pkl_path, "rb") as f: run_policy_jit = pickle.load(f)
+  with open(pkl_path, "wb") as f:
+    pickle.dump(run_policy_jit, f)
+  with open(pkl_path, "rb") as f:
+    run_policy_jit = pickle.load(f)
   _, _, _ = random_inputs_run_fn(run_policy_jit, test_val, test_buffers)
 
   # TODO 2x input
