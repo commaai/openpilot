@@ -52,7 +52,7 @@ def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad)
   return src_flat[idx]
 
 
-def frames_to_tensor(frames, model_w, model_h):
+def frames_to_tensor(frames):
   H = (frames.shape[0] * 2) // 3
   W = frames.shape[1]
   in_img1 = Tensor.cat(frames[0:H:2, 0::2],
