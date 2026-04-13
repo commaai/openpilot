@@ -248,35 +248,32 @@ def _get_frame_index(animation: Animation, elapsed: float, gap_first: bool = Fal
   if num_frames == 1:
     return 0
 
-  forward_duration = num_frames * animation.frame_duration
+  fd = animation.frame_duration
   has_backward = animation.mode in (AnimationMode.ONCE_FORWARD_BACKWARD, AnimationMode.REPEAT_FORWARD_BACKWARD)
   repeats = animation.mode in (AnimationMode.REPEAT_FORWARD, AnimationMode.REPEAT_FORWARD_BACKWARD)
 
-  if has_backward:
-    backward_frames = max(num_frames - 2, 0)
-    backward_duration = backward_frames * animation.frame_duration
-    cycle_duration = forward_duration + animation.hold_end + backward_duration
-  else:
-    backward_frames = 0
-    backward_duration = 0
-    cycle_duration = forward_duration
+  forward_duration = num_frames * fd
+  backward_frames = max(num_frames - 2, 0) if has_backward else 0
+  hold = animation.hold_end if has_backward else 0.0
+  cycle_duration = forward_duration + hold + backward_frames * fd
 
   if not repeats:
-    # Play once — clamp elapsed to one cycle
     t = min(elapsed, cycle_duration)
   else:
-    adj_elapsed = elapsed + cycle_duration if gap_first else elapsed
-    t = adj_elapsed % animation.repeat_interval
+    t = (elapsed + cycle_duration if gap_first else elapsed) % animation.repeat_interval
 
+  # Forward phase
   if t < forward_duration:
-    return min(int(t / animation.frame_duration), num_frames - 1)
-  elif not has_backward:
+    return min(int(t / fd), num_frames - 1)
+  t -= forward_duration
+
+  # Hold at last frame
+  if t < hold:
     return num_frames - 1
-  elif t < forward_duration + animation.hold_end:
-    return num_frames - 1
-  elif t < forward_duration + animation.hold_end + backward_duration:
-    backward_elapsed = t - forward_duration - animation.hold_end
-    backward_index = min(int(backward_elapsed / animation.frame_duration), backward_frames - 1)
-    return num_frames - 2 - backward_index
-  else:
-    return 0
+  t -= hold
+
+  # Backward phase
+  if backward_frames and t < backward_frames * fd:
+    return num_frames - 2 - min(int(t / fd), backward_frames - 1)
+
+  return 0 if has_backward else num_frames - 1
