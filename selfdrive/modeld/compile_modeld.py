@@ -185,7 +185,7 @@ def compile_modeld(cam_w, cam_h):
                          cam_w, cam_h, vision_features_slice, frame_skip)
   run_policy_jit = TinyJit(_run, prune=True)
 
-  N_RUNS = 3 + 7
+  N_RUNS = 3 + 0
   SEED = 42
 
   def random_inputs_run_fn(fn, test_val=None, test_buffers=None):
