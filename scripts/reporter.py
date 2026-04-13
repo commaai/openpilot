@@ -33,16 +33,7 @@ if __name__ == "__main__":
   print("|-| -----  | --------- |")
 
   for f in glob.glob(BASEDIR + MODEL_PATH + "/*.onnx"):
-    # TODO: add checkpoint to DM
-    if "dmonitoring" in f:
-      continue
-
     fn = os.path.basename(f)
-    master_path = MASTER_PATH + MODEL_PATH + fn
-    if os.path.exists(master_path):
-      master = get_checkpoint(master_path)
-      master_col = f"[{master}](https://reporter.comma.life/experiment/{master})"
-    else:
-      master_col = "N/A (new model)"
+    master = get_checkpoint(MASTER_PATH + MODEL_PATH + fn)
     pr = get_checkpoint(BASEDIR + MODEL_PATH + fn)
-    print("|", fn, "|", master_col, "|", f"[{pr}](https://reporter.comma.life/experiment/{pr})", "|")
+    print("|", fn, "|", f"[{master}](https://reporterv2.comma.life/{master})", "|", f"[{pr}](https://reporterv2.comma.life/{pr})", "|")

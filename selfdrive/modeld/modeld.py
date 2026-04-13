@@ -36,8 +36,8 @@ PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
-ON_POLICY_METADATA_PATH = MODELS_DIR / 'driving_on_policy_metadata.pkl'
-OFF_POLICY_METADATA_PATH = MODELS_DIR / 'driving_off_policy_metadata.pkl'
+POLICY_PKL_PATH = MODELS_DIR / 'driving_policy_tinygrad.pkl'
+POLICY_METADATA_PATH = MODELS_DIR / 'driving_policy_metadata.pkl'
 
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
@@ -146,13 +146,7 @@ class ModelState:
       self.vision_input_names = list(self.vision_input_shapes.keys())
       self.vision_output_slices = vision_metadata['output_slices']
 
-    with open(OFF_POLICY_METADATA_PATH, 'rb') as f:
-      off_policy_metadata = pickle.load(f)
-      self.off_policy_input_shapes =  off_policy_metadata['input_shapes']
-      self.off_policy_output_slices = off_policy_metadata['output_slices']
-      # off_policy_output_size = off_policy_metadata['output_shapes']['outputs'][1]
-
-    with open(ON_POLICY_METADATA_PATH, 'rb') as f:
+    with open(POLICY_METADATA_PATH, 'rb') as f:
       policy_metadata = pickle.load(f)
       self.policy_input_shapes =  policy_metadata['input_shapes']
       self.policy_output_slices = policy_metadata['output_slices']
@@ -175,11 +169,6 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
-    # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
-    inputs['desire_pulse'][0] = 0
-    new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
-    self.prev_desire[:] = inputs['desire_pulse']
-
     for key in bufs.keys():
       ptr = bufs[key].data.ctypes.data
       yuv_size = self.frame_buf_params[key][3]
@@ -189,27 +178,27 @@ class ModelState:
         self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
       self.full_frames[key] = self._blob_cache[cache_key]
 
+    # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
+    inputs['desire_pulse'][0] = 0
+    new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
+    self.prev_desire[:] = inputs['desire_pulse']
     self.npy['desire'][:] = new_desire
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
-    vision_output, on_policy_output, off_policy_output = self.run_policy(
+
+    vision_output, policy_output = self.run_policy(
       **self.bufs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 
     vision_output = vision_output.realize().numpy().flatten()
-    on_policy_output = on_policy_output.realize().numpy().flatten()
-    off_policy_output = off_policy_output.realize().numpy().flatten()
+    policy_output = policy_output.realize().numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
-    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
-    off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(off_policy_output, self.off_policy_output_slices))
-    off_policy_outputs_dict.pop('plan')
-    combined_outputs_dict = {**vision_outputs_dict, **off_policy_outputs_dict, **policy_outputs_dict}
+    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(policy_output, self.policy_output_slices))
+    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
 
-    if 'planplus' in combined_outputs_dict and 'plan' in combined_outputs_dict:
-      combined_outputs_dict['plan'] = combined_outputs_dict['plan'] + combined_outputs_dict['planplus']
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy(), off_policy_output.copy()])
+      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
     return combined_outputs_dict
 
 

@@ -225,7 +225,7 @@ def migrate_controlsState(msgs):
     for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
                   "alertStatus", "alertSize", "alertType", "experimentalMode",
                   "personality"):
-      setattr(ss, field, getattr(msg.controlsState, field+"DEPRECATED"))
+      setattr(ss, field, getattr(msg.controlsState.deprecated, field))
     add_ops.append(m.as_reader())
   return [], add_ops, []
 
@@ -238,10 +238,10 @@ def migrate_carState(msgs):
     if msg.which() == 'controlsState':
       last_cs = msg
     elif msg.which() == 'carState' and last_cs is not None:
-      if last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:
+      if last_cs.controlsState.deprecated.vCruise - msg.carState.vCruise > 0.1:
         msg = msg.as_builder()
-        msg.carState.vCruise = last_cs.controlsState.vCruiseDEPRECATED
-        msg.carState.vCruiseCluster = last_cs.controlsState.vCruiseClusterDEPRECATED
+        msg.carState.vCruise = last_cs.controlsState.deprecated.vCruise
+        msg.carState.vCruiseCluster = last_cs.controlsState.deprecated.vCruiseCluster
         ops.append((index, msg.as_reader()))
   return ops, [], []
 
@@ -488,7 +488,7 @@ def migrate_driverMonitoringState(msgs):
   for index, msg in msgs:
     msg = msg.as_builder()
     events = []
-    for event in msg.driverMonitoringState.eventsDEPRECATED:
+    for event in msg.driverMonitoringState.deprecated.events:
       try:
         if not str(event.name).endswith('DEPRECATED'):
           migrated_event = migrate_onroad_event(event)

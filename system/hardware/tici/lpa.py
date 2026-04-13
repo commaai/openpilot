@@ -33,12 +33,25 @@ SEND_APDU_RETRIES = 3
 LOCK_FILE = '/dev/shm/modem_lpa.lock'
 DEBUG = os.environ.get("DEBUG") == "1"
 
+
 # TLV Tags
 TAG_ICCID = 0x5A
 TAG_STATUS = 0x80
 TAG_PROFILE_INFO_LIST = 0xBF2D
 TAG_SET_NICKNAME = 0xBF29
+TAG_ENABLE_PROFILE = 0xBF31
+TAG_DELETE_PROFILE = 0xBF33
 TAG_OK = 0xA0
+
+PROFILE_OK = 0x00
+PROFILE_NOT_IN_DISABLED_STATE = 0x02
+PROFILE_CAT_BUSY = 0x05
+
+PROFILE_ERROR_CODES = {
+  0x01: "iccidOrAidNotFound", PROFILE_NOT_IN_DISABLED_STATE: "profileNotInDisabledState",
+  0x03: "disallowedByPolicy", 0x04: "wrongProfileReenabling",
+  PROFILE_CAT_BUSY: "catBusy", 0x06: "undefinedError",
+}
 
 STATE_LABELS = {0: "disabled", 1: "enabled", 255: "unknown"}
 ICON_LABELS = {0: "jpeg", 1: "png", 255: "unknown"}
@@ -68,6 +81,12 @@ class AtClient:
     self._timeout = timeout
     self._serial: serial.Serial | None = None
     self._use_dbus = not os.path.exists(device)
+
+  def send_raw(self, data: bytes) -> None:
+    self._ensure_serial()
+    self._serial.reset_input_buffer()
+    self._serial.write(data)
+    self._serial.flush()
 
   def close(self) -> None:
     try:
@@ -167,6 +186,15 @@ class AtClient:
         return
     raise RuntimeError("Failed to open ISD-R application")
 
+  def _reset_modem(self) -> None:
+    if self._serial:
+      try:
+        self._serial.close()
+      except Exception:
+        pass
+      self._serial = None
+    subprocess.run(['/usr/comma/lte/lte.sh', 'start'], capture_output=True)
+
   def open_isdr(self) -> None:
     for attempt in range(OPEN_ISDR_RETRIES):
       try:
@@ -175,9 +203,7 @@ class AtClient:
       except (RuntimeError, TimeoutError, termios.error, serial.SerialException):
         time.sleep(OPEN_ISDR_RETRY_DELAY_S)
         if attempt == OPEN_ISDR_RESET_ATTEMPT:
-          # reset modem via lte.sh
-          subprocess.run(['/usr/comma/lte/lte.sh', 'start'], capture_output=True)
-          self._serial = None  # serial port will be re-opened on next attempt
+          self._reset_modem()
     raise RuntimeError("Failed to open ISD-R after retries")
 
   def send_apdu(self, apdu: bytes) -> tuple[bytes, int, int]:
@@ -337,8 +363,7 @@ def set_profile_nickname(client: AtClient, iccid: str, nickname: str) -> None:
     raise ValueError("Profile nickname must be 64 bytes or less")
   content = encode_tlv(TAG_ICCID, string_to_tbcd(iccid)) + encode_tlv(0x90, nickname_bytes)
   response = es10x_command(client, encode_tlv(TAG_SET_NICKNAME, content))
-  root = require_tag(response, TAG_SET_NICKNAME, "SetNicknameResponse")
-  code = require_tag(root, TAG_STATUS, "status in SetNicknameResponse")[0]
+  code = require_tag(require_tag(response, TAG_SET_NICKNAME, "SetNicknameResponse"), TAG_STATUS, "SetNickname status")[0]
   if code == 0x01:
     raise LPAError(f"profile {iccid} not found")
   if code != 0x00:
@@ -385,7 +410,14 @@ class TiciLPA(LPABase):
     return None
 
   def delete_profile(self, iccid: str) -> None:
-    return None
+    if self.is_comma_profile(iccid):
+      raise LPAError("refusing to delete a comma profile")
+    with self._acquire_channel():
+      request = encode_tlv(TAG_DELETE_PROFILE, encode_tlv(TAG_ICCID, string_to_tbcd(iccid)))
+      response = es10x_command(self._client, request)
+      code = require_tag(require_tag(response, TAG_DELETE_PROFILE, "DeleteProfileResponse"), TAG_STATUS, "DeleteProfile status")[0]
+    if code != PROFILE_OK:
+      raise LPAError(f"DeleteProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
 
   def download_profile(self, qr: str, nickname: str | None = None) -> None:
     return None
@@ -394,5 +426,22 @@ class TiciLPA(LPABase):
     with self._acquire_channel():
       set_profile_nickname(self._client, iccid, nickname)
 
+  def _enable_profile(self, iccid: str) -> int:
+    inner = encode_tlv(TAG_OK, encode_tlv(TAG_ICCID, string_to_tbcd(iccid)))
+    inner += b'\x01\x01\x01'  # refreshFlag=1
+    response = es10x_command(self._client, encode_tlv(TAG_ENABLE_PROFILE, inner))
+    return require_tag(require_tag(response, TAG_ENABLE_PROFILE, "EnableProfileResponse"), TAG_STATUS, "EnableProfile status")[0]
+
   def switch_profile(self, iccid: str) -> None:
-    return None
+    with self._acquire_channel():
+      code = self._enable_profile(iccid)
+      if code == PROFILE_CAT_BUSY:  # stale eUICC transaction, reset and retry
+        self._client._reset_modem()
+        self._client.open_isdr()
+        code = self._enable_profile(iccid)
+      if code not in (PROFILE_OK, PROFILE_NOT_IN_DISABLED_STATE):
+        raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
+    from openpilot.system.hardware import HARDWARE
+    if HARDWARE.get_device_type() == "mici":
+      self._client.send_raw(b'AT+CFUN=0\rAT+CFUN=1\r')  # mici has no SIM presence pin; raw because CFUN=0 drops serial
+      self._client._ensure_serial(reconnect=True)

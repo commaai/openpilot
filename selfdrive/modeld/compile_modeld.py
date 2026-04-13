@@ -131,7 +131,7 @@ def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
   return warp_dm
 
 
-def make_run_policy(vision_runner, on_policy_runner, off_policy_runner, cam_w, cam_h,
+def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
                     vision_features_slice, frame_skip):
   model_w, model_h = MEDMODEL_INPUT_SIZE
   frame_prepare = make_frame_prepare(cam_w, cam_h, model_w, model_h)
@@ -154,10 +154,9 @@ def make_run_policy(vision_runner, on_policy_runner, off_policy_runner, cam_w, c
     desire_buf = shift_and_sample(desire_q, desire.to(Device.DEFAULT).reshape(1, 1, -1), sample_desire)
 
     inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention.to(Device.DEFAULT)}
-    on_policy_out = next(iter(on_policy_runner(inputs).values())).cast('float32')
-    off_policy_out = next(iter(off_policy_runner(inputs).values())).cast('float32')
+    policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
 
-    return vision_out, on_policy_out, off_policy_out
+    return vision_out, policy_out
   return run_policy
 
 
@@ -169,8 +168,7 @@ def compile_modeld(cam_w, cam_h):
   print(f"Compiling combined policy JIT for {cam_w}x{cam_h}...")
 
   vision_runner = OnnxRunner(MODELS_DIR / 'driving_vision.onnx')
-  on_policy_runner = OnnxRunner(MODELS_DIR / 'driving_on_policy.onnx')
-  off_policy_runner = OnnxRunner(MODELS_DIR / 'driving_off_policy.onnx')
+  policy_runner = OnnxRunner(MODELS_DIR / 'driving_policy.onnx')
 
   with open(MODELS_DIR / 'driving_vision_metadata.pkl', 'rb') as f:
     vision_metadata = pickle.load(f)
@@ -181,7 +179,7 @@ def compile_modeld(cam_w, cam_h):
 
   frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 
-  _run = make_run_policy(vision_runner, on_policy_runner, off_policy_runner,
+  _run = make_run_policy(vision_runner, policy_runner,
                          cam_w, cam_h, vision_features_slice, frame_skip)
   run_policy_jit = TinyJit(_run, prune=True)
 
