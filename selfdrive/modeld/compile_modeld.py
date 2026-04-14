@@ -225,7 +225,7 @@ def compile_modeld(cam_w, cam_h):
   pkl_path = policy_pkl_path(cam_w, cam_h)
   with open(pkl_path, "wb") as f:
     pickle.dump(run_policy_jit, f)
-
+  del run_policy_jit # https://github.com/tinygrad/tinygrad/issues/15682
   with open(pkl_path, "rb") as f:
     run_policy_jit = pickle.load(f)
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
