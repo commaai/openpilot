@@ -210,7 +210,7 @@ class MiciHomeLayout(Widget):
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
 
-    # Notification pill (bottom-right corner)
+    # Notification pill
     alert_count = self._alert_count_fn() if self._alert_count_fn else 0
     if alert_count > 0:
       pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
