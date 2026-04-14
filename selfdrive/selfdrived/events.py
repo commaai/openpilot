@@ -336,6 +336,13 @@ def overheat_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
   return NormalPermanentAlert("System Overheated", f"{temp:.0f} °C")
 
 
+def overheat_no_entry_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  cpu = max(sm['deviceState'].cpuTempC, default=0.)
+  gpu = max(sm['deviceState'].gpuTempC, default=0.)
+  temp = max((cpu, gpu, sm['deviceState'].memoryTempC))
+  return NoEntryAlert(f"System Overheated ({temp:.0f} °C). Allow device to cool.")
+
+
 def low_memory_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   return NormalPermanentAlert("Low Memory", f"{sm['deviceState'].memoryUsagePercent}% used")
 
@@ -795,7 +802,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.overheat: {
     ET.PERMANENT: overheat_alert,
     ET.SOFT_DISABLE: soft_disable_alert("System Overheated"),
-    ET.NO_ENTRY: NoEntryAlert("System Overheated"),
+    ET.NO_ENTRY: overheat_no_entry_alert,
   },
 
   EventName.wrongGear: {

@@ -16,6 +16,7 @@ HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
 
 NetworkType = log.DeviceState.NetworkType
+ThermalStatus = log.DeviceState.ThermalStatus
 
 NETWORK_TYPES = {
   NetworkType.none: "Offline",
@@ -80,6 +81,36 @@ class NetworkIcon(Widget):
     rl.draw_texture_ex(draw_net_txt, rl.Vector2(draw_x, draw_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9)))
 
 
+class TemperatureStatus(Widget):
+  def __init__(self):
+    super().__init__()
+    self.set_rect(rl.Rectangle(0, 0, 110, 44))
+    self._label = "TEMP OK"
+    self._color = rl.Color(218, 202, 37, int(255 * 0.9))
+
+  def _update_state(self):
+    thermal_status = ui_state.sm['deviceState'].thermalStatus
+
+    if thermal_status == ThermalStatus.green:
+      self._label = "TEMP GOOD"
+      self._color = rl.Color(255, 255, 255, int(255 * 0.9))
+    elif thermal_status == ThermalStatus.yellow:
+      self._label = "TEMP OK"
+      self._color = rl.Color(218, 202, 37, int(255 * 0.9))
+    else:
+      self._label = "TEMP HIGH"
+      self._color = rl.Color(201, 34, 49, int(255 * 0.9))
+
+  def _render(self, _):
+    font = gui_app.font(FontWeight.SEMI_BOLD)
+    text_size = rl.measure_text_ex(font, self._label, 28, 0)
+    pos = rl.Vector2(
+      self._rect.x + (self._rect.width - text_size.x) / 2,
+      self._rect.y + (self._rect.height - text_size.y) / 2,
+    )
+    rl.draw_text_ex(font, self._label, pos, 28, 0, self._color)
+
+
 class MiciHomeLayout(Widget):
   def __init__(self):
     super().__init__()
@@ -99,6 +130,7 @@ class MiciHomeLayout(Widget):
     self._status_bar_layout = HBoxLayout([
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
+      TemperatureStatus(),
       self._experimental_icon,
       self._mic_icon,
     ], spacing=18)
