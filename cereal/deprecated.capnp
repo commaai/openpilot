@@ -1,4 +1,6 @@
 using Cxx = import "./include/c++.capnp";
+using Log = import "log.capnp";
+using Car = import "car.capnp";
 $Cxx.namespace("cereal");
 
 @0x80ef1ec4889c2a63;
@@ -789,7 +791,7 @@ struct GpsTrajectory @0x8cfeb072f5301000 {
 }
 
 struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
-  events @18 :List(OnroadEvent);
+  events @18 :List(Log.OnroadEvent);
   faceDetected @1 :Bool;
   isDistracted @2 :Bool;
   distractedType @17 :UInt32;
