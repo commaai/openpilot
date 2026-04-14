@@ -7,7 +7,7 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
-from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.version import RELEASE_BRANCHES
@@ -84,6 +84,7 @@ class MiciHomeLayout(Widget):
   def __init__(self):
     super().__init__()
     self._on_settings_click: Callable | None = None
+    self._alert_count_fn: Callable[[], int] | None = None
 
     self._last_refresh = 0
     self._mouse_down_t: None | float = None
@@ -102,6 +103,10 @@ class MiciHomeLayout(Widget):
       self._experimental_icon,
       self._mic_icon,
     ], spacing=18)
+
+    # Notification pill
+    self._pill_bg_txt = gui_app.texture("icons_mici/notification_pill.png", 104, 52)
+    self._bell_txt = gui_app.texture("icons_mici/bell.png", 28, 30)
 
     self._openpilot_label = UnifiedLabel("openpilot", font_size=96, font_weight=FontWeight.DISPLAY, max_width=480, wrap_text=False)
     self._version_label = UnifiedLabel("", font_size=36, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
@@ -141,8 +146,9 @@ class MiciHomeLayout(Widget):
       self._last_refresh = rl.get_time()
       self._update_params()
 
-  def set_callbacks(self, on_settings: Callable | None = None):
+  def set_callbacks(self, on_settings: Callable | None = None, alert_count_fn: Callable[[], int] | None = None):
     self._on_settings_click = on_settings
+    self._alert_count_fn = alert_count_fn
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
@@ -203,3 +209,20 @@ class MiciHomeLayout(Widget):
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
+
+    # Notification pill (bottom-right corner)
+    alert_count = self._alert_count_fn() if self._alert_count_fn else 0
+    if alert_count > 0:
+      pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
+      pill_x = self.rect.x + self.rect.width - pill_w - HOME_PADDING
+      pill_y = self.rect.y + self.rect.height - pill_h
+      rl.draw_texture_ex(self._pill_bg_txt, rl.Vector2(pill_x, pill_y), 0.0, 1.0, rl.WHITE)
+
+      bell_x = pill_x + 20
+      bell_y = pill_y + (pill_h - self._bell_txt.height) / 2
+      rl.draw_texture_ex(self._bell_txt, rl.Vector2(bell_x, bell_y), 0.0, 1.0, rl.WHITE)
+
+      count_rect = rl.Rectangle(pill_x, pill_y, pill_w - 20, pill_h)
+      gui_label(count_rect, str(alert_count), font_size=36, color=rl.WHITE,
+                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
+                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
