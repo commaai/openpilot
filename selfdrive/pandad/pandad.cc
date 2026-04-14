@@ -285,7 +285,7 @@ void process_panda_state(Panda *panda, PubMaster *pm, bool engaged, bool is_onro
   panda->send_heartbeat(engaged);
 }
 
-void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) {
+void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control, bool is_onroad) {
   static Params params;
   static SubMaster sm({"deviceState", "driverCameraState"});
 
@@ -343,7 +343,7 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
     }
 
     // turn off IR leds if body
-    if (!not_car_checked && params.getBool("IsOnroad")) {
+    if (!not_car_checked && is_onroad) {
       std::string cp_bytes = params.get("CarParams");
       if (cp_bytes.size() > 0) {
         AlignedBuffer aligned_buf;
@@ -388,7 +388,7 @@ void pandad_run(Panda *panda) {
 
     // Process peripheral state at 20 Hz
     if (rk.frame() % 5 == 0) {
-      process_peripheral_state(panda, &pm, no_fan_control);
+      process_peripheral_state(panda, &pm, no_fan_control, is_onroad);
     }
 
     // Process panda state at 10 Hz
