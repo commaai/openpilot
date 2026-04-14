@@ -51,7 +51,7 @@ class AlertsPill(Widget):
       rl.draw_texture_ex(self._bell_txt, rl.Vector2(bell_x, bell_y), 0.0, 1.0, rl.WHITE)
 
       count_rect = rl.Rectangle(self.rect.x, self.rect.y, pill_w - 20, pill_h)
-      gui_label(count_rect, str(alert_count), font_size=36, color=rl.WHITE,
+      gui_label(count_rect, str(alert_count), font_size=36, color=rl.Color(255, 255, 255, int(255 * 0.9)),
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
