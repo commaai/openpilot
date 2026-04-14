@@ -29,7 +29,6 @@ class BodyLayout(Widget):
     self._last_input_time = time.monotonic()
     self._was_active = False
     self._font_bold = gui_app.font(FontWeight.BOLD)
-    self._prev_joystick_debug_mode = False
 
   def set_settings_callback(self, callback):
     pass
@@ -58,7 +57,7 @@ class BodyLayout(Widget):
     sm = ui_state.sm
 
     active = ui_state.is_onroad()
-    if active and ui_state.joystick_debug_mode:
+    if active:
       if not self._was_active:
         self._last_input_time = time.monotonic()
         self._was_active = True

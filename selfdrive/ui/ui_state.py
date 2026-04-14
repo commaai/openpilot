@@ -75,7 +75,6 @@ class UIState:
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
-    self.joystick_debug_mode: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
@@ -144,7 +143,6 @@ class UIState:
 
     # Update recording audio state
     self.recording_audio = self.params.get_bool("RecordAudio") and self.started
-    self.joystick_debug_mode = self.params.get_bool("JoystickDebugMode")
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")

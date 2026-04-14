@@ -22,18 +22,17 @@ class MiciMainLayout(Scroller):
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
-    self._is_body = ui_state.is_body
     self._prev_onroad = False
     self._prev_standstill = False
-    self._prev_joystick_debug_mode = False
     self._onroad_time_delay: float | None = None
     self._setup = False
 
     # Initialize widgets
-    self._home_layout = MiciBodyHomeLayout() if self._is_body else MiciHomeLayout()
-    if self._is_body:
+    if ui_state.is_body:
+      self._home_layout = MiciBodyHomeLayout()
       self._onroad_layout = BodyLayout()
     else:
+      self._home_layout = MiciHomeLayout()
       self._onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
     self._alerts_layout = MiciOffroadAlerts()
     self._settings_layout = SettingsLayout()
@@ -101,8 +100,7 @@ class MiciMainLayout(Scroller):
 
     # FIXME: these two pops can interrupt user interacting in the settings
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
-      if not self._is_body or ui_state.joystick_debug_mode:
-        gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
+      gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
       self._onroad_time_delay = None
 
     # When car leaves standstill, pop nav stack and scroll to onroad
@@ -111,25 +109,12 @@ class MiciMainLayout(Scroller):
       gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
     self._prev_standstill = CS.standstill
 
-    # On body, react to joystick debug mode changes while onroad:
-    # - Connected (False->True): scroll to onroad to show awake face
-    # - Disconnected (True->False): scroll to home so user can reconnect
-    if self._is_body and ui_state.joystick_debug_mode != self._prev_joystick_debug_mode:
-      if ui_state.joystick_debug_mode:
-        gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
-      else:
-        self._scroll_to(self._home_layout)
-      self._prev_joystick_debug_mode = ui_state.joystick_debug_mode
-
   def _on_interactive_timeout(self):
     # Don't pop if onboarding
     if gui_app.widget_in_stack(self._onboarding_window):
       return
 
     if ui_state.started:
-      # On body without joystick, stay on home screen
-      if self._is_body and not ui_state.joystick_debug_mode:
-        self._scroll_to(self._onroad_layout)
       # Don't pop if at standstill
       if not ui_state.sm["carState"].standstill:
         gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
