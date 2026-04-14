@@ -95,7 +95,7 @@ class MiciHomeLayout(Widget):
     self._experimental_mode = False
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
-    self._thermometer_icon = IconWidget("icons_mici/thermometer_red.png", (27, 46))
+    self._thermometer_icon = IconWidget("icons_mici/thermometer.png", (27, 46))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
     self._status_bar_layout = HBoxLayout([
