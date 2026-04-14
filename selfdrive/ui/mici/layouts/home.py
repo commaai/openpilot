@@ -105,8 +105,8 @@ class MiciHomeLayout(Widget):
     ], spacing=18)
 
     # alerts pill
-    self._pill_bg_txt = gui_app.texture("icons_mici/notification_pill.png", 104, 52)
-    self._bell_txt = gui_app.texture("icons_mici/bell.png", 28, 30)
+    self._pill_bg_txt = gui_app.texture("icons_mici/alerts_pill.png", 104, 52)
+    self._bell_txt = gui_app.texture("icons_mici/alerts_bell.png", 28, 30)
 
     self._openpilot_label = UnifiedLabel("openpilot", font_size=96, font_weight=FontWeight.DISPLAY, max_width=480, wrap_text=False)
     self._version_label = UnifiedLabel("", font_size=36, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
