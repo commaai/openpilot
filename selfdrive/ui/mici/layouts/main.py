@@ -69,6 +69,9 @@ class MiciMainLayout(Scroller):
     layout_x = int(layout.rect.x)
     self._scroller.scroll_to(layout_x, smooth=True)
 
+  def _update_state(self):
+    self._alerts_layout._update_state()
+
   def _render(self, _):
     if not self._setup:
       if self._alerts_layout.active_alerts() > 0:
