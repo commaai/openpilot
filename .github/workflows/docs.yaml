@@ -30,7 +30,7 @@ jobs:
     - name: Build docs
       run: |
         python3 -m pip install uv
-        uv pip install --system --group docs
+        uv pip install --system -r pyproject.toml --extra docs
         mdbook build
 
     # Push to docs.comma.ai

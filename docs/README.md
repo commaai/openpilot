@@ -8,7 +8,7 @@ NOTE: Those commands must be run in the root directory of openpilot, **not /docs
 
 **1. Install the docs tools**
 ``` bash
-uv pip install --group docs
+uv pip install -r pyproject.toml --extra docs
 ```
 
 **2. Build the new site**
