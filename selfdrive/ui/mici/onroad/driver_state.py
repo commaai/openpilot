@@ -12,8 +12,9 @@ AlertSize = log.SelfdriveState.AlertSize
 
 DEBUG = False
 
-LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6 * 2)
-LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3 * 2)
+# TODO: Only left for DM preview, remove
+LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6)
+LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3)
 
 
 class DriverStateRenderer(Widget):
@@ -61,7 +62,6 @@ class DriverStateRenderer(Widget):
     self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
     center_size = round(36 / self.BASE_SIZE * self._rect.width)
-    self._dm_center = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_center.png", center_size, center_size)
     self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", int(self._rect.width), int(self._rect.height))
 
   def set_should_draw(self, should_draw: bool):
@@ -114,16 +114,7 @@ class DriverStateRenderer(Widget):
           dest_rect,
           rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
           self._rotation_filter.x - 90,
-          rl.Color(255, 255, 255, int(255 * self._fade_filter.x * (1 - self._looking_center_filter.x))),
-        )
-
-        rl.draw_texture_ex(
-          self._dm_center,
-          (int(self._rect.x + (self._rect.width - self._dm_center.width) / 2),
-           int(self._rect.y + (self._rect.height - self._dm_center.height) / 2)),
-          0,
-          1.0,
-          rl.Color(255, 255, 255, int(255 * self._fade_filter.x * self._looking_center_filter.x)),
+          rl.Color(255, 255, 255, int(255 * self._fade_filter.x)),
         )
 
       else:
@@ -194,12 +185,12 @@ class DriverStateRenderer(Widget):
     pitch = self._pitch_filter.update(pitch)
     yaw = self._yaw_filter.update(yaw)
 
-    # # hysteresis on looking center
-    # if abs(pitch) < LOOKING_CENTER_THRESHOLD_LOWER and abs(yaw) < LOOKING_CENTER_THRESHOLD_LOWER:
-    #   self._looking_center = True
-    # elif abs(pitch) > LOOKING_CENTER_THRESHOLD_UPPER or abs(yaw) > LOOKING_CENTER_THRESHOLD_UPPER:
-    #   self._looking_center = False
-    # self._looking_center_filter.update(1 if self._looking_center else 0)
+    # hysteresis on looking center
+    if abs(pitch) < LOOKING_CENTER_THRESHOLD_LOWER and abs(yaw) < LOOKING_CENTER_THRESHOLD_LOWER:
+      self._looking_center = True
+    elif abs(pitch) > LOOKING_CENTER_THRESHOLD_UPPER or abs(yaw) > LOOKING_CENTER_THRESHOLD_UPPER:
+      self._looking_center = False
+    self._looking_center_filter.update(1 if self._looking_center else 0)
 
     if DEBUG:
       pitchd = math.degrees(pitch)
