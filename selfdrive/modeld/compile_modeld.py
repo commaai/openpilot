@@ -208,10 +208,10 @@ def compile_modeld(cam_w, cam_h):
     buffers = [np.copy(v.numpy().copy()) for v in bufs.values()]
 
     if test_val is not None:
-      match = all(np.array_equal(a, b) for a, b in zip(val, test_val))
+      match = all(np.array_equal(a, b) for a, b in zip(val, test_val, strict=True))
       assert match == expect_match, f"outputs {'differ from' if expect_match else 'match'} baseline (seed={seed})"
     if test_buffers is not None:
-      match = all(np.array_equal(a, b) for a, b in zip(buffers, test_buffers))
+      match = all(np.array_equal(a, b) for a, b in zip(buffers, test_buffers, strict=True))
       assert match == expect_match, f"buffers {'differ from' if expect_match else 'match'} baseline (seed={seed})"
     return fn, val, buffers
 
