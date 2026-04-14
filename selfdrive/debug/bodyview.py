@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Launch the comma UI while simulating a comma body."""
 
 import argparse
@@ -18,7 +17,7 @@ def send_messages():
   car_params.carParams.notCar = True
 
   device_state = messaging.new_message('deviceState')
-  device_state.deviceState.started = False
+  device_state.deviceState.started = True
 
   panda_states = messaging.new_message('pandaStates', 1)
   panda_states.pandaStates[0].ignitionLine = True
