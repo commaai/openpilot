@@ -193,8 +193,8 @@ class ModelState:
       **self.bufs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 
-    vision_output = vision_output.realize().numpy().flatten()
-    policy_output = policy_output.realize().numpy().flatten()
+    vision_output = vision_output.numpy().flatten()
+    policy_output = policy_output.numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
