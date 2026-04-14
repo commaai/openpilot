@@ -16,6 +16,7 @@ HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
 
 NetworkType = log.DeviceState.NetworkType
+ThermalStatus = log.DeviceState.ThermalStatus
 
 NETWORK_TYPES = {
   NetworkType.none: "Offline",
@@ -94,12 +95,14 @@ class MiciHomeLayout(Widget):
     self._experimental_mode = False
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
+    self._thermometer_icon = IconWidget("icons_mici/thermometer_red.png", (27, 46))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
     self._status_bar_layout = HBoxLayout([
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
+      self._thermometer_icon,
       self._mic_icon,
     ], spacing=18)
 
@@ -199,6 +202,7 @@ class MiciHomeLayout(Widget):
 
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(self._experimental_mode)
+    self._thermometer_icon.set_visible(ui_state.sm['deviceState'].thermalStatus >= ThermalStatus.red)
     self._mic_icon.set_visible(ui_state.recording_audio)
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
