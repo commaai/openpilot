@@ -75,7 +75,7 @@ class MainLayout(Widget):
       self._content_rect = rl.Rectangle(self._rect.x + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
 
   def _handle_onroad_transition(self):
-    if ui_state.started != self._prev_onroad and not self._is_body:
+    if ui_state.started != self._prev_onroad:
       self._prev_onroad = ui_state.started
       self._set_mode_for_state()
 
