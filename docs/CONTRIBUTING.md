@@ -6,13 +6,13 @@ Development is coordinated through [Discord](https://discord.comma.ai) and GitHu
 
 ### Getting Started
 
-* Set up your [development environment](/tools/)
+* Set up your [development environment](https://github.com/commaai/openpilot/tree/master/tools)
 * Join our [Discord](https://discord.comma.ai)
 * Docs are at https://docs.comma.ai and https://blog.comma.ai
 
 ## What contributions are we looking for?
 
-**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.**
+**openpilot's priorities are [safety](concepts/safety.md), stability, quality, and features, in that order.**
 openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all development is towards that goal.
 
 ### What gets merged?

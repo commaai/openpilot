@@ -1,0 +1,45 @@
+[book]
+title = "openpilot docs"
+language = "en"
+src = "docs"
+
+[build]
+build-dir = "docs_site"
+create-missing = false
+
+[output.html]
+site-url = "https://docs.comma.ai/"
+cname = "docs.comma.ai"
+git-repository-url = "https://github.com/commaai/openpilot/"
+edit-url-template = "https://github.com/commaai/openpilot/edit/master/{path}"
+no-section-label = true
+
+[output.html.print]
+enable = true
+page-break = true
+
+[output.html.fold]
+enable = true
+level = 1
+
+[output.html.redirect]
+"/getting-started/what-is-openpilot/index.html" = "/getting-started/what-is-openpilot.html"
+"/how-to/turn-the-speed-blue/index.html" = "/how-to/turn-the-speed-blue.html"
+"/how-to/connect-to-comma/index.html" = "/how-to/connect-to-comma.html"
+"/how-to/replay-a-drive/index.html" = "/how-to/replay-a-drive.html"
+"/concepts/logs/index.html" = "/concepts/logs.html"
+"/concepts/safety/index.html" = "/concepts/safety.html"
+"/concepts/glossary/index.html" = "/concepts/glossary.html"
+"/car-porting/what-is-a-car-port/index.html" = "/car-porting/what-is-a-car-port.html"
+"/car-porting/brand-port/index.html" = "/car-porting/brand-port.html"
+"/car-porting/model-port/index.html" = "/car-porting/model-port.html"
+"/car-porting/car-state-signals/index.html" = "/car-porting/car-state-signals.html"
+"/car-porting/reverse-engineering/index.html" = "/car-porting/reverse-engineering.html"
+"/contributing/roadmap/index.html" = "/contributing/roadmap.html"
+"/contributing/architecture/index.html" = "/contributing/architecture.html"
+"/CARS/index.html" = "/CARS.html"
+"/CONTRIBUTING/index.html" = "/CONTRIBUTING.html"
+"/DEBUGGING_SAFETY/index.html" = "/DEBUGGING_SAFETY.html"
+"/INTEGRATION/index.html" = "/INTEGRATION.html"
+"/LIMITATIONS/index.html" = "/LIMITATIONS.html"
+"/SAFETY/index.html" = "/concepts/safety.html"

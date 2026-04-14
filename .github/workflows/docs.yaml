@@ -29,9 +29,9 @@ jobs:
     # Build
     - name: Build docs
       run: |
-        # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs
-        mkdocs build
+        python3 -m pip install uv
+        uv pip install --system --group docs
+        mdbook build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v6
@@ -56,7 +56,6 @@ jobs:
 
         # GitHub pages config
         touch docs/.nojekyll
-        echo -n docs.comma.ai > docs/CNAME
 
         git add -f .
         git commit -m "build docs"

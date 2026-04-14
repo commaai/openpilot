@@ -6,21 +6,21 @@ The site is updated on pushes to master by this [workflow](../.github/workflows/
 ## Development
 NOTE: Those commands must be run in the root directory of openpilot, **not /docs**
 
-**1. Install the docs dependencies**
+**1. Install the docs tools**
 ``` bash
-uv pip install .[docs]
+uv pip install --group docs
 ```
 
 **2. Build the new site**
 ``` bash
-mkdocs build
+mdbook build
 ```
 
 **3. Run the new site locally**
 ``` bash
-mkdocs serve
+mdbook serve
 ```
 
 References:
-* https://www.mkdocs.org/getting-started/
-* https://github.com/ntno/mkdocs-terminal
+* https://rust-lang.github.io/mdBook/
+* https://github.com/rust-lang/mdBook

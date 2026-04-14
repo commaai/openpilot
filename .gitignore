@@ -66,6 +66,7 @@ htmlcov
 *.rlog
 
 build/
+docs_site/
 
 !**/.gitkeep
 

@@ -82,7 +82,7 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "mkdocs",
+  "mdbook @ git+https://github.com/commaai/dependencies.git@release-mdbook#subdirectory=mdbook",
 ]
 
 testing = [
@@ -104,6 +104,12 @@ testing = [
 dev = [
   "matplotlib",
   "opencv-python-headless",
+]
+
+[dependency-groups]
+docs = [
+  "Jinja2",
+  "mdbook @ git+https://github.com/commaai/dependencies.git@release-mdbook#subdirectory=mdbook",
 ]
 
 tools = [
