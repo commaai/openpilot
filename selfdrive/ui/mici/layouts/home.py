@@ -104,7 +104,7 @@ class MiciHomeLayout(Widget):
       self._mic_icon,
     ], spacing=18)
 
-    # Notification pill
+    # alerts pill
     self._pill_bg_txt = gui_app.texture("icons_mici/notification_pill.png", 104, 52)
     self._bell_txt = gui_app.texture("icons_mici/bell.png", 28, 30)
 
@@ -210,7 +210,7 @@ class MiciHomeLayout(Widget):
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
 
-    # Notification pill
+    # alerts pill
     alert_count = self._alert_count_fn() if self._alert_count_fn else 0
     if alert_count > 0:
       pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
