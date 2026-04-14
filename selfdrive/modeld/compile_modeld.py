@@ -84,7 +84,7 @@ def make_frame_prepare(cam_w, cam_h, model_w, model_h):
                                     M_inv_uv, (model_w//2, model_h//2),
                                     (cam_h//2, cam_w//2), 0).realize()
     yuv = y.cat(u).cat(v).reshape((model_h * 3 // 2, model_w))
-    tensor = frames_to_tensor(yuv, model_w, model_h)
+    tensor = frames_to_tensor(yuv)
     return tensor
   return frame_prepare_tinygrad
 
