@@ -1,3 +1,4 @@
+from collections import defaultdict
 from math import atan2, radians
 import numpy as np
 
@@ -138,7 +139,7 @@ class DriverMonitoring:
 
     self.alert_level = 'none'
     self.always_on = always_on
-    self.distracted_types = []
+    self.distracted_types = defaultdict(bool)
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, DT_DMON)
     self.wheel_on_right = False
@@ -152,6 +153,7 @@ class DriverMonitoring:
     self.driver_interacting = False
     self.is_model_uncertain = False
     self.hi_stds = 0
+    self.model_std_max = 0.
     self.threshold_alert_1 = 0.
     self.threshold_alert_2 = 0.
     self.dcam_uncertain = False
@@ -209,7 +211,7 @@ class DriverMonitoring:
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def _get_distracted_types(self):
-    self.distracted_types = []
+    self.distracted_types = defaultdict(bool)
 
     if not self.pose.calibrated:
       pitch_error = self.pose.pitch - self.settings._PITCH_NATURAL_OFFSET
@@ -229,14 +231,9 @@ class DriverMonitoring:
     pitch_threshold = self.settings._POSE_PITCH_THRESHOLD * self.pose.cfactor_pitch if self.pose.calibrated else self.settings._PITCH_NATURAL_THRESHOLD
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
 
-    if pitch_error > pitch_threshold or yaw_error > yaw_threshold:
-      self.distracted_types.append('pose')
-
-    if self.blink_prob > self.settings._BLINK_THRESHOLD:
-      self.distracted_types.append('blink')
-
-    if self.phone_prob > self.settings._PHONE_THRESH:
-      self.distracted_types.append('phone')
+    self.distracted_types['pose'] = (pitch_error > pitch_threshold) or (yaw_error > yaw_threshold)
+    self.distracted_types['eye'] = self.blink_prob > self.settings._BLINK_THRESHOLD
+    self.distracted_types['phone'] = self.phone_prob > self.settings._PHONE_THRESH
 
   def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False, steering_angle_deg=0.):
     rhd_pred = driver_state.wheelOnRightProb
@@ -269,13 +266,13 @@ class DriverMonitoring:
     self.wheel_on_right_last = self.wheel_on_right
     self.pose.pitch_std = driver_data.faceOrientationStd[0]
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
-    model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
-    self.pose.low_std = model_std_max < self.settings._HI_STD_THRESHOLD
+    self.model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
+    self.pose.low_std = self.model_std_max < self.settings._HI_STD_THRESHOLD
     self.blink_prob = driver_data.eyesClosedProb * (driver_data.eyesVisibleProb > self.settings._EYE_THRESHOLD)
     self.phone_prob = driver_data.phoneProb
 
     self._get_distracted_types()
-    self.driver_distracted = len(self.distracted_types) > 0 and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+    self.driver_distracted = any(self.distracted_types.values()) and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
@@ -288,7 +285,7 @@ class DriverMonitoring:
                            self.pose.yaw_offseter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
-      self.dcam_uncertain = model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
+      self.dcam_uncertain = self.model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
       if self.dcam_uncertain and not standstill:
         self.dcam_uncertain_cnt += 1
         self.dcam_reset_cnt = 0
@@ -362,12 +359,12 @@ class DriverMonitoring:
 
   def get_state_packet(self, valid=True):
     # build driverMonitoringState packet
-    dat = messaging.new_message('driverMonitoringStateV2', valid=valid)
-    dm = dat.driverMonitoringStateV2
+    dat = messaging.new_message('driverMonitoringState', valid=valid)
+    dm = dat.driverMonitoringState
 
-    dm.terminalLockout = self.too_distracted
-    dm.terminalAlertCountLockoutPercent = to_perc(self.terminal_alert_cnt / self.settings._MAX_TERMINAL_ALERTS)
-    dm.terminalAlertTimeLockoutPercent = to_perc(self.terminal_time / self.settings._MAX_TERMINAL_DURATION)
+    dm.lockout = self.too_distracted
+    dm.alertCountLockoutPercent = to_perc(self.terminal_alert_cnt / self.settings._MAX_TERMINAL_ALERTS)
+    dm.alertTimeLockoutPercent = to_perc(self.terminal_time / self.settings._MAX_TERMINAL_DURATION)
     dm.alwaysOn = self.always_on
     dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_alert_2
     dm.alertLevel = self.alert_level
@@ -378,7 +375,9 @@ class DriverMonitoring:
 
     dm.visionPolicyState.awarenessPercent = to_perc(self.last_vision_awareness if not self.active_monitoring_mode else self.awareness)
     dm.visionPolicyState.isDistracted = self.driver_distracted
-    dm.visionPolicyState.distractedTypes = self.distracted_types
+    dm.visionPolicyState.distractedTypes.pose = self.distracted_types['pose']
+    dm.visionPolicyState.distractedTypes.eye = self.distracted_types['eye']
+    dm.visionPolicyState.distractedTypes.phone = self.distracted_types['phone']
     dm.visionPolicyState.faceDetected = self.face_detected
     dm.visionPolicyState.rpyPose = [self.pose.roll, self.pose.pitch, self.pose.yaw]
     dm.visionPolicyState.poseCalibration.calibrated = self.pose.calibrated
@@ -386,8 +385,7 @@ class DriverMonitoring:
     dm.visionPolicyState.poseCalibration.pitch.offset = self.pose.pitch_offseter.filtered_stat.M
     dm.visionPolicyState.poseCalibration.yaw.calibratedPercent = to_perc(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
     dm.visionPolicyState.poseCalibration.yaw.offset = self.pose.yaw_offseter.filtered_stat.M
-    dm.visionPolicyState.poseUncertainShortTerm = not self.pose.low_std
-    dm.visionPolicyState.poseUncertainLongTerm = self.dcam_uncertain
+    dm.visionPolicyState.poseUncertainty = self.model_std_max
     dm.visionPolicyState.wheeltouchFallbackPercent = to_perc(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
     dm.visionPolicyState.uncertainOffroadAlertPercent = to_perc(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
 

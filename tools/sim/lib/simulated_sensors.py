@@ -15,7 +15,7 @@ class SimulatedSensors:
   """Simulates the C3 sensors (acc, gyro, gps, peripherals, dm state, cameras) to OpenPilot"""
 
   def __init__(self, dual_camera=False):
-    self.pm = messaging.PubMaster(['accelerometer', 'gyroscope', 'gpsLocationExternal', 'driverStateV2', 'driverMonitoringStateV2', 'peripheralState'])
+    self.pm = messaging.PubMaster(['accelerometer', 'gyroscope', 'gpsLocationExternal', 'driverStateV2', 'driverMonitoringState', 'peripheralState'])
     self.camerad = Camerad(dual_camera=dual_camera)
     self.last_perp_update = 0
     self.last_dmon_update = 0
@@ -91,14 +91,14 @@ class SimulatedSensors:
     self.pm.send('driverStateV2', dat)
 
     # dmonitoringd output
-    dat = messaging.new_message('driverMonitoringStateV2', valid=True)
-    dm = dat.driverMonitoringStateV2
+    dat = messaging.new_message('driverMonitoringState', valid=True)
+    dm = dat.driverMonitoringState
     dm.alertLevel = 'none'
     dm.monitoringPolicy = 'vision'
     dm.visionPolicyState.faceDetected = True
     dm.visionPolicyState.isDistracted = False
     dm.visionPolicyState.awarenessPercent = 100.
-    self.pm.send('driverMonitoringStateV2', dat)
+    self.pm.send('driverMonitoringState', dat)
 
   def send_camera_images(self, world: 'World'):
     world.image_lock.acquire()

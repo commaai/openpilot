@@ -42,7 +42,7 @@ class UIState:
         "deviceState",
         "pandaStates",
         "carParams",
-        "driverMonitoringStateV2",
+        "driverMonitoringState",
         "carState",
         "driverStateV2",
         "roadCameraState",

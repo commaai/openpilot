@@ -113,7 +113,7 @@ class DriverStateRenderer(Widget):
       return
 
     # Get monitoring state
-    dm_state = sm["driverMonitoringStateV2"]
+    dm_state = sm["driverMonitoringState"]
     self.is_active = dm_state.monitoringPolicy == 'vision'
     self.is_rhd = dm_state.isRHD
 

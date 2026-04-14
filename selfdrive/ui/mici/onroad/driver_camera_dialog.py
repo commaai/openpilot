@@ -116,7 +116,7 @@ class BaseDriverCameraDialog(Widget):
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
     """Render driver monitoring event names"""
-    dm_state = ui_state.sm["driverMonitoringStateV2"]
+    dm_state = ui_state.sm["driverMonitoringState"]
     self._publish_alert_sound(dm_state)
 
     is_vision = dm_state.monitoringPolicy == 'vision'
@@ -156,7 +156,7 @@ class BaseDriverCameraDialog(Widget):
       self._eye_orange_texture = gui_app.texture("icons_mici/onroad/eye_orange.png", self._eye_size, self._eye_size)
 
   def _draw_face_detection(self, rect: rl.Rectangle):
-    dm_state = ui_state.sm["driverMonitoringStateV2"]
+    dm_state = ui_state.sm["driverMonitoringState"]
     driver_data = self.driver_state_renderer.get_driver_data()
     if not dm_state.visionPolicyState.faceDetected:
       return
