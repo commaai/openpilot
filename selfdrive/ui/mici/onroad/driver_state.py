@@ -171,7 +171,7 @@ class DriverStateRenderer(Widget):
     if len(driver_orient) != 3:
       return
 
-    # Calibrate orientation so looking straight ahead at roa (instead of at device) is (0, 0, 0)
+    # Calibrate orientation so looking straight ahead at road (instead of at device) is (0, 0, 0)
     sm = ui_state.sm
     if sm.valid['liveCalibration'] and len(sm['liveCalibration'].rpyCalib) == 3:
       cal_rpy = sm['liveCalibration'].rpyCalib
