@@ -171,7 +171,7 @@ class DriverStateRenderer(Widget):
     if len(driver_orient) != 3:
       return
 
-    # Calibrate orientation so looking straight ahead (instead of at device) is (0, 0, 0)
+    # Calibrate orientation so looking straight ahead at roa (instead of at device) is (0, 0, 0)
     sm = ui_state.sm
     if sm.valid['liveCalibration'] and len(sm['liveCalibration'].rpyCalib) == 3:
       cal_rpy = sm['liveCalibration'].rpyCalib
@@ -179,7 +179,7 @@ class DriverStateRenderer(Widget):
       cal_rpy = [0.0, 0.0, 0.0]
 
     _, pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
-    pitch += math.radians(6)
+    pitch += math.radians(6)  # calib or DM pose is not accurate, add a fake upward pitch to bias forward
     yaw = -yaw  # undo sign flip in face_orientation_from_net to match UI convention
 
     pitch = self._pitch_filter.update(pitch)
@@ -206,7 +206,7 @@ class DriverStateRenderer(Widget):
       rl.draw_circle(int(yaw_x), 120, 5, rl.GREEN)
 
     # filter head rotation, handling wrap-around
-    rotation = math.degrees(math.atan2(pitch * 2, yaw))
+    rotation = math.degrees(math.atan2(pitch * 2, yaw))  # reduce yaw sensitivity
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)
