@@ -28,6 +28,34 @@ NETWORK_TYPES = {
 }
 
 
+class AlertsPill(Widget):
+  def __init__(self):
+    super().__init__()
+    self.set_rect(rl.Rectangle(0, 0, 104, 52))
+
+    self._pill_bg_txt = gui_app.texture("icons_mici/alerts_pill.png", 104, 52)
+    self._bell_txt = gui_app.texture("icons_mici/alerts_bell.png", 28, 30)
+    self._alert_count_callback: Callable[[], int] | None = None
+
+  def set_alert_count_callback(self, callback: Callable[[], int] | None):
+    self._alert_count_callback = callback
+
+  def _render(self, _):
+    alert_count = self._alert_count_callback() if self._alert_count_callback else 0
+    if alert_count > 0:
+      pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
+      rl.draw_texture_ex(self._pill_bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, rl.WHITE)
+
+      bell_x = self.rect.x + 20
+      bell_y = self.rect.y + (pill_h - self._bell_txt.height) / 2
+      rl.draw_texture_ex(self._bell_txt, rl.Vector2(bell_x, bell_y), 0.0, 1.0, rl.WHITE)
+
+      count_rect = rl.Rectangle(self.rect.x, self.rect.y, pill_w - 20, pill_h)
+      gui_label(count_rect, str(alert_count), font_size=36, color=rl.WHITE,
+                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
+                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+
+
 class NetworkIcon(Widget):
   def __init__(self):
     super().__init__()
@@ -84,7 +112,7 @@ class MiciHomeLayout(Widget):
   def __init__(self):
     super().__init__()
     self._on_settings_click: Callable | None = None
-    self._alert_count_fn: Callable[[], int] | None = None
+    self._alert_count_callback: Callable[[], int] | None = None
 
     self._last_refresh = 0
     self._mouse_down_t: None | float = None
@@ -97,16 +125,14 @@ class MiciHomeLayout(Widget):
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
+    self._alerts_pill = AlertsPill()
+
     self._status_bar_layout = HBoxLayout([
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
       self._mic_icon,
     ], spacing=18)
-
-    # alerts pill
-    self._pill_bg_txt = gui_app.texture("icons_mici/alerts_pill.png", 104, 52)
-    self._bell_txt = gui_app.texture("icons_mici/alerts_bell.png", 28, 30)
 
     self._openpilot_label = UnifiedLabel("openpilot", font_size=96, font_weight=FontWeight.DISPLAY, max_width=480, wrap_text=False)
     self._version_label = UnifiedLabel("", font_size=36, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
@@ -146,9 +172,9 @@ class MiciHomeLayout(Widget):
       self._last_refresh = rl.get_time()
       self._update_params()
 
-  def set_callbacks(self, on_settings: Callable | None = None, alert_count_fn: Callable[[], int] | None = None):
+  def set_callbacks(self, on_settings: Callable | None = None, alert_count_callback: Callable[[], int] | None = None):
     self._on_settings_click = on_settings
-    self._alert_count_fn = alert_count_fn
+    self._alerts_pill.set_alert_count_callback(alert_count_callback)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
@@ -210,19 +236,7 @@ class MiciHomeLayout(Widget):
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
 
-    # alerts pill
-    alert_count = self._alert_count_fn() if self._alert_count_fn else 0
-    if alert_count > 0:
-      pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
-      pill_x = self.rect.x + self.rect.width - pill_w - HOME_PADDING
-      pill_y = self.rect.y + self.rect.height - pill_h
-      rl.draw_texture_ex(self._pill_bg_txt, rl.Vector2(pill_x, pill_y), 0.0, 1.0, rl.WHITE)
-
-      bell_x = pill_x + 20
-      bell_y = pill_y + (pill_h - self._bell_txt.height) / 2
-      rl.draw_texture_ex(self._bell_txt, rl.Vector2(bell_x, bell_y), 0.0, 1.0, rl.WHITE)
-
-      count_rect = rl.Rectangle(pill_x, pill_y, pill_w - 20, pill_h)
-      gui_label(count_rect, str(alert_count), font_size=36, color=rl.WHITE,
-                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
-                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+    # TODO: add alignment to hboxlayout and add to there
+    self._alerts_pill.set_position(self.rect.x + self.rect.width - self._alerts_pill.rect.width - HOME_PADDING,
+                                   self.rect.y + self.rect.height - self._alerts_pill.rect.height)
+    self._alerts_pill.render()
