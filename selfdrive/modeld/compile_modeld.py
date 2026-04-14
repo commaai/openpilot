@@ -194,12 +194,11 @@ def compile_modeld(cam_w, cam_h):
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
-
       st = time.perf_counter()
-      outs = fn(**{**bufs, 'frame': frame, 'big_frame': big_frame})
+      outs = fn(**bufs, frame=frame, big_frame=big_frame)
       mt = time.perf_counter()
-      # .realize() not needed (and harmless?) once jitted, but needed for unjitted fn
       for o in outs:
+        # .realize() not needed once jitted, but needed for unjitted fn
         o.realize()
       Device.default.synchronize()
       et = time.perf_counter()
@@ -209,11 +208,11 @@ def compile_modeld(cam_w, cam_h):
     buffers = [np.copy(v.numpy().copy()) for v in bufs.values()]
 
     if test_val is not None:
-      eq = all(np.array_equal(a, b) for a, b in zip(val, test_val))
-      assert eq == expect_match, f"outputs {'differ from' if expect_match else 'match'} baseline (seed={seed})"
+      match = all(np.array_equal(a, b) for a, b in zip(val, test_val))
+      assert match == expect_match, f"outputs {'differ from' if expect_match else 'match'} baseline (seed={seed})"
     if test_buffers is not None:
-      eq = all(np.array_equal(a, b) for a, b in zip(buffers, test_buffers))
-      assert eq == expect_match, f"buffers {'differ from' if expect_match else 'match'} baseline (seed={seed})"
+      match = all(np.array_equal(a, b) for a, b in zip(buffers, test_buffers))
+      assert match == expect_match, f"buffers {'differ from' if expect_match else 'match'} baseline (seed={seed})"
     return fn, val, buffers
 
   print('run unjitted')
