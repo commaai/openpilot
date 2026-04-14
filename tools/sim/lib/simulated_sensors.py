@@ -93,8 +93,8 @@ class SimulatedSensors:
     # dmonitoringd output
     dat = messaging.new_message('driverMonitoringState', valid=True)
     dm = dat.driverMonitoringState
-    dm.alertLevel = 'none'
-    dm.monitoringPolicy = 'vision'
+    dm.alertLevel = log.DriverMonitoringState.AlertLevel.none
+    dm.monitoringPolicy = log.DriverMonitoringState.MonitoringPolicy.vision
     dm.visionPolicyState.faceDetected = True
     dm.visionPolicyState.isDistracted = False
     dm.visionPolicyState.awarenessPercent = 100.

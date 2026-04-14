@@ -2,13 +2,16 @@ from collections import defaultdict
 from math import atan2, radians
 import numpy as np
 
-from cereal import car
+from cereal import car, log
 import cereal.messaging as messaging
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.stat_live import RunningStatFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
+
+AlertLevel = log.DriverMonitoringState.AlertLevel
+MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
 
 def to_perc(v):
   return min(max(v * 100., 0.), 100.)
@@ -137,7 +140,7 @@ class DriverMonitoring:
     self.blink_prob = 0.
     self.phone_prob = 0.
 
-    self.alert_level = 'none'
+    self.alert_level = AlertLevel.none
     self.always_on = always_on
     self.distracted_types = defaultdict(bool)
     self.driver_distracted = False
@@ -302,7 +305,7 @@ class DriverMonitoring:
       self.hi_stds = 0
 
   def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear, car_speed):
-    self.alert_level = 'none'
+    self.alert_level = AlertLevel.none
     self.driver_interacting = driver_engaged
 
     if self.terminal_alert_cnt >= self.settings._MAX_TERMINAL_ALERTS or \
@@ -348,14 +351,14 @@ class DriverMonitoring:
 
     if self.awareness <= 0.:
       # terminal alert: disengagement required
-      self.alert_level = 'three'
+      self.alert_level = AlertLevel.three
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_alert_2:
-      self.alert_level = 'two'
+      self.alert_level = AlertLevel.two
     elif self.awareness <= self.threshold_alert_1:
-      self.alert_level = 'one'
+      self.alert_level = AlertLevel.one
 
   def get_state_packet(self, valid=True):
     # build driverMonitoringState packet
@@ -368,7 +371,7 @@ class DriverMonitoring:
     dm.alwaysOn = self.always_on
     dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_alert_2
     dm.alertLevel = self.alert_level
-    dm.monitoringPolicy = 'vision' if self.active_monitoring_mode else 'wheeltouch'
+    dm.monitoringPolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
     dm.isRHD = self.wheel_on_right
     dm.rhdCalibration.calibratedPercent = to_perc(self.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
     dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M
