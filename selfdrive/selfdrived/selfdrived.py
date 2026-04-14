@@ -39,6 +39,7 @@ EventName = log.OnroadEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 AlertLevel = log.DriverMonitoringState.AlertLevel
+MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
@@ -188,14 +189,14 @@ class SelfdriveD:
     # Handle DM
     if not self.CP.notCar:
       # Block engaging until ignition cycle after max number or time of distractions
-      if self.sm['driverMonitoringState'].terminalLockout and not self.dm_lockout_set:
+      if self.sm['driverMonitoringState'].lockout and not self.dm_lockout_set:
         self.params.put_bool_nonblocking("DriverTooDistracted", True)
         self.dm_lockout_set = True
       # No entry conditions
-      if self.sm['driverMonitoringState'].terminalLockout or self.sm['driverMonitoringState'].alwaysOnLockout:
+      if self.sm['driverMonitoringState'].lockout or self.sm['driverMonitoringState'].alwaysOnLockout:
         self.events.add(EventName.tooDistracted)
       # Alerts
-      vision_dm = self.sm['driverMonitoringState'].monitoringPolicy == 'vision'
+      vision_dm = self.sm['driverMonitoringState'].monitoringPolicy == MonitoringPolicy.vision
       if self.sm['driverMonitoringState'].alertLevel == AlertLevel.one:
         self.events.add(EventName.driverDistracted1 if vision_dm else EventName.driverUnresponsive1)
       elif self.sm['driverMonitoringState'].alertLevel == AlertLevel.two:
