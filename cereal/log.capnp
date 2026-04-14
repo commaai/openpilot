@@ -2107,15 +2107,16 @@ struct DriverMonitoringState {
 
   struct VisionPolicyState {
     awarenessPercent @0 :Float32;
-    isDistracted @1 :Bool;
-    distractedTypes @2 :DistractedTypes;
+    awarenessStep @1 :Float32;
+    isDistracted @2 :Bool;
+    distractedTypes @3 :DistractedTypes;
 
-    faceDetected @3 :Bool;
-    rpyPose @4 :List(Float32);
-    poseCalibration @5 :PoseCalibration;
-    poseUncertainty @6 :Float32;
-    wheeltouchFallbackPercent @7 :Float32;
-    uncertainOffroadAlertPercent @8 :Float32;
+    faceDetected @4 :Bool;
+    rpyPose @5 :List(Float32);
+    poseCalibration @6 :PoseCalibration;
+    poseUncertainty @7 :Float32;
+    wheeltouchFallbackPercent @8 :Float32;
+    uncertainOffroadAlertPercent @9 :Float32;
 
     struct DistractedTypes {
       pose @0: Bool;
@@ -2132,7 +2133,8 @@ struct DriverMonitoringState {
 
   struct WheeltouchPolicyState {
     awarenessPercent @0 :Float32;
-    driverInteracting @1 :Bool;
+    awarenessStep @1 :Float32;
+    driverInteracting @2 :Bool;
   }
 
   struct CalibrationState {

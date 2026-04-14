@@ -374,6 +374,7 @@ class DriverMonitoring:
     dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M
 
     dm.visionPolicyState.awarenessPercent = to_perc(self.last_vision_awareness if not self.active_monitoring_mode else self.awareness)
+    dm.visionPolicyState.awarenessStep = self.step_change if self.active_monitoring_mode else 0.
     dm.visionPolicyState.isDistracted = self.driver_distracted
     dm.visionPolicyState.distractedTypes.pose = self.distracted_types['pose']
     dm.visionPolicyState.distractedTypes.eye = self.distracted_types['eye']
@@ -390,6 +391,7 @@ class DriverMonitoring:
     dm.visionPolicyState.uncertainOffroadAlertPercent = to_perc(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
 
     dm.wheeltouchPolicyState.awarenessPercent = to_perc(self.last_wheeltouch_awareness if self.active_monitoring_mode else self.awareness)
+    dm.wheeltouchPolicyState.awarenessStep = 0. if self.active_monitoring_mode else self.step_change
     dm.wheeltouchPolicyState.driverInteracting = self.driver_interacting
     return dat
 
