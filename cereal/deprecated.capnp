@@ -787,3 +787,31 @@ struct GpsTrajectory @0x8cfeb072f5301000 {
   x @0 :List(Float32);
   y @1 :List(Float32);
 }
+
+struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
+  events @18 :List(OnroadEvent);
+  faceDetected @1 :Bool;
+  isDistracted @2 :Bool;
+  distractedType @17 :UInt32;
+  awarenessStatus @3 :Float32;
+  posePitchOffset @6 :Float32;
+  posePitchValidCount @7 :UInt32;
+  poseYawOffset @8 :Float32;
+  poseYawValidCount @9 :UInt32;
+  stepChange @10 :Float32;
+  awarenessActive @11 :Float32;
+  awarenessPassive @12 :Float32;
+  isLowStd @13 :Bool;
+  hiStdCount @14 :UInt32;
+  isActiveMode @16 :Bool;
+  isRHD @4 :Bool;
+  uncertainCount @19 :UInt32;
+
+  deprecated :group {
+    phoneProbOffset @20 :Float32;
+    phoneProbValidCount @21 :UInt32;
+    isPreview @15 :Bool;
+    rhdChecked @5 :Bool;
+    events @0 :List(Car.OnroadEventDEPRECATED);
+  }
+}

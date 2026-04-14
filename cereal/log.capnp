@@ -2076,38 +2076,10 @@ struct DriverStateV2 {
   }
 }
 
-struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
-  events @18 :List(OnroadEvent);
-  faceDetected @1 :Bool;
-  isDistracted @2 :Bool;
-  distractedType @17 :UInt32;
-  awarenessStatus @3 :Float32;
-  posePitchOffset @6 :Float32;
-  posePitchValidCount @7 :UInt32;
-  poseYawOffset @8 :Float32;
-  poseYawValidCount @9 :UInt32;
-  stepChange @10 :Float32;
-  awarenessActive @11 :Float32;
-  awarenessPassive @12 :Float32;
-  isLowStd @13 :Bool;
-  hiStdCount @14 :UInt32;
-  isActiveMode @16 :Bool;
-  isRHD @4 :Bool;
-  uncertainCount @19 :UInt32;
-
-  deprecated :group {
-    phoneProbOffset @20 :Float32;
-    phoneProbValidCount @21 :UInt32;
-    isPreview @15 :Bool;
-    rhdChecked @5 :Bool;
-    events @0 :List(Car.OnroadEventDEPRECATED);
-  }
-}
-
-struct DriverMonitoringStateV2 {
-  terminalLockout @0 :Bool;
-  terminalAlertCountLockoutPercent @1 :Float32;
-  terminalAlertTimeLockoutPercent @2 :Float32;
+struct DriverMonitoringState {
+  lockout @0 :Bool;
+  alertCountLockoutPercent @1 :Float32;
+  alertTimeLockoutPercent @2 :Float32;
 
   alwaysOn @3 :Bool;
   alwaysOnLockout @4 :Bool;
@@ -2120,6 +2092,7 @@ struct DriverMonitoringStateV2 {
   visionPolicyState @9 :VisionPolicyState;
   wheeltouchPolicyState @10 :WheeltouchPolicyState;
 
+  # ordinal must match name
   enum AlertLevel {
     none @0;
     one @1;
@@ -2135,20 +2108,19 @@ struct DriverMonitoringStateV2 {
   struct VisionPolicyState {
     awarenessPercent @0 :Float32;
     isDistracted @1 :Bool;
-    distractedTypes @2 :List(DistractedType);
+    distractedTypes @2 :DistractedTypes;
 
     faceDetected @3 :Bool;
     rpyPose @4 :List(Float32);
     poseCalibration @5 :PoseCalibration;
-    poseUncertainShortTerm @6 :Bool;
-    poseUncertainLongTerm @7 :Bool;
-    wheeltouchFallbackPercent @8 :Float32;
-    uncertainOffroadAlertPercent @9 :Float32;
+    poseUncertainty @6 :Float32;
+    wheeltouchFallbackPercent @7 :Float32;
+    uncertainOffroadAlertPercent @8 :Float32;
 
-    enum DistractedType {
-      pose @0;
-      blink @1;
-      phone @2;
+    struct DistractedTypes {
+      pose @0: Bool;
+      eye @1: Bool;
+      phone @2: Bool;
     }
 
     struct PoseCalibration {
@@ -2475,7 +2447,7 @@ struct Event {
     thumbnail @66: Thumbnail;
     onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
-    driverMonitoringStateV2 @151 :DriverMonitoringStateV2;
+    driverMonitoringState @151 :DriverMonitoringState;
     livePose @129 :LivePose;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
@@ -2618,6 +2590,6 @@ struct Event {
     gyroscope2DEPRECATED @100 :SensorEventData;
     accelerometer2DEPRECATED @101 :SensorEventData;
     temperatureSensor2DEPRECATED @123 :SensorEventData;
-    driverMonitoringStateDEPRECATED @71: DriverMonitoringStateDEPRECATED;
+    driverMonitoringStateDEPRECATED @71: Deprecated.DriverMonitoringStateDEPRECATED;
   }
 }
