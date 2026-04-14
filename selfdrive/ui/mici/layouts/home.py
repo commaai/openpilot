@@ -8,7 +8,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, DEFAULT_TEXT_COLOR
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.version import RELEASE_BRANCHES
 
@@ -48,10 +48,10 @@ class AlertsPill(Widget):
 
       bell_x = self.rect.x + 20
       bell_y = self.rect.y + (pill_h - self._bell_txt.height) / 2
-      rl.draw_texture_ex(self._bell_txt, rl.Vector2(bell_x, bell_y), 0.0, 1.0, rl.WHITE)
+      rl.draw_texture_ex(self._bell_txt, rl.Vector2(bell_x, bell_y), 0.0, 1.0, DEFAULT_TEXT_COLOR)
 
       count_rect = rl.Rectangle(self.rect.x, self.rect.y, pill_w - 20, pill_h)
-      gui_label(count_rect, str(alert_count), font_size=36, color=rl.Color(255, 255, 255, int(255 * 0.9)),
+      gui_label(count_rect, str(alert_count), font_size=36,
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
