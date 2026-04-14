@@ -70,6 +70,8 @@ class MiciMainLayout(Scroller):
     self._scroller.scroll_to(layout_x, smooth=True)
 
   def _update_state(self):
+    super()._update_state()
+    # TODO: Hack to run alert updates while not in view. Add a nav stack tick?
     self._alerts_layout._update_state()
 
   def _render(self, _):
