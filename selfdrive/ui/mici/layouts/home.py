@@ -7,8 +7,8 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
-from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, DEFAULT_TEXT_COLOR
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.version import RELEASE_BRANCHES
 
@@ -27,6 +27,34 @@ NETWORK_TYPES = {
   NetworkType.cell5G: "5G",
   NetworkType.ethernet: "Ethernet",
 }
+
+
+class AlertsPill(Widget):
+  def __init__(self):
+    super().__init__()
+    self.set_rect(rl.Rectangle(0, 0, 104, 52))
+
+    self._pill_bg_txt = gui_app.texture("icons_mici/alerts_pill.png", 104, 52)
+    self._bell_txt = gui_app.texture("icons_mici/alerts_bell.png", 28, 30)
+    self._alert_count_callback: Callable[[], int] | None = None
+
+  def set_alert_count_callback(self, callback: Callable[[], int] | None):
+    self._alert_count_callback = callback
+
+  def _render(self, _):
+    alert_count = self._alert_count_callback() if self._alert_count_callback else 0
+    if alert_count > 0:
+      pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
+      rl.draw_texture_ex(self._pill_bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, rl.WHITE)
+
+      bell_x = self.rect.x + 20
+      bell_y = self.rect.y + (pill_h - self._bell_txt.height) / 2
+      rl.draw_texture_ex(self._bell_txt, rl.Vector2(bell_x, bell_y), 0.0, 1.0, DEFAULT_TEXT_COLOR)
+
+      count_rect = rl.Rectangle(self.rect.x, self.rect.y, pill_w - 20, pill_h)
+      gui_label(count_rect, str(alert_count), font_size=36,
+                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
+                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
 
 class NetworkIcon(Widget):
@@ -86,6 +114,7 @@ class MiciHomeLayout(Widget):
     super().__init__()
     self._on_settings_click: Callable | None = None
     self._on_alerts_click: Callable | None = None
+    self._alert_count_callback: Callable[[], int] | None = None
 
     self._last_refresh = 0
     self._mouse_down_t: None | float = None
@@ -97,6 +126,8 @@ class MiciHomeLayout(Widget):
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
+
+    self._alerts_pill = AlertsPill()
 
     self._status_bar_layout = HBoxLayout([
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
@@ -143,9 +174,11 @@ class MiciHomeLayout(Widget):
       self._last_refresh = rl.get_time()
       self._update_params()
 
-  def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None):
+  def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
+                    alert_count_callback: Callable[[], int] | None = None):
     self._on_settings_click = on_settings
     self._on_alerts_click = on_alerts
+    self._alerts_pill.set_alert_count_callback(alert_count_callback)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
@@ -211,3 +244,8 @@ class MiciHomeLayout(Widget):
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
+
+    # TODO: add alignment to hboxlayout and add to there
+    self._alerts_pill.set_position(self.rect.x + self.rect.width - self._alerts_pill.rect.width - HOME_PADDING,
+                                   self.rect.y + self.rect.height - self._alerts_pill.rect.height)
+    self._alerts_pill.render()
