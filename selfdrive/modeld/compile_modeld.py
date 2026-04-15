@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import time
 import pickle
+from dataclasses import dataclass
+from itertools import product
 import numpy as np
 from pathlib import Path
 from tinygrad.tensor import Tensor
@@ -18,21 +20,30 @@ _orig = UOp.__reduce__
 UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig(self)
 
 
-MODELS_DIR = Path(__file__).parent / 'models'
+MODELS_DIR = Path(__file__).resolve().parent / 'models'
+
+
+@dataclass
+class CompileConfig:
+  cam_w: int
+  cam_h: int
+  prepare_only: bool
+  prefix: str
+
+  @property
+  def pkl_path(self):
+    return str(MODELS_DIR / f'{self.prefix}{"warp_" if self.prepare_only else ""}{self.cam_w}x{self.cam_h}_tinygrad.pkl')
 
 CAMERA_CONFIGS = [
   (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
   (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
 ]
+MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_') for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
+DM_WARP_CONFIGS = [CompileConfig(cam_w, cam_h, True, 'dm_') for cam_w, cam_h in CAMERA_CONFIGS]
+
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
-
-def policy_pkl_path(w, h):
-  return MODELS_DIR / f'driving_{w}x{h}_tinygrad.pkl'
-
-def dm_warp_pkl_path(w, h):
-  return MODELS_DIR / f'dm_warp_{w}x{h}_tinygrad.pkl'
 
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad):
@@ -164,7 +175,7 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
   return run_policy
 
 
-def compile_modeld(cam_w, cam_h):
+def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   from tinygrad.nn.onnx import OnnxRunner
   from openpilot.selfdrive.modeld.constants import ModelConstants
 
@@ -227,7 +238,6 @@ def compile_modeld(cam_w, cam_h):
   run_policy_jit, _, _ = random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers)
 
   print('pickle round trip')
-  pkl_path = policy_pkl_path(cam_w, cam_h)
   with open(pkl_path, "wb") as f:
     pickle.dump(run_policy_jit, f)
   with open(pkl_path, "rb") as f:
@@ -236,7 +246,7 @@ def compile_modeld(cam_w, cam_h):
   random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
 
 
-def compile_dm_warp(cam_w, cam_h):
+def compile_dm_warp(cam_w, cam_h, pkl_path):
   dm_w, dm_h = DM_INPUT_SIZE
   _, _, _, yuv_size = get_nv12_info(cam_w, cam_h)
 
@@ -256,16 +266,16 @@ def compile_dm_warp(cam_w, cam_h):
     et = time.perf_counter()
     print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
-  pkl_path = dm_warp_pkl_path(cam_w, cam_h)
   with open(pkl_path, "wb") as f:
     pickle.dump(warp_dm_jit, f)
   print(f"  Saved to {pkl_path}")
 
 
 def run_and_save_pickle():
-  for cam_w, cam_h in CAMERA_CONFIGS:
-    compile_modeld(cam_w, cam_h)
-    compile_dm_warp(cam_w, cam_h)
+  for cfg in MODELD_CONFIGS:
+    compile_modeld(cfg.cam_w, cfg.cam_h, cfg.prepare_only, cfg.pkl_path)
+  for cfg in DM_WARP_CONFIGS:
+    compile_dm_warp(cfg.cam_w, cfg.cam_h, cfg.pkl_path)
 
 
 if __name__ == "__main__":
