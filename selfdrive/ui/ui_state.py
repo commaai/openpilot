@@ -109,7 +109,6 @@ class UIState:
   def is_offroad(self) -> bool:
     return not self.started
 
-
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
     self.sm.update(0)

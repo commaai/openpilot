@@ -68,6 +68,7 @@ class MainLayout(Widget):
 
   def _update_layout_rects(self):
     self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
+
     x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0
     self._content_rect = rl.Rectangle(self._rect.x + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
 
@@ -119,8 +120,9 @@ class MainLayout(Widget):
     self._layouts[MainState.HOME] = self._body_layout if ui_state.is_body else self._home_layout
 
   def _render_main_content(self):
+    # Render sidebar
+    if self._sidebar.is_visible:
+      self._sidebar.render(self._sidebar_rect)
+
     content_rect = self._content_rect if self._sidebar.is_visible else self._rect
     self._layouts[self._current_mode].render(content_rect)
-
-    if self._sidebar.is_visible:
-        self._sidebar.render(self._sidebar_rect)
