@@ -41,10 +41,10 @@ std::vector<uint32_t> build_ife_abf_rnr_cfg(const SensorInfo *s) {
     (3U << 16) | (8U << 8) | 14U,
     (3U << 16) | (10U << 8) | 22U,
     32U,
-    (4U << 16) | (14U << 8) | 18U,
-    (4U << 16) | (14U << 8) | 26U,
-    (4U << 16) | (14U << 8) | 36U,
-    44U,
+    (2U << 16) | (4U << 8) | 8U,
+    (2U << 16) | (4U << 8) | 12U,
+    (2U << 16) | (4U << 8) | 16U,
+    20U,
     IFE_ABF_RNR_RSQUARE_SHIFT,
   };
 }
