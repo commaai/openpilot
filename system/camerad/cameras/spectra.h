@@ -31,6 +31,9 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 #define OpcodesIFEUpdate         0x1
 
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
+std::optional<int32_t> device_acquire_handle_only(int fd, int32_t session_handle);
+int device_acquire_hw(int fd, int32_t session_handle, int32_t dev_handle, void *data, uint32_t data_size);
+int device_release_hw(int fd, int32_t session_handle, int32_t dev_handle);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
 int device_control(int fd, int op_code, int session_handle, int dev_handle);
 int do_cam_control(int fd, int op_code, void *handle, int size);
@@ -167,6 +170,7 @@ public:
   int32_t sensor_dev_handle = -1;
   int32_t isp_dev_handle = -1;
   int32_t ife_offline_dev_handle = -1;
+  bool ife_offline_split_acquire = false;
   int32_t icp_dev_handle = -1;
   int32_t csiphy_dev_handle = -1;
 

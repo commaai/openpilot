@@ -18,6 +18,10 @@
 #define CAM_FLUSH_REQ                           (CAM_COMMON_OPCODE_BASE + 0x8)
 #define CAM_COMMON_OPCODE_MAX                   (CAM_COMMON_OPCODE_BASE + 0x9)
 
+#define CAM_COMMON_OPCODE_BASE_v2              0x150
+#define CAM_ACQUIRE_HW                         (CAM_COMMON_OPCODE_BASE_v2 + 0x1)
+#define CAM_RELEASE_HW                         (CAM_COMMON_OPCODE_BASE_v2 + 0x2)
+
 #define CAM_EXT_OPCODE_BASE                     0x200
 #define CAM_CONFIG_DEV_EXTERNAL                 (CAM_EXT_OPCODE_BASE + 0x1)
 
@@ -450,6 +454,33 @@ struct cam_acquire_dev_cmd {
 	uint32_t        handle_type;
 	uint32_t        num_resources;
 	uint64_t        resource_hdl;
+};
+
+/*
+ * In compatibility mode ACQUIRE_DEV only returns a device handle. Hardware
+ * resources are then associated via CAM_ACQUIRE_HW.
+ */
+#define CAM_API_COMPAT_CONSTANT                0xFEFEFEFE
+
+#define CAM_ACQUIRE_HW_STRUCT_VERSION_1       1
+
+struct cam_acquire_hw_cmd_v1 {
+	uint32_t        struct_version;
+	uint32_t        reserved;
+	int32_t         session_handle;
+	int32_t         dev_handle;
+	uint32_t        handle_type;
+	uint32_t        data_size;
+	uint64_t        resource_hdl;
+};
+
+#define CAM_RELEASE_HW_STRUCT_VERSION_1       1
+
+struct cam_release_hw_cmd_v1 {
+	uint32_t        struct_version;
+	uint32_t        reserved;
+	int32_t         session_handle;
+	int32_t         dev_handle;
 };
 
 /**

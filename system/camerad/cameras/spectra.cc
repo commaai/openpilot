@@ -73,6 +73,40 @@ std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data
   return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
 }
 
+std::optional<int32_t> device_acquire_handle_only(int fd, int32_t session_handle) {
+  struct cam_acquire_dev_cmd cmd = {
+    .session_handle = session_handle,
+    .handle_type = CAM_HANDLE_USER_POINTER,
+    .num_resources = CAM_API_COMPAT_CONSTANT,
+    .resource_hdl = 0,
+  };
+  int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
+  return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
+}
+
+int device_acquire_hw(int fd, int32_t session_handle, int32_t dev_handle, void *data, uint32_t data_size) {
+  struct cam_acquire_hw_cmd_v1 cmd = {
+    .struct_version = CAM_ACQUIRE_HW_STRUCT_VERSION_1,
+    .reserved = 0,
+    .session_handle = session_handle,
+    .dev_handle = dev_handle,
+    .handle_type = CAM_HANDLE_USER_POINTER,
+    .data_size = data_size,
+    .resource_hdl = (uint64_t)data,
+  };
+  return do_cam_control(fd, CAM_ACQUIRE_HW, &cmd, sizeof(cmd));
+}
+
+int device_release_hw(int fd, int32_t session_handle, int32_t dev_handle) {
+  struct cam_release_hw_cmd_v1 cmd = {
+    .struct_version = CAM_RELEASE_HW_STRUCT_VERSION_1,
+    .reserved = 0,
+    .session_handle = session_handle,
+    .dev_handle = dev_handle,
+  };
+  return do_cam_control(fd, CAM_RELEASE_HW, &cmd, sizeof(cmd));
+}
+
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
   struct cam_config_dev_cmd cmd = {
     .session_handle = session_handle,
@@ -1352,17 +1386,29 @@ void SpectraCamera::configOfflineIFE() {
     },
   };
 
-  struct cam_isp_resource isp_resource = {
-    .resource_id = CAM_ISP_RES_ID_PORT,
-    .handle_type = CAM_HANDLE_USER_POINTER,
-    .res_hdl = (uint64_t)&in_port_info,
-    .length = sizeof(in_port_info),
-  };
-
-  auto offline_dev_handle_ = device_acquire(m->isp_fd, session_handle, &isp_resource);
+  auto offline_dev_handle_ = device_acquire_handle_only(m->isp_fd, session_handle);
   assert(offline_dev_handle_);
   ife_offline_dev_handle = *offline_dev_handle_;
+  ife_offline_split_acquire = true;
   LOGD("acquire offline ife dev");
+
+  std::vector<uint8_t> acquire_hw_buf(sizeof(struct cam_isp_acquire_hw_info) + sizeof(in_port_info) - sizeof(uint64_t));
+  auto *acquire_hw_info = reinterpret_cast<struct cam_isp_acquire_hw_info *>(acquire_hw_buf.data());
+  memset(acquire_hw_info, 0, acquire_hw_buf.size());
+  *acquire_hw_info = {
+    .common_info_version = CAM_ISP_ACQUIRE_COMMON_VER0,
+    .common_info_size = CAM_ISP_ACQUIRE_COMMON_SIZE_VER0,
+    .common_info_offset = 0,
+    .num_inputs = 1,
+    .input_info_version = CAM_ISP_ACQUIRE_INPUT_VER0,
+    .input_info_size = sizeof(in_port_info),
+    .input_info_offset = 0,
+    .data = 0,
+  };
+  memcpy(&acquire_hw_info->data, &in_port_info, sizeof(in_port_info));
+
+  int ret = device_acquire_hw(m->isp_fd, session_handle, ife_offline_dev_handle, acquire_hw_info, acquire_hw_buf.size());
+  assert(ret == 0);
 
   ife_offline_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, ife_buf_depth);
   config_ife_offline(0, 1, true);
@@ -1557,6 +1603,10 @@ void SpectraCamera::camera_close() {
     ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
     if (ife_offline_dev_handle > 0) {
+      if (ife_offline_split_acquire) {
+        ret = device_release_hw(m->isp_fd, session_handle, ife_offline_dev_handle);
+        LOGD("release offline ife hw: %d", ret);
+      }
       ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, ife_offline_dev_handle);
       LOGD("release offline ife: %d", ret);
     }
