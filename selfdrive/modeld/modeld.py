@@ -102,8 +102,8 @@ class ModelState:
 
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = pickle.loads(read_file_chunked(str(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False))))
-    self.warp_enqueue = pickle.loads(read_file_chunked(str(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True))))
+    self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
+    self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
