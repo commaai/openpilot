@@ -2011,10 +2011,7 @@ struct StreamAccumulator::Impl {
       return;
     }
     detected_dbc_name = next_dbc;
-    can_dbc.reset();
-    if (!detected_dbc_name.empty()) {
-      can_dbc.emplace(resolve_dbc_path(detected_dbc_name));
-    }
+    can_dbc = load_dbc_by_name(detected_dbc_name);
   }
 };
 
@@ -2051,7 +2048,7 @@ void StreamAccumulator::appendEvent(kj::ArrayPtr<const capnp::word> data) {
                              event,
                              impl_->schema,
                              impl_->can_dbc ? &*impl_->can_dbc : nullptr,
-                             true,
+                             impl_->can_dbc.has_value(),
                              *impl_->time_offset,
                              &impl_->series);
     append_log_event(which, event, *impl_->time_offset, &impl_->logs, &impl_->last_alert_key);
@@ -2150,13 +2147,11 @@ RouteData load_route_data(const std::string &route_name,
 
   const RouteMetadata metadata = detect_route_metadata(segments, route.selector);
   const std::string resolved_dbc = !dbc_name.empty() ? dbc_name : detect_dbc_for_fingerprint(metadata.car_fingerprint);
-  const std::optional<dbc::Database> can_dbc = resolved_dbc.empty()
-    ? std::nullopt
-    : std::optional<dbc::Database>(std::in_place, resolve_dbc_path(resolved_dbc));
+  const std::optional<dbc::Database> can_dbc = load_dbc_by_name(resolved_dbc);
 
   const SchemaIndex &schema = SchemaIndex::instance();
   LoadedRouteArtifacts artifacts = load_route_series_parallel(segments, schema, can_dbc ? &*can_dbc : nullptr,
-                                                             route.selector, !resolved_dbc.empty(), &stats);
+                                                             route.selector, can_dbc.has_value(), &stats);
   RouteData route_data = build_route_data(std::move(artifacts.series),
                                           std::move(artifacts.can_messages),
                                           std::move(artifacts.logs),
