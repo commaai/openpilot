@@ -280,8 +280,8 @@ def main(demo=False):
     run_count = run_count + 1
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
-    prepare_only = vipc_dropped_frames > 0
-    if prepare_only or run_count == 1: # warm up prepare only jit
+    prepare_only = vipc_dropped_frames > 0 or run_count == 1
+    if prepare_only: # warm up prepare only jit
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
     bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
