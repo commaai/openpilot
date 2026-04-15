@@ -37,3 +37,25 @@ nav = [
     { "X →" = "https://x.com/comma_ai" },
   ] },
 ]
+
+[project.theme]
+features = [
+  "navigation.expand",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "content.code.copy",
+  "content.action.edit",
+  "content.action.view",
+]
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/commaai"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/discord"
+link = "https://discord.comma.ai"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/x-twitter"
+link = "https://x.com/comma_ai"
