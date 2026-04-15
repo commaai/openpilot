@@ -123,6 +123,7 @@ public:
   void config_bps(int idx, int request_id);
   void config_ife(int idx, int request_id, bool init=false);
   void config_ife_offline(int idx, int request_id, bool init=false);
+  bool probeOfflineIFESupport();
 
   int clear_req_queue();
   void enqueue_frame(uint64_t request_id);
@@ -139,10 +140,12 @@ public:
   void configCSIPHY();
   void linkDevices();
   void destroySyncObjectAt(int index);
+  std::optional<int32_t> acquireOfflineIFEDevice(int fd, bool *split_acquire);
 
-  bool uses_raw_capture() const { return cc.output_type != ISP_IFE_PROCESSED; }
-  bool uses_direct_ife_output() const { return cc.output_type == ISP_IFE_PROCESSED; }
-  bool uses_offline_ife() const { return cc.output_type == ISP_IFE_DDR_PROCESSED; }
+  bool wants_offline_ife() const { return cc.output_type == ISP_IFE_DDR_PROCESSED; }
+  bool uses_raw_capture() const { return cc.output_type == ISP_RAW_OUTPUT || uses_offline_ife() || uses_bps(); }
+  bool uses_direct_ife_output() const { return cc.output_type == ISP_IFE_PROCESSED || (wants_offline_ife() && !offline_ife_available); }
+  bool uses_offline_ife() const { return wants_offline_ife() && offline_ife_available; }
   bool uses_bps() const { return cc.output_type == ISP_BPS_PROCESSED; }
   bool uses_secondary_processor() const { return uses_bps() || uses_offline_ife(); }
   bool uses_processed_ife() const { return uses_direct_ife_output() || uses_offline_ife(); }
@@ -153,6 +156,7 @@ public:
   int ife_buf_depth = -1;
   bool open = false;
   bool enabled = true;
+  bool offline_ife_available = false;
   CameraConfig cc;
   std::unique_ptr<const SensorInfo> sensor;
 
