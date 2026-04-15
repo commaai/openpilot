@@ -97,7 +97,17 @@ LOGS_SIZE = {  # MB per segment
 }
 LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
 
-TIME_SERIES_SERVICES = frozenset(("managerState", "selfdriveState", "uiDebug"))
+TIME_SERIES_SERVICES = frozenset((
+  "managerState",
+  "selfdriveState",
+  "uiDebug",
+  "roadCameraState",
+  "wideRoadCameraState",
+  "driverCameraState",
+  "roadEncodeIdx",
+  "wideRoadEncodeIdx",
+  "driverEncodeIdx",
+))
 
 
 def cputime_total(ct):
