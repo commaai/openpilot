@@ -37,25 +37,25 @@ std::vector<uint32_t> build_ife_abf_rnr_cfg(const SensorInfo *s) {
     init_rsquare & 0x0fffffffU,
     (anchor1 << 16) | anchor0,
     (anchor3 << 16) | anchor2,
-    (3U << 16) | (8U << 8) | 8U,
-    (3U << 16) | (8U << 8) | 12U,
-    (3U << 16) | (8U << 8) | 16U,
-    20U,
-    (2U << 16) | (4U << 8) | 6U,
-    (2U << 16) | (4U << 8) | 10U,
-    (2U << 16) | (4U << 8) | 14U,
-    18U,
+    (5U << 16) | (20U << 8) | 24U,
+    (5U << 16) | (20U << 8) | 36U,
+    (5U << 16) | (20U << 8) | 48U,
+    56U,
+    (4U << 16) | (14U << 8) | 18U,
+    (4U << 16) | (14U << 8) | 26U,
+    (4U << 16) | (14U << 8) | 36U,
+    44U,
     IFE_ABF_RNR_RSQUARE_SHIFT,
   };
 }
 
 std::vector<uint32_t> build_ife_abf_bpc_cfg(const SensorInfo *s) {
   const uint32_t black_level = std::min<uint32_t>(0xfffU, s->black_level);
-  const uint32_t offset = std::min<uint32_t>(0xfffU, black_level + 32U);
+  const uint32_t offset = std::min<uint32_t>(0xfffU, black_level + 48U);
 
   return {
-    (offset << 16) | (4U << 8) | 31U,
-    (black_level << 8) | (5U << 4) | 2U,
+    (offset << 16) | (3U << 8) | 24U,
+    (black_level << 8) | (4U << 4) | 2U,
   };
 }
 
@@ -63,9 +63,9 @@ std::vector<uint32_t> build_ife_abf_noise_preserve_cfg(const SensorInfo *s) {
   const uint32_t anchor_lo = std::min<uint32_t>(0x3ffU, s->black_level + 16U);
 
   return {
-    (96U << 16) | anchor_lo,
-    (4U << 24) | (96U << 12) | 24U,
-    (4U << 24) | (96U << 12) | 28U,
+    (32U << 16) | anchor_lo,
+    (2U << 24) | (32U << 12) | 32U,
+    (2U << 24) | (32U << 12) | 40U,
   };
 }
 
