@@ -13,14 +13,13 @@ uv pip install .[docs]
 
 **2. Build the new site**
 ``` bash
-mkdocs build
+zensical build
 ```
 
 **3. Run the new site locally**
 ``` bash
-mkdocs serve
+zensical serve
 ```
 
 References:
-* https://www.mkdocs.org/getting-started/
-* https://github.com/ntno/mkdocs-terminal
+* https://zensical.org/docs/

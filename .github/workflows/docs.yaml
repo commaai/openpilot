@@ -30,8 +30,8 @@ jobs:
     - name: Build docs
       run: |
         # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs
-        mkdocs build
+        pip install zensical
+        zensical build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v6
