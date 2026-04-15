@@ -104,8 +104,10 @@ class ModelState:
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
-    dummy_frame = Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').realize()
-    self.warp_enqueue(**self.bufs, frame=dummy_frame, big_frame=dummy_frame)
+    self.warp_enqueue(
+      **self.bufs,
+      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').contiguous().realize(),
+      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8').contiguous().realize())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
