@@ -276,7 +276,10 @@ struct RouteIdentifier {
   std::string display_slice() const {
     const int begin = slice_explicit ? slice_begin : available_begin;
     const int end = slice_explicit ? slice_end : available_end;
-    if (end < 0 || end == begin) {
+    if (end < 0) {
+      return std::to_string(begin) + ":";
+    }
+    if (end == begin) {
       return std::to_string(begin);
     }
     return std::to_string(begin) + ":" + std::to_string(end);
