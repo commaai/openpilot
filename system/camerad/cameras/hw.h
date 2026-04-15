@@ -10,6 +10,7 @@
 typedef enum {
   ISP_RAW_OUTPUT,   // raw frame from sensor
   ISP_IFE_PROCESSED,  // fully processed image through the IFE
+  ISP_IFE_DDR_PROCESSED,  // raw frame to RAM first, then offline IFE processing
   ISP_BPS_PROCESSED,  // fully processed image through the BPS
 } SpectraOutputType;
 
@@ -39,7 +40,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_WIDE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_0,
   .vignetting_correction = false,
-  .output_type = ISP_IFE_PROCESSED,
+  .output_type = ISP_IFE_DDR_PROCESSED,
   .staggered_sof = false,
 };
 

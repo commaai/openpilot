@@ -119,6 +119,7 @@ public:
   void camera_map_bufs();
   void config_bps(int idx, int request_id);
   void config_ife(int idx, int request_id, bool init=false);
+  void config_ife_offline(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
   void enqueue_frame(uint64_t request_id);
@@ -130,10 +131,19 @@ public:
 
   bool openSensor();
   void configISP();
+  void configOfflineIFE();
   void configICP();
   void configCSIPHY();
   void linkDevices();
   void destroySyncObjectAt(int index);
+
+  bool uses_raw_capture() const { return cc.output_type != ISP_IFE_PROCESSED; }
+  bool uses_direct_ife_output() const { return cc.output_type == ISP_IFE_PROCESSED; }
+  bool uses_offline_ife() const { return cc.output_type == ISP_IFE_DDR_PROCESSED; }
+  bool uses_bps() const { return cc.output_type == ISP_BPS_PROCESSED; }
+  bool uses_secondary_processor() const { return uses_bps() || uses_offline_ife(); }
+  bool uses_processed_ife() const { return uses_direct_ife_output() || uses_offline_ife(); }
+  bool publishes_yuv() const { return cc.output_type != ISP_RAW_OUTPUT; }
 
   // *** state ***
 
@@ -156,12 +166,14 @@ public:
   int32_t session_handle = -1;
   int32_t sensor_dev_handle = -1;
   int32_t isp_dev_handle = -1;
+  int32_t ife_offline_dev_handle = -1;
   int32_t icp_dev_handle = -1;
   int32_t csiphy_dev_handle = -1;
 
   int32_t link_handle = -1;
 
   SpectraBuf ife_cmd;
+  SpectraBuf ife_offline_cmd;
   SpectraBuf ife_gamma_lut;
   SpectraBuf ife_linearization_lut;
   SpectraBuf ife_vignetting_lut;
@@ -179,7 +191,7 @@ public:
   int buf_handle_yuv[MAX_IFE_BUFS] = {};
   int buf_handle_raw[MAX_IFE_BUFS] = {};
   int sync_objs_ife[MAX_IFE_BUFS] = {};
-  int sync_objs_bps[MAX_IFE_BUFS] = {};
+  int sync_objs_post[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
   uint64_t last_requeue_ts = 0;
   uint64_t frame_id_raw_last = 0;
