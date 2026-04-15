@@ -29,12 +29,10 @@ class BodyLayout(Widget):
     self._last_input_time = time.monotonic()
     self._was_active = False
     self._font_bold = gui_app.font(FontWeight.BOLD)
+    self.set_visible(False)
 
   def set_settings_callback(self, callback):
     pass
-
-  def is_swiping_left(self) -> bool:
-    return False
 
   def draw_dot_grid(self, rect: rl.Rectangle, dots: list[tuple[int, int]], color: rl.Color | None = None):
     if color is None:

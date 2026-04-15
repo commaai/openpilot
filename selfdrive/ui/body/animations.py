@@ -9,6 +9,7 @@ class AnimationMode(Enum):
   REPEAT_FORWARD = 3
   REPEAT_FORWARD_BACKWARD = 4
 
+
 @dataclass
 class Animation:
   frames: list[list[tuple[int, int]]]

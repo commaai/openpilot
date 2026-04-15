@@ -21,20 +21,8 @@ def main():
   else:
     MiciMainLayout()
 
-  prev_is_body = ui_state.is_body
-
   for should_render in gui_app.render():
     ui_state.update()
-
-    # rebuild UI if device fingerprints body
-    if ui_state.is_body != prev_is_body:
-      prev_is_body = ui_state.is_body
-      gui_app._nav_stack.clear()
-      gui_app._nav_stack_ticks.clear()
-      if BIG_UI:
-        MainLayout()
-      else:
-        MiciMainLayout()
 
     if should_render:
       # reaffine after power save offlines our core

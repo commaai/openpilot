@@ -10,7 +10,6 @@ from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
 from openpilot.selfdrive.ui.body.layouts.onroad import BodyLayout
-from openpilot.selfdrive.ui.body.widgets.sidebar import BodySidebar, BODY_SIDEBAR_HEIGHT
 
 
 class MainState(IntEnum):
@@ -25,15 +24,15 @@ class MainLayout(Widget):
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
-    self._is_body = ui_state.is_body
-    self._sidebar = BodySidebar() if self._is_body else Sidebar()
+    self._sidebar = Sidebar()
     self._current_mode = MainState.HOME
     self._prev_onroad = False
 
     # Initialize layouts
-    self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
-    if self._is_body:
-      self._layouts[MainState.HOME] = BodyLayout()
+    self._home_layout = HomeLayout()
+    self._body_layout = BodyLayout()
+    self._layouts = {MainState.HOME: self._home_layout, MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
+    self._on_body_changed()
 
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
     self._content_rect = rl.Rectangle(0, 0, 0, 0)
@@ -56,31 +55,30 @@ class MainLayout(Widget):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_bookmark_clicked,
                                 open_settings=lambda: self.open_settings(PanelType.TOGGLES))
-    if self._is_body:
-      self._layouts[MainState.HOME].set_click_callback(self._on_onroad_clicked)
-    else:
-      self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
-      device.add_interactive_timeout_callback(self._set_mode_for_state)
-    self._layouts[MainState.HOME].set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
+    self._home_layout.set_click_callback(self._on_onroad_clicked)
+    self._home_layout._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
+    self._home_layout.set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
 
+    self._body_layout.set_click_callback(self._on_onroad_clicked)
+    self._body_layout.set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
+
+    device.add_interactive_timeout_callback(self._set_mode_for_state)
+    ui_state.add_on_body_changed_callbacks(self._on_body_changed)
+
   def _update_layout_rects(self):
-    if self._is_body:
-      self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, BODY_SIDEBAR_HEIGHT)
-      y_offset = BODY_SIDEBAR_HEIGHT if self._sidebar.is_visible else 0
-      self._content_rect = rl.Rectangle(self._rect.x, self._rect.y + y_offset, self._rect.width, self._rect.height - y_offset)
-    else:
-      self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
-      x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0
-      self._content_rect = rl.Rectangle(self._rect.x + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
+    self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
+    x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0
+    self._content_rect = rl.Rectangle(self._rect.x + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
 
   def _handle_onroad_transition(self):
     if ui_state.started != self._prev_onroad:
       self._prev_onroad = ui_state.started
+
       self._set_mode_for_state()
 
   def _set_mode_for_state(self):
-    if self._is_body:
+    if ui_state.is_body:
       self._set_current_layout(MainState.HOME)
       return
 
@@ -91,6 +89,7 @@ class MainLayout(Widget):
       self._set_current_layout(MainState.ONROAD)
     else:
       self._set_current_layout(MainState.HOME)
+      self._sidebar.set_visible(True)
 
   def _set_current_layout(self, layout: MainState):
     if layout != self._current_mode:
@@ -114,15 +113,14 @@ class MainLayout(Widget):
   def _on_onroad_clicked(self):
     self._sidebar.set_visible(not self._sidebar.is_visible)
 
+  def _on_body_changed(self):
+    self._body_layout.set_visible(ui_state.is_body)
+    self._home_layout.set_visible(not ui_state.is_body)
+    self._layouts[MainState.HOME] = self._body_layout if ui_state.is_body else self._home_layout
+
   def _render_main_content(self):
-    if self._is_body: # overlay sidebar but recompute boundaries for proper click events
-      parent_rect = rl.Rectangle(self._rect.x, self._rect.y + BODY_SIDEBAR_HEIGHT,
-                                 self._rect.width, self._rect.height - BODY_SIDEBAR_HEIGHT) if self._sidebar.is_visible else None
-      self._layouts[self._current_mode].set_parent_rect(parent_rect)
-      self._layouts[self._current_mode].render(self._rect)
-    else:
-      content_rect = self._content_rect if self._sidebar.is_visible else self._rect
-      self._layouts[self._current_mode].render(content_rect)
+    content_rect = self._content_rect if self._sidebar.is_visible else self._rect
+    self._layouts[self._current_mode].render(content_rect)
 
     if self._sidebar.is_visible:
         self._sidebar.render(self._sidebar_rect)

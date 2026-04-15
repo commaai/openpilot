@@ -12,6 +12,7 @@ PAIR_MESSAGE_WIDTH = 260
 class MiciBodyHomeLayout(MiciHomeLayout):
   def __init__(self):
     super().__init__()
+    self.set_visible(False)
     self._branch_label.set_visible(False)
     self._pair_message = self._child(UnifiedLabel("", font_size=PAIR_MESSAGE_FONT_SIZE, font_weight=FontWeight.SEMI_BOLD,
                                                   text_color=rl.Color(255, 255, 255, int(255 * 0.9)),

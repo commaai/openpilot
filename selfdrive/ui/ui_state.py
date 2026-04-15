@@ -79,12 +79,14 @@ class UIState:
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
     self.CP: car.CarParams | None = None
+    self.is_body: bool = False
     self.light_sensor: float = -1.0
     self._param_update_time: float = 0.0
 
     # Callbacks
     self._offroad_transition_callbacks: list[Callable[[], None]] = []
     self._engaged_transition_callbacks: list[Callable[[], None]] = []
+    self._on_body_changed_callbacks: list[Callable[[], None]] = []
 
     self.update_params()
 
@@ -93,6 +95,9 @@ class UIState:
 
   def add_engaged_transition_callback(self, callback: Callable[[], None]):
     self._engaged_transition_callbacks.append(callback)
+
+  def add_on_body_changed_callbacks(self, callback: Callable[[], None]):
+    self._on_body_changed_callbacks.append(callback)
 
   @property
   def engaged(self) -> bool:
@@ -104,9 +109,6 @@ class UIState:
   def is_offroad(self) -> bool:
     return not self.started
 
-  @property
-  def is_body(self) -> bool:
-    return self.CP is not None and self.CP.notCar
 
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
@@ -185,6 +187,10 @@ class UIState:
         self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
       else:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
+      if self.is_body != self.CP.notCar:
+        self.is_body = self.CP.notCar
+        for callback in self._on_body_changed_callbacks:
+            callback()
     self._param_update_time = time.monotonic()
 
 
