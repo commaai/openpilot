@@ -378,7 +378,7 @@ public:
   StreamAccumulator &operator=(const StreamAccumulator &) = delete;
 
   void setDbcName(const std::string &dbc_name);
-  void appendEvent(cereal::Event::Which which, kj::ArrayPtr<const capnp::word> data);
+  void appendEvent(kj::ArrayPtr<const capnp::word> data);
   void appendCanFrames(CanServiceKind service, const std::vector<LiveCanFrame> &frames);
   StreamExtractBatch takeBatch();
   const std::string &carFingerprint() const;

@@ -132,8 +132,8 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     userBookmark @95;
     excessiveActuation @96;
     audioFeedback @97;
-    laneTurnLeft @99;
-    laneTurnRight @100;
+    laneTurnLeft @101;
+    laneTurnRight @102;
 
     soundsUnavailableDEPRECATED @47;
   }
