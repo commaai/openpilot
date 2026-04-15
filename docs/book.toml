@@ -17,7 +17,7 @@ git-repository-url = "https://github.com/commaai/openpilot/"
 edit-url-template = "https://github.com/commaai/openpilot/edit/master/docs/{path}"
 no-section-label = true
 additional-css = ["theme/glossary.css", "theme/sidebar.css"]
-additional-js = ["theme/glossary.js", "theme/sidebar.js"]
+additional-js = ["theme/glossary.js"]
 
 [output.html.print]
 enable = true

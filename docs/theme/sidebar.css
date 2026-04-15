@@ -1,7 +1,35 @@
-.sidebar-extra-part {
-  margin-top: 0.85rem;
+:root {
+  --sidebar-footer-height: 13.75rem;
 }
 
-.sidebar-extra-link a {
+.sidebar .sidebar-scrollbox,
+.sidebar .sidebar-iframe-outer {
+  bottom: var(--sidebar-footer-height);
+}
+
+.sidebar .sidebar-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.55rem 10px 0.9rem;
+  background: var(--sidebar-bg);
+  border-top: 1px solid var(--searchbar-border-color);
+}
+
+.sidebar .sidebar-footer .chapter {
+  margin: 0;
+}
+
+.sidebar .sidebar-footer .part-title {
+  margin: 0 0 0.2rem;
+}
+
+.sidebar .sidebar-footer .chapter-item {
+  line-height: 2em;
+}
+
+.sidebar .sidebar-footer .chapter-link-wrapper a {
   display: block;
+  white-space: nowrap;
 }

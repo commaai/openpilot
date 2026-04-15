@@ -24,3 +24,4 @@
 # Contributing
 
 - [Roadmap](contributing/roadmap.md)
+- [Contributing Guide](CONTRIBUTING.md)
