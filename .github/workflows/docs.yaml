@@ -29,9 +29,10 @@ jobs:
     # Build
     - name: Build docs
       run: |
-        python3 -m pip install uv
-        uv pip install --system -r pyproject.toml --extra docs
-        mdbook build
+        python3 -m venv .docs-venv
+        .docs-venv/bin/python -m pip install uv
+        .docs-venv/bin/uv pip install --python .docs-venv/bin/python -r pyproject.toml --extra docs
+        .docs-venv/bin/mdbook build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v6

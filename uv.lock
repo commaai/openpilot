@@ -790,12 +790,6 @@ testing = [
     { name = "ruff" },
     { name = "ty" },
 ]
-
-[package.dev-dependencies]
-docs = [
-    { name = "jinja2" },
-    { name = "mdbook" },
-]
 tools = [
     { name = "imgui" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
@@ -819,6 +813,7 @@ requires-dist = [
     { name = "gcc-arm-none-eabi", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=release-gcc-arm-none-eabi" },
     { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=release-git-lfs" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
+    { name = "imgui", marker = "extra == 'tools'", git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=release-imgui" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
@@ -829,6 +824,7 @@ requires-dist = [
     { name = "libyuv", git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=release-libyuv" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "mdbook", marker = "extra == 'docs'", git = "https://github.com/commaai/dependencies.git?subdirectory=mdbook&rev=release-mdbook" },
+    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", git = "https://github.com/commaai/metadrive.git?rev=minimal" },
     { name = "ncurses", git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=release-ncurses" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opencv-python-headless", marker = "extra == 'dev'" },
@@ -865,17 +861,7 @@ requires-dist = [
     { name = "zstandard" },
     { name = "zstd", git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=release-zstd" },
 ]
-provides-extras = ["docs", "testing", "dev"]
-
-[package.metadata.requires-dev]
-docs = [
-    { name = "jinja2" },
-    { name = "mdbook", git = "https://github.com/commaai/dependencies.git?subdirectory=mdbook&rev=release-mdbook" },
-]
-tools = [
-    { name = "imgui", git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=release-imgui" },
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'", git = "https://github.com/commaai/metadrive.git?rev=minimal" },
-]
+provides-extras = ["docs", "testing", "dev", "tools"]
 
 [[package]]
 name = "packaging"
