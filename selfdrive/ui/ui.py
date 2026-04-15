@@ -23,7 +23,6 @@ def main():
 
   for should_render in gui_app.render():
     ui_state.update()
-
     if should_render:
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:
