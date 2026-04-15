@@ -305,7 +305,7 @@ class GlossaryExtension(Extension):
     }
     super().__init__(**kwargs)
 
-  def extendMarkdown(self, md) -> None:  # noqa: N802
+  def extendMarkdown(self, md) -> None:
     md.registerExtension(self)
     glossary_file = str(Path(self.getConfig("glossary_file")).resolve())
     glossary = Glossary.load(glossary_file)
@@ -327,5 +327,5 @@ class GlossaryExtension(Extension):
     )
 
 
-def makeExtension(**kwargs: Any) -> GlossaryExtension:  # noqa: N802
+def makeExtension(**kwargs: Any) -> GlossaryExtension:
   return GlossaryExtension(**kwargs)

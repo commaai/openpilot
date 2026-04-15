@@ -1,6 +1,9 @@
-"""Wrapper around zensical that materializes symlinks in docs/ before build."""
-from __future__ import annotations
+"""
+  wrapper that materializes symlinks in docs/ before build
 
+  we can delete this once zensical supports symlinks:
+  https://github.com/zensical/backlog/issues/55
+"""
 import os
 import shutil
 import signal
