@@ -65,7 +65,3 @@ icon = "fontawesome/brands/x-twitter"
 link = "https://x.com/comma_ai"
 
 [project.markdown_extensions."ext.glossary"]
-glossary_file = "docs/ext/glossary.toml"
-glossary_page = "concepts/glossary.md"
-placeholder = "{{GLOSSARY_DEFINITIONS}}"
-match_policy = "first"

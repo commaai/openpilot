@@ -3,7 +3,6 @@ import re
 import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any
 
 from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
@@ -11,7 +10,11 @@ from markdown.treeprocessors import Treeprocessor
 
 from zensical.extensions.links import LinksProcessor
 
-GlossaryTerm = dict[str, Any]
+GlossaryTerm = tuple[str, re.Pattern[str], str]
+
+GLOSSARY_FILE = Path(__file__).with_name("glossary.toml")
+GLOSSARY_PAGE = "concepts/glossary.md"
+GLOSSARY_PLACEHOLDER = "{{GLOSSARY_DEFINITIONS}}"
 
 SKIP_TAGS = {
   "a",
@@ -35,51 +38,41 @@ def clean_tooltip(description: str) -> str:
   return re.sub(r"\s+", " ", text).strip()
 
 
-def load_glossary(file_path: str) -> list[GlossaryTerm]:
-  with open(file_path, "rb") as f:
+def load_glossary() -> tuple[list[GlossaryTerm], str]:
+  with GLOSSARY_FILE.open("rb") as f:
     glossary_data = tomllib.load(f).get("glossary", {})
 
   glossary: list[GlossaryTerm] = []
+  rendered = []
   for key, value in glossary_data.items():
     label = str(key).strip().replace("_", " ")
     description = str(value).strip()
     if not description:
       continue
 
-    glossary.append(
-      {
-        "label": label,
-        "slug": label.replace(" ", "-").replace("_", "-").lower(),
-        "description": description,
-        "tooltip": clean_tooltip(description),
-        "pattern": re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE),
-      }
-    )
+    slug = label.replace(" ", "-").replace("_", "-").lower()
+    glossary.append((slug, re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE), clean_tooltip(description)))
+    rendered.append(f'* <span id="{slug}"></span>**{label}**: {description}')
 
-  return glossary
+  return glossary, "\n".join(rendered)
+
+
 class GlossaryPreprocessor(Preprocessor):
-  def __init__(self, md, glossary: list[GlossaryTerm], placeholder: str):
+  def __init__(self, md, glossary: str):
     super().__init__(md)
     self.glossary = glossary
-    self.placeholder = placeholder
 
   def run(self, lines: list[str]) -> list[str]:
     markdown = "\n".join(lines)
-    if self.placeholder not in markdown:
+    if GLOSSARY_PLACEHOLDER not in markdown:
       return lines
-    glossary = "\n".join(
-      f'* <span id="{term["slug"]}"></span>**{term["label"]}**: {term["description"]}'
-      for term in self.glossary
-    )
-    return markdown.replace(self.placeholder, glossary).splitlines()
+    return markdown.replace(GLOSSARY_PLACEHOLDER, self.glossary).splitlines()
 
 
 class GlossaryTreeprocessor(Treeprocessor):
-  def __init__(self, md, glossary: list[GlossaryTerm], glossary_page: str, match_policy: str):
+  def __init__(self, md, glossary: list[GlossaryTerm]):
     super().__init__(md)
     self.glossary = glossary
-    self.glossary_page = glossary_page
-    self.first_only = match_policy == "first"
     self.seen: set[str] = set()
 
   def run(self, root: ET.Element) -> None:
@@ -87,28 +80,29 @@ class GlossaryTreeprocessor(Treeprocessor):
     processor = self.md.treeprocessors[at]
     if not isinstance(processor, LinksProcessor):
       raise TypeError("Links processor not registered")
-    if processor.path == self.glossary_page:
+    if processor.path == GLOSSARY_PAGE:
       return
 
     self.seen.clear()
-    self._walk(root, processor.path)
+    glossary_href = f"{posixpath.relpath(GLOSSARY_PAGE, posixpath.dirname(processor.path) or '.')}#"
+    self._walk(root, glossary_href)
 
-  def _walk(self, element: ET.Element, page_path: str) -> None:
+  def _walk(self, element: ET.Element, glossary_href: str) -> None:
     if element.tag in SKIP_TAGS or element.attrib.get("data-glossary-skip") is not None:
       return
 
-    self._replace(element, page_path)
+    self._replace(element, glossary_href)
 
     idx = 0
     while idx < len(element):
       child = element[idx]
-      self._walk(child, page_path)
-      idx = self._replace(element, page_path, idx) + 1
+      self._walk(child, glossary_href)
+      idx = self._replace(element, glossary_href, idx) + 1
 
-  def _replace(self, parent: ET.Element, page_path: str, index: int | None = None) -> int:
+  def _replace(self, parent: ET.Element, glossary_href: str, index: int | None = None) -> int:
     child = None if index is None else parent[index]
     text = parent.text if child is None else child.tail
-    pieces = self._pieces(text or "", page_path)
+    pieces = self._pieces(text or "", glossary_href)
     if not pieces:
       return -1 if index is None else index
 
@@ -134,21 +128,63 @@ class GlossaryTreeprocessor(Treeprocessor):
 
     return insert_at
 
-  def _pieces(self, text: str, page_path: str) -> list[str | ET.Element]:
+  def _pieces(self, text: str, glossary_href: str) -> list[str | ET.Element]:
     if not text.strip():
       return []
 
     pieces: list[str | ET.Element] = []
     cursor = 0
 
-    while match := self._next_match(text, cursor):
-      term, start, end = match
+    while True:
+      best = None
+      for slug, pattern, tooltip in self.glossary:
+        if slug in self.seen:
+          continue
+
+        found = pattern.search(text, cursor)
+        if found is None:
+          continue
+
+        candidate = (slug, tooltip, found.start(), found.end())
+        if best is None:
+          best = candidate
+          continue
+
+        _, best_start, best_end = best
+        _, current_start, current_end = candidate
+        if current_start < best_start:
+          best = candidate
+          continue
+
+        if current_start == best_start and current_end - current_start > best_end - best_start:
+          best = candidate
+
+      if best is None:
+        break
+
+      slug, tooltip, start, end = best
       if start > cursor:
         pieces.append(text[cursor:start])
 
-      pieces.append(self._anchor(page_path, term, text[start:end]))
-      if self.first_only:
-        self.seen.add(term["slug"])
+      link = ET.Element(
+        "a",
+        {
+          "class": "glossary-term",
+          "data-glossary-term": "",
+          "href": f"{glossary_href}{slug}",
+        },
+      )
+      ET.SubElement(link, "span", {"class": "glossary-term__label"}).text = text[start:end]
+      ET.SubElement(
+        link,
+        "span",
+        {
+          "class": "glossary-term__tooltip",
+          "data-search-exclude": "",
+        },
+      ).text = tooltip
+      pieces.append(link)
+      self.seen.add(slug)
       cursor = end
 
     if not pieces:
@@ -157,77 +193,23 @@ class GlossaryTreeprocessor(Treeprocessor):
       pieces.append(text[cursor:])
     return pieces
 
-  def _next_match(self, text: str, start: int) -> tuple[GlossaryTerm, int, int] | None:
-    best: tuple[GlossaryTerm, int, int] | None = None
-    for term in self.glossary:
-      if self.first_only and term["slug"] in self.seen:
-        continue
-
-      found = term["pattern"].search(text, start)
-      if found is None:
-        continue
-
-      candidate = (term, found.start(), found.end())
-      if best is None:
-        best = candidate
-        continue
-
-      _, best_start, best_end = best
-      _, current_start, current_end = candidate
-      if current_start < best_start:
-        best = candidate
-        continue
-
-      if current_start == best_start and current_end - current_start > best_end - best_start:
-        best = candidate
-
-    return best
-
-  def _anchor(self, page_path: str, term: GlossaryTerm, label: str) -> ET.Element:
-    link = ET.Element(
-      "a",
-      {
-        "class": "glossary-term",
-        "data-glossary-term": "",
-        "href": f"{posixpath.relpath(self.glossary_page, posixpath.dirname(page_path) or '.')}#{term['slug']}",
-      },
-    )
-    ET.SubElement(link, "span", {"class": "glossary-term__label"}).text = label
-    ET.SubElement(
-      link,
-      "span",
-      {
-        "class": "glossary-term__tooltip",
-        "data-search-exclude": "",
-      },
-    ).text = term["tooltip"]
-    return link
 
 class GlossaryExtension(Extension):
-  def __init__(self, **kwargs: Any):
-    self.config = {
-      "glossary_file": ["docs/ext/glossary.toml", "Path to the glossary data file"],
-      "glossary_page": ["concepts/glossary.md", "Glossary page path relative to docs/"],
-      "placeholder": ["{{GLOSSARY_DEFINITIONS}}", "Marker to replace in the glossary page"],
-      "match_policy": ["first", "Only annotate the first occurrence of each term on a page"],
-    }
-    super().__init__(**kwargs)
-
   def extendMarkdown(self, md) -> None:
     md.registerExtension(self)
-    glossary = load_glossary(str(Path(self.getConfig("glossary_file")).resolve()))
+    glossary, rendered = load_glossary()
 
     md.preprocessors.register(
-      GlossaryPreprocessor(md, glossary, self.getConfig("placeholder")),
+      GlossaryPreprocessor(md, rendered),
       "docs-ext-glossary-preprocessor",
       27,
     )
     md.treeprocessors.register(
-      GlossaryTreeprocessor(md, glossary, self.getConfig("glossary_page"), self.getConfig("match_policy")),
+      GlossaryTreeprocessor(md, glossary),
       "docs-ext-glossary-treeprocessor",
       0,
     )
 
 
-def makeExtension(**kwargs: Any) -> GlossaryExtension:
+def makeExtension(**kwargs) -> GlossaryExtension:
   return GlossaryExtension(**kwargs)
