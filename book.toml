@@ -16,8 +16,8 @@ cname = "docs.comma.ai"
 git-repository-url = "https://github.com/commaai/openpilot/"
 edit-url-template = "https://github.com/commaai/openpilot/edit/master/{path}"
 no-section-label = true
-additional-css = ["theme/glossary.css"]
-additional-js = ["theme/glossary.js"]
+additional-css = ["docs/theme/glossary.css"]
+additional-js = ["docs/theme/glossary.js"]
 
 [output.html.print]
 enable = true
