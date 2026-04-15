@@ -97,24 +97,6 @@ LOGS_SIZE = {  # MB per segment
 }
 LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
 
-TIME_SERIES_SERVICES = frozenset((
-  "managerState",
-  "uiDebug",
-  "deviceState",
-  "roadCameraState",
-  "wideRoadCameraState",
-  "driverCameraState",
-  "roadEncodeIdx",
-  "wideRoadEncodeIdx",
-  "driverEncodeIdx",
-  "longitudinalPlan",
-  "modelV2",
-  "driverStateV2",
-  "selfdriveState",
-  "livePose",
-  "liveParameters",
-))
-
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
@@ -184,9 +166,7 @@ class TestOnroad:
     cls.msgs = defaultdict(list)
     for m in lr:
       cls.msgs[m.which()].append(m)
-
-    ts_msgs = [m for service in TIME_SERIES_SERVICES for m in cls.msgs.get(service, ())]
-    cls.ts = msgs_to_time_series(ts_msgs)
+    cls.ts = msgs_to_time_series(lr)
 
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():

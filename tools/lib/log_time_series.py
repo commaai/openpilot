@@ -1,27 +1,37 @@
 import numpy as np
 
+UNSUPPORTED_TYPES = frozenset(("qcomGnss", "ubloxGnss"))
+
+def _flatten_type_dict_into(res, d, sep="/", prefix=None):
+  stack = [(prefix, d)]
+  while stack:
+    path, value = stack.pop()
+    if isinstance(value, dict):
+      if path is None:
+        for key, child in value.items():
+          stack.append((key, child))
+      else:
+        prefix = path + sep
+        for key, child in value.items():
+          stack.append((prefix + key, child))
+    else:
+      res[path] = value
+
 
 def flatten_type_dict(d, sep="/", prefix=None):
   res = {}
-  if isinstance(d, dict):
-    for key, val in d.items():
-      if prefix is None:
-        res.update(flatten_type_dict(val, prefix=key))
-      else:
-        res.update(flatten_type_dict(val, prefix=prefix + sep + key))
-    return res
-  elif isinstance(d, list):
-    return {prefix: np.array(d)}
-  else:
-    return {prefix: d}
+  _flatten_type_dict_into(res, d, sep=sep, prefix=prefix)
+  return res
 
 
 def get_message_dict(message, typ):
+  if typ in UNSUPPORTED_TYPES:
+    # TODO: support these
+    return
+
   valid = message.valid
   message = message._get(typ)
-  if not hasattr(message, 'to_dict') or typ in ('qcomGnss', 'ubloxGnss'):
-    # TODO: support these
-    #print("skipping", typ)
+  if not hasattr(message, 'to_dict'):
     return
 
   msg_dict = message.to_dict(verbose=True)
@@ -51,6 +61,7 @@ def potentially_ragged_array(arr, dtype=None, **kwargs):
     return np.array(arr, dtype=dtype, **kwargs)
   except ValueError:
     return np.array(arr, dtype=object, **kwargs)
+
 
 def msgs_to_time_series(msgs):
   """
