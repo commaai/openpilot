@@ -9,9 +9,7 @@ site_dir = "docs_site/"
 extra_css = ["stylesheets/extra.css"]
 
 nav = [
-  { "Getting Started" = [
-    { "What is openpilot?" = "getting-started/what-is-openpilot.md" },
-  ] },
+  { "What is openpilot?" = "index.md" },
   { "How-to" = [
     { "Turn the speed blue" = "how-to/turn-the-speed-blue.md" },
     { "Connect to a comma 3X" = "how-to/connect-to-comma.md" },
