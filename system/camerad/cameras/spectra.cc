@@ -299,7 +299,7 @@ int SpectraCamera::clear_req_queue() {
       .dev_handle = ife_offline_dev_handle,
       .flush_type = CAM_FLUSH_TYPE_ALL,
     };
-    int err = do_cam_control(m->isp_fd, CAM_FLUSH_REQ, &cmd, sizeof(cmd));
+    int err = do_cam_control(ife_offline_fd, CAM_FLUSH_REQ, &cmd, sizeof(cmd));
     assert(err == 0);
     LOGD("flushed offline ife: %d", err);
   }
@@ -925,7 +925,7 @@ void SpectraCamera::config_ife_offline(int idx, int request_id, bool init) {
     add_patch(pkt.get(), buf_desc[1].mem_handle, offsetof(struct isp_packet, fe.source_addr), buf_handle_raw[idx], 0);
   }
 
-  int ret = device_config(m->isp_fd, session_handle, ife_offline_dev_handle, cam_packet_handle);
+  int ret = device_config(ife_offline_fd, session_handle, ife_offline_dev_handle, cam_packet_handle);
   assert(ret == 0);
 }
 
@@ -1350,6 +1350,10 @@ void SpectraCamera::configISP() {
 }
 
 void SpectraCamera::configOfflineIFE() {
+  ife_offline_fd = open_v4l_by_name_and_index("cam-isp");
+  assert(ife_offline_fd >= 0);
+  LOGD("opened offline isp %d", (int)ife_offline_fd);
+
   struct cam_isp_in_port_info in_port_info = {
     .res_type = CAM_ISP_IFE_IN_RES_RD,
     .lane_type = CAM_ISP_LANE_TYPE_DPHY,
@@ -1386,7 +1390,7 @@ void SpectraCamera::configOfflineIFE() {
     },
   };
 
-  auto offline_dev_handle_ = device_acquire_handle_only(m->isp_fd, session_handle);
+  auto offline_dev_handle_ = device_acquire_handle_only(ife_offline_fd, session_handle);
   assert(offline_dev_handle_);
   ife_offline_dev_handle = *offline_dev_handle_;
   ife_offline_split_acquire = true;
@@ -1407,7 +1411,7 @@ void SpectraCamera::configOfflineIFE() {
   };
   memcpy(&acquire_hw_info->data, &in_port_info, sizeof(in_port_info));
 
-  int ret = device_acquire_hw(m->isp_fd, session_handle, ife_offline_dev_handle, acquire_hw_info, acquire_hw_buf.size());
+  int ret = device_acquire_hw(ife_offline_fd, session_handle, ife_offline_dev_handle, acquire_hw_info, acquire_hw_buf.size());
   assert(ret == 0);
 
   ife_offline_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, ife_buf_depth);
@@ -1548,7 +1552,7 @@ void SpectraCamera::linkDevices() {
   LOGD("start isp: %d", ret);
   assert(ret == 0);
   if (ife_offline_dev_handle > 0) {
-    ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, ife_offline_dev_handle);
+    ret = device_control(ife_offline_fd, CAM_START_DEV, session_handle, ife_offline_dev_handle);
     LOGD("start offline ife: %d", ret);
     assert(ret == 0);
   }
@@ -1570,7 +1574,7 @@ void SpectraCamera::camera_close() {
     int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
     if (ife_offline_dev_handle > 0) {
-      ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, ife_offline_dev_handle);
+      ret = device_control(ife_offline_fd, CAM_STOP_DEV, session_handle, ife_offline_dev_handle);
       LOGD("stop offline ife: %d", ret);
     }
     if (uses_bps()) {
@@ -1604,10 +1608,10 @@ void SpectraCamera::camera_close() {
     LOGD("release isp: %d", ret);
     if (ife_offline_dev_handle > 0) {
       if (ife_offline_split_acquire) {
-        ret = device_release_hw(m->isp_fd, session_handle, ife_offline_dev_handle);
+        ret = device_release_hw(ife_offline_fd, session_handle, ife_offline_dev_handle);
         LOGD("release offline ife hw: %d", ret);
       }
-      ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, ife_offline_dev_handle);
+      ret = device_control(ife_offline_fd, CAM_RELEASE_DEV, session_handle, ife_offline_dev_handle);
       LOGD("release offline ife: %d", ret);
     }
     if (uses_bps()) {

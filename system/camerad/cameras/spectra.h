@@ -165,6 +165,7 @@ public:
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
+  unique_fd ife_offline_fd;
 
   int32_t session_handle = -1;
   int32_t sensor_dev_handle = -1;
