@@ -2077,7 +2077,7 @@ struct DriverStateV2 {
 }
 
 struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
-  events @18 :List(Log.OnroadEvent);
+  events @18 :List(OnroadEvent);
   faceDetected @1 :Bool;
   isDistracted @2 :Bool;
   distractedType @17 :UInt32;
