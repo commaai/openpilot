@@ -12,7 +12,7 @@ namespace {
 constexpr uint32_t IFE_ABF_RNR_RSQUARE_SHIFT = 10;
 
 uint32_t build_ife_abf_cfg() {
-  return (3U << 26) | (2U << 24) | (1U << 20) |
+  return (3U << 26) | (3U << 24) | (3U << 20) |
          (3U << 18) | (2U << 16) | (1U << 12) |
          (2U << 8) | (2U << 4) |
          (1U << 3) | (1U << 2) | 1U;
