@@ -40,21 +40,21 @@
   }
 
   function createTooltip(document, visibleText, entry) {
-    const wrapper = document.createElement("span");
+    const wrapper = document.createElement("a");
     wrapper.className = "glossary-term";
-    wrapper.tabIndex = 0;
+    wrapper.href = `${window.path_to_root || ""}concepts/glossary.html#${entry.anchor}`;
+    wrapper.setAttribute("aria-label", `${visibleText}: ${entry.description}`);
 
     const tooltip = document.createElement("span");
     tooltip.className = "tooltip-content";
     tooltip.textContent = `${entry.description} `;
 
-    const link = document.createElement("a");
-    link.className = "tooltip-glossary-link";
-    link.href = `${window.path_to_root || ""}concepts/glossary.html#${entry.anchor}`;
-    link.textContent = "Glossary";
+    const hint = document.createElement("span");
+    hint.className = "tooltip-glossary-hint";
+    hint.textContent = "Open glossary entry";
 
     wrapper.append(document.createTextNode(visibleText));
-    tooltip.append(link);
+    tooltip.append(hint);
     wrapper.append(tooltip);
     return wrapper;
   }

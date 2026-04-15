@@ -1,12 +1,14 @@
 .glossary-term {
   position: relative;
+  color: inherit;
   border-bottom: 1px dotted currentColor;
-  cursor: help;
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .glossary-term .tooltip-content {
   width: max-content;
-  max-width: min(28rem, calc(100vw - 2rem));
+  max-width: min(34rem, calc(100vw - 2rem));
   position: absolute;
   top: calc(100% + 0.35rem);
   left: 50%;
@@ -14,11 +16,11 @@
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--searchbar-border-color);
-  border-radius: 0.4rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  padding: 0.65rem 0.75rem;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 0.85rem 0.95rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
   text-decoration: none;
   opacity: 0;
   visibility: hidden;
@@ -36,13 +38,15 @@
   pointer-events: auto;
 }
 
-.tooltip-content .tooltip-glossary-link {
-  display: inline-block;
-  margin-top: 0.5rem;
-  color: var(--links);
+.glossary-term:hover,
+.glossary-term:focus-visible {
   text-decoration: none;
 }
 
-.tooltip-content .tooltip-glossary-link:hover {
-  text-decoration: underline;
+.tooltip-content .tooltip-glossary-hint {
+  display: inline-block;
+  margin-top: 0.6rem;
+  color: var(--links);
+  font-size: 0.88rem;
+  font-weight: 600;
 }
