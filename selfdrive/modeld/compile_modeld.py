@@ -148,7 +148,7 @@ def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
 
 
 def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
-                    vision_features_slice, frame_skip):
+                    vision_features_slice, frame_skip, prepare_only=False):
   model_w, model_h = MEDMODEL_INPUT_SIZE
   frame_prepare = make_frame_prepare(cam_w, cam_h, model_w, model_h)
 
@@ -161,6 +161,9 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
   def run_policy(img_buf, big_img_buf, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
     img = shift_and_sample(img_buf, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
     big_img = shift_and_sample(big_img_buf, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
+
+    if prepare_only:
+      return img, big_img
 
     vision_out = next(iter(vision_runner({'img': img, 'big_img': big_img}).values())).cast('float32')
 
@@ -195,7 +198,7 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 
   _run = make_run_policy(vision_runner, policy_runner,
-                         cam_w, cam_h, vision_features_slice, frame_skip)
+                         cam_w, cam_h, vision_features_slice, frame_skip, prepare_only)
   run_policy_jit = TinyJit(_run, prune=True)
 
   N_RUNS = 3
