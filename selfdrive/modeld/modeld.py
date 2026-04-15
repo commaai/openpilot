@@ -104,6 +104,8 @@ class ModelState:
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
+    dummy_frame = Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').realize()
+    self.warp_enqueue(**self.bufs, frame=dummy_frame, big_frame=dummy_frame)
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -280,8 +282,8 @@ def main(demo=False):
     run_count = run_count + 1
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
-    prepare_only = vipc_dropped_frames > 0 or run_count == 1
-    if prepare_only: # warm up prepare only jit
+    prepare_only = vipc_dropped_frames > 0
+    if prepare_only:
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
     bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
