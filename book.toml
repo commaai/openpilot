@@ -7,12 +7,17 @@ src = "docs"
 build-dir = "docs_site"
 create-missing = false
 
+[preprocessor.glossary]
+command = "python3 scripts/docs/mdbook_glossary.py"
+
 [output.html]
 site-url = "https://docs.comma.ai/"
 cname = "docs.comma.ai"
 git-repository-url = "https://github.com/commaai/openpilot/"
 edit-url-template = "https://github.com/commaai/openpilot/edit/master/{path}"
 no-section-label = true
+additional-css = ["theme/glossary.css"]
+additional-js = ["theme/glossary.js"]
 
 [output.html.print]
 enable = true

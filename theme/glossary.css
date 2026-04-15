@@ -1,0 +1,48 @@
+.glossary-term {
+  position: relative;
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+
+.glossary-term .tooltip-content {
+  width: max-content;
+  max-width: min(28rem, calc(100vw - 2rem));
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--searchbar-border-color);
+  border-radius: 0.4rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-decoration: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  z-index: 1000;
+  pointer-events: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.glossary-term:hover .tooltip-content,
+.glossary-term:focus-within .tooltip-content {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.tooltip-content .tooltip-glossary-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--links);
+  text-decoration: none;
+}
+
+.tooltip-content .tooltip-glossary-link:hover {
+  text-decoration: underline;
+}
