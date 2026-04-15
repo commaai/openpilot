@@ -90,7 +90,7 @@ OS04C10::OS04C10() {
     gamma_lut_rgb.push_back((uint32_t)((10*fx)/(1+9*fx)*1023.0 + 0.5));
   }
   prepare_gamma_lut();
-  prepare_noise_std_lut(0.5f, 100.0f);
+  prepare_noise_std_lut(0.1f, 25.0f);
   linearization_lut = {
     0x02000000, 0x02000000, 0x02000000, 0x02000000,
     0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,

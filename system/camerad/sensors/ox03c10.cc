@@ -78,7 +78,7 @@ OX03C10::OX03C10() {
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
   prepare_gamma_lut();
-  prepare_noise_std_lut(0.5f, 100.0f);
+  prepare_noise_std_lut(0.1f, 25.0f);
   linearization_lut = {
     0x00200000, 0x00200000, 0x00200000, 0x00200000,
     0x00404080, 0x00404080, 0x00404080, 0x00404080,
