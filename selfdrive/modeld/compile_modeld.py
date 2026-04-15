@@ -240,6 +240,7 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   print('pickle round trip')
   with open(pkl_path, "wb") as f:
     pickle.dump(run_policy_jit, f)
+    print(f"  Saved to {pkl_path}")
   with open(pkl_path, "rb") as f:
     run_policy_jit = pickle.load(f)
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)

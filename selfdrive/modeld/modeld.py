@@ -103,7 +103,7 @@ class ModelState:
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = pickle.loads(read_file_chunked(str(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False))))
-    # self.warp = pickle.loads(read_file_chunked(str(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True))))
+    self.warp_enqueue = pickle.loads(read_file_chunked(str(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True))))
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -120,8 +120,6 @@ class ModelState:
         self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
       self.full_frames[key] = self._blob_cache[cache_key]
 
-    if prepare_only:
-      return None
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
@@ -130,6 +128,10 @@ class ModelState:
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
+
+    if prepare_only:
+      self.warp_enqueue(**self.bufs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+      return None
 
     vision_output, policy_output = self.run_policy(
       **self.bufs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
