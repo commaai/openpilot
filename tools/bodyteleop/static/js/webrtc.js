@@ -15,15 +15,6 @@ export function offerRtcRequest(sdp, type) {
 }
 
 
-export function playSoundRequest(sound) {
-  return fetch('/sound', {
-    body: JSON.stringify({sound}),
-    headers: {'Content-Type': 'application/json'},
-    method: 'POST'
-  });
-}
-
-
 export function pingHeadRequest() {
   return fetch('/', {
     method: 'HEAD'
@@ -38,20 +29,18 @@ export function createPeerConnection(pc) {
 
   pc = new RTCPeerConnection(config);
 
-  // connect audio / video
+  // connect video
   pc.addEventListener('track', function(evt) {
     console.log("Adding Tracks!")
     if (evt.track.kind == 'video')
       document.getElementById('video').srcObject = evt.streams[0];
-    else
-      document.getElementById('audio').srcObject = evt.streams[0];
   });
   return pc;
 }
 
 
 export function negotiate(pc) {
-  return pc.createOffer({offerToReceiveAudio:true, offerToReceiveVideo:true}).then(function(offer) {
+  return pc.createOffer({offerToReceiveVideo:true}).then(function(offer) {
     return pc.setLocalDescription(offer);
   }).then(function() {
     return new Promise(function(resolve) {
@@ -90,14 +79,6 @@ function isMobile() {
 
 
 export const constraints = {
-  audio: {
-    autoGainControl: false,
-    sampleRate: 48000,
-    sampleSize: 16,
-    echoCancellation: true,
-    noiseSuppression: true,
-    channelCount: 1
-  },
   video: isMobile()
 };
 
@@ -105,23 +86,8 @@ export const constraints = {
 export function start(pc, dc) {
   pc = createPeerConnection(pc);
 
-  // add audio track
-  navigator.mediaDevices.enumerateDevices()
-    .then(function(devices) {
-      const hasAudioInput = devices.find((device) => device.kind === "audioinput");
-      var modifiedConstraints = {};
-      modifiedConstraints.video = constraints.video;
-      modifiedConstraints.audio = hasAudioInput ? constraints.audio : false;
-
-      return Promise.resolve(modifiedConstraints);
-    })
-    .then(function(constraints) {
-      if (constraints.audio || constraints.video) {
-        return navigator.mediaDevices.getUserMedia(constraints);
-      } else{
-        return Promise.resolve(null);
-      }
-    })
+  // add a local video track on mobile
+  (constraints.video ? navigator.mediaDevices.getUserMedia(constraints) : Promise.resolve(null))
     .then(function(stream) {
       if (stream) {
         stream.getTracks().forEach(function(track) {

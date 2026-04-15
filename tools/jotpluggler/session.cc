@@ -355,7 +355,7 @@ bool apply_route_slice_change(AppSession *session, UiState *state, std::string_v
   int begin = 0;
   int end = 0;
   if (!parse_slice_spec(slice_text, &begin, &end)) {
-    state->error_text = "Slice must be N or N:M.";
+    state->error_text = "Slice must be N, N:, or N:M.";
     state->open_error_popup = true;
     return false;
   }

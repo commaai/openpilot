@@ -49,6 +49,8 @@ def diff_format(diffs, ref, new, field) -> list[str]:
   msg_type = field.split(".")[0]
   ref_ts = [(m.logMonoTime, MsgWrap(m)) for m in ref.get(msg_type, [])]
   new_wrapped = [MsgWrap(m) for m in new.get(msg_type, [])]
+  if not ref_ts or not new_wrapped:
+    return format_numeric_diffs(diffs)
   return format_diff(diffs, ref_ts, new_wrapped, field)
 
 
