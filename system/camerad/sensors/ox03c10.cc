@@ -67,7 +67,6 @@ OX03C10::OX03C10() {
   target_grey_factor = 0.01;
 
   black_level = 0;
-  ife_abf_enable = true;
   color_correct_matrix = {
     0x000000b6, 0x00000ff1, 0x00000fda,
     0x00000fcc, 0x000000b9, 0x00000ffb,
@@ -79,6 +78,7 @@ OX03C10::OX03C10() {
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
   prepare_gamma_lut();
+  prepare_noise_std_lut(0.5f, 100.0f);
   linearization_lut = {
     0x00200000, 0x00200000, 0x00200000, 0x00200000,
     0x00404080, 0x00404080, 0x00404080, 0x00404080,

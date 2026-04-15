@@ -159,7 +159,7 @@ int build_update(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std:
   dst += write_cont(dst, 0x40, {
     0x00000c06 |
     ((uint32_t)(cam.vignetting_correction) << 8) |
-    ((uint32_t)(s->ife_abf_enable) << 7),
+    (1 << 7),
   });
   dst += write_cont(dst, 0x44, {
     0x00000000,
@@ -201,11 +201,7 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
 
   uint64_t addr;
 
-  if (s->ife_abf_enable) {
-    // Conservative raw-domain denoise. This is register-only for now; future
-    // tuning can replace these defaults without changing the IFE plumbing.
-    dst += build_ife_abf(dst, s);
-  }
+  dst += build_ife_abf(dst, s);
 
   // setup
   dst += write_cont(dst, 0x478, {
@@ -274,6 +270,8 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size()*sizeof(uint32_t), 0xc24, 28);  // B
   patches.push_back(addr - (uint64_t)start);
   dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size()*sizeof(uint32_t), 0xc24, 30);  // R
+  patches.push_back(addr - (uint64_t)start);
+  dst += write_dmi(dst, &addr, s->noise_std_lut.size()*sizeof(uint32_t), 0xc24, 12);
   patches.push_back(addr - (uint64_t)start);
 
   // output size/scaling

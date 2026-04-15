@@ -866,7 +866,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   // sets up the kernel driver to do address translation for the IFE
   {
     // order here corresponds to the one in build_initial_config
-    assert(patches.size() == 6 || patches.size() == 0);
+    assert(patches.size() == 7 || patches.size() == 0);
 
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
     if (patches.size() > 0) {
@@ -881,6 +881,9 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
       for (int i = 0; i < 3; i++) {
         add_patch(pkt.get(), ife_cmd.handle, patches[i+3], ife_gamma_lut.handle, ife_gamma_lut.size*i);
       }
+
+      // ABF noise std LUT
+      add_patch(pkt.get(), ife_cmd.handle, patches[6], ife_abf_lut.handle, 0);
     }
   }
 
@@ -1104,6 +1107,9 @@ void SpectraCamera::configISP() {
     for (int i = 0; i < 2; i++) {
       memcpy(ife_vignetting_lut.ptr + ife_vignetting_lut.size*i, sensor->vignetting_lut.data(), ife_vignetting_lut.size);
     }
+    assert(sensor->noise_std_lut.size() == 64);
+    ife_abf_lut.init(m, sensor->noise_std_lut.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu);
+    memcpy(ife_abf_lut.ptr, sensor->noise_std_lut.data(), ife_abf_lut.size);
   }
 
   config_ife(0, 1, true);

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <map>
 #include <utility>
@@ -69,7 +71,6 @@ public:
   uint32_t readout_time_ns;  // used to recover EOF from SOF
 
   // ISP image processing params
-  bool ife_abf_enable = false;
   uint32_t black_level;
   std::vector<uint32_t> color_correct_matrix;  // 3x3
   std::vector<uint32_t> gamma_lut_rgb;         // gamma LUTs are length 64 * sizeof(uint32_t); same for r/g/b here
@@ -78,6 +79,23 @@ public:
       gamma_lut_rgb[i] |= ((uint32_t)(gamma_lut_rgb[i+1] - gamma_lut_rgb[i]) << 10);
     }
     gamma_lut_rgb.pop_back();
+  }
+  std::vector<uint32_t> noise_std_lut;         // ABF noise std LUT, length 64
+  void prepare_noise_std_lut(float shot_noise_factor, float read_noise_sq) {
+    // noise model: noise_std = sqrt(shot_noise_factor * signal + read_noise_sq)
+    // LUT value = (1 << 13) / noise_std, monotonically decreasing
+    uint32_t raw[65];
+    for (int i = 0; i < 65; i++) {
+      float signal = std::max(0.0f, (float)(i * 64 + 32) - (float)black_level);
+      float noise_std = sqrtf(shot_noise_factor * signal + read_noise_sq);
+      raw[i] = std::min(511U, (uint32_t)(8192.0f / noise_std));
+    }
+    noise_std_lut.resize(64);
+    for (int i = 0; i < 64; i++) {
+      uint32_t base = raw[i];
+      uint32_t delta = (raw[i] > raw[i + 1]) ? (raw[i] - raw[i + 1]) : (raw[i + 1] - raw[i]);
+      noise_std_lut[i] = base | (std::min(delta, 511U) << 9);
+    }
   }
   std::vector<uint32_t> linearization_lut;     // length 36
   std::vector<uint32_t> linearization_pts;     // length 4
