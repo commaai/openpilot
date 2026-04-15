@@ -6,6 +6,8 @@ repo_url = "https://github.com/commaai/openpilot/"
 docs_dir = "docs"
 site_dir = "docs_site/"
 
+extra_css = ["stylesheets/extra.css"]
+
 nav = [
   { "Home" = "index.md" },
   { "Getting Started" = [
@@ -39,6 +41,7 @@ nav = [
 ]
 
 [project.theme]
+logo = "assets/comma-logo.png"
 features = [
   "navigation.expand",
   "navigation.instant",

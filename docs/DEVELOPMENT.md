@@ -13,12 +13,12 @@ uv pip install .[docs]
 
 **2. Build the new site**
 ``` bash
-zensical build
+docs build
 ```
 
 **3. Run the new site locally**
 ``` bash
-zensical serve
+docs serve
 ```
 
 References:
