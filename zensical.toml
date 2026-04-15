@@ -12,7 +12,7 @@ nav = [
   { "What is openpilot?" = "index.md" },
   { "How-to" = [
     { "Turn the speed blue" = "how-to/turn-the-speed-blue.md" },
-    { "Connect to a comma 3X" = "how-to/connect-to-comma.md" },
+    { "Connect to a comma 3X or four" = "how-to/connect-to-comma.md" },
   ] },
   { "Concepts" = [
     { "Logs" = "concepts/logs.md" },
@@ -60,5 +60,23 @@ link = "https://discord.comma.ai"
 [[project.extra.social]]
 icon = "fontawesome/brands/x-twitter"
 link = "https://x.com/comma_ai"
+
+[project.markdown_extensions.attr_list]
+
+[project.markdown_extensions.admonition]
+
+[project.markdown_extensions.md_in_html]
+
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+
+[project.markdown_extensions.pymdownx.inlinehilite]
+
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [{ name = "mermaid", class = "mermaid" }]
+
+[project.markdown_extensions.pymdownx.details]
 
 [project.markdown_extensions."ext.glossary"]
