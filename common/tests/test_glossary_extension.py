@@ -20,20 +20,10 @@ def glossary_file(tmp_path: Path) -> Path:
   file_path.write_text(
     dedent(
       """
-      [glossary.onroad]
-      title = "Onroad"
-      category = "System States"
-      description = "openpilot's system state while ignition is on."
-
-      [glossary.route]
-      title = "Route"
-      category = "Logs"
-      description = "A route is a recording of an onroad session."
-
-      [glossary.segment]
-      title = "Segment"
-      category = "Logs"
-      description = "Routes are split into one minute chunks called segments."
+      [glossary]
+      onroad = "openpilot's system state while ignition is on."
+      route = "A route is a recording of an onroad session."
+      segment = "Routes are split into one minute chunks called segments."
       """
     ).strip()
     + "\n"
@@ -58,6 +48,7 @@ def test_glossary_page_is_generated_from_structured_data(glossary_file: Path) ->
   assert html.count("<li>") == 3
   assert "{ #onroad }" not in html
   assert "glossary-term" not in html
+  assert "<strong>onroad</strong>" in html
 
 
 def test_first_occurrence_of_each_term_is_annotated(glossary_file: Path) -> None:

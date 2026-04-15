@@ -33,10 +33,8 @@ SKIP_TAGS = {
 @dataclass(frozen=True)
 class GlossaryTerm:
   slug: str
-  title: str
+  label: str
   description: str
-  category: str
-  aliases: tuple[str, ...]
 
   @property
   def tooltip(self) -> str:
@@ -75,45 +73,28 @@ class Glossary:
       data = tomllib.load(f)
 
     terms: list[GlossaryTerm] = []
-    for key, values in data.get("glossary", {}).items():
-      title = str(values.get("title", key.replace("_", " ").title())).strip()
-      description = str(values.get("description", "")).strip()
+    for key, value in data.get("glossary", {}).items():
+      label = str(key).strip().replace("_", " ")
+      description = str(value).strip()
       if not description:
         continue
 
-      aliases = tuple(
-        alias.strip()
-        for alias in values.get("aliases", [])
-        if isinstance(alias, str) and alias.strip()
-      )
-      category = str(values.get("category", "General")).strip() or "General"
       terms.append(
         GlossaryTerm(
-          slug=str(values.get("slug", key.replace("_", "-").lower())),
-          title=title,
+          slug=label.replace(" ", "-").lower(),
+          label=label,
           description=description,
-          category=category,
-          aliases=aliases,
         )
       )
 
     return cls(terms)
 
-  def grouped(self) -> list[tuple[str, list[GlossaryTerm]]]:
-    groups: dict[str, list[GlossaryTerm]] = {}
-    for term in self.terms:
-      groups.setdefault(term.category, []).append(term)
-    return list(groups.items())
-
   @staticmethod
   def _build_variants(terms: list[GlossaryTerm]) -> list[GlossaryVariant]:
     variants: list[GlossaryVariant] = []
     for term in terms:
-      names = [term.title, *term.aliases]
-      names = sorted(set(names), key=len, reverse=True)
-      for name in names:
-        pattern = re.compile(rf"(?<!\w){re.escape(name)}(?!\w)", re.IGNORECASE)
-        variants.append(GlossaryVariant(term.slug, pattern))
+      pattern = re.compile(rf"(?<!\w){re.escape(term.label)}(?!\w)", re.IGNORECASE)
+      variants.append(GlossaryVariant(term.slug, pattern))
     return variants
 
 
@@ -131,7 +112,7 @@ class GlossaryPreprocessor(Preprocessor):
 
   def _render_glossary(self) -> str:
     lines = [
-      f'* <span id="{term.slug}"></span>**{term.title}**: {term.description}'
+      f'* <span id="{term.slug}"></span>**{term.label}**: {term.description}'
       for term in self.glossary.terms
     ]
     return "\n".join(lines)
