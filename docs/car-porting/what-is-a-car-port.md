@@ -8,7 +8,7 @@ A car port enables openpilot support on a particular car. Each car model openpil
 
 # Structure of a car port
 
-Virtually all car-specific code is contained in two other repositories: [opendbc](https://github.com/commaai/opendbc) and [panda](https://github.com/commaai/panda).
+All car-specific code is contained in the [opendbc](https://github.com/commaai/opendbc) project.
 
 ## opendbc
 
@@ -23,8 +23,8 @@ Each car brand is supported by a standard interface structure in `opendbc/car/[b
 
 ## safety
 
-* `opendbc_repo/opendbc/safety/modes/[brand].h`: Brand-specific safety logic
-* `opendbc_repo/opendbc/safety/tests/test_[brand].py`: Brand-specific safety CI tests
+* `opendbc/safety/modes/[brand].h`: Brand-specific safety logic
+* `opendbc/safety/tests/test_[brand].py`: Brand-specific safety CI tests
 
 ## openpilot
 

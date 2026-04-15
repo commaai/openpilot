@@ -108,7 +108,8 @@ class GlossaryTreeprocessor(Treeprocessor):
 
     if child is None:
       parent.text = pieces[0] if isinstance(pieces[0], str) else ""
-      insert_at = 0 if isinstance(pieces[0], str) else -1
+      # Insert replacements for parent.text before the first existing child.
+      insert_at = -1
     else:
       assert index is not None
       child.tail = pieces[0] if isinstance(pieces[0], str) else ""
