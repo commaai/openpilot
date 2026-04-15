@@ -97,6 +97,24 @@ LOGS_SIZE = {  # MB per segment
 }
 LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
 
+TIME_SERIES_SERVICES = frozenset((
+  "managerState",
+  "uiDebug",
+  "deviceState",
+  "roadCameraState",
+  "wideRoadCameraState",
+  "driverCameraState",
+  "roadEncodeIdx",
+  "wideRoadEncodeIdx",
+  "driverEncodeIdx",
+  "longitudinalPlan",
+  "modelV2",
+  "driverStateV2",
+  "selfdriveState",
+  "livePose",
+  "liveParameters",
+))
+
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
@@ -177,10 +195,6 @@ class TestOnroad:
 
     cls.lr = list(LogReader(os.path.join(str(segs[0]), "rlog.zst")))
     mark_setup(f"read rlog ({len(cls.lr)} messages)")
-    st = time.monotonic()
-    cls.ts = msgs_to_time_series(cls.lr)
-    print("msgs to time series", time.monotonic() - st)
-    mark_setup("built time series")
     log_path = segs[0]
 
     cls.log_sizes = {}
@@ -193,6 +207,12 @@ class TestOnroad:
     for m in cls.lr:
       cls.msgs[m.which()].append(m)
     mark_setup(f"bucketed messages ({len(cls.msgs)} services)")
+
+    ts_msgs = [m for service in TIME_SERIES_SERVICES for m in cls.msgs.get(service, ())]
+    st = time.monotonic()
+    cls.ts = msgs_to_time_series(ts_msgs)
+    print("msgs to time series", time.monotonic() - st)
+    mark_setup(f"built time series ({len(ts_msgs)} filtered messages)")
     print(f"onroad setup total: {time.monotonic() - setup_st:.2f}s")
 
   def test_service_frequencies(self, subtests):
