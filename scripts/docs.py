@@ -4,9 +4,16 @@ from __future__ import annotations
 import os
 import shutil
 import signal
+import sys
 from pathlib import Path
 
-DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DOCS_DIR = REPO_ROOT / "docs"
+SITE_DIR = REPO_ROOT / "docs_site"
+sys.path.insert(0, str(REPO_ROOT))
+# Local docs build helpers live under docs/ so they stay near the content
+# source. The wrapper prunes them from docs_site/ after build.
+sys.path.insert(0, str(DOCS_DIR))
 
 
 def _materialize(docs: Path) -> dict[Path, str]:
@@ -33,12 +40,18 @@ def _raise_interrupt(*_):
   raise KeyboardInterrupt
 
 
+def _prune_site_output() -> None:
+  shutil.rmtree(SITE_DIR / "ext", ignore_errors=True)
+
+
 def main() -> None:
   signal.signal(signal.SIGTERM, _raise_interrupt)
   originals = _materialize(DOCS_DIR)
   try:
     from zensical.main import cli
-    cli()
+    cli(standalone_mode=False)
+    if len(sys.argv) > 1 and sys.argv[1] == "build":
+      _prune_site_output()
   finally:
     _restore(originals)
 

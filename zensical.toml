@@ -44,6 +44,7 @@ nav = [
 logo = "assets/comma-logo.png"
 features = [
   "navigation.expand",
+  "navigation.sections",
   "navigation.instant",
   "navigation.instant.prefetch",
   "content.code.copy",
@@ -62,3 +63,9 @@ link = "https://discord.comma.ai"
 [[project.extra.social]]
 icon = "fontawesome/brands/x-twitter"
 link = "https://x.com/comma_ai"
+
+[project.markdown_extensions."ext.glossary"]
+glossary_file = "docs/ext/glossary.toml"
+glossary_page = "concepts/glossary.md"
+placeholder = "{{GLOSSARY_DEFINITIONS}}"
+match_policy = "first"

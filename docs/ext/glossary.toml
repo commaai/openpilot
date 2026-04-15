@@ -1,0 +1,34 @@
+[glossary.onroad]
+title = "Onroad"
+category = "System States"
+description = "openpilot's system state while ignition is on."
+
+[glossary.offroad]
+title = "Offroad"
+category = "System States"
+description = "openpilot's system state while ignition is off."
+
+[glossary.route]
+title = "Route"
+category = "Logs"
+description = "A route is a recording of an onroad session."
+
+[glossary.segment]
+title = "Segment"
+category = "Logs"
+description = "Routes are split into one minute chunks called segments."
+
+[glossary.comma_connect]
+title = "comma connect"
+category = "Products"
+description = "The web viewer for all your routes; check it out at [connect.comma.ai](https://connect.comma.ai)."
+
+[glossary.panda]
+title = "panda"
+category = "Hardware"
+description = "The secondary processor on the device that implements the functional safety and directly talks to the car over CAN. See the [panda repo](https://github.com/commaai/panda)."
+
+[glossary.comma_four]
+title = "comma four"
+category = "Products"
+description = "The latest hardware by comma.ai for running openpilot. More info at [comma.ai/shop/comma-four](https://www.comma.ai/shop/comma-four)."
