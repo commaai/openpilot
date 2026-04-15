@@ -14,8 +14,8 @@ from openpilot.system.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
-SETTINGS_ZONE_WIDTH = 268
-ALERTS_ZONE_WIDTH = 160
+SETTINGS_ZONE_WIDTH = 280
+ALERTS_ZONE_WIDTH = 180
 
 NetworkType = log.DeviceState.NetworkType
 
