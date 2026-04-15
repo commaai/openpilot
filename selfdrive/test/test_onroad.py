@@ -97,6 +97,8 @@ LOGS_SIZE = {  # MB per segment
 }
 LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
 
+TIME_SERIES_SERVICES = frozenset(("managerState", "selfdriveState", "uiDebug"))
+
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
@@ -112,7 +114,7 @@ class TestOnroad:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       lr = list(LogReader(os.path.join(segs[-1], "rlog.zst")))
-      cls.ts = msgs_to_time_series(lr)
+      cls.ts = msgs_to_time_series(lr, include_types=TIME_SERIES_SERVICES)
       return
 
     # setup env
@@ -166,7 +168,7 @@ class TestOnroad:
     cls.msgs = defaultdict(list)
     for m in lr:
       cls.msgs[m.which()].append(m)
-    cls.ts = msgs_to_time_series(lr)
+    cls.ts = msgs_to_time_series(lr, include_types=TIME_SERIES_SERVICES)
 
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():

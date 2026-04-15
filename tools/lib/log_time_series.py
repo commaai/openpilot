@@ -63,15 +63,22 @@ def potentially_ragged_array(arr, dtype=None, **kwargs):
     return np.array(arr, dtype=object, **kwargs)
 
 
-def msgs_to_time_series(msgs):
+def msgs_to_time_series(msgs, include_types=None):
   """
     Convert an iterable of canonical capnp messages into a dictionary of time series.
     Each time series has a value with key "t" which consists of monotonically increasing timestamps
     in seconds.
+
+    include_types optionally limits conversion to a subset of message types.
   """
+  if include_types is not None:
+    include_types = frozenset(include_types)
+
   values = {}
   for msg in msgs:
     typ = msg.which()
+    if include_types is not None and typ not in include_types:
+      continue
 
     tm = msg.logMonoTime / 1.0e9
     msg_dict = get_message_dict(msg, typ)
