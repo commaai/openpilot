@@ -5,6 +5,7 @@ import time
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.body.animations import FaceAnimator, ASLEEP, INQUISITIVE, NORMAL, SLEEPY
 
@@ -29,6 +30,10 @@ class BodyLayout(Widget):
     self._last_input_time = time.monotonic()
     self._was_active = False
     self._font_bold = gui_app.font(FontWeight.BOLD)
+    self._offroad_label = UnifiedLabel("turn on ignition to use", 45, FontWeight.DISPLAY,
+                                       text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                                       alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                                       alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
     self.set_visible(False)
 
   def set_settings_callback(self, callback):
@@ -54,8 +59,7 @@ class BodyLayout(Widget):
   def _update_state(self):
     sm = ui_state.sm
 
-    active = ui_state.is_onroad()
-    if active:
+    if ui_state.is_onroad():
       if not self._was_active:
         self._last_input_time = time.monotonic()
         self._was_active = True
@@ -96,3 +100,8 @@ class BodyLayout(Widget):
       remove_set = set(animation.right_turn_remove)
       dots = [d for d in dots if d not in remove_set]
     self.draw_dot_grid(rect, dots)
+
+    if ui_state.is_offroad():
+      rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
+      upper_half = rl.Rectangle(rect.x, rect.y, rect.width, rect.height / 2)
+      self._offroad_label.render(upper_half)
