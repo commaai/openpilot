@@ -1390,29 +1390,46 @@ void SpectraCamera::configOfflineIFE() {
     },
   };
 
-  auto offline_dev_handle_ = device_acquire_handle_only(ife_offline_fd, session_handle);
-  assert(offline_dev_handle_);
-  ife_offline_dev_handle = *offline_dev_handle_;
-  ife_offline_split_acquire = true;
-  LOGD("acquire offline ife dev");
-
-  std::vector<uint8_t> acquire_hw_buf(sizeof(struct cam_isp_acquire_hw_info) + sizeof(in_port_info) - sizeof(uint64_t));
-  auto *acquire_hw_info = reinterpret_cast<struct cam_isp_acquire_hw_info *>(acquire_hw_buf.data());
-  memset(acquire_hw_info, 0, acquire_hw_buf.size());
-  *acquire_hw_info = {
-    .common_info_version = CAM_ISP_ACQUIRE_COMMON_VER0,
-    .common_info_size = CAM_ISP_ACQUIRE_COMMON_SIZE_VER0,
-    .common_info_offset = 0,
-    .num_inputs = 1,
-    .input_info_version = CAM_ISP_ACQUIRE_INPUT_VER0,
-    .input_info_size = sizeof(in_port_info),
-    .input_info_offset = 0,
-    .data = 0,
+  struct cam_isp_resource isp_resource = {
+    .resource_id = CAM_ISP_RES_ID_PORT,
+    .length = sizeof(in_port_info),
+    .handle_type = CAM_HANDLE_USER_POINTER,
+    .reserved = 0,
+    .res_hdl = (uint64_t)&in_port_info,
   };
-  memcpy(&acquire_hw_info->data, &in_port_info, sizeof(in_port_info));
 
-  int ret = device_acquire_hw(ife_offline_fd, session_handle, ife_offline_dev_handle, acquire_hw_info, acquire_hw_buf.size());
-  assert(ret == 0);
+  auto offline_dev_handle_ = device_acquire(ife_offline_fd, session_handle, &isp_resource);
+  if (offline_dev_handle_) {
+    ife_offline_dev_handle = *offline_dev_handle_;
+    ife_offline_split_acquire = false;
+    LOGD("acquire offline ife dev (combined)");
+  } else {
+    LOGD("falling back to split offline ife acquire");
+
+    offline_dev_handle_ = device_acquire_handle_only(ife_offline_fd, session_handle);
+    assert(offline_dev_handle_);
+    ife_offline_dev_handle = *offline_dev_handle_;
+
+    std::vector<uint8_t> acquire_hw_buf(sizeof(struct cam_isp_acquire_hw_info) + sizeof(in_port_info) - sizeof(uint64_t));
+    auto *acquire_hw_info = reinterpret_cast<struct cam_isp_acquire_hw_info *>(acquire_hw_buf.data());
+    memset(acquire_hw_info, 0, acquire_hw_buf.size());
+    *acquire_hw_info = {
+      .common_info_version = CAM_ISP_ACQUIRE_COMMON_VER0,
+      .common_info_size = CAM_ISP_ACQUIRE_COMMON_SIZE_VER0,
+      .common_info_offset = 0,
+      .num_inputs = 1,
+      .input_info_version = CAM_ISP_ACQUIRE_INPUT_VER0,
+      .input_info_size = sizeof(in_port_info),
+      .input_info_offset = 0,
+      .data = 0,
+    };
+    memcpy(&acquire_hw_info->data, &in_port_info, sizeof(in_port_info));
+
+    int ret = device_acquire_hw(ife_offline_fd, session_handle, ife_offline_dev_handle, acquire_hw_info, acquire_hw_buf.size());
+    assert(ret == 0);
+    ife_offline_split_acquire = true;
+    LOGD("acquire offline ife dev (split)");
+  }
 
   ife_offline_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, ife_buf_depth);
   config_ife_offline(0, 1, true);
