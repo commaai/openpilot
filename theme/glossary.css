@@ -8,7 +8,7 @@
 
 .glossary-term .tooltip-content {
   width: max-content;
-  max-width: min(34rem, calc(100vw - 2rem));
+  max-width: min(44rem, calc(100vw - 2rem));
   position: absolute;
   top: calc(100% + 0.35rem);
   left: 50%;
@@ -18,9 +18,9 @@
   border: 1px solid var(--searchbar-border-color);
   border-radius: 0.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 0.85rem 0.95rem;
-  font-size: 0.98rem;
-  line-height: 1.5;
+  padding: 1rem 1.1rem;
+  font-size: 1.95rem;
+  line-height: 1.35;
   text-decoration: none;
   opacity: 0;
   visibility: hidden;
@@ -47,6 +47,6 @@
   display: inline-block;
   margin-top: 0.6rem;
   color: var(--links);
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 600;
 }

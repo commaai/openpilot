@@ -2,6 +2,10 @@
   const DATA_SCRIPT_ID = "openpilot-glossary-data";
   const IGNORED_TAGS = new Set(["A", "BUTTON", "CODE", "KBD", "NOSCRIPT", "PRE", "SAMP", "SCRIPT", "STYLE", "SVG", "TEXTAREA"]);
 
+  function siteRoot() {
+    return typeof path_to_root !== "undefined" ? path_to_root : "";
+  }
+
   function escapeRegex(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
@@ -42,7 +46,7 @@
   function createTooltip(document, visibleText, entry) {
     const wrapper = document.createElement("a");
     wrapper.className = "glossary-term";
-    wrapper.href = `${window.path_to_root || ""}concepts/glossary.html#${entry.anchor}`;
+    wrapper.href = `${siteRoot()}concepts/glossary.html#${entry.anchor}`;
     wrapper.setAttribute("aria-label", `${visibleText}: ${entry.description}`);
 
     const tooltip = document.createElement("span");
