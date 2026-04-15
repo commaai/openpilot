@@ -115,6 +115,15 @@ class TestOnroad:
       cls.ts = msgs_to_time_series(cls.lr)
       return
 
+    setup_st = time.monotonic()
+    last_mark = setup_st
+
+    def mark_setup(name):
+      nonlocal last_mark
+      now = time.monotonic()
+      print(f"onroad setup timing: {name}: +{now - last_mark:.2f}s (total {now - setup_st:.2f}s)")
+      last_mark = now
+
     # setup env
     params = Params()
     params.remove("CurrentRoute")
@@ -125,46 +134,66 @@ class TestOnroad:
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
+    mark_setup("environment prepared")
 
     # start manager and run openpilot for TEST_DURATION
     proc = None
+    route = None
+    segs = []
     try:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
       cls.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
+      mark_setup("manager spawned")
 
       sm = messaging.SubMaster(['carState'])
       with Timeout(30, "controls didn't start"):
         while not sm.seen['carState']:
           sm.update(1000)
+      mark_setup("controls started")
 
       route = params.get("CurrentRoute")
       assert route is not None
 
       segs = list(Path(Paths.log_root()).glob(f"{route}--*"))
       assert len(segs) == 1
+      print(f"onroad setup route: {route}, segments found: {len(segs)}")
+      mark_setup("route ready")
 
       time.sleep(TEST_DURATION)
+      mark_setup("capture window complete")
     finally:
       if proc is not None:
         proc.terminate()
-        if proc.wait(60) is None:
+        mark_setup("manager terminate sent")
+        try:
+          proc.wait(timeout=60)
+          mark_setup("manager exited")
+        except subprocess.TimeoutExpired:
+          mark_setup("manager exit wait exceeded 60s")
           proc.kill()
+          proc.wait(timeout=5)
+          mark_setup("manager killed")
 
     cls.lr = list(LogReader(os.path.join(str(segs[0]), "rlog.zst")))
+    mark_setup(f"read rlog ({len(cls.lr)} messages)")
     st = time.monotonic()
     cls.ts = msgs_to_time_series(cls.lr)
     print("msgs to time series", time.monotonic() - st)
+    mark_setup("built time series")
     log_path = segs[0]
 
     cls.log_sizes = {}
     for f in log_path.iterdir():
       assert f.is_file()
       cls.log_sizes[f] = f.stat().st_size / 1e6
+    mark_setup(f"stat log files ({len(cls.log_sizes)} files)")
 
     cls.msgs = defaultdict(list)
     for m in cls.lr:
       cls.msgs[m.which()].append(m)
+    mark_setup(f"bucketed messages ({len(cls.msgs)} services)")
+    print(f"onroad setup total: {time.monotonic() - setup_st:.2f}s")
 
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():
