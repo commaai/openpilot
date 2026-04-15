@@ -111,9 +111,6 @@ tools = [
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
-[project.scripts]
-docs = "scripts.docs:main"
-
 [project.urls]
 Homepage = "https://github.com/commaai/openpilot"
 

@@ -28,11 +28,6 @@ SKIP_TAGS = {
   "style",
 }
 
-
-def slugify(label: str) -> str:
-  return label.replace(" ", "-").replace("_", "-").lower()
-
-
 def clean_tooltip(description: str) -> str:
   text = re.sub(r"\[([^\]]+)]\([^)]+\)", r"\1", description)
   text = re.sub(r"`([^`]+)`", r"\1", text)
@@ -54,7 +49,7 @@ def load_glossary(file_path: str) -> list[GlossaryTerm]:
     glossary.append(
       {
         "label": label,
-        "slug": slugify(label),
+        "slug": label.replace(" ", "-").replace("_", "-").lower(),
         "description": description,
         "tooltip": clean_tooltip(description),
         "pattern": re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE),
@@ -62,15 +57,6 @@ def load_glossary(file_path: str) -> list[GlossaryTerm]:
     )
 
   return glossary
-
-
-def render_glossary(glossary: list[GlossaryTerm]) -> str:
-  return "\n".join(
-    f'* <span id="{term["slug"]}"></span>**{term["label"]}**: {term["description"]}'
-    for term in glossary
-  )
-
-
 class GlossaryPreprocessor(Preprocessor):
   def __init__(self, md, glossary: list[GlossaryTerm], placeholder: str):
     super().__init__(md)
@@ -81,7 +67,11 @@ class GlossaryPreprocessor(Preprocessor):
     markdown = "\n".join(lines)
     if self.placeholder not in markdown:
       return lines
-    return markdown.replace(self.placeholder, render_glossary(self.glossary)).splitlines()
+    glossary = "\n".join(
+      f'* <span id="{term["slug"]}"></span>**{term["label"]}**: {term["description"]}'
+      for term in self.glossary
+    )
+    return markdown.replace(self.placeholder, glossary).splitlines()
 
 
 class GlossaryTreeprocessor(Treeprocessor):
@@ -89,66 +79,47 @@ class GlossaryTreeprocessor(Treeprocessor):
     super().__init__(md)
     self.glossary = glossary
     self.glossary_page = glossary_page
-    self.match_policy = match_policy
+    self.first_only = match_policy == "first"
     self.seen: set[str] = set()
 
   def run(self, root: ET.Element) -> None:
-    processor = self._links_processor()
+    at = self.md.treeprocessors.get_index_for_name("zrelpath")
+    processor = self.md.treeprocessors[at]
+    if not isinstance(processor, LinksProcessor):
+      raise TypeError("Links processor not registered")
     if processor.path == self.glossary_page:
       return
 
     self.seen.clear()
     self._walk(root, processor.path)
 
-  def _links_processor(self) -> LinksProcessor:
-    at = self.md.treeprocessors.get_index_for_name("zrelpath")
-    processor = self.md.treeprocessors[at]
-    if not isinstance(processor, LinksProcessor):
-      raise TypeError("Links processor not registered")
-    return processor
-
   def _walk(self, element: ET.Element, page_path: str) -> None:
     if element.tag in SKIP_TAGS or element.attrib.get("data-glossary-skip") is not None:
       return
 
-    self._replace_text(element, page_path)
+    self._replace(element, page_path)
 
     idx = 0
     while idx < len(element):
       child = element[idx]
       self._walk(child, page_path)
-      idx = self._replace_tail(element, idx, page_path) + 1
+      idx = self._replace(element, page_path, idx) + 1
 
-  def _replace_text(self, element: ET.Element, page_path: str) -> None:
-    pieces = self._pieces(element.text or "", page_path)
+  def _replace(self, parent: ET.Element, page_path: str, index: int | None = None) -> int:
+    child = None if index is None else parent[index]
+    text = parent.text if child is None else child.tail
+    pieces = self._pieces(text or "", page_path)
     if not pieces:
-      return
+      return -1 if index is None else index
 
-    element.text = pieces[0] if isinstance(pieces[0], str) else ""
-    insert_at = 0 if isinstance(pieces[0], str) else -1
-    start = 1 if isinstance(pieces[0], str) else 0
+    if child is None:
+      parent.text = pieces[0] if isinstance(pieces[0], str) else ""
+      insert_at = 0 if isinstance(pieces[0], str) else -1
+    else:
+      assert index is not None
+      child.tail = pieces[0] if isinstance(pieces[0], str) else ""
+      insert_at = index
 
-    previous: ET.Element | None = None
-    for piece in pieces[start:]:
-      if isinstance(piece, str):
-        if previous is None:
-          element.text = (element.text or "") + piece
-        else:
-          previous.tail = (previous.tail or "") + piece
-        continue
-
-      insert_at += 1
-      element.insert(insert_at, piece)
-      previous = piece
-
-  def _replace_tail(self, parent: ET.Element, index: int, page_path: str) -> int:
-    child = parent[index]
-    pieces = self._pieces(child.tail or "", page_path)
-    if not pieces:
-      return index
-
-    child.tail = pieces[0] if isinstance(pieces[0], str) else ""
-    insert_at = index
     start = 1 if isinstance(pieces[0], str) else 0
     previous = child
 
@@ -176,7 +147,7 @@ class GlossaryTreeprocessor(Treeprocessor):
         pieces.append(text[cursor:start])
 
       pieces.append(self._anchor(page_path, term, text[start:end]))
-      if self.match_policy == "first":
+      if self.first_only:
         self.seen.add(term["slug"])
       cursor = end
 
@@ -189,7 +160,7 @@ class GlossaryTreeprocessor(Treeprocessor):
   def _next_match(self, text: str, start: int) -> tuple[GlossaryTerm, int, int] | None:
     best: tuple[GlossaryTerm, int, int] | None = None
     for term in self.glossary:
-      if self.match_policy == "first" and term["slug"] in self.seen:
+      if self.first_only and term["slug"] in self.seen:
         continue
 
       found = term["pattern"].search(text, start)
@@ -218,7 +189,7 @@ class GlossaryTreeprocessor(Treeprocessor):
       {
         "class": "glossary-term",
         "data-glossary-term": "",
-        "href": f"{self._glossary_href(page_path)}#{term['slug']}",
+        "href": f"{posixpath.relpath(self.glossary_page, posixpath.dirname(page_path) or '.')}#{term['slug']}",
       },
     )
     ET.SubElement(link, "span", {"class": "glossary-term__label"}).text = label
@@ -231,11 +202,6 @@ class GlossaryTreeprocessor(Treeprocessor):
       },
     ).text = term["tooltip"]
     return link
-
-  def _glossary_href(self, page_path: str) -> str:
-    current_dir = posixpath.dirname(page_path) or "."
-    return posixpath.relpath(self.glossary_page, current_dir)
-
 
 class GlossaryExtension(Extension):
   def __init__(self, **kwargs: Any):
