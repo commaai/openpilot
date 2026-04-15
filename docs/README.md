@@ -13,12 +13,12 @@ uv pip install -r pyproject.toml --extra docs
 
 **2. Build the new site**
 ``` bash
-mdbook build
+mdbook build docs
 ```
 
 **3. Run the new site locally**
 ``` bash
-mdbook serve
+mdbook serve docs
 ```
 
 References:

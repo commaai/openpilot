@@ -1,4 +1,4 @@
-<!-- Generated from docs/glossary.toml by scripts/docs/mdbook_glossary.py. -->
+<!-- Generated from docs/glossary.toml by docs/scripts/mdbook_glossary.py. -->
 # openpilot glossary
 
 {{GLOSSARY_DEFINITIONS}}

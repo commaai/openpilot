@@ -6,7 +6,7 @@ import tomllib
 
 
 GLOSSARY_PLACEHOLDER = "{{GLOSSARY_DEFINITIONS}}"
-GLOSSARY_PATH = Path("docs/glossary.toml")
+GLOSSARY_PATH = Path("glossary.toml")
 GLOSSARY_PAGE = "concepts/glossary.md"
 DATA_SCRIPT_ID = "openpilot-glossary-data"
 

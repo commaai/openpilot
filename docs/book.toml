@@ -1,23 +1,23 @@
 [book]
 title = "openpilot docs"
 language = "en"
-src = "docs"
+src = "."
 
 [build]
-build-dir = "docs_site"
+build-dir = "../docs_site"
 create-missing = false
 
 [preprocessor.glossary]
-command = "python3 scripts/docs/mdbook_glossary.py"
+command = "python3 scripts/mdbook_glossary.py"
 
 [output.html]
 site-url = "https://docs.comma.ai/"
 cname = "docs.comma.ai"
 git-repository-url = "https://github.com/commaai/openpilot/"
-edit-url-template = "https://github.com/commaai/openpilot/edit/master/{path}"
+edit-url-template = "https://github.com/commaai/openpilot/edit/master/docs/{path}"
 no-section-label = true
-additional-css = ["docs/theme/glossary.css"]
-additional-js = ["docs/theme/glossary.js"]
+additional-css = ["theme/glossary.css"]
+additional-js = ["theme/glossary.js"]
 
 [output.html.print]
 enable = true

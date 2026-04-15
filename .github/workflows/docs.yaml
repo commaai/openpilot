@@ -32,7 +32,7 @@ jobs:
         python3 -m venv .docs-venv
         .docs-venv/bin/python -m pip install uv
         .docs-venv/bin/uv pip install --python .docs-venv/bin/python -r pyproject.toml --extra docs
-        .docs-venv/bin/mdbook build
+        .docs-venv/bin/mdbook build docs
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v6
