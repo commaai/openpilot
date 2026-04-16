@@ -14,11 +14,6 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 
-# https://github.com/tinygrad/tinygrad/issues/15682
-from tinygrad.uop.ops import UOp, Ops
-_orig = UOp.__reduce__
-UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig(self)
-
 
 @dataclass
 class CompileConfig:
