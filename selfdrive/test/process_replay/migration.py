@@ -482,22 +482,45 @@ def migrate_onroadEvents(msgs):
   return ops, [], []
 
 
-@migration(inputs=["driverMonitoringState"])
+@migration(inputs=["driverMonitoringStateDEPRECATED"])
 def migrate_driverMonitoringState(msgs):
   ops = []
   for index, msg in msgs:
-    msg = msg.as_builder()
-    events = []
-    for event in msg.driverMonitoringState.deprecated.events:
-      try:
-        if not str(event.name).endswith('DEPRECATED'):
-          migrated_event = migrate_onroad_event(event)
-          if migrated_event is not None:
-            events.append(migrated_event)
-      except RuntimeError:  # Member was null
-        traceback.print_exc()
+    old = msg.driverMonitoringStateDEPRECATED
+    new_msg = messaging.new_message('driverMonitoringState', valid=msg.valid, logMonoTime=msg.logMonoTime)
+    dm = new_msg.driverMonitoringState
 
-    msg.driverMonitoringState.events = events
-    ops.append((index, msg.as_reader()))
+    dm.isRHD = old.isRHD
+    dm.monitoringPolicy = log.DriverMonitoringState.MonitoringPolicy.vision if old.isActiveMode else \
+                          log.DriverMonitoringState.MonitoringPolicy.wheeltouch
+
+    # old thresholds: vision prompt=6/11, pre=8/11; wheeltouch prompt=6/30, pre=15/30
+    if old.isActiveMode:
+      threshold_pre, threshold_prompt = 8. / 11., 6. / 11.
+    else:
+      threshold_pre, threshold_prompt = 15. / 30., 6. / 30.
+
+    AlertLevel = log.DriverMonitoringState.AlertLevel
+    if old.awarenessStatus <= 0.:
+      dm.alertLevel = AlertLevel.three
+    elif old.awarenessStatus <= threshold_prompt:
+      dm.alertLevel = AlertLevel.two
+    elif old.awarenessStatus <= threshold_pre:
+      dm.alertLevel = AlertLevel.one
+
+    dm.visionPolicyState.awarenessPercent = max(0., min(100., old.awarenessActive * 100.))
+    dm.visionPolicyState.awarenessStep = old.stepChange if old.isActiveMode else 0.
+    dm.visionPolicyState.isDistracted = old.isDistracted
+    dm.visionPolicyState.faceDetected = old.faceDetected
+    dm.visionPolicyState.poseCalibration.pitch.offset = old.posePitchOffset
+    dm.visionPolicyState.poseCalibration.pitch.calibratedPercent = min(100., old.posePitchValidCount / 6. * 100.)
+    dm.visionPolicyState.poseCalibration.yaw.offset = old.poseYawOffset
+    dm.visionPolicyState.poseCalibration.yaw.calibratedPercent = min(100., old.poseYawValidCount / 6. * 100.)
+    dm.visionPolicyState.poseCalibration.calibrated = old.posePitchValidCount >= 6 and old.poseYawValidCount >= 6
+
+    dm.wheeltouchPolicyState.awarenessPercent = max(0., min(100., old.awarenessPassive * 100.))
+    dm.wheeltouchPolicyState.awarenessStep = 0. if old.isActiveMode else old.stepChange
+
+    ops.append((index, new_msg.as_reader()))
 
   return ops, [], []
