@@ -130,7 +130,7 @@ class MiciHomeLayout(Widget):
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
-    self._body_icon = IconWidget("icons_mici/wheel.png", (48, 48))
+    self._body_icon = IconWidget("icons_mici/body.png", (54, 40))
 
     self._alerts_pill = AlertsPill()
 
@@ -138,8 +138,8 @@ class MiciHomeLayout(Widget):
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
-      self._mic_icon,
       self._body_icon,
+      self._mic_icon,
     ], spacing=18)
 
     self._openpilot_label = UnifiedLabel("openpilot", font_size=96, font_weight=FontWeight.DISPLAY, max_width=480, wrap_text=False)
