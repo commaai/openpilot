@@ -234,9 +234,9 @@ class DriverMonitoring:
     pitch_threshold = self.settings._POSE_PITCH_THRESHOLD * self.pose.cfactor_pitch if self.pose.calibrated else self.settings._PITCH_NATURAL_THRESHOLD
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
 
-    self.distracted_types['pose'] = (pitch_error > pitch_threshold) or (yaw_error > yaw_threshold)
-    self.distracted_types['eye'] = self.blink_prob > self.settings._BLINK_THRESHOLD
-    self.distracted_types['phone'] = self.phone_prob > self.settings._PHONE_THRESH
+    self.distracted_types['pose'] = bool((pitch_error > pitch_threshold) or (yaw_error > yaw_threshold))
+    self.distracted_types['eye'] = bool(self.blink_prob > self.settings._BLINK_THRESHOLD)
+    self.distracted_types['phone'] = bool(self.phone_prob > self.settings._PHONE_THRESH)
 
   def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False, steering_angle_deg=0.):
     rhd_pred = driver_state.wheelOnRightProb
