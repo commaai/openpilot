@@ -27,12 +27,6 @@ class PairingDialog(Widget):
     self.last_qr_generation = float('-inf')
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
     self._close_btn.set_click_callback(gui_app.pop_widget)
-    self._title = tr("Pair your device to your comma account")
-    self._instructions = [
-      tr("Go to https://connect.comma.ai on your phone"),
-      tr("Click \"add new device\" and scan the QR code on the right"),
-      tr("Bookmark connect.comma.ai to your home screen to use it like an app"),
-    ]
 
   def _get_pairing_url(self) -> str:
     try:
@@ -95,10 +89,11 @@ class PairingDialog(Widget):
     y += close_size + 40
 
     # Title
+    title = tr("Pair your device to your comma account")
     title_font = gui_app.font(FontWeight.NORMAL)
     left_width = int(content_rect.width * 0.5 - 15)
 
-    title_wrapped = wrap_text(title_font, self._title, 75, left_width)
+    title_wrapped = wrap_text(title_font, title, 75, left_width)
     rl.draw_text_ex(title_font, "\n".join(title_wrapped), rl.Vector2(content_rect.x, y), 75, 0.0, rl.BLACK)
     y += len(title_wrapped) * 75 + 60
 
@@ -118,10 +113,16 @@ class PairingDialog(Widget):
     return -1
 
   def _render_instructions(self, rect: rl.Rectangle) -> None:
+    instructions = [
+      tr("Go to https://connect.comma.ai on your phone"),
+      tr("Click \"add new device\" and scan the QR code on the right"),
+      tr("Bookmark connect.comma.ai to your home screen to use it like an app"),
+    ]
+
     font = gui_app.font(FontWeight.BOLD)
     y = rect.y
 
-    for i, text in enumerate(self._instructions):
+    for i, text in enumerate(instructions):
       circle_radius = 25
       circle_x = rect.x + circle_radius + 15
       text_x = rect.x + circle_radius * 2 + 40
