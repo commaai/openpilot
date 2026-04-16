@@ -7,7 +7,6 @@ from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoad
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.selfdrive.ui.mici.layouts.onboarding import OnboardingWindow
 from openpilot.selfdrive.ui.body.layouts.onroad import BodyLayout
-from openpilot.selfdrive.ui.body.layouts.home_mici import MiciBodyHomeLayout
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app
@@ -28,9 +27,8 @@ class MiciMainLayout(Scroller):
     self._setup = False
 
     # Initialize widgets
-    self._car_home_layout = MiciHomeLayout()
+    self._home_layout = MiciHomeLayout()
     self._car_onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
-    self._body_home_layout = MiciBodyHomeLayout()
     self._body_onroad_layout = BodyLayout()
     self._on_body_changed()
 
@@ -38,7 +36,7 @@ class MiciMainLayout(Scroller):
     self._settings_layout = SettingsLayout()
 
     # Initialize widget rects
-    for widget in (self._car_home_layout, self._body_home_layout,
+    for widget in (self._home_layout,
                    self._car_onroad_layout, self._body_onroad_layout,
                    self._settings_layout, self._alerts_layout):
       # TODO: set parent rect and use it if never passed rect from render (like in Scroller)
@@ -46,9 +44,8 @@ class MiciMainLayout(Scroller):
 
     self._scroller.add_widgets([
       self._alerts_layout,
-      self._car_home_layout,
+      self._home_layout,
       self._car_onroad_layout,
-      self._body_home_layout,
       self._body_onroad_layout,
     ])
     self._scroller.set_reset_scroll_at_show(False)
@@ -68,19 +65,13 @@ class MiciMainLayout(Scroller):
       gui_app.push_widget(self._onboarding_window)
 
   def _setup_callbacks(self):
-    self._car_home_layout.set_callbacks(
+    self._home_layout.set_callbacks(
       on_settings=lambda: gui_app.push_widget(self._settings_layout),
       on_alerts=lambda: self._scroll_to(self._alerts_layout),
       alert_count_callback=self._alerts_layout.active_alerts,
     )
-    self._car_onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
-
-    self._body_home_layout.set_callbacks(
-      on_settings=lambda: gui_app.push_widget(self._settings_layout),
-      on_alerts=lambda: self._scroll_to(self._alerts_layout),
-      alert_count_callback=self._alerts_layout.active_alerts,
-    )
-    self._body_onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
+    for layout in (self._car_onroad_layout, self._body_onroad_layout):
+      layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
 
     device.add_interactive_timeout_callback(self._on_interactive_timeout)
     ui_state.add_on_body_changed_callbacks(self._on_body_changed)
@@ -151,11 +142,7 @@ class MiciMainLayout(Scroller):
     self._pm.send('bookmarkButton', user_bookmark)
 
   def _on_body_changed(self):
-    is_body = ui_state.is_body
-    self._car_home_layout.set_visible(not is_body)
-    self._car_onroad_layout.set_visible(not is_body)
-    self._body_home_layout.set_visible(is_body)
-    self._body_onroad_layout.set_visible(is_body)
+    self._car_onroad_layout.set_visible(not ui_state.is_body)
+    self._body_onroad_layout.set_visible(ui_state.is_body)
 
-    self._home_layout = self._body_home_layout if is_body else self._car_home_layout
-    self._onroad_layout = self._body_onroad_layout if is_body else self._car_onroad_layout
+    self._onroad_layout = self._body_onroad_layout if ui_state.is_body else self._car_onroad_layout

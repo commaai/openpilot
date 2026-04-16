@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import time
 
 import pyray as rl
@@ -37,10 +35,7 @@ class BodyLayout(Widget):
   def set_settings_callback(self, callback):
     pass
 
-  def draw_dot_grid(self, rect: rl.Rectangle, dots: list[tuple[int, int]], color: rl.Color | None = None):
-    if color is None:
-      color = rl.WHITE
-
+  def draw_dot_grid(self, rect: rl.Rectangle, dots: list[tuple[int, int]], color: rl.Color):
     spacing = min(rect.height / GRID_ROWS, rect.width / GRID_COLS)
 
     grid_w = (GRID_COLS - 1) * spacing
@@ -97,7 +92,7 @@ class BodyLayout(Widget):
     elif self._turning_right and animation.right_turn_remove:
       remove_set = set(animation.right_turn_remove)
       dots = [d for d in dots if d not in remove_set]
-    self.draw_dot_grid(rect, dots)
+    self.draw_dot_grid(rect, dots, rl.WHITE)
 
     if ui_state.is_offroad():
       rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))

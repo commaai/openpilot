@@ -186,6 +186,7 @@ class UIState:
         self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
       else:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
+
       if self.is_body != self.CP.notCar:
         self.is_body = self.CP.notCar
         for callback in self._on_body_changed_callbacks:

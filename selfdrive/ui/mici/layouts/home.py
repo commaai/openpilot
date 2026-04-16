@@ -130,6 +130,7 @@ class MiciHomeLayout(Widget):
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
+    self._body_icon = IconWidget("icons_mici/wheel.png", (48, 48))
 
     self._alerts_pill = AlertsPill()
 
@@ -138,6 +139,7 @@ class MiciHomeLayout(Widget):
       NetworkIcon(),
       self._experimental_icon,
       self._mic_icon,
+      self._body_icon,
     ], spacing=18)
 
     self._openpilot_label = UnifiedLabel("openpilot", font_size=96, font_weight=FontWeight.DISPLAY, max_width=480, wrap_text=False)
@@ -247,6 +249,7 @@ class MiciHomeLayout(Widget):
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(self._experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
+    self._body_icon.set_visible(ui_state.is_body)
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
