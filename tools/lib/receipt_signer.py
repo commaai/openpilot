@@ -11,7 +11,7 @@ reference implementation (production upgrade path: Ed25519 via PyNaCl or
 a hardware secure element).
 
 Usage:
-    from tools.lib.receipt_signer import ReceiptChain
+    from openpilot.tools.lib.receipt_signer import ReceiptChain
 
     chain = ReceiptChain(device_id="comma-3x-abc123")
 
@@ -126,7 +126,7 @@ class ReceiptChain:
             The signed receipt.
         """
         self._sequence += 1
-        ts = timestamp or time.time()
+        ts = timestamp or time.monotonic()
 
         prev_hash = None
         if self._receipts:

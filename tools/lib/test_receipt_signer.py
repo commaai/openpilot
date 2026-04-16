@@ -4,7 +4,7 @@ import json
 import os
 import tempfile
 
-from tools.lib.receipt_signer import Receipt, ReceiptChain, _jcs_canonicalize
+from openpilot.tools.lib.receipt_signer import Receipt, ReceiptChain, _jcs_canonicalize
 
 
 def test_jcs_canonical_sorted_keys():
