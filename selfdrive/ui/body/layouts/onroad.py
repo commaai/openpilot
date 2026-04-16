@@ -31,7 +31,6 @@ class BodyLayout(Widget):
     self._was_active = False
     self._font_bold = gui_app.font(FontWeight.BOLD)
     self._offroad_label = UnifiedLabel("turn on ignition to use", 45, FontWeight.DISPLAY,
-                                       text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                                        alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
