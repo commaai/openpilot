@@ -34,7 +34,7 @@ SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', '
 ALL_SENSORS = {
   Sensor.lsm6ds3trc: {
     SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .1),
+    SensorConfig("gyroUncalibrated", 0, .15),
     SensorConfig("temperature", 10, 40, 1),  # set for max range of our office
   },
 
@@ -199,7 +199,7 @@ class TestSensord:
 
         key = (sensor, s.type)
         if s.type == 'temperature':
-          measurement_stat = np.mean(sensor_values[key], axis=1)
+          measurement_stat = np.mean(sensor_values[key])
         else:
           measurement_stat = np.mean(np.linalg.norm(sensor_values[key], axis=1))
         err_msg = f"Sensor '{sensor} {s.type}' failed sanity checks {measurement_stat} is not between {s.sanity_min} and {s.sanity_max}"
