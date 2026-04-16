@@ -26,7 +26,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import CompileConfig, make_buffers
+from openpilot.selfdrive.modeld.compile_modeld import CompileConfig, make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -95,7 +95,7 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.bufs, self.npy = make_buffers(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
+    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
     self.full_frames : dict[str, Tensor] = {}
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
@@ -103,7 +103,7 @@ class ModelState:
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
     self.warp_enqueue(
-      **self.bufs,
+      **self.input_queues,
       frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').contiguous().realize(),
       big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8').contiguous().realize())
 
@@ -131,11 +131,11 @@ class ModelState:
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
     if prepare_only:
-      self.warp_enqueue(**self.bufs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
       return None
 
     vision_output, policy_output = self.run_policy(
-      **self.bufs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
+      **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 
     vision_output = vision_output.numpy().flatten()

@@ -4,12 +4,12 @@ import pickle
 from dataclasses import dataclass
 from itertools import product
 import numpy as np
-from pathlib import Path
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
+from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
@@ -18,9 +18,6 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from tinygrad.uop.ops import UOp, Ops
 _orig = UOp.__reduce__
 UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig(self)
-
-
-MODELS_DIR = Path(__file__).resolve().parent / 'models'
 
 
 @dataclass
@@ -106,7 +103,7 @@ def make_frame_prepare(cam_w, cam_h, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_buffers(vision_input_shapes, policy_input_shapes, frame_skip):
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
@@ -121,14 +118,14 @@ def make_buffers(vision_input_shapes, policy_input_shapes, frame_skip):
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
-  bufs = {
-    'img_buf': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'big_img_buf': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
+  input_queues = {
+    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
+    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
     'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
     'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
-  return bufs, npy
+  return input_queues, npy
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -158,9 +155,9 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
   def sample_desire(buf):
     return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
-  def run_policy(img_buf, big_img_buf, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    img = shift_and_sample(img_buf, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
-    big_img = shift_and_sample(big_img_buf, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
+  def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
+    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
+    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
 
     if prepare_only:
       return img, big_img
@@ -205,7 +202,7 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   SEED = 42
 
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    bufs, npy = make_buffers(vision_input_shapes, policy_input_shapes, frame_skip)
+    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip)
     np.random.seed(seed)
 
     for i in range(N_RUNS):
@@ -215,7 +212,7 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
       st = time.perf_counter()
-      outs = fn(**bufs, frame=frame, big_frame=big_frame)
+      outs = fn(**input_queues, frame=frame, big_frame=big_frame)
       mt = time.perf_counter()
       for o in outs:
         # .realize() not needed once jitted, but needed for unjitted fn
@@ -225,7 +222,7 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
       print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
     val = [np.copy(v.numpy()) for v in outs]
-    buffers = [np.copy(v.numpy().copy()) for v in bufs.values()]
+    buffers = [np.copy(v.numpy().copy()) for v in input_queues.values()]
 
     if test_val is not None:
       match = all(np.array_equal(a, b) for a, b in zip(val, test_val, strict=True))
