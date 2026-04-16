@@ -28,7 +28,7 @@ To post your feedback:
 Before posting feedback, please ensure:
 
 - **openpilot is up to date** you should be on the latest openpilot release or nightly
-- **driver camera has a clear view of the driver** ensure nothing blocks view of the driver (e.g. a cable), the lens is clean, etc.
+- **the driver camera has a clear view of the driver** ensure nothing blocks view of the driver (e.g. a cable), the lens is clean, etc.
 - **your device is mounted properly** your device must be mounted horizontally center and relatively high on the windshield
 
 ## Other bugs
