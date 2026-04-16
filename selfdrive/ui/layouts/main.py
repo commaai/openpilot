@@ -115,8 +115,6 @@ class MainLayout(Widget):
     self._sidebar.set_visible(not self._sidebar.is_visible)
 
   def _on_body_changed(self):
-    self._body_layout.set_visible(ui_state.is_body)
-    self._home_layout.set_visible(not ui_state.is_body)
     self._layouts[MainState.HOME] = self._body_layout if ui_state.is_body else self._home_layout
 
   def _render_main_content(self):

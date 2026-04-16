@@ -12,7 +12,6 @@ PAIR_MESSAGE_WIDTH = 260
 class MiciBodyHomeLayout(MiciHomeLayout):
   def __init__(self):
     super().__init__()
-    self.set_visible(False)
     self._branch_label.set_visible(False)
     self._pair_message = UnifiedLabel(" comma body ", font_size=36, text_color=rl.WHITE, font_weight=FontWeight.ROMAN, scroll=True)
 

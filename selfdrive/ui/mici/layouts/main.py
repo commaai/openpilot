@@ -152,10 +152,10 @@ class MiciMainLayout(Scroller):
 
   def _on_body_changed(self):
     is_body = ui_state.is_body
-    self._body_home_layout.set_visible(is_body)
     self._car_home_layout.set_visible(not is_body)
-    self._body_onroad_layout.set_visible(is_body)
     self._car_onroad_layout.set_visible(not is_body)
+    self._body_home_layout.set_visible(is_body)
+    self._body_onroad_layout.set_visible(is_body)
 
     self._home_layout = self._body_home_layout if is_body else self._car_home_layout
     self._onroad_layout = self._body_onroad_layout if is_body else self._car_onroad_layout

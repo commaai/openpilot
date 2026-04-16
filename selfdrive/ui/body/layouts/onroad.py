@@ -34,7 +34,6 @@ class BodyLayout(Widget):
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                                        alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
-    self.set_visible(False)
 
   def set_settings_callback(self, callback):
     pass
@@ -43,7 +42,7 @@ class BodyLayout(Widget):
     if color is None:
       color = rl.WHITE
 
-    spacing = (rect.height) / (GRID_ROWS)
+    spacing = min(rect.height / GRID_ROWS, rect.width / GRID_COLS)
 
     grid_w = (GRID_COLS - 1) * spacing
     grid_h = (GRID_ROWS - 1) * spacing
