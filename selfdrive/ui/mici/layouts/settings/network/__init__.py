@@ -1,9 +1,55 @@
 import pyray as rl
 
+from cereal import log
+from openpilot.system.ui.lib.cellular_manager import CellularManager, profile_display_name
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
+
+NetworkType = log.DeviceState.NetworkType
+
+
+class ESimNetworkButton(BigButton):
+  def __init__(self, cellular_manager: CellularManager):
+    self._cellular_manager = cellular_manager
+    self._cell_none_icon = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 64, 47)
+    self._cell_low_icon = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 64, 47)
+    self._cell_medium_icon = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 64, 47)
+    self._cell_high_icon = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 64, 47)
+    self._cell_full_icon = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 64, 47)
+    super().__init__("esim", "no active profile", self._cell_none_icon, scroll=True)
+
+  def _update_state(self):
+    super()._update_state()
+
+    if self._cellular_manager.busy:
+      self.set_text("esim")
+      self.set_value("switching...")
+      self.set_icon(self._cell_none_icon)
+    else:
+      active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
+      if active:
+        name = profile_display_name(active)
+        self.set_text(f"{name} (...{active.iccid[-4:]})")
+        self.set_value(self._cellular_manager.modem_ip or "obtaining IP...")
+        self.set_icon(self._get_cell_icon())
+      else:
+        self.set_text("esim")
+        self.set_value("no active profile")
+        self.set_icon(self._cell_none_icon)
+
+  def _get_cell_icon(self):
+    device_state = ui_state.sm['deviceState']
+    net_type = device_state.networkType
+    if net_type not in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
+      return self._cell_none_icon
+    strength = device_state.networkStrength
+    level = max(0, min(5, strength.raw + 1)) if strength.raw > 0 else 0
+    icons = (self._cell_none_icon, self._cell_none_icon, self._cell_low_icon,
+             self._cell_medium_icon, self._cell_high_icon, self._cell_full_icon)
+    return icons[level]
 
 
 class WifiNetworkButton(BigButton):
