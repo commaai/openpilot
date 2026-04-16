@@ -58,13 +58,22 @@ class MiciMainLayout(Scroller):
       gui_app.push_widget(self._onboarding_window)
 
   def _setup_callbacks(self):
-    self._home_layout.set_callbacks(on_settings=lambda: gui_app.push_widget(self._settings_layout))
+    self._home_layout.set_callbacks(
+      on_settings=lambda: gui_app.push_widget(self._settings_layout),
+      on_alerts=lambda: self._scroll_to(self._alerts_layout),
+      alert_count_callback=self._alerts_layout.active_alerts,
+    )
     self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
     device.add_interactive_timeout_callback(self._on_interactive_timeout)
 
   def _scroll_to(self, layout: Widget):
     layout_x = int(layout.rect.x)
     self._scroller.scroll_to(layout_x, smooth=True)
+
+  def _update_state(self):
+    super()._update_state()
+    # TODO: Hack to run alert updates while not in view. Add a nav stack tick?
+    self._alerts_layout._update_state()
 
   def _render(self, _):
     if not self._setup:

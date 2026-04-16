@@ -44,7 +44,7 @@ compiled_flags_node = lenv.Command(
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
 # Get model metadata
-for model_name in ['driving_vision', 'driving_off_policy', 'driving_on_policy', 'dmonitoring_model']:
+for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
   script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
   cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
@@ -82,5 +82,6 @@ def tg_compile(flags, model_name):
   )
 
 # Compile small models
-for model_name in ['driving_vision', 'driving_off_policy', 'driving_on_policy', 'dmonitoring_model']:
+for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   tg_compile(tg_flags, model_name)
+

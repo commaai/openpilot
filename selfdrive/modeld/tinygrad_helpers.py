@@ -7,5 +7,6 @@ COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
 
 
 def set_tinygrad_backend_from_compiled_flags() -> None:
-  with open(COMPILED_FLAGS_PATH) as f:
-    os.environ['DEV'] = str(json.load(f)['DEV'])
+  if os.path.isfile(COMPILED_FLAGS_PATH):
+    with open(COMPILED_FLAGS_PATH) as f:
+      os.environ['DEV'] = str(json.load(f)['DEV'])
