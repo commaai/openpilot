@@ -1,16 +1,15 @@
-# connect to a comma four
+# connect to a comma 3X or comma four
 
-A comma four is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
+A comma device is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
 
 ## Serial Console
 
-On both the comma three and comma four, the serial console is accessible from the main OBD-C port.
-Connect the comma four to your computer with a normal USB C cable, or use a [comma serial](https://comma.ai/shop/comma-serial) for steady 12V power.
+On the comma 3X, the serial console is accessible from the main OBD-C port, forwarded through the panda.
+Access it using `panda/scripts/som_debug.sh`.
 
-On the comma 3X, the serial console is forwarded by the panda, whose USB data lines are connected to the OBD-C port.
-On the comma four, the serial console is accessible through the [panda](https://github.com/commaai/panda) using the `panda/tests/som_debug.sh` script.
+comma four also exposes a serial console, albeit through an internal debug connector. Dedicated debug hardware coming soon to the comma shop.
 
-comma four does expose a serial console as well, but through an internal debug connector. Dedicated debug hardware coming soon.
+Login to the default user with:
 
   * Username: `comma`
   * Password: `comma`
