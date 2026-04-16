@@ -219,7 +219,7 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
         o.realize()
       Device.default.synchronize()
       et = time.perf_counter()
-      print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
+      print(f"  [{i+1}/{N_RUNS}] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
     val = [np.copy(v.numpy()) for v in outs]
     buffers = [np.copy(v.numpy().copy()) for v in input_queues.values()]
