@@ -21,6 +21,7 @@ nav = [
     { "Glossary" = "concepts/glossary.md" },
   ] },
   { "Contributing" = [
+    { "Feedback" = "contributing/feedback.md" },
     { "Roadmap" = "contributing/roadmap.md" },
     { "Contributing Guide →" = "https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md" },
   ] },
