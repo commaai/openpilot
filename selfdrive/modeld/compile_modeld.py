@@ -3,6 +3,8 @@ import time
 import pickle
 from dataclasses import dataclass
 from itertools import product
+from functools import partial
+
 import numpy as np
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
@@ -128,6 +130,14 @@ def shift_and_sample(buf, new_val, sample_fn):
   return sample_fn(buf)
 
 
+def sample_skip(buf, frame_skip):
+  return buf[::frame_skip].contiguous().flatten(0, 1).unsqueeze(0)
+
+
+def sample_desire(buf, frame_skip):
+  return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
+
+
 def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
   stride, y_height, _, _ = get_nv12_info(cam_w, cam_h)
   stride_pad = stride - cam_w
@@ -143,16 +153,12 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
                     vision_features_slice, frame_skip, prepare_only=False):
   model_w, model_h = MEDMODEL_INPUT_SIZE
   frame_prepare = make_frame_prepare(cam_w, cam_h, model_w, model_h)
-
-  def sample_skip(buf):
-    return buf[::frame_skip].contiguous().flatten(0, 1).unsqueeze(0)
-
-  def sample_desire(buf):
-    return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
+  sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
+  sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip)
+    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -160,8 +166,8 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
     vision_out = next(iter(vision_runner({'img': img, 'big_img': big_img}).values())).cast('float32')
 
     new_feat = vision_out[:, vision_features_slice].reshape(1, -1).unsqueeze(0)
-    feat_buf = shift_and_sample(feat_q, new_feat, sample_skip)
-    desire_buf = shift_and_sample(desire_q, desire.to(Device.DEFAULT).reshape(1, 1, -1), sample_desire)
+    feat_buf = shift_and_sample(feat_q, new_feat, sample_skip_fn)
+    desire_buf = shift_and_sample(desire_q, desire.to(Device.DEFAULT).reshape(1, 1, -1), sample_desire_fn)
 
     inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention.to(Device.DEFAULT)}
     policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
