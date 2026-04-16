@@ -32,8 +32,20 @@ For historical reasons, openpilot still contains a small amount of car-specific 
 
 * `selfdrive/car/car_specific.py`: Brand-specific event logic
 
-# Overview
+# How do I port car?
 
 [Jason Young](https://github.com/jyoung8607) gave a talk at COMMA_CON with an overview of the car porting process. The talk is available on YouTube:
 
 https://www.youtube.com/watch?v=XxPS5TpTUnI
+
+## Brand Port
+
+A brand port is a port of openpilot to a substantially new car brand or platform within a brand.
+
+Here's an example of one: https://github.com/commaai/openpilot/pull/23331.
+
+## Model Port
+
+A model port is a port of openpilot to a new car model within an already supported brand. Model ports are easier than brand ports because the car's existing APIs are already known.
+
+Here's an example of one: https://github.com/commaai/openpilot/pull/30672/.
