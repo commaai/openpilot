@@ -560,6 +560,7 @@ CONFIGS = [
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
     init_callback=get_car_params_callback,
+    timeout=60
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",
