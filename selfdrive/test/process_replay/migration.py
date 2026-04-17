@@ -506,7 +506,7 @@ def migrate_driverMonitoringState(msgs):
         dm.alertLevel = level
         break
 
-    dm.visionPolicyState.awarenessPercent = max(0., min(100., old.awarenessActive * 100.))
+    dm.visionPolicyState.awarenessPercent = max(0., min(100., (old.awarenessStatus if old.isActiveMode else old.awarenessActive) * 100.))
     dm.visionPolicyState.awarenessStep = old.stepChange if old.isActiveMode else 0.
     dm.visionPolicyState.isDistracted = old.isDistracted
     dm.visionPolicyState.faceDetected = old.faceDetected
@@ -515,7 +515,7 @@ def migrate_driverMonitoringState(msgs):
     dm.visionPolicyState.poseCalibration.yaw.offset = old.poseYawOffset
     dm.visionPolicyState.poseCalibration.yaw.calibratedPercent = min(100., old.poseYawValidCount / 600 * 100.)
     dm.visionPolicyState.poseCalibration.calibrated = old.posePitchValidCount >= 600 and old.poseYawValidCount >= 600
-    dm.wheeltouchPolicyState.awarenessPercent = max(0., min(100., old.awarenessPassive * 100.))
+    dm.wheeltouchPolicyState.awarenessPercent = max(0., min(100., (old.awarenessPassive if old.isActiveMode else old.awarenessStatus) * 100.))
     dm.wheeltouchPolicyState.awarenessStep = 0. if old.isActiveMode else old.stepChange
     ops.append((index, new_msg.as_reader()))
 
