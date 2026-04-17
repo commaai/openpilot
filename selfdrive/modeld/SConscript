@@ -61,7 +61,7 @@ driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['dri
 from openpilot.selfdrive.modeld.compile_modeld import MODELD_CONFIGS, DM_WARP_CONFIGS
 policy_pkls = [File(cfg.pkl_path).abspath for cfg in MODELD_CONFIGS]
 modeld_targets = policy_pkls + [File(cfg.pkl_path).abspath for cfg in DM_WARP_CONFIGS]
-compile_node = lenv.Command(modeld_targets, tinygrad_files + script_files + driving_onnx_deps + driving_metadata_deps + [chunker_file], compile_modeld_cmd)
+compile_node = lenv.Command(modeld_targets, tinygrad_files + script_files + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], compile_modeld_cmd)
 
 # chunk the combined policy pkls
 for policy_pkl in policy_pkls:
