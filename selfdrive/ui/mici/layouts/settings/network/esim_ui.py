@@ -166,7 +166,7 @@ class ESimProfileButton(BigButton):
       cell_icon = self._cell_full_txt if self._profile.enabled else self._cell_none_txt
       rl.draw_texture_ex(cell_icon, (self._rect.x + 30, btn_y + 38), 0.0, 1.0, rl.WHITE)
 
-    btn_x = self._rect.x + self._rect.width - (0 if self._show_delete_btn else 12)
+    btn_x = self._rect.x + self._rect.width
     btn_bottom = btn_y + self._rect.height
     if self._show_delete_btn:
       btn_x -= self._delete_btn.rect.width
