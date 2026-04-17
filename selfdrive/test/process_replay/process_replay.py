@@ -560,7 +560,7 @@ CONFIGS = [
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
     init_callback=get_car_params_callback,
-    timeout=90
+    timeout=60
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",
@@ -573,6 +573,7 @@ CONFIGS = [
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
     vision_pubs=["driverCameraState"],
     ignore_alive_pubs=["driverCameraState"],
+    timeout=60
   ),
 ]
 
