@@ -115,6 +115,7 @@ class MainLayout(Widget):
 
   def _on_body_changed(self):
     self._layouts[MainState.HOME] = self._body_layout if ui_state.is_body else self._home_layout
+    self._set_mode_for_state()
 
   def _render_main_content(self):
     # Render sidebar
