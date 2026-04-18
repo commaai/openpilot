@@ -67,8 +67,8 @@ class BodyLayout(Widget):
       self._animator.set_animation(ASLEEP)
 
     steer = sm['testJoystick'].axes[1] if len(sm['testJoystick'].axes) > 1 else 0
-    self._turning_left = steer >= 0.05
-    self._turning_right = steer <= -0.05
+    self._turning_left = steer <= -0.05
+    self._turning_right = steer >= 0.05
 
   # play animation on screen tap
   def _handle_mouse_release(self, mouse_pos):
