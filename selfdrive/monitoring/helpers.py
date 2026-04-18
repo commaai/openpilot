@@ -371,7 +371,7 @@ class DriverMonitoring:
     dm.alwaysOn = self.always_on
     dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_alert_2
     dm.alertLevel = self.alert_level
-    dm.monitoringPolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
+    dm.activePolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
     dm.isRHD = self.wheel_on_right
     dm.rhdCalibration.calibratedPercent = to_perc(self.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
     dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M

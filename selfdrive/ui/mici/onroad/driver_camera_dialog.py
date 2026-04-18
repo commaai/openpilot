@@ -117,7 +117,7 @@ class BaseDriverCameraDialog(Widget):
     dm_state = ui_state.sm["driverMonitoringState"]
     self._publish_alert_sound(dm_state)
 
-    is_vision = dm_state.monitoringPolicy == log.DriverMonitoringState.MonitoringPolicy.vision
+    is_vision = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     awareness_pct = dm_state.visionPolicyState.awarenessPercent if is_vision else dm_state.wheeltouchPolicyState.awarenessPercent
     gui_label(rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height),
               f"Awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,

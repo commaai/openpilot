@@ -196,7 +196,7 @@ class SelfdriveD:
       if self.sm['driverMonitoringState'].lockout or self.sm['driverMonitoringState'].alwaysOnLockout:
         self.events.add(EventName.tooDistracted)
       # Alerts
-      vision_dm = self.sm['driverMonitoringState'].monitoringPolicy == MonitoringPolicy.vision
+      vision_dm = self.sm['driverMonitoringState'].activePolicy == MonitoringPolicy.vision
       if self.sm['driverMonitoringState'].alertLevel == AlertLevel.one:
         self.events.add(EventName.driverDistracted1 if vision_dm else EventName.driverUnresponsive1)
       elif self.sm['driverMonitoringState'].alertLevel == AlertLevel.two:

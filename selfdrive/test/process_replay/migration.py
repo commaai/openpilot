@@ -490,7 +490,7 @@ def migrate_driverMonitoringState(msgs):
     new_msg = messaging.new_message('driverMonitoringState', valid=msg.valid, logMonoTime=msg.logMonoTime)
     dm = new_msg.driverMonitoringState
     dm.isRHD = old.isRHD
-    dm.monitoringPolicy = log.DriverMonitoringState.MonitoringPolicy.vision if old.isActiveMode else \
+    dm.activePolicy = log.DriverMonitoringState.MonitoringPolicy.vision if old.isActiveMode else \
                           log.DriverMonitoringState.MonitoringPolicy.wheeltouch
 
     AlertLevel = log.DriverMonitoringState.AlertLevel
