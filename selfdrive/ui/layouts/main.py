@@ -55,12 +55,11 @@ class MainLayout(Widget):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_bookmark_clicked,
                                 open_settings=lambda: self.open_settings(PanelType.TOGGLES))
-    self._home_layout._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
+    self._home_layout.set_settings_callback(self.open_settings)
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
 
-    for layout in (self._home_layout, self._home_body_layout):
+    for layout in (self._layouts[MainState.ONROAD], self._home_body_layout):
       layout.set_click_callback(self._on_onroad_clicked)
-      layout.set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
 
     device.add_interactive_timeout_callback(self._set_mode_for_state)
     ui_state.add_on_body_changed_callbacks(self._on_body_changed)

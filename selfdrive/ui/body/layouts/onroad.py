@@ -29,9 +29,6 @@ class BodyLayout(Widget):
                                        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                                        alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
-  def set_settings_callback(self, callback):
-    pass
-
   def draw_dot_grid(self, rect: rl.Rectangle, dots: list[tuple[int, int]], color: rl.Color):
     spacing = min(rect.height / GRID_ROWS, rect.width / GRID_COLS)
 
