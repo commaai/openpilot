@@ -62,11 +62,9 @@ class MiciMainLayout(Scroller):
       gui_app.push_widget(self._onboarding_window)
 
   @property
-  def _onroad_layout(self):
-    if ui_state.is_body:
-      return self._body_onroad_layout
-    else:
-      return self._car_onroad_layout
+  def _onroad_layout(self) -> Widget:
+    # For scroll_to
+    return self._body_onroad_layout if ui_state.is_body else self._car_onroad_layout
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(
