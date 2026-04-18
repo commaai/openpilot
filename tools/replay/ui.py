@@ -3,137 +3,160 @@ import argparse
 import os
 import sys
 
-import cv2
 import numpy as np
-import pygame
+import pyray as rl
 
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
-from openpilot.tools.replay.lib.ui_helpers import (UP,
-                                         BLACK, GREEN,
-                                         YELLOW, Calibration,
-                                         get_blank_lid_overlay, init_plots,
-                                         maybe_update_radar_points, plot_lead,
-                                         plot_model,
-                                         pygame_modules_have_loaded)
-from msgq.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.tools.replay.lib.ui_helpers import (
+  UP,
+  BLACK,
+  GREEN,
+  YELLOW,
+  Calibration,
+  get_blank_lid_overlay,
+  init_plots,
+  maybe_update_radar_points,
+  plot_lead,
+  plot_model,
+)
+from msgq.visionipc import VisionStreamType
+from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 
 os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
 
-def ui_thread(addr):
-  cv2.setNumThreads(1)
-  pygame.init()
-  pygame.font.init()
-  assert pygame_modules_have_loaded()
 
-  disp_info = pygame.display.Info()
-  max_height = disp_info.current_h
+def ui_thread(addr):
+  # Get monitor info before creating window
+  rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
+  rl.init_window(1, 1, "")
+  max_height = rl.get_monitor_height(0)
+  rl.close_window()
 
   hor_mode = os.getenv("HORIZONTAL") is not None
-  hor_mode = True if max_height < 960+300 else hor_mode
+  hor_mode = True if max_height < 960 + 300 else hor_mode
 
   if hor_mode:
-    size = (640+384+640, 960)
+    size = (640 + 384 + 640, 960)
     write_x = 5
     write_y = 680
   else:
-    size = (640+384, 960+300)
+    size = (640 + 384, 960 + 300)
     write_x = 645
     write_y = 970
 
-  pygame.display.set_caption("openpilot debug UI")
-  screen = pygame.display.set_mode(size, pygame.DOUBLEBUF)
+  rl.set_trace_log_level(rl.TraceLogLevel.LOG_ERROR)
+  rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
+  rl.init_window(size[0], size[1], "openpilot debug UI")
+  rl.set_target_fps(60)
 
-  alert1_font = pygame.font.SysFont("arial", 30)
-  alert2_font = pygame.font.SysFont("arial", 20)
-  info_font = pygame.font.SysFont("arial", 15)
+  # Load font
+  font_path = os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf")
+  font = rl.load_font_ex(font_path, 32, None, 0)
 
-  camera_surface = pygame.surface.Surface((640, 480), 0, 24).convert()
-  top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
+  camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
 
-  sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'selfdriveState', 'liveTracks', 'modelV2', 'liveParameters', 'roadCameraState'], addr=addr)
+  # Overlay texture for model/lane line drawing
+  overlay_img = np.zeros((480, 640, 4), dtype='uint8')
+  overlay_image = rl.gen_image_color(640, 480, rl.BLANK)
+  overlay_texture = rl.load_texture_from_image(overlay_image)
+  rl.unload_image(overlay_image)
+
+  # lid_overlay array is (lidar_x, lidar_y) = (384, 960)
+  top_down_image = rl.gen_image_color(UP.lidar_x, UP.lidar_y, rl.BLACK)
+  top_down_texture = rl.load_texture_from_image(top_down_image)
+  rl.unload_image(top_down_image)
+
+  sm = messaging.SubMaster(
+    [
+      'carState',
+      'longitudinalPlan',
+      'carControl',
+      'radarState',
+      'liveCalibration',
+      'controlsState',
+      'selfdriveState',
+      'liveTracks',
+      'modelV2',
+      'liveParameters',
+      'roadCameraState',
+    ],
+    addr=addr,
+  )
 
   img = np.zeros((480, 640, 3), dtype='uint8')
-  imgff = None
   num_px = 0
   calibration = None
 
   lid_overlay_blank = get_blank_lid_overlay(UP)
 
   # plots
-  name_to_arr_idx = { "gas": 0,
-                      "computer_gas": 1,
-                      "user_brake": 2,
-                      "computer_brake": 3,
-                      "v_ego": 4,
-                      "v_pid": 5,
-                      "angle_steers_des": 6,
-                      "angle_steers": 7,
-                      "angle_steers_k": 8,
-                      "steer_torque": 9,
-                      "v_override": 10,
-                      "v_cruise": 11,
-                      "a_ego": 12,
-                      "a_target": 13}
+  name_to_arr_idx = {
+    "gas": 0,
+    "computer_gas": 1,
+    "user_brake": 2,
+    "computer_brake": 3,
+    "v_ego": 4,
+    "v_pid": 5,
+    "angle_steers_des": 6,
+    "angle_steers": 7,
+    "angle_steers_k": 8,
+    "steer_torque": 9,
+    "v_override": 10,
+    "v_cruise": 11,
+    "a_ego": 12,
+    "a_target": 13,
+  }
 
   plot_arr = np.zeros((100, len(name_to_arr_idx.values())))
 
   plot_xlims = [(0, plot_arr.shape[0]), (0, plot_arr.shape[0]), (0, plot_arr.shape[0]), (0, plot_arr.shape[0])]
-  plot_ylims = [(-0.1, 1.1), (-ANGLE_SCALE, ANGLE_SCALE), (0., 75.), (-3.0, 2.0)]
-  plot_names = [["gas", "computer_gas", "user_brake", "computer_brake"],
-                ["angle_steers", "angle_steers_des", "angle_steers_k", "steer_torque"],
-                ["v_ego", "v_override", "v_pid", "v_cruise"],
-                ["a_ego", "a_target"]]
-  plot_colors = [["b", "b", "g", "r", "y"],
-                 ["b", "g", "y", "r"],
-                 ["b", "g", "r", "y"],
-                 ["b", "r"]]
-  plot_styles = [["-", "-", "-", "-", "-"],
-                 ["-", "-", "-", "-"],
-                 ["-", "-", "-", "-"],
-                 ["-", "-"]]
+  plot_ylims = [(-0.1, 1.1), (-ANGLE_SCALE, ANGLE_SCALE), (0.0, 75.0), (-3.5, 2.0)]
+  plot_names = [
+    ["gas", "computer_gas", "user_brake", "computer_brake"],
+    ["angle_steers", "angle_steers_des", "angle_steers_k", "steer_torque"],
+    ["v_ego", "v_override", "v_pid", "v_cruise"],
+    ["a_ego", "a_target"],
+  ]
+  plot_colors = [["b", "b", "g", "r", "y"], ["b", "g", "y", "r"], ["b", "g", "r", "y"], ["b", "r"]]
+  plot_styles = [["-", "-", "-", "-", "-"], ["-", "-", "-", "-"], ["-", "-", "-", "-"], ["-", "-"]]
 
   draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles)
 
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
-  while True:
-    for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-        pygame.quit()
-        sys.exit()
+  # Palette for converting lid_overlay grayscale indices to RGBA colors
+  palette = np.zeros((256, 4), dtype=np.uint8)
+  palette[:, 3] = 255  # alpha
+  palette[1] = [255, 0, 0, 255]  # RED
+  palette[2] = [0, 255, 0, 255]  # GREEN
+  palette[3] = [0, 0, 255, 255]  # BLUE
+  palette[4] = [255, 255, 0, 255]  # YELLOW
+  palette[110] = [110, 110, 110, 255]  # car_color (gray)
+  palette[255] = [255, 255, 255, 255]  # WHITE
 
-    screen.fill((64, 64, 64))
+  while not rl.window_should_close():
+    rl.begin_drawing()
+    rl.clear_background(rl.Color(64, 64, 64, 255))
+
+    # Render camera (NV12->RGB on GPU via shader)
+    if camera_view.frame:
+      cam_h = 640.0 * camera_view.frame.height / camera_view.frame.width
+    else:
+      cam_h = 480.0
+    camera_view.render(rl.Rectangle(0, 0, 640, cam_h))
+
     lid_overlay = lid_overlay_blank.copy()
-    top_down = top_down_surface, lid_overlay
-
-    # ***** frame *****
-    if not vipc_client.is_connected():
-      vipc_client.connect(True)
-
-    yuv_img_raw = vipc_client.recv()
-    if yuv_img_raw is None or not yuv_img_raw.data.any():
-      continue
+    top_down = top_down_texture, lid_overlay
 
     sm.update(0)
 
     camera = DEVICE_CAMERAS[("tici", str(sm['roadCameraState'].sensor))]
+    calib_scale = camera.fcam.width / 640.0
 
-    imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((len(yuv_img_raw.data) // vipc_client.stride, vipc_client.stride))
-    num_px = vipc_client.width * vipc_client.height
-    rgb = cv2.cvtColor(imgff[:vipc_client.height * 3 // 2, :vipc_client.width], cv2.COLOR_YUV2RGB_NV12)
-
-    qcam = "QCAM" in os.environ
-    bb_scale = (528 if qcam else camera.fcam.width) / 640.
-    calib_scale = camera.fcam.width / 640.
-    zoom_matrix = np.asarray([
-        [bb_scale, 0., 0.],
-        [0., bb_scale, 0.],
-        [0., 0., 1.]])
-    cv2.warpAffine(rgb, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+    if camera_view.frame:
+      num_px = camera_view.frame.width * camera_view.frame.height
 
     intrinsic_matrix = camera.fcam.intrinsics
 
@@ -145,24 +168,26 @@ def ui_thread(addr):
     else:
       angle_steers_k = np.inf
 
-    plot_arr[:-1] = plot_arr[1:]
+    if sm.updated['carState']:
+      plot_arr[:-1] = plot_arr[1:]
     plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['carState'].steeringAngleDeg
     plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steeringAngleDeg
     plot_arr[-1, name_to_arr_idx['angle_steers_k']] = angle_steers_k
     plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gasDEPRECATED
     # TODO gas is deprecated
-    plot_arr[-1, name_to_arr_idx['computer_gas']] = np.clip(sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
+    plot_arr[-1, name_to_arr_idx['computer_gas']] = np.clip(sm['carControl'].actuators.accel / 4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['user_brake']] = sm['carState'].brake
     plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.torque * ANGLE_SCALE
     # TODO brake is deprecated
-    plot_arr[-1, name_to_arr_idx['computer_brake']] = np.clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
+    plot_arr[-1, name_to_arr_idx['computer_brake']] = np.clip(-sm['carControl'].actuators.accel / 4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['v_ego']] = sm['carState'].vEgo
     plot_arr[-1, name_to_arr_idx['v_cruise']] = sm['carState'].cruiseState.speed
     plot_arr[-1, name_to_arr_idx['a_ego']] = sm['carState'].aEgo
 
-    if len(sm['longitudinalPlan'].accels):
-      plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].accels[0]
+    plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].aTarget
 
+    # Draw model overlays onto img, then blit as transparent overlay
+    img[:] = 0
     if sm.recv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)
 
@@ -176,56 +201,65 @@ def ui_thread(addr):
       rpyCalib = np.asarray(sm['liveCalibration'].rpyCalib)
       calibration = Calibration(num_px, rpyCalib, intrinsic_matrix, calib_scale)
 
-    # *** blits ***
-    pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
-    screen.blit(camera_surface, (0, 0))
+    # Update overlay texture (RGB img -> RGBA with non-black pixels visible)
+    mask = np.any(img > 0, axis=2)
+    overlay_img[:, :, :3] = img
+    overlay_img[:, :, 3] = mask * 255
+    rl.update_texture(overlay_texture, rl.ffi.cast("void *", overlay_img.ctypes.data))
+    rl.draw_texture(overlay_texture, 0, 0, rl.WHITE)  # noqa: TID251
 
     # display alerts
-    alert_line1 = alert1_font.render(sm['selfdriveState'].alertText1, True, (255, 0, 0))
-    alert_line2 = alert2_font.render(sm['selfdriveState'].alertText2, True, (255, 0, 0))
-    screen.blit(alert_line1, (180, 150))
-    screen.blit(alert_line2, (180, 190))
+    rl.draw_text_ex(font, sm['selfdriveState'].alertText1, rl.Vector2(180, 150), 30, 0, rl.RED)
+    rl.draw_text_ex(font, sm['selfdriveState'].alertText2, rl.Vector2(180, 190), 20, 0, rl.RED)
 
+    # draw plots (texture is reused internally)
+    plot_texture = draw_plots(plot_arr)
     if hor_mode:
-      screen.blit(draw_plots(plot_arr), (640+384, 0))
+      rl.draw_texture(plot_texture, 640 + 384, 0, rl.WHITE)  # noqa: TID251
     else:
-      screen.blit(draw_plots(plot_arr), (0, 600))
+      rl.draw_texture(plot_texture, 0, 600, rl.WHITE)  # noqa: TID251
 
-    pygame.surfarray.blit_array(*top_down)
-    screen.blit(top_down[0], (640, 0))
+    # Convert lid_overlay to RGBA and update top_down texture
+    # lid_overlay is (384, 960), need to transpose to (960, 384) for row-major RGBA buffer
+    lid_rgba = palette[lid_overlay.T]
+    rl.update_texture(top_down_texture, rl.ffi.cast("void *", np.ascontiguousarray(lid_rgba).ctypes.data))
+    rl.draw_texture(top_down_texture, 640, 0, rl.WHITE)  # noqa: TID251
 
     SPACING = 25
-
     lines = [
-      info_font.render("ENABLED", True, GREEN if sm['selfdriveState'].enabled else BLACK),
-      info_font.render("SPEED: " + str(round(sm['carState'].vEgo, 1)) + " m/s", True, YELLOW),
-      info_font.render("LONG CONTROL STATE: " + str(sm['controlsState'].longControlState), True, YELLOW),
-      info_font.render("LONG MPC SOURCE: " + str(sm['longitudinalPlan'].longitudinalPlanSource), True, YELLOW),
+      ("ENABLED", GREEN if sm['selfdriveState'].enabled else BLACK),
+      ("SPEED: " + str(round(sm['carState'].vEgo, 1)) + " m/s", YELLOW),
+      ("LONG CONTROL STATE: " + str(sm['controlsState'].longControlState), YELLOW),
+      ("LONG MPC SOURCE: " + str(sm['longitudinalPlan'].longitudinalPlanSource), YELLOW),
       None,
-      info_font.render("ANGLE OFFSET (AVG): " + str(round(sm['liveParameters'].angleOffsetAverageDeg, 2)) + " deg", True, YELLOW),
-      info_font.render("ANGLE OFFSET (INSTANT): " + str(round(sm['liveParameters'].angleOffsetDeg, 2)) + " deg", True, YELLOW),
-      info_font.render("STIFFNESS: " + str(round(sm['liveParameters'].stiffnessFactor * 100., 2)) + " %", True, YELLOW),
-      info_font.render("STEER RATIO: " + str(round(sm['liveParameters'].steerRatio, 2)), True, YELLOW)
+      ("ANGLE OFFSET (AVG): " + str(round(sm['liveParameters'].angleOffsetAverageDeg, 2)) + " deg", YELLOW),
+      ("ANGLE OFFSET (INSTANT): " + str(round(sm['liveParameters'].angleOffsetDeg, 2)) + " deg", YELLOW),
+      ("STIFFNESS: " + str(round(sm['liveParameters'].stiffnessFactor * 100.0, 2)) + " %", YELLOW),
+      ("STEER RATIO: " + str(round(sm['liveParameters'].steerRatio, 2)), YELLOW),
     ]
 
     for i, line in enumerate(lines):
       if line is not None:
-        screen.blit(line, (write_x, write_y + i * SPACING))
+        color = rl.Color(line[1][0], line[1][1], line[1][2], 255)
+        rl.draw_text_ex(font, line[0], rl.Vector2(write_x, write_y + i * SPACING), 20, 0, color)
 
-    # this takes time...vsync or something
-    pygame.display.flip()
+    rl.end_drawing()
+
+  rl.unload_texture(overlay_texture)
+  rl.unload_texture(top_down_texture)
+  rl.unload_font(font)
+  camera_view.close()
+  rl.close_window()
+
 
 def get_arg_parser():
-  parser = argparse.ArgumentParser(
-    description="Show replay data in a UI.",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser = argparse.ArgumentParser(description="Show replay data in a UI.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("ip_address", nargs="?", default="127.0.0.1",
-                      help="The ip address on which to receive zmq messages.")
+  parser.add_argument("ip_address", nargs="?", default="127.0.0.1", help="The ip address on which to receive zmq messages.")
 
-  parser.add_argument("--frame-address", default=None,
-                      help="The frame address (fully qualified ZMQ endpoint for frames) on which to receive zmq messages.")
+  parser.add_argument("--frame-address", default=None, help="The frame address (fully qualified ZMQ endpoint for frames) on which to receive zmq messages.")
   return parser
+
 
 if __name__ == "__main__":
   args = get_arg_parser().parse_args(sys.argv[1:])

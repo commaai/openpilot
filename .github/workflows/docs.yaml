@@ -22,19 +22,19 @@ jobs:
     steps:
     - uses: commaai/timeout@v1
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
 
     # Build
     - name: Build docs
       run: |
-        # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs
-        mkdocs build
+        git lfs pull
+        pip install zensical
+        python scripts/docs.py build
 
     # Push to docs.comma.ai
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       with:
         path: openpilot-docs

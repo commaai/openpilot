@@ -55,7 +55,7 @@ if __name__ == "__main__":
     sw_ver = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_VERSION_NUMBER).decode("utf-8")
     component = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.SYSTEM_NAME_OR_ENGINE_TYPE).decode("utf-8")
     odx_file = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.ODX_FILE).decode("utf-8").rstrip('\x00')
-    current_coding = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING)  # type: ignore
+    current_coding = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING)
     coding_text = current_coding.hex()
 
     print("\nEPS diagnostic data\n")
@@ -126,9 +126,9 @@ if __name__ == "__main__":
     new_coding = current_coding[0:coding_byte] + new_byte.to_bytes(1, "little") + current_coding[coding_byte+1:]
 
     try:
-      seed = uds_client.security_access(ACCESS_TYPE_LEVEL_1.REQUEST_SEED)  # type: ignore
+      seed = uds_client.security_access(ACCESS_TYPE_LEVEL_1.REQUEST_SEED)
       key = struct.unpack("!I", seed)[0] + 28183  # yeah, it's like that
-      uds_client.security_access(ACCESS_TYPE_LEVEL_1.SEND_KEY, struct.pack("!I", key))  # type: ignore
+      uds_client.security_access(ACCESS_TYPE_LEVEL_1.SEND_KEY, struct.pack("!I", key))
     except (NegativeResponseError, MessageTimeoutError):
       print("Security access failed!")
       print("Open the hood and retry (disables the \"diagnostic firewall\" on newer vehicles)")
@@ -148,7 +148,7 @@ if __name__ == "__main__":
       uds_client.write_data_by_identifier(DATA_IDENTIFIER_TYPE.PROGRAMMING_DATE, prog_date)
       tester_num = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.CALIBRATION_REPAIR_SHOP_CODE_OR_CALIBRATION_EQUIPMENT_SERIAL_NUMBER)
       uds_client.write_data_by_identifier(DATA_IDENTIFIER_TYPE.REPAIR_SHOP_CODE_OR_TESTER_SERIAL_NUMBER, tester_num)
-      uds_client.write_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING, new_coding)  # type: ignore
+      uds_client.write_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING, new_coding)
     except (NegativeResponseError, MessageTimeoutError):
       print("Writing new configuration failed!")
       print("Make sure the comma processes are stopped: tmux kill-session -t comma")
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     try:
       # Read back result just to make 100% sure everything worked
-      current_coding_text = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING).hex()  # type: ignore
+      current_coding_text = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING).hex()
       print(f"   New coding:   {current_coding_text}")
     except (NegativeResponseError, MessageTimeoutError):
       print("Reading back updated coding failed!")

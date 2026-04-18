@@ -65,6 +65,7 @@ class VehicleParamsLearner:
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader):
     if which == 'livePose':
+      t = msg.timestamp * 1e-9
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
 
@@ -127,8 +128,8 @@ class VehicleParamsLearner:
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
-      self.kf.filter.set_filter_time(t)  # type: ignore
-      self.kf.filter.reset_rewind()      # type: ignore
+      self.kf.filter.set_filter_time(t)
+      self.kf.filter.reset_rewind()
 
   def get_msg(self, valid: bool, debug: bool = False) -> capnp._DynamicStructBuilder:
     x = self.kf.x

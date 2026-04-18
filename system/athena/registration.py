@@ -2,6 +2,7 @@
 import time
 import json
 import jwt
+from typing import cast
 from pathlib import Path
 
 from datetime import datetime, timedelta, UTC
@@ -69,7 +70,8 @@ def register(show_spinner=False) -> str | None:
     start_time = time.monotonic()
     while True:
       try:
-        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)}, private_key, algorithm=jwt_algo)
+        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)},
+                                    cast(str, private_key), algorithm=jwt_algo)
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                        imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)

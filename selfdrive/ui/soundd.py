@@ -12,16 +12,23 @@ from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
+from openpilot.system.hardware import HARDWARE
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
+ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
 SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
 FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 
-AMBIENT_DB = 30 # DB where MIN_VOLUME is applied
+AMBIENT_DB = 24 # DB where MIN_VOLUME is applied
 DB_SCALE = 30 # AMBIENT_DB + DB_SCALE is where MAX_VOLUME is applied
+
+VOLUME_BASE = 20
+if HARDWARE.get_device_type() == "tizi":
+  AMBIENT_DB = 30
+  VOLUME_BASE = 10
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
@@ -39,6 +46,11 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
   AudibleAlert.warningSoft: ("warning_soft.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
 }
+if HARDWARE.get_device_type() == "tizi":
+  sound_list.update({
+    AudibleAlert.engage: ("engage_tizi.wav", 1, MAX_VOLUME),
+    AudibleAlert.disengage: ("disengage_tizi.wav", 1, MAX_VOLUME),
+  })
 
 def check_selfdrive_timeout_alert(sm):
   ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
@@ -57,6 +69,9 @@ class Soundd:
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
     self.current_sound_frame = 0
+
+    self.ramp_start_volume = MIN_VOLUME
+    self.ramp_start_time = 0.
 
     self.selfdrive_timeout_alert = False
 
@@ -106,6 +121,9 @@ class Soundd:
   def update_alert(self, new_alert):
     current_alert_played_once = self.current_alert == AudibleAlert.none or self.current_sound_frame > len(self.loaded_sounds[self.current_alert])
     if self.current_alert != new_alert and (new_alert != AudibleAlert.none or current_alert_played_once):
+      if new_alert == AudibleAlert.warningImmediate:
+        self.ramp_start_volume = self.current_volume
+        self.ramp_start_time = time.monotonic()
       self.current_alert = new_alert
       self.current_sound_frame = 0
 
@@ -122,7 +140,7 @@ class Soundd:
 
   def calculate_volume(self, weighted_db):
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
-    return math.pow(10, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
+    return math.pow(VOLUME_BASE, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
 
   @retry(attempts=10, delay=3)
   def get_stream(self, sd):
@@ -144,11 +162,18 @@ class Soundd:
       while True:
         sm.update(0)
 
-        if sm.updated['soundPressure'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
+        # Always update volume, even when alert is playing
+        if sm.updated['soundPressure']:
           self.spl_filter_weighted.update(sm["soundPressure"].soundPressureWeightedDb)
           self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
         self.get_audible_alert(sm)
+
+        # Ramp up immediate warning sound over 4s
+        if self.current_alert == AudibleAlert.warningImmediate:
+          elapsed = time.monotonic() - self.ramp_start_time
+          ramp_vol = float(np.interp(elapsed, [0, ALERT_RAMP_TIME], [self.ramp_start_volume, MAX_VOLUME]))
+          self.current_volume = max(self.current_volume, ramp_vol)
 
         rk.keep_time()
 

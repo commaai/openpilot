@@ -63,7 +63,7 @@ class ActionButton(Widget):
 
   @property
   def text(self) -> str:
-    return self._text() if callable(self._text) else self._text
+    return self._text if isinstance(self._text, str) else self._text()
 
   def _render(self, _):
     text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self.text, AlertConstants.FONT_SIZE)
@@ -118,6 +118,7 @@ class AbstractAlert(Widget, ABC):
     self.scroll_panel = GuiScrollPanel()
 
   def show_event(self):
+    super().show_event()
     self.scroll_panel.set_offset(0)
 
   def set_dismiss_callback(self, callback: Callable):

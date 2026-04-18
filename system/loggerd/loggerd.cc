@@ -219,11 +219,11 @@ void handle_preserve_segment(LoggerdState *s) {
 
 void loggerd_thread() {
   // setup messaging
-  typedef struct ServiceState {
+  struct ServiceState {
     std::string name;
     int counter, freq;
     bool encoder, preserve_segment, record_audio;
-  } ServiceState;
+  };
   std::unordered_map<SubSocket*, ServiceState> service_state;
   std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
@@ -238,7 +238,7 @@ void loggerd_thread() {
     if (it.should_log || (encoder && !livestream_encoder) || record_audio) {
       LOGD("logging %s", it.name.c_str());
 
-      SubSocket * sock = SubSocket::create(ctx.get(), it.name);
+      SubSocket * sock = SubSocket::create(ctx.get(), it.name, "127.0.0.1", false, true, it.queue_size);
       assert(sock != NULL);
       poller->registerSocket(sock);
       service_state[sock] = {

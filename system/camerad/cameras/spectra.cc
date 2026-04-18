@@ -12,11 +12,11 @@
 #include "media/cam_isp_ife.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
-#include "third_party/linux/include/msm_media_info.h"
 
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "system/camerad/cameras/ife.h"
+#include "system/camerad/cameras/nv12_info.h"
 #include "system/camerad/cameras/spectra.h"
 #include "system/camerad/cameras/bps_blobs.h"
 
@@ -274,7 +274,7 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
-void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
+void SpectraCamera::camera_open(VisionIpcServer *v) {
   if (!openSensor()) {
     return;
   }
@@ -286,17 +286,8 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   // size is driven by all the HW that handles frames,
   // the video encoder has certain alignment requirements in this case
-  stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, buf.out_img_width);
-  y_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, buf.out_img_height);
-  uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, buf.out_img_height);
-  uv_offset = stride*y_height;
-  yuv_size = uv_offset + stride*uv_height;
-  if (cc.output_type != ISP_RAW_OUTPUT) {
-    uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
-    yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
-  }
-  assert(stride == VENUS_UV_STRIDE(COLOR_FMT_NV12, buf.out_img_width));
-  assert(y_height/2 == uv_height);
+  std::tie(stride, y_height, uv_height, yuv_size) = get_nv12_info(buf.out_img_width, buf.out_img_height);
+  uv_offset = stride * y_height;
 
   open = true;
   configISP();
@@ -305,7 +296,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   linkDevices();
 
   LOGD("camera init %d", cc.camera_num);
-  buf.init(device_id, ctx, this, v, ife_buf_depth, cc.stream_type);
+  buf.init(this, v, ife_buf_depth, cc.stream_type);
   camera_map_bufs();
   clearAndRequeue(1);
 }
@@ -1004,8 +995,8 @@ bool SpectraCamera::openSensor() {
   };
 
   // Figure out which sensor we have
-  if (!init_sensor_lambda(new OX03C10) &&
-      !init_sensor_lambda(new OS04C10)) {
+  if (!init_sensor_lambda(new OS04C10) &&
+      !init_sensor_lambda(new OX03C10)) {
     LOGE("** sensor %d FAILED bringup, disabling", cc.camera_num);
     enabled = false;
     return false;
@@ -1445,7 +1436,7 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
 }
 
 bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
-  if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
+  if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp, cc.staggered_sof)) {
     return false;
   }
 
@@ -1464,23 +1455,31 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t fram
   return true;
 }
 
-bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp) {
+bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp, bool staggered) {
   if (first_frame_synced) return true;
 
   // Store the frame data for this camera
-  camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1};
+  camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1, staggered};
 
   // Ensure all cameras are up
   int enabled_camera_count = std::count_if(std::begin(ALL_CAMERA_CONFIGS), std::end(ALL_CAMERA_CONFIGS),
                                            [](const auto &config) { return config.enabled; });
   bool all_cams_up = camera_sync_data.size() == enabled_camera_count;
 
-  // Wait until the timestamps line up
+  // Check that camera timestamps are properly aligned:
+  // - non-staggered cameras should be within 0.2ms of each other
+  // - staggered cameras should be within 0.2ms of a 25ms offset from non-staggered cameras
+  const uint64_t half_period_ns = 25 * 1000000ULL;  // 25ms
+  const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
   bool all_cams_synced = true;
-  for (const auto &[_, sync_data] : camera_sync_data) {
+  for (const auto &[cam, sync_data] : camera_sync_data) {
+    if (cam == camera_id) continue;
     uint64_t diff = std::max(timestamp, sync_data.timestamp) -
                     std::min(timestamp, sync_data.timestamp);
-    if (diff > 0.2*1e6) { // milliseconds
+    bool pair_staggered = staggered != sync_data.staggered;
+    uint64_t expected_offset = pair_staggered ? half_period_ns : 0;
+    uint64_t error = (diff > expected_offset) ? diff - expected_offset : expected_offset - diff;
+    if (error > tolerance_ns) {
       all_cams_synced = false;
     }
   }

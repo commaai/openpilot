@@ -91,7 +91,8 @@ bool SegmentManager::mergeSegments(const SegmentMap::iterator &begin, const Segm
   auto &merged_events = merged_event_data->events;
   merged_events.reserve(total_event_count);
 
-  rDebug("merging segments: %s", join(segments_to_merge, ", ").c_str());
+  std::string segments_str = join(segments_to_merge, ", ");
+  rDebug("merging segments: %s", segments_str.c_str());
   for (int n : segments_to_merge) {
     const auto &events = segments_.at(n)->log->events;
     if (events.empty()) continue;
@@ -117,9 +118,15 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
     for (auto it = first; it != last; ++it) {
       auto &segment_ptr = it->second;
       if (!segment_ptr) {
+        if (onBenchmarkEvent_) {
+          onBenchmarkEvent_(it->first, "loading");
+        }
         segment_ptr = std::make_shared<Segment>(
             it->first, route_.at(it->first), flags_, filters_,
             [this](int seg_num, bool success) {
+              if (onBenchmarkEvent_) {
+                onBenchmarkEvent_(seg_num, success ? "loaded" : "load failed");
+              }
               std::unique_lock lock(mutex_);
               needs_update_ = true;
               cv_.notify_one();

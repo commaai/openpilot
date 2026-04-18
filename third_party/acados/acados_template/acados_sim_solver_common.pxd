@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 #
 # Copyright (c) The acados authors.
 #

@@ -99,7 +99,7 @@ class DirectoryTarChunkReader(BinaryChunkReader):
     create_casync_tar_package(pathlib.Path(path), pathlib.Path(cache_file))
 
     self.f = open(cache_file, "rb")
-    return super().__init__(self.f)
+    super().__init__(self.f)
 
   def __del__(self):
     self.f.close()
@@ -168,7 +168,7 @@ def build_chunk_dict(chunks: list[Chunk]) -> ChunkDict:
 def extract(target: list[Chunk],
             sources: list[tuple[str, ChunkReader, ChunkDict]],
             out_path: str,
-            progress: Callable[[int], None] = None):
+            progress: Callable[[int], None] | None = None):
   stats: dict[str, int] = defaultdict(int)
 
   mode = 'rb+' if os.path.exists(out_path) else 'wb'
@@ -208,7 +208,7 @@ def extract_directory(target: list[Chunk],
             sources: list[tuple[str, ChunkReader, ChunkDict]],
             out_path: str,
             tmp_file: str,
-            progress: Callable[[int], None] = None):
+            progress: Callable[[int], None] | None = None):
   """extract a directory stored as a casync tar archive"""
 
   stats = extract(target, sources, tmp_file, progress)

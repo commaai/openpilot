@@ -6,9 +6,9 @@
 #include "common/timing.h"
 #include "common/util.h"
 
-RateKeeper::RateKeeper(const std::string &name, float rate, float print_delay_threshold)
-    : name(name),
-      print_delay_threshold(std::max(0.f, print_delay_threshold)) {
+RateKeeper::RateKeeper(const std::string &name_, float rate, float print_delay_threshold_)
+    : name(name_),
+      print_delay_threshold(std::max(0.f, print_delay_threshold_)) {
   interval = 1 / rate;
   last_monitor_time = seconds_since_boot();
   next_frame_time = last_monitor_time + interval;

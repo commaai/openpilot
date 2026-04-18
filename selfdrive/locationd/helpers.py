@@ -94,7 +94,7 @@ class PointBuckets:
   def add_point(self, x: float, y: float) -> None:
     raise NotImplementedError
 
-  def get_points(self, num_points: int = None) -> Any:
+  def get_points(self, num_points: int | None = None) -> Any:
     points = np.vstack([x.arr for x in self.buckets.values()])
     if num_points is None:
       return points
@@ -172,7 +172,7 @@ class PoseCalibrator:
     ned_from_calib_euler = self._ned_from_calib(pose.orientation)
     angular_velocity_calib = self._transform_calib_from_device(pose.angular_velocity)
     acceleration_calib = self._transform_calib_from_device(pose.acceleration)
-    velocity_calib = self._transform_calib_from_device(pose.angular_velocity)
+    velocity_calib = self._transform_calib_from_device(pose.velocity)
 
     return Pose(ned_from_calib_euler, velocity_calib, acceleration_calib, angular_velocity_calib)
 

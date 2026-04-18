@@ -118,19 +118,24 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
   }
 }
 
-void DetailWidget::setMessage(const MessageId &message_id) {
-  if (std::exchange(msg_id, message_id) == message_id) return;
-
-  tabbar->blockSignals(true);
+int DetailWidget::findOrAddTab(const MessageId& message_id) {
   int index = tabbar->count() - 1;
   for (/**/; index >= 0; --index) {
     if (tabbar->tabData(index).value<MessageId>() == message_id) break;
   }
   if (index == -1) {
-    index = tabbar->addTab(message_id.toString());
+    index = tabbar->addTab(QString::fromStdString(message_id.toString()));
     tabbar->setTabData(index, QVariant::fromValue(message_id));
-    tabbar->setTabToolTip(index, msgName(message_id));
+    tabbar->setTabToolTip(index, QString::fromStdString(msgName(message_id)));
   }
+  return index;
+}
+
+void DetailWidget::setMessage(const MessageId &message_id) {
+  if (std::exchange(msg_id, message_id) == message_id) return;
+
+  tabbar->blockSignals(true);
+  int index = findOrAddTab(message_id);
   tabbar->setCurrentIndex(index);
   tabbar->blockSignals(false);
 
@@ -140,6 +145,29 @@ void DetailWidget::setMessage(const MessageId &message_id) {
   history_log->setMessage(msg_id);
   refresh();
   setUpdatesEnabled(true);
+}
+
+std::pair<QString, QStringList> DetailWidget::serializeMessageIds() const {
+  QStringList msgs;
+  for (int i = 0; i < tabbar->count(); ++i) {
+    MessageId id = tabbar->tabData(i).value<MessageId>();
+    msgs.append(QString::fromStdString(id.toString()));
+  }
+  return std::make_pair(QString::fromStdString(msg_id.toString()), msgs);
+}
+
+void DetailWidget::restoreTabs(const QString active_msg_id, const QStringList& msg_ids) {
+  tabbar->blockSignals(true);
+  for (const auto& str_id : msg_ids) {
+    MessageId id = MessageId::fromString(str_id.toStdString());
+    if (dbc()->msg(id) != nullptr)
+      findOrAddTab(id);
+  }
+  tabbar->blockSignals(false);
+
+  auto active_id = MessageId::fromString(active_msg_id.toStdString());
+  if (dbc()->msg(active_id) != nullptr)
+    setMessage(active_id);
 }
 
 void DetailWidget::refresh() {
@@ -152,10 +180,10 @@ void DetailWidget::refresh() {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
     for (auto s : binary_view->getOverlappingSignals()) {
-      warnings.push_back(tr("%1 has overlapping bits.").arg(s->name));
+      warnings.push_back(tr("%1 has overlapping bits.").arg(QString::fromStdString(s->name)));
     }
   }
-  QString msg_name = msg ? QString("%1 (%2)").arg(msg->name, msg->transmitter) : msgName(msg_id);
+  QString msg_name = msg ? QString("%1 (%2)").arg(QString::fromStdString(msg->name), QString::fromStdString(msg->transmitter)) : QString::fromStdString(msgName(msg_id));
   name_label->setText(msg_name);
   name_label->setToolTip(msg_name);
   action_remove_msg->setEnabled(msg != nullptr);
@@ -180,10 +208,10 @@ void DetailWidget::updateState(const std::set<MessageId> *msgs) {
 void DetailWidget::editMsg() {
   auto msg = dbc()->msg(msg_id);
   int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
-  EditMessageDialog dlg(msg_id, msgName(msg_id), size, this);
+  EditMessageDialog dlg(msg_id, QString::fromStdString(msgName(msg_id)), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(), dlg.size_spin->value(),
-                                       dlg.node->text().trimmed(), dlg.comment_edit->toPlainText().trimmed()));
+    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed().toStdString(), dlg.size_spin->value(),
+                                       dlg.node->text().trimmed().toStdString(), dlg.comment_edit->toPlainText().trimmed().toStdString()));
   }
 }
 
@@ -195,7 +223,7 @@ void DetailWidget::removeMsg() {
 
 EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent)
     : original_name(title), msg_id(msg_id), QDialog(parent) {
-  setWindowTitle(tr("Edit message: %1").arg(msg_id.toString()));
+  setWindowTitle(tr("Edit message: %1").arg(QString::fromStdString(msg_id.toString())));
   QFormLayout *form_layout = new QFormLayout(this);
 
   form_layout->addRow("", error_label = new QLabel);
@@ -213,8 +241,8 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
   form_layout->addRow(btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel));
 
   if (auto msg = dbc()->msg(msg_id)) {
-    node->setText(msg->transmitter);
-    comment_edit->setText(msg->comment);
+    node->setText(QString::fromStdString(msg->transmitter));
+    comment_edit->setText(QString::fromStdString(msg->comment));
   }
   validateName(name_edit->text());
   setFixedWidth(parent->width() * 0.9);
@@ -224,10 +252,10 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
 }
 
 void EditMessageDialog::validateName(const QString &text) {
-  bool valid = text.compare(UNTITLED, Qt::CaseInsensitive) != 0;
+  bool valid = text.compare(QString::fromStdString(UNTITLED), Qt::CaseInsensitive) != 0;
   error_label->setVisible(false);
   if (!text.isEmpty() && valid && text != original_name) {
-    valid = dbc()->msg(msg_id.source, text) == nullptr;
+    valid = dbc()->msg(msg_id.source, text.toStdString()) == nullptr;
     if (!valid) {
       error_label->setText(tr("Name already exists"));
       error_label->setVisible(true);
@@ -244,13 +272,13 @@ CenterWidget::CenterWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(welcome_widget = createWelcomeWidget());
 }
 
-void CenterWidget::setMessage(const MessageId &msg_id) {
+DetailWidget* CenterWidget::ensureDetailWidget() {
   if (!detail_widget) {
     delete welcome_widget;
     welcome_widget = nullptr;
     layout()->addWidget(detail_widget = new DetailWidget(((MainWindow*)parentWidget())->charts_widget, this));
   }
-  detail_widget->setMessage(msg_id);
+  return detail_widget;
 }
 
 void CenterWidget::clear() {

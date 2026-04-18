@@ -1,11 +1,10 @@
-Import('env', 'envCython', 'arch')
+Import('env', 'envCython')
 
 common_libs = [
   'params.cc',
   'swaglog.cc',
   'util.cc',
   'ratekeeper.cc',
-  'clutil.cc',
 ]
 
 _common = env.Library('common', common_libs, LIBS="json11")
@@ -19,11 +18,6 @@ if GetOption('extras'):
 # Cython bindings
 params_python = envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
 
-SConscript([
-  'transformations/SConscript',
-])
-
-Import('transformations_python')
-common_python = [params_python, transformations_python]
+common_python = [params_python]
 
 Export('common_python')

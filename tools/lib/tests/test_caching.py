@@ -2,11 +2,13 @@ import http.server
 import os
 import shutil
 import socket
+import tempfile
 import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile
+from openpilot.tools.lib.url_file import URLFile, prune_cache
+import openpilot.tools.lib.url_file as url_file_module
 
 
 class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -54,13 +56,13 @@ class TestFileDownload:
     for k, v in retry_defaults.items():
       assert getattr(URLFile.pool_manager().connection_pool_kw["retries"], k) == v
 
-    # ensure caching off by default and cache dir doesn't get created
-    os.environ.pop("FILEREADER_CACHE", None)
+    # ensure caching on by default and cache dir gets created
+    os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     if os.path.exists(Paths.download_cache_root()):
       shutil.rmtree(Paths.download_cache_root())
     URLFile(f"{host}/test.txt").get_length()
     URLFile(f"{host}/test.txt").read()
-    assert not os.path.exists(Paths.download_cache_root())
+    assert os.path.exists(Paths.download_cache_root())
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
@@ -88,7 +90,7 @@ class TestFileDownload:
 
   def test_small_file(self):
     # Make sure we don't force cache
-    os.environ["FILEREADER_CACHE"] = "0"
+    os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/SAFETY.md"
     #  If you want large file to be larger than a chunk
     #  large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/fcamera.hevc"
@@ -117,7 +119,10 @@ class TestFileDownload:
 
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_recover_from_missing_file(self, host, cache_enabled):
-    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+    if cache_enabled:
+      os.environ.pop("DISABLE_FILEREADER_CACHE", None)
+    else:
+      os.environ["DISABLE_FILEREADER_CACHE"] = "1"
 
     file_url = f"{host}/test.png"
 
@@ -128,3 +133,35 @@ class TestFileDownload:
     CachingTestRequestHandler.FILE_EXISTS = True
     length = URLFile(file_url).get_length()
     assert length == 4
+
+
+class TestCache:
+  def test_prune_cache(self, monkeypatch):
+    with tempfile.TemporaryDirectory() as tmpdir:
+      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
+
+      # setup test files and manifest
+      manifest_lines = []
+      for i in range(3):
+        fname = f"hash_{i}"
+        with open(tmpdir + "/" + fname, "wb") as f:
+          f.truncate(1000)
+        manifest_lines.append(f"{fname} {1000 + i}")
+      with open(tmpdir + "/manifest.txt", "w") as f:
+        f.write('\n'.join(manifest_lines))
+
+      # under limit, shouldn't prune
+      assert len(os.listdir(tmpdir)) == 4
+      prune_cache()
+      assert len(os.listdir(tmpdir)) == 4
+
+      # set a tiny cache limit to force eviction (1.5 chunks worth)
+      monkeypatch.setattr(url_file_module, 'CACHE_SIZE', url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
+
+      # prune_cache should evict oldest files to get under limit
+      prune_cache()
+      remaining = os.listdir(tmpdir)
+      # should have evicted at least one file + manifest
+      assert len(remaining) < 4
+      # newest file should remain
+      assert manifest_lines[2].split()[0] in remaining

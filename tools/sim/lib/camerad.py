@@ -1,13 +1,38 @@
 import numpy as np
-import os
-import pyopencl as cl
-import pyopencl.array as cl_array
 
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal import messaging
 
-from openpilot.common.basedir import BASEDIR
 from openpilot.tools.sim.lib.common import W, H
+
+
+def rgb_to_nv12(rgb):
+  """Convert RGB image to NV12 (YUV420) format using BT.601 coefficients."""
+  h, w = rgb.shape[:2]
+  r = rgb[:, :, 0].astype(np.int32)
+  g = rgb[:, :, 1].astype(np.int32)
+  b = rgb[:, :, 2].astype(np.int32)
+
+  # Y plane - BT.601 coefficients (matches original OpenCL kernel)
+  y = (((b * 13 + g * 65 + r * 33) + 64) >> 7) + 16
+  y = np.clip(y, 0, 255).astype(np.uint8)
+
+  # Subsample RGB for UV (2x2 box filter)
+  r_sub = (r[0::2, 0::2] + r[0::2, 1::2] + r[1::2, 0::2] + r[1::2, 1::2] + 2) >> 2
+  g_sub = (g[0::2, 0::2] + g[0::2, 1::2] + g[1::2, 0::2] + g[1::2, 1::2] + 2) >> 2
+  b_sub = (b[0::2, 0::2] + b[0::2, 1::2] + b[1::2, 0::2] + b[1::2, 1::2] + 2) >> 2
+
+  # U and V planes
+  u = np.clip((b_sub * 56 - g_sub * 37 - r_sub * 19 + 0x8080) >> 8, 0, 255).astype(np.uint8)
+  v = np.clip((r_sub * 56 - g_sub * 47 - b_sub * 9 + 0x8080) >> 8, 0, 255).astype(np.uint8)
+
+  # Interleave UV for NV12 format
+  uv = np.empty((h // 2, w), dtype=np.uint8)
+  uv[:, 0::2] = u
+  uv[:, 1::2] = v
+
+  return np.concatenate([y.ravel(), uv.ravel()]).tobytes()
+
 
 class Camerad:
   """Simulates the camerad daemon"""
@@ -24,18 +49,6 @@ class Camerad:
 
     self.vipc_server.start_listener()
 
-    # set up for pyopencl rgb to yuv conversion
-    self.ctx = cl.create_some_context()
-    self.queue = cl.CommandQueue(self.ctx)
-    cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
-
-    kernel_fn = os.path.join(BASEDIR, "tools/sim/rgb_to_nv12.cl")
-    with open(kernel_fn) as f:
-      prg = cl.Program(self.ctx, f.read()).build(cl_arg)
-      self.krnl = prg.rgb_to_nv12
-    self.Wdiv4 = W // 4 if (W % 4 == 0) else (W + (4 - W % 4)) // 4
-    self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
-
   def cam_send_yuv_road(self, yuv):
     self._send_yuv(yuv, self.frame_road_id, 'roadCameraState', VisionStreamType.VISION_STREAM_ROAD)
     self.frame_road_id += 1
@@ -44,16 +57,11 @@ class Camerad:
     self._send_yuv(yuv, self.frame_wide_id, 'wideRoadCameraState', VisionStreamType.VISION_STREAM_WIDE_ROAD)
     self.frame_wide_id += 1
 
-  # Returns: yuv bytes
   def rgb_to_yuv(self, rgb):
+    """Convert RGB to NV12 YUV format."""
     assert rgb.shape == (H, W, 3), f"{rgb.shape}"
     assert rgb.dtype == np.uint8
-
-    rgb_cl = cl_array.to_device(self.queue, rgb)
-    yuv_cl = cl_array.empty_like(rgb_cl)
-    self.krnl(self.queue, (self.Wdiv4, self.Hdiv4), None, rgb_cl.data, yuv_cl.data).wait()
-    yuv = np.resize(yuv_cl.get(), rgb.size // 2)
-    return yuv.data.tobytes()
+    return rgb_to_nv12(rgb)
 
   def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
     eof = int(frame_id * 0.05 * 1e9)

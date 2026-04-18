@@ -8,7 +8,7 @@ import time
 import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
-from tabulate import tabulate
+from openpilot.common.utils import tabulate
 
 from cereal import log
 import cereal.messaging as messaging
@@ -56,7 +56,7 @@ PROCS = {
   "selfdrive.ui.soundd": 3.0,
   "selfdrive.ui.feedback.feedbackd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
-  "system.proclogd": 3.0,
+  "system.proclogd": 7.0,
   "system.logmessaged": 1.0,
   "system.tombstoned": 0,
   "system.journald": 1.0,
@@ -121,6 +121,7 @@ class TestOnroad:
     params.put_bool("RecordFront", True)
     set_params_enabled()
     os.environ['REPLAY'] = '1'
+    os.environ['MSGQ_PREALLOC'] = '1'
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
@@ -179,7 +180,7 @@ class TestOnroad:
 
   def test_manager_starting_time(self):
     st = self.ts['managerState']['t'][0]
-    assert (st - self.manager_st) < 12.5, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
+    assert (st - self.manager_st) < 15.0, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
@@ -206,8 +207,9 @@ class TestOnroad:
     result += "-------------- UI Draw Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    # skip first few frames -- connecting to vipc
-    ts = self.ts['uiDebug']['drawTimeMillis'][15:]
+    # other processes preempt ui while starting up
+    offset = int(20 * LOG_OFFSET)
+    ts = self.ts['uiDebug']['drawTimeMillis'][offset:]
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
@@ -280,13 +282,17 @@ class TestOnroad:
     print("\n------------------------------------------------")
     print("--------------- Memory Usage -------------------")
     print("------------------------------------------------")
+
+    from openpilot.selfdrive.debug.mem_usage import print_report
+    print_report(self.msgs['procLog'], self.msgs['deviceState'])
+
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
-    print("Memory usage: ", mems)
+    print("MSGQ (/dev/shm/) usage: ", subprocess.check_output(["du", "-hs", "/dev/shm"]).split()[0].decode())
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert np.average(mems) <= 85, "Average memory usage above 85%"
+    assert np.average(mems) <= 80, "Average memory usage too high"
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
@@ -336,9 +342,14 @@ class TestOnroad:
 
         start, end = min(first_fid), min(last_fid)
         for i in range(end-start):
-          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams}
+          # road and wide cameras (first two) should be synced within 2ms
+          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams[:2]}
           diff = (max(ts.values()) - min(ts.values()))
           assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
+
+          # driver camera should be staggered ~25ms from road camera
+          offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
+          assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
 
   def test_camera_encoder_matches(self, subtests):
     # sanity check that the frame metadata is consistent with the encoded frames

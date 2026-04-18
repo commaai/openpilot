@@ -33,7 +33,7 @@ MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
-ALLOWED_CARS = ['toyota', 'hyundai', 'rivian', 'honda']
+ALLOWED_CARS = ['toyota', 'hyundai', 'rivian', 'honda', 'volkswagen']
 
 
 def slope2rot(slope):
@@ -180,7 +180,9 @@ class TorqueEstimator(ParameterEstimator):
       self.lag = msg.lateralDelay
     # calculate lateral accel from past steering torque
     elif which == "livePose":
-      if len(self.raw_points['steer_torque']) == self.hist_len:
+      is_valid = msg.angularVelocityDevice.valid and msg.orientationNED.valid and msg.inputsOK and msg.sensorsOK and msg.posenetOK
+      if len(self.raw_points['steer_torque']) == self.hist_len and is_valid:
+        t = msg.timestamp * 1e-9
         device_pose = Pose.from_live_pose(msg)
         calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
         angular_velocity_calibrated = calibrated_pose.angular_velocity

@@ -145,20 +145,18 @@ class SettingsLayout(Widget):
     if panel.instance:
       panel.instance.render(content_rect)
 
-  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
     # Check close button
     if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
       if self._close_callback:
         self._close_callback()
-      return True
+      return
 
     # Check navigation buttons
     for panel_type, panel_info in self._panels.items():
       if rl.check_collision_point_rec(mouse_pos, panel_info.button_rect):
         self.set_current_panel(panel_type)
-        return True
-
-    return False
+        return
 
   def set_current_panel(self, panel_type: PanelType):
     if panel_type != self._current_panel:

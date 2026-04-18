@@ -16,7 +16,7 @@ from openpilot.tools.lib.openpilotci import get_url
 
 
 def regen_segment(
-  lr: LogIterable, frs: dict[str, Any] = None,
+  lr: LogIterable, frs: dict[str, Any] | None = None,
   processes: Iterable[ProcessConfig] = CONFIGS, disable_tqdm: bool = False
 ) -> list[capnp._DynamicStructReader]:
   all_msgs = sorted(lr, key=lambda m: m.logMonoTime)

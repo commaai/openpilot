@@ -68,7 +68,7 @@ def write_time_to_param(params, param) -> None:
   t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
   params.put(param, t)
 
-def run(cmd: list[str], cwd: str = None) -> str:
+def run(cmd: list[str], cwd: str | None = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -244,6 +244,9 @@ class Updater:
       b = self.get_branch(BASEDIR)
     b = {
       ("tizi", "release3"): "release-tizi",
+      ("tizi", "release3-staging"): "release-tizi-staging",
+      ("mici", "release3"): "release-mici",
+      ("mici", "release3-staging"): "release-mici-staging",
     }.get((HARDWARE.get_device_type(), b), b)
     return b
 

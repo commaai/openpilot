@@ -8,11 +8,11 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
-from openpilot.common.util import sudo_read, sudo_write
+from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, LPABase, ThermalConfig, ThermalZone
 from openpilot.system.hardware.tici import iwlist
-from openpilot.system.hardware.tici.esim import TiciLPA
+from openpilot.system.hardware.tici.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
@@ -125,7 +125,7 @@ class Tici(HardwareBase):
       return int(f.read())
 
   def set_ir_power(self, percent: int):
-    if self.get_device_type() in ("tici", "tizi"):
+    if self.get_device_type() == "tizi":
       return
 
     value = int((percent / 100) * 300)
@@ -321,11 +321,12 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    intake, exhaust, case = None, None, None
+    intake, exhaust, gnss, bottomSoc = None, None, None, None
     if self.get_device_type() == "mici":
-      case = ThermalZone("case")
+      gnss = ThermalZone("gnss")
       intake = ThermalZone("intake")
       exhaust = ThermalZone("exhaust")
+      bottomSoc = ThermalZone("bottom_soc")
     return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-silver-usr") for i in range(4)] +
                              [ThermalZone(f"cpu{i}-gold-usr") for i in range(4)],
                          gpu=[ThermalZone("gpu0-usr"), ThermalZone("gpu1-usr")],
@@ -334,7 +335,8 @@ class Tici(HardwareBase):
                          pmic=[ThermalZone("pm8998_tz"), ThermalZone("pm8005_tz")],
                          intake=intake,
                          exhaust=exhaust,
-                         case=case)
+                         gnss=gnss,
+                         bottomSoc=bottomSoc)
 
   def set_display_power(self, on):
     try:
@@ -369,7 +371,7 @@ class Tici(HardwareBase):
     if self.amplifier is not None:
       self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
       if not powersave_enabled:
-        self.amplifier.initialize_configuration(self.get_device_type())
+        self.amplifier.initialize_configuration()
 
     # *** CPU config ***
 
@@ -404,7 +406,7 @@ class Tici(HardwareBase):
 
   def initialize_hardware(self):
     if self.amplifier is not None:
-      self.amplifier.initialize_configuration(self.get_device_type())
+      self.amplifier.initialize_configuration()
 
     # Allow hardwared to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
@@ -456,14 +458,10 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
-    modem = self.get_modem()
-    try:
-      manufacturer = str(modem.Get(MM_MODEM, 'Manufacturer', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
-    except Exception:
-      manufacturer = None
-
     cmds = []
+    modem = self.get_modem()
 
+    # Quectel EG25
     if self.get_device_type() in ("tizi", ):
       # clear out old blue prime initial APN
       os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
@@ -478,16 +476,8 @@ class Tici(HardwareBase):
         'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
         'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
       ]
-    elif manufacturer == 'Cavli Inc.':
-      cmds += [
-        'AT^SIMSWAP=1',     # use SIM slot, instead of internal eSIM
-        'AT$QCSIMSLEEP=0',  # disable SIM sleep
-        'AT$QCSIMCFG=SimPowerSave,0',  # more sleep disable
 
-        # ethernet config
-        'AT$QCPCFG=usbNet,0',
-        'AT$QCNETDEVCTL=3,1',
-      ]
+    # Quectel EG916
     else:
       # this modem gets upset with too many AT commands
       if sim_id is None or len(sim_id) == 0:

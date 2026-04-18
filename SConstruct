@@ -4,9 +4,11 @@ import sys
 import sysconfig
 import platform
 import shlex
+import importlib
 import numpy as np
 
 import SCons.Errors
+from SCons.Defaults import _stripixes
 
 SCons.Warnings.warningAsException(True)
 
@@ -14,11 +16,8 @@ Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
-AddOption('--kaitai', action='store_true', help='Regenerate kaitai struct parsers')
-AddOption('--asan', action='store_true', help='turn on ASAN')
-AddOption('--ubsan', action='store_true', help='turn on UBSan')
-AddOption('--mutation', action='store_true', help='generate mutation-ready code')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
+AddOption('--verbose', action='store_true', default=False, help='show full build commands')
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -29,7 +28,6 @@ AddOption('--minimal',
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
 elif arch == "aarch64" and os.path.isfile('/TICI'):
   arch = "larch64"
 assert arch in [
@@ -39,6 +37,48 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
+pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
+pkgs = [importlib.import_module(name) for name in pkg_names]
+
+
+# ***** enforce a whitelist of system libraries *****
+# this prevents silently relying on a 3rd party package,
+# e.g. apt-installed libusb. all libraries should either
+# be distributed with all Linux distros and macOS, or
+# vendored in commaai/dependencies.
+allowed_system_libs = {
+  "EGL", "GLESv2", "GL",
+  "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
+  "dl", "drm", "gbm", "m", "pthread",
+}
+
+def _resolve_lib(env, name):
+  for d in env.Flatten(env.get('LIBPATH', [])):
+    p = Dir(str(d)).abspath
+    for ext in ('.a', '.so', '.dylib'):
+      f = File(os.path.join(p, f'lib{name}{ext}'))
+      if f.exists() or f.has_builder():
+        return name
+  if name in allowed_system_libs:
+    return name
+  raise SCons.Errors.UserError(f"Unexpected non-vendored library '{name}'")
+
+def _libflags(target, source, env, for_signature):
+  libs = []
+  lp = env.subst('$LIBLITERALPREFIX')
+  for lib in env.Flatten(env.get('LIBS', [])):
+    if isinstance(lib, str):
+      if os.sep in lib or lib.startswith('#'):
+        libs.append(File(lib))
+      elif lib.startswith('-') or (lp and lib.startswith(lp)):
+        libs.append(lib)
+      else:
+        libs.append(_resolve_lib(env, lib))
+    else:
+      libs.append(lib)
+  return _stripixes(env['LIBLINKPREFIX'], libs, env['LIBLINKSUFFIX'],
+                    env['LIBPREFIXES'], env['LIBSUFFIXES'], env, env['LIBLITERALPREFIX'])
+
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
@@ -47,15 +87,13 @@ env = Environment(
     "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
     "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
   },
-  CC='clang',
-  CXX='clang++',
   CCFLAGS=[
     "-g",
     "-fPIC",
     "-O2",
     "-Wunused",
     "-Werror",
-    "-Wshadow",
+    "-Wshadow" if arch in ("Darwin", "larch64") else "-Wshadow=local",
     "-Wno-unknown-warning-option",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
@@ -74,7 +112,7 @@ env = Environment(
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
-    "#third_party/libyuv/include",
+    [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
     "#common",
@@ -82,8 +120,8 @@ env = Environment(
     "#third_party",
     "#selfdrive/pandad",
     "#rednose/helpers",
-    f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
+    [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
@@ -92,13 +130,14 @@ env = Environment(
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+if arch != "larch64":
+  env['_LIBFLAGS'] = _libflags
 
 # Arch-specific flags and paths
 if arch == "larch64":
-  env.Append(CPPPATH=["#third_party/opencl/include"])
+  env["CC"] = "clang"
+  env["CXX"] = "clang++"
   env.Append(LIBPATH=[
-    "/usr/local/lib",
-    "/system/vendor/lib64",
     "/usr/lib/aarch64-linux-gnu",
   ])
   arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
@@ -106,30 +145,10 @@ if arch == "larch64":
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
   env.Append(LIBPATH=[
-    f"{brew_prefix}/lib",
-    f"{brew_prefix}/opt/openssl@3.0/lib",
-    f"{brew_prefix}/opt/llvm/lib/c++",
     "/System/Library/Frameworks/OpenGL.framework/Libraries",
   ])
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
   env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
-  env.Append(CPPPATH=[
-    f"{brew_prefix}/include",
-    f"{brew_prefix}/opt/openssl@3.0/include",
-  ])
-else:
-  env.Append(LIBPATH=[
-    "/usr/lib",
-    "/usr/local/lib",
-  ])
-
-# Sanitizers and extra CCFLAGS from CLI
-if GetOption('asan'):
-  env.Append(CCFLAGS=["-fsanitize=address", "-fno-omit-frame-pointer"])
-  env.Append(LINKFLAGS=["-fsanitize=address"])
-elif GetOption('ubsan'):
-  env.Append(CCFLAGS=["-fsanitize=undefined"])
-  env.Append(LINKFLAGS=["-fsanitize=undefined"])
 
 _extra_cc = shlex.split(GetOption('ccflags') or '')
 if _extra_cc:
@@ -138,6 +157,22 @@ if _extra_cc:
 # no --as-needed on mac linker
 if arch != "Darwin":
   env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,--no-undefined"])
+
+# Shorter build output: show brief descriptions instead of full commands.
+# Full command lines are still printed on failure by scons.
+if not GetOption('verbose'):
+  for action, short in (
+    ("CC",     "CC"),
+    ("CXX",    "CXX"),
+    ("LINK",   "LINK"),
+    ("SHCC",   "CC"),
+    ("SHCXX",  "CXX"),
+    ("SHLINK", "LINK"),
+    ("AR",     "AR"),
+    ("RANLIB", "RANLIB"),
+    ("AS",     "AS"),
+  ):
+    env[f"{action}COMSTR"] = f"  [{short}] $TARGET"
 
 # progress output
 node_interval = 5
@@ -150,10 +185,9 @@ if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
 # ********** Cython build environment **********
-py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
-envCython["CPPPATH"] += [py_include, np.get_include()]
-envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-declarations"]
+envCython["CPPPATH"] += [sysconfig.get_paths()['include'], np.get_include()]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]
 envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
@@ -185,7 +219,6 @@ Export('common')
 env_swaglog = env.Clone()
 env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
 SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
-SConscript(['opendbc_repo/SConscript'], exports={'env': env_swaglog})
 
 SConscript(['cereal/SConscript'])
 
@@ -202,7 +235,6 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
 ])
 
@@ -212,12 +244,23 @@ if arch == "larch64":
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/SConscript'])
+# Build selfdrive
+SConscript([
+  'selfdrive/pandad/SConscript',
+  'selfdrive/controls/lib/lateral_mpc_lib/SConscript',
+  'selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+  'selfdrive/locationd/SConscript',
+  'selfdrive/modeld/SConscript',
+  'selfdrive/ui/SConscript',
+])
 
-if Dir('#tools/cabana/').exists() and GetOption('extras'):
-  SConscript(['tools/replay/SConscript'])
-  if arch != "larch64":
-    SConscript(['tools/cabana/SConscript'])
+# Build tools
+if arch != "larch64":
+  SConscript([
+    'tools/replay/SConscript',
+    'tools/cabana/SConscript',
+    'tools/jotpluggler/SConscript',
+  ])
 
 
 env.CompilationDatabase('compile_commands.json')

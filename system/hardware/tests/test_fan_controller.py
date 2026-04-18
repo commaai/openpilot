@@ -1,12 +1,12 @@
 import pytest
 
-from openpilot.system.hardware.fan_controller import TiciFanController
+from openpilot.system.hardware.fan_controller import FanController
 
-ALL_CONTROLLERS = [TiciFanController]
+ALL_CONTROLLERS = [FanController]
 
 def patched_controller(mocker, controller_class):
   mocker.patch("os.system", new=mocker.Mock())
-  return controller_class()
+  return controller_class(2)
 
 class TestFanController:
   def wind_up(self, controller, ignition=True):

@@ -140,7 +140,7 @@ def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> tuple[int, int]:
       j -= 1
 
       if prefix_val == 1 and prefix_len - 1 == suffix_len:
-        val = 2**(prefix_len-1) - 1 + suffix_val
+        val = int(2**(prefix_len-1) - 1 + suffix_val)
         size = prefix_len + suffix_len
         return val, size
     i += 1

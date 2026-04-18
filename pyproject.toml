@@ -1,11 +1,11 @@
 [project]
 name = "openpilot"
-requires-python = ">= 3.11, < 3.13"
+requires-python = ">= 3.12.3, < 3.13"
 license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
 authors = [
-  {name ="Vehicle Researcher", email="user@comma.ai"}
+  {name = "Vehicle Researcher", email="user@comma.ai"}
 ]
 
 dependencies = [
@@ -14,42 +14,44 @@ dependencies = [
   "pyserial",     # pigeond + qcomgpsd
   "requests",     # many one-off uses
   "sympy",        # rednose + friends
-  "crcmod",       # cars + qcomgpsd
+  "crcmod-plus",  # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
-
-  # hardwared
-  "smbus2", # configuring amp
 
   # core
   "cffi",
   "scons",
-  "pycapnp==2.1.0",
+  "pycapnp",
   "Cython",
   "setuptools",
   "numpy >=2.0",
 
+  # vendored native dependencies
+  "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
+  "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
+  "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
+  "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
+  "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
+  "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
+  "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
+  "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
+  "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
+  "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
+  "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
+  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
+
   # body / webrtcd
+  "av",
   "aiohttp",
   "aiortc",
-  # aiortc does not put an upper bound on pyopenssl and is now incompatible
-  # with the latest release
-  "pyopenssl < 24.3.0",
-  "pyaudio",
-
-  # ubloxd (TODO: just use struct)
-  "kaitaistruct",
 
   # panda
   "libusb1",
   "spidev; platform_system == 'Linux'",
 
-  # modeld
-  "onnx >= 1.14.0",
-
   # logging
   "pyzmq",
   "sentry-sdk",
-  "xattr", # used in place of 'os.getxattr' for macos compatibility
+  "xattr",  # used in place of 'os.getxattr' for macOS compatibility
 
   # athena
   "PyJWT",
@@ -58,7 +60,6 @@ dependencies = [
 
   # acados deps
   "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
-  "future-fstrings",
 
   # joystickd
   "inputs",
@@ -72,60 +73,42 @@ dependencies = [
   "zstandard",
 
   # ui
-  "raylib < 5.5.0.3", # TODO: unpin when they fix https://github.com/electronstudio/raylib-python-cffi/issues/186
+  "raylib > 5.5.0.3",
   "qrcode",
-  "mapbox-earcut",
+  "jeepney",
+  "pillow",
 ]
 
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "natsort",
-  "mkdocs",
+  "zensical",
 ]
 
 testing = [
+  "coverage",
   "hypothesis ==6.47.*",
-  "mypy",
+  "ty",
   "pytest",
   "pytest-cpp",
   "pytest-subtests",
   # https://github.com/pytest-dev/pytest-xdist/pull/1229
   "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
-  "pytest-timeout",
-  "pytest-randomly",
   "pytest-asyncio",
   "pytest-mock",
-  "pytest-repeat",
   "ruff",
   "codespell",
   "pre-commit-hooks",
 ]
 
 dev = [
-  "av",
-  "azure-identity",
-  "azure-storage-blob",
-  "dbus-next", # TODO: remove once we moved everything to jeepney
-  "dictdiffer",
-  "jeepney",
   "matplotlib",
   "opencv-python-headless",
-  "parameterized >=0.8, <0.9",
-  "pyautogui",
-  "pygame",
-  "pyopencl; platform_machine != 'aarch64'", # broken on arm64
-  "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
-  "pywinctl",
-  "pyprof2calltree",
-  "tabulate",
-  "types-requests",
-  "types-tabulate",
 ]
 
 tools = [
-  "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl ; (platform_machine != 'aarch64')",
-  "dearpygui>=2.1.0",
+  "imgui  @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
 [project.urls]
@@ -148,7 +131,6 @@ cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
 asyncio_default_fixture_loop_scope = "function"
-#timeout = "30"  # you get this long by default
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
@@ -157,65 +139,19 @@ markers = [
 testpaths = [
   "common",
   "selfdrive",
-  "system/manager",
-  "system/updated",
-  "system/athena",
-  "system/camerad",
-  "system/hardware",
-  "system/loggerd",
-  "system/tests",
-  "system/ubloxd",
-  "system/webrtc",
-  "tools/lib/tests",
-  "tools/replay",
-  "tools/cabana",
-  "cereal/messaging/tests",
+  "system",
+  "tools",
+  "cereal",
 ]
 
 [tool.codespell]
 quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
-ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite"
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite,ser"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*"
+skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, *.pem, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
 
-[tool.mypy]
-python_version = "3.11"
-exclude = [
-  "cereal/",
-  "msgq/",
-  "msgq_repo/",
-  "opendbc/",
-  "opendbc_repo/",
-  "panda/",
-  "rednose/",
-  "rednose_repo/",
-  "tinygrad/",
-  "tinygrad_repo/",
-  "teleoprtc/",
-  "teleoprtc_repo/",
-  "third_party/",
-]
-
-# third-party packages
-ignore_missing_imports=true
-
-# helpful warnings
-warn_redundant_casts=true
-warn_unreachable=true
-warn_unused_ignores=true
-
-# restrict dynamic typing
-warn_return_any=true
-
-# allow implicit optionals for default args
-implicit_optional = true
-
-local_partial_types=true
-explicit_package_bases=true
-disable_error_code = "annotation-unchecked"
-
-# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+# https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 [tool.ruff]
 indent-width = 2
 lint.select = [
@@ -225,7 +161,7 @@ lint.select = [
   "TRY203", "TRY400", "TRY401", # try/excepts
   "RUF008", "RUF100",
   "TID251",
-  "PLR1704",
+  "PLE", "PLR1704",
 ]
 lint.ignore = [
   "E741",
@@ -235,6 +171,7 @@ lint.ignore = [
   "B027",
   "B024",
   "NPY002",  # new numpy random syntax is worse
+  "UP045", "UP007",  # these don't play nice with raylib atm
 ]
 line-length = 160
 target-version ="py311"
@@ -269,6 +206,50 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
 "pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
 "pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
+"pyray.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
 
 [tool.ruff.format]
 quote-style = "preserve"
+
+[tool.ty.src]
+exclude = [
+  "cereal/",
+  "msgq/",
+  "msgq_repo/",
+  "opendbc/",
+  "opendbc_repo/",
+  "panda/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "teleoprtc/",
+  "teleoprtc_repo/",
+  "third_party/",
+]
+
+[tool.ty.rules]
+# Ignore unresolved imports for Cython-compiled modules (.pyx)
+unresolved-import = "ignore"
+# Ignore unresolved attributes - many from capnp and Cython modules
+unresolved-attribute = "ignore"
+# Ignore invalid method overrides - signature variance issues
+invalid-method-override = "ignore"
+# Ignore possibly-missing-attribute - too many false positives
+possibly-missing-attribute = "ignore"
+# Ignore invalid assignment - often intentional monkey-patching
+invalid-assignment = "ignore"
+# Ignore no-matching-overload - numpy/ctypes overload matching issues
+no-matching-overload = "ignore"
+# Ignore invalid-argument-type - many false positives from raylib, ctypes, numpy
+invalid-argument-type = "ignore"
+# Ignore call-non-callable - false positives from dynamic types
+call-non-callable = "ignore"
+# Ignore unsupported-operator - false positives from dynamic types
+unsupported-operator = "ignore"
+# Ignore not-subscriptable - false positives from dynamic types
+not-subscriptable = "ignore"
+# not-iterable errors are now fixed
+
+[tool.uv]
+python-preference = "only-managed"

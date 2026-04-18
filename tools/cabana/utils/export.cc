@@ -26,7 +26,7 @@ void exportSignalsToCSV(const QString &file_name, const MessageId &msg_id) {
     QTextStream stream(&file);
     stream << "time,addr,bus";
     for (auto s : msg->sigs)
-      stream << "," << s->name;
+      stream << "," << s->name.c_str();
     stream << "\n";
 
     for (auto e : can->events(msg_id)) {

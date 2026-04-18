@@ -4,10 +4,10 @@ const struct i2c_random_wr_payload start_reg_array_os04c10[] = {{0x100, 1}};
 const struct i2c_random_wr_payload stop_reg_array_os04c10[] = {{0x100, 0}};
 
 const struct i2c_random_wr_payload init_array_os04c10[] = {
-  // DP_2688X1520_NEWSTG_MIPI0776Mbps_30FPS_10BIT_FOURLANE
-  {0x0103, 0x01},
+  // baseed on DP_2688X1520_NEWSTG_MIPI0776Mbps_30FPS_10BIT_FOURLANE
+  {0x0103, 0x01}, // software reset
 
-  // PLL
+  // PLL + clocks
   {0x0301, 0xe4},
   {0x0303, 0x01},
   {0x0305, 0xb6},
@@ -24,7 +24,7 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   {0x3106, 0x21},
   {0x3107, 0xa1},
 
-  // ?
+  // Analog/timing fine-tuning block
   {0x3624, 0x00},
   {0x3625, 0x4c},
   {0x3660, 0x04},
@@ -101,7 +101,7 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   {0x3f00, 0x0b},
   {0x3f06, 0x04},
 
-  // BLC
+  // BLC - black level correction
   {0x400a, 0x01},
   {0x400b, 0x50},
   {0x400e, 0x08},
@@ -157,7 +157,7 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   {0x5180, 0x70},
   {0x5181, 0x10},
 
-  // DPC
+  // DPC - defective pixel correction
   {0x520a, 0x03},
   {0x520b, 0x06},
   {0x520c, 0x0c},
@@ -248,7 +248,7 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   {0x4008, 0x01},
   {0x4009, 0x06},
 
-  // FSIN
+  // FSIN - frame sync
   {0x3002, 0x22},
   {0x3663, 0x22},
   {0x368a, 0x04},
@@ -276,8 +276,8 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   {0x3816, 0x03},
   {0x3817, 0x01},
 
-  {0x380c, 0x0b}, {0x380d, 0xac}, // HTS
-  {0x380e, 0x06}, {0x380f, 0x9c}, // VTS
+  {0x380c, 0x0b}, {0x380d, 0xac}, // HTS (line length)
+  {0x380e, 0x06}, {0x380f, 0x9c}, // VTS (frame length)
 
   {0x3820, 0xb3},
   {0x3821, 0x01},
@@ -309,17 +309,17 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   // initialize exposure
   {0x3503, 0x88},
 
-  // long
+  // long exposure
   {0x3500, 0x00}, {0x3501, 0x00}, {0x3502, 0x10},
   {0x3508, 0x00}, {0x3509, 0x80},
   {0x350a, 0x04}, {0x350b, 0x00},
 
-  // short
+  // short exposure
   {0x3510, 0x00}, {0x3511, 0x00}, {0x3512, 0x40},
   {0x350c, 0x00}, {0x350d, 0x80},
   {0x350e, 0x04}, {0x350f, 0x00},
 
-  // wb
+  // white balance
   // b
   {0x5100, 0x06}, {0x5101, 0x7e},
   {0x5140, 0x06}, {0x5141, 0x7e},
@@ -332,7 +332,7 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
 };
 
 const struct i2c_random_wr_payload ife_downscale_override_array_os04c10[] = {
-  // OS04C10_AA_00_02_17_wAO_2688x1524_MIPI728Mbps_Linear12bit_20FPS_4Lane_MCLK24MHz
+  // based on OS04C10_AA_00_02_17_wAO_2688x1524_MIPI728Mbps_Linear12bit_20FPS_4Lane_MCLK24MHz
   {0x3c8c, 0x40},
   {0x3714, 0x24},
   {0x37c2, 0x04},

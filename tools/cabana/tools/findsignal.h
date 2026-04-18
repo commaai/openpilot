@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
+#include <vector>
 
 #include <QAbstractTableModel>
 #include <QCheckBox>
@@ -26,14 +28,14 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 3; }
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return std::min(filtered_signals.size(), 300); }
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return std::min((int)filtered_signals.size(), 300); }
   void search(std::function<bool(double)> cmp);
   void reset();
   void undo();
 
-  QList<SearchSignal> filtered_signals;
-  QList<SearchSignal> initial_signals;
-  QList<QList<SearchSignal>> histories;
+  std::vector<SearchSignal> filtered_signals;
+  std::vector<SearchSignal> initial_signals;
+  std::vector<std::vector<SearchSignal>> histories;
   uint64_t last_time = std::numeric_limits<uint64_t>::max();
 };
 

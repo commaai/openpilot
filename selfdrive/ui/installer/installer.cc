@@ -30,16 +30,25 @@ const std::string VALID_CACHE_PATH = "/data/.openpilot_cache";
 
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
-const int FONT_SIZE = 120;
+const int FONT_SIZE = 160;
 
 extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
 extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
 extern const uint8_t inter_ttf[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_start");
 extern const uint8_t inter_ttf_end[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_end");
+extern const uint8_t inter_light_ttf[] asm("_binary_selfdrive_assets_fonts_Inter_Light_ttf_start");
+extern const uint8_t inter_light_ttf_end[] asm("_binary_selfdrive_assets_fonts_Inter_Light_ttf_end");
+extern const uint8_t inter_bold_ttf[] asm("_binary_selfdrive_assets_fonts_Inter_Bold_ttf_start");
+extern const uint8_t inter_bold_ttf_end[] asm("_binary_selfdrive_assets_fonts_Inter_Bold_ttf_end");
 
-Font font;
+Font font_inter;
+Font font_roman;
+Font font_display;
 
-std::vector<std::string> tici_prebuilt_branches = {"release3", "release-tizi", "release3-staging", "nightly", "nightly-dev"};
+const bool tici_device = Hardware::get_device_type() == cereal::InitData::DeviceType::TICI ||
+                         Hardware::get_device_type() == cereal::InitData::DeviceType::TIZI;
+
+std::vector<std::string> tici_prebuilt_branches = {"release3", "release-tici", "release3-staging", "nightly", "nightly-dev"};
 std::string migrated_branch;
 
 void branchMigration() {
@@ -57,6 +66,12 @@ void branchMigration() {
     } else if (BRANCH_STR == "release3-staging") {
       migrated_branch = "release-tizi-staging";
     }
+  } else if (device_type == cereal::InitData::DeviceType::MICI) {
+    if (BRANCH_STR == "release3") {
+      migrated_branch = "release-mici";
+    } else if (BRANCH_STR == "release3-staging") {
+      migrated_branch = "release-mici-staging";
+    }
   }
 }
 
@@ -68,9 +83,13 @@ void run(const char* cmd) {
 void finishInstall() {
   BeginDrawing();
     ClearBackground(BLACK);
-    const char *m = "Finishing install...";
-    int text_width = MeasureText(m, FONT_SIZE);
-    DrawTextEx(font, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
+    if (tici_device) {
+      const char *m = "Finishing install...";
+      int text_width = MeasureText(m, FONT_SIZE);
+      DrawTextEx(font_display, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
+    } else {
+      DrawTextEx(font_display, "finishing setup", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
+    }
   EndDrawing();
   util::sleep_for(60 * 1000);
 }
@@ -78,13 +97,21 @@ void finishInstall() {
 void renderProgress(int progress) {
   BeginDrawing();
     ClearBackground(BLACK);
-    DrawTextEx(font, "Installing...", (Vector2){150, 290}, 110, 0, WHITE);
-    Rectangle bar = {150, 570, (float)GetScreenWidth() - 300, 72};
-    DrawRectangleRec(bar, (Color){41, 41, 41, 255});
-    progress = std::clamp(progress, 0, 100);
-    bar.width *= progress / 100.0f;
-    DrawRectangleRec(bar, (Color){70, 91, 234, 255});
-    DrawTextEx(font, (std::to_string(progress) + "%").c_str(), (Vector2){150, 670}, 85, 0, WHITE);
+    if (tici_device) {
+      DrawTextEx(font_inter, "Installing...", (Vector2){150, 290}, 110, 0, WHITE);
+      Rectangle bar = {150, 570, (float)GetScreenWidth() - 300, 72};
+      DrawRectangleRec(bar, (Color){41, 41, 41, 255});
+      progress = std::clamp(progress, 0, 100);
+      bar.width *= progress / 100.0f;
+      DrawRectangleRec(bar, (Color){70, 91, 234, 255});
+      DrawTextEx(font_inter, (std::to_string(progress) + "%").c_str(), (Vector2){150, 670}, 85, 0, WHITE);
+    } else {
+      DrawTextEx(font_display, "installing...", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
+      const std::string percent_str = std::to_string(progress) + "%";
+      DrawTextEx(font_inter, percent_str.c_str(), (Vector2){12, (float)(GetScreenHeight() - 154 + 20)}, 154, 0,
+                 (Color){255, 255, 255, (unsigned char)(255 * 0.9 * 0.65)});
+    }
+
   EndDrawing();
 }
 
@@ -117,6 +144,7 @@ int cachedFetch(const std::string &cache) {
   LOGD("Fetching with cache: %s", cache.c_str());
 
   run(util::string_format("cp -rp %s %s", cache.c_str(), TMP_INSTALL_PATH).c_str());
+  run(util::string_format("cd %s && git remote set-url origin %s", TMP_INSTALL_PATH, GIT_URL.c_str()).c_str());
   run(util::string_format("cd %s && git remote set-branches --add origin %s", TMP_INSTALL_PATH, migrated_branch.c_str()).c_str());
 
   renderProgress(10);
@@ -211,9 +239,18 @@ void cloneFinished(int exitCode) {
 }
 
 int main(int argc, char *argv[]) {
-  InitWindow(2160, 1080, "Installer");
-  font = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, FONT_SIZE, NULL, 0);
-  SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
+  if (tici_device) {
+    InitWindow(2160, 1080, "Installer");
+  } else {
+    InitWindow(536, 240, "Installer");
+  }
+
+  font_inter = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, FONT_SIZE, NULL, 0);
+  font_roman = LoadFontFromMemory(".ttf", inter_light_ttf, inter_light_ttf_end - inter_light_ttf, FONT_SIZE, NULL, 0);
+  font_display = LoadFontFromMemory(".ttf", inter_bold_ttf, inter_bold_ttf_end - inter_bold_ttf, FONT_SIZE, NULL, 0);
+  SetTextureFilter(font_inter.texture, TEXTURE_FILTER_BILINEAR);
+  SetTextureFilter(font_roman.texture, TEXTURE_FILTER_BILINEAR);
+  SetTextureFilter(font_display.texture, TEXTURE_FILTER_BILINEAR);
 
   branchMigration();
 
@@ -226,6 +263,8 @@ int main(int argc, char *argv[]) {
   }
 
   CloseWindow();
-  UnloadFont(font);
+  UnloadFont(font_inter);
+  UnloadFont(font_roman);
+  UnloadFont(font_display);
   return 0;
 }

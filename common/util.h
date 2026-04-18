@@ -96,6 +96,13 @@ bool create_directories(const std::string &dir, mode_t mode);
 
 std::string check_output(const std::string& command);
 
+inline void check_system(const std::string& cmd) {
+  int ret = std::system(cmd.c_str());
+  if (ret != 0) {
+    fprintf(stderr, "system command failed (%d): %s\n", ret, cmd.c_str());
+  }
+}
+
 bool system_time_valid();
 
 inline void sleep_for(const int milliseconds) {

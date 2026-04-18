@@ -1,5 +1,30 @@
-Version 0.10.2 (2025-11-23)
+Version 0.11.1 (2026-04-22)
 ========================
+* New driver monitoring model
+* Improved image processing pipeline for driver camera
+* Rivian R1S and R1T 2025 support thanks to lukasloetkolben!
+
+Version 0.11.0 (2026-03-17)
+========================
+* New driving model #36798
+  * Fully trained using a learned simulator
+  * Improved longitudinal performance in Experimental mode
+* Reduce comma four standby power usage by 77% to 52 mW
+* Kia K7 2017 support thanks to royjr!
+* Lexus LS 2018 support thanks to Hacheoy!
+
+Version 0.10.3 (2025-12-17)
+========================
+* New driving model #36249
+  * New temporal policy architecture
+  * New on-policy training physics noise model
+* New driver monitoring model #36409
+  * Trained on a new dataset, including comma four data
+* Improved inter-process communication memory efficiency
+
+Version 0.10.2 (2025-11-19)
+========================
+* comma four support
 
 Version 0.10.1 (2025-09-08)
 ========================

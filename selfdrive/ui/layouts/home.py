@@ -20,8 +20,6 @@ SPACING = 25
 RIGHT_COLUMN_WIDTH = 750
 REFRESH_INTERVAL = 10.0
 
-PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
-
 
 class HomeLayoutState(IntEnum):
   HOME = 0
@@ -41,7 +39,7 @@ class HomeLayout(Widget):
 
     self.current_state = HomeLayoutState.HOME
     self.last_refresh = 0
-    self.settings_callback: callable | None = None
+    self.settings_callback: Callable[[], None] | None = None
 
     self.update_available = False
     self.alert_count = 0
@@ -64,6 +62,7 @@ class HomeLayout(Widget):
     self._setup_callbacks()
 
   def show_event(self):
+    super().show_event()
     self._exp_mode_button.show_event()
     self.last_refresh = time.monotonic()
     self._refresh()

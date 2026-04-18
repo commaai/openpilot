@@ -19,7 +19,7 @@ struct BusConfig {
 };
 
 struct PandaStreamConfig {
-  QString serial = "";
+  std::string serial = "";
   std::vector<BusConfig> bus_config;
 };
 
@@ -28,8 +28,8 @@ class PandaStream : public LiveStream {
 public:
   PandaStream(QObject *parent, PandaStreamConfig config_ = {});
   ~PandaStream() { stop(); }
-  inline QString routeName() const override {
-    return QString("Panda: %1").arg(config.serial);
+  inline std::string routeName() const override {
+    return "Panda: " + config.serial;
   }
 
 protected:

@@ -1,6 +1,6 @@
 {% set footnote_tag = '[<sup>{}</sup>](#footnotes)' %}
 {% set star_icon = '[![star](assets/icon-star-{}.svg)](##)' %}
-{% set video_icon = '<a href="{}" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>' %}
+{% set video_icon = '<a href="{}" target="_blank"><img height="18px" src="assets/icon-youtube.svg" /></a>' %}
 {# Force hardware column wider by using a blank image with max width. #}
 {% set width_tag = '<a href="##"><img width=2000></a>%s<br>&nbsp;' %}
 {% set hardware_col_name = 'Hardware Needed' %}
@@ -42,7 +42,7 @@ If your car has the following packages or features, then it's a good candidate f
 
 | Make | Required Package/Features |
 | ---- | ------------------------- |
-| Acura | Any car with AcuraWatch Plus will work. AcuraWatch Plus comes standard on many newer models. |
+| Acura | Any car with AcuraWatch will work. AcuraWatch comes standard on many newer models. |
 | Ford | Any car with Lane Centering will likely work. |
 | Honda | Any car with Honda Sensing will work. Honda Sensing comes standard on many newer models. |
 | Subaru | Any car with EyeSight will work. EyeSight comes standard on many newer models. |

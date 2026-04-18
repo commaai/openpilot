@@ -114,7 +114,7 @@ class DriverStateRenderer(Widget):
 
     # Get monitoring state
     dm_state = sm["driverMonitoringState"]
-    self.is_active = dm_state.isActiveMode
+    self.is_active = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     self.is_rhd = dm_state.isRHD
 
     # Update fade state (smoother transition between active/inactive)
