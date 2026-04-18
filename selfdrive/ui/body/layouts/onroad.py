@@ -1,6 +1,6 @@
 import time
-
 import pyray as rl
+
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -15,9 +15,6 @@ IDLE_TIMEOUT = 30.0        # seconds of no joystick input before playing INQUISI
 IDLE_STEER_THRESH = 0.5    # degrees — below this counts as no input
 IDLE_SPEED_THRESH = 0.01   # m/s — below this counts as no input
 
-PAIR_BTN_FONT_SIZE = 60
-PAIR_BTN_MARGIN = 20
-
 
 # This class is used both in BIG (tizi) and small (mici) UIs
 class BodyLayout(Widget):
@@ -28,7 +25,6 @@ class BodyLayout(Widget):
     self._turning_right = False
     self._last_input_time = time.monotonic()
     self._was_active = False
-    self._font_bold = gui_app.font(FontWeight.BOLD)
     self._offroad_label = UnifiedLabel("turn on ignition to use", 75 if gui_app.big_ui() else 45, FontWeight.DISPLAY,
                                        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                                        alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
@@ -51,6 +47,8 @@ class BodyLayout(Widget):
       rl.draw_circle(x, y, DOT_RADIUS, color)
 
   def _update_state(self):
+    super()._update_state()
+
     sm = ui_state.sm
 
     if ui_state.is_onroad():

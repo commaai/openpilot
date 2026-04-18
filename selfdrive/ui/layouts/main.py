@@ -30,7 +30,7 @@ class MainLayout(Widget):
 
     # Initialize layouts
     self._home_layout = HomeLayout()
-    self._body_layout = BodyLayout()
+    self._home_body_layout = BodyLayout()
     self._layouts = {MainState.HOME: self._home_layout, MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
     self._on_body_changed()  # set initial body state, TODO: can we remove?
 
@@ -58,7 +58,7 @@ class MainLayout(Widget):
     self._home_layout._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
 
-    for layout in (self._home_layout, self._body_layout):
+    for layout in (self._home_layout, self._home_body_layout):
       layout.set_click_callback(self._on_onroad_clicked)
       layout.set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
 
@@ -78,6 +78,7 @@ class MainLayout(Widget):
       self._set_mode_for_state()
 
   def _set_mode_for_state(self):
+    # Don't go onroad if body, home is onroad
     if ui_state.is_body:
       self._set_current_layout(MainState.HOME)
       return
@@ -114,7 +115,7 @@ class MainLayout(Widget):
     self._sidebar.set_visible(not self._sidebar.is_visible)
 
   def _on_body_changed(self):
-    self._layouts[MainState.HOME] = self._body_layout if ui_state.is_body else self._home_layout
+    self._layouts[MainState.HOME] = self._home_body_layout if ui_state.is_body else self._home_layout
     self._set_mode_for_state()
 
   def _render_main_content(self):
