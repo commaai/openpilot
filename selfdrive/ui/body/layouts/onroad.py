@@ -69,9 +69,6 @@ class BodyLayout(Widget):
       self._was_active = False
       self._animator.set_animation(ASLEEP)
 
-    if not sm.updated['carState']:
-      return
-
     steer = sm['testJoystick'].axes[1] if len(sm['testJoystick'].axes) > 1 else 0
     self._turning_left = steer >= 0.05
     self._turning_right = steer <= -0.05

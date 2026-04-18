@@ -32,7 +32,7 @@ class MiciMainLayout(Scroller):
     self._settings_layout = SettingsLayout()
     self._car_onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
     self._body_onroad_layout = BodyLayout()
-    self._on_body_changed()
+    self._on_body_changed() # set initial state
 
     # Initialize widget rects
     for widget in (self._home_layout, self._alerts_layout, self._settings_layout,
@@ -61,6 +61,13 @@ class MiciMainLayout(Scroller):
     self._onboarding_window = OnboardingWindow(lambda: gui_app.pop_widgets_to(self))
     if not self._onboarding_window.completed:
       gui_app.push_widget(self._onboarding_window)
+
+  @property
+  def _onroad_layout(self):
+    if ui_state.is_body:
+      return self._body_onroad_layout
+    else:
+      return self._car_onroad_layout
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(
@@ -142,5 +149,3 @@ class MiciMainLayout(Scroller):
   def _on_body_changed(self):
     self._car_onroad_layout.set_visible(not ui_state.is_body)
     self._body_onroad_layout.set_visible(ui_state.is_body)
-
-    self._onroad_layout = self._body_onroad_layout if ui_state.is_body else self._car_onroad_layout
