@@ -78,7 +78,7 @@ class UIState:
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
-    self.is_body: bool = True
+    self.is_body: bool = False
     self.CP: car.CarParams | None = None
     self.light_sensor: float = -1.0
     self._param_update_time: float = 0.0
@@ -188,7 +188,7 @@ class UIState:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
 
       if self.is_body != self.CP.notCar:
-        self.is_body = True  # self.CP.notCar
+        self.is_body = self.CP.notCar
         for callback in self._on_body_changed_callbacks:
           callback()
 
