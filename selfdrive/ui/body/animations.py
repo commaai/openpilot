@@ -130,7 +130,6 @@ ASLEEP = Animation(
   frames=[
     _make_frame(EYE_CLOSED, _mirror(EYE_CLOSED), [], [], MOUTH_NORMAL),
   ],
-  # frame_duration=0.25,
 )
 
 SLEEPY = Animation(
@@ -154,8 +153,6 @@ INQUISITIVE = Animation(
     _make_frame(_shift(EYE_LEFT_LOOK, (0, -1)), _shift(_mirror(EYE_RIGHT_LOOK), (0, -1)), BROW_HIGH, _mirror(BROW_HIGH), MOUTH_SMILE),
     _make_frame(_shift(EYE_LEFT_LOOK, (0, -1)), _shift(_mirror(EYE_RIGHT_LOOK), (0, -1)), BROW_HIGH, _mirror(BROW_HIGH), MOUTH_SMILE),
     _make_frame(EYE_LEFT_LOOK, _mirror(EYE_RIGHT_LOOK), BROW_HIGH, _mirror(BROW_HIGH), MOUTH_SMILE),
-
-    # _make_frame(EYE_OPEN, _mirror(EYE_OPEN), BROW_HIGH, _mirror(BROW_HIGH), MOUTH_SMILE),
 
     _make_frame(EYE_RIGHT_LOOK, _mirror(EYE_LEFT_LOOK), BROW_HIGH, _mirror(BROW_HIGH), MOUTH_SMILE),
     _make_frame(_shift(EYE_RIGHT_LOOK, (0, 1)), _shift(_mirror(EYE_LEFT_LOOK), (0, 1)), BROW_HIGH, _mirror(BROW_HIGH), MOUTH_SMILE),
