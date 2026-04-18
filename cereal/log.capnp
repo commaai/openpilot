@@ -2120,8 +2120,9 @@ struct DriverMonitoringState {
   visionPolicyState @9 :VisionPolicyState;
   wheeltouchPolicyState @10 :WheeltouchPolicyState;
 
-  # ordinal must match name
   enum AlertLevel {
+    # ordinal must match the name to prevent bugs
+    # comparing against the raw ordinal value
     none @0;
     one @1;
     two @2;
