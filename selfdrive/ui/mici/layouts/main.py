@@ -28,17 +28,15 @@ class MiciMainLayout(Scroller):
 
     # Initialize widgets
     self._home_layout = MiciHomeLayout()
+    self._alerts_layout = MiciOffroadAlerts()
+    self._settings_layout = SettingsLayout()
     self._car_onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
     self._body_onroad_layout = BodyLayout()
     self._on_body_changed()
 
-    self._alerts_layout = MiciOffroadAlerts()
-    self._settings_layout = SettingsLayout()
-
     # Initialize widget rects
-    for widget in (self._home_layout,
-                   self._car_onroad_layout, self._body_onroad_layout,
-                   self._settings_layout, self._alerts_layout):
+    for widget in (self._home_layout, self._alerts_layout, self._settings_layout,
+                   self._car_onroad_layout, self._body_onroad_layout):
       # TODO: set parent rect and use it if never passed rect from render (like in Scroller)
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
