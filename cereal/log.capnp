@@ -2106,14 +2106,14 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
 
 struct DriverMonitoringState {
   lockout @0 :Bool;
-  alertCountLockoutPercent @1 :Float32;
-  alertTimeLockoutPercent @2 :Float32;
+  alertCountLockoutPercent @1 :Int8;
+  alertTimeLockoutPercent @2 :Int8;
 
   alwaysOn @3 :Bool;
   alwaysOnLockout @4 :Bool;
 
   alertLevel @5 :AlertLevel;
-  monitoringPolicy @6 :MonitoringPolicy;
+  activePolicy @6 :MonitoringPolicy;
   isRHD @7 :Bool;
   rhdCalibration @8 :CalibrationState;
 
@@ -2135,17 +2135,15 @@ struct DriverMonitoringState {
   }
 
   struct VisionPolicyState {
-    awarenessPercent @0 :Float32;
+    awarenessPercent @0 :Int8;
     awarenessStep @1 :Float32;
     isDistracted @2 :Bool;
     distractedTypes @3 :DistractedTypes;
 
     faceDetected @4 :Bool;
-    rpyPose @5 :List(Float32);
-    poseCalibration @6 :PoseCalibration;
-    poseUncertainty @7 :Float32;
-    wheeltouchFallbackPercent @8 :Float32;
-    uncertainOffroadAlertPercent @9 :Float32;
+    pose @5 :Pose;
+    wheeltouchFallbackPercent @6 :Int8;
+    uncertainOffroadAlertPercent @7 :Int8;
 
     struct DistractedTypes {
       pose @0: Bool;
@@ -2153,21 +2151,24 @@ struct DriverMonitoringState {
       phone @2: Bool;
     }
 
-    struct PoseCalibration {
-      calibrated @0 :Bool;
-      pitch @1 :CalibrationState;
-      yaw @2 :CalibrationState;
+    struct Pose {
+      pitch @0 :Float32;
+      yaw @1 :Float32;
+      pitchCalib @2 :CalibrationState;
+      yawCalib @3 :CalibrationState;
+      calibrated @4 :Bool;
+      uncertainty @5 :Float32;
     }
   }
 
   struct WheeltouchPolicyState {
-    awarenessPercent @0 :Float32;
+    awarenessPercent @0 :Int8;
     awarenessStep @1 :Float32;
     driverInteracting @2 :Bool;
   }
 
   struct CalibrationState {
-    calibratedPercent @0 :Float32;
+    calibratedPercent @0 :Int8;
     offset @1 :Float32;
   }
 }

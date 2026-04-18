@@ -14,7 +14,7 @@ AlertLevel = log.DriverMonitoringState.AlertLevel
 MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
 
 def to_perc(v):
-  return min(max(v * 100., 0.), 100.)
+  return int(min(max(v * 100., 0.), 100.))
 
 # ******************************************************************************************
 #  NOTE: To fork maintainers.
@@ -110,7 +110,7 @@ cam = DEVICE_CAMERAS[("tici", "ar0231")] # corrected image has same size as raw
 W, H = (cam.dcam.width, cam.dcam.height)  # corrected image has same size as raw
 
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
-  # the output of these angles are in device frame
+  # the output of these angles are in driver camera frame
   # so from driver's perspective, pitch is up and yaw is right
 
   pitch_net, yaw_net, roll_net = angles_desc
@@ -383,13 +383,14 @@ class DriverMonitoring:
     dm.visionPolicyState.distractedTypes.eye = self.distracted_types['eye']
     dm.visionPolicyState.distractedTypes.phone = self.distracted_types['phone']
     dm.visionPolicyState.faceDetected = self.face_detected
-    dm.visionPolicyState.rpyPose = [self.pose.roll, self.pose.pitch, self.pose.yaw]
-    dm.visionPolicyState.poseCalibration.calibrated = self.pose.calibrated
-    dm.visionPolicyState.poseCalibration.pitch.calibratedPercent = to_perc(self.pose.pitch_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    dm.visionPolicyState.poseCalibration.pitch.offset = self.pose.pitch_offseter.filtered_stat.M
-    dm.visionPolicyState.poseCalibration.yaw.calibratedPercent = to_perc(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    dm.visionPolicyState.poseCalibration.yaw.offset = self.pose.yaw_offseter.filtered_stat.M
-    dm.visionPolicyState.poseUncertainty = self.model_std_max
+    dm.visionPolicyState.pose.pitch = self.pose.pitch
+    dm.visionPolicyState.pose.yaw = self.pose.yaw
+    dm.visionPolicyState.pose.calibrated = self.pose.calibrated
+    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = to_perc(self.pose.pitch_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    dm.visionPolicyState.pose.pitchCalib.offset = self.pose.pitch_offseter.filtered_stat.M
+    dm.visionPolicyState.pose.yawCalib.calibratedPercent = to_perc(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    dm.visionPolicyState.pose.yawCalib.offset = self.pose.yaw_offseter.filtered_stat.M
+    dm.visionPolicyState.pose.uncertainty = self.model_std_max
     dm.visionPolicyState.wheeltouchFallbackPercent = to_perc(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
     dm.visionPolicyState.uncertainOffroadAlertPercent = to_perc(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
 

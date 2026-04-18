@@ -97,7 +97,7 @@ class SimulatedSensors:
     dm.monitoringPolicy = log.DriverMonitoringState.MonitoringPolicy.vision
     dm.visionPolicyState.faceDetected = True
     dm.visionPolicyState.isDistracted = False
-    dm.visionPolicyState.awarenessPercent = 100.
+    dm.visionPolicyState.awarenessPercent = 100
     self.pm.send('driverMonitoringState', dat)
 
   def send_camera_images(self, world: 'World'):
