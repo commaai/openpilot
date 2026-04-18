@@ -3,7 +3,6 @@ import pyray as rl
 from collections.abc import Callable
 from enum import IntEnum
 from openpilot.common.params import Params
-from openpilot.selfdrive.ui.layouts.settings.settings import PanelType
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
 from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButton
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
@@ -40,7 +39,7 @@ class HomeLayout(Widget):
 
     self.current_state = HomeLayoutState.HOME
     self.last_refresh = 0
-    self.settings_callback: Callable | None = None
+    self.settings_callback: Callable[[], None] | None = None
 
     self.update_available = False
     self.alert_count = 0
@@ -62,9 +61,6 @@ class HomeLayout(Widget):
     self._exp_mode_button = ExperimentalModeButton()
     self._setup_callbacks()
 
-  def set_settings_callback(self, callback: Callable):
-    self.settings_callback = callback
-
   def show_event(self):
     super().show_event()
     self._exp_mode_button.show_event()
@@ -74,8 +70,10 @@ class HomeLayout(Widget):
   def _setup_callbacks(self):
     self.update_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
     self.offroad_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
-    self._exp_mode_button.set_click_callback(lambda: self.settings_callback(PanelType.TOGGLES) if self.settings_callback else None)
-    self._setup_widget.set_open_settings_callback(lambda: self.settings_callback(PanelType.FIREHOSE) if self.settings_callback else None)
+    self._exp_mode_button.set_click_callback(lambda: self.settings_callback() if self.settings_callback else None)
+
+  def set_settings_callback(self, callback: Callable):
+    self.settings_callback = callback
 
   def _set_state(self, state: HomeLayoutState):
     # propagate show/hide events
