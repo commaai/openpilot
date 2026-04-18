@@ -21,6 +21,7 @@ class Animation:
   left_turn_remove: list[tuple[int, int]] | None = None   # dots to remove from frame when turning left
   right_turn_remove: list[tuple[int, int]] | None = None   # dots to remove from frame when turning right
 
+
 # --- Animation Helper Functions ---
 
 def _mirror(dots: list[tuple[int, int]]) -> list[tuple[int, int]]:
@@ -41,9 +42,10 @@ def _shift(dots: list[tuple[int, int]], rc: tuple[int, int]) -> list[tuple[int, 
 
 
 def _make_frame(left_eye: list[tuple[int, int]], right_eye: list[tuple[int, int]],
-                 left_brow: list[tuple[int, int]], right_brow: list[tuple[int, int]],
-                 mouth: list[tuple[int, int]]) -> list[tuple[int, int]]:
+                left_brow: list[tuple[int, int]], right_brow: list[tuple[int, int]],
+                mouth: list[tuple[int, int]]) -> list[tuple[int, int]]:
   return left_eye + left_brow + right_eye + right_brow + mouth
+
 
 # --- Animation Helper Components ---
 
@@ -101,7 +103,6 @@ MOUTH_SAD = [
 (7, 6),                 (7, 9)
 ]
 
-
 # --- Animations ---
 
 NORMAL = Animation(
@@ -134,7 +135,7 @@ ASLEEP = Animation(
 
 SLEEPY = Animation(
   frames=[
-    _make_frame(EYE_CLOSED, _mirror(EYE_CLOSED), _shift(BROW_STRAIGHT, (1,0)), [], MOUTH_NORMAL),
+    _make_frame(EYE_CLOSED, _mirror(EYE_CLOSED), _shift(BROW_STRAIGHT, (1, 0)), [], MOUTH_NORMAL),
     _make_frame(EYE_HALF, _mirror(EYE_CLOSED), BROW_LOWERED, [], MOUTH_NORMAL),
     _make_frame(EYE_OPEN, _mirror(EYE_CLOSED), BROW_HIGH, [], MOUTH_NORMAL)
   ],
