@@ -32,7 +32,6 @@ class MiciMainLayout(Scroller):
     self._settings_layout = SettingsLayout()
     self._car_onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
     self._body_onroad_layout = BodyLayout()
-    self._on_body_changed() # set initial state
 
     # Initialize widget rects
     for widget in (self._home_layout, self._alerts_layout, self._settings_layout,
@@ -147,5 +146,6 @@ class MiciMainLayout(Scroller):
     self._pm.send('bookmarkButton', user_bookmark)
 
   def _on_body_changed(self):
+    print('on body changed', ui_state.is_body)
     self._car_onroad_layout.set_visible(not ui_state.is_body)
     self._body_onroad_layout.set_visible(ui_state.is_body)
