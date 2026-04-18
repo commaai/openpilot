@@ -80,6 +80,7 @@ class MainLayout(Widget):
     # Don't go onroad if body, home is onroad
     if ui_state.is_body:
       self._set_current_layout(MainState.HOME)
+      self._sidebar.set_visible(not ui_state.ignition)
       return
 
     if ui_state.started:
