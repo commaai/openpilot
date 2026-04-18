@@ -144,6 +144,5 @@ class MiciMainLayout(Scroller):
     self._pm.send('bookmarkButton', user_bookmark)
 
   def _on_body_changed(self):
-    print('on body changed', ui_state.is_body)
     self._car_onroad_layout.set_visible(not ui_state.is_body)
     self._body_onroad_layout.set_visible(ui_state.is_body)
