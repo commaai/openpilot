@@ -1,26 +1,6 @@
-import pyray as rl
-rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
 import gc
 import weakref
 import pytest
-from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets import Widget
-
-# mici dialogs
-from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
-from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog as MiciDriverCameraDialog
-from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigInputDialog
-from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
-
-# tici dialogs
-from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog as TiciDriverCameraDialog
-from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow as TiciOnboardingWindow
-from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog as TiciPairingDialog
-from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
-from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
-from openpilot.system.ui.widgets.html_render import HtmlModal
-from openpilot.system.ui.widgets.keyboard import Keyboard
 
 # FIXME: known small leaks not worth worrying about at the moment
 KNOWN_LEAKS = {
@@ -52,7 +32,8 @@ KNOWN_LEAKS = {
 }
 
 
-def get_child_widgets(widget: Widget) -> list[Widget]:
+def get_child_widgets(widget) -> list:
+  from openpilot.system.ui.widgets import Widget
   children = []
   for val in widget.__dict__.values():
     items = val if isinstance(val, (list, tuple)) else (val,)
@@ -62,6 +43,28 @@ def get_child_widgets(widget: Widget) -> list[Widget]:
 
 @pytest.mark.skip(reason="segfaults")
 def test_dialogs_do_not_leak():
+  # Lazy-load heavy UI imports only when test actually runs
+  # This avoids importing expensive UI modules during test collection
+  import pyray as rl
+  rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
+  from openpilot.system.ui.lib.application import gui_app
+
+  # mici dialogs
+  from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
+  from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog as MiciDriverCameraDialog
+  from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
+  from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigInputDialog
+  from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
+
+  # tici dialogs
+  from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog as TiciDriverCameraDialog
+  from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow as TiciOnboardingWindow
+  from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog as TiciPairingDialog
+  from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+  from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
+  from openpilot.system.ui.widgets.html_render import HtmlModal
+  from openpilot.system.ui.widgets.keyboard import Keyboard
+
   gui_app.init_window("ref-test")
 
   leaked_widgets = set()
