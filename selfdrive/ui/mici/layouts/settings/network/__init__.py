@@ -24,6 +24,19 @@ class ESimNetworkButton(BigButton):
   def _update_state(self):
     super()._update_state()
 
+    if self._cellular_manager.is_euicc is False:
+      info = self._cellular_manager.sim_info
+      sim_id = info.get("sim_id") or ""
+      state = (info.get("sim_state") or [""])[0] if isinstance(info.get("sim_state"), list) else ""
+      if sim_id:
+        self.set_text(f"sim (...{sim_id[-4:]})")
+        self.set_value(self._cellular_manager.modem_ip or info.get("mcc_mnc") or "no IP")
+      else:
+        self.set_text("sim")
+        self.set_value(state.lower() if state else "no sim")
+      self.set_icon(self._get_cell_icon() if sim_id else self._cell_none_icon)
+      return
+
     if self._cellular_manager.busy:
       self.set_text("esim")
       self.set_value("switching...")

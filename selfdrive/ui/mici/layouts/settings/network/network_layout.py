@@ -70,7 +70,12 @@ class NetworkLayoutMici(NavScroller):
     self._cellular_manager = cellular_manager
     self._esim_ui = ESimUIMici(self._cellular_manager)
     self._esim_button = ESimNetworkButton(self._cellular_manager)
-    self._esim_button.set_click_callback(lambda: gui_app.push_widget(self._esim_ui))
+
+    def open_esim_ui():
+      if self._cellular_manager.is_euicc is False:
+        return
+      gui_app.push_widget(self._esim_ui)
+    self._esim_button.set_click_callback(open_esim_ui)
 
     # ******** Advanced settings ********
     # ******** Roaming toggle ********

@@ -34,12 +34,24 @@ def _get_lpa() -> LPABase:
   return HARDWARE.get_sim_lpa()
 
 
+def _get_sim_info() -> dict:
+  from openpilot.system.hardware import HARDWARE
+  try:
+    return HARDWARE.get_sim_info()
+  except Exception:
+    return {}
+
+
 class CellularManager:
   def __init__(self):
     self._lpa: LPABase | None = None
     self._profiles: list[Profile] = []
     self._busy: bool = False
     self._switching_iccid: str | None = None
+    # None = not yet checked, True/False = cached result. SIM cannot be swapped
+    # without disassembling the device, so we probe once and keep the result.
+    self._is_euicc: bool | None = None
+    self._sim_info: dict = {}
 
     self._lock = threading.Lock()
     self._callback_queue: list[Callable] = []
@@ -84,7 +96,11 @@ class CellularManager:
 
     if not self._busy and not self._polling and now >= self._no_poll_until and now - self._last_profile_poll >= PROFILE_POLL_INTERVAL:
       self._last_profile_poll = now
-      self._poll_profiles()
+      if self._is_euicc is False:
+        # confirmed non-eUICC: don't touch LPA, but keep sim_info fresh for the UI
+        self._sim_info = _get_sim_info()
+      else:
+        self._poll_profiles()
 
   @property
   def profiles(self) -> list[Profile]:
@@ -97,6 +113,14 @@ class CellularManager:
   @property
   def switching_iccid(self) -> str | None:
     return self._switching_iccid
+
+  @property
+  def is_euicc(self) -> bool | None:
+    return self._is_euicc
+
+  @property
+  def sim_info(self) -> dict:
+    return self._sim_info
 
   def _poll_modem_ip(self):
     ip = _get_modem_ip()
@@ -144,6 +168,8 @@ class CellularManager:
     threading.Thread(target=worker, daemon=True).start()
 
   def refresh_profiles(self):
+    if self._is_euicc is False:
+      return
     self._poll_profiles(is_refresh=True)
 
   def _poll_profiles(self, is_refresh: bool = False):
@@ -153,6 +179,14 @@ class CellularManager:
       try:
         with self._lock:
           lpa = self._ensure_lpa()
+          if self._is_euicc is None:
+            cloudlog.info("eSIM: checking eUICC presence")
+            self._is_euicc = lpa.is_euicc()
+            cloudlog.info(f"eSIM: is_euicc={self._is_euicc}")
+          if not self._is_euicc:
+            sim_info = _get_sim_info()
+            self._callback_queue.append(lambda: self._finish_poll_non_euicc(sim_info))
+            return
           cloudlog.info("eSIM: processing notifications")
           lpa.process_notifications()
           cloudlog.info("eSIM: listing profiles")
@@ -164,6 +198,12 @@ class CellularManager:
         self._callback_queue.append(lambda: setattr(self, '_polling', False))
 
     threading.Thread(target=worker, daemon=True).start()
+
+  def _finish_poll_non_euicc(self, sim_info: dict):
+    self._polling = False
+    self._sim_info = sim_info
+    for cb in self._profiles_updated_cbs:
+      cb(self._profiles)
 
   def _finish_poll(self, profiles: list[Profile]):
     self._polling = False
