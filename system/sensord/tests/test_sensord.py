@@ -30,16 +30,16 @@ SENSOR_CONFIGURATIONS: list[set] = {
 }.get(HARDWARE.get_device_type(), [])
 
 Sensor = log.SensorEventData.SensorSource
-SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', 'std_max'], defaults=[None])
+SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', 'std_max'])
 ALL_SENSORS = {
   Sensor.lsm6ds3trc: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .15),
-    SensorConfig("temperature", 10, 40, 1),  # set for max range of our office
+    SensorConfig("acceleration", 5, 15, 5),
+    SensorConfig("gyroUncalibrated", 0, .15, 0.5),
+    SensorConfig("temperature", 10, 40, 0.5),  # set for max range of our office
   },
 
   Sensor.mmc5603nj: {
-    SensorConfig("magneticUncalibrated", 0, 300),
+    SensorConfig("magneticUncalibrated", 0, 300, 10),
   }
 }
 ALL_SENSORS[Sensor.lsm6ds3] = ALL_SENSORS[Sensor.lsm6ds3trc]
@@ -205,10 +205,9 @@ class TestSensord:
         err_msg = f"Sensor '{sensor} {s.type}' failed sanity checks {measurement_stat} is not between {s.sanity_min} and {s.sanity_max}"
         assert s.sanity_min <= measurement_stat <= s.sanity_max, err_msg
 
-        if s.std_max is not None:
-          std_dev = np.std(sensor_values[key], axis=0)
-          err_msg = f"Sensor '{sensor} {s.type}' failed std dev test {std_dev} is not under {s.std_max}"
-          assert np.all(std_dev <= s.std_max), err_msg
+        std_dev = np.std(sensor_values[key], axis=0)
+        err_msg = f"Sensor '{sensor} {s.type}' failed std dev test {std_dev} is not under {s.std_max}"
+        assert np.all(std_dev <= s.std_max), err_msg
 
   def test_sensor_verify_no_interrupts_after_stop(self):
     managed_processes["sensord"].start()
