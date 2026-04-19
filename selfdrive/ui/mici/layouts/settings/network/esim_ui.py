@@ -182,7 +182,8 @@ class ESimProfileButton(BigButton):
       ))
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    action_pressed = lambda: self._delete_btn.is_pressed or (self._rename_btn is not None and self._rename_btn.is_pressed)
+    def action_pressed() -> bool:
+      return self._delete_btn.is_pressed or (self._rename_btn is not None and self._rename_btn.is_pressed)
     super().set_touch_valid_callback(lambda: touch_callback() and not action_pressed())
     self._delete_btn.set_touch_valid_callback(touch_callback)
     if self._rename_btn:
