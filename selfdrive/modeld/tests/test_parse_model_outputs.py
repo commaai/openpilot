@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-<<<<<<< HEAD
 from openpilot.selfdrive.modeld.parse_model_outputs import safe_exp, sigmoid, softmax, Parser
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
@@ -160,7 +159,7 @@ class TestParserCheckMissing:
 # Parser.parse_binary_crossentropy
 # ---------------------------------------------------------------------------
 
-class TestParseBinaryCrossentropy:
+class TestParseBinaryCrossentropy:W
   def test_applies_sigmoid(self):
     parser = Parser()
     raw = np.array([[0.0, 2.0, -2.0]], dtype=np.float32)
@@ -275,9 +274,6 @@ class TestParseMdn:
     assert outs["plan"].shape == (batch, ModelConstants.IDX_N, ModelConstants.PLAN_WIDTH)
     assert outs["plan_stds"].shape == (batch, ModelConstants.IDX_N, ModelConstants.PLAN_WIDTH)
     assert np.all(outs["plan_stds"] > 0.0)
-=======
-from openpilot.selfdrive.modeld.parse_model_outputs import Parser, sigmoid, softmax
-
 
 def test_softmax_float32_is_inplace_and_normalized():
   raw = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
@@ -354,5 +350,3 @@ def test_parse_mdn_single_output_selects_highest_weight_hypothesis():
   weights = outs["plan_weights"]
   assert weights.shape == (1, 3, 1)
   assert weights[0, 0, 0] >= weights[0, 1, 0] >= weights[0, 2, 0]
-
->>>>>>> ef1690d6a91f17e039d544e2cc2540220c8f7625
