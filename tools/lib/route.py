@@ -22,6 +22,15 @@ class FileName:
 
 
 class Route:
+  _SEGMENT_PATH_FIELDS = (
+    (FileName.RLOG, "log_path"),
+    (FileName.QLOG, "qlog_path"),
+    (FileName.FCAMERA, "camera_path"),
+    (FileName.DCAMERA, "dcamera_path"),
+    (FileName.ECAMERA, "ecamera_path"),
+    (FileName.QCAMERA, "qcamera_path"),
+  )
+
   def __init__(self, name, data_dir=None):
     self._name = RouteName(name)
     self.files = None
@@ -39,62 +48,58 @@ class Route:
   def segments(self):
     return self._segments
 
+  def _paths_for_attr(self, attr_name):
+    path_by_seg_num = {s.name.segment_num: getattr(s, attr_name) for s in self._segments}
+    return [path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+
+  @classmethod
+  def _segment_paths_from_files(cls, files, mode="first"):
+    segment_paths = {}
+    source = files if mode == "first" else reversed(files)
+    for path, filename in source:
+      for file_names, attr in cls._SEGMENT_PATH_FIELDS:
+        if filename in file_names and attr not in segment_paths:
+          segment_paths[attr] = path
+          break
+
+    return tuple(segment_paths.get(attr) for _, attr in cls._SEGMENT_PATH_FIELDS)
+
+  @classmethod
+  def _segment_from_files(cls, segment_name, files, mode="first"):
+    return Segment(segment_name, *cls._segment_paths_from_files(files, mode=mode))
+
   def log_paths(self):
-    log_path_by_seg_num = {s.name.segment_num: s.log_path for s in self._segments}
-    return [log_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+    return self._paths_for_attr("log_path")
 
   def qlog_paths(self):
-    qlog_path_by_seg_num = {s.name.segment_num: s.qlog_path for s in self._segments}
-    return [qlog_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+    return self._paths_for_attr("qlog_path")
 
   def camera_paths(self):
-    camera_path_by_seg_num = {s.name.segment_num: s.camera_path for s in self._segments}
-    return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+    return self._paths_for_attr("camera_path")
 
   def dcamera_paths(self):
-    dcamera_path_by_seg_num = {s.name.segment_num: s.dcamera_path for s in self._segments}
-    return [dcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+    return self._paths_for_attr("dcamera_path")
 
   def ecamera_paths(self):
-    ecamera_path_by_seg_num = {s.name.segment_num: s.ecamera_path for s in self._segments}
-    return [ecamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+    return self._paths_for_attr("ecamera_path")
 
   def qcamera_paths(self):
-    qcamera_path_by_seg_num = {s.name.segment_num: s.qcamera_path for s in self._segments}
-    return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+    return self._paths_for_attr("qcamera_path")
 
-  # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
     api = CommaApi(get_token())
     route_files = api.get('v1/route/' + self.name.canonical_name + '/files')
     self.files = list(chain.from_iterable(route_files.values()))
 
-    segments = {}
+    segment_files = defaultdict(list)
     for url in self.files:
       _, dongle_id, time_str, segment_num, fn = urlparse(url).path.rsplit('/', maxsplit=4)
       segment_name = f'{dongle_id}|{time_str}--{segment_num}'
-      if segments.get(segment_name):
-        segments[segment_name] = Segment(
-          segment_name,
-          url if fn in FileName.RLOG else segments[segment_name].log_path,
-          url if fn in FileName.QLOG else segments[segment_name].qlog_path,
-          url if fn in FileName.FCAMERA else segments[segment_name].camera_path,
-          url if fn in FileName.DCAMERA else segments[segment_name].dcamera_path,
-          url if fn in FileName.ECAMERA else segments[segment_name].ecamera_path,
-          url if fn in FileName.QCAMERA else segments[segment_name].qcamera_path,
-        )
-      else:
-        segments[segment_name] = Segment(
-          segment_name,
-          url if fn in FileName.RLOG else None,
-          url if fn in FileName.QLOG else None,
-          url if fn in FileName.FCAMERA else None,
-          url if fn in FileName.DCAMERA else None,
-          url if fn in FileName.ECAMERA else None,
-          url if fn in FileName.QCAMERA else None,
-        )
+      segment_files[segment_name].append((url, fn))
 
-    return sorted(segments.values(), key=lambda seg: seg.name.segment_num)
+    segments = [self._segment_from_files(segment_name, files, mode="last")
+                for segment_name, files in segment_files.items()]
+    return sorted(segments, key=lambda seg: seg.name.segment_num)
 
   def _get_segments_local(self, data_dir):
     files = os.listdir(data_dir)
@@ -124,40 +129,8 @@ class Route:
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
 
-    segments = []
-    for segment, files in segment_files.items():
-
-      try:
-        log_path = next(path for path, filename in files if filename in FileName.RLOG)
-      except StopIteration:
-        log_path = None
-
-      try:
-        qlog_path = next(path for path, filename in files if filename in FileName.QLOG)
-      except StopIteration:
-        qlog_path = None
-
-      try:
-        camera_path = next(path for path, filename in files if filename in FileName.FCAMERA)
-      except StopIteration:
-        camera_path = None
-
-      try:
-        dcamera_path = next(path for path, filename in files if filename in FileName.DCAMERA)
-      except StopIteration:
-        dcamera_path = None
-
-      try:
-        ecamera_path = next(path for path, filename in files if filename in FileName.ECAMERA)
-      except StopIteration:
-        ecamera_path = None
-
-      try:
-        qcamera_path = next(path for path, filename in files if filename in FileName.QCAMERA)
-      except StopIteration:
-        qcamera_path = None
-
-      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
+    segments = [self._segment_from_files(segment, files)
+                for segment, files in segment_files.items()]
 
     if len(segments) == 0:
       raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
