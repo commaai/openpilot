@@ -32,6 +32,30 @@ class IMUState:
     self.accelerometer: vec3 = vec3(0,0,0)
     self.gyroscope: vec3 = vec3(0,0,0)
     self.bearing: float = 0
+    self.timestamp_ns: int = 0
+
+
+def _normalize_angle_deg(delta_deg: float) -> float:
+  """Normalize an angle delta to [-180, 180)."""
+  return (delta_deg + 180.0) % 360.0 - 180.0
+
+
+def compute_imu_from_vehicle_state(current_velocity: vec3, current_bearing: float,
+                                   previous_velocity: vec3 | None, previous_bearing: float | None,
+                                   dt: float | None) -> tuple[vec3, vec3]:
+  if previous_velocity is None or previous_bearing is None or dt is None:
+    return vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0)
+
+  dt = max(dt, 1e-3)
+  accelerometer = vec3(
+    (current_velocity.x - previous_velocity.x) / dt,
+    (current_velocity.y - previous_velocity.y) / dt,
+    (current_velocity.z - previous_velocity.z) / dt,
+  )
+
+  yaw_rate = math.radians(_normalize_angle_deg(current_bearing - previous_bearing)) / dt
+  gyroscope = vec3(0.0, 0.0, yaw_rate)
+  return accelerometer, gyroscope
 
 
 class SimulatorState:

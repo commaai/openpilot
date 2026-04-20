@@ -9,7 +9,7 @@ from multiprocessing import Pipe, Array
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
-from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.common import SimulatorState, World, compute_imu_from_vehicle_state
 from openpilot.tools.sim.lib.camerad import W, H
 
 
@@ -57,6 +57,9 @@ class MetaDriveWorld(World):
     self.vc = [0.0,0.0]
     self.reset_time = 0
     self.should_reset = False
+    self.prev_velocity = None
+    self.prev_bearing = None
+    self.prev_timestamp = None
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
@@ -89,7 +92,20 @@ class MetaDriveWorld(World):
       state.bearing = md_vehicle.bearing
       state.steering_angle = md_vehicle.steering_angle
       state.gps.from_xy(curr_pos)
+      dt = None if self.prev_timestamp is None else (md_vehicle.timestamp - self.prev_timestamp)
+      state.imu.accelerometer, state.imu.gyroscope = compute_imu_from_vehicle_state(
+        md_vehicle.velocity,
+        md_vehicle.bearing,
+        self.prev_velocity,
+        self.prev_bearing,
+        dt,
+      )
+      state.imu.bearing = md_vehicle.bearing
+      state.imu.timestamp_ns = int(md_vehicle.timestamp * 1e9)
       state.valid = True
+      self.prev_velocity = md_vehicle.velocity
+      self.prev_bearing = md_vehicle.bearing
+      self.prev_timestamp = md_vehicle.timestamp
 
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:
