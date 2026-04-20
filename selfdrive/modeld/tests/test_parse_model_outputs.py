@@ -159,7 +159,7 @@ class TestParserCheckMissing:
 # Parser.parse_binary_crossentropy
 # ---------------------------------------------------------------------------
 
-class TestParseBinaryCrossentropy:W
+class TestParseBinaryCrossentropy:
   def test_applies_sigmoid(self):
     parser = Parser()
     raw = np.array([[0.0, 2.0, -2.0]], dtype=np.float32)
