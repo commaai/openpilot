@@ -3,7 +3,7 @@ $Cxx.namespace("cereal");
 
 @0x80ef1ec4889c2a63;
 
-# legacy.capnp: a home for deprecated structs
+# deprecated.capnp: a home for deprecated structs
 
 struct LogRotate @0x9811e1f38f62f2d1 {
   segmentNum @0 :Int32;
@@ -571,4 +571,219 @@ struct LidarPts @0xe3d6685d4e9d8f7a {
   pkt @4 :Data;
 }
 
+struct LiveTracksDEPRECATED @0xb16f60103159415a {
+  trackId @0 :Int32;
+  dRel @1 :Float32;
+  yRel @2 :Float32;
+  vRel @3 :Float32;
+  aRel @4 :Float32;
+  timeStamp @5 :Float32;
+  status @6 :Float32;
+  currentTime @7 :Float32;
+  stationary @8 :Bool;
+  oncoming @9 :Bool;
+}
 
+struct LiveMpcData @0x92a5e332a85f32a0 {
+  x @0 :List(Float32);
+  y @1 :List(Float32);
+  psi @2 :List(Float32);
+  curvature @3 :List(Float32);
+  qpIterations @4 :UInt32;
+  calculationTime @5 :UInt64;
+  cost @6 :Float64;
+}
+
+struct LiveLongitudinalMpcData @0xe7e17c434f865ae2 {
+  xEgo @0 :List(Float32);
+  vEgo @1 :List(Float32);
+  aEgo @2 :List(Float32);
+  xLead @3 :List(Float32);
+  vLead @4 :List(Float32);
+  aLead @5 :List(Float32);
+  aLeadTau @6 :Float32;    # lead accel time constant
+  qpIterations @7 :UInt32;
+  mpcId @8 :UInt32;
+  calculationTime @9 :UInt64;
+  cost @10 :Float64;
+}
+
+struct DriverStateDEPRECATED @0xb83c6cc593ed0a00 {
+  frameId @0 :UInt32;
+  modelExecutionTime @14 :Float32;
+  dspExecutionTime @16 :Float32;
+  rawPredictions @15 :Data;
+
+  faceOrientation @3 :List(Float32);
+  facePosition @4 :List(Float32);
+  faceProb @5 :Float32;
+  leftEyeProb @6 :Float32;
+  rightEyeProb @7 :Float32;
+  leftBlinkProb @8 :Float32;
+  rightBlinkProb @9 :Float32;
+  faceOrientationStd @11 :List(Float32);
+  facePositionStd @12 :List(Float32);
+  sunglassesProb @13 :Float32;
+  poorVision @17 :Float32;
+  partialFace @18 :Float32;
+  distractedPose @19 :Float32;
+  distractedEyes @20 :Float32;
+  eyesOnRoad @21 :Float32;
+  phoneUse @22 :Float32;
+  occludedProb @23 :Float32;
+
+  readyProb @24 :List(Float32);
+  notReadyProb @25 :List(Float32);
+
+  irPwrDEPRECATED @10 :Float32;
+  descriptorDEPRECATED @1 :List(Float32);
+  stdDEPRECATED @2 :Float32;
+}
+
+struct NavModelData @0xac3de5c437be057a {
+  frameId @0 :UInt32;
+  locationMonoTime @6 :UInt64;
+  modelExecutionTime @1 :Float32;
+  dspExecutionTime @2 :Float32;
+  features @3 :List(Float32);
+  # predicted future position
+  position @4 :XYData;
+  desirePrediction @5 :List(Float32);
+
+  # All SI units and in device frame
+  struct XYData @0xbe09e615b2507e26 {
+    x @0 :List(Float32);
+    y @1 :List(Float32);
+    xStd @2 :List(Float32);
+    yStd @3 :List(Float32);
+  }
+}
+
+struct AndroidBuildInfo @0xfe2919d5c21f426c {
+  board @0 :Text;
+  bootloader @1 :Text;
+  brand @2 :Text;
+  device @3 :Text;
+  display @4 :Text;
+  fingerprint @5 :Text;
+  hardware @6 :Text;
+  host @7 :Text;
+  id @8 :Text;
+  manufacturer @9 :Text;
+  model @10 :Text;
+  product @11 :Text;
+  radioVersion @12 :Text;
+  serial @13 :Text;
+  supportedAbis @14 :List(Text);
+  tags @15 :Text;
+  time @16 :Int64;
+  type @17 :Text;
+  user @18 :Text;
+
+  versionCodename @19 :Text;
+  versionRelease @20 :Text;
+  versionSdk @21 :Int32;
+  versionSecurityPatch @22 :Text;
+}
+
+struct AndroidSensor @0x9b513b93a887dbcd {
+  id @0 :Int32;
+  name @1 :Text;
+  vendor @2 :Text;
+  version @3 :Int32;
+  handle @4 :Int32;
+  type @5 :Int32;
+  maxRange @6 :Float32;
+  resolution @7 :Float32;
+  power @8 :Float32;
+  minDelay @9 :Int32;
+  fifoReservedEventCount @10 :UInt32;
+  fifoMaxEventCount @11 :UInt32;
+  stringType @12 :Text;
+  maxDelay @13 :Int32;
+}
+
+struct IosBuildInfo @0xd97e3b28239f5580 {
+  appVersion @0 :Text;
+  appBuild @1 :UInt32;
+  osVersion @2 :Text;
+  deviceModel @3 :Text;
+}
+
+enum FrameTypeDEPRECATED @0xa37f0d8558e193fd {
+  unknown @0;
+  neo @1;
+  chffrAndroid @2;
+  front @3;
+}
+
+struct AndroidCaptureResult @0xbcc3efbac41d2048 {
+  sensitivity @0 :Int32;
+  frameDuration @1 :Int64;
+  exposureTime @2 :Int64;
+  rollingShutterSkew @3 :UInt64;
+  colorCorrectionTransform @4 :List(Int32);
+  colorCorrectionGains @5 :List(Float32);
+  displayRotation @6 :Int8;
+}
+
+enum UsbPowerModeDEPRECATED @0xa8883583b32c9877 {
+  none @0;
+  client @1;
+  cdp @2;
+  dcp @3;
+}
+
+struct LateralINDIState @0x939463348632375e {
+  active @0 :Bool;
+  steeringAngleDeg @1 :Float32;
+  steeringRateDeg @2 :Float32;
+  steeringAccelDeg @3 :Float32;
+  rateSetPoint @4 :Float32;
+  accelSetPoint @5 :Float32;
+  accelError @6 :Float32;
+  delayedOutput @7 :Float32;
+  delta @8 :Float32;
+  output @9 :Float32;
+  saturated @10 :Bool;
+  steeringAngleDesiredDeg @11 :Float32;
+  steeringRateDesiredDeg @12 :Float32;
+}
+
+struct LateralLQRState @0x9024e2d790c82ade {
+  active @0 :Bool;
+  steeringAngleDeg @1 :Float32;
+  i @2 :Float32;
+  output @3 :Float32;
+  lqrOutput @4 :Float32;
+  saturated @5 :Bool;
+  steeringAngleDesiredDeg @6 :Float32;
+}
+
+struct LateralCurvatureState @0xad9d8095c06f7c61 {
+  active @0 :Bool;
+  actualCurvature @1 :Float32;
+  desiredCurvature @2 :Float32;
+  error @3 :Float32;
+  p @4 :Float32;
+  i @5 :Float32;
+  f @6 :Float32;
+  output @7 :Float32;
+  saturated @8 :Bool;
+}
+
+struct LateralPlannerSolution @0x84caeca5a6b4acfe {
+  x @0 :List(Float32);
+  y @1 :List(Float32);
+  yaw @2 :List(Float32);
+  yawRate @3 :List(Float32);
+  xStd @4 :List(Float32);
+  yStd @5 :List(Float32);
+  yawStd @6 :List(Float32);
+  yawRateStd @7 :List(Float32);
+}
+
+struct GpsTrajectory @0x8cfeb072f5301000 {
+  x @0 :List(Float32);
+  y @1 :List(Float32);
+}
