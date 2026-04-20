@@ -20,6 +20,11 @@ This directory documentation for testing the openpilot project 0.9.8 release don
   * *spi.cc*
 * *system/* (entire directory)
 
+**Pandad — desktop verification aligned with the STP** ([testing-plan/TESTING-PLAN.md](testing-plan/TESTING-PLAN.md) §3.1 unit / §3.3 boundary, risks R2–R3):
+
+* `pytest selfdrive/pandad/tests/test_pandad_can_capnp.py selfdrive/pandad/tests/test_pandad_pandad_wrapper.py -q` — Cython CAN serialization and `pandad.py` signature helper (no Panda hardware).
+* Native Catch2 USB protocol tests remain in `test_pandad_usbprotocol.cc` (built via SCons); integration and SPI fault-injection stay in `test_pandad_loopback.py` / `test_pandad_spi.py` (`@pytest.mark.tici`).
+
 # Directories
 
 * [testing-plan](testing-plan): Testing plan for the assigned subsystems of openpilot shown in both Markdown and PDF format.
@@ -36,12 +41,12 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 * [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md): Tactical guide aligned with the STP—repository pytest/native conventions, phased shared infrastructure (`selfdrive/test/support/` and `system/tests/support/`), per-subsystem work breakdown, risk traceability (R1–R10), and scoped commands.
 
-**Support harnesses (fixtures + empty plug-in suites):**
+**Support harnesses (fixtures + plug-in smoke tests):**
 
-* Selfdrive: `python -m pytest selfdrive/test/support/tests -q`
-* System: `python -m pytest system/tests/support/tests -q`
+* Selfdrive: `python -m pytest selfdrive/test/support/tests -q` — see `test_selfdrive_support_harness.py`
+* System: `python -m pytest system/tests/support/tests -q` — see `test_system_support_harness.py`
 
-Each should report no tests collected and exit successfully until you add `test_*.py` files there. Fixtures from both `support/fixtures.py` modules load globally via root `pytest_plugins` (`openpilot_params_seeded`, `system_daemon_params`, etc.).
+If both directories are empty again, their `conftest.py` hooks still map “no tests collected” to exit 0. Fixtures from both `support/fixtures.py` modules load globally via root `pytest_plugins` (`openpilot_params_seeded`, `system_daemon_params`, etc.).
 
 **Modeld coverage comparison (opt-in):**
 
