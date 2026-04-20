@@ -627,7 +627,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   # Camera is not outputting frames
   EventName.cameraMalfunction: {
-    ET.PERMANENT: camera_malfunction_alert,
+    #ET.PERMANENT: camera_malfunction_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Camera Malfunction"),
     ET.NO_ENTRY: NoEntryAlert("Camera Malfunction: Reboot Your Device"),
   },

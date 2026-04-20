@@ -149,6 +149,27 @@ class SelfdriveD:
 
     self.events.clear()
 
+    try:
+      with open('/dev/shm/debug') as f:
+        x = f.read()
+      evts = {
+        '1': EventName.cameraMalfunction,
+        '2': EventName.fanMalfunction,
+        '3': EventName.locationdPermanentError,
+        '4': EventName.paramsdTemporaryError,  # soft disable
+        '5': EventName.driverDistracted1,
+        '6': EventName.driverDistracted2,
+        '7': EventName.driverDistracted3,
+        '8': EventName.cruiseDisabled,
+        '9': EventName.fcw,
+        'a': EventName.aeb,
+      }
+      if len(x) and x[0] in evts:
+        self.events.add(evts[x[0]])
+        print("adding", evts[x[0]])
+    except Exception:
+      pass
+
     if self.sm['controlsState'].lateralControlState.which() == 'debugState':
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
