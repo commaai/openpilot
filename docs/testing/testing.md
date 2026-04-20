@@ -3,6 +3,7 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 # Table of Contents
 * [Assigned Subsystems](#assigned-subsystems)
 * [Directories](#directories)
+* [Testing tracker](#testing-tracker)
 * [Infrastructure overview](#infrastructure-overview)
 * [Low-level test plan](#low-level-test-plan)
 * [modeld implementation summary](#modeld-implementation-summary)
@@ -22,6 +23,10 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 # Directories
 
 * [testing-plan](testing-plan): Testing plan for the assigned subsystems of openpilot shown in both Markdown and PDF format.
+
+# Testing tracker
+
+* [TESTING-TRACKER.md](TESTING-TRACKER.md): Living backlog of done vs remaining work (modeld gates, pandad, `system/`, infra). Update as you merge or reprioritize.
 
 # Infrastructure overview
 
