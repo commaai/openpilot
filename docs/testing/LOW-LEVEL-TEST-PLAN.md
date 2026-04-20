@@ -80,12 +80,11 @@ Root `conftest.py` registers both plugins so any test under `testpaths` can requ
 
 `openpilot.selfdrive.test.support.fixtures` and `openpilot.system.tests.support.fixtures`.
 
-**Empty harnesses (0 tests, exit 0):** each has a `tests/` folder with only `conftest.py`, mapping `ExitCode.NO_TESTS_COLLECTED` to `OK`.
+**Harness directories:** each has a `tests/` folder with `conftest.py` mapping `ExitCode.NO_TESTS_COLLECTED` to `OK` if the suite is ever empty again. Smoke tests live in `test_selfdrive_support_harness.py` and `test_system_support_harness.py`.
 
 ```bash
 python -m pytest selfdrive/test/support/tests -q
 python -m pytest system/tests/support/tests -q
-# expect: no tests collected, exit code 0 for each
 ```
 
 **Rule:** Keep subsystem-specific setup (e.g. VisionIPC for modeld, loggerd segment layout) next to those tests; move repeated building blocks into the appropriate `support/` package after the second copy.

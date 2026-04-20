@@ -20,9 +20,9 @@
 | Subsystem | Done (high level) | Open / next |
 |-----------|-------------------|-------------|
 | modeld | Parser unit suite; fill + integration test files exist | Extend fill/integration coverage; optional timing tests |
-| pandad | Upstream anchors (gtest, loopback, SPI, device tests) | Team-owned extra cases per STP R2/R3 |
+| pandad | STP-aligned desktop units (``pandad.py``, ``pandad_api_impl``); upstream gtest / `tici` integration | USB/gtest edges; optional non-`tici` loopback/SPI shims |
 | system | Upstream tests per component | Team-owned extensions per LOW §4.3 P0–P2 |
-| Infra | Shared `support/` packages + pytest plugins | Optional first tests in support harness dirs |
+| Infra | Shared `support/` packages + pytest plugins; harness smoke tests | Extend harness or extract duplicated setup |
 
 ---
 
@@ -51,6 +51,8 @@ Aligned with [LOW-LEVEL §7.1](LOW-LEVEL-TEST-PLAN.md#71-modeld-rollout-gates) r
 
 | Status | Item | Location |
 |--------|------|----------|
+| [x] | CAN list serialize / deserialize (`sendcan` + `can`), parametrized round-trips, empty list, `valid` flag, multi-blob decode — skips if Cython ext missing | `selfdrive/pandad/tests/test_pandad_can_capnp.py` |
+| [x] | ``pandad.py`` ``get_expected_signature`` success and error paths (mocked ``Panda``) | `selfdrive/pandad/tests/test_pandad_pandad_wrapper.py` |
 | [ ] | Extra USB protocol / buffer edge cases | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` |
 | [ ] | Additional loopback / transport integrity | `selfdrive/pandad/tests/test_pandad_loopback.py` |
 | [ ] | SPI fault-injection / retry coverage | `selfdrive/pandad/tests/test_pandad_spi.py` |
@@ -86,7 +88,7 @@ Priorities from [LOW-LEVEL §4.3](LOW-LEVEL-TEST-PLAN.md#43-system).
 | [x] | Selfdrive support: processes, params seed, messaging builders, pytest fixtures | `selfdrive/test/support/` |
 | [x] | System support: re-exports + system fixtures | `system/tests/support/` |
 | [x] | Root `pytest_plugins` registration | Root `conftest.py` |
-| [ ] | First real tests in harness dirs (optional; today may collect 0 tests) | `selfdrive/test/support/tests/`, `system/tests/support/tests/` |
+| [x] | Harness smoke tests (params seeds, pub/sub factory) | `selfdrive/test/support/tests/test_selfdrive_support_harness.py`, `system/tests/support/tests/test_system_support_harness.py` |
 | [ ] | Extract duplicated setup to support after **third** copy | Per LOW-LEVEL §7 |
 
 ---
@@ -110,3 +112,5 @@ Edit when you want a paper trail without git archaeology:
 | Date | Change |
 |------|--------|
 | 2026-04-20 | Initial tracker; Phase A modeld parser suite marked done. |
+| 2026-04-20 | Added system + selfdrive support harness tests and pandad `test_pandad_can_capnp.py`. |
+| 2026-04-20 | Expanded pandad STP-aligned desktop tests (`test_pandad_can_capnp.py`, `test_pandad_pandad_wrapper.py`). |
