@@ -1,18 +1,20 @@
+from collections import defaultdict
 from math import atan2, radians
 import numpy as np
 
 from cereal import car, log
 import cereal.messaging as messaging
-from openpilot.selfdrive.selfdrived.events import Events
-from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.stat_live import RunningStatFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
-from openpilot.system.hardware import HARDWARE
 
-EventName = log.OnroadEvent.EventName
+AlertLevel = log.DriverMonitoringState.AlertLevel
+MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
+
+def to_perc(v):
+  return int(min(max(v * 100., 0.), 100.))
 
 # ******************************************************************************************
 #  NOTE: To fork maintainers.
@@ -21,21 +23,26 @@ EventName = log.OnroadEvent.EventName
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS:
-  def __init__(self, device_type):
-    self._DT_DMON = DT_DMON
-    # ref (page15-16): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
-    self._AWARENESS_TIME = 30. # passive wheeltouch total timeout
-    self._AWARENESS_PRE_TIME_TILL_TERMINAL = 15.
-    self._AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
-    self._DISTRACTED_TIME = 11. # active monitoring total timeout
-    self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
-    self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
+  def __init__(self):
+    # https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
+    self._WHEELTOUCH_POLICY_ALERT_1_TIMEOUT = 15.
+    self._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT = 24.
+    self._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT = 30.
+    # https://cdn.euroncap.com/cars/assets/euro_ncap_protocol_safe_driving_driver_engagement_v11_a30e874152.pdf
+    self._VISION_POLICY_ALERT_1_TIMEOUT = 3.
+    self._VISION_POLICY_ALERT_2_TIMEOUT = 5.
+    self._VISION_POLICY_ALERT_3_TIMEOUT = 11.
+
+    self._TIMEOUT_RECOVERY_FACTOR_MAX = 5.
+    self._TIMEOUT_RECOVERY_FACTOR_MIN = 1.25
+
+    self._MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
+    self._MAX_TERMINAL_DURATION = int(30 / DT_DMON)  # not allowed to engage after 30s of terminal alerts
 
     self._FACE_THRESHOLD = 0.7
     self._EYE_THRESHOLD = 0.5
     self._BLINK_THRESHOLD = 0.5
     self._PHONE_THRESH = 0.5
-
     self._POSE_PITCH_THRESHOLD = 0.3133
     self._POSE_PITCH_THRESHOLD_SLACK = 0.3237
     self._POSE_PITCH_THRESHOLD_STRICT = self._POSE_PITCH_THRESHOLD
@@ -56,35 +63,21 @@ class DRIVER_MONITOR_SETTINGS:
     self._YAW_MIN_OFFSET = -0.0246
 
     self._DCAM_UNCERTAIN_ALERT_THRESHOLD = 0.1
-    self._DCAM_UNCERTAIN_ALERT_COUNT = int(60  / self._DT_DMON)
-    self._DCAM_UNCERTAIN_RESET_COUNT = int(20  / self._DT_DMON)
-    self._POSESTD_THRESHOLD = 0.3
-    self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
+    self._DCAM_UNCERTAIN_ALERT_COUNT = int(60  / DT_DMON)
+    self._DCAM_UNCERTAIN_RESET_COUNT = int(20  / DT_DMON)
+    self._HI_STD_THRESHOLD = 0.3
+    self._HI_STD_FALLBACK_TIME = int(10  / DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
     self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
-    self._POSE_OFFSET_MIN_COUNT = int(60 / self._DT_DMON)  # valid data counts before calibration completes, 1min cumulative
-    self._POSE_OFFSET_MAX_COUNT = int(360 / self._DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
-
+    self._POSE_OFFSET_MIN_COUNT = int(60 / DT_DMON)  # valid data counts before calibration completes, 1min cumulative
+    self._POSE_OFFSET_MAX_COUNT = int(360 / DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
     self._WHEELPOS_CALIB_MIN_SPEED = 11
     self._WHEELPOS_THRESHOLD = 0.5
-    self._WHEELPOS_FILTER_MIN_COUNT = int(15 / self._DT_DMON) # allow 15 seconds to converge wheel side
+    self._WHEELPOS_FILTER_MIN_COUNT = int(15 / DT_DMON) # allow 15 seconds to converge wheel side
     self._WHEELPOS_DATA_AVG = 0.03
     self._WHEELPOS_DATA_VAR = 3*5.5e-5
     self._WHEELPOS_MAX_COUNT = -1
-
-    self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
-    self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
-
-    self._MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
-    self._MAX_TERMINAL_DURATION = int(30 / self._DT_DMON)  # not allowed to engage after 30s of terminal alerts
-
-class DistractedType:
-
-  NOT_DISTRACTED = 0
-  DISTRACTED_POSE = 1 << 0
-  DISTRACTED_BLINK = 1 << 1
-  DISTRACTED_PHONE = 1 << 2
 
 class DriverPose:
   def __init__(self, settings):
@@ -117,7 +110,7 @@ cam = DEVICE_CAMERAS[("tici", "ar0231")] # corrected image has same size as raw
 W, H = (cam.dcam.width, cam.dcam.height)  # corrected image has same size as raw
 
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
-  # the output of these angles are in device frame
+  # the output of these angles are in driver camera frame
   # so from driver's perspective, pitch is up and yaw is right
 
   pitch_net, yaw_net, roll_net = angles_desc
@@ -138,7 +131,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
 class DriverMonitoring:
   def __init__(self, rhd_saved=False, settings=None, always_on=False):
     # init policy settings
-    self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
+    self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS()
 
     # init driver status
     wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
@@ -147,10 +140,11 @@ class DriverMonitoring:
     self.blink_prob = 0.
     self.phone_prob = 0.
 
+    self.alert_level = AlertLevel.none
     self.always_on = always_on
-    self.distracted_types = []
+    self.distracted_types = defaultdict(bool)
     self.driver_distracted = False
-    self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
+    self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, DT_DMON)
     self.wheel_on_right = False
     self.wheel_on_right_last = None
     self.wheel_on_right_default = rhd_saved
@@ -159,33 +153,29 @@ class DriverMonitoring:
     self.terminal_time = 0
     self.step_change = 0.
     self.active_monitoring_mode = True
+    self.driver_interacting = False
     self.is_model_uncertain = False
     self.hi_stds = 0
-    self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
-    self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
+    self.model_std_max = 0.
+    self.threshold_alert_1 = 0.
+    self.threshold_alert_2 = 0.
+    self.dcam_uncertain = False
     self.dcam_uncertain_cnt = 0
-    self.dcam_uncertain_alerted = False # once per drive
     self.dcam_reset_cnt = 0
-
-    self.params = Params()
-    self.too_distracted = self.params.get_bool("DriverTooDistracted")
+    self.too_distracted = Params().get_bool("DriverTooDistracted")
 
     self._reset_awareness()
     self._set_timers(active_monitoring=True)
-    self._reset_events()
 
   def _reset_awareness(self):
     self.awareness = 1.
-    self.awareness_active = 1.
-    self.awareness_passive = 1.
-
-  def _reset_events(self):
-    self.current_events = Events()
+    self.last_vision_awareness = 1.
+    self.last_wheeltouch_awareness = 1.
 
   def _set_timers(self, active_monitoring):
-    if self.active_monitoring_mode and self.awareness <= self.threshold_prompt:
+    if self.active_monitoring_mode and self.awareness <= self.threshold_alert_2:
       if active_monitoring:
-        self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME
+        self.step_change = DT_DMON / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       else:
         self.step_change = 0.
       return  # no exploit after orange alert
@@ -195,24 +185,24 @@ class DriverMonitoring:
     if active_monitoring:
       # when falling back from passive mode to active mode, reset awareness to avoid false alert
       if not self.active_monitoring_mode:
-        self.awareness_passive = self.awareness
-        self.awareness = self.awareness_active
+        self.last_wheeltouch_awareness = self.awareness
+        self.awareness = self.last_vision_awareness
 
-      self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
-      self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
-      self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME
+      self.threshold_alert_1 = 1. - self.settings._VISION_POLICY_ALERT_1_TIMEOUT / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
+      self.threshold_alert_2 = 1. - self.settings._VISION_POLICY_ALERT_2_TIMEOUT / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
+      self.step_change = DT_DMON / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       self.active_monitoring_mode = True
     else:
       if self.active_monitoring_mode:
-        self.awareness_active = self.awareness
-        self.awareness = self.awareness_passive
+        self.last_vision_awareness = self.awareness
+        self.awareness = self.last_wheeltouch_awareness
 
-      self.threshold_pre = self.settings._AWARENESS_PRE_TIME_TILL_TERMINAL / self.settings._AWARENESS_TIME
-      self.threshold_prompt = self.settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL / self.settings._AWARENESS_TIME
-      self.step_change = self.settings._DT_DMON / self.settings._AWARENESS_TIME
+      self.threshold_alert_1 = 1. - self.settings._WHEELTOUCH_POLICY_ALERT_1_TIMEOUT / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
+      self.threshold_alert_2 = 1. - self.settings._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
+      self.step_change = DT_DMON / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
       self.active_monitoring_mode = False
 
-  def _set_policy(self, brake_disengage_prob, car_speed):
+  def _set_pose_strictness(self, brake_disengage_prob, car_speed):
     bp = brake_disengage_prob
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
@@ -224,7 +214,7 @@ class DriverMonitoring:
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def _get_distracted_types(self):
-    distracted_types = []
+    self.distracted_types = defaultdict(bool)
 
     if not self.pose.calibrated:
       pitch_error = self.pose.pitch - self.settings._PITCH_NATURAL_OFFSET
@@ -244,16 +234,9 @@ class DriverMonitoring:
     pitch_threshold = self.settings._POSE_PITCH_THRESHOLD * self.pose.cfactor_pitch if self.pose.calibrated else self.settings._PITCH_NATURAL_THRESHOLD
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
 
-    if pitch_error > pitch_threshold or yaw_error > yaw_threshold:
-      distracted_types.append(DistractedType.DISTRACTED_POSE)
-
-    if self.blink_prob > self.settings._BLINK_THRESHOLD:
-      distracted_types.append(DistractedType.DISTRACTED_BLINK)
-
-    if self.phone_prob > self.settings._PHONE_THRESH:
-      distracted_types.append(DistractedType.DISTRACTED_PHONE)
-
-    return distracted_types
+    self.distracted_types['pose'] = bool((pitch_error > pitch_threshold) or (yaw_error > yaw_threshold))
+    self.distracted_types['eye'] = bool(self.blink_prob > self.settings._BLINK_THRESHOLD)
+    self.distracted_types['phone'] = bool(self.phone_prob > self.settings._PHONE_THRESH)
 
   def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False, steering_angle_deg=0.):
     rhd_pred = driver_state.wheelOnRightProb
@@ -262,7 +245,7 @@ class DriverMonitoring:
                                           driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
       self.wheelpos.prob_offseter.push_and_update(rhd_pred)
 
-    self.wheelpos.prob_calibrated = self.wheelpos.prob_offseter.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT
+    self.wheelpos.prob_calibrated = self.wheelpos.prob_offseter.filtered_stat.n >= self.settings._WHEELPOS_FILTER_MIN_COUNT
 
     if self.wheelpos.prob_calibrated or demo_mode:
       self.wheel_on_right = self.wheelpos.prob_offseter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
@@ -286,16 +269,13 @@ class DriverMonitoring:
     self.wheel_on_right_last = self.wheel_on_right
     self.pose.pitch_std = driver_data.faceOrientationStd[0]
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
-    model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
-    self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
+    self.model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
+    self.pose.low_std = self.model_std_max < self.settings._HI_STD_THRESHOLD
     self.blink_prob = driver_data.eyesClosedProb * (driver_data.eyesVisibleProb > self.settings._EYE_THRESHOLD)
     self.phone_prob = driver_data.phoneProb
 
-    self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types
-                              or DistractedType.DISTRACTED_POSE in self.distracted_types
-                              or DistractedType.DISTRACTED_BLINK in self.distracted_types) \
-                              and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+    self._get_distracted_types()
+    self.driver_distracted = any(self.distracted_types.values()) and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
@@ -304,20 +284,20 @@ class DriverMonitoring:
       self.pose.pitch_offseter.push_and_update(self.pose.pitch)
       self.pose.yaw_offseter.push_and_update(self.pose.yaw)
 
-    self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and \
-                           self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+    self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT and \
+                           self.pose.yaw_offseter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
-      if model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD:
-        if not standstill:
-          self.dcam_uncertain_cnt += 1
-          self.dcam_reset_cnt = 0
+      self.dcam_uncertain = self.model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
+      if self.dcam_uncertain and not standstill:
+        self.dcam_uncertain_cnt += 1
+        self.dcam_reset_cnt = 0
       else:
         self.dcam_reset_cnt += 1
         if self.dcam_reset_cnt > self.settings._DCAM_UNCERTAIN_RESET_COUNT:
           self.dcam_uncertain_cnt = 0
 
-    self.is_model_uncertain = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME
+    self.is_model_uncertain = self.hi_stds >= self.settings._HI_STD_FALLBACK_TIME
     self._set_timers(self.face_detected and not self.is_model_uncertain)
     if self.face_detected and not self.pose.low_std and not self.driver_distracted:
       self.hi_stds += 1
@@ -325,20 +305,15 @@ class DriverMonitoring:
       self.hi_stds = 0
 
   def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear, car_speed):
-    self._reset_events()
-    # Block engaging until ignition cycle after max number or time of distractions
+    self.alert_level = AlertLevel.none
+    self.driver_interacting = driver_engaged
+
     if self.terminal_alert_cnt >= self.settings._MAX_TERMINAL_ALERTS or \
        self.terminal_time >= self.settings._MAX_TERMINAL_DURATION:
-      if not self.too_distracted:
-        self.params.put_bool_nonblocking("DriverTooDistracted", True)
       self.too_distracted = True
 
-    # Always-on distraction lockout is temporary
-    if self.too_distracted or (self.always_on and self.awareness <= self.threshold_prompt):
-      self.current_events.add(EventName.tooDistracted)
-
     always_on_valid = self.always_on and not wrong_gear
-    if (driver_engaged and self.awareness > 0 and not self.active_monitoring_mode) or \
+    if (self.driver_interacting and self.awareness > 0 and not self.active_monitoring_mode) or \
        (not always_on_valid and not op_engaged) or \
        (always_on_valid and not op_engaged and self.awareness <= 0):
       # always reset on disengage with normal mode; disengage resets only on red if always on
@@ -346,83 +321,87 @@ class DriverMonitoring:
       return
 
     awareness_prev = self.awareness
-    _reaching_pre = self.awareness - self.step_change <= self.threshold_pre
-    _reaching_terminal = self.awareness - self.step_change <= 0
-    standstill_orange_exemption = standstill and _reaching_pre
-    always_on_red_exemption = always_on_valid and not op_engaged and _reaching_terminal
+    _reaching_alert_1 = self.awareness - self.step_change <= self.threshold_alert_1
+    _reaching_alert_3 = self.awareness - self.step_change <= 0
+    standstill_exemption = standstill and _reaching_alert_1
+    always_on_exemption = always_on_valid and not op_engaged and _reaching_alert_3
 
     if self.awareness > 0 and \
-       ((self.driver_distraction_filter.x < 0.37 and self.face_detected and self.pose.low_std) or standstill_orange_exemption):
-      if driver_engaged:
+       ((self.driver_distraction_filter.x < 0.37 and self.face_detected and self.pose.low_std) or standstill_exemption):
+      if self.driver_interacting:
         self._reset_awareness()
         return
       # only restore awareness when paying attention and alert is not red
-      self.awareness = min(self.awareness + ((self.settings._RECOVERY_FACTOR_MAX-self.settings._RECOVERY_FACTOR_MIN)*
-                                             (1.-self.awareness)+self.settings._RECOVERY_FACTOR_MIN)*self.step_change, 1.)
+      self.awareness = min(self.awareness + ((self.settings._TIMEOUT_RECOVERY_FACTOR_MAX-self.settings._TIMEOUT_RECOVERY_FACTOR_MIN)*
+                                             (1.-self.awareness)+self.settings._TIMEOUT_RECOVERY_FACTOR_MIN)*self.step_change, 1.)
       if self.awareness == 1.:
-        self.awareness_passive = min(self.awareness_passive + self.step_change, 1.)
+        self.last_wheeltouch_awareness = min(self.last_wheeltouch_awareness + self.step_change, 1.)
       # don't display alert banner when awareness is recovering and has cleared orange
-      if self.awareness > self.threshold_prompt:
+      if self.awareness > self.threshold_alert_2:
         return
 
     certainly_distracted = self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
-    maybe_distracted = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME or not self.face_detected
+    maybe_distracted = self.is_model_uncertain or not self.face_detected
 
     if certainly_distracted or maybe_distracted:
       # should always be counting if distracted unless at standstill and reaching green
       # also will not be reaching 0 if DM is active when not engaged
-      if not (standstill_orange_exemption or always_on_red_exemption):
+      if not (standstill_exemption or always_on_exemption):
         self.awareness = max(self.awareness - self.step_change, -0.1)
 
-    alert = None
     if self.awareness <= 0.:
-      # terminal red alert: disengagement required
-      alert = EventName.driverDistracted3 if self.active_monitoring_mode else EventName.driverUnresponsive3
+      # terminal alert: disengagement required
+      self.alert_level = AlertLevel.three
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
-    elif self.awareness <= self.threshold_prompt:
-      # prompt orange alert
-      alert = EventName.driverDistracted2 if self.active_monitoring_mode else EventName.driverUnresponsive2
-    elif self.awareness <= self.threshold_pre:
-      # pre green alert
-      alert = EventName.driverDistracted1 if self.active_monitoring_mode else EventName.driverUnresponsive1
-
-    if alert is not None:
-      self.current_events.add(alert)
-
-    if self.dcam_uncertain_cnt > self.settings._DCAM_UNCERTAIN_ALERT_COUNT and not self.dcam_uncertain_alerted:
-      set_offroad_alert("Offroad_DriverMonitoringUncertain", True)
-      self.dcam_uncertain_alerted = True
-
+    elif self.awareness <= self.threshold_alert_2:
+      self.alert_level = AlertLevel.two
+    elif self.awareness <= self.threshold_alert_1:
+      self.alert_level = AlertLevel.one
 
   def get_state_packet(self, valid=True):
     # build driverMonitoringState packet
     dat = messaging.new_message('driverMonitoringState', valid=valid)
-    dat.driverMonitoringState = {
-      "events": self.current_events.to_msg(),
-      "faceDetected": self.face_detected,
-      "isDistracted": self.driver_distracted,
-      "distractedType": sum(self.distracted_types),
-      "awarenessStatus": self.awareness,
-      "posePitchOffset": self.pose.pitch_offseter.filtered_stat.mean(),
-      "posePitchValidCount": self.pose.pitch_offseter.filtered_stat.n,
-      "poseYawOffset": self.pose.yaw_offseter.filtered_stat.mean(),
-      "poseYawValidCount": self.pose.yaw_offseter.filtered_stat.n,
-      "stepChange": self.step_change,
-      "awarenessActive": self.awareness_active,
-      "awarenessPassive": self.awareness_passive,
-      "isLowStd": self.pose.low_std,
-      "hiStdCount": self.hi_stds,
-      "isActiveMode": self.active_monitoring_mode,
-      "isRHD": self.wheel_on_right,
-      "uncertainCount": self.dcam_uncertain_cnt,
-    }
+    dm = dat.driverMonitoringState
+
+    dm.lockout = self.too_distracted
+    dm.alertCountLockoutPercent = to_perc(self.terminal_alert_cnt / self.settings._MAX_TERMINAL_ALERTS)
+    dm.alertTimeLockoutPercent = to_perc(self.terminal_time / self.settings._MAX_TERMINAL_DURATION)
+    dm.alwaysOn = self.always_on
+    dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_alert_2
+    dm.alertLevel = self.alert_level
+    dm.activePolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
+    dm.isRHD = self.wheel_on_right
+    dm.rhdCalibration.calibratedPercent = to_perc(self.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
+    dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M
+
+    dm.visionPolicyState.awarenessPercent = to_perc(self.last_vision_awareness if not self.active_monitoring_mode else self.awareness)
+    dm.visionPolicyState.awarenessStep = self.step_change if self.active_monitoring_mode else 0.
+    dm.visionPolicyState.isDistracted = self.driver_distracted
+    dm.visionPolicyState.distractedTypes.pose = self.distracted_types['pose']
+    dm.visionPolicyState.distractedTypes.eye = self.distracted_types['eye']
+    dm.visionPolicyState.distractedTypes.phone = self.distracted_types['phone']
+    dm.visionPolicyState.faceDetected = self.face_detected
+    dm.visionPolicyState.pose.pitch = self.pose.pitch
+    dm.visionPolicyState.pose.yaw = self.pose.yaw
+    dm.visionPolicyState.pose.calibrated = self.pose.calibrated
+    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = to_perc(self.pose.pitch_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    dm.visionPolicyState.pose.pitchCalib.offset = self.pose.pitch_offseter.filtered_stat.M
+    dm.visionPolicyState.pose.yawCalib.calibratedPercent = to_perc(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    dm.visionPolicyState.pose.yawCalib.offset = self.pose.yaw_offseter.filtered_stat.M
+    dm.visionPolicyState.pose.uncertainty = self.model_std_max
+    dm.visionPolicyState.wheeltouchFallbackPercent = to_perc(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
+    dm.visionPolicyState.uncertainOffroadAlertPercent = to_perc(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
+
+    dm.wheeltouchPolicyState.awarenessPercent = to_perc(self.last_wheeltouch_awareness if self.active_monitoring_mode else self.awareness)
+    dm.wheeltouchPolicyState.awarenessStep = 0. if self.active_monitoring_mode else self.step_change
+    dm.wheeltouchPolicyState.driverInteracting = self.driver_interacting
     return dat
 
   def run_step(self, sm, demo=False):
     if demo:
-      highway_speed = 30
+      car_speed = 30
       enabled = True
       wrong_gear = False
       standstill = False
@@ -430,23 +409,24 @@ class DriverMonitoring:
       brake_disengage_prob = 1.0
       rpyCalib = [0., 0., 0.]
     else:
-      highway_speed = sm['carState'].vEgo
+      car_speed = sm['carState'].vEgo
       enabled = sm['selfdriveState'].enabled
       wrong_gear = sm['carState'].gearShifter not in (car.CarState.GearShifter.drive, car.CarState.GearShifter.low)
       standstill = sm['carState'].standstill
       driver_engaged = sm['carState'].steeringPressed or sm['carState'].gasPressed
       brake_disengage_prob = sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
       rpyCalib = sm['liveCalibration'].rpyCalib
-    self._set_policy(
+
+    self._set_pose_strictness(
       brake_disengage_prob=brake_disengage_prob,
-      car_speed=highway_speed,
+      car_speed=car_speed,
     )
 
     # Parse data from dmonitoringmodeld
     self._update_states(
       driver_state=sm['driverStateV2'],
       cal_rpy=rpyCalib,
-      car_speed=highway_speed,
+      car_speed=car_speed,
       op_engaged=enabled,
       standstill=standstill,
       demo_mode=demo,
@@ -459,5 +439,5 @@ class DriverMonitoring:
       op_engaged=enabled,
       standstill=standstill,
       wrong_gear=wrong_gear,
-      car_speed=highway_speed
+      car_speed=car_speed
     )

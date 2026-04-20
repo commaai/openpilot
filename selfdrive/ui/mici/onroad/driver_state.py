@@ -6,11 +6,13 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.monitoring.helpers import face_orientation_from_net
 
 AlertSize = log.SelfdriveState.AlertSize
 
 DEBUG = False
 
+# TODO: Only left for DM preview, remove
 LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6)
 LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3)
 
@@ -59,8 +61,6 @@ class DriverStateRenderer(Widget):
 
     self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
-    center_size = round(36 / self.BASE_SIZE * self._rect.width)
-    self._dm_center = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_center.png", center_size, center_size)
     self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", int(self._rect.width), int(self._rect.height))
 
   def set_should_draw(self, should_draw: bool):
@@ -113,16 +113,7 @@ class DriverStateRenderer(Widget):
           dest_rect,
           rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
           self._rotation_filter.x - 90,
-          rl.Color(255, 255, 255, int(255 * self._fade_filter.x * (1 - self._looking_center_filter.x))),
-        )
-
-        rl.draw_texture_ex(
-          self._dm_center,
-          (int(self._rect.x + (self._rect.width - self._dm_center.width) / 2),
-           int(self._rect.y + (self._rect.height - self._dm_center.height) / 2)),
-          0,
-          1.0,
-          rl.Color(255, 255, 255, int(255 * self._fade_filter.x * self._looking_center_filter.x)),
+          rl.Color(255, 255, 255, int(255 * self._fade_filter.x)),
         )
 
       else:
@@ -162,9 +153,9 @@ class DriverStateRenderer(Widget):
     sm = ui_state.sm
 
     dm_state = sm["driverMonitoringState"]
-    self._is_active = dm_state.isActiveMode
+    self._is_active = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     self._is_rhd = dm_state.isRHD
-    self._face_detected = dm_state.faceDetected
+    self._face_detected = dm_state.visionPolicyState.faceDetected
 
     driverstate = sm["driverStateV2"]
     driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
@@ -174,11 +165,22 @@ class DriverStateRenderer(Widget):
     # Get monitoring state
     driver_data = self.get_driver_data()
     driver_orient = driver_data.faceOrientation
+    driver_position = driver_data.facePosition
 
     if len(driver_orient) != 3:
       return
 
-    pitch, yaw, roll = driver_orient
+    # Calibrate orientation so looking straight ahead at road (instead of at device) is (0, 0, 0)
+    sm = ui_state.sm
+    if sm.valid['liveCalibration'] and len(sm['liveCalibration'].rpyCalib) == 3:
+      cal_rpy = sm['liveCalibration'].rpyCalib
+    else:
+      cal_rpy = [0.0, 0.0, 0.0]
+
+    _, pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
+    pitch += math.radians(6)  # calib or DM pose is not accurate, add a fake upward pitch to bias forward
+    yaw = -yaw  # undo sign flip in face_orientation_from_net to match UI convention
+
     pitch = self._pitch_filter.update(pitch)
     yaw = self._yaw_filter.update(yaw)
 
@@ -192,7 +194,6 @@ class DriverStateRenderer(Widget):
     if DEBUG:
       pitchd = math.degrees(pitch)
       yawd = math.degrees(yaw)
-      rolld = math.degrees(roll)
 
       rl.draw_line_ex((0, 100), (200, 100), 3, rl.RED)
       rl.draw_line_ex((0, 120), (200, 120), 3, rl.RED)
@@ -200,13 +201,11 @@ class DriverStateRenderer(Widget):
 
       pitch_x = 100 + pitchd
       yaw_x = 100 + yawd
-      roll_x = 100 + rolld
       rl.draw_circle(int(pitch_x), 100, 5, rl.GREEN)
       rl.draw_circle(int(yaw_x), 120, 5, rl.GREEN)
-      rl.draw_circle(int(roll_x), 140, 5, rl.GREEN)
 
     # filter head rotation, handling wrap-around
-    rotation = math.degrees(math.atan2(pitch, yaw))
+    rotation = math.degrees(math.atan2(pitch * 2, yaw))  # reduce yaw sensitivity
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)

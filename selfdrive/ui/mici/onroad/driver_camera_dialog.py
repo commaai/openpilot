@@ -1,19 +1,14 @@
 import pyray as rl
-from cereal import log, messaging
+from cereal import car, log, messaging
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state, device
-from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import gui_label
-
-EventName = log.OnroadEvent.EventName
-
-EVENT_TO_INT = EventName.schema.enumerants
 
 
 class DriverCameraView(CameraView):
@@ -107,11 +102,14 @@ class BaseDriverCameraDialog(Widget):
     if self._pm is None:
       return
 
+    AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+    ALERT_SOUNDS = {
+      log.DriverMonitoringState.AlertLevel.two: AudibleAlert.promptDistracted,
+      log.DriverMonitoringState.AlertLevel.three: AudibleAlert.warningImmediate,
+    }
     msg = messaging.new_message('selfdriveState')
-    if dm_state is not None and len(dm_state.events):
-      event_name = EVENT_TO_INT[dm_state.events[0].name]
-      if event_name is not None and event_name in EVENTS and ET.PERMANENT in EVENTS[event_name]:
-        msg.selfdriveState.alertSound = EVENTS[event_name][ET.PERMANENT].audible_alert
+    if dm_state is not None:
+      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(dm_state.alertLevel, AudibleAlert.none)
     self._pm.send('selfdriveState', msg)
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
@@ -119,29 +117,31 @@ class BaseDriverCameraDialog(Widget):
     dm_state = ui_state.sm["driverMonitoringState"]
     self._publish_alert_sound(dm_state)
 
+    is_vision = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
+    awareness_pct = dm_state.visionPolicyState.awarenessPercent if is_vision else dm_state.wheeltouchPolicyState.awarenessPercent
     gui_label(rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height),
-              f"Awareness: {dm_state.awarenessStatus * 100:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
+              f"Awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
               color=rl.Color(0, 0, 0, 180))
-    gui_label(rect, f"Awareness: {dm_state.awarenessStatus * 100:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
+    gui_label(rect, f"Awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
               color=rl.Color(255, 255, 255, int(255 * 0.9)))
 
-    if not dm_state.events:
+    if dm_state.alertLevel == log.DriverMonitoringState.AlertLevel.none:
       return
 
-    # Show first event (only one should be active at a time)
-    event_name_str = str(dm_state.events[0].name).split('.')[-1]
+    # Show alert level
+    alert_level_str = dm_state.alertLevel
     alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if self.driver_state_renderer.is_rhd else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
 
     shadow_rect = rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height)
-    gui_label(shadow_rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
+    gui_label(shadow_rect, alert_level_str, font_size=40, font_weight=FontWeight.BOLD,
               alignment=alignment,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM,
               color=rl.Color(0, 0, 0, 180))
-    gui_label(rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
+    gui_label(rect, alert_level_str, font_size=40, font_weight=FontWeight.BOLD,
               alignment=alignment,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM,
               color=rl.Color(255, 255, 255, int(255 * 0.9)))
@@ -156,7 +156,7 @@ class BaseDriverCameraDialog(Widget):
   def _draw_face_detection(self, rect: rl.Rectangle):
     dm_state = ui_state.sm["driverMonitoringState"]
     driver_data = self.driver_state_renderer.get_driver_data()
-    if not dm_state.faceDetected:
+    if not dm_state.visionPolicyState.faceDetected:
       return
 
     # Get face position and orientation

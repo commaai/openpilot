@@ -8,7 +8,7 @@ A car port enables openpilot support on a particular car. Each car model openpil
 
 # Structure of a car port
 
-Virtually all car-specific code is contained in two other repositories: [opendbc](https://github.com/commaai/opendbc) and [panda](https://github.com/commaai/panda).
+All car-specific code is contained in the [opendbc](https://github.com/commaai/opendbc) project.
 
 ## opendbc
 
@@ -23,8 +23,8 @@ Each car brand is supported by a standard interface structure in `opendbc/car/[b
 
 ## safety
 
-* `opendbc_repo/opendbc/safety/modes/[brand].h`: Brand-specific safety logic
-* `opendbc_repo/opendbc/safety/tests/test_[brand].py`: Brand-specific safety CI tests
+* `opendbc/safety/modes/[brand].h`: Brand-specific safety logic
+* `opendbc/safety/tests/test_[brand].py`: Brand-specific safety CI tests
 
 ## openpilot
 
@@ -32,8 +32,20 @@ For historical reasons, openpilot still contains a small amount of car-specific 
 
 * `selfdrive/car/car_specific.py`: Brand-specific event logic
 
-# Overview
+# How do I port car?
 
 [Jason Young](https://github.com/jyoung8607) gave a talk at COMMA_CON with an overview of the car porting process. The talk is available on YouTube:
 
 https://www.youtube.com/watch?v=XxPS5TpTUnI
+
+## Brand Port
+
+A brand port is a port of openpilot to a substantially new car brand or platform within a brand.
+
+Here's an example of one: https://github.com/commaai/openpilot/pull/23331.
+
+## Model Port
+
+A model port is a port of openpilot to a new car model within an already supported brand. Model ports are easier than brand ports because the car's existing APIs are already known.
+
+Here's an example of one: https://github.com/commaai/openpilot/pull/30672/.

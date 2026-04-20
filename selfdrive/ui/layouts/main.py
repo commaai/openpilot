@@ -2,13 +2,14 @@ import pyray as rl
 from enum import IntEnum
 import cereal.messaging as messaging
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
-from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
+from openpilot.selfdrive.ui.body.layouts.onroad import BodyLayout
 
 
 class MainState(IntEnum):
@@ -28,7 +29,9 @@ class MainLayout(Widget):
     self._prev_onroad = False
 
     # Initialize layouts
-    self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
+    self._home_layout = HomeLayout()
+    self._home_body_layout = BodyLayout()
+    self._layouts = {MainState.HOME: self._home_layout, MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
 
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
     self._content_rect = rl.Rectangle(0, 0, 0, 0)
@@ -54,14 +57,18 @@ class MainLayout(Widget):
     self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
     self._layouts[MainState.HOME].set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
-    self._layouts[MainState.ONROAD].set_click_callback(self._on_onroad_clicked)
+
+    for layout in (self._layouts[MainState.ONROAD], self._home_body_layout):
+      layout.set_click_callback(self._on_onroad_clicked)
+
     device.add_interactive_timeout_callback(self._set_mode_for_state)
+    ui_state.add_on_body_changed_callbacks(self._on_body_changed)
 
   def _update_layout_rects(self):
     self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
 
     x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0
-    self._content_rect = rl.Rectangle(self._rect.y + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
+    self._content_rect = rl.Rectangle(self._rect.x + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
 
   def _handle_onroad_transition(self):
     if ui_state.started != self._prev_onroad:
@@ -70,6 +77,12 @@ class MainLayout(Widget):
       self._set_mode_for_state()
 
   def _set_mode_for_state(self):
+    # Don't go onroad if body, home is onroad
+    if ui_state.is_body:
+      self._set_current_layout(MainState.HOME)
+      self._sidebar.set_visible(not ui_state.ignition)
+      return
+
     if ui_state.started:
       # Don't hide sidebar from interactive timeout
       if self._current_mode != MainState.ONROAD:
@@ -100,6 +113,10 @@ class MainLayout(Widget):
 
   def _on_onroad_clicked(self):
     self._sidebar.set_visible(not self._sidebar.is_visible)
+
+  def _on_body_changed(self):
+    self._layouts[MainState.HOME] = self._home_body_layout if ui_state.is_body else self._home_layout
+    self._set_mode_for_state()
 
   def _render_main_content(self):
     # Render sidebar
