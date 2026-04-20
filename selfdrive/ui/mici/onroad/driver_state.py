@@ -6,7 +6,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.monitoring.helpers import face_orientation_from_net
+from openpilot.selfdrive.monitoring.policy import face_orientation_from_net
 
 AlertSize = log.SelfdriveState.AlertSize
 

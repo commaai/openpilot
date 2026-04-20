@@ -2,7 +2,7 @@
 import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
-from openpilot.selfdrive.monitoring.helpers import DriverMonitoring
+from openpilot.selfdrive.monitoring.policy import DriverMonitoring
 
 
 def dmonitoringd_thread():
