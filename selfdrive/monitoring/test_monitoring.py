@@ -33,7 +33,7 @@ msg_ATTENTIVE = make_msg(True)
 msg_DISTRACTED = make_msg(True, distracted=True)
 msg_ATTENTIVE_UNCERTAIN = make_msg(True, model_uncertain=True)
 msg_DISTRACTED_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=True)
-msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=dm_settings._HI_STD_THRESHOLD*1.5)
+msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=dm_settings._POSE_UNCERTAINTY_THRESHOLD*1.5)
 
 # driver interaction with car
 car_interaction_DETECTED = True
@@ -157,9 +157,12 @@ class TestMonitoring:
     ds_vector = always_no_face[:]
     interaction_vector = always_false[:]
     op_vector = always_true[:]
-    ds_vector[int(WHEELTOUCH_ALERT_3_INTERVAL/DT_DMON):int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time)/DT_DMON)] = [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
-    interaction_vector[int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time)/DT_DMON):int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time+1)/DT_DMON)] = [True] * int(1/DT_DMON)
-    op_vector[int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time+1)/DT_DMON):int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time+0.5)/DT_DMON)] = [False] * int(0.5/DT_DMON)
+    ds_vector[int(WHEELTOUCH_ALERT_3_INTERVAL/DT_DMON):int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time)/DT_DMON)] = \
+      [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
+    interaction_vector[int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time)/DT_DMON):
+                       int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time+1)/DT_DMON)] = [True] * int(1/DT_DMON)
+    op_vector[int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time+1)/DT_DMON):
+              int((WHEELTOUCH_ALERT_3_INTERVAL+_visible_time+0.5)/DT_DMON)] = [False] * int(0.5/DT_DMON)
     alert_lvls, _ = self._run_seq(ds_vector, interaction_vector, op_vector, always_false)
     assert alert_lvls[int(WHEELTOUCH_ALERT_2_INTERVAL*0.5/DT_DMON)] == 0
     assert alert_lvls[int((WHEELTOUCH_ALERT_2_INTERVAL-0.1)/DT_DMON)] == 2
@@ -205,6 +208,6 @@ class TestMonitoring:
     interaction_vector = always_false[:]
     alert_lvls, d_status = self._run_seq(ds_vector, interaction_vector, always_true, always_false)
     s = d_status.settings
-    assert alert_lvls[int((WHEELTOUCH_ALERT_2_INTERVAL-1+DT_DMON*s._HI_STD_FALLBACK_TIME-0.1)/DT_DMON)] == 1
-    assert alert_lvls[int((WHEELTOUCH_ALERT_2_INTERVAL-1+DT_DMON*s._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)] == 2
-    assert alert_lvls[int((WHEELTOUCH_ALERT_3_INTERVAL-1+DT_DMON*s._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)] == 3
+    assert alert_lvls[int((WHEELTOUCH_ALERT_2_INTERVAL-1+DT_DMON*s._WHEELTOUCH_FALLBACK_TIME-0.1)/DT_DMON)] == 1
+    assert alert_lvls[int((WHEELTOUCH_ALERT_2_INTERVAL-1+DT_DMON*s._WHEELTOUCH_FALLBACK_TIME+0.1)/DT_DMON)] == 2
+    assert alert_lvls[int((WHEELTOUCH_ALERT_3_INTERVAL-1+DT_DMON*s._WHEELTOUCH_FALLBACK_TIME+0.1)/DT_DMON)] == 3
