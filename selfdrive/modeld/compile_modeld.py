@@ -148,7 +148,7 @@ def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
   stride_pad = stride - cam_w
 
   def warp_dm(input_frame, M_inv):
-    M_inv = M_inv.to(Device.DEFAULT)
+    M_inv = M_inv.to(Device.DEFAULT).realize()
     result = warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv, (dm_w, dm_h), (cam_h, cam_w), stride_pad).reshape(-1, dm_h * dm_w)
     return result
   return warp_dm
@@ -270,7 +270,7 @@ def compile_dm_warp(cam_w, cam_h, pkl_path):
   warp_dm_jit = TinyJit(warp_dm, prune=True)
 
   for i in range(10):
-    inputs = [Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize(),
+    inputs = [Tensor.randint(yuv_size, low=0, high=256, dtype='uint8').realize(),
               Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')]
     Device.default.synchronize()
     st = time.perf_counter()
