@@ -848,7 +848,7 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
     } else {
       for (size_t i = 0; i < prepared_curves.size(); ++i) {
         const PreparedCurve &curve = prepared_curves[i];
-        std::string series_id = curve_legend_label(curve, has_cursor_time, max_legend_label_width) + "##curve" + std::to_string(i);
+        std::string series_id = curve_legend_label(curve, has_cursor_time, max_legend_label_width) + "###curve" + std::to_string(curve.pane_curve_index);
         ImPlotSpec spec;
         spec.LineColor = color_rgb(curve.color);
         spec.LineWeight = curve.line_weight;
