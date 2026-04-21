@@ -157,9 +157,9 @@ class DriverMonitoring:
     self.last_vision_awareness = 1.
     self.last_wheeltouch_awareness = 1.
 
-  def _set_policy(self, active_policy):
+  def _set_policy(self, target_policy):
     if self.active_policy == MonitoringPolicy.vision and self.awareness <= self.threshold_alert_2:
-      if active_policy == MonitoringPolicy.vision:
+      if target_policy == MonitoringPolicy.vision:
         self.step_change = DT_DMON / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       else:
         self.step_change = 0.
@@ -167,7 +167,7 @@ class DriverMonitoring:
     elif self.awareness <= 0.:
       return
 
-    if active_policy == MonitoringPolicy.vision:
+    if target_policy == MonitoringPolicy.vision:
       # when falling back from passive mode to active mode, reset awareness to avoid false alert
       if self.active_policy != MonitoringPolicy.vision:
         self.last_wheeltouch_awareness = self.awareness
@@ -261,8 +261,7 @@ class DriverMonitoring:
     self.driver_distracted = any(self.distracted_types.values()) and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
-    # update offsetter
-    # only update when driver is actively driving the car above a certain speed
+    # only update offsetter when driver is actively driving the car above a certain speed
     if self.face_detected and car_speed > self.settings._POSE_CALIB_MIN_SPEED and self.pose.low_std and (not op_engaged or not self.driver_distracted):
       self.pose.pitch_offsetter.push_and_update(self.pose.pitch)
       self.pose.yaw_offsetter.push_and_update(self.pose.yaw)
