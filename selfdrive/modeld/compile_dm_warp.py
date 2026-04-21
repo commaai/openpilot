@@ -3,7 +3,6 @@ import argparse
 import pickle
 import time
 
-import numpy as np
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
@@ -27,10 +26,9 @@ def compile_dm_warp(nv12: NV12Frame, dm_w, dm_h, pkl_path):
 
   warp_dm_jit = TinyJit(make_warp_dm(nv12, dm_w, dm_h), prune=True)
 
-  np.random.seed(42)
   for i in range(10):
-    frame = Tensor(np.random.randint(0, 256, nv12.size, dtype=np.uint8)).realize()
-    M_inv = Tensor((np.random.randn(3, 3) * 8).astype(np.float32), device='NPY').realize()
+    frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
+    M_inv = Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')
     Device.default.synchronize()
     st = time.perf_counter()
     warp_dm_jit(frame, M_inv).realize()
