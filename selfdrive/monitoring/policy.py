@@ -97,7 +97,6 @@ class DriverPose:
 
 class DriverProb:
   def __init__(self, raw_priors, max_trackable):
-    self.prob = 0.
     self.prob_offsetter = RunningStatFilter(raw_priors=raw_priors, max_trackable=max_trackable)
     self.prob_calibrated = False
 
@@ -111,7 +110,8 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in driver camera frame
   # so from driver's perspective, pitch is up and yaw is right
 
-  pitch_net, yaw_net = angles_desc
+  pitch_net = angles_desc[0]
+  yaw_net = angles_desc[1]
 
   face_pixel_position = ((pos_desc[0]+0.5)*W, (pos_desc[1]+0.5)*H)
   yaw_focal_angle = atan2(face_pixel_position[0] - W//2, EFL)
@@ -156,7 +156,6 @@ class DriverMonitoring:
     self.model_std_max = 0.
     self.threshold_alert_1 = 0.
     self.threshold_alert_2 = 0.
-    self.dcam_uncertain = False
     self.dcam_uncertain_cnt = 0
     self.dcam_reset_cnt = 0
     self.too_distracted = Params().get_bool("DriverTooDistracted")
@@ -285,8 +284,8 @@ class DriverMonitoring:
                            self.pose.yaw_offsetter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
-      self.dcam_uncertain = self.model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
-      if self.dcam_uncertain and not standstill:
+      dcam_uncertain = self.model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
+      if dcam_uncertain and not standstill:
         self.dcam_uncertain_cnt += 1
         self.dcam_reset_cnt = 0
       else:

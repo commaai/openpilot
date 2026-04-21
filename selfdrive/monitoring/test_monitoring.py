@@ -55,7 +55,7 @@ class TestMonitoring:
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0, 0)
+      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0)
       alert_lvls.append(DM.alert_level)
     assert len(alert_lvls) == len(msgs), f"got {len(alert_lvls)} for {len(msgs)} driverState input msgs"
     return alert_lvls, DM
