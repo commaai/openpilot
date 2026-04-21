@@ -85,10 +85,8 @@ class DriverPose:
     yaw_filter_raw_priors = (settings._YAW_NATURAL_OFFSET, settings._YAW_NATURAL_VAR, 2)
     self.yaw = 0.
     self.pitch = 0.
-    self.roll = 0.
     self.yaw_std = 0.
     self.pitch_std = 0.
-    self.roll_std = 0.
     self.pitch_offsetter = RunningStatFilter(raw_priors=pitch_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
     self.yaw_offsetter = RunningStatFilter(raw_priors=yaw_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
     self.calibrated = False
@@ -113,7 +111,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in driver camera frame
   # so from driver's perspective, pitch is up and yaw is right
 
-  pitch_net, yaw_net, roll_net = angles_desc
+  pitch_net, yaw_net = angles_desc
 
   face_pixel_position = ((pos_desc[0]+0.5)*W, (pos_desc[1]+0.5)*H)
   yaw_focal_angle = atan2(face_pixel_position[0] - W//2, EFL)
@@ -122,10 +120,9 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   pitch = pitch_net + pitch_focal_angle
   yaw = -yaw_net + yaw_focal_angle
 
-  # no calib for roll
   pitch -= rpy_calib[1]
   yaw -= rpy_calib[2]
-  return roll_net, pitch, yaw
+  return pitch, yaw
 
 
 class DriverMonitoring:
@@ -260,7 +257,7 @@ class DriverMonitoring:
       return
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
+    self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
     steer_d = max(abs(steering_angle_deg) - self.settings._POSE_YAW_MIN_STEER_DEG, 0.)
     self.pose.steer_yaw_offset = radians(steer_d) * -np.sign(steering_angle_deg) * self.settings._POSE_YAW_STEER_FACTOR
     if self.wheel_on_right:
