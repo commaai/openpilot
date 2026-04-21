@@ -104,12 +104,12 @@ class BaseDriverCameraDialog(Widget):
 
     AudibleAlert = car.CarControl.HUDControl.AudibleAlert
     ALERT_SOUNDS = {
-      log.DriverMonitoringState.AlertLevel.two: AudibleAlert.promptDistracted,
-      log.DriverMonitoringState.AlertLevel.three: AudibleAlert.warningImmediate,
+      'two': AudibleAlert.promptDistracted,
+      'three': AudibleAlert.warningImmediate,
     }
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None:
-      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(dm_state.alertLevel, AudibleAlert.none)
+      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(str(dm_state.alertLevel), AudibleAlert.none)
     self._pm.send('selfdriveState', msg)
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
