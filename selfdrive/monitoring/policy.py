@@ -150,14 +150,14 @@ class DriverMonitoring:
     self.too_distracted = Params().get_bool("DriverTooDistracted")
 
     self._reset_awareness()
-    self._set_timers(MonitoringPolicy.vision)
+    self._set_policy(MonitoringPolicy.vision)
 
   def _reset_awareness(self):
     self.awareness = 1.
     self.last_vision_awareness = 1.
     self.last_wheeltouch_awareness = 1.
 
-  def _set_timers(self, active_policy):
+  def _set_policy(self, active_policy):
     if self.active_policy == MonitoringPolicy.vision and self.awareness <= self.threshold_alert_2:
       if active_policy == MonitoringPolicy.vision:
         self.step_change = DT_DMON / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
@@ -281,7 +281,7 @@ class DriverMonitoring:
           self.dcam_uncertain_cnt = 0
 
     self.is_model_uncertain = self.hi_stds >= self.settings._HI_STD_FALLBACK_TIME
-    self._set_timers(MonitoringPolicy.vision if self.face_detected and not self.is_model_uncertain else MonitoringPolicy.wheeltouch)
+    self._set_policy(MonitoringPolicy.vision if self.face_detected and not self.is_model_uncertain else MonitoringPolicy.wheeltouch)
     if self.face_detected and not self.pose.low_std and not self.driver_distracted:
       self.hi_stds += 1
     elif self.face_detected and self.pose.low_std:
