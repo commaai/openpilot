@@ -304,7 +304,7 @@ class DriverMonitoring:
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
 
-  def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear, car_speed):
+  def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear):
     self.alert_level = AlertLevel.none
     self.driver_interacting = driver_engaged
 
@@ -439,5 +439,4 @@ class DriverMonitoring:
       op_engaged=enabled,
       standstill=standstill,
       wrong_gear=wrong_gear,
-      car_speed=car_speed
     )
