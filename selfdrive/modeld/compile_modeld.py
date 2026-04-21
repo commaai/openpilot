@@ -3,6 +3,7 @@ import argparse
 import pickle
 import time
 from functools import partial
+from typing import NamedTuple
 
 import numpy as np
 from tinygrad.tensor import Tensor
@@ -16,7 +17,15 @@ from tinygrad.uop.ops import UOp, Ops
 _orig = UOp.__reduce__
 UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig(self)
 
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
+
+class NV12Frame(NamedTuple):
+  width: int
+  height: int
+  stride: int
+  y_height: int
+  uv_height: int
+  size: int
+
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -56,8 +65,8 @@ def frames_to_tensor(frames):
   return in_img1
 
 
-def make_frame_prepare(cam_w, cam_h, model_w, model_h):
-  stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
+def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
+  cam_w, cam_h, stride, y_height, uv_height, _ = nv12
   uv_offset = stride * y_height
   stride_pad = stride - cam_w
 
@@ -120,9 +129,9 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_run_policy(vision_runner, policy_runner, cam_w, cam_h, model_w, model_h,
+def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, model_h,
                     vision_features_slice, frame_skip, prepare_only=False):
-  frame_prepare = make_frame_prepare(cam_w, cam_h, model_w, model_h)
+  frame_prepare = make_frame_prepare(nv12, model_w, model_h)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
@@ -146,12 +155,11 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h, model_w, model_h
   return run_policy
 
 
-def compile_modeld(cam_w, cam_h, model_w, model_h, prepare_only, frame_skip,
+def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
                    vision_onnx, policy_onnx, pkl_path):
   from get_model_metadata import metadata_path_for
 
-  _, _, _, yuv_size = get_nv12_info(cam_w, cam_h)
-  print(f"Compiling combined policy JIT for {cam_w}x{cam_h} (prepare_only={prepare_only})...")
+  print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
   vision_runner = OnnxRunner(vision_onnx)
   policy_runner = OnnxRunner(policy_onnx)
@@ -163,8 +171,8 @@ def compile_modeld(cam_w, cam_h, model_w, model_h, prepare_only, frame_skip,
   with open(metadata_path_for(policy_onnx), 'rb') as f:
     policy_input_shapes = pickle.load(f)['input_shapes']
 
-  _run = make_run_policy(vision_runner, policy_runner,
-                         cam_w, cam_h, model_w, model_h, vision_features_slice, frame_skip, prepare_only)
+  _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
+                         vision_features_slice, frame_skip, prepare_only)
   run_policy_jit = TinyJit(_run, prune=True)
 
   N_RUNS = 3
@@ -175,8 +183,8 @@ def compile_modeld(cam_w, cam_h, model_w, model_h, prepare_only, frame_skip,
     np.random.seed(seed)
 
     for i in range(N_RUNS):
-      frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
-      big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
+      frame = Tensor(np.random.randint(0, 256, nv12.size, dtype=np.uint8)).realize()
+      big_frame = Tensor(np.random.randint(0, 256, nv12.size, dtype=np.uint8)).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
@@ -221,10 +229,18 @@ def _parse_size(s):
   return int(w), int(h)
 
 
+def _parse_nv12(s):
+  parts = s.split(',')
+  assert len(parts) == len(NV12Frame._fields), \
+    f"--nv12 expects {','.join(NV12Frame._fields)} (got {s!r})"
+  return NV12Frame(*(int(x) for x in parts))
+
+
 if __name__ == "__main__":
   p = argparse.ArgumentParser()
-  p.add_argument('--cam-size', type=_parse_size, required=True, help='camera WxH, e.g. 1928x1208')
   p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH, e.g. 512x256')
+  p.add_argument('--nv12', type=_parse_nv12, required=True,
+                 help=f'NV12 frame layout: {",".join(NV12Frame._fields)}')
   p.add_argument('--vision-onnx', required=True)
   p.add_argument('--policy-onnx', required=True)
   p.add_argument('--output', required=True)
@@ -232,7 +248,6 @@ if __name__ == "__main__":
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
 
-  cam_w, cam_h = args.cam_size
   model_w, model_h = args.model_size
-  compile_modeld(cam_w, cam_h, model_w, model_h, args.prepare_only, args.frame_skip,
+  compile_modeld(args.nv12, model_w, model_h, args.prepare_only, args.frame_skip,
                  args.vision_onnx, args.policy_onnx, args.output)

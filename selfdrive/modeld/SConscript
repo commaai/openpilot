@@ -76,7 +76,8 @@ model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 for cfg in MODELD_CONFIGS:
   cmd = (f'{tg_flags} {mac_brew_string} {image_flag} python3 {modeld_dir}/compile_modeld.py '
-         f'--cam-size {cfg.cam_w}x{cfg.cam_h} --model-size {model_w}x{model_h} '
+         f'--model-size {model_w}x{model_h} '
+         f'--nv12 {",".join(str(x) for x in cfg.nv12)} '
          f'--vision-onnx {File("models/driving_vision.onnx").abspath} '
          f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
          f'--output {cfg.pkl_path} --frame-skip {frame_skip}'
