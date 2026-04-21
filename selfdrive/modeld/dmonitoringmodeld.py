@@ -42,6 +42,7 @@ class ModelState:
     self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
     self.frame_buf_params = None
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+    self.tensor_inputs['input_img'] = Tensor.zeros(self.input_shapes['input_img'], dtype='uint8').contiguous().realize()
     self._blob_cache : dict[int, Tensor] = {}
     self.image_warp = None
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
@@ -62,7 +63,7 @@ class ModelState:
       self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
 
     self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()
+    self.image_warp(self.tensor_inputs['input_img'], self._blob_cache[ptr], self.warp_inputs['transform'])
 
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
 
