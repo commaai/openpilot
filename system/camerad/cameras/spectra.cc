@@ -583,7 +583,6 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
     // gamma
     for (uint8_t ch = 1; ch <= 3; ch++) {
-      uint64_t addr;
       cdm_len += write_dmi((unsigned char *)bps_cdm_program_array.ptr + cdm_len, &addr, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x3208, ch, CAM_CDM_CMD_DMI);
       patches.push_back(addr - (uint64_t)bps_cdm_program_array.ptr);
     }
