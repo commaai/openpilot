@@ -98,16 +98,16 @@ ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].dcam
 dcam_undistorted_FL = 598.0
 dcam_undistorted_W, dcam_undistorted_H = (ref_undistorted_cam.width, ref_undistorted_cam.height)
 
-def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
-  pitch_net = angles_desc[0]
-  yaw_net = angles_desc[1]
+def face_orientation_from_model(orient_model, pos_model, rpy_calib):
+  pitch_model = orient_model[0]
+  yaw_model = orient_model[1]
 
-  face_pixel_position = ((pos_desc[0]+0.5)*dcam_undistorted_W, (pos_desc[1]+0.5)*dcam_undistorted_H)
+  face_pixel_position = ((pos_model[0]+0.5)*dcam_undistorted_W, (pos_model[1]+0.5)*dcam_undistorted_H)
   yaw_focal_angle = atan2(face_pixel_position[0] - dcam_undistorted_W//2, dcam_undistorted_FL)
   pitch_focal_angle = atan2(face_pixel_position[1] - dcam_undistorted_H//2, dcam_undistorted_FL)
 
-  pitch = pitch_net + pitch_focal_angle
-  yaw = -yaw_net + yaw_focal_angle
+  pitch = pitch_model + pitch_focal_angle
+  yaw = -yaw_model + yaw_focal_angle
 
   pitch -= rpy_calib[1]
   yaw -= rpy_calib[2]
@@ -245,7 +245,7 @@ class DriverMonitoring:
       return
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
-    self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
+    self.pose.pitch, self.pose.yaw = face_orientation_from_model(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
     steer_d = max(abs(steering_angle_deg) - self.settings._POSE_YAW_MIN_STEER_DEG, 0.)
     self.pose.steer_yaw_offset = radians(steer_d) * -np.sign(steering_angle_deg) * self.settings._POSE_YAW_STEER_FACTOR
     if self.wheel_on_right:

@@ -6,7 +6,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.monitoring.policy import face_orientation_from_net
+from openpilot.selfdrive.monitoring.policy import face_orientation_from_model
 
 AlertSize = log.SelfdriveState.AlertSize
 
@@ -177,9 +177,9 @@ class DriverStateRenderer(Widget):
     else:
       cal_rpy = [0.0, 0.0, 0.0]
 
-    pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
+    pitch, yaw = face_orientation_from_model(driver_orient, driver_position, cal_rpy)
     pitch += math.radians(6)  # calib or DM pose is not accurate, add a fake upward pitch to bias forward
-    yaw = -yaw  # undo sign flip in face_orientation_from_net to match UI convention
+    yaw = -yaw  # undo sign flip in face_orientation_from_model to match UI convention
 
     pitch = self._pitch_filter.update(pitch)
     yaw = self._yaw_filter.update(yaw)
