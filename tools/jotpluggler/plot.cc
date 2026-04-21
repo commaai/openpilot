@@ -7,8 +7,6 @@
 #include <cstdio>
 #include <limits>
 
-constexpr double PLOT_Y_PAD_FRACTION = 0.4;
-
 struct PlotBounds {
   double x_min = 0.0;
   double x_max = 1.0;
@@ -484,7 +482,7 @@ PlotBounds compute_plot_bounds(const Pane &pane,
     min_value = std::min(min_value, 0.0);
     max_value = std::max(max_value, 1.0);
   }
-  ensure_non_degenerate_range(&min_value, &max_value, PLOT_Y_PAD_FRACTION, 0.1);
+  ensure_non_degenerate_range(&min_value, &max_value, PLOT_Y_PADDING_FRACTION, 0.1);
   if (pane.range.has_y_limit_min) {
     min_value = pane.range.y_limit_min;
   }
