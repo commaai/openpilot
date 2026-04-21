@@ -85,8 +85,6 @@ class DriverPose:
     yaw_filter_raw_priors = (settings._YAW_NATURAL_OFFSET, settings._YAW_NATURAL_VAR, 2)
     self.yaw = 0.
     self.pitch = 0.
-    self.yaw_std = 0.
-    self.pitch_std = 0.
     self.pitch_offsetter = RunningStatFilter(raw_priors=pitch_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
     self.yaw_offsetter = RunningStatFilter(raw_priors=yaw_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
     self.calibrated = False
@@ -94,11 +92,6 @@ class DriverPose:
     self.cfactor_pitch = 1.
     self.cfactor_yaw = 1.
     self.steer_yaw_offset = 0.
-
-class DriverProb:
-  def __init__(self, raw_priors, max_trackable):
-    self.prob_offsetter = RunningStatFilter(raw_priors=raw_priors, max_trackable=max_trackable)
-    self.prob_calibrated = False
 
 
 # model output refers to center of undistorted+leveled image
@@ -132,7 +125,7 @@ class DriverMonitoring:
 
     # init driver status
     wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
-    self.wheelpos = DriverProb(raw_priors=wheelpos_filter_raw_priors, max_trackable=self.settings._WHEELPOS_MAX_COUNT)
+    self.wheelpos_offsetter = RunningStatFilter(raw_priors=wheelpos_filter_raw_priors, max_trackable=self.settings._WHEELPOS_MAX_COUNT)
     self.pose = DriverPose(settings=self.settings)
     self.blink_prob = 0.
     self.phone_prob = 0.
@@ -239,12 +232,12 @@ class DriverMonitoring:
     # calibrates only when there's movement and either face detected
     if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
                                           driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
-      self.wheelpos.prob_offsetter.push_and_update(rhd_pred)
+      self.wheelpos_offsetter.push_and_update(rhd_pred)
 
-    self.wheelpos.prob_calibrated = self.wheelpos.prob_offsetter.filtered_stat.n >= self.settings._WHEELPOS_FILTER_MIN_COUNT
+    wheelpos_calibrated = self.wheelpos_offsetter.filtered_stat.n >= self.settings._WHEELPOS_FILTER_MIN_COUNT
 
-    if self.wheelpos.prob_calibrated or demo_mode:
-      self.wheel_on_right = self.wheelpos.prob_offsetter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
+    if wheelpos_calibrated or demo_mode:
+      self.wheel_on_right = self.wheelpos_offsetter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
       self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
     # make sure no switching when engaged
@@ -263,9 +256,9 @@ class DriverMonitoring:
       self.pose.yaw *= -1
       self.pose.steer_yaw_offset *= -1
     self.wheel_on_right_last = self.wheel_on_right
-    self.pose.pitch_std = driver_data.faceOrientationStd[0]
-    self.pose.yaw_std = driver_data.faceOrientationStd[1]
-    self.model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
+    pitch_std = driver_data.faceOrientationStd[0]
+    yaw_std = driver_data.faceOrientationStd[1]
+    self.model_std_max = max(pitch_std, yaw_std)
     self.pose.low_std = self.model_std_max < self.settings._HI_STD_THRESHOLD
     self.blink_prob = driver_data.eyesClosedProb * (driver_data.eyesVisibleProb > self.settings._EYE_THRESHOLD)
     self.phone_prob = driver_data.phoneProb
@@ -369,8 +362,8 @@ class DriverMonitoring:
     dm.alertLevel = self.alert_level
     dm.activePolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
     dm.isRHD = self.wheel_on_right
-    dm.rhdCalibration.calibratedPercent = to_percent(self.wheelpos.prob_offsetter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
-    dm.rhdCalibration.offset = self.wheelpos.prob_offsetter.filtered_stat.M
+    dm.rhdCalibration.calibratedPercent = to_percent(self.wheelpos_offsetter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
+    dm.rhdCalibration.offset = self.wheelpos_offsetter.filtered_stat.M
 
     dm.visionPolicyState.awarenessPercent = to_percent(self.last_vision_awareness if not self.active_monitoring_mode else self.awareness)
     dm.visionPolicyState.awarenessStep = self.step_change if self.active_monitoring_mode else 0.
@@ -403,6 +396,7 @@ class DriverMonitoring:
       standstill = False
       driver_engaged = False
       brake_disengage_prob = 1.0
+      steering_angle_deg = 0.0
       rpyCalib = [0., 0., 0.]
     else:
       car_speed = sm['carState'].vEgo
@@ -411,6 +405,7 @@ class DriverMonitoring:
       standstill = sm['carState'].standstill
       driver_engaged = sm['carState'].steeringPressed or sm['carState'].gasPressed
       brake_disengage_prob = sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
+      steering_angle_deg = sm['carState'].steeringAngleDeg
       rpyCalib = sm['liveCalibration'].rpyCalib
 
     self._set_pose_strictness(
@@ -426,7 +421,7 @@ class DriverMonitoring:
       op_engaged=enabled,
       standstill=standstill,
       demo_mode=demo,
-      steering_angle_deg=sm['carState'].steeringAngleDeg,
+      steering_angle_deg=steering_angle_deg,
     )
 
     # Update distraction events

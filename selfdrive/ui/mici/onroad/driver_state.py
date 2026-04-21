@@ -177,7 +177,7 @@ class DriverStateRenderer(Widget):
     else:
       cal_rpy = [0.0, 0.0, 0.0]
 
-    _, pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
+    pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
     pitch += math.radians(6)  # calib or DM pose is not accurate, add a fake upward pitch to bias forward
     yaw = -yaw  # undo sign flip in face_orientation_from_net to match UI convention
 
