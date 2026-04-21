@@ -92,7 +92,7 @@ for cfg in MODELD_CONFIGS:
 dm_w, dm_h = DM_INPUT_SIZE
 for cfg in DM_WARP_CONFIGS:
   cmd = (f'{tg_flags} {mac_brew_string} {image_flag} python3 {modeld_dir}/compile_dm_warp.py '
-         f'--warp-from {cfg.cam_w}x{cfg.cam_h} --warp-to {dm_w}x{dm_h} '
+         f'--nv12 {",".join(str(x) for x in cfg.nv12)} --warp-to {dm_w}x{dm_h} '
          f'--output {cfg.pkl_path}')
   lenv.Command(cfg.pkl_path, tinygrad_files + compile_dm_warp_script + compile_modeld_script + [compiled_flags_node], cmd)
 
