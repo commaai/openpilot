@@ -5,7 +5,9 @@ from datetime import datetime, timedelta, UTC
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
-API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
+from openpilot.common.params import Params
+
+API_HOST = Params().get("APIHost", return_default=True)
 
 # name: jwt signature algorithm
 KEYS = {"id_rsa": "RS256",

@@ -44,8 +44,10 @@ bin/
 config.json
 compile_commands.json
 compare_runtime*.html
+selfdrive/modeld/models/tg_compiled_flags.json
 
 # build artifacts
+docs_site/
 selfdrive/pandad/pandad
 cereal/services.h
 cereal/gen

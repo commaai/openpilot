@@ -16,6 +16,8 @@ from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
 
+NO_IMU = os.environ.get("NO_IMU") == "1"
+
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
 TRANS_SANITY_CHECK = 200.0  # m/s
@@ -97,6 +99,15 @@ class LocationEstimator:
       cloudlog.error("Non-finite values detected, kalman reset")
       self.reset(t)
 
+  def _observe(self, sensor_time: float, kind: ObservationKind, meas: np.ndarray):
+    res = self.kf.predict_and_observe(sensor_time, kind, meas)
+    if res is not None:
+      _, new_x, _, new_P, _, _, (err,), _, _ = res
+      self.observation_errors[kind] = np.array(err)
+      self.observations[kind] = meas
+      return new_x, new_P
+    return None, None
+
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
     new_x, new_P = None, None
     if which == "accelerometer" and msg.which() == "acceleration":
@@ -113,11 +124,7 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
-      acc_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
-      if acc_res is not None:
-        _, new_x, _, new_P, _, _, (acc_err,), _, _ = acc_res
-        self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(acc_err)
-        self.observations[ObservationKind.PHONE_ACCEL] = meas
+      new_x, new_P = self._observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
 
     elif which == "gyroscope" and msg.which() == "gyroUncalibrated":
       sensor_time = msg.timestamp * 1e-9
@@ -139,14 +146,21 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ROTATION_SANITY_CHECK or not gyro_valid:
         return HandleLogResult.INPUT_INVALID
 
-      gyro_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
-      if gyro_res is not None:
-        _, new_x, _, new_P, _, _, (gyro_err,), _, _ = gyro_res
-        self.observation_errors[ObservationKind.PHONE_GYRO] = np.array(gyro_err)
-        self.observations[ObservationKind.PHONE_GYRO] = meas
+      new_x, new_P = self._observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
 
     elif which == "carState":
       self.car_speed = abs(msg.vEgo)
+
+      if NO_IMU:
+        accel_meas = np.array([msg.aEgo, 0, -9.81])
+        if np.linalg.norm(accel_meas) >= ACCEL_SANITY_CHECK:
+          return HandleLogResult.INPUT_INVALID
+        self._observe(t, ObservationKind.PHONE_ACCEL, accel_meas)
+
+        gyro_meas = np.array([0, 0, -msg.yawRate])
+        if np.linalg.norm(gyro_meas) >= ROTATION_SANITY_CHECK:
+          return HandleLogResult.INPUT_INVALID
+        new_x, new_P = self._observe(t, ObservationKind.PHONE_GYRO, gyro_meas)
 
     elif which == "liveCalibration":
       # Note that we use this message during calibration
@@ -267,6 +281,7 @@ def main():
 
   pm = messaging.PubMaster(['livePose'])
   sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
+
   # separate sensor sockets for efficiency
   sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
   sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)
@@ -276,7 +291,7 @@ def main():
   estimator = LocationEstimator(DEBUG)
 
   filter_initialized = False
-  critcal_services = ["accelerometer", "gyroscope", "cameraOdometry"]
+  critcal_services = ["cameraOdometry"] if NO_IMU else ["accelerometer", "gyroscope", "cameraOdometry"]
   observation_input_invalid = defaultdict(int)
 
   input_invalid_limit = {s: round(INPUT_INVALID_LIMIT * (SERVICE_LIST[s].frequency / 20.)) for s in critcal_services}
@@ -323,12 +338,14 @@ def main():
           elif res == HandleLogResult.SUCCESS:
             observation_input_invalid[which] *= input_invalid_decay[which]
     else:
-      filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      filter_initialized = sm.all_checks() if NO_IMU else \
+        sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < input_invalid_threshold[s] for s in critcal_services)
       inputs_valid = sm.all_valid() and critical_service_inputs_valid
-      sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      sensors_valid = True if NO_IMU else \
+        sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
       pm.send("livePose", msg)

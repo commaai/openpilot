@@ -41,7 +41,7 @@ from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
 
 
-ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
+ATHENA_HOST = Params().get("AthenaHost", return_default=True)
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {22, }  # SSH
 
@@ -388,6 +388,57 @@ def scan_dir(path: str, prefix: str) -> list[str]:
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> list[str]:
   return scan_dir(Paths.log_root(), prefix)
+
+
+@dispatcher.add_method
+def getAllParams() -> dict[str, str | bool | int | float | None]:
+  from openpilot.common.params_pyx import ParamKeyType
+  import datetime
+
+  params = Params()
+  result: dict[str, str | bool | int | float | None] = {}
+
+  for key in [k.decode('utf-8') for k in params.all_keys()]:
+    if params.get_type(key) == ParamKeyType.BYTES:
+      continue
+    value = params.get(key)
+    if isinstance(value, datetime.datetime):
+      value = value.timestamp()
+    result[key] = value
+
+  return result
+
+
+@dispatcher.add_method
+def saveParams(params_to_update: dict[str, str | bool | int | float | dict | list | None]) -> dict[str, str]:
+  params = Params()
+  results = {}
+
+  for key, value in params_to_update.items():
+    try:
+      if value is None:
+        params.remove(key)
+        results[key] = "ok: removed"
+      else:
+        params.put(key, value)
+        results[key] = "ok"
+    except Exception as e:
+      results[key] = f"error: {e}"
+
+  return results
+
+
+@dispatcher.add_method
+def webrtc(sdp: str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
+  if not Params().get_bool("EnableWebRTC"):
+    raise Exception("EnableWebRTC is disabled")
+  try:
+    from openpilot.system.webrtc.session_manager import create_session
+
+    return create_session(sdp, cameras, bridge_services_in, bridge_services_out)
+  except Exception as e:
+    cloudlog.exception("athena.webrtc.exception")
+    return {"error": str(e)}
 
 
 @dispatcher.add_method

@@ -24,7 +24,7 @@ def dmonitoringd_thread():
 
     valid = sm.all_checks()
     if demo_mode and sm.valid['driverStateV2']:
-      DM.run_step(sm, demo=demo_mode)
+      DM.run_step(sm, demo=True)
     elif valid:
       DM.run_step(sm, demo=demo_mode)
 
