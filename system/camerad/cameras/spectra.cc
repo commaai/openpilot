@@ -1182,13 +1182,21 @@ void SpectraCamera::configICP() {
   assert(sensor->linearization_lut.size() == 36);
   bps_linearization_lut.init(m, sensor->linearization_lut.size()*sizeof(uint32_t), 0x20, true, m->icp_device_iommu);
 
-  // bit shift linearization_lut to bps specs
+  // bit shift linearization_lut to bps specs, also compensate for black level here
+  uint32_t bl = sensor->black_level << (14 - sensor->bits_per_pixel);
+  uint32_t p0 = (sensor->linearization_pts[0] >> 16) & 0x3fff;
   uint32_t* bps_lut = (uint32_t*)bps_linearization_lut.ptr;
   for (size_t i = 0; i < sensor->linearization_lut.size(); i++) {
     uint32_t e = sensor->linearization_lut[i];
     uint32_t base = e & 0x3fff;
     uint32_t slope_q11 = (e >> 14) & 0x3fff;
     uint32_t slope_q12 = std::min<uint32_t>(slope_q11 << 1, 0x3fff);
+    size_t seg = i / 4;
+    if (seg == 0) {
+      slope_q12 = (bl < p0) ? (slope_q12 * (p0 - bl)) / p0 : 0;
+    } else {
+      base = (base > bl) ? (base - bl) : 0;
+    }
     bps_lut[i] = base | (slope_q12 << 14);
   }
 
