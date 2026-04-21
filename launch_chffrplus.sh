@@ -70,8 +70,9 @@ function launch {
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
 
-  # hardware specific init
-  if [ -f /AGNOS ]; then
+  # hardware specific init (skip on ASIUS — Dragon has no A/B abctl, no
+  # adsprpc-smd/ion/kgsl-3d0 chgrp targets, no agnos OTA)
+  if [ -f /AGNOS ] && [ ! -f /ASIUS ]; then
     agnos_init
   fi
 
