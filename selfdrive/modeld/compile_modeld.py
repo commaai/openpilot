@@ -162,10 +162,11 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(Device.DEFAULT).realize()
-    big_tfm = big_tfm.to(Device.DEFAULT).realize()
-    desire = desire.to(Device.DEFAULT).realize()
-    traffic_convention = traffic_convention.to(Device.DEFAULT).realize()
+    tfm = tfm.to(Device.DEFAULT)
+    big_tfm = big_tfm.to(Device.DEFAULT)
+    desire = desire.to(Device.DEFAULT)
+    traffic_convention = traffic_convention.to(Device.DEFAULT)
+    Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
     img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
     big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
