@@ -256,9 +256,7 @@ class DriverMonitoring:
       self.pose.yaw *= -1
       self.pose.steer_yaw_offset *= -1
     self.wheel_on_right_last = self.wheel_on_right
-    pitch_std = driver_data.faceOrientationStd[0]
-    yaw_std = driver_data.faceOrientationStd[1]
-    self.model_std_max = max(pitch_std, yaw_std)
+    self.model_std_max = max(driver_data.faceOrientationStd[0], driver_data.faceOrientationStd[1])
     self.pose.low_std = self.model_std_max < self.settings._HI_STD_THRESHOLD
     self.blink_prob = driver_data.eyesClosedProb * (driver_data.eyesVisibleProb > self.settings._EYE_THRESHOLD)
     self.phone_prob = driver_data.phoneProb
