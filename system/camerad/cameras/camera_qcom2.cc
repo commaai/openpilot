@@ -1,8 +1,11 @@
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/spectra.h"
 
+#include <dirent.h>
+#include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cassert>
@@ -75,7 +78,12 @@ void CameraState::init(VisionIpcServer *v) {
   pm = std::make_unique<PubMaster>(std::vector{camera.cc.publish_name});
 }
 
-CameraState::~CameraState() {}
+CameraState::~CameraState() {
+  if (camera.phy_sel_fd >= 0) {
+    close(camera.phy_sel_fd);
+    camera.phy_sel_fd = -1;
+  }
+}
 
 void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
@@ -263,9 +271,73 @@ void camerad_thread() {
     cams.emplace_back(std::move(cam));
   }
 
+  // Wire up IFE sharing pointers
+  // secondary_cam_state: cached pointer for fast sendState lookup in the event loop
+  CameraState *secondary_cam_state = nullptr;
+  for (auto &cam : cams) {
+    if (cam->camera.cc.ife_share_primary >= 0) {
+      // This is a secondary — find its primary
+      for (auto &primary : cams) {
+        if (primary->camera.cc.camera_num == cam->camera.cc.ife_share_primary) {
+          primary->camera.ife_secondary = &cam->camera;
+          cam->camera.ife_primary_ptr = &primary->camera;
+          secondary_cam_state = cam.get();
+          LOG("IFE sharing: cam %d (secondary) shares IFE with cam %d (primary)",
+              cam->camera.cc.camera_num, primary->camera.cc.camera_num);
+          break;
+        }
+      }
+    }
+  }
+
+  // Set up IFE sharing: open sysfs phy_sel for PHY switching
+  for (auto &cam : cams) {
+    if (cam->camera.ife_secondary) {
+      // Find CSID0's phy_sel sysfs attribute (from kernel patch)
+      // Search /sys/devices/platform/soc/ for csid devices with phy_sel
+      int phy_fd = -1;
+      const char *soc_path = "/sys/devices/platform/soc";
+      DIR *dir = opendir(soc_path);
+      if (dir) {
+        struct dirent *ent;
+        while ((ent = readdir(dir)) != nullptr) {
+          // Match CSID0 device (base addr acb3000, e.g. "acb3000.qcom,csid")
+          if (strstr(ent->d_name, "acb3000")) {
+            char path[256];
+            snprintf(path, sizeof(path), "%s/%s/phy_sel", soc_path, ent->d_name);
+            phy_fd = open(path, O_RDWR);
+            if (phy_fd >= 0) {
+              LOGW("IFE sharing: opened %s for PHY switching", path);
+              break;
+            }
+          }
+        }
+        closedir(dir);
+      }
+      if (phy_fd < 0) {
+        LOGE("IFE sharing: no phy_sel sysfs found. Need kernel with CSID phy_sel patch.");
+        assert(phy_fd >= 0);
+      }
+      cam->camera.phy_sel_fd = phy_fd;
+
+      // Now that ife_secondary is wired, do the deferred clearAndRequeue.
+      // This was skipped in camera_open so the initial batch gets correct P/S alternation.
+      // Safe here because sensors haven't started yet (no MIPI data flowing).
+      cam->camera.clearAndRequeue(1);
+    }
+  }
+
   v.start_listener();
 
-  // start devices
+  // Store the expected SOF offset for secondary cameras.
+  for (auto &cam : cams) {
+    if (cam->camera.ife_primary_ptr) {
+      cam->camera.fsin_stagger_ns = 25000000LL;
+    }
+  }
+
+  // On the target device the panda already provides the 25ms driver FSIN offset,
+  // so all sensors can start together.
   LOG("-- Starting devices");
   for (auto &cam : cams) cam->camera.sensors_start();
 
@@ -282,21 +354,34 @@ void camerad_thread() {
 
     if (!(fds[0].revents & POLLPRI)) continue;
 
-    struct v4l2_event ev = {0};
-    ret = HANDLE_EINTR(ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev));
-    if (ret == 0) {
+    // Drain all pending V4L2 events
+    while (true) {
+      struct v4l2_event ev = {0};
+      ret = HANDLE_EINTR(ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev));
+      if (ret != 0) break;
+
       if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
-        struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
+        struct cam_req_mgr_message event_data = *(struct cam_req_mgr_message *)ev.u.data;
         if (env_debug_frames) {
-          printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl,
-                 event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
-          do_exit = do_exit || event_data->u.frame_msg.frame_id > (1*20);
+          printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data.session_hdl, event_data.u.frame_msg.link_hdl,
+                 event_data.u.frame_msg.frame_id, event_data.u.frame_msg.request_id, event_data.u.frame_msg.timestamp/1e6, event_data.u.frame_msg.sof_status);
+          do_exit = do_exit || event_data.u.frame_msg.frame_id > (1*20);
         }
 
         for (auto &cam : cams) {
-          if (event_data->session_hdl == cam->camera.session_handle) {
-            if (cam->camera.handle_camera_event(event_data)) {
-              cam->sendState();
+          if (event_data.session_hdl == cam->camera.session_handle) {
+            if (cam->camera.ife_secondary) {
+              bool publish = cam->camera.handle_camera_event(&event_data);
+              if (publish) {
+                cam->sendState();
+              }
+              if (cam->camera.secondary_frame_ready) {
+                cam->camera.secondary_frame_ready = false;
+                secondary_cam_state->sendState();
+              }
+            } else {
+              bool publish = cam->camera.handle_camera_event(&event_data);
+              if (publish) cam->sendState();
             }
             break;
           }
@@ -304,8 +389,6 @@ void camerad_thread() {
       } else {
         LOGE("unhandled event %d\n", ev.type);
       }
-    } else {
-      LOGE("VIDIOC_DQEVENT failed, errno=%d", errno);
     }
   }
 }

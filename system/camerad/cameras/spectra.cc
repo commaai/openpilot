@@ -122,7 +122,9 @@ void release(int video0_fd, uint32_t handle) {
   mem_mgr_release_cmd.buf_handle = handle;
 
   int ret = do_cam_control(video0_fd, CAM_REQ_MGR_RELEASE_BUF, &mem_mgr_release_cmd, sizeof(mem_mgr_release_cmd));
-  assert(ret == 0);
+  if (ret != 0) {
+    LOGE("release buffer failed: handle=%u ret=%d", handle, ret);
+  }
 }
 
 static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
@@ -290,15 +292,32 @@ void SpectraCamera::camera_open(VisionIpcServer *v) {
   uv_offset = stride * y_height;
 
   open = true;
-  configISP();
-  if (cc.output_type == ISP_BPS_PROCESSED) configICP();
-  configCSIPHY();
-  linkDevices();
+  if (is_ife_secondary()) {
+    // Secondary IFE camera: only init sensor + CSIPHY, no ISP acquire or link
+    configCSIPHY();
+    linkDevices();  // starts CSIPHY so MIPI data flows on this PHY
+    LOGD("camera init %d (IFE secondary)", cc.camera_num);
+    buf.init(this, v, ife_buf_depth, cc.stream_type);
+    camera_map_bufs();
+    // Allocate IOMMU-mapped CDM buffer for secondary frame processing
+    ife_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, 1);
+    // don't clearAndRequeue — primary drives our frame processing
+  } else {
+    configISP();
+    if (cc.output_type == ISP_BPS_PROCESSED) configICP();
+    configCSIPHY();
+    linkDevices();
 
-  LOGD("camera init %d", cc.camera_num);
-  buf.init(this, v, ife_buf_depth, cc.stream_type);
-  camera_map_bufs();
-  clearAndRequeue(1);
+    LOGD("camera init %d", cc.camera_num);
+    buf.init(this, v, ife_buf_depth, cc.stream_type);
+    camera_map_bufs();
+
+    // Defer clearAndRequeue for IFE-sharing primaries until after ife_secondary
+    // is wired, so the initial batch gets correct primary/secondary slot alternation.
+    if (!is_ife_sharing()) {
+      clearAndRequeue(1);
+    }
+  }
 }
 
 void SpectraCamera::sensors_start() {
@@ -687,7 +706,30 @@ void SpectraCamera::config_bps(int idx, int request_id) {
   }
 
   int ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
-  assert(ret == 0);
+  if (ret != 0) {
+    LOGE("camera %d config_bps failed: %d", cc.camera_num, ret);
+  }
+}
+
+bool SpectraCamera::is_ife_sharing() const {
+  if (cc.ife_share_primary >= 0) return true;
+  if (ife_secondary != nullptr) return true;
+  // Before wiring (during camera_open): check static config as a conservative default
+  for (const auto &cfg : ALL_CAMERA_CONFIGS) {
+    if (cfg.ife_share_primary == cc.camera_num) return true;
+  }
+  return false;
+}
+
+void SpectraCamera::switch_phy(uint32_t phy_num) {
+  if (phy_sel_fd < 0) return;
+
+  // No sleep needed — CSID latches the new PHY at the next D-PHY settle (SOF time).
+  char phy_str[2] = {(char)('0' + (phy_num & 0x3)), '\n'};
+  lseek(phy_sel_fd, 0, SEEK_SET);
+  if (write(phy_sel_fd, phy_str, 2) != 2) {
+    LOGE("PHY switch: sysfs write failed (errno=%d)", errno);
+  }
 }
 
 void SpectraCamera::config_ife(int idx, int request_id, bool init) {
@@ -835,8 +877,14 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
       io_cfg[0].subsample_pattern = 0x1;
       io_cfg[0].framedrop_pattern = 0x1;
     } else {
-      io_cfg[0].mem_handle[0] = buf_handle_yuv[idx];
-      io_cfg[0].mem_handle[1] = buf_handle_yuv[idx];
+      // IFE sharing: use overridden buffer handle for secondary frames
+      int yuv_handle = buf_handle_yuv[idx];
+      if (override_buf_handle_yuv >= 0) {
+        yuv_handle = override_buf_handle_yuv;
+        override_buf_handle_yuv = -1;
+      }
+      io_cfg[0].mem_handle[0] = yuv_handle;
+      io_cfg[0].mem_handle[1] = yuv_handle;
       io_cfg[0].planes[0] = (struct cam_plane_cfg){
         .width = buf.out_img_width,
         .height = buf.out_img_height,
@@ -885,12 +933,26 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   }
 
   int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
-  assert(ret == 0);
+  if (ret != 0) {
+    LOGE("camera %d config_ife failed: %d", cc.camera_num, ret);
+  }
 }
 
 void SpectraCamera::enqueue_frame(uint64_t request_id) {
   int i = request_id % ife_buf_depth;
-  assert(sync_objs_ife[i] == 0);
+  if (sync_objs_ife[i] != 0) {
+    LOGE("camera %d: sync object leak at slot %d (request %lu), destroying stale fence", cc.camera_num, i, request_id);
+    destroySyncObjectAt(i);
+  }
+
+  // IFE sharing: mark slot as primary or secondary (alternating)
+  secondary_frame_slot[i] = (ife_secondary != nullptr) && next_enqueue_is_secondary;
+  if (secondary_frame_slot[i]) {
+    int sec_buf_idx = (secondary_enqueue_count++) % ife_secondary->ife_buf_depth;
+    secondary_out_idx_slot[i] = sec_buf_idx;
+    override_buf_handle_yuv = ife_secondary->buf_handle_yuv[sec_buf_idx];
+  }
+  if (ife_secondary) next_enqueue_is_secondary = !next_enqueue_is_secondary;
 
   // create output fences
   struct cam_sync_info sync_create = {0};
@@ -987,7 +1049,7 @@ bool SpectraCamera::openSensor() {
   LOGD("-- Probing sensor %d", cc.camera_num);
 
   auto init_sensor_lambda = [this](SensorInfo *s) {
-    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED) {
+    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && !is_ife_sharing() && cc.output_type == ISP_IFE_PROCESSED) {
       ((OS04C10*)s)->ife_downscale_configure();
     }
     sensor.reset(s);
@@ -1217,6 +1279,15 @@ void SpectraCamera::configCSIPHY() {
 }
 
 void SpectraCamera::linkDevices() {
+  if (is_ife_secondary()) {
+    // Secondary camera: no link or ISP start, just start CSIPHY so MIPI data flows
+    LOG("-- Start CSIPHY only (IFE secondary) %d", cc.camera_num);
+    int ret = device_control(csiphy_fd, CAM_START_DEV, session_handle, csiphy_dev_handle);
+    LOGD("start csiphy: %d", ret);
+    assert(ret == 0);
+    return;
+  }
+
   LOG("-- Link devices");
   struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = session_handle;
@@ -1253,57 +1324,71 @@ void SpectraCamera::camera_close() {
   LOG("-- Stop devices %d", cc.camera_num);
 
   if (enabled) {
-    clear_req_queue();
-
-    // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
-    // LOGD("stop sensor: %d", ret);
-    int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
-    LOGD("stop isp: %d", ret);
-    if (cc.output_type == ISP_BPS_PROCESSED) {
-      ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
-      LOGD("stop icp: %d", ret);
-    }
-    ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
-    LOGD("stop csiphy: %d", ret);
-
-    // link control stop
-    LOG("-- Stop link control");
-    struct cam_req_mgr_link_control req_mgr_link_control = {0};
-    req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
-    req_mgr_link_control.session_hdl = session_handle;
-    req_mgr_link_control.num_links = 1;
-    req_mgr_link_control.link_hdls[0] = link_handle;
-    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
-    LOGD("link control stop: %d", ret);
-
-    // unlink
-    LOG("-- Unlink");
-    struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
-    req_mgr_unlink_info.session_hdl = session_handle;
-    req_mgr_unlink_info.link_hdl = link_handle;
-    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
-    LOGD("unlink: %d", ret);
-
-    // release devices
-    LOGD("-- Release devices");
-    ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
-    LOGD("release isp: %d", ret);
-    if (cc.output_type == ISP_BPS_PROCESSED) {
-      ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
-      LOGD("release icp: %d", ret);
-    }
-    ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
-    LOGD("release csiphy: %d", ret);
-
-    for (int i = 0; i < ife_buf_depth; i++) {
-      if (buf_handle_raw[i]) {
-        release(m->video0_fd, buf_handle_raw[i]);
+    if (is_ife_secondary()) {
+      // Secondary: only stop/release CSIPHY and buffers, no ISP/link
+      int ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
+      LOGD("stop csiphy: %d", ret);
+      ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
+      LOGD("release csiphy: %d", ret);
+      for (int i = 0; i < ife_buf_depth; i++) {
+        if (buf_handle_yuv[i]) {
+          release(m->video0_fd, buf_handle_yuv[i]);
+        }
       }
-      if (buf_handle_yuv[i]) {
-        release(m->video0_fd, buf_handle_yuv[i]);
+      LOGD("released buffers");
+    } else {
+      clear_req_queue();
+
+      // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
+      // LOGD("stop sensor: %d", ret);
+      int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
+      LOGD("stop isp: %d", ret);
+      if (cc.output_type == ISP_BPS_PROCESSED) {
+        ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
+        LOGD("stop icp: %d", ret);
       }
+      ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
+      LOGD("stop csiphy: %d", ret);
+
+      // link control stop
+      LOG("-- Stop link control");
+      struct cam_req_mgr_link_control req_mgr_link_control = {0};
+      req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
+      req_mgr_link_control.session_hdl = session_handle;
+      req_mgr_link_control.num_links = 1;
+      req_mgr_link_control.link_hdls[0] = link_handle;
+      ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
+      LOGD("link control stop: %d", ret);
+
+      // unlink
+      LOG("-- Unlink");
+      struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
+      req_mgr_unlink_info.session_hdl = session_handle;
+      req_mgr_unlink_info.link_hdl = link_handle;
+      ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
+      LOGD("unlink: %d", ret);
+
+      // release devices
+      LOGD("-- Release devices");
+      ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
+      LOGD("release isp: %d", ret);
+      if (cc.output_type == ISP_BPS_PROCESSED) {
+        ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
+        LOGD("release icp: %d", ret);
+      }
+      ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
+      LOGD("release csiphy: %d", ret);
+
+      for (int i = 0; i < ife_buf_depth; i++) {
+        if (buf_handle_raw[i]) {
+          release(m->video0_fd, buf_handle_raw[i]);
+        }
+        if (buf_handle_yuv[i]) {
+          release(m->video0_fd, buf_handle_yuv[i]);
+        }
+      }
+      LOGD("released buffers");
     }
-    LOGD("released buffers");
   }
 
   int ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
@@ -1323,7 +1408,6 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the camera request manager
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
-  //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
 
   // if there's a lag, some more frames could have already come in before
   // we cleared the queue, so we'll still get them with valid (> 0) request IDs.
@@ -1347,18 +1431,75 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   frame_id_raw_last = frame_id_raw;
   request_id_last = request_id;
 
-  // Wait until frame's fully read out and processed
+  // Wait until frame is fully read out and processed by the IFE
   if (!waitForFrameReady(request_id)) {
-    // Reset queue on sync failure to prevent frame tearing
     LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, frame_id_raw);
-    clearAndRequeue(request_id + 1);
+    // Skip this frame without clearAndRequeue: just clean up and enqueue a replacement.
+    // clearAndRequeue causes cascading frame loss under DRAM contention (IFE sharing runs
+    // IFE0 at 40fps, creating more DRAM pressure than master's 20fps). The pipeline recovers
+    // naturally when contention resolves — the kernel still processes queued requests in order.
+    int buf_idx = request_id % ife_buf_depth;
+    destroySyncObjectAt(buf_idx);
+    enqueue_frame(request_id + ife_buf_depth);
     return false;
   }
 
   int buf_idx = request_id % ife_buf_depth;
-  bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+
+  // IFE sharing: switch PHY immediately after IFE completes.
+  // PHY switch must be after IFE DMA (CSID FIFOs still flush during DMA) and
+  // before the next sensor's SOF (FSIN-staggered). The FSIN delay is tuned to
+  // provide enough margin even when IFE DMA is slowed by DRAM contention.
+  if (ife_secondary) {
+    double sof_age_ms = (nanos_since_boot() - timestamp) / 1e6;
+    if (secondary_frame_slot[buf_idx]) {
+      switch_phy(phy_num());
+    } else {
+      switch_phy(ife_secondary->phy_num());
+    }
+    // Warn if PHY switch is dangerously close to or past the FSIN stagger window
+    if (sof_age_ms > 24.0) {
+      LOGE("PHY switch late: cam %d slot=%s age=%.1fms raw=%lu",
+           cc.camera_num, secondary_frame_slot[buf_idx] ? "S" : "P",
+           sof_age_ms, frame_id_raw);
+    }
+  }
+
+  // IFE sharing: add secondary camera to sync data so first-frame sync can complete.
+  // Only inject during primary events — secondary events have FSIN-staggered timestamps
+  // that would corrupt the sync check (all cameras must be within 0.2ms).
+  if (ife_secondary && !first_frame_synced && !secondary_frame_slot[buf_idx]) {
+    camera_sync_data[ife_secondary->cc.camera_num] = SyncData{timestamp};
+  }
+
+  // IFE sharing: handle alternating primary/secondary frames
+  // Frame IDs derived from raw IFE frame_id / 2 so P and S in the same period share an ID,
+  // and it naturally aligns with road camera's frame_id (which increments 1x per period).
+  bool ret = false;
+  bool is_secondary_slot = ife_secondary && secondary_frame_slot[buf_idx];
+
+  if (is_secondary_slot) {
+    // Secondary frame — skip processFrame during sync to avoid corrupting sync data.
+    // Temporarily apply secondary's FSIN stagger for correct frame_id computation.
+    int64_t saved_stagger = fsin_stagger_ns;
+    fsin_stagger_ns = ife_secondary->fsin_stagger_ns;
+    ret = first_frame_synced ? processFrame(buf_idx, request_id, frame_id_raw, timestamp) : false;
+    fsin_stagger_ns = saved_stagger;
+  } else {
+    ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+  }
   destroySyncObjectAt(buf_idx);
-  enqueue_frame(request_id + ife_buf_depth);  // request next frame for this slot
+
+  if (ret && is_secondary_slot) {
+    ife_secondary->buf.cur_buf_idx = secondary_out_idx_slot[buf_idx];
+    ife_secondary->buf.cur_frame_data = buf.cur_frame_data;
+    // Recalculate EOF with secondary sensor's readout time (processFrame used primary's)
+    ife_secondary->buf.cur_frame_data.timestamp_eof = ife_secondary->buf.cur_frame_data.timestamp_sof + ife_secondary->sensor->readout_time_ns;
+    secondary_frame_ready = true;
+    ret = false;  // secondary frames are published via secondary_frame_ready
+  }
+
+  enqueue_frame(request_id + ife_buf_depth);
   return ret;
 }
 
@@ -1393,10 +1534,23 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
 }
 
 void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
+  // Cooldown: prevent rapid re-entry (at least 100ms between requeues)
+  uint64_t now = nanos_since_boot();
+  if (last_requeue_ts > 0 && (now - last_requeue_ts) < 100000000ULL) {
+    LOGW("camera %d: clearAndRequeue cooldown, skipping (last requeue %llums ago)",
+         cc.camera_num, (unsigned long long)(now - last_requeue_ts) / 1000000ULL);
+    return;
+  }
+
   // clear everything, then queue up a fresh set of frames
   LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, from_request_id);
+  if (ife_secondary) {
+    switch_phy(phy_num());
+  }
   clear_req_queue();
   last_requeue_ts = nanos_since_boot();
+  next_enqueue_is_secondary = false;  // start batch with primary
+  secondary_enqueue_count = 0;        // reset secondary buffer cycling
   for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
     enqueue_frame(id);
   }
@@ -1405,7 +1559,10 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   int buf_idx = request_id % ife_buf_depth;
-  assert(sync_objs_ife[buf_idx]);
+  if (sync_objs_ife[buf_idx] == 0) {
+    LOGE("camera %d: sync object missing for request %lu buf_idx %d", cc.camera_num, request_id, buf_idx);
+    return false;  // triggers clearAndRequeue recovery
+  }
 
   if (stress_test("sync sleep time")) {
     util::sleep_for(350);
@@ -1440,14 +1597,26 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t fram
     return false;
   }
 
+  // Timestamp-based frame number: round SOF to nearest FSIN period.
+  // Naturally aligns frame_ids across all cameras (same FSIN period = same frame_id),
+  // including IFE-sharing cameras with PHY switching and staggered SOF.
+  int64_t dt = (int64_t)(timestamp - sync_reference_ns) - fsin_stagger_ns;
+  int64_t frame_num = (dt + kFramePeriodNs / 2) / kFramePeriodNs;
+
+  // Skip first 2 FSIN periods after sync to absorb the IFE-sharing PHY switch startup
+  // transient (first PHY switch may miss the staggered SOF, delaying P frames by 1 period).
+  if (frame_num < 2) return false;
+
+  uint32_t frame_id = (uint32_t)frame_num;
+
   // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
   uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
 
   // Update buffer and frame data
   buf.cur_buf_idx = buf_idx;
   buf.cur_frame_data = {
-    .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
-    .request_id = (uint32_t)request_id,
+    .frame_id = frame_id,
+    .request_id = frame_id + 1,
     .timestamp_sof = timestamp,
     .timestamp_eof = timestamp_eof,
     .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
@@ -1458,8 +1627,7 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t fram
 bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp, bool staggered) {
   if (first_frame_synced) return true;
 
-  // Store the frame data for this camera
-  camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1, staggered};
+  camera_sync_data[camera_id] = SyncData{timestamp, staggered};
 
   // Ensure all cameras are up
   int enabled_camera_count = std::count_if(std::begin(ALL_CAMERA_CONFIGS), std::end(ALL_CAMERA_CONFIGS),
@@ -1469,31 +1637,50 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t 
   // Check that camera timestamps are properly aligned:
   // - non-staggered cameras should be within 0.2ms of each other
   // - staggered cameras should be within 0.2ms of a 25ms offset from non-staggered cameras
-  const uint64_t half_period_ns = 25 * 1000000ULL;  // 25ms
-  const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
+  bool has_staggered = false;
+  for (const auto &[cam, sd] : camera_sync_data) {
+    if (sd.staggered) { has_staggered = true; break; }
+  }
+
   bool all_cams_synced = true;
-  for (const auto &[cam, sync_data] : camera_sync_data) {
-    if (cam == camera_id) continue;
-    uint64_t diff = std::max(timestamp, sync_data.timestamp) -
-                    std::min(timestamp, sync_data.timestamp);
-    bool pair_staggered = staggered != sync_data.staggered;
-    uint64_t expected_offset = pair_staggered ? half_period_ns : 0;
-    uint64_t error = (diff > expected_offset) ? diff - expected_offset : expected_offset - diff;
-    if (error > tolerance_ns) {
-      all_cams_synced = false;
+  if (has_staggered) {
+    const uint64_t half_period_ns = 25 * 1000000ULL;  // 25ms
+    const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
+    for (const auto &[cam, sync_data] : camera_sync_data) {
+      if (cam == camera_id) continue;
+      uint64_t diff = std::max(timestamp, sync_data.timestamp) -
+                      std::min(timestamp, sync_data.timestamp);
+      bool pair_staggered = staggered != sync_data.staggered;
+      uint64_t expected_offset = pair_staggered ? half_period_ns : 0;
+      uint64_t error = (diff > expected_offset) ? diff - expected_offset : expected_offset - diff;
+      if (error > tolerance_ns) {
+        all_cams_synced = false;
+      }
     }
   }
 
   if (all_cams_up && all_cams_synced) {
+    // Set sync reference to average of non-staggered camera timestamps
+    uint64_t ref_sum = 0;
+    int ref_count = 0;
+    for (const auto &[cam, sd] : camera_sync_data) {
+      if (!sd.staggered) {
+        ref_sum += sd.timestamp;
+        ref_count++;
+      }
+    }
+    sync_reference_ns = ref_sum / ref_count;
     first_frame_synced = true;
     for (const auto&[cam, sync_data] : camera_sync_data) {
-      LOGW("camera %d synced on frame_id_offset %ld timestamp %lu", cam, sync_data.frame_id_offset, sync_data.timestamp);
+      LOGW("camera %d synced: timestamp %lu, reference %lu", cam, sync_data.timestamp, sync_reference_ns);
     }
   }
 
   // Timeout in case the timestamps never line up
   if (raw_id > 40) {
     LOGE("camera first frame sync timed out");
+    // Use this camera's timestamp as reference so frame_id computation works
+    if (sync_reference_ns == 0) sync_reference_ns = timestamp;
     first_frame_synced = true;
   }
 

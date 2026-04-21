@@ -120,6 +120,24 @@ public:
   void config_bps(int idx, int request_id);
   void config_ife(int idx, int request_id, bool init=false);
 
+  bool is_ife_secondary() const { return cc.ife_share_primary >= 0; }
+  bool is_ife_sharing() const;  // true if primary or secondary in an IFE-sharing pair
+  uint32_t phy_num() const { return cc.phy - CAM_ISP_IFE_IN_RES_PHY_0; }
+  SpectraCamera *ife_secondary = nullptr;   // the secondary camera sharing our IFE (set on primary)
+  SpectraCamera *ife_primary_ptr = nullptr;  // pointer back to primary (set on secondary)
+
+  // IFE sharing: PHY switching
+  int phy_sel_fd = -1;                           // sysfs fd for CSID phy_sel
+  bool secondary_frame_slot[MAX_IFE_BUFS] = {};  // per-slot: true if secondary frame
+  int secondary_out_idx_slot[MAX_IFE_BUFS] = {}; // per-slot: which secondary VIPC buf
+  int override_buf_handle_yuv = -1;              // if >= 0, next config_ife uses this output buffer
+  bool secondary_frame_ready = false;            // secondary frame was captured, ready for sendState
+  uint64_t secondary_enqueue_count = 0;
+  bool next_enqueue_is_secondary = false;
+  int64_t fsin_stagger_ns = 0;               // FSIN delay in ns (set on secondary, used for frame_id alignment)
+
+  void switch_phy(uint32_t phy_num);
+
   int clear_req_queue();
   void enqueue_frame(uint64_t request_id);
 
@@ -189,19 +207,24 @@ public:
   CameraBuf buf;
   SpectraMaster *m;
 
-private:
   void clearAndRequeue(uint64_t from_request_id);
+
+private:
   bool validateEvent(uint64_t request_id, uint64_t frame_id_raw);
   bool waitForFrameReady(uint64_t request_id);
   bool processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp);
   static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp, bool staggered);
   struct SyncData {
     uint64_t timestamp;
-    uint64_t frame_id_offset = 0;
     bool staggered = false;
   };
   inline static std::map<int, SyncData> camera_sync_data;
   inline static bool first_frame_synced = false;
+
+  // Timestamp-based frame_id: all cameras compute frame_id from SOF relative to this reference.
+  // This eliminates alignment issues from IFE raw_id sequences and PHY switch timing.
+  static constexpr int64_t kFramePeriodNs = 50000000LL;  // 50ms at 20fps
+  inline static uint64_t sync_reference_ns = 0;
 
   // a mode for stressing edge cases: realignment, sync failures, etc.
   inline bool stress_test(std::string log) {
