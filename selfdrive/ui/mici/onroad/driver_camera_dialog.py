@@ -104,12 +104,12 @@ class BaseDriverCameraDialog(Widget):
 
     AudibleAlert = car.CarControl.HUDControl.AudibleAlert
     ALERT_SOUNDS = {
-      log.DriverMonitoringState.AlertLevel.two: AudibleAlert.promptDistracted,
-      log.DriverMonitoringState.AlertLevel.three: AudibleAlert.warningImmediate,
+      'two': AudibleAlert.promptDistracted,
+      'three': AudibleAlert.warningImmediate,
     }
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None:
-      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(dm_state.alertLevel, AudibleAlert.none)
+      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(str(dm_state.alertLevel), AudibleAlert.none)
     self._pm.send('selfdriveState', msg)
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
@@ -133,7 +133,7 @@ class BaseDriverCameraDialog(Widget):
       return
 
     # Show alert level
-    alert_level_str = dm_state.alertLevel
+    alert_level_str = f"{'Pay Attention' if is_vision else 'Touch Wheel'} - level {dm_state.alertLevel}"
     alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if self.driver_state_renderer.is_rhd else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
 
     shadow_rect = rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height)
