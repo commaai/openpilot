@@ -12,6 +12,8 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 AlertLevel = log.DriverMonitoringState.AlertLevel
 MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
+DISTRACTION_FILTER_ATTENTIVE_THRESHOLD = 0.37
+DISTRACTION_FILTER_DISTRACTED_THRESHOLD = 0.63
 
 def to_percent(v):
   return int(min(max(v * 100., 0.), 100.))
@@ -24,60 +26,13 @@ def to_percent(v):
 
 class DRIVER_MONITOR_SETTINGS:
   def __init__(self):
-    # https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
-    self._WHEELTOUCH_POLICY_ALERT_1_INTERVAL = 15.
-    self._WHEELTOUCH_POLICY_ALERT_2_INTERVAL = 24.
-    self._WHEELTOUCH_POLICY_ALERT_3_INTERVAL = 30.
-    # https://cdn.euroncap.com/cars/assets/euro_ncap_protocol_safe_driving_driver_engagement_v11_a30e874152.pdf
-    self._VISION_POLICY_ALERT_1_INTERVAL = 3.
-    self._VISION_POLICY_ALERT_2_INTERVAL = 5.
-    self._VISION_POLICY_ALERT_3_INTERVAL = 11.
-
     self._AWARENESS_RECOVERY_FACTOR_MAX = 5.
     self._AWARENESS_RECOVERY_FACTOR_MIN = 1.25
 
     self._MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
     self._MAX_TERMINAL_DURATION = int(30 / DT_DMON)  # not allowed to engage after 30s of terminal alerts
-
-    self._FACE_THRESHOLD = 0.7
-    self._EYE_THRESHOLD = 0.5
-    self._BLINK_THRESHOLD = 0.5
-    self._PHONE_THRESH = 0.5
-    self._POSE_PITCH_THRESHOLD = 0.3133
-    self._POSE_PITCH_THRESHOLD_SLACK = 0.3237
-    self._POSE_PITCH_THRESHOLD_STRICT = self._POSE_PITCH_THRESHOLD
-    self._POSE_YAW_THRESHOLD = 0.4020
-    self._POSE_YAW_THRESHOLD_SLACK = 0.5042
-    self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
-    self._POSE_YAW_MIN_STEER_DEG = 30
-    self._POSE_YAW_STEER_FACTOR = 0.15
-    self._POSE_YAW_STEER_MAX_OFFSET = 0.3927
-    self._PITCH_NATURAL_OFFSET = 0.011 # initial value before offset is learned
-    self._PITCH_NATURAL_THRESHOLD = 0.449
-    self._YAW_NATURAL_OFFSET = 0.075 # initial value before offset is learned
-    self._PITCH_NATURAL_VAR = 3*0.01
-    self._YAW_NATURAL_VAR = 3*0.05
-    self._PITCH_MAX_OFFSET = 0.124
-    self._PITCH_MIN_OFFSET = -0.0881
-    self._YAW_MAX_OFFSET = 0.289
-    self._YAW_MIN_OFFSET = -0.0246
-
-    self._DCAM_UNCERTAIN_ALERT_THRESHOLD = 0.1
-    self._DCAM_UNCERTAIN_ALERT_COUNT = int(60  / DT_DMON)
-    self._DCAM_UNCERTAIN_RESET_COUNT = int(20  / DT_DMON)
-    self._POSE_UNCERTAINTY_THRESHOLD = 0.3
-    self._WHEELTOUCH_FALLBACK_TIME = int(10  / DT_DMON)  # fall back to wheel touch if pose uncertainty stays high for 10s
-    self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
-
-    self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
-    self._POSE_OFFSET_MIN_COUNT = int(60 / DT_DMON)  # valid data counts before calibration completes, 1min cumulative
-    self._POSE_OFFSET_MAX_COUNT = int(360 / DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
-    self._WHEELPOS_CALIB_MIN_SPEED = 11
-    self._WHEELPOS_THRESHOLD = 0.5
-    self._WHEELPOS_FILTER_MIN_COUNT = int(15 / DT_DMON) # allow 15 seconds to converge wheel side
-    self._WHEELPOS_DATA_AVG = 0.03
-    self._WHEELPOS_DATA_VAR = 3*5.5e-5
-    self._WHEELPOS_MAX_COUNT = -1
+    self.vision = VisionPolicy.Settings()
+    self.wheeltouch = WheeltouchPolicy.Settings()
 
 class DriverPose:
   def __init__(self, settings):
@@ -99,14 +54,14 @@ class DriverPose:
 
 class DriverProb:
   def __init__(self, raw_priors, max_trackable):
-    self.prob = 0.
     self.prob_offseter = RunningStatFilter(raw_priors=raw_priors, max_trackable=max_trackable)
-    self.prob_calibrated = False
-
 
 class DriverMonitoringPolicy:
-  def __init__(self, settings, alert_1_interval, alert_2_interval, alert_3_interval):
-    self.settings = settings
+  """
+    Common awareness countdown/recovery logic shared by both DM policies
+  """
+  def __init__(self, shared_settings, alert_1_interval, alert_2_interval, alert_3_interval):
+    self.shared_settings = shared_settings
     self.alert_1_threshold = 1. - alert_1_interval / alert_3_interval
     self.alert_2_threshold = 1. - alert_2_interval / alert_3_interval
     self.awareness_step = DT_DMON / alert_3_interval
@@ -125,8 +80,8 @@ class DriverMonitoringPolicy:
     return can_recover or (standstill and self._reaching_alert_1(step))
 
   def _recover_awareness(self, step):
-    self.awareness = min(self.awareness + ((self.settings._AWARENESS_RECOVERY_FACTOR_MAX - self.settings._AWARENESS_RECOVERY_FACTOR_MIN) *
-                                           (1. - self.awareness) + self.settings._AWARENESS_RECOVERY_FACTOR_MIN) * step, 1.)
+    self.awareness = min(self.awareness + ((self.shared_settings._AWARENESS_RECOVERY_FACTOR_MAX - self.shared_settings._AWARENESS_RECOVERY_FACTOR_MIN) *
+                                           (1. - self.awareness) + self.shared_settings._AWARENESS_RECOVERY_FACTOR_MIN) * step, 1.)
 
   def _decrease_awareness(self, step):
     self.awareness = max(self.awareness - step, -0.1)
@@ -156,22 +111,72 @@ class DriverMonitoringPolicy:
       return AlertLevel.one
     return AlertLevel.none
 
-
 class VisionPolicy(DriverMonitoringPolicy):
-  def __init__(self, settings, rhd_saved=False):
-    super().__init__(settings,
-                     settings._VISION_POLICY_ALERT_1_INTERVAL,
-                     settings._VISION_POLICY_ALERT_2_INTERVAL,
-                     settings._VISION_POLICY_ALERT_3_INTERVAL)
+  class Settings:
+    def __init__(self):
+      # https://cdn.euroncap.com/cars/assets/euro_ncap_protocol_safe_driving_driver_engagement_v11_a30e874152.pdf
+      self._ALERT_1_INTERVAL = 3.
+      self._ALERT_2_INTERVAL = 5.
+      self._ALERT_3_INTERVAL = 11.
 
-    wheelpos_filter_raw_priors = (settings._WHEELPOS_DATA_AVG, settings._WHEELPOS_DATA_VAR, 2)
-    self.wheelpos = DriverProb(raw_priors=wheelpos_filter_raw_priors, max_trackable=settings._WHEELPOS_MAX_COUNT)
-    self.pose = DriverPose(settings=settings)
+      self._FACE_THRESHOLD = 0.7
+      self._EYE_THRESHOLD = 0.5
+      self._BLINK_THRESHOLD = 0.5
+      self._PHONE_THRESH = 0.5
+      self._POSE_PITCH_THRESHOLD = 0.3133
+      self._POSE_PITCH_THRESHOLD_SLACK = 0.3237
+      self._POSE_PITCH_THRESHOLD_STRICT = self._POSE_PITCH_THRESHOLD
+      self._POSE_YAW_THRESHOLD = 0.4020
+      self._POSE_YAW_THRESHOLD_SLACK = 0.5042
+      self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
+      self._POSE_YAW_MIN_STEER_DEG = 30
+      self._POSE_YAW_STEER_FACTOR = 0.15
+      self._POSE_YAW_STEER_MAX_OFFSET = 0.3927
+      self._PITCH_NATURAL_OFFSET = 0.011 # initial value before offset is learned
+      self._PITCH_NATURAL_THRESHOLD = 0.449
+      self._YAW_NATURAL_OFFSET = 0.075 # initial value before offset is learned
+      self._PITCH_NATURAL_VAR = 3*0.01
+      self._YAW_NATURAL_VAR = 3*0.05
+      self._PITCH_MAX_OFFSET = 0.124
+      self._PITCH_MIN_OFFSET = -0.0881
+      self._YAW_MAX_OFFSET = 0.289
+      self._YAW_MIN_OFFSET = -0.0246
+
+      self._DCAM_UNCERTAIN_ALERT_THRESHOLD = 0.1
+      self._DCAM_UNCERTAIN_ALERT_COUNT = int(60  / DT_DMON)
+      self._DCAM_UNCERTAIN_RESET_COUNT = int(20  / DT_DMON)
+      self._POSE_UNCERTAINTY_THRESHOLD = 0.3
+      self._WHEELTOUCH_FALLBACK_TIME = int(10  / DT_DMON)  # fall back to wheel touch if pose uncertainty stays high for 10s
+      self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
+
+      self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
+      self._POSE_OFFSET_MIN_COUNT = int(60 / DT_DMON)  # valid data counts before calibration completes, 1min cumulative
+      self._POSE_OFFSET_MAX_COUNT = int(360 / DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
+      self._WHEELPOS_CALIB_MIN_SPEED = 11
+      self._WHEELPOS_THRESHOLD = 0.5
+      self._WHEELPOS_FILTER_MIN_COUNT = int(15 / DT_DMON) # allow 15 seconds to converge wheel side
+      self._WHEELPOS_DATA_AVG = 0.03
+      self._WHEELPOS_DATA_VAR = 3*5.5e-5
+      self._WHEELPOS_MAX_COUNT = -1
+
+  """
+    This is the primary DM policy that relies on active monitoring via driver-facing camera.
+  """
+  def __init__(self, shared_settings, rhd_saved=False):
+    super().__init__(shared_settings,
+                     shared_settings.vision._ALERT_1_INTERVAL,
+                     shared_settings.vision._ALERT_2_INTERVAL,
+                     shared_settings.vision._ALERT_3_INTERVAL)
+    self.settings = shared_settings.vision
+
+    wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
+    self.wheelpos = DriverProb(raw_priors=wheelpos_filter_raw_priors, max_trackable=self.settings._WHEELPOS_MAX_COUNT)
+    self.pose = DriverPose(settings=self.settings)
     self.blink_prob = 0.
     self.phone_prob = 0.
     self.distracted_types = defaultdict(bool)
     self.driver_distracted = False
-    self.driver_distraction_filter = FirstOrderFilter(0., settings._DISTRACTED_FILTER_TS, DT_DMON)
+    self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, DT_DMON)
     self.wheel_on_right = False
     self.wheel_on_right_last = None
     self.wheel_on_right_default = rhd_saved
@@ -179,34 +184,21 @@ class VisionPolicy(DriverMonitoringPolicy):
     self.wheeltouch_fallback_active = False
     self.wheeltouch_fallback_count = 0
     self.pose_uncertainty = 0.
-    self.dcam_uncertain = False
     self.dcam_uncertain_cnt = 0
     self.dcam_reset_cnt = 0
     self.is_available = True
 
   @property
   def attentive(self):
-    return self.driver_distraction_filter.x < 0.37 and self.face_detected and self.pose.low_uncertainty
+    return self.driver_distraction_filter.x < DISTRACTION_FILTER_ATTENTIVE_THRESHOLD and self.face_detected and self.pose.low_uncertainty
 
   @property
   def certainly_distracted(self):
-    return self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
+    return self.driver_distraction_filter.x > DISTRACTION_FILTER_DISTRACTED_THRESHOLD and self.driver_distracted and self.face_detected
 
   @property
   def maybe_distracted(self):
     return self.wheeltouch_fallback_active or not self.face_detected
-
-  def _get_pose_state(self):
-    pose_state = log.DriverMonitoringState.VisionPolicyState.Pose.new_message()
-    pose_state.pitch = self.pose.pitch
-    pose_state.yaw = self.pose.yaw
-    pose_state.pitchCalib.calibratedPercent = to_percent(self.pose.pitch_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    pose_state.pitchCalib.offset = self.pose.pitch_offseter.filtered_stat.M
-    pose_state.yawCalib.calibratedPercent = to_percent(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    pose_state.yawCalib.offset = self.pose.yaw_offseter.filtered_stat.M
-    pose_state.calibrated = self.pose.calibrated
-    pose_state.uncertainty = self.pose_uncertainty
-    return pose_state
 
   def get_state(self, awareness_step):
     state = log.DriverMonitoringState.VisionPolicyState.new_message()
@@ -217,7 +209,14 @@ class VisionPolicy(DriverMonitoringPolicy):
     state.distractedTypes.eye = self.distracted_types['eye']
     state.distractedTypes.phone = self.distracted_types['phone']
     state.faceDetected = self.face_detected
-    state.pose = self._get_pose_state()
+    state.pose.pitch = self.pose.pitch
+    state.pose.yaw = self.pose.yaw
+    state.pose.pitchCalib.calibratedPercent = to_percent(self.pose.pitch_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    state.pose.pitchCalib.offset = self.pose.pitch_offseter.filtered_stat.M
+    state.pose.yawCalib.calibratedPercent = to_percent(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    state.pose.yawCalib.offset = self.pose.yaw_offseter.filtered_stat.M
+    state.pose.calibrated = self.pose.calibrated
+    state.pose.uncertainty = self.pose_uncertainty
     state.wheeltouchFallbackPercent = to_percent(self.wheeltouch_fallback_count / self.settings._WHEELTOUCH_FALLBACK_TIME)
     state.uncertainOffroadAlertPercent = to_percent(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
     return state
@@ -265,9 +264,9 @@ class VisionPolicy(DriverMonitoringPolicy):
                                                                 driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
       self.wheelpos.prob_offseter.push_and_update(rhd_pred)
 
-    self.wheelpos.prob_calibrated = self.wheelpos.prob_offseter.filtered_stat.n >= self.settings._WHEELPOS_FILTER_MIN_COUNT
+    wheelpos_calibrated = self.wheelpos.prob_offseter.filtered_stat.n >= self.settings._WHEELPOS_FILTER_MIN_COUNT
 
-    if self.wheelpos.prob_calibrated or demo_mode:
+    if wheelpos_calibrated or demo_mode:
       self.wheel_on_right = self.wheelpos.prob_offseter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
       self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
@@ -295,7 +294,7 @@ class VisionPolicy(DriverMonitoringPolicy):
     self.phone_prob = driver_data.phoneProb
 
     self._update_distracted_types()
-    self.driver_distracted = any(self.distracted_types.values()) and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_uncertainty
+    self.driver_distracted = any(self.distracted_types.values()) and self.face_detected and self.pose.low_uncertainty
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
@@ -308,8 +307,8 @@ class VisionPolicy(DriverMonitoringPolicy):
                            self.pose.yaw_offseter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
-      self.dcam_uncertain = self.pose_uncertainty > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
-      if self.dcam_uncertain and not standstill:
+      dcam_uncertain = self.pose_uncertainty > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
+      if dcam_uncertain and not standstill:
         self.dcam_uncertain_cnt += 1
         self.dcam_reset_cnt = 0
       else:
@@ -336,13 +335,23 @@ class VisionPolicy(DriverMonitoringPolicy):
                            standstill=standstill,
                            always_on_exemption=always_on_exemption)
 
-
 class WheeltouchPolicy(DriverMonitoringPolicy):
-  def __init__(self, settings):
-    super().__init__(settings,
-                     settings._WHEELTOUCH_POLICY_ALERT_1_INTERVAL,
-                     settings._WHEELTOUCH_POLICY_ALERT_2_INTERVAL,
-                     settings._WHEELTOUCH_POLICY_ALERT_3_INTERVAL)
+  class Settings:
+    def __init__(self):
+      # https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
+      self._ALERT_1_INTERVAL = 15.
+      self._ALERT_2_INTERVAL = 24.
+      self._ALERT_3_INTERVAL = 30.
+
+  """
+    This is the fallback DM policy when vision is unavailable.
+  """
+  def __init__(self, shared_settings):
+    super().__init__(shared_settings,
+                     shared_settings.wheeltouch._ALERT_1_INTERVAL,
+                     shared_settings.wheeltouch._ALERT_2_INTERVAL,
+                     shared_settings.wheeltouch._ALERT_3_INTERVAL)
+    self.settings = shared_settings.wheeltouch
     self.driver_interacting = False
 
   def update(self, *, active, vision_policy, driver_interacting, standstill, always_on_exemption):
@@ -447,7 +456,7 @@ class DriverMonitoring:
                               steering_angle_deg=steering_angle_deg)
     self._update_active_policy()
 
-  def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear, car_speed):
+  def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear):
     self.alert_level = AlertLevel.none
     self.wheeltouch_policy.driver_interacting = driver_engaged
 
@@ -497,7 +506,9 @@ class DriverMonitoring:
     dm.alertLevel = self.alert_level
     dm.activePolicy = self.active_policy
     dm.isRHD = self.vision_policy.wheel_on_right
-    dm.rhdCalibration.calibratedPercent = to_percent(self.vision_policy.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
+    dm.rhdCalibration.calibratedPercent = to_percent(
+      self.vision_policy.wheelpos.prob_offseter.filtered_stat.n / self.vision_policy.settings._WHEELPOS_FILTER_MIN_COUNT
+    )
     dm.rhdCalibration.offset = self.vision_policy.wheelpos.prob_offseter.filtered_stat.M
 
     dm.visionPolicyState = self.vision_policy.get_state(
@@ -548,5 +559,4 @@ class DriverMonitoring:
       op_engaged=enabled,
       standstill=standstill,
       wrong_gear=wrong_gear,
-      car_speed=car_speed
     )

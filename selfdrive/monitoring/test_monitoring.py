@@ -4,14 +4,15 @@ from cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.selfdrive.monitoring.policy import DriverMonitoring, DRIVER_MONITOR_SETTINGS
 
-EventName = log.OnroadEvent.EventName
 dm_settings = DRIVER_MONITOR_SETTINGS()
+vision_settings = dm_settings.vision
+wheeltouch_settings = dm_settings.wheeltouch
 
 TEST_TIMESPAN = 120  # seconds
-VISION_ALERT_2_INTERVAL = dm_settings._VISION_POLICY_ALERT_2_INTERVAL + 1
-VISION_ALERT_3_INTERVAL = dm_settings._VISION_POLICY_ALERT_3_INTERVAL + 1
-WHEELTOUCH_ALERT_2_INTERVAL = dm_settings._WHEELTOUCH_POLICY_ALERT_2_INTERVAL + 1
-WHEELTOUCH_ALERT_3_INTERVAL = dm_settings._WHEELTOUCH_POLICY_ALERT_3_INTERVAL + 1
+VISION_ALERT_2_INTERVAL = vision_settings._ALERT_2_INTERVAL + 1
+VISION_ALERT_3_INTERVAL = vision_settings._ALERT_3_INTERVAL + 1
+WHEELTOUCH_ALERT_2_INTERVAL = wheeltouch_settings._ALERT_2_INTERVAL + 1
+WHEELTOUCH_ALERT_3_INTERVAL = wheeltouch_settings._ALERT_3_INTERVAL + 1
 
 def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds = log.DriverStateV2.new_message()
@@ -31,9 +32,7 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
 msg_NO_FACE_DETECTED = make_msg(False)
 msg_ATTENTIVE = make_msg(True)
 msg_DISTRACTED = make_msg(True, distracted=True)
-msg_ATTENTIVE_UNCERTAIN = make_msg(True, model_uncertain=True)
-msg_DISTRACTED_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=True)
-msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=dm_settings._POSE_UNCERTAINTY_THRESHOLD*1.5)
+msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=vision_settings._POSE_UNCERTAINTY_THRESHOLD*1.5)
 
 # driver interaction with car
 car_interaction_DETECTED = True
@@ -55,7 +54,7 @@ class TestMonitoring:
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0, 0)
+      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0)
       alert_lvls.append(DM.alert_level)
     assert len(alert_lvls) == len(msgs), f"got {len(alert_lvls)} for {len(msgs)} driverState input msgs"
     return alert_lvls, DM
@@ -69,27 +68,27 @@ class TestMonitoring:
   # engaged, driver is distracted and does nothing
   def test_fully_distracted_driver(self):
     alert_lvls, d_status = self._run_seq(always_distracted, always_false, always_true, always_false)
-    s = d_status.settings
-    assert alert_lvls[int(s._VISION_POLICY_ALERT_1_INTERVAL / 2 / DT_DMON)] == 0
-    assert alert_lvls[int((s._VISION_POLICY_ALERT_1_INTERVAL + \
-                    (s._VISION_POLICY_ALERT_2_INTERVAL - s._VISION_POLICY_ALERT_1_INTERVAL) / 2) / DT_DMON)] == 1
-    assert alert_lvls[int((s._VISION_POLICY_ALERT_2_INTERVAL + \
-                    (s._VISION_POLICY_ALERT_3_INTERVAL - s._VISION_POLICY_ALERT_2_INTERVAL) / 2) / DT_DMON)] == 2
-    assert alert_lvls[int((s._VISION_POLICY_ALERT_3_INTERVAL + \
-                    (TEST_TIMESPAN - 10 - s._VISION_POLICY_ALERT_3_INTERVAL) / 2) / DT_DMON)] == 3
+    s = d_status.vision_policy.settings
+    assert alert_lvls[int(s._ALERT_1_INTERVAL / 2 / DT_DMON)] == 0
+    assert alert_lvls[int((s._ALERT_1_INTERVAL + \
+                    (s._ALERT_2_INTERVAL - s._ALERT_1_INTERVAL) / 2) / DT_DMON)] == 1
+    assert alert_lvls[int((s._ALERT_2_INTERVAL + \
+                    (s._ALERT_3_INTERVAL - s._ALERT_2_INTERVAL) / 2) / DT_DMON)] == 2
+    assert alert_lvls[int((s._ALERT_3_INTERVAL + \
+                    (TEST_TIMESPAN - 10 - s._ALERT_3_INTERVAL) / 2) / DT_DMON)] == 3
     assert isinstance(d_status.awareness, float)
 
   # engaged, no face detected the whole time, no action
   def test_fully_invisible_driver(self):
     alert_lvls, d_status = self._run_seq(always_no_face, always_false, always_true, always_false)
-    s = d_status.settings
-    assert alert_lvls[int(s._WHEELTOUCH_POLICY_ALERT_1_INTERVAL / 2 / DT_DMON)] == 0
-    assert alert_lvls[int((s._WHEELTOUCH_POLICY_ALERT_1_INTERVAL + \
-                    (s._WHEELTOUCH_POLICY_ALERT_2_INTERVAL - s._WHEELTOUCH_POLICY_ALERT_1_INTERVAL) / 2) / DT_DMON)] == 1
-    assert alert_lvls[int((s._WHEELTOUCH_POLICY_ALERT_2_INTERVAL + \
-                    (s._WHEELTOUCH_POLICY_ALERT_3_INTERVAL - s._WHEELTOUCH_POLICY_ALERT_2_INTERVAL) / 2) / DT_DMON)] == 2
-    assert alert_lvls[int((s._WHEELTOUCH_POLICY_ALERT_3_INTERVAL + \
-                    (TEST_TIMESPAN - 10 - s._WHEELTOUCH_POLICY_ALERT_3_INTERVAL) / 2) / DT_DMON)] == 3
+    s = d_status.wheeltouch_policy.settings
+    assert alert_lvls[int(s._ALERT_1_INTERVAL / 2 / DT_DMON)] == 0
+    assert alert_lvls[int((s._ALERT_1_INTERVAL + \
+                    (s._ALERT_2_INTERVAL - s._ALERT_1_INTERVAL) / 2) / DT_DMON)] == 1
+    assert alert_lvls[int((s._ALERT_2_INTERVAL + \
+                    (s._ALERT_3_INTERVAL - s._ALERT_2_INTERVAL) / 2) / DT_DMON)] == 2
+    assert alert_lvls[int((s._ALERT_3_INTERVAL + \
+                    (TEST_TIMESPAN - 10 - s._ALERT_3_INTERVAL) / 2) / DT_DMON)] == 3
 
   # engaged, down to alert level two, driver pays attention, back to normal; then back to alert level two, driver touches wheel
   #  - should have short alert level two recovery time and no alert afterwards; wheel touch only recovers when paying attention
@@ -184,9 +183,9 @@ class TestMonitoring:
     standstill_vector = always_true[:]
     standstill_vector[int(_redlight_time/DT_DMON):] = [False] * int((TEST_TIMESPAN-_redlight_time)/DT_DMON)
     alert_lvls, d_status = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
-    s = d_status.settings
+    s = d_status.vision_policy.settings
     assert alert_lvls[int((_redlight_time-0.1)/DT_DMON)] == 0
-    _vision_alert_1_to_2_interval = s._VISION_POLICY_ALERT_2_INTERVAL - s._VISION_POLICY_ALERT_1_INTERVAL
+    _vision_alert_1_to_2_interval = s._ALERT_2_INTERVAL - s._ALERT_1_INTERVAL
     assert alert_lvls[int((_redlight_time+0.5)/DT_DMON)] == 1
     assert alert_lvls[int((_redlight_time+_vision_alert_1_to_2_interval+0.5)/DT_DMON)] == 2
 
@@ -207,7 +206,7 @@ class TestMonitoring:
     ds_vector = [msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN] * int(TEST_TIMESPAN/DT_DMON)
     interaction_vector = always_false[:]
     alert_lvls, d_status = self._run_seq(ds_vector, interaction_vector, always_true, always_false)
-    s = d_status.settings
+    s = d_status.vision_policy.settings
     assert alert_lvls[int((WHEELTOUCH_ALERT_2_INTERVAL-1+DT_DMON*s._WHEELTOUCH_FALLBACK_TIME-0.1)/DT_DMON)] == 1
     assert alert_lvls[int((WHEELTOUCH_ALERT_2_INTERVAL-1+DT_DMON*s._WHEELTOUCH_FALLBACK_TIME+0.1)/DT_DMON)] == 2
     assert alert_lvls[int((WHEELTOUCH_ALERT_3_INTERVAL-1+DT_DMON*s._WHEELTOUCH_FALLBACK_TIME+0.1)/DT_DMON)] == 3
