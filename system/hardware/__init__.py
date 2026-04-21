@@ -7,6 +7,7 @@ from openpilot.system.hardware.pc.hardware import Pc
 
 TICI = os.path.isfile('/TICI')
 AGNOS = os.path.isfile('/AGNOS')
+ASIUS = os.path.isfile('/ASIUS')
 PC = not TICI
 
 

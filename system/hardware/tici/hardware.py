@@ -114,7 +114,18 @@ class Tici(HardwareBase):
     self.reboot()
 
   def get_serial(self):
-    return self.get_cmdline()['androidboot.serialno']
+    # androidboot.serialno is set by Android ABL on comma devices. Dragon boots
+    # via edk2 → EFI stub, no androidboot.* cmdline. Fall back to the chip's
+    # serial number (QCS6490 ECID), which we can read from the DT.
+    cmdline = self.get_cmdline()
+    if 'androidboot.serialno' in cmdline:
+      return cmdline['androidboot.serialno']
+    try:
+      with open("/sys/firmware/devicetree/base/serial-number") as f:
+        return f.read().strip('\x00').strip()
+    except FileNotFoundError:
+      pass
+    return "cccccc"
 
   def get_voltage(self):
     with open("/sys/class/hwmon/hwmon1/in1_input") as f:

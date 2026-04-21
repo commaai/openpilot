@@ -14,14 +14,22 @@ class HardwareTici : public HardwareNone {
 public:
   static std::string get_name() {
     std::string model = util::read_file("/sys/firmware/devicetree/base/model");
-    return util::strip(model.substr(std::string("comma ").size()));
+    std::string stripped = util::strip(model);
+    // "comma X" -> X; anything else (e.g. Asius Radxa Dragon Q6A) returned as-is.
+    const std::string comma_prefix = "comma ";
+    if (stripped.rfind(comma_prefix, 0) == 0) {
+      return stripped.substr(comma_prefix.size());
+    }
+    return stripped;
   }
 
   static cereal::InitData::DeviceType get_device_type() {
     static const std::map<std::string, cereal::InitData::DeviceType> device_map = {
       {"tici", cereal::InitData::DeviceType::TICI},
       {"tizi", cereal::InitData::DeviceType::TIZI},
-      {"mici", cereal::InitData::DeviceType::MICI}
+      {"mici", cereal::InitData::DeviceType::MICI},
+      // Asius Dragon Q6A — QCS6490 Linux host running vamOS.
+      {"Radxa Dragon Q6A", cereal::InitData::DeviceType::ASIUS}
     };
     auto it = device_map.find(get_name());
     assert(it != device_map.end());

@@ -17,6 +17,9 @@ def estimate_pickle_max_size(onnx_size):
 # THREADS=0 is need to prevent bug: https://github.com/tinygrad/tinygrad/issues/14689
 if arch == 'larch64' and os.path.exists('/dev/kgsl-3d0'):
   tg_flags = 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0'
+elif arch == 'larch64' and os.path.isfile('/ASIUS'):
+  # Dragon Q6A: no MSM DRM yet, no KGSL exposed. CPU backend with LLVM jit.
+  tg_flags = 'DEV=CPU CPU_LLVM=1 THREADS=0'
 elif arch == 'larch64':
   tg_flags = 'DEV=MSM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0'
 elif arch == 'Darwin':
