@@ -151,6 +151,8 @@ def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
     M_inv = M_inv.to(Device.DEFAULT).realize()
     result = warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv, (dm_w, dm_h), (cam_h, cam_w), stride_pad).reshape(-1, dm_h * dm_w)
     out.assign(result)
+    # return out so prune=True keeps the assign kernels
+    return out
   return warp_dm
 
 
