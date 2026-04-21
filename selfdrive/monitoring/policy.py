@@ -13,7 +13,7 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 AlertLevel = log.DriverMonitoringState.AlertLevel
 MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
 
-def to_perc(v):
+def to_percent(v):
   return int(min(max(v * 100., 0.), 100.))
 
 # ******************************************************************************************
@@ -89,8 +89,8 @@ class DriverPose:
     self.yaw_std = 0.
     self.pitch_std = 0.
     self.roll_std = 0.
-    self.pitch_offseter = RunningStatFilter(raw_priors=pitch_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
-    self.yaw_offseter = RunningStatFilter(raw_priors=yaw_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
+    self.pitch_offsetter = RunningStatFilter(raw_priors=pitch_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
+    self.yaw_offsetter = RunningStatFilter(raw_priors=yaw_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
     self.calibrated = False
     self.low_std = True
     self.cfactor_pitch = 1.
@@ -100,7 +100,7 @@ class DriverPose:
 class DriverProb:
   def __init__(self, raw_priors, max_trackable):
     self.prob = 0.
-    self.prob_offseter = RunningStatFilter(raw_priors=raw_priors, max_trackable=max_trackable)
+    self.prob_offsetter = RunningStatFilter(raw_priors=raw_priors, max_trackable=max_trackable)
     self.prob_calibrated = False
 
 
@@ -220,9 +220,9 @@ class DriverMonitoring:
       pitch_error = self.pose.pitch - self.settings._PITCH_NATURAL_OFFSET
       yaw_error = self.pose.yaw - self.settings._YAW_NATURAL_OFFSET
     else:
-      pitch_error = self.pose.pitch - min(max(self.pose.pitch_offseter.filtered_stat.mean(),
+      pitch_error = self.pose.pitch - min(max(self.pose.pitch_offsetter.filtered_stat.mean(),
                                                        self.settings._PITCH_MIN_OFFSET), self.settings._PITCH_MAX_OFFSET)
-      yaw_error = self.pose.yaw - min(max(self.pose.yaw_offseter.filtered_stat.mean(),
+      yaw_error = self.pose.yaw - min(max(self.pose.yaw_offsetter.filtered_stat.mean(),
                                                     self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
 
@@ -243,12 +243,12 @@ class DriverMonitoring:
     # calibrates only when there's movement and either face detected
     if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
                                           driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
-      self.wheelpos.prob_offseter.push_and_update(rhd_pred)
+      self.wheelpos.prob_offsetter.push_and_update(rhd_pred)
 
-    self.wheelpos.prob_calibrated = self.wheelpos.prob_offseter.filtered_stat.n >= self.settings._WHEELPOS_FILTER_MIN_COUNT
+    self.wheelpos.prob_calibrated = self.wheelpos.prob_offsetter.filtered_stat.n >= self.settings._WHEELPOS_FILTER_MIN_COUNT
 
     if self.wheelpos.prob_calibrated or demo_mode:
-      self.wheel_on_right = self.wheelpos.prob_offseter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
+      self.wheel_on_right = self.wheelpos.prob_offsetter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
       self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
     # make sure no switching when engaged
@@ -278,14 +278,14 @@ class DriverMonitoring:
     self.driver_distracted = any(self.distracted_types.values()) and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
-    # update offseter
+    # update offsetter
     # only update when driver is actively driving the car above a certain speed
     if self.face_detected and car_speed > self.settings._POSE_CALIB_MIN_SPEED and self.pose.low_std and (not op_engaged or not self.driver_distracted):
-      self.pose.pitch_offseter.push_and_update(self.pose.pitch)
-      self.pose.yaw_offseter.push_and_update(self.pose.yaw)
+      self.pose.pitch_offsetter.push_and_update(self.pose.pitch)
+      self.pose.yaw_offsetter.push_and_update(self.pose.yaw)
 
-    self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT and \
-                           self.pose.yaw_offseter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT
+    self.pose.calibrated = self.pose.pitch_offsetter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT and \
+                           self.pose.yaw_offsetter.filtered_stat.n >= self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
       self.dcam_uncertain = self.model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD
@@ -366,17 +366,17 @@ class DriverMonitoring:
     dm = dat.driverMonitoringState
 
     dm.lockout = self.too_distracted
-    dm.alertCountLockoutPercent = to_perc(self.terminal_alert_cnt / self.settings._MAX_TERMINAL_ALERTS)
-    dm.alertTimeLockoutPercent = to_perc(self.terminal_time / self.settings._MAX_TERMINAL_DURATION)
+    dm.alertCountLockoutPercent = to_percent(self.terminal_alert_cnt / self.settings._MAX_TERMINAL_ALERTS)
+    dm.alertTimeLockoutPercent = to_percent(self.terminal_time / self.settings._MAX_TERMINAL_DURATION)
     dm.alwaysOn = self.always_on
     dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_alert_2
     dm.alertLevel = self.alert_level
     dm.activePolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
     dm.isRHD = self.wheel_on_right
-    dm.rhdCalibration.calibratedPercent = to_perc(self.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
-    dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M
+    dm.rhdCalibration.calibratedPercent = to_percent(self.wheelpos.prob_offsetter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
+    dm.rhdCalibration.offset = self.wheelpos.prob_offsetter.filtered_stat.M
 
-    dm.visionPolicyState.awarenessPercent = to_perc(self.last_vision_awareness if not self.active_monitoring_mode else self.awareness)
+    dm.visionPolicyState.awarenessPercent = to_percent(self.last_vision_awareness if not self.active_monitoring_mode else self.awareness)
     dm.visionPolicyState.awarenessStep = self.step_change if self.active_monitoring_mode else 0.
     dm.visionPolicyState.isDistracted = self.driver_distracted
     dm.visionPolicyState.distractedTypes.pose = self.distracted_types['pose']
@@ -386,15 +386,15 @@ class DriverMonitoring:
     dm.visionPolicyState.pose.pitch = self.pose.pitch
     dm.visionPolicyState.pose.yaw = self.pose.yaw
     dm.visionPolicyState.pose.calibrated = self.pose.calibrated
-    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = to_perc(self.pose.pitch_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    dm.visionPolicyState.pose.pitchCalib.offset = self.pose.pitch_offseter.filtered_stat.M
-    dm.visionPolicyState.pose.yawCalib.calibratedPercent = to_perc(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    dm.visionPolicyState.pose.yawCalib.offset = self.pose.yaw_offseter.filtered_stat.M
+    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = to_percent(self.pose.pitch_offsetter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    dm.visionPolicyState.pose.pitchCalib.offset = self.pose.pitch_offsetter.filtered_stat.M
+    dm.visionPolicyState.pose.yawCalib.calibratedPercent = to_percent(self.pose.yaw_offsetter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
+    dm.visionPolicyState.pose.yawCalib.offset = self.pose.yaw_offsetter.filtered_stat.M
     dm.visionPolicyState.pose.uncertainty = self.model_std_max
-    dm.visionPolicyState.wheeltouchFallbackPercent = to_perc(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
-    dm.visionPolicyState.uncertainOffroadAlertPercent = to_perc(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
+    dm.visionPolicyState.wheeltouchFallbackPercent = to_percent(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
+    dm.visionPolicyState.uncertainOffroadAlertPercent = to_percent(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
 
-    dm.wheeltouchPolicyState.awarenessPercent = to_perc(self.last_wheeltouch_awareness if self.active_monitoring_mode else self.awareness)
+    dm.wheeltouchPolicyState.awarenessPercent = to_percent(self.last_wheeltouch_awareness if self.active_monitoring_mode else self.awareness)
     dm.wheeltouchPolicyState.awarenessStep = 0. if self.active_monitoring_mode else self.step_change
     dm.wheeltouchPolicyState.driverInteracting = self.driver_interacting
     return dat
