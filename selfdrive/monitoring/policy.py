@@ -93,22 +93,18 @@ class DriverPose:
     self.cfactor_yaw = 1.
     self.steer_yaw_offset = 0.
 
-
 # model output refers to center of undistorted+leveled image
-EFL = 598.0 # focal length in K
-cam = DEVICE_CAMERAS[("tici", "ar0231")] # corrected image has same size as raw
-W, H = (cam.dcam.width, cam.dcam.height)  # corrected image has same size as raw
+ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].dcam
+dcam_undistorted_FL = 598.0
+dcam_undistorted_W, dcam_undistorted_H = (ref_undistorted_cam.width, ref_undistorted_cam.height)
 
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
-  # the output of these angles are in driver camera frame
-  # so from driver's perspective, pitch is up and yaw is right
-
   pitch_net = angles_desc[0]
   yaw_net = angles_desc[1]
 
-  face_pixel_position = ((pos_desc[0]+0.5)*W, (pos_desc[1]+0.5)*H)
-  yaw_focal_angle = atan2(face_pixel_position[0] - W//2, EFL)
-  pitch_focal_angle = atan2(face_pixel_position[1] - H//2, EFL)
+  face_pixel_position = ((pos_desc[0]+0.5)*dcam_undistorted_W, (pos_desc[1]+0.5)*dcam_undistorted_H)
+  yaw_focal_angle = atan2(face_pixel_position[0] - dcam_undistorted_W//2, dcam_undistorted_FL)
+  pitch_focal_angle = atan2(face_pixel_position[1] - dcam_undistorted_H//2, dcam_undistorted_FL)
 
   pitch = pitch_net + pitch_focal_angle
   yaw = -yaw_net + yaw_focal_angle
