@@ -63,8 +63,9 @@ class TestMonitoring:
 
   # engaged, driver is attentive all the time
   def test_fully_aware_driver(self):
-    alert_lvls, _ = self._run_seq(always_attentive, always_false, always_true, always_false)
+    alert_lvls, d_status = self._run_seq(always_attentive, always_false, always_true, always_false)
     assert all(a == 0 for a in alert_lvls)
+    assert d_status.active_policy == log.DriverMonitoringState.MonitoringPolicy.vision
 
   # engaged, driver is distracted and does nothing
   def test_fully_distracted_driver(self):
@@ -90,6 +91,7 @@ class TestMonitoring:
                     (s._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT - s._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT) / 2) / DT_DMON)] == 2
     assert alert_lvls[int((s._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT + \
                     (TEST_TIMESPAN - 10 - s._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT) / 2) / DT_DMON)] == 3
+    assert d_status.active_policy == log.DriverMonitoringState.MonitoringPolicy.wheeltouch
 
   # engaged, down to orange, driver pays attention, back to normal; then down to orange, driver touches wheel
   #  - should have short orange recovery time and no green afterwards; wheel touch only recovers when paying attention

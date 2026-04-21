@@ -142,7 +142,7 @@ class DriverMonitoring:
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
     self.step_change = 0.
-    self.active_monitoring_mode = True
+    self.active_policy = MonitoringPolicy.vision
     self.driver_interacting = False
     self.is_model_uncertain = False
     self.hi_stds = 0
@@ -154,16 +154,16 @@ class DriverMonitoring:
     self.too_distracted = Params().get_bool("DriverTooDistracted")
 
     self._reset_awareness()
-    self._set_timers(active_monitoring=True)
+    self._set_timers(MonitoringPolicy.vision)
 
   def _reset_awareness(self):
     self.awareness = 1.
     self.last_vision_awareness = 1.
     self.last_wheeltouch_awareness = 1.
 
-  def _set_timers(self, active_monitoring):
-    if self.active_monitoring_mode and self.awareness <= self.threshold_alert_2:
-      if active_monitoring:
+  def _set_timers(self, active_policy):
+    if self.active_policy == MonitoringPolicy.vision and self.awareness <= self.threshold_alert_2:
+      if active_policy == MonitoringPolicy.vision:
         self.step_change = DT_DMON / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       else:
         self.step_change = 0.
@@ -171,25 +171,25 @@ class DriverMonitoring:
     elif self.awareness <= 0.:
       return
 
-    if active_monitoring:
+    if active_policy == MonitoringPolicy.vision:
       # when falling back from passive mode to active mode, reset awareness to avoid false alert
-      if not self.active_monitoring_mode:
+      if self.active_policy != MonitoringPolicy.vision:
         self.last_wheeltouch_awareness = self.awareness
         self.awareness = self.last_vision_awareness
 
       self.threshold_alert_1 = 1. - self.settings._VISION_POLICY_ALERT_1_TIMEOUT / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       self.threshold_alert_2 = 1. - self.settings._VISION_POLICY_ALERT_2_TIMEOUT / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       self.step_change = DT_DMON / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
-      self.active_monitoring_mode = True
+      self.active_policy = MonitoringPolicy.vision
     else:
-      if self.active_monitoring_mode:
+      if self.active_policy == MonitoringPolicy.vision:
         self.last_vision_awareness = self.awareness
         self.awareness = self.last_wheeltouch_awareness
 
       self.threshold_alert_1 = 1. - self.settings._WHEELTOUCH_POLICY_ALERT_1_TIMEOUT / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
       self.threshold_alert_2 = 1. - self.settings._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
       self.step_change = DT_DMON / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
-      self.active_monitoring_mode = False
+      self.active_policy = MonitoringPolicy.wheeltouch
 
   def _set_pose_strictness(self, brake_disengage_prob, car_speed):
     bp = brake_disengage_prob
@@ -285,7 +285,7 @@ class DriverMonitoring:
           self.dcam_uncertain_cnt = 0
 
     self.is_model_uncertain = self.hi_stds >= self.settings._HI_STD_FALLBACK_TIME
-    self._set_timers(self.face_detected and not self.is_model_uncertain)
+    self._set_timers(MonitoringPolicy.vision if self.face_detected and not self.is_model_uncertain else MonitoringPolicy.wheeltouch)
     if self.face_detected and not self.pose.low_std and not self.driver_distracted:
       self.hi_stds += 1
     elif self.face_detected and self.pose.low_std:
@@ -300,7 +300,7 @@ class DriverMonitoring:
       self.too_distracted = True
 
     always_on_valid = self.always_on and not wrong_gear
-    if (self.driver_interacting and self.awareness > 0 and not self.active_monitoring_mode) or \
+    if (self.driver_interacting and self.awareness > 0 and self.active_policy == MonitoringPolicy.wheeltouch) or \
        (not always_on_valid and not op_engaged) or \
        (always_on_valid and not op_engaged and self.awareness <= 0):
       # always reset on disengage with normal mode; disengage resets only on red if always on
@@ -358,13 +358,13 @@ class DriverMonitoring:
     dm.alwaysOn = self.always_on
     dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_alert_2
     dm.alertLevel = self.alert_level
-    dm.activePolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
+    dm.activePolicy = self.active_policy
     dm.isRHD = self.wheel_on_right
     dm.rhdCalibration.calibratedPercent = to_percent(self.wheelpos_offsetter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
     dm.rhdCalibration.offset = self.wheelpos_offsetter.filtered_stat.M
 
-    dm.visionPolicyState.awarenessPercent = to_percent(self.last_vision_awareness if not self.active_monitoring_mode else self.awareness)
-    dm.visionPolicyState.awarenessStep = self.step_change if self.active_monitoring_mode else 0.
+    dm.visionPolicyState.awarenessPercent = to_percent(self.last_vision_awareness if self.active_policy != MonitoringPolicy.vision else self.awareness)
+    dm.visionPolicyState.awarenessStep = self.step_change if self.active_policy == MonitoringPolicy.vision else 0.
     dm.visionPolicyState.isDistracted = self.driver_distracted
     dm.visionPolicyState.distractedTypes.pose = self.distracted_types['pose']
     dm.visionPolicyState.distractedTypes.eye = self.distracted_types['eye']
@@ -381,8 +381,8 @@ class DriverMonitoring:
     dm.visionPolicyState.wheeltouchFallbackPercent = to_percent(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
     dm.visionPolicyState.uncertainOffroadAlertPercent = to_percent(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
 
-    dm.wheeltouchPolicyState.awarenessPercent = to_percent(self.last_wheeltouch_awareness if self.active_monitoring_mode else self.awareness)
-    dm.wheeltouchPolicyState.awarenessStep = 0. if self.active_monitoring_mode else self.step_change
+    dm.wheeltouchPolicyState.awarenessPercent = to_percent(self.last_wheeltouch_awareness if self.active_policy == MonitoringPolicy.vision else self.awareness)
+    dm.wheeltouchPolicyState.awarenessStep = 0. if self.active_policy == MonitoringPolicy.vision else self.step_change
     dm.wheeltouchPolicyState.driverInteracting = self.driver_interacting
     return dat
 
