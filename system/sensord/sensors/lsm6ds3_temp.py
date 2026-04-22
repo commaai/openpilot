@@ -9,10 +9,6 @@ class LSM6DS3_Temp(Sensor):
   def device_address(self) -> int:
     return 0x6A
 
-  @property
-  def service(self) -> str:
-    return "temperatureSensor"
-
   def _read_temperature(self) -> float:
     scale = 16.0 if self.source == log.SensorEventData.SensorSource.lsm6ds3 else 256.0
     data = self.read(0x20, 2)

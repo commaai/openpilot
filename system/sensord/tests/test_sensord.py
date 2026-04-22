@@ -24,10 +24,6 @@ def get_irq_count(irq: int):
     per_cpu = map(int, f.read().split(","))
     return sum(per_cpu)
 
-def get_irq_affinity(irq: int):
-  with open(f"/proc/irq/{irq}/smp_affinity_list") as f:
-    return f.read().strip()
-
 def read_sensor_events(duration_sec):
   socks = {}
   poller = messaging.Poller()
@@ -86,13 +82,6 @@ class TestSensord:
   def test_all_sensors_present(self):
     missing = [config.service for config in SENSOR_CONFIGS if config.service not in self.events]
     assert len(missing) == 0, f"missing sensors: {missing}"
-
-  def test_sensor_irqs_present(self):
-    assert len(self.sensord_irqs) == 2, f"expected 2 sensord IRQs, got {self.sensord_irqs}"
-
-  def test_sensor_irq_affinity(self):
-    for irq in self.sensord_irqs:
-      assert get_irq_affinity(irq) == "1", f"unexpected affinity for IRQ {irq}"
 
   def test_lsm6ds3_timing(self, subtests):
     # verify measurements are sampled and published at 104Hz

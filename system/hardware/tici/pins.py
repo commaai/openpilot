@@ -24,5 +24,5 @@ class GPIO:
   CAM2_RSTN = 12
 
   # Sensor interrupts
-  LSM_INT1 = 84
+  LSM_INT = 84
   LSM_INT2 = 123

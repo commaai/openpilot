@@ -2,7 +2,6 @@ import os
 import time
 
 from cereal import log
-from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
 class LSM6DS3_Accel(Sensor):
@@ -31,14 +30,6 @@ class LSM6DS3_Accel(Sensor):
   @property
   def device_address(self) -> int:
     return 0x6A
-
-  @property
-  def service(self) -> str:
-    return "accelerometer"
-
-  @property
-  def irq_pin(self) -> int | None:
-    return GPIO.LSM_INT1
 
   def reset(self):
     self.write(0x12, 0x1)
@@ -73,7 +64,7 @@ class LSM6DS3_Accel(Sensor):
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     assert ts is not None  # must come from the IRQ event
 
-    # Guard against reading on the trailing edge of the data ready pulse.
+    # Check if data is ready since IRQ is shared with gyro
     status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
     if (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA) == 0:
       raise self.DataNotReady
