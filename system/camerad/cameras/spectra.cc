@@ -545,8 +545,15 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     int cdm_len = 0;
 
     if (bps_lin_reg.size() == 0) {
+      // set first knee pt to do BLC
+      uint32_t new_knee[8];
+      new_knee[0] = sensor->black_level << (14 - sensor->bits_per_pixel);
+      for (int i = 0; i < 7; i++) {
+        uint32_t pts = sensor->linearization_pts[i / 2];
+        new_knee[i + 1] = (i % 2 == 0) ? (pts >> 16) : (pts & 0xffff);
+      }
       for (int i = 0; i < 4; i++) {
-        bps_lin_reg.push_back(((sensor->linearization_pts[i] & 0xffff) << 0x10) | (sensor->linearization_pts[i] >> 0x10));
+        bps_lin_reg.push_back((new_knee[2*i + 1] << 16) | new_knee[2*i]);
       }
     }
 
@@ -1184,19 +1191,19 @@ void SpectraCamera::configICP() {
 
   // bit shift linearization_lut to bps specs, also compensate for black level here
   uint32_t bl = sensor->black_level << (14 - sensor->bits_per_pixel);
-  uint32_t p0 = (sensor->linearization_pts[0] >> 16) & 0x3fff;
   uint32_t* bps_lut = (uint32_t*)bps_linearization_lut.ptr;
   for (size_t i = 0; i < sensor->linearization_lut.size(); i++) {
-    uint32_t e = sensor->linearization_lut[i];
+    size_t seg = i / 4;
+    size_t ch = i % 4;
+    if (seg == 0) {
+      bps_lut[i] = 0;
+      continue;
+    }
+    uint32_t e = sensor->linearization_lut[(seg - 1) * 4 + ch];
     uint32_t base = e & 0x3fff;
     uint32_t slope_q11 = (e >> 14) & 0x3fff;
     uint32_t slope_q12 = std::min<uint32_t>(slope_q11 << 1, 0x3fff);
-    size_t seg = i / 4;
-    if (seg == 0) {
-      slope_q12 = (bl < p0) ? (slope_q12 * (p0 - bl)) / p0 : 0;
-    } else {
-      base = (base > bl) ? (base - bl) : 0;
-    }
+    base = (base > bl) ? (base - bl) : 0;
     bps_lut[i] = base | (slope_q12 << 14);
   }
 
