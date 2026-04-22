@@ -306,7 +306,17 @@ class Modem:
           return State.CONNECTING
 
       if reg != self.S.get("registration"):
-        self._update(registration=reg)
+        err = ""
+        if reg == "denied":
+          # query extended error reason — helps diagnose why the network rejected attach
+          ceer = self._atv("AT+CEER", "+CEER:")
+          if ceer:
+            parts = [p.strip().strip('"') for p in ceer.split(",")]
+            err = parts[-1] if parts else ceer
+            # PLMN_NOT_ALLOWED often clears once the SIM's required APN is set — hint the user
+            if "PLMN_NOT_ALLOWED" in err and not self._apn:
+              err += " (try setting GsmApn)"
+        self._update(registration=reg, error=err)
     else:
       log.debug("CREG returned None")
       self._ps_wait_start = 0.0
