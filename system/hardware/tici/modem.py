@@ -304,6 +304,9 @@ class Modem:
           log.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
           self._update(registration=reg, error="")
           return State.CONNECTING
+
+      if reg != self.S.get("registration"):
+        self._update(registration=reg)
     else:
       log.debug("CREG returned None")
       self._ps_wait_start = 0.0
@@ -508,8 +511,8 @@ class Modem:
       try:
         prev = state
         state = handlers[state]()
-        self.S["state"] = state.value
         if state != prev:
+          self._update(state=state.value)
           log.info(f"{prev.value} -> {state.value}")
       except Exception:
         log.exception(f"error in {state.value}")
