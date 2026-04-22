@@ -19,7 +19,7 @@ if not log.handlers:
   _h = logging.StreamHandler()
   _h.setFormatter(logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"))
   log.addHandler(_h)
-  log.setLevel(logging.DEBUG)
+  log.setLevel(logging.INFO)
   log.propagate = False
 
 AT_PORT = "/dev/modem_at0"
@@ -96,7 +96,6 @@ class Modem:
     fd = tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False)
     json.dump(self.S, fd)
     fd.flush()
-    os.fsync(fd.fileno())
     os.chmod(fd.name, 0o644)
     tmp = fd.name
     fd.close()
@@ -144,6 +143,26 @@ class Modem:
       if pfx in line and ":" in line:
         return line.split(":", 1)[1].strip()
     return None
+
+  @staticmethod
+  def _parse_reg(v: str) -> str:
+    try:
+      return CREG.get(int(v.split(",")[1].strip('"')), "unknown")
+    except (ValueError, IndexError):
+      return "unknown"
+
+  def _query_ceer(self, reg: str) -> str:
+    if reg not in ("denied", "not_registered"):
+      return ""
+    ceer = self._atv("AT+CEER", "+CEER:")
+    if not ceer:
+      return ""
+    parts = [p.strip().strip('"') for p in ceer.split(",")]
+    msg = parts[-1] if parts else ceer
+    # PLMN_NOT_ALLOWED often clears with the right APN; EPS_SERVICES_NOT_ALLOWED is a plan issue
+    if "PLMN_NOT_ALLOWED" in msg:
+      msg += " (check GsmApn)"
+    return msg
 
   # -- teardown helpers --
 
@@ -263,66 +282,42 @@ class Modem:
       self._roaming_allowed = new_roaming
 
     v = self._atv("AT+CREG?", "+CREG:")
-    if v:
-      try:
-        reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
-      except (ValueError, IndexError):
-        reg = "unknown"
-      # also check packet-switched registration
-      greg = "unknown"
-      gv = self._atv("AT+CGREG?", "+CGREG:")
-      if gv:
-        try:
-          greg = CREG.get(int(gv.split(",")[1].strip('"')), "unknown")
-        except (ValueError, IndexError):
-          pass
+    if not v:
+      log.debug("CREG returned None")
+      self._ps_wait_start = 0.0
+      self._ps_attach_tried = False
+    else:
+      reg = self._parse_reg(v)
+      greg = self._parse_reg(self._atv("AT+CGREG?", "+CGREG:") or "")
       log.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
-      # check roaming policy
-      if reg in ("home", "roaming") and not self._roaming_allowed and reg == "roaming":
+      # block roaming if policy disallows
+      if reg == "roaming" and not self._roaming_allowed:
         self._update(registration=reg, error="roaming_disabled")
         time.sleep(0.5)
         return State.REGISTERING
 
+      # ready to connect once both CS and PS are registered, or after PS timeout
       if reg in ("home", "roaming"):
         if greg in ("home", "roaming"):
-          # both circuit and packet registered — ready to connect
           self._update(registration=reg, error="", carrier_error="")
           return State.CONNECTING
 
-        # circuit registered but packet not attached
         if self._ps_wait_start == 0.0:
           self._ps_wait_start = time.monotonic()
-
         elapsed = time.monotonic() - self._ps_wait_start
         if elapsed > 10 and not self._ps_attach_tried:
-          # mimic MM: force PS attach after 10s
           log.info(f"forcing PS attach (waited {elapsed:.0f}s)")
           self._at("AT+CGATT=1")
           self._ps_attach_tried = True
         elif elapsed > 30:
-          # give up waiting for PS, try connecting anyway
           log.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
           self._update(registration=reg, error="", carrier_error="")
           return State.CONNECTING
 
+      # not connectable yet — record current reg and any carrier reject reason
       if reg != self.S.get("registration"):
-        carrier_err = ""
-        if reg in ("denied", "not_registered"):
-          # query extended error reason — helps diagnose why the network rejected attach
-          ceer = self._atv("AT+CEER", "+CEER:")
-          if ceer:
-            parts = [p.strip().strip('"') for p in ceer.split(",")]
-            carrier_err = parts[-1] if parts else ceer
-            # PLMN_NOT_ALLOWED often clears with the right APN — hint the user
-            # (EPS_SERVICES_NOT_ALLOWED is a subscription/plan issue, APN won't help)
-            if "PLMN_NOT_ALLOWED" in carrier_err:
-              carrier_err += " (check GsmApn)"
-        self._update(registration=reg, carrier_error=carrier_err)
-    else:
-      log.debug("CREG returned None")
-      self._ps_wait_start = 0.0
-      self._ps_attach_tried = False
+        self._update(registration=reg, error="", carrier_error=self._query_ceer(reg))
 
     if self._sim_change or not os.path.exists(AT_PORT):
       log.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
@@ -348,7 +343,6 @@ class Modem:
 
   def _do_connecting(self):
     log.info("starting pppd")
-    self._update(state="connecting")
     self._ppp_fails = 0
     self._sim_change = False
     self._ps_wait_start = 0.0
@@ -369,7 +363,7 @@ class Modem:
       log.info(f"pppd: {line}")
       if "local  IP address" in line:
         ip = line.split("local  IP address")[-1].strip()
-        self._update(ip_address=ip, connected=True, state="connected")
+        self._update(ip_address=ip, connected=True)
       elif "remote IP address" in line and self.S["ip_address"]:
         peer = line.split("remote IP address")[-1].strip()
         self._cleanup_routes()
@@ -381,7 +375,7 @@ class Modem:
                        capture_output=True)
         log.info(f"route set up for {self.S['ip_address']} via {peer}")
       elif "Connection terminated" in line or "Modem hangup" in line:
-        self._update(connected=False, state="disconnected", ip_address="")
+        self._update(connected=False, ip_address="")
 
     # check if pppd exited
     if self._ppp and self._ppp.poll() is not None:
@@ -483,9 +477,9 @@ class Modem:
       r = subprocess.run(["ip", "-4", "addr", "show", "ppp0"], capture_output=True, text=True, timeout=2)
       ip = next((l.strip().split()[1].split("/")[0] for l in r.stdout.splitlines() if "inet " in l), None)
       if ip:
-        s.update(ip_address=ip, connected=True, state="connected")
+        s.update(ip_address=ip, connected=True)
       elif self.S["connected"]:
-        s.update(connected=False, state="registered", ip_address="")
+        s.update(connected=False, ip_address="")
     except Exception:
       pass
 
@@ -497,7 +491,8 @@ class Modem:
     except Exception:
       pass
 
-    self._update(**s)
+    if s:
+      self._update(**s)
 
   # -- main loop --
 
