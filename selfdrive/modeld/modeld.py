@@ -26,6 +26,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
+from openpilot.selfdrive.modeld.compile_modeld import CompileConfig, make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -34,19 +35,13 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_PKL_PATH = MODELS_DIR / 'driving_vision_tinygrad.pkl'
 VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
-ON_POLICY_PKL_PATH = MODELS_DIR / 'driving_on_policy_tinygrad.pkl'
-ON_POLICY_METADATA_PATH = MODELS_DIR / 'driving_on_policy_metadata.pkl'
-OFF_POLICY_PKL_PATH = MODELS_DIR / 'driving_off_policy_tinygrad.pkl'
-OFF_POLICY_METADATA_PATH = MODELS_DIR / 'driving_off_policy_metadata.pkl'
+POLICY_METADATA_PATH = MODELS_DIR / 'driving_policy_metadata.pkl'
 
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 
-IMG_QUEUE_SHAPE = (6*(ModelConstants.MODEL_RUN_FREQ//ModelConstants.MODEL_CONTEXT_FREQ + 1), 128, 256)
-assert IMG_QUEUE_SHAPE[0] == 30
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -81,114 +76,36 @@ class FrameMeta:
     if vipc is not None:
       self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
-class InputQueues:
-  def __init__ (self, model_fps, env_fps, n_frames_input):
-    assert env_fps % model_fps == 0
-    assert env_fps >= model_fps
-    self.model_fps = model_fps
-    self.env_fps = env_fps
-    self.n_frames_input = n_frames_input
-
-    self.dtypes = {}
-    self.shapes = {}
-    self.q = {}
-
-  def update_dtypes_and_shapes(self, input_dtypes, input_shapes) -> None:
-    self.dtypes.update(input_dtypes)
-    if self.env_fps == self.model_fps:
-      self.shapes.update(input_shapes)
-    else:
-      for k in input_shapes:
-        shape = list(input_shapes[k])
-        if 'img' in k:
-          n_channels = shape[1] // self.n_frames_input
-          shape[1] = (self.env_fps // self.model_fps + (self.n_frames_input - 1)) * n_channels
-        else:
-          shape[1] = (self.env_fps // self.model_fps) * shape[1]
-        self.shapes[k] = tuple(shape)
-
-  def reset(self) -> None:
-    self.q = {k: np.zeros(self.shapes[k], dtype=self.dtypes[k]) for k in self.dtypes.keys()}
-
-  def enqueue(self, inputs:dict[str, np.ndarray]) -> None:
-    for k in inputs.keys():
-      if inputs[k].dtype != self.dtypes[k]:
-        raise ValueError(f'supplied input <{k}({inputs[k].dtype})> has wrong dtype, expected {self.dtypes[k]}')
-      input_shape = list(self.shapes[k])
-      input_shape[1] = -1
-      single_input = inputs[k].reshape(tuple(input_shape))
-      sz = single_input.shape[1]
-      self.q[k][:,:-sz] = self.q[k][:,sz:]
-      self.q[k][:,-sz:] = single_input
-
-  def get(self, *names) -> dict[str, np.ndarray]:
-    if self.env_fps == self.model_fps:
-      return {k: self.q[k] for k in names}
-    else:
-      out = {}
-      for k in names:
-        shape = self.shapes[k]
-        if 'img' in k:
-          n_channels = shape[1] // (self.env_fps // self.model_fps + (self.n_frames_input - 1))
-          out[k] = np.concatenate([self.q[k][:, s:s+n_channels] for s in np.linspace(0, shape[1] - n_channels, self.n_frames_input, dtype=int)], axis=1)
-        elif 'pulse' in k:
-          # any pulse within interval counts
-          out[k] = self.q[k].reshape((shape[0], shape[1] * self.model_fps // self.env_fps, self.env_fps // self.model_fps, -1)).max(axis=2)
-        else:
-          idxs = np.arange(-1, -shape[1], -self.env_fps // self.model_fps)[::-1]
-          out[k] = self.q[k][:, idxs]
-      return out
 
 class ModelState:
-  inputs: dict[str, np.ndarray]
-  output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
-  def __init__(self):
+  def __init__(self, cam_w: int, cam_h: int):
     with open(VISION_METADATA_PATH, 'rb') as f:
       vision_metadata = pickle.load(f)
       self.vision_input_shapes =  vision_metadata['input_shapes']
       self.vision_input_names = list(self.vision_input_shapes.keys())
       self.vision_output_slices = vision_metadata['output_slices']
-      vision_output_size = vision_metadata['output_shapes']['outputs'][1]
 
-    with open(OFF_POLICY_METADATA_PATH, 'rb') as f:
-      off_policy_metadata = pickle.load(f)
-      self.off_policy_input_shapes =  off_policy_metadata['input_shapes']
-      self.off_policy_output_slices = off_policy_metadata['output_slices']
-      off_policy_output_size = off_policy_metadata['output_shapes']['outputs'][1]
-
-    with open(ON_POLICY_METADATA_PATH, 'rb') as f:
+    with open(POLICY_METADATA_PATH, 'rb') as f:
       policy_metadata = pickle.load(f)
       self.policy_input_shapes =  policy_metadata['input_shapes']
       self.policy_output_slices = policy_metadata['output_slices']
-      policy_output_size = policy_metadata['output_shapes']['outputs'][1]
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
-    # policy inputs
-    self.numpy_inputs = {k: np.zeros(self.policy_input_shapes[k], dtype=np.float32) for k in self.policy_input_shapes}
-    self.full_input_queues = InputQueues(ModelConstants.MODEL_CONTEXT_FREQ, ModelConstants.MODEL_RUN_FREQ, ModelConstants.N_FRAMES)
-    for k in ['desire_pulse', 'features_buffer']:
-      self.full_input_queues.update_dtypes_and_shapes({k: self.numpy_inputs[k].dtype}, {k: self.numpy_inputs[k].shape})
-    self.full_input_queues.reset()
-
-    self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
-                       'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize()}
+    self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
+    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
     self.full_frames : dict[str, Tensor] = {}
     self._blob_cache : dict[int, Tensor] = {}
-    self.transforms_np = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
-    self.transforms = {k: Tensor(v, device='NPY').realize() for k, v in self.transforms_np.items()}
-    self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
-    self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
-    self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
-    self.off_policy_output = np.zeros(off_policy_output_size, dtype=np.float32)
     self.parser = Parser()
-    self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
-    self.update_imgs = None
-    self.vision_run = pickle.loads(read_file_chunked(str(VISION_PKL_PATH)))
-    self.policy_run = pickle.loads(read_file_chunked(str(ON_POLICY_PKL_PATH)))
-    self.off_policy_run = pickle.loads(read_file_chunked(str(OFF_POLICY_PKL_PATH)))
+    self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
+    self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
+    self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
+    self.warp_enqueue(
+      **self.input_queues,
+      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').contiguous().realize(),
+      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8').contiguous().realize())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -196,18 +113,6 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
-    # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
-    inputs['desire_pulse'][0] = 0
-    new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
-    self.prev_desire[:] = inputs['desire_pulse']
-    if self.update_imgs is None:
-      for key in bufs.keys():
-        w, h = bufs[key].width, bufs[key].height
-        self.frame_buf_params[key] = get_nv12_info(w, h)
-      warp_path = MODELS_DIR / f'warp_{w}x{h}_tinygrad.pkl'
-      with open(warp_path, "rb") as f:
-        self.update_imgs = pickle.load(f)
-
     for key in bufs.keys():
       ptr = bufs[key].data.ctypes.data
       yuv_size = self.frame_buf_params[key][3]
@@ -216,38 +121,31 @@ class ModelState:
       if cache_key not in self._blob_cache:
         self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
       self.full_frames[key] = self._blob_cache[cache_key]
-    for key in bufs.keys():
-      self.transforms_np[key][:,:] = transforms[key][:,:]
 
-    out = self.update_imgs(self.img_queues['img'], self.full_frames['img'], self.transforms['img'],
-                           self.img_queues['big_img'], self.full_frames['big_img'], self.transforms['big_img'])
-    vision_inputs = {'img': out[0], 'big_img': out[1]}
+    # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
+    inputs['desire_pulse'][0] = 0
+    self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
+    self.prev_desire[:] = inputs['desire_pulse']
+    self.npy['traffic_convention'][:] = inputs['traffic_convention']
+    self.npy['tfm'][:,:] = transforms['img'][:,:]
+    self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
     if prepare_only:
+      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
       return None
 
-    self.vision_output = self.vision_run(**vision_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
-    vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
+    vision_output, policy_output = self.run_policy(
+      **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
+    )
 
-    self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'], 'desire_pulse': new_desire})
-    for k in ['desire_pulse', 'features_buffer']:
-      self.numpy_inputs[k][:] = self.full_input_queues.get(k)[k]
-    self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
+    vision_output = vision_output.numpy().flatten()
+    policy_output = policy_output.numpy().flatten()
+    vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
+    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(policy_output, self.policy_output_slices))
+    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
 
-    self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
-    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
-
-    self.off_policy_output = self.off_policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy()
-    off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(self.off_policy_output, self.off_policy_output_slices))
-    off_policy_outputs_dict.pop('plan')
-
-
-    combined_outputs_dict = {**vision_outputs_dict, **off_policy_outputs_dict, **policy_outputs_dict}
-    if 'planplus' in combined_outputs_dict and 'plan' in combined_outputs_dict:
-      combined_outputs_dict['plan'] = combined_outputs_dict['plan'] + combined_outputs_dict['planplus']
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy(), self.off_policy_output.copy()])
-
+      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
     return combined_outputs_dict
 
 
@@ -258,11 +156,6 @@ def main(demo=False):
     # USB GPU currently saturates a core so can't do this yet,
     # also need to move the aux USB interrupts for good timings
     config_realtime_process(7, 54)
-
-  st = time.monotonic()
-  cloudlog.warning("loading model")
-  model = ModelState()
-  cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # visionipc clients
   while True:
@@ -286,6 +179,11 @@ def main(demo=False):
   cloudlog.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
   if use_extra_client:
     cloudlog.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
+
+  st = time.monotonic()
+  cloudlog.warning("loading model")
+  model = ModelState(vipc_client_main.width, vipc_client_main.height)
+  cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
   pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])

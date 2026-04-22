@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-MODELS_DIR = Path(__file__).parent / 'models'
+MODELS_DIR = Path(__file__).resolve().parent / 'models'
 COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
 
 

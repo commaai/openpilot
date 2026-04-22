@@ -58,6 +58,7 @@ inline constexpr float SIDEBAR_MAX_WIDTH = 520.0f;
 inline constexpr float TIMELINE_BAR_HEIGHT = 14.0f;
 inline constexpr float STATUS_BAR_HEIGHT = 52.0f;
 inline constexpr double MIN_HORIZONTAL_ZOOM_SECONDS = 2.0;
+inline constexpr double PLOT_Y_PADDING_FRACTION = 0.05;
 
 struct UiMetrics {
   float width = 0.0f;
