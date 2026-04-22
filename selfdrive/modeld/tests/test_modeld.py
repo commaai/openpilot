@@ -100,3 +100,35 @@ class TestModeld:
       if n != frame_id:
         assert not self.sm.updated['modelV2']
         assert not self.sm.updated['cameraOdometry']
+
+  def test_recovery_after_wide_only_gap_requires_consecutive_road_frames(self):
+    # Warmup with consecutive road frames.
+    self._send_frames(1)
+    self._wait()
+    self._send_frames(2)
+    self._wait()
+
+    assert self.sm['modelV2'].frameId == 2
+    assert self.sm['cameraOdometry'].frameId == 2
+
+    # Wide-only frame should not advance model outputs.
+    self._send_frames(3, ('wideRoadCameraState',))
+    self._wait()
+    assert self.sm['modelV2'].frameId == 2
+    assert self.sm['cameraOdometry'].frameId == 2
+    assert not self.sm.updated['modelV2']
+    assert not self.sm.updated['cameraOdometry']
+
+    # A single road frame after a gap is still non-consecutive.
+    self._send_frames(4)
+    self._wait()
+    assert self.sm['modelV2'].frameId == 2
+    assert self.sm['cameraOdometry'].frameId == 2
+    assert not self.sm.updated['modelV2']
+    assert not self.sm.updated['cameraOdometry']
+
+    # Consecutive road frames restore updates.
+    self._send_frames(5)
+    self._wait()
+    assert self.sm['modelV2'].frameId == 5
+    assert self.sm['cameraOdometry'].frameId == 5

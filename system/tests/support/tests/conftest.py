@@ -1,9 +1,9 @@
 """
 Harness-only conftest for ``system/tests/support/tests``.
 
-Add ``test_*.py`` files here for cross-cutting system tests; until then the suite
-is empty and maps "no tests collected" to exit 0 (same behavior as
-``selfdrive/test/support/tests``).
+Cross-cutting system support tests live in ``test_*.py`` modules here. If the
+suite is temporarily empty, we map ``NO_TESTS_COLLECTED`` to exit 0 (same hook
+as ``selfdrive/test/support/tests``) so scoped runs stay green.
 """
 
 from __future__ import annotations
