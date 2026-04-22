@@ -24,6 +24,10 @@ def get_irq_count(irq: int):
     per_cpu = map(int, f.read().split(","))
     return sum(per_cpu)
 
+def get_irq_affinity(irq: int):
+  with open(f"/proc/irq/{irq}/smp_affinity_list") as f:
+    return f.read().strip()
+
 def read_sensor_events(duration_sec):
   socks = {}
   poller = messaging.Poller()
@@ -67,8 +71,7 @@ class TestSensord:
       cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))
       cls.events = read_sensor_events(cls.sample_secs)
 
-      # determine sensord's irq
-      cls.sensord_irq = get_irqs_for_action("sensord")[0]
+      cls.sensord_irqs = sorted(get_irqs_for_action("sensord"))
     finally:
       # teardown won't run if this doesn't succeed
       managed_processes["sensord"].stop()
@@ -83,6 +86,13 @@ class TestSensord:
   def test_all_sensors_present(self):
     missing = [config.service for config in SENSOR_CONFIGS if config.service not in self.events]
     assert len(missing) == 0, f"missing sensors: {missing}"
+
+  def test_sensor_irqs_present(self):
+    assert len(self.sensord_irqs) == 2, f"expected 2 sensord IRQs, got {self.sensord_irqs}"
+
+  def test_sensor_irq_affinity(self):
+    for irq in self.sensord_irqs:
+      assert get_irq_affinity(irq) == "1", f"unexpected affinity for IRQ {irq}"
 
   def test_lsm6ds3_timing(self, subtests):
     # verify measurements are sampled and published at 104Hz
@@ -168,20 +178,22 @@ class TestSensord:
   def test_sensor_verify_no_interrupts_after_stop(self):
     managed_processes["sensord"].start()
     time.sleep(3)
+    sensord_irqs = sorted(get_irqs_for_action("sensord"))
+    assert len(sensord_irqs) == 2, f"expected 2 sensord IRQs, got {sensord_irqs}"
 
     # read /proc/interrupts to verify interrupts are received
-    state_one = get_irq_count(self.sensord_irq)
+    state_one = {irq: get_irq_count(irq) for irq in sensord_irqs}
     time.sleep(1)
-    state_two = get_irq_count(self.sensord_irq)
+    state_two = {irq: get_irq_count(irq) for irq in sensord_irqs}
 
-    error_msg = f"no interrupts received after sensord start!\n{state_one} {state_two}"
-    assert state_one != state_two, error_msg
+    stalled = [irq for irq in sensord_irqs if state_one[irq] == state_two[irq]]
+    assert len(stalled) == 0, f"no interrupts received after sensord start!\n{state_one} {state_two}"
 
     managed_processes["sensord"].stop()
     time.sleep(1)
 
     # read /proc/interrupts to verify no more interrupts are received
-    state_one = get_irq_count(self.sensord_irq)
+    state_one = {irq: get_irq_count(irq) for irq in sensord_irqs}
     time.sleep(1)
-    state_two = get_irq_count(self.sensord_irq)
-    assert state_one == state_two, "Interrupts received after sensord stop!"
+    state_two = {irq: get_irq_count(irq) for irq in sensord_irqs}
+    assert state_one == state_two, f"Interrupts received after sensord stop! {state_one} {state_two}"

@@ -3,18 +3,20 @@ import math
 import time
 
 from cereal import log
+from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
 class LSM6DS3_Gyro(Sensor):
   LSM6DS3_GYRO_I2C_REG_DRDY_CFG  = 0x0B
   LSM6DS3_GYRO_I2C_REG_INT1_CTRL = 0x0D
+  LSM6DS3_GYRO_I2C_REG_INT2_CTRL = 0x0E
   LSM6DS3_GYRO_I2C_REG_CTRL2_G   = 0x11
   LSM6DS3_GYRO_I2C_REG_CTRL5_C   = 0x14
   LSM6DS3_GYRO_I2C_REG_STAT_REG  = 0x1E
   LSM6DS3_GYRO_I2C_REG_OUTX_L_G  = 0x22
 
   LSM6DS3_GYRO_ODR_104HZ       = (0b0100 << 4)
-  LSM6DS3_GYRO_INT1_DRDY_G     = 0b10
+  LSM6DS3_GYRO_INT2_DRDY_G     = 0b10
   LSM6DS3_GYRO_DRDY_GDA        = 0b10
   LSM6DS3_GYRO_DRDY_PULSE_MODE = (1 << 7)
 
@@ -28,6 +30,14 @@ class LSM6DS3_Gyro(Sensor):
   @property
   def device_address(self) -> int:
     return 0x6A
+
+  @property
+  def service(self) -> str:
+    return "gyroscope"
+
+  @property
+  def irq_pin(self) -> int | None:
+    return GPIO.LSM_INT2
 
   def reset(self):
     self.write(0x12, 0x1)
@@ -52,14 +62,14 @@ class LSM6DS3_Gyro(Sensor):
       # Configure data ready signal to pulse mode
       (self.LSM6DS3_GYRO_I2C_REG_DRDY_CFG, self.LSM6DS3_GYRO_DRDY_PULSE_MODE),
     ))
-    value = self.read(self.LSM6DS3_GYRO_I2C_REG_INT1_CTRL, 1)[0]
-    value |= self.LSM6DS3_GYRO_INT1_DRDY_G
-    self.write(self.LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value)
+    value = self.read(self.LSM6DS3_GYRO_I2C_REG_INT2_CTRL, 1)[0]
+    value |= self.LSM6DS3_GYRO_INT2_DRDY_G
+    self.write(self.LSM6DS3_GYRO_I2C_REG_INT2_CTRL, value)
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     assert ts is not None  # must come from the IRQ event
 
-    # Check if gyroscope data is ready, since it's shared with accelerometer
+    # Guard against reading on the trailing edge of the data ready pulse.
     status_reg = self.read(self.LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
     if not (status_reg & self.LSM6DS3_GYRO_DRDY_GDA):
       raise self.DataNotReady
@@ -83,10 +93,10 @@ class LSM6DS3_Gyro(Sensor):
     return event
 
   def shutdown(self) -> None:
-    # Disable data ready interrupt on INT1
-    value = self.read(self.LSM6DS3_GYRO_I2C_REG_INT1_CTRL, 1)[0]
-    value &= ~self.LSM6DS3_GYRO_INT1_DRDY_G
-    self.write(self.LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value)
+    # Disable data ready interrupt on INT2
+    value = self.read(self.LSM6DS3_GYRO_I2C_REG_INT2_CTRL, 1)[0]
+    value &= ~self.LSM6DS3_GYRO_INT2_DRDY_G
+    self.write(self.LSM6DS3_GYRO_I2C_REG_INT2_CTRL, value)
 
     # Power down by clearing ODR bits
     value = self.read(self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, 1)[0]
