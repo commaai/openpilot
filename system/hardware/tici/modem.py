@@ -79,6 +79,7 @@ class Modem:
       "tx_bytes": 0,
       "rx_bytes": 0,
       "error": "",
+      "carrier_error": "",
     }
 
   @staticmethod
@@ -286,7 +287,7 @@ class Modem:
       if reg in ("home", "roaming"):
         if greg in ("home", "roaming"):
           # both circuit and packet registered — ready to connect
-          self._update(registration=reg, error="")
+          self._update(registration=reg, error="", carrier_error="")
           return State.CONNECTING
 
         # circuit registered but packet not attached
@@ -302,21 +303,21 @@ class Modem:
         elif elapsed > 30:
           # give up waiting for PS, try connecting anyway
           log.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
-          self._update(registration=reg, error="")
+          self._update(registration=reg, error="", carrier_error="")
           return State.CONNECTING
 
       if reg != self.S.get("registration"):
-        err = ""
-        if reg == "denied":
+        carrier_err = ""
+        if reg in ("denied", "not_registered"):
           # query extended error reason — helps diagnose why the network rejected attach
           ceer = self._atv("AT+CEER", "+CEER:")
           if ceer:
             parts = [p.strip().strip('"') for p in ceer.split(",")]
-            err = parts[-1] if parts else ceer
-            # PLMN_NOT_ALLOWED often clears once the SIM's required APN is set — hint the user
-            if "PLMN_NOT_ALLOWED" in err and not self._apn:
-              err += " (try setting GsmApn)"
-        self._update(registration=reg, error=err)
+            carrier_err = parts[-1] if parts else ceer
+            # these often clear once the SIM's required APN is set — hint the user
+            if ("PLMN_NOT_ALLOWED" in carrier_err or "EPS_SERVICES_NOT_ALLOWED" in carrier_err) and not self._apn:
+              carrier_err += " (try setting GsmApn)"
+        self._update(registration=reg, carrier_error=carrier_err)
     else:
       log.debug("CREG returned None")
       self._ps_wait_start = 0.0
