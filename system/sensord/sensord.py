@@ -22,6 +22,10 @@ I2C_BUS_IMU = 1
 def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
   pm = messaging.PubMaster([service for sensor, service, interrupt in sensors if interrupt])
 
+  # NOTE: the gyro and accelerometer share an IRQ due to the comma three
+  # routing only one GPIO from the LSM to the SOC, but comma 3X and four
+  # have two. if we want better timestamps in the future, we can use both.
+
   # Requesting both edges as the data ready pulse from the lsm6ds sensor is
   # very short (75us) and is mostly detected as falling edge instead of rising.
   # So if it is detected as rising the following falling edge is skipped.
