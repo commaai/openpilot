@@ -488,11 +488,8 @@ class Modem:
 
   def run(self):
     log.info("starting")
-    try:
-      os.remove(STATE_PATH)
-    except FileNotFoundError:
-      pass
-    subprocess.run(["sudo", "systemctl", "mask", "ModemManager"], capture_output=True)
+    # publish initial state so callers short-circuit MM DBus activation from the start
+    self._update(state="init")
     subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
 
