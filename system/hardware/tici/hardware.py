@@ -127,6 +127,11 @@ class Tici(HardwareBase):
         return f.read().strip('\x00').strip()
     except FileNotFoundError:
       pass
+    try:
+      with open("/sys/class/net/enp1s0/address") as f:
+        return f.read().strip().replace(':', '')
+    except FileNotFoundError:
+      pass
     return "cccccc"
 
   def get_voltage(self):

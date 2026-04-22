@@ -9,7 +9,7 @@ from openpilot.common.api import api_get, get_key_pair
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import HARDWARE, PC, ASIUS
 from openpilot.common.swaglog import cloudlog
 
 
@@ -36,6 +36,14 @@ def register(show_spinner=False) -> str | None:
 
   # Create registration token, in the future, this key will make JWTs directly
   jwt_algo, private_key, public_key = get_key_pair()
+
+  if ASIUS:
+    if dongle_id is None:
+      serial = HARDWARE.get_serial()
+      dongle_id = f"asius_{serial[-12:]}" if serial else "asius_local"
+      params.put("DongleId", dongle_id)
+    set_offroad_alert("Offroad_UnregisteredHardware", False)
+    return dongle_id
 
   if not public_key:
     dongle_id = UNREGISTERED_DONGLE_ID

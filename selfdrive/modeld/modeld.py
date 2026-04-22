@@ -101,6 +101,9 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
+    if ASIUS:
+      self._frame_upload_bufs = {k: Tensor.zeros(get_nv12_info(cam_w, cam_h)[3], dtype='uint8').contiguous().realize()
+                                 for k in ('img', 'big_img')}
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
     self.warp_enqueue(
@@ -117,9 +120,9 @@ class ModelState:
     for key in bufs.keys():
       yuv_size = self.frame_buf_params[key][3]
       if ASIUS:
-        # Rusticl CL from_blob doesn't sync host→GPU; copyin each frame
         arr = np.frombuffer(bufs[key].data, dtype=np.uint8)[:yuv_size].copy()
-        self.full_frames[key] = Tensor(arr).contiguous().realize()
+        self._frame_upload_bufs[key].uop.buffer.copyin(memoryview(arr))
+        self.full_frames[key] = self._frame_upload_bufs[key]
       else:
         ptr = bufs[key].data.ctypes.data
         cache_key = (key, ptr)
