@@ -87,15 +87,12 @@ class TestSensord:
   def test_lsm6ds3_timing(self, subtests):
     # verify measurements are sampled and published at 104Hz
 
-    sensor_t = {
-      1: [], # accel
-      5: [], # gyro
-    }
+    sensor_t = {service: [] for service in ('accelerometer', 'gyroscope')}
 
-    for service in ('accelerometer', 'gyroscope'):
+    for service in sensor_t:
       for measurement in self.events.get(service, []):
         m = getattr(measurement, measurement.which())
-        sensor_t[m.sensor].append(m.timestamp)
+        sensor_t[service].append(m.timestamp)
 
     for s, vals in sensor_t.items():
       with subtests.test(sensor=s):

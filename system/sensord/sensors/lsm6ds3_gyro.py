@@ -73,13 +73,9 @@ class LSM6DS3_Gyro(Sensor):
 
     event = log.SensorEventData.new_message()
     event.timestamp = ts
-    event.version = 2
-    event.sensor = 5  # SENSOR_GYRO_UNCALIBRATED
-    event.type = 16   # SENSOR_TYPE_GYROSCOPE_UNCALIBRATED
     event.source = self.source
     g = event.init('gyroUncalibrated')
     g.v = xyz
-    g.status = 1
     return event
 
   def shutdown(self) -> None:
