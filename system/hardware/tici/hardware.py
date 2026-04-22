@@ -163,7 +163,9 @@ class Tici(HardwareBase):
 
       if ms.get('connected'):
         nt = ms.get('network_type', '')
-        if nt == 'lte':
+        if nt == 'nr':
+          return NetworkType.cell5G
+        elif nt == 'lte':
           return NetworkType.cell4G
         elif nt in ('utran', 'umts'):
           return NetworkType.cell3G
@@ -264,8 +266,14 @@ class Tici(HardwareBase):
 
     ms = self.get_modem_state()
     if ms is not None:
-      state_map = {"connected": "CONNECTED", "connecting": "CONNECTING", "searching": "SEARCHING",
-                   "registered": "REGISTERED", "init": "INITIALIZING"}
+      state_map = {
+        "waiting_port": "INITIALIZING",
+        "init": "INITIALIZING",
+        "registering": "SEARCHING",
+        "connecting": "CONNECTING",
+        "connected": "CONNECTED",
+        "reconnecting": "DISCONNECTING",
+      }
       return {
         'technology': ms.get('network_type', '').upper() if ms.get('network_type') else '',
         'operator': ms.get('operator', ''),

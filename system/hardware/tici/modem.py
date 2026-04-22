@@ -70,6 +70,7 @@ class Modem:
       "connected": False,
       "ip_address": "",
       "iccid": "",
+      "mcc_mnc": "",
       "imei": "",
       "modem_version": "",
       "signal_strength": 0,
@@ -257,17 +258,24 @@ class Modem:
       self._at('AT$QCPCFG=usbNet,1')
 
     # read identity
-    imei, iccid, modem_version = "", "", ""
+    imei, iccid, mcc_mnc, modem_version = "", "", "", ""
     r = self._at("AT+CGSN")
     if r:
       imei = r[0].strip()
     v = self._atv("AT+QCCID", "+QCCID:")
     if v:
       iccid = v
+    r = self._at("AT+CIMI")
+    if r:
+      # IMSI = MCC (3 digits) + MNC (2 or 3 digits) + MSIN; we include both 5- and 6-digit forms in MNC,
+      # but standard convention for mcc_mnc is first 5-6 digits — use 6 by default, consumers can truncate
+      imsi = r[0].strip()
+      if len(imsi) >= 6 and imsi.isdigit():
+        mcc_mnc = imsi[:6]
     r = self._at("AT+GMR")
     if r:
       modem_version = r[0].strip()
-    log.info(f"imei={imei} iccid={iccid} ver={modem_version}")
+    log.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
 
     # configure APN on CID 1
     self._apn = self._read_param("GsmApn")
@@ -276,7 +284,7 @@ class Modem:
     log.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}, sim_change={self._sim_change}")
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
-    self._update(imei=imei, iccid=iccid, modem_version=modem_version)
+    self._update(imei=imei, iccid=iccid, mcc_mnc=mcc_mnc, modem_version=modem_version)
     return State.REGISTERING
 
   def _do_registering(self):
@@ -419,7 +427,7 @@ class Modem:
     self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
     self._update(
       connected=False, ip_address="",
-      iccid="", imei="", modem_version="",
+      iccid="", mcc_mnc="", imei="", modem_version="",
       signal_strength=0, signal_quality=0,
       network_type="unknown", operator="", band="", channel=0,
       registration="unknown", temperatures=[], extra="",
@@ -453,7 +461,19 @@ class Modem:
         if len(p) >= 3:
           s["operator"] = p[2].strip('"')
         if len(p) >= 4:
-          s["network_type"] = {0: "gsm", 2: "utran", 7: "lte"}.get(int(p[3]), "unknown")
+          # 3GPP TS 27.007 AcT: 0-1 GSM, 2 UTRAN, 3 GSM+EGPRS, 4-6 UTRAN HS*, 7/9/10 E-UTRAN, 11-13 NR
+          act = int(p[3])
+          if act in (0, 1, 3):
+            nt = "gsm"
+          elif act in (2, 4, 5, 6):
+            nt = "utran"
+          elif act in (7, 9, 10):
+            nt = "lte"
+          elif act in (11, 12, 13):
+            nt = "nr"
+          else:
+            nt = "unknown"
+          s["network_type"] = nt
       except (ValueError, IndexError):
         pass
 
