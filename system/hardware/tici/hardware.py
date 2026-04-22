@@ -147,6 +147,30 @@ class Tici(HardwareBase):
       f.write(f"{value}\n")
 
   def get_network_type(self):
+    # modem.py manages connectivity outside of NetworkManager — check first to avoid MM DBus auto-activation
+    ms = self.get_modem_state()
+    if ms is not None:
+      try:
+        primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+        primary_connection = self.bus.get_object(NM, primary_connection)
+        primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+        if primary_type == '802-3-ethernet':
+          return NetworkType.ethernet
+        elif primary_type == '802-11-wireless':
+          return NetworkType.wifi
+      except Exception:
+        pass
+
+      if ms.get('connected'):
+        nt = ms.get('network_type', '')
+        if nt == 'lte':
+          return NetworkType.cell4G
+        elif nt in ('utran', 'umts'):
+          return NetworkType.cell3G
+        elif nt == 'gsm':
+          return NetworkType.cell2G
+      return NetworkType.none
+
     try:
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
@@ -172,17 +196,6 @@ class Tici(HardwareBase):
               return NetworkType.cell2G
     except Exception:
       pass
-
-    # modem.py manages connectivity outside of NetworkManager
-    ms = self.get_modem_state()
-    if ms is not None and ms.get('connected'):
-      nt = ms.get('network_type', '')
-      if nt == 'lte':
-        return NetworkType.cell4G
-      elif nt in ('utran', 'umts'):
-        return NetworkType.cell3G
-      elif nt == 'gsm':
-        return NetworkType.cell2G
 
     return NetworkType.none
 
