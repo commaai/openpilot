@@ -2515,10 +2515,6 @@ struct Event {
     # touch frame
     touch @135 :List(Touch);
 
-    # navigation
-    navThumbnail @84: Thumbnail;
-    mapRenderState @105: MapRenderState;
-
     # UI services
     uiDebug @102 :UIDebug;
 
@@ -2625,6 +2621,8 @@ struct Event {
     uploaderStateDEPRECATED @79 :UploaderState;
     navInstructionDEPRECATED @82 :NavInstruction;
     navRouteDEPRECATED @83 :NavRoute;
+    navThumbnailDEPRECATED @84 :Thumbnail;
     gnssMeasurementsDEPRECATED @91 :GnssMeasurements;
+    mapRenderStateDEPRECATED @105: MapRenderState;
   }
 }
