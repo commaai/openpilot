@@ -2,7 +2,7 @@ import numpy as np
 
 from cereal import log
 from openpilot.common.realtime import DT_DMON
-from openpilot.selfdrive.monitoring.helpers import DriverMonitoring, DRIVER_MONITOR_SETTINGS
+from openpilot.selfdrive.monitoring.policy import DriverMonitoring, DRIVER_MONITOR_SETTINGS
 
 EventName = log.OnroadEvent.EventName
 dm_settings = DRIVER_MONITOR_SETTINGS()
@@ -55,7 +55,7 @@ class TestMonitoring:
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0, 0)
+      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0)
       alert_lvls.append(DM.alert_level)
     assert len(alert_lvls) == len(msgs), f"got {len(alert_lvls)} for {len(msgs)} driverState input msgs"
     return alert_lvls, DM
@@ -63,8 +63,9 @@ class TestMonitoring:
 
   # engaged, driver is attentive all the time
   def test_fully_aware_driver(self):
-    alert_lvls, _ = self._run_seq(always_attentive, always_false, always_true, always_false)
+    alert_lvls, d_status = self._run_seq(always_attentive, always_false, always_true, always_false)
     assert all(a == 0 for a in alert_lvls)
+    assert d_status.active_policy == log.DriverMonitoringState.MonitoringPolicy.vision
 
   # engaged, driver is distracted and does nothing
   def test_fully_distracted_driver(self):
@@ -90,6 +91,7 @@ class TestMonitoring:
                     (s._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT - s._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT) / 2) / DT_DMON)] == 2
     assert alert_lvls[int((s._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT + \
                     (TEST_TIMESPAN - 10 - s._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT) / 2) / DT_DMON)] == 3
+    assert d_status.active_policy == log.DriverMonitoringState.MonitoringPolicy.wheeltouch
 
   # engaged, down to orange, driver pays attention, back to normal; then down to orange, driver touches wheel
   #  - should have short orange recovery time and no green afterwards; wheel touch only recovers when paying attention
