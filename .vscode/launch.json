@@ -52,6 +52,9 @@
       "type": "lldb",
       "request": "attach",
       "pid": "${command:pickMyProcess}",
+      "sourceMap": {
+        ".": "${workspaceFolder}/opendbc/safety"
+      },
       "initCommands": [
         "script import time; time.sleep(3)"
       ]

@@ -598,9 +598,7 @@ struct StreamPoller::Impl {
           }
           kj::ArrayPtr<const capnp::word> data(reinterpret_cast<const capnp::word *>(msg->getData()),
                                                size / sizeof(capnp::word));
-          capnp::FlatArrayMessageReader event_reader(data);
-          const cereal::Event::Reader event = event_reader.getRoot<cereal::Event>();
-          accumulator->appendEvent(event.which(), data);
+          accumulator->appendEvent(data);
           received_messages.fetch_add(1);
         }
       }
