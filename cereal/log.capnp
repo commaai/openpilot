@@ -2449,7 +2449,6 @@ struct Event {
     boot @60 :Boot;
 
     # ********** openpilot daemon msgs **********
-    gpsNMEA @3 :GPSNMEAData;
     can @5 :List(CanData);
     controlsState @7 :ControlsState;
     selfdriveState @130 :SelfdriveState;
@@ -2474,7 +2473,6 @@ struct Event {
     qcomGnss @31 :QcomGnss;
     gpsLocationExternal @48 :GpsLocationData;
     gpsLocation @21 :GpsLocationData;
-    gnssMeasurements @91 :GnssMeasurements;
     liveParameters @61 :LiveParametersData;
     liveTorqueParameters @94 :LiveTorqueParametersData;
     liveDelay @146 : LiveDelayData;
@@ -2508,7 +2506,6 @@ struct Event {
     # systems stuff
     androidLog @20 :AndroidLogEntry;
     managerState @78 :ManagerState;
-    uploaderState @79 :UploaderState;
     procLog @33 :ProcLog;
     clocks @35 :Clocks;
     deviceState @6 :DeviceState;
@@ -2519,8 +2516,6 @@ struct Event {
     touch @135 :List(Touch);
 
     # navigation
-    navInstruction @82 :NavInstruction;
-    navRoute @83 :NavRoute;
     navThumbnail @84: Thumbnail;
     mapRenderState @105: MapRenderState;
 
@@ -2626,5 +2621,10 @@ struct Event {
     accelerometer2DEPRECATED @101 :SensorEventData;
     temperatureSensor2DEPRECATED @123 :SensorEventData;
     driverMonitoringStateDEPRECATED @71 :DriverMonitoringStateDEPRECATED;
+    gpsNMEADEPRECATED @3 :GPSNMEAData;
+    uploaderStateDEPRECATED @79 :UploaderState;
+    navInstructionDEPRECATED @82 :NavInstruction;
+    navRouteDEPRECATED @83 :NavRoute;
+    gnssMeasurementsDEPRECATED @91 :GnssMeasurements;
   }
 }
