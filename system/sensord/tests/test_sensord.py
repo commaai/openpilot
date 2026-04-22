@@ -5,35 +5,17 @@ import numpy as np
 from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
-from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
-from openpilot.system.hardware import HARDWARE
 from openpilot.system.manager.process_config import managed_processes
 
-LSM = {
-  ('lsm6ds3', 'acceleration'),
-  ('lsm6ds3', 'gyroUncalibrated'),
-  ('lsm6ds3', 'temperature'),
-}
-LSM_C = {(x[0]+'trc', x[1]) for x in LSM}
-
-SENSOR_CONFIGURATIONS: list[set] = {
-  "mici": [LSM, LSM_C],
-  "tizi": [LSM, LSM_C],
-}.get(HARDWARE.get_device_type(), [])
-
-Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', 'std_max'])
-ALL_SENSORS = {
-  Sensor.lsm6ds3trc: {
-    SensorConfig("acceleration", 5, 15, 5),
-    SensorConfig("gyroUncalibrated", 0, .15, 0.5),
-    SensorConfig("temperature", 10, 40, 0.5),  # set for max range of our office
-  },
-}
-ALL_SENSORS[Sensor.lsm6ds3] = ALL_SENSORS[Sensor.lsm6ds3trc]
+SENSOR_THRESHOLDS = [
+  SensorConfig("acceleration", 5, 15, 5),
+  SensorConfig("gyroUncalibrated", 0, .15, 0.5),
+  SensorConfig("temperature", 10, 40, 0.5),  # set for max range of our office
+]
 
 def get_irq_count(irq: int):
   with open(f"/sys/kernel/irq/{irq}/per_cpu_count") as f:
@@ -41,7 +23,7 @@ def get_irq_count(irq: int):
     return sum(per_cpu)
 
 def read_sensor_events(duration_sec):
-  sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'temperatureSensor',]
+  sensor_types = ['accelerometer', 'gyroscope', 'temperatureSensor']
   socks = {}
   poller = messaging.Poller()
   events = defaultdict(list)
@@ -61,7 +43,6 @@ def read_sensor_events(duration_sec):
     for s in socks:
       events[s] += messaging.drain_sock(socks[s])
     time.sleep(0.1)
-
   assert sum(map(len, events.values())) != 0, "No sensor events collected!"
 
   return {k: v for k, v in events.items() if len(v) > 0}
@@ -93,15 +74,9 @@ class TestSensord:
   def teardown_method(self):
     managed_processes["sensord"].stop()
 
-  def test_sensors_present(self):
-    # verify correct sensors configuration
-    seen = set()
-    for etype in self.events:
-      for measurement in self.events[etype]:
-        m = getattr(measurement, measurement.which())
-        seen.add((str(m.source), m.which()))
-
-    assert seen in SENSOR_CONFIGURATIONS
+  def test_all_sensors_present(self):
+    missing = [s.type for s in SENSOR_THRESHOLDS if len(self.events[s.type]) == 0]
+    assert len(missing) == 0, f"missing sensors: {missing}"
 
   def test_lsm6ds3_timing(self, subtests):
     # verify measurements are sampled and published at 104Hz
@@ -184,7 +159,7 @@ class TestSensord:
 
     # Sanity check sensor values
     for sensor, stype in sensor_values:
-      for s in ALL_SENSORS[sensor]:
+      for s in SENSOR_THRESHOLDS:
         if s.type != stype:
           continue
 

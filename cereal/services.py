@@ -24,8 +24,6 @@ _services: dict[str, tuple] = {
   # note: the "EncodeIdx" packets will still be in the log
   "gyroscope": (True, 104., 104),
   "accelerometer": (True, 104., 104),
-  "magnetometer": (True, 25.),
-  "lightSensor": (True, 100., 100),
   "temperatureSensor": (True, 2., 200),
   "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
