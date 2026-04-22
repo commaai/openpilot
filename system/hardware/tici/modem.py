@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import fcntl
 import json
+import logging
 import os
 import queue
 import serial
@@ -13,7 +14,13 @@ import time
 
 from enum import Enum
 
-from openpilot.common.swaglog import cloudlog
+log = logging.getLogger("modem")
+if not log.handlers:
+  _h = logging.StreamHandler()
+  _h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"))
+  log.addHandler(_h)
+  log.setLevel(logging.DEBUG)
+  log.propagate = False
 
 AT_PORT = "/dev/modem_at0"
 PPP_PORT = "/dev/modem_at1"
@@ -119,13 +126,13 @@ class Modem:
         if line == "ERROR" or line.startswith("+CME ERROR"):
           raise RuntimeError(line)
         if "+QUSIM:" in line:
-          cloudlog.warning(f"modem URC: {line}")
+          log.warning(f"URC: {line}")
           self._sim_change = True
           subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
         lines.append(line)
       return lines
     except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
-      cloudlog.info(f"AT {cmd} failed: {e}")
+      log.info(f"AT {cmd} failed: {e}")
       return []
     finally:
       fcntl.flock(fd, fcntl.LOCK_UN)
@@ -174,19 +181,19 @@ class Modem:
         s.read(100)
       s.close()
     except Exception as e:
-      cloudlog.warning(f"modem data port reset failed: {e}")
+      log.warning(f"data port reset failed: {e}")
 
   # -- state handlers --
 
   def _do_waiting_port(self):
     if os.path.exists(AT_PORT):
-      print("[modem] _do_waiting_port: port found")
+      log.info("port found")
       return State.INIT
     time.sleep(1)
     return State.WAITING_PORT
 
   def _do_init(self):
-    print("[modem] _do_init: opening serial port")
+    log.info("opening serial port")
     if self._ser:
       try:
         self._ser.close()
@@ -195,17 +202,15 @@ class Modem:
     try:
       self._ser = serial.Serial(AT_PORT, 9600, timeout=5)
     except (OSError, serial.SerialException) as e:
-      print(f"[modem] _do_init: serial open failed: {e}")
+      log.warning(f"serial open failed: {e}")
       return State.WAITING_PORT
     time.sleep(1)
 
     # kill any stale pppd from previous run
-    print("[modem] _do_init: killing stale pppd")
     self._kill_ppp()
     self._cleanup_routes()
 
     # AT init
-    print("[modem] _do_init: AT init")
     for c in AT_INIT + ["AT$QCSIMSLEEP=0", "AT$QCSIMCFG=SimPowerSave,0", "AT+CREG=2", "AT+CGREG=2"]:
       self._at(c)
 
@@ -227,7 +232,6 @@ class Modem:
       self._at('AT$QCPCFG=usbNet,1')
 
     # read identity
-    print("[modem] _do_init: reading identity")
     imei, iccid, modem_version = "", "", ""
     r = self._at("AT+CGSN")
     if r:
@@ -238,17 +242,15 @@ class Modem:
     r = self._at("AT+GMR")
     if r:
       modem_version = r[0].strip()
-    print(f"[modem] _do_init: imei={imei} iccid={iccid} ver={modem_version}")
+    log.info(f"imei={imei} iccid={iccid} ver={modem_version}")
 
     # configure APN on CID 1
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
-    print(f"[modem] _do_init: APN='{self._apn or '(auto)'}' roaming={'on' if self._roaming_allowed else 'off'} sim_change={self._sim_change}")
-    cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
+    log.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}, sim_change={self._sim_change}")
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
-    print("[modem] _do_init: done, -> registering")
     self._update(imei=imei, iccid=iccid, modem_version=modem_version)
     return State.REGISTERING
 
@@ -256,8 +258,7 @@ class Modem:
     # check for param changes while waiting
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
-      print(f"[modem] _do_registering: roaming changed {self._roaming_allowed} -> {new_roaming}")
-      cloudlog.info(f"modem roaming changed: {self._roaming_allowed} -> {new_roaming}")
+      log.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
 
     v = self._atv("AT+CREG?", "+CREG:")
@@ -274,7 +275,7 @@ class Modem:
           greg = CREG.get(int(gv.split(",")[1].strip('"')), "unknown")
         except (ValueError, IndexError):
           pass
-      print(f"[modem] _do_registering: creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
+      log.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
       # check roaming policy
       if reg in ("home", "roaming") and not self._roaming_allowed and reg == "roaming":
@@ -295,22 +296,21 @@ class Modem:
         elapsed = time.monotonic() - self._ps_wait_start
         if elapsed > 10 and not self._ps_attach_tried:
           # mimic MM: force PS attach after 10s
-          print(f"[modem] _do_registering: forcing PS attach (waited {elapsed:.0f}s)")
+          log.info(f"forcing PS attach (waited {elapsed:.0f}s)")
           self._at("AT+CGATT=1")
           self._ps_attach_tried = True
         elif elapsed > 30:
           # give up waiting for PS, try connecting anyway
-          print(f"[modem] _do_registering: PS attach timeout ({elapsed:.0f}s), proceeding")
-          cloudlog.warning("modem packet service not attached, proceeding anyway")
+          log.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
           self._update(registration=reg, error="")
           return State.CONNECTING
     else:
-      print("[modem] _do_registering: CREG returned None")
+      log.debug("CREG returned None")
       self._ps_wait_start = 0.0
       self._ps_attach_tried = False
 
     if self._sim_change or not os.path.exists(AT_PORT):
-      print(f"[modem] _do_registering: -> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
+      log.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
       return State.RECONNECTING
     time.sleep(0.5)
     return State.REGISTERING
@@ -326,13 +326,13 @@ class Modem:
           q.put(raw)
         proc.stdout.close()
       except Exception as e:
-        cloudlog.warning(f"modem pppd reader error: {e}")
+        log.warning(f"pppd reader error: {e}")
 
     threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
-    cloudlog.info("modem PPP dialing")
+    log.info("PPP dialing")
 
   def _do_connecting(self):
-    print("[modem] _do_connecting: starting pppd")
+    log.info("starting pppd")
     self._update(state="connecting")
     self._ppp_fails = 0
     self._sim_change = False
@@ -351,7 +351,7 @@ class Modem:
       line = raw.decode(errors="ignore").strip()
       if not line:
         continue
-      cloudlog.info(f"pppd: {line}")
+      log.info(f"pppd: {line}")
       if "local  IP address" in line:
         ip = line.split("local  IP address")[-1].strip()
         self._update(ip_address=ip, connected=True, state="connected")
@@ -364,7 +364,7 @@ class Modem:
                        capture_output=True)
         subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
                        capture_output=True)
-        cloudlog.info(f"modem route set up for {self.S['ip_address']} via {peer}")
+        log.info(f"route set up for {self.S['ip_address']} via {peer}")
       elif "Connection terminated" in line or "Modem hangup" in line:
         self._update(connected=False, state="disconnected", ip_address="")
 
@@ -375,9 +375,9 @@ class Modem:
         return State.RECONNECTING
       self._ppp_fails += 1
       if self._ppp_fails >= 3:
-        cloudlog.warning(f"modem PPP fail {self._ppp_fails}/3, reconnecting")
+        log.warning(f"PPP fail {self._ppp_fails}/3, reconnecting")
         return State.RECONNECTING
-      cloudlog.warning(f"modem PPP fail {self._ppp_fails}/3, retrying")
+      log.warning(f"PPP fail {self._ppp_fails}/3, retrying")
       self._reset_data_port()
       if not os.path.exists(AT_PORT):
         return State.RECONNECTING
@@ -389,11 +389,11 @@ class Modem:
       return State.RECONNECTING
     new_apn = self._read_param("GsmApn")
     if new_apn != self._apn:
-      cloudlog.info(f"modem APN changed: '{self._apn}' -> '{new_apn}'")
+      log.info(f"APN changed: '{self._apn}' -> '{new_apn}'")
       return State.RECONNECTING
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
-      cloudlog.info(f"modem roaming changed: {self._roaming_allowed} -> {new_roaming}")
+      log.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       return State.RECONNECTING
 
     # poll modem status
@@ -401,8 +401,7 @@ class Modem:
     return State.CONNECTED
 
   def _do_reconnecting(self):
-    print("[modem] _do_reconnecting")
-    cloudlog.warning("modem reconnecting")
+    log.warning("reconnecting")
     self._update(
       state="reconnecting", connected=False, ip_address="",
       iccid="", imei="", modem_version="",
@@ -488,7 +487,7 @@ class Modem:
   # -- main loop --
 
   def run(self):
-    cloudlog.info(f"modem starting {time.strftime('%H:%M:%S')}")
+    log.info("starting")
     try:
       os.remove(STATE_PATH)
     except FileNotFoundError:
@@ -514,11 +513,9 @@ class Modem:
         state = handlers[state]()
         self.S["state"] = state.value
         if state != prev:
-          print(f"[modem] {prev.value} -> {state.value}")
-          cloudlog.info(f"modem {prev.value} -> {state.value}")
+          log.info(f"{prev.value} -> {state.value}")
       except Exception as e:
-        print(f"[modem] ERROR in {state.value}: {e}")
-        cloudlog.exception(f"modem error in {state.value}: {e}")
+        log.exception(f"error in {state.value}: {e}")
         state = State.RECONNECTING
       if state not in (State.REGISTERING, State.WAITING_PORT):
         time.sleep(2)
