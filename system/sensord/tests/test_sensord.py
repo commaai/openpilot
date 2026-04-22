@@ -19,14 +19,9 @@ LSM = {
 }
 LSM_C = {(x[0]+'trc', x[1]) for x in LSM}
 
-MMC = {
-  ('mmc5603nj', 'magneticUncalibrated'),
-}
-
 SENSOR_CONFIGURATIONS: list[set] = {
   "mici": [LSM, LSM_C],
-  "tizi": [MMC | LSM, MMC | LSM_C],
-  "tici": [LSM, LSM_C, MMC | LSM, MMC | LSM_C],
+  "tizi": [LSM, LSM_C],
 }.get(HARDWARE.get_device_type(), [])
 
 Sensor = log.SensorEventData.SensorSource
@@ -37,10 +32,6 @@ ALL_SENSORS = {
     SensorConfig("gyroUncalibrated", 0, .15, 0.5),
     SensorConfig("temperature", 10, 40, 0.5),  # set for max range of our office
   },
-
-  Sensor.mmc5603nj: {
-    SensorConfig("magneticUncalibrated", 0, 300, 10),
-  }
 }
 ALL_SENSORS[Sensor.lsm6ds3] = ALL_SENSORS[Sensor.lsm6ds3trc]
 
