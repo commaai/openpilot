@@ -122,7 +122,9 @@ def hw_state_thread(end_event, hw_queue):
           if modem_version is not None:
             cloudlog.event("modem version", version=modem_version)
 
-        if AGNOS and modem_restart_count < 3 and HARDWARE.get_modem_version() is None:
+        # skip MM restart if modem.py is running — it owns the modem and stops MM itself
+        modem_py_running = os.path.exists("/dev/shm/modem")
+        if AGNOS and not modem_py_running and modem_restart_count < 3 and HARDWARE.get_modem_version() is None:
           # TODO: we may be able to remove this with a MM update
           # ModemManager's probing on startup can fail
           # rarely, restart the service to probe again.
