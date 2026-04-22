@@ -1,9 +1,9 @@
 #include "cdm.h"
 #include "stddef.h"
 
-int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel) {
+int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel, uint8_t opcode) {
   struct cdm_dmi_cmd *cmd = (struct cdm_dmi_cmd*)dst;
-  cmd->cmd = CAM_CDM_CMD_DMI_32;
+  cmd->cmd = opcode;
   cmd->length = length - 1;
   cmd->reserved = 0;
   cmd->addr = 0; // gets patched in
