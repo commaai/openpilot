@@ -59,6 +59,11 @@ class Modem:
     self._roaming_allowed = True
     self._ps_wait_start = 0.0
     self._ps_attach_tried = False
+    # byte counters persist across pppd restarts (sysfs counters reset when ppp0 is recreated)
+    self._tx_base = 0
+    self._rx_base = 0
+    self._last_tx = 0
+    self._last_rx = 0
     self.running = True
     self.S = {
       "state": "init",
@@ -411,8 +416,9 @@ class Modem:
 
   def _do_reconnecting(self):
     log.warning("reconnecting")
+    self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
     self._update(
-      state="reconnecting", connected=False, ip_address="",
+      connected=False, ip_address="",
       iccid="", imei="", modem_version="",
       signal_strength=0, signal_quality=0,
       network_type="unknown", operator="", band="", channel=0,
@@ -485,9 +491,15 @@ class Modem:
 
     try:
       with open("/sys/class/net/ppp0/statistics/tx_bytes") as f:
-        s["tx_bytes"] = int(f.read().strip())
+        tx = int(f.read().strip())
       with open("/sys/class/net/ppp0/statistics/rx_bytes") as f:
-        s["rx_bytes"] = int(f.read().strip())
+        rx = int(f.read().strip())
+      # ppp0 sysfs counters reset each time pppd recreates the interface;
+      # carry a base across restarts so cumulative stays monotonic within a session
+      self._tx_base += tx if tx < self._last_tx else tx - self._last_tx
+      self._rx_base += rx if rx < self._last_rx else rx - self._last_rx
+      self._last_tx, self._last_rx = tx, rx
+      s["tx_bytes"], s["rx_bytes"] = self._tx_base, self._rx_base
     except Exception:
       pass
 
