@@ -30,7 +30,7 @@ AddOption('--minimal',
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-elif arch == "aarch64" and os.path.isfile('/TICI'):
+elif arch == "aarch64" and (os.path.isfile('/TICI') or os.path.isfile('/ASIUS')):
   arch = "larch64"
 assert arch in [
   "larch64",  # linux tici arm64

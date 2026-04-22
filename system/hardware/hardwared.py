@@ -17,7 +17,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, TICI, AGNOS, PC
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS, ASIUS, PC
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
@@ -70,9 +70,9 @@ def touch_thread(end_event):
   event_size = struct.calcsize(event_format)
   event_frame = []
 
-  # Dragon Q6A has no touchscreen. Skip this thread instead of crashing.
   event_path = "/dev/input/by-path/platform-894000.i2c-event"
   if not os.path.exists(event_path):
+    end_event.wait()
     return
 
   with open(event_path, "rb") as event_file:
@@ -475,7 +475,7 @@ def main():
     threading.Thread(target=hardware_thread, args=(end_event, hw_queue)),
   ]
 
-  if TICI:
+  if TICI or ASIUS:
     threads.append(threading.Thread(target=touch_thread, args=(end_event,)))
 
   for t in threads:

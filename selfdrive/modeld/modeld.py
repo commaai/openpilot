@@ -11,6 +11,7 @@ from tinygrad.tensor import Tensor
 import time
 import pickle
 import numpy as np
+from openpilot.system.hardware import ASIUS
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.messaging import PubMaster, SubMaster
@@ -114,13 +115,17 @@ class ModelState:
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     for key in bufs.keys():
-      ptr = bufs[key].data.ctypes.data
       yuv_size = self.frame_buf_params[key][3]
-      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-      cache_key = (key, ptr)
-      if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
-      self.full_frames[key] = self._blob_cache[cache_key]
+      if ASIUS:
+        # Rusticl CL from_blob doesn't sync host→GPU; copyin each frame
+        arr = np.frombuffer(bufs[key].data, dtype=np.uint8)[:yuv_size].copy()
+        self.full_frames[key] = Tensor(arr).contiguous().realize()
+      else:
+        ptr = bufs[key].data.ctypes.data
+        cache_key = (key, ptr)
+        if cache_key not in self._blob_cache:
+          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+        self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0

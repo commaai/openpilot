@@ -76,6 +76,8 @@ def get_device_type():
   # lru_cache and cache can cause memory leaks when used in classes
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
+  if 'Dragon' in model or 'asius' in model.lower():
+    return "asius"
   return model.split('comma ')[-1]
 
 class Tici(HardwareBase):
@@ -94,7 +96,7 @@ class Tici(HardwareBase):
 
   @cached_property
   def amplifier(self):
-    if self.get_device_type() == "mici":
+    if self.get_device_type() in ("mici", "asius"):
       return None
     return Amplifier()
 
@@ -332,6 +334,12 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
+    if self.get_device_type() == "asius":
+      return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-thermal") for i in range(8)],
+                           gpu=[ThermalZone("gpuss0-thermal"), ThermalZone("gpuss1-thermal")],
+                           dsp=ThermalZone("nspss0-thermal"),
+                           memory=ThermalZone("ddr-thermal"))
+
     intake, exhaust, gnss, bottomSoc = None, None, None, None
     if self.get_device_type() == "mici":
       gnss = ThermalZone("gnss")
@@ -425,8 +433,9 @@ class Tici(HardwareBase):
     os.system("sudo chmod a+w /dev/kmsg")
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
-    gpio_init(GPIO.SOM_ST_IO, True)
-    gpio_set(GPIO.SOM_ST_IO, 1)
+    if self.get_device_type() != "asius":
+      gpio_init(GPIO.SOM_ST_IO, True)
+      gpio_set(GPIO.SOM_ST_IO, 1)
 
     # *** IRQ config ***
 
@@ -580,10 +589,13 @@ class Tici(HardwareBase):
       return -1, -1
 
   def has_internal_panda(self):
-    return True
+    return self.get_device_type() != "asius"
 
   def reset_internal_panda(self):
+    if not self.has_internal_panda():
+      return
     gpio_init(GPIO.STM_RST_N, True)
+
     gpio_init(GPIO.STM_BOOT0, True)
 
     gpio_set(GPIO.STM_RST_N, 1)
@@ -592,6 +604,8 @@ class Tici(HardwareBase):
     gpio_set(GPIO.STM_RST_N, 0)
 
   def recover_internal_panda(self):
+    if not self.has_internal_panda():
+      return
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
 

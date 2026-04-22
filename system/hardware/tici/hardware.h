@@ -74,8 +74,13 @@ public:
     std::map<std::string, std::string> ret = {
       {"/BUILD", util::read_file("/BUILD")},
       {"lsblk", util::check_output("lsblk -o NAME,SIZE,STATE,VENDOR,MODEL,REV,SERIAL")},
-      {"SOM ID", util::read_file("/sys/devices/platform/vendor/vendor:gpio-som-id/som_id")},
     };
+
+    if (get_device_type() == cereal::InitData::DeviceType::ASIUS) {
+      return ret;
+    }
+
+    ret["SOM ID"] = util::read_file("/sys/devices/platform/vendor/vendor:gpio-som-id/som_id");
 
     std::string bs = util::check_output("abctl --boot_slot");
     ret["boot slot"] = bs.substr(0, bs.find_first_of("\n"));
@@ -84,7 +89,6 @@ public:
     temp.erase(temp.find_last_not_of(std::string("\0\r\n", 3))+1);
     ret["boot temp"] = temp;
 
-    // TODO: log something from system and boot
     for (std::string part : {"xbl", "abl", "aop", "devcfg", "xbl_config"}) {
       for (std::string slot : {"a", "b"}) {
         std::string partition = part + "_" + slot;

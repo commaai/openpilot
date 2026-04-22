@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from cereal import messaging, log, car
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
-from openpilot.system.hardware import TICI
+from openpilot.system.hardware import TICI, ASIUS
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -131,7 +131,7 @@ class AlertRenderer(Widget):
         return ALERT_STARTUP_PENDING
 
       # 2. Lost communication with selfdriveState after receiving it
-      if TICI and not waiting_for_startup:
+      if (TICI or ASIUS) and not waiting_for_startup:
         ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
         if ss_missing > SELFDRIVE_STATE_TIMEOUT:
           if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:

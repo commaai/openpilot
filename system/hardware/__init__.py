@@ -8,10 +8,10 @@ from openpilot.system.hardware.pc.hardware import Pc
 TICI = os.path.isfile('/TICI')
 AGNOS = os.path.isfile('/AGNOS')
 ASIUS = os.path.isfile('/ASIUS')
-PC = not TICI
+PC = not TICI and not ASIUS
 
 
-if TICI:
+if TICI or ASIUS:
   HARDWARE = cast(HardwareBase, Tici())
 else:
   HARDWARE = cast(HardwareBase, Pc())

@@ -231,7 +231,7 @@ def main():
   print("Loading ModelState...")
   t0 = time.monotonic()
   from selfdrive.modeld.modeld import ModelState
-  model = ModelState()
+  model = ModelState(cam_w, cam_h)
   print(f"Model loaded in {time.monotonic() - t0:.1f}s")
 
   input_names = model.vision_input_names
