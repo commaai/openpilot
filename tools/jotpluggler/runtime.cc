@@ -71,7 +71,6 @@ bool should_subscribe_stream_service(const std::string &name) {
     "livestreamRoadEncodeIdx",
     "livestreamDriverEncodeIdx",
     "thumbnail",
-    "navThumbnail",
   }};
   if (name == "rawAudioData") return false;
   for (std::string_view skipped : kSkippedServices) {
