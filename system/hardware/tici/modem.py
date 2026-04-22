@@ -17,7 +17,7 @@ from enum import Enum
 log = logging.getLogger("modem")
 if not log.handlers:
   _h = logging.StreamHandler()
-  _h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"))
+  _h.setFormatter(logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"))
   log.addHandler(_h)
   log.setLevel(logging.DEBUG)
   log.propagate = False
