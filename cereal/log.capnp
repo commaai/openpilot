@@ -273,11 +273,7 @@ struct GPSNMEAData {
   nmea @2 :Text;
 }
 
-# android sensor_event_t
 struct SensorEventData {
-  version @0 :Int32;
-  sensor @1 :Int32;
-  type @2 :Int32;
   timestamp @3 :Int64;
 
   union {
@@ -296,7 +292,10 @@ struct SensorEventData {
 
   struct SensorVec {
     v @0 :List(Float32);
-    status @1 :Int8;
+
+    deprecated :group {
+      status @1 :Int8;
+    }
   }
 
   enum SensorSource {
@@ -314,7 +313,11 @@ struct SensorEventData {
     mmc5603nj @11;
   }
 
+  # formerly based on android sensor_event_t
   deprecated :group {
+    version @0 :Int32;
+    sensor @1 :Int32;
+    type @2 :Int32;
     uncalibrated @10 :Bool;
   }
 }

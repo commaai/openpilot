@@ -447,9 +447,6 @@ def migrate_sensorEvents(msgs):
       m.logMonoTime = msg.logMonoTime
 
       m_dat = getattr(m, sensor_service)
-      m_dat.version = evt.version
-      m_dat.sensor = evt.sensor
-      m_dat.type = evt.type
       m_dat.source = evt.source
       m_dat.timestamp = evt.timestamp
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
