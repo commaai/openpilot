@@ -314,9 +314,10 @@ class Modem:
           if ceer:
             parts = [p.strip().strip('"') for p in ceer.split(",")]
             carrier_err = parts[-1] if parts else ceer
-            # these often clear once the SIM's required APN is set — hint the user
-            if ("PLMN_NOT_ALLOWED" in carrier_err or "EPS_SERVICES_NOT_ALLOWED" in carrier_err) and not self._apn:
-              carrier_err += " (try setting GsmApn)"
+            # PLMN_NOT_ALLOWED often clears with the right APN — hint the user
+            # (EPS_SERVICES_NOT_ALLOWED is a subscription/plan issue, APN won't help)
+            if "PLMN_NOT_ALLOWED" in carrier_err:
+              carrier_err += " (check GsmApn)"
         self._update(registration=reg, carrier_error=carrier_err)
     else:
       log.debug("CREG returned None")
