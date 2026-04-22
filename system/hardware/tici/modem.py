@@ -514,8 +514,8 @@ class Modem:
         self.S["state"] = state.value
         if state != prev:
           log.info(f"{prev.value} -> {state.value}")
-      except Exception as e:
-        log.exception(f"error in {state.value}: {e}")
+      except Exception:
+        log.exception(f"error in {state.value}")
         state = State.RECONNECTING
       if state not in (State.REGISTERING, State.WAITING_PORT):
         time.sleep(2)
