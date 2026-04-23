@@ -3,6 +3,7 @@ import os
 import sys
 import signal
 import itertools
+import fcntl
 import math
 import time
 import requests
@@ -91,23 +92,31 @@ def try_setup_logs(diag, logs):
   return setup_logs(diag, logs)
 
 AT_PORT = "/dev/modem_at0"
+AT_LOCK = "/dev/shm/modem_lpa.lock"  # shared with modem.py and LPA
+
+def _at_send(ser: Serial, cmd: str, strict: bool = False) -> str:
+  """Send AT command on an open Serial; return accumulated non-echo lines.
+  If strict, raise on ERROR/+CME ERROR instead of silently returning."""
+  ser.reset_input_buffer()
+  ser.write(f"{cmd}\r".encode())
+  lines = []
+  while True:
+    line = ser.readline()
+    if not line:
+      raise RuntimeError(f"AT command timeout: {cmd}")
+    line = line.decode('utf-8', errors='replace').strip()
+    if line in ("OK", "ERROR") or line.startswith("+CME ERROR"):
+      if strict and line != "OK":
+        raise RuntimeError(f"AT {cmd} -> {line}")
+      break
+    if line and line != cmd:
+      lines.append(line)
+  return '\n'.join(lines)
 
 @retry(attempts=5, delay=1.0)
 def at_cmd(cmd: str) -> str:
   with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
-    ser.reset_input_buffer()
-    ser.write(f"{cmd}\r".encode())
-    lines = []
-    while True:
-      line = ser.readline()
-      if not line:
-        raise RuntimeError(f"AT command timeout: {cmd}")
-      line = line.decode('utf-8', errors='replace').strip()
-      if line in ("OK", "ERROR") or line.startswith("+CME ERROR"):
-        break
-      if line and line != cmd:
-        lines.append(line)
-  return '\n'.join(lines)
+    return _at_send(ser, cmd)
 
 def gps_enabled() -> bool:
   return "QGPS: 1" in at_cmd("AT+QGPS?")
@@ -144,12 +153,59 @@ def downloader_loop(event):
   except KeyboardInterrupt:
     pass
 
-@retry(attempts=5, delay=0.2, ignore_failure=True)
+def _qfupl(ser: Serial, name: str, data: bytes) -> None:
+  """Upload data to the modem's RAM filesystem via AT+QFUPL."""
+  ser.reset_input_buffer()
+  ser.write(f'AT+QFUPL="{name}",{len(data)},60\r'.encode())
+  # wait for CONNECT
+  deadline = time.monotonic() + 10
+  while time.monotonic() < deadline:
+    line = ser.readline().decode('utf-8', errors='replace').strip()
+    if line == "CONNECT":
+      break
+    if line == "ERROR" or line.startswith("+CME ERROR"):
+      raise RuntimeError(f"QFUPL setup failed: {line}")
+  else:
+    raise RuntimeError("QFUPL: no CONNECT")
+  # stream raw bytes
+  ser.write(data)
+  ser.flush()
+  # expect "+QFUPL: <size>,<checksum>" then "OK"
+  deadline = time.monotonic() + 60
+  saw_qfupl = False
+  while time.monotonic() < deadline:
+    line = ser.readline().decode('utf-8', errors='replace').strip()
+    if line.startswith("+QFUPL:"):
+      saw_qfupl = True
+    elif line == "OK" and saw_qfupl:
+      return
+    elif line == "ERROR" or line.startswith("+CME ERROR"):
+      raise RuntimeError(f"QFUPL failed: {line}")
+  raise RuntimeError("QFUPL: no OK")
+
+@retry(attempts=3, delay=0.5, ignore_failure=True)
 def inject_assistance():
-  import subprocess
-  cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
-  subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
-  cloudlog.info("successfully loaded assistance data")
+  try:
+    with open(ASSIST_DATA_FILE, 'rb') as f:
+      data = f.read()
+  except FileNotFoundError:
+    return
+
+  # coordinate with modem.py / LPA over the shared AT-port lock
+  lock_fd = os.open(AT_LOCK, os.O_CREAT | os.O_RDWR, 0o666)
+  try:
+    fcntl.flock(lock_fd, fcntl.LOCK_EX)
+    with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
+      _at_send(ser, "AT+QGPSXTRA=1", strict=True)
+      _qfupl(ser, "RAM:xtra3grc.bin", data)
+      now = datetime.datetime.now(datetime.UTC).strftime("%Y/%m/%d,%H:%M:%S")
+      _at_send(ser, f'AT+QGPSXTRATIME=0,"{now}",1,1,500', strict=True)
+      _at_send(ser, 'AT+QGPSXTRADATA="RAM:xtra3grc.bin"', strict=True)
+      _at_send(ser, 'AT+QFDEL="RAM:xtra3grc.bin"')
+    cloudlog.info("successfully loaded assistance data")
+  finally:
+    fcntl.flock(lock_fd, fcntl.LOCK_UN)
+    os.close(lock_fd)
 
 @retry(attempts=5, delay=1.0)
 def setup_quectel(diag: ModemDiag) -> bool:
