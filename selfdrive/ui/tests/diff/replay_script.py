@@ -310,7 +310,6 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   device_cases: Cases = [
     None,
-    click,  # update
     explore_setting,  # pairing (just open and close)
     lambda: explore_setting(
       # training guide
@@ -321,11 +320,17 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     lambda: explore_setting(swipe_left),  # terms & conditions (swipe to view QR code)
     lambda: explore_setting(lambda: swipe_up(height * 3), lambda: swipe_down(height * 3)),  # regulatory info
     lambda: run_actions(click, lambda: swipe_left(width)),  # reset calibration confirm (goes back automatically)
-    lambda: explore_setting(lambda: swipe_left(width)),  # uninstall
-    lambda: run_actions(
-      lambda: explore_setting(lambda: swipe_left(width)),  # reboot
-      lambda: script.click(430, 120), lambda: swipe_left(width), swipe_down,  # shutdown
-    ),
+    lambda: explore_setting(lambda: swipe_left(width)),  # reboot
+    lambda: explore_setting(lambda: swipe_left(width)),  # shutdown
+  ]
+
+  software_cases: Cases = [
+    explore_setting,  # current version notes
+    click,  # download/check
+    explore_setting,  # new version notes
+    None,  # install update
+    lambda: run_actions(click, click),  # open branch picker and choose another branch
+    lambda: run_actions(click, swipe_down),  # uninstall
   ]
 
   developer_cases: Cases = [
@@ -340,6 +345,10 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     lambda: scroll_through_cases(toggle_cases),
     lambda: scroll_through_cases(network_cases),
     lambda: scroll_through_cases(device_cases),
+    lambda: run_actions(
+      lambda: script.setup(setup_update_available, wait_after=0),
+      lambda: scroll_through_cases(software_cases),
+    ),
     lambda: script.wait(WAIT_SHORT),  # pairing
     lambda: run_actions(lambda: swipe_up(height * 3), lambda: swipe_down(height * 3)),  # firehose (scroll down and back up)
     lambda: scroll_through_cases(developer_cases),
