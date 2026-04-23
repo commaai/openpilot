@@ -63,8 +63,10 @@ def parse_args():
   return args
 
 
-def setup_env(output_path: str, big: bool = False, speed: int = 1, target_mb: float = 0, duration: int = 0):
-  os.environ.update({"RECORD": "1", "OFFSCREEN": "1", "RECORD_OUTPUT": str(Path(output_path).with_suffix(".mp4"))})
+def setup_env(output_path: str, big: bool = False, speed: int = 1, target_mb: float = 0, duration: int = 0, headless: bool = True):
+  os.environ.update({"RECORD": "1", "RECORD_OUTPUT": str(Path(output_path).with_suffix(".mp4"))})
+  if headless:
+    os.environ["OFFSCREEN"] = "1"
   if speed > 1:
     os.environ["RECORD_SPEED"] = str(speed)
   if target_mb > 0 and duration > 0:
@@ -302,11 +304,11 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     logger.error("No messages to render")
     sys.exit(1)
 
-  metadata = load_route_metadata(route) if show_metadata else None
   if headless:
     rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
 
   with OpenpilotPrefix(shared_download_cache=True):
+    metadata = load_route_metadata(route) if show_metadata else None
     camera_paths = route.qcamera_paths() if use_qcam else route.camera_paths()
     frame_queue = FrameQueue(camera_paths, start, end, fps=FRAMERATE, use_qcam=use_qcam)
 
@@ -349,8 +351,9 @@ def main():
   logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s\t%(message)s")
   args = parse_args()
 
-  setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start)
-  clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, not args.windowed,
+  headless = not args.windowed
+  setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start, headless=headless)
+  clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, headless,
        args.big, args.title, not args.no_metadata, not args.no_time_overlay, args.qcam)
 
 

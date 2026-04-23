@@ -191,7 +191,7 @@ class IconButton(Widget):
       color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.35 * self._opacity_filter.x))
     draw_x = rect.x + (rect.width - self._texture.width) / 2
     draw_y = rect.y + (rect.height - self._texture.height) / 2
-    rl.draw_texture(self._texture, int(draw_x), int(draw_y), color)
+    rl.draw_texture_ex(self._texture, rl.Vector2(draw_x, draw_y), 0.0, 1.0, color)
 
 
 class SmallCircleIconButton(Widget):
@@ -219,7 +219,7 @@ class SmallCircleIconButton(Widget):
       bg_txt = self._icon_bg_pressed_txt if self.is_pressed else self._icon_bg_txt
       icon_white = white
 
-    rl.draw_texture(bg_txt, int(self.rect.x), int(self.rect.y), white)
+    rl.draw_texture_ex(bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, white)
     icon_x = self.rect.x + (self.rect.width - self._icon_txt.width) / 2
     icon_y = self.rect.y + (self.rect.height - self._icon_txt.height) / 2
-    rl.draw_texture(self._icon_txt, int(icon_x), int(icon_y), icon_white)
+    rl.draw_texture_ex(self._icon_txt, rl.Vector2(icon_x, icon_y), 0.0, 1.0, icon_white)

@@ -28,6 +28,9 @@ INPUT_INVALID_LIMIT = 2.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored
 INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad inputs by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
+CAM_ODO_POSE_DELAY = 0.1 # dependent on the vision model context frames and temporal frequency (current model is 5 fps with 2 context frames)
+CAM_ODO_ROT_STD_MULT = 10
+CAM_ODO_TRANS_STD_MULT = 4
 
 
 def calculate_invalid_input_decay(invalid_limit, recovery_time, frequency):
@@ -155,6 +158,8 @@ class LocationEstimator:
         self.device_from_calib = rot_from_euler(calib)
 
     elif which == "cameraOdometry":
+      # camera odometry is delayed depending on the model context frames and temporal frequency
+      t = msg.timestampEof * 1e-9 - CAM_ODO_POSE_DELAY
       if not self._validate_timestamp(t):
         return HandleLogResult.TIMING_INVALID
 
@@ -177,8 +182,8 @@ class LocationEstimator:
       self.posenet_stds[-1] = trans_calib_std[0]
 
       # Multiply by N to avoid to high certainty in kalman filter because of temporally correlated noise
-      rot_calib_std *= 10
-      trans_calib_std *= 2
+      rot_calib_std *= CAM_ODO_ROT_STD_MULT
+      trans_calib_std *= CAM_ODO_TRANS_STD_MULT
 
       rot_device_std = rotate_std(self.device_from_calib, rot_calib_std)
       trans_device_std = rotate_std(self.device_from_calib, trans_calib_std)
@@ -234,6 +239,7 @@ class LocationEstimator:
     livePose.inputsOK = inputs_valid
     livePose.posenetOK = not std_spike or self.car_speed <= 5.0
     livePose.sensorsOK = sensors_valid
+    livePose.timestamp = int(np.nan_to_num(self.kf.t) * 1e9)
 
     return msg
 

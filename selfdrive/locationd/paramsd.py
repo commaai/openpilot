@@ -65,6 +65,7 @@ class VehicleParamsLearner:
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader):
     if which == 'livePose':
+      t = msg.timestamp * 1e-9
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
 

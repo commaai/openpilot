@@ -1,0 +1,92 @@
+import os
+import imgui
+import libusb
+from opendbc import get_generated_dbcs
+from opendbc.car import Bus
+from opendbc.car.fingerprints import MIGRATION
+from opendbc.car.values import PLATFORMS
+from openpilot.common.basedir import BASEDIR
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
+
+jot_env = env.Clone()
+jot_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
+jot_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
+jot_env["CXXFLAGS"] += [
+  "-DGLFW_INCLUDE_NONE",
+  '-DJOTP_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
+]
+
+def materialize_generated_dbcs(target, source, env):
+  out_dir = os.path.dirname(str(target[0]))
+  os.makedirs(out_dir, exist_ok=True)
+
+  for name in os.listdir(out_dir):
+    if name.endswith('.dbc'):
+      os.unlink(os.path.join(out_dir, name))
+
+  for name, content in sorted(get_generated_dbcs().items()):
+    with open(os.path.join(out_dir, f"{name}.dbc"), "w") as f:
+      f.write(content)
+
+  with open(str(target[0]), "w") as f:
+    f.write("ok\n")
+
+  return None
+
+def write_car_fingerprint_to_dbc_header(target, source, env):
+  pairs = {}
+
+  for name, platform in sorted(PLATFORMS.items()):
+    dbc = platform.config.dbc_dict.get(Bus.pt, "")
+    if not dbc and name.startswith("TESLA_"):
+      dbc = platform.config.dbc_dict.get(Bus.party, "")
+    if not dbc and name == "COMMA_BODY":
+      dbc = "comma_body"
+    if dbc and name != "MOCK":
+      pairs[name] = dbc
+
+  for fingerprint, car in sorted(MIGRATION.items()):
+    dbc = pairs.get(str(car), "")
+    if dbc:
+      pairs[fingerprint] = dbc
+
+  lines = [
+    "#pragma once",
+    "",
+    "#include <string_view>",
+    "#include <utility>",
+    "",
+    "inline constexpr std::pair<std::string_view, std::string_view> kCarFingerprintToDbc[] = {",
+  ]
+  lines.extend(f'  {{"{fingerprint}", "{dbc}"}},' for fingerprint, dbc in sorted(pairs.items()))
+  lines.extend([
+    "};",
+    "",
+    "inline std::string_view dbc_for_car_fingerprint(std::string_view fingerprint) {",
+    "  for (const auto &[car_fingerprint, dbc] : kCarFingerprintToDbc) {",
+    "    if (car_fingerprint == fingerprint) return dbc;",
+    "  }",
+    "  return {};",
+    "}",
+    "",
+  ])
+
+  with open(str(target[0]), "w") as f:
+    f.write("\n".join(lines))
+
+  return None
+
+generated_dbc_stamp = jot_env.Command(f"generated_dbcs/.stamp", [], materialize_generated_dbcs)
+car_fingerprint_to_dbc = jot_env.Command("car_fingerprint_to_dbc.h", [], write_car_fingerprint_to_dbc_header)
+
+libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"),
+        "avformat", "avcodec", "avutil", "x264", "yuv", "z", "bz2", "zstd", "m", "pthread", "usb-1.0"]
+if arch == "Darwin":
+  jot_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
+else:
+  libs += ["GL", "dl", "va", "va-drm", "drm"]
+
+program = jot_env.Program("jotpluggler", jot_env.Glob("*.cc"), LIBS=libs)
+jot_env.Depends(program, generated_dbc_stamp)
+jot_env.Depends(program, car_fingerprint_to_dbc)

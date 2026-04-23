@@ -91,7 +91,7 @@ class TrainingGuide(Widget):
   def _render(self, _):
     # Safeguard against fast tapping
     step = min(self._step, len(self._textures) - 1)
-    rl.draw_texture(self._textures[step], 0, 0, rl.WHITE)
+    rl.draw_texture_ex(self._textures[step], rl.Vector2(0, 0), 0.0, 1.0, rl.WHITE)
 
     # progress bar
     if 0 < step < len(STEP_RECTS) - 1:

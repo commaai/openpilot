@@ -165,7 +165,7 @@ class WifiButton(BigButton):
 
       if self._is_connected and not self._network_forgetting:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
-        rl.draw_texture(self._check_txt, int(sub_label_x), check_y, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)))
+        rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)))
         sub_label_x += self._check_txt.width + 14
 
       sub_label_rect = rl.Rectangle(sub_label_x, label_y - sub_label_height, sub_label_w, sub_label_height)
@@ -246,8 +246,7 @@ class ForgetButton(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    dlg = BigConfirmationDialog("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
-                                confirm_callback=self._forget_network)
+    dlg = BigConfirmationDialog("slide to forget", gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64), self._forget_network, red=True)
     gui_app.push_widget(dlg)
 
   def _render(self, _):

@@ -172,13 +172,6 @@ video {
   display: none;
 }
 
-.plan-form {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .details {
   display: flex;
   padding: 0px 10px 0px 10px;

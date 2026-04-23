@@ -7,7 +7,7 @@ import math
 import time
 import requests
 import shutil
-import subprocess
+from serial import Serial
 import datetime
 from multiprocessing import Process, Event
 from typing import NoReturn
@@ -90,9 +90,24 @@ measurementStatusGlonassFields = {
 def try_setup_logs(diag, logs):
   return setup_logs(diag, logs)
 
-@retry(attempts=3, delay=1.0)
-def at_cmd(cmd: str) -> str | None:
-  return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
+AT_PORT = "/dev/modem_at0"
+
+@retry(attempts=5, delay=1.0)
+def at_cmd(cmd: str) -> str:
+  with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
+    ser.reset_input_buffer()
+    ser.write(f"{cmd}\r".encode())
+    lines = []
+    while True:
+      line = ser.readline()
+      if not line:
+        raise RuntimeError(f"AT command timeout: {cmd}")
+      line = line.decode('utf-8', errors='replace').strip()
+      if line in ("OK", "ERROR") or line.startswith("+CME ERROR"):
+        break
+      if line and line != cmd:
+        lines.append(line)
+  return '\n'.join(lines)
 
 def gps_enabled() -> bool:
   return "QGPS: 1" in at_cmd("AT+QGPS?")
@@ -131,6 +146,7 @@ def downloader_loop(event):
 
 @retry(attempts=5, delay=0.2, ignore_failure=True)
 def inject_assistance():
+  import subprocess
   cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
   subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
   cloudlog.info("successfully loaded assistance data")
@@ -207,13 +223,19 @@ def teardown_quectel(diag):
   try_setup_logs(diag, [])
 
 
-def wait_for_modem(cmd="AT+QGPS?"):
+def wait_for_modem():
   cloudlog.warning("waiting for modem to come up")
+  while not os.path.exists(AT_PORT):
+    time.sleep(0.5)
+  # wait until the modem GNSS subsystem responds
   while True:
-    ret = subprocess.call(f"mmcli -m any --timeout 10 --command=\"{cmd}\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-    if ret == 0:
-      return
-    time.sleep(0.1)
+    try:
+      resp = at_cmd("AT+QGPS?")
+      if "+QGPS:" in resp:
+        return
+    except Exception:
+      pass
+    time.sleep(0.5)
 
 
 def main() -> NoReturn:
@@ -334,6 +356,9 @@ def main() -> NoReturn:
     elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
       if report["u_PosSource"] != 2:
+        continue
+      # uint16_t max is an invalid sentinel value from the modem
+      if report['w_GpsWeekNumber'] >= 0xFFFF:
         continue
       vNED = [report["q_FltVelEnuMps[1]"], report["q_FltVelEnuMps[0]"], -report["q_FltVelEnuMps[2]"]]
       vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
