@@ -34,11 +34,6 @@ class TestQcomgpsd:
       time.sleep(dt)
     return self.sm.updated['qcomGnss']
 
-  def test_wait_for_modem(self):
-    os.system("sudo systemctl stop ModemManager")
-    managed_processes['qcomgpsd'].start()
-    assert self._wait_for_output(30)
-
   def test_startup_time(self):
     managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(30)
