@@ -7,7 +7,7 @@ from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
-from compile_modeld import NV12Frame, warp_perspective_tinygrad, _parse_size, _parse_nv12
+from openpilot.selfdrive.modeld.compile_modeld import NV12Frame, warp_perspective_tinygrad, _parse_size, _parse_nv12
 
 
 def make_warp_dm(nv12: NV12Frame, dm_w, dm_h):
