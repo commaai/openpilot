@@ -107,7 +107,7 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
     'desire_q': ((frame_skip * dp[1], dp[0], dp[2]), 'float32'),
   }
   if devices is None:
-    devices = {k: Device.DEFAULT for k in queues_shapes_dtypes.keys()}
+    devices = dict.fromkeys(queues_shapes_dtypes, Device.DEFAULT)
 
   input_queues = {
     **{k: Tensor.zeros(shape, dtype=dtype, device=devices[k]).contiguous().realize()
