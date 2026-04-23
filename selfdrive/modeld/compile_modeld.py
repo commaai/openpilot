@@ -4,7 +4,6 @@ import pickle
 import time
 from functools import partial
 from collections import namedtuple
-from typing import Optional
 
 import numpy as np
 from tinygrad.tensor import Tensor
@@ -85,7 +84,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devices: Optional[str]=None):
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devices=None):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
