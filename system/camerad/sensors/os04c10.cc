@@ -41,7 +41,7 @@ OS04C10::OS04C10() {
   // hdr_offset = 64 * 2 + 8; // stagger
   frame_width = 1344;
   frame_height = 760; //760 * 2 + hdr_offset;
-  frame_stride = (frame_width * 12 / 8); // no alignment
+  frame_stride = (frame_width * 10 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -51,8 +51,8 @@ OS04C10::OS04C10() {
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
   bits_per_pixel = 12;
-  mipi_format = CAM_FORMAT_MIPI_RAW_12;
-  frame_data_type = CSI_RAW12;
+  mipi_format = CAM_FORMAT_MIPI_RAW_10;
+  frame_data_type = CSI_RAW10;
   mclk_frequency = 24000000; // Hz
 
   // TODO: this was set from logs. actually calculate it out
