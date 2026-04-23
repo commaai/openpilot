@@ -530,7 +530,7 @@ class Modem:
 
   def run(self):
     log.info("starting")
-    # publish initial state so callers short-circuit MM DBus activation from the start
+    # publish initial state so callers see modem.py is active from the start
     self._update(state="init")
     subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)

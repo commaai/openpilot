@@ -1,9 +1,8 @@
 import json
-import math
 import os
 import subprocess
-import time
 import tempfile
+import time
 from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -21,29 +20,8 @@ NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
 NM_DEV = NM + '.Device'
 NM_DEV_WL = NM + '.Device.Wireless'
-NM_DEV_STATS = NM + '.Device.Statistics'
 NM_AP = NM + '.AccessPoint'
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
-
-MM = 'org.freedesktop.ModemManager1'
-MM_MODEM = MM + ".Modem"
-MM_MODEM_SIMPLE = MM + ".Modem.Simple"
-MM_SIM = MM + ".Sim"
-
-class MM_MODEM_STATE(IntEnum):
-  FAILED        = -1
-  UNKNOWN       = 0
-  INITIALIZING  = 1
-  LOCKED        = 2
-  DISABLED      = 3
-  DISABLING     = 4
-  ENABLING      = 5
-  ENABLED       = 6
-  SEARCHING     = 7
-  REGISTERED    = 8
-  DISCONNECTING = 9
-  CONNECTING    = 10
-  CONNECTED     = 11
 
 class NMMetered(IntEnum):
   NM_METERED_UNKNOWN = 0
@@ -54,14 +32,9 @@ class NMMetered(IntEnum):
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 TIMEOUT = 0.1
-REFRESH_RATE_MS = 1000
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
-
-# https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
-MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
-MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 
 def affine_irq(val, action):
@@ -90,23 +63,16 @@ class Tici(HardwareBase):
   def nm(self):
     return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
-  @property # this should not be cached, in case the modemmanager restarts
-  def mm(self):
-    return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
-
   @cached_property
   def amplifier(self):
     if self.get_device_type() == "mici":
       return None
     return Amplifier()
 
-  def get_modem_state(self):
-    """Read modem.py state file. Returns dict or None if modem.py isn't running."""
-    try:
-      with open(MODEM_STATE_PATH) as f:
-        return json.load(f)
-    except Exception:
-      return None
+  def get_modem_state(self) -> dict:
+    """Read modem.py state file. Raises if modem.py hasn't published state yet."""
+    with open(MODEM_STATE_PATH) as f:
+      return json.load(f)
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -147,105 +113,44 @@ class Tici(HardwareBase):
       f.write(f"{value}\n")
 
   def get_network_type(self):
-    # modem.py manages connectivity outside of NetworkManager — check first to avoid MM DBus auto-activation
     ms = self.get_modem_state()
-    if ms is not None:
-      try:
-        primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        primary_connection = self.bus.get_object(NM, primary_connection)
-        primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        if primary_type == '802-3-ethernet':
-          return NetworkType.ethernet
-        elif primary_type == '802-11-wireless':
-          return NetworkType.wifi
-      except Exception:
-        pass
-
-      if ms.get('connected'):
-        nt = ms.get('network_type', '')
-        if nt == 'nr':
-          return NetworkType.cell5G
-        elif nt == 'lte':
-          return NetworkType.cell4G
-        elif nt in ('utran', 'umts'):
-          return NetworkType.cell3G
-        elif nt == 'gsm':
-          return NetworkType.cell2G
-      return NetworkType.none
-
     try:
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
       primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
       if primary_type == '802-3-ethernet':
         return NetworkType.ethernet
       elif primary_type == '802-11-wireless':
         return NetworkType.wifi
-      else:
-        active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        for conn in active_connections:
-          c = self.bus.get_object(NM, conn)
-          tp = c.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-          if tp == 'gsm':
-            modem = self.get_modem()
-            access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-            if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
-              return NetworkType.cell4G
-            elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
-              return NetworkType.cell3G
-            else:
-              return NetworkType.cell2G
     except Exception:
       pass
 
+    if ms.get('connected'):
+      nt = ms.get('network_type', '')
+      if nt == 'nr':
+        return NetworkType.cell5G
+      elif nt == 'lte':
+        return NetworkType.cell4G
+      elif nt in ('utran', 'umts'):
+        return NetworkType.cell3G
+      elif nt == 'gsm':
+        return NetworkType.cell2G
     return NetworkType.none
-
-  def get_modem(self):
-    objects = self.mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=TIMEOUT)
-    modem_path = list(objects.keys())[0]
-    return self.bus.get_object(MM, modem_path)
 
   def get_wlan(self):
     wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
     return self.bus.get_object(NM, wlan_path)
 
-  def get_wwan(self):
-    wwan_path = self.nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
-    return self.bus.get_object(NM, wwan_path)
-
   def get_sim_info(self):
     ms = self.get_modem_state()
-    if ms is not None:
-      sim_id = ms.get('iccid', '')
-      return {
-        'sim_id': sim_id,
-        'mcc_mnc': ms.get('mcc_mnc') or None,
-        'network_type': ["Unknown"],
-        'sim_state': ["ABSENT"] if not sim_id else ["READY"],
-        'data_connected': ms.get('connected', False),
-      }
-
-    modem = self.get_modem()
-    sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-    if sim_path == "/":
-      return {
-        'sim_id': '',
-        'mcc_mnc': None,
-        'network_type': ["Unknown"],
-        'sim_state': ["ABSENT"],
-        'data_connected': False
-      }
-    else:
-      sim = self.bus.get_object(MM, sim_path)
-      return {
-        'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
-        'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
-        'network_type': ["Unknown"],
-        'sim_state': ["READY"],
-        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
-      }
+    sim_id = ms.get('iccid', '')
+    return {
+      'sim_id': sim_id,
+      'mcc_mnc': ms.get('mcc_mnc') or None,
+      'network_type': ["Unknown"],
+      'sim_state': ["ABSENT"] if not sim_id else ["READY"],
+      'data_connected': ms.get('connected', False),
+    }
 
   def get_sim_lpa(self) -> LPABase:
     return TiciLPA()
@@ -253,64 +158,29 @@ class Tici(HardwareBase):
   def get_imei(self, slot):
     if slot != 0:
       return ""
-
-    ms = self.get_modem_state()
-    if ms is not None:
-      return ms.get('imei', '')
-
-    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    return self.get_modem_state().get('imei', '')
 
   def get_network_info(self):
     if self.get_device_type() == "mici":
       return None
 
     ms = self.get_modem_state()
-    if ms is not None:
-      state_map = {
-        "waiting_port": "INITIALIZING",
-        "init": "INITIALIZING",
-        "registering": "SEARCHING",
-        "connecting": "CONNECTING",
-        "connected": "CONNECTED",
-        "reconnecting": "DISCONNECTING",
-      }
-      return {
-        'technology': ms.get('network_type', '').upper() if ms.get('network_type') else '',
-        'operator': ms.get('operator', ''),
-        'band': ms.get('band', ''),
-        'channel': ms.get('channel', 0),
-        'extra': ms.get('extra', ''),
-        'state': state_map.get(ms.get('state', ''), 'UNKNOWN'),
-      }
-
-    try:
-      modem = self.get_modem()
-      info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-    except Exception:
-      return None
-
-    if info and info.startswith('+QNWINFO: '):
-      info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
-      extra = "" if extra is None else extra.replace('+QENG: "servingcell",', '').replace('"', '')
-      state = "" if state is None else MM_MODEM_STATE(state).name
-
-      if len(info) != 4:
-        return None
-
-      technology, operator, band, channel = info
-
-      return({
-        'technology': technology,
-        'operator': operator,
-        'band': band,
-        'channel': int(channel),
-        'extra': extra,
-        'state': state,
-      })
-    else:
-      return None
+    state_map = {
+      "waiting_port": "INITIALIZING",
+      "init": "INITIALIZING",
+      "registering": "SEARCHING",
+      "connecting": "CONNECTING",
+      "connected": "CONNECTED",
+      "reconnecting": "DISCONNECTING",
+    }
+    return {
+      'technology': ms.get('network_type', '').upper() if ms.get('network_type') else '',
+      'operator': ms.get('operator', ''),
+      'band': ms.get('band', ''),
+      'channel': ms.get('channel', 0),
+      'extra': ms.get('extra', ''),
+      'state': state_map.get(ms.get('state', ''), 'UNKNOWN'),
+    }
 
   def parse_strength(self, percentage):
     if percentage < 25:
@@ -336,13 +206,7 @@ class Tici(HardwareBase):
           strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
           network_strength = self.parse_strength(strength)
       else:  # Cellular
-        ms = self.get_modem_state()
-        if ms is not None:
-          network_strength = self.parse_strength(ms.get('signal_quality', 0))
-        else:
-          modem = self.get_modem()
-          strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
-          network_strength = self.parse_strength(strength)
+        network_strength = self.parse_strength(self.get_modem_state().get('signal_quality', 0))
     except Exception:
       pass
 
@@ -370,29 +234,10 @@ class Tici(HardwareBase):
     return super().get_network_metered(network_type)
 
   def get_modem_version(self):
-    ms = self.get_modem_state()
-    if ms is not None:
-      return ms.get('modem_version') or None
-
-    try:
-      modem = self.get_modem()
-      return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-    except Exception:
-      return None
+    return self.get_modem_state().get('modem_version') or None
 
   def get_modem_temperatures(self):
-    ms = self.get_modem_state()
-    if ms is not None:
-      return ms.get('temperatures', [])
-
-    timeout = 0.2  # Default timeout is too short
-    try:
-      modem = self.get_modem()
-      temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
-      return list(filter(lambda t: t != 255, map(int, temps.split(' ')[1].split(','))))
-    except Exception:
-      return []
-
+    return self.get_modem_state().get('temperatures', [])
 
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
@@ -541,46 +386,6 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
-    # modem.py handles AT configuration when active
-    if self.get_modem_state() is None:
-      cmds = []
-      modem = self.get_modem()
-
-      # Quectel EG25
-      if self.get_device_type() in ("tizi", ):
-        # clear out old blue prime initial APN
-        os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
-
-        cmds += [
-          # SIM hot swap
-          'AT+QSIMDET=1,0',
-          'AT+QSIMSTAT=1',
-
-          # configure modem as data-centric
-          'AT+QNVW=5280,0,"0102000000000000"',
-          'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-          'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-        ]
-
-      # Quectel EG916
-      else:
-        # this modem gets upset with too many AT commands
-        if sim_id is None or len(sim_id) == 0:
-          cmds += [
-            # SIM sleep disable
-            'AT$QCSIMSLEEP=0',
-            'AT$QCSIMCFG=SimPowerSave,0',
-
-            # ethernet config
-            'AT$QCPCFG=usbNet,1',
-          ]
-
-      for cmd in cmds:
-        try:
-          modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-        except Exception:
-          pass
-
     # eSIM prime
     dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
     if self.get_sim_lpa().is_comma_profile(sim_id) and not os.path.exists(dest):
@@ -593,17 +398,6 @@ class Tici(HardwareBase):
         # needs to be root
         os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
-
-  def reboot_modem(self):
-    if self.get_modem_state() is not None:
-      return
-
-    modem = self.get_modem()
-    for state in (0, 1):
-      try:
-        modem.Command(f'AT+CFUN={state}', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      except Exception:
-        pass
 
   def get_networks(self):
     r = {}
@@ -634,23 +428,7 @@ class Tici(HardwareBase):
 
   def get_modem_data_usage(self):
     ms = self.get_modem_state()
-    if ms is not None:
-      return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
-
-    try:
-      wwan = self.get_wwan()
-
-      # Ensure refresh rate is set so values don't go stale
-      refresh_rate = wwan.Get(NM_DEV_STATS, 'RefreshRateMs', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      if refresh_rate != REFRESH_RATE_MS:
-        u = type(refresh_rate)
-        wwan.Set(NM_DEV_STATS, 'RefreshRateMs', u(REFRESH_RATE_MS), dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-      tx = wwan.Get(NM_DEV_STATS, 'TxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      rx = wwan.Get(NM_DEV_STATS, 'RxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      return int(tx), int(rx)
-    except Exception:
-      return -1, -1
+    return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
 
   def has_internal_panda(self):
     return True
