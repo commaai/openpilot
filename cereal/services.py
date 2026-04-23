@@ -24,10 +24,7 @@ _services: dict[str, tuple] = {
   # note: the "EncodeIdx" packets will still be in the log
   "gyroscope": (True, 104., 104),
   "accelerometer": (True, 104., 104),
-  "magnetometer": (True, 25.),
-  "lightSensor": (True, 100., 100),
   "temperatureSensor": (True, 2., 200),
-  "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
   "touch": (True, 20., 1),
   "can": (True, 100., 2053, QueueSize.BIG),  # decimation gives ~3 msgs in a full segment
@@ -56,7 +53,6 @@ _services: dict[str, tuple] = {
   "gpsLocation": (True, 1., 1),
   "ubloxGnss": (True, 10.),
   "qcomGnss": (True, 2.),
-  "gnssMeasurements": (True, 10., 10),
   "clocks": (True, 0.1, 1),
   "ubloxRaw": (True, 20.),
   "livePose": (True, 20., 4),
@@ -75,10 +71,6 @@ _services: dict[str, tuple] = {
   "drivingModelData": (True, 20., 10),
   "modelV2": (True, 20., None, QueueSize.BIG),
   "managerState": (True, 2., 1),
-  "uploaderState": (True, 0., 1),
-  "navInstruction": (True, 1., 10),
-  "navRoute": (True, 0.),
-  "navThumbnail": (True, 0.),
   "qRoadEncodeIdx": (False, 20.),
   "userBookmark": (True, 0., 1),
   "soundPressure": (True, 10., 10),
@@ -101,8 +93,6 @@ _services: dict[str, tuple] = {
   "livestreamRoadEncodeData": (False, 20., None, QueueSize.MEDIUM),
   "livestreamDriverEncodeData": (False, 20., None, QueueSize.MEDIUM),
   "customReservedRawData0": (True, 0.),
-  "customReservedRawData1": (True, 0.),
-  "customReservedRawData2": (True, 0.),
 }
 SERVICE_LIST = {name: Service(*vals) for
                 idx, (name, vals) in enumerate(_services.items())}
