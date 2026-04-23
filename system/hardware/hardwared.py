@@ -41,12 +41,19 @@ HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'ne
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
-THERMAL_BANDS = OrderedDict({
-  ThermalStatus.green: ThermalBand(None, 80.0),
-  ThermalStatus.yellow: ThermalBand(75.0, 96.0),
-  ThermalStatus.red: ThermalBand(88.0, 107.),
-  ThermalStatus.danger: ThermalBand(94.0, None),
-})
+if HARDWARE.get_device_type() == "mici":
+  THERMAL_BANDS = OrderedDict({
+    ThermalStatus.green: ThermalBand(None, 100.0),
+    ThermalStatus.red: ThermalBand(92.0, 107.),
+    ThermalStatus.danger: ThermalBand(98.0, None),
+  })
+else:
+  THERMAL_BANDS = OrderedDict({
+    ThermalStatus.green: ThermalBand(None, 80.0),
+    ThermalStatus.yellow: ThermalBand(75.0, 96.0),
+    ThermalStatus.red: ThermalBand(88.0, 107.),
+    ThermalStatus.danger: ThermalBand(94.0, None),
+  })
 
 # Override to highest thermal band when offroad and above this temp
 OFFROAD_DANGER_TEMP = 75
@@ -181,7 +188,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   started_ts: float | None = None
   started_seen = False
   startup_blocked_ts: float | None = None
-  thermal_status = ThermalStatus.yellow
+  thermal_status = ThermalStatus.green
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
