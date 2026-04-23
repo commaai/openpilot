@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
-import time
+import argparse
 import pickle
-from dataclasses import dataclass
-from itertools import product
+import time
 from functools import partial
+from collections import namedtuple
 
 import numpy as np
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-
-from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
-from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
-from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+from tinygrad.nn.onnx import OnnxRunner
 
 # https://github.com/tinygrad/tinygrad/issues/15682
 from tinygrad.uop.ops import UOp, Ops
@@ -22,24 +18,7 @@ _orig = UOp.__reduce__
 UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig(self)
 
 
-@dataclass
-class CompileConfig:
-  cam_w: int
-  cam_h: int
-  prepare_only: bool
-  prefix: str
-
-  @property
-  def pkl_path(self):
-    return str(MODELS_DIR / f'{self.prefix}{"warp_" if self.prepare_only else ""}{self.cam_w}x{self.cam_h}_tinygrad.pkl')
-
-CAMERA_CONFIGS = [
-  (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
-  (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
-]
-MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_') for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
-DM_WARP_CONFIGS = [CompileConfig(cam_w, cam_h, True, 'dm_') for cam_w, cam_h in CAMERA_CONFIGS]
-
+NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -79,8 +58,8 @@ def frames_to_tensor(frames):
   return in_img1
 
 
-def make_frame_prepare(cam_w, cam_h, model_w, model_h):
-  stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
+def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
+  cam_w, cam_h, stride, y_height, uv_height, _ = nv12
   uv_offset = stride * y_height
   stride_pad = stride - cam_w
 
@@ -143,27 +122,21 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
-  stride, y_height, _, _ = get_nv12_info(cam_w, cam_h)
-  stride_pad = stride - cam_w
-
-  def warp_dm(input_frame, M_inv):
-    M_inv = M_inv.to(Device.DEFAULT)
-    result = warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv, (dm_w, dm_h), (cam_h, cam_w), stride_pad).reshape(-1, dm_h * dm_w)
-    return result
-  return warp_dm
-
-
-def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
+def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, model_h,
                     vision_features_slice, frame_skip, prepare_only=False):
-  model_w, model_h = MEDMODEL_INPUT_SIZE
-  frame_prepare = make_frame_prepare(cam_w, cam_h, model_w, model_h)
+  frame_prepare = make_frame_prepare(nv12, model_w, model_h)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
+    tfm = tfm.to(Device.DEFAULT)
+    big_tfm = big_tfm.to(Device.DEFAULT)
+    desire = desire.to(Device.DEFAULT)
+    traffic_convention = traffic_convention.to(Device.DEFAULT)
+    Tensor.realize(tfm, big_tfm, desire, traffic_convention)
+
+    img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -172,36 +145,33 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
 
     new_feat = vision_out[:, vision_features_slice].reshape(1, -1).unsqueeze(0)
     feat_buf = shift_and_sample(feat_q, new_feat, sample_skip_fn)
-    desire_buf = shift_and_sample(desire_q, desire.to(Device.DEFAULT).reshape(1, 1, -1), sample_desire_fn)
+    desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
 
-    inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention.to(Device.DEFAULT)}
+    inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention}
     policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
 
     return vision_out, policy_out
   return run_policy
 
 
-def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
-  from tinygrad.nn.onnx import OnnxRunner
-  from openpilot.selfdrive.modeld.constants import ModelConstants
+def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
+                   vision_onnx, policy_onnx, pkl_path):
+  from get_model_metadata import metadata_path_for
 
-  _, _, _, yuv_size = get_nv12_info(cam_w, cam_h)
-  print(f"Compiling combined policy JIT for {cam_w}x{cam_h}...")
+  print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
-  vision_runner = OnnxRunner(MODELS_DIR / 'driving_vision.onnx')
-  policy_runner = OnnxRunner(MODELS_DIR / 'driving_policy.onnx')
+  vision_runner = OnnxRunner(vision_onnx)
+  policy_runner = OnnxRunner(policy_onnx)
 
-  with open(MODELS_DIR / 'driving_vision_metadata.pkl', 'rb') as f:
+  with open(metadata_path_for(vision_onnx), 'rb') as f:
     vision_metadata = pickle.load(f)
     vision_features_slice = vision_metadata['output_slices']['hidden_state']
     vision_input_shapes = vision_metadata['input_shapes']
-  with open(MODELS_DIR / 'driving_policy_metadata.pkl', 'rb') as f:
+  with open(metadata_path_for(policy_onnx), 'rb') as f:
     policy_input_shapes = pickle.load(f)['input_shapes']
 
-  frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-
-  _run = make_run_policy(vision_runner, policy_runner,
-                         cam_w, cam_h, vision_features_slice, frame_skip, prepare_only)
+  _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
+                         vision_features_slice, frame_skip, prepare_only)
   run_policy_jit = TinyJit(_run, prune=True)
 
   N_RUNS = 3
@@ -210,10 +180,11 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip)
     np.random.seed(seed)
+    Tensor.manual_seed(seed)
 
     for i in range(N_RUNS):
-      frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
-      big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
+      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
+      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
@@ -253,37 +224,30 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
 
 
-def compile_dm_warp(cam_w, cam_h, pkl_path):
-  dm_w, dm_h = DM_INPUT_SIZE
-  _, _, _, yuv_size = get_nv12_info(cam_w, cam_h)
-
-  print(f"Compiling DM warp for {cam_w}x{cam_h}...")
-
-  warp_dm = make_warp_dm(cam_w, cam_h, dm_w, dm_h)
-  warp_dm_jit = TinyJit(warp_dm, prune=True)
-
-  for i in range(10):
-    inputs = [Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize(),
-              Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')]
-    Device.default.synchronize()
-    st = time.perf_counter()
-    warp_dm_jit(*inputs)
-    mt = time.perf_counter()
-    Device.default.synchronize()
-    et = time.perf_counter()
-    print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
-
-  with open(pkl_path, "wb") as f:
-    pickle.dump(warp_dm_jit, f)
-  print(f"  Saved to {pkl_path}")
+def _parse_size(s):
+  w, h = s.lower().split('x')
+  return int(w), int(h)
 
 
-def run_and_save_pickle():
-  for cfg in MODELD_CONFIGS:
-    compile_modeld(cfg.cam_w, cfg.cam_h, cfg.prepare_only, cfg.pkl_path)
-  for cfg in DM_WARP_CONFIGS:
-    compile_dm_warp(cfg.cam_w, cfg.cam_h, cfg.pkl_path)
+def _parse_nv12(s):
+  parts = s.split(',')
+  assert len(parts) == len(NV12Frame._fields), \
+    f"--nv12 expects {','.join(NV12Frame._fields)} (got {s!r})"
+  return NV12Frame(*(int(x) for x in parts))
 
 
 if __name__ == "__main__":
-  run_and_save_pickle()
+  p = argparse.ArgumentParser()
+  p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
+  p.add_argument('--nv12', type=_parse_nv12, required=True,
+                 help=f'NV12 frame layout: {",".join(NV12Frame._fields)}')
+  p.add_argument('--vision-onnx', required=True)
+  p.add_argument('--policy-onnx', required=True)
+  p.add_argument('--output', required=True)
+  p.add_argument('--prepare-only', action='store_true')
+  p.add_argument('--frame-skip', type=int, required=True)
+  args = p.parse_args()
+
+  model_w, model_h = args.model_size
+  compile_modeld(args.nv12, model_w, model_h, args.prepare_only, args.frame_skip,
+                 args.vision_onnx, args.policy_onnx, args.output)

@@ -324,7 +324,7 @@ void configure_style() {
   plot_style.LegendInnerPadding = ImVec2(6.0f, 3.0f);
   plot_style.LegendSpacing = ImVec2(7.0f, 2.0f);
   plot_style.PlotPadding = ImVec2(4.0f, 8.0f);
-  plot_style.FitPadding = ImVec2(0.02f, 0.4f);
+  plot_style.FitPadding = ImVec2(0.02f, static_cast<float>(PLOT_Y_PADDING_FRACTION));
 
   ImPlot::MapInputDefault();
   ImPlotInputMap &input_map = ImPlot::GetInputMap();

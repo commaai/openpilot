@@ -716,21 +716,28 @@ class TiciLPA(LPABase):
     atexit.register(self._client.close)
 
   @contextmanager
-  def _acquire_channel(self):
+  def _acquire_lock(self):
     fd = os.open(LOCK_FILE, os.O_CREAT | os.O_RDWR)
     try:
       fcntl.flock(fd, fcntl.LOCK_EX)
-      self._client.open_isdr()
       yield
     finally:
-      if self._client.channel:
-        try:
-          self._client.query(f"AT+CCHC={self._client.channel}")
-        except (RuntimeError, TimeoutError):
-          pass
-        self._client.channel = None
       fcntl.flock(fd, fcntl.LOCK_UN)
       os.close(fd)
+
+  @contextmanager
+  def _acquire_channel(self):
+    with self._acquire_lock():
+      try:
+        self._client.open_isdr()
+        yield
+      finally:
+        if self._client.channel:
+          try:
+            self._client.query(f"AT+CCHC={self._client.channel}")
+          except (RuntimeError, TimeoutError):
+            pass
+          self._client.channel = None
 
   def list_profiles(self) -> list[Profile]:
     with self._acquire_channel():
@@ -792,3 +799,21 @@ class TiciLPA(LPABase):
     if HARDWARE.get_device_type() == "mici":
       self._client.send_raw(b'AT+CFUN=0\rAT+CFUN=1\r')  # mici has no SIM presence pin; raw because CFUN=0 drops serial
       self._client._ensure_serial(reconnect=True)
+
+  def is_euicc(self) -> bool:
+    # +CCHO:<n> -> eUICC; bare ERROR -> applet absent, non-eUICC; +CME ERROR -> applet
+    # exists but bus busy or modem in transient state, still eUICC.
+    with self._acquire_lock():
+      try:
+        lines = self._client.query(f'AT+CCHO="{ISDR_AID}"')
+      except RuntimeError as e:
+        return "+CME ERROR" in str(e)
+      for line in lines:
+        if line.startswith("+CCHO:") and (ch := line.split(":", 1)[1].strip()):
+          try:
+            self._client.query(f"AT+CCHC={ch}")
+          except (RuntimeError, TimeoutError):
+            pass
+          self._client.channel = None
+          return True
+      return False
