@@ -250,7 +250,7 @@ def _parse_nv12(s):
 
 if __name__ == "__main__":
   p = argparse.ArgumentParser()
-  p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH, e.g. 512x256')
+  p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
   p.add_argument('--nv12', type=_parse_nv12, required=True,
                  help=f'NV12 frame layout: {",".join(NV12Frame._fields)}')
   p.add_argument('--vision-onnx', required=True)
