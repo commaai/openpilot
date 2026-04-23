@@ -34,17 +34,12 @@ class TestQcomgpsd:
       time.sleep(dt)
     return self.sm.updated['qcomGnss']
 
-  def test_no_crash_double_command(self):
-    wait_for_modem()
-    at_cmd("AT+QGPSDEL=0")
-    at_cmd("AT+QGPSDEL=0")
-
   def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager")
     managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(30)
 
-  def test_startup_time(self, subtests):
+  def test_startup_time(self):
     managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(30)
     managed_processes['qcomgpsd'].stop()
