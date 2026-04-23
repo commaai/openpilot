@@ -56,7 +56,7 @@ else:
   })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 75
+OFFROAD_DANGER_TEMP = 85 if HARDWARE.get_device_type() == "mici" else 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
