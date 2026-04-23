@@ -605,7 +605,10 @@ def load_bpp(client: AtClient, b64_bpp: str) -> dict:
   for chunk in _split_bpp(bpp):
     response = es10x_command(client, chunk)
     if response:
-      result = _parse_install_result(response) or result
+      parsed = _parse_install_result(response)
+      if parsed:
+        result = parsed
+        break
 
   if result is None:
     raise RuntimeError("Profile installation failed: no result from eUICC")
