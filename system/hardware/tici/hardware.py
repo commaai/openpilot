@@ -165,21 +165,13 @@ class Tici(HardwareBase):
       return None
 
     ms = self.get_modem_state()
-    state_map = {
-      "waiting_port": "INITIALIZING",
-      "init": "INITIALIZING",
-      "registering": "SEARCHING",
-      "connecting": "CONNECTING",
-      "connected": "CONNECTED",
-      "reconnecting": "DISCONNECTING",
-    }
     return {
       'technology': ms.get('network_type', '').upper() if ms.get('network_type') else '',
       'operator': ms.get('operator', ''),
       'band': ms.get('band', ''),
       'channel': ms.get('channel', 0),
       'extra': ms.get('extra', ''),
-      'state': state_map.get(ms.get('state', ''), 'UNKNOWN'),
+      'state': ms.get('state', 'UNKNOWN'),
     }
 
   def parse_strength(self, percentage):

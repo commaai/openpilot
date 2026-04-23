@@ -47,6 +47,17 @@ class State(Enum):
   CONNECTED = "connected"
   RECONNECTING = "reconnecting"
 
+  @property
+  def label(self) -> str:
+    return {
+      State.WAITING_PORT: "INITIALIZING",
+      State.INIT: "INITIALIZING",
+      State.REGISTERING: "SEARCHING",
+      State.CONNECTING: "CONNECTING",
+      State.CONNECTED: "CONNECTED",
+      State.RECONNECTING: "DISCONNECTING",
+    }[self]
+
 
 class Modem:
   def __init__(self):
@@ -66,7 +77,7 @@ class Modem:
     self._last_rx = 0
     self.running = True
     self.S = {
-      "state": "init",
+      "state": "INITIALIZING",
       "connected": False,
       "ip_address": "",
       "iccid": "",
@@ -531,7 +542,7 @@ class Modem:
   def run(self):
     log.info("starting")
     # publish initial state so callers see modem.py is active from the start
-    self._update(state="init")
+    self._update(state=State.INIT.label)
     subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
 
@@ -551,7 +562,7 @@ class Modem:
         prev = state
         state = handlers[state]()
         if state != prev:
-          self._update(state=state.value)
+          self._update(state=state.label)
           log.info(f"{prev.value} -> {state.value}")
       except Exception:
         log.exception(f"error in {state.value}")
