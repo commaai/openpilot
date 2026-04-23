@@ -163,12 +163,17 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
 
 def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
                    vision_onnx, policy_onnx, pkl_path):
-  from get_model_metadata import metadata_path_for
+  from get_model_metadata import dump_metadata, metadata_path_for
 
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
   vision_runner = OnnxRunner(vision_onnx)
   policy_runner = OnnxRunner(policy_onnx)
+
+  # metadata also used at runtime
+  # TODO can be removed altogether
+  dump_metadata(vision_onnx)
+  dump_metadata(policy_onnx)
 
   with open(metadata_path_for(vision_onnx), 'rb') as f:
     vision_metadata = pickle.load(f)

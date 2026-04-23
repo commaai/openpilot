@@ -39,8 +39,7 @@ def get_metadata_value_by_name(model: dict[str, Any], name: str) -> str | Any:
   return None
 
 
-if __name__ == "__main__":
-  model_path = pathlib.Path(sys.argv[1])
+def dump_metadata(model_path):
   model = MetadataOnnxPBParser(model_path).parse()
   output_slices = get_metadata_value_by_name(model, 'output_slices')
   assert output_slices is not None, 'output_slices not found in metadata'
@@ -57,3 +56,8 @@ if __name__ == "__main__":
     pickle.dump(metadata, f)
 
   print(f'saved metadata to {metadata_path}')
+
+
+if __name__ == "__main__":
+  model_path = pathlib.Path(sys.argv[1])
+  dump_metadata(model_path)
