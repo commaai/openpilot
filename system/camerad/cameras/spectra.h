@@ -174,7 +174,7 @@ public:
   SpectraBuf bps_striping;
   SpectraBuf bps_linearization_lut;
   SpectraBuf bps_gamma_lut;
-  SpectraBuf bps_full_scratch;
+  SpectraBuf bps_fullres_dummy;
   std::vector<uint32_t> bps_lin_reg;
   std::vector<uint32_t> bps_ccm_reg;
 
