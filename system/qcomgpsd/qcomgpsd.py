@@ -197,6 +197,8 @@ def inject_assistance():
     fcntl.flock(lock_fd, fcntl.LOCK_EX)
     with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
       _at_send(ser, "AT+QGPSXTRA=1", strict=True)
+      # clear any stale upload from a prior run so QFUPL doesn't hit +CME ERROR: 407 (file exists)
+      _at_send(ser, 'AT+QFDEL="RAM:xtra3grc.bin"')
       _qfupl(ser, "RAM:xtra3grc.bin", data)
       now = datetime.datetime.now(datetime.UTC).strftime("%Y/%m/%d,%H:%M:%S")
       _at_send(ser, f'AT+QGPSXTRATIME=0,"{now}",1,1,500', strict=True)
