@@ -3,6 +3,7 @@ import argparse
 import pickle
 import time
 from functools import partial
+from collections import namedtuple
 from typing import NamedTuple
 
 import numpy as np
@@ -18,14 +19,7 @@ _orig = UOp.__reduce__
 UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig(self)
 
 
-class NV12Frame(NamedTuple):
-  width: int
-  height: int
-  stride: int
-  y_height: int
-  uv_height: int
-  size: int
-
+NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
