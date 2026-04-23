@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
-set_tinygrad_backend_from_compiled_flags()
-
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -18,6 +15,7 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, get_jit_input_devices
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -34,18 +32,21 @@ class ModelState:
       self.input_shapes = model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
 
+    self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
+    self.model_input_devices = get_jit_input_devices(self.model_run)
+
     self.numpy_inputs = {
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
     }
 
     self.warp_inputs_np = {'transform': np.zeros((3,3), dtype=np.float32)}
-    self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
     self.frame_buf_params = get_nv12_info(cam_w, cam_h)
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
-    self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
     with open(CompileConfig(cam_w, cam_h, prefix='dm_', prepare_only=True).pkl_path, "rb") as f:
       self.image_warp = pickle.load(f)
+    self.warp_input_devices = get_jit_input_devices(self.image_warp)
+    self.warp_inputs = {'transform': Tensor(self.warp_inputs_np['transform'], device=self.warp_input_devices['M_inv'])}
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -55,10 +56,10 @@ class ModelState:
     ptr = buf.data.ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.warp_input_devices['input_frame'])
 
     self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()
+    self.tensor_inputs['input_img'] = self.image_warp(input_frame=self._blob_cache[ptr], M_inv=self.warp_inputs['transform']).realize()
 
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
 

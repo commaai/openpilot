@@ -31,7 +31,7 @@ def compile_dm_warp(nv12: NV12Frame, dm_w, dm_h, pkl_path):
     M_inv = Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')
     Device.default.synchronize()
     st = time.perf_counter()
-    warp_dm_jit(frame, M_inv).realize()
+    warp_dm_jit(input_frame=frame, M_inv=M_inv).realize()
     mt = time.perf_counter()
     Device.default.synchronize()
     et = time.perf_counter()

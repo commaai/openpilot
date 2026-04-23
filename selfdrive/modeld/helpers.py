@@ -1,19 +1,12 @@
-import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
-COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
 
-
-def set_tinygrad_backend_from_compiled_flags() -> None:
-  if os.path.isfile(COMPILED_FLAGS_PATH):
-    with open(COMPILED_FLAGS_PATH) as f:
-      os.environ['DEV'] = str(json.load(f)['DEV'])
-
+def get_jit_input_devices(jit) -> dict[str, str]:
+  return {name: info[3] for name, info in zip(jit.captured.expected_names, jit.captured.expected_input_info)}
 
 @dataclass
 class CompileConfig:
