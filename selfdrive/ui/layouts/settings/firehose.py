@@ -1,7 +1,7 @@
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
-from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -65,12 +65,13 @@ class FirehoseLayout(FirehoseLayoutBase):
     y = self._draw_wrapped_text(x, y, w, status_text, gui_app.font(FontWeight.BOLD), 60, status_color)
     y += 20 + 20
 
+    # TODO: add back once reliable
     # Contribution count (if available)
-    if self._segment_count > 0:
-      contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
-      y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 52, rl.WHITE)
-      y += 20 + 20
+    #if self._segment_count > 0:
+    #  contrib_text = trn("{} segment of your driving is in the training dataset so far.",
+    #                     "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
+    #  y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 52, rl.WHITE)
+    #  y += 20 + 20
 
     # Separator
     rl.draw_rectangle(x, y, w, 2, self.GRAY)
