@@ -4,7 +4,6 @@ import pickle
 import time
 from functools import partial
 from collections import namedtuple
-from typing import NamedTuple
 
 import numpy as np
 from tinygrad.tensor import Tensor
