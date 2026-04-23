@@ -102,7 +102,6 @@ def hw_state_thread(end_event, hw_queue):
   prev_hw_state = None
 
   modem_version = None
-  modem_configured = False
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -135,11 +134,6 @@ def hw_state_thread(end_event, hw_queue):
           hw_queue.put_nowait(hw_state)
         except queue.Full:
           pass
-
-        if not modem_configured and HARDWARE.get_modem_version() is not None:
-          cloudlog.warning("configuring modem")
-          HARDWARE.configure_modem()
-          modem_configured = True
 
         prev_hw_state = hw_state
       except Exception:

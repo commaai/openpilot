@@ -229,6 +229,45 @@ class Modem:
     time.sleep(1)
     return State.WAITING_PORT
 
+  def _configure_device(self, sim_id):
+    try:
+      with open("/sys/firmware/devicetree/base/model") as f:
+        device = f.read().strip('\x00').split('comma ')[-1]
+    except Exception:
+      device = ""
+
+    cmds = []
+    # Quectel EG25
+    if device == "tizi":
+      cmds += [
+        # clear old blue prime initial EPS bearer APN (was `mmcli --3gpp-set-initial-eps-bearer-settings="apn="`)
+        'AT+CGDCONT=0,"IP",""',
+
+        # SIM hot swap
+        'AT+QSIMDET=1,0',
+        'AT+QSIMSTAT=1',
+
+        # configure modem as data-centric
+        'AT+QNVW=5280,0,"0102000000000000"',
+        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+      ]
+    # Quectel EG916
+    else:
+      # this modem gets upset with too many AT commands
+      if not sim_id:
+        cmds += [
+          # SIM sleep disable
+          'AT$QCSIMSLEEP=0',
+          'AT$QCSIMCFG=SimPowerSave,0',
+
+          # ethernet config
+          'AT$QCPCFG=usbNet,1',
+        ]
+
+    for c in cmds:
+      self._at(c)
+
   def _do_init(self):
     log.info("opening serial port")
     if self._ser:
@@ -248,25 +287,8 @@ class Modem:
     self._cleanup_routes()
 
     # AT init
-    for c in AT_INIT + ["AT$QCSIMSLEEP=0", "AT$QCSIMCFG=SimPowerSave,0", "AT+CREG=2", "AT+CGREG=2"]:
+    for c in AT_INIT + ["AT+CREG=2", "AT+CGREG=2"]:
       self._at(c)
-
-    # device-specific config
-    try:
-      with open("/sys/firmware/devicetree/base/model") as f:
-        device = f.read().strip('\x00').split('comma ')[-1]
-    except Exception:
-      device = ""
-    if device == "tizi":
-      for c in [
-        "AT+QSIMDET=1,0", "AT+QSIMSTAT=1",
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]:
-        self._at(c)
-    else:
-      self._at('AT$QCPCFG=usbNet,1')
 
     # read identity
     imei, iccid, mcc_mnc, modem_version = "", "", "", ""
@@ -287,6 +309,8 @@ class Modem:
     if r:
       modem_version = r[0].strip()
     log.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
+
+    self._configure_device(iccid)
 
     # configure APN on CID 1
     self._apn = self._read_param("GsmApn")
