@@ -6,7 +6,7 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
 
 def get_jit_input_devices(jit) -> dict[str, str]:
-  return {name: info[3] for name, info in zip(jit.captured.expected_names, jit.captured.expected_input_info)}
+  return {name: info[3] for name, info in zip(jit.captured.expected_names, jit.captured.expected_input_info, strict=True)}
 
 @dataclass
 class CompileConfig:
