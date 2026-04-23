@@ -84,7 +84,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devices=None):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
@@ -99,11 +99,18 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
+  queues_shapes_dtypes = {
+    'img_q': (img_buf_shape, 'uint8'),
+    'big_img_q': (img_buf_shape, 'uint8'),
+    'feat_q': ((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), 'float32'),
+    'desire_q': ((frame_skip * dp[1], dp[0], dp[2]), 'float32'),
+  }
+  if devices is None:
+    devices = dict.fromkeys(queues_shapes_dtypes, Device.DEFAULT)
+
   input_queues = {
-    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
-    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
+    **{k: Tensor.zeros(shape, dtype=dtype, device=devices[k]).contiguous().realize()
+       for k, (shape, dtype) in queues_shapes_dtypes.items()},
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return input_queues, npy

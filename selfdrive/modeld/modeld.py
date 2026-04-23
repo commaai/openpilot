@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
-set_tinygrad_backend_from_compiled_flags()
-
 USBGPU = "USBGPU" in os.environ
 if USBGPU:
   os.environ['DEV'] = 'AMD'
@@ -30,6 +27,7 @@ from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, get_jit_input_devices
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -95,17 +93,19 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
     self.full_frames : dict[str, Tensor] = {}
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
+
+    self.input_devices = get_jit_input_devices(self.run_policy)
+    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, self.input_devices)
     self.warp_enqueue(
       **self.input_queues,
-      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').contiguous().realize(),
-      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8').contiguous().realize())
+      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8', device=self.input_devices['frame']).contiguous().realize(),
+      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8', device=self.input_devices['big_frame']).contiguous().realize())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -119,7 +119,7 @@ class ModelState:
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
       cache_key = (key, ptr)
       if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.input_devices['frame']) # TODO use key
       self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge

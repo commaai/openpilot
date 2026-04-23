@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, set_tinygrad_backend_from_compiled_flags
-set_tinygrad_backend_from_compiled_flags()
-
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -18,6 +15,7 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, get_jit_input_devices
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -28,42 +26,38 @@ class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
 
-  def __init__(self):
+  def __init__(self, cam_w: int, cam_h: int):
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
 
-    self.numpy_inputs = {
-      'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
-    }
-
-    self.warp_inputs_np = {'transform': np.zeros((3,3), dtype=np.float32)}
-    self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
-    self.frame_buf_params = None
-    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
-    self._blob_cache : dict[int, Tensor] = {}
-    self.image_warp = None
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
+
+    self.numpy_inputs = {'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32)}
+    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+
+    self.frame_buf_params = get_nv12_info(cam_w, cam_h)
+    self._blob_cache : dict[int, Tensor] = {}
+
+    with open(CompileConfig(cam_w, cam_h, prefix='dm_', prepare_only=True).pkl_path, "rb") as f:
+      self.image_warp = pickle.load(f)
+    self.warp_input_devices = get_jit_input_devices(self.image_warp)
+    self.warp_inputs_np = {'M_inv': np.zeros((3,3), dtype=np.float32)}
+    self.warp_inputs = {k: Tensor(v, device='NPY') for k, v in self.warp_inputs_np}
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
 
-    if self.image_warp is None:
-      self.frame_buf_params = get_nv12_info(buf.width, buf.height)
-      warp_path = MODELS_DIR / f'dm_warp_{buf.width}x{buf.height}_tinygrad.pkl'
-      with open(warp_path, "rb") as f:
-        self.image_warp = pickle.load(f)
     ptr = buf.data.ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.warp_input_devices['input_frame'])
 
-    self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()
-
+    self.warp_inputs_np['M_inv'][:] = transform[:]
+    self.tensor_inputs['input_img'] = self.image_warp(input_frame=self._blob_cache[ptr], **self.warp_inputs).realize()
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
 
     t2 = time.perf_counter()
@@ -109,15 +103,15 @@ def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_t
 def main():
   config_realtime_process(7, 5)
 
-  model = ModelState()
-  cloudlog.warning("models loaded, dmonitoringmodeld starting")
-
   cloudlog.warning("connecting to driver stream")
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
   while not vipc_client.connect(False):
     time.sleep(0.1)
   assert vipc_client.is_connected()
   cloudlog.warning(f"connected with buffer size: {vipc_client.buffer_len}")
+
+  model = ModelState(vipc_client.width, vipc_client.height)
+  cloudlog.warning("models loaded, dmonitoringmodeld starting")
 
   sm = SubMaster(["liveCalibration"])
   pm = PubMaster(["driverStateV2"])
