@@ -19,7 +19,7 @@ function retry() {
   return 1
 }
 
-function install_ubuntu_deps() {
+function install_linux_deps() {
   SUDO=""
 
   if [[ ! $(id -u) -eq 0 ]]; then
@@ -30,61 +30,49 @@ function install_ubuntu_deps() {
     SUDO="sudo"
   fi
 
-  # Detect OS using /etc/os-release file
-  if [ -f "/etc/os-release" ]; then
-    source /etc/os-release
-    case "$VERSION_CODENAME" in
-      "jammy" | "kinetic" | "noble")
-        ;;
-      *)
-        echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 24.04."
-        read -p "Would you like to attempt installation anyway? " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-          exit 1
-        fi
-        ;;
-    esac
+  # normal stuff, this mostly for bare docker images
+  if command -v apt-get > /dev/null 2>&1; then
+    $SUDO apt-get update
+    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xvfb
+  elif command -v dnf > /dev/null 2>&1; then
+    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git xorg-x11-server-Xvfb
+  elif command -v yum > /dev/null 2>&1; then
+    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git xorg-x11-server-Xvfb
+  elif command -v pacman > /dev/null 2>&1; then
+    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git xorg-server-xvfb
+  elif command -v zypper > /dev/null 2>&1; then
+    $SUDO zypper --non-interactive refresh
+    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git xorg-x11-server
+  elif command -v apk > /dev/null 2>&1; then
+    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git xvfb
+  elif command -v xbps-install > /dev/null 2>&1; then
+    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales xorg-server-xvfb
   else
-    echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
+    echo "Unsupported Linux distribution. Supported package managers: apt-get, dnf, yum, pacman, zypper, apk, xbps-install."
     exit 1
   fi
 
-  $SUDO apt-get update
-
-  # normal stuff, mostly for the bare docker image
-  $SUDO apt-get install -y --no-install-recommends \
-    ca-certificates \
-    build-essential \
-    curl \
-    libcurl4-openssl-dev \
-    locales \
-    git \
-    xvfb
-
   if [[ -d "/etc/udev/rules.d/" ]]; then
-    # Setup jungle udev rules
-    $SUDO tee /etc/udev/rules.d/12-panda_jungle.rules > /dev/null <<EOF
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddef", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcf", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddef", MODE="0666"
+    $SUDO tee /etc/udev/rules.d/11-openpilot.rules > /dev/null <<-EOF
+	# Panda Jungle devices
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddef", MODE="0666"
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcf", MODE="0666"
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddef", MODE="0666"
 
-EOF
+	# Panda devices
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666"
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcc", MODE="0666"
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddee", MODE="0666"
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
+	SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
 
-    # Setup panda udev rules
-    $SUDO tee /etc/udev/rules.d/11-panda.rules > /dev/null <<EOF
-SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcc", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddee", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
-EOF
+	# comma devices over ADB
+	SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="1234", ENV{adb_user}="yes"
+	EOF
 
-    # Setup adb udev rules
-    $SUDO tee /etc/udev/rules.d/50-comma-adb.rules > /dev/null <<EOF
-SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="1234", ENV{adb_user}="yes"
-EOF
+    # delete the old ones
+    $SUDO rm -f /etc/udev/rules.d/11-panda.rules /etc/udev/rules.d/12-panda_jungle.rules /etc/udev/rules.d/50-comma-adb.rules
 
     $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
   fi
@@ -116,7 +104,7 @@ function install_python_deps() {
 # --- Main ---
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  install_ubuntu_deps
+  install_linux_deps
   echo "[ ] installed system dependencies t=$SECONDS"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   if [[ $SHELL == "/bin/zsh" ]]; then
