@@ -17,12 +17,8 @@ def estimate_pickle_max_size(onnx_size):
   return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
 
 # get fastest TG config
-# available = set(Device.get_available_devices())
-if True: # "AMD" in available:
-  tg_backend = 'USB+AMD:LLVM'
-  tg_flags = f'DEV={tg_backend} GMMU=0 FLOAT16=1 JIT_BATCH_SIZE=0'
-  SetOption('num_jobs', 1)
-elif 'CUDA' in available:
+available = set(Device.get_available_devices())
+if 'CUDA' in available:
   tg_backend = 'CUDA'
   tg_flags = f'DEV={tg_backend}'
 elif 'QCOM' in available:
@@ -51,11 +47,11 @@ mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
   script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
-  cmd = f'DEV=CPU:LLVM THREADS=0 {mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+  cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
   lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files + [compiled_flags_node], cmd)
 
 image_flag = {
-  'larch64': 'IMAGE=2',
+     'larch64': 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
 script_files = [File(Dir("#selfdrive/modeld").File("compile_modeld.py").abspath)]
 compile_modeld_cmd = f'{tg_flags} {mac_brew_string} {image_flag} python3 {Dir("#selfdrive/modeld").abspath}/compile_modeld.py '
@@ -84,7 +80,7 @@ def tg_compile(flags, model_name):
   compile_node = lenv.Command(
     pkl,
     [onnx_path] + tinygrad_files + [chunker_file, compiled_flags_node],
-    f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
+    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
   )
   def do_chunk(target, source, env):
     chunk_file(pkl, chunk_targets)
@@ -94,7 +90,4 @@ def tg_compile(flags, model_name):
     do_chunk,
   )
 
-dm_flags = {
-  'larch64': 'DEV=QCOM IMAGE=2 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1',
-}.get(arch, 'DEV=CPU:LLVM')
-tg_compile(f'{dm_flags}', 'dmonitoring_model')
+tg_compile(tg_flags, 'dmonitoring_model')

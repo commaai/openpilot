@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import time
 import pickle
 from dataclasses import dataclass
@@ -11,10 +10,6 @@ from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-
-from openpilot.system.hardware import TICI
-WARP_DEVICE = 'QCOM' if TICI else 'CPU' # TODO should warp on NV if available
-SZ_PREFIX = "big_" # if Device.DEFAULT=="AMD" else ""
 
 from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
@@ -39,10 +34,10 @@ class CompileConfig:
     return str(MODELS_DIR / f'{self.prefix}{"warp_" if self.prepare_only else ""}{self.cam_w}x{self.cam_h}_tinygrad.pkl')
 
 CAMERA_CONFIGS = [
-  # (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
+  (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
   (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
 ]
-MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, f'{SZ_PREFIX}driving_') for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
+MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_') for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
 DM_WARP_CONFIGS = [CompileConfig(cam_w, cam_h, True, 'dm_') for cam_w, cam_h in CAMERA_CONFIGS]
 
 
@@ -54,8 +49,8 @@ def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad)
   w_dst, h_dst = dst_shape
   h_src, w_src = src_shape
 
-  x = Tensor.arange(w_dst, device=WARP_DEVICE).reshape(1, w_dst).expand(h_dst, w_dst).reshape(-1)
-  y = Tensor.arange(h_dst, device=WARP_DEVICE).reshape(h_dst, 1).expand(h_dst, w_dst).reshape(-1)
+  x = Tensor.arange(w_dst).reshape(1, w_dst).expand(h_dst, w_dst).reshape(-1)
+  y = Tensor.arange(h_dst).reshape(h_dst, 1).expand(h_dst, w_dst).reshape(-1)
 
   # inline 3x3 matmul as elementwise to avoid reduce op (enables fusion with gather)
   src_x = M_inv[0, 0] * x + M_inv[0, 1] * y + M_inv[0, 2]
@@ -91,7 +86,7 @@ def make_frame_prepare(cam_w, cam_h, model_w, model_h):
 
   def frame_prepare_tinygrad(input_frame, M_inv):
     # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
-    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=WARP_DEVICE)
+    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]])
     # deinterleave NV12 UV plane (UVUV... -> separate U, V)
     uv = input_frame[uv_offset:uv_offset + uv_height * stride].reshape(uv_height, stride)
     with Context(SPLIT_REDUCEOP=0):
@@ -167,8 +162,8 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(WARP_DEVICE)).unsqueeze(0).to(Device.DEFAULT), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(WARP_DEVICE)).unsqueeze(0).to(Device.DEFAULT), sample_skip_fn)
+    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -193,8 +188,8 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   _, _, _, yuv_size = get_nv12_info(cam_w, cam_h)
   print(f"Compiling combined policy JIT for {cam_w}x{cam_h}...")
 
-  vision_runner = OnnxRunner(MODELS_DIR / f'driving_vision.onnx')
-  policy_runner = OnnxRunner(MODELS_DIR / f'driving_policy.onnx')
+  vision_runner = OnnxRunner(MODELS_DIR / 'driving_vision.onnx')
+  policy_runner = OnnxRunner(MODELS_DIR / 'driving_policy.onnx')
 
   with open(MODELS_DIR / 'driving_vision_metadata.pkl', 'rb') as f:
     vision_metadata = pickle.load(f)
@@ -217,8 +212,8 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
     np.random.seed(seed)
 
     for i in range(N_RUNS):
-      frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8), device=WARP_DEVICE).realize()
-      big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8), device=WARP_DEVICE).realize()
+      frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
+      big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
@@ -286,9 +281,8 @@ def compile_dm_warp(cam_w, cam_h, pkl_path):
 def run_and_save_pickle():
   for cfg in MODELD_CONFIGS:
     compile_modeld(cfg.cam_w, cfg.cam_h, cfg.prepare_only, cfg.pkl_path)
-  with Context(DEV=WARP_DEVICE):
-    for cfg in DM_WARP_CONFIGS:
-      compile_dm_warp(cfg.cam_w, cfg.cam_h, cfg.pkl_path)
+  for cfg in DM_WARP_CONFIGS:
+    compile_dm_warp(cfg.cam_w, cfg.cam_h, cfg.pkl_path)
 
 
 if __name__ == "__main__":

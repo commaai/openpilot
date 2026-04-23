@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 import os
 from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR, set_tinygrad_backend_from_compiled_flags
-# set_tinygrad_backend_from_compiled_flags()
-# TODO compiled flags assumes single device
-from openpilot.system.hardware import TICI
-DEV = 'QCOM' if TICI else 'CPU'
+set_tinygrad_backend_from_compiled_flags()
 
 from tinygrad.tensor import Tensor
 import time
@@ -62,7 +59,7 @@ class ModelState:
     ptr = buf.data.ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=DEV)
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
 
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()
