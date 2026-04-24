@@ -134,13 +134,12 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
-  compute_device = Device.DEFAULT
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(compute_device)
-    big_tfm = big_tfm.to(compute_device)
-    desire = desire.to(compute_device)
-    traffic_convention = traffic_convention.to(compute_device)
+    tfm = tfm.to(Device.DEFAULT)
+    big_tfm = big_tfm.to(Device.DEFAULT)
+    desire = desire.to(Device.DEFAULT)
+    traffic_convention = traffic_convention.to(Device.DEFAULT)
     Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
     img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
