@@ -45,6 +45,7 @@ else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   tg_flags = f'DEV={tg_backend}'
 
+assert 'AMD' in available, "USBGPU not detected"
 if 'AMD' in available:
   # Context(DEV=WARP_DEV) in compile_modeld.py breaks the :LLVM hints so we set AMD_CC=LLVM
   modeld_tg_flags = f'WARP_DEV={tg_backend} DEV=USB+AMD AMD_CC=LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 XDG_CACHE_HOME=/data/tinycache DEBUG=2'
