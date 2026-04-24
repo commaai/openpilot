@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <initializer_list>
 #include <map>
 #include <mutex>
 #include <limits>
@@ -94,6 +95,7 @@ struct SchemaIndex {
   std::vector<std::optional<ResolvedService>> by_which;
   size_t fixed_series_count = 0;
   std::vector<std::string> fixed_paths;
+  bool use_static_extractors = true;
 
   static const SchemaIndex &instance();
 };
@@ -111,6 +113,27 @@ struct SeriesAccumulator {
   std::unordered_map<CanMessageId, size_t, CanMessageIdHash> can_message_slots;
   std::unordered_map<std::string, EnumInfo> enum_info;
 };
+
+void append_fixed_scalar_point(RouteSeries *series, double tm, double value);
+void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
+RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series);
+void append_can_frame(CanServiceKind service,
+                      uint8_t bus,
+                      uint32_t address,
+                      uint16_t bus_time,
+                      capnp::Data::Reader dat,
+                      double tm,
+                      SeriesAccumulator *series);
+void decode_can_frame(const dbc::Database *can_dbc,
+                      const std::string &service_name,
+                      uint8_t bus,
+                      uint32_t address,
+                      const uint8_t *raw,
+                      size_t data_size,
+                      double tm,
+                      SeriesAccumulator *series);
+
+#include "tools/jotpluggler/generated_event_extractors.h"
 
 struct LoadedRouteArtifacts {
   std::vector<RouteSeries> series;
@@ -988,6 +1011,10 @@ int register_fixed_series_path(const std::string &path,
 const SchemaIndex &SchemaIndex::instance() {
   static const SchemaIndex index = [] {
     SchemaIndex out;
+    out.fixed_paths = static_event_fixed_paths();
+    out.fixed_series_count = out.fixed_paths.size();
+    out.use_static_extractors = !env_flag_enabled("JOTP_CAPNP_DYNAMIC");
+
     const auto event_schema = capnp::Schema::from<cereal::Event>().asStruct();
     uint16_t max_discriminant = 0;
     for (auto union_field : event_schema.getUnionFields()) {
@@ -995,17 +1022,18 @@ const SchemaIndex &SchemaIndex::instance() {
     }
     out.by_which.resize(static_cast<size_t>(max_discriminant) + 1);
     size_t next_fixed_slot = 0;
+    std::vector<std::string> dynamic_fixed_paths;
     for (auto union_field : event_schema.getUnionFields()) {
       ResolvedService service;
       service.event_which = union_field.getProto().getDiscriminantValue();
       service.union_field = union_field;
       service.service_name = union_field.getProto().getName().cStr();
       service.valid_slot = register_fixed_series_path(
-        "/" + service.service_name + "/valid", &next_fixed_slot, &out.fixed_paths);
+        "/" + service.service_name + "/valid", &next_fixed_slot, &dynamic_fixed_paths);
       service.log_mono_time_slot = register_fixed_series_path(
-        "/" + service.service_name + "/logMonoTime", &next_fixed_slot, &out.fixed_paths);
+        "/" + service.service_name + "/logMonoTime", &next_fixed_slot, &dynamic_fixed_paths);
       service.seconds_slot = register_fixed_series_path(
-        "/" + service.service_name + "/t", &next_fixed_slot, &out.fixed_paths);
+        "/" + service.service_name + "/t", &next_fixed_slot, &dynamic_fixed_paths);
       service.payload = build_resolved_type(
         union_field.getType(),
         false,
@@ -1013,10 +1041,12 @@ const SchemaIndex &SchemaIndex::instance() {
         service.service_name,
         "/" + service.service_name,
         &next_fixed_slot,
-        &out.fixed_paths);
+        &dynamic_fixed_paths);
       out.by_which[service.event_which] = std::move(service);
     }
-    out.fixed_series_count = next_fixed_slot;
+    if (dynamic_fixed_paths != out.fixed_paths) {
+      throw std::runtime_error("Generated jotpluggler Cap'n Proto extractor paths are out of sync with cereal schema");
+    }
     return out;
   }();
   return index;
@@ -1283,6 +1313,11 @@ void append_event_fast_reader(cereal::Event::Which which,
                               bool skip_raw_can,
                               double time_offset,
                               SeriesAccumulator *series) {
+  if (schema.use_static_extractors &&
+      append_event_static_reader(which, event, can_dbc, skip_raw_can, time_offset, series)) {
+    return;
+  }
+
   const uint16_t which_index = static_cast<uint16_t>(which);
   if (which_index >= schema.by_which.size() || !schema.by_which[which_index].has_value()) {
     return;
