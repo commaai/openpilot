@@ -10,7 +10,6 @@ from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-from tinygrad.nn.onnx import OnnxRunner
 
 # https://github.com/tinygrad/tinygrad/issues/15682
 from tinygrad.uop.ops import UOp, Ops
@@ -167,6 +166,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
 
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
+  from tinygrad.nn.onnx import OnnxRunner
   vision_runner = OnnxRunner(vision_onnx)
   policy_runner = OnnxRunner(policy_onnx)
 
