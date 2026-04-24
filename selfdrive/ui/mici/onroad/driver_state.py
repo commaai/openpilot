@@ -47,8 +47,7 @@ class DriverStateRenderer(Widget):
     self._awareness_unfull = False
 
     self._fade_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-    # 1.0 = full green, 0.0 = full orange; interpolates the cone tint
-    self._color_fade = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps)
+    self._color_fade_filter = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps) # 1.0 = full green, 0.0 = full orange
     self._pitch_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._yaw_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._rotation_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
@@ -107,9 +106,8 @@ class DriverStateRenderer(Widget):
                        rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     if self.effective_active:
-      # interpolate tint between green and orange via _color_fade
-      self._color_fade.update(0.0 if self._awareness_unfull else 1.0)
-      t = self._color_fade.x
+      self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
+      t = self._color_fade_filter.x
       r = int(round(CONE_COLOR_GREEN[0] * t + CONE_COLOR_ORANGE[0] * (1 - t)))
       g = int(round(CONE_COLOR_GREEN[1] * t + CONE_COLOR_ORANGE[1] * (1 - t)))
       b = int(round(CONE_COLOR_GREEN[2] * t + CONE_COLOR_ORANGE[2] * (1 - t)))
