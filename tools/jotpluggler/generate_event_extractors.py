@@ -21,8 +21,9 @@ SCALAR_KINDS = {
   "float64": "Float",
   "enum": "Enum",
 }
-POINTER_KINDS = {"struct", "list", "text", "data", "interface", "anyPointer"}
-IGNORED_LIST_ELEMENT_KINDS = {"text", "data", "interface", "anyPointer"}
+POINTER_FIELD_KINDS = {"struct", "list"}
+SCHEMA_TYPE_KINDS = {"struct", "list"}
+IGNORED_TYPE_KINDS = {"void", "text", "data", "interface", "anyPointer"}
 
 
 def cxx_string(value: str) -> str:
@@ -43,22 +44,10 @@ def field_type_proto(field):
   return field.proto.slot.type if field.proto.which() == "slot" else None
 
 
-def field_schema(field):
-  return field.schema
-
-
-def list_element_type(type_proto):
-  return type_proto.list.elementType
-
-
 def scalar_kind(type_proto) -> str | None:
   if type_proto is None:
     return None
   return SCALAR_KINDS.get(type_proto.which())
-
-
-def is_pointer_field(field) -> bool:
-  return field.proto.which() == "slot" and field_type(field) in POINTER_KINDS
 
 
 def enum_names(schema) -> list[str]:
@@ -137,7 +126,7 @@ class Generator:
                 dynamic_path: bool) -> None:
     if not self.node_emits(type_kind, type_proto, schema):
       return
-    kind = scalar_kind(type_proto) if type_proto is not None else None
+    kind = scalar_kind(type_proto)
     if kind is not None:
       self.emit_scalar(indent, path, path_expr if dynamic_path else None, expr, kind,
                        schema if kind == "Enum" else None)
@@ -152,22 +141,21 @@ class Generator:
 
   def emit_field(self,
                  indent: int,
-                 schema,
+                 struct_schema,
                  reader_expr: str,
                  field_name: str,
                  base_path: str,
                  base_path_expr: str | None,
                  dynamic_path: bool) -> None:
-    field = schema.fields[field_name]
+    field = struct_schema.fields[field_name]
     proto = field.proto
     type_kind = field_type(field)
     type_proto = field_type_proto(field)
     kind = scalar_kind(type_proto)
-    schema = field_schema(field) if kind == "Enum" or type_kind in {"struct", "list"} else None
-    kind = scalar_kind(type_proto) if type_proto is not None else None
-    if type_kind in {"void", "text", "data", "interface", "anyPointer"}:
+    value_schema = field.schema if kind == "Enum" or type_kind in SCHEMA_TYPE_KINDS else None
+    if type_kind in IGNORED_TYPE_KINDS:
       return
-    if not self.node_emits(type_kind, type_proto, field_schema(field) if kind == "Enum" or type_kind in {"struct", "list"} else None):
+    if not self.node_emits(type_kind, type_proto, value_schema):
       return
 
     field_path = f"{base_path}/{field_name}"
@@ -182,7 +170,7 @@ class Generator:
     conditions: list[str] = []
     if proto.discriminantValue != NO_DISCRIMINANT:
       conditions.append(f"{reader_expr}.which() == static_cast<decltype({reader_expr}.which())>({proto.discriminantValue})")
-    if is_pointer_field(field):
+    if proto.which() == "slot" and type_kind in POINTER_FIELD_KINDS:
       conditions.append(has_call)
 
     if conditions:
@@ -194,7 +182,7 @@ class Generator:
     self.emit_node(indent,
                    type_kind,
                    type_proto,
-                   field_schema(field) if kind == "Enum" or type_kind in {"struct", "list"} else None,
+                   value_schema,
                    value_var,
                    field_path,
                    field_path_expr,
@@ -224,11 +212,9 @@ class Generator:
                 path: str,
                 path_expr: str | None,
                 dynamic_path: bool) -> None:
-    elem_type = list_element_type(type_proto)
+    elem_type = type_proto.list.elementType
     elem_kind = elem_type.which()
-    if elem_kind in IGNORED_LIST_ELEMENT_KINDS:
-      return
-    if elem_kind in {"void", "interface", "anyPointer"}:
+    if elem_kind in IGNORED_TYPE_KINDS:
       return
 
     self.emit(indent, f"if ({list_expr}.size() != 0) {{")
@@ -255,25 +241,17 @@ class Generator:
       self.emit(indent - 2, "}")
       return
 
-    if elem_kind == "struct":
-      elem_schema = schema.elementType
+    if elem_kind in {"struct", "list"}:
       index_var = self.tmp("i")
       self.emit(indent, f"for (uint {index_var} = 0; {index_var} < {list_expr}.size(); ++{index_var}) {{")
       item_path = self.tmp("item_path")
       self.emit(indent + 2, f"const std::string {item_path} = {base_path_var} + \"/\" + std::to_string({index_var});")
       item = self.tmp("item")
       self.emit(indent + 2, f"const auto {item} = {list_expr}[{index_var}];")
-      self.emit_struct(indent + 2, elem_schema, item, path, item_path, True)
-      self.emit(indent, "}")
-    elif elem_kind == "list":
-      elem_schema = schema.elementType
-      index_var = self.tmp("i")
-      self.emit(indent, f"for (uint {index_var} = 0; {index_var} < {list_expr}.size(); ++{index_var}) {{")
-      item_path = self.tmp("item_path")
-      self.emit(indent + 2, f"const std::string {item_path} = {base_path_var} + \"/\" + std::to_string({index_var});")
-      item = self.tmp("item")
-      self.emit(indent + 2, f"const auto {item} = {list_expr}[{index_var}];")
-      self.emit_list(indent + 2, elem_type, elem_schema, item, path, item_path, True)
+      if elem_kind == "struct":
+        self.emit_struct(indent + 2, schema.elementType, item, path, item_path, True)
+      else:
+        self.emit_list(indent + 2, elem_type, schema.elementType, item, path, item_path, True)
       self.emit(indent, "}")
     self.emit(indent - 2, "}")
 
@@ -293,10 +271,10 @@ class Generator:
         field = schema.fields[field_name]
         ft = field_type(field)
         ftp = field_type_proto(field)
-        fkind = scalar_kind(ftp) if ftp is not None else None
-        if ft in {"void", "text", "data", "interface", "anyPointer"}:
+        fkind = scalar_kind(ftp)
+        if ft in IGNORED_TYPE_KINDS:
           continue
-        fschema = field_schema(field) if fkind == "Enum" or ft in {"struct", "list"} else None
+        fschema = field.schema if fkind == "Enum" or ft in SCHEMA_TYPE_KINDS else None
         if self.node_emits(ft, ftp, fschema, next_seen):
           self.emits_memo[schema_id] = True
           return True
@@ -305,9 +283,9 @@ class Generator:
     if type_kind == "list":
       if type_proto is None or schema is None:
         return False
-      elem_type = list_element_type(type_proto)
+      elem_type = type_proto.list.elementType
       elem_kind = elem_type.which()
-      if elem_kind in IGNORED_LIST_ELEMENT_KINDS or elem_kind in {"void", "interface", "anyPointer"}:
+      if elem_kind in IGNORED_TYPE_KINDS:
         return False
       if scalar_kind(elem_type) is not None:
         return True
@@ -349,7 +327,7 @@ class Generator:
     type_kind = field_type(field)
     type_proto = field_type_proto(field)
     kind = scalar_kind(type_proto)
-    schema = field_schema(field) if kind == "Enum" or type_kind in {"struct", "list"} else None
+    schema = field.schema if kind == "Enum" or type_kind in SCHEMA_TYPE_KINDS else None
     self.emit(4, f"case static_cast<cereal::Event::Which>({proto.discriminantValue}): {{")
     valid_slot = self.add_fixed_path(f"/{field_name}/valid")
     mono_slot = self.add_fixed_path(f"/{field_name}/logMonoTime")
@@ -359,7 +337,7 @@ class Generator:
     self.emit(6, f"append_fixed_scalar_point(&series->fixed_series[{seconds_slot}], tm, tm);")
     if field_name in {"can", "sendcan"}:
       self.emit_can_special(6, field_name, field_name)
-    if type_kind not in {"void", "text", "data", "interface", "anyPointer"} \
+    if type_kind not in IGNORED_TYPE_KINDS \
         and self.node_emits(type_kind, type_proto, schema):
       payload = self.tmp("payload")
       self.emit(6, f"const auto {payload} = event.{accessor('get', field_name)}();")

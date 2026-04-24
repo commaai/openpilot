@@ -89,15 +89,10 @@ def generate_event_extractors(target, source, env):
 
 generated_dbc_stamp = jot_env.Command(f"generated_dbcs/.stamp", [], materialize_generated_dbcs)
 car_fingerprint_to_dbc = jot_env.Command("car_fingerprint_to_dbc.h", [], write_car_fingerprint_to_dbc_header)
-event_extractors = jot_env.Command(
-  "generated_event_extractors.h",
-  [
+event_extractors = jot_env.Command("generated_event_extractors.h", [
     "generate_event_extractors.py",
-    "#cereal/log.capnp",
-    "#cereal/car.capnp",
-    "#cereal/deprecated.capnp",
-    "#cereal/custom.capnp",
-    "#cereal/include/c++.capnp",
+    jot_env.Glob("#cereal/*.capnp"),
+    jot_env.Glob("#cereal/include/*.capnp"),
   ],
   generate_event_extractors,
 )
