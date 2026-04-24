@@ -44,7 +44,7 @@ class ModelState:
       self.image_warp = pickle.load(f)
     self.warp_input_devices = get_jit_input_devices(self.image_warp)
     self.warp_inputs_np = {'M_inv': np.zeros((3,3), dtype=np.float32)}
-    self.warp_inputs = {k: Tensor(v, device='NPY') for k, v in self.warp_inputs_np}
+    self.warp_inputs = {k: Tensor(v, device='NPY') for k, v in self.warp_inputs_np.items()}
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
