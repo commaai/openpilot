@@ -29,8 +29,8 @@ def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad)
   w_dst, h_dst = dst_shape
   h_src, w_src = src_shape
 
-  x = Tensor.arange(w_dst).reshape(1, w_dst).expand(h_dst, w_dst).reshape(-1)
-  y = Tensor.arange(h_dst).reshape(h_dst, 1).expand(h_dst, w_dst).reshape(-1)
+  x = Tensor.arange(w_dst, device=WARP_DEV).reshape(1, w_dst).expand(h_dst, w_dst).reshape(-1)
+  y = Tensor.arange(h_dst, device=WARP_DEV).reshape(h_dst, 1).expand(h_dst, w_dst).reshape(-1)
 
   # inline 3x3 matmul as elementwise to avoid reduce op (enables fusion with gather)
   src_x = M_inv[0, 0] * x + M_inv[0, 1] * y + M_inv[0, 2]
@@ -66,7 +66,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
 
   def frame_prepare_tinygrad(input_frame, M_inv):
     # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
-    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]])
+    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=WARP_DEV)
     # deinterleave NV12 UV plane (UVUV... -> separate U, V)
     uv = input_frame[uv_offset:uv_offset + uv_height * stride].reshape(uv_height, stride)
     with Context(SPLIT_REDUCEOP=0):
@@ -143,10 +143,8 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
     traffic_convention = traffic_convention.to(Device.DEFAULT)
     Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
-    out_dev = Device.DEFAULT
-    with Context(DEV=WARP_DEV):
-      warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(out_dev)
-      warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(out_dev)
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
 
     img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
@@ -197,8 +195,8 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     Tensor.manual_seed(seed)
 
     for i in range(N_RUNS):
-      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
-      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
+      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
+      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
