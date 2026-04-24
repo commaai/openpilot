@@ -19,10 +19,10 @@
 
 | Subsystem | Done (high level) | Open / next |
 |-----------|-------------------|-------------|
-| modeld | Parser unit suite; fill + integration test files exist | Extend fill/integration coverage; optional timing tests |
+| modeld | Phase B/B+, Phase C contracts + timeliness subtest; upstream anchor unchanged | Coverage compare opt-in; full `pytest selfdrive/modeld/tests` gate |
 | pandad | STP-aligned desktop units (``pandad.py``, ``pandad_api_impl``); upstream gtest / `tici` integration | USB/gtest edges; optional non-`tici` loopback/SPI shims |
 | system | Upstream tests per component | Team-owned extensions per LOW §4.3 P0–P2 |
-| Infra | Shared `support/` packages + pytest plugins; harness smoke tests | Extend harness or extract duplicated setup |
+| Infra | Shared `support/` packages + pytest plugins; harness smoke + multi-service IPC | Extend harness or extract duplicated setup |
 
 ---
 
@@ -33,9 +33,11 @@ Aligned with [LOW-LEVEL §7.1](LOW-LEVEL-TEST-PLAN.md#71-modeld-rollout-gates) r
 | Status | Item | Location / command |
 |--------|------|---------------------|
 | [x] | **Phase A:** `Parser`, `safe_exp`, `sigmoid`, `softmax`, MDN/crossentropy paths; Ruff clean | `selfdrive/modeld/tests/test_parse_model_outputs.py` |
-| [ ] | **Phase B:** Expand `ModelConstants`-driven shape and field coverage for `fill_model_msg` (optional keys, edge batch sizes) | `selfdrive/modeld/tests/test_fill_model_msg.py` |
-| [ ] | **Phase C:** Additional R1 daemon contract cases (frame/timestamp/drop policy, camera combos) | `selfdrive/modeld/tests/test_modeld.py` |
-| [ ] | **Phase C (optional):** Documented latency / timeliness threshold in test name + assertion | `selfdrive/modeld/tests/test_modeld.py` or new file in same dir |
+| [x] | **Phase B:** `fill_model_msg` contracts (frame ids, `modelV2` dims, pose/odometry, drivingModelData, raw pred); parser vision/policy including optional policy keys | `modeld_test_fixtures.py`, `modeld_parse_fixtures.py`, `test_fill_model_msg_*.py`, `test_parse_model_outputs_*_contracts.py` |
+| [x] | **Phase B+:** deeper per-field assertions on fill/parser paths (pose tensors, lane meta, plan/temporal/leads, parser sigmoid/MDN bounds) | `test_fill_model_msg_*.py`, `test_parse_model_outputs_*_contracts.py` |
+| [x] | **Phase C (extension):** Daemon contracts (`modelV2` / `cameraOdometry` / `drivingModelData` frame lock, EOF monotonicity, execution time finite, frame age, timeliness ceiling) — skips if modeld never publishes | `selfdrive/modeld/tests/test_modeld_phase_c_contracts.py` |
+| [x] | **Phase C (anchor):** Upstream VisionIPC + `modeld` integration unchanged; gate via scoped pytest | `selfdrive/modeld/tests/test_modeld.py` |
+| [x] | **Phase C (timeliness):** Documented `modelExecutionTime` ceiling (subtest; same harness as extension) | `test_modeld_phase_c_contracts.py` (subtest in `test_phase_c_daemon_message_contracts`) |
 | [ ] | **Coverage compare (opt-in):** Run `scripts/testing/compare_coverage.sh` and archive reports under `.coverage-compare/modeld/` | See [testing.md](testing.md) snippet |
 | [ ] | **Gate:** Full suite green before merge | `pytest selfdrive/modeld/tests -q` |
 
@@ -51,7 +53,7 @@ Aligned with [LOW-LEVEL §7.1](LOW-LEVEL-TEST-PLAN.md#71-modeld-rollout-gates) r
 
 | Status | Item | Location |
 |--------|------|----------|
-| [x] | CAN list serialize / deserialize (`sendcan` + `can`), parametrized round-trips, empty list, `valid` flag, multi-blob decode — skips if Cython ext missing | `selfdrive/pandad/tests/test_pandad_can_capnp.py` |
+| [x] | CAN capnp serialization split by concern — skips if Cython ext missing | `test_pandad_can_capnp_roundtrip.py`, `test_pandad_can_capnp_event_validity.py`, `test_pandad_can_capnp_multiblob.py` |
 | [x] | ``pandad.py`` ``get_expected_signature`` success and error paths (mocked ``Panda``) | `selfdrive/pandad/tests/test_pandad_pandad_wrapper.py` |
 | [ ] | Extra USB protocol / buffer edge cases | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` |
 | [ ] | Additional loopback / transport integrity | `selfdrive/pandad/tests/test_pandad_loopback.py` |
@@ -89,6 +91,7 @@ Priorities from [LOW-LEVEL §4.3](LOW-LEVEL-TEST-PLAN.md#43-system).
 | [x] | System support: re-exports + system fixtures | `system/tests/support/` |
 | [x] | Root `pytest_plugins` registration | Root `conftest.py` |
 | [x] | Harness smoke tests (params seeds, pub/sub factory) | `selfdrive/test/support/tests/test_selfdrive_support_harness.py`, `system/tests/support/tests/test_system_support_harness.py` |
+| [x] | Multi-service pub/sub round-trip (system harness) | `system/tests/support/tests/test_system_support_messaging_multi_service.py` |
 | [ ] | Extract duplicated setup to support after **third** copy | Per LOW-LEVEL §7 |
 
 ---
@@ -114,3 +117,7 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-20 | Initial tracker; Phase A modeld parser suite marked done. |
 | 2026-04-20 | Added system + selfdrive support harness tests and pandad `test_pandad_can_capnp.py`. |
 | 2026-04-20 | Expanded pandad STP-aligned desktop tests (`test_pandad_can_capnp.py`, `test_pandad_pandad_wrapper.py`). |
+| 2026-04-24 | Split pandad CAN tests into `test_pandad_can_capnp_*.py`; added modeld fill contracts + `modeld_test_fixtures.py`; added system multi-service harness test. |
+| 2026-04-24 | Modeld: `modeld_parse_fixtures`, vision/policy parser contracts, `fill_pose_msg`, drivingModelData, `SEND_RAW_PRED` tests. |
+| 2026-04-24 | Modeld Phase C: `test_modeld_phase_c_contracts.py` (daemon contracts; skips if modeld never publishes). |
+| 2026-04-24 | Modeld Phase B+ marked done (deeper fill/parser assertions); Phase C extended (`drivingModelData` lock + timeliness subtest); anchor `test_modeld.py` left unchanged. |

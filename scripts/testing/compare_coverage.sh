@@ -6,8 +6,10 @@ cd "$ROOT"
 
 COV_TARGET="selfdrive/modeld"
 BASELINE_TESTS="selfdrive/modeld/tests/test_modeld.py"
-OUR_TESTS="selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_fill_model_msg.py"
+# Default "ours" matches docs/testing/LOW-LEVEL-TEST-PLAN.md §6 (parser + fill contracts + Phase C extension).
+OUR_TESTS="selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_parse_model_outputs_vision_contracts.py selfdrive/modeld/tests/test_parse_model_outputs_policy_contracts.py selfdrive/modeld/tests/test_fill_model_msg.py selfdrive/modeld/tests/test_fill_model_msg_frame_ids.py selfdrive/modeld/tests/test_fill_model_msg_modelv2_dimensions.py selfdrive/modeld/tests/test_fill_model_msg_pose_odometry.py selfdrive/modeld/tests/test_fill_model_msg_driving_model_data.py selfdrive/modeld/tests/test_fill_model_msg_raw_predictions.py selfdrive/modeld/tests/test_fill_model_msg_fcw_hard_brake.py selfdrive/modeld/tests/test_get_model_metadata_unit.py selfdrive/modeld/tests/test_modeld_phase_c_contracts.py"
 OUT_DIR=".coverage-compare/modeld"
+COV_CONFIG="$ROOT/scripts/testing/coverage-modeld-compare.ini"
 
 function usage() {
   echo "Compare baseline vs new-test coverage for a target directory."
@@ -21,6 +23,9 @@ function usage() {
   echo "  --ours <tests>        Quoted new-test paths/globs"
   echo "  --out-dir <path>      Output directory for coverage artifacts"
   echo "  -h, --help            Show this help"
+  echo ""
+  echo "See scripts/testing/coverage-modeld-compare.ini: omits tests/ and subprocess daemons"
+  echo "(modeld.py, dmonitoringmodeld.py); pytest runs with -n 0 for stable cov combine."
   echo ""
   echo "Example:"
   echo "  bash scripts/testing/compare_coverage.sh \\"
@@ -59,14 +64,17 @@ function run_group() {
   echo ""
   echo "=== Running ${name} coverage ==="
   echo "Tests: ${tests_str}"
-  COVERAGE_FILE="$coverage_file" python -m pytest "${test_args[@]}" \
+  # -n 0: disable xdist for this run so pytest-cov combines a single data file and
+  #        worker processes cannot re-introduce test modules into the trace.
+  COVERAGE_FILE="$coverage_file" python -m pytest "${test_args[@]}" -n 0 \
     --cov="$COV_TARGET" \
+    --cov-config="$COV_CONFIG" \
     --cov-report=xml:"$xml_file" \
     --cov-report=html:"$html_dir"
 
   echo ""
   echo "--- ${name} coverage summary ---"
-  coverage report --data-file="$coverage_file" --precision=2 --sort=cover | tee "$report_file"
+  coverage report --rcfile="$COV_CONFIG" --data-file="$coverage_file" --precision=2 --sort=cover | tee "$report_file"
 }
 
 run_group "baseline" "$BASELINE_TESTS"

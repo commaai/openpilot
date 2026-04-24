@@ -1,12 +1,9 @@
 """
-Unit tests for CAN list serialization (``pandad_api_impl`` / ``can_list_to_can_capnp.cc``).
+CAN capnp **round-trip** serialization (``pandad_api_impl`` / ``can_list_to_can_capnp.cc``).
 
-Stakeholder plan: ``docs/testing/testing-plan/TESTING-PLAN.md`` §3.1 (unit tests
-for transport serialization), §3.3 (white-box boundary), and risk **R3**
-(``pandad_api_impl.pyx`` + native packing).
+Split from the former monolithic capnp test module for clarity.
 
-Requires a built ``pandad_api_impl`` extension; skipped when the tree is not
-compiled.
+``docs/testing/testing-plan/TESTING-PLAN.md`` §3.1 unit / **R3**.
 
 Maps: R3.
 """
@@ -14,7 +11,6 @@ Maps: R3.
 from __future__ import annotations
 
 import pytest
-from cereal import log
 
 pytest.importorskip(
   "openpilot.selfdrive.pandad.pandad_api_impl",
@@ -53,35 +49,6 @@ def test_sendcan_empty_list_roundtrip():
   assert len(decoded) == 1
   _nanos, out_frames = decoded[0]
   assert out_frames == []
-
-
-def test_sendcan_valid_flag_false_on_event():
-  from openpilot.selfdrive.pandad import can_list_to_can_capnp
-
-  blob = can_list_to_can_capnp([(1, b"x", 0)], msgtype="sendcan", valid=False)
-  with log.Event.from_bytes(blob) as msg:
-    assert msg.valid is False
-
-
-def test_sendcan_valid_flag_true_on_event():
-  from openpilot.selfdrive.pandad import can_list_to_can_capnp
-
-  blob = can_list_to_can_capnp([(1, b"x", 0)], msgtype="sendcan", valid=True)
-  with log.Event.from_bytes(blob) as msg:
-    assert msg.valid is True
-
-
-def test_can_capnp_to_list_multiple_blobs():
-  from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
-
-  a = [(0x10, b"\x01", 0)]
-  b = [(0x20, b"\x02", 1)]
-  blob_a = can_list_to_can_capnp(a, msgtype="sendcan")
-  blob_b = can_list_to_can_capnp(b, msgtype="sendcan")
-  decoded = can_capnp_to_list([blob_a, blob_b], msgtype="sendcan")
-  assert len(decoded) == 2
-  assert [(f[0], f[1], f[2]) for f in decoded[0][1]] == a
-  assert [(f[0], f[1], f[2]) for f in decoded[1][1]] == b
 
 
 def test_can_list_to_capnp_and_back_sendcan():
