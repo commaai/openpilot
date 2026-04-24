@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import os
-USBGPU = "USBGPU" in os.environ
+USBGPU = 'USBGPU' in os.environ
+# USBGPU = 'AMD' in set(Device.get_available_devices()) # TODO
 if USBGPU:
-  os.environ['DEV'] = 'AMD'
-  os.environ['AMD_IFACE'] = 'USB'
+  os.environ['GMMU'] = '0'
 from tinygrad.tensor import Tensor
+from tinygrad.device import Device
 import time
 import pickle
 import numpy as np

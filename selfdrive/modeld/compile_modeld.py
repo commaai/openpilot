@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import argparse
 import pickle
 import time
@@ -22,6 +23,7 @@ NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'u
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
+WARP_DEV = os.getenv('WARP_DEV', Device.DEFAULT)
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad):
   w_dst, h_dst = dst_shape
@@ -135,14 +137,19 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(Device.DEFAULT)
-    big_tfm = big_tfm.to(Device.DEFAULT)
+    tfm = tfm.to(WARP_DEV)
+    big_tfm = big_tfm.to(WARP_DEV)
     desire = desire.to(Device.DEFAULT)
     traffic_convention = traffic_convention.to(Device.DEFAULT)
     Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
+    out_dev = Device.DEFAULT
+    with Context(DEV=WARP_DEV):
+      warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(out_dev)
+      warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(out_dev)
+
+    img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -170,11 +177,11 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   vision_runner = OnnxRunner(vision_onnx)
   policy_runner = OnnxRunner(policy_onnx)
 
-  with open(metadata_path_for(vision_onnx), 'rb') as f:
+  with open(str(metadata_path_for(vision_onnx)).replace('big_',''), 'rb') as f:
     vision_metadata = pickle.load(f)
     vision_features_slice = vision_metadata['output_slices']['hidden_state']
     vision_input_shapes = vision_metadata['input_shapes']
-  with open(metadata_path_for(policy_onnx), 'rb') as f:
+  with open(str(metadata_path_for(policy_onnx)).replace('big_', ''), 'rb') as f:
     policy_input_shapes = pickle.load(f)['input_shapes']
 
   _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
