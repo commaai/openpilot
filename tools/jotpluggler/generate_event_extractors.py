@@ -1,8 +1,6 @@
 import sys
-from pathlib import Path
-
 import capnp
-
+from pathlib import Path
 
 NO_DISCRIMINANT = 65535
 SCALAR_KINDS = {
@@ -315,10 +313,10 @@ class Generator:
     return "\n".join(self.lines) + "\n"
 
 
-def main():
+if __name__ == "__main__":
   if len(sys.argv) != 3:
     print(f"usage: {sys.argv[0]} <repo-root> <output>", file=sys.stderr)
-    return 2
+    sys.exit(2)
 
   repo_root = Path(sys.argv[1]).resolve()
   output = Path(sys.argv[2])
@@ -327,8 +325,3 @@ def main():
   generated = Generator(log.Event.schema).generate()
   output.parent.mkdir(parents=True, exist_ok=True)
   output.write_text(generated)
-  return 0
-
-
-if __name__ == "__main__":
-  raise SystemExit(main())
