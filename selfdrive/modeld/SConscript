@@ -48,19 +48,25 @@ else:
 
 assert 'AMD' in available, f"USBGPU not detected in {available}"
 if 'AMD' in available:
-  modeld_tg_flags = f'WARP_DEV={tg_backend} DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 XDG_CACHE_HOME=/data/tinycache DEBUG=2'
+  modeld_tg_flags = f'WARP_DEV={tg_backend} DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 XDG_CACHE_HOME=/data/tinycache'
   SetOption('num_jobs', 1)
 else:
   modeld_tg_flags = tg_flags
 
+# assume compiled flags = runtime flags for now
+compiled_flags = {
+  'selfdrive.modeld.modeld': dict(kv.split('=', 1) for kv in modeld_tg_flags.split()),
+  'selfdrive.modeld.dmonitoringmodeld': dict(kv.split('=', 1) for kv in tg_flags.split()),
+}
+
 def write_tg_compiled_flags(target, source, env):
   with open(str(target[0]), "w") as f:
-    json.dump({"DEV": tg_backend}, f)
+    json.dump(compiled_flags, f, sort_keys=True)
     f.write("\n")
 
 compiled_flags_node = lenv.Command(
   File("models/tg_compiled_flags.json").abspath,
-  tinygrad_files + [Value(tg_backend)],
+  tinygrad_files + [Value(json.dumps(compiled_flags, sort_keys=True))],
   write_tg_compiled_flags,
 )
 

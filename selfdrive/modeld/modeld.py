@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
-set_tinygrad_backend_from_compiled_flags()
-
-USBGPU = "USBGPU" in os.environ
-if USBGPU:
-  os.environ['DEV'] = 'AMD'
-  os.environ['AMD_IFACE'] = 'USB'
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_flags_from_compiled
+PROCESS_NAME = "selfdrive.modeld.modeld"
+set_tinygrad_flags_from_compiled(PROCESS_NAME)
+USBGPU = os.environ['DEV'] == 'USB+AMD:LLVM'
 from tinygrad.tensor import Tensor
+from tinygrad.device import Device
 import time
 import pickle
 import numpy as np
@@ -32,7 +30,7 @@ from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 
 
-PROCESS_NAME = "selfdrive.modeld.modeld"
+WARP_DEV = os.getenv('WARP_DEV', Device.DEFAULT)
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
@@ -104,8 +102,8 @@ class ModelState:
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
     self.warp_enqueue(
       **self.input_queues,
-      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').contiguous().realize(),
-      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8').contiguous().realize())
+      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8', device=WARP_DEV).contiguous().realize(),
+      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8', device=WARP_DEV).contiguous().realize())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -119,7 +117,7 @@ class ModelState:
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
       cache_key = (key, ptr)
       if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=WARP_DEV)
       self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
