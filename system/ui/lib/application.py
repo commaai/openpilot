@@ -867,8 +867,7 @@ class GuiApplication:
     if w == 0 or h == 0 or (w >= self._width and h >= self._height):
       return 1.0
 
-    margin = 1.0 if ASIUS else 0.95
-    return max(0.3, min(w / self._width, h / self._height) * margin)
+    return max(0.3, min(w / self._width, h / self._height) * 0.95)
 
   @staticmethod
   def _default_width() -> int:

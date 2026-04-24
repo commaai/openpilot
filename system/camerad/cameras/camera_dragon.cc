@@ -260,46 +260,31 @@ void DragonCamera::setup_media_links() {
   struct media_link_desc link = {};
 
   // CSIPHY → CSID (source pad 1 → sink pad 0)
-  fprintf(stderr, "cam %d: link csiphy(ent %u):1 → csid(ent %u):0\n",
-          cam_idx, dcfg.csiphy_entity, dcfg.csid_entity); fflush(stderr);
   link.source = {.entity = (uint32_t)dcfg.csiphy_entity, .index = 1};
   link.sink = {.entity = (uint32_t)dcfg.csid_entity, .index = 0};
   link.flags = MEDIA_LNK_FL_ENABLED;
   if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0)
-    fprintf(stderr, "cam %d: csiphy→csid link FAILED: %d (%s)\n", cam_idx, errno, strerror(errno));
-  else
-    fprintf(stderr, "cam %d: csiphy→csid link OK\n", cam_idx);
-  fflush(stderr);
+    LOGE("cam %d: csiphy->csid link FAILED: %d (%s)", cam_idx, errno, strerror(errno));
 
   memset(&link, 0, sizeof(link));
   if (use_pix) {
     // CSID pad 4 → VFE_PIX pad 0
-    fprintf(stderr, "cam %d: link csid(ent %u):4 → vfe_pix(ent %u):0\n",
-            cam_idx, dcfg.csid_entity, dcfg.vfe_pix_entity); fflush(stderr);
     link.source = {.entity = (uint32_t)dcfg.csid_entity, .index = 4};
     link.sink = {.entity = (uint32_t)dcfg.vfe_pix_entity, .index = 0};
     link.flags = MEDIA_LNK_FL_ENABLED;
     if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0) {
-      fprintf(stderr, "cam %d: csid→vfe_pix link FAILED: %d (%s), falling back to RDI\n", cam_idx, errno, strerror(errno));
+      LOGE("cam %d: csid->vfe_pix link FAILED: %d (%s), falling back to RDI", cam_idx, errno, strerror(errno));
       use_pix = false;
-    } else {
-      fprintf(stderr, "cam %d: csid→vfe_pix link OK\n", cam_idx);
     }
-    fflush(stderr);
   }
 
   if (!use_pix) {
     // CSID pad 1 → VFE_RDI0 pad 0
-    fprintf(stderr, "cam %d: link csid(ent %u):1 → vfe_rdi(ent %u):0\n",
-            cam_idx, dcfg.csid_entity, dcfg.vfe_rdi_entity); fflush(stderr);
     link.source = {.entity = (uint32_t)dcfg.csid_entity, .index = 1};
     link.sink = {.entity = (uint32_t)dcfg.vfe_rdi_entity, .index = 0};
     link.flags = MEDIA_LNK_FL_ENABLED;
     if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0)
-      fprintf(stderr, "cam %d: csid→vfe_rdi link FAILED: %d (%s)\n", cam_idx, errno, strerror(errno));
-    else
-      fprintf(stderr, "cam %d: csid→vfe_rdi link OK\n", cam_idx);
-    fflush(stderr);
+      LOGE("cam %d: csid->vfe_rdi link FAILED: %d (%s)", cam_idx, errno, strerror(errno));
   }
 
   close(media_fd);
@@ -473,10 +458,8 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
   req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   req.memory = V4L2_MEMORY_MMAP;
   int reqbufs_ret = ioctl(video_fd, VIDIOC_REQBUFS, &req);
-  fprintf(stderr, "cam %d: REQBUFS ret=%d count=%d errno=%d(%s)\n",
-          cam_idx, reqbufs_ret, req.count, errno, reqbufs_ret ? strerror(errno) : "ok");
   if (reqbufs_ret != 0) {
-    LOGE("cam %d: REQBUFS failed: %d", cam_idx, errno);
+    LOGE("cam %d: REQBUFS failed: %d (%s)", cam_idx, errno, strerror(errno));
     enabled = false;
     return;
   }
@@ -510,15 +493,11 @@ void DragonCamera::start_streaming() {
     queue_frame(i);
   }
   int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  fprintf(stderr, "cam %d: calling STREAMON on fd=%d (dev=%d)\n",
-          cc.camera_num, video_fd,
-          use_pix ? dragon_cams[cc.camera_num].pix_video_dev : dragon_cams[cc.camera_num].rdi_video_dev);
   if (ioctl(video_fd, VIDIOC_STREAMON, &type) != 0) {
     LOGE("cam %d: STREAMON failed: %d (%s)", cc.camera_num, errno, strerror(errno));
     enabled = false;
     return;
   }
-  fprintf(stderr, "cam %d: STREAMON OK\n", cc.camera_num);
 
   if (use_pix) {
     // Program ISP registers after STREAMON (VFE is powered and clocked)
@@ -587,9 +566,7 @@ void DragonCamera::queue_frame(int index) {
   vbuf.length = 1;
   vbuf.m.planes = planes;
   int ret = ioctl(video_fd, VIDIOC_QBUF, &vbuf);
-  if (ret != 0 || env_debug_frames)
-    fprintf(stderr, "cam %d: QBUF idx=%d ret=%d errno=%d(%s)\n",
-            cc.camera_num, index, ret, errno, ret ? strerror(errno) : "ok");
+  if (ret != 0) LOGE("cam %d: QBUF idx=%d failed: %d (%s)", cc.camera_num, index, errno, strerror(errno));
 }
 
 int DragonCamera::dequeue_frame(uint64_t *timestamp) {
@@ -919,7 +896,6 @@ void camerad_thread() {
       if (env_debug_frames) {
         printf("cam %d frame %u buf %d ts %.2f ms (%s)\n", cam->camera.cc.camera_num, cam->frame_id, buf_idx, timestamp / 1e6,
                cam->camera.use_pix ? "PIX" : "RDI");
-        if (cam->frame_id > 20) do_exit = true;
       }
 
       cam->camera.queue_frame(buf_idx);
