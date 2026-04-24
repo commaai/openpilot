@@ -70,7 +70,7 @@ static DragonCamConfig resolve_cam_config(int media_fd, int cam_idx) {
   // PIX uses full VFEs (0-2, have ISP hw); RDI uses matched VFE (CSID N → VFE N)
   static const struct { int csiphy; int csid; int pix_vfe; int rdi_vfe; const char *sensor; } routing[] = {
     {2, 2, 2, 2, "imx219 18-0010"},
-    {3, 3, 1, 3, "imx219 20-0010"},
+    {3, 3, 1, 3, "imx219 21-0010"},
   };
   auto &r = routing[cam_idx];
   DragonCamConfig cfg = {};

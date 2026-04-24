@@ -229,8 +229,9 @@ messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
 
 
-# Build other submodules
-SConscript(['panda/SConscript'])
+# Build other submodules (panda firmware needs arm-none-eabi-gcc, skip on ASIUS)
+if not os.path.isfile('/ASIUS'):
+  SConscript(['panda/SConscript'])
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
