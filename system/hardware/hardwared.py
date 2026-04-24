@@ -49,8 +49,7 @@ if HARDWARE.get_device_type() == "mici":
   })
 else:
   THERMAL_BANDS = OrderedDict({
-    ThermalStatus.ok: ThermalBand(None, 80.0),
-    ThermalStatus.warm: ThermalBand(75.0, 96.0),
+    ThermalStatus.ok: ThermalBand(None, 96.0),
     ThermalStatus.overheated: ThermalBand(88.0, 107.),
     ThermalStatus.critical: ThermalBand(94.0, None),
   })

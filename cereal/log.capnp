@@ -461,7 +461,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
 
   enum ThermalStatus {
     ok @0;
-    warm @1;
+    warmDEPRECATED @1;
     overheated @2;
     critical @3;
   }
