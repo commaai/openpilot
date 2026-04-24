@@ -130,6 +130,7 @@ class MiciHomeLayout(Widget):
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
+    self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
 
     self._alerts_pill = AlertsPill()
 
@@ -137,6 +138,7 @@ class MiciHomeLayout(Widget):
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
+      self._body_icon,
       self._mic_icon,
     ], spacing=18)
 
@@ -247,6 +249,7 @@ class MiciHomeLayout(Widget):
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(self._experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
+    self._body_icon.set_visible(ui_state.is_body)
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)

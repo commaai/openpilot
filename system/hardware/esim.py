@@ -28,8 +28,7 @@ if __name__ == '__main__':
     lpa.nickname_profile(args.nickname[0], args.nickname[1])
   else:
     parser.print_help()
-
-  profiles = lpa.list_profiles()
-  print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
-  for p in profiles:
-    print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
+    profiles = lpa.list_profiles()
+    print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
+    for p in profiles:
+      print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')

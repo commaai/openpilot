@@ -23,7 +23,6 @@ class LSM6DS3_Temp(Sensor):
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     event = log.SensorEventData.new_message()
-    event.version = 1
     event.timestamp = int(time.monotonic() * 1e9)
     event.source = self.source
     event.temperature = self._read_temperature()

@@ -8,7 +8,7 @@ from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 
-from zensical.extensions.links import LinksProcessor
+from zensical.extensions.links import LinksTreeprocessor
 
 GlossaryTerm = tuple[str, re.Pattern[str], str]
 
@@ -78,7 +78,7 @@ class GlossaryTreeprocessor(Treeprocessor):
   def run(self, root: ET.Element) -> None:
     at = self.md.treeprocessors.get_index_for_name("zrelpath")
     processor = self.md.treeprocessors[at]
-    if not isinstance(processor, LinksProcessor):
+    if not isinstance(processor, LinksTreeprocessor):
       raise TypeError("Links processor not registered")
     if processor.path == GLOSSARY_PAGE:
       return
