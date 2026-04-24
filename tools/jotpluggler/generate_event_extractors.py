@@ -23,15 +23,15 @@ NESTED_TYPE_KINDS = {"struct", "list"}
 IGNORED_TYPE_KINDS = {"void", "text", "data", "interface", "anyPointer"}
 
 
-def cxx_string(value: str) -> str:
+def cxx_string(value):
   return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def accessor(prefix: str, name: str) -> str:
+def accessor(prefix, name):
   return prefix + name[:1].upper() + name[1:]
 
 
-def field_type(field) -> str:
+def field_type(field):
   if field.proto.which() == "group":
     return "struct"
   return field.proto.slot.type.which()
@@ -41,13 +41,13 @@ def field_type_proto(field):
   return field.proto.slot.type if field.proto.which() == "slot" else None
 
 
-def scalar_kind(type_proto) -> str | None:
+def scalar_kind(type_proto):
   if type_proto is None:
     return None
   return SCALAR_KINDS.get(type_proto.which())
 
 
-def enum_names(schema) -> list[str]:
+def enum_names(schema):
   if schema is None:
     return []
   names_by_ordinal = schema.enumerants
@@ -63,45 +63,37 @@ def enum_names(schema) -> list[str]:
 class Generator:
   def __init__(self, event_schema):
     self.event_schema = event_schema
-    self.fixed_paths: list[str] = []
+    self.fixed_paths = []
     self.tmp_index = 0
-    self.lines: list[str] = []
-    self.emits_memo: dict[int, bool] = {}
+    self.lines = []
+    self.emits_memo = {}
 
-  def tmp(self, prefix: str) -> str:
+  def tmp(self, prefix):
     self.tmp_index += 1
     return f"{prefix}_{self.tmp_index}"
 
-  def add_fixed_path(self, path: str) -> int:
+  def add_fixed_path(self, path):
     slot = len(self.fixed_paths)
     self.fixed_paths.append(path)
     return slot
 
-  def emit(self, indent: int, text: str = "") -> None:
+  def emit(self, indent, text=""):
     self.lines.append(" " * indent + text)
 
-  def scalar_double_expr(self, value_expr: str, kind: str) -> str:
+  def scalar_double_expr(self, value_expr, kind):
     if kind == "Bool":
       return f"({value_expr} ? 1.0 : 0.0)"
     if kind == "Enum":
       return f"static_cast<double>(static_cast<uint16_t>({value_expr}))"
     return f"static_cast<double>({value_expr})"
 
-  def emit_enum_capture(self, indent: int, path_expr: str, names: list[str]) -> None:
+  def emit_enum_capture(self, indent, path_expr, names):
     if not names:
       return
     names_expr = "{" + ", ".join(cxx_string(name) for name in names) + "}"
     self.emit(indent, f"capture_static_enum_info({path_expr}, {names_expr}, series);")
 
-  def emit_node(self,
-                indent: int,
-                type_kind: str,
-                type_proto,
-                schema,
-                expr: str,
-                path: str,
-                path_expr: str | None,
-                dynamic_path: bool) -> None:
+  def emit_node(self, indent, type_kind, type_proto, schema, expr, path, path_expr, dynamic_path):
     if not self.node_emits(type_kind, type_proto, schema):
       return
     kind = scalar_kind(type_proto)
@@ -125,14 +117,7 @@ class Generator:
     if type_kind == "list":
       self.emit_list(indent, type_proto, schema, expr, path, path_expr, dynamic_path)
 
-  def emit_field(self,
-                 indent: int,
-                 struct_schema,
-                 reader_expr: str,
-                 field_name: str,
-                 base_path: str,
-                 base_path_expr: str | None,
-                 dynamic_path: bool) -> None:
+  def emit_field(self, indent, struct_schema, reader_expr, field_name, base_path, base_path_expr, dynamic_path):
     field = struct_schema.fields[field_name]
     proto = field.proto
     type_kind = field_type(field)
@@ -151,7 +136,7 @@ class Generator:
 
     get_call = f"{reader_expr}.{accessor('get', field_name)}()"
     has_call = f"{reader_expr}.{accessor('has', field_name)}()"
-    conditions: list[str] = []
+    conditions = []
     if proto.discriminantValue != NO_DISCRIMINANT:
       conditions.append(f"{reader_expr}.which() == static_cast<decltype({reader_expr}.which())>({proto.discriminantValue})")
     if proto.which() == "slot" and type_kind in NESTED_TYPE_KINDS:
@@ -163,39 +148,19 @@ class Generator:
 
     value_var = self.tmp("value")
     self.emit(indent, f"const auto {value_var} = {get_call};")
-    self.emit_node(indent,
-                   type_kind,
-                   type_proto,
-                   value_schema,
-                   value_var,
-                   field_path,
-                   field_path_expr,
-                   dynamic_path)
+    self.emit_node(indent, type_kind, type_proto, value_schema, value_var, field_path, field_path_expr, dynamic_path)
 
     if conditions:
       indent -= 2
       self.emit(indent, "}")
 
-  def emit_struct(self,
-                  indent: int,
-                  schema,
-                  reader_expr: str,
-                  path: str,
-                  path_expr: str | None,
-                  dynamic_path: bool) -> None:
+  def emit_struct(self, indent, schema, reader_expr, path, path_expr, dynamic_path):
     if schema is None:
       return
     for field_name in schema.fieldnames:
       self.emit_field(indent, schema, reader_expr, field_name, path, path_expr, dynamic_path)
 
-  def emit_list(self,
-                indent: int,
-                type_proto,
-                schema,
-                list_expr: str,
-                path: str,
-                path_expr: str | None,
-                dynamic_path: bool) -> None:
+  def emit_list(self, indent, type_proto, schema, list_expr, path, path_expr, dynamic_path):
     elem_type = type_proto.list.elementType
     elem_kind = elem_type.which()
     if elem_kind in IGNORED_TYPE_KINDS:
@@ -215,8 +180,7 @@ class Generator:
       self.emit(indent + 4, f"RouteSeries *{item_series} = ensure_list_scalar_series({base_path_var}, {index_var}, series);")
       if elem_scalar == "Enum":
         self.emit_enum_capture(indent + 4, f"{item_series}->path", enum_names(schema.elementType))
-      self.emit(indent + 4,
-                f"append_fixed_scalar_point({item_series}, tm, {self.scalar_double_expr(f'{list_expr}[{index_var}]', elem_scalar)});")
+      self.emit(indent + 4, f"append_fixed_scalar_point({item_series}, tm, {self.scalar_double_expr(f'{list_expr}[{index_var}]', elem_scalar)});")
       self.emit(indent + 2, "}")
       self.emit(indent, "}")
       return
@@ -234,7 +198,7 @@ class Generator:
         self.emit_list(indent + 2, elem_type, schema.elementType, item, path, item_path, True)
       self.emit(indent, "}")
 
-  def node_emits(self, type_kind: str, type_proto, schema, seen: frozenset[int] = frozenset()) -> bool:
+  def node_emits(self, type_kind, type_proto, schema, seen=frozenset()):
     if scalar_kind(type_proto) is not None:
       return True
     if type_kind == "struct":
@@ -274,25 +238,21 @@ class Generator:
         return self.node_emits("list", elem_type, schema.elementType, seen)
     return False
 
-  def emit_can_special(self, indent: int, service_name: str) -> None:
+  def emit_can_special(self, indent, service_name):
     service_kind = "CanServiceKind::Can" if service_name == "can" else "CanServiceKind::Sendcan"
     self.emit(indent, f"const CanServiceKind can_service = {service_kind};")
     self.emit(indent, f"for (const auto &msg : event.{accessor('get', service_name)}()) {{")
-    self.emit(indent + 2,
-              "append_can_frame(can_service, static_cast<uint8_t>(msg.getSrc()), msg.getAddress(), " +
-              "msg.getDeprecated().getBusTime(), msg.getDat(), tm, series);")
+    self.emit(indent + 2, "append_can_frame(can_service, static_cast<uint8_t>(msg.getSrc()), msg.getAddress(), msg.getDeprecated().getBusTime(), msg.getDat(), tm, series);")  # noqa: E501
     self.emit(indent + 2, "if (skip_raw_can) {")
     self.emit(indent + 4, "const auto dat = msg.getDat();")
-    self.emit(indent + 4,
-              f"decode_can_frame(can_dbc, {cxx_string(service_name)}, static_cast<uint8_t>(msg.getSrc()), " +
-              "msg.getAddress(), dat.begin(), dat.size(), tm, series);")
+    self.emit(indent + 4, f"decode_can_frame(can_dbc, {cxx_string(service_name)}, static_cast<uint8_t>(msg.getSrc()), msg.getAddress(), dat.begin(), dat.size(), tm, series);")  # noqa: E501
     self.emit(indent + 2, "}")
     self.emit(indent, "}")
     self.emit(indent, "if (skip_raw_can) {")
     self.emit(indent + 2, "return true;")
     self.emit(indent, "}")
 
-  def emit_event_case(self, field_name: str) -> None:
+  def emit_event_case(self, field_name):
     field = self.event_schema.fields[field_name]
     proto = field.proto
     type_kind = field_type(field)
@@ -315,7 +275,7 @@ class Generator:
     self.emit(6, "return true;")
     self.emit(4, "}")
 
-  def generate(self) -> str:
+  def generate(self):
     self.lines = []
     self.emit(0, "// Generated by tools/jotpluggler/generate_event_extractors.py; do not edit.")
     self.emit(0, "")
@@ -326,9 +286,7 @@ class Generator:
     self.emit(2, "return paths;")
     self.emit(0, "}")
     self.emit(0, "")
-    self.emit(0, "void capture_static_enum_info(const std::string &path,")
-    self.emit(0, "                              std::initializer_list<std::string_view> names,")
-    self.emit(0, "                              SeriesAccumulator *series) {")
+    self.emit(0, "void capture_static_enum_info(const std::string &path, std::initializer_list<std::string_view> names, SeriesAccumulator *series) {")
     self.emit(2, "if (series->enum_info.find(path) != series->enum_info.end()) {")
     self.emit(4, "return;")
     self.emit(2, "}")
@@ -342,12 +300,7 @@ class Generator:
     self.emit(2, "}")
     self.emit(0, "}")
     self.emit(0, "")
-    self.emit(0, "bool append_event_static_reader(cereal::Event::Which which,")
-    self.emit(0, "                                const cereal::Event::Reader &event,")
-    self.emit(0, "                                const dbc::Database *can_dbc,")
-    self.emit(0, "                                bool skip_raw_can,")
-    self.emit(0, "                                double time_offset,")
-    self.emit(0, "                                SeriesAccumulator *series) {")
+    self.emit(0, "bool append_event_static_reader(cereal::Event::Which which, const cereal::Event::Reader &event, const dbc::Database *can_dbc, bool skip_raw_can, double time_offset, SeriesAccumulator *series) {")  # noqa: E501
     self.emit(2, "const double tm = static_cast<double>(event.getLogMonoTime()) / 1.0e9 - time_offset;")
     self.emit(2, "switch (which) {")
     for field_name in self.event_schema.union_fields:
@@ -362,7 +315,7 @@ class Generator:
     return "\n".join(self.lines) + "\n"
 
 
-def main() -> int:
+def main():
   if len(sys.argv) != 3:
     print(f"usage: {sys.argv[0]} <repo-root> <output>", file=sys.stderr)
     return 2
