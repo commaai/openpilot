@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 import pickle
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ class CompileConfig:
 CAMERA_CONFIGS = [
   (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
   (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
+  (1920, 1080),                                    # asius: IMX219
 ]
 MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_') for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
 DM_WARP_CONFIGS = [CompileConfig(cam_w, cam_h, True, 'dm_') for cam_w, cam_h in CAMERA_CONFIGS]
@@ -148,7 +150,7 @@ def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
   stride_pad = stride - cam_w
 
   def warp_dm(input_frame, M_inv):
-    M_inv = M_inv.to(Device.DEFAULT).realize()
+    M_inv = M_inv.to(Device.DEFAULT)
     result = warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv, (dm_w, dm_h), (cam_h, cam_w), stride_pad).reshape(-1, dm_h * dm_w)
     return result
   return warp_dm
@@ -162,14 +164,8 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(Device.DEFAULT)
-    big_tfm = big_tfm.to(Device.DEFAULT)
-    desire = desire.to(Device.DEFAULT)
-    traffic_convention = traffic_convention.to(Device.DEFAULT)
-    Tensor.realize(tfm, big_tfm, desire, traffic_convention)
-
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
+    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -178,9 +174,9 @@ def make_run_policy(vision_runner, policy_runner, cam_w, cam_h,
 
     new_feat = vision_out[:, vision_features_slice].reshape(1, -1).unsqueeze(0)
     feat_buf = shift_and_sample(feat_q, new_feat, sample_skip_fn)
-    desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
+    desire_buf = shift_and_sample(desire_q, desire.to(Device.DEFAULT).reshape(1, 1, -1), sample_desire_fn)
 
-    inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention}
+    inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention.to(Device.DEFAULT)}
     policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
 
     return vision_out, policy_out
@@ -216,11 +212,10 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip)
     np.random.seed(seed)
-    Tensor.manual_seed(seed)
 
     for i in range(N_RUNS):
-      frame = Tensor.randint(yuv_size, low=0, high=256, dtype='uint8').realize()
-      big_frame = Tensor.randint(yuv_size, low=0, high=256, dtype='uint8').realize()
+      frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
+      big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
@@ -248,7 +243,10 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
   print('run unjitted')
   _, test_val, test_buffers = random_inputs_run_fn(_run, seed=SEED)
   print('capture + replay')
-  run_policy_jit, _, _ = random_inputs_run_fn(run_policy_jit, SEED)
+  if os.environ.get("DEV", "") == "CL":
+    run_policy_jit, _, _ = random_inputs_run_fn(run_policy_jit, SEED)
+  else:
+    run_policy_jit, _, _ = random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers)
 
   print('pickle round trip')
   with open(pkl_path, "wb") as f:
@@ -256,8 +254,12 @@ def compile_modeld(cam_w, cam_h, prepare_only, pkl_path):
     print(f"  Saved to {pkl_path}")
   with open(pkl_path, "rb") as f:
     run_policy_jit = pickle.load(f)
-  random_inputs_run_fn(run_policy_jit, SEED)
-  random_inputs_run_fn(run_policy_jit, SEED+1)
+  if os.environ.get("DEV", "") == "CL":
+    random_inputs_run_fn(run_policy_jit, SEED)
+    random_inputs_run_fn(run_policy_jit, SEED+1)
+  else:
+    random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
+    random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
 
 
 def compile_dm_warp(cam_w, cam_h, pkl_path):
@@ -270,7 +272,7 @@ def compile_dm_warp(cam_w, cam_h, pkl_path):
   warp_dm_jit = TinyJit(warp_dm, prune=True)
 
   for i in range(10):
-    inputs = [Tensor.randint(yuv_size, low=0, high=256, dtype='uint8').realize(),
+    inputs = [Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize(),
               Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')]
     Device.default.synchronize()
     st = time.perf_counter()

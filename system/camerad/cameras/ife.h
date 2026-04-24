@@ -287,8 +287,17 @@ build_initial_config_flat(const CameraConfig &cam, const SensorInfo *s, uint32_t
   auto regs = build_update_flat(cam, s);
   std::vector<dmi_upload> dmis;
 
-  // VFE CORE_CFG: pixel_pattern=1 (GRGR for SGRBG12), input=CAMIF
-  collect_cont(regs, 0x050, {0x00000001});
+  // CGC override: force clocks on for all ISP modules
+  collect_cont(regs, 0x02c, {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff});
+
+  // Module enables
+  // LENS_EN: BLACK(1) + DEMUX(2) + DEMO(10) + BLACK_LEVEL(11)
+  // COLOR_EN: COLOR_CORRECT(1) + RGB_LUT(3)
+  // ZOOM_EN: Y_SCALER(0) + UV_SCALER(3) + Y_CROP(4)
+  collect_cont(regs, 0x040, {0x00000c06, 0x00000000, 0x0000000a, 0x00000019});
+
+  // VFE CORE_CFG: pixel_pattern from sensor bayer_pattern, input=CAMIF
+  collect_cont(regs, 0x050, {s->bayer_pattern});
 
   // CAMIF setup
   collect_cont(regs, 0x478, {0x00000004, 0x004000c0});
@@ -357,6 +366,11 @@ build_initial_config_flat(const CameraConfig &cam, const SensorInfo *s, uint32_t
   // YUV conversion
   collect_common_ife_yuv(regs);
 
+  // ISP flush/halt config
+  collect_cont(regs, 0xf80, {0x01010000, 0x01010000, 0x01010000, 0x01010000});
+  // Dual PD CGC override
+  collect_cont(regs, 0xfac, {0x00000001});
+
   // VFE BUS: PIX output enable - route ISP output to WM3 (Y) + WM4 (UV)
   collect_cont(regs, 0x2018, {(1 << 3) | (1 << 4)});  // BIT(3)|BIT(4) = WM3+WM4
   // Composite group 0: WM3+WM4 for composite done IRQ
@@ -364,6 +378,33 @@ build_initial_config_flat(const CameraConfig &cam, const SensorInfo *s, uint32_t
   // WM output port mapping: WM3+WM4 -> port 0x16 (PIX processed output)
   collect_cont(regs, 0x25a0, {0x16});  // WM3: 0x2200 + 3*0x100 + 0xa0
   collect_cont(regs, 0x26a0, {0x16});  // WM4: 0x2200 + 4*0x100 + 0xa0
+
+  // WM3 (Y plane) dimensions — override kernel's vfe_wm_start() values
+  // Register layout: base 0x2200 + wm*0x100
+  uint32_t wm3 = 0x2200 + 3 * 0x100;  // 0x2500
+  uint32_t wm4 = 0x2200 + 4 * 0x100;  // 0x2600
+  uint32_t nv12_stride = out_width;    // 1 byte per Y pixel
+  collect_random(regs, {
+    wm3 + 0x1c, out_width,              // BUFFER_WIDTH_CFG
+    wm3 + 0x20, out_height,             // BUFFER_HEIGHT_CFG
+    wm3 + 0x24, 0x0e,                   // PACKER_CFG (QCOM_PLAIN NV12)
+    wm3 + 0x28, nv12_stride,            // STRIDE
+    wm3 + 0x48, 0,                      // IRQ_SUBSAMPLE_PERIOD
+    wm3 + 0x4c, 1,                      // IRQ_SUBSAMPLE_PATTERN (pass all)
+    wm3 + 0x50, 0,                      // FRAMEDROP_PERIOD
+    wm3 + 0x54, 1,                      // FRAMEDROP_PATTERN (pass all)
+    wm3 + 0x58, nv12_stride * out_height, // FRAME_INC
+    // WM4 (UV plane)
+    wm4 + 0x1c, out_width,
+    wm4 + 0x20, out_height / 2,
+    wm4 + 0x24, 0x0e,
+    wm4 + 0x28, nv12_stride,
+    wm4 + 0x48, 0,
+    wm4 + 0x4c, 1,
+    wm4 + 0x50, 0,
+    wm4 + 0x54, 1,
+    wm4 + 0x58, nv12_stride * out_height / 2,
+  });
 
   return {regs, dmis};
 }

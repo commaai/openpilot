@@ -51,10 +51,12 @@ fi
 
 cd raylib_repo
 
-COMMIT=${1:-3425bd9d1fb292ede4d80f97a1f4f258f614cffc}
-git fetch origin $COMMIT
-git reset --hard $COMMIT
-git clean -xdff .
+if [ ! -f /ASIUS ]; then
+  COMMIT=${1:-3425bd9d1fb292ede4d80f97a1f4f258f614cffc}
+  git fetch origin $COMMIT
+  git reset --hard $COMMIT
+  git clean -xdff .
+fi
 
 cd src
 

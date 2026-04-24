@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import HARDWARE, PC, ASIUS
 from openpilot.system.ui.lib.multilang import multilang
 from openpilot.common.realtime import Ratekeeper
 
@@ -201,14 +201,26 @@ class GuiApplication:
     self._width = width if width is not None else GuiApplication._default_width()
     self._height = height if height is not None else GuiApplication._default_height()
 
-    if PC and os.getenv("SCALE") is None:
+    if ASIUS and os.getenv("SCALE") is None:
+      dw, dh = self._get_display_size()
+      if dw > 0 and dh > 0:
+        self._scale = min(dw / self._width, dh / self._height)
+        self._scaled_width = dw
+        self._scaled_height = dh
+      else:
+        self._scale = SCALE
+        self._scaled_width = int(self._width * self._scale)
+        self._scaled_height = int(self._height * self._scale)
+    elif PC and os.getenv("SCALE") is None:
       self._scale = self._calculate_auto_scale()
+      self._scaled_width = int(self._width * self._scale)
+      self._scaled_height = int(self._height * self._scale)
     else:
       self._scale = SCALE
+      self._scaled_width = int(self._width * self._scale)
+      self._scaled_height = int(self._height * self._scale)
 
-    # Scale, then ensure dimensions are even
-    self._scaled_width = int(self._width * self._scale)
-    self._scaled_height = int(self._height * self._scale)
+    # Ensure dimensions are even
     self._scaled_width += self._scaled_width % 2
     self._scaled_height += self._scaled_height % 2
 
@@ -832,6 +844,20 @@ class GuiApplication:
     print(f"{green}Average frame time: {avg_frame_time:.2f} ms ({1000/avg_frame_time:.1f} FPS){reset}")
     sys.exit(0)
 
+  @staticmethod
+  def _get_display_size() -> tuple[int, int]:
+    import glob
+    for modes_path in sorted(glob.glob('/sys/class/drm/card0-*/modes')):
+      try:
+        with open(modes_path) as f:
+          mode = f.readline().strip()
+        if 'x' in mode:
+          w, h = mode.split('x')
+          return int(w), int(h)
+      except (ValueError, IOError):
+        continue
+    return 0, 0
+
   def _calculate_auto_scale(self) -> float:
      # Create temporary window to query monitor info
     rl.init_window(1, 1, "")
@@ -841,8 +867,8 @@ class GuiApplication:
     if w == 0 or h == 0 or (w >= self._width and h >= self._height):
       return 1.0
 
-    # Apply 0.95 factor for window decorations/taskbar margin
-    return max(0.3, min(w / self._width, h / self._height) * 0.95)
+    margin = 1.0 if ASIUS else 0.95
+    return max(0.3, min(w / self._width, h / self._height) * margin)
 
   @staticmethod
   def _default_width() -> int:

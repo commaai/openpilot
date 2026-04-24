@@ -1,0 +1,933 @@
+#include "system/camerad/cameras/camera_common.h"
+
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <linux/media.h>
+#include <linux/v4l2-subdev.h>
+#include <linux/videodev2.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cmath>
+#include <cstring>
+#include <string>
+#include <vector>
+
+#include "media/qcom-camss-vfe.h"
+
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "system/camerad/cameras/hw.h"
+#include "system/camerad/cameras/ife.h"
+#include "system/camerad/cameras/nv12_info.h"
+#include "system/camerad/sensors/sensor.h"
+
+
+ExitHandler do_exit;
+
+const bool env_debug_frames = getenv("DEBUG_FRAMES") != nullptr;
+
+// Dragon Q6A camera routing:
+//   PIX mode (hw debayer): CSIPHY → CSID pad 4 → VFE0-2 PIX → NV12 output
+//   RDI mode (raw passthrough): CSIPHY → CSID pad 1 → VFE RDI0 → raw Bayer
+// VFE0-2 are full IFEs (RDI + PIX/ISP), VFE3-4 are lite (RDI only).
+// RDI requires CSID N → VFE N pairing. PIX can cross-connect.
+struct DragonCamConfig {
+  uint32_t csiphy_entity;
+  uint32_t csid_entity;
+  uint32_t vfe_pix_entity;
+  uint32_t vfe_rdi_entity;
+  int pix_video_dev;
+  int rdi_video_dev;
+  const char *sensor_name;
+  int csiphy_subdev;
+  int csid_subdev;
+  int vfe_pix_subdev;
+  int vfe_rdi_subdev;
+};
+
+static int find_v4l_dev(const char *prefix, const char *name) {
+  for (int i = 0; i < 64; i++) {
+    auto path = util::string_format("/sys/class/video4linux/%s%d/name", prefix, i);
+    auto dev_name = util::read_file(path);
+    if (!dev_name.empty() && dev_name.find(name) == 0) return i;
+  }
+  return -1;
+}
+
+static uint32_t find_media_entity(int media_fd, const char *name) {
+  struct media_entity_desc ent = {};
+  for (ent.id = 0 | MEDIA_ENT_ID_FLAG_NEXT; ; ent.id |= MEDIA_ENT_ID_FLAG_NEXT) {
+    if (ioctl(media_fd, MEDIA_IOC_ENUM_ENTITIES, &ent) < 0) break;
+    if (strcmp(ent.name, name) == 0) return ent.id;
+  }
+  return 0;
+}
+
+static DragonCamConfig resolve_cam_config(int media_fd, int cam_idx) {
+  // PIX uses full VFEs (0-2, have ISP hw); RDI uses matched VFE (CSID N → VFE N)
+  static const struct { int csiphy; int csid; int pix_vfe; int rdi_vfe; const char *sensor; } routing[] = {
+    {2, 2, 2, 2, "imx219 18-0010"},
+    {3, 3, 1, 3, "imx219 20-0010"},
+  };
+  auto &r = routing[cam_idx];
+  DragonCamConfig cfg = {};
+  cfg.sensor_name = r.sensor;
+  cfg.csiphy_entity = find_media_entity(media_fd, util::string_format("msm_csiphy%d", r.csiphy).c_str());
+  cfg.csid_entity = find_media_entity(media_fd, util::string_format("msm_csid%d", r.csid).c_str());
+  cfg.vfe_pix_entity = find_media_entity(media_fd, util::string_format("msm_vfe%d_pix", r.pix_vfe).c_str());
+  cfg.vfe_rdi_entity = find_media_entity(media_fd, util::string_format("msm_vfe%d_rdi0", r.rdi_vfe).c_str());
+  cfg.pix_video_dev = find_v4l_dev("video", util::string_format("msm_vfe%d_video3", r.pix_vfe).c_str());
+  cfg.rdi_video_dev = find_v4l_dev("video", util::string_format("msm_vfe%d_video0", r.rdi_vfe).c_str());
+  cfg.csiphy_subdev = find_v4l_dev("v4l-subdev", util::string_format("msm_csiphy%d", r.csiphy).c_str());
+  cfg.csid_subdev = find_v4l_dev("v4l-subdev", util::string_format("msm_csid%d", r.csid).c_str());
+  cfg.vfe_pix_subdev = find_v4l_dev("v4l-subdev", util::string_format("msm_vfe%d_pix", r.pix_vfe).c_str());
+  cfg.vfe_rdi_subdev = find_v4l_dev("v4l-subdev", util::string_format("msm_vfe%d_rdi0", r.rdi_vfe).c_str());
+  return cfg;
+}
+
+static DragonCamConfig dragon_cams[2];
+
+
+struct V4LBuf {
+  void *start;
+  size_t length;
+};
+
+static inline uint16_t raw10_pixel(const uint8_t *raw, int row, int col, int stride) {
+  int group = col / 4;
+  int idx = col % 4;
+  int off = row * stride + group * 5;
+  return ((uint16_t)raw[off + idx] << 2) | ((raw[off + 4] >> (idx * 2)) & 0x3);
+}
+
+static uint8_t gamma_lut[1024];
+static void __attribute__((constructor)) init_gamma_lut() {
+  for (int i = 0; i < 1024; i++) {
+    float v = i / 1023.0f;
+    gamma_lut[i] = (uint8_t)std::min((int)(powf(v, 1.0f / 2.2f) * 255.0f + 0.5f), 255);
+  }
+}
+
+static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
+                                   uint8_t *y_out, uint8_t *uv_out,
+                                   int width, int height, int out_stride) {
+  // IMX219 white balance gains (10-bit fixed point: multiply then >>8)
+  // These compensate for the sensor's green-heavy Bayer response
+  const int wb_r = 410;   // ~1.60x
+  const int wb_g = 256;   // 1.00x
+  const int wb_b = 390;   // ~1.52x
+  const int black = 64;   // IMX219 10-bit black level
+
+  for (int y = 0; y < height - 1; y += 2) {
+    for (int x = 0; x < width - 1; x += 2) {
+      // RGGB Bayer pattern
+      int R  = std::max((int)raw10_pixel(raw, y, x, raw_stride) - black, 0);
+      int Gr = std::max((int)raw10_pixel(raw, y, x + 1, raw_stride) - black, 0);
+      int Gb = std::max((int)raw10_pixel(raw, y + 1, x, raw_stride) - black, 0);
+      int B  = std::max((int)raw10_pixel(raw, y + 1, x + 1, raw_stride) - black, 0);
+
+      // White balance + scale to 10-bit range
+      int r10 = std::min((R * wb_r) >> 8, 1023);
+      int g10_r = std::min((Gr * wb_g) >> 8, 1023);
+      int g10_b = std::min((Gb * wb_g) >> 8, 1023);
+      int b10 = std::min((B * wb_b) >> 8, 1023);
+
+      // Gamma-corrected 8-bit values
+      uint8_t r8 = gamma_lut[r10];
+      uint8_t gr8 = gamma_lut[g10_r];
+      uint8_t gb8 = gamma_lut[g10_b];
+      uint8_t b8 = gamma_lut[b10];
+      uint8_t g8 = (gr8 + gb8 + 1) >> 1;
+
+      // BT.601 RGB→YUV
+      y_out[y * out_stride + x]         = std::clamp(((66*r8 + 129*gr8 + 25*b8 + 128) >> 8) + 16, 16, 235);
+      y_out[y * out_stride + x + 1]     = std::clamp(((66*r8 + 129*gr8 + 25*b8 + 128) >> 8) + 16, 16, 235);
+      y_out[(y+1) * out_stride + x]     = std::clamp(((66*r8 + 129*gb8 + 25*b8 + 128) >> 8) + 16, 16, 235);
+      y_out[(y+1) * out_stride + x + 1] = std::clamp(((66*r8 + 129*gb8 + 25*b8 + 128) >> 8) + 16, 16, 235);
+
+      uv_out[(y/2) * out_stride + x]     = std::clamp(((-38*r8 - 74*g8 + 112*b8 + 128) >> 8) + 128, 16, 240);
+      uv_out[(y/2) * out_stride + x + 1] = std::clamp(((112*r8 - 94*g8 - 18*b8 + 128) >> 8) + 128, 16, 240);
+    }
+  }
+}
+
+class DragonCamera {
+public:
+  CameraConfig cc;
+  std::unique_ptr<SensorInfo> sensor;
+  CameraBuf buf;
+  bool enabled;
+  bool use_pix;
+
+  int video_fd = -1;
+  int sensor_fd = -1;
+
+  V4LBuf v4l_bufs[4];
+  int n_bufs = 4;
+  uint32_t frame_size = 0;
+
+  uint32_t stride = 0, y_height = 0, uv_height = 0, yuv_size = 0, uv_offset = 0;
+
+  // PIX mode VFE ioctl state
+  uint64_t iova_map[VIPC_BUFFER_COUNT] = {};
+  uint32_t wm_y = 3, wm_uv = 4;
+
+  DragonCamera(const CameraConfig &config) : cc(config), enabled(config.enabled),
+    use_pix(getenv("DRAGON_PIX") != nullptr) {}
+
+  void camera_open(VisionIpcServer *v);
+  void camera_close();
+  void setup_media_links();
+  void set_formats();
+  void start_streaming();
+  void stop_streaming();
+  int dequeue_frame(uint64_t *timestamp);
+  void queue_frame(int index);
+  void enqueue_pix_frame(int buf_idx);
+  int wait_sof();
+  void set_exposure(int exposure_time, int gain_idx);
+
+  int vfe_ioctl(unsigned long cmd, void *arg) {
+    return HANDLE_EINTR(ioctl(video_fd, cmd, arg));
+  }
+
+  VisionIpcServer *vipc_server = nullptr;
+  VisionStreamType stream_type;
+};
+
+
+static void reset_all_media_links() {
+  int media_fd = open("/dev/media0", O_RDWR);
+  if (media_fd < 0) return;
+
+  for (int i = 0; i < 20; i++) {
+    std::string vpath = util::string_format("/dev/video%d", i);
+    int vfd = open(vpath.c_str(), O_RDWR);
+    if (vfd >= 0) {
+      int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+      ioctl(vfd, VIDIOC_STREAMOFF, &type);
+      type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+      ioctl(vfd, VIDIOC_STREAMOFF, &type);
+      close(vfd);
+    }
+  }
+
+  std::vector<uint32_t> csid_ents, vfe_ents, csiphy_ents;
+  struct media_entity_desc ent = {};
+  for (ent.id = 0 | MEDIA_ENT_ID_FLAG_NEXT; ; ent.id |= MEDIA_ENT_ID_FLAG_NEXT) {
+    if (ioctl(media_fd, MEDIA_IOC_ENUM_ENTITIES, &ent) < 0) break;
+    if (strncmp(ent.name, "msm_csiphy", 10) == 0) csiphy_ents.push_back(ent.id);
+    if (strncmp(ent.name, "msm_csid", 8) == 0) csid_ents.push_back(ent.id);
+    if (strncmp(ent.name, "msm_vfe", 7) == 0) vfe_ents.push_back(ent.id);
+  }
+  for (uint32_t csiphy : csiphy_ents) {
+    for (uint32_t csid : csid_ents) {
+      struct media_link_desc link = {};
+      link.source = {.entity = csiphy, .index = 1};
+      link.sink = {.entity = csid, .index = 0};
+      link.flags = 0;
+      ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link);
+    }
+  }
+  for (uint32_t csid : csid_ents) {
+    for (uint32_t vfe : vfe_ents) {
+      for (int pad = 1; pad <= 4; pad++) {
+        struct media_link_desc link = {};
+        link.source = {.entity = csid, .index = (uint16_t)pad};
+        link.sink = {.entity = vfe, .index = 0};
+        link.flags = 0;
+        ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link);
+      }
+    }
+  }
+  close(media_fd);
+  LOG("reset all media links");
+}
+
+void DragonCamera::setup_media_links() {
+  int media_fd = open("/dev/media0", O_RDWR);
+  if (media_fd < 0) {
+    LOGE("failed to open /dev/media0");
+    return;
+  }
+
+  int cam_idx = cc.camera_num;
+  auto &dcfg = dragon_cams[cam_idx];
+
+  struct media_link_desc link = {};
+
+  // CSIPHY → CSID (source pad 1 → sink pad 0)
+  fprintf(stderr, "cam %d: link csiphy(ent %u):1 → csid(ent %u):0\n",
+          cam_idx, dcfg.csiphy_entity, dcfg.csid_entity); fflush(stderr);
+  link.source = {.entity = (uint32_t)dcfg.csiphy_entity, .index = 1};
+  link.sink = {.entity = (uint32_t)dcfg.csid_entity, .index = 0};
+  link.flags = MEDIA_LNK_FL_ENABLED;
+  if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0)
+    fprintf(stderr, "cam %d: csiphy→csid link FAILED: %d (%s)\n", cam_idx, errno, strerror(errno));
+  else
+    fprintf(stderr, "cam %d: csiphy→csid link OK\n", cam_idx);
+  fflush(stderr);
+
+  memset(&link, 0, sizeof(link));
+  if (use_pix) {
+    // CSID pad 4 → VFE_PIX pad 0
+    fprintf(stderr, "cam %d: link csid(ent %u):4 → vfe_pix(ent %u):0\n",
+            cam_idx, dcfg.csid_entity, dcfg.vfe_pix_entity); fflush(stderr);
+    link.source = {.entity = (uint32_t)dcfg.csid_entity, .index = 4};
+    link.sink = {.entity = (uint32_t)dcfg.vfe_pix_entity, .index = 0};
+    link.flags = MEDIA_LNK_FL_ENABLED;
+    if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0) {
+      fprintf(stderr, "cam %d: csid→vfe_pix link FAILED: %d (%s), falling back to RDI\n", cam_idx, errno, strerror(errno));
+      use_pix = false;
+    } else {
+      fprintf(stderr, "cam %d: csid→vfe_pix link OK\n", cam_idx);
+    }
+    fflush(stderr);
+  }
+
+  if (!use_pix) {
+    // CSID pad 1 → VFE_RDI0 pad 0
+    fprintf(stderr, "cam %d: link csid(ent %u):1 → vfe_rdi(ent %u):0\n",
+            cam_idx, dcfg.csid_entity, dcfg.vfe_rdi_entity); fflush(stderr);
+    link.source = {.entity = (uint32_t)dcfg.csid_entity, .index = 1};
+    link.sink = {.entity = (uint32_t)dcfg.vfe_rdi_entity, .index = 0};
+    link.flags = MEDIA_LNK_FL_ENABLED;
+    if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0)
+      fprintf(stderr, "cam %d: csid→vfe_rdi link FAILED: %d (%s)\n", cam_idx, errno, strerror(errno));
+    else
+      fprintf(stderr, "cam %d: csid→vfe_rdi link OK\n", cam_idx);
+    fflush(stderr);
+  }
+
+  close(media_fd);
+  LOG("cam %d: media links set up (%s mode)", cam_idx, use_pix ? "PIX" : "RDI");
+}
+
+void DragonCamera::set_formats() {
+  int cam_idx = cc.camera_num;
+  auto &dcfg = dragon_cams[cam_idx];
+
+  // set format on CSIPHY subdev
+  int csiphy_fd = open(util::string_format("/dev/v4l-subdev%d", dcfg.csiphy_subdev).c_str(), O_RDWR);
+  if (csiphy_fd >= 0) {
+    struct v4l2_subdev_format sfmt = {};
+    sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+    sfmt.pad = 0;
+    sfmt.format.width = sensor->frame_width;
+    sfmt.format.height = sensor->frame_height;
+    sfmt.format.code = 0x300f;  // MEDIA_BUS_FMT_SRGGB10_1X10
+    ioctl(csiphy_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+    sfmt.pad = 1;
+    ioctl(csiphy_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+    close(csiphy_fd);
+  }
+
+  // set format on CSID subdev
+  int csid_fd = open(util::string_format("/dev/v4l-subdev%d", dcfg.csid_subdev).c_str(), O_RDWR);
+  if (csid_fd >= 0) {
+    struct v4l2_subdev_format sfmt = {};
+    sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+    sfmt.pad = 0;
+    sfmt.format.width = sensor->frame_width;
+    sfmt.format.height = sensor->frame_height;
+    sfmt.format.code = 0x300f;
+    ioctl(csid_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+
+    if (use_pix) {
+      // PIX source pad (pad 4)
+      sfmt.pad = 4;
+      ioctl(csid_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+    } else {
+      // RDI source pad (pad 1)
+      sfmt.pad = 1;
+      ioctl(csid_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+    }
+    close(csid_fd);
+  }
+
+  // set format on sensor subdev
+  if (sensor_fd >= 0) {
+    struct v4l2_subdev_format sfmt = {};
+    sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+    sfmt.pad = 0;
+    sfmt.format.width = sensor->frame_width;
+    sfmt.format.height = sensor->frame_height;
+    sfmt.format.code = 0x300f;
+    ioctl(sensor_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+  }
+
+  if (use_pix) {
+    // set format on VFE PIX subdev (sink pad)
+    int vfe_sub_fd = open(util::string_format("/dev/v4l-subdev%d", dcfg.vfe_pix_subdev).c_str(), O_RDWR);
+    if (vfe_sub_fd >= 0) {
+      struct v4l2_subdev_format sfmt = {};
+      sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+      sfmt.pad = 0;
+      sfmt.format.width = sensor->frame_width;
+      sfmt.format.height = sensor->frame_height;
+      sfmt.format.code = 0x300f;
+      ioctl(vfe_sub_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+      close(vfe_sub_fd);
+    }
+
+    // set NV12 format on VFE PIX video device
+    struct v4l2_format vfmt = {};
+    vfmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    vfmt.fmt.pix_mp.width = sensor->frame_width;
+    vfmt.fmt.pix_mp.height = sensor->frame_height;
+    vfmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
+    vfmt.fmt.pix_mp.num_planes = 1;
+    int ret = ioctl(video_fd, VIDIOC_S_FMT, &vfmt);
+    if (ret != 0) {
+      LOGE("cam %d: VIDIOC_S_FMT NV12 failed: %d (%s)", cam_idx, errno, strerror(errno));
+    }
+    frame_size = vfmt.fmt.pix_mp.plane_fmt[0].sizeimage;
+    LOG("cam %d: PIX NV12 %dx%d stride=%d size=%u", cam_idx,
+        vfmt.fmt.pix_mp.width, vfmt.fmt.pix_mp.height,
+        vfmt.fmt.pix_mp.plane_fmt[0].bytesperline, frame_size);
+  } else {
+    // set format on VFE RDI subdev (sink pad)
+    int vfe_rdi_fd = open(util::string_format("/dev/v4l-subdev%d", dcfg.vfe_rdi_subdev).c_str(), O_RDWR);
+    if (vfe_rdi_fd >= 0) {
+      struct v4l2_subdev_format sfmt = {};
+      sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+      sfmt.pad = 0;
+      sfmt.format.width = sensor->frame_width;
+      sfmt.format.height = sensor->frame_height;
+      sfmt.format.code = 0x300f;
+      ioctl(vfe_rdi_fd, VIDIOC_SUBDEV_S_FMT, &sfmt);
+      close(vfe_rdi_fd);
+    }
+
+    // set raw Bayer format on RDI video device
+    struct v4l2_format vfmt = {};
+    vfmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    vfmt.fmt.pix_mp.width = sensor->frame_width;
+    vfmt.fmt.pix_mp.height = sensor->frame_height;
+    vfmt.fmt.pix_mp.pixelformat = v4l2_fourcc('p', 'R', 'A', 'A');  // SRGGB10P
+    vfmt.fmt.pix_mp.num_planes = 1;
+    if (ioctl(video_fd, VIDIOC_S_FMT, &vfmt) == 0) {
+      frame_size = vfmt.fmt.pix_mp.plane_fmt[0].sizeimage;
+      LOG("cam %d: RDI format set %dx%d, frame_size=%u", cam_idx,
+          vfmt.fmt.pix_mp.width, vfmt.fmt.pix_mp.height, frame_size);
+    }
+  }
+}
+
+void DragonCamera::camera_open(VisionIpcServer *v) {
+  if (!enabled) return;
+
+  sensor = std::make_unique<IMX219>();
+  vipc_server = v;
+  stream_type = cc.stream_type;
+
+  int cam_idx = cc.camera_num;
+  auto &dcfg = dragon_cams[cam_idx];
+
+  // compute NV12 geometry (needed before opening video device for PIX mode)
+  // open video device
+  int dev = use_pix ? dcfg.pix_video_dev : dcfg.rdi_video_dev;
+  std::string path = util::string_format("/dev/video%d", dev);
+  video_fd = open(path.c_str(), O_RDWR);
+  if (video_fd < 0) {
+    LOGE("cam %d: failed to open %s: %d", cam_idx, path.c_str(), errno);
+    enabled = false;
+    return;
+  }
+  LOG("cam %d: opened %s (%s mode)", cam_idx, path.c_str(), use_pix ? "PIX" : "RDI");
+
+  // find sensor subdev
+  for (int i = 0; i < 32; i++) {
+    std::string name = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", i));
+    if (name.find(dcfg.sensor_name) == 0) {
+      sensor_fd = open(util::string_format("/dev/v4l-subdev%d", i).c_str(), O_RDWR);
+      break;
+    }
+  }
+  if (sensor_fd < 0) {
+    LOGE("cam %d: sensor subdev '%s' not found, disabling", cam_idx, dcfg.sensor_name);
+    enabled = false;
+    return;
+  }
+
+  setup_media_links();
+  set_formats();
+
+  auto [s, yh, uvh, sz] = get_nv12_info(sensor->frame_width, sensor->frame_height);
+  stride = s;
+  y_height = yh;
+  uv_height = uvh;
+  yuv_size = sz;
+  uv_offset = stride * y_height;
+
+  v->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT,
+                               sensor->frame_width, sensor->frame_height,
+                               yuv_size, stride, uv_offset);
+
+  // V4L2 MMAP buffers for both PIX and RDI modes
+  struct v4l2_requestbuffers req = {};
+  req.count = n_bufs;
+  req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  req.memory = V4L2_MEMORY_MMAP;
+  int reqbufs_ret = ioctl(video_fd, VIDIOC_REQBUFS, &req);
+  fprintf(stderr, "cam %d: REQBUFS ret=%d count=%d errno=%d(%s)\n",
+          cam_idx, reqbufs_ret, req.count, errno, reqbufs_ret ? strerror(errno) : "ok");
+  if (reqbufs_ret != 0) {
+    LOGE("cam %d: REQBUFS failed: %d", cam_idx, errno);
+    enabled = false;
+    return;
+  }
+  n_bufs = req.count;
+
+  for (int i = 0; i < n_bufs; i++) {
+    struct v4l2_buffer qbuf = {};
+    struct v4l2_plane planes[1] = {};
+    qbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    qbuf.memory = V4L2_MEMORY_MMAP;
+    qbuf.index = i;
+    qbuf.length = 1;
+    qbuf.m.planes = planes;
+    if (ioctl(video_fd, VIDIOC_QUERYBUF, &qbuf) != 0) {
+      LOGE("cam %d: QUERYBUF %d failed: %d", cam_idx, i, errno);
+      continue;
+    }
+    v4l_bufs[i].length = planes[0].length;
+    v4l_bufs[i].start = mmap(NULL, planes[0].length, PROT_READ | PROT_WRITE,
+                              MAP_SHARED, video_fd, planes[0].m.mem_offset);
+  }
+
+  LOG("cam %d: VIPC buffers created (%s, %u bytes, stride=%u)", cam_idx,
+      use_pix ? "NV12 hw ISP" : "NV12 sw debayer", yuv_size, stride);
+}
+
+void DragonCamera::start_streaming() {
+  if (!enabled) return;
+
+  for (int i = 0; i < n_bufs; i++) {
+    queue_frame(i);
+  }
+  int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  fprintf(stderr, "cam %d: calling STREAMON on fd=%d (dev=%d)\n",
+          cc.camera_num, video_fd,
+          use_pix ? dragon_cams[cc.camera_num].pix_video_dev : dragon_cams[cc.camera_num].rdi_video_dev);
+  if (ioctl(video_fd, VIDIOC_STREAMON, &type) != 0) {
+    LOGE("cam %d: STREAMON failed: %d (%s)", cc.camera_num, errno, strerror(errno));
+    enabled = false;
+    return;
+  }
+  fprintf(stderr, "cam %d: STREAMON OK\n", cc.camera_num);
+
+  if (use_pix) {
+    // Program ISP registers after STREAMON (VFE is powered and clocked)
+    auto [regs, dmis] = build_initial_config_flat(cc, sensor.get(), sensor->frame_width, sensor->frame_height);
+    struct vfe_write_regs_cmd regs_cmd = {};
+    regs_cmd.regs = (uint64_t)regs.data();
+    regs_cmd.count = regs.size();
+    int ret = vfe_ioctl(VFE_WRITE_REGS, &regs_cmd);
+    if (ret != 0) LOGE("cam %d: VFE_WRITE_REGS init failed: %d (%s)", cc.camera_num, errno, strerror(errno));
+
+    for (const auto &dmi : dmis) {
+      struct vfe_dmi_cmd dmi_cmd = {};
+      dmi_cmd.dmi_cfg_offset = dmi.cfg_offset;
+      dmi_cmd.ram_select = dmi.ram_select;
+      dmi_cmd.count = dmi.count;
+      dmi_cmd.data = (uint64_t)dmi.data;
+      ret = vfe_ioctl(VFE_WRITE_DMI, &dmi_cmd);
+      if (ret != 0) LOGE("cam %d: VFE_WRITE_DMI (sel=%d) failed: %d", cc.camera_num, dmi.ram_select, errno);
+    }
+
+    vfe_ioctl(VFE_REG_UPDATE, nullptr);
+    LOG("cam %d: ISP configured (%zu regs, %zu DMI uploads)", cc.camera_num, regs.size(), dmis.size());
+  }
+  LOG("cam %d: %s streaming started", cc.camera_num, use_pix ? "PIX" : "RDI");
+}
+
+void DragonCamera::stop_streaming() {
+  int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  ioctl(video_fd, VIDIOC_STREAMOFF, &type);
+}
+
+void DragonCamera::enqueue_pix_frame(int buf_idx) {
+  auto regs = build_update_flat(cc, sensor.get());
+  struct vfe_write_regs_cmd regs_cmd = {};
+  regs_cmd.regs = (uint64_t)regs.data();
+  regs_cmd.count = regs.size();
+  vfe_ioctl(VFE_WRITE_REGS, &regs_cmd);
+
+  struct vfe_set_buf_cmd y_cmd = {};
+  y_cmd.wm_index = wm_y;
+  y_cmd.iova = iova_map[buf_idx];
+  y_cmd.stride = stride;
+  y_cmd.frame_inc = stride * y_height;
+  vfe_ioctl(VFE_SET_BUF, &y_cmd);
+
+  struct vfe_set_buf_cmd uv_cmd = {};
+  uv_cmd.wm_index = wm_uv;
+  uv_cmd.iova = iova_map[buf_idx] + uv_offset;
+  uv_cmd.stride = stride;
+  uv_cmd.frame_inc = stride * uv_height;
+  vfe_ioctl(VFE_SET_BUF, &uv_cmd);
+
+  vfe_ioctl(VFE_REG_UPDATE, nullptr);
+}
+
+int DragonCamera::wait_sof() {
+  return vfe_ioctl(VFE_WAIT_SOF, nullptr);
+}
+
+void DragonCamera::queue_frame(int index) {
+  struct v4l2_buffer vbuf = {};
+  struct v4l2_plane planes[1] = {};
+  vbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  vbuf.memory = V4L2_MEMORY_MMAP;
+  vbuf.index = index;
+  vbuf.length = 1;
+  vbuf.m.planes = planes;
+  int ret = ioctl(video_fd, VIDIOC_QBUF, &vbuf);
+  if (ret != 0 || env_debug_frames)
+    fprintf(stderr, "cam %d: QBUF idx=%d ret=%d errno=%d(%s)\n",
+            cc.camera_num, index, ret, errno, ret ? strerror(errno) : "ok");
+}
+
+int DragonCamera::dequeue_frame(uint64_t *timestamp) {
+  struct pollfd pfd = {video_fd, POLLIN, 0};
+  int ret = poll(&pfd, 1, 1000);
+  if (ret <= 0) return -1;
+
+  struct v4l2_buffer dbuf = {};
+  struct v4l2_plane planes[1] = {};
+  dbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  dbuf.memory = V4L2_MEMORY_MMAP;
+  dbuf.length = 1;
+  dbuf.m.planes = planes;
+  if (ioctl(video_fd, VIDIOC_DQBUF, &dbuf) != 0) return -1;
+
+  *timestamp = (uint64_t)dbuf.timestamp.tv_sec * 1000000000ULL +
+               (uint64_t)dbuf.timestamp.tv_usec * 1000ULL;
+  return dbuf.index;
+}
+
+void DragonCamera::set_exposure(int exposure_time, int gain_idx) {
+  if (sensor_fd < 0) return;
+
+  struct v4l2_control ctrl = {};
+  ctrl.id = V4L2_CID_EXPOSURE;
+  ctrl.value = exposure_time;
+  ioctl(sensor_fd, VIDIOC_S_CTRL, &ctrl);
+
+  const uint32_t imx219_gains[] = {0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 232};
+  ctrl.id = V4L2_CID_ANALOGUE_GAIN;
+  ctrl.value = imx219_gains[gain_idx];
+  ioctl(sensor_fd, VIDIOC_S_CTRL, &ctrl);
+}
+
+void DragonCamera::camera_close() {
+  if (video_fd >= 0) {
+    stop_streaming();
+    for (int i = 0; i < n_bufs; i++) {
+      if (v4l_bufs[i].start) {
+        munmap(v4l_bufs[i].start, v4l_bufs[i].length);
+        v4l_bufs[i].start = nullptr;
+      }
+    }
+    close(video_fd);
+    video_fd = -1;
+  }
+  if (sensor_fd >= 0) {
+    close(sensor_fd);
+    sensor_fd = -1;
+  }
+}
+
+
+class CameraState {
+public:
+  DragonCamera camera;
+  int exposure_time = 800;
+  bool dc_gain_enabled = false;
+  int dc_gain_weight = 0;
+  int gain_idx = 0;
+  float analog_gain_frac = 0;
+  float cur_ev[3] = {};
+  float best_ev_score = 0;
+  int new_exp_g = 0;
+  int new_exp_t = 0;
+
+  Rect ae_xywh = {};
+  float measured_grey_fraction = 0;
+  float target_grey_fraction = 0.125;
+
+  uint32_t frame_id = 0;
+  std::unique_ptr<PubMaster> pm;
+  float fl_pix = 0;
+
+  CameraState(const CameraConfig &config) : camera(config) {}
+  ~CameraState() { camera.camera_close(); }
+
+  void init(VisionIpcServer *v);
+  void process_rdi_frame(int buf_idx, uint64_t timestamp);
+  void process_pix_frame(int buf_idx, uint64_t timestamp);
+  void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
+  void set_camera_exposure(float grey_frac);
+  void set_exposure_rect();
+
+  float get_gain_factor() const {
+    return (1 + dc_gain_weight * (camera.sensor->dc_gain_factor-1) / camera.sensor->dc_gain_max_weight);
+  }
+};
+
+void CameraState::init(VisionIpcServer *v) {
+  camera.camera_open(v);
+  if (!camera.enabled) return;
+
+  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
+  pm = std::make_unique<PubMaster>(std::vector{camera.cc.publish_name});
+
+  float gain = camera.sensor->sensor_analog_gains[gain_idx];
+  cur_ev[0] = cur_ev[1] = cur_ev[2] = gain * exposure_time;
+
+  if (camera.use_pix) {
+    set_exposure_rect();
+  }
+}
+
+void CameraState::set_exposure_rect() {
+  // AE rectangle for NV12 frames
+  ae_xywh = {
+    (int)(camera.sensor->frame_width * 0.05f),
+    (int)(camera.sensor->frame_height * 0.15f),
+    (int)(camera.sensor->frame_width * 0.9f),
+    (int)(camera.sensor->frame_height * 0.75f),
+  };
+}
+
+void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
+  float score = camera.sensor->getExposureScore(desired_ev, exp_t, exp_g_idx, exp_gain, gain_idx);
+  if (score < best_ev_score) {
+    new_exp_t = exp_t;
+    new_exp_g = exp_g_idx;
+    best_ev_score = score;
+  }
+}
+
+void CameraState::set_camera_exposure(float grey_frac) {
+  if (!camera.enabled) return;
+
+  const float dt = 0.05;
+  const float ts_grey = 10.0;
+  const float ts_ev = 0.05;
+  const float k_grey = (dt / ts_grey) / (1.0 + dt / ts_grey);
+  const float k_ev = (dt / ts_ev) / (1.0 + dt / ts_ev);
+
+  const auto &sens = camera.sensor;
+  const float cur_ev_ = cur_ev[(frame_id - 1) % 3];
+
+  float new_target_grey = std::clamp(0.4f - 0.3f * (float)(log2(1.0 + sens->target_grey_factor*cur_ev_) / log2(6000.0)), 0.1f, 0.4f);
+  float target_grey = (1.0f - k_grey) * target_grey_fraction + k_grey * new_target_grey;
+
+  float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, sens->min_ev, sens->max_ev);
+  float k = (1.0f - k_ev) / 3.0f;
+  desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
+
+  best_ev_score = 1e6;
+  new_exp_g = 0;
+  new_exp_t = 0;
+
+  int min_g = std::max(gain_idx - 1, sens->analog_gain_min_idx);
+  int max_g = std::min(gain_idx + 1, sens->analog_gain_max_idx);
+  for (int g = min_g; g <= max_g; g++) {
+    float gain = sens->sensor_analog_gains[g];
+    int t = std::clamp((int)std::round(desired_ev / gain), sens->exposure_time_min, sens->exposure_time_max);
+    update_exposure_score(desired_ev, t, g, gain);
+  }
+
+  measured_grey_fraction = grey_frac;
+  target_grey_fraction = target_grey;
+  analog_gain_frac = sens->sensor_analog_gains[new_exp_g];
+  gain_idx = new_exp_g;
+  exposure_time = new_exp_t;
+
+  cur_ev[frame_id % 3] = exposure_time * analog_gain_frac;
+  camera.set_exposure(exposure_time, gain_idx);
+}
+
+void CameraState::process_rdi_frame(int buf_idx, uint64_t timestamp) {
+  frame_id++;
+  uint64_t timestamp_eof = timestamp + camera.sensor->readout_time_ns;
+
+  VisionBuf *vb = camera.vipc_server->get_buffer(camera.stream_type, frame_id % VIPC_BUFFER_COUNT);
+  if (vb && camera.v4l_bufs[buf_idx].start) {
+    const uint8_t *raw = (const uint8_t *)camera.v4l_bufs[buf_idx].start;
+    uint8_t *y_plane = (uint8_t *)vb->addr;
+    uint8_t *uv_plane = y_plane + camera.uv_offset;
+    int raw_stride = camera.frame_size / camera.sensor->frame_height;
+    debayer_raw10_to_nv12(raw, raw_stride, y_plane, uv_plane,
+                           camera.sensor->frame_width, camera.sensor->frame_height,
+                           camera.stride);
+  }
+
+  VisionIpcBufExtra extra = {frame_id, timestamp, timestamp_eof};
+  vb->set_frame_id(frame_id);
+  camera.vipc_server->send(vb, &extra);
+
+  MessageBuilder msg;
+  auto framed = (msg.initEvent().*camera.cc.init_camera_state)();
+  framed.setFrameId(frame_id);
+  framed.setTimestampEof(timestamp_eof);
+  framed.setTimestampSof(timestamp);
+  framed.setIntegLines(exposure_time);
+  framed.setGain(camera.sensor->sensor_analog_gains[gain_idx]);
+  framed.setSensor(camera.sensor->image_sensor);
+  framed.setExposureValPercent(util::map_val(cur_ev[frame_id % 3],
+    camera.sensor->min_ev, camera.sensor->max_ev, 0.0f, 100.0f));
+  pm->send(camera.cc.publish_name, msg);
+
+  // AE on debayered Y plane
+  if (frame_id % 3 == 0 && vb) {
+    const uint8_t *y = (const uint8_t *)vb->addr;
+    uint64_t sum = 0;
+    int count = 0;
+    for (int r = camera.sensor->frame_height / 4; r < camera.sensor->frame_height * 3 / 4; r += 4) {
+      for (int c = camera.sensor->frame_width / 4; c < camera.sensor->frame_width * 3 / 4; c += 4) {
+        sum += y[r * camera.stride + c];
+        count++;
+      }
+    }
+    float grey_frac = count > 0 ? (float)sum / count / 255.0f : 0.3f;
+    set_camera_exposure(grey_frac);
+  }
+}
+
+void CameraState::process_pix_frame(int buf_idx, uint64_t timestamp) {
+  frame_id++;
+  uint64_t timestamp_eof = timestamp + camera.sensor->readout_time_ns;
+
+  VisionBuf *vb = camera.vipc_server->get_buffer(camera.stream_type, frame_id % VIPC_BUFFER_COUNT);
+
+  // Copy NV12 data from V4L2 MMAP buffer to VIPC buffer
+  if (vb && camera.v4l_bufs[buf_idx].start) {
+    const uint8_t *src = (const uint8_t *)camera.v4l_bufs[buf_idx].start;
+    uint8_t *dst = (uint8_t *)vb->addr;
+    uint32_t v4l_stride = camera.frame_size / (camera.sensor->frame_height * 3 / 2);
+    if (v4l_stride == camera.stride) {
+      memcpy(dst, src, camera.yuv_size);
+    } else {
+      uint32_t copy_w = std::min(v4l_stride, camera.stride);
+      for (uint32_t y = 0; y < camera.y_height; y++)
+        memcpy(dst + y * camera.stride, src + y * v4l_stride, copy_w);
+      uint32_t src_uv_off = v4l_stride * camera.sensor->frame_height;
+      for (uint32_t y = 0; y < camera.uv_height; y++)
+        memcpy(dst + camera.uv_offset + y * camera.stride,
+               src + src_uv_off + y * v4l_stride, copy_w);
+    }
+  }
+
+  VisionIpcBufExtra extra = {frame_id, timestamp, timestamp_eof};
+  vb->set_frame_id(frame_id);
+  camera.vipc_server->send(vb, &extra);
+
+  MessageBuilder msg;
+  auto framed = (msg.initEvent().*camera.cc.init_camera_state)();
+  framed.setFrameId(frame_id);
+  framed.setTimestampEof(timestamp_eof);
+  framed.setTimestampSof(timestamp);
+  framed.setIntegLines(exposure_time);
+  framed.setGain(camera.sensor->sensor_analog_gains[gain_idx]);
+  framed.setSensor(camera.sensor->image_sensor);
+  framed.setExposureValPercent(util::map_val(cur_ev[frame_id % 3],
+    camera.sensor->min_ev, camera.sensor->max_ev, 0.0f, 100.0f));
+  pm->send(camera.cc.publish_name, msg);
+
+  // AE on Y plane
+  if (frame_id % 3 == 0 && vb) {
+    const uint8_t *y = (const uint8_t *)vb->addr;
+    uint64_t sum = 0;
+    int count = 0;
+    for (int r = camera.sensor->frame_height / 4; r < camera.sensor->frame_height * 3 / 4; r += 4) {
+      for (int c = camera.sensor->frame_width / 4; c < camera.sensor->frame_width * 3 / 4; c += 4) {
+        sum += y[r * camera.stride + c];
+        count++;
+      }
+    }
+    float grey_frac = count > 0 ? (float)sum / count / 255.0f : 0.3f;
+    set_camera_exposure(grey_frac);
+  }
+}
+
+
+void camerad_thread() {
+  bool use_pix = (getenv("DRAGON_PIX") != nullptr);
+  LOG("-- Dragon camerad starting (%s mode)", use_pix ? "PIX hw debayer" : "RDI sw debayer");
+
+  VisionIpcServer v("camerad");
+
+  int media_fd = open("/dev/media0", O_RDWR);
+  if (media_fd < 0) {
+    LOGE("failed to open /dev/media0");
+    return;
+  }
+  for (int i = 0; i < 2; i++) {
+    dragon_cams[i] = resolve_cam_config(media_fd, i);
+    LOG("cam %d: csiphy=%u csid=%u vfe_pix=%u vfe_rdi=%u pix_dev=%d rdi_dev=%d",
+        i, dragon_cams[i].csiphy_entity, dragon_cams[i].csid_entity,
+        dragon_cams[i].vfe_pix_entity, dragon_cams[i].vfe_rdi_entity,
+        dragon_cams[i].pix_video_dev, dragon_cams[i].rdi_video_dev);
+  }
+  close(media_fd);
+
+  reset_all_media_links();
+
+  bool single_cam = getenv("SINGLE_CAM") != nullptr;
+  std::vector<std::unique_ptr<CameraState>> cams;
+  for (const auto &config : ALL_CAMERA_CONFIGS) {
+    if (config.output_type == ISP_BPS_PROCESSED) continue;
+    if (config.camera_num > 1) continue;
+    if (single_cam && config.camera_num != 0) continue;
+    auto cam = std::make_unique<CameraState>(config);
+    cam->init(&v);
+    cams.emplace_back(std::move(cam));
+  }
+
+  v.start_listener();
+
+  for (auto &cam : cams) {
+    cam->camera.start_streaming();
+  }
+
+  LOG("-- Dragon camerad streaming");
+
+  while (!do_exit) {
+    for (auto &cam : cams) {
+      if (!cam->camera.enabled) continue;
+
+      uint64_t timestamp;
+      int buf_idx = cam->camera.dequeue_frame(&timestamp);
+      if (buf_idx < 0) {
+        if (env_debug_frames) printf("cam %d: dequeue timeout\n", cam->camera.cc.camera_num);
+        continue;
+      }
+
+      if (cam->camera.use_pix) {
+        cam->process_pix_frame(buf_idx, timestamp);
+      } else {
+        cam->process_rdi_frame(buf_idx, timestamp);
+      }
+
+      if (env_debug_frames) {
+        printf("cam %d frame %u buf %d ts %.2f ms (%s)\n", cam->camera.cc.camera_num, cam->frame_id, buf_idx, timestamp / 1e6,
+               cam->camera.use_pix ? "PIX" : "RDI");
+        if (cam->frame_id > 20) do_exit = true;
+      }
+
+      cam->camera.queue_frame(buf_idx);
+    }
+  }
+
+  LOG("-- Dragon camerad stopping");
+  for (auto &cam : cams) {
+    cam->camera.stop_streaming();
+  }
+}

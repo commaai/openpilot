@@ -214,7 +214,7 @@ def main(demo=False):
   meta_extra = FrameMeta()
 
 
-  if demo:
+  if demo or ASIUS:
     CP = get_demo_car_params()
   else:
     CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)

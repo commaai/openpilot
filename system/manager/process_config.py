@@ -71,9 +71,9 @@ def and_(*fns):
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
-  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, webrtc)),
+  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging, enabled=not ASIUS),
+  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not ASIUS),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, webrtc), enabled=not ASIUS),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], or_(driverview, webrtc), enabled=(not WEBCAM)),
@@ -83,7 +83,7 @@ procs = [
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
-  PythonProcess("modeld", "selfdrive.modeld.modeld", only_onroad),
+  PythonProcess("modeld", "selfdrive.modeld.modeld", always_run if ASIUS else only_onroad),
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 
   PythonProcess("sensord", "system.sensord.sensord", only_onroad, enabled=not PC and not NO_IMU),

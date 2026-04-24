@@ -24,6 +24,9 @@ if 'CUDA' in available:
 elif 'QCOM' in available:
   tg_backend = 'QCOM'
   tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
+elif 'CL' in available:
+  tg_backend = 'CL'
+  tg_flags = f'DEV={tg_backend} DISABLE_FAST_IDIV=1 EMULATED_DTYPES=long'
 else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   # THREADS=0 is need to prevent bug: https://github.com/tinygrad/tinygrad/issues/14689
@@ -50,9 +53,10 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
   lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files + [compiled_flags_node], cmd)
 
-image_flag = {
-     'larch64': 'IMAGE=2',
-}.get(arch, 'IMAGE=0')
+if arch == 'larch64' and tg_backend != 'CL':
+  image_flag = 'IMAGE=2'
+else:
+  image_flag = 'IMAGE=0'
 script_files = [File(Dir("#selfdrive/modeld").File("compile_modeld.py").abspath)]
 compile_modeld_cmd = f'{tg_flags} {mac_brew_string} {image_flag} python3 {Dir("#selfdrive/modeld").abspath}/compile_modeld.py '
 driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_policy']]

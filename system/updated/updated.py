@@ -18,7 +18,7 @@ from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.markdown import parse_markdown
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import AGNOS, HARDWARE
+from openpilot.system.hardware import AGNOS, ASIUS, HARDWARE
 from openpilot.system.version import get_build_metadata
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
@@ -220,7 +220,10 @@ def handle_agnos_update() -> None:
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
   set_offroad_alert("Offroad_NeosUpdate", True)
 
-  manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
+  if ASIUS:
+    manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/dragon.json")
+  else:
+    manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
   target_slot_number = get_target_slot_number()
   flash_agnos_update(manifest_path, target_slot_number, cloudlog)
   set_offroad_alert("Offroad_NeosUpdate", False)
@@ -405,7 +408,7 @@ class Updater:
     cloudlog.info("git reset success: %s", '\n'.join(r))
 
     # TODO: show agnos download progress
-    if AGNOS:
+    if AGNOS or ASIUS:
       handle_agnos_update()
 
     # Create the finalized, ready-to-swap update
