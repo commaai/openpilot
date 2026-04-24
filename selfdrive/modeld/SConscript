@@ -41,7 +41,8 @@ def probe_devices():
 deadline = time.monotonic() + 10
 while 'AMD' not in (available := probe_devices()):
   if time.monotonic() > deadline:
-    raise RuntimeError(f"USBGPU (AMD) not detected within 10s: {available}")
+    print(f"USBGPU (AMD) not detected within 10s: {available}", file=sys.stderr)
+    Exit(1)
   time.sleep(1)
 
 if 'CUDA' in available:
