@@ -46,6 +46,13 @@ else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   tg_flags = f'DEV={tg_backend}'
 
+assert 'AMD' in available, f"USBGPU not detected in {available}"
+if 'AMD' in available:
+  modeld_tg_flags = f'WARP_DEV={tg_backend} DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 XDG_CACHE_HOME=/data/tinycache DEBUG=2'
+  SetOption('num_jobs', 1)
+else:
+  modeld_tg_flags = tg_flags
+
 def write_tg_compiled_flags(target, source, env):
   with open(str(target[0]), "w") as f:
     json.dump({"DEV": tg_backend}, f)
@@ -64,23 +71,23 @@ mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
   script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
-  cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+  cmd = f'{mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
   lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files + [compiled_flags_node], cmd)
 
 modeld_dir = Dir("#selfdrive/modeld").abspath
 compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
 compile_dm_warp_script = [File(f"{modeld_dir}/compile_dm_warp.py")]
-driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_policy']]
+driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['big_driving_vision', 'big_driving_policy']]
 driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['driving_vision', 'driving_policy']]
 
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 for cfg in MODELD_CONFIGS:
-  cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
+  cmd = (f'{modeld_tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
          f'--model-size {model_w}x{model_h} '
          f'--nv12 {",".join(str(x) for x in cfg.nv12)} '
-         f'--vision-onnx {File("models/driving_vision.onnx").abspath} '
-         f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
+         f'--vision-onnx {File("models/big_driving_vision.onnx").abspath} '
+         f'--policy-onnx {File("models/big_driving_policy.onnx").abspath} '
          f'--output {cfg.pkl_path} --frame-skip {frame_skip}'
          + (' --prepare-only' if cfg.prepare_only else ''))
   node = lenv.Command(cfg.pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], cmd)
