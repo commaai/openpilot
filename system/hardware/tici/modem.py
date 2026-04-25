@@ -299,7 +299,6 @@ class Modem:
     except (OSError, serial.SerialException) as e:
       log.warning(f"serial open failed: {e}")
       return State.WAITING_PORT
-    time.sleep(1)
 
     # kill any stale pppd from previous run
     self._kill_ppp()
