@@ -37,7 +37,7 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
+pkg_names = ['bzip2', 'capnproto', 'catch2', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 
 
@@ -111,7 +111,6 @@ env = Environment(
     "#third_party/acados/include",
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
-    "#third_party/catch2/include",
     [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[

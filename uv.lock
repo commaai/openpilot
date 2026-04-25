@@ -141,6 +141,11 @@ wheels = [
 ]
 
 [[package]]
+name = "catch2"
+version = "2.13.10"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2#419106e82a8dfb86b3252935c94cefb4570cd395" }
+
+[[package]]
 name = "certifi"
 version = "2026.2.25"
 source = { registry = "https://pypi.org/simple" }
@@ -751,6 +756,7 @@ dependencies = [
     { name = "bzip2" },
     { name = "capnproto" },
     { name = "casadi" },
+    { name = "catch2" },
     { name = "cffi" },
     { name = "crcmod-plus" },
     { name = "cython" },
@@ -828,6 +834,7 @@ requires-dist = [
     { name = "bzip2", git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=release-bzip2" },
     { name = "capnproto", git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=release-capnproto" },
     { name = "casadi", specifier = ">=3.6.6" },
+    { name = "catch2", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "coverage", marker = "extra == 'testing'" },
