@@ -11,6 +11,8 @@ struct PandaTest : public Panda {
   void test_can_send();
   void test_can_recv(uint32_t chunk_size = 0);
   void test_chunked_can_recv();
+  void test_incomplete_can_recv();
+  void test_bus_filtering();
 
   std::map<int, std::string> test_data;
   int can_list_size = 0;
@@ -102,6 +104,76 @@ void PandaTest::test_can_recv(uint32_t rx_chunk_size) {
   }
 }
 
+void PandaTest::test_incomplete_can_recv() {
+  MessageBuilder local_msg;
+  auto can_list = local_msg.initEvent().initSendcan(1);
+  can_list[0].setAddress(0xabc);
+  can_list[0].setSrc(bus_offset);
+  const std::string dat = "\x01\x02\x03\x04";
+  can_list[0].setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
+
+  std::vector<uint8_t> packed_data;
+  this->pack_can_buffer(can_list.asReader(), [&](uint8_t *chunk, size_t size) {
+    packed_data.insert(packed_data.end(), chunk, &chunk[size]);
+  });
+  REQUIRE(packed_data.size() > sizeof(can_header));
+
+  // Feed all but the last byte. unpack_can_buffer should keep a partial frame
+  // in the receive buffer instead of dropping it.
+  std::vector<can_frame> frames;
+  this->receive_buffer_size = packed_data.size() - 1;
+  memcpy(this->receive_buffer, packed_data.data(), this->receive_buffer_size);
+  uint32_t partial_size = this->receive_buffer_size;
+  REQUIRE(this->unpack_can_buffer(this->receive_buffer, partial_size, frames));
+  REQUIRE(frames.empty());
+  REQUIRE(partial_size > 0);
+
+  // Provide the missing trailing byte and validate that all frames decode.
+  this->receive_buffer[partial_size] = packed_data.back();
+  partial_size += 1;
+  REQUIRE(this->unpack_can_buffer(this->receive_buffer, partial_size, frames));
+  REQUIRE(frames.size() == 1);
+  REQUIRE(frames[0].address == 0xabc);
+  REQUIRE(frames[0].src == bus_offset);
+  REQUIRE(frames[0].dat == dat);
+  REQUIRE(partial_size == 0);
+}
+
+void PandaTest::test_bus_filtering() {
+  MessageBuilder local_msg;
+  auto can_list = local_msg.initEvent().initSendcan(3);
+
+  // Bus in range for this panda (bus_offset..bus_offset+3)
+  can_list[0].setAddress(0x111);
+  can_list[0].setSrc(bus_offset + 1);
+  const std::string valid_dat = "\x01\x02\x03\x04";
+  can_list[0].setDat(kj::ArrayPtr((uint8_t *)valid_dat.data(), valid_dat.size()));
+
+  // Buses outside this panda's ownership should be ignored by pack_can_buffer.
+  can_list[1].setAddress(0x222);
+  can_list[1].setSrc((bus_offset + PANDA_BUS_OFFSET) % 8);
+  const std::string out_of_range_dat_1 = "\x09\x08\x07\x06";
+  can_list[1].setDat(kj::ArrayPtr((uint8_t *)out_of_range_dat_1.data(), out_of_range_dat_1.size()));
+
+  can_list[2].setAddress(0x333);
+  can_list[2].setSrc((bus_offset == 0) ? 7 : (bus_offset - 1));
+  const std::string out_of_range_dat_2 = "\xaa\xbb\xcc\xdd";
+  can_list[2].setDat(kj::ArrayPtr((uint8_t *)out_of_range_dat_2.data(), out_of_range_dat_2.size()));
+
+  std::vector<uint8_t> packed_data;
+  this->pack_can_buffer(can_list.asReader(), [&](uint8_t *chunk, size_t size) {
+    packed_data.insert(packed_data.end(), chunk, &chunk[size]);
+  });
+
+  std::vector<can_frame> frames;
+  uint32_t size = packed_data.size();
+  REQUIRE(this->unpack_can_buffer(packed_data.data(), size, frames));
+  REQUIRE(frames.size() == 1);
+  REQUIRE(frames[0].address == 0x111);
+  REQUIRE(frames[0].src == bus_offset + 1);
+  REQUIRE(frames[0].dat == valid_dat);
+}
+
 TEST_CASE("send/recv CAN 2.0 packets") {
   auto bus_offset = GENERATE(0, 4);
   auto can_list_size = GENERATE(1, 3, 5, 10, 30, 60, 100, 200);
@@ -115,6 +187,12 @@ TEST_CASE("send/recv CAN 2.0 packets") {
   }
   SECTION("chunked_can_receive") {
     test.test_can_recv(0x40);
+  }
+  SECTION("incomplete_receive_buffering") {
+    test.test_incomplete_can_recv();
+  }
+  SECTION("bus_filtering") {
+    test.test_bus_filtering();
   }
 }
 
@@ -131,5 +209,11 @@ TEST_CASE("send/recv CAN FD packets") {
   }
   SECTION("chunked_can_receive") {
     test.test_can_recv(0x40);
+  }
+  SECTION("incomplete_receive_buffering") {
+    test.test_incomplete_can_recv();
+  }
+  SECTION("bus_filtering") {
+    test.test_bus_filtering();
   }
 }
