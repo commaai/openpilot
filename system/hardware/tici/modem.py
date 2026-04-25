@@ -37,6 +37,14 @@ PPPD = [
   "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
   "user", '""', "password", '""',
 ]
+RECONNECT_RESET = {
+  "connected": False, "ip_address": "",
+  "iccid": "", "mcc_mnc": "", "imei": "", "modem_version": "",
+  "signal_strength": 0, "signal_quality": 0,
+  "network_type": "unknown", "operator": "", "band": "", "channel": 0,
+  "registration": "unknown", "temperatures": [], "extra": "",
+  "tx_bytes": 0, "rx_bytes": 0, "error": "",
+}
 
 
 class State(Enum):
@@ -290,7 +298,15 @@ class Modem:
     for c in AT_INIT + ["AT+CREG=2", "AT+CGREG=2"]:
       self._at(c)
 
-    # read identity
+    identity = self._read_identity()
+    self._configure_device(identity["iccid"])
+    self._configure_apn_and_roaming()
+
+    self._sim_change = False  # clear — we just re-read identity with the new SIM
+    self._update(**identity)
+    return State.REGISTERING
+
+  def _read_identity(self):
     imei, iccid, mcc_mnc, modem_version = "", "", "", ""
     r = self._at("AT+CGSN")
     if r:
@@ -309,64 +325,69 @@ class Modem:
     if r:
       modem_version = r[0].strip()
     log.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
+    return {"imei": imei, "iccid": iccid, "mcc_mnc": mcc_mnc, "modem_version": modem_version}
 
-    self._configure_device(iccid)
-
-    # configure APN on CID 1
+  def _configure_apn_and_roaming(self):
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
     log.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}, sim_change={self._sim_change}")
 
-    self._sim_change = False  # clear — we just re-read identity with the new SIM
-    self._update(imei=imei, iccid=iccid, mcc_mnc=mcc_mnc, modem_version=modem_version)
-    return State.REGISTERING
+  def _reset_ps_attach(self):
+    self._ps_wait_start = 0.0
+    self._ps_attach_tried = False
 
-  def _do_registering(self):
-    # check for param changes while waiting
+  def _handle_ps_attach(self, reg: str, greg: str) -> bool:
+    """Return True once we should advance to CONNECTING."""
+    if greg in ("home", "roaming"):
+      return True
+    if self._ps_wait_start == 0.0:
+      self._ps_wait_start = time.monotonic()
+    elapsed = time.monotonic() - self._ps_wait_start
+    if elapsed > 10 and not self._ps_attach_tried:
+      log.info(f"forcing PS attach (waited {elapsed:.0f}s)")
+      self._at("AT+CGATT=1")
+      self._ps_attach_tried = True
+    elif elapsed > 30:
+      log.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
+      return True
+    return False
+
+  def _refresh_roaming_param(self):
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
       log.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
 
+  def _do_registering(self):
+    self._refresh_roaming_param()
+
     v = self._atv("AT+CREG?", "+CREG:")
     if not v:
       log.debug("CREG returned None")
-      self._ps_wait_start = 0.0
-      self._ps_attach_tried = False
-    else:
-      reg = self._parse_reg(v)
-      greg = self._parse_reg(self._atv("AT+CGREG?", "+CGREG:") or "")
-      log.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
+      self._reset_ps_attach()
+      return self._registering_idle()
 
-      # block roaming if policy disallows
-      if reg == "roaming" and not self._roaming_allowed:
-        self._update(registration=reg, error="roaming_disabled")
-        time.sleep(0.5)
-        return State.REGISTERING
+    reg = self._parse_reg(v)
+    greg = self._parse_reg(self._atv("AT+CGREG?", "+CGREG:") or "")
+    log.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
-      # ready to connect once both CS and PS are registered, or after PS timeout
-      if reg in ("home", "roaming"):
-        if greg in ("home", "roaming"):
-          self._update(registration=reg, error="", carrier_error="")
-          return State.CONNECTING
+    if reg == "roaming" and not self._roaming_allowed:
+      self._update(registration=reg, error="roaming_disabled")
+      time.sleep(0.5)
+      return State.REGISTERING
 
-        if self._ps_wait_start == 0.0:
-          self._ps_wait_start = time.monotonic()
-        elapsed = time.monotonic() - self._ps_wait_start
-        if elapsed > 10 and not self._ps_attach_tried:
-          log.info(f"forcing PS attach (waited {elapsed:.0f}s)")
-          self._at("AT+CGATT=1")
-          self._ps_attach_tried = True
-        elif elapsed > 30:
-          log.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
-          self._update(registration=reg, error="", carrier_error="")
-          return State.CONNECTING
+    if reg in ("home", "roaming") and self._handle_ps_attach(reg, greg):
+      self._update(registration=reg, error="", carrier_error="")
+      return State.CONNECTING
 
-      # not connectable yet — record current reg and any carrier reject reason
-      if reg != self.S.get("registration"):
-        self._update(registration=reg, error="", carrier_error=self._query_ceer(reg))
+    # not connectable yet — record current reg and any carrier reject reason
+    if reg != self.S.get("registration"):
+      self._update(registration=reg, error="", carrier_error=self._query_ceer(reg))
 
+    return self._registering_idle()
+
+  def _registering_idle(self):
     if self._sim_change or not os.path.exists(AT_PORT):
       log.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
       return State.RECONNECTING
@@ -393,81 +414,85 @@ class Modem:
     log.info("starting pppd")
     self._ppp_fails = 0
     self._sim_change = False
-    self._ps_wait_start = 0.0
-    self._ps_attach_tried = False
+    self._reset_ps_attach()
     self._start_pppd()
     return State.CONNECTED
 
-  def _do_connected(self):
-    # drain pppd output from queue
+  def _install_ppp_routes(self, peer: str):
+    self._cleanup_routes()
+    subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
+                   capture_output=True)
+    subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
+                   capture_output=True)
+    subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
+                   capture_output=True)
+    log.info(f"route set up for {self.S['ip_address']} via {peer}")
+
+  def _handle_pppd_line(self, line: str):
+    log.info(f"pppd: {line}")
+    if "local  IP address" in line:
+      ip = line.split("local  IP address")[-1].strip()
+      self._update(ip_address=ip, connected=True)
+    elif "remote IP address" in line and self.S["ip_address"]:
+      # only install routes once both local IP and remote peer are known
+      peer = line.split("remote IP address")[-1].strip()
+      self._install_ppp_routes(peer)
+    elif "Connection terminated" in line or "Modem hangup" in line:
+      self._update(connected=False, ip_address="")
+
+  def _drain_pppd_output(self):
     while not self._ppp_lines.empty():
       try:
         raw = self._ppp_lines.get_nowait()
       except queue.Empty:
         break
       line = raw.decode(errors="ignore").strip()
-      if not line:
-        continue
-      log.info(f"pppd: {line}")
-      if "local  IP address" in line:
-        ip = line.split("local  IP address")[-1].strip()
-        self._update(ip_address=ip, connected=True)
-      elif "remote IP address" in line and self.S["ip_address"]:
-        peer = line.split("remote IP address")[-1].strip()
-        self._cleanup_routes()
-        subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
-                       capture_output=True)
-        subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
-                       capture_output=True)
-        subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
-                       capture_output=True)
-        log.info(f"route set up for {self.S['ip_address']} via {peer}")
-      elif "Connection terminated" in line or "Modem hangup" in line:
-        self._update(connected=False, ip_address="")
+      if line:
+        self._handle_pppd_line(line)
 
-    # check if pppd exited
-    if self._ppp and self._ppp.poll() is not None:
-      self._ppp = None
-      if self._sim_change or not os.path.exists(AT_PORT):
-        return State.RECONNECTING
-      self._ppp_fails += 1
-      if self._ppp_fails >= 3:
-        log.warning(f"PPP fail {self._ppp_fails}/3, reconnecting")
-        return State.RECONNECTING
-      log.warning(f"PPP fail {self._ppp_fails}/3, retrying")
-      self._reset_data_port()
-      if not os.path.exists(AT_PORT):
-        return State.RECONNECTING
-      self._start_pppd()
-      return State.CONNECTED
-
-    # check for SIM change, port loss, or param changes
+  def _handle_pppd_exit(self):
+    """Called when pppd has exited. Returns next State."""
+    self._ppp = None
     if self._sim_change or not os.path.exists(AT_PORT):
       return State.RECONNECTING
+    self._ppp_fails += 1
+    if self._ppp_fails >= 3:
+      log.warning(f"PPP fail {self._ppp_fails}/3, reconnecting")
+      return State.RECONNECTING
+    log.warning(f"PPP fail {self._ppp_fails}/3, retrying")
+    self._reset_data_port()
+    if not os.path.exists(AT_PORT):
+      return State.RECONNECTING
+    self._start_pppd()
+    return State.CONNECTED
+
+  def _params_changed(self) -> bool:
     new_apn = self._read_param("GsmApn")
     if new_apn != self._apn:
       log.info(f"APN changed: '{self._apn}' -> '{new_apn}'")
-      return State.RECONNECTING
+      return True
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
       log.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
+      return True
+    return False
+
+  def _do_connected(self):
+    self._drain_pppd_output()
+
+    if self._ppp and self._ppp.poll() is not None:
+      return self._handle_pppd_exit()
+
+    if self._sim_change or not os.path.exists(AT_PORT) or self._params_changed():
       return State.RECONNECTING
 
-    # poll modem status
     self._poll()
     return State.CONNECTED
 
   def _do_reconnecting(self):
     log.warning("reconnecting")
     self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
-    self._update(
-      connected=False, ip_address="",
-      iccid="", mcc_mnc="", imei="", modem_version="",
-      signal_strength=0, signal_quality=0,
-      network_type="unknown", operator="", band="", channel=0,
-      registration="unknown", temperatures=[], extra="",
-      tx_bytes=0, rx_bytes=0, error="",
-    )
+    self._update(**RECONNECT_RESET)
     self._kill_ppp()
     self._cleanup_routes()
     self._reset_data_port()
@@ -476,88 +501,104 @@ class Modem:
 
   # -- poll --
 
-  def _poll(self):
-    s = {}
-
+  def _poll_signal(self) -> dict:
     v = self._atv("AT+CSQ", "+CSQ:")
-    if v:
-      try:
-        rssi = int(v.split(",")[0])
-        if rssi != 99:
-          s["signal_strength"] = rssi
-          s["signal_quality"] = min(100, int(rssi / 31 * 100))
-      except (ValueError, IndexError):
-        pass
+    if not v:
+      return {}
+    try:
+      rssi = int(v.split(",")[0])
+      if rssi == 99:
+        return {}
+      return {"signal_strength": rssi, "signal_quality": min(100, int(rssi / 31 * 100))}
+    except (ValueError, IndexError):
+      return {}
 
+  @staticmethod
+  def _act_to_network_type(act: int) -> str:
+    # 3GPP TS 27.007 AcT: 0-1 GSM, 2 UTRAN, 3 GSM+EGPRS, 4-6 UTRAN HS*, 7/9/10 E-UTRAN, 11-13 NR
+    if act in (0, 1, 3):
+      return "gsm"
+    if act in (2, 4, 5, 6):
+      return "utran"
+    if act in (7, 9, 10):
+      return "lte"
+    if act in (11, 12, 13):
+      return "nr"
+    return "unknown"
+
+  def _poll_operator(self) -> dict:
     v = self._atv("AT+COPS?", "+COPS:")
-    if v:
-      p = v.split(",")
-      try:
-        if len(p) >= 3:
-          s["operator"] = p[2].strip('"')
-        if len(p) >= 4:
-          # 3GPP TS 27.007 AcT: 0-1 GSM, 2 UTRAN, 3 GSM+EGPRS, 4-6 UTRAN HS*, 7/9/10 E-UTRAN, 11-13 NR
-          act = int(p[3])
-          if act in (0, 1, 3):
-            nt = "gsm"
-          elif act in (2, 4, 5, 6):
-            nt = "utran"
-          elif act in (7, 9, 10):
-            nt = "lte"
-          elif act in (11, 12, 13):
-            nt = "nr"
-          else:
-            nt = "unknown"
-          s["network_type"] = nt
-      except (ValueError, IndexError):
-        pass
+    if not v:
+      return {}
+    p = v.split(",")
+    out: dict = {}
+    try:
+      if len(p) >= 3:
+        out["operator"] = p[2].strip('"')
+      if len(p) >= 4:
+        out["network_type"] = self._act_to_network_type(int(p[3]))
+    except (ValueError, IndexError):
+      pass
+    return out
 
+  def _poll_band(self) -> dict:
     v = self._atv("AT+QNWINFO", "+QNWINFO:")
-    if v:
-      info = v.replace('"', '').split(",")
-      try:
-        if len(info) >= 4:
-          s["band"] = info[2]
-          s["channel"] = int(info[3])
-      except (ValueError, IndexError):
-        pass
+    if not v:
+      return {}
+    info = v.replace('"', '').split(",")
+    try:
+      if len(info) >= 4:
+        return {"band": info[2], "channel": int(info[3])}
+    except (ValueError, IndexError):
+      pass
+    return {}
 
+  def _poll_extra(self) -> dict:
     v = self._atv('AT+QENG="servingcell"', "+QENG:")
-    if v:
-      s["extra"] = v.replace('"', '')
+    return {"extra": v.replace('"', '')} if v else {}
 
+  def _poll_temps(self) -> dict:
     v = self._atv("AT+QTEMP", "+QTEMP:")
-    if v:
-      try:
-        s["temperatures"] = [t for t in (int(x) for x in v.split(",") if x.strip()) if t != 255]
-      except (ValueError, IndexError):
-        pass
+    if not v:
+      return {}
+    try:
+      return {"temperatures": [t for t in (int(x) for x in v.split(",") if x.strip()) if t != 255]}
+    except (ValueError, IndexError):
+      return {}
 
-    # ppp0 interface status
+  def _poll_iface(self) -> dict:
     try:
       r = subprocess.run(["ip", "-4", "addr", "show", "ppp0"], capture_output=True, text=True, timeout=2)
       ip = next((l.strip().split()[1].split("/")[0] for l in r.stdout.splitlines() if "inet " in l), None)
       if ip:
-        s.update(ip_address=ip, connected=True)
-      elif self.S["connected"]:
-        s.update(connected=False, ip_address="")
+        return {"ip_address": ip, "connected": True}
+      if self.S["connected"]:
+        return {"connected": False, "ip_address": ""}
     except Exception:
       pass
+    return {}
 
+  def _poll_byte_counters(self) -> dict:
     try:
       with open("/sys/class/net/ppp0/statistics/tx_bytes") as f:
         tx = int(f.read().strip())
       with open("/sys/class/net/ppp0/statistics/rx_bytes") as f:
         rx = int(f.read().strip())
-      # ppp0 sysfs counters reset each time pppd recreates the interface;
-      # carry a base across restarts so cumulative stays monotonic within a session
-      self._tx_base += tx if tx < self._last_tx else tx - self._last_tx
-      self._rx_base += rx if rx < self._last_rx else rx - self._last_rx
-      self._last_tx, self._last_rx = tx, rx
-      s["tx_bytes"], s["rx_bytes"] = self._tx_base, self._rx_base
     except Exception:
-      pass
+      return {}
+    # ppp0 sysfs counters reset each time pppd recreates the interface;
+    # carry a base across restarts so cumulative stays monotonic within a session
+    self._tx_base += tx if tx < self._last_tx else tx - self._last_tx
+    self._rx_base += rx if rx < self._last_rx else rx - self._last_rx
+    self._last_tx, self._last_rx = tx, rx
+    return {"tx_bytes": self._tx_base, "rx_bytes": self._rx_base}
 
+  def _poll(self):
+    s: dict = {}
+    for fn in (self._poll_signal, self._poll_operator, self._poll_band,
+               self._poll_extra, self._poll_temps, self._poll_iface,
+               self._poll_byte_counters):
+      s.update(fn())
     if s:
       self._update(**s)
 
