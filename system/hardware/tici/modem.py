@@ -82,7 +82,6 @@ STATE_WAIT = {
 
 class Modem:
   def __init__(self):
-    self._ser = None
     self._ppp = None
     self._ppp_lines = queue.Queue()
     self._ppp_fails = 0
@@ -149,25 +148,27 @@ class Modem:
       os.close(fd)
       return []
     try:
-      self._ser.write((cmd + "\r").encode())
-      lines = []
-      while True:
-        raw = self._ser.readline()
-        if not raw:
-          raise TimeoutError("AT timeout")
-        line = raw.decode(errors="ignore").strip()
-        if not line:
-          continue
-        if line == "OK":
-          break
-        if line == "ERROR" or line.startswith("+CME ERROR"):
-          raise RuntimeError(line)
-        if "+QUSIM:" in line:
-          log.warning(f"URC: {line}")
-          self._sim_change = True
-          subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
-        lines.append(line)
-      return lines
+      with serial.Serial(AT_PORT, 9600, timeout=5) as ser:
+        ser.reset_input_buffer()
+        ser.write((cmd + "\r").encode())
+        lines = []
+        while True:
+          raw = ser.readline()
+          if not raw:
+            raise TimeoutError("AT timeout")
+          line = raw.decode(errors="ignore").strip()
+          if not line:
+            continue
+          if line == "OK":
+            break
+          if line == "ERROR" or line.startswith("+CME ERROR"):
+            raise RuntimeError(line)
+          if "+QUSIM:" in line:
+            log.warning(f"URC: {line}")
+            self._sim_change = True
+            subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
+          lines.append(line)
+        return lines
     except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
       log.info(f"AT {cmd} failed: {e}")
       return []
@@ -288,18 +289,7 @@ class Modem:
       self._at(c)
 
   def _do_init(self):
-    log.info("opening serial port")
-    if self._ser:
-      try:
-        self._ser.close()
-      except Exception:
-        pass
-    try:
-      self._ser = serial.Serial(AT_PORT, 9600, timeout=5)
-    except (OSError, serial.SerialException) as e:
-      log.warning(f"serial open failed: {e}")
-      return State.WAITING_PORT
-
+    log.info("init")
     # kill any stale pppd from previous run
     self._kill_ppp()
     self._cleanup_routes()
@@ -648,8 +638,6 @@ class Modem:
   def stop(self):
     self.running = False
     self._kill_ppp()
-    if self._ser:
-      self._ser.close()
     self._cleanup_routes()
     try:
       os.remove(STATE_PATH)
