@@ -4,7 +4,6 @@ import atexit
 import base64
 import fcntl
 import hashlib
-import math
 import os
 import requests
 import serial
@@ -29,8 +28,6 @@ DEFAULT_BAUD = 9600
 DEFAULT_TIMEOUT = 5.0
 # https://euicc-manual.osmocom.org/docs/lpa/applet-id/
 ISDR_AID = "A0000005591010FFFFFFFF8900000100"
-MM = "org.freedesktop.ModemManager1"
-MM_MODEM = MM + ".Modem"
 ES10X_MSS = 120
 HTTP_TIMEOUT = 30
 OPEN_ISDR_RETRIES = 10
@@ -137,7 +134,6 @@ class AtClient:
     self._baud = baud
     self._timeout = timeout
     self._serial: serial.Serial | None = None
-    self._use_dbus = not os.path.exists(device)
 
   def send_raw(self, data: bytes) -> None:
     self._ensure_serial()
@@ -191,30 +187,7 @@ class AtClient:
     if self._serial is None:
       self._serial = serial.Serial(self._device, baudrate=self._baud, timeout=self._timeout)
 
-  def _get_modem(self):
-    import dbus
-    bus = dbus.SystemBus()
-    mm = bus.get_object(MM, '/org/freedesktop/ModemManager1')
-    objects = mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=self._timeout)
-    modem_path = list(objects.keys())[0]
-    return bus.get_object(MM, modem_path)
-
-  def _dbus_query(self, cmd: str) -> list[str]:
-    if DEBUG:
-      print(f"DBUS >> {cmd}", file=sys.stderr)
-    try:
-      result = str(self._get_modem().Command(cmd, math.ceil(self._timeout), dbus_interface=MM_MODEM, timeout=self._timeout))
-    except Exception as e:
-      raise RuntimeError(f"AT command failed: {e}") from e
-    lines = [line.strip() for line in result.splitlines() if line.strip()]
-    if DEBUG:
-      for line in lines:
-        print(f"DBUS << {line}", file=sys.stderr)
-    return lines
-
   def query(self, cmd: str) -> list[str]:
-    if self._use_dbus:
-      return self._dbus_query(cmd)
     self._ensure_serial()
     try:
       self._send(cmd)
@@ -232,7 +205,7 @@ class AtClient:
         pass
       self.channel = None
     # drain any unsolicited responses before opening
-    if self._serial and not self._use_dbus:
+    if self._serial:
       try:
         self._serial.reset_input_buffer()
       except (OSError, serial.SerialException, termios.error):
