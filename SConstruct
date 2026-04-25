@@ -236,7 +236,7 @@ Export('messaging')
 
 # replaced hardcoded call to remove dependency on panda submodule
 panda_sconscript = os.path.join(PANDA_DIR, 'SConscript')
-SConscript(panda_sconscript, variant_dir='panda', duplicate=0)
+SConscript(panda_sconscript, variant_dir='build/panda', duplicate=0)
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
