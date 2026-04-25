@@ -6,6 +6,7 @@ import platform
 import shlex
 import importlib
 import numpy as np
+import panda
 
 import SCons.Errors
 from SCons.Defaults import _stripixes
@@ -79,6 +80,10 @@ def _libflags(target, source, env, for_signature):
   return _stripixes(env['LIBLINKPREFIX'], libs, env['LIBLINKSUFFIX'],
                     env['LIBPREFIXES'], env['LIBSUFFIXES'], env, env['LIBLITERALPREFIX'])
 
+# dynamic path for panda
+PANDA_DIR = os.path.dirname(panda.__file__)
+SITE_PACKAGES_DIR = os.path.dirname(PANDA_DIR)
+
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
@@ -113,6 +118,8 @@ env = Environment(
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     [x.INCLUDE_DIR for x in pkgs],
+    PANDA_DIR,
+    SITE_PACKAGES_DIR,
   ],
   LIBPATH=[
     "#common",
@@ -227,8 +234,9 @@ messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
 
 
-# Build other submodules
-SConscript(['panda/SConscript'])
+# replaced hardcoded call to remove dependency on panda submodule
+panda_sconscript = os.path.join(PANDA_DIR, 'SConscript')
+SConscript(panda_sconscript, variant_dir='panda', duplicate=0)
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
