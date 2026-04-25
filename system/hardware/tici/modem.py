@@ -28,6 +28,11 @@ STATE_PATH = "/dev/shm/modem"
 AT_LOCK = "/dev/shm/modem_lpa.lock"  # shared with LPA
 AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
+
+# error.type values published in the state file
+ERR_NONE = ""
+ERR_ROAMING_DISABLED = "roaming_disabled"
+ERR_CARRIER_REJECT = "carrier_reject"
 PPPD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
   "nodefaultroute", "connect",
@@ -43,7 +48,7 @@ RECONNECT_RESET = {
   "signal_strength": 0, "signal_quality": 0,
   "network_type": "unknown", "operator": "", "band": "", "channel": 0,
   "registration": "unknown", "temperatures": [], "extra": "",
-  "tx_bytes": 0, "rx_bytes": 0, "error": "",
+  "tx_bytes": 0, "rx_bytes": 0, "error": {},
 }
 
 
@@ -65,6 +70,14 @@ class State(Enum):
       State.CONNECTED: "CONNECTED",
       State.RECONNECTING: "DISCONNECTING",
     }[self]
+
+
+# seconds to wait after each state handler returns; states omitted use STATE_WAIT_DEFAULT
+STATE_WAIT_DEFAULT = 2.0
+STATE_WAIT = {
+  State.WAITING_PORT: 1.0,
+  State.REGISTERING: 0.5,
+}
 
 
 class Modem:
@@ -103,8 +116,7 @@ class Modem:
       "extra": "",
       "tx_bytes": 0,
       "rx_bytes": 0,
-      "error": "",
-      "carrier_error": "",
+      "error": {},
     }
 
   @staticmethod
@@ -176,18 +188,18 @@ class Modem:
     except (ValueError, IndexError):
       return "unknown"
 
-  def _query_ceer(self, reg: str) -> str:
+  def _carrier_reject_error(self, reg: str) -> dict:
     if reg not in ("denied", "not_registered"):
-      return ""
+      return {}
     ceer = self._atv("AT+CEER", "+CEER:")
     if not ceer:
-      return ""
+      return {}
     parts = [p.strip().strip('"') for p in ceer.split(",")]
     msg = parts[-1] if parts else ceer
     # PLMN_NOT_ALLOWED often clears with the right APN; EPS_SERVICES_NOT_ALLOWED is a plan issue
     if "PLMN_NOT_ALLOWED" in msg:
       msg += " (check GsmApn)"
-    return msg
+    return {"type": ERR_CARRIER_REJECT, "description": msg}
 
   # -- teardown helpers --
 
@@ -234,7 +246,6 @@ class Modem:
     if os.path.exists(AT_PORT):
       log.info("port found")
       return State.INIT
-    time.sleep(1)
     return State.WAITING_PORT
 
   def _configure_device(self, sim_id):
@@ -373,17 +384,17 @@ class Modem:
     log.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
     if reg == "roaming" and not self._roaming_allowed:
-      self._update(registration=reg, error="roaming_disabled")
-      time.sleep(0.5)
+      self._update(registration=reg, error={"type": ERR_ROAMING_DISABLED,
+                                            "description": "roaming blocked by GsmRoaming param"})
       return State.REGISTERING
 
     if reg in ("home", "roaming") and self._handle_ps_attach(reg, greg):
-      self._update(registration=reg, error="", carrier_error="")
+      self._update(registration=reg, error={})
       return State.CONNECTING
 
     # not connectable yet — record current reg and any carrier reject reason
     if reg != self.S.get("registration"):
-      self._update(registration=reg, error="", carrier_error=self._query_ceer(reg))
+      self._update(registration=reg, error=self._carrier_reject_error(reg))
 
     return self._registering_idle()
 
@@ -391,7 +402,6 @@ class Modem:
     if self._sim_change or not os.path.exists(AT_PORT):
       log.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
       return State.RECONNECTING
-    time.sleep(0.5)
     return State.REGISTERING
 
   def _start_pppd(self):
@@ -634,8 +644,7 @@ class Modem:
       except Exception:
         log.exception(f"error in {state.value}")
         state = State.RECONNECTING
-      if state not in (State.REGISTERING, State.WAITING_PORT):
-        time.sleep(2)
+      time.sleep(STATE_WAIT.get(state, STATE_WAIT_DEFAULT))
 
   def stop(self):
     self.running = False
