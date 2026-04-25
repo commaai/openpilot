@@ -476,12 +476,20 @@ class Modem:
       return True
     return False
 
+  def _check_iccid(self):
+    """Catch SIM swaps that didn't fire a +QUSIM URC."""
+    iccid = self._atv("AT+QCCID", "+QCCID:")
+    if iccid and self.S["iccid"] and iccid != self.S["iccid"]:
+      log.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
+      self._sim_change = True
+
   def _do_connected(self):
     self._drain_pppd_output()
 
     if self._ppp and self._ppp.poll() is not None:
       return self._handle_pppd_exit()
 
+    self._check_iccid()
     if self._sim_change or not os.path.exists(AT_PORT) or self._params_changed():
       return State.RECONNECTING
 
