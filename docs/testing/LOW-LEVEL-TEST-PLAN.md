@@ -188,7 +188,7 @@ Run from repository root with the same `PYTHONPATH` / venv the project expects (
 # Full Python suite (heavy; matches broad CI intent)
 pytest
 
-# Shared support harnesses (empty until you add tests; exit 0)
+# Shared support harnesses (smoke tests + optional empty-dir exit 0)
 pytest selfdrive/test/support/tests
 pytest system/tests/support/tests
 
@@ -199,12 +199,15 @@ pytest selfdrive/modeld/tests/
 pytest selfdrive/modeld/tests/test_parse_model_outputs.py -q
 pytest selfdrive/modeld/tests/test_fill_model_msg.py -q
 pytest selfdrive/modeld/tests/test_modeld.py -q
+pytest selfdrive/modeld/tests/test_modeld_phase_c_contracts.py -q
 
-# Coverage comparison: baseline/original vs new modeld tests (opt-in)
+# Coverage comparison: baseline/original vs new modeld tests (opt-in).
+# The script defaults to the same --ours list, pytest -n 0, and coverage-modeld-compare.ini
+# (omit tests/, modeld.py, dmonitoringmodeld.py for a stable library-focused report).
 bash scripts/testing/compare_coverage.sh \
   --cov-target selfdrive/modeld \
   --baseline "selfdrive/modeld/tests/test_modeld.py" \
-  --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_fill_model_msg.py"
+  --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_parse_model_outputs_vision_contracts.py selfdrive/modeld/tests/test_parse_model_outputs_policy_contracts.py selfdrive/modeld/tests/test_fill_model_msg.py selfdrive/modeld/tests/test_fill_model_msg_frame_ids.py selfdrive/modeld/tests/test_fill_model_msg_modelv2_dimensions.py selfdrive/modeld/tests/test_fill_model_msg_pose_odometry.py selfdrive/modeld/tests/test_fill_model_msg_driving_model_data.py selfdrive/modeld/tests/test_fill_model_msg_raw_predictions.py selfdrive/modeld/tests/test_fill_model_msg_fcw_hard_brake.py selfdrive/modeld/tests/test_get_model_metadata_unit.py selfdrive/modeld/tests/test_modeld_phase_c_contracts.py"
 
 # Pandad Python tests (prefer explicit files; test_pandad.py is device-heavy / tici)
 pytest selfdrive/pandad/tests/test_pandad_loopback.py
@@ -241,7 +244,7 @@ Native gtests are invoked via the build system after `scons` (or the componentâ€
 
 - [ ] Phase A parser tests pass standalone (`test_parse_model_outputs.py`) on WSL without starting managed daemons.
 - [ ] Phase B message-mapping tests pass standalone (`test_fill_model_msg.py`) and validate `ModelConstants`-driven array lengths.
-- [ ] Phase C daemon contract tests pass (`test_modeld.py`) with no new flakiness.
+- [ ] Phase C daemon contract tests pass (`test_modeld.py`, `test_modeld_phase_c_contracts.py`; latter skips if modeld never publishes) with no new flakiness.
 - [ ] Coverage comparison script outputs both reports (`baseline`, `ours`) under `.coverage-compare/modeld/`.
 - [ ] Combined modeld suite passes before merge: `pytest selfdrive/modeld/tests -q`.
 

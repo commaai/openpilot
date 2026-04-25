@@ -22,7 +22,7 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 **Pandad — desktop verification aligned with the STP** ([testing-plan/TESTING-PLAN.md](testing-plan/TESTING-PLAN.md) §3.1 unit / §3.3 boundary, risks R2–R3):
 
-* `pytest selfdrive/pandad/tests/test_pandad_can_capnp.py selfdrive/pandad/tests/test_pandad_pandad_wrapper.py -q` — Cython CAN serialization and `pandad.py` signature helper (no Panda hardware).
+* `pytest selfdrive/pandad/tests/test_pandad_can_capnp_*.py selfdrive/pandad/tests/test_pandad_pandad_wrapper.py -q` — Cython CAN serialization (split: roundtrip / event validity / multiblob) and `pandad.py` signature helper (no Panda hardware).
 * Native Catch2 USB protocol tests remain in `test_pandad_usbprotocol.cc` (built via SCons); integration and SPI fault-injection stay in `test_pandad_loopback.py` / `test_pandad_spi.py` (`@pytest.mark.tici`).
 
 # Directories
@@ -41,6 +41,8 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 * [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md): Tactical guide aligned with the STP—repository pytest/native conventions, phased shared infrastructure (`selfdrive/test/support/` and `system/tests/support/`), per-subsystem work breakdown, risk traceability (R1–R10), and scoped commands.
 
+**Modeld Phase C (extra daemon contracts):** `pytest selfdrive/modeld/tests/test_modeld_phase_c_contracts.py -q` — extends §7.1 with subtests; skips if `modeld` never publishes in the environment (anchor `test_modeld.py` unchanged).
+
 **Support harnesses (fixtures + plug-in smoke tests):**
 
 * Selfdrive: `python -m pytest selfdrive/test/support/tests -q` — see `test_selfdrive_support_harness.py`
@@ -50,7 +52,9 @@ If both directories are empty again, their `conftest.py` hooks still map “no t
 
 **Modeld coverage comparison (opt-in):**
 
-* `bash scripts/testing/compare_coverage.sh --cov-target selfdrive/modeld --baseline "selfdrive/modeld/tests/test_modeld.py" --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_fill_model_msg.py"`
+* Run `scripts/testing/compare_coverage.sh` (executable bit required, or `bash scripts/testing/compare_coverage.sh`). The script passes `scripts/testing/coverage-modeld-compare.ini` (omit **`tests/`**, **`modeld.py`**, **`dmonitoringmodeld.py`**) and runs pytest **`-n 0`** so pytest-cov does not scatter traces across xdist workers (which previously let test modules appear in HTML).
+* Default `--ours` in the script matches [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md) §6 plus FCW / `get_model_metadata` helpers; override with `--ours "..."` when needed.
+* **`modeld.py`** / **`dmonitoringmodeld.py`** are omitted from this report by design (subprocess entrypoints). **`get_model_metadata.py`** is covered by `test_get_model_metadata_unit.py` (helpers only; the `if __name__ == "__main__"` block is CLI-only).
 
 # modeld implementation summary
 
