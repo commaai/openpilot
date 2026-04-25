@@ -96,6 +96,7 @@ class Modem:
     self._rx_base = 0
     self._last_tx = 0
     self._last_rx = 0
+    self._poll_count = 0
     self.running = True
     self.S = {
       "state": "INITIALIZING",
@@ -501,6 +502,7 @@ class Modem:
   def _do_reconnecting(self):
     log.warning("reconnecting")
     self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
+    self._poll_count = 0
     self._update(**RECONNECT_RESET)
     self._kill_ppp()
     self._cleanup_routes()
@@ -603,11 +605,22 @@ class Modem:
     return {"tx_bytes": self._tx_base, "rx_bytes": self._rx_base}
 
   def _poll(self):
+    # (fn, period_in_ticks): fast queries every tick, slower ones staggered;
+    # tick 0 runs all so initial CONNECTED snapshot is fully populated
+    pollers = (
+      (self._poll_signal, 1),         # CSQ — RSSI, time-sensitive
+      (self._poll_iface, 1),          # cheap (sysfs)
+      (self._poll_byte_counters, 1),  # cheap (sysfs)
+      (self._poll_operator, 5),       # COPS — operator/network_type, stable
+      (self._poll_band, 5),           # QNWINFO — band/channel
+      (self._poll_temps, 5),          # QTEMP — modem temps
+      (self._poll_extra, 10),         # QENG — diagnostic
+    )
     s: dict = {}
-    for fn in (self._poll_signal, self._poll_operator, self._poll_band,
-               self._poll_extra, self._poll_temps, self._poll_iface,
-               self._poll_byte_counters):
-      s.update(fn())
+    for fn, period in pollers:
+      if self._poll_count % period == 0:
+        s.update(fn())
+    self._poll_count += 1
     if s:
       self._update(**s)
 
