@@ -1,9 +1,22 @@
 import glob
 import json
 import os
+from itertools import product
 from SCons.Script import Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_paths
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
+from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.selfdrive.modeld.helpers import CompileConfig
 from tinygrad import Device
+
+CAMERA_CONFIGS = [
+  (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
+  (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
+]
+MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_')
+                  for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
+DM_WARP_CONFIGS = [CompileConfig(cam_w, cam_h, True, 'dm_') for cam_w, cam_h in CAMERA_CONFIGS]
 
 Import('env', 'arch')
 chunker_file = File("#common/file_chunker.py")
@@ -53,23 +66,35 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
 image_flag = {
      'larch64': 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
-script_files = [File(Dir("#selfdrive/modeld").File("compile_modeld.py").abspath)]
-compile_modeld_cmd = f'{tg_flags} {mac_brew_string} {image_flag} python3 {Dir("#selfdrive/modeld").abspath}/compile_modeld.py '
+modeld_dir = Dir("#selfdrive/modeld").abspath
+compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
+compile_dm_warp_script = [File(f"{modeld_dir}/compile_dm_warp.py")]
 driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_policy']]
 driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['driving_vision', 'driving_policy']]
 
-from openpilot.selfdrive.modeld.compile_modeld import MODELD_CONFIGS, DM_WARP_CONFIGS
-policy_pkls = [File(cfg.pkl_path).abspath for cfg in MODELD_CONFIGS]
-modeld_targets = policy_pkls + [File(cfg.pkl_path).abspath for cfg in DM_WARP_CONFIGS]
-compile_node = lenv.Command(modeld_targets, tinygrad_files + script_files + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], compile_modeld_cmd)
-
-# chunk the combined policy pkls
-for policy_pkl in policy_pkls:
+model_w, model_h = MEDMODEL_INPUT_SIZE
+frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
+for cfg in MODELD_CONFIGS:
+  cmd = (f'{tg_flags} {mac_brew_string} {image_flag} python3 {modeld_dir}/compile_modeld.py '
+         f'--model-size {model_w}x{model_h} '
+         f'--nv12 {",".join(str(x) for x in cfg.nv12)} '
+         f'--vision-onnx {File("models/driving_vision.onnx").abspath} '
+         f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
+         f'--output {cfg.pkl_path} --frame-skip {frame_skip}'
+         + (' --prepare-only' if cfg.prepare_only else ''))
+  node = lenv.Command(cfg.pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], cmd)
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
-  chunk_targets = get_chunk_paths(policy_pkl, estimate_pickle_max_size(onnx_sizes_sum))
-  def do_chunk(target, source, env, pkl=policy_pkl, chunks=chunk_targets):
+  chunk_targets = get_chunk_paths(cfg.pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
+  def do_chunk(target, source, env, pkl=cfg.pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
-  lenv.Command(chunk_targets, compile_node, do_chunk)
+  lenv.Command(chunk_targets, node, do_chunk)
+
+dm_w, dm_h = DM_INPUT_SIZE
+for cfg in DM_WARP_CONFIGS:
+  cmd = (f'{tg_flags} {mac_brew_string} {image_flag} python3 {modeld_dir}/compile_dm_warp.py '
+         f'--nv12 {",".join(str(x) for x in cfg.nv12)} --warp-to {dm_w}x{dm_h} '
+         f'--output {cfg.pkl_path}')
+  lenv.Command(cfg.pkl_path, tinygrad_files + compile_dm_warp_script + compile_modeld_script + [compiled_flags_node], cmd)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
