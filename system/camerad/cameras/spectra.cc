@@ -466,8 +466,11 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     * BPS = Bayer Processing Segment
   */
 
-  int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2 + sizeof(struct cam_buf_io_cfg)*2;
-  size += sizeof(struct cam_patch_desc)*9;
+  bool needs_downscale = sensor->out_scale > 1;
+  int num_io_cfgs = needs_downscale ? 3 : 2;
+  int num_patches = needs_downscale ? 14 : 12;
+  int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2 + sizeof(struct cam_buf_io_cfg)*num_io_cfgs;
+  size += sizeof(struct cam_patch_desc)*num_patches;
 
   uint32_t cam_packet_handle = 0;
   auto pkt = m->mem_mgr.alloc<struct cam_packet>(size, &cam_packet_handle);
@@ -545,8 +548,15 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     int cdm_len = 0;
 
     if (bps_lin_reg.size() == 0) {
+      // set first knee pt to do BLC
+      uint32_t new_knee[8];
+      new_knee[0] = sensor->black_level << (14 - sensor->bits_per_pixel);
+      for (int i = 0; i < 7; i++) {
+        uint32_t pts = sensor->linearization_pts[i / 2];
+        new_knee[i + 1] = (i % 2 == 0) ? (pts >> 16) : (pts & 0xffff);
+      }
       for (int i = 0; i < 4; i++) {
-        bps_lin_reg.push_back(((sensor->linearization_pts[i] & 0xffff) << 0x10) | (sensor->linearization_pts[i] >> 0x10));
+        bps_lin_reg.push_back((new_knee[2*i + 1] << 16) | new_knee[2*i]);
       }
     }
 
@@ -569,19 +579,23 @@ void SpectraCamera::config_bps(int idx, int request_id) {
       0x00000080,
       0x00800066,
     });
-    // linearization, EN=0
+    // linearization
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1868, bps_lin_reg);
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1878, bps_lin_reg);
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1888, bps_lin_reg);
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1898, bps_lin_reg);
-    /*
-    uint8_t *start = (unsigned char *)bps_cdm_program_array.ptr + cdm_len;
     uint64_t addr;
-    cdm_len += write_dmi((unsigned char *)bps_cdm_program_array.ptr + cdm_len, &addr, sensor->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1);
-    patches.push_back(addr - (uint64_t)start);
-    */
+    cdm_len += write_dmi((unsigned char *)bps_cdm_program_array.ptr + cdm_len, &addr, sensor->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1, CAM_CDM_CMD_DMI);
+    patches.push_back(addr - (uint64_t)bps_cdm_program_array.ptr);
+
     // color correction
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2e68, bps_ccm_reg);
+
+    // gamma
+    for (uint8_t ch = 1; ch <= 3; ch++) {
+      cdm_len += write_dmi((unsigned char *)bps_cdm_program_array.ptr + cdm_len, &addr, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x3208, ch, CAM_CDM_CMD_DMI);
+      patches.push_back(addr - (uint64_t)bps_cdm_program_array.ptr);
+    }
 
     cdm_len += build_common_ife_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches, false);
 
@@ -596,7 +610,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     tmp.header = CAM_ICP_CMD_GENERIC_BLOB_CLK;
     tmp.header |= (sizeof(cam_icp_clk_bw_request)) << 8;
     tmp.clk.budget_ns = 0x1fca058;
-    tmp.clk.frame_cycles = 2329024; // comes from the striping lib
+    tmp.clk.frame_cycles = sensor->frame_width * sensor->frame_height; // matches striping lib pixelCount
     tmp.clk.rt_flag = 0x0;
     tmp.clk.uncompressed_bw = 0x38512180;
     tmp.clk.compressed_bw = 0x38512180;
@@ -611,7 +625,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
   }
 
   // *** io config ***
-  pkt->num_io_configs = 2;
+  pkt->num_io_configs = num_io_cfgs;
   pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
   struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
   {
@@ -655,28 +669,69 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
     io_cfg[1].format = CAM_FORMAT_NV12;  // TODO: why is this 21 in the dump? should be 12
     io_cfg[1].color_space = CAM_COLOR_SPACE_BT601_FULL;
-    io_cfg[1].resource_type = CAM_ICP_BPS_OUTPUT_IMAGE_FULL;
+    io_cfg[1].resource_type = needs_downscale ? CAM_ICP_BPS_OUTPUT_IMAGE_REG1 : CAM_ICP_BPS_OUTPUT_IMAGE_FULL;
     io_cfg[1].fence = sync_objs_bps[idx];
     io_cfg[1].direction = CAM_BUF_OUTPUT;
     io_cfg[1].subsample_pattern = 0x1;
     io_cfg[1].framedrop_pattern = 0x1;
+
+    if (needs_downscale) {
+      // downscaling needs a full res placeholder
+      uint32_t full_stride, full_y_h, full_uv_h, full_yuv_size;
+      std::tie(full_stride, full_y_h, full_uv_h, full_yuv_size) = get_nv12_info(sensor->frame_width, sensor->frame_height);
+      io_cfg[2].mem_handle[0] = bps_fullres_dummy.handle;
+      io_cfg[2].mem_handle[1] = bps_fullres_dummy.handle;
+      io_cfg[2].planes[0] = (struct cam_plane_cfg){
+        .width = sensor->frame_width,
+        .height = sensor->frame_height,
+        .plane_stride = full_stride,
+        .slice_height = full_y_h,
+      };
+      io_cfg[2].planes[1] = (struct cam_plane_cfg){
+        .width = sensor->frame_width,
+        .height = sensor->frame_height / 2,
+        .plane_stride = full_stride,
+        .slice_height = full_uv_h,
+      };
+      io_cfg[2].offsets[1] = ALIGNED_SIZE(full_stride * full_y_h, 0x1000);
+      io_cfg[2].format = CAM_FORMAT_NV12;
+      io_cfg[2].color_space = CAM_COLOR_SPACE_BT601_FULL;
+      io_cfg[2].resource_type = CAM_ICP_BPS_OUTPUT_IMAGE_FULL;
+      io_cfg[2].fence = sync_objs_bps[idx];
+      io_cfg[2].direction = CAM_BUF_OUTPUT;
+      io_cfg[2].subsample_pattern = 0x1;
+      io_cfg[2].framedrop_pattern = 0x1;
+    }
   }
 
   // *** patches ***
   {
-    assert(patches.size() == 0 | patches.size() == 1);
+    assert(patches.size() == 0 || patches.size() == 4);
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
 
     if (patches.size() > 0) {
-      add_patch(pkt.get(), bps_cmd.handle, patches[0], bps_linearization_lut.handle, 0);
+      // linearization LUT
+      add_patch(pkt.get(), bps_cdm_program_array.handle, patches[0], bps_linearization_lut.handle, 0);
+      // gamma LUTs
+      for (int i = 0; i < 3; i++) {
+        add_patch(pkt.get(), bps_cdm_program_array.handle, patches[i+1], bps_gamma_lut.handle, 0);
+      }
     }
 
     // input frame
     add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[0].ptr[0]), buf_handle_raw[idx], 0);
 
-    // output frame
-    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[0]), buf_handle_yuv[idx], 0);
-    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[1]), buf_handle_yuv[idx], io_cfg[1].offsets[1]);
+    if (needs_downscale) {
+      add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[0]), bps_fullres_dummy.handle, 0);
+      add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[1]), bps_fullres_dummy.handle, io_cfg[2].offsets[1]);
+      // output frame at REG1
+      add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[7].ptr[0]), buf_handle_yuv[idx], 0);
+      add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[7].ptr[1]), buf_handle_yuv[idx], io_cfg[1].offsets[1]);
+    } else {
+      // output frame at FULL
+      add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[0]), buf_handle_yuv[idx], 0);
+      add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[1]), buf_handle_yuv[idx], io_cfg[1].offsets[1]);
+    }
 
     // rest of buffers
     add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, settings_addr), bps_iq.handle, 0);
@@ -987,9 +1042,6 @@ bool SpectraCamera::openSensor() {
   LOGD("-- Probing sensor %d", cc.camera_num);
 
   auto init_sensor_lambda = [this](SensorInfo *s) {
-    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED) {
-      ((OS04C10*)s)->ife_downscale_configure();
-    }
     sensor.reset(s);
     return (sensors_init() == 0);
   };
@@ -1167,13 +1219,39 @@ void SpectraCamera::configICP() {
 
   // used internally by the BPS, we just allocate it.
   // size comes from the BPSStripingLib
-  bps_cdm_striping_bl.init(m, 0xa100, 0x20, true, m->icp_device_iommu);
+  bps_cdm_striping_bl.init(m, 0xcfe0, 0x20, true, m->icp_device_iommu);
+
+  if (sensor->out_scale > 1) {
+    uint32_t full_stride, full_y_h, full_uv_h, full_yuv_size;
+    std::tie(full_stride, full_y_h, full_uv_h, full_yuv_size) = get_nv12_info(sensor->frame_width, sensor->frame_height);
+    bps_fullres_dummy.init(m, full_yuv_size, 0x1000, true, m->icp_device_iommu);
+  }
 
   // LUTs
-  /*
+  assert(sensor->linearization_lut.size() == 36);
   bps_linearization_lut.init(m, sensor->linearization_lut.size()*sizeof(uint32_t), 0x20, true, m->icp_device_iommu);
-  memcpy(bps_linearization_lut.ptr, sensor->linearization_lut.data(), bps_linearization_lut.size);
-  */
+
+  // bit shift linearization_lut to bps specs, also compensate for black level here
+  uint32_t bl = sensor->black_level << (14 - sensor->bits_per_pixel);
+  uint32_t* bps_lut = (uint32_t*)bps_linearization_lut.ptr;
+  for (size_t i = 0; i < sensor->linearization_lut.size(); i++) {
+    size_t seg = i / 4;
+    size_t ch = i % 4;
+    if (seg == 0) {
+      bps_lut[i] = 0;
+      continue;
+    }
+    uint32_t e = sensor->linearization_lut[(seg - 1) * 4 + ch];
+    uint32_t base = e & 0x3fff;
+    uint32_t slope_q11 = (e >> 14) & 0x3fff;
+    uint32_t slope_q12 = std::min<uint32_t>(slope_q11 << 1, 0x3fff);
+    base = (base > bl) ? (base - bl) : 0;
+    bps_lut[i] = base | (slope_q12 << 14);
+  }
+
+  assert(sensor->gamma_lut_rgb.size() == 64);
+  bps_gamma_lut.init(m, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x20, true, m->icp_device_iommu);
+  memcpy(bps_gamma_lut.ptr, sensor->gamma_lut_rgb.data(), bps_gamma_lut.size);
 }
 
 void SpectraCamera::configCSIPHY() {

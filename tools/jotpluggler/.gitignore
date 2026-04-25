@@ -3,6 +3,7 @@ jot_*.o
 *.o
 jotpluggler
 car_fingerprint_to_dbc.h
+generated_event_extractors.h
 generated_dbcs/.stamp
 generated_dbcs/*.dbc
 layouts/.jotpluggler_autosave/
