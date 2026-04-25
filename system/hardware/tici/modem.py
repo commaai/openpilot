@@ -608,6 +608,8 @@ class Modem:
     log.info("starting")
     # publish initial state so callers see modem.py is active from the start
     self._update(state=State.INIT.label)
+    # mask before stop so anything trying to activate ModemManager (NetworkManager, dbus) can't race us
+    subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
 
@@ -645,7 +647,7 @@ class Modem:
       os.remove(STATE_PATH)
     except FileNotFoundError:
       pass
-    subprocess.run(["sudo", "systemctl", "unmask", "ModemManager"], capture_output=True)
+    subprocess.run(["sudo", "systemctl", "unmask", "--runtime", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "systemctl", "start", "ModemManager"], capture_output=True)
 
 
