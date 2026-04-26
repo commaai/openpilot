@@ -14,9 +14,11 @@ import time
 
 from enum import Enum
 
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s.%(msecs)03d %(levelname)s modem: %(message)s",
-                    datefmt="%H:%M:%S")
+logging.basicConfig(
+  level=logging.INFO,
+  format="%(asctime)s.%(msecs)03d %(levelname)-7s modem: %(message)s",
+  datefmt="%H:%M:%S",
+)
 
 AT_PORT = "/dev/modem_at0"
 PPP_PORT = "/dev/modem_at1"
