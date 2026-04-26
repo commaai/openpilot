@@ -8,7 +8,6 @@ import serial
 import signal
 import subprocess
 import tempfile
-import termios
 import threading
 import time
 
@@ -185,20 +184,12 @@ class Modem:
 
   @staticmethod
   def _reset_data_port():
+    """Drop DTR on PPP_PORT so the modem terminates any stuck PPP session."""
     try:
-      s = serial.Serial(PPP_PORT, 460800, timeout=1)
-      attrs = termios.tcgetattr(s.fd)
-      attrs[4] = attrs[5] = termios.B0
-      termios.tcsetattr(s.fd, termios.TCSANOW, attrs)
-      time.sleep(1)
-      attrs[4] = attrs[5] = termios.B460800
-      termios.tcsetattr(s.fd, termios.TCSANOW, attrs)
-      s.reset_input_buffer()
-      for cmd in AT_INIT:
-        s.write((cmd + "\r").encode())
-        time.sleep(0.1)
-        s.read(100)
-      s.close()
+      with serial.Serial(PPP_PORT, 460800, timeout=1) as s:
+        s.dtr = False
+        time.sleep(1)
+        s.dtr = True
     except Exception as e:
       logging.warning(f"data port reset failed: {e}")
 
