@@ -927,15 +927,9 @@ std::optional<PaneMenuAction> draw_pane_context_menu(const WorkspaceTab &tab, in
     action.kind = PaneMenuActionKind::Clear;
   }
   ImGui::Separator();
-  icon_menu_item(icon::FILES, "Copy", nullptr, false, false);
-  icon_menu_item(icon::CLIPBOARD2, "Paste", nullptr, false, false);
   icon_menu_item(icon::FILE_EARMARK_IMAGE, "Copy image to clipboard", nullptr, false, false);
   icon_menu_item(icon::SAVE, "Save plot to file", nullptr, false, false);
   icon_menu_item(icon::BAR_CHART, "Show data statistics", nullptr, false, false);
-  ImGui::Separator();
-  if (icon_menu_item(icon::X_SQUARE, "Close Pane")) {
-    action.kind = PaneMenuActionKind::Close;
-  }
   ImGui::EndPopup();
   if (action.kind == PaneMenuActionKind::None) return std::nullopt;
   return action;
