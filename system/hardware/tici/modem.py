@@ -90,11 +90,6 @@ class Modem:
     self._sim_change = False
     self._apn = ""
     self._roaming_allowed = True
-    # byte counters persist across pppd restarts (sysfs counters reset when ppp0 is recreated)
-    self._tx_base = 0
-    self._rx_base = 0
-    self._last_tx = 0
-    self._last_rx = 0
     self.running = True
     self.S = INITIAL_STATE.copy()
 
@@ -414,7 +409,6 @@ class Modem:
 
   def _do_disconnecting(self):
     logging.warning("reconnecting")
-    self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
     self._update(**INITIAL_STATE)
     self._kill_ppp()
     self._cleanup_routes()
@@ -496,12 +490,7 @@ class Modem:
         rx = int(f.read().strip())
     except Exception:
       return {}
-    # ppp0 sysfs counters reset each time pppd recreates the interface;
-    # carry a base across restarts so cumulative stays monotonic within a session
-    self._tx_base += tx if tx < self._last_tx else tx - self._last_tx
-    self._rx_base += rx if rx < self._last_rx else rx - self._last_rx
-    self._last_tx, self._last_rx = tx, rx
-    return {"tx_bytes": self._tx_base, "rx_bytes": self._rx_base}
+    return {"tx_bytes": tx, "rx_bytes": rx}
 
   def _poll(self):
     s: dict = {}
