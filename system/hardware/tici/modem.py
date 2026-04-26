@@ -31,10 +31,6 @@ NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm",
                 7: "lte", 9: "lte", 10: "lte",
                 11: "nr", 12: "nr", 13: "nr"}
 
-# error.type values published in the state file
-ERR_NONE = ""
-ERR_ROAMING_DISABLED = "roaming_disabled"
-ERR_CARRIER_REJECT = "carrier_reject"
 # 3GPP CEER reason substring -> user-facing message
 CEER_MESSAGES = {
   "PLMN_NOT_ALLOWED": "Carrier rejected SIM. The APN may be wrong.",
@@ -136,7 +132,7 @@ class Modem:
             raise RuntimeError(line)
           lines.append(line)
         return lines
-    except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
+    except (RuntimeError, TimeoutError, OSError) as e:
       logging.info(f"AT {cmd} failed: {e}")
       return []
     finally:
@@ -165,7 +161,7 @@ class Modem:
     parts = [p.strip().strip('"') for p in ceer.split(",")]
     code = parts[-1] if parts else ceer
     msg = next((m for k, m in CEER_MESSAGES.items() if k in code), f"Carrier rejected connection ({code}).")
-    return {"type": ERR_CARRIER_REJECT, "description": msg}
+    return {"type": "carrier_reject", "description": msg}
 
   # -- teardown helpers --
 
@@ -288,8 +284,7 @@ class Modem:
     logging.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
     if reg == "roaming" and not self._roaming_allowed:
-      self._update(registration=reg, error={"type": ERR_ROAMING_DISABLED,
-                                            "description": "Roaming is disabled."})
+      self._update(registration=reg, error={"type": "roaming_disabled", "description": "Roaming is disabled."})
       return State.SEARCHING
 
     if reg in ("home", "roaming") and greg in ("home", "roaming"):
@@ -354,7 +349,6 @@ class Modem:
       self._update(connected=False, ip_address="")
 
   def _handle_pppd_exit(self):
-    """Called when pppd has exited. Returns next State."""
     self._ppp = None
     if self._sim_change or not os.path.exists(AT_PORT):
       return State.DISCONNECTING
@@ -380,9 +374,9 @@ class Modem:
       return True
     return False
 
-  def _check_iccid(self):
-    """Detect SIM swaps. Skip if port missing or no prior identity."""
-    if not os.path.exists(AT_PORT) or not self.S["iccid"]:
+  def _check_iccid(self, state):
+    # skip when port may be gone or identity not yet known
+    if state in (State.INITIALIZING, State.DISCONNECTING) or not self.S["iccid"]:
       return
     iccid = self._atv("AT+QCCID", "+QCCID:")
     if iccid and iccid != self.S["iccid"]:
@@ -524,8 +518,7 @@ class Modem:
 
     while self.running:
       try:
-        if state not in (State.INITIALIZING, State.DISCONNECTING):
-          self._check_iccid()
+        self._check_iccid(state)
         prev = state
         state = handlers[state]()
         if state != prev:
