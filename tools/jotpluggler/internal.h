@@ -27,8 +27,6 @@ enum class PaneMenuActionKind {
   SplitTop,
   SplitBottom,
   ResetView,
-  ResetHorizontal,
-  ResetVertical,
   Clear,
   Close,
 };
