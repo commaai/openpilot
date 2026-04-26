@@ -40,7 +40,8 @@ PPPD = [
   "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
   "user", '""', "password", '""',
 ]
-RECONNECT_RESET = {
+INITIAL_STATE = {
+  "state": "INITIALIZING",
   "connected": False, "ip_address": "",
   "iccid": "", "mcc_mnc": "", "imei": "", "modem_version": "",
   "signal_strength": 0, "signal_quality": 0,
@@ -92,27 +93,7 @@ class Modem:
     self._last_tx = 0
     self._last_rx = 0
     self.running = True
-    self.S = {
-      "state": "INITIALIZING",
-      "connected": False,
-      "ip_address": "",
-      "iccid": "",
-      "mcc_mnc": "",
-      "imei": "",
-      "modem_version": "",
-      "signal_strength": 0,
-      "signal_quality": 0,
-      "network_type": "unknown",
-      "operator": "",
-      "band": "",
-      "channel": 0,
-      "registration": "unknown",
-      "temperatures": [],
-      "extra": "",
-      "tx_bytes": 0,
-      "rx_bytes": 0,
-      "error": {},
-    }
+    self.S = INITIAL_STATE.copy()
 
   @staticmethod
   def _read_param(key):
@@ -460,7 +441,7 @@ class Modem:
   def _do_reconnecting(self):
     logging.warning("reconnecting")
     self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
-    self._update(**RECONNECT_RESET)
+    self._update(**INITIAL_STATE)
     self._kill_ppp()
     self._cleanup_routes()
     self._reset_data_port()
