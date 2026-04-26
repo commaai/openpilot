@@ -35,6 +35,17 @@ NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm",
 ERR_NONE = ""
 ERR_ROAMING_DISABLED = "roaming_disabled"
 ERR_CARRIER_REJECT = "carrier_reject"
+# 3GPP CEER reason substring -> user-facing message
+CEER_MESSAGES = {
+  "PLMN_NOT_ALLOWED": "Carrier rejected SIM. The APN may be wrong.",
+  "EPS_SERVICES_NOT_ALLOWED": "Cellular data not allowed on this SIM.",
+  "GPRS_SERVICES_NOT_ALLOWED": "Cellular data not allowed on this SIM.",
+  "OPERATOR_DETERMINED_BARRING": "Carrier has blocked this SIM.",
+  "IMSI_UNKNOWN": "SIM not recognized by carrier. The eSIM profile may not be active.",
+  "ILLEGAL_ME": "Device blocked by carrier.",
+  "IMEI_NOT_ACCEPTED": "Device blocked by carrier.",
+  "ROAMING_NOT_ALLOWED": "Roaming not allowed on this SIM.",
+}
 PPPD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
   "nodefaultroute", "connect",
@@ -158,21 +169,7 @@ class Modem:
       return {}
     parts = [p.strip().strip('"') for p in ceer.split(",")]
     code = parts[-1] if parts else ceer
-    # map common 3GPP reject reasons to actionable user messages
-    if "PLMN_NOT_ALLOWED" in code:
-      msg = "Carrier rejected SIM. The APN may be wrong."
-    elif "EPS_SERVICES_NOT_ALLOWED" in code or "GPRS_SERVICES_NOT_ALLOWED" in code:
-      msg = "Cellular data not allowed on this SIM."
-    elif "OPERATOR_DETERMINED_BARRING" in code:
-      msg = "Carrier has blocked this SIM."
-    elif "IMSI_UNKNOWN_IN_HLR" in code or "IMSI_UNKNOWN" in code:
-      msg = "SIM not recognized by carrier. The eSIM profile may not be active."
-    elif "ILLEGAL_ME" in code or "IMEI_NOT_ACCEPTED" in code:
-      msg = "Device blocked by carrier."
-    elif "ROAMING_NOT_ALLOWED" in code:
-      msg = "Roaming not allowed on this SIM."
-    else:
-      msg = f"Carrier rejected connection ({code})."
+    msg = next((m for k, m in CEER_MESSAGES.items() if k in code), f"Carrier rejected connection ({code}).")
     return {"type": ERR_CARRIER_REJECT, "description": msg}
 
   # -- teardown helpers --
