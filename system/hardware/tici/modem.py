@@ -14,13 +14,9 @@ import time
 
 from enum import Enum
 
-log = logging.getLogger("modem")
-if not log.handlers:
-  _h = logging.StreamHandler()
-  _h.setFormatter(logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"))
-  log.addHandler(_h)
-  log.setLevel(logging.INFO)
-  log.propagate = False
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s.%(msecs)03d %(levelname)s modem: %(message)s",
+                    datefmt="%H:%M:%S")
 
 AT_PORT = "/dev/modem_at0"
 PPP_PORT = "/dev/modem_at1"
@@ -166,7 +162,7 @@ class Modem:
           lines.append(line)
         return lines
     except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
-      log.info(f"AT {cmd} failed: {e}")
+      logging.info(f"AT {cmd} failed: {e}")
       return []
     finally:
       fcntl.flock(fd, fcntl.LOCK_UN)
@@ -235,13 +231,13 @@ class Modem:
         s.read(100)
       s.close()
     except Exception as e:
-      log.warning(f"data port reset failed: {e}")
+      logging.warning(f"data port reset failed: {e}")
 
   # -- state handlers --
 
   def _do_waiting_port(self):
     if os.path.exists(AT_PORT):
-      log.info("port found")
+      logging.info("port found")
       return State.INIT
     return State.WAITING_PORT
 
@@ -285,7 +281,7 @@ class Modem:
       self._at(c)
 
   def _do_init(self):
-    log.info("init")
+    logging.info("init")
     # kill any stale pppd from previous run
     self._kill_ppp()
     self._cleanup_routes()
@@ -320,14 +316,14 @@ class Modem:
     r = self._at("AT+GMR")
     if r:
       modem_version = r[0].strip()
-    log.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
+    logging.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
     return {"imei": imei, "iccid": iccid, "mcc_mnc": mcc_mnc, "modem_version": modem_version}
 
   def _configure_apn_and_roaming(self):
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
-    log.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}, sim_change={self._sim_change}")
+    logging.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}, sim_change={self._sim_change}")
 
   def _reset_ps_attach(self):
     self._ps_wait_start = 0.0
@@ -341,18 +337,18 @@ class Modem:
       self._ps_wait_start = time.monotonic()
     elapsed = time.monotonic() - self._ps_wait_start
     if elapsed > 10 and not self._ps_attach_tried:
-      log.info(f"forcing PS attach (waited {elapsed:.0f}s)")
+      logging.info(f"forcing PS attach (waited {elapsed:.0f}s)")
       self._at("AT+CGATT=1")
       self._ps_attach_tried = True
     elif elapsed > 30:
-      log.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
+      logging.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
       return True
     return False
 
   def _refresh_roaming_param(self):
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
-      log.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
+      logging.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
 
   def _do_registering(self):
@@ -360,13 +356,13 @@ class Modem:
 
     v = self._atv("AT+CREG?", "+CREG:")
     if not v:
-      log.debug("CREG returned None")
+      logging.debug("CREG returned None")
       self._reset_ps_attach()
       return self._registering_idle()
 
     reg = self._parse_reg(v)
     greg = self._parse_reg(self._atv("AT+CGREG?", "+CGREG:") or "")
-    log.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
+    logging.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
     if reg == "roaming" and not self._roaming_allowed:
       self._update(registration=reg, error={"type": ERR_ROAMING_DISABLED,
@@ -385,7 +381,7 @@ class Modem:
 
   def _registering_idle(self):
     if self._sim_change or not os.path.exists(AT_PORT):
-      log.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
+      logging.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
       return State.RECONNECTING
     return State.REGISTERING
 
@@ -400,13 +396,13 @@ class Modem:
           q.put(raw)
         proc.stdout.close()
       except Exception as e:
-        log.warning(f"pppd reader error: {e}")
+        logging.warning(f"pppd reader error: {e}")
 
     threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
-    log.info("PPP dialing")
+    logging.info("PPP dialing")
 
   def _do_connecting(self):
-    log.info("starting pppd")
+    logging.info("starting pppd")
     self._ppp_fails = 0
     self._sim_change = False
     self._reset_ps_attach()
@@ -421,10 +417,10 @@ class Modem:
                    capture_output=True)
     subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
                    capture_output=True)
-    log.info(f"route set up for {self.S['ip_address']} via {peer}")
+    logging.info(f"route set up for {self.S['ip_address']} via {peer}")
 
   def _handle_pppd_line(self, line: str):
-    log.info(f"pppd: {line}")
+    logging.info(f"pppd: {line}")
     if "local  IP address" in line:
       ip = line.split("local  IP address")[-1].strip()
       self._update(ip_address=ip, connected=True)
@@ -452,9 +448,9 @@ class Modem:
       return State.RECONNECTING
     self._ppp_fails += 1
     if self._ppp_fails >= 3:
-      log.warning(f"PPP fail {self._ppp_fails}/3, reconnecting")
+      logging.warning(f"PPP fail {self._ppp_fails}/3, reconnecting")
       return State.RECONNECTING
-    log.warning(f"PPP fail {self._ppp_fails}/3, retrying")
+    logging.warning(f"PPP fail {self._ppp_fails}/3, retrying")
     self._reset_data_port()
     if not os.path.exists(AT_PORT):
       return State.RECONNECTING
@@ -464,11 +460,11 @@ class Modem:
   def _params_changed(self) -> bool:
     new_apn = self._read_param("GsmApn")
     if new_apn != self._apn:
-      log.info(f"APN changed: '{self._apn}' -> '{new_apn}'")
+      logging.info(f"APN changed: '{self._apn}' -> '{new_apn}'")
       return True
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
-      log.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
+      logging.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       return True
     return False
 
@@ -478,7 +474,7 @@ class Modem:
       return
     iccid = self._atv("AT+QCCID", "+QCCID:")
     if iccid and iccid != self.S["iccid"]:
-      log.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
+      logging.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
       self._sim_change = True
 
   def _do_connected(self):
@@ -494,7 +490,7 @@ class Modem:
     return State.CONNECTED
 
   def _do_reconnecting(self):
-    log.warning("reconnecting")
+    logging.warning("reconnecting")
     self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
     self._update(**RECONNECT_RESET)
     self._kill_ppp()
@@ -609,7 +605,7 @@ class Modem:
   # -- main loop --
 
   def run(self):
-    log.info("starting")
+    logging.info("starting")
     # publish initial state so callers see modem.py is active from the start
     self._update(state=State.INIT.label)
     # mask before stop so anything trying to activate ModemManager (NetworkManager, dbus) can't race us
@@ -636,9 +632,9 @@ class Modem:
         state = handlers[state]()
         if state != prev:
           self._update(state=state.label)
-          log.info(f"{prev.value} -> {state.value}")
+          logging.info(f"{prev.value} -> {state.value}")
       except Exception:
-        log.exception(f"error in {state.value}")
+        logging.exception(f"error in {state.value}")
         state = State.RECONNECTING
       time.sleep(STATE_WAIT.get(state, STATE_WAIT_DEFAULT))
 
