@@ -58,6 +58,7 @@ CEER_NUMERIC = {
   (6, 8): "Carrier has blocked this SIM.",                                         # PS LTE local: Operator determined barring
   (6, 11): "Carrier rejected SIM. The APN may be wrong.",                          # PS LTE local: PLMN not allowed
   (6, 13): "Roaming not allowed on this SIM.",                                     # PS LTE local: Roaming not allowed
+  (6, 259): "Carrier rejected SIM. The eSIM profile may not be active.",           # PS LTE local: EMM attach failed
 }
 PPPD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
