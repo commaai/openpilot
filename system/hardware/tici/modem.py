@@ -263,7 +263,7 @@ class Modem:
     identity = self._read_identity()
     self._configure_modem(identity["modem_version"], identity["iccid"])
 
-    self._apn = self._read_param("GsmApn")
+    self._apn = self._read_param("GsmApn") or self._discover_apn()
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
     logging.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
@@ -271,6 +271,22 @@ class Modem:
     self._sim_change = False  # clear — we just re-read identity with the new SIM
     self._update(**identity)
     return State.SEARCHING
+
+  def _discover_apn(self) -> str:
+    """Pick a carrier-provisioned data APN from AT+CGDCONT? when GsmApn isn't set."""
+    skip = ("ims", "sos", "xcap", "scap")
+    for line in self._at("AT+CGDCONT?"):
+      if not line.startswith("+CGDCONT:"):
+        continue
+      parts = [p.strip().strip('"') for p in line.split(":", 1)[1].split(",")]
+      if len(parts) < 8:
+        continue
+      apn, emergency = parts[2], parts[7]
+      if emergency == "1" or not apn or apn.lower() in skip:
+        continue
+      logging.info(f"auto-selected APN '{apn}' from CID {parts[0]}")
+      return apn
+    return ""
 
   def _read_identity(self):
     imei, iccid, mcc_mnc, modem_version = "", "", "", ""
