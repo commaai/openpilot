@@ -31,8 +31,9 @@ NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm", 8: "gsm",
                 7: "lte", 9: "lte", 10: "lte",
                 11: "nr", 12: "nr", 13: "nr"}
 
-# AT+CEER reason -> user-facing message. EG916 returns named strings (e.g. "PLMN_NOT_ALLOWED");
-# EG25 family returns integers per Quectel "LTE Standard Error Code List". Map both forms.
+# AT+CEER reason -> user-facing message.
+# EG916 returns +CEER: "<subsystem>",<cause>,"<reason_string>" — match by string.
+# EG25 returns +CEER: <locID>,<cause> — match by (locID, cause) per Quectel "LTE Standard Error Code List".
 CEER_TEXT = {
   "PLMN_NOT_ALLOWED": "Carrier rejected SIM. The APN may be wrong.",
   "EPS_SERVICES_NOT_ALLOWED": "Cellular data not allowed on this SIM.",
@@ -45,7 +46,6 @@ CEER_TEXT = {
   "MISSING_OR_UNKNOWN_APN": "APN is missing or wrong.",
   "UNKNOWN_OR_MISSING_APN": "APN is missing or wrong.",
 }
-# Numeric (locID, cause) -> user-facing message; EG25 and similar
 CEER_NUMERIC = {
   (2, 2): "SIM not recognized by carrier. The eSIM profile may not be active.",  # CS reject: IMSI unknown in HLR
   (2, 5): "Device blocked by carrier.",                                            # CS reject: IMEI not accepted
