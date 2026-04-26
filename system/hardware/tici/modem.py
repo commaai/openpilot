@@ -101,7 +101,8 @@ class Modem:
     self._ppp_lines = queue.Queue()
     self._ppp_fails = 0
     self._sim_change = False
-    self._apn = ""
+    self._apn = ""        # active APN written to CID 1 (user-set or auto-discovered)
+    self._user_apn = ""   # last-seen value of GsmApn param
     self._roaming_allowed = True
     self.running = True
     self.S = INITIAL_STATE.copy()
@@ -263,7 +264,8 @@ class Modem:
     identity = self._read_identity()
     self._configure_modem(identity["modem_version"], identity["iccid"])
 
-    self._apn = self._read_param("GsmApn") or self._discover_apn()
+    self._user_apn = self._read_param("GsmApn")
+    self._apn = self._user_apn or self._discover_apn()
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
     logging.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
@@ -405,8 +407,8 @@ class Modem:
 
   def _params_changed(self) -> bool:
     new_apn = self._read_param("GsmApn")
-    if new_apn != self._apn:
-      logging.info(f"APN changed: '{self._apn}' -> '{new_apn}'")
+    if new_apn != self._user_apn:
+      logging.info(f"GsmApn changed: '{self._user_apn}' -> '{new_apn}'")
       return True
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
