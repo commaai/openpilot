@@ -25,6 +25,11 @@ STATE_PATH = "/dev/shm/modem"
 AT_LOCK = "/dev/shm/modem_lpa.lock"  # shared with LPA
 AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
+# 3GPP TS 27.007 AcT codes -> network type
+NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm",
+                2: "utran", 4: "utran", 5: "utran", 6: "utran",
+                7: "lte", 9: "lte", 10: "lte",
+                11: "nr", 12: "nr", 13: "nr"}
 
 # error.type values published in the state file
 ERR_NONE = ""
@@ -91,15 +96,11 @@ class Modem:
       return ""
 
   def _update(self, **kwargs):
-    """Update state and atomically write to disk."""
     self.S.update(kwargs)
-    fd = tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False)
-    json.dump(self.S, fd)
-    fd.flush()
-    os.chmod(fd.name, 0o644)
-    tmp = fd.name
-    fd.close()
-    os.replace(tmp, STATE_PATH)
+    with tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False) as f:
+      json.dump(self.S, f)
+    os.chmod(f.name, 0o644)
+    os.replace(f.name, STATE_PATH)
 
   # -- AT commands --
 
@@ -176,11 +177,9 @@ class Modem:
   def _cleanup_routes(self):
     subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
     subprocess.run(["sudo", "ip", "route", "flush", "table", "1000"], capture_output=True)
-    while True:
-      r = subprocess.run(["ip", "rule", "show", "table", "1000"], capture_output=True, text=True, timeout=2)
-      if not r.stdout.strip():
-        break
-      subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True)
+    # rules don't have a flush; delete until none remain
+    while subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True).returncode == 0:
+      pass
 
   @staticmethod
   def _reset_data_port():
@@ -239,7 +238,11 @@ class Modem:
 
     identity = self._read_identity()
     self._configure_modem(identity["modem_version"], identity["iccid"])
-    self._configure_apn_and_roaming()
+
+    self._apn = self._read_param("GsmApn")
+    self._roaming_allowed = self._read_param("GsmRoaming") != "0"
+    self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
+    logging.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
     self._update(**identity)
@@ -266,20 +269,11 @@ class Modem:
     logging.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
     return {"imei": imei, "iccid": iccid, "mcc_mnc": mcc_mnc, "modem_version": modem_version}
 
-  def _configure_apn_and_roaming(self):
-    self._apn = self._read_param("GsmApn")
-    self._roaming_allowed = self._read_param("GsmRoaming") != "0"
-    self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
-    logging.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}, sim_change={self._sim_change}")
-
-  def _refresh_roaming_param(self):
+  def _do_searching(self):
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
       logging.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
-
-  def _do_searching(self):
-    self._refresh_roaming_param()
 
     v = self._atv("AT+CREG?", "+CREG:")
     if not v:
@@ -355,16 +349,6 @@ class Modem:
     elif "Connection terminated" in line or "Modem hangup" in line:
       self._update(connected=False, ip_address="")
 
-  def _drain_pppd_output(self):
-    while not self._ppp_lines.empty():
-      try:
-        raw = self._ppp_lines.get_nowait()
-      except queue.Empty:
-        break
-      line = raw.decode(errors="ignore").strip()
-      if line:
-        self._handle_pppd_line(line)
-
   def _handle_pppd_exit(self):
     """Called when pppd has exited. Returns next State."""
     self._ppp = None
@@ -402,7 +386,13 @@ class Modem:
       self._sim_change = True
 
   def _do_connected(self):
-    self._drain_pppd_output()
+    while True:
+      try:
+        line = self._ppp_lines.get_nowait().decode(errors="ignore").strip()
+      except queue.Empty:
+        break
+      if line:
+        self._handle_pppd_line(line)
 
     if self._ppp and self._ppp.poll() is not None:
       return self._handle_pppd_exit()
@@ -437,19 +427,6 @@ class Modem:
     except (ValueError, IndexError):
       return {}
 
-  @staticmethod
-  def _act_to_network_type(act: int) -> str:
-    # 3GPP TS 27.007 AcT: 0-1 GSM, 2 UTRAN, 3 GSM+EGPRS, 4-6 UTRAN HS*, 7/9/10 E-UTRAN, 11-13 NR
-    if act in (0, 1, 3):
-      return "gsm"
-    if act in (2, 4, 5, 6):
-      return "utran"
-    if act in (7, 9, 10):
-      return "lte"
-    if act in (11, 12, 13):
-      return "nr"
-    return "unknown"
-
   def _poll_operator(self) -> dict:
     v = self._atv("AT+COPS?", "+COPS:")
     if not v:
@@ -460,7 +437,7 @@ class Modem:
       if len(p) >= 3:
         out["operator"] = p[2].strip('"')
       if len(p) >= 4:
-        out["network_type"] = self._act_to_network_type(int(p[3]))
+        out["network_type"] = NETWORK_TYPE.get(int(p[3]), "unknown")
     except (ValueError, IndexError):
       pass
     return out
