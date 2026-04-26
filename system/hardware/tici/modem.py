@@ -163,10 +163,6 @@ class Modem:
             break
           if line == "ERROR" or line.startswith("+CME ERROR"):
             raise RuntimeError(line)
-          if "+QUSIM:" in line:
-            log.warning(f"URC: {line}")
-            self._sim_change = True
-            subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
           lines.append(line)
         return lines
     except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
@@ -477,7 +473,7 @@ class Modem:
     return False
 
   def _check_iccid(self):
-    """Catch SIM swaps that didn't fire a +QUSIM URC. Skip if port missing or no prior identity."""
+    """Detect SIM swaps. Skip if port missing or no prior identity."""
     if not os.path.exists(AT_PORT) or not self.S["iccid"]:
       return
     iccid = self._atv("AT+QCCID", "+QCCID:")
