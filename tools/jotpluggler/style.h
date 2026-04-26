@@ -4,8 +4,6 @@
 
 #include <cstdint>
 
-enum class AppTheme : uint8_t { Light, Dark };
-
 enum class AppColor : uint8_t {
   Clear,
   FpsBg,
@@ -24,9 +22,16 @@ enum class AppColor : uint8_t {
   PlotSelection,
   PlotCrosshairs,
   PlotCursor,
-  Count,
 };
 
-bool app_dark_mode();
-ImVec4 app_color(AppColor color);
-void apply_app_style(AppTheme theme);
+class Style {
+ public:
+  bool dark_mode() const { return dark_mode_; }
+  void set_dark_mode(bool enabled);
+  ImVec4 color(AppColor c) const;
+
+ private:
+  bool dark_mode_ = false;
+};
+
+Style &style();

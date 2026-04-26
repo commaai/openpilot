@@ -777,20 +777,20 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
   const bool has_cursor_time = state->has_tracker_time;
   const double cursor_time = state->tracker_time;
 
-  ImPlot::PushStyleColor(ImPlotCol_PlotBg, app_color(AppColor::PlotBg));
-  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, app_color(AppColor::PlotBorder));
-  ImPlot::PushStyleColor(ImPlotCol_LegendBg, app_color(AppColor::PlotLegendBg));
-  ImPlot::PushStyleColor(ImPlotCol_LegendBorder, app_color(AppColor::PlotLegendBorder));
-  ImPlot::PushStyleColor(ImPlotCol_LegendText, app_color(AppColor::PlotText));
-  ImPlot::PushStyleColor(ImPlotCol_TitleText, app_color(AppColor::PlotText));
-  ImPlot::PushStyleColor(ImPlotCol_InlayText, app_color(AppColor::PlotMutedText));
-  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, app_color(AppColor::PlotGrid));
-  ImPlot::PushStyleColor(ImPlotCol_AxisText, app_color(AppColor::PlotMutedText));
-  ImPlot::PushStyleColor(ImPlotCol_AxisBg, app_color(AppColor::PlotAxisBg));
-  ImPlot::PushStyleColor(ImPlotCol_AxisBgHovered, app_color(AppColor::PlotAxisBgHovered));
-  ImPlot::PushStyleColor(ImPlotCol_AxisBgActive, app_color(AppColor::PlotAxisBgActive));
-  ImPlot::PushStyleColor(ImPlotCol_Selection, app_color(AppColor::PlotSelection));
-  ImPlot::PushStyleColor(ImPlotCol_Crosshairs, app_color(AppColor::PlotCrosshairs));
+  ImPlot::PushStyleColor(ImPlotCol_PlotBg, style().color(AppColor::PlotBg));
+  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, style().color(AppColor::PlotBorder));
+  ImPlot::PushStyleColor(ImPlotCol_LegendBg, style().color(AppColor::PlotLegendBg));
+  ImPlot::PushStyleColor(ImPlotCol_LegendBorder, style().color(AppColor::PlotLegendBorder));
+  ImPlot::PushStyleColor(ImPlotCol_LegendText, style().color(AppColor::PlotText));
+  ImPlot::PushStyleColor(ImPlotCol_TitleText, style().color(AppColor::PlotText));
+  ImPlot::PushStyleColor(ImPlotCol_InlayText, style().color(AppColor::PlotMutedText));
+  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, style().color(AppColor::PlotGrid));
+  ImPlot::PushStyleColor(ImPlotCol_AxisText, style().color(AppColor::PlotMutedText));
+  ImPlot::PushStyleColor(ImPlotCol_AxisBg, style().color(AppColor::PlotAxisBg));
+  ImPlot::PushStyleColor(ImPlotCol_AxisBgHovered, style().color(AppColor::PlotAxisBgHovered));
+  ImPlot::PushStyleColor(ImPlotCol_AxisBgActive, style().color(AppColor::PlotAxisBgActive));
+  ImPlot::PushStyleColor(ImPlotCol_Selection, style().color(AppColor::PlotSelection));
+  ImPlot::PushStyleColor(ImPlotCol_Crosshairs, style().color(AppColor::PlotCrosshairs));
   ImPlot::PushStyleVar(ImPlotStyleVar_LegendPadding, ImVec2(56.0f, 10.0f));
 
   ImPlotFlags plot_flags = ImPlotFlags_NoTitle | ImPlotFlags_NoMenus;
@@ -864,7 +864,7 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
     if (has_cursor_time) {
       const double clamped_cursor_time = std::clamp(cursor_time, state->route_x_min, state->route_x_max);
       ImPlotSpec cursor_spec;
-      cursor_spec.LineColor = app_color(AppColor::PlotCursor);
+      cursor_spec.LineColor = style().color(AppColor::PlotCursor);
       cursor_spec.LineWeight = 1.0f;
       cursor_spec.Flags = ImPlotItemFlags_NoLegend;
       ImPlot::PlotInfLines("##tracker_cursor", &clamped_cursor_time, 1, cursor_spec);

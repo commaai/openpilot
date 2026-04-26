@@ -277,7 +277,7 @@ void configure_style() {
     g_ui_bold_font = g_ui_font;
   }
 
-  apply_app_style(AppTheme::Light);
+  style().set_dark_mode(false);
 
   ImPlot::MapInputDefault();
   ImPlotInputMap &input_map = ImPlot::GetInputMap();
