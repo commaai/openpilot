@@ -157,10 +157,22 @@ class Modem:
     if not ceer:
       return {}
     parts = [p.strip().strip('"') for p in ceer.split(",")]
-    msg = parts[-1] if parts else ceer
-    # PLMN_NOT_ALLOWED often clears with the right APN; EPS_SERVICES_NOT_ALLOWED is a plan issue
-    if "PLMN_NOT_ALLOWED" in msg:
-      msg += " (check GsmApn)"
+    code = parts[-1] if parts else ceer
+    # map common 3GPP reject reasons to actionable user messages
+    if "PLMN_NOT_ALLOWED" in code:
+      msg = "Carrier rejected SIM. Try setting an APN under Settings > Network > Advanced."
+    elif "EPS_SERVICES_NOT_ALLOWED" in code or "GPRS_SERVICES_NOT_ALLOWED" in code:
+      msg = "Cellular data not allowed on this SIM. Check your plan or contact your carrier."
+    elif "OPERATOR_DETERMINED_BARRING" in code:
+      msg = "Carrier has blocked this SIM. Contact your carrier."
+    elif "IMSI_UNKNOWN_IN_HLR" in code or "IMSI_UNKNOWN" in code:
+      msg = "SIM not recognized by carrier. The eSIM profile may not be active."
+    elif "ILLEGAL_ME" in code or "IMEI_NOT_ACCEPTED" in code:
+      msg = "Device blocked by carrier. Contact your carrier."
+    elif "ROAMING_NOT_ALLOWED" in code:
+      msg = "Roaming not allowed on this SIM. Use a local SIM or contact your carrier."
+    else:
+      msg = f"Carrier rejected connection ({code}). Check your plan or try a different SIM."
     return {"type": ERR_CARRIER_REJECT, "description": msg}
 
   # -- teardown helpers --
@@ -187,7 +199,7 @@ class Modem:
     try:
       with serial.Serial(PPP_PORT, 460800, timeout=1) as s:
         s.dtr = False
-        time.sleep(1)
+        time.sleep(0.2)
         s.dtr = True
     except Exception as e:
       logging.warning(f"data port reset failed: {e}")
@@ -285,7 +297,7 @@ class Modem:
 
     if reg == "roaming" and not self._roaming_allowed:
       self._update(registration=reg, error={"type": ERR_ROAMING_DISABLED,
-                                            "description": "roaming blocked by GsmRoaming param"})
+                                            "description": "Roaming is disabled. Enable roaming under Settings > Network > Advanced to connect."})
       return State.SEARCHING
 
     if reg in ("home", "roaming") and greg in ("home", "roaming"):
