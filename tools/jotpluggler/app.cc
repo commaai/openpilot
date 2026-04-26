@@ -697,7 +697,6 @@ void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool
   ImGui::SetNextWindowPos(ImVec2(0.0f, ui.top_offset));
   ImGui::SetNextWindowSize(ImVec2(ui.sidebar_width, std::max(1.0f, ui.height - ui.top_offset)));
   ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
-  ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_Border));
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoResize |
@@ -857,7 +856,7 @@ void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool
     }
   }
   ImGui::End();
-  ImGui::PopStyleColor(2);
+  ImGui::PopStyleColor();
 }
 
 std::string app_curve_display_name(const Curve &curve) {
@@ -1517,11 +1516,6 @@ void draw_pane_windows(AppSession *session, UiState *state) {
     std::optional<PaneDropAction> drop_action;
     bool close_pane_requested = false;
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_Border));
-    ImGui::PushStyleColor(ImGuiCol_TitleBg, ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImGui::GetStyleColorVec4(ImGuiCol_TitleBgActive));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, ImGui::GetStyleColorVec4(ImGuiCol_TitleBgCollapsed));
     const ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
     const std::string window_name = pane_window_name(tab_state->runtime_id, static_cast<int>(i), pane);
     const bool opened = ImGui::Begin(window_name.c_str(), nullptr, flags);
@@ -1544,7 +1538,6 @@ void draw_pane_windows(AppSession *session, UiState *state) {
     }
     ImGui::End();
     ImGui::PopStyleVar();
-    ImGui::PopStyleColor(5);
     if (!pending_menu_action.has_value() && menu_action.has_value()) {
       pending_menu_action = std::make_pair(static_cast<int>(i), *menu_action);
     }
@@ -1580,7 +1573,6 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
   ImGui::SetNextWindowSize(ImVec2(ui.content_w, ui.content_h));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_DockingEmptyBg));
-  ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_Border));
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoResize |
@@ -1687,9 +1679,6 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
         }
       }
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 5.0f));
-      ImGui::PushStyleColor(ImGuiCol_Tab, ImGui::GetStyleColorVec4(ImGuiCol_Tab));
-      ImGui::PushStyleColor(ImGuiCol_TabHovered, ImGui::GetStyleColorVec4(ImGuiCol_TabHovered));
-      ImGui::PushStyleColor(ImGuiCol_TabSelected, ImGui::GetStyleColorVec4(ImGuiCol_TabSelected));
       if (ImGui::TabItemButton("   ##new_tab_button", ImGuiTabItemFlags_Trailing)) {
         pending_action = TabActionKind::New;
       }
@@ -1716,7 +1705,6 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
         ImGui::EndTooltip();
         ImGui::PopStyleVar();
       }
-      ImGui::PopStyleColor(3);
       ImGui::PopStyleVar();
       ImGui::EndTabBar();
 
@@ -1765,7 +1753,7 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
   }
   ImGui::End();
   ImGui::PopStyleVar();
-  ImGui::PopStyleColor(2);
+  ImGui::PopStyleColor();
 }
 
 int run(const Options &options) {

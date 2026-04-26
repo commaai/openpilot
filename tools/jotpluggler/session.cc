@@ -746,9 +746,8 @@ float draw_main_menu_bar(AppSession *session, UiState *state) {
       if (ImGui::MenuItem("Show FPS", nullptr, state->show_fps_overlay)) {
         state->show_fps_overlay = !state->show_fps_overlay;
       }
-      if (ImGui::MenuItem("Dark Mode", nullptr, state->dark_mode)) {
-        state->dark_mode = !state->dark_mode;
-        apply_app_style(state->dark_mode ? AppTheme::Dark : AppTheme::Light);
+      if (ImGui::MenuItem("Dark Mode", nullptr, app_dark_mode())) {
+        apply_app_style(app_dark_mode() ? AppTheme::Light : AppTheme::Dark);
       }
       if (ImGui::MenuItem("Preferences...")) {
         state->open_preferences = true;

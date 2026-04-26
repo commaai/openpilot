@@ -149,7 +149,6 @@ void draw_status_bar(const AppSession &session, const UiMetrics &ui, UiState *st
   ImGui::SetNextWindowSize(ImVec2(ui.content_w, STATUS_BAR_HEIGHT));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
-  ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_Border));
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoResize |
@@ -180,7 +179,7 @@ void draw_status_bar(const AppSession &session, const UiMetrics &ui, UiState *st
 
   }
   ImGui::End();
-  ImGui::PopStyleColor(2);
+  ImGui::PopStyleColor();
   ImGui::PopStyleVar();
 }
 

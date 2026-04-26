@@ -24,6 +24,7 @@ enum class AppColor : uint8_t {
   PlotSelection,
   PlotCrosshairs,
   PlotCursor,
+  Count,
 };
 
 bool app_dark_mode();
