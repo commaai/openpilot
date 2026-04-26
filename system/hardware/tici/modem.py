@@ -160,19 +160,19 @@ class Modem:
     code = parts[-1] if parts else ceer
     # map common 3GPP reject reasons to actionable user messages
     if "PLMN_NOT_ALLOWED" in code:
-      msg = "Carrier rejected SIM. Try setting an APN under Settings > Network > Advanced."
+      msg = "Carrier rejected SIM. The APN may be wrong."
     elif "EPS_SERVICES_NOT_ALLOWED" in code or "GPRS_SERVICES_NOT_ALLOWED" in code:
-      msg = "Cellular data not allowed on this SIM. Check your plan or contact your carrier."
+      msg = "Cellular data not allowed on this SIM."
     elif "OPERATOR_DETERMINED_BARRING" in code:
-      msg = "Carrier has blocked this SIM. Contact your carrier."
+      msg = "Carrier has blocked this SIM."
     elif "IMSI_UNKNOWN_IN_HLR" in code or "IMSI_UNKNOWN" in code:
       msg = "SIM not recognized by carrier. The eSIM profile may not be active."
     elif "ILLEGAL_ME" in code or "IMEI_NOT_ACCEPTED" in code:
-      msg = "Device blocked by carrier. Contact your carrier."
+      msg = "Device blocked by carrier."
     elif "ROAMING_NOT_ALLOWED" in code:
-      msg = "Roaming not allowed on this SIM. Use a local SIM or contact your carrier."
+      msg = "Roaming not allowed on this SIM."
     else:
-      msg = f"Carrier rejected connection ({code}). Check your plan or try a different SIM."
+      msg = f"Carrier rejected connection ({code})."
     return {"type": ERR_CARRIER_REJECT, "description": msg}
 
   # -- teardown helpers --
@@ -297,7 +297,7 @@ class Modem:
 
     if reg == "roaming" and not self._roaming_allowed:
       self._update(registration=reg, error={"type": ERR_ROAMING_DISABLED,
-                                            "description": "Roaming is disabled. Enable roaming under Settings > Network > Advanced to connect."})
+                                            "description": "Roaming is disabled."})
       return State.SEARCHING
 
     if reg in ("home", "roaming") and greg in ("home", "roaming"):
