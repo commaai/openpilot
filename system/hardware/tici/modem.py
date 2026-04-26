@@ -294,10 +294,15 @@ class Modem:
     return ""
 
   def _read_identity(self):
+    # after a SIM hot-swap or modem reset, identity reads can come back empty for a few seconds;
+    # retry until IMEI (hardware-fixed) reads or we give up
     imei, iccid, mcc_mnc, modem_version = "", "", "", ""
-    r = self._at("AT+CGSN")
-    if r:
-      imei = r[0].strip()
+    for _ in range(10):
+      r = self._at("AT+CGSN")
+      if r and r[0].strip():
+        imei = r[0].strip()
+        break
+      time.sleep(0.5)
     v = self._atv("AT+QCCID", "+QCCID:")
     if v:
       iccid = v
