@@ -52,30 +52,18 @@ INITIAL_STATE = {
 
 
 class State(Enum):
-  WAITING_PORT = "waiting_port"
-  INIT = "init"
-  REGISTERING = "registering"
-  CONNECTING = "connecting"
-  CONNECTED = "connected"
-  RECONNECTING = "reconnecting"
-
-  @property
-  def label(self) -> str:
-    return {
-      State.WAITING_PORT: "INITIALIZING",
-      State.INIT: "INITIALIZING",
-      State.REGISTERING: "SEARCHING",
-      State.CONNECTING: "CONNECTING",
-      State.CONNECTED: "CONNECTED",
-      State.RECONNECTING: "DISCONNECTING",
-    }[self]
+  INITIALIZING = "INITIALIZING"
+  SEARCHING = "SEARCHING"
+  CONNECTING = "CONNECTING"
+  CONNECTED = "CONNECTED"
+  DISCONNECTING = "DISCONNECTING"
 
 
 # seconds to wait after each state handler returns; states omitted use STATE_WAIT_DEFAULT
 STATE_WAIT_DEFAULT = 2.0
 STATE_WAIT = {
-  State.WAITING_PORT: 1.0,
-  State.REGISTERING: 0.5,
+  State.INITIALIZING: 1.0,
+  State.SEARCHING: 0.5,
 }
 
 
@@ -216,12 +204,6 @@ class Modem:
 
   # -- state handlers --
 
-  def _do_waiting_port(self):
-    if os.path.exists(AT_PORT):
-      logging.info("port found")
-      return State.INIT
-    return State.WAITING_PORT
-
   def _configure_modem(self, modem_version: str, sim_id: str):
     cmds: list[str] = []
     if modem_version.startswith("EG25"):
@@ -252,8 +234,10 @@ class Modem:
     for c in cmds:
       self._at(c)
 
-  def _do_init(self):
-    logging.info("init")
+  def _do_initializing(self):
+    if not os.path.exists(AT_PORT):
+      return State.INITIALIZING
+    logging.info("port found, initializing")
     # kill any stale pppd from previous run
     self._kill_ppp()
     self._cleanup_routes()
@@ -268,7 +252,7 @@ class Modem:
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
     self._update(**identity)
-    return State.REGISTERING
+    return State.SEARCHING
 
   def _read_identity(self):
     imei, iccid, mcc_mnc, modem_version = "", "", "", ""
@@ -303,12 +287,12 @@ class Modem:
       logging.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
 
-  def _do_registering(self):
+  def _do_searching(self):
     self._refresh_roaming_param()
 
     v = self._atv("AT+CREG?", "+CREG:")
     if not v:
-      return self._registering_idle()
+      return self._searching_idle()
 
     reg = self._parse_reg(v)
     greg = self._parse_reg(self._atv("AT+CGREG?", "+CGREG:") or "")
@@ -317,7 +301,7 @@ class Modem:
     if reg == "roaming" and not self._roaming_allowed:
       self._update(registration=reg, error={"type": ERR_ROAMING_DISABLED,
                                             "description": "roaming blocked by GsmRoaming param"})
-      return State.REGISTERING
+      return State.SEARCHING
 
     if reg in ("home", "roaming") and greg in ("home", "roaming"):
       self._update(registration=reg, error={})
@@ -327,13 +311,13 @@ class Modem:
     if reg != self.S.get("registration"):
       self._update(registration=reg, error=self._carrier_reject_error(reg))
 
-    return self._registering_idle()
+    return self._searching_idle()
 
-  def _registering_idle(self):
+  def _searching_idle(self):
     if self._sim_change or not os.path.exists(AT_PORT):
       logging.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
-      return State.RECONNECTING
-    return State.REGISTERING
+      return State.DISCONNECTING
+    return State.SEARCHING
 
   def _start_pppd(self):
     self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -394,15 +378,15 @@ class Modem:
     """Called when pppd has exited. Returns next State."""
     self._ppp = None
     if self._sim_change or not os.path.exists(AT_PORT):
-      return State.RECONNECTING
+      return State.DISCONNECTING
     self._ppp_fails += 1
     if self._ppp_fails >= 3:
       logging.warning(f"PPP fail {self._ppp_fails}/3, reconnecting")
-      return State.RECONNECTING
+      return State.DISCONNECTING
     logging.warning(f"PPP fail {self._ppp_fails}/3, retrying")
     self._reset_data_port()
     if not os.path.exists(AT_PORT):
-      return State.RECONNECTING
+      return State.DISCONNECTING
     self._start_pppd()
     return State.CONNECTED
 
@@ -433,12 +417,12 @@ class Modem:
       return self._handle_pppd_exit()
 
     if self._sim_change or not os.path.exists(AT_PORT) or self._params_changed():
-      return State.RECONNECTING
+      return State.DISCONNECTING
 
     self._poll()
     return State.CONNECTED
 
-  def _do_reconnecting(self):
+  def _do_disconnecting(self):
     logging.warning("reconnecting")
     self._tx_base = self._rx_base = self._last_tx = self._last_rx = 0
     self._update(**INITIAL_STATE)
@@ -446,7 +430,7 @@ class Modem:
     self._cleanup_routes()
     self._reset_data_port()
     self._sim_change = False
-    return State.WAITING_PORT
+    return State.INITIALIZING
 
   # -- poll --
 
@@ -556,35 +540,34 @@ class Modem:
   def run(self):
     logging.info("starting")
     # publish initial state so callers see modem.py is active from the start
-    self._update(state=State.INIT.label)
+    self._update(state=State.INITIALIZING.value)
     # mask before stop so anything trying to activate ModemManager (NetworkManager, dbus) can't race us
     subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
 
-    state = State.INIT
+    state = State.INITIALIZING
 
     handlers = {
-      State.WAITING_PORT: self._do_waiting_port,
-      State.INIT: self._do_init,
-      State.REGISTERING: self._do_registering,
+      State.INITIALIZING: self._do_initializing,
+      State.SEARCHING: self._do_searching,
       State.CONNECTING: self._do_connecting,
       State.CONNECTED: self._do_connected,
-      State.RECONNECTING: self._do_reconnecting,
+      State.DISCONNECTING: self._do_disconnecting,
     }
 
     while self.running:
       try:
-        if state not in (State.INIT, State.RECONNECTING):
+        if state not in (State.INITIALIZING, State.DISCONNECTING):
           self._check_iccid()
         prev = state
         state = handlers[state]()
         if state != prev:
-          self._update(state=state.label)
+          self._update(state=state.value)
           logging.info(f"{prev.value} -> {state.value}")
       except Exception:
         logging.exception(f"error in {state.value}")
-        state = State.RECONNECTING
+        state = State.DISCONNECTING
       time.sleep(STATE_WAIT.get(state, STATE_WAIT_DEFAULT))
 
   def stop(self):
