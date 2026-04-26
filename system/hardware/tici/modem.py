@@ -198,7 +198,7 @@ class Modem:
     cmds: list[str] = []
     if modem_version.startswith("EG25"):
       cmds += [
-        # clear old blue prime initial EPS bearer APN (was `mmcli --3gpp-set-initial-eps-bearer-settings="apn="`)
+        # clear initial EPS bearer APN (some carriers reject the default)
         'AT+CGDCONT=0,"IP",""',
 
         # SIM hot swap
@@ -232,7 +232,6 @@ class Modem:
     self._kill_ppp()
     self._cleanup_routes()
 
-    # AT init
     for c in AT_INIT + ["AT+CREG=2", "AT+CGREG=2"]:
       self._at(c)
 
@@ -375,7 +374,6 @@ class Modem:
     return False
 
   def _check_iccid(self, state):
-    # skip when port may be gone or identity not yet known
     if state in (State.INITIALIZING, State.DISCONNECTING) or not self.S["iccid"]:
       return
     iccid = self._atv("AT+QCCID", "+QCCID:")
