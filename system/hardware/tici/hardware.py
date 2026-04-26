@@ -1,6 +1,6 @@
 import math
 import os
-import subprocess
+from subprocess import run as subprocess_run
 import time
 import tempfile
 from enum import IntEnum
@@ -106,7 +106,7 @@ class Tici(HardwareBase):
     return get_device_type()
 
   def reboot(self, reason=None):
-    subprocess.check_output(["sudo", "reboot"])
+    subprocess_run(["sudo", "reboot"], check=True)
 
   def uninstall(self):
     Path("/data/__system_reset__").touch()
@@ -318,7 +318,7 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
-    os.system("sudo poweroff")
+    subprocess_run(["sudo", "poweroff"], check=True)
 
   def get_thermal_config(self):
     intake, exhaust, gnss, bottomSoc = None, None, None, None
@@ -409,7 +409,7 @@ class Tici(HardwareBase):
       self.amplifier.initialize_configuration()
 
     # Allow hardwared to write engagement status to kmsg
-    os.system("sudo chmod a+w /dev/kmsg")
+    subprocess_run(["sudo", "chmod", "a+w", "/dev/kmsg"], check=True)
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
     gpio_init(GPIO.SOM_ST_IO, True)
@@ -449,10 +449,10 @@ class Tici(HardwareBase):
     # pandad core
     affine_irq(3, "spi_geni")         # SPI
     try:
-      pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
-      subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
-      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
-    except subprocess.CalledProcessException as e:
+      pid = subprocess_run(["pgrep", "-f", "spi0"], capture_output=True, text=True, check=True).stdout.strip()
+      subprocess_run(["sudo", "chrt", "-f", "-p", "1", pid], check=True)
+      subprocess_run(["sudo", "taskset", "-pc", "3", pid], check=True)
+    except Exception as e:
       print(str(e))
 
   def configure_modem(self):
@@ -464,7 +464,7 @@ class Tici(HardwareBase):
     # Quectel EG25
     if self.get_device_type() in ("tizi", ):
       # clear out old blue prime initial APN
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
+      subprocess_run(["mmcli", "-m", "any", "--3gpp-set-initial-eps-bearer-settings=apn="], check=True)
 
       cmds += [
         # SIM hot swap
@@ -506,8 +506,8 @@ class Tici(HardwareBase):
         tf.flush()
 
         # needs to be root
-        os.system(f"sudo cp {tf.name} {dest}")
-      os.system(f"sudo nmcli con load {dest}")
+        subprocess_run(["sudo", "cp", tf.name, dest], check=True)
+      subprocess_run(["sudo", "nmcli", "con", "load", dest], check=True)
 
   def reboot_modem(self):
     modem = self.get_modem()
