@@ -266,6 +266,8 @@ class Modem:
     self._configure_modem(identity["modem_version"], identity["iccid"])
 
     self._user_apn = self._read_param("GsmApn")
+    # clear CID 1 first so discover doesn't carry over a stale APN from a prior SIM/boot
+    self._at('AT+CGDCONT=1,"IP",""')
     self._apn = self._user_apn or self._discover_apn()
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
