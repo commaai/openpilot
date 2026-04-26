@@ -86,8 +86,6 @@ class Modem:
     self._sim_change = False
     self._apn = ""
     self._roaming_allowed = True
-    self._ps_wait_start = 0.0
-    self._ps_attach_tried = False
     # byte counters persist across pppd restarts (sysfs counters reset when ppp0 is recreated)
     self._tx_base = 0
     self._rx_base = 0
@@ -318,26 +316,6 @@ class Modem:
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
     logging.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}, sim_change={self._sim_change}")
 
-  def _reset_ps_attach(self):
-    self._ps_wait_start = 0.0
-    self._ps_attach_tried = False
-
-  def _handle_ps_attach(self, reg: str, greg: str) -> bool:
-    """Return True once we should advance to CONNECTING."""
-    if greg in ("home", "roaming"):
-      return True
-    if self._ps_wait_start == 0.0:
-      self._ps_wait_start = time.monotonic()
-    elapsed = time.monotonic() - self._ps_wait_start
-    if elapsed > 10 and not self._ps_attach_tried:
-      logging.info(f"forcing PS attach (waited {elapsed:.0f}s)")
-      self._at("AT+CGATT=1")
-      self._ps_attach_tried = True
-    elif elapsed > 30:
-      logging.warning(f"PS attach timeout ({elapsed:.0f}s), proceeding anyway")
-      return True
-    return False
-
   def _refresh_roaming_param(self):
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
@@ -349,8 +327,6 @@ class Modem:
 
     v = self._atv("AT+CREG?", "+CREG:")
     if not v:
-      logging.debug("CREG returned None")
-      self._reset_ps_attach()
       return self._registering_idle()
 
     reg = self._parse_reg(v)
@@ -362,7 +338,7 @@ class Modem:
                                             "description": "roaming blocked by GsmRoaming param"})
       return State.REGISTERING
 
-    if reg in ("home", "roaming") and self._handle_ps_attach(reg, greg):
+    if reg in ("home", "roaming") and greg in ("home", "roaming"):
       self._update(registration=reg, error={})
       return State.CONNECTING
 
@@ -398,7 +374,6 @@ class Modem:
     logging.info("starting pppd")
     self._ppp_fails = 0
     self._sim_change = False
-    self._reset_ps_attach()
     self._start_pppd()
     return State.CONNECTED
 
