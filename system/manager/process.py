@@ -17,8 +17,11 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 
 
-def launcher(proc: str, name: str) -> None:
+def launcher(proc: str, name: str, argv: list[str] | None = None) -> None:
   try:
+    import sys
+    sys.argv = [proc] + (argv or [])
+
     # import the process
     mod = importlib.import_module(proc)
 
@@ -168,7 +171,7 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, should_run, enabled=True, sigkill=False, restart_if_crash=False):
+  def __init__(self, name, module, should_run, enabled=True, sigkill=False, restart_if_crash=False, param_args=None):
     self.name = name
     self.module = module
     self.should_run = should_run
@@ -176,6 +179,7 @@ class PythonProcess(ManagerProcess):
     self.sigkill = sigkill
     self.launcher = launcher
     self.restart_if_crash = restart_if_crash
+    self.param_args = [] if param_args is None else param_args
 
   def prepare(self) -> None:
     if self.enabled:
@@ -195,7 +199,7 @@ class PythonProcess(ManagerProcess):
     name = self.name if "modeld" not in self.name else "MainProcess"
 
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=name, target=self.launcher, args=(self.module, self.name))
+    self.proc = Process(name=name, target=self.launcher, args=(self.module, self.name, self.param_args))
     self.proc.start()
     self.shutting_down = False
 

@@ -39,7 +39,7 @@ PROCS = {
   "selfdrive.selfdrived.selfdrived": 16.0,
   "selfdrive.car.card": 26.0,
   "./loggerd": 14.0,
-  "./encoderd": 13.0,
+  "system.loggerd.encoderd": 13.0,
   "./camerad": 10.0,
   "selfdrive.controls.plannerd": 8.0,
   "selfdrive.ui.ui": 40.0,
