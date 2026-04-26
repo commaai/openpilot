@@ -243,16 +243,9 @@ class Modem:
       return State.INIT
     return State.WAITING_PORT
 
-  def _configure_device(self, sim_id):
-    try:
-      with open("/sys/firmware/devicetree/base/model") as f:
-        device = f.read().strip('\x00').split('comma ')[-1]
-    except Exception:
-      device = ""
-
-    cmds = []
-    # Quectel EG25
-    if device == "tizi":
+  def _configure_modem(self, modem_version: str, sim_id: str):
+    cmds: list[str] = []
+    if modem_version.startswith("EG25"):
       cmds += [
         # clear old blue prime initial EPS bearer APN (was `mmcli --3gpp-set-initial-eps-bearer-settings="apn="`)
         'AT+CGDCONT=0,"IP",""',
@@ -266,18 +259,16 @@ class Modem:
         'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
         'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
       ]
-    # Quectel EG916
-    else:
-      # this modem gets upset with too many AT commands
-      if not sim_id:
-        cmds += [
-          # SIM sleep disable
-          'AT$QCSIMSLEEP=0',
-          'AT$QCSIMCFG=SimPowerSave,0',
+    elif modem_version.startswith("EG916") and not sim_id:
+      # EG916 gets upset with too many AT commands; only run when no SIM is provisioned
+      cmds += [
+        # SIM sleep disable
+        'AT$QCSIMSLEEP=0',
+        'AT$QCSIMCFG=SimPowerSave,0',
 
-          # ethernet config
-          'AT$QCPCFG=usbNet,1',
-        ]
+        # ethernet config
+        'AT$QCPCFG=usbNet,1',
+      ]
 
     for c in cmds:
       self._at(c)
@@ -293,7 +284,7 @@ class Modem:
       self._at(c)
 
     identity = self._read_identity()
-    self._configure_device(identity["iccid"])
+    self._configure_modem(identity["modem_version"], identity["iccid"])
     self._configure_apn_and_roaming()
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
