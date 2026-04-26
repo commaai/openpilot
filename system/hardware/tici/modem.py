@@ -45,6 +45,7 @@ CEER_TEXT = {
   "ROAMING_NOT_ALLOWED": "Roaming not allowed on this SIM.",
   "MISSING_OR_UNKNOWN_APN": "APN is missing or wrong.",
   "UNKNOWN_OR_MISSING_APN": "APN is missing or wrong.",
+  "APN_CONGESTION_CONTROL_BARRED": "Carrier is rate-limiting this APN. Try again later.",
 }
 CEER_NUMERIC = {
   (2, 2): "SIM not recognized by carrier. The eSIM profile may not be active.",  # CS reject: IMSI unknown in HLR
@@ -54,6 +55,7 @@ CEER_NUMERIC = {
   (2, 13): "Roaming not allowed on this SIM.",                                     # CS reject: Roaming not allowed
   (4, 27): "APN is missing or wrong.",                                             # PS network: Missing or unknown APN
   (5, 27): "APN is missing or wrong.",                                             # PS LTE: Missing or unknown APN
+  (5, 26): "Carrier is rate-limiting this APN. Try again later.",                  # PS LTE: Insufficient resources / APN congestion back-off
   (6, 7): "Cellular data not allowed on this SIM.",                                # PS LTE local: EPS services not allowed
   (6, 8): "Carrier has blocked this SIM.",                                         # PS LTE local: Operator determined barring
   (6, 11): "Carrier rejected SIM. The APN may be wrong.",                          # PS LTE local: PLMN not allowed
