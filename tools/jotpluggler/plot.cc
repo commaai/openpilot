@@ -921,10 +921,6 @@ std::optional<PaneMenuAction> draw_pane_context_menu(const WorkspaceTab &tab, in
   ImGui::Separator();
   if (icon_menu_item(icon::ZOOM_OUT, "Zoom Out", nullptr, false, is_plot)) {
     action.kind = PaneMenuActionKind::ResetView;
-  } else if (icon_menu_item(icon::ARROW_LEFT_RIGHT, "Zoom Out Horizontally", nullptr, false, is_plot)) {
-    action.kind = PaneMenuActionKind::ResetHorizontal;
-  } else if (icon_menu_item(icon::ARROW_DOWN_UP, "Zoom Out Vertically", nullptr, false, is_plot)) {
-    action.kind = PaneMenuActionKind::ResetVertical;
   }
   ImGui::Separator();
   if (icon_menu_item(icon::TRASH, "Remove ALL curves", nullptr, false, is_plot)) {
