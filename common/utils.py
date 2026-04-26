@@ -2,10 +2,16 @@ import io
 import os
 import tempfile
 import contextlib
-import subprocess
 import time
 import functools
-from subprocess import Popen, PIPE, TimeoutExpired
+_subprocess = __import__('subprocess')
+run = _subprocess.run
+check_output = _subprocess.check_output
+CalledProcessError = _subprocess.CalledProcessError
+DEVNULL = _subprocess.DEVNULL
+Popen = _subprocess.Popen
+PIPE = _subprocess.PIPE
+TimeoutExpired = _subprocess.TimeoutExpired
 import zstandard as zstd
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
@@ -37,18 +43,18 @@ def sudo_write(val: str, path: str) -> None:
     with open(path, 'w') as f:
       f.write(str(val))
   except PermissionError:
-    os.system(f"sudo chmod a+w {path}")
+    run(["sudo", "chmod", "a+w", path], check=False)
     try:
       with open(path, 'w') as f:
         f.write(str(val))
     except PermissionError:
       # fallback for debugfs files
-      os.system(f"sudo su -c 'echo {val} > {path}'")
+      run(["sudo", "tee", path], input=(str(val) + "\n").encode(), check=False, stdout=DEVNULL)
 
 
 def sudo_read(path: str) -> str:
   try:
-    return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8').strip()
+    return check_output(["sudo", "cat", path], encoding='utf8').strip()
   except Exception:
     return ""
 
@@ -143,13 +149,13 @@ def strip_deprecated_keys(d):
 
 
 def run_cmd(cmd: list[str], cwd=None, env=None) -> str:
-  return subprocess.check_output(cmd, encoding='utf8', cwd=cwd, env=env).strip()
+  return check_output(cmd, encoding='utf8', cwd=cwd, env=env).strip()
 
 
 def run_cmd_default(cmd: list[str], default: str = "", cwd=None, env=None) -> str:
   try:
     return run_cmd(cmd, cwd=cwd, env=env)
-  except subprocess.CalledProcessError:
+  except CalledProcessError:
     return default
 
 
