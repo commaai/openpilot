@@ -25,14 +25,15 @@ STATE_PATH = "/dev/shm/modem"
 AT_LOCK = "/dev/shm/modem_lpa.lock"  # shared with LPA
 AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
-# 3GPP TS 27.007 AcT codes -> network type
-NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm",
+# 3GPP TS 27.007 +COPS <AcT> -> network type
+NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm", 8: "gsm",
                 2: "utran", 4: "utran", 5: "utran", 6: "utran",
                 7: "lte", 9: "lte", 10: "lte",
                 11: "nr", 12: "nr", 13: "nr"}
 
-# 3GPP CEER reason substring -> user-facing message
-CEER_MESSAGES = {
+# AT+CEER reason -> user-facing message. EG916 returns named strings (e.g. "PLMN_NOT_ALLOWED");
+# EG25 family returns integers per Quectel "LTE Standard Error Code List". Map both forms.
+CEER_TEXT = {
   "PLMN_NOT_ALLOWED": "Carrier rejected SIM. The APN may be wrong.",
   "EPS_SERVICES_NOT_ALLOWED": "Cellular data not allowed on this SIM.",
   "GPRS_SERVICES_NOT_ALLOWED": "Cellular data not allowed on this SIM.",
@@ -41,6 +42,22 @@ CEER_MESSAGES = {
   "ILLEGAL_ME": "Device blocked by carrier.",
   "IMEI_NOT_ACCEPTED": "Device blocked by carrier.",
   "ROAMING_NOT_ALLOWED": "Roaming not allowed on this SIM.",
+  "MISSING_OR_UNKNOWN_APN": "APN is missing or wrong.",
+  "UNKNOWN_OR_MISSING_APN": "APN is missing or wrong.",
+}
+# Numeric (locID, cause) -> user-facing message; EG25 and similar
+CEER_NUMERIC = {
+  (2, 2): "SIM not recognized by carrier. The eSIM profile may not be active.",  # CS reject: IMSI unknown in HLR
+  (2, 5): "Device blocked by carrier.",                                            # CS reject: IMEI not accepted
+  (2, 6): "Device blocked by carrier.",                                            # CS reject: Illegal ME
+  (2, 11): "Carrier rejected SIM. The APN may be wrong.",                          # CS reject: PLMN not allowed
+  (2, 13): "Roaming not allowed on this SIM.",                                     # CS reject: Roaming not allowed
+  (4, 27): "APN is missing or wrong.",                                             # PS network: Missing or unknown APN
+  (5, 27): "APN is missing or wrong.",                                             # PS LTE: Missing or unknown APN
+  (6, 7): "Cellular data not allowed on this SIM.",                                # PS LTE local: EPS services not allowed
+  (6, 8): "Carrier has blocked this SIM.",                                         # PS LTE local: Operator determined barring
+  (6, 11): "Carrier rejected SIM. The APN may be wrong.",                          # PS LTE local: PLMN not allowed
+  (6, 13): "Roaming not allowed on this SIM.",                                     # PS LTE local: Roaming not allowed
 }
 PPPD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
@@ -160,7 +177,15 @@ class Modem:
       return {}
     parts = [p.strip().strip('"') for p in ceer.split(",")]
     code = parts[-1] if parts else ceer
-    msg = next((m for k, m in CEER_MESSAGES.items() if k in code), f"Carrier rejected connection ({code}).")
+    msg = next((m for k, m in CEER_TEXT.items() if k in code), None)
+    if msg is None:
+      try:
+        loc, cause = int(parts[0]), int(parts[1])
+        msg = CEER_NUMERIC.get((loc, cause))
+      except (ValueError, IndexError):
+        msg = None
+    if msg is None:
+      msg = f"Carrier rejected connection ({code})."
     return {"type": "carrier_reject", "description": msg}
 
   # -- teardown helpers --
