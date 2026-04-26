@@ -148,8 +148,8 @@ void draw_status_bar(const AppSession &session, const UiMetrics &ui, UiState *st
   ImGui::SetNextWindowPos(ImVec2(ui.content_x, ui.status_bar_y));
   ImGui::SetNextWindowSize(ImVec2(ui.content_w, STATUS_BAR_HEIGHT));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(247, 248, 250));
-  ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(188, 193, 199));
+  ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
+  ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_Border));
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoResize |
@@ -174,7 +174,7 @@ void draw_status_bar(const AppSession &session, const UiMetrics &ui, UiState *st
     const char *status_text = state->status_text.empty() ? "Ready" : state->status_text.c_str();
     const float status_x = controls_end_x + 16.0f;
     ImGui::SetCursorPos(ImVec2(status_x, row_y + 2.0f));
-    ImGui::PushStyleColor(ImGuiCol_Text, color_rgb(102, 110, 118));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     ImGui::TextUnformatted(status_text);
     ImGui::PopStyleColor();
 

@@ -2,6 +2,7 @@
 
 #include "tools/jotpluggler/common.h"
 #include "tools/jotpluggler/map.h"
+#include "tools/jotpluggler/style.h"
 
 #include <filesystem>
 #include <functional>

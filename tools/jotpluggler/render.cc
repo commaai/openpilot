@@ -29,10 +29,10 @@ void draw_fps_overlay(const UiState &state, float top_offset) {
                    viewport->Pos.y + top_offset + margin.y);
   ImDrawList *draw_list = ImGui::GetForegroundDrawList(viewport);
   const ImVec2 max(pos.x + size.x, pos.y + size.y);
-  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(color_rgb(248, 249, 251, 0.92f)), 4.0f);
-  draw_list->AddRect(pos, max, ImGui::GetColorU32(color_rgb(182, 188, 196, 0.95f)), 4.0f);
+  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(app_color(AppColor::FpsBg)), 4.0f);
+  draw_list->AddRect(pos, max, ImGui::GetColorU32(app_color(AppColor::FpsBorder)), 4.0f);
   draw_list->AddText(font, font_size, ImVec2(pos.x + padding.x, pos.y + padding.y),
-                     ImGui::GetColorU32(color_rgb(57, 62, 69)), label.c_str(), nullptr);
+                     ImGui::GetColorU32(app_color(AppColor::FpsText)), label.c_str(), nullptr);
 }
 
 void render_layout(AppSession *session, UiState *state, bool show_camera_feed) {
@@ -162,7 +162,8 @@ void render_frame(GLFWwindow *window, AppSession *session, UiState *state, const
   }
 
   glViewport(0, 0, framebuffer_width, framebuffer_height);
-  glClearColor(227.0f / 255.0f, 229.0f / 255.0f, 233.0f / 255.0f, 1.0f);
+  const ImVec4 clear = app_color(AppColor::Clear);
+  glClearColor(clear.x, clear.y, clear.z, clear.w);
   glClear(GL_COLOR_BUFFER_BIT);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   if (capture_path != nullptr) {

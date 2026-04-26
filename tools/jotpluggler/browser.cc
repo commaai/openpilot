@@ -409,7 +409,7 @@ void draw_browser_node(AppSession *session,
                               nullptr);
     if (!value_text.empty()) {
       app_push_mono_font();
-      ImGui::PushStyleColor(ImGuiCol_Text, selected ? color_rgb(70, 77, 86) : color_rgb(116, 124, 133));
+      ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(selected ? ImGuiCol_Text : ImGuiCol_TextDisabled));
       ImGui::RenderTextClipped(ImVec2(value_left, rect.Min.y + style.FramePadding.y),
                                ImVec2(value_right, rect.Max.y),
                                value_text.c_str(),

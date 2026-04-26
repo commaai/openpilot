@@ -369,7 +369,7 @@ void draw_custom_series_preview(const AppSession &session, CustomSeriesEditorSta
     }
   } else {
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 72.0f);
-    ImGui::PushStyleColor(ImGuiCol_Text, color_rgb(116, 124, 133));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     ImGui::TextWrapped("Choose an input timeseries or click Preview to evaluate the custom result.");
     ImGui::PopStyleColor();
   }

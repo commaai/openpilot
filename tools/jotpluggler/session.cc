@@ -402,7 +402,7 @@ bool draw_route_chip_text_button(const char *id,
     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
     draw_list->AddRectFilled(ImVec2(pos.x - 5.0f, pos.y - 1.0f),
                              ImVec2(pos.x + size.x + 5.0f, pos.y + size.y + 2.0f),
-                             ImGui::GetColorU32(color_rgb(225, 231, 239, 0.95f)), 0.0f);
+                             ImGui::GetColorU32(ImGuiCol_HeaderHovered), 0.0f);
   }
   draw_list->AddText(pos, color, text.data(), text.data() + text.size());
   if (tooltip != nullptr && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
@@ -532,9 +532,9 @@ void draw_route_id_chip(AppSession *session, UiState *state) {
   const ImVec2 chip_min(chip_x, chip_y);
   const ImVec2 chip_max(chip_x + chip_w, chip_y + chip_h);
   const float text_y = std::floor(chip_y + std::max(0.0f, (chip_h - ImGui::GetTextLineHeight()) * 0.5f));
-  const ImU32 chip_bg = ImGui::GetColorU32(color_rgb(247, 249, 252));
-  const ImU32 chip_border = ImGui::GetColorU32(color_rgb(184, 191, 200));
-  const ImU32 sep = ImGui::GetColorU32(color_rgb(162, 170, 178));
+  const ImU32 chip_bg = ImGui::GetColorU32(ImGuiCol_FrameBg);
+  const ImU32 chip_border = ImGui::GetColorU32(ImGuiCol_Border);
+  const ImU32 sep = ImGui::GetColorU32(ImGuiCol_TextDisabled);
   draw_list->AddRectFilled(chip_min, chip_max, chip_bg, 0.0f);
   draw_list->AddRect(chip_min, chip_max, chip_border, 0.0f, 0, 1.0f);
 
@@ -617,7 +617,7 @@ void draw_route_id_chip(AppSession *session, UiState *state) {
     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
   }
   draw_list->AddCircleFilled(info_center, info_size * 0.5f,
-                             ImGui::GetColorU32(info_hovered ? color_rgb(220, 229, 240) : color_rgb(239, 243, 248)));
+                             ImGui::GetColorU32(info_hovered ? ImGuiCol_HeaderHovered : ImGuiCol_Header));
   draw_list->AddCircle(info_center, info_size * 0.5f, chip_border, 20, 1.0f);
   const char *info_text = icon::INFO_CIRCLE;
   const ImVec2 info_text_size = ImGui::CalcTextSize(info_text);
@@ -745,6 +745,10 @@ float draw_main_menu_bar(AppSession *session, UiState *state) {
       }
       if (ImGui::MenuItem("Show FPS", nullptr, state->show_fps_overlay)) {
         state->show_fps_overlay = !state->show_fps_overlay;
+      }
+      if (ImGui::MenuItem("Dark Mode", nullptr, state->dark_mode)) {
+        state->dark_mode = !state->dark_mode;
+        apply_app_style(state->dark_mode ? AppTheme::Dark : AppTheme::Light);
       }
       if (ImGui::MenuItem("Preferences...")) {
         state->open_preferences = true;

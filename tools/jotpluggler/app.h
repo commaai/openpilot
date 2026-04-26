@@ -650,6 +650,7 @@ struct UiState {
   bool playback_playing = false;
   bool show_deprecated_fields = false;
   bool show_fps_overlay = false;
+  bool dark_mode = false;
   bool fps_overlay_initialized = false;
   bool suppress_range_side_effects = false;
   bool browser_nodes_dirty = false;

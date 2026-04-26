@@ -199,7 +199,7 @@ void draw_log_expansion_row(const LogEntry &entry) {
   ImGui::TableSetColumnIndex(2);
   ImGui::TextUnformatted(entry.func.empty() ? "" : entry.func.c_str());
   ImGui::TableSetColumnIndex(3);
-  ImGui::PushStyleColor(ImGuiCol_Text, color_rgb(96, 104, 113));
+  ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
   ImGui::TextWrapped("%s", entry.message.c_str());
   if (!entry.func.empty()) {
     ImGui::TextWrapped("func: %s", entry.func.c_str());
@@ -222,7 +222,7 @@ void draw_log_row(const LogEntry &entry,
   }
 
   const std::string time_text = std::string(active ? "\xE2\x96\xB6 " : "  ") + format_log_time(entry, state->logs.time_mode);
-  const auto clickable_text = [&](const char *id, const std::string &text, ImVec4 color = color_rgb(74, 80, 88)) {
+  const auto clickable_text = [&](const char *id, const std::string &text, ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Text)) {
     ImGui::PushID(id);
     ImGui::PushStyleColor(ImGuiCol_Text, color);
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0, 0, 0, 0));
@@ -363,7 +363,7 @@ void draw_logs_tab(AppSession *session, UiState *state) {
 
   if (route_data.logs.empty()) {
     ImGui::Spacing();
-    ImGui::PushStyleColor(ImGuiCol_Text, color_rgb(116, 124, 133));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     ImGui::TextWrapped("%s", loading_logs ? "Loading logs..." : "No text logs available for this route.");
     ImGui::PopStyleColor();
     return;
