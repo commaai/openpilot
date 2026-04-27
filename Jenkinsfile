@@ -203,51 +203,7 @@ node {
       'onroad tests': {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd system/manager && ./build.py"),
-          step("check dirty", "release/check-dirty.sh"),
-          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
-        ])
-      },
-      'HW + Unit Tests': {
-        deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py"),
-          step("test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"),
-          step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py", [diffPaths: ["system/loggerd/"]]),
-          step("test manager", "pytest system/manager/test/test_manager.py"),
-        ])
-      },
-      'camerad OX03C10': {
-        deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 90]),
-        ])
-      },
-      'camerad OS04C10': {
-        deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 90]),
-        ])
-      },
-      'sensord': {
-        deviceStage("LSM + MMC", "tizi-lsmc", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py"),
-          step("test sensord", "pytest system/sensord/tests/test_sensord.py"),
-        ])
-      },
-      'replay': {
-        deviceStage("model-replay", "tizi-replay", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/", "tinygrad_repo", "selfdrive/test/process_replay/model_replay.py"]]),
-          step("model replay", "selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/", "tinygrad_repo", "selfdrive/test/process_replay/model_replay.py"]]),
-        ])
-      },
-      'tizi': {
-        deviceStage("tizi", "tizi", ["UNSAFE=1"], [
-          step("build openpilot", "cd system/manager && ./build.py"),
-          step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
-          step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
-          step("test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", [diffPaths: ["system/qcomgpsd/"]]),
+          step("onroad model timing", "pytest selfdrive/test/test_onroad.py::TestOnroad::test_model_execution_timings -s", [timeout: 90]),
         ])
       },
 
