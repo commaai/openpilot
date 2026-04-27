@@ -29,9 +29,9 @@ jobs:
     # Build
     - name: Build docs
       run: |
-        # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs
-        mkdocs build
+        git lfs pull
+        pip install zensical
+        python scripts/docs.py build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v6

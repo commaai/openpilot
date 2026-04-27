@@ -193,7 +193,7 @@ class Controls:
     cs.upAccelCmd = float(self.LoC.pid.p)
     cs.uiAccelCmd = float(self.LoC.pid.i)
     cs.ufAccelCmd = float(self.LoC.pid.f)
-    cs.forceDecel = bool((self.sm['driverMonitoringState'].awarenessStatus < 0.) or
+    cs.forceDecel = bool((self.sm['driverMonitoringState'].alertLevel == log.DriverMonitoringState.AlertLevel.three) or
                          (self.sm['selfdriveState'].state == State.softDisabling))
 
     lat_tuning = self.CP.lateralTuning.which()

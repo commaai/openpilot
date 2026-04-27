@@ -73,7 +73,7 @@ std::vector<BrowserNode> build_browser_tree(const std::vector<std::string> &path
 }
 
 bool is_deprecated_browser_path(const std::string &path) {
-  return path.find("DEPRECATED") != std::string::npos;
+  return path.find("DEPRECATED") != std::string::npos || path.find("/deprecated/") != std::string::npos;
 }
 
 std::vector<std::string> visible_browser_paths(const RouteData &route_data, bool show_deprecated_fields) {

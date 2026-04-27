@@ -16,7 +16,7 @@ def generate_type(type_walker, schema_walker) -> str | list[Any] | dict[str, Any
 
 
 def generate_struct(schema: capnp.lib.capnp._StructSchema) -> dict[str, Any]:
-  return {field: generate_field(schema.fields[field]) for field in schema.fields if not field.endswith("DEPRECATED")}
+  return {field: generate_field(schema.fields[field]) for field in schema.fields if not field.endswith("DEPRECATED") and field != "deprecated"}
 
 
 def generate_field(field: capnp.lib.capnp._StructSchemaField) -> str | list[Any] | dict[str, Any]:
