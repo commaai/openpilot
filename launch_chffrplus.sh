@@ -76,6 +76,28 @@ function launch {
     agnos_init
   fi
 
+  # Build raylib PLATFORM_COMMA Python bindings on first boot (ASIUS only).
+  # All source is baked in — no internet needed.
+  if [ -f /ASIUS ] && [ ! -d "$DIR/third_party/raylib/wheel" ]; then
+    echo "Building raylib PLATFORM_COMMA bindings..."
+    RAYLIB_DIR="$DIR/third_party/raylib"
+    VENV_PY=/usr/local/venv/bin/python3
+    VENV_PIP=/usr/local/venv/bin/pip3
+    cd "$RAYLIB_DIR/raylib_repo/src"
+    make clean 2>/dev/null || true
+    make -j$(nproc) PLATFORM=PLATFORM_COMMA RAYLIB_RELEASE_PATH="$RAYLIB_DIR/larch64"
+    cp raylib.h raymath.h rlgl.h "$RAYLIB_DIR/include/"
+    cd "$RAYLIB_DIR/raylib_python_repo"
+    RAYLIB_PLATFORM=PLATFORM_COMMA \
+      RAYLIB_INCLUDE_PATH="$RAYLIB_DIR/include" \
+      RAYLIB_LIB_PATH="$RAYLIB_DIR/larch64" \
+      $VENV_PY setup.py bdist_wheel
+    mkdir -p "$RAYLIB_DIR/wheel"
+    cp dist/*.whl "$RAYLIB_DIR/wheel/"
+    sudo $VENV_PIP install --no-deps --force-reinstall "$RAYLIB_DIR/wheel/"*.whl
+    cd "$DIR"
+  fi
+
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 

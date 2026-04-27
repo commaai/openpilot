@@ -21,7 +21,7 @@ cd $DIR
 RAYLIB_PLATFORM="PLATFORM_DESKTOP"
 
 ARCHNAME=$(uname -m)
-if [ -f /TICI ]; then
+if [ -f /TICI ] || [ -f /ASIUS ]; then
   ARCHNAME="larch64"
   RAYLIB_PLATFORM="PLATFORM_COMMA"
 elif [[ "$OSTYPE" == "linux"* ]]; then
@@ -69,7 +69,7 @@ set -x
 RAYGUI_COMMIT="76b36b597edb70ffaf96f046076adc20d67e7827"
 curl -fsSLo $INSTALL_H_DIR/raygui.h https://raw.githubusercontent.com/raysan5/raygui/$RAYGUI_COMMIT/src/raygui.h
 
-if [ -f /TICI ]; then
+if [ -f /TICI ] || [ -f /ASIUS ]; then
 
   # Building the python bindings
   cd $DIR
