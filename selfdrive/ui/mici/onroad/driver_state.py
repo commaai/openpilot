@@ -118,7 +118,7 @@ class DriverStateRenderer(Widget):
 
       if not self._lines:
         cone_color = [round(orange * (1 - green_amount) + green * green_amount)
-                      for orange, green in zip(CONE_COLOR_ORANGE, CONE_COLOR_GREEN)]
+                      for orange, green in zip(CONE_COLOR_ORANGE, CONE_COLOR_GREEN, strict=True)]
 
         rl.draw_texture_pro(
           self._dm_cone,
