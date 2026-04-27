@@ -3,6 +3,7 @@ import pyray as rl
 import select
 import sys
 
+from openpilot.system.hardware import ASIUS
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.text import wrap_text
@@ -35,7 +36,8 @@ def clamp(value, min_value, max_value):
 class Spinner(Widget):
   def __init__(self):
     super().__init__()
-    self._comma_texture = gui_app.texture("asius/spinner_asius.png", TEXTURE_SIZE, TEXTURE_SIZE)
+    spinner_img = "asius/spinner_asius.png" if ASIUS else "images/spinner_comma.png"
+    self._comma_texture = gui_app.texture(spinner_img, TEXTURE_SIZE, TEXTURE_SIZE)
     self._spinner_texture = gui_app.texture("images/spinner_track.png", TEXTURE_SIZE, TEXTURE_SIZE, alpha_premultiply=True)
     self._rotation = 0.0
     self._progress: int | None = None

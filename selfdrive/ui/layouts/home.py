@@ -3,6 +3,7 @@ import pyray as rl
 from collections.abc import Callable
 from enum import IntEnum
 from openpilot.common.params import Params
+from openpilot.system.hardware import ASIUS
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
 from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButton
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
@@ -228,6 +229,6 @@ class HomeLayout(Widget):
     self._prev_alerts_present = alerts_present
 
   def _get_version_text(self) -> str:
-    brand = "dorapilot"
+    brand = "dorapilot" if ASIUS else "openpilot"
     description = self.params.get("UpdaterCurrentDescription")
     return f"{brand} {description}" if description else brand

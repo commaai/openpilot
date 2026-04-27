@@ -26,7 +26,10 @@ elif 'QCOM' in available:
   tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 elif 'CL' in available:
   tg_backend = 'CL'
-  tg_flags = f'DEV={tg_backend} DISABLE_FAST_IDIV=1 EMULATED_DTYPES=long'
+  if os.path.exists("/ASIUS"):
+    tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 BEAM=2 IGNORE_JIT_FIRST_BEAM=1 SUM_DTYPE=float16 DISABLE_FAST_IDIV=1 EMULATED_DTYPES=long RUSTICL_ENABLE=freedreno'
+  else:
+    tg_flags = f'DEV={tg_backend} DISABLE_FAST_IDIV=1 EMULATED_DTYPES=long'
 else:
   tg_backend = 'CPU'
   # THREADS=0 is need to prevent bug: https://github.com/tinygrad/tinygrad/issues/14689

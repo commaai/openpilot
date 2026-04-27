@@ -84,6 +84,7 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
+    "HOME": os.environ.get('HOME', '/root'),
     "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
     "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
     "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,

@@ -31,4 +31,6 @@ if [ -f /ASIUS ]; then
   export EMULATED_DTYPES=long
   export SUM_DTYPE=float16
   export JIT_BATCH_SIZE=0
+  export BEAM=2
+  export IGNORE_JIT_FIRST_BEAM=1
 fi
