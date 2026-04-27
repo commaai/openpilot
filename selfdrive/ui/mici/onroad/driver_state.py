@@ -106,7 +106,6 @@ class DriverStateRenderer(Widget):
                        rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
-
     if self.effective_active:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
@@ -117,8 +116,9 @@ class DriverStateRenderer(Widget):
       )
 
       if not self._lines:
-        r, g, b = zip(*[round(orange * (1 - green_amount) + green * green_amount)
-                        for orange, green in zip(CONE_COLOR_ORANGE, CONE_COLOR_GREEN, strict=True)])
+        r = int(round(CONE_COLOR_GREEN[0] * green_amount + CONE_COLOR_ORANGE[0] * (1 - t)))
+        g = int(round(CONE_COLOR_GREEN[1] * green_amount + CONE_COLOR_ORANGE[1] * (1 - t)))
+        b = int(round(CONE_COLOR_GREEN[2] * green_amount + CONE_COLOR_ORANGE[2] * (1 - t)))
         rl.draw_texture_pro(
           self._dm_cone,
           source_rect,
