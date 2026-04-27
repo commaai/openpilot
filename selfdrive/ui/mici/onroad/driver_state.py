@@ -105,30 +105,29 @@ class DriverStateRenderer(Widget):
                                   self._rect.y + (self._rect.height - self._dm_person.height) / 2), 0.0, 1.0,
                        rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
-    if self.effective_active:
-      self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
-      t = self._color_fade_filter.x
-      r = int(round(CONE_COLOR_GREEN[0] * t + CONE_COLOR_ORANGE[0] * (1 - t)))
-      g = int(round(CONE_COLOR_GREEN[1] * t + CONE_COLOR_ORANGE[1] * (1 - t)))
-      b = int(round(CONE_COLOR_GREEN[2] * t + CONE_COLOR_ORANGE[2] * (1 - t)))
+    green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
 
+    if self.effective_active:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
         self._rect.x + self._rect.width / 2,
         self._rect.y + self._rect.height / 2,
         self._dm_cone.width,
         self._dm_cone.height,
-      )
+        )
 
       if not self._lines:
+        cone_color = [round(orange * (1 - green_amount) + green * green_amount)
+                      for orange, green in zip(CONE_COLOR_ORANGE, CONE_COLOR_GREEN)]
+
         rl.draw_texture_pro(
           self._dm_cone,
           source_rect,
           dest_rect,
           rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
           self._rotation_filter.x - 90,
-          rl.Color(r, g, b, int(255 * self._fade_filter.x)),
-        )
+          rl.Color(*cone_color, int(255 * self._fade_filter.x)),
+          )
 
       else:
         # remove old angles
@@ -167,10 +166,10 @@ class DriverStateRenderer(Widget):
     sm = ui_state.sm
 
     dm_state = sm["driverMonitoringState"]
-    self._is_active = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
+    self._is_active = True  # dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     self._is_rhd = dm_state.isRHD
     self._face_detected = dm_state.visionPolicyState.faceDetected
-    self._awareness_unfull = self._is_active and dm_state.visionPolicyState.awarenessPercent < self.AWARENESS_UNFULL_PERCENT
+    self._awareness_unfull = self.effective_active and dm_state.visionPolicyState.awarenessPercent < self.AWARENESS_UNFULL_PERCENT
     self._face_pitch = dm_state.visionPolicyState.pose.pitch + math.radians(6) # calib or DM pose is not accurate, add a fake upward pitch to bias forward
     self._face_yaw = -dm_state.visionPolicyState.pose.yaw # undo sign flip in face_orientation_from_model to match UI convention
 
