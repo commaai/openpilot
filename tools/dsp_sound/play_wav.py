@@ -1030,7 +1030,8 @@ if __name__ == "__main__":
     sys.exit(1)
 
   args = []
-  eq_path = None
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  eq_path = os.path.join(script_dir, 'mici.txt')
   preamp_db = None  # None = auto-calculate
   i = 1
   while i < len(sys.argv):
