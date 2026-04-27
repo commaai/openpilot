@@ -127,7 +127,7 @@ class DriverStateRenderer(Widget):
           rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
           self._rotation_filter.x - 90,
           rl.Color(*cone_color, int(255 * self._fade_filter.x)),
-          )
+        )
 
       else:
         # remove old angles
