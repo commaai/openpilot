@@ -114,7 +114,7 @@ class DriverStateRenderer(Widget):
         self._rect.y + self._rect.height / 2,
         self._dm_cone.width,
         self._dm_cone.height,
-        )
+      )
 
       if not self._lines:
         cone_color = [round(orange * (1 - green_amount) + green * green_amount)
