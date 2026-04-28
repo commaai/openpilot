@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Register a virtual PipeWire sink and stream audio to play_server.py.
 
+For the foolproof one-command experience, prefer ./comma_speaker.py — this script
+remains for power users who need fine-grained sink/target control.
+
+
 Creates a virtual sink using pw-loopback:
   - 'comma_sink' — apps route their output here
   - 'comma_capture' — virtual source that pw-record captures from
