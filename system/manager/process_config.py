@@ -70,6 +70,7 @@ def and_(*fns):
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
+  DaemonProcess("manage_ble", "system.athena.manage_ble", "BlePid", enabled=not ASIUS),
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging, enabled=not ASIUS),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not ASIUS),
