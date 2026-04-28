@@ -42,6 +42,28 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+
+_OPENPILOT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+def _require_openpilot_venv():
+  """numpy + sounddevice are pinned in openpilot's pyproject.toml. Refuse to run
+  outside the openpilot venv so users get one canonical setup path."""
+  try:
+    import numpy  # noqa: F401
+    return
+  except ImportError:
+    pass
+  msg = (
+    "  ERR numpy is missing — this script must run inside the openpilot venv.\n"
+    f"      cd {_OPENPILOT_ROOT}\n"
+    "      uv sync       # one-time, populates .venv with all openpilot deps\n"
+    "      op venv       # activate, then re-run this script\n"
+  )
+  sys.exit(msg)
+
+
+_require_openpilot_venv()
 import numpy as np
 
 IS_LINUX = sys.platform.startswith('linux')
@@ -447,16 +469,9 @@ def _auto_install_linux(missing):
   return True
 
 
-def _auto_install_mac(need_blackhole=False, need_switchaudio=False, need_sounddevice=False):
-  """Install missing macOS audio dependencies via brew + pip. Returns True on success."""
+def _auto_install_mac(need_blackhole=False, need_switchaudio=False):
+  """Install missing macOS audio system tools via brew. Returns True on success."""
   ok = True
-  if need_sounddevice:
-    _info("installing sounddevice (pip)")
-    # try plain install first; fall back to --user if site-packages isn't writable
-    r = subprocess.run([sys.executable, '-m', 'pip', 'install', 'sounddevice'])
-    if r.returncode != 0:
-      r = subprocess.run([sys.executable, '-m', 'pip', 'install', '--user', 'sounddevice'])
-    ok = ok and r.returncode == 0
   if need_blackhole or need_switchaudio:
     if not shutil.which('brew'):
       _err("Homebrew not installed — install from https://brew.sh, then re-run.")
@@ -627,31 +642,20 @@ class MacBackend(_BaseBackend):
     self.device_idx = None
 
   def check_prereqs(self):
-    need_sd = False
-    try:
-      import sounddevice as sd  # noqa: F401
-    except ImportError:
-      need_sd = True
+    # sounddevice is pinned in openpilot's pyproject — _require_openpilot_venv()
+    # at module load enforces the venv, so import here can't fail
+    import sounddevice as sd  # noqa: F401
     need_switch = shutil.which('SwitchAudioSource') is None
-    # find_blackhole imports sounddevice — only call after sd is available
-    need_bh = need_sd or self._find_blackhole() is None
-    if need_sd or need_switch or need_bh:
-      _auto_install_mac(need_blackhole=need_bh,
-                        need_switchaudio=need_switch,
-                        need_sounddevice=need_sd)
-    # re-check
-    try:
-      import sounddevice as sd  # noqa: F401
-    except ImportError:
-      raise RuntimeError("sounddevice still missing — run: pip install sounddevice")
-    idx = self._find_blackhole()
-    if idx is None:
+    need_bh = self._find_blackhole() is None
+    if need_switch or need_bh:
+      _auto_install_mac(need_blackhole=need_bh, need_switchaudio=need_switch)
+    if self._find_blackhole() is None:
       raise RuntimeError(
         f"'{self.BLACKHOLE_NAME}' not found after install. "
         "Try restarting CoreAudio: sudo killall coreaudiod, then re-run.")
     if shutil.which('SwitchAudioSource') is None:
       _warn("SwitchAudioSource still missing — '--no-default' will be implied")
-    self.device_idx = idx
+    self.device_idx = self._find_blackhole()
 
   def _find_blackhole(self):
     import sounddevice as sd
