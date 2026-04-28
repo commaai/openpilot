@@ -407,6 +407,56 @@ class _BaseBackend:
       return None
 
 
+# ---- auto-install of platform audio dependencies ----
+
+def _auto_install_linux(missing):
+  """Install missing PipeWire/Pulse tools via the system package manager.
+  Returns True iff all required tools are present afterwards."""
+  if shutil.which('apt-get'):
+    pkgs = ['pipewire-pulse', 'pulseaudio-utils', 'pipewire-bin']
+    cmd = ['sudo', 'apt-get', 'install', '-y'] + pkgs
+  elif shutil.which('dnf'):
+    pkgs = ['pipewire-pulseaudio', 'pulseaudio-utils', 'pipewire-utils']
+    cmd = ['sudo', 'dnf', 'install', '-y'] + pkgs
+  elif shutil.which('pacman'):
+    pkgs = ['pipewire-pulse', 'pipewire']
+    cmd = ['sudo', 'pacman', '-S', '--noconfirm'] + pkgs
+  else:
+    _err("no supported package manager (apt/dnf/pacman) found")
+    return False
+  _info(f"missing: {', '.join(missing)} — auto-installing: {' '.join(pkgs)}")
+  _info("(may prompt for sudo password)")
+  try:
+    subprocess.run(cmd, timeout=300)
+  except Exception as e:
+    _warn(f"auto-install failed: {e}")
+    return False
+  return True
+
+
+def _auto_install_mac(need_blackhole=False, need_switchaudio=False, need_sounddevice=False):
+  """Install missing macOS audio dependencies via brew + pip. Returns True on success."""
+  ok = True
+  if need_sounddevice:
+    _info("installing sounddevice (pip)")
+    r = subprocess.run([sys.executable, '-m', 'pip', 'install', '--user', 'sounddevice'])
+    ok = ok and r.returncode == 0
+  brew_pkgs = []
+  if need_blackhole: brew_pkgs.append('blackhole-2ch')
+  if need_switchaudio: brew_pkgs.append('switchaudio-osx')
+  if brew_pkgs:
+    if not shutil.which('brew'):
+      _err("Homebrew not installed — install from https://brew.sh, then re-run.")
+      return False
+    _info(f"installing: brew install {' '.join(brew_pkgs)}")
+    r = subprocess.run(['brew', 'install'] + brew_pkgs)
+    ok = ok and r.returncode == 0
+    if need_blackhole and ok:
+      _info("restarting CoreAudio so BlackHole device shows up")
+      subprocess.run(['sudo', 'killall', 'coreaudiod'])
+  return ok
+
+
 # ---- Linux: pactl null-sink + pw-metadata default + parec subprocess ----
 
 class LinuxBackend(_BaseBackend):
@@ -418,11 +468,15 @@ class LinuxBackend(_BaseBackend):
     self.stop_evt = threading.Event()
 
   def check_prereqs(self):
-    missing = [t for t in ('pactl', 'parec', 'pw-metadata') if shutil.which(t) is None]
+    needed = ('pactl', 'parec', 'pw-metadata')
+    missing = [t for t in needed if shutil.which(t) is None]
     if missing:
-      raise RuntimeError("missing tools: " + ', '.join(missing) +
-                         " — install pipewire-pulse and pipewire-utils "
-                         "(`sudo apt install pipewire-pulse pipewire-utils` on Debian/Ubuntu)")
+      _auto_install_linux(missing)
+      missing = [t for t in needed if shutil.which(t) is None]
+    if missing:
+      raise RuntimeError(
+        "missing tools after install attempt: " + ', '.join(missing) +
+        " — on Debian/Ubuntu try: sudo apt install pipewire-pulse pulseaudio-utils pipewire-bin")
 
   @staticmethod
   def get_default_sink():
@@ -555,18 +609,30 @@ class MacBackend(_BaseBackend):
     self.device_idx = None
 
   def check_prereqs(self):
+    need_sd = False
     try:
       import sounddevice as sd  # noqa: F401
     except ImportError:
-      raise RuntimeError("sounddevice not installed (pip install sounddevice)")
-    if shutil.which('SwitchAudioSource') is None:
-      _warn("SwitchAudioSource not installed — '--no-default' is implied. "
-            "To set 'BlackHole 2ch' as system default automatically: brew install switchaudio-osx")
+      need_sd = True
+    need_switch = shutil.which('SwitchAudioSource') is None
+    # find_blackhole imports sounddevice — only call after sd is available
+    need_bh = need_sd or self._find_blackhole() is None
+    if need_sd or need_switch or need_bh:
+      _auto_install_mac(need_blackhole=need_bh,
+                        need_switchaudio=need_switch,
+                        need_sounddevice=need_sd)
+    # re-check
+    try:
+      import sounddevice as sd  # noqa: F401
+    except ImportError:
+      raise RuntimeError("sounddevice still missing — run: pip install sounddevice")
     idx = self._find_blackhole()
     if idx is None:
       raise RuntimeError(
-        f"'{self.BLACKHOLE_NAME}' not found in audio devices.\n"
-        "       install BlackHole: `brew install blackhole-2ch`, then re-run.")
+        f"'{self.BLACKHOLE_NAME}' not found after install. "
+        "Try restarting CoreAudio: sudo killall coreaudiod, then re-run.")
+    if shutil.which('SwitchAudioSource') is None:
+      _warn("SwitchAudioSource still missing — '--no-default' will be implied")
     self.device_idx = idx
 
   def _find_blackhole(self):
