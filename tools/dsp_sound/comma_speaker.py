@@ -28,6 +28,8 @@ import atexit
 import fcntl
 import json
 import os
+import platform
+import queue
 import re
 import shutil
 import signal
@@ -42,6 +44,9 @@ from pathlib import Path
 
 import numpy as np
 
+IS_LINUX = sys.platform.startswith('linux')
+IS_MAC   = sys.platform == 'darwin'
+
 # add openpilot root to path so CommaApi import works
 _HERE = Path(__file__).resolve().parent
 _BASEDIR = _HERE.parent.parent
@@ -49,8 +54,27 @@ sys.path.insert(0, str(_BASEDIR))
 
 PORT = 7777
 SSH_PROXY = 'ssh.comma.ai'
-SSH_KEY = _BASEDIR / 'system' / 'hardware' / 'tici' / 'id_rsa'
+SSH_KEY_SRC = _BASEDIR / 'system' / 'hardware' / 'tici' / 'id_rsa'
 LOCAL_SERVER = _HERE / 'play_server.py'
+
+
+def _safe_ssh_key():
+  """ssh on macOS (and recent OpenSSH on Linux) refuses keys with permissive
+  modes. The bundled key is committed as 0664. Copy it to a 0600 tempfile and
+  use that path. Cached for the lifetime of the process."""
+  global _SSH_KEY_CACHED
+  try:
+    return _SSH_KEY_CACHED
+  except NameError:
+    pass
+  import tempfile
+  fd, path = tempfile.mkstemp(prefix='comma_speaker_key_', suffix='.pem')
+  with os.fdopen(fd, 'wb') as f:
+    f.write(SSH_KEY_SRC.read_bytes())
+  os.chmod(path, 0o600)
+  atexit.register(lambda: os.path.exists(path) and os.unlink(path))
+  globals()['_SSH_KEY_CACHED'] = path
+  return path
 
 CACHE_DIR = Path.home() / '.cache' / 'comma_speaker'
 CACHE_FILE = CACHE_DIR / 'device.json'
@@ -119,25 +143,32 @@ def tcp_probe(ip, port=PORT, timeout=0.5):
 
 
 def _local_subnets():
-  """Yield candidate /24 subnet prefixes for scanning."""
+  """Cross-platform /24 subnet enumeration: open a UDP socket to a public IP and
+  read back our outgoing source address. No packet is actually sent. Works
+  identically on Linux and macOS."""
   subnets = set()
+  for probe_ip in ('8.8.8.8', '1.1.1.1'):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+      s.connect((probe_ip, 80))
+      ip = s.getsockname()[0]
+      if not ip.startswith('127.'):
+        m = re.match(r'(\d+\.\d+\.\d+)\.\d+', ip)
+        if m:
+          subnets.add(m.group(1))
+    except OSError:
+      pass
+    finally:
+      s.close()
+  # also try resolving our own hostname (catches additional interfaces)
   try:
-    out = subprocess.run(['ip', '-4', '-j', 'route'],
-                         capture_output=True, text=True, timeout=5).stdout
-    for r in json.loads(out):
-      dst = r.get('dst', '')
-      pref = r.get('prefsrc')
-      if not pref or pref.startswith('127.'):
-        continue
-      m = re.match(r'(\d+\.\d+\.\d+)\.\d+/(\d+)', dst)
-      if m and int(m.group(2)) >= 16:
-        subnets.add(m.group(1))
-      # also add a /24 around our prefsrc
-      m2 = re.match(r'(\d+\.\d+\.\d+)\.\d+', pref)
-      if m2:
-        subnets.add(m2.group(1))
-  except Exception as e:
-    _warn(f"could not enumerate local subnets: {e}")
+    for ip in socket.gethostbyname_ex(socket.gethostname())[2]:
+      if not ip.startswith('127.'):
+        m = re.match(r'(\d+\.\d+\.\d+)\.\d+', ip)
+        if m:
+          subnets.add(m.group(1))
+  except (socket.gaierror, OSError):
+    pass
   return list(subnets)
 
 
@@ -223,11 +254,12 @@ def resolve_device(name_or_dongle):
 
 def _proxy_cmd_args(dongle_id, *cmd):
   """Build an ssh ProxyCommand args list to run `cmd` on the device."""
-  proxy = (f"ssh -i {SSH_KEY} -o StrictHostKeyChecking=no "
+  key = _safe_ssh_key()
+  proxy = (f"ssh -i {key} -o StrictHostKeyChecking=no "
            f"-o UserKnownHostsFile=/dev/null -W %h:%p comma@{SSH_PROXY}")
   base = [
     'ssh',
-    '-i', str(SSH_KEY),
+    '-i', key,
     '-o', f"ProxyCommand={proxy}",
     '-o', 'StrictHostKeyChecking=no',
     '-o', 'UserKnownHostsFile=/dev/null',
@@ -247,11 +279,12 @@ def ssh_proxy(dongle_id, *cmd, timeout=30, capture=True):
 
 
 def scp_proxy(dongle_id, local_path, remote_path, timeout=30):
-  proxy = (f"ssh -i {SSH_KEY} -o StrictHostKeyChecking=no "
+  key = _safe_ssh_key()
+  proxy = (f"ssh -i {key} -o StrictHostKeyChecking=no "
            f"-o UserKnownHostsFile=/dev/null -W %h:%p comma@{SSH_PROXY}")
   args = [
     'scp',
-    '-i', str(SSH_KEY),
+    '-i', key,
     '-o', f"ProxyCommand={proxy}",
     '-o', 'StrictHostKeyChecking=no',
     '-o', 'UserKnownHostsFile=/dev/null',
@@ -340,80 +373,306 @@ def wait_for_port(ip, port, timeout=15):
   return False
 
 
-# ---------- local PipeWire ----------
+# ---------- audio backends (cross-platform) ----------
+#
+# Each backend exposes the same interface to the streamer:
+#   check_prereqs()      raise with install instructions if anything is missing
+#   start(make_default)  set up virtual sink + capture, optionally hijack default
+#   stop()               tear down capture + sink, restore default
+#   read(timeout)        return next stereo f32 block (numpy array of shape (N,2)) or None
+#   alive()              True if capture is still healthy
+#   restart()            best-effort restart of capture only
 
-def get_default_sink():
-  try:
-    r = subprocess.run(['pw-metadata', '0', 'default.audio.sink'],
-                       capture_output=True, text=True, timeout=3)
-    m = re.search(r'"name"\s*:\s*"([^"]+)"', r.stdout)
-    return m.group(1) if m else None
-  except Exception:
+CAPTURE_CHANNELS = 2  # always stereo; streamer downmixes
+QUEUE_DEPTH = 32      # ~2.7s of f32 stereo at 48kHz/4096
+
+
+class _BaseBackend:
+  def __init__(self):
+    self.q = queue.Queue(maxsize=QUEUE_DEPTH)
+    self.previous_default = None
+    self.make_default = True
+    self.stats = {'q_drops': 0}
+
+  def _enqueue(self, block_stereo):
+    """Common enqueue logic with drop-oldest on overflow."""
+    try:
+      self.q.put_nowait(block_stereo)
+    except queue.Full:
+      try: self.q.get_nowait()
+      except queue.Empty: pass
+      try: self.q.put_nowait(block_stereo)
+      except queue.Full: pass
+      self.stats['q_drops'] += 1
+
+  def read(self, timeout=1.0):
+    try:
+      return self.q.get(timeout=timeout)
+    except queue.Empty:
+      return None
+
+
+# ---- Linux: pactl null-sink + pw-metadata default + parec subprocess ----
+
+class LinuxBackend(_BaseBackend):
+  def __init__(self):
+    super().__init__()
+    self.module_id = None
+    self.rec_proc = None
+    self.reader_thread = None
+    self.stop_evt = threading.Event()
+
+  def check_prereqs(self):
+    missing = [t for t in ('pactl', 'parec', 'pw-metadata') if shutil.which(t) is None]
+    if missing:
+      raise RuntimeError("missing tools: " + ', '.join(missing) +
+                         " — install pipewire-pulse and pipewire-utils "
+                         "(`sudo apt install pipewire-pulse pipewire-utils` on Debian/Ubuntu)")
+
+  @staticmethod
+  def get_default_sink():
+    try:
+      r = subprocess.run(['pw-metadata', '0', 'default.audio.sink'],
+                         capture_output=True, text=True, timeout=3)
+      m = re.search(r'"name"\s*:\s*"([^"]+)"', r.stdout)
+      return m.group(1) if m else None
+    except Exception:
+      return None
+
+  @staticmethod
+  def set_default_sink(name):
+    subprocess.run(['pw-metadata', '0', 'default.audio.sink', f'{{"name":"{name}"}}'],
+                   check=False, capture_output=True)
+
+  @staticmethod
+  def clear_default_sink():
+    subprocess.run(['pw-metadata', '-d', '0', 'default.audio.sink'],
+                   check=False, capture_output=True)
+
+  def _load_null_sink(self):
+    r = subprocess.run([
+      'pactl', 'load-module', 'module-null-sink',
+      f'sink_name={SINK_NAME}',
+      f'sink_properties=device.description={SINK_DESC}',
+    ], capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+      raise RuntimeError(f"pactl load-module failed: {r.stderr.strip()}")
+    module_id = r.stdout.strip()
+    for _ in range(30):
+      time.sleep(0.1)
+      sinks = subprocess.run(['pactl', 'list', 'short', 'sinks'],
+                             capture_output=True, text=True, timeout=5).stdout
+      if SINK_NAME in sinks:
+        return module_id
+    raise RuntimeError(f"null sink '{SINK_NAME}' never appeared")
+
+  def _start_parec(self):
+    cmd = ['parec',
+           f'--device={SINK_NAME}.monitor',
+           '--format=float32le',
+           f'--rate={SAMPLE_RATE}',
+           f'--channels={CAPTURE_CHANNELS}',
+           '--raw']
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+
+  def _reader_loop(self):
+    block_bytes = SAMPLE_BUFFER * 4 * CAPTURE_CHANNELS
+    buf = b''
+    while not self.stop_evt.is_set():
+      proc = self.rec_proc
+      if proc is None or proc.poll() is not None:
+        time.sleep(0.05)
+        continue
+      try:
+        data = proc.stdout.read(block_bytes)
+      except Exception:
+        time.sleep(0.05)
+        continue
+      if not data:
+        time.sleep(0.05)
+        continue
+      buf += data
+      while len(buf) >= block_bytes:
+        chunk = buf[:block_bytes]
+        buf = buf[block_bytes:]
+        stereo = np.frombuffer(chunk, dtype=np.float32).reshape(-1, CAPTURE_CHANNELS).copy()
+        self._enqueue(stereo)
+
+  def start(self, make_default=True):
+    self.make_default = make_default
+    self.module_id = self._load_null_sink()
+    if make_default:
+      self.previous_default = self.get_default_sink()
+      self.set_default_sink(SINK_NAME)
+      _ok(f"set default sink → '{SINK_DESC}' (was: {self.previous_default or 'none'})")
+    else:
+      _info(f"sink '{SINK_DESC}' available — route apps via pavucontrol/Helvum")
+    self.rec_proc = self._start_parec()
+    self.reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
+    self.reader_thread.start()
+
+  def alive(self):
+    return self.rec_proc is not None and self.rec_proc.poll() is None
+
+  def restart(self):
+    _warn("parec died, restarting capture")
+    if self.rec_proc:
+      try: self.rec_proc.kill()
+      except Exception: pass
+    try:
+      self.rec_proc = self._start_parec()
+    except Exception as e:
+      _err(f"could not restart capture: {e}")
+
+  def stop(self):
+    self.stop_evt.set()
+    if self.rec_proc and self.rec_proc.poll() is None:
+      try:
+        self.rec_proc.terminate()
+        try: self.rec_proc.wait(timeout=2)
+        except subprocess.TimeoutExpired: self.rec_proc.kill()
+      except Exception as e:
+        _warn(f"could not stop parec: {e}")
+    if self.make_default:
+      if self.previous_default:
+        self.set_default_sink(self.previous_default)
+      else:
+        self.clear_default_sink()
+    if self.module_id:
+      subprocess.run(['pactl', 'unload-module', str(self.module_id)],
+                     check=False, capture_output=True, timeout=5)
+
+
+# ---- macOS: BlackHole 2ch as default output + sounddevice.InputStream ----
+
+class MacBackend(_BaseBackend):
+  """Captures from a BlackHole 2ch virtual audio device on macOS.
+
+  BlackHole (https://existential.audio/blackhole) is the standard free virtual
+  audio driver on macOS. Install with:  brew install blackhole-2ch
+  Optional for default-sink switching: brew install switchaudio-osx
+  """
+  BLACKHOLE_NAME = 'BlackHole 2ch'
+
+  def __init__(self):
+    super().__init__()
+    self.stream = None
+    self.device_idx = None
+
+  def check_prereqs(self):
+    try:
+      import sounddevice as sd  # noqa: F401
+    except ImportError:
+      raise RuntimeError("sounddevice not installed (pip install sounddevice)")
+    if shutil.which('SwitchAudioSource') is None:
+      _warn("SwitchAudioSource not installed — '--no-default' is implied. "
+            "To set 'BlackHole 2ch' as system default automatically: brew install switchaudio-osx")
+    idx = self._find_blackhole()
+    if idx is None:
+      raise RuntimeError(
+        f"'{self.BLACKHOLE_NAME}' not found in audio devices.\n"
+        "       install BlackHole: `brew install blackhole-2ch`, then re-run.")
+    self.device_idx = idx
+
+  def _find_blackhole(self):
+    import sounddevice as sd
+    for i, d in enumerate(sd.query_devices()):
+      if self.BLACKHOLE_NAME.lower() in d['name'].lower() and d['max_input_channels'] >= 2:
+        return i
     return None
 
+  @staticmethod
+  def get_default_output():
+    if shutil.which('SwitchAudioSource') is None:
+      return None
+    try:
+      r = subprocess.run(['SwitchAudioSource', '-c', '-t', 'output'],
+                         capture_output=True, text=True, timeout=3)
+      return r.stdout.strip() if r.returncode == 0 else None
+    except Exception:
+      return None
 
-def set_default_sink(name):
-  subprocess.run(['pw-metadata', '0', 'default.audio.sink', f'{{"name":"{name}"}}'],
-                 check=False, capture_output=True)
+  @staticmethod
+  def set_default_output(name):
+    if shutil.which('SwitchAudioSource') is None:
+      return False
+    try:
+      r = subprocess.run(['SwitchAudioSource', '-s', name, '-t', 'output'],
+                         capture_output=True, text=True, timeout=5)
+      return r.returncode == 0
+    except Exception:
+      return False
+
+  def start(self, make_default=True):
+    import sounddevice as sd
+    self.make_default = make_default and shutil.which('SwitchAudioSource') is not None
+    if self.device_idx is None:
+      self.device_idx = self._find_blackhole()
+    if self.device_idx is None:
+      raise RuntimeError(f"'{self.BLACKHOLE_NAME}' device disappeared")
+
+    if self.make_default:
+      self.previous_default = self.get_default_output()
+      if self.set_default_output(self.BLACKHOLE_NAME):
+        _ok(f"set default output → '{self.BLACKHOLE_NAME}' (was: {self.previous_default or 'none'})")
+      else:
+        _warn(f"could not set default output; route apps to '{self.BLACKHOLE_NAME}' manually")
+        self.make_default = False
+    else:
+      _info(f"capture device: '{self.BLACKHOLE_NAME}' — route apps to it in System Settings → Sound → Output")
+
+    def cb(indata, frames, time_info, status):
+      if status:
+        # status flags include input overflow; mostly cosmetic
+        pass
+      # indata is a (frames, channels) numpy array of float32
+      self._enqueue(indata.copy())
+
+    self.stream = sd.InputStream(device=self.device_idx,
+                                 channels=CAPTURE_CHANNELS,
+                                 samplerate=SAMPLE_RATE,
+                                 dtype='float32',
+                                 blocksize=SAMPLE_BUFFER,
+                                 callback=cb)
+    self.stream.start()
+
+  def alive(self):
+    return self.stream is not None and self.stream.active
+
+  def restart(self):
+    _warn("InputStream went inactive, restarting")
+    try:
+      if self.stream:
+        self.stream.stop()
+        self.stream.close()
+    except Exception: pass
+    self.start(self.make_default)
+
+  def stop(self):
+    if self.stream:
+      try: self.stream.stop()
+      except Exception: pass
+      try: self.stream.close()
+      except Exception: pass
+      self.stream = None
+    if self.make_default and self.previous_default:
+      self.set_default_output(self.previous_default)
 
 
-def clear_default_sink():
-  subprocess.run(['pw-metadata', '-d', '0', 'default.audio.sink'],
-                 check=False, capture_output=True)
-
-
-def load_null_sink():
-  """pactl load-module module-null-sink — creates SINK_NAME + SINK_NAME.monitor source.
-  Returns the module id (used for unload on cleanup)."""
-  r = subprocess.run([
-    'pactl', 'load-module', 'module-null-sink',
-    f'sink_name={SINK_NAME}',
-    f'sink_properties=device.description={SINK_DESC}',
-  ], capture_output=True, text=True, timeout=10)
-  if r.returncode != 0:
-    raise RuntimeError(f"pactl load-module failed: {r.stderr.strip()}")
-  module_id = r.stdout.strip()
-  # wait for sink to appear in pactl
-  for _ in range(30):
-    time.sleep(0.1)
-    sinks = subprocess.run(['pactl', 'list', 'short', 'sinks'],
-                           capture_output=True, text=True, timeout=5).stdout
-    if SINK_NAME in sinks:
-      return module_id
-  raise RuntimeError(f"null sink '{SINK_NAME}' never appeared")
-
-
-def unload_null_sink(module_id):
-  if not module_id:
-    return
-  subprocess.run(['pactl', 'unload-module', str(module_id)],
-                 check=False, capture_output=True, timeout=5)
-
-
-def start_capture():
-  """parec captures from <SINK_NAME>.monitor. Stereo, raw float32 (no WAV header).
-  Streamer downmixes to mono."""
-  cmd = ['parec',
-         f'--device={SINK_NAME}.monitor',
-         '--format=float32le',
-         f'--rate={SAMPLE_RATE}',
-         '--channels=2',
-         '--raw']
-  return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+def make_backend():
+  if IS_LINUX: return LinuxBackend()
+  if IS_MAC:   return MacBackend()
+  raise RuntimeError(f"unsupported platform: {sys.platform} (only linux + darwin so far)")
 
 
 # ---------- streamer ----------
 
-CAPTURE_CHANNELS = 2                                      # pw-record reads stereo
-STEREO_BLOCK_BYTES = SAMPLE_BUFFER * 4 * CAPTURE_CHANNELS  # one block of stereo f32
-
-
-def streamer(rec_proc_holder, ip, port, stop_evt, stats):
-  """Read stereo f32 from pw-record, downmix to mono, send mono over TCP.
-  Reconnects on failure."""
+def streamer(backend, ip, port, stop_evt, stats):
+  """Pull stereo f32 numpy blocks from the backend queue, downmix to mono, send mono over TCP."""
   backoff = 0.2
   while not stop_evt.is_set():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(5.0)
     try:
       sock.connect((ip, port))
     except OSError as e:
@@ -423,20 +682,16 @@ def streamer(rec_proc_holder, ip, port, stop_evt, stats):
       stop_evt.wait(backoff)
       backoff = min(5.0, backoff * 2)
       continue
+    sock.settimeout(None)
     backoff = 0.2
     stats['connected'] = True
-    rec_proc = rec_proc_holder['proc']
     try:
       while not stop_evt.is_set():
-        data = rec_proc.stdout.read(STEREO_BLOCK_BYTES)
-        if not data:
-          # capture ended (loopback died, etc.) — let caller restart it
-          break
-        # downmix stereo → mono: average L+R
-        stereo = np.frombuffer(data, dtype=np.float32)
-        if len(stereo) % CAPTURE_CHANNELS:
-          stereo = stereo[:len(stereo) - (len(stereo) % CAPTURE_CHANNELS)]
-        mono = stereo.reshape(-1, CAPTURE_CHANNELS).mean(axis=1).astype(np.float32)
+        block = backend.read(timeout=1.0)
+        if block is None:
+          continue  # backend has nothing yet — keep socket alive, wait more
+        # block shape: (frames, CAPTURE_CHANNELS)
+        mono = block.mean(axis=1).astype(np.float32)
         mono_bytes = mono.tobytes()
         try:
           sock.sendall(mono_bytes)
@@ -447,79 +702,27 @@ def streamer(rec_proc_holder, ip, port, stop_evt, stats):
         if len(mono) > 0:
           stats['rms'] = float(np.sqrt(np.mean(mono * mono)))
           stats['peak'] = float(np.max(np.abs(mono)))
+        stats['q_drops'] = backend.stats.get('q_drops', 0)
     finally:
       stats['connected'] = False
       try: sock.close()
       except Exception: pass
 
 
-# ---------- pw-loopback / pw-record watchdog ----------
-
-class CaptureManager:
-  """Owns the null-sink module and the parec capture process. Restarts parec if it dies."""
-  def __init__(self):
-    self.lock = threading.Lock()
-    self.module_id = None
-    self.rec_proc = None
-    self.rec_proc_holder = {'proc': None}
-    self.stop_evt = threading.Event()
-    self.previous_default = None
-    self.make_default = True
-
-  def start(self, make_default=True):
-    self.make_default = make_default
-    self.module_id = load_null_sink()
-    if make_default:
-      self.previous_default = get_default_sink()
-      set_default_sink(SINK_NAME)
-      _ok(f"set default sink → '{SINK_DESC}' (was: {self.previous_default or 'none'})")
-    else:
-      _info(f"sink '{SINK_DESC}' available — route apps via pavucontrol/Helvum")
-    self.rec_proc = start_capture()
-    self.rec_proc_holder['proc'] = self.rec_proc
-
-  def watchdog_tick(self):
-    with self.lock:
-      if self.stop_evt.is_set():
-        return
-      if self.rec_proc and self.rec_proc.poll() is not None:
-        _warn("parec died, restarting capture")
-        try:
-          self.rec_proc = start_capture()
-          self.rec_proc_holder['proc'] = self.rec_proc
-        except Exception as e:
-          _err(f"could not restart capture: {e}")
-
-  def shutdown(self):
-    with self.lock:
-      self.stop_evt.set()
-      if self.rec_proc and self.rec_proc.poll() is None:
-        try:
-          self.rec_proc.terminate()
-          try: self.rec_proc.wait(timeout=2)
-          except subprocess.TimeoutExpired: self.rec_proc.kill()
-        except Exception as e:
-          _warn(f"could not stop parec: {e}")
-      if self.make_default:
-        if self.previous_default:
-          set_default_sink(self.previous_default)
-        else:
-          clear_default_sink()
-      unload_null_sink(self.module_id)
-
-
 # ---------- status display ----------
 
-def status_loop(stats, stop_evt, capture_mgr):
+def status_loop(stats, stop_evt, backend):
   t0 = time.monotonic()
   while not stop_evt.is_set():
-    capture_mgr.watchdog_tick()
+    if backend is not None and not backend.alive():
+      backend.restart()
     elapsed = time.monotonic() - t0
     state = 'connected' if stats.get('connected') else 'disconnected'
     msg = (f"\r  [{state:>12s}]  rms={stats.get('rms', 0):.4f}  "
            f"peak={stats.get('peak', 0):.4f}  "
            f"tx={stats.get('tx_bytes', 0)/1024/1024:.1f}MB  "
            f"reconn={stats.get('reconn', 0):>2d}  "
+           f"qdrop={stats.get('q_drops', 0):>2d}  "
            f"t={elapsed:6.1f}s  ")
     sys.stdout.write(msg)
     sys.stdout.flush()
@@ -688,17 +891,19 @@ def cmd_run(dongle_id, alias, ip, make_default):
     sys.exit(1)
   _ok("server reachable")
 
-  # 3. setup local audio capture
-  _step("setting up local audio sink")
-  capture_mgr = CaptureManager()
-  atexit.register(capture_mgr.shutdown)
-  capture_mgr.start(make_default=make_default)
-  _ok(f"virtual sink '{SINK_DESC}' running")
+  # 3. setup local audio capture (platform-specific)
+  _step("setting up local audio capture")
+  backend = make_backend()
+  backend.check_prereqs()
+  atexit.register(backend.stop)
+  backend.start(make_default=make_default)
+  _ok(f"backend '{type(backend).__name__}' running")
 
   # 4. start streaming
   _step("streaming")
   stop_evt = threading.Event()
-  stats = {'tx_bytes': 0, 'rms': 0.0, 'peak': 0.0, 'reconn': 0, 'connected': False}
+  stats = {'tx_bytes': 0, 'rms': 0.0, 'peak': 0.0, 'reconn': 0,
+           'connected': False, 'q_drops': 0}
 
   def handle_signal(*_):
     print()
@@ -708,13 +913,13 @@ def cmd_run(dongle_id, alias, ip, make_default):
   signal.signal(signal.SIGTERM, handle_signal)
 
   st_thread = threading.Thread(target=streamer,
-                               args=(capture_mgr.rec_proc_holder, ip, PORT, stop_evt, stats),
+                               args=(backend, ip, PORT, stop_evt, stats),
                                daemon=True)
   st_thread.start()
 
-  status_loop(stats, stop_evt, capture_mgr)
+  status_loop(stats, stop_evt, backend)
   st_thread.join(timeout=2)
-  capture_mgr.shutdown()
+  backend.stop()
   if dongle_id and pid:
     stop_remote_server(dongle_id, pid)
   _ok("clean exit")
@@ -738,15 +943,13 @@ def parse_args():
   return p.parse_args()
 
 
-def check_prereqs(need_pipewire=True):
-  missing = []
-  if need_pipewire:
-    for tool in ('pactl', 'parec', 'pw-metadata'):
-      if shutil.which(tool) is None:
-        missing.append(tool)
-  if missing:
-    _err("missing required tools: " + ', '.join(missing))
-    _err("       install pipewire-pulse and pipewire-utils")
+def check_prereqs():
+  """Best-effort up-front check; backend.check_prereqs() also runs at start()."""
+  try:
+    backend = make_backend()
+    backend.check_prereqs()
+  except Exception as e:
+    _err(str(e))
     sys.exit(1)
 
 
@@ -759,7 +962,6 @@ def main():
     return
 
   lock = acquire_lock()  # noqa: F841 — kept open for the lifetime of the process
-
   cached = load_cached()
   dongle_id, alias, ip = None, None, args.ip
 
@@ -824,7 +1026,7 @@ def main():
     cmd_ping(dongle_id, ip, pid)
     return
 
-  check_prereqs(need_pipewire=True)
+  check_prereqs()
   cmd_run(dongle_id, alias, ip, make_default=not args.no_default)
 
 
