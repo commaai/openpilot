@@ -83,6 +83,8 @@ LOCK_FILE = '/tmp/comma_speaker.pid'
 REMOTE_DIR = '/data/dsp_sound'
 REMOTE_SERVER = f'{REMOTE_DIR}/play_server.py'
 REMOTE_LOG = '/tmp/play_server.log'
+# the openpilot venv ships numpy + sounddevice; system python3 has neither
+REMOTE_PY = '/usr/local/venv/bin/python'
 
 SINK_NAME = 'comma_speaker'
 SINK_DESC = 'Comma_Speaker'  # underscores avoid issues with pactl prop parsing
@@ -330,18 +332,29 @@ def install_server(target):
   _ok("server installed")
 
 
+# anchor the pattern at the python interpreter path so it only matches the
+# server process, never the shell that's running pkill (whose argv contains
+# REMOTE_SERVER as text and would otherwise get killed → SSH dies → rc=255)
+_REMOTE_PROC_PAT = f'^{re.escape(REMOTE_PY)} .*{re.escape(REMOTE_SERVER.split("/")[-1])}$'
+
+
 def start_remote_server(target):
   _info("starting server on device")
+  # detach via subshell + setsid so the backgrounded python doesn't keep ssh's
+  # stdio fds, then verify with pgrep
   cmd = (
-    f"pkill -f {REMOTE_SERVER} >/dev/null 2>&1; "
+    f"pkill -f '{_REMOTE_PROC_PAT}' 2>/dev/null; "
     f"sleep 0.4; "
-    f"nohup python3 {REMOTE_SERVER} >{REMOTE_LOG} 2>&1 </dev/null & "
-    f"echo $!"
+    f"( setsid {REMOTE_PY} {REMOTE_SERVER} >{REMOTE_LOG} 2>&1 </dev/null & ) ; "
+    f"sleep 0.8; "
+    f"pgrep -f '{_REMOTE_PROC_PAT}' | head -1"
   )
   r = ssh_run(target, cmd, timeout=20)
-  if r.returncode != 0:
-    raise RuntimeError(f"start failed: {r.stderr.strip()}")
-  pid = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "?"
+  pid = (r.stdout or '').strip().splitlines()
+  pid = pid[-1] if pid else ''
+  if not pid.isdigit():
+    raise RuntimeError(
+      f"start failed (rc={r.returncode}) stdout={r.stdout!r} stderr={r.stderr!r}")
   _ok(f"server pid {pid}")
   return pid
 
@@ -350,7 +363,7 @@ def stop_remote_server(target, pid=None):
   parts = []
   if pid and pid != "?":
     parts.append(f"kill {pid} 2>/dev/null")
-  parts.append(f"pkill -f {REMOTE_SERVER} 2>/dev/null")
+  parts.append(f"pkill -f '{_REMOTE_PROC_PAT}' 2>/dev/null")
   parts.append("true")
   cmd = "; ".join(parts)
   try:
@@ -439,20 +452,25 @@ def _auto_install_mac(need_blackhole=False, need_switchaudio=False, need_soundde
   ok = True
   if need_sounddevice:
     _info("installing sounddevice (pip)")
-    r = subprocess.run([sys.executable, '-m', 'pip', 'install', '--user', 'sounddevice'])
+    # try plain install first; fall back to --user if site-packages isn't writable
+    r = subprocess.run([sys.executable, '-m', 'pip', 'install', 'sounddevice'])
+    if r.returncode != 0:
+      r = subprocess.run([sys.executable, '-m', 'pip', 'install', '--user', 'sounddevice'])
     ok = ok and r.returncode == 0
-  brew_pkgs = []
-  if need_blackhole: brew_pkgs.append('blackhole-2ch')
-  if need_switchaudio: brew_pkgs.append('switchaudio-osx')
-  if brew_pkgs:
+  if need_blackhole or need_switchaudio:
     if not shutil.which('brew'):
       _err("Homebrew not installed — install from https://brew.sh, then re-run.")
       return False
-    _info(f"installing: brew install {' '.join(brew_pkgs)}")
-    r = subprocess.run(['brew', 'install'] + brew_pkgs)
-    ok = ok and r.returncode == 0
+    if need_blackhole:
+      _info("installing: brew install --cask blackhole-2ch")
+      r = subprocess.run(['brew', 'install', '--cask', 'blackhole-2ch'])
+      ok = ok and r.returncode == 0
+    if need_switchaudio:
+      _info("installing: brew install switchaudio-osx")
+      r = subprocess.run(['brew', 'install', 'switchaudio-osx'])
+      ok = ok and r.returncode == 0
     if need_blackhole and ok:
-      _info("restarting CoreAudio so BlackHole device shows up")
+      _info("restarting CoreAudio so BlackHole device shows up (will prompt for sudo)")
       subprocess.run(['sudo', 'killall', 'coreaudiod'])
   return ok
 
