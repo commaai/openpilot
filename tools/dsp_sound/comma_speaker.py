@@ -252,52 +252,47 @@ def resolve_device(name_or_dongle):
       pass
 
 
-def _proxy_cmd_args(dongle_id, *cmd):
-  """Build an ssh ProxyCommand args list to run `cmd` on the device."""
-  key = _safe_ssh_key()
-  proxy = (f"ssh -i {key} -o StrictHostKeyChecking=no "
-           f"-o UserKnownHostsFile=/dev/null -W %h:%p comma@{SSH_PROXY}")
-  base = [
-    'ssh',
+def _ssh_common_opts(key):
+  return [
     '-i', key,
-    '-o', f"ProxyCommand={proxy}",
     '-o', 'StrictHostKeyChecking=no',
     '-o', 'UserKnownHostsFile=/dev/null',
     '-o', 'ConnectTimeout=15',
     '-o', 'ServerAliveInterval=15',
-    f"comma@comma-{dongle_id}",
   ]
+
+
+def _ssh_target_args(dongle_id=None, ip=None):
+  """Return (ssh_prefix_args, host) for either direct or proxy connection.
+  Pass exactly one of dongle_id, ip."""
+  key = _safe_ssh_key()
+  opts = _ssh_common_opts(key)
+  if ip:
+    return opts, f"comma@{ip}"
+  proxy = (f"ssh -i {key} -o StrictHostKeyChecking=no "
+           f"-o UserKnownHostsFile=/dev/null -W %h:%p comma@{SSH_PROXY}")
+  return opts + ['-o', f"ProxyCommand={proxy}"], f"comma@comma-{dongle_id}"
+
+
+def ssh_run(target, *cmd, timeout=30, capture=True):
+  """target: dict with 'dongle_id' or 'ip'."""
+  opts, host = _ssh_target_args(**target)
+  args = ['ssh'] + opts + [host]
   if cmd:
-    base.append('--')
-    base.extend(cmd)
-  return base
-
-
-def ssh_proxy(dongle_id, *cmd, timeout=30, capture=True):
-  args = _proxy_cmd_args(dongle_id, *cmd)
+    args.append('--')
+    args.extend(cmd)
   return subprocess.run(args, capture_output=capture, text=True, timeout=timeout)
 
 
-def scp_proxy(dongle_id, local_path, remote_path, timeout=30):
-  key = _safe_ssh_key()
-  proxy = (f"ssh -i {key} -o StrictHostKeyChecking=no "
-           f"-o UserKnownHostsFile=/dev/null -W %h:%p comma@{SSH_PROXY}")
-  args = [
-    'scp',
-    '-i', key,
-    '-o', f"ProxyCommand={proxy}",
-    '-o', 'StrictHostKeyChecking=no',
-    '-o', 'UserKnownHostsFile=/dev/null',
-    '-o', 'ConnectTimeout=15',
-    str(local_path),
-    f"comma@comma-{dongle_id}:{remote_path}",
-  ]
+def scp_run(target, local_path, remote_path, timeout=30):
+  opts, host = _ssh_target_args(**target)
+  args = ['scp'] + opts + [str(local_path), f"{host}:{remote_path}"]
   return subprocess.run(args, capture_output=True, text=True, timeout=timeout)
 
 
 def get_lan_ip_via_proxy(dongle_id):
   """Ask the device via SSH proxy what its LAN IPs are; return first non-loopback."""
-  r = ssh_proxy(dongle_id, "ip -4 -j addr show", timeout=20)
+  r = ssh_run({'dongle_id': dongle_id}, "ip -4 -j addr show", timeout=20)
   if r.returncode != 0:
     _warn(f"ssh ip-addr-show failed: {r.stderr.strip()}")
     return None
@@ -321,21 +316,21 @@ def get_lan_ip_via_proxy(dongle_id):
 
 # ---------- remote server lifecycle ----------
 
-def install_server(dongle_id):
+def install_server(target):
   _info(f"installing server to {REMOTE_SERVER}")
-  r = ssh_proxy(dongle_id, f"mkdir -p {REMOTE_DIR}", timeout=15)
+  r = ssh_run(target, f"mkdir -p {REMOTE_DIR}", timeout=15)
   if r.returncode != 0:
     raise RuntimeError(f"mkdir failed: {r.stderr.strip()}")
-  r = scp_proxy(dongle_id, LOCAL_SERVER, REMOTE_SERVER)
+  r = scp_run(target, LOCAL_SERVER, REMOTE_SERVER)
   if r.returncode != 0:
     raise RuntimeError(f"scp failed: {r.stderr.strip()}")
-  r = ssh_proxy(dongle_id, f"chmod +x {REMOTE_SERVER}", timeout=10)
+  r = ssh_run(target, f"chmod +x {REMOTE_SERVER}", timeout=10)
   if r.returncode != 0:
     raise RuntimeError(f"chmod failed: {r.stderr.strip()}")
   _ok("server installed")
 
 
-def start_remote_server(dongle_id):
+def start_remote_server(target):
   _info("starting server on device")
   cmd = (
     f"pkill -f {REMOTE_SERVER} >/dev/null 2>&1; "
@@ -343,7 +338,7 @@ def start_remote_server(dongle_id):
     f"nohup python3 {REMOTE_SERVER} >{REMOTE_LOG} 2>&1 </dev/null & "
     f"echo $!"
   )
-  r = ssh_proxy(dongle_id, cmd, timeout=20)
+  r = ssh_run(target, cmd, timeout=20)
   if r.returncode != 0:
     raise RuntimeError(f"start failed: {r.stderr.strip()}")
   pid = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "?"
@@ -351,7 +346,7 @@ def start_remote_server(dongle_id):
   return pid
 
 
-def stop_remote_server(dongle_id, pid=None):
+def stop_remote_server(target, pid=None):
   parts = []
   if pid and pid != "?":
     parts.append(f"kill {pid} 2>/dev/null")
@@ -359,7 +354,7 @@ def stop_remote_server(dongle_id, pid=None):
   parts.append("true")
   cmd = "; ".join(parts)
   try:
-    ssh_proxy(dongle_id, cmd, timeout=15)
+    ssh_run(target, cmd, timeout=15)
   except Exception as e:
     _warn(f"could not stop remote server cleanly: {e}")
 
@@ -861,14 +856,18 @@ def cmd_ping(dongle_id, ip, pid):
   return False
 
 
-def cmd_stop(dongle_id):
-  _step(f"stopping any server on comma-{dongle_id}")
-  stop_remote_server(dongle_id)
+def cmd_stop(target):
+  _step(f"stopping any server on {_target_label(target)}")
+  stop_remote_server(target)
   _ok("done")
 
 
-def cmd_run(dongle_id, alias, ip, make_default):
-  _step(f"comma_speaker → {alias or 'host'} ({dongle_id or 'no-dongle'}) at {ip}")
+def _target_label(target):
+  return f"comma-{target['dongle_id']}" if target.get('dongle_id') else target.get('ip', '?')
+
+
+def cmd_run(target, alias, ip, make_default):
+  _step(f"comma_speaker → {alias or 'host'} ({_target_label(target) if target else 'no-target'}) at {ip}")
 
   # 1. install + start remote server (skip if already reachable — local test, or
   #    a server already running from a prior session)
@@ -876,17 +875,17 @@ def cmd_run(dongle_id, alias, ip, make_default):
   already_up = tcp_probe(ip, PORT, timeout=0.5)
   if already_up:
     _info(f"server already reachable at {ip}:{PORT} — skipping SSH install")
-  elif dongle_id:
-    install_server(dongle_id)
-    pid = start_remote_server(dongle_id)
-    atexit.register(lambda: stop_remote_server(dongle_id, pid))
+  elif target:
+    install_server(target)
+    pid = start_remote_server(target)
+    atexit.register(lambda: stop_remote_server(target, pid))
     _info(f"waiting for {ip}:{PORT}")
     if not wait_for_port(ip, PORT, timeout=15):
       _err(f"server not reachable at {ip}:{PORT} — is the device on the same WiFi?")
       _err("       try: ./comma_speaker.py --ip <other-ip>")
       sys.exit(1)
   else:
-    _err(f"no server at {ip}:{PORT} and no dongle_id to SSH-install one")
+    _err(f"no server at {ip}:{PORT} and no SSH target to install one")
     _err("       start play_server.py manually, or pass --device <name>")
     sys.exit(1)
   _ok("server reachable")
@@ -920,8 +919,8 @@ def cmd_run(dongle_id, alias, ip, make_default):
   status_loop(stats, stop_evt, backend)
   st_thread.join(timeout=2)
   backend.stop()
-  if dongle_id and pid:
-    stop_remote_server(dongle_id, pid)
+  if target and pid:
+    stop_remote_server(target, pid)
   _ok("clean exit")
 
 
@@ -964,11 +963,17 @@ def main():
   lock = acquire_lock()  # noqa: F841 — kept open for the lifetime of the process
   cached = load_cached()
   dongle_id, alias, ip = None, None, args.ip
+  target = None  # dict with 'dongle_id' or 'ip' — used for SSH/SCP
 
-  # fast path: --ip given AND already reachable → skip dongle_id resolution entirely
-  # (covers localhost test and "server still running from a prior session")
-  if ip and tcp_probe(ip, PORT, timeout=0.5):
-    _info(f"server reachable at {ip}:{PORT} — skipping device resolution")
+  # --ip given: skip device resolution entirely. SSH directly to the IP for
+  # install/start. The server may already be running, in which case SSH is
+  # only used if the user passes --stop / --ping.
+  if ip:
+    target = {'ip': ip}
+    if tcp_probe(ip, PORT, timeout=0.5):
+      _info(f"server reachable at {ip}:{PORT}")
+    else:
+      _info(f"will SSH directly to {ip} to install/start server")
   else:
     # need a dongle_id to SSH-install + start the server
     if args.device:
@@ -982,8 +987,9 @@ def main():
     if not dongle_id:
       _err("no device selected")
       sys.exit(1)
+    target = {'dongle_id': dongle_id}
 
-    if not ip and cached.get('ip') and cached.get('dongle_id') == dongle_id:
+    if cached.get('ip') and cached.get('dongle_id') == dongle_id:
       if tcp_probe(cached['ip']):
         ip = cached['ip']
         _info(f"reusing cached IP: {ip}")
@@ -1013,13 +1019,13 @@ def main():
     save_cached(dongle_id=dongle_id, alias=alias, ip=ip)
 
   if args.stop:
-    cmd_stop(dongle_id)
+    cmd_stop(target)
     return
 
   if args.ping:
-    install_server(dongle_id)
-    pid = start_remote_server(dongle_id)
-    atexit.register(lambda: stop_remote_server(dongle_id, pid))
+    install_server(target)
+    pid = start_remote_server(target)
+    atexit.register(lambda: stop_remote_server(target, pid))
     if not wait_for_port(ip, PORT, timeout=15):
       _err(f"server not reachable at {ip}:{PORT}")
       sys.exit(1)
@@ -1027,7 +1033,7 @@ def main():
     return
 
   check_prereqs()
-  cmd_run(dongle_id, alias, ip, make_default=not args.no_default)
+  cmd_run(target, alias, ip, make_default=not args.no_default)
 
 
 if __name__ == '__main__':
