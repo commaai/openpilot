@@ -101,6 +101,7 @@ class AugmentedRoadView(CameraView):
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
     msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
+    msg.uiDebug.fps = rl.get_fps()
     self._pm.send('uiDebug', msg)
 
   def _handle_mouse_press(self, _):
