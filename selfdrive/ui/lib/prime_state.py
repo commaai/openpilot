@@ -7,6 +7,7 @@ import time
 from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 
@@ -32,6 +33,7 @@ class PrimeState:
     self._lock = threading.Lock()
     self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self.prime_type: PrimeType = self._load_initial_state()
+    self._ignore_uploads = self._params.get("Offroad_UploadsIgnored") is not None
 
     self._running = False
     self._thread = None
@@ -48,6 +50,7 @@ class PrimeState:
   def _fetch_prime_status(self) -> None:
     dongle_id = self._params.get("DongleId")
     if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
+      self._set_ignore_uploads(False)
       return
 
     try:
@@ -55,11 +58,19 @@ class PrimeState:
       response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token, session=self._session)
       if response.status_code == 200:
         data = response.json()
+        self._set_ignore_uploads(data.get("ignore_uploads") is True)
         is_paired = data.get("is_paired", False)
         prime_type = data.get("prime_type", 0)
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
+
+  def _set_ignore_uploads(self, ignore_uploads: bool) -> None:
+    if ignore_uploads == self._ignore_uploads:
+      return
+
+    self._ignore_uploads = ignore_uploads
+    set_offroad_alert("Offroad_UploadsIgnored", ignore_uploads)
 
   def set_type(self, prime_type: PrimeType) -> None:
     with self._lock:
