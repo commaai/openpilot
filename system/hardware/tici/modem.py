@@ -62,15 +62,20 @@ CEER_NUMERIC = {
   (6, 13): "Roaming not allowed on this SIM.",                                     # PS LTE local: Roaming not allowed
   (6, 259): "Carrier rejected SIM. The eSIM profile may not be active.",           # PS LTE local: EMM attach failed
 }
-PPPD = [
-  "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
-  "nodefaultroute", "connect",
-  "/usr/sbin/chat -v ABORT 'NO CARRIER' ABORT 'NO DIALTONE' ABORT 'BUSY' " +
-  "ABORT 'NO ANSWER' ABORT 'ERROR' TIMEOUT 5 '' AT OK ATD*99***1# CONNECT ''",
-  "lcp-echo-interval", "30", "lcp-echo-failure", "4", "mtu", "1500", "mru", "1500",
-  "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
-  "user", '""', "password", '""',
-]
+# dial CIDs in this order; CID 1 (attach context) works on home-network SIMs (e.g. Verizon),
+# CID 3 (PCO-supplied) works for roaming attach contexts that route to a config bearer
+DIAL_CIDS = (1, 3)
+
+def _pppd_cmd(cid: int) -> list[str]:
+  return [
+    "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
+    "nodefaultroute", "connect",
+    "/usr/sbin/chat -v ABORT 'NO CARRIER' ABORT 'NO DIALTONE' ABORT 'BUSY' " +
+    f"ABORT 'NO ANSWER' ABORT 'ERROR' TIMEOUT 5 '' AT OK ATD*99***{cid}# CONNECT ''",
+    "lcp-echo-interval", "30", "lcp-echo-failure", "4", "mtu", "1500", "mru", "1500",
+    "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
+    "user", '""', "password", '""',
+  ]
 INITIAL_STATE = {
   "state": "INITIALIZING",
   "connected": False, "ip_address": "",
@@ -103,8 +108,9 @@ class Modem:
     self._ppp = None
     self._ppp_lines = queue.Queue()
     self._ppp_fails = 0
+    self._dial_cid_idx = 0  # index into DIAL_CIDS for the current attempt
     self._sim_change = False
-    self._apn = ""        # active APN written to CID 1 (user-set, blank = network-provided via PCO)
+    self._apn = ""        # active APN written to dial CIDs (user-set, blank = network-provided via PCO)
     self._user_apn = ""   # last-seen value of GsmApn param
     self._roaming_allowed = True
     self.running = True
@@ -270,9 +276,10 @@ class Modem:
     self._user_apn = self._read_param("GsmApn")
     self._apn = self._user_apn
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
-    # write CID 1 — blank APN lets the carrier supply one via PCO
+    # write the same APN to every dial CID — blank lets the carrier supply one via PCO
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
-    logging.info(f"APN '{self._apn or '(network-provided)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
+    self._at(f'AT+CGDCONT=3,"IPV4V6","{self._apn}"')
+    logging.info(f"APN '{self._apn or '(network-provided)'}' written to CIDs {DIAL_CIDS}, roaming={'on' if self._roaming_allowed else 'off'}")
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
     self._update(**identity)
@@ -339,7 +346,8 @@ class Modem:
     return State.SEARCHING
 
   def _start_pppd(self):
-    self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    cid = DIAL_CIDS[self._dial_cid_idx]
+    self._ppp = subprocess.Popen(_pppd_cmd(cid), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     self._ppp_lines = queue.Queue()
 
     def _read_pppd(proc, q):
@@ -352,11 +360,12 @@ class Modem:
         logging.warning(f"pppd reader error: {e}")
 
     threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
-    logging.info("PPP dialing")
+    logging.info(f"PPP dialing CID {cid}")
 
   def _do_connecting(self):
     logging.info("starting pppd")
     self._ppp_fails = 0
+    self._dial_cid_idx = 0
     self._sim_change = False
     self._start_pppd()
     return State.CONNECTED
@@ -391,7 +400,8 @@ class Modem:
     if self._ppp_fails >= 3:
       logging.warning(f"PPP fail {self._ppp_fails}/3, reconnecting")
       return State.DISCONNECTING
-    logging.warning(f"PPP fail {self._ppp_fails}/3, retrying")
+    self._dial_cid_idx = (self._dial_cid_idx + 1) % len(DIAL_CIDS)
+    logging.warning(f"PPP fail {self._ppp_fails}/3, retrying with CID {DIAL_CIDS[self._dial_cid_idx]}")
     self._reset_data_port()
     if not os.path.exists(AT_PORT):
       return State.DISCONNECTING
