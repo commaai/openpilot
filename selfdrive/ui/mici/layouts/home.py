@@ -43,12 +43,12 @@ class AlertsPill(Widget):
     self._icon_orange = gui_app.texture("icons_mici/offroad_alerts/orange_warning.png", 36, 36)
     self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 36, 36)
     self._alert_count_callback: Callable[[], int] | None = None
-    self._top_severity_callback: Callable[[], int | None] | None = None
+    self._max_severity_callback: Callable[[], int | None] | None = None
 
   def set_alert_count_callback(self, callback: Callable[[], int] | None,
                                severity_callback: Callable[[], int | None] | None = None):
     self._alert_count_callback = callback
-    self._top_severity_callback = severity_callback
+    self._max_severity_callback = severity_callback
 
   def _render(self, _):
     alert_count = self._alert_count_callback() if self._alert_count_callback else 0
@@ -56,7 +56,7 @@ class AlertsPill(Widget):
       pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
       rl.draw_texture_ex(self._pill_bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, rl.WHITE)
 
-      severity = self._top_severity_callback() if self._top_severity_callback else None
+      severity = self._max_severity_callback() if self._max_severity_callback else None
       if severity == -1:
         warning_txt = self._icon_green
       elif severity is not None and severity > 0:
@@ -195,11 +195,11 @@ class MiciHomeLayout(Widget):
 
   def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
                     alert_count_callback: Callable[[], int] | None = None,
-                    top_severity_callback: Callable[[], int | None] | None = None):
+                    max_severity_callback: Callable[[], int | None] | None = None):
     self._on_settings_click = on_settings
     self._on_alerts_click = on_alerts
     self._alert_count_callback = alert_count_callback
-    self._alerts_pill.set_alert_count_callback(alert_count_callback, top_severity_callback)
+    self._alerts_pill.set_alert_count_callback(alert_count_callback, max_severity_callback)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:

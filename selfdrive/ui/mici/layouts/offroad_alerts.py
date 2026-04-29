@@ -208,7 +208,7 @@ class MiciOffroadAlerts(Scroller):
   def active_alerts(self) -> int:
     return sum(alert.visible for alert in self.sorted_alerts)
 
-  def top_severity(self) -> int | None:
+  def max_severity(self) -> int | None:
     return max((alert.severity for alert in self.sorted_alerts if alert.visible), default=None)
 
   def scrolling(self):
