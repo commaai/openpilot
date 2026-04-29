@@ -108,6 +108,7 @@ class Modem:
     self._ppp = None
     self._ppp_lines = queue.Queue()
     self._ppp_fails = 0
+    self._ppp_started_t = 0.0  # monotonic time pppd was last spawned
     self._dial_cid_idx = 0  # index into DIAL_CIDS for the current attempt
     self._sim_change = False
     self._apn = ""        # active APN written to dial CIDs (user-set, blank = network-provided via PCO)
@@ -360,6 +361,7 @@ class Modem:
         logging.warning(f"pppd reader error: {e}")
 
     threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
+    self._ppp_started_t = time.monotonic()
     logging.info(f"PPP dialing CID {cid}")
 
   def _do_connecting(self):
@@ -443,6 +445,12 @@ class Modem:
       return State.DISCONNECTING
 
     self._poll()
+    # if no inbound traffic 30s after dial, the bearer is dead — terminate pppd so the
+    # exit handler rotates to the next CID
+    if self.S["rx_bytes"] == 0 and time.monotonic() - self._ppp_started_t > 30:
+      logging.warning(f"no rx on CID {DIAL_CIDS[self._dial_cid_idx]} after 30s, terminating pppd")
+      subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
+      self._ppp_started_t = time.monotonic() + 60  # avoid re-firing while pppd shuts down
     return State.CONNECTED
 
   def _do_disconnecting(self):
