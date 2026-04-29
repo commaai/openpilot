@@ -17,6 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
 from importlib.resources import as_file, files
+from cereal import messaging
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import multilang
@@ -241,6 +242,7 @@ class GuiApplication:
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
     self._render_profile_start_time = None
+    self._pm = messaging.PubMaster(['uiDebug'])
 
   @property
   def frame(self):
@@ -329,6 +331,7 @@ class GuiApplication:
 
       if not PC:
         self._mouse.start()
+
 
   @contextmanager
   def _startup_profile_context(self):
@@ -602,6 +605,7 @@ class GuiApplication:
           yield False
           continue
 
+        draw_start = time.monotonic()
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)
@@ -650,7 +654,13 @@ class GuiApplication:
         if self._grid_size > 0:
           self._draw_grid()
 
+        draw_time_ms = (time.monotonic() - draw_start) * 1000
         rl.end_drawing()
+
+        msg = messaging.new_message('uiDebug')
+        msg.uiDebug.drawTimeMillis = draw_time_ms
+        msg.uiDebug.fps = int(1/rl.get_frame_time())
+        self._pm.send('uiDebug', msg)
 
         if RECORD:
           image = rl.load_image_from_texture(self._render_texture.texture)
@@ -658,6 +668,7 @@ class GuiApplication:
           data = bytes(rl.ffi.buffer(image.data, data_size))
           self._ffmpeg_queue.put(data)  # Async write via background thread
           rl.unload_image(image)
+
 
         self._monitor_fps()
         self._frame += 1
