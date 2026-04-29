@@ -242,7 +242,6 @@ class GuiApplication:
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
     self._render_profile_start_time = None
-    self._pm = messaging.PubMaster(['uiDebug'])
 
   @property
   def frame(self):
@@ -331,6 +330,8 @@ class GuiApplication:
 
       if not PC:
         self._mouse.start()
+
+      self._pm = messaging.PubMaster(['uiDebug'])
 
   @contextmanager
   def _startup_profile_context(self):
