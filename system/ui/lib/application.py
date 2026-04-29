@@ -332,7 +332,6 @@ class GuiApplication:
       if not PC:
         self._mouse.start()
 
-
   @contextmanager
   def _startup_profile_context(self):
     if "PROFILE_STARTUP" not in os.environ:
@@ -668,7 +667,6 @@ class GuiApplication:
           data = bytes(rl.ffi.buffer(image.data, data_size))
           self._ffmpeg_queue.put(data)  # Async write via background thread
           rl.unload_image(image)
-
 
         self._monitor_fps()
         self._frame += 1
