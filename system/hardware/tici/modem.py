@@ -66,7 +66,7 @@ PPPD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
   "nodefaultroute", "connect",
   "/usr/sbin/chat -v ABORT 'NO CARRIER' ABORT 'NO DIALTONE' ABORT 'BUSY' " +
-  "ABORT 'NO ANSWER' ABORT 'ERROR' TIMEOUT 5 '' AT OK ATD*99***3# CONNECT ''",
+  "ABORT 'NO ANSWER' ABORT 'ERROR' TIMEOUT 5 '' AT OK ATD*99***1# CONNECT ''",
   "lcp-echo-interval", "30", "lcp-echo-failure", "4", "mtu", "1500", "mru", "1500",
   "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
   "user", '""', "password", '""',
@@ -104,7 +104,7 @@ class Modem:
     self._ppp_lines = queue.Queue()
     self._ppp_fails = 0
     self._sim_change = False
-    self._apn = ""        # active APN written to CID 3 (user-set, blank = network-provided via PCO)
+    self._apn = ""        # active APN written to CID 1 (user-set, blank = network-provided via PCO)
     self._user_apn = ""   # last-seen value of GsmApn param
     self._roaming_allowed = True
     self.running = True
@@ -270,9 +270,9 @@ class Modem:
     self._user_apn = self._read_param("GsmApn")
     self._apn = self._user_apn
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
-    # dial CID 3 (non-attach context) — blank APN lets the carrier supply one via PCO
-    self._at(f'AT+CGDCONT=3,"IPV4V6","{self._apn}"')
-    logging.info(f"APN '{self._apn or '(network-provided)'}' CID 3, roaming={'on' if self._roaming_allowed else 'off'}")
+    # write CID 1 — blank APN lets the carrier supply one via PCO
+    self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
+    logging.info(f"APN '{self._apn or '(network-provided)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
     self._update(**identity)
