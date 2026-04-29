@@ -104,7 +104,7 @@ class Modem:
     self._ppp_lines = queue.Queue()
     self._ppp_fails = 0
     self._sim_change = False
-    self._apn = ""        # active APN written to CID 1 (user-set or auto-discovered)
+    self._apn = ""        # active APN written to CID 1 (user-set, blank = network-provided via PCO)
     self._user_apn = ""   # last-seen value of GsmApn param
     self._roaming_allowed = True
     self.running = True
@@ -268,32 +268,15 @@ class Modem:
     self._configure_modem(identity["modem_version"], identity["iccid"])
 
     self._user_apn = self._read_param("GsmApn")
-    # clear CID 1 first so discover doesn't carry over a stale APN from a prior SIM/boot
-    self._at('AT+CGDCONT=1,"IP",""')
-    self._apn = self._user_apn or self._discover_apn()
+    self._apn = self._user_apn
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
+    # leave CID 1 blank unless the user pinned an APN — the carrier supplies one via PCO
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
-    logging.info(f"APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
+    logging.info(f"APN '{self._apn or '(network-provided)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
     self._update(**identity)
     return State.SEARCHING
-
-  def _discover_apn(self) -> str:
-    """Pick a carrier-provisioned data APN from AT+CGDCONT? when GsmApn isn't set."""
-    skip = ("ims", "sos", "xcap", "scap")
-    for line in self._at("AT+CGDCONT?"):
-      if not line.startswith("+CGDCONT:"):
-        continue
-      parts = [p.strip().strip('"') for p in line.split(":", 1)[1].split(",")]
-      if len(parts) < 8:
-        continue
-      apn, emergency = parts[2], parts[7]
-      if emergency == "1" or not apn or apn.lower() in skip:
-        continue
-      logging.info(f"auto-selected APN '{apn}' from CID {parts[0]}")
-      return apn
-    return ""
 
   def _read_identity(self):
     # after a SIM hot-swap or modem reset, identity reads can come back empty for a few seconds;
