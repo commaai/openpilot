@@ -658,7 +658,7 @@ class GuiApplication:
 
         msg = messaging.new_message('uiDebug')
         msg.uiDebug.drawTimeMillis = draw_time_ms
-        msg.uiDebug.fps = int(1/rl.get_frame_time())
+        msg.uiDebug.frameTime = rl.get_frame_time()
         self._pm.send('uiDebug', msg)
 
         if RECORD:
