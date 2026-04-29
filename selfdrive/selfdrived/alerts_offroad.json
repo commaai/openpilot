@@ -30,7 +30,7 @@
     "severity": 1
   },
   "Offroad_UploadsIgnored": {
-    "text": "Uploads from this device are currently being ignored by the comma.ai server. Contact support at https://comma.ai/support if you believe this is a mistake.",
+    "text": "Uploads from this device are blocked due to potential safety standard violations. Contact support at https://comma.ai/support if you believe this is a mistake.",
     "severity": 1
   },
   "Offroad_CarUnrecognized": {
