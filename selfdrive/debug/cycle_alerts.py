@@ -30,9 +30,9 @@ def cycle_alerts(duration=200, is_metric=False):
     (EventName.accFaulted, ET.IMMEDIATE_DISABLE),
 
     # DM sequence
-    (EventName.preDriverDistracted, ET.WARNING),
-    (EventName.promptDriverDistracted, ET.WARNING),
-    (EventName.driverDistracted, ET.WARNING),
+    (EventName.driverDistracted1, ET.WARNING),
+    (EventName.driverDistracted2, ET.WARNING),
+    (EventName.driverDistracted3, ET.WARNING),
   ]
 
   # debug alerts

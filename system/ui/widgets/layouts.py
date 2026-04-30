@@ -54,6 +54,6 @@ class HBoxLayout(Widget):
         y = self._rect.y + (self._rect.height - widget.rect.height) / 2
 
       # Update widget position and render
-      widget.set_position(round(x), round(y))
+      widget.set_position(x, y)
       widget.set_parent_rect(self._rect)
       widget.render()

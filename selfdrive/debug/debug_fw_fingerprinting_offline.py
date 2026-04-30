@@ -44,7 +44,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='View back and forth ISO-TP communication between various ECUs given an address')
   parser.add_argument('route', nargs='?', help='Route name, live if not specified')
   parser.add_argument('--addrs', nargs='*', default=[], help='List of tx address to view (0x7e0 for engine)')
-  parser.add_argument('--rxoffset', default='')
+  parser.add_argument('--rxoffset', default='0x8')
   args = parser.parse_args()
 
   addrs = [int(addr, base=16) if addr.startswith('0x') else int(addr) for addr in args.addrs]

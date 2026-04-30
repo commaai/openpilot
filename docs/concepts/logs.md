@@ -6,9 +6,9 @@ Check out our [Python library](https://github.com/commaai/openpilot/blob/master/
 
 For each segment, openpilot records the following log types:
 
-## rlog.bz2
+## rlog.zst
 
-rlogs contain all the messages passed amongst openpilot's processes. See [cereal/services.py](https://github.com/commaai/cereal/blob/master/services.py) for a list of all the logged services. They're a bzip2 archive of the serialized capnproto messages.
+rlogs contain all the messages passed amongst openpilot's processes. See [cereal/services.py](https://github.com/commaai/openpilot/blob/master/cereal/services.py) for a list of all the logged services. They're a zstd archive of the serialized [Cap’n Proto](https://capnproto.org/) messages.
 
 ## {f,e,d}camera.hevc
 
@@ -18,12 +18,10 @@ Each camera stream is H.265 encoded and written to its respective file.
 * `ecamera.hevc` is the wide road camera
 * `dcamera.hevc` is the driver camera
 
-## qlog.bz2 & qcamera.ts
+## qlog.zst & qcamera.ts
 
 qlogs are a decimated subset of the rlogs. Check out [cereal/services.py](https://github.com/commaai/cereal/blob/master/services.py) for the decimation.
 
-
 qcameras are H.264 encoded, lower res versions of the fcamera.hevc. The video shown in [comma connect](https://connect.comma.ai/) is from the qcameras.
 
-
-qlogs and qcameras are designed to be small enough to upload instantly on slow internet and store forever, yet useful enough for most analysis and debugging.
+qlogs and qcameras are designed to be small enough to upload instantly on slow internet, yet useful enough for most analysis and debugging.

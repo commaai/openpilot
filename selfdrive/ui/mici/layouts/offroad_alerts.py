@@ -144,7 +144,7 @@ class AlertItem(Widget):
       bg_texture = self._bg_small_pressed if self.is_pressed else self._bg_small
 
     # Draw background
-    rl.draw_texture(bg_texture, int(self._rect.x), int(self._rect.y), rl.WHITE)
+    rl.draw_texture_ex(bg_texture, rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0, rl.WHITE)
 
     # Calculate text area (left side, avoiding icon on right)
     title_width = self.ALERT_WIDTH - (self.ALERT_PADDING * 2) - self.ICON_SIZE - self.ICON_MARGIN
@@ -183,7 +183,7 @@ class AlertItem(Widget):
       icon_texture = self._icon_orange
     icon_x = self._rect.x + self.ALERT_WIDTH - self.ALERT_PADDING - self.ICON_SIZE
     icon_y = self._rect.y + self.ALERT_PADDING
-    rl.draw_texture(icon_texture, int(icon_x), int(icon_y), rl.WHITE)
+    rl.draw_texture_ex(icon_texture, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
 
 
 class MiciOffroadAlerts(Scroller):
@@ -207,6 +207,9 @@ class MiciOffroadAlerts(Scroller):
 
   def active_alerts(self) -> int:
     return sum(alert.visible for alert in self.sorted_alerts)
+
+  def max_severity(self) -> int | None:
+    return max((alert.severity for alert in self.sorted_alerts if alert.visible), default=None)
 
   def scrolling(self):
     return self._scroller.scroll_panel.is_touch_valid()
@@ -273,6 +276,11 @@ class MiciOffroadAlerts(Scroller):
       if alert_json:
         text = alert_json.get("text", "").replace("%1", alert_json.get("extra", ""))
 
+      if text and not alert_data.visible:
+        # Bump newly visible alerts to the top, severity sort keeps it at the top of its category
+        widget = next(w for w in self._scroller.items if w.alert_data is alert_data)
+        self._scroller.items.remove(widget)
+        self._scroller.items.insert(0, widget)
       alert_data.text = text
       alert_data.visible = bool(text)
 
@@ -282,6 +290,8 @@ class MiciOffroadAlerts(Scroller):
     # Update alert items (they reference the same alert_data objects)
     for alert_item in self.alert_items:
       alert_item.update_alert_data(alert_item.alert_data)
+
+    self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
 
     return active_count
 

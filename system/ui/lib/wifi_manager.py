@@ -23,8 +23,9 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
-                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_ACTIVE_CONNECTION_IFACE,
+                                                    NM_DEVICE_TYPE_WIFI, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState, NMDeviceStateReason)
+from openpilot.system.ui.lib.gsm_manager import _GsmManager
 
 try:
   from openpilot.common.params import Params
@@ -183,6 +184,8 @@ class WifiManager:
 
     self._last_network_scan: float = 0.0
     self._callback_queue: list[Callable] = []
+
+    self._gsm = _GsmManager()
 
     self._tethering_ssid = "weedle"
     if Params is not None:
@@ -932,86 +935,9 @@ class WifiManager:
 
   def update_gsm_settings(self, roaming: bool, apn: str, metered: bool):
     """Update GSM settings for cellular connection"""
-
     def worker():
-      try:
-        lte_connection_path = self._get_lte_connection_path()
-        if not lte_connection_path:
-          cloudlog.warning("No LTE connection found")
-          return
-
-        settings = self._get_connection_settings(lte_connection_path)
-
-        if len(settings) == 0:
-          cloudlog.warning(f"Failed to get connection settings for {lte_connection_path}")
-          return
-
-        # Ensure dicts exist
-        if 'gsm' not in settings:
-          settings['gsm'] = {}
-        if 'connection' not in settings:
-          settings['connection'] = {}
-
-        changes = False
-        auto_config = apn == ""
-
-        if settings['gsm'].get('auto-config', ('b', False))[1] != auto_config:
-          cloudlog.warning(f'Changing gsm.auto-config to {auto_config}')
-          settings['gsm']['auto-config'] = ('b', auto_config)
-          changes = True
-
-        if settings['gsm'].get('apn', ('s', ''))[1] != apn:
-          cloudlog.warning(f'Changing gsm.apn to {apn}')
-          settings['gsm']['apn'] = ('s', apn)
-          changes = True
-
-        if settings['gsm'].get('home-only', ('b', False))[1] == roaming:
-          cloudlog.warning(f'Changing gsm.home-only to {not roaming}')
-          settings['gsm']['home-only'] = ('b', not roaming)
-          changes = True
-
-        # Unknown means NetworkManager decides
-        metered_int = int(MeteredType.UNKNOWN if metered else MeteredType.NO)
-        if settings['connection'].get('metered', ('i', 0))[1] != metered_int:
-          cloudlog.warning(f'Changing connection.metered to {metered_int}')
-          settings['connection']['metered'] = ('i', metered_int)
-          changes = True
-
-        if changes:
-          # Update the connection settings (temporary update)
-          conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-          reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,)))
-
-          if reply.header.message_type == MessageType.error:
-            cloudlog.warning(f"Failed to update GSM settings: {reply}")
-            return
-
-          self._activate_modem_connection(lte_connection_path)
-      except Exception as e:
-        cloudlog.exception(f"Error updating GSM settings: {e}")
-
+      self._gsm.update_gsm_settings(roaming, apn, metered)
     threading.Thread(target=worker, daemon=True).start()
-
-  def _get_lte_connection_path(self) -> str | None:
-    try:
-      settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-      known_connections = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
-
-      for conn_path in known_connections:
-        settings = self._get_connection_settings(conn_path)
-        if settings and settings.get('connection', {}).get('id', ('s', ''))[1] == 'lte':
-          return str(conn_path)
-    except Exception as e:
-      cloudlog.exception(f"Error finding LTE connection: {e}")
-    return None
-
-  def _activate_modem_connection(self, connection_path: str):
-    try:
-      modem_device = self._get_adapter(NM_DEVICE_TYPE_MODEM)
-      if modem_device and connection_path:
-        self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo', (connection_path, modem_device, "/")))
-    except Exception as e:
-      cloudlog.exception(f"Error activating modem connection: {e}")
 
   def stop(self):
     if not self._exit:
@@ -1026,3 +952,5 @@ class WifiManager:
         self._router_main.conn.close()
       if self._conn_monitor is not None:
         self._conn_monitor.close()
+
+      self._gsm.close()

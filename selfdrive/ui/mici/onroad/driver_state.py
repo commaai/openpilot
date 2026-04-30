@@ -7,18 +7,24 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
 
+
 AlertSize = log.SelfdriveState.AlertSize
 
 DEBUG = False
 
+# TODO: Only left for DM preview, remove
 LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6)
 LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3)
+
+CONE_COLOR_GREEN = (0, 255, 64)
+CONE_COLOR_ORANGE = (255, 115, 0)
 
 
 class DriverStateRenderer(Widget):
   BASE_SIZE = 60
   LINES_ANGLE_INCREMENT = 5
   LINES_STALE_ANGLES = 3.0  # seconds
+  AWARENESS_UNFULL_PERCENT = 95  # ~0.5s
 
   def __init__(self, lines: bool = False, inset: bool = False):
     super().__init__()
@@ -33,11 +39,15 @@ class DriverStateRenderer(Widget):
     self._is_active = False
     self._is_rhd = False
     self._face_detected = False
+    self._face_pitch = 0.
+    self._face_yaw = 0.
     self._should_draw = False
     self._force_active = False
     self._looking_center = False
+    self._awareness_unfull = False
 
     self._fade_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._color_fade_filter = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps) # 1.0 = full green, 0.0 = full orange
     self._pitch_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._yaw_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._rotation_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
@@ -59,9 +69,7 @@ class DriverStateRenderer(Widget):
 
     self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
-    center_size = round(36 / self.BASE_SIZE * self._rect.width)
-    self._dm_center = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_center.png", center_size, center_size)
-    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", self._rect.width, self._rect.height)
+    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", int(self._rect.width), int(self._rect.height))
 
   def set_should_draw(self, should_draw: bool):
     self._should_draw = should_draw
@@ -88,16 +96,16 @@ class DriverStateRenderer(Widget):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
-    rl.draw_texture(self._dm_background,
-                    int(self._rect.x),
-                    int(self._rect.y),
-                    rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
+    rl.draw_texture_ex(self._dm_background,
+                       rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0,
+                       rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
-    rl.draw_texture(self._dm_person,
-                    int(self._rect.x + (self._rect.width - self._dm_person.width) / 2),
-                    int(self._rect.y + (self._rect.height - self._dm_person.height) / 2),
-                    rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
+    rl.draw_texture_ex(self._dm_person,
+                       rl.Vector2(self._rect.x + (self._rect.width - self._dm_person.width) / 2,
+                                  self._rect.y + (self._rect.height - self._dm_person.height) / 2), 0.0, 1.0,
+                       rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
+    green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
     if self.effective_active:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
@@ -108,22 +116,16 @@ class DriverStateRenderer(Widget):
       )
 
       if not self._lines:
+        r = int(round(CONE_COLOR_GREEN[0] * green_amount + CONE_COLOR_ORANGE[0] * (1 - green_amount)))
+        g = int(round(CONE_COLOR_GREEN[1] * green_amount + CONE_COLOR_ORANGE[1] * (1 - green_amount)))
+        b = int(round(CONE_COLOR_GREEN[2] * green_amount + CONE_COLOR_ORANGE[2] * (1 - green_amount)))
         rl.draw_texture_pro(
           self._dm_cone,
           source_rect,
           dest_rect,
           rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
           self._rotation_filter.x - 90,
-          rl.Color(255, 255, 255, int(255 * self._fade_filter.x * (1 - self._looking_center_filter.x))),
-        )
-
-        rl.draw_texture_ex(
-          self._dm_center,
-          (int(self._rect.x + (self._rect.width - self._dm_center.width) / 2),
-           int(self._rect.y + (self._rect.height - self._dm_center.height) / 2)),
-          0,
-          1.0,
-          rl.Color(255, 255, 255, int(255 * self._fade_filter.x * self._looking_center_filter.x)),
+          rl.Color(r, g, b, int(255 * self._fade_filter.x)),
         )
 
       else:
@@ -163,9 +165,12 @@ class DriverStateRenderer(Widget):
     sm = ui_state.sm
 
     dm_state = sm["driverMonitoringState"]
-    self._is_active = dm_state.isActiveMode
+    self._is_active = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     self._is_rhd = dm_state.isRHD
-    self._face_detected = dm_state.faceDetected
+    self._face_detected = dm_state.visionPolicyState.faceDetected
+    self._awareness_unfull = self.effective_active and dm_state.visionPolicyState.awarenessPercent < self.AWARENESS_UNFULL_PERCENT
+    self._face_pitch = dm_state.visionPolicyState.pose.pitch + math.radians(6) # calib or DM pose is not accurate, add a fake upward pitch to bias forward
+    self._face_yaw = -dm_state.visionPolicyState.pose.yaw # undo sign flip in face_orientation_from_model to match UI convention
 
     driverstate = sm["driverStateV2"]
     driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
@@ -173,15 +178,9 @@ class DriverStateRenderer(Widget):
 
   def _update_state(self):
     # Get monitoring state
-    driver_data = self.get_driver_data()
-    driver_orient = driver_data.faceOrientation
-
-    if len(driver_orient) != 3:
-      return
-
-    pitch, yaw, roll = driver_orient
-    pitch = self._pitch_filter.update(pitch)
-    yaw = self._yaw_filter.update(yaw)
+    _ = self.get_driver_data()
+    pitch = self._pitch_filter.update(self._face_pitch)
+    yaw = self._yaw_filter.update(self._face_yaw)
 
     # hysteresis on looking center
     if abs(pitch) < LOOKING_CENTER_THRESHOLD_LOWER and abs(yaw) < LOOKING_CENTER_THRESHOLD_LOWER:
@@ -193,7 +192,6 @@ class DriverStateRenderer(Widget):
     if DEBUG:
       pitchd = math.degrees(pitch)
       yawd = math.degrees(yaw)
-      rolld = math.degrees(roll)
 
       rl.draw_line_ex((0, 100), (200, 100), 3, rl.RED)
       rl.draw_line_ex((0, 120), (200, 120), 3, rl.RED)
@@ -201,13 +199,11 @@ class DriverStateRenderer(Widget):
 
       pitch_x = 100 + pitchd
       yaw_x = 100 + yawd
-      roll_x = 100 + rolld
       rl.draw_circle(int(pitch_x), 100, 5, rl.GREEN)
       rl.draw_circle(int(yaw_x), 120, 5, rl.GREEN)
-      rl.draw_circle(int(roll_x), 140, 5, rl.GREEN)
 
     # filter head rotation, handling wrap-around
-    rotation = math.degrees(math.atan2(pitch, yaw))
+    rotation = math.degrees(math.atan2(pitch * 2, yaw))  # reduce yaw sensitivity
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)

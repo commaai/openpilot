@@ -138,7 +138,7 @@ class TrainingGuideDMTutorial(NavWidget):
 
     # stay at 100% once reached
     in_bad_face = gui_app.get_active_widget() == self._bad_face_page
-    if ((dm_state.faceDetected and looking_center) or self._progress.x > 0.99) and not in_bad_face:
+    if ((dm_state.visionPolicyState.faceDetected and looking_center) or self._progress.x > 0.99) and not in_bad_face:
       slow = self._progress.x < 0.25
       duration = self.PROGRESS_DURATION * 2 if slow else self.PROGRESS_DURATION
       self._progress.x += 1.0 / (duration * gui_app.target_fps)
@@ -151,8 +151,10 @@ class TrainingGuideDMTutorial(NavWidget):
   def _render(self, _):
     self._dialog.render(self._rect)
 
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 80),
-                                 int(self._rect.width), 80, rl.BLANK, rl.BLACK)
+    gradient_y = int(self._rect.y + self._rect.height - 80)
+    gradient_h = int(self._rect.y) + int(self._rect.height) - gradient_y
+    rl.draw_rectangle_gradient_v(int(self._rect.x), gradient_y,
+                                 int(self._rect.width), gradient_h, rl.BLANK, rl.BLACK)
 
     # draw white ring around dm icon to indicate progress
     ring_thickness = 8
@@ -301,7 +303,7 @@ class QRCodeWidget(Widget):
   def _render(self, _):
     if self._qr_texture:
       scale = self._size / self._qr_texture.height
-      rl.draw_texture_ex(self._qr_texture, rl.Vector2(self._rect.x, self._rect.y), 0.0, scale, rl.WHITE)
+      rl.draw_texture_ex(self._qr_texture, rl.Vector2(round(self._rect.x), round(self._rect.y)), 0.0, scale, rl.WHITE)
 
   def __del__(self):
     if self._qr_texture and self._qr_texture.id != 0:

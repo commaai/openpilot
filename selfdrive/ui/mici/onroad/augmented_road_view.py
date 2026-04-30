@@ -126,7 +126,7 @@ class BookmarkIcon(Widget):
     if self._offset_filter.x > 0:
       icon_x = self.rect.x + self.rect.width - round(self._offset_filter.x)
       icon_y = self.rect.y + (self.rect.height - self._icon.height) / 2  # Vertically centered
-      rl.draw_texture(self._icon, int(icon_x), int(icon_y), rl.WHITE)
+      rl.draw_texture_ex(self._icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
 
 
 class AugmentedRoadView(CameraView):
@@ -174,6 +174,8 @@ class AugmentedRoadView(CameraView):
     # update offroad label
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._offroad_label.set_text("system booting")
+    elif ui_state.ignition and not ui_state.started:
+      self._offroad_label.set_text("openpilot can't start\ncheck alerts")
     else:
       self._offroad_label.set_text("start the car to\nuse openpilot")
 

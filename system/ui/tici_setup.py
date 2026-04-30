@@ -183,7 +183,7 @@ class Setup(Widget):
       self.state = SetupState.CUSTOM_SOFTWARE
 
   def render_low_voltage(self, rect: rl.Rectangle):
-    rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
+    rl.draw_texture_ex(self.warning, rl.Vector2(rect.x + 150, rect.y + 110), 0.0, 1.0, rl.WHITE)
 
     self._low_voltage_title_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE * FONT_SCALE))
     self._low_voltage_body_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 150, rect.width - 500, BODY_FONT_SIZE * FONT_SCALE * 3))
