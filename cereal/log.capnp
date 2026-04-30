@@ -2302,7 +2302,7 @@ struct Sentinel {
 
 struct UIDebug {
   drawTimeMillis @0 :Float32;
-  frameTime @1 :Float32;
+  fps @0 :Uint8;
 }
 
 struct ManagerState {

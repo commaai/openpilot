@@ -17,7 +17,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
 from importlib.resources import as_file, files
-from cereal import messaging
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import multilang
@@ -331,8 +330,6 @@ class GuiApplication:
       if not PC:
         self._mouse.start()
 
-      self._pm = messaging.PubMaster(['uiDebug'])
-
   @contextmanager
   def _startup_profile_context(self):
     if "PROFILE_STARTUP" not in os.environ:
@@ -625,7 +622,9 @@ class GuiApplication:
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
-        yield True
+        frame_time = rl.get_frame_time() # from previous tick
+        draw_time_ms = (time.monotonic - draw_start) * 1000
+        yield True, frame_time, draw_time_ms
 
         if self._scale != 1.0:
           rl.rl_pop_matrix()
@@ -654,13 +653,7 @@ class GuiApplication:
         if self._grid_size > 0:
           self._draw_grid()
 
-        draw_time_ms = (time.monotonic() - draw_start) * 1000
         rl.end_drawing()
-
-        msg = messaging.new_message('uiDebug')
-        msg.uiDebug.drawTimeMillis = draw_time_ms
-        msg.uiDebug.frameTime = rl.get_frame_time()
-        self._pm.send('uiDebug', msg)
 
         if RECORD:
           image = rl.load_image_from_texture(self._render_texture.texture)

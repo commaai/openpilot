@@ -210,7 +210,7 @@ class TestOnroad:
 
     # other processes preempt ui while starting up
     offset = int(20 * LOG_OFFSET)
-    ts = self.ts['uiDebug']['frameTime'][offset:]
+    ts = 1 / self.ts['uiDebug']['fps'][offset:]
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
