@@ -5,7 +5,7 @@ requires-python = ">=3.12.3, <3.13"
 [[package]]
 name = "acados"
 version = "0.2.2"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados#f0e3e0e53892d867be623390bc1aadc219a06da2" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados#2dc0ff804cab5f495641e5e45c6061296445d6cb" }
 dependencies = [
     { name = "numpy" },
 ]
