@@ -29,7 +29,7 @@ def main():
     if should_render:
       msg = messaging.new_message('uiDebug')
       msg.uiDebug.drawTimeMillis = draw_time_ms
-      msg.uiDebug.fps = int(1/frame_time)
+      msg.uiDebug.fps = int(1/frame_time) if frame_time else 0
       _pm.send('uiDebug', msg)
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:
