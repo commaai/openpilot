@@ -623,7 +623,7 @@ class GuiApplication:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
         frame_time = rl.get_frame_time() # from previous tick
-        draw_time_ms = (time.monotonic - draw_start) * 1000
+        draw_time_ms = (time.monotonic() - draw_start) * 1000
         yield True, frame_time, draw_time_ms
 
         if self._scale != 1.0:

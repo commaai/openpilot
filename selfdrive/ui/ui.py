@@ -26,12 +26,11 @@ def main():
   for should_render, frame_time, draw_time_ms in gui_app.render():
     ui_state.update()
 
-    msg = messaging.new_message('uiDebug')
-    msg.uiDebug.drawTimeMillis = draw_time_ms
-    msg.uiDebug.fps = int(1/frame_time)
-    _pm.send('uiDebug', msg)
-
     if should_render:
+      msg = messaging.new_message('uiDebug')
+      msg.uiDebug.drawTimeMillis = draw_time_ms
+      msg.uiDebug.fps = int(1/frame_time)
+      _pm.send('uiDebug', msg)
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:
         try:
