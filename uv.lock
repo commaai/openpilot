@@ -3,6 +3,14 @@ revision = 3
 requires-python = ">=3.12.3, <3.13"
 
 [[package]]
+name = "acados"
+version = "0.2.2"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados#2dc0ff804cab5f495641e5e45c6061296445d6cb" }
+dependencies = [
+    { name = "numpy" },
+]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -745,6 +753,7 @@ name = "openpilot"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "acados" },
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
@@ -822,6 +831,7 @@ tools = [
 
 [package.metadata]
 requires-dist = [
+    { name = "acados", git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados" },
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
