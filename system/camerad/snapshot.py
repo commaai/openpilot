@@ -9,7 +9,7 @@ import cereal.messaging as messaging
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import PC, DEVICE
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.manager.process_config import managed_processes
 
@@ -103,7 +103,7 @@ def snapshot():
 
   try:
     # Allow testing on replay on PC
-    if not PC:
+    if DEVICE:
       managed_processes['camerad'].start()
 
     frame = "wideRoadCameraState"

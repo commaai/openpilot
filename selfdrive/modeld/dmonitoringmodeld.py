@@ -7,6 +7,7 @@ from tinygrad.tensor import Tensor
 import time
 import pickle
 import numpy as np
+from openpilot.system.hardware import ASIUS
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
@@ -45,28 +46,74 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.image_warp = None
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
+    if ASIUS:
+      import ctypes as _ctypes
+      from tinygrad.device import Device
+      from tinygrad.runtime.autogen import opencl as _cl
+      self._cl, self._ctypes, self._cl_dev = _cl, _ctypes, Device['CL']
+      self._output_np = None
+      self._frame_upload_buf = None
+
+  def warmup(self, width: int, height: int):
+    self.frame_buf_params = get_nv12_info(width, height)
+    yuv_size = self.frame_buf_params[3]
+    warp_path = MODELS_DIR / f'dm_warp_{width}x{height}_tinygrad.pkl'
+    with open(warp_path, "rb") as f:
+      self.image_warp = pickle.load(f)
+    dummy = np.zeros(yuv_size, dtype=np.uint8)
+    dummy_tensor = Tensor.from_blob(dummy.ctypes.data, (yuv_size,), dtype='uint8')
+    transform = np.eye(3, dtype=np.float32)
+    self.warp_inputs_np['transform'][:] = transform
+    for _ in range(3):
+      self.tensor_inputs['input_img'] = self.image_warp(dummy_tensor, self.warp_inputs['transform'])
+      out = self.model_run(**self.tensor_inputs).realize()
+      if ASIUS:
+        self._cl.clFinish(self._cl_dev.queue)
+        self._cl_dev.pending_copyin.clear()
+    self._warmup_dummy = dummy
+
+  def prepare_inputs(self, buf: VisionBuf, transform: np.ndarray):
+    ptr = buf.data.ctypes.data
+    if ptr not in self._blob_cache:
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
+    self.warp_inputs_np['transform'][:] = transform[:]
+    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
+    if ASIUS:
+      self._cl.clFinish(self._cl_dev.queue)
+      self._cl_dev.pending_copyin.clear()
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
 
-    t1 = time.perf_counter()
+    if not ASIUS:
+      ptr = buf.data.ctypes.data
+      if ptr not in self._blob_cache:
+        self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
+      self.warp_inputs_np['transform'][:] = transform[:]
+      self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
 
-    if self.image_warp is None:
-      self.frame_buf_params = get_nv12_info(buf.width, buf.height)
-      warp_path = MODELS_DIR / f'dm_warp_{buf.width}x{buf.height}_tinygrad.pkl'
-      with open(warp_path, "rb") as f:
-        self.image_warp = pickle.load(f)
-    ptr = buf.data.ctypes.data
-    # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-    if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
-
-    self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()
-
-    output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
-
-    t2 = time.perf_counter()
+    import gc
+    gc.disable()
+    try:
+      t1 = time.perf_counter()
+      out_tensor = self.model_run(**self.tensor_inputs).realize()
+      if ASIUS:
+        _cl, dev = self._cl, self._cl_dev
+        obuf = out_tensor.uop.base.buffer
+        obuf.ensure_allocated()
+        if self._output_np is None:
+          self._output_np = np.empty(obuf.nbytes // 4, dtype=np.float32)
+          self._output_ptr = self._ctypes.c_void_p(self._output_np.ctypes.data)
+        _cl.clEnqueueReadBuffer(dev.queue, obuf._buf[0], False, 0, obuf.nbytes, self._output_ptr, 0, None, None)
+        _cl.clFlush(dev.queue)
+        _cl.clFinish(dev.queue)
+        dev.pending_copyin.clear()
+        output = self._output_np
+      else:
+        output = out_tensor.uop.base.buffer.numpy().flatten()
+      t2 = time.perf_counter()
+    finally:
+      gc.enable()
     return output, t2 - t1
 
 def slice_outputs(model_outputs, output_slices):
@@ -119,6 +166,9 @@ def main():
   assert vipc_client.is_connected()
   cloudlog.warning(f"connected with buffer size: {vipc_client.buffer_len}")
 
+  model.warmup(vipc_client.width, vipc_client.height)
+  cloudlog.warning("dm model warmed up")
+
   sm = SubMaster(["liveCalibration"])
   pm = PubMaster(["driverStateV2"])
 
@@ -138,9 +188,12 @@ def main():
     if sm.updated["liveCalibration"]:
       calib[:] = np.array(sm["liveCalibration"].rpyCalib)
 
+    if ASIUS:
+      model.prepare_inputs(buf, model_transform)
     t1 = time.perf_counter()
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
+    cloudlog.warning(f"dm frame {vipc_client.frame_id}: exec={((t2-t1)*1000):.1f}ms gpu={gpu_execution_time*1000:.1f}ms")
     raw_pred = model_output.tobytes() if SEND_RAW_PRED else b''
     model_output = slice_outputs(model_output, model.output_slices)
     model_output = parse_model_output(model_output)

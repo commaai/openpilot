@@ -467,6 +467,38 @@ class Tici(HardwareBase):
       sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
       sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
+    # Mainline GPU (Freedreno/msm, used on ASIUS/Dragon)
+    if os.path.exists("/sys/class/devfreq/3d00000.gpu"):
+      sudo_write("userspace", "/sys/class/devfreq/3d00000.gpu/governor")
+      sudo_write("812000000", "/sys/class/devfreq/3d00000.gpu/userspace/set_freq")
+      # Raise thermal trip points: passive 90→100°C, 95→105°C to avoid
+      # GPU compute slowdown from system-wide thermal throttling
+      import glob
+      for z in glob.glob("/sys/class/thermal/thermal_zone*/"):
+        try:
+          ztype = open(z + "type").read().strip()
+        except OSError:
+          continue
+        if not any(ztype.startswith(p) for p in ("cpu", "aoss", "ddr", "video", "cpuss", "gpuss")):
+          continue
+        for i in range(4):
+          tp_path = z + f"trip_point_{i}_temp"
+          tt_path = z + f"trip_point_{i}_type"
+          try:
+            tp = int(open(tp_path).read().strip())
+            tt = open(tt_path).read().strip()
+          except (OSError, ValueError):
+            continue
+          if tt in ("passive", "hot"):
+            if tp == 90000:
+              sudo_write("100000", tp_path)
+            elif tp == 95000:
+              sudo_write("105000", tp_path)
+            elif tp == 100000:
+              sudo_write("108000", tp_path)
+            elif tp == 105000:
+              sudo_write("109000", tp_path)
+
     # Qualcomm devfreq governors (downstream only)
     for devfreq_path in ("/sys/class/devfreq/soc:qcom,cpubw/governor",
                          "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor",

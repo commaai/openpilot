@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import HARDWARE, PC, ASIUS
+from openpilot.system.hardware import HARDWARE, PC, ASIUS, DEVICE
 from openpilot.system.ui.lib.multilang import multilang
 from openpilot.common.realtime import Ratekeeper
 
@@ -339,7 +339,7 @@ class GuiApplication:
       if BURN_IN_MODE and self._burn_in_shader is None:
         self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
 
-      if not PC:
+      if DEVICE:
         self._mouse.start()
 
   @contextmanager
@@ -573,7 +573,7 @@ class GuiApplication:
       rl.unload_shader(self._burn_in_shader)
       self._burn_in_shader = None
 
-    if not PC:
+    if DEVICE:
       self._mouse.stop()
 
     self.close_ffmpeg()

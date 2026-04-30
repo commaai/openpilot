@@ -30,6 +30,7 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import CompileConfig, make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
+import ctypes as _c
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 
 
@@ -104,7 +105,18 @@ class ModelState:
     if ASIUS:
       self._frame_upload_bufs = {k: Tensor.zeros(get_nv12_info(cam_w, cam_h)[3], dtype='uint8').contiguous().realize()
                                  for k in ('img', 'big_img')}
+      import ctypes as _ctypes
+      from tinygrad.device import Device
+      from tinygrad.runtime.autogen import opencl as _cl
+      self._cl, self._ctypes = _cl, _ctypes
+      self._cl_dev = Device['CL']
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
+    if ASIUS:
+      self._fp_lib = _c.CDLL('/data/openpilot/fast_parse.so')
+      self._fp_lib.fast_parse_vision.argtypes = [_c.c_void_p]
+      self._fp_lib.fast_parse_vision.restype = None
+      self._fp_lib.fast_parse_policy.argtypes = [_c.c_void_p]
+      self._fp_lib.fast_parse_policy.restype = None
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
     self.warp_enqueue(
       **self.input_queues,
@@ -115,13 +127,82 @@ class ModelState:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
     return parsed_model_outputs
 
+  def prepare_inputs(self, bufs, transforms, inputs):
+    for key in bufs:
+      yuv_size = self.frame_buf_params[key][3]
+      arr = np.frombuffer(bufs[key].data, dtype=np.uint8)[:yuv_size]
+      cl_buf = self._frame_upload_bufs[key].uop.base.buffer
+      cl_buf.ensure_allocated()
+      if cl_buf.nbytes == yuv_size:
+        cl_buf.copyin(memoryview(arr))
+      else:
+        if not hasattr(self, '_padded_cache'): self._padded_cache = {}
+        if key not in self._padded_cache or len(self._padded_cache[key]) != cl_buf.nbytes:
+          self._padded_cache[key] = np.empty(cl_buf.nbytes, dtype=np.uint8)
+        self._padded_cache[key][:len(arr)] = arr
+        cl_buf.copyin(memoryview(self._padded_cache[key]))
+      self.full_frames[key] = self._frame_upload_bufs[key]
+    self._cl.clFinish(self._cl_dev.queue)
+    self._cl_dev.pending_copyin.clear()
+    inputs['desire_pulse'][0] = 0
+    self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
+    self.prev_desire[:] = inputs['desire_pulse']
+    self.npy['traffic_convention'][:] = inputs['traffic_convention']
+    self.npy['tfm'][:,:] = transforms['img'][:,:]
+    self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
+    self._inputs_prepared = True
+
+  def _build_parsed_dict(self, v, p):
+    d = {}
+    vs = self.vision_output_slices
+    for name, sl, shape in [
+      ('pose', vs['pose'], (1,6)), ('wide_from_device_euler', vs['wide_from_device_euler'], (1,3)),
+      ('road_transform', vs['road_transform'], (1,6)),
+      ('lane_lines', vs['lane_lines'], (1,4,33,2)), ('road_edges', vs['road_edges'], (1,2,33,2)),
+      ('lead', vs['lead'], (1,3,6,4))]:
+      nv = (sl.stop - sl.start) // 2
+      d[name] = v[sl.start:sl.start+nv].reshape(shape)
+      d[name+'_stds'] = v[sl.start+nv:sl.stop].reshape(shape)
+    d['meta'] = v[np.newaxis, vs['meta']]
+    d['desire_pred'] = v[vs['desire_pred'].start:vs['desire_pred'].stop].reshape(1,4,8)
+    d['lane_lines_prob'] = v[np.newaxis, vs['lane_lines_prob']]
+    d['lead_prob'] = v[np.newaxis, vs['lead_prob']]
+    d['hidden_state'] = v[np.newaxis, vs['hidden_state']]
+    ps = self.policy_output_slices
+    psl = ps['plan']
+    pnv = (psl.stop - psl.start) // 2
+    d['plan'] = p[psl.start:psl.start+pnv].reshape(1,33,15)
+    d['plan_stds'] = p[psl.start+pnv:psl.stop].reshape(1,33,15)
+    d['desire_state'] = p[ps['desire_state'].start:ps['desire_state'].stop].reshape(1,8)
+    return d
+
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
-    for key in bufs.keys():
+    import gc
+    gc.disable()
+    try:
+      return self._run_inner(bufs, transforms, inputs, prepare_only)
+    finally:
+      gc.enable()
+
+  def _run_inner(self, bufs, transforms, inputs, prepare_only):
+    _skip_copyin = getattr(self, '_inputs_prepared', False)
+    if _skip_copyin: self._inputs_prepared = False
+    for key in bufs:
       yuv_size = self.frame_buf_params[key][3]
       if ASIUS:
-        arr = np.frombuffer(bufs[key].data, dtype=np.uint8)[:yuv_size].copy()
-        self._frame_upload_bufs[key].uop.buffer.copyin(memoryview(arr))
+        if not _skip_copyin:
+          arr = np.frombuffer(bufs[key].data, dtype=np.uint8)[:yuv_size]
+          cl_buf = self._frame_upload_bufs[key].uop.base.buffer
+          cl_buf.ensure_allocated()
+          if cl_buf.nbytes == yuv_size:
+            cl_buf.copyin(memoryview(arr))
+          else:
+            if not hasattr(self, '_padded_cache'): self._padded_cache = {}
+            if key not in self._padded_cache or len(self._padded_cache[key]) != cl_buf.nbytes:
+              self._padded_cache[key] = np.empty(cl_buf.nbytes, dtype=np.uint8)
+            self._padded_cache[key][:len(arr)] = arr
+            cl_buf.copyin(memoryview(self._padded_cache[key]))
         self.full_frames[key] = self._frame_upload_bufs[key]
       else:
         ptr = bufs[key].data.ctypes.data
@@ -130,28 +211,48 @@ class ModelState:
           self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
         self.full_frames[key] = self._blob_cache[cache_key]
 
-    # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
-    inputs['desire_pulse'][0] = 0
-    self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
-    self.prev_desire[:] = inputs['desire_pulse']
-    self.npy['traffic_convention'][:] = inputs['traffic_convention']
-    self.npy['tfm'][:,:] = transforms['img'][:,:]
-    self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
+    if not _skip_copyin:
+      inputs['desire_pulse'][0] = 0
+      self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
+      self.prev_desire[:] = inputs['desire_pulse']
+      self.npy['traffic_convention'][:] = inputs['traffic_convention']
+      self.npy['tfm'][:,:] = transforms['img'][:,:]
+      self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
     if prepare_only:
       self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+      if ASIUS:
+        self._cl.clFlush(self._cl_dev.queue)
       return None
 
-    vision_output, policy_output = self.run_policy(
+    vision_tensor, policy_tensor = self.run_policy(
       **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 
-    vision_output = vision_output.numpy().flatten()
-    policy_output = policy_output.numpy().flatten()
+    if ASIUS:
+      _cl, dev, _ctypes = self._cl, self._cl_dev, self._ctypes
+      vbuf = vision_tensor.uop.base.buffer
+      pbuf = policy_tensor.uop.base.buffer
+      vbuf.ensure_allocated()
+      pbuf.ensure_allocated()
+      if not hasattr(self, '_vision_np'):
+        self._vision_np = np.empty(vbuf.nbytes // 4, dtype=np.float32)
+        self._policy_np = np.empty(pbuf.nbytes // 4, dtype=np.float32)
+        self._vision_ptr = _ctypes.c_void_p(self._vision_np.ctypes.data)
+        self._policy_ptr = _ctypes.c_void_p(self._policy_np.ctypes.data)
+      _cl.clEnqueueReadBuffer(dev.queue, vbuf._buf[0], False, 0, vbuf.nbytes, self._vision_ptr, 0, None, None)
+      _cl.clEnqueueReadBuffer(dev.queue, pbuf._buf[0], False, 0, pbuf.nbytes, self._policy_ptr, 0, None, None)
+      _cl.clFlush(dev.queue)
+      _cl.clFinish(dev.queue)
+      dev.pending_copyin.clear()
+      return (self._vision_np, self._policy_np)
+    else:
+      vision_output = vision_tensor.numpy().flatten()
+      policy_output = policy_tensor.numpy().flatten()
+
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
-
     if SEND_RAW_PRED:
       combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
     return combined_outputs_dict
@@ -300,10 +401,19 @@ def main(demo=False):
       'traffic_convention': traffic_convention,
     }
 
+    if ASIUS:
+      model.prepare_inputs(bufs, transforms, inputs)
     mt1 = time.perf_counter()
     model_output = model.run(bufs, transforms, inputs, prepare_only)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
+    if ASIUS and model_output is not None:
+      vision_output, policy_output = model_output
+      model._fp_lib.fast_parse_vision(vision_output.ctypes.data)
+      model._fp_lib.fast_parse_policy(policy_output.ctypes.data)
+      model_output = model._build_parsed_dict(vision_output, policy_output)
+      if SEND_RAW_PRED:
+        model_output['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
 
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')

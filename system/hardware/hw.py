@@ -2,7 +2,7 @@ import os
 import platform
 from pathlib import Path
 
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import PC, DEVICE
 
 DEFAULT_DOWNLOAD_CACHE_ROOT = "/tmp/comma_download_cache"
 
@@ -15,14 +15,14 @@ class Paths:
   def log_root() -> str:
     if os.environ.get('LOG_ROOT', False):
       return os.environ['LOG_ROOT']
-    elif PC:
+    elif not DEVICE:
       return str(Path(Paths.comma_home()) / "media" / "0" / "realdata")
     else:
       return '/data/media/0/realdata/'
 
   @staticmethod
   def swaglog_root() -> str:
-    if PC:
+    if not DEVICE:
       return os.path.join(Paths.comma_home(), "log")
     else:
       return "/data/log/"
@@ -39,21 +39,21 @@ class Paths:
 
   @staticmethod
   def persist_root() -> str:
-    if PC:
+    if not DEVICE:
       return os.path.join(Paths.comma_home(), "persist")
     else:
       return "/persist/"
 
   @staticmethod
   def stats_root() -> str:
-    if PC:
+    if not DEVICE:
       return str(Path(Paths.comma_home()) / "stats")
     else:
       return "/data/stats/"
 
   @staticmethod
   def config_root() -> str:
-    if PC:
+    if not DEVICE:
       return Paths.comma_home()
     else:
       return "/tmp/.comma"
