@@ -39,6 +39,7 @@ assert arch in [
 
 pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
+import acados as acados_pkg
 
 
 # ***** enforce a whitelist of system libraries *****
@@ -82,10 +83,10 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
-    "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
-    "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
-    "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
+    "PYTHONPATH": Dir("#").abspath,
+    "ACADOS_SOURCE_DIR": acados_pkg.DIR,
+    "ACADOS_PYTHON_INTERFACE_PATH": acados_pkg.TEMPLATE_DIR,
+    "TERA_PATH": acados_pkg.TERA_PATH,
   },
   CCFLAGS=[
     "-g",
@@ -108,9 +109,9 @@ env = Environment(
     "#third_party",
     "#third_party/json11",
     "#third_party/linux/include",
-    "#third_party/acados/include",
-    "#third_party/acados/include/blasfeo/include",
-    "#third_party/acados/include/hpipm/include",
+    acados_pkg.INCLUDE_DIR,
+    os.path.join(acados_pkg.INCLUDE_DIR, "blasfeo", "include"),
+    os.path.join(acados_pkg.INCLUDE_DIR, "hpipm", "include"),
     "#third_party/catch2/include",
     [x.INCLUDE_DIR for x in pkgs],
   ],
@@ -120,7 +121,7 @@ env = Environment(
     "#third_party",
     "#selfdrive/pandad",
     "#rednose/helpers",
-    f"#third_party/acados/{arch}/lib",
+    acados_pkg.LIB_DIR,
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[],

@@ -1,3 +1,5 @@
+import os
+
 Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'np_version')
 
 gen = "c_generated_code"
@@ -51,17 +53,19 @@ generated_files = [
   f'{gen}/long_cost/long_cost.h',
 ] + build_files
 
-acados_dir = '#third_party/acados'
-acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
+import acados as acados_pkg
+
+acados_include = acados_pkg.INCLUDE_DIR
+acados_templates_dir = os.path.join(acados_pkg.TEMPLATE_DIR, 'c_templates_tera')
 
 source_list = ['long_mpc.py',
   '#selfdrive/modeld/constants.py',
-  f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
-  f'{acados_templates_dir}/acados_solver.in.c',
+  os.path.join(acados_include, 'acados_c', 'ocp_nlp_interface.h'),
+  os.path.join(acados_templates_dir, 'acados_solver.in.c'),
 ]
 
 lenv = env.Clone()
-acados_rel_path = Dir(gen).rel_path(Dir(f"#third_party/acados/{arch}/lib"))
+acados_rel_path = Dir(gen).rel_path(Dir(acados_pkg.LIB_DIR))
 lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
 lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
@@ -82,8 +86,8 @@ lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                                 LIBS=['m', 'acados', 'hpipm', 'blasfeo', 'qpOASES_e'])
 
 # generate cython stuff
-acados_ocp_solver_pyx = File("#third_party/acados/acados_template/acados_ocp_solver_pyx.pyx")
-acados_ocp_solver_common = File("#third_party/acados/acados_template/acados_solver_common.pxd")
+acados_ocp_solver_pyx = File(os.path.join(acados_pkg.TEMPLATE_DIR, "acados_ocp_solver_pyx.pyx"))
+acados_ocp_solver_common = File(os.path.join(acados_pkg.TEMPLATE_DIR, "acados_solver_common.pxd"))
 libacados_ocp_solver_pxd = File(f'{gen}/acados_solver.pxd')
 libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
