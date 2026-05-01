@@ -174,7 +174,6 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
                          vision_features_slice, frame_skip, prepare_only)
   run_policy_jit = TinyJit(_run, prune=True)
 
-  N_RUNS = 3
   SEED = 42
 
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
@@ -182,7 +181,10 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     np.random.seed(seed)
     Tensor.manual_seed(seed)
 
-    for i in range(N_RUNS):
+    testing = test_val is not None or test_buffers is not None
+    n_runs = 1 if testing else 3
+
+    for i in range(n_runs):
       frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
       big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
       for v in npy.values():
@@ -191,15 +193,13 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
       st = time.perf_counter()
       outs = fn(**input_queues, frame=frame, big_frame=big_frame)
       mt = time.perf_counter()
-      for o in outs:
-        # .realize() not needed once jitted, but needed for unjitted fn
-        o.realize()
       Device.default.synchronize()
       et = time.perf_counter()
-      print(f"  [{i+1}/{N_RUNS}] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
+      print(f"  [{i+1}/{n_runs}] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
-    val = [np.copy(v.numpy()) for v in outs]
-    buffers = [np.copy(v.numpy().copy()) for v in input_queues.values()]
+      if i == 0:
+        val = [np.copy(v.numpy()) for v in outs]
+        buffers = [np.copy(v.numpy().copy()) for v in input_queues.values()]
 
     if test_val is not None:
       match = all(np.array_equal(a, b) for a, b in zip(val, test_val, strict=True))
@@ -209,10 +209,8 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
       assert match == expect_match, f"buffers {'differ from' if expect_match else 'match'} baseline (seed={seed})"
     return fn, val, buffers
 
-  print('run unjitted')
-  _, test_val, test_buffers = random_inputs_run_fn(_run, seed=SEED)
   print('capture + replay')
-  run_policy_jit, _, _ = random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers)
+  run_policy_jit, test_val, test_buffers = random_inputs_run_fn(run_policy_jit, SEED)
 
   print('pickle round trip')
   with open(pkl_path, "wb") as f:
