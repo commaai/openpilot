@@ -36,6 +36,8 @@ ROAD_CAM_MIN_SPEED = 10  # m/s (25 mph)
 
 CAM_Y_OFFSET = 20
 
+CANT_START_LABEL_DELAY = 1.0  # seconds ignition must be on without starting before showing the alert
+
 
 class BookmarkIcon(Widget):
   PEEK_THRESHOLD = 50  # If icon peeks out this much, snap it fully visible
@@ -161,6 +163,8 @@ class AugmentedRoadView(CameraView):
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
+    self._ignition_no_start_t: float = 0.0
+
     # debug
     self._pm = messaging.PubMaster(['uiDebug'])
 
@@ -172,9 +176,15 @@ class AugmentedRoadView(CameraView):
     super()._update_state()
 
     # update offroad label
+    ignition_no_start = ui_state.ignition and not ui_state.started
+    if not ignition_no_start:
+      self._ignition_no_start_t = 0.0
+    elif self._ignition_no_start_t == 0.0:
+      self._ignition_no_start_t = time.monotonic()
+
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._offroad_label.set_text("system booting")
-    elif ui_state.ignition and not ui_state.started:
+    elif ignition_no_start and time.monotonic() - self._ignition_no_start_t >= CANT_START_LABEL_DELAY:
       self._offroad_label.set_text("openpilot can't start\ncheck alerts")
     else:
       self._offroad_label.set_text("start the car to\nuse openpilot")
@@ -185,6 +195,11 @@ class AugmentedRoadView(CameraView):
       super()._handle_mouse_release(mouse_pos)
 
   def _render(self, _):
+    if not ui_state.started:
+      rl.draw_rectangle_rec(self.rect, rl.BLACK)
+      self._offroad_label.render(self._rect)
+      return
+
     start_draw = time.monotonic()
     self._switch_stream_if_needed(ui_state.sm)
 
@@ -220,7 +235,7 @@ class AugmentedRoadView(CameraView):
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
 
     # Hide DMoji when disengaged unless AlwaysOnDM is enabled
-    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and ui_state.is_onroad() and
+    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and
                          (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
     self._driver_state_renderer.set_should_draw(should_draw_dmoji)
     self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
@@ -229,8 +244,7 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
-    if ui_state.started:
-      self._alert_renderer.render(self._content_rect)
+    self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
     # Draw fake rounded border
@@ -244,9 +258,6 @@ class AugmentedRoadView(CameraView):
     self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
-
-    if not ui_state.started:
-      self._offroad_label.render(self._rect)
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
