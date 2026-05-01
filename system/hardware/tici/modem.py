@@ -128,8 +128,6 @@ class Modem:
     os.chmod(f.name, 0o644)
     os.replace(f.name, STATE_PATH)
 
-  # -- AT commands --
-
   def _at(self, cmd):
     """Send AT command, return response lines. [] on error or if LPA holds port."""
     fd = os.open(AT_LOCK, os.O_CREAT | os.O_RDWR, 0o666)
@@ -195,8 +193,6 @@ class Modem:
       msg = f"Carrier rejected connection ({code})."
     return {"type": "carrier_reject", "description": msg}
 
-  # -- teardown helpers --
-
   def _kill_ppp(self):
     subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
     self._ppp = None
@@ -218,8 +214,6 @@ class Modem:
         s.dtr = True
     except Exception as e:
       logging.warning(f"data port reset failed: {e}")
-
-  # -- state handlers --
 
   def _configure_modem(self, modem_version: str, sim_id: str):
     cmds: list[str] = []
@@ -255,7 +249,6 @@ class Modem:
     if not os.path.exists(AT_PORT):
       return State.INITIALIZING
     logging.info("port found, initializing")
-    # kill any stale pppd from previous run
     self._kill_ppp()
     self._cleanup_routes()
 
@@ -276,8 +269,7 @@ class Modem:
     return State.SEARCHING
 
   def _read_identity(self):
-    # after a SIM hot-swap or modem reset, identity reads can come back empty for a few seconds;
-    # retry until IMEI (hardware-fixed) reads or we give up
+    # after a SIM hot-swap, identity reads can come back empty for a few seconds; retry on IMEI
     imei, iccid, mcc_mnc, modem_version = "", "", "", ""
     for _ in range(10):
       r = self._at("AT+CGSN")
@@ -290,8 +282,6 @@ class Modem:
       iccid = v
     r = self._at("AT+CIMI")
     if r:
-      # IMSI = MCC (3 digits) + MNC (2 or 3 digits) + MSIN; we include both 5- and 6-digit forms in MNC,
-      # but standard convention for mcc_mnc is first 5-6 digits — use 6 by default, consumers can truncate
       imsi = r[0].strip()
       if len(imsi) >= 6 and imsi.isdigit():
         mcc_mnc = imsi[:6]
@@ -323,10 +313,8 @@ class Modem:
       self._update(registration=reg, error={})
       return State.CONNECTING
 
-    # not connectable yet — record current reg and any carrier reject reason
     if reg != self.S.get("registration"):
       self._update(registration=reg, error=self._carrier_reject_error(reg))
-
     return self._searching_idle()
 
   def _searching_idle(self):
@@ -413,8 +401,6 @@ class Modem:
     self._sim_change = False
     self._ppp_peer = ""
     return State.INITIALIZING
-
-  # -- poll --
 
   def _poll_signal(self) -> dict:
     v = self._atv("AT+CSQ", "+CSQ:")
@@ -512,11 +498,8 @@ class Modem:
     if s:
       self._update(**s)
 
-  # -- main loop --
-
   def run(self):
     logging.info("starting")
-    # publish initial state so callers see modem.py is active from the start
     self._update(state=State.INITIALIZING.value)
     # mask before stop so anything trying to activate ModemManager (NetworkManager, dbus) can't race us
     subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
