@@ -892,7 +892,7 @@ requires-dist = [
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
     { name = "xattr" },
-    { name = "xvfb", git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=add-xvfb-package" },
+    { name = "xvfb", git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb" },
     { name = "zensical", marker = "extra == 'docs'" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=release-zeromq" },
     { name = "zstandard" },
@@ -1564,7 +1564,7 @@ wheels = [
 [[package]]
 name = "xvfb"
 version = "1.20.11"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=add-xvfb-package#31b76cc466b1c84bfb1b73970fa86c0cf40c8680" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb#e98ecfa02a49f59cbb5194ed122e14b50f458873" }
 
 [[package]]
 name = "yarl"
