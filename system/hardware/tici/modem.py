@@ -218,7 +218,7 @@ class Modem:
     self._at(f'AT+CGDCONT={DIAL_CID},"IP","{self._apn}"')
     logging.info(f"APN '{self._apn or '(network-provided)'}' written to CID {DIAL_CID}, roaming={'on' if self._roaming_allowed else 'off'}")
 
-    self._sim_change = False  # clear — we just re-read identity with the new SIM
+    self._sim_change = False  # clear since we just re-read identity with the new SIM
     self._update(**identity)
     return State.SEARCHING
 

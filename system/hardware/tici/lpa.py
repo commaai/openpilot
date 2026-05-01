@@ -94,7 +94,7 @@ BPP_ERROR_MESSAGES = {
   12: "Profile installation failed. The QR code may have already been used.",
 }
 
-# SGP.22 §5.2.6 — SM-DP+ reason/subject codes mapped to user-friendly messages
+# SGP.22 §5.2.6 SM-DP+ reason/subject codes mapped to user-friendly messages
 ES9P_ERROR_MESSAGES: dict[tuple[str, str], str] = {
   ('3.8', '8.2.6'): "This eSIM profile is already installed on another device. Please use a new QR code.",
   ('3.8', '8.2.1'): "This eSIM profile has expired. Please request a new QR code.",
