@@ -3,12 +3,10 @@ import fcntl
 import json
 import logging
 import os
-import queue
 import serial
 import signal
 import subprocess
 import tempfile
-import threading
 import time
 
 from enum import Enum
@@ -103,13 +101,17 @@ STATE_WAIT = {
 class Modem:
   def __init__(self):
     self._ppp = None
-    self._ppp_lines = queue.Queue()
     self._ppp_fails = 0
+    self._ppp_peer = ""
+    self._last_iccid_check = 0.0
     self._sim_change = False
-    self._apn = ""  # last-seen value of GsmApn param (blank = network-provided via PCO)
+    self._apn = ""  # blank = network-provided via PCO
     self._roaming_allowed = True
     self.running = True
     self.S = INITIAL_STATE.copy()
+
+  def _is_roaming_allowed(self) -> bool:
+    return self._read_param("GsmRoaming") != "0"
 
   @staticmethod
   def _read_param(key):
@@ -120,6 +122,8 @@ class Modem:
       return ""
 
   def _update(self, **kwargs):
+    if all(self.S.get(k) == v for k, v in kwargs.items()):
+      return
     self.S.update(kwargs)
     with tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False) as f:
       json.dump(self.S, f)
@@ -197,12 +201,7 @@ class Modem:
 
   def _kill_ppp(self):
     subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
-    if self._ppp:
-      try:
-        self._ppp.wait(timeout=5)
-      except subprocess.TimeoutExpired:
-        pass
-      self._ppp = None
+    self._ppp = None
 
   def _cleanup_routes(self):
     subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
@@ -269,7 +268,7 @@ class Modem:
     self._configure_modem(identity["modem_version"], identity["iccid"])
 
     self._apn = self._read_param("GsmApn")
-    self._roaming_allowed = self._read_param("GsmRoaming") != "0"
+    self._roaming_allowed = self._is_roaming_allowed()
     # blank APN lets the carrier supply one via PCO
     self._at(f'AT+CGDCONT={DIAL_CID},"IP","{self._apn}"')
     logging.info(f"APN '{self._apn or '(network-provided)'}' written to CID {DIAL_CID}, roaming={'on' if self._roaming_allowed else 'off'}")
@@ -305,7 +304,7 @@ class Modem:
     return {"imei": imei, "iccid": iccid, "mcc_mnc": mcc_mnc, "modem_version": modem_version}
 
   def _do_searching(self):
-    new_roaming = self._read_param("GsmRoaming") != "0"
+    new_roaming = self._is_roaming_allowed()
     if new_roaming != self._roaming_allowed:
       logging.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
@@ -339,19 +338,8 @@ class Modem:
     return State.SEARCHING
 
   def _start_pppd(self):
-    self._ppp = subprocess.Popen(PPPD_CMD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    self._ppp_lines = queue.Queue()
-
-    def _read_pppd(proc, q):
-      try:
-        assert proc.stdout is not None
-        for raw in proc.stdout:
-          q.put(raw)
-        proc.stdout.close()
-      except Exception as e:
-        logging.warning(f"pppd reader error: {e}")
-
-    threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
+    self._ppp = subprocess.Popen(PPPD_CMD, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    self._ppp_peer = ""
     logging.info(f"PPP dialing CID {DIAL_CID}")
 
   def _do_connecting(self):
@@ -361,27 +349,15 @@ class Modem:
     self._start_pppd()
     return State.CONNECTED
 
-  def _install_ppp_routes(self, peer: str):
+  def _install_ppp_routes(self, ip: str, peer: str):
     self._cleanup_routes()
     subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
                    capture_output=True)
     subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
                    capture_output=True)
-    subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
+    subprocess.run(["sudo", "ip", "rule", "add", "from", ip, "table", "1000"],
                    capture_output=True)
-    logging.info(f"route set up for {self.S['ip_address']} via {peer}")
-
-  def _handle_pppd_line(self, line: str):
-    logging.info(f"pppd: {line}")
-    if "local  IP address" in line:
-      ip = line.split("local  IP address")[-1].strip()
-      self._update(ip_address=ip, connected=True)
-    elif "remote IP address" in line and self.S["ip_address"]:
-      # only install routes once both local IP and remote peer are known
-      peer = line.split("remote IP address")[-1].strip()
-      self._install_ppp_routes(peer)
-    elif "Connection terminated" in line or "Modem hangup" in line:
-      self._update(connected=False, ip_address="")
+    logging.info(f"route set up for {ip} via {peer}")
 
   def _handle_pppd_exit(self):
     self._ppp = None
@@ -403,7 +379,7 @@ class Modem:
     if new_apn != self._apn:
       logging.info(f"GsmApn changed: '{self._apn}' -> '{new_apn}'")
       return True
-    new_roaming = self._read_param("GsmRoaming") != "0"
+    new_roaming = self._is_roaming_allowed()
     if new_roaming != self._roaming_allowed:
       logging.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       return True
@@ -412,20 +388,15 @@ class Modem:
   def _check_iccid(self, state):
     if state in (State.INITIALIZING, State.DISCONNECTING) or not self.S["iccid"]:
       return
+    if time.monotonic() - self._last_iccid_check < 30:
+      return
+    self._last_iccid_check = time.monotonic()
     iccid = self._atv("AT+QCCID", "+QCCID:")
     if iccid and iccid != self.S["iccid"]:
       logging.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
       self._sim_change = True
 
   def _do_connected(self):
-    while True:
-      try:
-        line = self._ppp_lines.get_nowait().decode(errors="ignore").strip()
-      except queue.Empty:
-        break
-      if line:
-        self._handle_pppd_line(line)
-
     if self._ppp and self._ppp.poll() is not None:
       return self._handle_pppd_exit()
 
@@ -442,6 +413,7 @@ class Modem:
     self._cleanup_routes()
     self._reset_data_port()
     self._sim_change = False
+    self._ppp_peer = ""
     return State.INITIALIZING
 
   # -- poll --
@@ -501,10 +473,23 @@ class Modem:
   def _poll_iface(self) -> dict:
     try:
       r = subprocess.run(["ip", "-4", "addr", "show", "ppp0"], capture_output=True, text=True, timeout=2)
-      ip = next((l.strip().split()[1].split("/")[0] for l in r.stdout.splitlines() if "inet " in l), None)
+      ip, peer = "", ""
+      for line in r.stdout.splitlines():
+        # `inet 10.x.x.x peer 10.64.64.64/32 ...`
+        parts = line.strip().split()
+        if "inet" in parts:
+          i = parts.index("inet")
+          ip = parts[i + 1].split("/")[0]
+          if "peer" in parts:
+            peer = parts[parts.index("peer") + 1].split("/")[0]
+          break
       if ip:
+        if peer and peer != self._ppp_peer:
+          self._install_ppp_routes(ip, peer)
+          self._ppp_peer = peer
         return {"ip_address": ip, "connected": True}
       if self.S["connected"]:
+        self._ppp_peer = ""
         return {"connected": False, "ip_address": ""}
     except Exception:
       pass
