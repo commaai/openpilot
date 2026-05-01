@@ -36,6 +36,8 @@ ROAD_CAM_MIN_SPEED = 10  # m/s (25 mph)
 
 CAM_Y_OFFSET = 20
 
+CANT_START_LABEL_DELAY = 1.0  # seconds ignition must be on without starting before showing the alert
+
 
 class BookmarkIcon(Widget):
   PEEK_THRESHOLD = 50  # If icon peeks out this much, snap it fully visible
@@ -161,6 +163,8 @@ class AugmentedRoadView(CameraView):
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
+    self._ignition_no_start_t: float = 0.0
+
     # debug
     self._pm = messaging.PubMaster(['uiDebug'])
 
@@ -172,9 +176,15 @@ class AugmentedRoadView(CameraView):
     super()._update_state()
 
     # update offroad label
+    ignition_no_start = ui_state.ignition and not ui_state.started
+    if not ignition_no_start:
+      self._ignition_no_start_t = 0.0
+    elif self._ignition_no_start_t == 0.0:
+      self._ignition_no_start_t = time.monotonic()
+
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._offroad_label.set_text("system booting")
-    elif ui_state.ignition and not ui_state.started:
+    elif ignition_no_start and time.monotonic() - self._ignition_no_start_t >= CANT_START_LABEL_DELAY:
       self._offroad_label.set_text("openpilot can't start\ncheck alerts")
     else:
       self._offroad_label.set_text("start the car to\nuse openpilot")
