@@ -21,7 +21,13 @@ AT_PORT = "/dev/modem_at0"
 PPP_PORT = "/dev/modem_at1"
 STATE_PATH = "/dev/shm/modem"
 AT_LOCK = "/dev/shm/modem.lock"  # shared with LPA
-AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
+AT_INIT = [
+  "ATE0",       # disable command echo
+  "ATV1",       # verbose result codes
+  "AT+CMEE=1",  # numeric error codes on failures
+  "ATX4",       # full result codes (CONNECT/BUSY/NO CARRIER...)
+  "AT&C1",      # DCD reflects carrier state
+]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
 # 3GPP TS 27.007 +COPS <AcT> -> network type
 NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm", 8: "gsm",
@@ -59,12 +65,7 @@ class State(Enum):
   DISCONNECTING = "DISCONNECTING"
 
 
-# seconds to wait after each state handler returns; states omitted use STATE_WAIT_DEFAULT
-STATE_WAIT_DEFAULT = 2.0
-STATE_WAIT = {
-  State.INITIALIZING: 1.0,
-  State.SEARCHING: 0.5,
-}
+STATE_WAIT = 1.0  # seconds to wait after each state handler returns
 
 
 class Modem:
@@ -106,13 +107,12 @@ class Modem:
 
   @staticmethod
   def _has_modem_manager() -> bool:
-    return subprocess.run(["systemctl", "list-unit-files", "ModemManager.service"],
-                          capture_output=True, text=True).stdout.find("ModemManager.service") != -1
+    return os.path.isfile("/lib/systemd/system/ModemManager.service")
 
   def _is_roaming_allowed(self) -> bool:
-    return self._read_param("GsmRoaming") != "0"
+    return self._read_param("GsmRoaming") == "1"
 
-  def _update(self, **kwargs):
+  def _publish_state(self, **kwargs):
     self.S.update(kwargs)
     with tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False) as f:
       json.dump(self.S, f)
@@ -219,7 +219,7 @@ class Modem:
     logging.info(f"APN '{self._apn or '(network-provided)'}' written to CID {DIAL_CID}, roaming={'on' if self._roaming_allowed else 'off'}")
 
     self._sim_change = False  # clear since we just re-read identity with the new SIM
-    self._update(**identity)
+    self._publish_state(**identity)
     return State.SEARCHING
 
   def _read_identity(self):
@@ -260,15 +260,15 @@ class Modem:
     logging.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
     if reg == "roaming" and not self._roaming_allowed:
-      self._update(registration=reg)
+      self._publish_state(registration=reg)
       return State.SEARCHING
 
     if reg in ("home", "roaming") and greg in ("home", "roaming"):
-      self._update(registration=reg)
+      self._publish_state(registration=reg)
       return State.CONNECTING
 
     if reg != self.S.get("registration"):
-      self._update(registration=reg)
+      self._publish_state(registration=reg)
     return self._searching_idle()
 
   def _searching_idle(self):
@@ -345,7 +345,7 @@ class Modem:
 
   def _do_disconnecting(self):
     logging.warning("reconnecting")
-    self._update(**INITIAL_STATE)
+    self._publish_state(**INITIAL_STATE)
     self._kill_ppp()
     self._cleanup_routes()
     self._reset_data_port()
@@ -388,7 +388,7 @@ class Modem:
     try:
       if len(info) >= 4:
         return {"band": info[2], "channel": int(info[3])}
-    except (ValueError, IndexError):
+    except ValueError:
       pass
     return {}
 
@@ -447,11 +447,11 @@ class Modem:
                self._poll_byte_counters):
       s.update(fn())
     if s:
-      self._update(**s)
+      self._publish_state(**s)
 
   def run(self):
     logging.info("starting")
-    self._update(state=State.INITIALIZING.value)
+    self._publish_state(state=State.INITIALIZING.value)
     if self._has_modem_manager():
       subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
       subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
@@ -473,12 +473,12 @@ class Modem:
         prev = state
         state = handlers[state]()
         if state != prev:
-          self._update(state=state.value)
+          self._publish_state(state=state.value)
           logging.info(f"{prev.value} -> {state.value}")
       except Exception:
         logging.exception(f"error in {state.value}")
         state = State.DISCONNECTING
-      time.sleep(STATE_WAIT.get(state, STATE_WAIT_DEFAULT))
+      time.sleep(STATE_WAIT)
 
   def stop(self):
     self.running = False
