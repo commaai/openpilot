@@ -78,9 +78,6 @@ class Modem:
     self.running = True
     self.S = INITIAL_STATE.copy()
 
-  def _is_roaming_allowed(self) -> bool:
-    return self._read_param("GsmRoaming") != "0"
-
   @staticmethod
   def _read_param(key):
     try:
@@ -88,6 +85,32 @@ class Modem:
         return f.read().strip()
     except FileNotFoundError:
       return ""
+
+  @staticmethod
+  def _parse_reg(v: str) -> str:
+    try:
+      return CREG.get(int(v.split(",")[1].strip('"')), "unknown")
+    except (ValueError, IndexError):
+      return "unknown"
+
+  @staticmethod
+  def _reset_data_port():
+    """Drop DTR on PPP_PORT so the modem terminates any stuck PPP session."""
+    try:
+      with serial.Serial(PPP_PORT, 460800, timeout=1) as s:
+        s.dtr = False
+        time.sleep(0.2)
+        s.dtr = True
+    except Exception as e:
+      logging.warning(f"data port reset failed: {e}")
+
+  @staticmethod
+  def _has_modem_manager() -> bool:
+    return subprocess.run(["systemctl", "list-unit-files", "ModemManager.service"],
+                          capture_output=True, text=True).stdout.find("ModemManager.service") != -1
+
+  def _is_roaming_allowed(self) -> bool:
+    return self._read_param("GsmRoaming") != "0"
 
   def _update(self, **kwargs):
     self.S.update(kwargs)
@@ -135,13 +158,6 @@ class Modem:
         return line.split(":", 1)[1].strip()
     return None
 
-  @staticmethod
-  def _parse_reg(v: str) -> str:
-    try:
-      return CREG.get(int(v.split(",")[1].strip('"')), "unknown")
-    except (ValueError, IndexError):
-      return "unknown"
-
   def _kill_ppp(self):
     subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
     self._ppp = None
@@ -152,17 +168,6 @@ class Modem:
     # rules don't have a flush; delete until none remain
     while subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True).returncode == 0:
       pass
-
-  @staticmethod
-  def _reset_data_port():
-    """Drop DTR on PPP_PORT so the modem terminates any stuck PPP session."""
-    try:
-      with serial.Serial(PPP_PORT, 460800, timeout=1) as s:
-        s.dtr = False
-        time.sleep(0.2)
-        s.dtr = True
-    except Exception as e:
-      logging.warning(f"data port reset failed: {e}")
 
   def _configure_modem(self, modem_version: str, sim_id: str):
     cmds: list[str] = []
@@ -443,11 +448,6 @@ class Modem:
       s.update(fn())
     if s:
       self._update(**s)
-
-  @staticmethod
-  def _has_modem_manager() -> bool:
-    return subprocess.run(["systemctl", "list-unit-files", "ModemManager.service"],
-                          capture_output=True, text=True).stdout.find("ModemManager.service") != -1
 
   def run(self):
     logging.info("starting")
