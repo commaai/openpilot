@@ -72,7 +72,6 @@ class Modem:
     self._ppp = None
     self._ppp_fails = 0
     self._ppp_peer = ""
-    self._last_iccid_check = 0.0
     self._sim_change = False
     self._apn = ""  # blank = network-provided via PCO
     self._roaming_allowed = True
@@ -324,9 +323,6 @@ class Modem:
   def _check_iccid(self, state):
     if state in (State.INITIALIZING, State.DISCONNECTING) or not self.S["iccid"]:
       return
-    if time.monotonic() - self._last_iccid_check < 30:
-      return
-    self._last_iccid_check = time.monotonic()
     iccid = self._atv("AT+QCCID", "+QCCID:")
     if iccid and iccid != self.S["iccid"]:
       logging.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
