@@ -150,10 +150,8 @@ class CameraView(Widget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _offroad_transition(self):
-    # Drain queued SubSocket messages so the next render doesn't pull stale frames
-    # buffered before the transition. Qt has a background thread draining the socket
-    # for us; mici does not, so without this the next drive briefly shows the
-    # previous drive's last frame.
+    # Drain queued SubSocket messages to prevent old frames from showing when going
+    # onroad. Qt had a separate thread which drains the VisionIpcClient SubSocket for us.
     if self.client and self.client.is_connected():
       while self.client.recv(timeout_ms=0) is not None:
         pass
