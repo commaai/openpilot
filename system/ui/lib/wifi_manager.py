@@ -210,8 +210,6 @@ class WifiManager:
     def worker():
       self._wait_for_wifi_device()
 
-      # Start signal threads before mutating NM so the NewConnection signal
-      # from _add_tethering_connection lands in _connections.
       self._scan_thread.start()
       self._state_thread.start()
 
