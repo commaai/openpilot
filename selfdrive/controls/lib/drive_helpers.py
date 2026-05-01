@@ -8,11 +8,11 @@ CAR_ROTATION_RADIUS = 0.0
 # This is a turn radius smaller than most cars can achieve
 MAX_CURVATURE = 0.2
 MAX_VEL_ERR = 5.0  # m/s
+MIN_STABLE_DELAY = 0.3
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0  # m/s^3
 MAX_LATERAL_ACCEL_NO_ROLL = 3.0  # m/s^2
-MIN_STABLE_DELAY = 0.3
 
 
 def clamp(val, min_val, max_val):
