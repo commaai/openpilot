@@ -2,7 +2,6 @@
 #include "tools/jotpluggler/car_fingerprint_to_dbc.h"
 #include "tools/jotpluggler/common.h"
 
-#include <capnp/dynamic.h>
 #include <kj/exception.h>
 
 #include <chrono>
@@ -10,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <initializer_list>
 #include <map>
 #include <mutex>
 #include <limits>
@@ -51,47 +51,7 @@ struct SegmentLogs {
   std::string qcamera;
 };
 
-enum class ScalarKind {
-  None,
-  Bool,
-  Int,
-  UInt,
-  Float,
-  Enum,
-};
-
-enum class ResolvedNodeKind {
-  Ignore,
-  Scalar,
-  Struct,
-  List,
-};
-
-struct ResolvedNode {
-  ResolvedNodeKind kind = ResolvedNodeKind::Ignore;
-  ScalarKind scalar_kind = ScalarKind::None;
-  int fixed_slot = -1;
-  bool has_field = false;
-  capnp::StructSchema::Field field;
-  std::string segment;
-  std::string path;
-  bool skip_large_scalar_list = false;
-  std::vector<ResolvedNode> children;
-  std::unique_ptr<ResolvedNode> element;
-};
-
-struct ResolvedService {
-  uint16_t event_which = 0;
-  capnp::StructSchema::Field union_field;
-  std::string service_name;
-  int valid_slot = -1;
-  int log_mono_time_slot = -1;
-  int seconds_slot = -1;
-  ResolvedNode payload;
-};
-
 struct SchemaIndex {
-  std::vector<std::optional<ResolvedService>> by_which;
   size_t fixed_series_count = 0;
   std::vector<std::string> fixed_paths;
 
@@ -111,6 +71,27 @@ struct SeriesAccumulator {
   std::unordered_map<CanMessageId, size_t, CanMessageIdHash> can_message_slots;
   std::unordered_map<std::string, EnumInfo> enum_info;
 };
+
+void append_fixed_scalar_point(RouteSeries *series, double tm, double value);
+void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
+RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series);
+void append_can_frame(CanServiceKind service,
+                      uint8_t bus,
+                      uint32_t address,
+                      uint16_t bus_time,
+                      capnp::Data::Reader dat,
+                      double tm,
+                      SeriesAccumulator *series);
+void decode_can_frame(const dbc::Database *can_dbc,
+                      const std::string &service_name,
+                      uint8_t bus,
+                      uint32_t address,
+                      const uint8_t *raw,
+                      size_t data_size,
+                      double tm,
+                      SeriesAccumulator *series);
+
+#include "tools/jotpluggler/generated_event_extractors.h"
 
 struct LoadedRouteArtifacts {
   std::vector<RouteSeries> series;
@@ -898,125 +879,11 @@ SketchLayout parse_layout(const fs::path &layout_path) {
   return layout;
 }
 
-ScalarKind scalar_kind_for_type(const capnp::Type &type) {
-  if (type.isBool()) return ScalarKind::Bool;
-  if (type.isInt8() || type.isInt16() || type.isInt32() || type.isInt64()) {
-    return ScalarKind::Int;
-  }
-  if (type.isUInt8() || type.isUInt16() || type.isUInt32() || type.isUInt64()) {
-    return ScalarKind::UInt;
-  }
-  if (type.isFloat32() || type.isFloat64()) {
-    return ScalarKind::Float;
-  }
-  if (type.isEnum()) return ScalarKind::Enum;
-  return ScalarKind::None;
-}
-
-ResolvedNode build_resolved_type(const capnp::Type &type,
-                                 bool has_field,
-                                 capnp::StructSchema::Field field,
-                                 std::string segment,
-                                 std::string path,
-                                 size_t *next_fixed_slot,
-                                 std::vector<std::string> *fixed_paths,
-                                 bool dynamic_path = false) {
-  ResolvedNode node;
-  node.has_field = has_field;
-  node.field = field;
-  node.segment = std::move(segment);
-  node.path = std::move(path);
-  node.scalar_kind = scalar_kind_for_type(type);
-  if (node.scalar_kind != ScalarKind::None) {
-    node.kind = ResolvedNodeKind::Scalar;
-    if (!dynamic_path) {
-      node.fixed_slot = static_cast<int>((*next_fixed_slot)++);
-      fixed_paths->push_back(node.path);
-    }
-    return node;
-  }
-
-  if (type.isStruct()) {
-    node.kind = ResolvedNodeKind::Struct;
-    for (auto child : type.asStruct().getFields()) {
-      const std::string child_segment = child.getProto().getName().cStr();
-      node.children.push_back(build_resolved_type(
-        child.getType(),
-        true,
-        child,
-        child_segment,
-        node.path + "/" + child_segment,
-        next_fixed_slot,
-        fixed_paths,
-        dynamic_path));
-    }
-    return node;
-  }
-
-  if (type.isList()) {
-    const capnp::Type element_type = type.asList().getElementType();
-    if (element_type.isText() || element_type.isData() || element_type.isInterface() || element_type.isAnyPointer()) {
-      node.kind = ResolvedNodeKind::Ignore;
-      return node;
-    }
-    node.kind = ResolvedNodeKind::List;
-    node.skip_large_scalar_list = scalar_kind_for_type(element_type) != ScalarKind::None;
-    node.element = std::make_unique<ResolvedNode>(
-      build_resolved_type(element_type,
-                          false,
-                          capnp::StructSchema::Field(),
-                          "",
-                          node.path,
-                          next_fixed_slot,
-                          fixed_paths,
-                          true));
-    return node;
-  }
-
-  node.kind = ResolvedNodeKind::Ignore;
-  return node;
-}
-
-int register_fixed_series_path(const std::string &path,
-                               size_t *next_fixed_slot,
-                               std::vector<std::string> *fixed_paths) {
-  const int slot = static_cast<int>((*next_fixed_slot)++);
-  fixed_paths->push_back(path);
-  return slot;
-}
-
 const SchemaIndex &SchemaIndex::instance() {
   static const SchemaIndex index = [] {
     SchemaIndex out;
-    const auto event_schema = capnp::Schema::from<cereal::Event>().asStruct();
-    uint16_t max_discriminant = 0;
-    for (auto union_field : event_schema.getUnionFields()) {
-      max_discriminant = std::max<uint16_t>(max_discriminant, union_field.getProto().getDiscriminantValue());
-    }
-    out.by_which.resize(static_cast<size_t>(max_discriminant) + 1);
-    size_t next_fixed_slot = 0;
-    for (auto union_field : event_schema.getUnionFields()) {
-      ResolvedService service;
-      service.event_which = union_field.getProto().getDiscriminantValue();
-      service.union_field = union_field;
-      service.service_name = union_field.getProto().getName().cStr();
-      service.valid_slot = register_fixed_series_path(
-        "/" + service.service_name + "/valid", &next_fixed_slot, &out.fixed_paths);
-      service.log_mono_time_slot = register_fixed_series_path(
-        "/" + service.service_name + "/logMonoTime", &next_fixed_slot, &out.fixed_paths);
-      service.seconds_slot = register_fixed_series_path(
-        "/" + service.service_name + "/t", &next_fixed_slot, &out.fixed_paths);
-      service.payload = build_resolved_type(
-        union_field.getType(),
-        false,
-        capnp::StructSchema::Field(),
-        service.service_name,
-        "/" + service.service_name,
-        &next_fixed_slot,
-        &out.fixed_paths);
-      out.by_which[service.event_which] = std::move(service);
-    }
-    out.fixed_series_count = next_fixed_slot;
+    out.fixed_paths = static_event_fixed_paths();
+    out.fixed_series_count = out.fixed_paths.size();
     return out;
   }();
   return index;
@@ -1024,45 +891,6 @@ const SchemaIndex &SchemaIndex::instance() {
 
 bool is_absolute_curve(const std::string &name) {
   return !name.empty() && name.front() == '/';
-}
-
-std::optional<double> scalar_value_to_double(const capnp::DynamicValue::Reader &value, ScalarKind kind) {
-  switch (kind) {
-    case ScalarKind::Bool:
-      return value.as<bool>() ? 1.0 : 0.0;
-    case ScalarKind::Int:
-      return static_cast<double>(value.as<int64_t>());
-    case ScalarKind::UInt:
-      return static_cast<double>(value.as<uint64_t>());
-    case ScalarKind::Float:
-      return value.as<double>();
-    case ScalarKind::Enum:
-      return static_cast<double>(value.as<capnp::DynamicEnum>().getRaw());
-    case ScalarKind::None:
-      return std::nullopt;
-  }
-  return std::nullopt;
-}
-
-void capture_enum_info(const std::string &path,
-                       const capnp::DynamicValue::Reader &value,
-                       SeriesAccumulator *series) {
-  if (series->enum_info.find(path) != series->enum_info.end()) {
-    return;
-  }
-
-  const auto dynamic_enum = value.as<capnp::DynamicEnum>();
-  EnumInfo info;
-  for (auto enumerant : dynamic_enum.getSchema().getEnumerants()) {
-    const uint16_t ordinal = enumerant.getOrdinal();
-    if (ordinal >= info.names.size()) {
-      info.names.resize(static_cast<size_t>(ordinal) + 1);
-    }
-    info.names[ordinal] = enumerant.getProto().getName().cStr();
-  }
-  if (!info.names.empty()) {
-    series->enum_info.emplace(path, std::move(info));
-  }
 }
 
 void append_scalar_point(RouteSeries *series,
@@ -1195,156 +1023,9 @@ void append_dynamic_scalar_point(const std::string &path, double tm, double valu
   append_scalar_point(ensure_dynamic_series(path, series), path, tm, value);
 }
 
-void append_scalar_value(const ResolvedNode &node,
-                         const std::string *path_override,
-                         const capnp::DynamicValue::Reader &raw_value,
-                         double tm,
-                         double value,
-                         SeriesAccumulator *series) {
-  if (path_override == nullptr && node.fixed_slot >= 0) {
-    if (node.scalar_kind == ScalarKind::Enum) {
-      capture_enum_info(node.path, raw_value, series);
-    }
-    append_fixed_scalar_point(&series->fixed_series[static_cast<size_t>(node.fixed_slot)], tm, value);
-    return;
-  }
-
-  const std::string &path = path_override != nullptr ? *path_override : node.path;
-  if (node.scalar_kind == ScalarKind::Enum) {
-    capture_enum_info(path, raw_value, series);
-  }
-  append_dynamic_scalar_point(path, tm, value, series);
-}
-
-void append_fast_node(const ResolvedNode &node,
-                      const capnp::DynamicValue::Reader &value,
-                      double tm,
-                      SeriesAccumulator *series,
-                      const std::string *path_override = nullptr) {
-  switch (node.kind) {
-    case ResolvedNodeKind::Scalar: {
-      if (std::optional<double> scalar = scalar_value_to_double(value, node.scalar_kind); scalar.has_value()) {
-        append_scalar_value(node, path_override, value, tm, *scalar, series);
-      }
-      return;
-    }
-    case ResolvedNodeKind::Struct: {
-      const capnp::DynamicStruct::Reader reader = value.as<capnp::DynamicStruct>();
-      for (const ResolvedNode &child : node.children) {
-        if (!child.has_field || !reader.has(child.field)) continue;
-        if (path_override == nullptr) {
-          append_fast_node(child, reader.get(child.field), tm, series, nullptr);
-        } else {
-          const std::string child_path = child.segment.empty() ? *path_override : (*path_override + "/" + child.segment);
-          append_fast_node(child, reader.get(child.field), tm, series, &child_path);
-        }
-      }
-      return;
-    }
-    case ResolvedNodeKind::List: {
-      if (!node.element) {
-        return;
-      }
-      const capnp::DynamicList::Reader list = value.as<capnp::DynamicList>();
-      if (list.size() == 0) {
-        return;
-      }
-      if (node.skip_large_scalar_list && list.size() > 16) {
-        return;
-      }
-      const std::string &base_path = path_override != nullptr ? *path_override : node.path;
-      if (node.element->kind == ResolvedNodeKind::Scalar) {
-        for (uint i = 0; i < list.size(); ++i) {
-          if (std::optional<double> scalar = scalar_value_to_double(list[i], node.element->scalar_kind); scalar.has_value()) {
-            RouteSeries *item_series = ensure_list_scalar_series(base_path, i, series);
-            if (node.element->scalar_kind == ScalarKind::Enum && !item_series->path.empty()) {
-              capture_enum_info(item_series->path, list[i], series);
-            }
-            append_fixed_scalar_point(item_series, tm, *scalar);
-          }
-        }
-        return;
-      }
-      for (uint i = 0; i < list.size(); ++i) {
-        const std::string item_path = base_path + "/" + std::to_string(i);
-        append_fast_node(*node.element, list[i], tm, series, &item_path);
-      }
-      return;
-    }
-    case ResolvedNodeKind::Ignore:
-      return;
-  }
-}
-
-void append_event_fast_reader(cereal::Event::Which which,
-                              const cereal::Event::Reader &event,
-                              const SchemaIndex &schema,
-                              const dbc::Database *can_dbc,
-                              bool skip_raw_can,
-                              double time_offset,
-                              SeriesAccumulator *series) {
-  const uint16_t which_index = static_cast<uint16_t>(which);
-  if (which_index >= schema.by_which.size() || !schema.by_which[which_index].has_value()) {
-    return;
-  }
-  const ResolvedService &service = *schema.by_which[which_index];
-  const capnp::DynamicStruct::Reader dynamic_event(event);
-  const capnp::DynamicValue::Reader payload = dynamic_event.get(service.union_field);
-  const double tm = static_cast<double>(event.getLogMonoTime()) / 1.0e9 - time_offset;
-  append_fixed_scalar_point(&series->fixed_series[static_cast<size_t>(service.valid_slot)],
-                            tm,
-                            event.getValid() ? 1.0 : 0.0);
-  append_fixed_scalar_point(&series->fixed_series[static_cast<size_t>(service.log_mono_time_slot)],
-                            tm,
-                            static_cast<double>(event.getLogMonoTime()));
-  append_fixed_scalar_point(&series->fixed_series[static_cast<size_t>(service.seconds_slot)],
-                            tm,
-                            tm);
-  if (service.service_name == "can" || service.service_name == "sendcan") {
-    const CanServiceKind can_service = service.service_name == "can"
-      ? CanServiceKind::Can
-      : CanServiceKind::Sendcan;
-    auto decode_message = [&](uint8_t bus, uint32_t address, const auto &dat_reader) {
-      const auto bytes = dat_reader.begin();
-      decode_can_frame(can_dbc, service.service_name, bus, address, bytes, dat_reader.size(), tm, series);
-    };
-    if (service.service_name == "can") {
-      for (const auto &msg : event.getCan()) {
-        append_can_frame(can_service,
-                         static_cast<uint8_t>(msg.getSrc()),
-                         msg.getAddress(),
-                         msg.getDeprecated().getBusTime(),
-                         msg.getDat(),
-                         tm,
-                         series);
-        if (!skip_raw_can) continue;
-        decode_message(static_cast<uint8_t>(msg.getSrc()), msg.getAddress(), msg.getDat());
-      }
-    } else {
-      for (const auto &msg : event.getSendcan()) {
-        append_can_frame(can_service,
-                         static_cast<uint8_t>(msg.getSrc()),
-                         msg.getAddress(),
-                         msg.getDeprecated().getBusTime(),
-                         msg.getDat(),
-                         tm,
-                         series);
-        if (!skip_raw_can) continue;
-        decode_message(static_cast<uint8_t>(msg.getSrc()), msg.getAddress(), msg.getDat());
-      }
-    }
-    if (skip_raw_can) {
-      return;
-    }
-  }
-
-  append_fast_node(service.payload, payload, tm, series);
-}
-
 void append_event_fast(cereal::Event::Which which,
                        int32_t eidx_segnum,
                        kj::ArrayPtr<const capnp::word> data,
-                       const SchemaIndex &schema,
                        const dbc::Database *can_dbc,
                        bool skip_raw_can,
                        double time_offset,
@@ -1353,14 +1034,13 @@ void append_event_fast(cereal::Event::Which which,
     return;
   }
   with_parseable_event(data, [&](const cereal::Event::Reader &event) {
-    append_event_fast_reader(which, event, schema, can_dbc, skip_raw_can, time_offset, series);
+    append_event_static_reader(which, event, can_dbc, skip_raw_can, time_offset, series);
   });
 }
 
 void append_events_fast_range(const std::vector<Event> &events,
                               size_t begin,
                               size_t end,
-                              const SchemaIndex &schema,
                               const dbc::Database *can_dbc,
                               bool skip_raw_can,
                               SeriesAccumulator *series) {
@@ -1369,7 +1049,6 @@ void append_events_fast_range(const std::vector<Event> &events,
     append_event_fast(event_record.which,
                       event_record.eidx_segnum,
                       event_record.data,
-                      schema,
                       can_dbc,
                       skip_raw_can,
                       0.0,
@@ -1802,7 +1481,7 @@ SeriesAccumulator extract_segment_series(const std::vector<Event> &events,
   const size_t chunk_count = extract_chunk_count(events.size(), worker_budget, segment_workers);
   if (chunk_count <= 1 || events.empty()) {
     SeriesAccumulator series = make_series_accumulator(schema);
-    append_events_fast_range(events, 0, events.size(), schema, can_dbc, skip_raw_can, &series);
+    append_events_fast_range(events, 0, events.size(), can_dbc, skip_raw_can, &series);
     return series;
   }
 
@@ -1819,10 +1498,10 @@ SeriesAccumulator extract_segment_series(const std::vector<Event> &events,
     workers.emplace_back([&, chunk]() {
       const size_t begin = chunk * events_per_chunk;
       const size_t end = std::min(events.size(), begin + events_per_chunk);
-      append_events_fast_range(events, begin, end, schema, can_dbc, skip_raw_can, &chunk_results[chunk]);
+      append_events_fast_range(events, begin, end, can_dbc, skip_raw_can, &chunk_results[chunk]);
     });
   }
-  append_events_fast_range(events, 0, std::min(events.size(), events_per_chunk), schema, can_dbc, skip_raw_can, &chunk_results[0]);
+  append_events_fast_range(events, 0, std::min(events.size(), events_per_chunk), can_dbc, skip_raw_can, &chunk_results[0]);
   for (std::thread &worker : workers) {
     worker.join();
   }
@@ -2044,13 +1723,12 @@ void StreamAccumulator::appendEvent(kj::ArrayPtr<const capnp::word> data) {
       }
     }
 
-    append_event_fast_reader(which,
-                             event,
-                             impl_->schema,
-                             impl_->can_dbc ? &*impl_->can_dbc : nullptr,
-                             impl_->can_dbc.has_value(),
-                             *impl_->time_offset,
-                             &impl_->series);
+    append_event_static_reader(which,
+                               event,
+                               impl_->can_dbc ? &*impl_->can_dbc : nullptr,
+                               impl_->can_dbc.has_value(),
+                               *impl_->time_offset,
+                               &impl_->series);
     append_log_event(which, event, *impl_->time_offset, &impl_->logs, &impl_->last_alert_key);
     if (which == cereal::Event::Which::SELFDRIVE_STATE) {
       const auto sd = event.getSelfdriveState();

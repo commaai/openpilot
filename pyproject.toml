@@ -28,6 +28,8 @@ dependencies = [
   # vendored native dependencies
   "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
   "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
+  "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
+  "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
   "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
   "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
@@ -38,6 +40,7 @@ dependencies = [
   "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
   "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
   "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
+  "xvfb @ git+https://github.com/commaai/dependencies.git@release-xvfb#subdirectory=xvfb",
 
   # body / webrtcd
   "av",

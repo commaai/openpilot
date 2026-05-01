@@ -460,10 +460,10 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   }
 
   enum ThermalStatus {
-    green @0;
-    yellow @1;
-    red @2;
-    danger @3;
+    ok @0;
+    warmDEPRECATED @1;
+    overheated @2;
+    critical @3;
   }
 
   enum NetworkType {

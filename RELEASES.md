@@ -2,6 +2,7 @@ Version 0.11.1 (2026-04-22)
 ========================
 * New driver monitoring model
 * Improved image processing pipeline for driver camera
+* Improved thermal policy for comma four
 * Rivian R1S and R1T 2025 support thanks to lukasloetkolben!
 
 Version 0.11.0 (2026-03-17)

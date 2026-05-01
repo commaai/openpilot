@@ -3,6 +3,14 @@ revision = 3
 requires-python = ">=3.12.3, <3.13"
 
 [[package]]
+name = "acados"
+version = "0.2.2"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados#2dc0ff804cab5f495641e5e45c6061296445d6cb" }
+dependencies = [
+    { name = "numpy" },
+]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -139,6 +147,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/24/ab/d7233c915b12c005655437c6c4cf0ae46cbbb2b20d743cb5e4881ad3104a/casadi-3.7.2-cp312-none-manylinux2014_x86_64.whl", hash = "sha256:cde616930fa1440ad66f1850670399423edd37354eed9b12e74b3817b98d1187", size = 75568903, upload-time = "2025-09-10T08:10:07.108Z" },
     { url = "https://files.pythonhosted.org/packages/3e/b9/5b984124f539656efdf079f3d8f09d73667808ec8d0546e6bce6dc60ade6/casadi-3.7.2-cp312-none-win_amd64.whl", hash = "sha256:81d677d2b020c1307c1eb25eae15686e5de199bb066828c3eaabdfaaaf457ffd", size = 50991347, upload-time = "2025-09-10T08:10:46.629Z" },
 ]
+
+[[package]]
+name = "catch2"
+version = "2.13.10"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2#7a05367ad5e3705a23f00ebc41b629960b8996b0" }
 
 [[package]]
 name = "certifi"
@@ -745,12 +758,14 @@ name = "openpilot"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "acados" },
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
     { name = "bzip2" },
     { name = "capnproto" },
     { name = "casadi" },
+    { name = "catch2" },
     { name = "cffi" },
     { name = "crcmod-plus" },
     { name = "cython" },
@@ -787,6 +802,7 @@ dependencies = [
     { name = "tqdm" },
     { name = "websocket-client" },
     { name = "xattr" },
+    { name = "xvfb" },
     { name = "zeromq" },
     { name = "zstandard" },
     { name = "zstd" },
@@ -822,12 +838,14 @@ tools = [
 
 [package.metadata]
 requires-dist = [
+    { name = "acados", git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados" },
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
     { name = "bzip2", git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=release-bzip2" },
     { name = "capnproto", git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=release-capnproto" },
     { name = "casadi", specifier = ">=3.6.6" },
+    { name = "catch2", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "coverage", marker = "extra == 'testing'" },
@@ -881,6 +899,7 @@ requires-dist = [
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
     { name = "xattr" },
+    { name = "xvfb", git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb" },
     { name = "zensical", marker = "extra == 'docs'" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=release-zeromq" },
     { name = "zstandard" },
@@ -1548,6 +1567,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/b2/9416317ac89e2ed759a861857cda0d5e284c3691e6f460d36cc2bd5ce4d1/xattr-1.3.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:6c42ef5bdac3febbe28d3db14d3a8a159d84ba5daca2b13deae6f9f1fc0d4092", size = 38214, upload-time = "2025-10-13T22:16:14.389Z" },
     { url = "https://files.pythonhosted.org/packages/38/63/188f7cb41ab35d795558325d5cc8ab552171d5498cfb178fd14409651e18/xattr-1.3.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:2aaa5d66af6523332189108f34e966ca120ff816dfa077ca34b31e6263f8a236", size = 37754, upload-time = "2025-10-13T22:16:15.306Z" },
 ]
+
+[[package]]
+name = "xvfb"
+version = "1.20.11.post1"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb#8dbb2f0e4a8b22402e8f7029dc7fd06c8e4fd865" }
 
 [[package]]
 name = "yarl"
