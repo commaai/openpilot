@@ -29,37 +29,6 @@ NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm", 8: "gsm",
                 7: "lte", 9: "lte", 10: "lte",
                 11: "nr", 12: "nr", 13: "nr"}
 
-# AT+CEER reason -> user-facing message.
-# EG916 returns +CEER: "<subsystem>",<cause>,"<reason_string>" — match by string.
-# EG25 returns +CEER: <locID>,<cause> — match by (locID, cause) per Quectel "LTE Standard Error Code List".
-CEER_TEXT = {
-  "PLMN_NOT_ALLOWED": "Carrier rejected SIM. The APN may be wrong.",
-  "EPS_SERVICES_NOT_ALLOWED": "Cellular data not allowed on this SIM.",
-  "GPRS_SERVICES_NOT_ALLOWED": "Cellular data not allowed on this SIM.",
-  "OPERATOR_DETERMINED_BARRING": "Carrier has blocked this SIM.",
-  "IMSI_UNKNOWN": "SIM not recognized by carrier. The eSIM profile may not be active.",
-  "ILLEGAL_ME": "Device blocked by carrier.",
-  "IMEI_NOT_ACCEPTED": "Device blocked by carrier.",
-  "ROAMING_NOT_ALLOWED": "Roaming not allowed on this SIM.",
-  "MISSING_OR_UNKNOWN_APN": "APN is missing or wrong.",
-  "UNKNOWN_OR_MISSING_APN": "APN is missing or wrong.",
-  "APN_CONGESTION_CONTROL_BARRED": "Carrier is rate-limiting this APN. Try again later.",
-}
-CEER_NUMERIC = {
-  (2, 2): "SIM not recognized by carrier. The eSIM profile may not be active.",  # CS reject: IMSI unknown in HLR
-  (2, 5): "Device blocked by carrier.",                                            # CS reject: IMEI not accepted
-  (2, 6): "Device blocked by carrier.",                                            # CS reject: Illegal ME
-  (2, 11): "Carrier rejected SIM. The APN may be wrong.",                          # CS reject: PLMN not allowed
-  (2, 13): "Roaming not allowed on this SIM.",                                     # CS reject: Roaming not allowed
-  (4, 27): "APN is missing or wrong.",                                             # PS network: Missing or unknown APN
-  (5, 27): "APN is missing or wrong.",                                             # PS LTE: Missing or unknown APN
-  (5, 26): "Carrier is rate-limiting this APN. Try again later.",                  # PS LTE: Insufficient resources / APN congestion back-off
-  (6, 7): "Cellular data not allowed on this SIM.",                                # PS LTE local: EPS services not allowed
-  (6, 8): "Carrier has blocked this SIM.",                                         # PS LTE local: Operator determined barring
-  (6, 11): "Carrier rejected SIM. The APN may be wrong.",                          # PS LTE local: PLMN not allowed
-  (6, 13): "Roaming not allowed on this SIM.",                                     # PS LTE local: Roaming not allowed
-  (6, 259): "Carrier rejected SIM. The eSIM profile may not be active.",           # PS LTE local: EMM attach failed
-}
 DIAL_CID = 1
 
 PPPD_CMD = [
@@ -78,7 +47,7 @@ INITIAL_STATE = {
   "signal_strength": 0, "signal_quality": 0,
   "network_type": "unknown", "operator": "", "band": "", "channel": 0,
   "registration": "unknown", "temperatures": [], "extra": "",
-  "tx_bytes": 0, "rx_bytes": 0, "error": {},
+  "tx_bytes": 0, "rx_bytes": 0,
 }
 
 
@@ -173,25 +142,6 @@ class Modem:
       return CREG.get(int(v.split(",")[1].strip('"')), "unknown")
     except (ValueError, IndexError):
       return "unknown"
-
-  def _carrier_reject_error(self, reg: str) -> dict:
-    if reg not in ("denied", "not_registered"):
-      return {}
-    ceer = self._atv("AT+CEER", "+CEER:")
-    if not ceer:
-      return {}
-    parts = [p.strip().strip('"') for p in ceer.split(",")]
-    code = parts[-1] if parts else ceer
-    msg = next((m for k, m in CEER_TEXT.items() if k in code), None)
-    if msg is None:
-      try:
-        loc, cause = int(parts[0]), int(parts[1])
-        msg = CEER_NUMERIC.get((loc, cause))
-      except (ValueError, IndexError):
-        msg = None
-    if msg is None:
-      msg = f"Carrier rejected connection ({code})."
-    return {"type": "carrier_reject", "description": msg}
 
   def _kill_ppp(self):
     subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
@@ -306,15 +256,15 @@ class Modem:
     logging.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
 
     if reg == "roaming" and not self._roaming_allowed:
-      self._update(registration=reg, error={"type": "roaming_disabled", "description": "Roaming is disabled."})
+      self._update(registration=reg)
       return State.SEARCHING
 
     if reg in ("home", "roaming") and greg in ("home", "roaming"):
-      self._update(registration=reg, error={})
+      self._update(registration=reg)
       return State.CONNECTING
 
     if reg != self.S.get("registration"):
-      self._update(registration=reg, error=self._carrier_reject_error(reg))
+      self._update(registration=reg)
     return self._searching_idle()
 
   def _searching_idle(self):
