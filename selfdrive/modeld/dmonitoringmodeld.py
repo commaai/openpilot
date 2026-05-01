@@ -3,7 +3,7 @@ import os
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_flags_from_compiled
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 set_tinygrad_flags_from_compiled(PROCESS_NAME)
-DM_DEV = os.environ['DEV'] # tg read DEV once then share across processes?
+DM_DEV = os.environ['DEV']
 
 from tinygrad.tensor import Tensor
 import time

@@ -30,8 +30,8 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
 def estimate_pickle_max_size(onnx_size):
   return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
 
-# get fastest TG config — probe in a subprocess so device handles/flocks
-# (e.g. the USB GPU lock at /tmp/am_usb:0.lock) are released on exit.
+# get fastest TG config
+# probe in subprocess so usbgpu locks get released
 def probe_devices():
   return set(subprocess.run(
     [sys.executable, '-c', 'from tinygrad import Device\nprint("\\n".join(Device.get_available_devices()))'],
