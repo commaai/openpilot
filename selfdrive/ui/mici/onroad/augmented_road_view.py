@@ -185,6 +185,12 @@ class AugmentedRoadView(CameraView):
       super()._handle_mouse_release(mouse_pos)
 
   def _render(self, _):
+    # Draw text if not onroad
+    if not ui_state.started:
+      rl.draw_rectangle_rec(self.rect, rl.BLACK)
+      self._offroad_label.render(self._rect)
+      return
+
     start_draw = time.monotonic()
     self._switch_stream_if_needed(ui_state.sm)
 
@@ -220,7 +226,7 @@ class AugmentedRoadView(CameraView):
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
 
     # Hide DMoji when disengaged unless AlwaysOnDM is enabled
-    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and ui_state.is_onroad() and
+    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and
                          (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
     self._driver_state_renderer.set_should_draw(should_draw_dmoji)
     self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
@@ -229,9 +235,7 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
-    # TODO: have alert renderer draw offroad mici label below
-    if ui_state.started:
-      self._alert_renderer.render(self._content_rect)
+    self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
     # Draw fake rounded border
@@ -245,11 +249,6 @@ class AugmentedRoadView(CameraView):
     self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
-
-    # Draw darkened background and text if not onroad
-    if not ui_state.started:
-      rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
-      self._offroad_label.render(self._rect)
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
