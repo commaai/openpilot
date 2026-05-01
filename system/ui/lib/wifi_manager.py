@@ -210,6 +210,7 @@ class WifiManager:
     def worker():
       self._wait_for_wifi_device()
 
+      # TODO: wait for state thread to start before adding tethering connection, tiny race currently
       self._scan_thread.start()
       self._state_thread.start()
 
