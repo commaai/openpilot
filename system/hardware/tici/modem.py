@@ -444,12 +444,18 @@ class Modem:
     if s:
       self._update(**s)
 
+  @staticmethod
+  def _has_modem_manager() -> bool:
+    return subprocess.run(["systemctl", "list-unit-files", "ModemManager.service"],
+                          capture_output=True, text=True).stdout.find("ModemManager.service") != -1
+
   def run(self):
     logging.info("starting")
     self._update(state=State.INITIALIZING.value)
-    # mask before stop so anything trying to activate ModemManager (NetworkManager, dbus) can't race us
-    subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
-    subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
+    if self._has_modem_manager():
+      # mask before stop so anything trying to activate ModemManager (NetworkManager, dbus) can't race us
+      subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
+      subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
 
     state = State.INITIALIZING
@@ -483,8 +489,9 @@ class Modem:
       os.remove(STATE_PATH)
     except FileNotFoundError:
       pass
-    subprocess.run(["sudo", "systemctl", "unmask", "--runtime", "ModemManager"], capture_output=True)
-    subprocess.run(["sudo", "systemctl", "start", "ModemManager"], capture_output=True)
+    if self._has_modem_manager():
+      subprocess.run(["sudo", "systemctl", "unmask", "--runtime", "ModemManager"], capture_output=True)
+      subprocess.run(["sudo", "systemctl", "start", "ModemManager"], capture_output=True)
 
 
 def main():
