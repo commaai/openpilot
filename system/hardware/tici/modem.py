@@ -122,8 +122,6 @@ class Modem:
       return ""
 
   def _update(self, **kwargs):
-    if all(self.S.get(k) == v for k, v in kwargs.items()):
-      return
     self.S.update(kwargs)
     with tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False) as f:
       json.dump(self.S, f)
