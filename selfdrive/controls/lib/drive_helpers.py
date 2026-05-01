@@ -12,6 +12,7 @@ MAX_VEL_ERR = 5.0  # m/s
 # EU guidelines
 MAX_LATERAL_JERK = 5.0  # m/s^3
 MAX_LATERAL_ACCEL_NO_ROLL = 3.0  # m/s^2
+MIN_STABLE_DELAY = 0.3
 
 
 def clamp(val, min_val, max_val):
@@ -43,7 +44,10 @@ def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL, vEgoStopping=0.
   if len(speeds) == len(t_idxs):
     v_now = speeds[0]
     a_now = accels[0]
-    v_target = np.interp(action_t, t_idxs, speeds)
+    if action_t < MIN_STABLE_DELAY:
+      v_target = v_now + (action_t / MIN_STABLE_DELAY) * (np.interp(MIN_STABLE_DELAY, t_idxs, speeds) - v_now)
+    else:
+      v_target = np.interp(action_t, t_idxs, speeds)
     a_target = 2 * (v_target - v_now) / (action_t) - a_now
   else:
     v_now = 0.0
@@ -58,6 +62,9 @@ def curv_from_psis(psi_target, psi_rate, vego, action_t):
   return 2*curv_from_psi - psi_rate / vego
 
 def get_curvature_from_plan(yaws, yaw_rates, t_idxs, vego, action_t):
-  psi_target = np.interp(action_t, t_idxs, yaws)
+  if action_t < MIN_STABLE_DELAY:
+    psi_target = (action_t / MIN_STABLE_DELAY) * np.interp(MIN_STABLE_DELAY, t_idxs, yaws)
+  else:
+    psi_target = np.interp(action_t, t_idxs, yaws)
   psi_rate = yaw_rates[0]
   return curv_from_psis(psi_target, psi_rate, vego, action_t)
