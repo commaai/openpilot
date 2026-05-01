@@ -34,7 +34,7 @@ OPEN_ISDR_RETRIES = 10
 OPEN_ISDR_RETRY_DELAY_S = 0.25
 OPEN_ISDR_RESET_ATTEMPT = 5
 SEND_APDU_RETRIES = 3
-LOCK_FILE = '/dev/shm/modem_lpa.lock'
+LOCK_FILE = '/dev/shm/modem.lock'
 DEBUG = os.environ.get("DEBUG") == "1"
 
 

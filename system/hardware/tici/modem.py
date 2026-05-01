@@ -20,7 +20,7 @@ logging.basicConfig(
 AT_PORT = "/dev/modem_at0"
 PPP_PORT = "/dev/modem_at1"
 STATE_PATH = "/dev/shm/modem"
-AT_LOCK = "/dev/shm/modem_lpa.lock"  # shared with LPA
+AT_LOCK = "/dev/shm/modem.lock"  # shared with LPA
 AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
 # 3GPP TS 27.007 +COPS <AcT> -> network type
