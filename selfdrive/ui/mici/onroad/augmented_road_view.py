@@ -185,6 +185,7 @@ class AugmentedRoadView(CameraView):
       super()._handle_mouse_release(mouse_pos)
 
   def _render(self, _):
+    # Draw text if not onroad
     if not ui_state.started:
       rl.draw_rectangle_rec(self.rect, rl.BLACK)
       self._offroad_label.render(self._rect)
