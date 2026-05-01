@@ -453,7 +453,6 @@ class Modem:
     logging.info("starting")
     self._update(state=State.INITIALIZING.value)
     if self._has_modem_manager():
-      # mask before stop so anything trying to activate ModemManager (NetworkManager, dbus) can't race us
       subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
       subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
