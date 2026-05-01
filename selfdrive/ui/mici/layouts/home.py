@@ -270,10 +270,3 @@ class MiciHomeLayout(Widget):
     self._alerts_pill.set_position(self.rect.x + self.rect.width - self._alerts_pill.rect.width - HOME_PADDING,
                                    self.rect.y + self.rect.height - self._alerts_pill.rect.height)
     self._alerts_pill.render()
-
-    # DEBUG: alerts touch zone
-    has_alerts = self._alert_count_callback and self._alert_count_callback() > 0
-    if has_alerts:
-      zone = rl.Rectangle(self.rect.x + self.rect.width - ALERTS_ZONE_WIDTH, self.rect.y, ALERTS_ZONE_WIDTH, self.rect.height)
-      rl.draw_rectangle_rec(zone, rl.Color(255, 0, 0, 60))
-      rl.draw_rectangle_lines_ex(zone, 2, rl.Color(255, 0, 0, 200))
