@@ -39,8 +39,8 @@ def register(show_spinner=False) -> str | None:
 
   if ASIUS:
     if dongle_id is None:
-      serial = HARDWARE.get_serial()
-      dongle_id = f"asius_{serial[-12:]}" if serial else "asius_local"
+      import secrets
+      dongle_id = secrets.token_hex(8)
       params.put("DongleId", dongle_id)
     set_offroad_alert("Offroad_UnregisteredHardware", False)
     return dongle_id
