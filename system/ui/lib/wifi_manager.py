@@ -210,14 +210,16 @@ class WifiManager:
     def worker():
       self._wait_for_wifi_device()
 
+      # Start signal threads before mutating NM so the NewConnection signal
+      # from _add_tethering_connection lands in _connections.
+      self._scan_thread.start()
+      self._state_thread.start()
+
       self._init_connections()
       if Params is not None and self._tethering_ssid not in self._connections:
         self._add_tethering_connection()
 
       self._init_wifi_state()
-
-      self._scan_thread.start()
-      self._state_thread.start()
 
       self._tethering_password = self._get_tethering_password()
       cloudlog.debug("WifiManager initialized")
