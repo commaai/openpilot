@@ -234,33 +234,22 @@ class Modem:
         return line.split(":", 1)[1].strip()
     return None
 
-  def _configure_modem(self, modem_version: str, sim_id: str):
-    cmds: list[str] = []
-    if modem_version.startswith("EG25"):
-      cmds += [
-        # clear initial EPS bearer APN (some carriers reject the default)
-        'AT+CGDCONT=0,"IP",""',
+  def _configure_modem(self, modem_version: str):
+    if not modem_version.startswith("EG25"):
+      return
+    cmds = [
+      # clear initial EPS bearer APN (some carriers reject the default)
+      'AT+CGDCONT=0,"IP",""',
 
-        # SIM hot swap
-        'AT+QSIMDET=1,0',
-        'AT+QSIMSTAT=1',
+      # SIM hot swap
+      'AT+QSIMDET=1,0',
+      'AT+QSIMSTAT=1',
 
-        # configure modem as data-centric
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]
-    elif modem_version.startswith("EG916") and not sim_id:
-      # EG916 gets upset with too many AT commands; only run when no SIM is provisioned
-      cmds += [
-        # SIM sleep disable
-        'AT$QCSIMSLEEP=0',
-        'AT$QCSIMCFG=SimPowerSave,0',
-
-        # ethernet config
-        'AT$QCPCFG=usbNet,1',
-      ]
-
+      # configure modem as data-centric
+      'AT+QNVW=5280,0,"0102000000000000"',
+      'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+      'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+    ]
     for c in cmds:
       self._at(c)
 
@@ -275,7 +264,7 @@ class Modem:
       self._at(c)
 
     identity = self._read_identity()
-    self._configure_modem(identity["modem_version"], identity["iccid"])
+    self._configure_modem(identity["modem_version"])
 
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._is_roaming_allowed()
