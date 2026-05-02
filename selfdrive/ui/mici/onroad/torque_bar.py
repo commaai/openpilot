@@ -9,7 +9,7 @@ from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
+from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient, ShaderState, _configure_shader_color, triangulate
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import FirstOrderFilter
 
@@ -17,6 +17,38 @@ from openpilot.common.filter_simple import FirstOrderFilter
 TORQUE_ANGLE_SPAN = 12.7
 
 DEBUG = False
+
+# DEBUG timing
+import time as _t_time
+_T = {'state': 0.0, 'arc_bg': 0.0, 'draw_bg': 0.0, 'arc_sl': 0.0, 'grad_endpts': 0.0, 'colors': 0.0, 'draw_sl': 0.0, 'count': 0, 'last_print': _t_time.monotonic()}
+
+
+def _blend_rgb(a, b, f):
+  fc = 0.0 if f < 0.0 else 1.0 if f > 1.0 else f
+  return rl.Color(
+    int(a.r + fc * (b.r - a.r)),
+    int(a.g + fc * (b.g - a.g)),
+    int(a.b + fc * (b.b - a.b)),
+    int(a.a + fc * (b.a - a.a)),
+  )
+
+
+def _draw_two_polygons_batched(origin_rect, pts1, color1, pts2, gradient2):
+  """Two polygons sharing one begin/end_shader_mode (skips the second batch flush)."""
+  state = ShaderState.get_instance()
+  state.initialize()
+  pts1c = np.ascontiguousarray(pts1, dtype=np.float32)
+  pts2c = np.ascontiguousarray(pts2, dtype=np.float32)
+  tri1 = triangulate(pts1c)
+  tri2 = triangulate(pts2c)
+  rl.begin_shader_mode(state.shader)
+  if len(tri1) >= 3:
+    _configure_shader_color(state, color1, None, origin_rect)
+    rl.draw_triangle_strip(tri1, len(tri1), rl.WHITE)
+  if len(tri2) >= 3:
+    _configure_shader_color(state, None, gradient2, origin_rect)
+    rl.draw_triangle_strip(tri2, len(tri2), rl.WHITE)
+  rl.end_shader_mode()
 
 
 def quantized_lru_cache(maxsize=128):
@@ -33,12 +65,16 @@ def quantized_lru_cache(maxsize=128):
 
       if key in cache:
         cache.move_to_end(key)
+        wrapper._hits = getattr(wrapper, '_hits', 0) + 1
       else:
         if len(cache) >= maxsize:
           cache.popitem(last=False)
-
         result = func(r_mid, thickness, a0_deg, a1_deg, **kwargs)
         cache[key] = result
+        wrapper._misses = getattr(wrapper, '_misses', 0) + 1
+      total = getattr(wrapper, '_hits', 0) + getattr(wrapper, '_misses', 0)
+      if total % 120 == 0:
+        print(f'[arc_bar_pts cache] hits={wrapper._hits} misses={wrapper._misses} hit_rate={wrapper._hits/total*100:.1f}%', flush=True)
       return cache[key]
     return wrapper
   return decorator
@@ -188,9 +224,12 @@ class TorqueBar(Widget):
       self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 
   def _render(self, rect: rl.Rectangle) -> None:
-    # adjust y pos with torque
-    torque_line_offset = np.interp(abs(self._torque_filter.x), [0.5, 1], [22, 26])
-    torque_line_height = np.interp(abs(self._torque_filter.x), [0.5, 1], [14, 56])
+    _t0 = _t_time.perf_counter()
+    # adjust y pos with torque (shared t over [0.5, 1.0])
+    _t = abs(self._torque_filter.x)
+    _t = 0.0 if _t <= 0.5 else 1.0 if _t >= 1.0 else (_t - 0.5) * 2.0
+    torque_line_offset = 22 + _t * 4
+    torque_line_height = 14 + _t * 42
 
     # animate alpha and angle span
     if not self._demo:
@@ -198,7 +237,7 @@ class TorqueBar(Widget):
     else:
       self._torque_line_alpha_filter.update(1.0)
 
-    torque_line_bg_alpha = np.interp(abs(self._torque_filter.x), [0.5, 1.0], [0.25, 0.5])
+    torque_line_bg_alpha = 0.25 + _t * 0.25
     torque_line_bg_color = rl.Color(255, 255, 255, int(255 * torque_line_bg_alpha * self._torque_line_alpha_filter.x))
     if ui_state.status != UIStatus.ENGAGED and not self._demo:
       torque_line_bg_color = rl.Color(255, 255, 255, int(255 * 0.15 * self._torque_line_alpha_filter.x))
@@ -209,58 +248,68 @@ class TorqueBar(Widget):
     torque_bg_angle_span = self._torque_line_alpha_filter.x * TORQUE_ANGLE_SPAN
     torque_start_angle = top_angle - torque_bg_angle_span / 2
     torque_end_angle = top_angle + torque_bg_angle_span / 2
-    # centerline radius & center (you already have these values)
     mid_r = torque_line_radius + torque_line_height / 2
 
-    cx = rect.x + rect.width / 2 + 8  # offset 8px to right of camera feed
+    cx = rect.x + rect.width / 2 + 8
     cy = rect.y + rect.height + torque_line_radius - torque_line_offset
     offset = np.array([cx, cy], dtype=np.float32)
+    _t1 = _t_time.perf_counter(); _T['state'] += _t1 - _t0
 
     # draw bg torque indicator line
     bg_pts = arc_bar_pts(mid_r, torque_line_height, torque_start_angle, torque_end_angle) + offset
-    draw_polygon(rect, bg_pts, color=torque_line_bg_color)
+    _t2 = _t_time.perf_counter(); _T['arc_bg'] += _t2 - _t1
 
     # draw torque indicator line
     a0s = top_angle
     a1s = a0s + torque_bg_angle_span / 2 * self._torque_filter.x
     sl_pts = arc_bar_pts(mid_r, torque_line_height, a0s, a1s) + offset
+    _t3 = _t_time.perf_counter(); _T['arc_sl'] += _t3 - _t2
 
-    # draw beautiful gradient from center to 65% of the bg torque bar width
+    # gradient endpoint min/max
     start_grad_pt = cx / rect.width
     if self._torque_filter.x < 0:
-      end_grad_pt = (cx * (1 - 0.65) + (min(bg_pts[:, 0]) * 0.65)) / rect.width
+      end_grad_pt = (cx * (1 - 0.65) + (bg_pts[:, 0].min() * 0.65)) / rect.width
     else:
-      end_grad_pt = (cx * (1 - 0.65) + (max(bg_pts[:, 0]) * 0.65)) / rect.width
+      end_grad_pt = (cx * (1 - 0.65) + (bg_pts[:, 0].max() * 0.65)) / rect.width
+    _t4 = _t_time.perf_counter(); _T['grad_endpts'] += _t4 - _t3
 
-    # fade to orange as we approach max torque
-    start_color = blend_colors(
+    # blend_colors + Gradient
+    start_color = _blend_rgb(
       rl.Color(255, 255, 255, int(255 * 0.9 * self._torque_line_alpha_filter.x)),
-      rl.Color(255, 200, 0, int(255 * self._torque_line_alpha_filter.x)),  # yellow
+      rl.Color(255, 200, 0, int(255 * self._torque_line_alpha_filter.x)),
       max(0, abs(self._torque_filter.x) - 0.75) * 4,
     )
-    end_color = blend_colors(
+    end_color = _blend_rgb(
       rl.Color(255, 255, 255, int(255 * 0.9 * self._torque_line_alpha_filter.x)),
-      rl.Color(255, 115, 0, int(255 * self._torque_line_alpha_filter.x)),  # orange
+      rl.Color(255, 115, 0, int(255 * self._torque_line_alpha_filter.x)),
       max(0, abs(self._torque_filter.x) - 0.75) * 4,
     )
-
     if ui_state.status != UIStatus.ENGAGED and not self._demo:
       start_color = end_color = rl.Color(255, 255, 255, int(255 * 0.35 * self._torque_line_alpha_filter.x))
-
     gradient = Gradient(
       start=(start_grad_pt, 0),
       end=(end_grad_pt, 0),
-      colors=[
-        start_color,
-        end_color,
-      ],
+      colors=[start_color, end_color],
       stops=[0.0, 1.0],
     )
-
+    _t4b = _t_time.perf_counter(); _T['colors'] += _t4b - _t4; _t4 = _t4b
     draw_polygon(rect, sl_pts, gradient=gradient)
+    _t4c = _t_time.perf_counter(); _T['draw_sl'] += _t4c - _t4; _t4 = _t4c
+    draw_polygon(rect, bg_pts, color=torque_line_bg_color)
+    _t4d = _t_time.perf_counter(); _T['draw_bg'] += _t4d - _t4c; _t4 = _t4d
 
-    # draw center torque bar dot
     if abs(self._torque_filter.x) < 0.5:
       dot_y = self._rect.y + self._rect.height - torque_line_offset - torque_line_height / 2
       rl.draw_circle(int(cx), int(dot_y), 10 // 2,
                      rl.Color(182, 182, 182, int(255 * 0.9 * self._torque_line_alpha_filter.x)))
+    _t5 = _t_time.perf_counter()
+    _T['count'] += 1
+    if _t5 - _T['last_print'] > 3.0:
+      n = _T['count']
+      total = sum(_T[k] for k in ('state','arc_bg','draw_bg','arc_sl','grad_endpts','colors','draw_sl'))
+      print(f"[torque] n={n} state={_T['state']/n*1e6:.0f} arc_bg={_T['arc_bg']/n*1e6:.0f} DRAW_BG={_T['draw_bg']/n*1e6:.0f} arc_sl={_T['arc_sl']/n*1e6:.0f} grad_pts={_T['grad_endpts']/n*1e6:.0f} colors={_T['colors']/n*1e6:.0f} DRAW_SL={_T['draw_sl']/n*1e6:.0f} total={total/n*1e6:.0f}us", flush=True)
+      for k in ('state','arc_bg','draw_bg','arc_sl','grad_endpts','colors','draw_sl'):
+        _T[k] = 0.0
+      _T['count'] = 0
+      _T['last_print'] = _t5
+

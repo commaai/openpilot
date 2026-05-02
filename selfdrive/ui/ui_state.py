@@ -100,6 +100,7 @@ class UIState:
 
   @property
   def engaged(self) -> bool:
+    return True  # DEBUG: force engaged
     return self.started and self.sm["selfdriveState"].enabled
 
   def is_onroad(self) -> bool:
@@ -155,7 +156,7 @@ class UIState:
       if state in (log.SelfdriveState.OpenpilotState.preEnabled, log.SelfdriveState.OpenpilotState.overriding):
         self.status = UIStatus.OVERRIDE
       else:
-        self.status = UIStatus.ENGAGED if ss.enabled else UIStatus.DISENGAGED
+        self.status = UIStatus.ENGAGED  # DEBUG: force engaged
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:
@@ -166,7 +167,7 @@ class UIState:
     # Handle onroad/offroad transition
     if self.started != self._started_prev or self.sm.frame == 1:
       if self.started:
-        self.status = UIStatus.DISENGAGED
+        self.status = UIStatus.ENGAGED  # DEBUG: force engaged
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
 

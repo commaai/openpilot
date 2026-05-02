@@ -271,7 +271,7 @@ class GuiApplication:
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
 
-      flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
+      flags = 0  # DEBUG: MSAA disabled
       if ENABLE_VSYNC:
         flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
       rl.set_config_flags(flags)
@@ -602,6 +602,10 @@ class GuiApplication:
           yield False
           continue
 
+        _now = time.monotonic()
+        self.last_frame_dt_ms = (_now - getattr(self, '_prev_frame_start', _now)) * 1000.0
+        self._prev_frame_start = _now
+        self.frame_start_time = _now
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)

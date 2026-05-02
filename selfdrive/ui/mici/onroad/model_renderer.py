@@ -9,7 +9,7 @@ from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
+from openpilot.system.ui.lib.shader_polygon import draw_polygon, draw_polygons_batched, Gradient
 from openpilot.system.ui.widgets import Widget
 
 CLIP_MARGIN = 500
@@ -33,6 +33,23 @@ LANE_LINE_COLORS = {
   UIStatus.OVERRIDE: rl.Color(255, 255, 255, 255),
   UIStatus.ENGAGED: rl.Color(0, 255, 64, 255),
 }
+
+
+
+# DEBUG timing
+import time as _mr_t
+_MR = {'update_state': 0.0, 'update_model': 0.0, 'draw_lls_total': 0.0, 'draw_path_total': 0.0,
+       'll_0': 0.0, 'll_1': 0.0, 'll_2': 0.0, 'll_3': 0.0, 're_0': 0.0, 're_1': 0.0,
+       'path_setup': 0.0, 'path_draw': 0.0, 'count': 0, 'last_print': _mr_t.monotonic()}
+def _mr_print():
+  _MR['count'] += 1
+  if _mr_t.monotonic() - _MR['last_print'] > 3.0:
+    n = _MR['count']
+    print(f"[mr] n={n} upd_state={_MR['update_state']/n*1e6:.0f} upd_model={_MR['update_model']/n*1e6:.0f} lls={_MR['draw_lls_total']/n*1e6:.0f} (ll0={_MR['ll_0']/n*1e6:.0f} ll1={_MR['ll_1']/n*1e6:.0f} ll2={_MR['ll_2']/n*1e6:.0f} ll3={_MR['ll_3']/n*1e6:.0f} re0={_MR['re_0']/n*1e6:.0f} re1={_MR['re_1']/n*1e6:.0f}) path={_MR['draw_path_total']/n*1e6:.0f} (setup={_MR['path_setup']/n*1e6:.0f} draw={_MR['path_draw']/n*1e6:.0f})us", flush=True)
+    for k in list(_MR.keys()):
+      if k not in ('count','last_print'): _MR[k] = 0.0
+    _MR['count'] = 0
+    _MR['last_print'] = _mr_t.monotonic()
 
 
 @dataclass
@@ -84,6 +101,9 @@ class ModelRenderer(Widget):
       stops=[],
     )
 
+    # pre-allocated buffers for projected_points + offset (avoid per-frame alloc)
+    self._draw_bufs: dict = {}
+
     # Get longitudinal control setting from car parameters
     if car_params := Params().get("CarParams"):
       cp = messaging.log_from_bytes(car_params, car.CarParams)
@@ -92,6 +112,14 @@ class ModelRenderer(Widget):
   def set_transform(self, transform: np.ndarray):
     self._car_space_transform = transform.astype(np.float32)
     self._transform_dirty = True
+
+  def _add_offset(self, key, pts: np.ndarray, offset: np.ndarray) -> np.ndarray:
+    buf = self._draw_bufs.get(key)
+    if buf is None or buf.shape != pts.shape:
+      buf = np.empty_like(pts)
+      self._draw_bufs[key] = buf
+    np.add(pts, offset, out=buf)
+    return buf
 
   def _render(self, rect: rl.Rectangle):
     sm = ui_state.sm
@@ -132,15 +160,22 @@ class ModelRenderer(Widget):
       if path_x_array.size == 0:
         return
 
+      _ut0 = _mr_t.perf_counter()
       self._update_model(lead_one, path_x_array)
       if render_lead_indicator:
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
+      _MR['update_model'] += _mr_t.perf_counter() - _ut0
 
     # Draw elements (hide when disengaged)
     if ui_state.status != UIStatus.DISENGAGED:
+      _dt0 = _mr_t.perf_counter()
       self._draw_lane_lines()
+      _MR['draw_lls_total'] += _mr_t.perf_counter() - _dt0
+      _dt0 = _mr_t.perf_counter()
       self._draw_path(sm)
+      _MR['draw_path_total'] += _mr_t.perf_counter() - _dt0
+    _mr_print()
 
     # if render_lead_indicator and radar_state:
     #   self._draw_lead_indicator()
@@ -221,7 +256,7 @@ class ModelRenderer(Widget):
     if not self._experimental_mode:
       return
 
-    path_pts = self._path.projected_points + np.array([self._rect.x, self._rect.y], dtype=np.float32)
+    path_pts = self._add_offset(('path',), self._path.projected_points, np.array([self._rect.x, self._rect.y], dtype=np.float32))
     max_len = min(len(path_pts) // 2, len(self._acceleration_x))
 
     segment_colors = []
@@ -308,31 +343,42 @@ class ModelRenderer(Widget):
   def _draw_lane_lines(self):
     """Draw lane lines and road edges. Two closest lines should be green (lane line or road edges)."""
     offset = np.array([self._rect.x, self._rect.y], dtype=np.float32)
+    polys = []
 
+    _t_setup = _mr_t.perf_counter()
     for i, lane_line in enumerate(self._lane_lines):
       if lane_line.projected_points.size == 0:
         continue
-
       color = self._get_ll_color(float(self._lane_line_probs[i]), i in (1, 2), i in (0, 1))
-      draw_polygon(self._rect, lane_line.projected_points + offset, color)
+      polys.append((self._add_offset(('ll', i), lane_line.projected_points, offset), color))
 
     for i, road_edge in enumerate(self._road_edges):
       if road_edge.projected_points.size == 0:
         continue
-
       # if closest lane lines are not confident, make road edges green
       color = self._get_ll_color(float(1.0 - self._road_edge_stds[i]), float(self._lane_line_probs[i + 1]) < 0.25, i == 0)
-      draw_polygon(self._rect, road_edge.projected_points + offset, color)
+      polys.append((self._add_offset(('re', i), road_edge.projected_points, offset), color))
+    _MR['ll_0'] += _mr_t.perf_counter() - _t_setup  # repurpose ll_0 as setup time
+
+    _t_draw = _mr_t.perf_counter()
+    if rl.is_mouse_button_down(0):  # DEBUG: unbatch when finger down to spike GPU calls
+      for pts, color in polys:
+        draw_polygon(self._rect, pts, color)
+    else:
+      draw_polygons_batched(self._rect, polys)
+    _MR['ll_1'] += _mr_t.perf_counter() - _t_draw
 
   def _draw_path(self, sm):
     """Draw path with dynamic coloring based on mode and throttle state."""
     if not self._path.projected_points.size:
       return
-
+    _ps0 = _mr_t.perf_counter()
     allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
     self._blend_filter.update(int(allow_throttle))
 
-    path_pts = self._path.projected_points + np.array([self._rect.x, self._rect.y], dtype=np.float32)
+    path_pts = self._add_offset(('path',), self._path.projected_points, np.array([self._rect.x, self._rect.y], dtype=np.float32))
+    _MR['path_setup'] += _mr_t.perf_counter() - _ps0
+    _pd0 = _mr_t.perf_counter()
 
     if self._experimental_mode:
       # Draw with acceleration coloring
@@ -357,6 +403,7 @@ class ModelRenderer(Widget):
         draw_polygon(self._rect, path_pts, rl.Color(0, 0, 0, 90))
       else:
         draw_polygon(self._rect, path_pts, gradient=gradient)
+    _MR['path_draw'] += _mr_t.perf_counter() - _pd0
 
   def _draw_lead_indicator(self):
     # Draw lead vehicles if available

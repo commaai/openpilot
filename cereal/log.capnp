@@ -428,6 +428,20 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   freeSpacePercent @7 :Float32;
   memoryUsagePercent @19 :Int8;
   gpuUsagePercent @33 :Int8;
+  gpuFreqHz @51 :UInt64;
+  gpuBusyTimeUs @52 :UInt64;
+  gpuTotalTimeUs @53 :UInt64;
+  gpuPreemptCount @54 :UInt64;
+  gpuThermalPwrlevel @55 :UInt8;
+  gpuThrottling @56 :Bool;
+  cpuFreqMHz @57 :List(UInt16);     # per-core scaling_cur_freq / 1000
+  gpuIrqCount @58 :UInt64;          # cumulative kgsl-3d0 IRQ count from /proc/interrupts
+  gpuClockStatsUs @59 :List(UInt64); # cumulative time at each pwrlevel (len 7, 0=fastest)
+  gpuResetCount @60 :UInt32;
+  modeldCtxSwitches @61 :UInt64;    # voluntary+involuntary ctxt switches for modeld
+  memBwGpuHz @62 :UInt64;           # soc:qcom,gpubw cur_freq
+  memBwCpuHz @63 :UInt64;           # soc:qcom,cpubw cur_freq
+  gpuInflight @64 :UInt32;          # GPU commands in-flight (queue depth proxy)
   cpuUsagePercent @34 :List(Int8);  # per-core cpu usage
 
   # power
@@ -2302,6 +2316,7 @@ struct Sentinel {
 
 struct UIDebug {
   drawTimeMillis @0 :Float32;
+  e2eFrameTimeMillis @1 :Float32;
 }
 
 struct ManagerState {

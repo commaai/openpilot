@@ -61,6 +61,79 @@ prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
 
 
+
+def _read_int(path, base=10):
+  try:
+    with open(path) as f:
+      return int(f.read().strip(), base)
+  except Exception:
+    return 0
+
+def _read_gpu_freq_hz() -> int:
+  return _read_int('/sys/class/devfreq/5000000.qcom,kgsl-3d0/cur_freq')
+
+def _read_gpubusy() -> tuple[int, int]:
+  try:
+    with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
+      busy, total = f.read().strip().split()
+    return int(busy), int(total)
+  except Exception:
+    return 0, 0
+
+def _read_gpu_preempt_count() -> int:
+  return _read_int('/sys/class/kgsl/kgsl-3d0/preempt_count', base=16)
+
+def _read_cpu_freqs_mhz() -> list[int]:
+  freqs = []
+  for i in range(8):
+    khz = _read_int(f'/sys/devices/system/cpu/cpu{i}/cpufreq/scaling_cur_freq')
+    freqs.append(khz // 1000)
+  return freqs
+
+def _read_gpu_irq_count() -> int:
+  try:
+    with open('/proc/interrupts') as f:
+      for line in f:
+        if 'kgsl-3d0' in line:
+          parts = line.split()
+          # parts[0] is "565:", parts[1..8] are per-CPU counts
+          return sum(int(p) for p in parts[1:9])
+  except Exception:
+    pass
+  return 0
+
+def _read_gpu_clock_stats() -> list[int]:
+  try:
+    with open('/sys/class/kgsl/kgsl-3d0/gpu_clock_stats') as f:
+      return [int(x) for x in f.read().split()]
+  except Exception:
+    return []
+
+_modeld_pid_cache = [None]
+def _read_modeld_ctx_switches() -> int:
+  pid = _modeld_pid_cache[0]
+  try:
+    if pid is not None:
+      with open(f'/proc/{pid}/status') as f:
+        v = i = 0
+        for line in f:
+          if line.startswith('voluntary_ctxt_switches:'):
+            v = int(line.split()[-1])
+          elif line.startswith('nonvoluntary_ctxt_switches:'):
+            i = int(line.split()[-1])
+        return v + i
+  except Exception:
+    pass
+  # re-resolve pid
+  try:
+    import subprocess
+    out = subprocess.run(['pgrep', '-f', 'selfdrive.modeld.modeld'], capture_output=True, text=True)
+    if out.stdout.strip():
+      _modeld_pid_cache[0] = int(out.stdout.strip().split()[0])
+  except Exception:
+    pass
+  return 0
+
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
     return
@@ -290,6 +363,21 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.maxTempC = all_comp_temp
 
     msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
+    msg.deviceState.gpuFreqHz = _read_gpu_freq_hz()
+    _busy, _total = _read_gpubusy()
+    msg.deviceState.gpuBusyTimeUs = _busy
+    msg.deviceState.gpuTotalTimeUs = _total
+    msg.deviceState.gpuPreemptCount = _read_gpu_preempt_count()
+    msg.deviceState.gpuThermalPwrlevel = _read_int('/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel')
+    msg.deviceState.gpuThrottling = _read_int('/sys/class/kgsl/kgsl-3d0/throttling') == 1
+    msg.deviceState.cpuFreqMHz = _read_cpu_freqs_mhz()
+    msg.deviceState.gpuIrqCount = _read_gpu_irq_count()
+    msg.deviceState.gpuClockStatsUs = _read_gpu_clock_stats()
+    msg.deviceState.gpuResetCount = _read_int('/sys/class/kgsl/kgsl-3d0/reset_count')
+    msg.deviceState.modeldCtxSwitches = _read_modeld_ctx_switches()
+    msg.deviceState.memBwGpuHz = _read_int('/sys/class/devfreq/soc:qcom,gpubw/cur_freq')
+    msg.deviceState.memBwCpuHz = _read_int('/sys/class/devfreq/soc:qcom,cpubw/cur_freq')
+    msg.deviceState.gpuInflight = _read_int("/sys/class/kgsl/kgsl-3d0/dispatch/inflight")
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:

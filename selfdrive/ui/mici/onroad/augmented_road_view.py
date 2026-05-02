@@ -26,6 +26,25 @@ WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
 
+
+# DEBUG widget timing
+import time as _arv_t
+_W = {k: 0.0 for k in ('model','alert','driver','hud','confball','bookmark')}
+_W_count = [0]
+_W_last = [_arv_t.monotonic()]
+_MC = {'hits': 0, 'misses': 0, 'last_print': _arv_t.monotonic()}
+def _wprint(label, dt):
+  _W[label] += dt
+  if label == 'bookmark':  # last one each frame
+    _W_count[0] += 1
+    if _arv_t.monotonic() - _W_last[0] > 3.0:
+      n = _W_count[0]
+      print(f"[arv widgets] n={n} model={_W['model']/n*1e6:.0f} alert={_W['alert']/n*1e6:.0f} driver={_W['driver']/n*1e6:.0f} hud={_W['hud']/n*1e6:.0f} confball={_W['confball']/n*1e6:.0f} bookmark={_W['bookmark']/n*1e6:.0f}us", flush=True)
+      for k in _W: _W[k] = 0.0
+      _W_count[0] = 0
+      _W_last[0] = _arv_t.monotonic()
+
+
 class BookmarkState(IntEnum):
   HIDDEN = 0
   DRAGGING = 1
@@ -189,7 +208,7 @@ class AugmentedRoadView(CameraView):
       self._offroad_label.render(self._rect)
       return
 
-    start_draw = time.monotonic()
+    start_draw = getattr(gui_app, "frame_start_time", time.monotonic())
     self._switch_stream_if_needed(ui_state.sm)
 
     # Update calibration before rendering
@@ -216,7 +235,9 @@ class AugmentedRoadView(CameraView):
     super()._render(self._content_rect)
 
     # Draw all UI overlays
+    _t = _arv_t.perf_counter()
     self._model_renderer.render(self._content_rect)
+    _wprint('model', _arv_t.perf_counter() - _t)
 
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
@@ -228,13 +249,19 @@ class AugmentedRoadView(CameraView):
                          (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
     self._driver_state_renderer.set_should_draw(should_draw_dmoji)
     self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
+    _t = _arv_t.perf_counter()
     self._driver_state_renderer.render()
+    _wprint('driver', _arv_t.perf_counter() - _t)
 
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
+    _t = _arv_t.perf_counter()
     self._alert_renderer.render(self._content_rect)
+    _wprint('alert', _arv_t.perf_counter() - _t)
+    _t = _arv_t.perf_counter()
     self._hud_renderer.render(self._content_rect)
+    _wprint('hud', _arv_t.perf_counter() - _t)
 
     # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
@@ -244,13 +271,18 @@ class AugmentedRoadView(CameraView):
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
+    _t = _arv_t.perf_counter()
     self._confidence_ball.render(self.rect)
+    _wprint('confball', _arv_t.perf_counter() - _t)
 
+    _t = _arv_t.perf_counter()
     self._bookmark_icon.render(self.rect)
+    _wprint('bookmark', _arv_t.perf_counter() - _t)
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
     msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
+    msg.uiDebug.e2eFrameTimeMillis = getattr(gui_app, 'last_frame_dt_ms', 0.0)
     self._pm.send('uiDebug', msg)
 
   def _switch_stream_if_needed(self, sm):
@@ -298,11 +330,19 @@ class AugmentedRoadView(CameraView):
       int(self._content_rect.width),
       int(self._content_rect.height),
       self.stream_type,
-      round(ui_state.sm['carState'].vEgo, 1),
+      round(ui_state.sm["carState"].vEgo * 2) / 2,
     )
 
     if cache_key == self._matrix_cache_key and self._cached_matrix is not None:
+      _MC['hits'] += 1
+      _now = _arv_t.monotonic()
+      if _now - _MC['last_print'] > 3.0:
+        _tot = _MC['hits'] + _MC['misses']
+        print(f"[matrix cache] {_tot} calls hits={_MC['hits']} misses={_MC['misses']} hit_rate={_MC['hits']/_tot*100:.1f}%", flush=True)
+        _MC['hits'] = _MC['misses'] = 0
+        _MC['last_print'] = _now
       return self._cached_matrix
+    _MC['misses'] += 1
 
     # Get camera configuration
     device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA

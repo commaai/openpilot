@@ -20,6 +20,10 @@ CRUISE_DISABLED_CHAR = '–'
 SET_SPEED_PERSISTENCE = 2.5  # seconds
 
 
+import time as _t_time
+_TB_T = {'total': 0.0, 'count': 0, 'last_print': _t_time.monotonic()}
+
+
 @dataclass(frozen=True)
 class FontSizes:
   current_speed: int = 176
@@ -172,8 +176,17 @@ class HudRenderer(Widget):
   def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
 
+    _tb_t0 = _t_time.perf_counter()
     self._torque_bar.render(rect)
-
+    _tb_t1 = _t_time.perf_counter()
+    _TB_T['total'] += _tb_t1 - _tb_t0
+    _TB_T['count'] += 1
+    if _tb_t1 - _TB_T['last_print'] > 3.0:
+      n = _TB_T['count']
+      print(f"[torque_bar.render] n={n} avg={_TB_T['total']/n*1e6:.0f}us", flush=True)
+      _TB_T['total'] = 0.0
+      _TB_T['count'] = 0
+      _TB_T['last_print'] = _tb_t1
     if self.is_cruise_set:
       self._draw_set_speed(rect)
 

@@ -91,6 +91,32 @@ UNIFORM_VEC2 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2
 UNIFORM_VEC4 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4
 
 
+
+# Per-vertex color shader (used by draw_polygons_batched). Color comes from raylib's
+# per-vertex color attribute (vertexColor), which it sets via rlColor4ub before each
+# draw_triangle_strip's vertices. Lets us batch many solid-colored polygons into one
+# draw call without uniform changes between them.
+VC_VERTEX_SHADER = GL_VERSION + """
+in vec3 vertexPosition;
+in vec4 vertexColor;
+out vec4 fragColor;
+uniform mat4 mvp;
+
+void main() {
+  fragColor = vertexColor;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
+}
+"""
+
+VC_FRAGMENT_SHADER = GL_VERSION + """
+in vec4 fragColor;
+out vec4 finalColor;
+
+void main() {
+  finalColor = fragColor;
+}
+"""
+
 class ShaderState:
   _instance: Any = None
 
@@ -106,6 +132,7 @@ class ShaderState:
 
     self.initialized = False
     self.shader = None
+    self.vc_shader = None
 
     # Shader uniform locations
     self.locations = {
@@ -131,14 +158,17 @@ class ShaderState:
       return
 
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAGMENT_SHADER)
+    self.vc_shader = rl.load_shader_from_memory(VC_VERTEX_SHADER, VC_FRAGMENT_SHADER)
 
     # Cache all uniform locations
     for uniform in self.locations.keys():
       self.locations[uniform] = rl.get_shader_location(self.shader, uniform)
 
-    # Orthographic MVP (origin top-left)
+    # Orthographic MVP (origin top-left) — applied to both shaders
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
     rl.set_shader_value_matrix(self.shader, self.locations['mvp'], proj)
+    vc_mvp_loc = rl.get_shader_location(self.vc_shader, 'mvp')
+    rl.set_shader_value_matrix(self.vc_shader, vc_mvp_loc, proj)
 
     self.initialized = True
 
@@ -148,6 +178,9 @@ class ShaderState:
     if self.shader:
       rl.unload_shader(self.shader)
       self.shader = None
+    if self.vc_shader:
+      rl.unload_shader(self.vc_shader)
+      self.vc_shader = None
 
     self.initialized = False
 
@@ -188,14 +221,19 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],
 
 def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
   """Only supports simple polygons with two chains (ribbon)."""
-  # interleave: result[2i] = pts[i], result[2i+1] = pts[2n-1-i]
-  n = len(pts) // 2
-  if n == 0:
-    return []
-  result = np.empty((2 * n, 2), dtype=np.float32)
-  result[0::2] = pts[:n]
-  result[1::2] = pts[2 * n - 1:n - 1:-1]
-  return cast(list, result.tolist())
+
+  # TODO: consider deduping close screenspace points
+  # interleave points to produce a triangle strip
+  # assert len(pts) % 2 == 0, "Interleaving expects even number of points"
+  if len(pts) % 2 != 0:
+    pts = pts[:-1]
+
+  tri_strip = []
+  for i in range(len(pts) // 2):
+    tri_strip.append(pts[i])
+    tri_strip.append(pts[-i - 1])
+
+  return cast(list, np.array(tri_strip).tolist())
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
@@ -225,6 +263,30 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   # Draw strip, color here doesn't matter
   rl.begin_shader_mode(state.shader)
   rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
+  rl.end_shader_mode()
+
+
+
+
+def draw_polygons_batched(origin_rect: rl.Rectangle, polys: list) -> None:
+  """Batched solid-color polygons sharing one shader_mode block.
+
+  polys: list of (points: np.ndarray (N,2), color: rl.Color).
+  All polygons render in a single GL draw call via the per-vertex-color shader.
+  """
+  if not polys:
+    return
+  state = ShaderState.get_instance()
+  state.initialize()
+
+  rl.begin_shader_mode(state.vc_shader)
+  for points, color in polys:
+    if len(points) < 3:
+      continue
+    pts = np.ascontiguousarray(points, dtype=np.float32)
+    tri_strip = triangulate(pts)
+    if len(tri_strip) >= 3:
+      rl.draw_triangle_strip(tri_strip, len(tri_strip), color)
   rl.end_shader_mode()
 
 
