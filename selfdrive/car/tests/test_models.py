@@ -4,8 +4,6 @@ import pytest
 import random
 import unittest # noqa: TID251
 from collections import defaultdict, Counter
-import hypothesis.strategies as st
-from hypothesis import Phase, given, settings
 from openpilot.common.parameterized import parameterized_class
 
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
@@ -296,10 +294,7 @@ class TestCarModelBase(unittest.TestCase):
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
-  @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
-  @given(data=st.data())
-  def test_panda_safety_carstate_fuzzy(self, data):
+  def test_panda_safety_carstate_fuzzy(self):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
@@ -309,10 +304,12 @@ class TestCarModelBase(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
-    address, bus, size = data.draw(st.sampled_from(valid_addrs))
+    for _ in range(MAX_EXAMPLES):
+      self._fuzz_carstate_once(valid_addrs)
 
-    msg_strategy = st.binary(min_size=size, max_size=size)
-    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+  def _fuzz_carstate_once(self, valid_addrs):
+    address, bus, size = random.choice(valid_addrs)
+    msgs = [random.randbytes(size) for _ in range(random.randint(20, 100))]
 
     vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
 
