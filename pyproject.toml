@@ -61,9 +61,6 @@ dependencies = [
   "json-rpc",
   "websocket_client",
 
-  # acados deps
-  "casadi ==3.6.7",  # pinned to match libcasadi bundled in commaai/dependencies@release-acados
-
   # joystickd
   "inputs",
 
