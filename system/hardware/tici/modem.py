@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import fcntl
+import ipaddress
 import json
 import logging
 import os
@@ -290,6 +291,12 @@ class Modem:
     return State.CONNECTED
 
   def _install_ppp_routes(self, ip: str, peer: str):
+    try:
+      ipaddress.IPv4Address(ip)
+      ipaddress.IPv4Address(peer)
+    except ValueError:
+      logging.warning(f"refusing route install with non-IPv4 ip={ip!r} peer={peer!r}")
+      return
     self._cleanup_routes()
     subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
                    capture_output=True)
