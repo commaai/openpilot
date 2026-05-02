@@ -9,7 +9,6 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import CompileConfig
-from tinygrad import Device
 
 CAMERA_CONFIGS = [
   (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
@@ -31,7 +30,7 @@ def estimate_pickle_max_size(onnx_size):
   return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
 
 # get fastest TG config
-# probe in subprocess so usbgpu locks get released
+# probe in subprocess so usbgpu locks gets released on process exit
 def probe_devices():
   return set(subprocess.run(
     [sys.executable, '-c', 'from tinygrad import Device\nprint("\\n".join(Device.get_available_devices()))'],
