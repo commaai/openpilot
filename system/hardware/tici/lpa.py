@@ -4,7 +4,6 @@ import atexit
 import base64
 import fcntl
 import hashlib
-import math
 import os
 import requests
 import serial
@@ -29,15 +28,13 @@ DEFAULT_BAUD = 9600
 DEFAULT_TIMEOUT = 5.0
 # https://euicc-manual.osmocom.org/docs/lpa/applet-id/
 ISDR_AID = "A0000005591010FFFFFFFF8900000100"
-MM = "org.freedesktop.ModemManager1"
-MM_MODEM = MM + ".Modem"
 ES10X_MSS = 120
 HTTP_TIMEOUT = 30
 OPEN_ISDR_RETRIES = 10
 OPEN_ISDR_RETRY_DELAY_S = 0.25
 OPEN_ISDR_RESET_ATTEMPT = 5
 SEND_APDU_RETRIES = 3
-LOCK_FILE = '/dev/shm/modem_lpa.lock'
+LOCK_FILE = '/dev/shm/modem.lock'
 DEBUG = os.environ.get("DEBUG") == "1"
 
 
@@ -97,7 +94,7 @@ BPP_ERROR_MESSAGES = {
   12: "Profile installation failed. The QR code may have already been used.",
 }
 
-# SGP.22 §5.2.6 — SM-DP+ reason/subject codes mapped to user-friendly messages
+# SGP.22 §5.2.6 SM-DP+ reason/subject codes mapped to user-friendly messages
 ES9P_ERROR_MESSAGES: dict[tuple[str, str], str] = {
   ('3.8', '8.2.6'): "This eSIM profile is already installed on another device. Please use a new QR code.",
   ('3.8', '8.2.1'): "This eSIM profile has expired. Please request a new QR code.",
@@ -137,7 +134,6 @@ class AtClient:
     self._baud = baud
     self._timeout = timeout
     self._serial: serial.Serial | None = None
-    self._use_dbus = not os.path.exists(device)
 
   def send_raw(self, data: bytes) -> None:
     self._ensure_serial()
@@ -191,30 +187,7 @@ class AtClient:
     if self._serial is None:
       self._serial = serial.Serial(self._device, baudrate=self._baud, timeout=self._timeout)
 
-  def _get_modem(self):
-    import dbus
-    bus = dbus.SystemBus()
-    mm = bus.get_object(MM, '/org/freedesktop/ModemManager1')
-    objects = mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=self._timeout)
-    modem_path = list(objects.keys())[0]
-    return bus.get_object(MM, modem_path)
-
-  def _dbus_query(self, cmd: str) -> list[str]:
-    if DEBUG:
-      print(f"DBUS >> {cmd}", file=sys.stderr)
-    try:
-      result = str(self._get_modem().Command(cmd, math.ceil(self._timeout), dbus_interface=MM_MODEM, timeout=self._timeout))
-    except Exception as e:
-      raise RuntimeError(f"AT command failed: {e}") from e
-    lines = [line.strip() for line in result.splitlines() if line.strip()]
-    if DEBUG:
-      for line in lines:
-        print(f"DBUS << {line}", file=sys.stderr)
-    return lines
-
   def query(self, cmd: str) -> list[str]:
-    if self._use_dbus:
-      return self._dbus_query(cmd)
     self._ensure_serial()
     try:
       self._send(cmd)
@@ -232,7 +205,7 @@ class AtClient:
         pass
       self.channel = None
     # drain any unsolicited responses before opening
-    if self._serial and not self._use_dbus:
+    if self._serial:
       try:
         self._serial.reset_input_buffer()
       except (OSError, serial.SerialException, termios.error):
@@ -796,10 +769,6 @@ class TiciLPA(LPABase):
         code = self._enable_profile(iccid)
       if code not in (PROFILE_OK, PROFILE_NOT_IN_DISABLED_STATE):
         raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
-    from openpilot.system.hardware import HARDWARE
-    if HARDWARE.get_device_type() == "mici":
-      self._client.send_raw(b'AT+CFUN=0\rAT+CFUN=1\r')  # mici has no SIM presence pin; raw because CFUN=0 drops serial
-      self._client._ensure_serial(reconnect=True)
 
   def is_euicc(self) -> bool:
     # +CCHO:<n> -> eUICC; bare ERROR -> applet absent, non-eUICC; +CME ERROR -> applet
