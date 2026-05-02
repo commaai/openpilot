@@ -78,19 +78,15 @@ class PPPSession:
     self._proc: subprocess.Popen | None = None
     self._fails = 0
     self._peer = ""
-    self._dead = False  # set on explicit kill so the state machine sees it next tick
 
   def start(self):
     self._proc = subprocess.Popen(PPPD_CMD, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     self._peer = ""
-    self._dead = False
     logging.info(f"PPP dialing CID {DIAL_CID}")
 
   def kill(self):
     subprocess.run(["sudo", "killall", "-9", "pppd"], capture_output=True)
-    self._proc = None
     self._peer = ""
-    self._dead = True
 
   @staticmethod
   def reset_data_port():
@@ -104,7 +100,7 @@ class PPPSession:
       logging.warning(f"data port reset failed: {e}")
 
   def has_exited(self) -> bool:
-    return self._dead or (self._proc is not None and self._proc.poll() is not None)
+    return self._proc is not None and self._proc.poll() is not None
 
   def reset_fail_counter(self):
     self._fails = 0
@@ -144,9 +140,6 @@ class PPPSession:
         return
     logging.info(f"route set up for {ip} via {peer}")
     self._peer = peer
-
-  def clear_peer(self):
-    self._peer = ""
 
   @staticmethod
   def cleanup_routes():
@@ -459,7 +452,6 @@ class Modem:
         self._ppp.maybe_install_routes(ip, peer)
         return {"ip_address": ip, "connected": True}
       if self.S["connected"]:
-        self._ppp.clear_peer()
         return {"connected": False, "ip_address": ""}
     except Exception:
       pass
