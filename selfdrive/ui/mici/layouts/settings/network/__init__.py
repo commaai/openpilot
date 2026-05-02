@@ -36,7 +36,7 @@ class ESimNetworkButton(BigButton):
       self.set_icon(self._get_cell_icon() if iccid else self._cell_none_icon)
       return
 
-    if self._cellular_manager.busy:
+    if self._cellular_manager.switching_iccid is not None:
       self.set_text("esim")
       self.set_value("switching...")
       self.set_icon(self._cell_none_icon)

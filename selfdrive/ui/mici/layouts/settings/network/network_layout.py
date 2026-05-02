@@ -115,7 +115,6 @@ class NetworkLayoutMici(NavScroller):
   def show_event(self):
     super().show_event()
     self._wifi_manager.set_active(True)
-    self._cellular_manager.set_active(True)
     self._cellular_manager.refresh_profiles()
 
     # Process wifi and esim callbacks while at any point in the nav stack
@@ -125,7 +124,6 @@ class NetworkLayoutMici(NavScroller):
   def hide_event(self):
     super().hide_event()
     self._wifi_manager.set_active(False)
-    self._cellular_manager.set_active(False)
 
     gui_app.remove_nav_stack_tick(self._wifi_manager.process_callbacks)
     gui_app.remove_nav_stack_tick(self._cellular_manager.process_callbacks)

@@ -105,13 +105,13 @@ class ESimProfileButton(BigButton):
 
   @property
   def _show_rename_btn(self) -> bool:
-    if self._deleting or self._cellular_manager.busy:
+    if self._deleting or self._cellular_manager.busy or self._cellular_manager.switching_iccid is not None:
       return False
     return self._rename_btn is not None
 
   @property
   def _show_delete_btn(self) -> bool:
-    if self._deleting or self._profile.enabled or self._cellular_manager.busy:
+    if self._deleting or self._profile.enabled or self._cellular_manager.busy or self._cellular_manager.switching_iccid is not None:
       return False
     return not self._cellular_manager.is_comma_profile(self._profile.iccid)
 
@@ -192,14 +192,16 @@ class ESimProfileButton(BigButton):
   def _update_state(self):
     super()._update_state()
 
-    if self._cellular_manager.busy or self._deleting:
+    switching = self._cellular_manager.switching_iccid is not None
+
+    if self._cellular_manager.busy or switching or self._deleting:
       self.set_enabled(False)
       self._sub_label.set_color(SUB_LABEL_DISABLED)
       self._sub_label.set_font_weight(FontWeight.ROMAN)
 
       if self._deleting:
         self.set_value("deleting...")
-      elif self._cellular_manager.busy:
+      elif switching:
         self.set_value("switching..." if not self._profile.enabled else "active")
     elif self._profile.enabled:
       self.set_value("active")
@@ -282,7 +284,7 @@ class ESimUIMici(NavScroller):
     gui_app.push_widget(dlg)
 
   def _on_profile_clicked(self, iccid: str):
-    if self._cellular_manager.busy:
+    if self._cellular_manager.busy or self._cellular_manager.switching_iccid is not None:
       return
     profile = next((p for p in self._cellular_manager.profiles if p.iccid == iccid), None)
     if profile is None or profile.enabled:

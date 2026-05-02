@@ -11,7 +11,6 @@ def profile_display_name(profile: Profile) -> str:
 
 
 PROFILE_POLL_INTERVAL = 30.0
-SWITCH_SETTLE_S = 15.0
 
 
 def _get_lpa() -> LPABase:
@@ -45,18 +44,13 @@ class CellularManager:
     self._operation_error_cbs: list[Callable[[str], None]] = []
 
     self._last_profile_poll: float = 0.0
-    self._no_poll_until: float = 0.0
     self._polling: bool = False
-    self._active: bool = False
 
   def add_callbacks(self, profiles_updated: Callable | None = None, operation_error: Callable | None = None):
     if profiles_updated:
       self._profiles_updated_cbs.append(profiles_updated)
     if operation_error:
       self._operation_error_cbs.append(operation_error)
-
-  def set_active(self, active: bool):
-    self._active = active
 
   @property
   def modem_ip(self) -> str:
@@ -71,12 +65,12 @@ class CellularManager:
     for cb in to_run:
       cb()
 
-    if not self._active:
-      return
-
     self._modem_state = _get_modem_state()
 
-    if not self._busy and not self._polling and time.monotonic() >= self._no_poll_until and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL:
+    if self._switching_iccid and self._modem_state.get("iccid") == self._switching_iccid:
+      self._switching_iccid = None
+
+    if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL:
       self._last_profile_poll = time.monotonic()
       if self._is_euicc is not False:
         self._poll_profiles()
@@ -107,7 +101,6 @@ class CellularManager:
 
   def _finish(self, profiles: list[Profile] | None = None, error: str | None = None):
     self._busy = False
-    self._switching_iccid = None
     if profiles is not None:
       self._profiles = profiles
       for cb in self._profiles_updated_cbs:
@@ -137,9 +130,9 @@ class CellularManager:
   def refresh_profiles(self):
     if self._is_euicc is False:
       return
-    self._poll_profiles(is_refresh=True)
+    self._poll_profiles()
 
-  def _poll_profiles(self, is_refresh: bool = False):
+  def _poll_profiles(self):
     self._polling = True
 
     def worker():
@@ -167,13 +160,14 @@ class CellularManager:
 
   def _finish_poll(self, profiles: list[Profile]):
     self._polling = False
-    if self._busy or time.monotonic() < self._no_poll_until:
+    if self._busy:
       return
     self._profiles = profiles
     for cb in self._profiles_updated_cbs:
       cb(profiles)
 
   def switch_profile(self, iccid: str):
+    # _switching_iccid stays set across _finish; cleared when modem state's ICCID matches (or on error)
     self._switching_iccid = iccid
     self._busy = True
 
@@ -184,12 +178,14 @@ class CellularManager:
           lpa.switch_profile(iccid)
         # optimistic update: flip enabled flags locally
         profiles = [Profile(iccid=p.iccid, nickname=p.nickname, enabled=(p.iccid == iccid), provider=p.provider) for p in self._profiles]
-        self._no_poll_until = time.monotonic() + SWITCH_SETTLE_S
         self._callback_queue.append(lambda: self._finish(profiles=profiles))
       except Exception as e:
         cloudlog.exception("Failed to switch eSIM profile")
         err = str(e)
-        self._callback_queue.append(lambda: self._finish(error=err))
+        def fail():
+          self._switching_iccid = None
+          self._finish(error=err)
+        self._callback_queue.append(fail)
 
     threading.Thread(target=worker, daemon=True).start()
 
