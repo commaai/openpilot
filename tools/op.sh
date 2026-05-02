@@ -26,15 +26,6 @@ function op_install() {
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 }
 
-function loge() {
-  if [[ -f "$LOG_FILE" ]]; then
-    # error type
-    echo "$1" >> $LOG_FILE
-    # error log
-    echo "$2" >> $LOG_FILE
-  fi
-}
-
 function retry() {
   local attempts=$1
   shift
@@ -148,13 +139,11 @@ function op_check_os() {
           ;;
         * )
           echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
           return 1
           ;;
       esac
     else
       echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
-      loge "ERROR_UNKNOWN_UBUNTU"
       return 1
     fi
 
@@ -162,7 +151,6 @@ function op_check_os() {
     echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
-    loge "ERROR_UNKNOWN_OS" "$OSTYPE"
     return 1
   fi
 }
@@ -210,7 +198,6 @@ function op_setup() {
   SETUP_SCRIPT="tools/setup_dependencies.sh"
   if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
-    loge "ERROR_DEPENDENCIES_INSTALLATION"
     return 1
   fi
   et="$(date +%s)"
@@ -222,7 +209,6 @@ function op_setup() {
   st="$(date +%s)"
   if ! retry 3 git submodule update --jobs 4 --init --recursive; then
     echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
-    loge "ERROR_GIT_SUBMODULES"
     return 1
   fi
   et="$(date +%s)"
@@ -232,7 +218,6 @@ function op_setup() {
   st="$(date +%s)"
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
-    loge "ERROR_GIT_LFS"
     return 1
   fi
   et="$(date +%s)"
@@ -383,6 +368,9 @@ function op_switch() {
   git submodule update --init --recursive
   git submodule foreach git reset --hard
   git submodule foreach git clean -df
+
+  # remove openpilot update flag if present
+  rm -f .overlay_init
 }
 
 function op_start() {
@@ -465,7 +453,6 @@ function _op() {
     -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
-    -l | --log )       shift 1; LOG_FILE="$1" ; shift 1 ;;
   esac
 
   # parse Commands

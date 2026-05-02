@@ -1,0 +1,81 @@
+[project]
+site_name = "openpilot docs"
+site_url = "https://docs.comma.ai"
+repo_url = "https://github.com/commaai/openpilot/"
+
+docs_dir = "docs"
+site_dir = "docs_site/"
+
+extra_css = ["stylesheets/extra.css"]
+
+nav = [
+  { "What is openpilot?" = "index.md" },
+  { "How-to" = [
+    { "Turn the speed blue" = "how-to/turn-the-speed-blue.md" },
+    { "Connect to a comma 3X or four" = "how-to/connect-to-comma.md" },
+    { "Add support for a car" = "how-to/car-port.md" },
+  ] },
+  { "Concepts" = [
+    { "Logs" = "concepts/logs.md" },
+    { "Safety" = "concepts/safety.md" },
+    { "Glossary" = "concepts/glossary.md" },
+  ] },
+  { "Contributing" = [
+    { "Feedback" = "contributing/feedback.md" },
+    { "Roadmap" = "contributing/roadmap.md" },
+    { "Contributing Guide →" = "https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md" },
+  ] },
+  { "Links" = [
+    { "Blog →" = "https://blog.comma.ai" },
+    { "Bounties →" = "https://comma.ai/bounties" },
+    { "GitHub →" = "https://github.com/commaai" },
+    { "Discord →" = "https://discord.comma.ai" },
+    { "X →" = "https://x.com/comma_ai" },
+  ] },
+]
+
+[project.theme]
+logo = "assets/comma-logo.png"
+features = [
+  "navigation.expand",
+  "navigation.sections",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "content.code.copy",
+  "content.action.edit",
+  "content.action.view",
+]
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/commaai"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/discord"
+link = "https://discord.comma.ai"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/x-twitter"
+link = "https://x.com/comma_ai"
+
+[project.markdown_extensions.attr_list]
+
+[project.markdown_extensions.admonition]
+
+[project.markdown_extensions.md_in_html]
+
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+
+[project.markdown_extensions.pymdownx.inlinehilite]
+
+[project.markdown_extensions.pymdownx.magiclink]
+
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [{ name = "mermaid", class = "mermaid" }]
+
+[project.markdown_extensions.pymdownx.details]
+
+[project.markdown_extensions."ext.glossary"]

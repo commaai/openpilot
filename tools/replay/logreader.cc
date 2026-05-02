@@ -142,18 +142,19 @@ void LogReader::migrateOldEvents() {
       new_evt.setLogMonoTime(old_evt.getLogMonoTime());
       auto new_state = new_evt.initSelfdriveState();
 
-      new_state.setActive(old_state.getActiveDEPRECATED());
-      new_state.setAlertSize(old_state.getAlertSizeDEPRECATED());
-      new_state.setAlertSound(old_state.getAlertSound2DEPRECATED());
-      new_state.setAlertStatus(old_state.getAlertStatusDEPRECATED());
-      new_state.setAlertText1(old_state.getAlertText1DEPRECATED());
-      new_state.setAlertText2(old_state.getAlertText2DEPRECATED());
-      new_state.setAlertType(old_state.getAlertTypeDEPRECATED());
-      new_state.setEnabled(old_state.getEnabledDEPRECATED());
-      new_state.setEngageable(old_state.getEngageableDEPRECATED());
-      new_state.setExperimentalMode(old_state.getExperimentalModeDEPRECATED());
-      new_state.setPersonality(old_state.getPersonalityDEPRECATED());
-      new_state.setState(old_state.getStateDEPRECATED());
+      auto old_dep = old_state.getDeprecated();
+      new_state.setActive(old_dep.getActive());
+      new_state.setAlertSize(old_dep.getAlertSize());
+      new_state.setAlertSound(old_dep.getAlertSound2());
+      new_state.setAlertStatus(old_dep.getAlertStatus());
+      new_state.setAlertText1(old_dep.getAlertText1());
+      new_state.setAlertText2(old_dep.getAlertText2());
+      new_state.setAlertType(old_dep.getAlertType());
+      new_state.setEnabled(old_dep.getEnabled());
+      new_state.setEngageable(old_dep.getEngageable());
+      new_state.setExperimentalMode(old_dep.getExperimentalMode());
+      new_state.setPersonality(old_dep.getPersonality());
+      new_state.setState(old_dep.getState());
 
       // Serialize the new event to the buffer
       auto buf_size = msg.getSerializedSize();

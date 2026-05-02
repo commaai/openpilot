@@ -244,6 +244,9 @@ class Updater:
       b = self.get_branch(BASEDIR)
     b = {
       ("tizi", "release3"): "release-tizi",
+      ("tizi", "release3-staging"): "release-tizi-staging",
+      ("mici", "release3"): "release-mici",
+      ("mici", "release3-staging"): "release-mici-staging",
     }.get((HARDWARE.get_device_type(), b), b)
     return b
 

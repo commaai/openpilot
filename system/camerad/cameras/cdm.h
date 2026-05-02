@@ -6,11 +6,6 @@
 #include <vector>
 #include <memory>
 
-// our helpers
-int write_random(uint8_t *dst, const std::vector<uint32_t> &vals);
-int write_cont(uint8_t *dst, uint32_t reg, const std::vector<uint32_t> &vals);
-int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel);
-
 // from drivers/media/platform/msm/camera/cam_cdm/cam_cdm_util.{c,h}
 
 enum cam_cdm_command {
@@ -31,6 +26,11 @@ enum cam_cdm_command {
   CAM_CDM_CMD_SWD_DMI_64 = (CAM_CDM_CMD_PRIVATE_BASE + 0x65),
   CAM_CDM_CMD_PRIVATE_BASE_MAX = 0x7F
 };
+
+// our helpers
+int write_random(uint8_t *dst, const std::vector<uint32_t> &vals);
+int write_cont(uint8_t *dst, uint32_t reg, const std::vector<uint32_t> &vals);
+int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel, uint8_t opcode = CAM_CDM_CMD_DMI_32);
 
 /**
  * struct cdm_regrandom_cmd - Definition for CDM random register command.

@@ -93,7 +93,7 @@ class TestVCruiseHelper:
         self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
 
       # Expected diff on enabling. Speed should not change on falling edge of pressed
-      assert not pressed == self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last
+      assert (not pressed) == (self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_resume_in_standstill(self):
     """
