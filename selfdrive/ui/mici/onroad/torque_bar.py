@@ -23,9 +23,9 @@ def quantized_lru_cache(maxsize=128):
   def decorator(func):
     cache = OrderedDict()
     @wraps(func)
-    def wrapper(cx, cy, r_mid, thickness, a0_deg, a1_deg, **kwargs):
+    def wrapper(r_mid, thickness, a0_deg, a1_deg, **kwargs):
       # Quantize inputs: balanced for smoothness vs cache effectiveness
-      key = (round(cx), round(cy), round(r_mid),
+      key = (round(r_mid),
              round(thickness),           # 1px precision for smoother height transitions
              round(a0_deg * 10) / 10,    # 0.1° precision for smoother angle transitions
              round(a1_deg * 10) / 10,
@@ -37,33 +37,23 @@ def quantized_lru_cache(maxsize=128):
         if len(cache) >= maxsize:
           cache.popitem(last=False)
 
-        result = func(cx, cy, r_mid, thickness, a0_deg, a1_deg, **kwargs)
+        result = func(r_mid, thickness, a0_deg, a1_deg, **kwargs)
         cache[key] = result
       return cache[key]
     return wrapper
   return decorator
 
 
-def arc_bar_pts(cx: float, cy: float,
-                r_mid: float, thickness: float,
+@quantized_lru_cache(maxsize=256)
+def arc_bar_pts(r_mid: float, thickness: float,
                 a0_deg: float, a1_deg: float,
                 *, max_points: int = 100, cap_segs: int = 10,
                 cap_radius: float = 7, px_per_seg: float = 2.0) -> np.ndarray:
-  # Compute shape at origin so the LRU cache stays hot while the bar is translated
-  # (e.g. parent rect.x changes during a scroll animation). Translate to (cx, cy) after.
-  rel = _arc_bar_pts_cached(0.0, 0.0, r_mid, thickness, a0_deg, a1_deg,
-                            max_points=max_points, cap_segs=cap_segs,
-                            cap_radius=cap_radius, px_per_seg=px_per_seg)
-  return rel + np.array([cx, cy], dtype=np.float32)
+  """Return Nx2 np.float32 points for a single closed polygon (rounded thick arc), centered at origin.
 
-
-@quantized_lru_cache(maxsize=256)
-def _arc_bar_pts_cached(cx: float, cy: float,
-                       r_mid: float, thickness: float,
-                       a0_deg: float, a1_deg: float,
-                       *, max_points: int = 100, cap_segs: int = 10,
-                       cap_radius: float = 7, px_per_seg: float = 2.0) -> np.ndarray:
-  """Return Nx2 np.float32 points for a single closed polygon (rounded thick arc)."""
+  Callers translate the result to screen position. Keeping the geometry origin-relative
+  lets the cache stay hot while the bar moves (e.g. parent rect.x during a scroll animation).
+  """
 
   def get_cap(left: bool, a_deg: float):
     # end cap at a1: center (a1), sweep a1→a1+180 (skip endpoints to avoid dupes)
@@ -72,7 +62,7 @@ def _arc_bar_pts_cached(cx: float, cy: float,
     nx, ny = math.cos(math.radians(a_deg)), math.sin(math.radians(a_deg))  # outward normal
     tx, ty = -ny, nx  # tangent (CCW)
 
-    mx, my = cx + nx * r_mid, cy + ny * r_mid  # mid-point at a1
+    mx, my = nx * r_mid, ny * r_mid  # mid-point at a1
     if DEBUG:
       rl.draw_circle(int(mx), int(my), 4, rl.PURPLE)
 
@@ -127,16 +117,16 @@ def _arc_bar_pts_cached(cx: float, cy: float,
 
   # outer arc a0→a1
   ang_o = np.deg2rad(np.linspace(a0_deg, a1_deg, arc_segs + 1))
-  outer = np.c_[cx + np.cos(ang_o) * (r_mid + half),
-                cy + np.sin(ang_o) * (r_mid + half)]
+  outer = np.c_[np.cos(ang_o) * (r_mid + half),
+                np.sin(ang_o) * (r_mid + half)]
 
   # end cap at a1
   cap_end = get_cap(False, a1_deg)
 
   # inner arc a1→a0
   ang_i = np.deg2rad(np.linspace(a1_deg, a0_deg, arc_segs + 1))
-  inner = np.c_[cx + np.cos(ang_i) * (r_mid - half),
-                cy + np.sin(ang_i) * (r_mid - half)]
+  inner = np.c_[np.cos(ang_i) * (r_mid - half),
+                np.sin(ang_i) * (r_mid - half)]
 
   # start cap at a0
   cap_start = get_cap(True, a0_deg)
@@ -228,15 +218,16 @@ class TorqueBar(Widget):
 
     cx = rect.x + rect.width / 2 + 8  # offset 8px to right of camera feed
     cy = rect.y + rect.height + torque_line_radius - torque_line_offset
+    offset = np.array([cx, cy], dtype=np.float32)
 
     # draw bg torque indicator line
-    bg_pts = arc_bar_pts(cx, cy, mid_r, torque_line_height, torque_start_angle, torque_end_angle)
+    bg_pts = arc_bar_pts(mid_r, torque_line_height, torque_start_angle, torque_end_angle) + offset
     draw_polygon(rect, bg_pts, color=torque_line_bg_color)
 
     # draw torque indicator line
     a0s = top_angle
     a1s = a0s + torque_bg_angle_span / 2 * self._torque_filter.x
-    sl_pts = arc_bar_pts(cx, cy, mid_r, torque_line_height, a0s, a1s)
+    sl_pts = arc_bar_pts(mid_r, torque_line_height, a0s, a1s) + offset
 
     # draw beautiful gradient from center to 65% of the bg torque bar width
     start_grad_pt = cx / rect.width
