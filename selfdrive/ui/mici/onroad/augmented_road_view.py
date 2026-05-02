@@ -139,7 +139,7 @@ class AugmentedRoadView(CameraView):
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
 
-    self._matrix_cache_key = (0, 0, 0, 0, stream_type)
+    self._matrix_cache_key: tuple | None = None
     self._cached_matrix: np.ndarray | None = None
     self._content_rect = rl.Rectangle()
     self._last_click_time = 0.0
