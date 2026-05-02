@@ -1,4 +1,3 @@
-import subprocess
 import time
 import threading
 from collections.abc import Callable
@@ -11,22 +10,8 @@ def profile_display_name(profile: Profile) -> str:
   return profile.nickname or profile.provider or profile.iccid[:12]
 
 
-MODEM_IP_POLL_INTERVAL = 5.0
 PROFILE_POLL_INTERVAL = 30.0
 SWITCH_SETTLE_S = 15.0
-
-
-def _get_modem_ip() -> str:
-  for iface in ("ppp0", "wwan0"):
-    try:
-      out = subprocess.check_output(["ip", "-4", "-o", "addr", "show", iface], timeout=1, text=True, stderr=subprocess.DEVNULL)
-      parts = out.split()
-      for i, part in enumerate(parts):
-        if part == "inet" and i + 1 < len(parts):
-          return parts[i + 1].split("/")[0]
-    except Exception:
-      pass
-  return ""
 
 
 def _get_lpa() -> LPABase:
@@ -34,10 +19,10 @@ def _get_lpa() -> LPABase:
   return HARDWARE.get_sim_lpa()
 
 
-def _get_sim_info() -> dict:
+def _get_modem_state() -> dict:
   from openpilot.system.hardware import HARDWARE
   try:
-    return HARDWARE.get_sim_info()
+    return HARDWARE.get_modem_state()
   except Exception:
     return {}
 
@@ -51,7 +36,7 @@ class CellularManager:
     # None = not yet checked, True/False = cached result. SIM cannot be swapped
     # without disassembling the device, so we probe once and keep the result.
     self._is_euicc: bool | None = None
-    self._sim_info: dict = {}
+    self._modem_state: dict = {}
 
     self._lock = threading.Lock()
     self._callback_queue: list[Callable] = []
@@ -59,9 +44,6 @@ class CellularManager:
     self._profiles_updated_cbs: list[Callable[[list[Profile]], None]] = []
     self._operation_error_cbs: list[Callable[[str], None]] = []
 
-    self._modem_ip: str = ""
-    self._ip_polling: bool = False
-    self._last_ip_poll: float = 0.0
     self._last_profile_poll: float = 0.0
     self._no_poll_until: float = 0.0
     self._polling: bool = False
@@ -78,7 +60,11 @@ class CellularManager:
 
   @property
   def modem_ip(self) -> str:
-    return self._modem_ip
+    return self._modem_state.get("ip_address", "")
+
+  @property
+  def modem_state(self) -> dict:
+    return self._modem_state
 
   def process_callbacks(self):
     to_run, self._callback_queue = self._callback_queue, []
@@ -88,18 +74,11 @@ class CellularManager:
     if not self._active:
       return
 
-    now = time.monotonic()
-    if now - self._last_ip_poll >= MODEM_IP_POLL_INTERVAL and not self._ip_polling:
-      self._last_ip_poll = now
-      self._ip_polling = True
-      threading.Thread(target=self._poll_modem_ip, daemon=True).start()
+    self._modem_state = _get_modem_state()
 
-    if not self._busy and not self._polling and now >= self._no_poll_until and now - self._last_profile_poll >= PROFILE_POLL_INTERVAL:
-      self._last_profile_poll = now
-      if self._is_euicc is False:
-        # confirmed non-eUICC: don't touch LPA, but keep sim_info fresh for the UI
-        self._sim_info = _get_sim_info()
-      else:
+    if not self._busy and not self._polling and time.monotonic() >= self._no_poll_until and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL:
+      self._last_profile_poll = time.monotonic()
+      if self._is_euicc is not False:
         self._poll_profiles()
 
   @property
@@ -117,18 +96,6 @@ class CellularManager:
   @property
   def is_euicc(self) -> bool | None:
     return self._is_euicc
-
-  @property
-  def sim_info(self) -> dict:
-    return self._sim_info
-
-  def _poll_modem_ip(self):
-    ip = _get_modem_ip()
-    self._callback_queue.append(lambda: self._finish_ip_poll(ip))
-
-  def _finish_ip_poll(self, ip: str):
-    self._ip_polling = False
-    self._modem_ip = ip
 
   def is_comma_profile(self, iccid: str) -> bool:
     return any(p.iccid == iccid and p.provider == 'Webbing' for p in self._profiles)
@@ -184,8 +151,7 @@ class CellularManager:
             self._is_euicc = lpa.is_euicc()
             cloudlog.info(f"eSIM: is_euicc={self._is_euicc}")
           if not self._is_euicc:
-            sim_info = _get_sim_info()
-            self._callback_queue.append(lambda: self._finish_poll_non_euicc(sim_info))
+            self._callback_queue.append(lambda: setattr(self, '_polling', False))
             return
           cloudlog.info("eSIM: processing notifications")
           lpa.process_notifications()
@@ -198,12 +164,6 @@ class CellularManager:
         self._callback_queue.append(lambda: setattr(self, '_polling', False))
 
     threading.Thread(target=worker, daemon=True).start()
-
-  def _finish_poll_non_euicc(self, sim_info: dict):
-    self._polling = False
-    self._sim_info = sim_info
-    for cb in self._profiles_updated_cbs:
-      cb(self._profiles)
 
   def _finish_poll(self, profiles: list[Profile]):
     self._polling = False
