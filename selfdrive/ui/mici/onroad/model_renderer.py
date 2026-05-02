@@ -72,9 +72,7 @@ class ModelRenderer(Widget):
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._ll_color_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-    # Transform matrix (3x3 for car space to screen space). Projection is done at the parent
-    # rect's origin (x=y=0); each draw method translates by self._rect.x/y so the cached
-    # projection stays independent of screen position (cache hot during scroll).
+    # 3x3 car space -> rect-origin space; draw methods translate by self._rect.x/y so cache stays hot during scroll
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
     self._transform_dirty = True
     self._clip_region = None

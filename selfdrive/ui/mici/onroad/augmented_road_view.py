@@ -346,8 +346,7 @@ class AugmentedRoadView(CameraView):
       [0, 0, 1.0]
     ])
 
-    # video_transform is built without rect.x/y so the cached projection stays independent
-    # of screen position; ModelRenderer adds the rect offset at draw time.
+    # built without rect.x/y so cache stays hot during scroll. ModelRenderer adds offset at draw time
     video_transform = np.array([
       [zoom, 0.0, (w / 2 - x_offset) - (cx * zoom)],
       [0.0, zoom, (h / 2 - y_offset) - (cy * zoom)],
