@@ -293,20 +293,15 @@ class AugmentedRoadView(CameraView):
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
-    # Update model_renderer's screen offset every frame so overlay tracks camera
-    # position at 60Hz, even when the cache returns the same projection matrix.
-    self._model_renderer.set_screen_offset(self._content_rect.x, self._content_rect.y)
-
-    v_ego_quantized = round(ui_state.sm['carState'].vEgo, 1)
     cache_key = (
       ui_state.sm.recv_frame['liveCalibration'],
       int(self._content_rect.width),
       int(self._content_rect.height),
       self.stream_type,
-      v_ego_quantized
+      round(ui_state.sm['carState'].vEgo, 1),
     )
 
-    if cache_key == self._matrix_cache_key and self._cached_matrix is not None:
+    if cache_key == self._matrix_cache_key:
       return self._cached_matrix
 
     # Get camera configuration
@@ -325,7 +320,6 @@ class AugmentedRoadView(CameraView):
     kep = calib_transform @ inf_point
 
     # Calculate center points and dimensions
-    x, y = self._content_rect.x, self._content_rect.y
     w, h = self._content_rect.width, self._content_rect.height
     cx, cy = intrinsic[0, 2], intrinsic[1, 2]
 
@@ -352,9 +346,8 @@ class AugmentedRoadView(CameraView):
       [0, 0, 1.0]
     ])
 
-    # Compute video_transform with x=0, y=0 so the cached projection is independent of
-    # the parent rect's screen position. ModelRenderer applies (x, y) as a 2D screen
-    # offset post-projection — translation passes through linearly after the divide.
+    # video_transform is built without rect.x/y so the cached projection stays independent
+    # of screen position; ModelRenderer adds the rect offset at draw time.
     video_transform = np.array([
       [zoom, 0.0, (w / 2 - x_offset) - (cx * zoom)],
       [0.0, zoom, (h / 2 - y_offset) - (cy * zoom)],
