@@ -293,6 +293,10 @@ class AugmentedRoadView(CameraView):
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+    # Update model_renderer's screen offset every frame so overlay tracks camera
+    # position at 60Hz, even when the cache returns the same projection matrix.
+    self._model_renderer.set_screen_offset(self._content_rect.x, self._content_rect.y)
+
     v_ego_quantized = round(ui_state.sm['carState'].vEgo, 1)
     cache_key = (
       ui_state.sm.recv_frame['liveCalibration'],
@@ -357,7 +361,6 @@ class AugmentedRoadView(CameraView):
       [0.0, 0.0, 1.0]
     ])
     self._model_renderer.set_transform(video_transform @ calib_transform)
-    self._model_renderer.set_screen_offset(x, y)
 
     return self._cached_matrix
 
