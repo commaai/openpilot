@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import fcntl
-import ipaddress
 import json
 import logging
 import os
@@ -9,6 +8,8 @@ import signal
 import subprocess
 import tempfile
 import time
+
+from ipaddress import IPv4Address, AddressValueError
 
 from enum import Enum
 
@@ -292,9 +293,9 @@ class Modem:
 
   def _install_ppp_routes(self, ip: str, peer: str):
     try:
-      ipaddress.IPv4Address(ip)
-      ipaddress.IPv4Address(peer)
-    except ValueError:
+      IPv4Address(ip)
+      IPv4Address(peer)
+    except AddressValueError:
       logging.warning(f"refusing route install with non-IPv4 ip={ip!r} peer={peer!r}")
       return
     self._cleanup_routes()
