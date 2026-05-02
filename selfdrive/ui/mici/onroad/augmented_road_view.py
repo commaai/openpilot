@@ -301,7 +301,7 @@ class AugmentedRoadView(CameraView):
       round(ui_state.sm['carState'].vEgo, 1),
     )
 
-    if cache_key == self._matrix_cache_key:
+    if cache_key == self._matrix_cache_key and self._cached_matrix is not None:
       return self._cached_matrix
 
     # Get camera configuration
