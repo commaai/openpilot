@@ -25,10 +25,10 @@ STATE_PATH = "/dev/shm/modem"
 AT_LOCK = "/dev/shm/modem.lock"  # shared with LPA
 AT_INIT = [
   "ATE0",       # disable command echo
-  "ATV1",       # verbose result codes
-  "AT+CMEE=1",  # numeric error codes on failures
-  "ATX4",       # full result codes (CONNECT/BUSY/NO CARRIER...)
-  "AT&C1",      # DCD reflects carrier state
+  "ATV1",       # verbose result codes (CONNECT/BUSY/NO CARRIER, not numeric)
+  "AT+CMEE=1",  # numeric +CME ERROR codes on failures (per 3GPP 27.007)
+  "ATX4",       # extended result codes: busy + dial tone detection, line speed in CONNECT
+  "AT&C1",      # DCD pin follows carrier state (V.250 default)
 ]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
 # 3GPP TS 27.007 +COPS <AcT> -> network type
