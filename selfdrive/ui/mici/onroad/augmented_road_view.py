@@ -348,12 +348,16 @@ class AugmentedRoadView(CameraView):
       [0, 0, 1.0]
     ])
 
+    # Compute video_transform with x=0, y=0 so the cached projection is independent of
+    # the parent rect's screen position. ModelRenderer applies (x, y) as a 2D screen
+    # offset post-projection — translation passes through linearly after the divide.
     video_transform = np.array([
-      [zoom, 0.0, (w / 2 + x - x_offset) - (cx * zoom)],
-      [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
+      [zoom, 0.0, (w / 2 - x_offset) - (cx * zoom)],
+      [0.0, zoom, (h / 2 - y_offset) - (cy * zoom)],
       [0.0, 0.0, 1.0]
     ])
     self._model_renderer.set_transform(video_transform @ calib_transform)
+    self._model_renderer.set_screen_offset(x, y)
 
     return self._cached_matrix
 
