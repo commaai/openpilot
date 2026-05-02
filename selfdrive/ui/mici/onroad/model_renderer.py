@@ -72,7 +72,7 @@ class ModelRenderer(Widget):
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._ll_color_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-    # 3x3 car space -> rect-origin space; draw methods translate by self._rect.x/y so cache stays hot during scroll
+    # 3x3 car space -> rect-origin space (draw methods add rect.x/y)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
     self._transform_dirty = True
     self._clip_region = None
@@ -306,8 +306,7 @@ class ModelRenderer(Widget):
     return color
 
   def _draw_lane_lines(self):
-    """Draw lane lines and road edges"""
-    """Two closest lines should be green (lane line or road edges)"""
+    """Draw lane lines and road edges. Two closest lines should be green (lane line or road edges)."""
     offset = np.array([self._rect.x, self._rect.y], dtype=np.float32)
 
     for i, lane_line in enumerate(self._lane_lines):
