@@ -49,11 +49,7 @@ def arc_bar_pts(r_mid: float, thickness: float,
                 a0_deg: float, a1_deg: float,
                 *, max_points: int = 100, cap_segs: int = 10,
                 cap_radius: float = 7, px_per_seg: float = 2.0) -> np.ndarray:
-  """Return Nx2 np.float32 points for a single closed polygon (rounded thick arc), centered at origin.
-
-  Callers translate the result to screen position. Keeping the geometry origin-relative
-  lets the cache stay hot while the bar moves (e.g. parent rect.x during a scroll animation).
-  """
+  """Return Nx2 np.float32 points for a single closed polygon (rounded thick arc), centered at origin."""
 
   def get_cap(left: bool, a_deg: float):
     # end cap at a1: center (a1), sweep a1→a1+180 (skip endpoints to avoid dupes)
