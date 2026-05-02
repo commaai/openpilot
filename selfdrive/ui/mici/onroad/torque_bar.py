@@ -44,12 +44,25 @@ def quantized_lru_cache(maxsize=128):
   return decorator
 
 
-@quantized_lru_cache(maxsize=256)
 def arc_bar_pts(cx: float, cy: float,
                 r_mid: float, thickness: float,
                 a0_deg: float, a1_deg: float,
                 *, max_points: int = 100, cap_segs: int = 10,
                 cap_radius: float = 7, px_per_seg: float = 2.0) -> np.ndarray:
+  # Compute shape at origin so the LRU cache stays hot while the bar is translated
+  # (e.g. parent rect.x changes during a scroll animation). Translate to (cx, cy) after.
+  rel = _arc_bar_pts_cached(0.0, 0.0, r_mid, thickness, a0_deg, a1_deg,
+                            max_points=max_points, cap_segs=cap_segs,
+                            cap_radius=cap_radius, px_per_seg=px_per_seg)
+  return rel + np.array([cx, cy], dtype=np.float32)
+
+
+@quantized_lru_cache(maxsize=256)
+def _arc_bar_pts_cached(cx: float, cy: float,
+                       r_mid: float, thickness: float,
+                       a0_deg: float, a1_deg: float,
+                       *, max_points: int = 100, cap_segs: int = 10,
+                       cap_radius: float = 7, px_per_seg: float = 2.0) -> np.ndarray:
   """Return Nx2 np.float32 points for a single closed polygon (rounded thick arc)."""
 
   def get_cap(left: bool, a_deg: float):
