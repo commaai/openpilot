@@ -7,6 +7,7 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
+from openpilot.common.params import Params
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, LPABase, ThermalConfig, ThermalZone
@@ -204,6 +205,8 @@ class Tici(HardwareBase):
     return network_strength
 
   def get_network_metered(self, network_type) -> bool:
+    if network_type in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
+      return Params().get_bool("GsmMetered")
     try:
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
@@ -216,9 +219,6 @@ class Tici(HardwareBase):
         if network_type == NetworkType.wifi:
           if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
             return True
-        elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
-          if metered_prop == NMMetered.NM_METERED_NO:
-            return False
     except Exception:
       pass
 

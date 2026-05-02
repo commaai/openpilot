@@ -25,7 +25,6 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
                                                     NM_DEVICE_TYPE_WIFI, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState, NMDeviceStateReason)
-from openpilot.system.ui.lib.gsm_manager import _GsmManager
 
 try:
   from openpilot.common.params import Params
@@ -184,8 +183,6 @@ class WifiManager:
 
     self._last_network_scan: float = 0.0
     self._callback_queue: list[Callable] = []
-
-    self._gsm = _GsmManager()
 
     self._tethering_ssid = "weedle"
     if Params is not None:
@@ -934,12 +931,6 @@ class WifiManager:
   def __del__(self):
     self.stop()
 
-  def update_gsm_settings(self, roaming: bool, apn: str, metered: bool):
-    """Update GSM settings for cellular connection"""
-    def worker():
-      self._gsm.update_gsm_settings(roaming, apn, metered)
-    threading.Thread(target=worker, daemon=True).start()
-
   def stop(self):
     if not self._exit:
       self._exit = True
@@ -953,5 +944,3 @@ class WifiManager:
         self._router_main.conn.close()
       if self._conn_monitor is not None:
         self._conn_monitor.close()
-
-      self._gsm.close()
