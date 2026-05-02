@@ -132,23 +132,6 @@ version = "1.0.1"
 source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=release-capnproto#eba2fe8b8208b5408fbda1bc0104a91e4375aee3" }
 
 [[package]]
-name = "casadi"
-version = "3.7.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/92/62/1e98662024915ecb09c6894c26a3f497f4afa66570af3f53db4651fc45f1/casadi-3.7.2.tar.gz", hash = "sha256:b4d7bd8acdc4180306903ae1c9eddaf41be2a3ae2fa7154c57174ae64acdc60d", size = 6053600, upload-time = "2025-09-10T10:05:49.521Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/c8/689d085447b1966f42bdb8aa4fbebef49a09697dbee32ab02a865c17ac1b/casadi-3.7.2-cp312-none-macosx_10_13_x86_64.macosx_10_13_intel.whl", hash = "sha256:309ea41a69c9230390d349b0dd899c6a19504d1904c0756bef463e47fb5c8f9a", size = 47116756, upload-time = "2025-09-10T07:53:00.931Z" },
-    { url = "https://files.pythonhosted.org/packages/1e/c0/3c4704394a6fd4dfb2123a4fd71ba64a001f340670a3eba45be7a19ac736/casadi-3.7.2-cp312-none-macosx_11_0_arm64.whl", hash = "sha256:6033381234db810b2247d16c6352e679a009ec4365d04008fc768866e011ed58", size = 42293718, upload-time = "2025-09-10T08:07:16.415Z" },
-    { url = "https://files.pythonhosted.org/packages/f3/24/4cf05469ddf8544da5e92f359f96d716a97e7482999f085a632bc4ef344a/casadi-3.7.2-cp312-none-manylinux2014_aarch64.whl", hash = "sha256:732f2804d0766454bb75596339e4f2da6662ffb669621da0f630ed4af9e83d6a", size = 47276175, upload-time = "2025-09-10T08:08:09.29Z" },
-    { url = "https://files.pythonhosted.org/packages/82/08/b5f57fea03128efd5c860673b6ac44776352e6c1af862b8177f4c503fffe/casadi-3.7.2-cp312-none-manylinux2014_i686.whl", hash = "sha256:cf17298ff0c162735bdf9bf72b765c636ae732130604017a3b52e26e35402857", size = 72430454, upload-time = "2025-09-10T08:09:10.781Z" },
-    { url = "https://files.pythonhosted.org/packages/24/ab/d7233c915b12c005655437c6c4cf0ae46cbbb2b20d743cb5e4881ad3104a/casadi-3.7.2-cp312-none-manylinux2014_x86_64.whl", hash = "sha256:cde616930fa1440ad66f1850670399423edd37354eed9b12e74b3817b98d1187", size = 75568903, upload-time = "2025-09-10T08:10:07.108Z" },
-    { url = "https://files.pythonhosted.org/packages/3e/b9/5b984124f539656efdf079f3d8f09d73667808ec8d0546e6bce6dc60ade6/casadi-3.7.2-cp312-none-win_amd64.whl", hash = "sha256:81d677d2b020c1307c1eb25eae15686e5de199bb066828c3eaabdfaaaf457ffd", size = 50991347, upload-time = "2025-09-10T08:10:46.629Z" },
-]
-
-[[package]]
 name = "catch2"
 version = "2.13.10"
 source = { git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2#7a05367ad5e3705a23f00ebc41b629960b8996b0" }
@@ -764,7 +747,6 @@ dependencies = [
     { name = "av" },
     { name = "bzip2" },
     { name = "capnproto" },
-    { name = "casadi" },
     { name = "catch2" },
     { name = "cffi" },
     { name = "crcmod-plus" },
@@ -844,7 +826,6 @@ requires-dist = [
     { name = "av" },
     { name = "bzip2", git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=release-bzip2" },
     { name = "capnproto", git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=release-capnproto" },
-    { name = "casadi", specifier = ">=3.6.6" },
     { name = "catch2", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
