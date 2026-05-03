@@ -451,8 +451,8 @@ class Modem:
             peer = parts[parts.index("peer") + 1].split("/")[0]
           break
       if ip:
-        if self._ppp.maybe_install_routes(ip, peer):
-          self._push_cellular_dns()
+        if self._ppp.maybe_install_routes(ip, peer) and not self._push_cellular_dns():
+          self._ppp.kill()
         return {"ip_address": ip, "connected": True}
       if self.S["connected"]:
         return {"connected": False, "ip_address": ""}
@@ -460,10 +460,10 @@ class Modem:
       pass
     return {}
 
-  def _push_cellular_dns(self):
+  def _push_cellular_dns(self) -> bool:
     v = self._atv(f"AT+CGCONTRDP={DIAL_CID}", "+CGCONTRDP:")
     if not v:
-      return
+      return False
     # +CGCONTRDP: <cid>,<bearer_id>,<apn>,<local_addr>,<gw_addr>,<dns_prim>,<dns_sec>,...
     fields = [f.strip().strip('"') for f in v.split(",")]
     dns_servers = []
@@ -473,10 +473,15 @@ class Modem:
       except (AddressValueError, ValueError):
         pass
     if not dns_servers:
-      return
-    subprocess.run(["sudo", "resolvectl", "dns", "ppp0", *dns_servers], capture_output=True)
-    subprocess.run(["sudo", "resolvectl", "default-route", "ppp0", "yes"], capture_output=True)
+      return False
+    for cmd in (["sudo", "resolvectl", "dns", "ppp0", *dns_servers],
+                ["sudo", "resolvectl", "default-route", "ppp0", "yes"]):
+      r = subprocess.run(cmd, capture_output=True, text=True)
+      if r.returncode != 0:
+        logging.warning(f"resolvectl failed ({' '.join(cmd[1:])}): {r.stderr.strip()}")
+        return False
     logging.info(f"resolvectl: ppp0 DNS = {dns_servers}")
+    return True
 
   def _poll_byte_counters(self) -> dict:
     try:
