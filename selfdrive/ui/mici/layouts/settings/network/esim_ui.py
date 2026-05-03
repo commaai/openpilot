@@ -144,7 +144,8 @@ class ESimProfileButton(BigButton):
     if self.value:
       sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
       label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
-      action_w = self._delete_btn.rect.width if self._show_delete_btn else 0
+      action_w = self._rename_btn.rect.width if self._show_rename_btn else 0
+      action_w += self._delete_btn.rect.width if self._show_delete_btn else 0
       sub_label_w = self.SUB_LABEL_WIDTH - action_w
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
@@ -164,17 +165,17 @@ class ESimProfileButton(BigButton):
 
     btn_x = self._rect.x + self._rect.width
     btn_bottom = btn_y + self._rect.height
-    if self._show_delete_btn:
-      btn_x -= self._delete_btn.rect.width
-      self._delete_btn.render(rl.Rectangle(
-        btn_x, btn_bottom - self._delete_btn.rect.height,
-        self._delete_btn.rect.width, self._delete_btn.rect.height,
-      ))
     if self._show_rename_btn:
       btn_x -= self._rename_btn.rect.width
       self._rename_btn.render(rl.Rectangle(
         btn_x, btn_bottom - self._rename_btn.rect.height,
         self._rename_btn.rect.width, self._rename_btn.rect.height,
+      ))
+    if self._show_delete_btn:
+      btn_x -= self._delete_btn.rect.width
+      self._delete_btn.render(rl.Rectangle(
+        btn_x, btn_bottom - self._delete_btn.rect.height,
+        self._delete_btn.rect.width, self._delete_btn.rect.height,
       ))
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
