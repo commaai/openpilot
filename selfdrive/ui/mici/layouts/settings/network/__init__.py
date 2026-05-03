@@ -1,11 +1,11 @@
 import pyray as rl
 
 from cereal import log
-from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
 
 NetworkType = log.DeviceState.NetworkType

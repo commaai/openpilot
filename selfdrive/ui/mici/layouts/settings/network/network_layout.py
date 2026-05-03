@@ -1,14 +1,14 @@
-from openpilot.system.ui.widgets.scroller import NavScroller
+from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.mici.layouts.settings.network import EsimNetworkButton, WifiNetworkButton
-from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.selfdrive.ui.mici.layouts.settings.network.esim_ui import EsimUIMici
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
+from openpilot.system.ui.widgets.scroller import NavScroller
 
 
 class NetworkLayoutMici(NavScroller):

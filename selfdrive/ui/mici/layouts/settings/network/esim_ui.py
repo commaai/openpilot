@@ -1,11 +1,11 @@
 import pyray as rl
 from collections.abc import Callable
 
-from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog, BigDialog, BigInputDialog
 from openpilot.system.hardware.base import Profile
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller import NavScroller
