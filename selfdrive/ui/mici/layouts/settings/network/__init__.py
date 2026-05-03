@@ -25,6 +25,8 @@ class ESimNetworkButton(BigButton):
   def _update_state(self):
     super()._update_state()
 
+    self.set_enabled(self._cellular_manager.is_euicc is not False)
+
     if self._cellular_manager.is_euicc is False:
       ms = self._cellular_manager.modem_state
       iccid = ms.get("iccid") or ""
