@@ -142,6 +142,20 @@ class PPPSession:
     self._peer = peer
     return True
 
+  def maybe_install_dns(self, dns_servers: list[str]) -> bool:
+    """Register DNS servers with systemd-resolved; kill the session on failure to force a retry."""
+    if not dns_servers:
+      return False
+    for cmd in (["sudo", "resolvectl", "dns", "ppp0", *dns_servers],
+                ["sudo", "resolvectl", "default-route", "ppp0", "yes"]):
+      r = subprocess.run(cmd, capture_output=True, text=True)
+      if r.returncode != 0:
+        logging.warning(f"resolvectl failed ({' '.join(cmd[1:])}): {r.stderr.strip()}")
+        self.kill()
+        return False
+    logging.info(f"resolvectl: ppp0 DNS = {dns_servers}")
+    return True
+
   @staticmethod
   def cleanup_routes():
     subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
@@ -451,8 +465,8 @@ class Modem:
             peer = parts[parts.index("peer") + 1].split("/")[0]
           break
       if ip:
-        if self._ppp.maybe_install_routes(ip, peer) and not self._push_cellular_dns():
-          self._ppp.kill()
+        if self._ppp.maybe_install_routes(ip, peer):
+          self._ppp.maybe_install_dns(self._read_cellular_dns())
         return {"ip_address": ip, "connected": True}
       if self.S["connected"]:
         return {"connected": False, "ip_address": ""}
@@ -460,10 +474,10 @@ class Modem:
       pass
     return {}
 
-  def _push_cellular_dns(self) -> bool:
+  def _read_cellular_dns(self) -> list[str]:
     v = self._atv(f"AT+CGCONTRDP={DIAL_CID}", "+CGCONTRDP:")
     if not v:
-      return False
+      return []
     # +CGCONTRDP: <cid>,<bearer_id>,<apn>,<local_addr>,<gw_addr>,<dns_prim>,<dns_sec>,...
     fields = [f.strip().strip('"') for f in v.split(",")]
     dns_servers = []
@@ -472,16 +486,7 @@ class Modem:
         dns_servers.append(str(IPv4Address(d)))
       except (AddressValueError, ValueError):
         pass
-    if not dns_servers:
-      return False
-    for cmd in (["sudo", "resolvectl", "dns", "ppp0", *dns_servers],
-                ["sudo", "resolvectl", "default-route", "ppp0", "yes"]):
-      r = subprocess.run(cmd, capture_output=True, text=True)
-      if r.returncode != 0:
-        logging.warning(f"resolvectl failed ({' '.join(cmd[1:])}): {r.stderr.strip()}")
-        return False
-    logging.info(f"resolvectl: ppp0 DNS = {dns_servers}")
-    return True
+    return dns_servers
 
   def _poll_byte_counters(self) -> dict:
     try:
