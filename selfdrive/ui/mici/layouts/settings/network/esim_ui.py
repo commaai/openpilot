@@ -44,7 +44,7 @@ class DeleteButton(Widget):
 
 
 class RenameButton(Widget):
-  SIZE = 63
+  SIZE = 84
   MARGIN = 12
 
   def __init__(self, rename_callback: Callable):
@@ -64,7 +64,7 @@ class RenameButton(Widget):
     rl.draw_texture_ex(bg_txt, (self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
                                 self._rect.y + (self._rect.height - self._bg_txt.height) / 2), 0, 1.0, rl.WHITE)
     icon_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, self._rect.height)
-    gui_label(icon_rect, "Aa", 24, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    gui_label(icon_rect, "Aa", 32, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
 class EsimProfileButton(BigButton):
