@@ -6,10 +6,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.base import LPABase, Profile
 
 
-def profile_display_name(profile: Profile) -> str:
-  return profile.nickname or profile.provider or profile.iccid[:12]
-
-
 PROFILE_POLL_INTERVAL = 30.0
 
 
@@ -92,7 +88,7 @@ class CellularManager:
     return self._is_euicc
 
   def is_comma_profile(self, iccid: str) -> bool:
-    return any(p.iccid == iccid and p.provider == 'Webbing' for p in self._profiles)
+    return any(p.iccid == iccid and p.is_comma for p in self._profiles)
 
   def _ensure_lpa(self) -> LPABase:
     if self._lpa is None:

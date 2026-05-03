@@ -2,7 +2,7 @@ import pyray as rl
 
 from cereal import log
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.cellular_manager import CellularManager, profile_display_name
+from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.system.ui.lib.application import gui_app
@@ -44,10 +44,7 @@ class ESimNetworkButton(BigButton):
     else:
       active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
       if active:
-        if self._cellular_manager.is_comma_profile(active.iccid):
-          self.set_text("comma prime")
-        else:
-          self.set_text(f"{profile_display_name(active)} (...{active.iccid[-4:]})")
+        self.set_text(active.display_name)
         self.set_value(self._cellular_manager.modem_ip or "obtaining IP...")
         self.set_icon(self._get_cell_icon())
       else:

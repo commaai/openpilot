@@ -1,7 +1,7 @@
 import pyray as rl
 from collections.abc import Callable
 
-from openpilot.system.ui.lib.cellular_manager import CellularManager, profile_display_name
+from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog, BigDialog, BigInputDialog
 from openpilot.system.hardware.base import Profile
@@ -67,10 +67,6 @@ class RenameButton(Widget):
     gui_label(icon_rect, "Aa", 32, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
-def _mici_profile_name(profile: Profile) -> str:
-  return f"{profile_display_name(profile)} (...{profile.iccid[-4:]})"
-
-
 class ESimProfileButton(BigButton):
   LABEL_PADDING = 98
   LABEL_WIDTH = 402 - 98 - 28
@@ -78,9 +74,7 @@ class ESimProfileButton(BigButton):
 
   def __init__(self, profile: Profile, cellular_manager: CellularManager):
     self._cellular_manager = cellular_manager
-    is_comma = cellular_manager.is_comma_profile(profile.iccid)
-    display_name = "comma prime" if is_comma else _mici_profile_name(profile)
-    super().__init__(display_name, scroll=True)
+    super().__init__(profile.display_name, scroll=True)
 
     self._profile = profile
     self._deleting = False
@@ -88,10 +82,10 @@ class ESimProfileButton(BigButton):
     self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 48, 36)
     self._cell_none_txt = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 48, 36)
     self._check_txt = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 32, 32)
-    self._comma_txt = gui_app.texture("icons_mici/settings/comma_icon.png", 36, 36) if is_comma else None
+    self._comma_txt = gui_app.texture("icons_mici/settings/comma_icon.png", 36, 36) if profile.is_comma else None
 
     self._delete_btn = DeleteButton(self._on_delete)
-    self._rename_btn = RenameButton(self._on_rename) if not is_comma else None
+    self._rename_btn = RenameButton(self._on_rename) if not profile.is_comma else None
 
   @property
   def profile(self) -> Profile:
@@ -100,10 +94,8 @@ class ESimProfileButton(BigButton):
   def update_profile(self, profile: Profile):
     self._profile = profile
     self._deleting = False
-    is_comma = self._cellular_manager.is_comma_profile(profile.iccid)
-    new_text = "comma prime" if is_comma else _mici_profile_name(profile)
-    if new_text != self.text:
-      self.set_text(new_text)
+    if profile.display_name != self.text:
+      self.set_text(profile.display_name)
 
   @property
   def _show_rename_btn(self) -> bool:
@@ -115,7 +107,7 @@ class ESimProfileButton(BigButton):
   def _show_delete_btn(self) -> bool:
     if self._deleting or self._profile.enabled or self._cellular_manager.switching_iccid is not None:
       return False
-    return not self._cellular_manager.is_comma_profile(self._profile.iccid)
+    return not self._profile.is_comma
 
   def _on_delete(self):
     if self._deleting:

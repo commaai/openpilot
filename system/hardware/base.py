@@ -20,6 +20,17 @@ class Profile:
   enabled: bool
   provider: str
 
+  @property
+  def is_comma(self) -> bool:
+    return self.provider == 'Webbing'
+
+  @property
+  def display_name(self) -> str:
+    if self.is_comma:
+      return "comma prime"
+    name = self.nickname or self.provider or self.iccid[:12]
+    return f"{name} (...{self.iccid[-4:]})"
+
 @dataclass
 class ThermalZone:
   # a zone from /sys/class/thermal/thermal_zone*
