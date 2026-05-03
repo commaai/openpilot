@@ -101,17 +101,19 @@ class ESimProfileButton(BigButton):
     self._profile = profile
     self._deleting = False
     is_comma = self._cellular_manager.is_comma_profile(profile.iccid)
-    self.set_text("comma prime" if is_comma else _mici_profile_name(profile))
+    new_text = "comma prime" if is_comma else _mici_profile_name(profile)
+    if new_text != self.text:
+      self.set_text(new_text)
 
   @property
   def _show_rename_btn(self) -> bool:
-    if self._deleting or self._cellular_manager.busy:
+    if self._deleting:
       return False
     return self._rename_btn is not None
 
   @property
   def _show_delete_btn(self) -> bool:
-    if self._deleting or self._profile.enabled or self._cellular_manager.busy or self._cellular_manager.switching_iccid is not None:
+    if self._deleting or self._profile.enabled or self._cellular_manager.switching_iccid is not None:
       return False
     return not self._cellular_manager.is_comma_profile(self._profile.iccid)
 
