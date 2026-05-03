@@ -105,7 +105,7 @@ class ESimProfileButton(BigButton):
 
   @property
   def _show_rename_btn(self) -> bool:
-    if self._deleting or self._cellular_manager.busy or self._cellular_manager.switching_iccid is not None:
+    if self._deleting or self._cellular_manager.busy:
       return False
     return self._rename_btn is not None
 
@@ -145,6 +145,8 @@ class ESimProfileButton(BigButton):
                               self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
+    active = self._profile.enabled and self._cellular_manager.switching_iccid is None
+
     if self.value:
       sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
       label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
@@ -152,7 +154,7 @@ class ESimProfileButton(BigButton):
       sub_label_w = self.SUB_LABEL_WIDTH - action_w
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
-      if self._profile.enabled and not self._deleting:
+      if active and not self._deleting:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
         rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, CHECK_ICON_COLOR)
         sub_label_x += self._check_txt.width + 14
@@ -163,7 +165,7 @@ class ESimProfileButton(BigButton):
     if self._comma_txt:
       rl.draw_texture_ex(self._comma_txt, (self._rect.x + 36, btn_y + 38), 0.0, 1.0, rl.WHITE)
     else:
-      cell_icon = self._cell_full_txt if self._profile.enabled else self._cell_none_txt
+      cell_icon = self._cell_full_txt if active else self._cell_none_txt
       rl.draw_texture_ex(cell_icon, (self._rect.x + 30, btn_y + 38), 0.0, 1.0, rl.WHITE)
 
     btn_x = self._rect.x + self._rect.width
