@@ -20,7 +20,7 @@ class EsimNetworkButton(BigButton):
     self._cell_medium_icon = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 64, 47)
     self._cell_high_icon = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 64, 47)
     self._cell_full_icon = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 64, 47)
-    super().__init__("esim", "no active profile", self._cell_none_icon, scroll=True)
+    super().__init__("esim", "loading...", self._cell_none_icon, scroll=True)
 
   def _update_state(self):
     super()._update_state()
@@ -51,7 +51,7 @@ class EsimNetworkButton(BigButton):
         self.set_icon(self._get_cell_icon())
       else:
         self.set_text("esim")
-        self.set_value("no active profile")
+        self.set_value("loading...")
         self.set_icon(self._cell_none_icon)
 
   def _get_cell_icon(self):
