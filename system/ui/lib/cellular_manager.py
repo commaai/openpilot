@@ -113,7 +113,6 @@ class CellularManager:
         with self._lock:
           lpa = self._ensure_lpa()
           fn(lpa)
-          lpa.process_notifications()
           profiles = lpa.list_profiles()
         self._callback_queue.append(lambda: self._finish(profiles=profiles))
       except Exception as e:
@@ -142,8 +141,6 @@ class CellularManager:
           if not self._is_euicc:
             self._callback_queue.append(lambda: setattr(self, '_polling', False))
             return
-          cloudlog.info("eSIM: processing notifications")
-          lpa.process_notifications()
           cloudlog.info("eSIM: listing profiles")
           profiles = lpa.list_profiles()
           cloudlog.info(f"eSIM: got {len(profiles)} profiles")
