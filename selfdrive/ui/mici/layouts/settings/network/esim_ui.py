@@ -4,14 +4,13 @@ from collections.abc import Callable
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog, BigDialog, BigInputDialog
 from openpilot.system.hardware.base import Profile
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import DEFAULT_TEXT_COLOR, FontWeight, MousePos, gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller import NavScroller
 
 SUB_LABEL_DISABLED = rl.Color(255, 255, 255, int(255 * 0.585))
-SUB_LABEL_ACTIVE = rl.Color(255, 255, 255, int(255 * 0.9))
 CHECK_ICON_COLOR = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
 
 
@@ -25,12 +24,12 @@ class DeleteButton(Widget):
     self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", 84, 84)
     self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", 84, 84)
     self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 29, 35)
+    self._dialog_trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64)
     self.set_rect(rl.Rectangle(0, 0, 84 + self.MARGIN * 2, 84 + self.MARGIN * 2))
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    dlg = BigConfirmationDialog("slide to delete", gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64),
-                                self._delete_callback, red=True)
+    dlg = BigConfirmationDialog("slide to delete", self._dialog_trash_txt, self._delete_callback, red=True)
     gui_app.push_widget(dlg)
 
   def _render(self, _):
@@ -208,7 +207,7 @@ class EsimProfileButton(BigButton):
     else:
       self.set_value("switch")
       self.set_enabled(True)
-      self._sub_label.set_color(SUB_LABEL_ACTIVE)
+      self._sub_label.set_color(DEFAULT_TEXT_COLOR)
       self._sub_label.set_font_weight(FontWeight.SEMI_BOLD)
 
 
