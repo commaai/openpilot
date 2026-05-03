@@ -44,8 +44,10 @@ class ESimNetworkButton(BigButton):
     else:
       active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
       if active:
-        name = profile_display_name(active)
-        self.set_text(f"{name} (...{active.iccid[-4:]})")
+        if self._cellular_manager.is_comma_profile(active.iccid):
+          self.set_text("comma prime")
+        else:
+          self.set_text(f"{profile_display_name(active)} (...{active.iccid[-4:]})")
         self.set_value(self._cellular_manager.modem_ip or "obtaining IP...")
         self.set_icon(self._get_cell_icon())
       else:
