@@ -29,6 +29,8 @@ AT_INIT = [
   "AT+CMEE=1",  # numeric +CME ERROR codes on failures (per 3GPP 27.007)
   "ATX4",       # extended result codes: busy + dial tone detection, line speed in CONNECT
   "AT&C1",      # DCD pin follows carrier state (V.250 default)
+  "AT+CREG=2",  # registration URCs include location info
+  "AT+CGREG=2", # GPRS registration URCs include location info
 ]
 CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
 # 3GPP TS 27.007 +COPS <AcT> -> network type
@@ -227,6 +229,13 @@ class Modem:
         return line.split(":", 1)[1].strip()
     return None
 
+  def _init_at_channel(self) -> bool:
+    """Run AT_INIT and confirm ATE0 took effect. Returns False if echo is still on."""
+    for c in AT_INIT:
+      self._at(c)
+    r = self._at("AT+CGMI")
+    return bool(r) and not r[0].startswith("AT")
+
   def _configure_modem(self, modem_version: str):
     if not modem_version.startswith("EG25"):
       return
@@ -253,10 +262,15 @@ class Modem:
     self._ppp.kill()
     self._ppp.cleanup_routes()
 
-    for c in AT_INIT + ["AT+CREG=2", "AT+CGREG=2"]:
-      self._at(c)
+    if not self._init_at_channel():
+      logging.warning("AT echo still on, retrying")
+      return State.INITIALIZING
 
     identity = self._read_identity()
+    if not identity["iccid"] or not identity["imei"]:
+      logging.warning(f"identity read incomplete: {identity}, retrying")
+      return State.INITIALIZING
+
     self._configure_modem(identity["modem_version"])
 
     self._apn = self._read_param("GsmApn")
@@ -270,25 +284,23 @@ class Modem:
     return State.SEARCHING
 
   def _read_identity(self):
-    # after a SIM hot-swap, identity reads can come back empty for a few seconds; retry on IMEI
-    imei, iccid, mcc_mnc, modem_version = "", "", "", ""
-    for _ in range(10):
-      r = self._at("AT+CGSN")
-      if r and r[0].strip():
-        imei = r[0].strip()
-        break
-      time.sleep(0.5)
-    v = self._atv("AT+QCCID", "+QCCID:")
-    if v:
-      iccid = v
-    r = self._at("AT+CIMI")
-    if r:
-      imsi = r[0].strip()
-      if len(imsi) >= 6 and imsi.isdigit():
-        mcc_mnc = imsi[:6]
-    r = self._at("AT+GMR")
-    if r:
-      modem_version = r[0].strip()
+    def first_line(cmd):
+      r = self._at(cmd)
+      return r[0].strip() if r else ""
+
+    imei = first_line("AT+CGSN")
+    if not (imei.isdigit() and 14 <= len(imei) <= 17):  # 3GPP TS 23.003
+      imei = ""
+
+    iccid = self._atv("AT+QCCID", "+QCCID:") or ""
+    if not iccid.isdigit():
+      iccid = ""
+
+    imsi = first_line("AT+CIMI")
+    mcc_mnc = imsi[:6] if imsi.isdigit() and len(imsi) >= 6 else ""
+
+    modem_version = first_line("AT+GMR")
+
     logging.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
     return {"imei": imei, "iccid": iccid, "mcc_mnc": mcc_mnc, "modem_version": modem_version}
 
