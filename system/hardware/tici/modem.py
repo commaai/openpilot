@@ -150,7 +150,7 @@ class PPPSession:
                 ["sudo", "resolvectl", "default-route", "ppp0", "yes"]):
       r = subprocess.run(cmd, capture_output=True, text=True)
       if r.returncode != 0:
-        logging.warning(f"resolvectl failed ({' '.join(cmd[1:])}): {r.stderr.strip()}")
+        logging.warning(f"resolvectl failed ({' '.join(cmd[1:])}): {r.stderr.strip()}; killing PPP session to retry DNS install")
         self.kill()
         return False
     logging.info(f"resolvectl: ppp0 DNS = {dns_servers}")
