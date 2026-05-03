@@ -6,7 +6,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.base import LPABase, Profile
 
 
-PROFILE_POLL_INTERVAL = 30.0
+PROFILE_POLL_INTERVAL_S = 30.0
 
 
 def _get_lpa() -> LPABase:
@@ -66,7 +66,7 @@ class CellularManager:
     if self._switching_iccid and self._modem_state.get("iccid") == self._switching_iccid:
       self._switching_iccid = None
 
-    if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL:
+    if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL_S:
       self._last_profile_poll = time.monotonic()
       if self._is_euicc is not False:
         self._poll_profiles()
