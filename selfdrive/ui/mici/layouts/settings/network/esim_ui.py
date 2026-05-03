@@ -201,8 +201,8 @@ class ESimProfileButton(BigButton):
 
       if self._deleting:
         self.set_value("deleting...")
-      elif switching:
-        self.set_value("switching..." if not self._profile.enabled else "active")
+      elif self._cellular_manager.switching_iccid == self._profile.iccid:
+        self.set_value("switching...")
     elif self._profile.enabled:
       self.set_value("active")
       self.set_enabled(True)
