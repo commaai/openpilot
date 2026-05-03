@@ -12,7 +12,7 @@ NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 
 
-class ESimNetworkButton(BigButton):
+class EsimNetworkButton(BigButton):
   def __init__(self, cellular_manager: CellularManager):
     self._cellular_manager = cellular_manager
     self._cell_none_icon = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 64, 47)

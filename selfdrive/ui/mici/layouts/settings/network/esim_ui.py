@@ -67,7 +67,7 @@ class RenameButton(Widget):
     gui_label(icon_rect, "Aa", 32, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
-class ESimProfileButton(BigButton):
+class EsimProfileButton(BigButton):
   LABEL_PADDING = 98
   LABEL_WIDTH = 402 - 98 - 28
   SUB_LABEL_WIDTH = 402 - BigButton.LABEL_HORIZONTAL_PADDING * 2
@@ -212,7 +212,7 @@ class ESimProfileButton(BigButton):
       self._sub_label.set_font_weight(FontWeight.SEMI_BOLD)
 
 
-class ESimUIMici(NavScroller):
+class EsimUIMici(NavScroller):
   def __init__(self, cellular_manager: CellularManager):
     super().__init__()
 
@@ -232,7 +232,7 @@ class ESimUIMici(NavScroller):
     self._update_buttons()
 
   def _update_buttons(self, re_sort: bool = False):
-    existing = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, ESimProfileButton)}
+    existing = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
     profiles = self._cellular_manager.profiles
     current_iccids = {p.iccid for p in profiles}
 
@@ -240,12 +240,12 @@ class ESimUIMici(NavScroller):
       if profile.iccid in existing:
         existing[profile.iccid].update_profile(profile)
       else:
-        btn = ESimProfileButton(profile, self._cellular_manager)
+        btn = EsimProfileButton(profile, self._cellular_manager)
         btn.set_click_callback(lambda iccid=profile.iccid: self._on_profile_clicked(iccid))
         self._scroller.add_widget(btn)
 
     if re_sort:
-      btn_map = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, ESimProfileButton)}
+      btn_map = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
       self._scroller.items[:] = sorted(
         [btn_map[iccid] for iccid in current_iccids if iccid in btn_map],
         key=lambda b: not b.profile.enabled,
@@ -253,12 +253,12 @@ class ESimUIMici(NavScroller):
     else:
       self._scroller.items[:] = [
         btn for btn in self._scroller.items
-        if not isinstance(btn, ESimProfileButton) or btn.profile.iccid in current_iccids
+        if not isinstance(btn, EsimProfileButton) or btn.profile.iccid in current_iccids
       ]
 
   def _move_profile_to_front(self, iccid: str | None, scroll: bool = False):
     front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
-                          if isinstance(btn, ESimProfileButton) and
+                          if isinstance(btn, EsimProfileButton) and
                           btn.profile.iccid == iccid), None) if iccid else None
 
     if front_btn_idx is not None and front_btn_idx > 0:
