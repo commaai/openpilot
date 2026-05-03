@@ -145,7 +145,6 @@ class PPPSession:
   def maybe_install_dns(self, dns_servers: list[str]) -> bool:
     """Register DNS servers with systemd-resolved; kill the session on failure to force a retry."""
     if not dns_servers:
-      logging.warning("no cellular DNS servers reported by modem")
       return False
     for cmd in (["sudo", "resolvectl", "dns", "ppp0", *dns_servers],
                 ["sudo", "resolvectl", "default-route", "ppp0", "yes"]):
@@ -487,6 +486,8 @@ class Modem:
         dns_servers.append(str(IPv4Address(d)))
       except (AddressValueError, ValueError):
         pass
+    if not dns_servers:
+      logging.warning(f"no cellular DNS servers reported by modem: {v!r}")
     return dns_servers
 
   def _poll_byte_counters(self) -> dict:
