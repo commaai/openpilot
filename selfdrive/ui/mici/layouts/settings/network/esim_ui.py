@@ -15,17 +15,18 @@ CHECK_ICON_COLOR = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
 
 
 class DeleteButton(Widget):
+  SIZE = 63
   MARGIN = 12
 
   def __init__(self, delete_callback: Callable):
     super().__init__()
     self._delete_callback = delete_callback
 
-    self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", 84, 84)
-    self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", 84, 84)
-    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 29, 35)
+    self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", self.SIZE, self.SIZE)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", self.SIZE, self.SIZE)
+    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 22, 26)
     self._dialog_trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64)
-    self.set_rect(rl.Rectangle(0, 0, 84 + self.MARGIN * 2, 84 + self.MARGIN * 2))
+    self.set_rect(rl.Rectangle(0, 0, self.SIZE + self.MARGIN * 2, self.SIZE + self.MARGIN * 2))
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
@@ -43,7 +44,7 @@ class DeleteButton(Widget):
 
 
 class RenameButton(Widget):
-  SIZE = 84
+  SIZE = 63
   MARGIN = 12
 
   def __init__(self, rename_callback: Callable):
@@ -63,7 +64,7 @@ class RenameButton(Widget):
     rl.draw_texture_ex(bg_txt, (self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
                                 self._rect.y + (self._rect.height - self._bg_txt.height) / 2), 0, 1.0, rl.WHITE)
     icon_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, self._rect.height)
-    gui_label(icon_rect, "Aa", 32, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    gui_label(icon_rect, "Aa", 24, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
 class EsimProfileButton(BigButton):
