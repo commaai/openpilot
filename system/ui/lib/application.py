@@ -46,6 +46,43 @@ RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k" 
 RECORD_SPEED = int(os.getenv("RECORD_SPEED", "1"))  # Speed multiplier
 OFFSCREEN = os.getenv("OFFSCREEN") == "1"  # Disable FPS limiting for fast offline rendering
 
+
+def get_process_elapsed_ms() -> float | None:
+  try:
+    with open("/proc/self/stat") as f:
+      stat = f.read()
+    with open("/proc/uptime") as f:
+      uptime = float(f.read().split()[0])
+
+    # Field 2, comm, can contain spaces and is wrapped in parentheses.
+    fields_after_comm = stat.rsplit(")", 1)[1].split()
+    start_ticks = int(fields_after_comm[19])
+    ticks_per_second = os.sysconf(os.sysconf_names["SC_CLK_TCK"])
+    return (uptime - (start_ticks / ticks_per_second)) * 1e3
+  except Exception:
+    return None
+
+
+STARTUP_TIMELINE = [
+  ("process start", 0.0),
+  ("UI module loaded (interpreter + early imports)", get_process_elapsed_ms()),
+]
+
+
+def print_startup_timeline(timeline: list[tuple[str, float | None]]):
+  print("\nStartup timeline:")
+  label_width = max(len(label) for label, _ in timeline)
+  last_ms = None
+  for label, elapsed_ms in timeline:
+    if elapsed_ms is None:
+      print(f"  {label:<{label_width}}  {'unavailable':>12}")
+      continue
+
+    delta = "" if last_ms is None else f"+{elapsed_ms - last_ms:.1f} ms"
+    print(f"  {label:<{label_width}}  {elapsed_ms:8.1f} ms  {delta:>10}")
+    last_ms = elapsed_ms
+
+
 GL_VERSION = """
 #version 300 es
 precision highp float;
@@ -241,6 +278,7 @@ class GuiApplication:
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
     self._render_profile_start_time = None
+    self._startup_timeline: list[tuple[str, float | None]] | None = None
 
   @property
   def frame(self):
@@ -342,23 +380,36 @@ class GuiApplication:
 
     profiler = cProfile.Profile()
     start_time = time.monotonic()
+    self._startup_timeline = STARTUP_TIMELINE.copy()
+    self._startup_timeline.append(("init_window entered (entrypoint imports complete)", get_process_elapsed_ms()))
     profiler.enable()
+
+    def print_startup_profile():
+      profiler.disable()
+      elapsed_ms = (time.monotonic() - start_time) * 1e3
+      process_elapsed_ms = get_process_elapsed_ms()
+      if self._startup_timeline is not None:
+        self._startup_timeline.append(("process exit", process_elapsed_ms))
+
+      stats_stream = io.StringIO()
+      pstats.Stats(profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+      print("\n=== Startup profile ===")
+      print(stats_stream.getvalue().rstrip())
+
+      green = "\033[92m"
+      reset = "\033[0m"
+      if process_elapsed_ms is not None:
+        print(f"{green}Process elapsed in {process_elapsed_ms:.1f} ms (profiled Python: {elapsed_ms:.1f} ms){reset}")
+      else:
+        print(f"{green}Profiled Python startup in {elapsed_ms:.1f} ms{reset}")
+      if self._startup_timeline is not None:
+        print_startup_timeline(self._startup_timeline)
+
+    atexit.register(print_startup_profile)
 
     # do the init
     yield
-
-    profiler.disable()
-    elapsed_ms = (time.monotonic() - start_time) * 1e3
-
-    stats_stream = io.StringIO()
-    pstats.Stats(profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
-    print("\n=== Startup profile ===")
-    print(stats_stream.getvalue().rstrip())
-
-    green = "\033[92m"
-    reset = "\033[0m"
-    print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
-    sys.exit(0)
+    self._startup_timeline.append(("init_window complete (window ready)", get_process_elapsed_ms()))
 
   def _ffmpeg_writer_thread(self):
     """Background thread that writes frames to ffmpeg."""
@@ -651,6 +702,10 @@ class GuiApplication:
           self._draw_grid()
 
         rl.end_drawing()
+
+        if self._startup_timeline is not None:
+          self._startup_timeline.append(("draw first frame", get_process_elapsed_ms()))
+          sys.exit(0)
 
         if RECORD:
           image = rl.load_image_from_texture(self._render_texture.texture)
