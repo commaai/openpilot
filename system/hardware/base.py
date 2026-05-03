@@ -13,6 +13,9 @@ class LPAError(RuntimeError):
 class LPAProfileNotFoundError(LPAError):
   pass
 
+COMMA_ICCID_PREFIXES = ('8985235',)
+
+
 @dataclass
 class Profile:
   iccid: str
@@ -22,7 +25,7 @@ class Profile:
 
   @property
   def is_comma(self) -> bool:
-    return self.provider == 'Webbing'
+    return self.provider == 'Webbing' or any(self.iccid.startswith(p) for p in COMMA_ICCID_PREFIXES)
 
   @property
   def display_name(self) -> str:
@@ -110,7 +113,7 @@ class LPABase(ABC):
     pass
 
   def is_comma_profile(self, iccid: str) -> bool:
-    return any(iccid.startswith(prefix) for prefix in ('8985235',))
+    return any(iccid.startswith(prefix) for prefix in COMMA_ICCID_PREFIXES)
 
 class HardwareBase(ABC):
   @staticmethod
