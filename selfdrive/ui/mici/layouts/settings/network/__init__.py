@@ -1,14 +1,15 @@
 import pyray as rl
 
 from cereal import log
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.cellular_manager import CellularManager, profile_display_name
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
-from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
 
 NetworkType = log.DeviceState.NetworkType
+NetworkStrength = log.DeviceState.NetworkStrength
 
 
 class ESimNetworkButton(BigButton):
@@ -53,15 +54,16 @@ class ESimNetworkButton(BigButton):
         self.set_icon(self._cell_none_icon)
 
   def _get_cell_icon(self):
-    device_state = ui_state.sm['deviceState']
-    net_type = device_state.networkType
-    if net_type not in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
-      return self._cell_none_icon
-    strength = device_state.networkStrength
-    level = max(0, min(5, strength.raw + 1)) if strength.raw > 0 else 0
-    icons = (self._cell_none_icon, self._cell_none_icon, self._cell_low_icon,
-             self._cell_medium_icon, self._cell_high_icon, self._cell_full_icon)
-    return icons[level]
+    # always read cell strength from HARDWARE so it reflects modem state even when wifi is the active connection
+    strength = HARDWARE.get_network_strength(NetworkType.cell4G)
+    icons = {
+      NetworkStrength.unknown: self._cell_none_icon,
+      NetworkStrength.poor: self._cell_low_icon,
+      NetworkStrength.moderate: self._cell_medium_icon,
+      NetworkStrength.good: self._cell_high_icon,
+      NetworkStrength.great: self._cell_full_icon,
+    }
+    return icons.get(strength, self._cell_none_icon)
 
 
 class WifiNetworkButton(BigButton):
