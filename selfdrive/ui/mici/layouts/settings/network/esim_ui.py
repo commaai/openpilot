@@ -207,7 +207,7 @@ class ESimProfileButton(BigButton):
         self.set_value("switching...")
     elif self._profile.enabled:
       self.set_value("active")
-      self.set_enabled(True)
+      self.set_enabled(False)
       self._sub_label.set_color(SUB_LABEL_DISABLED)
       self._sub_label.set_font_weight(FontWeight.ROMAN)
     else:
