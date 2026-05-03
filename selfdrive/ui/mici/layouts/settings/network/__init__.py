@@ -9,62 +9,45 @@ from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
 
 NetworkType = log.DeviceState.NetworkType
-NetworkStrength = log.DeviceState.NetworkStrength
 
 
 class EsimNetworkButton(BigButton):
+  # indexed by NetworkStrength enum value: unknown, poor, moderate, good, great
+  CELL_ICONS = ("none", "low", "medium", "high", "full")
+
   def __init__(self, cellular_manager: CellularManager):
     self._cellular_manager = cellular_manager
-    self._cell_none_icon = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 64, 47)
-    self._cell_low_icon = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 64, 47)
-    self._cell_medium_icon = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 64, 47)
-    self._cell_high_icon = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 64, 47)
-    self._cell_full_icon = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 64, 47)
-    super().__init__("esim", "loading...", self._cell_none_icon, scroll=True)
+    self._cell_icons = [gui_app.texture(f"icons_mici/settings/network/cell_strength_{n}.png", 64, 47) for n in self.CELL_ICONS]
+    super().__init__("esim", "loading...", self._cell_icons[0], scroll=True)
 
   def _update_state(self):
     super()._update_state()
-
     self.set_enabled(self._cellular_manager.is_euicc is not False)
+    text, value, icon = self._compute_state()
+    self.set_text(text)
+    self.set_value(value)
+    self.set_icon(icon)
 
-    if self._cellular_manager.is_euicc is False:
-      ms = self._cellular_manager.modem_state
-      iccid = ms.get("iccid") or ""
-      if iccid:
-        self.set_text(f"sim (...{iccid[-4:]})")
-        self.set_value(self._cellular_manager.modem_ip or ms.get("mcc_mnc") or "no IP")
-      else:
-        self.set_text("sim")
-        self.set_value("no sim")
-      self.set_icon(self._get_cell_icon() if iccid else self._cell_none_icon)
-      return
+  def _compute_state(self):
+    cm = self._cellular_manager
+    if cm.is_euicc is False:
+      iccid = cm.modem_state.get("iccid") or ""
+      if not iccid:
+        return "sim", "no sim", self._cell_icons[0]
+      value = cm.modem_ip or cm.modem_state.get("mcc_mnc") or "no IP"
+      return f"sim (...{iccid[-4:]})", value, self._cell_icon()
 
-    if self._cellular_manager.switching_iccid is not None:
-      self.set_text("esim")
-      self.set_value("switching...")
-      self.set_icon(self._cell_none_icon)
-    else:
-      active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
-      if active:
-        self.set_text(active.display_name)
-        self.set_value(self._cellular_manager.modem_ip or "obtaining IP...")
-        self.set_icon(self._get_cell_icon())
-      else:
-        self.set_text("esim")
-        self.set_value("loading...")
-        self.set_icon(self._cell_none_icon)
+    if cm.switching_iccid is not None:
+      return "esim", "switching...", self._cell_icons[0]
 
-  def _get_cell_icon(self):
-    # always read cell strength from HARDWARE so it reflects modem state even when wifi is the active connection
-    strength = HARDWARE.get_network_strength(NetworkType.cell4G)
-    icons = {
-      NetworkStrength.unknown: self._cell_none_icon,
-      NetworkStrength.poor: self._cell_low_icon,
-      NetworkStrength.moderate: self._cell_medium_icon,
-      NetworkStrength.good: self._cell_high_icon,
-      NetworkStrength.great: self._cell_full_icon,
-    }
-    return icons.get(strength, self._cell_none_icon)
+    active = next((p for p in cm.profiles if p.enabled), None)
+    if active is None:
+      return "esim", "loading...", self._cell_icons[0]
+    return active.display_name, cm.modem_ip or "obtaining IP...", self._cell_icon()
+
+  def _cell_icon(self):
+    # read directly from HARDWARE so it reflects modem state even when wifi is the active connection
+    return self._cell_icons[HARDWARE.get_network_strength(NetworkType.cell4G)]
 
 
 class WifiNetworkButton(BigButton):
