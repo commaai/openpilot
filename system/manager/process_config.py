@@ -71,7 +71,7 @@ def and_(*fns):
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
-  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging, enabled=not ASIUS),
+  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not ASIUS),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, webrtc), enabled=not ASIUS),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
