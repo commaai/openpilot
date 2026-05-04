@@ -190,9 +190,8 @@ def model_replay(lr, frs):
   print("----------------- Model Timing -----------------")
   print("------------------------------------------------")
   print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".4f"))
-  assert timings_ok or PC
 
-  return msgs
+  return msgs, timings_ok
 
 
 def get_frames():
@@ -231,10 +230,11 @@ if __name__ == "__main__":
 
   log_msgs = []
   # run replays
-  log_msgs += model_replay(lr, frs)
+  model_msgs, timings_ok = model_replay(lr, frs)
+  log_msgs += model_msgs
 
   # get diff
-  failed = False
+  failed = not (timings_ok or PC)
   if not update:
     log_fn = get_log_fn(TEST_ROUTE)
     try:
