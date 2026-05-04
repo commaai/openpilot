@@ -12,10 +12,10 @@ function agnos_init {
   # set success flag for current boot slot
   sudo abctl --set_success
 
-  # udev does this, but sometimes we startup faster (downstream kernel only)
-  for dev in /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0; do
-    [ -e "$dev" ] && sudo chgrp gpu "$dev" && sudo chmod 660 "$dev"
-  done
+  # TODO: do this without udev in AGNOS
+  # udev does this, but sometimes we startup faster
+  sudo chgrp gpu /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0
+  sudo chmod 660 /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
@@ -70,9 +70,8 @@ function launch {
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
 
-  # hardware specific init (skip on ASIUS — Dragon has no A/B abctl, no
-  # adsprpc-smd/ion/kgsl-3d0 chgrp targets, no agnos OTA)
-  if [ -f /AGNOS ] && [ ! -f /ASIUS ]; then
+  # hardware specific init
+  if [ -f /AGNOS ]; then
     agnos_init
   fi
 
