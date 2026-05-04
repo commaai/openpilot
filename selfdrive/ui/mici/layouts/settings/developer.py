@@ -186,17 +186,14 @@ class DeveloperLayoutMici(NavScroller):
     restart_needed_callback(state)
 
   def _on_alpha_long_enabled(self, state: bool):
+    def toggle(_state: bool):
+      ui_state.params.put_bool("AlphaLongitudinalEnabled", True)
+      restart_needed_callback(True)
+      self._update_toggles()
+
     if state:
       # Don't show enabled state until confirm
       self._alpha_long_toggle.set_checked(False)
-
-      def on_confirm():
-        ui_state.params.put_bool("AlphaLongitudinalEnabled", True)
-        restart_needed_callback(True)
-        self._update_toggles()
-
-      gui_app.push_widget(AlphaLongConfirmPage(on_confirm))
+      gui_app.push_widget(AlphaLongConfirmPage(lambda: toggle(True)))
     else:
-      ui_state.params.put_bool("AlphaLongitudinalEnabled", False)
-      restart_needed_callback(False)
-      self._update_toggles()
+      toggle(False)
