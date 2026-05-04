@@ -10,15 +10,11 @@ from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
 
 
 class AlphaLongConfirmPage(NavScroller):
-  def __init__(self, on_confirm: Callable[[], None], on_cancel: Callable[[], None]):
+  def __init__(self, on_confirm: Callable[[], None]):
     super().__init__()
-    self._on_confirm = on_confirm
-    self._on_cancel = on_cancel
-    self._confirmed = False
 
     def confirm():
-      self._confirmed = True
-      self.dismiss(self._on_confirm)
+      self.dismiss(on_confirm)
 
     accept = BigConfirmationCircleButton("enable alpha\nlongitudinal",
                                          gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
@@ -34,11 +30,6 @@ class AlphaLongConfirmPage(NavScroller):
       GreyBigButton("", "Changing this setting will restart openpilot if the car is powered on."),
       accept,
     ])
-
-  def hide_event(self):
-    super().hide_event()
-    if not self._confirmed:
-      self._on_cancel()
 
 
 class DeveloperLayoutMici(NavScroller):
@@ -199,15 +190,14 @@ class DeveloperLayoutMici(NavScroller):
 
   def _on_alpha_long_enabled(self, state: bool):
     if state:
+      self._alpha_long_toggle.set_checked(False)
+
       def on_confirm():
         ui_state.params.put_bool("AlphaLongitudinalEnabled", True)
         restart_needed_callback(True)
         self._update_toggles()
 
-      def on_cancel():
-        self._alpha_long_toggle.set_checked(False)
-
-      gui_app.push_widget(AlphaLongConfirmPage(on_confirm, on_cancel))
+      gui_app.push_widget(AlphaLongConfirmPage(on_confirm))
     else:
       ui_state.params.put_bool("AlphaLongitudinalEnabled", False)
       restart_needed_callback(False)
