@@ -4,7 +4,7 @@ import os
 from itertools import product
 from SCons.Script import Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_paths
-from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye, _asius_wide
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import CompileConfig
@@ -13,6 +13,7 @@ from tinygrad import Device
 CAMERA_CONFIGS = [
   (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
   (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
+  (_asius_wide.width, _asius_wide.height),        # asius: Dragon Q6A IMX219
 ]
 MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_')
                   for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
