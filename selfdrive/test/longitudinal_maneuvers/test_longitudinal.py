@@ -170,7 +170,7 @@ def create_maneuvers(kwargs):
       initial_speed=0.,
       lead_relevancy=True,
       initial_distance_lead=STOP_DISTANCE,
-      speed_lead_values=[0., 0., 2.],
+      speed_lead_values=[0., 0., 7.],
       breakpoints=[1., 10., 15.],
       ensure_start=True,
       **kwargs,

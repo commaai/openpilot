@@ -11,18 +11,20 @@ from openpilot.common.utils import sudo_write
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gpio import gpiochip_get_ro_value_fd, gpioevent_data
-from openpilot.system.hardware import HARDWARE
 
 from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 from openpilot.system.sensord.sensors.lsm6ds3_accel import LSM6DS3_Accel
 from openpilot.system.sensord.sensors.lsm6ds3_gyro import LSM6DS3_Gyro
 from openpilot.system.sensord.sensors.lsm6ds3_temp import LSM6DS3_Temp
-from openpilot.system.sensord.sensors.mmc5603nj_magn import MMC5603NJ_Magn
 
 I2C_BUS_IMU = 1
 
 def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
   pm = messaging.PubMaster([service for sensor, service, interrupt in sensors if interrupt])
+
+  # NOTE: the gyro and accelerometer share an IRQ due to the comma three
+  # routing only one GPIO from the LSM to the SOC, but comma 3X and four
+  # have two. if we want better timestamps in the future, we can use both.
 
   # Requesting both edges as the data ready pulse from the lsm6ds sensor is
   # very short (75us) and is mostly detected as falling edge instead of rising.
@@ -97,10 +99,6 @@ def main() -> None:
     (LSM6DS3_Gyro(I2C_BUS_IMU), "gyroscope", True),
     (LSM6DS3_Temp(I2C_BUS_IMU), "temperatureSensor", False),
   ]
-  if HARDWARE.get_device_type() == "tizi":
-    sensors_cfg.append(
-      (MMC5603NJ_Magn(I2C_BUS_IMU), "magnetometer", False),
-    )
 
   # Reset sensors
   for sensor, _, _ in sensors_cfg:

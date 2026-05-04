@@ -1,15 +1,15 @@
-# connect to a comma four
+# connect to a comma 3X or comma four
 
-A comma four is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
+A comma device is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
 
 ## Serial Console
 
-On both the comma three and comma four, the serial console is accessible from the main OBD-C port.
-Connect the comma four to your computer with a normal USB C cable, or use a [comma serial](https://comma.ai/shop/comma-serial) for steady 12V power.
+On the comma 3X, the serial console is accessible from the main OBD-C port, forwarded through the panda.
+Access it using `panda/scripts/som_debug.sh`.
 
-On the comma three, the serial console is exposed through a UART-to-USB chip, and `tools/scripts/serial.sh` can be used to connect.
+comma four also exposes a serial console, albeit through an internal debug connector. Dedicated debug hardware coming soon to the comma shop.
 
-On the comma four, the serial console is accessible through the [panda](https://github.com/commaai/panda) using the `panda/tests/som_debug.sh` script.
+Login to the default user with:
 
   * Username: `comma`
   * Password: `comma`
@@ -25,7 +25,7 @@ In order to SSH into your device, you'll need a GitHub account with SSH keys. Se
     * Port: `22`
 
 Here's an example command for connecting to your device using its tethered connection:<br />
-`ssh comma@192.168.43.1`
+`ssh comma@192.168.43.1 -i ~/.ssh/my_github_key`
 
 For doing development work on device, it's recommended to use [SSH agent forwarding](https://docs.github.com/en/developers/overview/using-ssh-agent-forwarding).
 
@@ -45,7 +45,7 @@ In order to use ADB on your device, you'll need to perform the following steps u
     * Here's an example command for connecting to your device using its tethered connection: `adb connect 192.168.43.1:5555`
 
 > [!NOTE]
-> The default port for ADB is 5555 on the comma four.
+> The default port for ADB is 5555.
 
 For more info on ADB, see the [Android Debug Bridge (ADB) documentation](https://developer.android.com/tools/adb).
 
@@ -55,7 +55,7 @@ The public keys are only fetched from your GitHub account once. In order to upda
 
 The `id_rsa` key in this directory only works while your device is in the setup state with no software installed. After installation, that default key will be removed.
 
-#### ssh.comma.ai proxy
+## ssh.comma.ai proxy
 
 With a [comma prime subscription](https://comma.ai/connect), you can SSH into your comma device from anywhere.
 
@@ -79,6 +79,7 @@ Host ssh.comma.ai
 ```
 ssh -i ~/.ssh/my_github_key -o ProxyCommand="ssh -i ~/.ssh/my_github_key -W %h:%p -p %p %h@ssh.comma.ai" comma@ffffffffffffffff
 ```
+
 (Replace `ffffffffffffffff` with your dongle_id)
 
 ### ssh.comma.ai host key fingerprint

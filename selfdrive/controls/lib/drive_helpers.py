@@ -8,6 +8,7 @@ CAR_ROTATION_RADIUS = 0.0
 # This is a turn radius smaller than most cars can achieve
 MAX_CURVATURE = 0.2
 MAX_VEL_ERR = 5.0  # m/s
+MIN_STABLE_DELAY = 0.3
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0  # m/s^3
@@ -39,19 +40,20 @@ def clip_curvature(v_ego, prev_curvature, new_curvature, roll) -> tuple[float, b
   return float(new_curvature), limited_accel or limited_max_curv
 
 
-def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL, vEgoStopping=0.05):
+def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL, vEgoStopping=0.3):
   if len(speeds) == len(t_idxs):
     v_now = speeds[0]
     a_now = accels[0]
-    v_target = np.interp(action_t, t_idxs, speeds)
+    if action_t < MIN_STABLE_DELAY:
+      v_target = v_now + (action_t / MIN_STABLE_DELAY) * (np.interp(MIN_STABLE_DELAY, t_idxs, speeds) - v_now)
+    else:
+      v_target = np.interp(action_t, t_idxs, speeds)
     a_target = 2 * (v_target - v_now) / (action_t) - a_now
-    v_target_1sec = np.interp(action_t + 1.0, t_idxs, speeds)
   else:
+    v_now = 0.0
     v_target = 0.0
-    v_target_1sec = 0.0
     a_target = 0.0
-  should_stop = (v_target < vEgoStopping and
-                 v_target_1sec < vEgoStopping)
+  should_stop = (v_now < vEgoStopping and a_target < 0.1)
   return a_target, should_stop
 
 def curv_from_psis(psi_target, psi_rate, vego, action_t):
@@ -60,6 +62,9 @@ def curv_from_psis(psi_target, psi_rate, vego, action_t):
   return 2*curv_from_psi - psi_rate / vego
 
 def get_curvature_from_plan(yaws, yaw_rates, t_idxs, vego, action_t):
-  psi_target = np.interp(action_t, t_idxs, yaws)
+  if action_t < MIN_STABLE_DELAY:
+    psi_target = (action_t / MIN_STABLE_DELAY) * np.interp(MIN_STABLE_DELAY, t_idxs, yaws)
+  else:
+    psi_target = np.interp(action_t, t_idxs, yaws)
   psi_rate = yaw_rates[0]
   return curv_from_psis(psi_target, psi_rate, vego, action_t)

@@ -276,7 +276,10 @@ struct RouteIdentifier {
   std::string display_slice() const {
     const int begin = slice_explicit ? slice_begin : available_begin;
     const int end = slice_explicit ? slice_end : available_end;
-    if (end < 0 || end == begin) {
+    if (end < 0) {
+      return std::to_string(begin) + ":";
+    }
+    if (end == begin) {
       return std::to_string(begin);
     }
     return std::to_string(begin) + ":" + std::to_string(end);
@@ -378,7 +381,7 @@ public:
   StreamAccumulator &operator=(const StreamAccumulator &) = delete;
 
   void setDbcName(const std::string &dbc_name);
-  void appendEvent(cereal::Event::Which which, kj::ArrayPtr<const capnp::word> data);
+  void appendEvent(kj::ArrayPtr<const capnp::word> data);
   void appendCanFrames(CanServiceKind service, const std::vector<LiveCanFrame> &frames);
   StreamExtractBatch takeBatch();
   const std::string &carFingerprint() const;

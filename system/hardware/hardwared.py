@@ -41,15 +41,21 @@ HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'ne
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
-THERMAL_BANDS = OrderedDict({
-  ThermalStatus.green: ThermalBand(None, 80.0),
-  ThermalStatus.yellow: ThermalBand(75.0, 96.0),
-  ThermalStatus.red: ThermalBand(88.0, 107.),
-  ThermalStatus.danger: ThermalBand(94.0, None),
-})
+if HARDWARE.get_device_type() == "mici":
+  THERMAL_BANDS = OrderedDict({
+    ThermalStatus.ok: ThermalBand(None, 100.0),
+    ThermalStatus.overheated: ThermalBand(92.0, 107.),
+    ThermalStatus.critical: ThermalBand(98.0, None),
+  })
+else:
+  THERMAL_BANDS = OrderedDict({
+    ThermalStatus.ok: ThermalBand(None, 96.0),
+    ThermalStatus.overheated: ThermalBand(88.0, 107.),
+    ThermalStatus.critical: ThermalBand(94.0, None),
+  })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 75
+OFFROAD_DANGER_TEMP = 85 if HARDWARE.get_device_type() == "mici" else 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
@@ -102,9 +108,6 @@ def hw_state_thread(end_event, hw_queue):
   prev_hw_state = None
 
   modem_version = None
-  modem_configured = False
-  modem_missing_count = 0
-  modem_restart_count = 0
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -122,18 +125,6 @@ def hw_state_thread(end_event, hw_queue):
           if modem_version is not None:
             cloudlog.event("modem version", version=modem_version)
 
-        if AGNOS and modem_restart_count < 3 and HARDWARE.get_modem_version() is None:
-          # TODO: we may be able to remove this with a MM update
-          # ModemManager's probing on startup can fail
-          # rarely, restart the service to probe again.
-          # Also, AT commands sometimes timeout resulting in ModemManager not
-          # trying to use this modem anymore.
-          modem_missing_count += 1
-          if (modem_missing_count % 4) == 0:
-            modem_restart_count += 1
-            cloudlog.event("restarting ModemManager")
-            os.system("sudo systemctl restart --no-block ModemManager")
-
         tx, rx = HARDWARE.get_modem_data_usage()
 
         hw_state = HardwareState(
@@ -149,11 +140,6 @@ def hw_state_thread(end_event, hw_queue):
           hw_queue.put_nowait(hw_state)
         except queue.Full:
           pass
-
-        if not modem_configured and HARDWARE.get_modem_version() is not None:
-          cloudlog.warning("configuring modem")
-          HARDWARE.configure_modem()
-          modem_configured = True
 
         prev_hw_state = hw_state
       except Exception:
@@ -181,7 +167,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   started_ts: float | None = None
   started_seen = False
   startup_blocked_ts: float | None = None
-  thermal_status = ThermalStatus.yellow
+  thermal_status = ThermalStatus.ok
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
@@ -289,7 +275,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
       # if device is offroad and already hot without the extra onroad load,
       # we want to cool down first before increasing load
-      thermal_status = ThermalStatus.danger
+      thermal_status = ThermalStatus.critical
     else:
       current_band = THERMAL_BANDS[thermal_status]
       band_idx = list(THERMAL_BANDS.keys()).index(thermal_status)
@@ -312,16 +298,19 @@ def hardware_thread(end_event, hw_queue) -> None:
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
 
     # must be at an engageable thermal band to go onroad
-    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.red
+    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.overheated
 
     # ensure device is fully booted
     startup_conditions["device_booted"] = startup_conditions.get("device_booted", False) or HARDWARE.booted()
 
     # if the temperature enters the danger zone, go offroad to cool down
-    onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
+    onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.critical
     extra_text = f"{offroad_comp_temp:.1f}C"
     show_alert = (not onroad_conditions["device_temp_good"] or not startup_conditions["device_temp_engageable"]) and onroad_conditions["ignition"]
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
+
+    if show_alert:
+      msg.deviceState.fanSpeedPercentDesired = 100
 
     # *** registration check ***
     if not PC:
@@ -421,9 +410,10 @@ def hardware_thread(end_event, hw_queue) -> None:
     statlog.gauge("fan_speed_percent_desired", msg.deviceState.fanSpeedPercentDesired)
     statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
-    # report to server once every 10 minutes
+    # report to server once every 10 minutes, or every 1s when thermally blocked
     rising_edge_started = should_start and not should_start_prev
-    if rising_edge_started or (count % int(600. / DT_HW)) == 0:
+    status_packet_interval = 1. if show_alert else 600.
+    if rising_edge_started or (count % int(status_packet_interval / DT_HW)) == 0:
       dat = {
         'count': count,
         'pandaStates': [strip_deprecated_keys(p.to_dict()) for p in pandaStates],

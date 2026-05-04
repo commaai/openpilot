@@ -512,7 +512,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.prompt, 1.8),
   },
 
-  EventName.preDriverDistracted: {
+  EventName.driverDistracted1: {
     ET.PERMANENT: Alert(
       "Pay Attention",
       "",
@@ -520,7 +520,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
-  EventName.promptDriverDistracted: {
+  EventName.driverDistracted2: {
     ET.PERMANENT: Alert(
       "Pay Attention",
       "Driver Distracted",
@@ -528,7 +528,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, .1),
   },
 
-  EventName.driverDistracted: {
+  EventName.driverDistracted3: {
     ET.PERMANENT: Alert(
       "DISENGAGE IMMEDIATELY",
       "Driver Distracted",
@@ -536,7 +536,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1),
   },
 
-  EventName.preDriverUnresponsive: {
+  EventName.driverUnresponsive1: {
     ET.PERMANENT: Alert(
       "Touch Steering Wheel: No Face Detected",
       "",
@@ -544,7 +544,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .1),
   },
 
-  EventName.promptDriverUnresponsive: {
+  EventName.driverUnresponsive2: {
     ET.PERMANENT: Alert(
       "Touch Steering Wheel",
       "Driver Unresponsive",
@@ -552,7 +552,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, .1),
   },
 
-  EventName.driverUnresponsive: {
+  EventName.driverUnresponsive3: {
     ET.PERMANENT: Alert(
       "DISENGAGE IMMEDIATELY",
       "Driver Unresponsive",
@@ -1032,14 +1032,14 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
 if HARDWARE.get_device_type() == 'mici':
   EVENTS.update({
-    EventName.preDriverDistracted: {
+    EventName.driverDistracted1: {
       ET.PERMANENT: Alert(
         "Pay Attention",
         "",
         AlertStatus.normal, AlertSize.small,
         Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
     },
-    EventName.promptDriverDistracted: {
+    EventName.driverDistracted2: {
       ET.PERMANENT: Alert(
         "Pay Attention",
         "Driver Distracted",

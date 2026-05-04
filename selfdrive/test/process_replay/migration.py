@@ -98,6 +98,17 @@ def migration(inputs: list[str], product: str|None=None):
   return decorator
 
 
+def migrate_onroad_event(event: capnp.lib.capnp._DynamicStructReader):
+  event_dict = event.to_dict()
+  try:
+    return log.OnroadEvent(**event_dict)
+  except capnp.lib.capnp.KjException as e:
+    # Ignore legacy events the current schema no longer defines.
+    if "enum has no such enumerant" in str(e):
+      return None
+    raise
+
+
 @migration(inputs=["longitudinalPlan", "carParams"])
 def migrate_longitudinalPlan(msgs):
   ops = []
@@ -214,7 +225,7 @@ def migrate_controlsState(msgs):
     for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
                   "alertStatus", "alertSize", "alertType", "experimentalMode",
                   "personality"):
-      setattr(ss, field, getattr(msg.controlsState, field+"DEPRECATED"))
+      setattr(ss, field, getattr(msg.controlsState.deprecated, field))
     add_ops.append(m.as_reader())
   return [], add_ops, []
 
@@ -227,10 +238,10 @@ def migrate_carState(msgs):
     if msg.which() == 'controlsState':
       last_cs = msg
     elif msg.which() == 'carState' and last_cs is not None:
-      if last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:
+      if last_cs.controlsState.deprecated.vCruise - msg.carState.vCruise > 0.1:
         msg = msg.as_builder()
-        msg.carState.vCruise = last_cs.controlsState.vCruiseDEPRECATED
-        msg.carState.vCruiseCluster = last_cs.controlsState.vCruiseClusterDEPRECATED
+        msg.carState.vCruise = last_cs.controlsState.deprecated.vCruise
+        msg.carState.vCruiseCluster = last_cs.controlsState.deprecated.vCruiseCluster
         ops.append((index, msg.as_reader()))
   return ops, [], []
 
@@ -436,9 +447,6 @@ def migrate_sensorEvents(msgs):
       m.logMonoTime = msg.logMonoTime
 
       m_dat = getattr(m, sensor_service)
-      m_dat.version = evt.version
-      m_dat.sensor = evt.sensor
-      m_dat.type = evt.type
       m_dat.source = evt.source
       m_dat.timestamp = evt.timestamp
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
@@ -456,12 +464,13 @@ def migrate_onroadEvents(msgs):
     for event in msg.onroadEventsDEPRECATED:
       try:
         if not str(event.name).endswith('DEPRECATED'):
-          # dict converts name enum into string representation
-          onroadEvents.append(log.OnroadEvent(**event.to_dict()))
+          migrated_event = migrate_onroad_event(event)
+          if migrated_event is not None:
+            onroadEvents.append(migrated_event)
       except RuntimeError:  # Member was null
         traceback.print_exc()
 
-    new_msg = messaging.new_message('onroadEvents', len(msg.onroadEventsDEPRECATED))
+    new_msg = messaging.new_message('onroadEvents', len(onroadEvents))
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
     new_msg.onroadEvents = onroadEvents
@@ -470,21 +479,41 @@ def migrate_onroadEvents(msgs):
   return ops, [], []
 
 
-@migration(inputs=["driverMonitoringState"])
+@migration(inputs=["driverMonitoringStateDEPRECATED"])
 def migrate_driverMonitoringState(msgs):
   ops = []
   for index, msg in msgs:
-    msg = msg.as_builder()
-    events = []
-    for event in msg.driverMonitoringState.eventsDEPRECATED:
-      try:
-        if not str(event.name).endswith('DEPRECATED'):
-          # dict converts name enum into string representation
-          events.append(log.OnroadEvent(**event.to_dict()))
-      except RuntimeError:  # Member was null
-        traceback.print_exc()
+    old = msg.driverMonitoringStateDEPRECATED
+    new_msg = messaging.new_message('driverMonitoringState', valid=msg.valid, logMonoTime=msg.logMonoTime)
+    dm = new_msg.driverMonitoringState
+    dm.isRHD = old.isRHD
+    dm.activePolicy = log.DriverMonitoringState.MonitoringPolicy.vision if old.isActiveMode else \
+                          log.DriverMonitoringState.MonitoringPolicy.wheeltouch
 
-    msg.driverMonitoringState.events = events
-    ops.append((index, msg.as_reader()))
+    AlertLevel = log.DriverMonitoringState.AlertLevel
+    event_to_alert_level = {
+      'driverDistracted1': AlertLevel.one, 'driverUnresponsive1': AlertLevel.one,
+      'driverDistracted2': AlertLevel.two, 'driverUnresponsive2': AlertLevel.two,
+      'driverDistracted3': AlertLevel.three, 'driverUnresponsive3': AlertLevel.three,
+      'tooDistracted': AlertLevel.three,
+    }
+    for event in old.events:
+      level = event_to_alert_level.get(str(event.name))
+      if level is not None:
+        dm.alertLevel = level
+        break
+
+    dm.visionPolicyState.awarenessPercent = int(max(0, min(100, (old.awarenessStatus if old.isActiveMode else old.awarenessActive) * 100)))
+    dm.visionPolicyState.awarenessStep = old.stepChange if old.isActiveMode else 0.
+    dm.visionPolicyState.isDistracted = old.isDistracted
+    dm.visionPolicyState.faceDetected = old.faceDetected
+    dm.visionPolicyState.pose.pitchCalib.offset = old.posePitchOffset
+    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = int(min(100, old.posePitchValidCount / 600 * 100))
+    dm.visionPolicyState.pose.yawCalib.offset = old.poseYawOffset
+    dm.visionPolicyState.pose.yawCalib.calibratedPercent = int(min(100, old.poseYawValidCount / 600 * 100))
+    dm.visionPolicyState.pose.calibrated = old.posePitchValidCount >= 600 and old.poseYawValidCount >= 600
+    dm.wheeltouchPolicyState.awarenessPercent = int(max(0, min(100, (old.awarenessPassive if old.isActiveMode else old.awarenessStatus) * 100)))
+    dm.wheeltouchPolicyState.awarenessStep = 0. if old.isActiveMode else old.stepChange
+    ops.append((index, new_msg.as_reader()))
 
   return ops, [], []
