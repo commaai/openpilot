@@ -5,7 +5,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import cast
 from openpilot.system.ui.lib.application import gui_app, MouseEvent
-from openpilot.system.hardware import TICI, ASIUS
+from openpilot.system.hardware import TICI
 from collections import deque
 
 MIN_VELOCITY = 10  # px/s, changes from auto scroll to steady state
@@ -53,7 +53,7 @@ class GuiScrollPanel2:
     self._initial_click_event: MouseEvent | None = None
     self._previous_mouse_event: MouseEvent | None = None
     self._velocity = 0.0  # pixels per second
-    self._velocity_buffer: deque[float] = deque(maxlen=12 if (TICI or ASIUS) else 6)
+    self._velocity_buffer: deque[float] = deque(maxlen=12 if TICI else 6)
     self._enabled: bool | Callable[[], bool] = True
 
   def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:

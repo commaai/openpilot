@@ -13,7 +13,7 @@ import pyray as rl
 
 from cereal import log
 from openpilot.common.filter_simple import BounceFilter
-from openpilot.system.hardware import HARDWARE, TICI, ASIUS
+from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid
@@ -89,7 +89,7 @@ class NetworkConnectivityMonitor:
               not system_time_valid() and
               time.monotonic() - self._last_timesyncd_restart > 5):
             self._last_timesyncd_restart = time.monotonic()
-            run_cmd(["sudo", "sv", "restart", "busybox-ntpd"])
+            run_cmd(["sudo", "systemctl", "restart", "systemd-timesyncd"])
           self.reset()
         except Exception:
           self.reset()
@@ -570,7 +570,7 @@ class Setup(Widget):
 def main():
   config_realtime_process(0, 51)
   # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
-  if TICI or ASIUS:
+  if TICI:
     try:
       set_core_affinity([5])
     except OSError:

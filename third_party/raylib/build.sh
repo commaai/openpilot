@@ -21,7 +21,7 @@ cd $DIR
 RAYLIB_PLATFORM="PLATFORM_DESKTOP"
 
 ARCHNAME=$(uname -m)
-if [ -f /TICI ] || [ -f /ASIUS ]; then
+if [ -f /TICI ]; then
   ARCHNAME="larch64"
   RAYLIB_PLATFORM="PLATFORM_COMMA"
 elif [[ "$OSTYPE" == "linux"* ]]; then
@@ -51,12 +51,10 @@ fi
 
 cd raylib_repo
 
-if [ ! -f /ASIUS ]; then
-  COMMIT=${1:-faf6e4392780de7471504e43e70975efaba07e95}
-  git fetch origin $COMMIT
-  git reset --hard $COMMIT
-  git clean -xdff .
-fi
+COMMIT=${1:-faf6e4392780de7471504e43e70975efaba07e95}
+git fetch origin $COMMIT
+git reset --hard $COMMIT
+git clean -xdff .
 
 cd src
 
@@ -69,7 +67,7 @@ set -x
 RAYGUI_COMMIT="76b36b597edb70ffaf96f046076adc20d67e7827"
 curl -fsSLo $INSTALL_H_DIR/raygui.h https://raw.githubusercontent.com/raysan5/raygui/$RAYGUI_COMMIT/src/raygui.h
 
-if [ -f /TICI ] || [ -f /ASIUS ]; then
+if [ -f /TICI ]; then
   # Building the python bindings
   cd $DIR
 

@@ -33,7 +33,7 @@ static inline void softmax_inplace(float* data, int rows, int cols) {
    - MDN entries: exp() the std half
    - sigmoid entries: sigmoid() in-place
    - softmax entries: softmax() in-place
-   
+
    Slice layout (1576 floats):
      meta:            [0:55]     55  sigmoid
      desire_pred:     [55:87]    32  softmax (4 rows x 8 cols)
@@ -50,31 +50,31 @@ static inline void softmax_inplace(float* data, int rows, int cols) {
 void fast_parse_vision(float* v) {
     /* meta: sigmoid */
     sigmoid_inplace(v + 0, 55);
-    
+
     /* desire_pred: softmax 4x8 */
     softmax_inplace(v + 55, 4, 8);
-    
+
     /* pose: exp std half (87+6=93..99) */
     exp_inplace(v + 93, 6);
-    
+
     /* wide_from_device_euler: exp std half (99+3=102..105) */
     exp_inplace(v + 102, 3);
-    
+
     /* road_transform: exp std half (105+6=111..117) */
     exp_inplace(v + 111, 6);
-    
+
     /* lane_lines: exp std half (117+264=381..645) */
     exp_inplace(v + 381, 264);
-    
+
     /* lane_lines_prob: sigmoid */
     sigmoid_inplace(v + 645, 8);
-    
+
     /* road_edges: exp std half (653+132=785..917) */
     exp_inplace(v + 785, 132);
-    
+
     /* lead: exp std half (917+72=989..1061) */
     exp_inplace(v + 989, 72);
-    
+
     /* lead_prob: sigmoid */
     sigmoid_inplace(v + 1061, 3);
 }
@@ -87,13 +87,13 @@ void fast_parse_vision(float* v) {
      2 * 495 = 990 → NOT MHP (returns False)
      So plan uses in_N=0, out_N=0, out_shape=(33, 15)
      n_values = 990/2 = 495, mu=first 495, std=exp(last 495)
-   
+
    desire_state: [990:998] 8 floats - softmax (1x8)
 */
 void fast_parse_policy(float* p) {
     /* plan: exp std half (0+495=495..990) */
     exp_inplace(p + 495, 495);
-    
+
     /* desire_state: softmax 1x8 */
     softmax_inplace(p + 990, 1, 8);
 }

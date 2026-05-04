@@ -15,10 +15,14 @@ public:
   static std::string get_name() {
     std::string model = util::read_file("/sys/firmware/devicetree/base/model");
     std::string stripped = util::strip(model);
-    // "comma X" -> X; anything else (e.g. Asius Radxa Dragon Q6A) returned as-is.
+
+    // "comma X" -> X.
     const std::string comma_prefix = "comma ";
     if (stripped.rfind(comma_prefix, 0) == 0) {
       return stripped.substr(comma_prefix.size());
+    }
+    if (stripped == "Radxa Dragon Q6A") {
+      return "asius";
     }
     return stripped;
   }
@@ -28,8 +32,7 @@ public:
       {"tici", cereal::InitData::DeviceType::TICI},
       {"tizi", cereal::InitData::DeviceType::TIZI},
       {"mici", cereal::InitData::DeviceType::MICI},
-      // Asius Dragon Q6A — QCS6490 Linux host running vamOS.
-      {"Radxa Dragon Q6A", cereal::InitData::DeviceType::ASIUS}
+      {"asius", cereal::InitData::DeviceType::ASIUS},
     };
     auto it = device_map.find(get_name());
     assert(it != device_map.end());

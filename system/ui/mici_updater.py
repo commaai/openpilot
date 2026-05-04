@@ -5,7 +5,7 @@ import threading
 import pyray as rl
 
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
-from openpilot.system.hardware import HARDWARE, TICI, ASIUS
+from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets.nav_widget import NavWidget
@@ -152,7 +152,7 @@ class Updater(Scroller):
 def main():
   config_realtime_process(0, 51)
   # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
-  if TICI or ASIUS:
+  if TICI:
     try:
       set_core_affinity([5])
     except OSError:

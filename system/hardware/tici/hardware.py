@@ -1,4 +1,5 @@
 import json
+import glob
 import os
 import subprocess
 import time
@@ -45,14 +46,50 @@ def affine_irq(val, action):
   for i in irqs:
     sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
 
+def sudo_write_if_exists(val: str, path: str) -> None:
+  if os.path.exists(path):
+    sudo_write(val, path)
+
+def raise_thermal_limits() -> None:
+  trip_overrides = {
+    90000: 100000,
+    95000: 105000,
+    100000: 108000,
+    105000: 109000,
+  }
+
+  for z in glob.glob("/sys/class/thermal/thermal_zone*/"):
+    try:
+      ztype = open(z + "type").read().strip()
+    except OSError:
+      continue
+
+    if not any(ztype.startswith(p) for p in ("cpu", "aoss", "ddr", "video", "cpuss", "gpuss")):
+      continue
+
+    for i in range(4):
+      tp_path = z + f"trip_point_{i}_temp"
+      tt_path = z + f"trip_point_{i}_type"
+      try:
+        temp = int(open(tp_path).read().strip())
+        trip_type = open(tt_path).read().strip()
+      except (OSError, ValueError):
+        continue
+
+      if trip_type in ("passive", "hot") and temp in trip_overrides:
+        sudo_write(str(trip_overrides[temp]), tp_path)
+
 @lru_cache
 def get_device_type():
   # lru_cache and cache can cause memory leaks when used in classes
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
-  if 'Dragon' in model or 'asius' in model.lower():
+  comma_prefix = "comma "
+  if model.startswith(comma_prefix):
+    return model[len(comma_prefix):]
+  if model == "Radxa Dragon Q6A":
     return "asius"
-  return model.split('comma ')[-1]
+  return model
 
 class Tici(HardwareBase):
   @cached_property
@@ -91,22 +128,16 @@ class Tici(HardwareBase):
     self.reboot()
 
   def get_serial(self):
-    # androidboot.serialno is set by Android ABL on comma devices. Dragon boots
-    # via edk2 → EFI stub, no androidboot.* cmdline. Fall back to the chip's
-    # serial number (QCS6490 ECID), which we can read from the DT.
     cmdline = self.get_cmdline()
     if 'androidboot.serialno' in cmdline:
       return cmdline['androidboot.serialno']
+
     try:
       with open("/sys/firmware/devicetree/base/serial-number") as f:
         return f.read().strip('\x00').strip()
     except FileNotFoundError:
       pass
-    try:
-      with open("/sys/class/net/enp1s0/address") as f:
-        return f.read().strip().replace(':', '')
-    except FileNotFoundError:
-      pass
+
     return "cccccc"
 
   def get_voltage(self):
@@ -258,14 +289,15 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    if self.get_device_type() == "asius":
+    device_type = self.get_device_type()
+    if device_type == "asius":
       return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-thermal") for i in range(8)],
                            gpu=[ThermalZone("gpuss0-thermal"), ThermalZone("gpuss1-thermal")],
                            dsp=ThermalZone("nspss0-thermal"),
                            memory=ThermalZone("ddr-thermal"))
 
     intake, exhaust, gnss, bottomSoc = None, None, None, None
-    if self.get_device_type() == "mici":
+    if device_type == "mici":
       gnss = ThermalZone("gnss")
       intake = ThermalZone("intake")
       exhaust = ThermalZone("exhaust")
@@ -327,9 +359,8 @@ class Tici(HardwareBase):
       if powersave_enabled and n == '4':
         continue
       path = f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor'
-      if os.path.exists(path):
-        gov = 'ondemand' if powersave_enabled else 'performance'
-        sudo_write(gov, path)
+      gov = 'ondemand' if powersave_enabled else 'performance'
+      sudo_write_if_exists(gov, path)
 
     # *** IRQ config ***
 
@@ -364,8 +395,7 @@ class Tici(HardwareBase):
     # *** IRQ config ***
 
     # mask off big cluster from default affinity
-    if os.path.exists("/proc/irq/default_smp_affinity"):
-      sudo_write("f", "/proc/irq/default_smp_affinity")
+    sudo_write_if_exists("f", "/proc/irq/default_smp_affinity")
 
     # move these off the default core
     affine_irq(1, "msm_vidc")  # encoders
@@ -376,59 +406,33 @@ class Tici(HardwareBase):
     affine_irq(5, "msm_drm")   # display
 
     # KGSL (downstream Qualcomm GPU driver)
-    if os.path.exists("/sys/class/kgsl/kgsl-3d0"):
-      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
-      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
-      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
-      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
-      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
-      sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
-      sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
-      sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
+    for val, path in (
+      ("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel"),
+      ("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel"),
+      ("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on"),
+      ("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on"),
+      ("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on"),
+      ("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer"),
+      ("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor"),
+      ("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz"),
+    ):
+      sudo_write_if_exists(val, path)
 
-    # Mainline GPU (Freedreno/msm, used on ASIUS/Dragon)
+    # Mainline GPU (Freedreno/msm)
     if os.path.exists("/sys/class/devfreq/3d00000.gpu"):
       sudo_write("userspace", "/sys/class/devfreq/3d00000.gpu/governor")
       sudo_write("812000000", "/sys/class/devfreq/3d00000.gpu/userspace/set_freq")
-      # Raise thermal trip points: passive 90→100°C, 95→105°C to avoid
-      # GPU compute slowdown from system-wide thermal throttling
-      import glob
-      for z in glob.glob("/sys/class/thermal/thermal_zone*/"):
-        try:
-          ztype = open(z + "type").read().strip()
-        except OSError:
-          continue
-        if not any(ztype.startswith(p) for p in ("cpu", "aoss", "ddr", "video", "cpuss", "gpuss")):
-          continue
-        for i in range(4):
-          tp_path = z + f"trip_point_{i}_temp"
-          tt_path = z + f"trip_point_{i}_type"
-          try:
-            tp = int(open(tp_path).read().strip())
-            tt = open(tt_path).read().strip()
-          except (OSError, ValueError):
-            continue
-          if tt in ("passive", "hot"):
-            if tp == 90000:
-              sudo_write("100000", tp_path)
-            elif tp == 95000:
-              sudo_write("105000", tp_path)
-            elif tp == 100000:
-              sudo_write("108000", tp_path)
-            elif tp == 105000:
-              sudo_write("109000", tp_path)
+      raise_thermal_limits()
 
     # Qualcomm devfreq governors (downstream only)
     for devfreq_path in ("/sys/class/devfreq/soc:qcom,cpubw/governor",
                          "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor",
                          "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor"):
-      if os.path.exists(devfreq_path):
-        sudo_write("performance", devfreq_path)
+      sudo_write_if_exists("performance", devfreq_path)
 
     # VIDC encoder config (downstream only)
-    if os.path.exists("/sys/kernel/debug/msm_vidc"):
-      sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
-      sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+    sudo_write_if_exists("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
+    sudo_write_if_exists("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
 
     # pandad core
     affine_irq(3, "spi_geni")         # SPI
@@ -477,7 +481,6 @@ class Tici(HardwareBase):
     if not self.has_internal_panda():
       return
     gpio_init(GPIO.STM_RST_N, True)
-
     gpio_init(GPIO.STM_BOOT0, True)
 
     gpio_set(GPIO.STM_RST_N, 1)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import time
 from collections import namedtuple
 
@@ -77,10 +76,6 @@ class Amplifier:
   def __init__(self, debug=False):
     self.debug = debug
 
-  @property
-  def available(self) -> bool:
-    return os.path.exists(f"/dev/i2c-{self.AMP_I2C_BUS}")
-
   def _get_shutdown_config(self, amp_disabled: bool) -> AmpConfig:
     return AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000)
 
@@ -98,9 +93,6 @@ class Amplifier:
           print(f"  Changed {hex(config.register)}: {hex(old_value)} -> {hex(new_value)}")
 
   def set_configs(self, configs: list[AmpConfig]) -> bool:
-    if not self.available:
-      return False
-
     # retry in case panda is using the amp
     tries = 15
     backoff = 0.
