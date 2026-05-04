@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import argparse
 import pickle
 import time
@@ -130,8 +129,14 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm.to(Device.DEFAULT)).unsqueeze(0), sample_skip_fn)
+    tfm = tfm.to(Device.DEFAULT)
+    big_tfm = big_tfm.to(Device.DEFAULT)
+    desire = desire.to(Device.DEFAULT)
+    traffic_convention = traffic_convention.to(Device.DEFAULT)
+    Tensor.realize(tfm, big_tfm, desire, traffic_convention)
+
+    img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -140,9 +145,9 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
 
     new_feat = vision_out[:, vision_features_slice].reshape(1, -1).unsqueeze(0)
     feat_buf = shift_and_sample(feat_q, new_feat, sample_skip_fn)
-    desire_buf = shift_and_sample(desire_q, desire.to(Device.DEFAULT).reshape(1, 1, -1), sample_desire_fn)
+    desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
 
-    inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention.to(Device.DEFAULT)}
+    inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention}
     policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
 
     return vision_out, policy_out
@@ -174,6 +179,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip)
     np.random.seed(seed)
+    Tensor.manual_seed(seed)
 
     testing = test_val is not None or test_buffers is not None
     n_runs = 1 if testing else 3
@@ -196,10 +202,10 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
         buffers = [np.copy(v.numpy().copy()) for v in input_queues.values()]
 
     if test_val is not None:
-      match = all(np.allclose(a, b, rtol=1e-5, atol=1e-5) for a, b in zip(val, test_val, strict=True))
+      match = all(np.array_equal(a, b) for a, b in zip(val, test_val, strict=True))
       assert match == expect_match, f"outputs {'differ from' if expect_match else 'match'} baseline (seed={seed})"
     if test_buffers is not None:
-      match = all(np.allclose(a, b, rtol=1e-5, atol=1e-5) for a, b in zip(buffers, test_buffers, strict=True))
+      match = all(np.array_equal(a, b) for a, b in zip(buffers, test_buffers, strict=True))
       assert match == expect_match, f"buffers {'differ from' if expect_match else 'match'} baseline (seed={seed})"
     return fn, val, buffers
 
@@ -212,12 +218,8 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     print(f"  Saved to {pkl_path}")
   with open(pkl_path, "rb") as f:
     run_policy_jit = pickle.load(f)
-  if os.environ.get("DEV", "") == "CL":
-    random_inputs_run_fn(run_policy_jit, SEED)
-    random_inputs_run_fn(run_policy_jit, SEED+1)
-  else:
-    random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
-    random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
+  random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
+  random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
 
 
 def _parse_size(s):

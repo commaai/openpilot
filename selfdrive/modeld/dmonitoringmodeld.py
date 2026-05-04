@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import os
+import ctypes
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
 set_tinygrad_backend_from_compiled_flags()
 
 from tinygrad.tensor import Tensor
+from tinygrad.device import Device
 import time
 import pickle
 import numpy as np
@@ -54,8 +56,16 @@ class ModelState:
 
     ptr = buf.data.ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-    if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
+    yuv_size = self.frame_buf_params[3]
+    if Device.DEFAULT == "CL":
+      if ptr not in self._blob_cache:
+        self._blob_cache[ptr] = Tensor.empty(yuv_size, dtype='uint8', device=Device.DEFAULT)
+        self._blob_cache[ptr].uop.buffer.ensure_allocated()
+      frame_mv = memoryview((ctypes.c_ubyte * yuv_size).from_address(ptr))
+      self._blob_cache[ptr].uop.buffer.copyin(frame_mv)
+    else:
+      if ptr not in self._blob_cache:
+        self._blob_cache[ptr] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
 
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()

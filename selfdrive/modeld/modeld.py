@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import ctypes
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
 set_tinygrad_backend_from_compiled_flags()
 
@@ -8,6 +9,7 @@ if USBGPU:
   os.environ['DEV'] = 'AMD'
   os.environ['AMD_IFACE'] = 'USB'
 from tinygrad.tensor import Tensor
+from tinygrad.device import Device
 import time
 import pickle
 import numpy as np
@@ -118,9 +120,17 @@ class ModelState:
       yuv_size = self.frame_buf_params[key][3]
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
       cache_key = (key, ptr)
-      if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
-      self.full_frames[key] = self._blob_cache[cache_key]
+      if Device.DEFAULT == "CL":
+        if cache_key not in self._blob_cache:
+          self._blob_cache[cache_key] = Tensor.empty(yuv_size, dtype='uint8', device=Device.DEFAULT)
+          self._blob_cache[cache_key].uop.buffer.ensure_allocated()
+        frame_mv = memoryview((ctypes.c_ubyte * yuv_size).from_address(ptr))
+        self._blob_cache[cache_key].uop.buffer.copyin(frame_mv)
+        self.full_frames[key] = self._blob_cache[cache_key]
+      else:
+        if cache_key not in self._blob_cache:
+          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+        self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0

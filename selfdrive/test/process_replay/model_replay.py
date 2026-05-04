@@ -12,7 +12,7 @@ import numpy as np
 from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import ASIUS, PC
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
@@ -254,7 +254,7 @@ if __name__ == "__main__":
         'driverStateV2.modelExecutionTime',
         'driverStateV2.gpuExecutionTime'
       ]
-      if PC:
+      if PC or ASIUS:
         # TODO We ignore whole bunch so we can compare important stuff
         # like posenet with reasonable tolerance
         ignore += ['modelV2.acceleration.x',
@@ -275,11 +275,12 @@ if __name__ == "__main__":
         for i in range(2):
           for field in ('x', 'y', 'z', 't'):
             ignore.append(f'modelV2.roadEdges.{i}.{field}')
-      tolerance = .3 if PC else None
+      tolerance = .3 if PC or ASIUS else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
+      diff_short, diff_long, output_failed = format_diff(results, log_paths, 'master')
+      failed = output_failed or failed
 
       if "CI" in os.environ:
         comment_replay_report(log_msgs, cmp_log, log_msgs)
