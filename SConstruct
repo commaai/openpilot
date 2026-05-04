@@ -25,11 +25,10 @@ AddOption('--minimal',
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform
-is_asius = os.path.isfile('/ASIUS')
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-elif arch == "aarch64" and (os.path.isfile('/TICI') or is_asius):
+elif arch == "aarch64" and (os.path.isfile('/TICI') or os.path.isfile('/ASIUS')):
   arch = "larch64"
 assert arch in [
   "larch64",  # linux tici arm64
@@ -255,7 +254,7 @@ SConscript([
   'selfdrive/modeld/SConscript',
 ])
 
-if not is_asius:
+if not os.path.isfile('/ASIUS'):
   SConscript(['selfdrive/ui/SConscript'])
 
 # Build desktop-only tools

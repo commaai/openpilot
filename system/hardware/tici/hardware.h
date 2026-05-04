@@ -16,10 +16,8 @@ public:
     std::string model = util::read_file("/sys/firmware/devicetree/base/model");
     std::string stripped = util::strip(model);
 
-    // "comma X" -> X.
-    const std::string comma_prefix = "comma ";
-    if (stripped.rfind(comma_prefix, 0) == 0) {
-      return stripped.substr(comma_prefix.size());
+    if (stripped.rfind("comma ", 0) == 0) {
+      return stripped.substr(6);
     }
     if (stripped == "Radxa Dragon Q6A") {
       return "asius";

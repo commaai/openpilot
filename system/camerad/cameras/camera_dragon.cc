@@ -15,10 +15,9 @@
 #include <string>
 #include <vector>
 
-#include "media/qcom-camss-vfe.h"
-
 #include "common/params.h"
 #include "common/swaglog.h"
+#include "system/camerad/cameras/dragon_vfe.h"
 #include "system/camerad/cameras/hw.h"
 #include "system/camerad/cameras/ife.h"
 #include "system/camerad/cameras/nv12_info.h"
