@@ -13,12 +13,9 @@ class AlphaLongConfirmPage(NavScroller):
   def __init__(self, on_confirm: Callable[[], None]):
     super().__init__()
 
-    def confirm():
-      self.dismiss(on_confirm)
-
     accept = BigConfirmationCircleButton("enable alpha\nlongitudinal",
                                          gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
-                                         confirm)
+                                         lambda: self.dismiss(on_confirm))
 
     self._scroller.add_widgets([
       GreyBigButton("enabling alpha longitudinal", "scroll to continue",
@@ -190,6 +187,7 @@ class DeveloperLayoutMici(NavScroller):
 
   def _on_alpha_long_enabled(self, state: bool):
     if state:
+      # Don't show enabled state until confirm
       self._alpha_long_toggle.set_checked(False)
 
       def on_confirm():
