@@ -25,14 +25,13 @@ class AlphaLongConfirmPage(NavScroller):
                                          confirm)
 
     self._scroller.add_widgets([
-      GreyBigButton("alpha longitudinal", "scroll to accept",
-                    gui_app.texture("icons_mici/offroad_alerts/orange_warning.png", 64, 64)),
-      GreyBigButton("", "Alpha-quality openpilot longitudinal control for this car."),
-      GreyBigButton("", "Disables Automatic Emergency Braking (AEB)."),
-      GreyBigButton("", "On this car, openpilot defaults to the car's built-in ACC."),
-      GreyBigButton("", "Enable to switch to openpilot longitudinal control."),
-      GreyBigButton("", "Enabling experimental mode is recommended."),
-      GreyBigButton("", "Changing this setting will restart openpilot if powered on."),
+      GreyBigButton("enabling alpha longitudinal", "scroll to continue",
+                    gui_app.texture("icons_mici/setup/warning.png", 64, 64)),
+      GreyBigButton("", "WARNING: alpha longitudinal control will disable Automatic Emergency Braking (AEB)"),
+      GreyBigButton("", "On this car, openpilot defaults to the stock system's built-in ACC."),
+      GreyBigButton("", "Enabling this will switch to openpilot longitudinal control."),
+      GreyBigButton("", "Using Experimental mode is recommended with openpilot longitudinal control alpha."),
+      GreyBigButton("", "Changing this setting will restart openpilot if the car is powered on."),
       accept,
     ])
 
