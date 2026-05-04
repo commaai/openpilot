@@ -54,7 +54,7 @@ def write_tg_compiled_flags(target, source, env):
 
 compiled_flags_node = lenv.Command(
   File("models/tg_compiled_flags.json").abspath,
-  tinygrad_files + [Value(tg_backend)],
+  tinygrad_files + [Value(tg_flags)],
   write_tg_compiled_flags,
 )
 
