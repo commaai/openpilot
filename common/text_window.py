@@ -7,6 +7,10 @@ from openpilot.common.basedir import BASEDIR
 
 class TextWindow:
   def __init__(self, text):
+    if os.path.isfile("/ASIUS"):
+      self.text_proc = None
+      return
+
     try:
       self.text_proc = subprocess.Popen(["./text.py", text],
                                         stdin=subprocess.PIPE,

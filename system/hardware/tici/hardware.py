@@ -109,8 +109,13 @@ class Tici(HardwareBase):
 
   def get_modem_state(self) -> dict:
     """Read modem.py state file. Raises if modem.py hasn't published state yet."""
-    with open(MODEM_STATE_PATH) as f:
-      return json.load(f)
+    try:
+      with open(MODEM_STATE_PATH) as f:
+        return json.load(f)
+    except FileNotFoundError:
+      if self.get_device_type() == "asius":
+        return {}
+      raise
 
   def get_os_version(self):
     with open("/VERSION") as f:

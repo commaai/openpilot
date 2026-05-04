@@ -22,9 +22,14 @@ if arch == "Darwin":
 logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
-env.Program('loggerd', ['loggerd.cc'], LIBS=libs, FRAMEWORKS=frameworks)
-env.Program('encoderd', ['encoderd.cc'], LIBS=libs + ["jpeg"], FRAMEWORKS=frameworks)
-env.Program('bootlog.cc', LIBS=libs, FRAMEWORKS=frameworks)
+bootlog_logger = env.Object('bootlog_logger.o', 'logger.cc')
+bootlog_zstd_writer = env.Object('bootlog_zstd_writer.o', 'zstd_writer.cc')
+loggerd_main = env.Object('loggerd_main.o', 'loggerd.cc')
+encoderd_main = env.Object('encoderd_main.o', 'encoderd.cc')
+
+env.Program('loggerd', [loggerd_main], LIBS=libs, FRAMEWORKS=frameworks)
+env.Program('encoderd', [encoderd_main], LIBS=libs + ["jpeg"], FRAMEWORKS=frameworks)
+env.Program('bootlog', ['bootlog.cc', bootlog_logger, bootlog_zstd_writer], LIBS=libs[1:], FRAMEWORKS=frameworks)
 
 if GetOption('extras'):
   env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_zstd_writer.cc'], LIBS=libs)
