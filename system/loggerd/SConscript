@@ -11,9 +11,8 @@ if arch != "larch64":
   libs += ['yuv']
   if arch == "Darwin":
     frameworks += ['VideoToolbox', 'CoreMedia', 'CoreFoundation', 'CoreVideo']
-  else:
-    libs += ['va', 'va-drm', 'drm']
-elif arch == "larch64":
+
+if arch != "Darwin":
   libs += ['va', 'va-drm', 'drm']
 
 if arch == "Darwin":

@@ -52,7 +52,7 @@ fi
 cd raylib_repo
 
 if [ ! -f /ASIUS ]; then
-  COMMIT=${1:-3425bd9d1fb292ede4d80f97a1f4f258f614cffc}
+  COMMIT=${1:-faf6e4392780de7471504e43e70975efaba07e95}
   git fetch origin $COMMIT
   git reset --hard $COMMIT
   git clean -xdff .
@@ -70,7 +70,6 @@ RAYGUI_COMMIT="76b36b597edb70ffaf96f046076adc20d67e7827"
 curl -fsSLo $INSTALL_H_DIR/raygui.h https://raw.githubusercontent.com/raysan5/raygui/$RAYGUI_COMMIT/src/raygui.h
 
 if [ -f /TICI ] || [ -f /ASIUS ]; then
-
   # Building the python bindings
   cd $DIR
 
@@ -91,5 +90,4 @@ if [ -f /TICI ] || [ -f /ASIUS ]; then
   rm -rf wheel
   mkdir wheel
   cp raylib_python_repo/dist/*.whl wheel/
-
 fi

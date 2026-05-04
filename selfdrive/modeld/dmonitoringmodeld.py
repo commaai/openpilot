@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR, set_tinygrad_backend_from_compiled_flags
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
 set_tinygrad_backend_from_compiled_flags()
 
 from tinygrad.tensor import Tensor
@@ -29,7 +29,7 @@ class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
 
-  def __init__(self):
+  def __init__(self, cam_w: int, cam_h: int):
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
@@ -41,10 +41,9 @@ class ModelState:
 
     self.warp_inputs_np = {'transform': np.zeros((3,3), dtype=np.float32)}
     self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
-    self.frame_buf_params = None
+    self.frame_buf_params = get_nv12_info(cam_w, cam_h)
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
-    self.image_warp = None
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
     if ASIUS:
       import ctypes as _ctypes
@@ -57,8 +56,7 @@ class ModelState:
   def warmup(self, width: int, height: int):
     self.frame_buf_params = get_nv12_info(width, height)
     yuv_size = self.frame_buf_params[3]
-    warp_path = MODELS_DIR / f'dm_warp_{width}x{height}_tinygrad.pkl'
-    with open(warp_path, "rb") as f:
+    with open(CompileConfig(width, height, prefix='dm_', prepare_only=True).pkl_path, "rb") as f:
       self.image_warp = pickle.load(f)
     dummy = np.zeros(yuv_size, dtype=np.uint8)
     dummy_tensor = Tensor.from_blob(dummy.ctypes.data, (yuv_size,), dtype='uint8')
@@ -156,9 +154,6 @@ def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_t
 def main():
   config_realtime_process(7, 5)
 
-  model = ModelState()
-  cloudlog.warning("models loaded, dmonitoringmodeld starting")
-
   cloudlog.warning("connecting to driver stream")
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
   while not vipc_client.connect(False):
@@ -166,6 +161,7 @@ def main():
   assert vipc_client.is_connected()
   cloudlog.warning(f"connected with buffer size: {vipc_client.buffer_len}")
 
+  model = ModelState(vipc_client.width, vipc_client.height)
   model.warmup(vipc_client.width, vipc_client.height)
   cloudlog.warning("dm model warmed up")
 

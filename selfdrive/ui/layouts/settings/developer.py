@@ -131,12 +131,6 @@ class DeveloperLayout(Widget):
 
       long_man_enabled = ui_state.has_longitudinal_control and ui_state.is_offroad()
       self._long_maneuver_toggle.action_item.set_enabled(long_man_enabled)
-      if not long_man_enabled:
-        self._long_maneuver_toggle.action_item.set_state(False)
-        self._params.put_bool("LongitudinalManeuverMode", False)
-
-      lat_man_enabled = ui_state.is_offroad()
-      self._lat_maneuver_toggle.action_item.set_enabled(lat_man_enabled)
     else:
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._lat_maneuver_toggle.action_item.set_enabled(False)

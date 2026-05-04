@@ -139,9 +139,7 @@ class AugmentedRoadView(CameraView):
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
 
-    self._last_calib_time: float = 0
-    self._last_rect_dims = (0.0, 0.0)
-    self._last_stream_type = stream_type
+    self._matrix_cache_key: tuple | None = None
     self._cached_matrix: np.ndarray | None = None
     self._content_rect = rl.Rectangle()
     self._last_click_time = 0.0
@@ -185,6 +183,12 @@ class AugmentedRoadView(CameraView):
       super()._handle_mouse_release(mouse_pos)
 
   def _render(self, _):
+    # Draw text if not onroad
+    if not ui_state.started:
+      rl.draw_rectangle_rec(self.rect, rl.BLACK)
+      self._offroad_label.render(self._rect)
+      return
+
     start_draw = time.monotonic()
     self._switch_stream_if_needed(ui_state.sm)
 
@@ -220,7 +224,7 @@ class AugmentedRoadView(CameraView):
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
 
     # Hide DMoji when disengaged unless AlwaysOnDM is enabled
-    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and ui_state.is_onroad() and
+    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and
                          (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
     self._driver_state_renderer.set_should_draw(should_draw_dmoji)
     self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
@@ -229,9 +233,7 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
-    # TODO: have alert renderer draw offroad mici label below
-    if ui_state.started:
-      self._alert_renderer.render(self._content_rect)
+    self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
     # Draw fake rounded border
@@ -245,11 +247,6 @@ class AugmentedRoadView(CameraView):
     self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
-
-    # Draw darkened background and text if not onroad
-    if not ui_state.started:
-      rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
-      self._offroad_label.render(self._rect)
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
@@ -296,10 +293,18 @@ class AugmentedRoadView(CameraView):
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+    cache_key = (
+      ui_state.sm.recv_frame['liveCalibration'],
+      int(self._content_rect.width),
+      int(self._content_rect.height),
+      self.stream_type,
+      round(ui_state.sm['carState'].vEgo, 1),
+    )
+
+    if cache_key == self._matrix_cache_key and self._cached_matrix is not None:
+      return self._cached_matrix
+
     # Get camera configuration
-    # TODO: cache with vEgo?
-    calib_time = ui_state.sm.recv_frame['liveCalibration']
-    current_dims = (self._content_rect.width, self._content_rect.height)
     device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA
     is_wide_camera = self.stream_type == WIDE_CAM
     intrinsic = device_camera.ecam.intrinsics if is_wide_camera else device_camera.fcam.intrinsics
@@ -315,7 +320,6 @@ class AugmentedRoadView(CameraView):
     kep = calib_transform @ inf_point
 
     # Calculate center points and dimensions
-    x, y = self._content_rect.x, self._content_rect.y
     w, h = self._content_rect.width, self._content_rect.height
     cx, cy = intrinsic[0, 2], intrinsic[1, 2]
 
@@ -335,18 +339,17 @@ class AugmentedRoadView(CameraView):
       x_offset, y_offset = 0, 0
 
     # Cache the computed transformation matrix to avoid recalculations
-    self._last_calib_time = calib_time
-    self._last_rect_dims = current_dims
-    self._last_stream_type = self.stream_type
+    self._matrix_cache_key = cache_key
     self._cached_matrix = np.array([
       [zoom * 2 * cx / w, 0, -x_offset / w * 2],
       [0, zoom * 2 * cy / h, -y_offset / h * 2],
       [0, 0, 1.0]
     ])
 
+    # built without rect.x/y so cache stays hot during scroll. ModelRenderer adds offset at draw time
     video_transform = np.array([
-      [zoom, 0.0, (w / 2 + x - x_offset) - (cx * zoom)],
-      [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
+      [zoom, 0.0, (w / 2 - x_offset) - (cx * zoom)],
+      [0.0, zoom, (h / 2 - y_offset) - (cy * zoom)],
       [0.0, 0.0, 1.0]
     ])
     self._model_renderer.set_transform(video_transform @ calib_transform)
