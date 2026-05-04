@@ -136,10 +136,6 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"TeslaCoopSteering", {PERSISTENT, BOOL, "1"}},
     {"LaneTurnDesire", {PERSISTENT, BOOL, "1"}},
     {"EnableWebRTC", {PERSISTENT, BOOL, "1"}},
-    {"EnableBLE", {PERSISTENT, BOOL, "0"}},
-    {"BlePairingCode", {CLEAR_ON_MANAGER_START, STRING}},
-    {"BlePid", {PERSISTENT, INT}},
-    {"BleToken", {PERSISTENT, STRING}},
     {"APIHost", {PERSISTENT, STRING, "https://api.commadotai.com"}},
     {"AthenaHost", {PERSISTENT, STRING, "wss://athena.comma.ai"}},
 };
