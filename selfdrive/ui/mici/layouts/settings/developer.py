@@ -131,12 +131,6 @@ class DeveloperLayoutMici(NavScroller):
 
       long_man_enabled = ui_state.has_longitudinal_control and ui_state.is_offroad()
       self._long_maneuver_toggle.set_enabled(long_man_enabled)
-      if not long_man_enabled:
-        self._long_maneuver_toggle.set_checked(False)
-        ui_state.params.put_bool("LongitudinalManeuverMode", False)
-
-      lat_man_enabled = ui_state.is_offroad()
-      self._lat_maneuver_toggle.set_enabled(lat_man_enabled)
     else:
       self._long_maneuver_toggle.set_enabled(False)
       self._lat_maneuver_toggle.set_enabled(False)

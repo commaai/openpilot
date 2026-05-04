@@ -208,6 +208,9 @@ class MiciOffroadAlerts(Scroller):
   def active_alerts(self) -> int:
     return sum(alert.visible for alert in self.sorted_alerts)
 
+  def max_severity(self) -> int | None:
+    return max((alert.severity for alert in self.sorted_alerts if alert.visible), default=None)
+
   def scrolling(self):
     return self._scroller.scroll_panel.is_touch_valid()
 
@@ -273,6 +276,11 @@ class MiciOffroadAlerts(Scroller):
       if alert_json:
         text = alert_json.get("text", "").replace("%1", alert_json.get("extra", ""))
 
+      if text and not alert_data.visible:
+        # Bump newly visible alerts to the top, severity sort keeps it at the top of its category
+        widget = next(w for w in self._scroller.items if w.alert_data is alert_data)
+        self._scroller.items.remove(widget)
+        self._scroller.items.insert(0, widget)
       alert_data.text = text
       alert_data.visible = bool(text)
 
@@ -282,6 +290,8 @@ class MiciOffroadAlerts(Scroller):
     # Update alert items (they reference the same alert_data objects)
     for alert_item in self.alert_items:
       alert_item.update_alert_data(alert_item.alert_data)
+
+    self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
 
     return active_count
 

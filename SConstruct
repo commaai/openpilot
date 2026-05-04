@@ -254,8 +254,8 @@ SConscript([
   'selfdrive/ui/SConscript',
 ])
 
-# Build tools
-if arch != "larch64":
+# Build desktop-only tools
+if GetOption('extras') and arch != "larch64":
   SConscript([
     'tools/replay/SConscript',
     'tools/cabana/SConscript',
