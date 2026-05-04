@@ -10,6 +10,8 @@ from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import CompileConfig
 
+USBGPU = 'USBGPU' in os.environ
+
 CAMERA_CONFIGS = [
   (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
   (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
@@ -36,14 +38,8 @@ def probe_devices():
     [sys.executable, '-c', 'from tinygrad import Device\nprint("\\n".join(Device.get_available_devices()))'],
     capture_output=True, text=True, check=True).stdout.strip().splitlines())
 
-# poll: usbgpu takes a few seconds to show up
-deadline = time.monotonic() + 10
-while 'AMD' not in (available := probe_devices()):
-  if time.monotonic() > deadline:
-    print(f"USBGPU (AMD) not detected within 10s: {available}", file=sys.stderr)
-    Exit(1)
-  time.sleep(1)
 
+available = probe_devices()
 if 'CUDA' in available:
   tg_backend = 'CUDA'
   tg_flags = f'DEV={tg_backend}'
@@ -54,21 +50,25 @@ else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   tg_flags = f'DEV={tg_backend}'
 
-assert 'AMD' in available, f"USBGPU not detected in {available}"
-if 'AMD' in available:
-  modeld_tg_flags = f'WARP_DEV={tg_backend} DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 XDG_CACHE_HOME=/data/tinycache'
+runtime_env = f'WARP_DEV={tg_backend} DM_DEV={tg_backend}' # which device to put inputs to, shared env for modeld, dmonitoringmodeld
+
+if USBGPU:
+  # poll: usbgpu takes a few seconds to show up
+  deadline = time.monotonic() + 10
+  while 'AMD' not in (available := probe_devices()):
+    if time.monotonic() > deadline:
+      print(f"USBGPU (AMD) not detected within 10s: {available}", file=sys.stderr)
+      Exit(1)
+    time.sleep(1)
+  modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0'
+  runtime_env += ' GMMU=0 XDG_CACHE_HOME=/data/tinycache'
+
+  # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
+  usb_gpu_lock = File("models/.usb_gpu.lock").abspath
 else:
   modeld_tg_flags = tg_flags
 
-# the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
-usb_gpu_lock = File("models/.usb_gpu.lock").abspath
-
-# assume compiled flags = runtime flags for now
-compiled_flags = {
-  'selfdrive.modeld.modeld': dict(kv.split('=', 1) for kv in modeld_tg_flags.split()),
-  'selfdrive.modeld.dmonitoringmodeld': dict(kv.split('=', 1) for kv in tg_flags.split()),
-}
-
+compiled_flags = dict(kv.split('=', 1) for kv in runtime_env.split())
 def write_tg_compiled_flags(target, source, env):
   with open(str(target[0]), "w") as f:
     json.dump(compiled_flags, f, sort_keys=True)
@@ -99,7 +99,7 @@ driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['dri
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 for cfg in MODELD_CONFIGS:
-  cmd = (f'{modeld_tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
+  cmd = (f'{modeld_tg_flags} {runtime_env} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
          f'--model-size {model_w}x{model_h} '
          f'--nv12 {",".join(str(x) for x in cfg.nv12)} '
          f'--vision-onnx {File("models/big_driving_vision.onnx").abspath} '
@@ -107,7 +107,8 @@ for cfg in MODELD_CONFIGS:
          f'--output {cfg.pkl_path} --frame-skip {frame_skip}'
          + (' --prepare-only' if cfg.prepare_only else ''))
   node = lenv.Command(cfg.pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], cmd)
-  lenv.SideEffect(usb_gpu_lock, node)
+  if USBGPU:
+    lenv.SideEffect(usb_gpu_lock, node)
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_paths(cfg.pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_chunk(target, source, env, pkl=cfg.pkl_path, chunks=chunk_targets):

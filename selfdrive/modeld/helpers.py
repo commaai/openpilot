@@ -9,11 +9,10 @@ MODELS_DIR = Path(__file__).resolve().parent / 'models'
 COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
 
 
-def set_tinygrad_flags_from_compiled(process_name: str) -> None:
-  if os.path.isfile(COMPILED_FLAGS_PATH):
-    with open(COMPILED_FLAGS_PATH) as f:
-      for k, v in json.load(f).get(process_name, {}).items():
-        os.environ[k] = str(v)
+def set_tinygrad_env() -> None:
+  with open(COMPILED_FLAGS_PATH) as f:
+    for k, v in json.load(f).items():
+      os.environ[k] = str(v)
 
 
 @dataclass

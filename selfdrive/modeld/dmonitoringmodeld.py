@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_flags_from_compiled
-PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
-set_tinygrad_flags_from_compiled(PROCESS_NAME)
-DM_DEV = os.environ['DEV']
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_env
+set_tinygrad_env()
+DM_DEV = os.environ['DM_DEV']
 
 from tinygrad.tensor import Tensor
 import time
@@ -21,6 +20,7 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
+PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
 METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'

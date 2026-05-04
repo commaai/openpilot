@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_flags_from_compiled
-PROCESS_NAME = "selfdrive.modeld.modeld"
-set_tinygrad_flags_from_compiled(PROCESS_NAME)
-USBGPU = os.environ['DEV'] == 'USB+AMD:LLVM'
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_env
+set_tinygrad_env()
+WARP_DEV = os.getenv('WARP_DEV', Device.DEFAULT)
+USBGPU = 'USBGPU' in os.environ
+
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 import time
@@ -30,7 +31,7 @@ from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 
 
-WARP_DEV = os.getenv('WARP_DEV', Device.DEFAULT)
+PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
