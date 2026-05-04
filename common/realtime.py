@@ -30,7 +30,11 @@ class Priority:
 
 def set_core_affinity(cores: list[int]) -> None:
   if sys.platform == 'linux' and not PC:
-    os.sched_setaffinity(0, cores)
+    available = os.sched_getaffinity(0)
+    valid = [c for c in cores if c in available]
+    if not valid:
+      valid = [max(available)]
+    os.sched_setaffinity(0, valid)
 
 
 def config_realtime_process(cores: int | list[int], priority: int) -> None:
