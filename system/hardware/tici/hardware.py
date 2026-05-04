@@ -130,12 +130,11 @@ class Tici(HardwareBase):
     self.reboot()
 
   def get_serial(self):
-    cmdline = self.get_cmdline()
-    if 'androidboot.serialno' in cmdline:
-      return cmdline['androidboot.serialno']
+    if self.get_device_type() == "asius":
+      with open("/sys/devices/soc0/serial_number") as f:
+        return f.read().strip()
 
-    with open("/sys/firmware/devicetree/base/serial-number") as f:
-      return f.read().strip('\x00').strip()
+    return self.get_cmdline()['androidboot.serialno']
 
   def get_voltage(self):
     with open("/sys/class/hwmon/hwmon1/in1_input") as f:
