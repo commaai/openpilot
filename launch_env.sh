@@ -20,17 +20,3 @@ if [ -z "$AGNOS_VERSION" ]; then
 fi
 
 export STAGING_ROOT="/data/safe_staging"
-
-if [ -f /ASIUS ]; then
-  export BIG=1
-  export DEV=CL
-  export NOLOCALS=1
-  export FLOAT16=1
-  export RUSTICL_ENABLE=freedreno
-  export DISABLE_FAST_IDIV=1
-  export EMULATED_DTYPES=long
-  export SUM_DTYPE=float16
-  export JIT_BATCH_SIZE=0
-  export BEAM=2
-  export IGNORE_JIT_FIRST_BEAM=1
-fi

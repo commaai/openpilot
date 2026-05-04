@@ -44,7 +44,7 @@ IMX219::IMX219() {
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 4;
-  exposure_time_max = 1759;
+  exposure_time_max = 2636;
   analog_gain_min_idx = 0;
   analog_gain_rec_idx = 0;
   analog_gain_max_idx = 15;

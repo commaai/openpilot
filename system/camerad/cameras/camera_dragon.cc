@@ -28,6 +28,9 @@
 ExitHandler do_exit;
 
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != nullptr;
+const int dragon_target_fps = 20;
+const int dragon_frame_height = 1080;
+const int dragon_frame_length_lines_20fps = 2640;
 
 // Dragon Q6A camera routing:
 //   PIX mode (hw debayer): CSIPHY → CSID pad 4 → VFE0-2 PIX → NV12 output
@@ -111,43 +114,63 @@ static void __attribute__((constructor)) init_gamma_lut() {
   }
 }
 
+static void set_dragon_sensor_timing(int sensor_fd, int cam_idx) {
+  struct v4l2_control vblank_ctrl = {};
+  vblank_ctrl.id = V4L2_CID_VBLANK;
+  vblank_ctrl.value = dragon_frame_length_lines_20fps - dragon_frame_height;
+  if (ioctl(sensor_fd, VIDIOC_S_CTRL, &vblank_ctrl) != 0) {
+    LOGE("cam %d: set VBLANK failed: %d (%s)", cam_idx, errno, strerror(errno));
+    return;
+  }
+
+  if (ioctl(sensor_fd, VIDIOC_G_CTRL, &vblank_ctrl) != 0) {
+    LOGE("cam %d: read VBLANK failed after set: %d (%s)", cam_idx, errno, strerror(errno));
+    return;
+  }
+
+  const int frame_length_lines = dragon_frame_height + vblank_ctrl.value;
+  if (frame_length_lines != dragon_frame_length_lines_20fps) {
+    LOGE("cam %d: VBLANK readback %d gives FLL=%d, expected FLL=%d for %dfps",
+         cam_idx, vblank_ctrl.value, frame_length_lines, dragon_frame_length_lines_20fps, dragon_target_fps);
+  } else {
+    LOG("cam %d: VBLANK set to %d (FLL=%d, %dfps target)",
+        cam_idx, vblank_ctrl.value, frame_length_lines, dragon_target_fps);
+  }
+}
+
 static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
                                    uint8_t *y_out, uint8_t *uv_out,
                                    int width, int height, int out_stride) {
-  // IMX219 white balance gains (10-bit fixed point: multiply then >>8)
-  // These compensate for the sensor's green-heavy Bayer response
   const int wb_r = 410;   // ~1.60x
   const int wb_g = 256;   // 1.00x
   const int wb_b = 390;   // ~1.52x
-  const int black = 64;   // IMX219 10-bit black level
+  const int black = 64;
 
   for (int y = 0; y < height - 1; y += 2) {
     for (int x = 0; x < width - 1; x += 2) {
-      // RGGB Bayer pattern
       int R  = std::max((int)raw10_pixel(raw, y, x, raw_stride) - black, 0);
       int Gr = std::max((int)raw10_pixel(raw, y, x + 1, raw_stride) - black, 0);
       int Gb = std::max((int)raw10_pixel(raw, y + 1, x, raw_stride) - black, 0);
       int B  = std::max((int)raw10_pixel(raw, y + 1, x + 1, raw_stride) - black, 0);
 
-      // White balance + scale to 10-bit range
       int r10 = std::min((R * wb_r) >> 8, 1023);
       int g10_r = std::min((Gr * wb_g) >> 8, 1023);
       int g10_b = std::min((Gb * wb_g) >> 8, 1023);
       int b10 = std::min((B * wb_b) >> 8, 1023);
 
-      // Gamma-corrected 8-bit values
+      // Gamma-corrected 8-bit for Y (perceptual luminance)
       uint8_t r8 = gamma_lut[r10];
       uint8_t gr8 = gamma_lut[g10_r];
       uint8_t gb8 = gamma_lut[g10_b];
       uint8_t b8 = gamma_lut[b10];
-      uint8_t g8 = (gr8 + gb8 + 1) >> 1;
 
-      // BT.601 RGB→YUV
+      uint8_t g8 = (gr8 + gb8 + 1) >> 1;
       y_out[y * out_stride + x]         = std::clamp(((66*r8 + 129*gr8 + 25*b8 + 128) >> 8) + 16, 16, 235);
       y_out[y * out_stride + x + 1]     = std::clamp(((66*r8 + 129*gr8 + 25*b8 + 128) >> 8) + 16, 16, 235);
       y_out[(y+1) * out_stride + x]     = std::clamp(((66*r8 + 129*gb8 + 25*b8 + 128) >> 8) + 16, 16, 235);
       y_out[(y+1) * out_stride + x + 1] = std::clamp(((66*r8 + 129*gb8 + 25*b8 + 128) >> 8) + 16, 16, 235);
 
+      // UV from gamma-corrected RGB (BT.601)
       uv_out[(y/2) * out_stride + x]     = std::clamp(((-38*r8 - 74*g8 + 112*b8 + 128) >> 8) + 128, 16, 240);
       uv_out[(y/2) * out_stride + x + 1] = std::clamp(((112*r8 - 94*g8 - 18*b8 + 128) >> 8) + 128, 16, 240);
     }
@@ -440,6 +463,7 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
 
   setup_media_links();
   set_formats();
+  set_dragon_sensor_timing(sensor_fd, cam_idx);
 
   auto [s, yh, uvh, sz] = get_nv12_info(sensor->frame_width, sensor->frame_height);
   stride = s;
