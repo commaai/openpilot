@@ -109,13 +109,10 @@ class Tici(HardwareBase):
 
   def get_modem_state(self) -> dict:
     """Read modem.py state file. Raises if modem.py hasn't published state yet."""
-    try:
-      with open(MODEM_STATE_PATH) as f:
-        return json.load(f)
-    except FileNotFoundError:
-      if self.get_device_type() == "asius":
-        return {}
-      raise
+    if self.get_device_type() == "asius":
+      return {}
+    with open(MODEM_STATE_PATH) as f:
+      return json.load(f)
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -137,13 +134,8 @@ class Tici(HardwareBase):
     if 'androidboot.serialno' in cmdline:
       return cmdline['androidboot.serialno']
 
-    try:
-      with open("/sys/firmware/devicetree/base/serial-number") as f:
-        return f.read().strip('\x00').strip()
-    except FileNotFoundError:
-      pass
-
-    return "cccccc"
+    with open("/sys/firmware/devicetree/base/serial-number") as f:
+      return f.read().strip('\x00').strip()
 
   def get_voltage(self):
     with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -410,34 +402,29 @@ class Tici(HardwareBase):
     affine_irq(5, "fts_ts")    # touch
     affine_irq(5, "msm_drm")   # display
 
-    # KGSL (downstream Qualcomm GPU driver)
-    for val, path in (
-      ("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel"),
-      ("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel"),
-      ("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on"),
-      ("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on"),
-      ("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on"),
-      ("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer"),
-      ("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor"),
-      ("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz"),
-    ):
-      sudo_write_if_exists(val, path)
-
-    # Mainline GPU (Freedreno/msm)
-    if os.path.exists("/sys/class/devfreq/3d00000.gpu"):
+    if self.get_device_type() == "asius":
       sudo_write("userspace", "/sys/class/devfreq/3d00000.gpu/governor")
       sudo_write("812000000", "/sys/class/devfreq/3d00000.gpu/userspace/set_freq")
       raise_thermal_limits()
+    else:
+      # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
+      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
+      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
+      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
+      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
+      sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
+      sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
+      sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
+      sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
-    # Qualcomm devfreq governors (downstream only)
-    for devfreq_path in ("/sys/class/devfreq/soc:qcom,cpubw/governor",
-                         "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor",
-                         "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor"):
-      sudo_write_if_exists("performance", devfreq_path)
+      # setup governors
+      sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
+      sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
+      sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
 
-    # VIDC encoder config (downstream only)
-    sudo_write_if_exists("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
-    sudo_write_if_exists("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+      # *** VIDC (encoder) config ***
+      sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
+      sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
 
     # pandad core
     affine_irq(3, "spi_geni")         # SPI
