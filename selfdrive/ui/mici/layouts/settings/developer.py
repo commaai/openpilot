@@ -1,11 +1,45 @@
+from collections.abc import Callable
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl, GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationCircleButton
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
+
+
+class AlphaLongConfirmPage(NavScroller):
+  def __init__(self, on_confirm: Callable[[], None], on_cancel: Callable[[], None]):
+    super().__init__()
+    self._on_confirm = on_confirm
+    self._on_cancel = on_cancel
+    self._confirmed = False
+
+    def confirm():
+      self._confirmed = True
+      self.dismiss(self._on_confirm)
+
+    accept = BigConfirmationCircleButton("enable alpha\nlongitudinal",
+                                         gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
+                                         confirm)
+
+    self._scroller.add_widgets([
+      GreyBigButton("alpha longitudinal", "scroll to accept",
+                    gui_app.texture("icons_mici/offroad_alerts/orange_warning.png", 64, 64)),
+      GreyBigButton("", "Alpha-quality openpilot longitudinal control for this car."),
+      GreyBigButton("", "Disables Automatic Emergency Braking (AEB)."),
+      GreyBigButton("", "On this car, openpilot defaults to the car's built-in ACC."),
+      GreyBigButton("", "Enable to switch to openpilot longitudinal control."),
+      GreyBigButton("", "Enabling experimental mode is recommended."),
+      GreyBigButton("", "Changing this setting will restart openpilot if powered on."),
+      accept,
+    ])
+
+  def hide_event(self):
+    super().hide_event()
+    if not self._confirmed:
+      self._on_cancel()
 
 
 class DeveloperLayoutMici(NavScroller):
@@ -165,7 +199,17 @@ class DeveloperLayoutMici(NavScroller):
     restart_needed_callback(state)
 
   def _on_alpha_long_enabled(self, state: bool):
-    # TODO: show confirmation dialog before enabling
-    ui_state.params.put_bool("AlphaLongitudinalEnabled", state)
-    restart_needed_callback(state)
-    self._update_toggles()
+    if state:
+      def on_confirm():
+        ui_state.params.put_bool("AlphaLongitudinalEnabled", True)
+        restart_needed_callback(True)
+        self._update_toggles()
+
+      def on_cancel():
+        self._alpha_long_toggle.set_checked(False)
+
+      gui_app.push_widget(AlphaLongConfirmPage(on_confirm, on_cancel))
+    else:
+      ui_state.params.put_bool("AlphaLongitudinalEnabled", False)
+      restart_needed_callback(False)
+      self._update_toggles()
