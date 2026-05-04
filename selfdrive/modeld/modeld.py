@@ -30,7 +30,6 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
-import ctypes as _c
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 
 
@@ -109,14 +108,8 @@ class ModelState:
       from tinygrad.device import Device
       from tinygrad.runtime.autogen import opencl as _cl
       self._cl, self._ctypes = _cl, _ctypes
-      self._cl_dev = Device['CL']
+    self._cl_dev = Device['CL']
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
-    if ASIUS:
-      self._fp_lib = _c.CDLL('/data/openpilot/fast_parse.so')
-      self._fp_lib.fast_parse_vision.argtypes = [_c.c_void_p]
-      self._fp_lib.fast_parse_vision.restype = None
-      self._fp_lib.fast_parse_policy.argtypes = [_c.c_void_p]
-      self._fp_lib.fast_parse_policy.restype = None
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
     self.warp_enqueue(
       **self.input_queues,
@@ -151,30 +144,6 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
     self._inputs_prepared = True
-
-  def _build_parsed_dict(self, v, p):
-    d = {}
-    vs = self.vision_output_slices
-    for name, sl, shape in [
-      ('pose', vs['pose'], (1,6)), ('wide_from_device_euler', vs['wide_from_device_euler'], (1,3)),
-      ('road_transform', vs['road_transform'], (1,6)),
-      ('lane_lines', vs['lane_lines'], (1,4,33,2)), ('road_edges', vs['road_edges'], (1,2,33,2)),
-      ('lead', vs['lead'], (1,3,6,4))]:
-      nv = (sl.stop - sl.start) // 2
-      d[name] = v[sl.start:sl.start+nv].reshape(shape)
-      d[name+'_stds'] = v[sl.start+nv:sl.stop].reshape(shape)
-    d['meta'] = v[np.newaxis, vs['meta']]
-    d['desire_pred'] = v[vs['desire_pred'].start:vs['desire_pred'].stop].reshape(1,4,8)
-    d['lane_lines_prob'] = v[np.newaxis, vs['lane_lines_prob']]
-    d['lead_prob'] = v[np.newaxis, vs['lead_prob']]
-    d['hidden_state'] = v[np.newaxis, vs['hidden_state']]
-    ps = self.policy_output_slices
-    psl = ps['plan']
-    pnv = (psl.stop - psl.start) // 2
-    d['plan'] = p[psl.start:psl.start+pnv].reshape(1,33,15)
-    d['plan_stds'] = p[psl.start+pnv:psl.stop].reshape(1,33,15)
-    d['desire_state'] = p[ps['desire_state'].start:ps['desire_state'].stop].reshape(1,8)
-    return d
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
@@ -245,7 +214,8 @@ class ModelState:
       _cl.clFlush(dev.queue)
       _cl.clFinish(dev.queue)
       dev.pending_copyin.clear()
-      return (self._vision_np, self._policy_np)
+      vision_output = self._vision_np
+      policy_output = self._policy_np
     else:
       vision_output = vision_tensor.numpy().flatten()
       policy_output = policy_tensor.numpy().flatten()
@@ -407,13 +377,6 @@ def main(demo=False):
     model_output = model.run(bufs, transforms, inputs, prepare_only)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
-    if ASIUS and model_output is not None:
-      vision_output, policy_output = model_output
-      model._fp_lib.fast_parse_vision(vision_output.ctypes.data)
-      model._fp_lib.fast_parse_policy(policy_output.ctypes.data)
-      model_output = model._build_parsed_dict(vision_output, policy_output)
-      if SEND_RAW_PRED:
-        model_output['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
 
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')
