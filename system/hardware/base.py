@@ -22,7 +22,7 @@ class Profile:
 
   @property
   def is_comma(self) -> bool:
-    return self.provider == 'Webbing' or self.iccid.startswith('8985235')
+    return self.provider == 'Webbing' and self.iccid.startswith('8985235')
 
 @dataclass
 class ThermalZone:
