@@ -2,7 +2,7 @@
 import os
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_env
 set_tinygrad_env()
-WARP_DEV = os.getenv('WARP_DEV', Device.DEFAULT)
+WARP_DEV = os.getenv('WARP_DEV')
 USBGPU = 'USBGPU' in os.environ
 
 from tinygrad.tensor import Tensor
