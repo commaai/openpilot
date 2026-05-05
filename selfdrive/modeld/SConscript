@@ -56,7 +56,7 @@ compiled_flags_node = lenv.Command(
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
 # Get model metadata
-for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+for model_name in ['driving_vision', 'driving_off_policy', 'driving_on_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
   script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
   cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
@@ -65,8 +65,8 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
 modeld_dir = Dir("#selfdrive/modeld").abspath
 compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
 compile_dm_warp_script = [File(f"{modeld_dir}/compile_dm_warp.py")]
-driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_policy']]
-driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['driving_vision', 'driving_policy']]
+driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_off_policy', 'driving_on_policy']]
+driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['driving_vision', 'driving_off_policy', 'driving_on_policy']]
 
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
@@ -75,7 +75,8 @@ for cfg in MODELD_CONFIGS:
          f'--model-size {model_w}x{model_h} '
          f'--nv12 {",".join(str(x) for x in cfg.nv12)} '
          f'--vision-onnx {File("models/driving_vision.onnx").abspath} '
-         f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
+         f'--off-policy-onnx {File("models/driving_off_policy.onnx").abspath} '
+         f'--on-policy-onnx {File("models/driving_on_policy.onnx").abspath} '
          f'--output {cfg.pkl_path} --frame-skip {frame_skip}'
          + (' --prepare-only' if cfg.prepare_only else ''))
   node = lenv.Command(cfg.pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], cmd)
