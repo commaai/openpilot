@@ -20,6 +20,10 @@ class Profile:
   enabled: bool
   provider: str
 
+  @property
+  def is_comma(self) -> bool:
+    return self.provider == 'Webbing' and self.iccid.startswith('8985235')
+
 @dataclass
 class ThermalZone:
   # a zone from /sys/class/thermal/thermal_zone*
@@ -94,8 +98,9 @@ class LPABase(ABC):
   def process_notifications(self) -> None:
     pass
 
-  def is_comma_profile(self, iccid: str) -> bool:
-    return any(iccid.startswith(prefix) for prefix in ('8985235',))
+  @abstractmethod
+  def is_euicc(self) -> bool:
+    pass
 
 class HardwareBase(ABC):
   @staticmethod
@@ -192,12 +197,6 @@ class HardwareBase(ABC):
     return []
 
   def initialize_hardware(self):
-    pass
-
-  def configure_modem(self):
-    pass
-
-  def reboot_modem(self):
     pass
 
   def get_networks(self):

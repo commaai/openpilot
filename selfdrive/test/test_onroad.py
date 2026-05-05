@@ -68,6 +68,7 @@ PROCS = {
   "system.loggerd.deleter": 1.0,
   "./pandad": 19.0,
   "system.qcomgpsd.qcomgpsd": 1.0,
+  #"system.hardware.tici.modem": 2.0,
 }
 
 TIMINGS = {
@@ -209,7 +210,7 @@ class TestOnroad:
 
     # other processes preempt ui while starting up
     offset = int(20 * LOG_OFFSET)
-    ts = self.ts['uiDebug']['drawTimeMillis'][offset:]
+    ts = self.ts['uiDebug']['cpuTimeMillis'][offset:]
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
