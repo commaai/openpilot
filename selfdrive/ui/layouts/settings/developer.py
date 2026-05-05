@@ -20,7 +20,7 @@ DESCRIPTIONS = {
     "other than your own. A comma employee will NEVER ask you to add their GitHub username."
   ),
   'alpha_longitudinal': tr_noop(
-    "<b>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</b><br><br>" +
+    "<b>WARNING: openpilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB).</b><br><br>" +
     "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
     "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha. " +
     "Changing this setting will restart openpilot if the car is powered on."
