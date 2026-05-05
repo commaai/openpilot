@@ -243,18 +243,10 @@ class AugmentedRoadView(CameraView):
 
     self._bookmark_icon.render(self.rect)
 
-<<<<<<< HEAD
-    # publish uiDebug
-    msg = messaging.new_message('uiDebug')
-    msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
-    msg.uiDebug.fps = rl.get_fps()
-    self._pm.send('uiDebug', msg)
-=======
     # Draw darkened background and text if not onroad
     if not ui_state.started:
       rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
       self._offroad_label.render(self._rect)
->>>>>>> e0cfe7597 (log fps from frame time)
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
