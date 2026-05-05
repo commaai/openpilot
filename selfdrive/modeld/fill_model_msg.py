@@ -125,10 +125,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
 
   # meta
   meta = modelV2.meta
-  if 'desire_state' in net_output_data:
-    meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
-  else:
-    meta.desireState = [0.0] * ModelConstants.DESIRE_PRED_WIDTH
+  meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
   meta.desirePrediction = net_output_data['desire_pred'][0].reshape(-1).tolist()
   meta.engagedProb = net_output_data['meta'][0,Meta.ENGAGED].item()
   meta.init('disengagePredictions')
