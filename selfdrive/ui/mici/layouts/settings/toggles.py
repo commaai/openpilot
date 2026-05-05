@@ -25,10 +25,15 @@ class ExperimentalModeConfirmPage(NavScroller):
                     gui_app.texture("icons_mici/experimental_mode.png", 64, 64)),
       GreyBigButton("", "openpilot defaults to driving in chill mode."),
       GreyBigButton("", "Experimental mode enables alpha-level features that aren't ready for chill mode."),
-      GreyBigButton("", "End-to-end longitudinal: the driving model controls gas and brakes."),
+      GreyBigButton("", "Experimental features are listed below:"),
+      GreyBigButton("End-to-End Longitudinal Control", ""),
+      GreyBigButton("", "Let the driving model control the gas and brakes."),
       GreyBigButton("", "openpilot will drive as it thinks a human would, including stopping for red lights and stop signs."),
-      GreyBigButton("", "The set speed will only act as an upper bound."),
-      GreyBigButton("", "This is an alpha-quality feature; mistakes should be expected."),
+      GreyBigButton("", "Since the driving model decides the speed to drive, the set speed will only act as an upper bound."),
+      GreyBigButton("", "This is an alpha quality feature; mistakes should be expected."),
+      GreyBigButton("New Driving Visualization", ""),
+      GreyBigButton("", "The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns."),
+      GreyBigButton("", "The Experimental mode logo will also be shown in the top right corner."),
       accept,
     ])
 
@@ -113,18 +118,15 @@ class TogglesLayoutMici(NavScroller):
       item.set_checked(ui_state.params.get_bool(key))
 
   def _on_experimental_mode(self, state: bool):
-    def do_toggle(_state: bool):
-      ui_state.params.put_bool("ExperimentalMode", _state)
-      self._update_toggles()
-
     if state and not ui_state.params.get_bool("ExperimentalModeConfirmed"):
       # Don't show enabled state until confirm
       self._experimental_btn.set_checked(False)
 
       def on_confirm():
         ui_state.params.put_bool("ExperimentalModeConfirmed", True)
-        do_toggle(True)
+        ui_state.params.put_bool("ExperimentalMode", True)
+        self._update_toggles()
 
       gui_app.push_widget(ExperimentalModeConfirmPage(on_confirm))
     else:
-      do_toggle(state)
+      ui_state.params.put_bool("ExperimentalMode", state)
