@@ -31,6 +31,7 @@ def main():
       msg.uiDebug.cpuTimeMillis = cpu_time * 1000
       msg.uiDebug.frameTimeMillis = frame_time * 1000
       _pm.send('uiDebug', msg)
+
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:
         try:
