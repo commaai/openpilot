@@ -585,6 +585,8 @@ class GuiApplication:
         self._render_profiler.enable()
 
       while not (self._window_close_requested or rl.window_should_close()):
+        frame_start = time.monotonic()
+
         if PC:
           # Thread is not used on PC, need to manually add mouse events
           self._mouse._handle_mouse_event()
@@ -599,10 +601,9 @@ class GuiApplication:
           if PC:
             rl.poll_input_events()
           time.sleep(1 / self._target_fps)
-          yield False
+          yield False, 0.0, 0.0
           continue
 
-        draw_start = time.monotonic()
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)
@@ -622,9 +623,9 @@ class GuiApplication:
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
-        frame_time = rl.get_frame_time() # from previous tick
-        draw_time_ms = (time.monotonic() - draw_start) * 1000
-        yield True, frame_time, draw_time_ms
+        frame_time = rl.get_frame_time()
+        cpu_time = time.monotonic() - frame_start
+        yield True, frame_time, cpu_time
 
         if self._scale != 1.0:
           rl.rl_pop_matrix()

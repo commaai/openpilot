@@ -23,12 +23,12 @@ def main():
     MiciMainLayout()
 
   _pm = messaging.PubMaster(['uiDebug'])
-  for should_render, frame_time, draw_time_ms in gui_app.render():
+  for should_render, frame_time, cpu_time in gui_app.render():
     ui_state.update()
 
     if should_render:
       msg = messaging.new_message('uiDebug')
-      msg.uiDebug.cpuTimeMillis = draw_time_ms
+      msg.uiDebug.cpuTimeMillis = cpu_time * 1000
       msg.uiDebug.frameTimeMillis = frame_time * 1000
       _pm.send('uiDebug', msg)
       # reaffine after power save offlines our core
