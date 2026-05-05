@@ -22,7 +22,7 @@ def main():
   else:
     MiciMainLayout()
 
-  _pm = messaging.PubMaster(['uiDebug'])
+  pm = messaging.PubMaster(['uiDebug'])
   for should_render, frame_time, cpu_time in gui_app.render():
     ui_state.update()
 
@@ -30,7 +30,7 @@ def main():
       msg = messaging.new_message('uiDebug')
       msg.uiDebug.cpuTimeMillis = cpu_time * 1000
       msg.uiDebug.frameTimeMillis = frame_time * 1000
-      _pm.send('uiDebug', msg)
+      pm.send('uiDebug', msg)
 
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:
