@@ -13,12 +13,18 @@ class LPAError(RuntimeError):
 class LPAProfileNotFoundError(LPAError):
   pass
 
+COMMA_ICCID_PREFIXES = ('8985235',)
+
 @dataclass
 class Profile:
   iccid: str
   nickname: str
   enabled: bool
   provider: str
+
+  @property
+  def is_comma(self) -> bool:
+    return self.provider == 'Webbing' or self.iccid.startswith(COMMA_ICCID_PREFIXES)
 
 @dataclass
 class ThermalZone:
@@ -97,9 +103,6 @@ class LPABase(ABC):
   @abstractmethod
   def is_euicc(self) -> bool:
     pass
-
-  def is_comma_profile(self, iccid: str) -> bool:
-    return any(iccid.startswith(prefix) for prefix in ('8985235',))
 
 class HardwareBase(ABC):
   @staticmethod
