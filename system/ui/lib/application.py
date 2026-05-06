@@ -316,7 +316,9 @@ class GuiApplication:
         self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, daemon=True)
         self._ffmpeg_thread.start()
 
-      rl.set_target_fps(0)
+      # four display runs slightly faster than 60 FPS, let it control rate
+      vblank_control = TICI and not self.big_ui()
+      rl.set_target_fps(0 if OFFSCREEN or vblank_control else fps)
 
       self._target_fps = fps
       self._set_styles()
