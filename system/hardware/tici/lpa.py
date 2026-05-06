@@ -19,7 +19,7 @@ from typing import Any
 from pathlib import Path
 
 from openpilot.common.time_helpers import system_time_valid
-from openpilot.system.hardware.base import LPABase, LPAError, Profile
+from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
 GSMA_CI_BUNDLE = str(Path(__file__).parent / "gsma_ci_bundle.pem")
 
@@ -735,7 +735,10 @@ class TiciLPA(LPABase):
       process_notifications(self._client)
 
   def delete_profile(self, iccid: str) -> None:
-    if self.is_comma_profile(iccid):
+    profile = next((p for p in self.list_profiles() if p.iccid == iccid), None)
+    if profile is None:
+      raise LPAProfileNotFoundError(f"profile not found: {iccid}")
+    if profile.is_comma:
       raise LPAError("refusing to delete a comma profile")
     with self._acquire_channel():
       request = encode_tlv(TAG_DELETE_PROFILE, encode_tlv(TAG_ICCID, string_to_tbcd(iccid)))
