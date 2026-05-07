@@ -195,7 +195,6 @@ class _Scroller(Widget):
 
     # Snap closest item to center
     center_pos = self._rect.x + self._rect.width / 2
-    print('center_pos', center_pos)
     scroll_snap_item: tuple[int, float] | None = None
     for idx, item in enumerate(visible_items):
       delta_pos = (item.rect.x + item.rect.width / 2) - center_pos
@@ -203,7 +202,6 @@ class _Scroller(Widget):
         scroll_snap_item = idx, delta_pos
 
     # closest_delta_pos = round(closest_delta_pos)
-    print('scroll_snap_item', scroll_snap_item)
 
     # if scroll_snap_idx is not None:
     if scroll_snap_item is not None:
@@ -216,13 +214,9 @@ class _Scroller(Widget):
         snap_delta_pos = -scroll_snap_item[1] / 10
         snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
 
-        print('two diffs', (center_pos - (snap_item.rect.x + snap_item.rect.width / 2)), scroll_snap_item[1])
         snap_delta_pos = max(snap_delta_pos, (self._rect.width - self.scroll_panel.get_offset() - content_size) / 10)
         self._scroll_snap_filter.update(snap_delta_pos)
-        print('snap_delta_pos', snap_delta_pos, 'snap_filter', self._scroll_snap_filter.x)
 
-      print('final offset', self.scroll_panel.get_offset() + self._scroll_snap_filter.x)
-      print()
       self.scroll_panel.set_offset(self.scroll_panel.get_offset() + self._scroll_snap_filter.x)
 
     return self.scroll_panel.get_offset()
@@ -301,7 +295,6 @@ class _Scroller(Widget):
     self._content_size += self._pad * 2
 
     self._scroll_offset = self._get_scroll(self._visible_items, self._content_size)
-    # print(self._scroll_offset)
 
     self._item_pos_filter.update(self._scroll_offset)
 
