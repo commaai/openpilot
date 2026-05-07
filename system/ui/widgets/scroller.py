@@ -179,7 +179,7 @@ class _Scroller(Widget):
       self._scrolling_to_filter.update(self._scrolling_to[0])
       self.scroll_panel.set_offset(self._scrolling_to_filter.x)
 
-      if abs(self._scrolling_to_filter.x - self._scrolling_to[0]) < 1:
+      if abs(self._scrolling_to_filter.x - self._scrolling_to[0]) < 1:  # finished scroll
         self.scroll_panel.set_offset(self._scrolling_to[0])
         self._scrolling_to = None, False
 

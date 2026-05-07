@@ -131,8 +131,8 @@ class GuiScrollPanel2:
       snap_target = max(min_offset, min(max_offset, snap_target))
       dist = snap_target - self.get_offset()
       print('snap dist', dist, 'offset', self.get_offset(), 'target', snap_target)
-      if abs(dist) < 1:
-        self.set_offset(snap_target)  # exact set to prevent sub-pixel drift
+      if abs(dist) < 1:  # finished snap
+        self.set_offset(snap_target)
       else:
         dt = rl.get_frame_time() or 1e-6
         factor = 1.0 - math.exp(-SNAP_RATE * dt)
