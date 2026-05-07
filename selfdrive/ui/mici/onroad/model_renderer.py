@@ -94,6 +94,12 @@ class ModelRenderer(Widget):
     self._transform_dirty = True
 
   def _render(self, rect: rl.Rectangle):
+    import time as _t
+    if not hasattr(self, '_dbg_acc'):
+      self._dbg_acc: dict[str, float] = {}
+      self._dbg_n = 0
+    _ts = _t.monotonic()
+
     sm = ui_state.sm
 
     self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
@@ -121,29 +127,41 @@ class ModelRenderer(Widget):
     radar_state = sm['radarState'] if sm.valid['radarState'] else None
     lead_one = radar_state.leadOne if radar_state else None
     render_lead_indicator = self._longitudinal_control and radar_state is not None
+    self._dbg_acc['setup'] = self._dbg_acc.get('setup', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     # Update model data when needed
     model_updated = sm.updated['modelV2']
     if model_updated or sm.updated['radarState'] or self._transform_dirty:
       if model_updated:
         self._update_raw_points(model)
+      self._dbg_acc['raw_points'] = self._dbg_acc.get('raw_points', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
       path_x_array = self._path.raw_points[:, 0]
       if path_x_array.size == 0:
         return
 
       self._update_model(lead_one, path_x_array)
+      self._dbg_acc['update_model'] = self._dbg_acc.get('update_model', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
       if render_lead_indicator:
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
+      self._dbg_acc['leads'] = self._dbg_acc.get('leads', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     # Draw elements (hide when disengaged)
     if ui_state.status != UIStatus.DISENGAGED:
       self._draw_lane_lines()
+      self._dbg_acc['lanes'] = self._dbg_acc.get('lanes', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
       self._draw_path(sm)
+      self._dbg_acc['path'] = self._dbg_acc.get('path', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
-    # if render_lead_indicator and radar_state:
-    #   self._draw_lead_indicator()
+    self._dbg_n += 1
+    if self._dbg_n >= 120:
+      total = sum(self._dbg_acc.values())
+      print("[Model avg over 120f] " + "  ".join(
+        f"{k}={(v / self._dbg_n) * 1000:.2f}ms" for k, v in sorted(self._dbg_acc.items(), key=lambda x: -x[1]))
+        + f"  total={total / self._dbg_n * 1000:.2f}ms")
+      self._dbg_acc = {}
+      self._dbg_n = 0
 
   def _update_raw_points(self, model):
     """Update raw 3D points from model data"""
@@ -177,8 +195,16 @@ class ModelRenderer(Widget):
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
-    max_distance = np.clip(path_x_array[-1], MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE)
+    import time as _t
+    if not hasattr(self, '_dbg_um'):
+      self._dbg_um: dict[str, float] = {}
+      self._dbg_um_n = 0
+    _ts = _t.monotonic()
+
+    _max = float(path_x_array[-1])
+    max_distance = MIN_DRAW_DISTANCE if _max < MIN_DRAW_DISTANCE else MAX_DRAW_DISTANCE if _max > MAX_DRAW_DISTANCE else _max
     max_idx = self._get_path_length_idx(self._lane_lines[0].raw_points[:, 0], max_distance)
+    self._dbg_um['head'] = self._dbg_um.get('head', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     # Update lane lines using raw points
     line_width_factor = 0.12
@@ -188,10 +214,12 @@ class ModelRenderer(Widget):
       lane_line.projected_points = self._map_line_to_polygon(
         lane_line.raw_points, line_width_factor * self._lane_line_probs[i], 0.0, max_idx
       )
+    self._dbg_um['lanes_mapping'] = self._dbg_um.get('lanes_mapping', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     # Update road edges using raw points
     for road_edge in self._road_edges:
       road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, line_width_factor, 0.0, max_idx)
+    self._dbg_um['edges_mapping'] = self._dbg_um.get('edges_mapping', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     # Update path using raw points
     if lead and lead.status:

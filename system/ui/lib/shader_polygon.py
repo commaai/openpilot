@@ -206,27 +206,26 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
                  color: Optional[rl.Color] = None, gradient: Gradient | None = None):
 
   """
-  Draw a ribbon polygon (two chains) with a triangle strip and gradient.
+  Draw a ribbon polygon (two chains) with a triangle strip.
   - Input must be [L0..Lk-1, Rk-1..R0], even count, no crossings/holes.
+  Solid-color polygons use raylib's default shader (fast, no begin/end_shader_mode).
+  Gradient polygons use the custom shader.
   """
   if len(points) < 3:
     return
 
-  # Initialize shader on-demand
-  state = ShaderState.get_instance()
-  state.initialize()
-
-  # Ensure (N,2) float32 contiguous array
   pts = np.ascontiguousarray(points, dtype=np.float32)
-  assert pts.ndim == 2 and pts.shape[1] == 2, "points must be (N,2)"
-
-  # Configure gradient shader
-  _configure_shader_color(state, color, gradient, origin_rect)
-
-  # Triangulate via interleaving
   tri_strip = triangulate(pts)
 
-  # Draw strip, color here doesn't matter
+  if gradient is None:
+    # Fast path: default raylib shader with tint
+    rl.draw_triangle_strip(tri_strip, len(tri_strip), color or rl.WHITE)
+    return
+
+  # Slow path: custom shader for gradients
+  state = ShaderState.get_instance()
+  state.initialize()
+  _configure_shader_color(state, color, gradient, origin_rect)
   rl.begin_shader_mode(state.shader)
   rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
   rl.end_shader_mode()

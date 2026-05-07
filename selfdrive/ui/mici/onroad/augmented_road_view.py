@@ -193,63 +193,65 @@ class AugmentedRoadView(CameraView):
       self._offroad_label.render(self._rect)
       return
 
+    import time as _t
+    if not hasattr(self, '_dbg_acc'):
+      self._dbg_acc: dict[str, float] = {}
+      self._dbg_n = 0
+
+    _ts = _t.monotonic()
+
     self._switch_stream_if_needed(ui_state.sm)
-
-    # Update calibration before rendering
     self._update_calibration()
-
-    # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
-      self.rect.x,
-      self.rect.y,
-      self.rect.width - SIDE_PANEL_WIDTH,
-      self.rect.height,
+      self.rect.x, self.rect.y,
+      self.rect.width - SIDE_PANEL_WIDTH, self.rect.height,
     )
+    self._dbg_acc['setup'] = self._dbg_acc.get('setup', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
-    # Enable scissor mode to clip all rendering within content rectangle boundaries
-    # This creates a rendering viewport that prevents graphics from drawing outside the border
     rl.begin_scissor_mode(
-      int(self._content_rect.x),
-      int(self._content_rect.y),
-      int(self._content_rect.width),
-      int(self._content_rect.height)
-    )
+      int(self._content_rect.x), int(self._content_rect.y),
+      int(self._content_rect.width), int(self._content_rect.height))
 
-    # Render the base camera view
     super()._render(self._content_rect)
+    self._dbg_acc['camera'] = self._dbg_acc.get('camera', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
-    # Draw all UI overlays
     self._model_renderer.render(self._content_rect)
+    self._dbg_acc['model'] = self._dbg_acc.get('model', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
-    # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
-
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
 
-    # Hide DMoji when disengaged unless AlwaysOnDM is enabled
     should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and
                          (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
     self._driver_state_renderer.set_should_draw(should_draw_dmoji)
     self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
     self._driver_state_renderer.render()
+    self._dbg_acc['dmoji'] = self._dbg_acc.get('dmoji', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
     self._alert_renderer.render(self._content_rect)
+    self._dbg_acc['alert'] = self._dbg_acc.get('alert', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
+
     self._hud_renderer.render(self._content_rect)
+    self._dbg_acc['hud'] = self._dbg_acc.get('hud', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
-    # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
-
-    # End clipping region
     rl.end_scissor_mode()
 
-    # Custom UI extension point - add custom overlays here
-    # Use self._content_rect for positioning within camera bounds
     self._confidence_ball.render(self.rect)
-
     self._bookmark_icon.render(self.rect)
+    self._dbg_acc['rest'] = self._dbg_acc.get('rest', 0) + (_t.monotonic() - _ts)
+
+    self._dbg_n += 1
+    if self._dbg_n >= 120:
+      total = sum(self._dbg_acc.values())
+      print("[AugRV avg over 120f] " + "  ".join(
+        f"{k}={(v / self._dbg_n) * 1000:.2f}ms" for k, v in sorted(self._dbg_acc.items(), key=lambda x: -x[1]))
+        + f"  total={total / self._dbg_n * 1000:.2f}ms")
+      self._dbg_acc = {}
+      self._dbg_n = 0
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
