@@ -774,13 +774,12 @@ class TiciLPA(LPABase):
         raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
 
   def is_euicc(self) -> bool:
-    # +CCHO:<n> -> eUICC; bare ERROR -> applet absent, non-eUICC; +CME ERROR -> applet
-    # exists but bus busy or modem in transient state, still eUICC.
+    # +CCHO:<n> -> ISD-R applet present, eUICC. Any error -> non-eUICC.
     with self._acquire_lock():
       try:
         lines = self._client.query(f'AT+CCHO="{ISDR_AID}"')
-      except RuntimeError as e:
-        return "+CME ERROR" in str(e)
+      except RuntimeError:
+        return False
       for line in lines:
         if line.startswith("+CCHO:") and (ch := line.split(":", 1)[1].strip()):
           try:
