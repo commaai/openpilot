@@ -28,7 +28,7 @@ class Profile:
   def display_name(self) -> str:
     if self.is_comma:
       return "comma prime"
-    name = self.nickname or self.provider or self.iccid[:12]
+    name = self.nickname or self.provider or "<unnamed>"
     return f"{name} (...{self.iccid[-4:]})"
 
 @dataclass
