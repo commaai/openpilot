@@ -75,6 +75,10 @@ class CellularManager:
     return self._profiles
 
   @property
+  def active_profile(self) -> Profile | None:
+    return next((p for p in self._profiles if p.enabled), None)
+
+  @property
   def busy(self) -> bool:
     return self._busy
 

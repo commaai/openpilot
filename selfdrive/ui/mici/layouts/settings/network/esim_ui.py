@@ -231,7 +231,7 @@ class EsimUIMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
+    active = self._cellular_manager.active_profile
     self._move_profile_to_front(active.iccid if active else None)
 
   def _on_error(self, error: str):

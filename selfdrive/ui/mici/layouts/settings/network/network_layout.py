@@ -105,7 +105,7 @@ class NetworkLayoutMici(NavScroller):
     self._wifi_manager.set_ipv4_forward(prime in (PrimeType.NONE, PrimeType.LITE))
 
     # full prime hides GSM settings only when the comma profile is the active one
-    active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
+    active = self._cellular_manager.active_profile
     on_comma_profile = active is not None and active.is_comma
     show_cell_settings = prime in (PrimeType.NONE, PrimeType.LITE) or not on_comma_profile
     self._roaming_btn.set_visible(show_cell_settings)
