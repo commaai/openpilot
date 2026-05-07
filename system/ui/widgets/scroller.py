@@ -74,8 +74,8 @@ class _Scroller(Widget):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
-    assert not snap_items or self._horizontal, "Snapping is only supported for horizontal scrolling"
     self._snap_items = snap_items
+    assert not self._snap_items or self._horizontal, "Snapping is only supported for horizontal scrolling"
     self._spacing = spacing
     self._pad = pad
 
@@ -195,25 +195,23 @@ class _Scroller(Widget):
 
     # Snap closest item to center
     center_pos = self._rect.x + self._rect.width / 2
-    scroll_snap_item: tuple[int, float] | None = None
+    closest_delta_pos = float('inf')
+    scroll_snap_idx: int | None = None
     for idx, item in enumerate(visible_items):
       delta_pos = (item.rect.x + item.rect.width / 2) - center_pos
-      if scroll_snap_item is None or abs(delta_pos) < abs(scroll_snap_item[1]):
-        scroll_snap_item = idx, delta_pos
+      if abs(delta_pos) < abs(closest_delta_pos):
+        closest_delta_pos = delta_pos
+        scroll_snap_idx = idx
 
-    # closest_delta_pos = round(closest_delta_pos)
-
-    # if scroll_snap_idx is not None:
-    if scroll_snap_item is not None:
-      snap_item = visible_items[scroll_snap_item[0]]
+    if scroll_snap_idx is not None:
+      snap_item = visible_items[scroll_snap_idx]
       if self.is_pressed:
         # no snapping until released
         self._scroll_snap_filter.x = 0
       else:
         # TODO: this doesn't handle two small buttons at the edges well
-        snap_delta_pos = -scroll_snap_item[1] / 10
+        snap_delta_pos = (center_pos - (snap_item.rect.x + snap_item.rect.width / 2)) / 10
         snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-
         snap_delta_pos = max(snap_delta_pos, (self._rect.width - self.scroll_panel.get_offset() - content_size) / 10)
         self._scroll_snap_filter.update(snap_delta_pos)
 
