@@ -242,8 +242,19 @@ class ModelRenderer(Widget):
     self._path.projected_points = self._map_line_to_polygon(
       self._path.raw_points, y_off, self._path_offset_z, max_idx, allow_invert=False
     )
+    self._dbg_um['path_mapping'] = self._dbg_um.get('path_mapping', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     self._update_experimental_gradient()
+    self._dbg_um['exp_gradient'] = self._dbg_um.get('exp_gradient', 0) + (_t.monotonic() - _ts)
+
+    self._dbg_um_n += 1
+    if self._dbg_um_n >= 40:  # ~2s @ 20Hz
+      total = sum(self._dbg_um.values())
+      print("[update_model avg over %df] " % self._dbg_um_n + "  ".join(
+        f"{k}={(v / self._dbg_um_n) * 1000:.2f}ms" for k, v in sorted(self._dbg_um.items(), key=lambda x: -x[1]))
+        + f"  total={total / self._dbg_um_n * 1000:.2f}ms")
+      self._dbg_um = {}
+      self._dbg_um_n = 0
 
   def _update_experimental_gradient(self):
     """Pre-calculate experimental mode gradient colors"""

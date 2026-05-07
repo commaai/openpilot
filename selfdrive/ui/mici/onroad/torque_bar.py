@@ -188,9 +188,12 @@ class TorqueBar(Widget):
       self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 
   def _render(self, rect: rl.Rectangle) -> None:
-    # adjust y pos with torque
-    torque_line_offset = np.interp(abs(self._torque_filter.x), [0.5, 1], [22, 26])
-    torque_line_height = np.interp(abs(self._torque_filter.x), [0.5, 1], [14, 56])
+    # adjust y pos with torque (scalar interp [0.5, 1] -> [a, b])
+    abs_t = abs(self._torque_filter.x)
+    _f = (abs_t - 0.5) * 2.0  # / 0.5
+    _f = 0.0 if _f < 0.0 else 1.0 if _f > 1.0 else _f
+    torque_line_offset = 22 + _f * (26 - 22)
+    torque_line_height = 14 + _f * (56 - 14)
 
     # animate alpha and angle span
     if not self._demo:
@@ -198,7 +201,7 @@ class TorqueBar(Widget):
     else:
       self._torque_line_alpha_filter.update(1.0)
 
-    torque_line_bg_alpha = np.interp(abs(self._torque_filter.x), [0.5, 1.0], [0.25, 0.5])
+    torque_line_bg_alpha = 0.25 + _f * (0.5 - 0.25)
     torque_line_bg_color = rl.Color(255, 255, 255, int(255 * torque_line_bg_alpha * self._torque_line_alpha_filter.x))
     if ui_state.status != UIStatus.ENGAGED and not self._demo:
       torque_line_bg_color = rl.Color(255, 255, 255, int(255 * 0.15 * self._torque_line_alpha_filter.x))
@@ -218,12 +221,15 @@ class TorqueBar(Widget):
 
     # draw bg torque indicator line
     bg_pts = arc_bar_pts(mid_r, torque_line_height, torque_start_angle, torque_end_angle) + offset
+    self._dbg_acc['bg_arc'] = self._dbg_acc.get('bg_arc', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
     draw_polygon(rect, bg_pts, color=torque_line_bg_color)
+    self._dbg_acc['bg_draw'] = self._dbg_acc.get('bg_draw', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     # draw torque indicator line
     a0s = top_angle
     a1s = a0s + torque_bg_angle_span / 2 * self._torque_filter.x
     sl_pts = arc_bar_pts(mid_r, torque_line_height, a0s, a1s) + offset
+    self._dbg_acc['sl_arc'] = self._dbg_acc.get('sl_arc', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     # draw beautiful gradient from center to 65% of the bg torque bar width
     start_grad_pt = cx / rect.width
@@ -258,6 +264,16 @@ class TorqueBar(Widget):
     )
 
     draw_polygon(rect, sl_pts, gradient=gradient)
+    self._dbg_acc['sl_draw'] = self._dbg_acc.get('sl_draw', 0) + (_t.monotonic() - _ts)
+
+    self._dbg_n += 1
+    if self._dbg_n >= 120:
+      total = sum(self._dbg_acc.values())
+      print("[TorqueBar avg over 120f] " + "  ".join(
+        f"{k}={(v / self._dbg_n) * 1000:.2f}ms" for k, v in sorted(self._dbg_acc.items(), key=lambda x: -x[1]))
+        + f"  total={total / self._dbg_n * 1000:.2f}ms")
+      self._dbg_acc = {}
+      self._dbg_n = 0
 
     # draw center torque bar dot
     if abs(self._torque_filter.x) < 0.5:

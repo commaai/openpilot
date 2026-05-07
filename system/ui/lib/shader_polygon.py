@@ -210,6 +210,17 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   - Input must be [L0..Lk-1, Rk-1..R0], even count, no crossings/holes.
   Solid-color polygons use raylib's default shader (fast, no begin/end_shader_mode).
   Gradient polygons use the custom shader.
+
+  TODO: gradient path is ~4-5x slower than solid (~0.5ms vs ~0.1ms per polygon)
+  due to begin/end_shader_mode + uniform setup + flush. Options to speed up:
+    1. Render-to-texture cache: hash on state, render once, blit thereafter.
+       Works well when gradient params change slowly (torque bar, path).
+    2. Per-vertex color: build a vertex buffer with interpolated colors,
+       use raylib default shader (which already supports vertex color).
+       Eliminates custom shader entirely for linear gradients. Medium refactor.
+    3. Split into multiple solid-color polygons along gradient stops.
+       Visually less smooth but uses fast path.
+  Each call burns ~95us in begin/end_shader_mode batch flushes.
   """
   if len(points) < 3:
     return

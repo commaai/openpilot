@@ -171,13 +171,30 @@ class HudRenderer(Widget):
 
   def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
+    import time as _t
+    if not hasattr(self, '_dbg_acc'):
+      self._dbg_acc: dict[str, float] = {}
+      self._dbg_n = 0
+    _ts = _t.monotonic()
 
     self._torque_bar.render(rect)
+    self._dbg_acc['torque_bar'] = self._dbg_acc.get('torque_bar', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     if self.is_cruise_set:
       self._draw_set_speed(rect)
+    self._dbg_acc['set_speed'] = self._dbg_acc.get('set_speed', 0) + (_t.monotonic() - _ts); _ts = _t.monotonic()
 
     self._draw_steering_wheel(rect)
+    self._dbg_acc['wheel'] = self._dbg_acc.get('wheel', 0) + (_t.monotonic() - _ts)
+
+    self._dbg_n += 1
+    if self._dbg_n >= 120:
+      total = sum(self._dbg_acc.values())
+      print("[HUD avg over 120f] " + "  ".join(
+        f"{k}={(v / self._dbg_n) * 1000:.2f}ms" for k, v in sorted(self._dbg_acc.items(), key=lambda x: -x[1]))
+        + f"  total={total / self._dbg_n * 1000:.2f}ms")
+      self._dbg_acc = {}
+      self._dbg_n = 0
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
