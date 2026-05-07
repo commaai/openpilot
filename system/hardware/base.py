@@ -13,9 +13,6 @@ class LPAError(RuntimeError):
 class LPAProfileNotFoundError(LPAError):
   pass
 
-COMMA_ICCID_PREFIXES = ('8985235',)
-
-
 @dataclass
 class Profile:
   iccid: str
@@ -25,7 +22,7 @@ class Profile:
 
   @property
   def is_comma(self) -> bool:
-    return self.provider == 'Webbing' or any(self.iccid.startswith(p) for p in COMMA_ICCID_PREFIXES)
+    return self.provider == 'Webbing' or self.iccid.startswith('8985235')
 
   @property
   def display_name(self) -> str:
