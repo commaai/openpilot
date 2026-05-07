@@ -40,8 +40,9 @@ class DRIVER_MONITOR_SETTINGS:
     self._MAX_TERMINAL_DURATION = int(30 / DT_DMON)  # not allowed to engage after 30s of terminal alerts
 
     self._FACE_THRESHOLD = 0.7
-    self._EYE_THRESHOLD = 0.5
-    self._BLINK_THRESHOLD = 0.5
+    self._EYE_THRESHOLD = 0.65
+    self._SG_THRESHOLD = 0.9
+    self._BLINK_THRESHOLD = 0.865
     self._PHONE_THRESH = 0.5
     self._POSE_PITCH_THRESHOLD = 0.3133
     self._POSE_PITCH_THRESHOLD_SLACK = 0.3237
@@ -93,6 +94,11 @@ class DriverPose:
     self.cfactor_yaw = 1.
     self.steer_yaw_offset = 0.
 
+class DriverBlink:
+  def __init__(self):
+    self.left = 0.
+    self.right = 0.
+
 # model output refers to center of undistorted+leveled image
 ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].dcam
 dcam_undistorted_FL = 598.0
@@ -123,7 +129,7 @@ class DriverMonitoring:
     wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
     self.wheelpos_offsetter = RunningStatFilter(raw_priors=wheelpos_filter_raw_priors, max_trackable=self.settings._WHEELPOS_MAX_COUNT)
     self.pose = DriverPose(settings=self.settings)
-    self.blink_prob = 0.
+    self.blink = DriverBlink()
     self.phone_prob = 0.
 
     self.alert_level = AlertLevel.none
@@ -220,7 +226,7 @@ class DriverMonitoring:
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
 
     self.distracted_types['pose'] = bool((pitch_error > pitch_threshold) or (yaw_error > yaw_threshold))
-    self.distracted_types['eye'] = bool(self.blink_prob > self.settings._BLINK_THRESHOLD)
+    self.distracted_types['eye'] = bool((self.blink.left + self.blink.right)*0.5 > self.settings._BLINK_THRESHOLD)
     self.distracted_types['phone'] = bool(self.phone_prob > self.settings._PHONE_THRESH)
 
   def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False, steering_angle_deg=0.):
@@ -254,7 +260,10 @@ class DriverMonitoring:
     self.wheel_on_right_last = self.wheel_on_right
     self.model_std_max = max(driver_data.faceOrientationStd[0], driver_data.faceOrientationStd[1])
     self.pose.low_std = self.model_std_max < self.settings._HI_STD_THRESHOLD
-    self.blink_prob = driver_data.eyesClosedProb * (driver_data.eyesVisibleProb > self.settings._EYE_THRESHOLD)
+    self.blink.left = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) \
+                      * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
+                      * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.phone_prob = driver_data.phoneProb
 
     self._get_distracted_types()

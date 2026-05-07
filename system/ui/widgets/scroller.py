@@ -93,10 +93,7 @@ class _Scroller(Widget):
 
     self._item_pos_filter = BounceFilter(0.0, 0.05, 1 / gui_app.target_fps)
 
-    # when not pressed, snap to closest item to be center
-    self._scroll_snap_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-
-    self.scroll_panel = GuiScrollPanel2(self._horizontal, handle_out_of_bounds=not self._snap_items)
+    self.scroll_panel = GuiScrollPanel2(self._horizontal)
     self._scroll_enabled: bool | Callable[[], bool] = True
 
     self._show_scroll_indicator = scroll_indicator and self._horizontal
@@ -182,42 +179,23 @@ class _Scroller(Widget):
       self._scrolling_to_filter.update(self._scrolling_to[0])
       self.scroll_panel.set_offset(self._scrolling_to_filter.x)
 
-      if abs(self._scrolling_to_filter.x - self._scrolling_to[0]) < 1:
+      if abs(self._scrolling_to_filter.x - self._scrolling_to[0]) < 1:  # finished scroll
         self.scroll_panel.set_offset(self._scrolling_to[0])
         self._scrolling_to = None, False
 
   def _get_scroll(self, visible_items: list[Widget], content_size: float) -> float:
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not self._scrolling_to[1])
-    self.scroll_panel.update(self._rect, content_size)
-    if not self._snap_items:
-      return self.scroll_panel.get_offset()
 
-    # Snap closest item to center
-    center_pos = self._rect.x + self._rect.width / 2
-    closest_delta_pos = float('inf')
-    scroll_snap_idx: int | None = None
-    for idx, item in enumerate(visible_items):
-      delta_pos = (item.rect.x + item.rect.width / 2) - center_pos
-      if abs(delta_pos) < abs(closest_delta_pos):
-        closest_delta_pos = delta_pos
-        scroll_snap_idx = idx
+    # Snap closest item to center. Skipped while scroll_to() is animating
+    snap_target: float | None = None
+    if self._snap_items and visible_items and self._scrolling_to[0] is None:
+      # TODO: this doesn't handle two small buttons at the edges well
+      center_pos = self._rect.x + self._rect.width / 2
+      closest_delta_pos = min((((item.rect.x + item.rect.width / 2) - center_pos) for item in visible_items), key=abs)
+      snap_target = self.scroll_panel.get_offset() - closest_delta_pos
 
-    if scroll_snap_idx is not None:
-      snap_item = visible_items[scroll_snap_idx]
-      if self.is_pressed:
-        # no snapping until released
-        self._scroll_snap_filter.x = 0
-      else:
-        # TODO: this doesn't handle two small buttons at the edges well
-        snap_delta_pos = (center_pos - (snap_item.rect.x + snap_item.rect.width / 2)) / 10
-        snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-        snap_delta_pos = max(snap_delta_pos, (self._rect.width - self.scroll_panel.get_offset() - content_size) / 10)
-        self._scroll_snap_filter.update(snap_delta_pos)
-
-      self.scroll_panel.set_offset(self.scroll_panel.get_offset() + self._scroll_snap_filter.x)
-
-    return self.scroll_panel.get_offset()
+    return self.scroll_panel.update(self._rect, content_size, snap_target=snap_target)
 
   @property
   def moving_items(self) -> bool:
