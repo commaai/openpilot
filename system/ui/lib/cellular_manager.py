@@ -63,9 +63,6 @@ class CellularManager:
 
     self._modem_state = _get_modem_state()
 
-    if self._switching_iccid and self._modem_state.get("iccid") == self._switching_iccid:
-      self._switching_iccid = None
-
     if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL_S:
       self._last_profile_poll = time.monotonic()
       if self._is_euicc is not False:
@@ -160,7 +157,6 @@ class CellularManager:
       cb(profiles)
 
   def switch_profile(self, iccid: str):
-    # _switching_iccid stays set across _finish; cleared when modem state's ICCID matches (or on error)
     self._switching_iccid = iccid
     self._busy = True
 
@@ -171,7 +167,10 @@ class CellularManager:
           lpa.switch_profile(iccid)
         # optimistic update: flip enabled flags locally
         profiles = [Profile(iccid=p.iccid, nickname=p.nickname, enabled=(p.iccid == iccid), provider=p.provider) for p in self._profiles]
-        self._callback_queue.append(lambda: self._finish(profiles=profiles))
+        def done():
+          self._switching_iccid = None
+          self._finish(profiles=profiles)
+        self._callback_queue.append(done)
       except Exception as e:
         cloudlog.exception("Failed to switch eSIM profile")
         err = str(e)
