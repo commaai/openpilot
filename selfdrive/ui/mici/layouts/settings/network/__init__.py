@@ -36,7 +36,7 @@ class EsimNetworkButton(BigButton):
       iccid = cm.modem_state.get("iccid") or ""
       if not iccid:
         return "sim", "no sim", self._cell_none_icon
-      value = cm.modem_ip or cm.modem_state.get("mcc_mnc") or "no IP"
+      value = cm.modem_ip or "obtaining IP..."
       return f"sim (...{iccid[-4:]})", value, self._cell_icon()
 
     active = cm.active_profile
