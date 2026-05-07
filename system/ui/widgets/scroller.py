@@ -194,7 +194,7 @@ class _Scroller(Widget):
     if self._snap_items and visible_items and self._scrolling_to[0] is None:
       # TODO: this doesn't handle two small buttons at the edges well
       # Project where items will end up given current scroll velocity, so flicks land on the next item
-      center_pos = self._rect.x + self._rect.width / 2 - self.scroll_panel.velocity * SNAP_LOOKAHEAD
+      center_pos = self._rect.x + self._rect.width / 2# - self.scroll_panel.velocity * SNAP_LOOKAHEAD
       closest_delta_pos = min((((item.rect.x + item.rect.width / 2) - center_pos) for item in visible_items), key=abs)
       print('closest_delta_pos', closest_delta_pos)
       snap_target = self.scroll_panel.get_offset() - closest_delta_pos
