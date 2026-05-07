@@ -78,6 +78,7 @@ class EsimProfileButton(BigButton):
 
     self._profile = profile
     self._deleting = False
+    self._switching = False
 
     self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 48, 36)
     self._cell_none_txt = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 48, 36)
@@ -94,8 +95,12 @@ class EsimProfileButton(BigButton):
   def update_profile(self, profile: Profile):
     self._profile = profile
     self._deleting = False
+    self._switching = False
     if profile.display_name != self.text:
       self.set_text(profile.display_name)
+
+  def mark_switching(self):
+    self._switching = True
 
   @property
   def _show_rename_btn(self) -> bool:
@@ -197,6 +202,8 @@ class EsimProfileButton(BigButton):
 
       if self._deleting:
         self.set_value("deleting...")
+      elif self._switching:
+        self.set_value("switching...")
     elif self._profile.enabled:
       self.set_value("active")
       self.set_enabled(False)
@@ -280,6 +287,11 @@ class EsimUIMici(NavScroller):
     profile = next((p for p in self._cellular_manager.profiles if p.iccid == iccid), None)
     if profile is None or profile.enabled:
       return
+
+    btn = next((b for b in self._scroller.items
+                if isinstance(b, EsimProfileButton) and b.profile.iccid == iccid), None)
+    if btn is not None:
+      btn.mark_switching()
 
     self._cellular_manager.switch_profile(iccid)
     self._move_profile_to_front(iccid, scroll=True)
