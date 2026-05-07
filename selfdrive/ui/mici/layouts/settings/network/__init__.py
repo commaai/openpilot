@@ -8,8 +8,8 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
 
-NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
+NetworkType = log.DeviceState.NetworkType
 
 
 class EsimNetworkButton(BigButton):

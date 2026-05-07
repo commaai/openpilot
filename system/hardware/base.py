@@ -4,8 +4,8 @@ from dataclasses import dataclass, fields
 
 from cereal import log
 
-NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
+NetworkType = log.DeviceState.NetworkType
 
 class LPAError(RuntimeError):
   pass
