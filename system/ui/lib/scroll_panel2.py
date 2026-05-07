@@ -89,54 +89,55 @@ class GuiScrollPanel2:
     """Runs per render frame, independent of mouse events. Updates auto-scrolling state and velocity."""
     max_offset, min_offset = self._get_offset_bounds(bounds_size, content_size)
 
-    if self._state == ScrollState.STEADY:
-      # if we find ourselves out of bounds, scroll back in (from external layout dimension changes, etc.)
-      if self.get_offset() > max_offset or self.get_offset() < min_offset:
-        self._state = ScrollState.AUTO_SCROLL
+    if self._state in (ScrollState.STEADY, ScrollState.AUTO_SCROLL):
+      if self._state == ScrollState.STEADY:
+        # if we find ourselves out of bounds, scroll back in (from external layout dimension changes, etc.)
+        if self.get_offset() > max_offset or self.get_offset() < min_offset:
+          self._state = ScrollState.AUTO_SCROLL
 
-    elif self._state == ScrollState.AUTO_SCROLL:
-      # simple exponential return if out of bounds
-      # out of bounds is handled by snapping, so skip if set
-      out_of_bounds = self.get_offset() > max_offset or self.get_offset() < min_offset
-      if out_of_bounds and snap_target is None:
-        target = max_offset if self.get_offset() > max_offset else min_offset
+      elif self._state == ScrollState.AUTO_SCROLL:
+        # simple exponential return if out of bounds
+        # out of bounds is handled by snapping, so skip if set
+        out_of_bounds = self.get_offset() > max_offset or self.get_offset() < min_offset
+        if out_of_bounds and snap_target is None:
+          target = max_offset if self.get_offset() > max_offset else min_offset
 
-        dt = rl.get_frame_time() or 1e-6
-        factor = 1.0 - math.exp(-BOUNCE_RETURN_RATE * dt)
+          dt = rl.get_frame_time() or 1e-6
+          factor = 1.0 - math.exp(-BOUNCE_RETURN_RATE * dt)
 
-        dist = target - self.get_offset()
-        self.set_offset(self.get_offset() + dist * factor)  # ease toward the edge
-        self._velocity *= (1.0 - factor)  # damp any leftover fling
+          dist = target - self.get_offset()
+          self.set_offset(self.get_offset() + dist * factor)  # ease toward the edge
+          self._velocity *= (1.0 - factor)  # damp any leftover fling
 
-        # Steady once we are close enough to the target
-        if abs(dist) < 1 and abs(self._velocity) < MIN_VELOCITY:
-          self.set_offset(target)
+          # Steady once we are close enough to the target
+          if abs(dist) < 1 and abs(self._velocity) < MIN_VELOCITY:
+            self.set_offset(target)
+            self._velocity = 0.0
+            self._state = ScrollState.STEADY
+
+        elif abs(self._velocity) < MIN_VELOCITY:
           self._velocity = 0.0
           self._state = ScrollState.STEADY
 
-      elif abs(self._velocity) < MIN_VELOCITY:
-        self._velocity = 0.0
-        self._state = ScrollState.STEADY
+        # Update the offset based on the current velocity
+        dt = rl.get_frame_time()
+        self.set_offset(self.get_offset() + self._velocity * dt)  # Adjust the offset based on velocity
+        # fast decay in snap mode so velocity yields to the snap pull instead of fighting it
+        auto_scroll_tc = AUTO_SCROLL_TC_SNAP if snap_target is not None else AUTO_SCROLL_TC
+        alpha = 1 - (dt / (auto_scroll_tc + dt))
+        self._velocity *= alpha
 
-      # Update the offset based on the current velocity
-      dt = rl.get_frame_time()
-      self.set_offset(self.get_offset() + self._velocity * dt)  # Adjust the offset based on velocity
-      # fast decay in snap mode so velocity yields to the snap pull instead of fighting it
-      auto_scroll_tc = AUTO_SCROLL_TC_SNAP if snap_target is not None else AUTO_SCROLL_TC
-      alpha = 1 - (dt / (auto_scroll_tc + dt))
-      self._velocity *= alpha
-
-    # Ease toward snap target when not in user control. Composes with velocity coast above:
-    # high velocity dominates initially, snap dominates as velocity decays.
-    if snap_target is not None and self.enabled and self._state not in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL):
-      snap_target = max(min_offset, min(max_offset, snap_target))
-      dist = snap_target - self.get_offset()
-      if abs(dist) < 1:  # finished snap
-        self.set_offset(snap_target)
-      else:
-        dt = rl.get_frame_time() or 1e-6
-        factor = 1.0 - math.exp(-SNAP_RATE * dt)
-        self.set_offset(self.get_offset() + dist * factor)
+      # Ease toward snap target when not in user control. Composes with velocity coast above:
+      # high velocity dominates initially, snap dominates as velocity decays.
+      if snap_target is not None and self.enabled:
+        snap_target = max(min_offset, min(max_offset, snap_target))
+        dist = snap_target - self.get_offset()
+        if abs(dist) < 1:  # finished snap
+          self.set_offset(snap_target)
+        else:
+          dt = rl.get_frame_time() or 1e-6
+          factor = 1.0 - math.exp(-SNAP_RATE * dt)
+          self.set_offset(self.get_offset() + dist * factor)
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, bounds_size: float,
                           content_size: float) -> None:
