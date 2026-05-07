@@ -187,7 +187,8 @@ class _Scroller(Widget):
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not self._scrolling_to[1])
 
-    # Snap closest item to center: target offset that would put it on the viewport center
+    # Snap closest item to center: target offset that would put it on the viewport center.
+    # Skipped while scroll_to() is animating; they target different offsets and would fight.
     snap_target: float | None = None
     if self._snap_items and visible_items and self._scrolling_to[0] is None:
       # TODO: this doesn't handle two small buttons at the edges well

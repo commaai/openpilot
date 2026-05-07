@@ -121,6 +121,7 @@ class GuiScrollPanel2:
       # Update the offset based on the current velocity
       dt = rl.get_frame_time()
       self.set_offset(self.get_offset() + self._velocity * dt)  # Adjust the offset based on velocity
+      # fast decay in snap mode so velocity yields to the snap pull instead of fighting it
       auto_scroll_tc = AUTO_SCROLL_TC_SNAP if snap_target is not None else AUTO_SCROLL_TC
       alpha = 1 - (dt / (auto_scroll_tc + dt))
       self._velocity *= alpha
