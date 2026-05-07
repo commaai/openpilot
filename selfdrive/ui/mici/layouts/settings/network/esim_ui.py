@@ -110,7 +110,7 @@ class EsimProfileButton(BigButton):
 
   @property
   def _show_delete_btn(self) -> bool:
-    if self._deleting or self._profile.enabled or self._cellular_manager.busy:
+    if self._deleting or self._profile.enabled:
       return False
     return not self._profile.is_comma
 
@@ -195,15 +195,11 @@ class EsimProfileButton(BigButton):
   def _update_state(self):
     super()._update_state()
 
-    if self._cellular_manager.busy or self._deleting:
+    if self._deleting or self._switching:
       self.set_enabled(False)
       self._sub_label.set_color(SUB_LABEL_DISABLED)
       self._sub_label.set_font_weight(FontWeight.ROMAN)
-
-      if self._deleting:
-        self.set_value("deleting...")
-      elif self._switching:
-        self.set_value("switching...")
+      self.set_value("deleting..." if self._deleting else "switching...")
     elif self._profile.enabled:
       self.set_value("active")
       self.set_enabled(False)
