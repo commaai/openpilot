@@ -196,7 +196,8 @@ class ModelRenderer(Widget):
     # Update path using raw points
     if lead and lead.status:
       lead_d = lead.dRel * 2.0
-      max_distance = np.clip(lead_d - min(lead_d * 0.35, 10.0), 0.0, max_distance)
+      _md = lead_d - min(lead_d * 0.35, 10.0)
+      max_distance = 0.0 if _md < 0.0 else max_distance if _md > max_distance else _md
 
     soon_acceleration = self._acceleration_x[len(self._acceleration_x) // 4] if len(self._acceleration_x) > 0 else 0
     self._acceleration_x_filter.update(soon_acceleration)
@@ -238,12 +239,20 @@ class ModelRenderer(Widget):
       # Calculate color based on acceleration (0 is bottom, 1 is top)
       lin_grad_point = 1 - (track_y - self._rect.y) / self._rect.height
 
-      # speed up: 120, slow down: 0
-      path_hue = np.clip(60 + self._acceleration_x[i] * 35, 0, 120)
+      # speed up: 120, slow down: 0 (scalar clip 0..120)
+      _hue = 60 + self._acceleration_x[i] * 35
+      path_hue = 0.0 if _hue < 0.0 else 120.0 if _hue > 120.0 else _hue
 
       saturation = min(abs(self._acceleration_x[i] * 1.5), 1)
-      lightness = np.interp(saturation, [0.0, 1.0], [0.95, 0.62])
-      alpha = np.interp(lin_grad_point, [0.75 / 2.0, 0.75], [0.4, 0.0])
+      # scalar interp: [0,1] -> [0.95, 0.62]
+      lightness = 0.95 + saturation * (0.62 - 0.95)
+      # scalar interp: [0.375, 0.75] -> [0.4, 0.0]; clamped at endpoints
+      if lin_grad_point <= 0.375:
+        alpha = 0.4
+      elif lin_grad_point >= 0.75:
+        alpha = 0.0
+      else:
+        alpha = 0.4 + (lin_grad_point - 0.375) * (0.0 - 0.4) / (0.75 - 0.375)
 
       # Use HSL to RGB conversion
       color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
@@ -269,9 +278,10 @@ class ModelRenderer(Widget):
         fill_alpha += 255 * (-1 * (v_rel / speed_buff))
       fill_alpha = min(fill_alpha, 255)
 
-    # Calculate size and position
-    sz = np.clip((25 * 30) / (d_rel / 3 + 30), 15.0, 30.0) * 1
-    x = np.clip(point[0], 0.0, rect.width - sz / 2)
+    # Calculate size and position (scalar clips)
+    _sz_raw = (25 * 30) / (d_rel / 3 + 30)
+    sz = 15.0 if _sz_raw < 15.0 else 30.0 if _sz_raw > 30.0 else _sz_raw
+    x = max(0.0, min(point[0], rect.width - sz / 2))
     y = min(point[1], rect.height - sz * 0.6)
 
     g_xo = sz / 5
@@ -283,25 +293,27 @@ class ModelRenderer(Widget):
     return LeadVehicle(glow=glow, chevron=chevron, fill_alpha=int(fill_alpha))
 
   def _get_ll_color(self, prob: float, adjacent: bool, left: bool):
-    alpha = np.clip(prob, 0.0, 0.7)
-    if adjacent:
-      _base_color = LANE_LINE_COLORS.get(ui_state.status, LANE_LINE_COLORS[UIStatus.DISENGAGED])
-      color = rl.Color(_base_color.r, _base_color.g, _base_color.b, int(alpha * 255))
-
-      # turn adjacent lls orange if torque is high
-      torque = self._torque_filter.x
-      high_torque = abs(torque) > 0.6
-      if high_torque and (left == (torque > 0)):
-        color = blend_colors(
-          color,
-          rl.Color(255, 115, 0, int(alpha * 255)),  # orange
-          np.interp(abs(torque), [0.6, 0.8], [0.0, 1.0])
-        )
-    else:
-      color = rl.Color(255, 255, 255, int(alpha * 255))
+    # scalar clip 0..0.7
+    alpha = 0.0 if prob < 0.0 else 0.7 if prob > 0.7 else prob
+    alpha_int = int(alpha * 255)
 
     if ui_state.status == UIStatus.DISENGAGED:
-      color = rl.Color(0, 0, 0, int(alpha * 255))
+      return rl.Color(0, 0, 0, alpha_int)
+
+    if not adjacent:
+      return rl.Color(255, 255, 255, alpha_int)
+
+    _base_color = LANE_LINE_COLORS.get(ui_state.status, LANE_LINE_COLORS[UIStatus.DISENGAGED])
+    color = rl.Color(_base_color.r, _base_color.g, _base_color.b, alpha_int)
+
+    # turn adjacent lls orange if torque is high
+    torque = self._torque_filter.x
+    abs_torque = abs(torque)
+    if abs_torque > 0.6 and (left == (torque > 0)):
+      # scalar lerp: interp from [0.6, 0.8] -> [0, 1]
+      f = (abs_torque - 0.6) * 5.0  # / 0.2
+      f = 0.0 if f < 0.0 else 1.0 if f > 1.0 else f
+      color = blend_colors(color, rl.Color(255, 115, 0, alpha_int), f)
 
     return color
 
