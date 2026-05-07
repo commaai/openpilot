@@ -1,6 +1,7 @@
 import time
 import threading
 from collections.abc import Callable
+from dataclasses import replace
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.base import LPABase, Profile
@@ -34,6 +35,7 @@ class CellularManager:
     self._modem_state: dict = {}
 
     self._lock = threading.Lock()
+    self._callback_lock = threading.Lock()
     self._callback_queue: list[Callable] = []
 
     self._profiles_updated_cbs: list[Callable[[list[Profile]], None]] = []
@@ -57,7 +59,8 @@ class CellularManager:
     return self._modem_state
 
   def process_callbacks(self):
-    to_run, self._callback_queue = self._callback_queue, []
+    with self._callback_lock:
+      to_run, self._callback_queue = self._callback_queue, []
     for cb in to_run:
       cb()
 
@@ -92,6 +95,13 @@ class CellularManager:
       self._lpa = _get_lpa()
     return self._lpa
 
+  def _enqueue(self, cb: Callable):
+    with self._callback_lock:
+      self._callback_queue.append(cb)
+
+  def _stop_polling(self):
+    self._polling = False
+
   def _finish(self, profiles: list[Profile] | None = None, error: str | None = None):
     self._busy = False
     if profiles is not None:
@@ -111,11 +121,11 @@ class CellularManager:
           lpa = self._ensure_lpa()
           fn(lpa)
           profiles = lpa.list_profiles()
-        self._callback_queue.append(lambda: self._finish(profiles=profiles))
+        self._enqueue(lambda: self._finish(profiles=profiles))
       except Exception as e:
         cloudlog.exception(error_msg)
         err = str(e)
-        self._callback_queue.append(lambda: self._finish(error=err))
+        self._enqueue(lambda: self._finish(error=err))
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -126,25 +136,25 @@ class CellularManager:
 
   def _poll_profiles(self):
     self._polling = True
+    first_check = self._is_euicc is None
 
     def worker():
       try:
         with self._lock:
           lpa = self._ensure_lpa()
           if self._is_euicc is None:
-            cloudlog.info("eSIM: checking eUICC presence")
             self._is_euicc = lpa.is_euicc()
             cloudlog.info(f"eSIM: is_euicc={self._is_euicc}")
           if not self._is_euicc:
-            self._callback_queue.append(lambda: setattr(self, '_polling', False))
+            self._enqueue(self._stop_polling)
             return
-          cloudlog.info("eSIM: listing profiles")
           profiles = lpa.list_profiles()
-          cloudlog.info(f"eSIM: got {len(profiles)} profiles")
-        self._callback_queue.append(lambda: self._finish_poll(profiles))
+          if first_check:
+            cloudlog.info(f"eSIM: got {len(profiles)} profiles")
+        self._enqueue(lambda: self._finish_poll(profiles))
       except Exception:
         cloudlog.exception("Failed to poll eSIM profiles")
-        self._callback_queue.append(lambda: setattr(self, '_polling', False))
+        self._enqueue(self._stop_polling)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -166,18 +176,18 @@ class CellularManager:
           lpa = self._ensure_lpa()
           lpa.switch_profile(iccid)
         # optimistic update: flip enabled flags locally
-        profiles = [Profile(iccid=p.iccid, nickname=p.nickname, enabled=(p.iccid == iccid), provider=p.provider) for p in self._profiles]
+        profiles = [replace(p, enabled=(p.iccid == iccid)) for p in self._profiles]
         def done():
           self._switching_iccid = None
           self._finish(profiles=profiles)
-        self._callback_queue.append(done)
+        self._enqueue(done)
       except Exception as e:
         cloudlog.exception("Failed to switch eSIM profile")
         err = str(e)
         def fail():
           self._switching_iccid = None
           self._finish(error=err)
-        self._callback_queue.append(fail)
+        self._enqueue(fail)
 
     threading.Thread(target=worker, daemon=True).start()
 
