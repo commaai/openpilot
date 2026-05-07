@@ -7,7 +7,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.base import LPABase, Profile
 
 
-PROFILE_POLL_INTERVAL_S = 30.0
+PROFILE_POLL_INTERVAL_S = 5.0
 
 
 def _get_lpa() -> LPABase:
