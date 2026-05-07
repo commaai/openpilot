@@ -74,6 +74,7 @@ class _Scroller(Widget):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
+    assert not snap_items or self._horizontal, "Snapping is only supported for horizontal scrolling"
     self._snap_items = snap_items
     self._spacing = spacing
     self._pad = pad
