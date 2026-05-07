@@ -14,7 +14,7 @@ MIN_DRAG_PIXELS = 12
 AUTO_SCROLL_TC_SNAP = 0.025
 AUTO_SCROLL_TC = 0.18
 BOUNCE_RETURN_RATE = 10.0
-SNAP_RATE = 6.3  # exp rate of approach to snap target, 1/s
+SNAP_RATE = 6.3  # matches previous Scroller snapping. exp rate of approach to snap target, 1/s
 REJECT_DECELERATION_FACTOR = 3
 MAX_SPEED = 10000.0  # px/s
 
@@ -262,10 +262,6 @@ class GuiScrollPanel2:
   @property
   def state(self) -> ScrollState:
     return self._state
-
-  @property
-  def velocity(self) -> float:
-    return self._velocity
 
   def is_touch_valid(self) -> bool:
     # MIN_VELOCITY_FOR_CLICKING is checked in auto-scroll state
