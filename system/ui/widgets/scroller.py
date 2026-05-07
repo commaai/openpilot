@@ -81,7 +81,7 @@ class _Scroller(Widget):
 
     self._reset_scroll_at_show = True
 
-    self._scrolling_to: tuple[float | None, bool, bool] = (None, False, False)  # target offset, block_cancel, block_widget_touches
+    self._scrolling_to: tuple[float | None, bool, bool] = (None, False, False)  # target offset, block_interrupt, block_widget_interaction
     self._scrolling_to_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
@@ -115,8 +115,8 @@ class _Scroller(Widget):
     self._reset_scroll_at_show = scroll
 
   def scroll_to(self, pos: float, smooth: bool = False,
-                block_cancel: bool = False, block_widget_touches: bool = False):
-    assert smooth or (not block_cancel and not block_widget_touches), "Instant scroll cannot block interaction"
+                block_interrupt: bool = False, block_widget_interaction: bool = False):
+    assert smooth or (not block_interrupt and not block_widget_interaction), "Instant scroll cannot block interaction"
 
     # already there
     if abs(pos) < 1:
@@ -126,7 +126,7 @@ class _Scroller(Widget):
     scroll_offset = self.scroll_panel.get_offset() - pos
     if smooth:
       self._scrolling_to_filter.x = self.scroll_panel.get_offset()
-      self._scrolling_to = scroll_offset, block_cancel, block_widget_touches
+      self._scrolling_to = scroll_offset, block_interrupt, block_widget_interaction
     else:
       self.scroll_panel.set_offset(scroll_offset)
 
