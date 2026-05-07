@@ -128,7 +128,7 @@ class GuiScrollPanel2:
 
     # Ease toward snap target when not in user control. Composes with velocity coast above:
     # high velocity dominates initially, snap dominates as velocity decays.
-    if snap_target is not None and self.enabled and self._state not in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL):
+    if snap_target is not None and self._state not in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL):
       snap_target = max(min_offset, min(max_offset, snap_target))
       dist = snap_target - self.get_offset()
       if abs(dist) < 1:  # finished snap
