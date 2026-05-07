@@ -35,9 +35,8 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 EXEC_TIMINGS = [
   # model, instant max, average max
   ("modelV2", 0.05, 0.028),
+  ("driverStateV2", 0.05, 0.018),
 ]
-if not ASIUS:
-  EXEC_TIMINGS.append(("driverStateV2", 0.05, 0.018))
 
 def get_log_fn(test_route, ref="master"):
   return f"{test_route}_model_tici_{ref}.zst"

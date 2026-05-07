@@ -75,6 +75,7 @@ if tg_backend == 'CL':
   image_flag = ''
 modeld_dir = Dir("#selfdrive/modeld").abspath
 compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
+compile_dmonitoring_model_script = [File(f"{modeld_dir}/compile_dmonitoring_model.py")]
 compile_dm_warp_script = [File(f"{modeld_dir}/compile_dm_warp.py")]
 driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_policy']]
 driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['driving_vision', 'driving_policy']]
@@ -103,16 +104,17 @@ for cfg in DM_WARP_CONFIGS:
          f'--output {cfg.pkl_path}')
   lenv.Command(cfg.pkl_path, tinygrad_files + compile_dm_warp_script + compile_modeld_script + [compiled_flags_node], cmd)
 
-def tg_compile(flags, model_name):
+def tg_compile(flags, model_name, script=None):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
   chunk_targets = get_chunk_paths(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
+  script = script or File(f"{Dir('#tinygrad_repo').abspath}/examples/openpilot/compile3.py")
   compile_node = lenv.Command(
     pkl,
-    [onnx_path] + tinygrad_files + [chunker_file, compiled_flags_node],
-    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
+    [onnx_path] + tinygrad_files + [script, chunker_file, compiled_flags_node],
+    f'{pythonpath_string} {flags} {image_flag} python3 {script.abspath} {fn}.onnx {pkl}',
   )
   def do_chunk(target, source, env):
     chunk_file(pkl, chunk_targets)
@@ -122,4 +124,4 @@ def tg_compile(flags, model_name):
     do_chunk,
   )
 
-tg_compile(tg_flags, 'dmonitoring_model')
+tg_compile(tg_flags, 'dmonitoring_model', compile_dmonitoring_model_script[0])

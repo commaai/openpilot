@@ -20,6 +20,7 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
+from openpilot.system.hardware import ASIUS
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -45,11 +46,20 @@ class ModelState:
     self.frame_buf_params = get_nv12_info(cam_w, cam_h)
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
+    self._last_model_output: dict[str, np.ndarray] | None = None
+    reuse_defaults = ASIUS and Device.DEFAULT == "CL"
+    default_eval_interval = "3" if reuse_defaults else "1"
+    self._model_eval_interval = max(1, int(os.getenv("DMODEL_EVAL_INTERVAL", default_eval_interval)))
+    self._reuse_left = 0
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
     with open(CompileConfig(cam_w, cam_h, prefix='dm_', prepare_only=True).pkl_path, "rb") as f:
       self.image_warp = pickle.load(f)
 
-  def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
+  def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[dict[str, np.ndarray], float, bool]:
+    if self._last_model_output is not None and self._reuse_left > 0:
+      self._reuse_left -= 1
+      return self._last_model_output, 0.0, True
+
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
@@ -73,7 +83,13 @@ class ModelState:
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
 
     t2 = time.perf_counter()
-    return output, t2 - t1
+    raw_pred = output.tobytes() if SEND_RAW_PRED else b''
+    parsed_output = slice_outputs(output, self.output_slices)
+    parsed_output = parse_model_output(parsed_output)
+    parsed_output['raw_pred'] = raw_pred
+    self._last_model_output = parsed_output
+    self._reuse_left = self._model_eval_interval - 1
+    return parsed_output, t2 - t1, False
 
 def slice_outputs(model_outputs, output_slices):
   return  {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -145,13 +161,10 @@ def main():
       calib[:] = np.array(sm["liveCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
-    model_output, gpu_execution_time = model.run(buf, calib, model_transform)
+    model_output, gpu_execution_time, reused_output = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
-    raw_pred = model_output.tobytes() if SEND_RAW_PRED else b''
-    model_output = slice_outputs(model_output, model.output_slices)
-    model_output = parse_model_output(model_output)
-    model_output['raw_pred'] = raw_pred
-    msg = get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time)
+    msg = get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof,
+                                 t2 - t1 if reused_output else gpu_execution_time, gpu_execution_time)
     pm.send("driverStateV2", msg)
 
 
