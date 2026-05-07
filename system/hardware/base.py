@@ -112,9 +112,6 @@ class LPABase(ABC):
   def is_euicc(self) -> bool:
     pass
 
-  def is_comma_profile(self, iccid: str) -> bool:
-    return any(iccid.startswith(prefix) for prefix in COMMA_ICCID_PREFIXES)
-
 class HardwareBase(ABC):
   @staticmethod
   def get_cmdline() -> dict[str, str]:

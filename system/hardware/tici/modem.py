@@ -116,17 +116,17 @@ class PPPSession:
   def fails(self) -> int:
     return self._fails
 
-  def maybe_install_routes(self, ip: str, peer: str):
+  def maybe_install_routes(self, ip: str, peer: str) -> bool:
     """Install routes if peer changed; kill the session on failure so the state machine reconnects."""
     if not peer or peer == self._peer:
-      return
+      return False
     try:
       IPv4Address(ip)
       IPv4Address(peer)
     except AddressValueError:
       logging.warning(f"refusing route install with non-IPv4 ip={ip!r} peer={peer!r}")
       self.kill()
-      return
+      return False
     self.cleanup_routes()
     cmds = [
       ["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
@@ -139,9 +139,24 @@ class PPPSession:
         logging.warning(f"route install failed ({' '.join(cmd[1:])}): {r.stderr.strip()}")
         self.cleanup_routes()
         self.kill()
-        return
+        return False
     logging.info(f"route set up for {ip} via {peer}")
     self._peer = peer
+    return True
+
+  def maybe_install_dns(self, dns_servers: list[str]) -> bool:
+    """Register DNS servers with systemd-resolved; kill the session on failure to force a retry."""
+    if not dns_servers:
+      return False
+    for cmd in (["sudo", "resolvectl", "dns", "ppp0", *dns_servers],
+                ["sudo", "resolvectl", "default-route", "ppp0", "yes"]):
+      r = subprocess.run(cmd, capture_output=True, text=True)
+      if r.returncode != 0:
+        logging.warning(f"resolvectl failed ({' '.join(cmd[1:])}): {r.stderr.strip()}")
+        self.kill()
+        return False
+    logging.info(f"resolvectl: ppp0 DNS = {dns_servers}")
+    return True
 
   @staticmethod
   def cleanup_routes():
@@ -150,6 +165,7 @@ class PPPSession:
     # rules don't have a flush; delete until none remain
     while subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True).returncode == 0:
       pass
+    subprocess.run(["sudo", "resolvectl", "revert", "ppp0"], capture_output=True)
 
 
 class Modem:
@@ -461,13 +477,30 @@ class Modem:
             peer = parts[parts.index("peer") + 1].split("/")[0]
           break
       if ip:
-        self._ppp.maybe_install_routes(ip, peer)
+        if self._ppp.maybe_install_routes(ip, peer):
+          self._ppp.maybe_install_dns(self._read_cellular_dns())
         return {"ip_address": ip, "connected": True}
       if self.S["connected"]:
         return {"connected": False, "ip_address": ""}
     except Exception:
       pass
     return {}
+
+  def _read_cellular_dns(self) -> list[str]:
+    v = self._atv(f"AT+CGCONTRDP={DIAL_CID}", "+CGCONTRDP:")
+    if not v:
+      return []
+    # +CGCONTRDP: <cid>,<bearer_id>,<apn>,<local_addr>,<gw_addr>,<dns_prim>,<dns_sec>,...
+    fields = [f.strip().strip('"') for f in v.split(",")]
+    dns_servers = []
+    for d in fields[5:7]:
+      try:
+        dns_servers.append(str(IPv4Address(d)))
+      except (AddressValueError, ValueError):
+        pass
+    if not dns_servers:
+      logging.warning(f"no cellular DNS servers reported by modem: {v!r}")
+    return dns_servers
 
   def _poll_byte_counters(self) -> dict:
     try:
