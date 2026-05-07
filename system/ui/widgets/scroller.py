@@ -197,8 +197,6 @@ class _Scroller(Widget):
       snap_target = self.scroll_panel.get_offset() - closest_delta_pos
 
     offset = self.scroll_panel.update(self._rect, content_size, snap_target=snap_target)
-    print('final offset', offset)
-    print()
     return offset
 
   @property

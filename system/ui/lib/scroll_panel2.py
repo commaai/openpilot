@@ -131,7 +131,6 @@ class GuiScrollPanel2:
     if snap_target is not None and self.enabled and self._state not in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL):
       snap_target = max(min_offset, min(max_offset, snap_target))
       dist = snap_target - self.get_offset()
-      print('snap dist', dist, 'offset', self.get_offset(), 'target', snap_target)
       if abs(dist) < 1:  # finished snap
         self.set_offset(snap_target)
       else:
