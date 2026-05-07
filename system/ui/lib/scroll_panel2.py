@@ -45,9 +45,8 @@ class ScrollState(Enum):
 
 
 class GuiScrollPanel2:
-  def __init__(self, horizontal: bool = True, handle_out_of_bounds: bool = True) -> None:
+  def __init__(self, horizontal: bool = True) -> None:
     self._horizontal = horizontal
-    self._handle_out_of_bounds = handle_out_of_bounds
     self._state = ScrollState.STEADY
     self._offset: rl.Vector2 = rl.Vector2(0, 0)
     self._initial_click_event: MouseEvent | None = None
@@ -97,8 +96,9 @@ class GuiScrollPanel2:
 
     elif self._state == ScrollState.AUTO_SCROLL:
       # simple exponential return if out of bounds
+      # out of bounds is handled by snapping, so skip if set
       out_of_bounds = self.get_offset() > max_offset or self.get_offset() < min_offset
-      if out_of_bounds and self._handle_out_of_bounds:
+      if out_of_bounds and snap_target is None:
         target = max_offset if self.get_offset() > max_offset else min_offset
 
         dt = rl.get_frame_time() or 1e-6

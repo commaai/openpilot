@@ -93,7 +93,7 @@ class _Scroller(Widget):
 
     self._item_pos_filter = BounceFilter(0.0, 0.05, 1 / gui_app.target_fps)
 
-    self.scroll_panel = GuiScrollPanel2(self._horizontal, handle_out_of_bounds=not self._snap_items)
+    self.scroll_panel = GuiScrollPanel2(self._horizontal)
     self._scroll_enabled: bool | Callable[[], bool] = True
 
     self._show_scroll_indicator = scroll_indicator and self._horizontal
