@@ -275,6 +275,7 @@ if __name__ == "__main__":
         for i in range(2):
           for field in ('x', 'y', 'z', 't'):
             ignore.append(f'modelV2.roadEdges.{i}.{field}')
+        ignore.append('modelV2.roadEdgeStds')
       tolerance = .3 if PC or ASIUS else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}

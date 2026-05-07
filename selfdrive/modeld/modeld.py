@@ -32,6 +32,7 @@ from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
+from openpilot.system.hardware import ASIUS
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -100,6 +101,14 @@ class ModelState:
     self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
     self.full_frames : dict[str, Tensor] = {}
     self._blob_cache : dict[int, Tensor] = {}
+    self._last_model_output: dict[str, np.ndarray] | None = None
+    reuse_defaults = ASIUS and Device.DEFAULT == "CL"
+    default_eval_interval = "2" if reuse_defaults else "1"
+    self._model_eval_interval = max(1, int(os.getenv("MODEL_EVAL_INTERVAL", default_eval_interval)))
+    default_extra_reuse_period = "6" if reuse_defaults else "0"
+    self._extra_reuse_period = max(0, int(os.getenv("MODEL_EXTRA_REUSE_PERIOD", default_extra_reuse_period)))
+    self._reuse_left = 0
+    self._model_eval_count = 0
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
@@ -140,13 +149,21 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    if prepare_only:
+    reuse_last_output = self._last_model_output is not None and self._reuse_left > 0
+    if prepare_only or reuse_last_output:
       self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
-      return None
+      if prepare_only:
+        return None
+      self._reuse_left -= 1
+      return self._last_model_output
 
     vision_output, policy_output = self.run_policy(
       **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
+    self._model_eval_count += 1
+    self._reuse_left = self._model_eval_interval - 1
+    if self._extra_reuse_period > 0 and self._model_eval_count % self._extra_reuse_period == 0:
+      self._reuse_left += 1
 
     vision_output = vision_output.numpy().flatten()
     policy_output = policy_output.numpy().flatten()
@@ -156,6 +173,7 @@ class ModelState:
 
     if SEND_RAW_PRED:
       combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
+    self._last_model_output = combined_outputs_dict
     return combined_outputs_dict
 
 
