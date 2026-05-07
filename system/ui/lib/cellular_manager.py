@@ -82,9 +82,6 @@ class CellularManager:
   def is_euicc(self) -> bool | None:
     return self._is_euicc
 
-  def is_comma_profile(self, iccid: str) -> bool:
-    return any(p.iccid == iccid and p.is_comma for p in self._profiles)
-
   def _ensure_lpa(self) -> LPABase:
     if self._lpa is None:
       self._lpa = _get_lpa()
@@ -169,8 +166,7 @@ class CellularManager:
         with self._lock:
           lpa = self._ensure_lpa()
           lpa.switch_profile(iccid)
-        # optimistic: switch_profile() succeeded, flip enabled flags locally
-        # without calling list_profiles() (which can briefly return stale state)
+        # avoid list_profiles(): can briefly return stale enabled state
         profiles = [replace(p, enabled=(p.iccid == iccid)) for p in self._profiles]
         self._enqueue(lambda: self._finish(profiles=profiles))
       except Exception as e:
