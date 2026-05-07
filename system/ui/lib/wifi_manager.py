@@ -208,8 +208,8 @@ class WifiManager:
       self._wait_for_wifi_device()
 
       # TODO: wait for state thread to start before adding tethering connection, tiny race currently
-      self._scan_thread.start()
-      self._state_thread.start()
+      # self._scan_thread.start()
+      # self._state_thread.start()
 
       self._init_connections()
       if Params is not None and self._tethering_ssid not in self._connections:

@@ -1,4 +1,5 @@
 import datetime
+import threading
 import time
 
 from cereal import log
@@ -132,13 +133,16 @@ class MiciHomeLayout(Widget):
     self._on_alerts_click: Callable | None = None
     self._alert_count_callback: Callable[[], int] | None = None
 
-    self._last_refresh = 0
     self._mouse_down_t: None | float = None
     self._did_long_press = False
     self._is_pressed_prev = False
 
     self._version_text = None
     self._experimental_mode = False
+
+    self._params_thread_exit = threading.Event()
+    self._params_thread = threading.Thread(target=self._params_refresh_loop, daemon=True)
+    self._params_thread.start()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
@@ -163,11 +167,12 @@ class MiciHomeLayout(Widget):
 
   def show_event(self):
     super().show_event()
-    self._version_text = self._get_version_text()
-    self._update_params()
 
-  def _update_params(self):
-    self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
+  def _params_refresh_loop(self):
+    while not self._params_thread_exit.is_set():
+      self._version_text = self._get_version_text()
+      self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
+      self._params_thread_exit.wait(5.0)
 
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
@@ -185,12 +190,6 @@ class MiciHomeLayout(Widget):
           ui_state.params.put("ExperimentalMode", self._experimental_mode)
         self._mouse_down_t = None
         self._did_long_press = True
-
-    if rl.get_time() - self._last_refresh > 5.0:
-      # Update version text
-      self._version_text = self._get_version_text()
-      self._last_refresh = rl.get_time()
-      self._update_params()
 
   def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
                     alert_count_callback: Callable[[], int] | None = None,

@@ -54,7 +54,7 @@ class FirehoseLayoutBase(Widget):
 
     self._running = True
     self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-    self._update_thread.start()
+    # self._update_thread.start()  # disabled for perf testing
 
   def __del__(self):
     self._running = False

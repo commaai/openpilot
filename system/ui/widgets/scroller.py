@@ -264,6 +264,8 @@ class _Scroller(Widget):
     return target_x, target_y
 
   def _layout(self):
+    # TODO: skip when scroll/items/rect unchanged from last frame (dirty flag).
+    # Layout reruns each frame even when steady — costs ~300us for 4 items.
     self._visible_items = [item for item in self._items if item.is_visible]
 
     self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)

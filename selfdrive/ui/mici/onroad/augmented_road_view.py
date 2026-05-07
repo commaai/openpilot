@@ -165,6 +165,14 @@ class AugmentedRoadView(CameraView):
   def _update_state(self):
     super()._update_state()
 
+    # DEBUG: log which sm topics updated this frame
+    # _topics = ('modelV2', 'liveCalibration', 'radarState', 'controlsState',
+    #            'carState', 'longitudinalPlan', 'selfdriveState', 'pandaStates',
+    #            'driverMonitoringState', 'roadCameraState', 'wideRoadCameraState')
+    # _updated = [t for t in _topics if ui_state.sm.updated[t]]
+    # if _updated:
+    #   print(f"[AugRV] frame={ui_state.sm.frame} updated={_updated}")
+
     # update offroad label
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._offroad_label.set_text("system booting")

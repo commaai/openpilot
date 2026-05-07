@@ -317,7 +317,7 @@ class GuiApplication:
         self._ffmpeg_thread.start()
 
       # OFFSCREEN disables FPS limiting for fast offline rendering (e.g. clips)
-      rl.set_target_fps(0 if OFFSCREEN else fps)
+      rl.set_target_fps(0)  # disabled: drmWaitVBlank handles pacing
 
       self._target_fps = fps
       self._set_styles()
@@ -611,13 +611,13 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        if self._scale != 1.0:
-          rl.rl_push_matrix()
-          rl.rl_scalef(self._scale, self._scale, 1.0)
+        # if self._scale != 1.0:
+        #   rl.rl_push_matrix()
+        #   rl.rl_scalef(self._scale, self._scale, 1.0)
 
         # Allow a Widget to still run a function regardless of the stack depth
-        for tick in self._nav_stack_ticks:
-          tick()
+        # for tick in self._nav_stack_ticks:
+        #   tick()
 
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:

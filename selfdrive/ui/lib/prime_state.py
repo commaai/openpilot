@@ -80,6 +80,7 @@ class PrimeState:
         time.sleep(self.SLEEP_INTERVAL)
 
   def start(self) -> None:
+    return  # disabled for perf testing
     if self._thread and self._thread.is_alive():
       return
     self._running = True

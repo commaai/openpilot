@@ -89,6 +89,11 @@ class UIState:
     self._engaged_transition_callbacks: list[Callable[[], None]] = []
     self._on_body_changed_callbacks: list[Callable[[], None]] = []
 
+    # Background params thread (filesystem reads off the render thread)
+    self._params_thread_exit = threading.Event()
+    self._params_thread = threading.Thread(target=self._params_refresh_loop, daemon=True)
+    self._params_thread.start()
+
   def add_offroad_transition_callback(self, callback: Callable[[], None]):
     self._offroad_transition_callbacks.append(callback)
 
@@ -109,13 +114,34 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
+    SECTION_SLOW_MS = 1.0
+    sections = []
+    t0 = time.monotonic()
+
     self.prime_state.start()  # start thread after manager forks ui
+    sections.append(('prime_start', time.monotonic() - t0)); t1 = time.monotonic()
+
     self.sm.update(0)
+    sections.append(('sm.update', time.monotonic() - t1)); t1 = time.monotonic()
+
     self._update_state()
+    sections.append(('_update_state', time.monotonic() - t1)); t1 = time.monotonic()
+
     self._update_status()
-    if time.monotonic() - self._param_update_time >= PARAM_UPDATE_TIME:
-      self.update_params()
+    sections.append(('_update_status', time.monotonic() - t1)); t1 = time.monotonic()
+
     device.update()
+    sections.append(('device.update', time.monotonic() - t1))
+
+    if any(t * 1000 > SECTION_SLOW_MS for _, t in sections):
+      total_ms = (time.monotonic() - t0) * 1000
+      print(f">> ui_state.update SLOW  total={total_ms:.2f}ms  " +
+            "  ".join(f"{n}={t*1000:.2f}ms" for n, t in sections))
+
+  def _params_refresh_loop(self):
+    while not self._params_thread_exit.is_set():
+      self.update_params()
+      self._params_thread_exit.wait(PARAM_UPDATE_TIME)
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -140,12 +166,6 @@ class UIState:
 
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
-
-    # Update recording audio state
-    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
-
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
 
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
@@ -176,7 +196,11 @@ class UIState:
       self._started_prev = self.started
 
   def update_params(self) -> None:
-    # For slower operations
+    # For slower operations — these read from filesystem, don't run every frame
+    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
+
     # Update longitudinal control state
     CP_bytes = self.params.get("CarParamsPersistent")
     if CP_bytes is not None:
@@ -206,7 +230,23 @@ class Device:
     self._offroad_brightness: int = BACKLIGHT_OFFROAD
     self._last_brightness: int = 0
     self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / gui_app.target_fps)
-    self._brightness_thread: threading.Thread | None = None
+
+    # Persistent brightness writer thread — main only signals (cheap), thread does sysfs write
+    self._brightness_pending: int | None = None
+    self._brightness_event = threading.Event()
+    self._brightness_thread: threading.Thread | None = None  # lazy-started after fork
+
+  def _brightness_loop(self):
+    while True:
+      self._brightness_event.wait()
+      self._brightness_event.clear()
+      pending = self._brightness_pending
+      if pending is not None:
+        t0 = time.monotonic()
+        HARDWARE.set_screen_brightness(pending)
+        dt_ms = (time.monotonic() - t0) * 1000
+        if dt_ms > 0.5:
+          print(f"        >> set_screen_brightness({pending}) took {dt_ms:.2f}ms")
 
   @property
   def awake(self) -> bool:
@@ -223,7 +263,7 @@ class Device:
       return self._override_interactive_timeout
 
     ignition_timeout = 10 if gui_app.big_ui() else 5
-    return ignition_timeout if ui_state.ignition else 30
+    return ignition_timeout if ui_state.ignition else 999999
 
   def _reset_interactive_timeout(self) -> None:
     self._interaction_time = time.monotonic() + self.interactive_timeout
@@ -232,12 +272,25 @@ class Device:
     self._interactive_timeout_callbacks.append(callback)
 
   def update(self):
+    SECTION_SLOW_MS = 1.0
+    sections = []
+    t0 = time.monotonic()
+
     # do initial reset
     if self._interaction_time <= 0:
       self._reset_interactive_timeout()
+    sections.append(('init_reset', time.monotonic() - t0)); t1 = time.monotonic()
 
     self._update_brightness()
+    sections.append(('_update_brightness', time.monotonic() - t1)); t1 = time.monotonic()
+
     self._update_wakefulness()
+    sections.append(('_update_wakefulness', time.monotonic() - t1))
+
+    if any(t * 1000 > SECTION_SLOW_MS for _, t in sections):
+      total_ms = (time.monotonic() - t0) * 1000
+      print(f"        >> device.update SLOW  total={total_ms:.2f}ms  " +
+            "  ".join(f"{n}={t*1000:.2f}ms" for n, t in sections))
 
   def set_offroad_brightness(self, brightness: int | None):
     if brightness is None:
@@ -263,26 +316,46 @@ class Device:
       brightness = 0
 
     if brightness != self._last_brightness:
+      # Lazy-start thread (after manager fork)
       if self._brightness_thread is None or not self._brightness_thread.is_alive():
-        self._brightness_thread = threading.Thread(target=HARDWARE.set_screen_brightness, args=(brightness,))
+        self._brightness_thread = threading.Thread(target=self._brightness_loop, daemon=True)
         self._brightness_thread.start()
-        self._last_brightness = brightness
+      self._brightness_pending = brightness
+      self._brightness_event.set()
+      self._last_brightness = brightness
 
   def _update_wakefulness(self):
+    SUB_SLOW_MS = 1.0
+    sub = []
+    s0 = time.monotonic()
+
     # Handle interactive timeout
     ignition_just_turned_off = not ui_state.ignition and self._ignition
     self._ignition = ui_state.ignition
+    sub.append(('ignition_check', time.monotonic() - s0)); s1 = time.monotonic()
 
     if ignition_just_turned_off or any(ev.left_down for ev in gui_app.mouse_events):
       self._reset_interactive_timeout()
+    sub.append(('mouse_check', time.monotonic() - s1)); s1 = time.monotonic()
 
     interaction_timeout = time.monotonic() > self._interaction_time
     if interaction_timeout and not self._prev_timed_out:
       for callback in self._interactive_timeout_callbacks:
+        cb_t0 = time.monotonic()
         callback()
+        cb_dt = (time.monotonic() - cb_t0) * 1000
+        if cb_dt > 0.5:
+          name = getattr(callback, '__qualname__', getattr(callback, '__name__', repr(callback)))
+          print(f"                        >> timeout_cb SLOW  {name}={cb_dt:.2f}ms")
     self._prev_timed_out = interaction_timeout
+    sub.append(('timeout_callbacks', time.monotonic() - s1)); s1 = time.monotonic()
 
     self._set_awake(ui_state.ignition or not interaction_timeout or PC)
+    sub.append(('_set_awake', time.monotonic() - s1))
+
+    if any(t * 1000 > SUB_SLOW_MS for _, t in sub):
+      print(f"                >> _update_wakefulness SLOW  " +
+            "  ".join(f"{n}={t*1000:.2f}ms" for n, t in sub))
 
   def _set_awake(self, on: bool):
     if on != self._awake:
