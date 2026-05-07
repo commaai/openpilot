@@ -23,8 +23,8 @@ def get_camera_configs():
   }
   RELEASE = not (Path(BASEDIR) / '.gitattributes').exists()
   if RELEASE or PC:
-    return DEVICE_RESOLUTIONS.values()
-  return DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]
+    return list(DEVICE_RESOLUTIONS.values())
+  return [DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]]
 
 CAMERA_CONFIGS = get_camera_configs()
 MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_')
