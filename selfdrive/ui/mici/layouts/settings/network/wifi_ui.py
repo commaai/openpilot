@@ -383,7 +383,7 @@ class WifiUIMici(NavScroller):
 
       if scroll:
         # Scroll to the new position of the network
-        self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+        self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True, block_widget_interaction=True)
 
   def _update_state(self):
     super()._update_state()

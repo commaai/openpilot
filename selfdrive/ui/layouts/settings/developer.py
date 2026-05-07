@@ -20,7 +20,7 @@ DESCRIPTIONS = {
     "other than your own. A comma employee will NEVER ask you to add their GitHub username."
   ),
   'alpha_longitudinal': tr_noop(
-    "<b>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</b><br><br>" +
+    "<b>WARNING: openpilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB).</b><br><br>" +
     "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
     "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha. " +
     "Changing this setting will restart openpilot if the car is powered on."
@@ -131,12 +131,6 @@ class DeveloperLayout(Widget):
 
       long_man_enabled = ui_state.has_longitudinal_control and ui_state.is_offroad()
       self._long_maneuver_toggle.action_item.set_enabled(long_man_enabled)
-      if not long_man_enabled:
-        self._long_maneuver_toggle.action_item.set_state(False)
-        self._params.put_bool("LongitudinalManeuverMode", False)
-
-      lat_man_enabled = ui_state.is_offroad()
-      self._lat_maneuver_toggle.action_item.set_enabled(lat_man_enabled)
     else:
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._lat_maneuver_toggle.action_item.set_enabled(False)

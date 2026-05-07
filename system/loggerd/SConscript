@@ -11,8 +11,9 @@ if arch != "larch64":
   libs += ['yuv']
   if arch == "Darwin":
     frameworks += ['VideoToolbox', 'CoreMedia', 'CoreFoundation', 'CoreVideo']
-  else:
-    libs += ['va', 'va-drm', 'drm']
+
+if arch != "Darwin":
+  libs += ['va', 'va-drm', 'drm']
 
 if arch == "Darwin":
   # exclude v4l

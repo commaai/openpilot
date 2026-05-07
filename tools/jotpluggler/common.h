@@ -57,6 +57,10 @@ const char *stream_source_kind_label(StreamSourceKind kind);
 std::string stream_source_target_label(const StreamSourceConfig &source);
 
 bool env_flag_enabled(const char *name, bool default_value = false);
+bool app_begin_popup(const char *str_id, ImGuiWindowFlags flags = 0);
+bool app_begin_popup_modal(const char *name,
+                           bool *p_open = nullptr,
+                           ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize);
 void open_external_url(std::string_view url);
 std::string route_useradmin_url(const RouteIdentifier &route_id);
 std::string route_connect_url(const RouteIdentifier &route_id);

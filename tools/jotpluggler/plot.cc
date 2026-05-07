@@ -7,8 +7,6 @@
 #include <cstdio>
 #include <limits>
 
-constexpr double PLOT_Y_PAD_FRACTION = 0.4;
-
 struct PlotBounds {
   double x_min = 0.0;
   double x_max = 1.0;
@@ -484,7 +482,7 @@ PlotBounds compute_plot_bounds(const Pane &pane,
     min_value = std::min(min_value, 0.0);
     max_value = std::max(max_value, 1.0);
   }
-  ensure_non_degenerate_range(&min_value, &max_value, PLOT_Y_PAD_FRACTION, 0.1);
+  ensure_non_degenerate_range(&min_value, &max_value, PLOT_Y_PADDING_FRACTION, 0.1);
   if (pane.range.has_y_limit_min) {
     min_value = pane.range.y_limit_min;
   }
@@ -848,7 +846,7 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
     } else {
       for (size_t i = 0; i < prepared_curves.size(); ++i) {
         const PreparedCurve &curve = prepared_curves[i];
-        std::string series_id = curve_legend_label(curve, has_cursor_time, max_legend_label_width) + "##curve" + std::to_string(i);
+        std::string series_id = curve_legend_label(curve, has_cursor_time, max_legend_label_width) + "###curve" + std::to_string(curve.pane_curve_index);
         ImPlotSpec spec;
         spec.LineColor = color_rgb(curve.color);
         spec.LineWeight = curve.line_weight;
@@ -923,28 +921,15 @@ std::optional<PaneMenuAction> draw_pane_context_menu(const WorkspaceTab &tab, in
   ImGui::Separator();
   if (icon_menu_item(icon::ZOOM_OUT, "Zoom Out", nullptr, false, is_plot)) {
     action.kind = PaneMenuActionKind::ResetView;
-  } else if (icon_menu_item(icon::ARROW_LEFT_RIGHT, "Zoom Out Horizontally", nullptr, false, is_plot)) {
-    action.kind = PaneMenuActionKind::ResetHorizontal;
-  } else if (icon_menu_item(icon::ARROW_DOWN_UP, "Zoom Out Vertically", nullptr, false, is_plot)) {
-    action.kind = PaneMenuActionKind::ResetVertical;
   }
   ImGui::Separator();
   if (icon_menu_item(icon::TRASH, "Remove ALL curves", nullptr, false, is_plot)) {
     action.kind = PaneMenuActionKind::Clear;
   }
   ImGui::Separator();
-  icon_menu_item(icon::ARROW_LEFT_RIGHT, "Flip Horizontal Axis", nullptr, false, false);
-  icon_menu_item(icon::ARROW_DOWN_UP, "Flip Vertical Axis", nullptr, false, false);
-  ImGui::Separator();
-  icon_menu_item(icon::FILES, "Copy", nullptr, false, false);
-  icon_menu_item(icon::CLIPBOARD2, "Paste", nullptr, false, false);
   icon_menu_item(icon::FILE_EARMARK_IMAGE, "Copy image to clipboard", nullptr, false, false);
   icon_menu_item(icon::SAVE, "Save plot to file", nullptr, false, false);
   icon_menu_item(icon::BAR_CHART, "Show data statistics", nullptr, false, false);
-  ImGui::Separator();
-  if (icon_menu_item(icon::X_SQUARE, "Close Pane")) {
-    action.kind = PaneMenuActionKind::Close;
-  }
   ImGui::EndPopup();
   if (action.kind == PaneMenuActionKind::None) return std::nullopt;
   return action;
