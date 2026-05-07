@@ -75,7 +75,7 @@ class GuiScrollPanel2:
 
     self._update_state(bounds_size, content_size)
 
-    if DEBUG:
+    if DEBUG or 1:
       print('Velocity:', self._velocity)
       print('Offset X:', self._offset.x, 'Y:', self._offset.y)
       print('New state:', self._state)
