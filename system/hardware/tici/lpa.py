@@ -18,7 +18,6 @@ from typing import Any
 
 from pathlib import Path
 
-from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
@@ -776,6 +775,7 @@ class TiciLPA(LPABase):
         raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
     if target is not None and target.is_comma:
       # comma prime: roams, metered, no APN override
+      from openpilot.common.params import Params
       params = Params()
       params.put_bool("GsmRoaming", True)
       params.put_bool("GsmMetered", True)
