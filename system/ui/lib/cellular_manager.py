@@ -28,8 +28,7 @@ class CellularManager:
     self._lpa: LPABase | None = None
     self._profiles: list[Profile] = []
     self._busy: bool = False
-    # None = not yet checked, True/False = cached result. SIM cannot be swapped
-    # without disassembling the device, so we probe once and keep the result.
+    # re-probed every poll; SIM may be swapped at runtime on tray-accessible devices
     self._is_euicc: bool | None = None
     self._modem_state: dict = {}
 
@@ -67,8 +66,7 @@ class CellularManager:
 
     if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL_S:
       self._last_profile_poll = time.monotonic()
-      if self._is_euicc is not False:
-        self._poll_profiles()
+      self._poll_profiles()
 
   @property
   def profiles(self) -> list[Profile]:
@@ -126,38 +124,32 @@ class CellularManager:
     threading.Thread(target=worker, daemon=True).start()
 
   def refresh_profiles(self):
-    if self._is_euicc is False:
-      return
     self._poll_profiles()
 
   def _poll_profiles(self):
     self._polling = True
-    first_check = self._is_euicc is None
+    prev_is_euicc = self._is_euicc
 
     def worker():
       try:
         with self._lock:
           lpa = self._ensure_lpa()
-          if self._is_euicc is None:
-            self._is_euicc = lpa.is_euicc()
-            cloudlog.info(f"eSIM: is_euicc={self._is_euicc}")
-          if not self._is_euicc:
-            self._enqueue(self._stop_polling)
-            return
-          profiles = lpa.list_profiles()
-          if first_check:
-            cloudlog.info(f"eSIM: got {len(profiles)} profiles")
-        self._enqueue(lambda: self._finish_poll(profiles))
+          is_euicc = lpa.is_euicc()
+          profiles = lpa.list_profiles() if is_euicc else []
+        if is_euicc != prev_is_euicc:
+          cloudlog.info(f"eSIM: is_euicc={is_euicc}")
+        self._enqueue(lambda: self._finish_poll(is_euicc, profiles))
       except Exception:
         cloudlog.exception("Failed to poll eSIM profiles")
         self._enqueue(self._stop_polling)
 
     threading.Thread(target=worker, daemon=True).start()
 
-  def _finish_poll(self, profiles: list[Profile]):
+  def _finish_poll(self, is_euicc: bool, profiles: list[Profile]):
     self._polling = False
     if self._busy:
       return
+    self._is_euicc = is_euicc
     self._profiles = profiles
     for cb in self._profiles_updated_cbs:
       cb(profiles)
