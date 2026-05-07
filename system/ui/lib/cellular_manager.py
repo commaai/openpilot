@@ -3,6 +3,7 @@ import threading
 from collections.abc import Callable
 from dataclasses import replace
 
+from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.base import LPABase, Profile
 
@@ -164,12 +165,19 @@ class CellularManager:
 
   def switch_profile(self, iccid: str):
     self._busy = True
+    target = next((p for p in self._profiles if p.iccid == iccid), None)
 
     def worker():
       try:
         with self._lock:
           lpa = self._ensure_lpa()
           lpa.switch_profile(iccid)
+        if target is not None and target.is_comma:
+          # comma prime: roams, metered, no APN override
+          params = Params()
+          params.put_bool("GsmRoaming", True)
+          params.put_bool("GsmMetered", True)
+          params.put("GsmApn", "")
         # avoid list_profiles(): can briefly return stale enabled state
         profiles = [replace(p, enabled=(p.iccid == iccid)) for p in self._profiles]
         self._enqueue(lambda: self._finish(profiles=profiles))
