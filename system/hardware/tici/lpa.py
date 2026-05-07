@@ -782,18 +782,13 @@ class TiciLPA(LPABase):
       params.put("GsmApn", "")
 
   def is_euicc(self) -> bool:
-    # +CCHO:<n> -> ISD-R applet present, eUICC.
-    # bare ERROR -> applet absent, non-eUICC.
-    # +CME ERROR: 13 (SIM failure) -> non-eUICC; the SIM rejects the AID.
-    # other +CME ERROR (14 busy, 16 wrong card, etc.) -> applet may exist, treat as eUICC.
+    # +CCHO:<n> -> eUICC; bare ERROR -> applet absent, non-eUICC; +CME ERROR -> applet
+    # exists but bus busy or modem in transient state, still eUICC.
     with self._acquire_lock():
       try:
         lines = self._client.query(f'AT+CCHO="{ISDR_AID}"')
       except RuntimeError as e:
-        msg = str(e)
-        if "+CME ERROR: 13" in msg:
-          return False
-        return "+CME ERROR" in msg
+        return "+CME ERROR" in str(e)
       for line in lines:
         if line.startswith("+CCHO:") and (ch := line.split(":", 1)[1].strip()):
           try:
