@@ -1,6 +1,7 @@
 import time
 import threading
 from collections.abc import Callable
+from dataclasses import replace
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.base import LPABase, Profile
@@ -161,10 +162,23 @@ class CellularManager:
       cb(profiles)
 
   def switch_profile(self, iccid: str):
-    def op(lpa: LPABase):
-      lpa.switch_profile(iccid)
+    self._busy = True
 
-    self._run_operation(op, "Failed to switch eSIM profile")
+    def worker():
+      try:
+        with self._lock:
+          lpa = self._ensure_lpa()
+          lpa.switch_profile(iccid)
+        # optimistic: switch_profile() succeeded, flip enabled flags locally
+        # without calling list_profiles() (which can briefly return stale state)
+        profiles = [replace(p, enabled=(p.iccid == iccid)) for p in self._profiles]
+        self._enqueue(lambda: self._finish(profiles=profiles))
+      except Exception as e:
+        cloudlog.exception("Failed to switch eSIM profile")
+        err = str(e)
+        self._enqueue(lambda: self._finish(error=err))
+
+    threading.Thread(target=worker, daemon=True).start()
 
   def delete_profile(self, iccid: str):
     self._run_operation(lambda lpa: lpa.delete_profile(iccid), "Failed to delete eSIM profile")
