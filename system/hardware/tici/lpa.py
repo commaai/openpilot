@@ -18,6 +18,7 @@ from typing import Any
 
 from pathlib import Path
 
+from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
@@ -764,6 +765,7 @@ class TiciLPA(LPABase):
     return require_tag(require_tag(response, TAG_ENABLE_PROFILE, "EnableProfileResponse"), TAG_STATUS, "EnableProfile status")[0]
 
   def switch_profile(self, iccid: str) -> None:
+    target = next((p for p in self.list_profiles() if p.iccid == iccid), None)
     with self._acquire_channel():
       code = self._enable_profile(iccid)
       if code == PROFILE_CAT_BUSY:  # stale eUICC transaction, reset and retry
@@ -772,6 +774,12 @@ class TiciLPA(LPABase):
         code = self._enable_profile(iccid)
       if code not in (PROFILE_OK, PROFILE_NOT_IN_DISABLED_STATE):
         raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
+    if target is not None and target.is_comma:
+      # comma prime: roams, metered, no APN override
+      params = Params()
+      params.put_bool("GsmRoaming", True)
+      params.put_bool("GsmMetered", True)
+      params.put("GsmApn", "")
 
   def is_euicc(self) -> bool:
     # +CCHO:<n> -> eUICC; bare ERROR -> applet absent, non-eUICC; +CME ERROR -> applet
