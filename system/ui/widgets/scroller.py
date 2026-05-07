@@ -114,8 +114,7 @@ class _Scroller(Widget):
   def set_reset_scroll_at_show(self, scroll: bool):
     self._reset_scroll_at_show = scroll
 
-  def scroll_to(self, pos: float, smooth: bool = False,
-                block_interrupt: bool = False, block_widget_interaction: bool = False):
+  def scroll_to(self, pos: float, smooth: bool = False, block_interrupt: bool = False, block_widget_interaction: bool = False):
     assert smooth or (not block_interrupt and not block_widget_interaction), "Instant scroll cannot block interaction"
 
     # already there
