@@ -61,7 +61,9 @@ else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   tg_flags = f'DEV={tg_backend}'
 
-runtime_env = f'WARP_DEV={tg_backend} DM_DEV={tg_backend}' # which device to put inputs to, shared env for modeld, dmonitoringmodeld
+# which device to put inputs to, shared env for modeld, dmonitoringmodeld
+# same between QCOM or USBGPU path, given we only warp on QCOM for now
+runtime_env = f'WARP_DEV={tg_backend} DM_DEV={tg_backend}'
 
 if USBGPU:
   # poll: usbgpu takes a few seconds to show up
