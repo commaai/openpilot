@@ -14,6 +14,7 @@ MIN_DRAG_PIXELS = 12
 AUTO_SCROLL_TC_SNAP = 0.025
 AUTO_SCROLL_TC = 0.18
 BOUNCE_RETURN_RATE = 10.0
+SNAP_RATE = 10.0  # exp rate of approach to snap target, 1/s
 REJECT_DECELERATION_FACTOR = 3
 MAX_SPEED = 10000.0  # px/s
 
@@ -63,7 +64,7 @@ class GuiScrollPanel2:
   def enabled(self) -> bool:
     return self._enabled() if callable(self._enabled) else self._enabled
 
-  def update(self, bounds: rl.Rectangle, content_size: float) -> float:
+  def update(self, bounds: rl.Rectangle, content_size: float, snap_target: float | None = None) -> float:
     if DEBUG:
       print('Old state:', self._state)
 
@@ -73,7 +74,7 @@ class GuiScrollPanel2:
       self._handle_mouse_event(mouse_event, bounds, bounds_size, content_size)
       self._previous_mouse_event = mouse_event
 
-    self._update_state(bounds_size, content_size)
+    self._update_state(bounds_size, content_size, snap_target)
 
     if DEBUG:
       print('Velocity:', self._velocity)
@@ -86,7 +87,7 @@ class GuiScrollPanel2:
     """Returns (max_offset, min_offset) for the given bounds and content size."""
     return 0.0, min(0.0, bounds_size - content_size)
 
-  def _update_state(self, bounds_size: float, content_size: float) -> None:
+  def _update_state(self, bounds_size: float, content_size: float, snap_target: float | None) -> None:
     """Runs per render frame, independent of mouse events. Updates auto-scrolling state and velocity."""
     max_offset, min_offset = self._get_offset_bounds(bounds_size, content_size)
 
@@ -123,6 +124,19 @@ class GuiScrollPanel2:
       self.set_offset(self.get_offset() + self._velocity * dt)  # Adjust the offset based on velocity
       alpha = 1 - (dt / (self._AUTO_SCROLL_TC + dt))
       self._velocity *= alpha
+
+    # Ease toward snap target when not in user control. Composes with velocity coast above:
+    # high velocity dominates initially, snap dominates as velocity decays.
+    if snap_target is not None and self.enabled and self._state not in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL):
+      snap_target = max(min_offset, min(max_offset, snap_target))
+      dist = snap_target - self.get_offset()
+      print('snap dist', dist, 'offset', self.get_offset(), 'target', snap_target)
+      if abs(dist) < 1:
+        self.set_offset(snap_target)  # exact set to prevent sub-pixel drift
+      else:
+        dt = rl.get_frame_time() or 1e-6
+        factor = 1.0 - math.exp(-SNAP_RATE * dt)
+        self.set_offset(self.get_offset() + dist * factor)
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, bounds_size: float,
                           content_size: float) -> None:
