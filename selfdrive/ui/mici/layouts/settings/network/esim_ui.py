@@ -193,13 +193,13 @@ class EsimUIMici(NavScroller):
 
   def show_event(self):
     super().show_event()
-    self._update_buttons()
+    self._update_buttons(re_sort=True)
     self._cellular_manager.refresh_profiles()
 
   def _on_profiles_updated(self, profiles: list[Profile]):
     self._update_buttons()
 
-  def _update_buttons(self):
+  def _update_buttons(self, re_sort: bool = False):
     existing = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
     profiles = self._cellular_manager.profiles
     current_iccids = {p.iccid for p in profiles}
@@ -212,10 +212,17 @@ class EsimUIMici(NavScroller):
         btn.set_click_callback(lambda iccid=profile.iccid: self._on_profile_clicked(iccid))
         self._scroller.add_widget(btn)
 
-    self._scroller.items[:] = [
-      btn for btn in self._scroller.items
-      if not isinstance(btn, EsimProfileButton) or btn.profile.iccid in current_iccids
-    ]
+    if re_sort:
+      btn_map = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
+      self._scroller.items[:] = sorted(
+        [btn_map[iccid] for iccid in current_iccids if iccid in btn_map],
+        key=lambda b: not b.profile.enabled,
+      )
+    else:
+      self._scroller.items[:] = [
+        btn for btn in self._scroller.items
+        if not isinstance(btn, EsimProfileButton) or btn.profile.iccid in current_iccids
+      ]
 
   def _move_profile_to_front(self, iccid: str | None, scroll: bool = False):
     front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
