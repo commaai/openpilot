@@ -263,6 +263,10 @@ class GuiScrollPanel2:
   def state(self) -> ScrollState:
     return self._state
 
+  @property
+  def velocity(self) -> float:
+    return self._velocity
+
   def is_touch_valid(self) -> bool:
     # MIN_VELOCITY_FOR_CLICKING is checked in auto-scroll state
     return bool(self._state != ScrollState.MANUAL_SCROLL)
