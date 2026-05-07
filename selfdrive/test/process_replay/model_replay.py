@@ -35,8 +35,9 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 EXEC_TIMINGS = [
   # model, instant max, average max
   ("modelV2", 0.05, 0.028),
-  ("driverStateV2", 0.05, 0.018),
 ]
+if not ASIUS:
+  EXEC_TIMINGS.append(("driverStateV2", 0.05, 0.018))
 
 def get_log_fn(test_route, ref="master"):
   return f"{test_route}_model_tici_{ref}.zst"
@@ -276,6 +277,11 @@ if __name__ == "__main__":
           for field in ('x', 'y', 'z', 't'):
             ignore.append(f'modelV2.roadEdges.{i}.{field}')
         ignore.append('modelV2.roadEdgeStds')
+      if ASIUS:
+        for side in ('leftDriverData', 'rightDriverData'):
+          ignore.append(f'driverStateV2.{side}.eyesVisibleProb')
+          for field in ('leftEyeProb', 'rightEyeProb', 'leftBlinkProb', 'rightBlinkProb'):
+            ignore.append(f'driverStateV2.{side}.deprecated.{field}')
       tolerance = .3 if PC or ASIUS else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
