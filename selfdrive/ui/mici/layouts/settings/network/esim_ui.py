@@ -105,7 +105,7 @@ class EsimProfileButton(BigButton):
 
   @property
   def _show_delete_btn(self) -> bool:
-    if self._deleting or self._profile.enabled or self._cellular_manager.switching_iccid is not None:
+    if self._deleting or self._profile.enabled or self._cellular_manager.busy:
       return False
     return not self._profile.is_comma
 
@@ -139,7 +139,7 @@ class EsimProfileButton(BigButton):
                               self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
-    active = self._profile.enabled and self._cellular_manager.switching_iccid is None
+    active = self._profile.enabled
 
     if self.value:
       sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
@@ -190,17 +190,13 @@ class EsimProfileButton(BigButton):
   def _update_state(self):
     super()._update_state()
 
-    switching = self._cellular_manager.switching_iccid is not None
-
-    if self._cellular_manager.busy or switching or self._deleting:
+    if self._cellular_manager.busy or self._deleting:
       self.set_enabled(False)
       self._sub_label.set_color(SUB_LABEL_DISABLED)
       self._sub_label.set_font_weight(FontWeight.ROMAN)
 
       if self._deleting:
         self.set_value("deleting...")
-      elif self._cellular_manager.switching_iccid == self._profile.iccid:
-        self.set_value("switching...")
     elif self._profile.enabled:
       self.set_value("active")
       self.set_enabled(False)
@@ -271,18 +267,15 @@ class EsimUIMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    iccid = self._cellular_manager.switching_iccid
-    if iccid is None:
-      active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
-      iccid = active.iccid if active else None
-    self._move_profile_to_front(iccid)
+    active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
+    self._move_profile_to_front(active.iccid if active else None)
 
   def _on_error(self, error: str):
     dlg = BigDialog("esim error", error)
     gui_app.push_widget(dlg)
 
   def _on_profile_clicked(self, iccid: str):
-    if self._cellular_manager.busy or self._cellular_manager.switching_iccid is not None:
+    if self._cellular_manager.busy:
       return
     profile = next((p for p in self._cellular_manager.profiles if p.iccid == iccid), None)
     if profile is None or profile.enabled:

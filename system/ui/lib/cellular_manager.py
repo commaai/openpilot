@@ -1,7 +1,6 @@
 import time
 import threading
 from collections.abc import Callable
-from dataclasses import replace
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.base import LPABase, Profile
@@ -28,7 +27,6 @@ class CellularManager:
     self._lpa: LPABase | None = None
     self._profiles: list[Profile] = []
     self._busy: bool = False
-    self._switching_iccid: str | None = None
     # None = not yet checked, True/False = cached result. SIM cannot be swapped
     # without disassembling the device, so we probe once and keep the result.
     self._is_euicc: bool | None = None
@@ -78,10 +76,6 @@ class CellularManager:
   @property
   def busy(self) -> bool:
     return self._busy
-
-  @property
-  def switching_iccid(self) -> str | None:
-    return self._switching_iccid
 
   @property
   def is_euicc(self) -> bool | None:
@@ -167,29 +161,10 @@ class CellularManager:
       cb(profiles)
 
   def switch_profile(self, iccid: str):
-    self._switching_iccid = iccid
-    self._busy = True
+    def op(lpa: LPABase):
+      lpa.switch_profile(iccid)
 
-    def worker():
-      try:
-        with self._lock:
-          lpa = self._ensure_lpa()
-          lpa.switch_profile(iccid)
-        # optimistic update: flip enabled flags locally
-        profiles = [replace(p, enabled=(p.iccid == iccid)) for p in self._profiles]
-        def done():
-          self._switching_iccid = None
-          self._finish(profiles=profiles)
-        self._enqueue(done)
-      except Exception as e:
-        cloudlog.exception("Failed to switch eSIM profile")
-        err = str(e)
-        def fail():
-          self._switching_iccid = None
-          self._finish(error=err)
-        self._enqueue(fail)
-
-    threading.Thread(target=worker, daemon=True).start()
+    self._run_operation(op, "Failed to switch eSIM profile")
 
   def delete_profile(self, iccid: str):
     self._run_operation(lambda lpa: lpa.delete_profile(iccid), "Failed to delete eSIM profile")
