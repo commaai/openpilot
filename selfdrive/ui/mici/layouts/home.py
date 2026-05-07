@@ -141,6 +141,7 @@ class MiciHomeLayout(Widget):
     self._experimental_mode = False
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
+    self._egpu_icon = IconWidget("icons_mici/egpu.png", (50, 37))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
     self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
 
@@ -150,6 +151,7 @@ class MiciHomeLayout(Widget):
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
+      self._egpu_icon,
       self._body_icon,
       self._mic_icon,
     ], spacing=18)
@@ -260,6 +262,7 @@ class MiciHomeLayout(Widget):
 
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(self._experimental_mode)
+    self._egpu_icon.set_visible(ui_state.params.get_bool("UsbGpuPresent"))
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(ui_state.is_body)
 
