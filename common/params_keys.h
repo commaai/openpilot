@@ -129,5 +129,6 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"UpdaterLastFetchTime", {PERSISTENT, TIME}},
     {"UptimeOffroad", {PERSISTENT, FLOAT, "0.0"}},
     {"UptimeOnroad", {PERSISTENT, FLOAT, "0.0"}},
+    {"UsbGpuPresent", {CLEAR_ON_MANAGER_START, BOOL}},
     {"Version", {PERSISTENT, STRING}},
 };

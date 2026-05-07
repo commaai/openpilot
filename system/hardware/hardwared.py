@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import fcntl
 import os
+import pathlib
 import queue
+import select
+import socket
 import struct
 import threading
 import time
@@ -34,6 +37,8 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
+USBGPU_VID = 0xADD1
+USBGPU_PID = 0x0001
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -66,6 +71,59 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
     return
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
   set_offroad_alert(offroad_alert, show_alert, extra_text)
+
+def _usbgpu_present() -> bool:
+  for d in pathlib.Path("/sys/bus/usb/devices").glob("*"):
+    try:
+      if int((d / "idVendor").read_text(), 16) == USBGPU_VID and \
+         int((d / "idProduct").read_text(), 16) == USBGPU_PID:
+        return True
+    except (FileNotFoundError, NotADirectoryError, ValueError):
+      pass
+  return False
+
+
+def usb_gpu_thread(end_event):
+  params = Params()
+
+  NETLINK_KOBJECT_UEVENT = 15
+  s = socket.socket(socket.AF_NETLINK, socket.SOCK_DGRAM, NETLINK_KOBJECT_UEVENT)
+  s.bind((0, 1))
+
+  present = _usbgpu_present()
+  params.put_bool_nonblocking("UsbGpuPresent", present)
+  cloudlog.info(f"usb_gpu_thread: started, coldplug present={present}")
+
+  while not end_event.is_set():
+    r, _, _ = select.select([s], [], [], 1.0)
+    if not r:
+      continue
+
+    data = s.recv(8192)
+    fields = {k.decode(): v.decode()
+              for k, v in (kv.split(b"=", 1) for kv in data.split(b"\0") if b"=" in kv)}
+
+    if fields.get("SUBSYSTEM") != "usb" or fields.get("DEVTYPE") != "usb_device":
+      continue
+    if fields.get("ACTION") not in ("add", "remove"):
+      continue
+
+    cloudlog.info(f"usb_gpu_thread: usb uevent action={fields.get('ACTION')} product={fields.get('PRODUCT')} devpath={fields.get('DEVPATH')}")
+
+    parts = fields.get("PRODUCT", "").split("/")
+    try:
+      vid, pid = int(parts[0], 16), int(parts[1], 16)
+    except (ValueError, IndexError):
+      continue
+    if (vid, pid) != (USBGPU_VID, USBGPU_PID):
+      continue
+
+    new_present = fields["ACTION"] == "add"
+    cloudlog.info(f"usb_gpu_thread: matched USBGPU, action={fields['ACTION']}, present {present}->{new_present}")
+    if new_present != present:
+      present = new_present
+      params.put_bool_nonblocking("UsbGpuPresent", present)
+
 
 def touch_thread(end_event):
   count = 0
@@ -458,6 +516,7 @@ def main():
 
   if TICI:
     threads.append(threading.Thread(target=touch_thread, args=(end_event,)))
+    threads.append(threading.Thread(target=usb_gpu_thread, args=(end_event,)))
 
   for t in threads:
     t.start()
