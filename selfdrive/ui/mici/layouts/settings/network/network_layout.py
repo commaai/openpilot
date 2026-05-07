@@ -101,9 +101,13 @@ class NetworkLayoutMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
-    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
-    self._wifi_manager.set_ipv4_forward(show_cell_settings)
+    prime = ui_state.prime_state.get_type()
+    self._wifi_manager.set_ipv4_forward(prime in (PrimeType.NONE, PrimeType.LITE))
+
+    # full prime hides GSM settings only when the comma profile is the active one
+    active = next((p for p in self._cellular_manager.profiles if p.enabled), None)
+    on_comma_profile = active is not None and active.is_comma
+    show_cell_settings = prime in (PrimeType.NONE, PrimeType.LITE) or not on_comma_profile
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)
     self._cellular_metered_btn.set_visible(show_cell_settings)
