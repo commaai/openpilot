@@ -197,7 +197,7 @@ cache_size_limit = 4e9 if "CI" in os.environ else 2e9
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
-def prune_cache_dir():
+def prune_cache_dir(target=None, source=None, env=None):
   cache_files = sorted((os.path.join(root, f) for root, _, files in os.walk(cache_dir) for f in files), key=os.path.getmtime)
   cache_size = sum(os.path.getsize(f) for f in cache_files)
   for f in cache_files:
@@ -205,9 +205,6 @@ def prune_cache_dir():
       break
     cache_size -= os.path.getsize(f)
     os.unlink(f)
-
-def prune_cache_dir_action(target, source, env):
-  prune_cache_dir()
 
 # ********** start building stuff **********
 
@@ -287,10 +284,6 @@ def count_scons_nodes(nodes):
 progress_interval = 5
 progress_count = 0
 progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
-progress_format = "progress: %.1f\n"
-
-if sys.stderr.isatty():
-  progress_format = "\rBuilding: %5.1f%%"
 
 def progress_function(node):
   global progress_count
@@ -298,10 +291,10 @@ def progress_function(node):
     return
   progress_count = min(progress_count + progress_interval, progress_total)
   progress = round(100. * progress_count / progress_total, 1)
-  sys.stderr.write(progress_format % progress)
+  sys.stderr.write("\rBuilding: %5.1f%%" % progress if sys.stderr.isatty() else "progress: %.1f\n" % progress)
   if progress == 100. and sys.stderr.isatty():
     sys.stderr.write("\n")
   sys.stderr.flush()
 
 Progress(progress_function, interval=progress_interval)
-AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir_action)
+AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)

@@ -21,7 +21,7 @@ def build() -> None:
   compile_output: list[bytes] = []
   for parallelism in ([], ["-j4"], ["-j1"]):
     compile_output.clear()
-    scons: subprocess.Popen = subprocess.Popen(["scons", *parallelism, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons: subprocess.Popen = subprocess.Popen(["scons", *parallelism], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
     assert scons.stderr is not None
 
     # Read progress from stderr and update spinner
