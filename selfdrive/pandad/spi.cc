@@ -63,9 +63,8 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   uint32_t spi_mode = SPI_MODE_0;
   uint8_t spi_bits_per_word = 8;
 
-  // 50MHz is the max of the 845. note that some older
-  // revs of the comma three may not support this speed
-  uint32_t spi_speed = 50000000;
+  // Dragon Q6A GENI SPI is stable below the 38MHz failure point.
+  uint32_t spi_speed = 30000000;
   try {
     if (!util::file_exists(SPI_DEVICE)) {
       throw std::runtime_error("Error connecting to panda: SPI device not found");
