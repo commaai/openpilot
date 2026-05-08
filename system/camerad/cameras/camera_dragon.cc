@@ -176,6 +176,59 @@ static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
   }
 }
 
+static void flip_y_plane_180(uint8_t *plane, int stride, int width, int height) {
+  for (int top = 0, bottom = height - 1; top <= bottom; top++, bottom--) {
+    uint8_t *top_row = plane + top * stride;
+    uint8_t *bottom_row = plane + bottom * stride;
+    if (top == bottom) {
+      for (int x = 0; x < width / 2; x++) {
+        uint8_t tmp = top_row[x];
+        top_row[x] = top_row[width - 1 - x];
+        top_row[width - 1 - x] = tmp;
+      }
+    } else {
+      for (int x = 0; x < width; x++) {
+        uint8_t tmp = top_row[x];
+        top_row[x] = bottom_row[width - 1 - x];
+        bottom_row[width - 1 - x] = tmp;
+      }
+    }
+  }
+}
+
+static void flip_uv_plane_180(uint8_t *plane, int stride, int width, int height) {
+  for (int top = 0, bottom = height - 1; top <= bottom; top++, bottom--) {
+    uint8_t *top_row = plane + top * stride;
+    uint8_t *bottom_row = plane + bottom * stride;
+    if (top == bottom) {
+      for (int x = 0; x < width / 2; x += 2) {
+        int rx = width - 2 - x;
+        uint8_t u = top_row[x];
+        uint8_t v = top_row[x + 1];
+        top_row[x] = top_row[rx];
+        top_row[x + 1] = top_row[rx + 1];
+        top_row[rx] = u;
+        top_row[rx + 1] = v;
+      }
+    } else {
+      for (int x = 0; x < width; x += 2) {
+        int rx = width - 2 - x;
+        uint8_t u = top_row[x];
+        uint8_t v = top_row[x + 1];
+        top_row[x] = bottom_row[rx];
+        top_row[x + 1] = bottom_row[rx + 1];
+        bottom_row[rx] = u;
+        bottom_row[rx + 1] = v;
+      }
+    }
+  }
+}
+
+static void flip_nv12_180(uint8_t *data, int stride, int width, int height, int uv_offset) {
+  flip_y_plane_180(data, stride, width, height);
+  flip_uv_plane_180(data + uv_offset, stride, width, height / 2);
+}
+
 class DragonCamera {
 public:
   CameraConfig cc;
@@ -767,6 +820,7 @@ void CameraState::process_rdi_frame(int buf_idx, uint64_t timestamp) {
     debayer_raw10_to_nv12(raw, raw_stride, y_plane, uv_plane,
                            camera.sensor->frame_width, camera.sensor->frame_height,
                            camera.stride);
+    flip_nv12_180(y_plane, camera.stride, camera.sensor->frame_width, camera.sensor->frame_height, camera.uv_offset);
   }
 
   VisionIpcBufExtra extra = {frame_id, timestamp, timestamp_eof};
@@ -823,6 +877,7 @@ void CameraState::process_pix_frame(int buf_idx, uint64_t timestamp) {
         memcpy(dst + camera.uv_offset + y * camera.stride,
                src + src_uv_off + y * v4l_stride, copy_w);
     }
+    flip_nv12_180(dst, camera.stride, camera.sensor->frame_width, camera.sensor->frame_height, camera.uv_offset);
   }
 
   VisionIpcBufExtra extra = {frame_id, timestamp, timestamp_eof};
