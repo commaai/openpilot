@@ -12,7 +12,7 @@ from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
-from openpilot.system.hardware import HARDWARE
+from openpilot.system.hardware import ASIUS, HARDWARE
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
@@ -52,6 +52,19 @@ if HARDWARE.get_device_type() == "tizi":
     AudibleAlert.disengage: ("disengage_tizi.wav", 1, MAX_VOLUME),
   })
 
+panda_sound_ids: dict[int, int] = {
+  AudibleAlert.engage: 1,
+  AudibleAlert.disengage: 2,
+  AudibleAlert.prompt: 3,
+  AudibleAlert.promptRepeat: 3,
+  AudibleAlert.promptDistracted: 3,
+  AudibleAlert.refuse: 4,
+  AudibleAlert.warningSoft: 5,
+  AudibleAlert.warningImmediate: 6,
+}
+
+PANDA_SOUND_RESET_DELAY = 0.2
+
 def check_selfdrive_timeout_alert(sm):
   ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
 
@@ -64,7 +77,8 @@ def check_selfdrive_timeout_alert(sm):
 
 class Soundd:
   def __init__(self):
-    self.load_sounds()
+    if not ASIUS:
+      self.load_sounds()
 
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
@@ -76,6 +90,13 @@ class Soundd:
     self.selfdrive_timeout_alert = False
 
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
+    self.panda_handle = None
+    self.panda_pending_sound_id = 0
+    self.panda_pending_start_time = 0.
+    self.panda_playing_sound_id = 0
+    self.panda_playing_start_time = 0.
+    self.panda_repeat_sound = False
+    self.panda_sound_durations = self.load_sound_durations() if ASIUS else {}
 
   def load_sounds(self):
     self.loaded_sounds: dict[int, np.ndarray] = {}
@@ -91,6 +112,13 @@ class Soundd:
 
         length = wavefile.getnframes()
         self.loaded_sounds[sound] = np.frombuffer(wavefile.readframes(length), dtype=np.int16).astype(np.float32) / (2**16/2)
+
+  def load_sound_durations(self):
+    durations = {}
+    for sound, (filename, _, _) in sound_list.items():
+      with wave.open(BASEDIR + "/selfdrive/assets/sounds/" + filename, 'r') as wavefile:
+        durations[sound] = wavefile.getnframes() / wavefile.getframerate()
+    return durations
 
   def get_sound_data(self, frames): # get "frames" worth of data from the current alert sound, looping when required
 
@@ -138,6 +166,71 @@ class Soundd:
       self.update_alert(AudibleAlert.none)
       self.selfdrive_timeout_alert = False
 
+  def panda_connect(self):
+    if self.panda_handle is None:
+      from panda.python.spi import PandaSpiHandle
+      self.panda_handle = PandaSpiHandle()
+    return self.panda_handle
+
+  def panda_set_sound(self, sound_id: int):
+    try:
+      self.panda_connect().controlWrite(0, 0xf6, sound_id, 0, b'', timeout=500)
+    except Exception:
+      cloudlog.exception("failed to set panda sound")
+      if self.panda_handle is not None:
+        self.panda_handle.close()
+      self.panda_handle = None
+
+  def panda_request_sound(self, sound_id: int, repeat: bool):
+    self.panda_repeat_sound = repeat
+    self.panda_pending_sound_id = 0
+    self.panda_playing_sound_id = 0
+    self.panda_set_sound(0)
+    if sound_id != 0:
+      self.panda_pending_sound_id = sound_id
+      self.panda_pending_start_time = time.monotonic() + PANDA_SOUND_RESET_DELAY
+
+  def update_panda_alert(self, new_alert):
+    if self.current_alert == new_alert:
+      return
+
+    self.current_alert = new_alert
+    if new_alert == AudibleAlert.none:
+      self.panda_request_sound(0, False)
+      return
+    if new_alert not in panda_sound_ids:
+      self.panda_request_sound(0, False)
+      return
+
+    self.panda_request_sound(panda_sound_ids.get(new_alert, 0), sound_list[new_alert][1] is None)
+
+  def get_panda_audible_alert(self, sm):
+    if sm.updated['selfdriveState']:
+      self.update_panda_alert(sm['selfdriveState'].alertSound.raw)
+    elif check_selfdrive_timeout_alert(sm):
+      self.update_panda_alert(AudibleAlert.warningImmediate)
+      self.selfdrive_timeout_alert = True
+    elif self.selfdrive_timeout_alert:
+      self.update_panda_alert(AudibleAlert.none)
+      self.selfdrive_timeout_alert = False
+
+  def update_panda_playback(self):
+    now = time.monotonic()
+    if self.panda_pending_sound_id != 0 and now >= self.panda_pending_start_time:
+      self.panda_set_sound(self.panda_pending_sound_id)
+      self.panda_playing_sound_id = self.panda_pending_sound_id
+      self.panda_playing_start_time = now
+      self.panda_pending_sound_id = 0
+
+    if self.panda_repeat_sound and self.panda_playing_sound_id != 0:
+      duration = self.panda_sound_durations.get(self.current_alert, 3.0)
+      if now - self.panda_playing_start_time >= duration + PANDA_SOUND_RESET_DELAY:
+        sound_id = self.panda_playing_sound_id
+        self.panda_set_sound(0)
+        self.panda_playing_sound_id = 0
+        self.panda_pending_sound_id = sound_id
+        self.panda_pending_start_time = now + PANDA_SOUND_RESET_DELAY
+
   def calculate_volume(self, weighted_db):
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
     return math.pow(VOLUME_BASE, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
@@ -150,6 +243,18 @@ class Soundd:
     return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
 
   def soundd_thread(self):
+    if ASIUS:
+      sm = messaging.SubMaster(['selfdriveState'])
+      rk = Ratekeeper(20)
+      try:
+        while True:
+          sm.update(0)
+          self.get_panda_audible_alert(sm)
+          self.update_panda_playback()
+          rk.keep_time()
+      finally:
+        self.panda_set_sound(0)
+
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
