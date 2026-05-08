@@ -70,6 +70,10 @@ function launch {
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
 
+  if [ -f /ASIUS ]; then
+    python3 -m openpilot.selfdrive.ui.ledd --startup-once > /tmp/asius_ledd_startup 2>&1 || true
+  fi
+
   # hardware specific init
   if [ -f /AGNOS ]; then
     agnos_init
