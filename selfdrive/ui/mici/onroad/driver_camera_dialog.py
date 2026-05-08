@@ -41,7 +41,7 @@ class BaseDriverCameraDialog(Widget):
 
   def show_event(self):
     super().show_event()
-    ui_state.params.put_bool("IsDriverViewEnabled", True)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
     self._publish_alert_sound(None)
     device.set_override_interactive_timeout(300)
     ui_state.params.remove("DriverTooDistracted")
@@ -49,7 +49,7 @@ class BaseDriverCameraDialog(Widget):
 
   def hide_event(self):
     super().hide_event()
-    ui_state.params.put_bool("IsDriverViewEnabled", False)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
     device.set_override_interactive_timeout(None)
 
   def _handle_mouse_release(self, _):
