@@ -4,7 +4,7 @@ import time
 
 from cereal import messaging
 from openpilot.system.hardware import TICI
-from openpilot.common.realtime import config_realtime_process, set_core_affinity
+from openpilot.common.realtime import Priority, config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
@@ -16,7 +16,7 @@ BIG_UI = gui_app.big_ui()
 def main():
   cores = {5, }
   # above plannerd and radard
-  config_realtime_process(0, 53)
+  config_realtime_process(0, Priority.CTRL_HIGH)
 
   gui_app.init_window("UI")
   if BIG_UI:
