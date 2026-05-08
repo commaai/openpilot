@@ -317,8 +317,8 @@ class GuiApplication:
         self._ffmpeg_thread.start()
 
       # four display runs slightly faster than 60 FPS, let it dictate rate so we don't drift and drop frames
-      mici = HARDWARE.get_device_type() == 'mici'
-      rl.set_target_fps(0 if OFFSCREEN or mici else fps)
+      vblank_control = HARDWARE.get_device_type() == 'mici'
+      rl.set_target_fps(0 if OFFSCREEN or vblank_control else fps)
 
       self._target_fps = fps
       self._set_styles()
