@@ -108,14 +108,23 @@ def test_reconcile_disconnected_stays_disconnected(wm, mocker):
   activated.assert_not_called()
 
 
-def test_reconcile_disconnected_skips_ap_mode_status(wm):
+def test_reconcile_disconnected_adopts_ap_mode_status(wm, mocker):
+  """If startup adoption missed (e.g. transient STATUS failure), reconcile must re-adopt
+  AP state so we don't stay DISCONNECTED while attached to the AP daemon."""
+  activated = mocker.MagicMock()
+  wm._activated.append(activated)
+  wm._tethering_ssid = "weedle"
   wm._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
   wm._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=tether\n"
 
   wm._reconcile_connecting_state()
+  wm.process_callbacks()
 
-  assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+  assert wm._tethering_active
+  assert wm._wifi_state.status == ConnectStatus.CONNECTED
+  assert wm._wifi_state.ssid == "tether"
   wm._dhcp.start.assert_not_called()
+  activated.assert_called_once()
 
 
 def test_reconcile_disconnected_skipped_during_tethering(wm):

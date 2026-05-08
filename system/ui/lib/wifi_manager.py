@@ -200,10 +200,7 @@ class WifiManager:
         # so the STA path below would flush wlan0 and kill the live hotspot.
         if self._user_epoch != epoch:
           return
-        self._tethering_active = True
-        self._wifi_state = WifiState(ssid=ssid or self._tethering_ssid, status=ConnectStatus.CONNECTED)
-        self._ipv4_address = TETHERING_IP_ADDRESS
-        self._enqueue_callbacks(self._activated)
+        self._adopt_ap_state(ssid)
         return
 
       if wpa_state == "COMPLETED":
@@ -387,6 +384,14 @@ class WifiManager:
             pass
         time.sleep(2)
 
+  def _adopt_ap_state(self, ssid: str | None) -> None:
+    """Mark a live hotspot as active without touching dnsmasq/iptables — those daemons
+    survive UI restart via start_new_session, so adoption only updates manager state."""
+    self._tethering_active = True
+    self._wifi_state = WifiState(ssid=ssid or self._tethering_ssid, status=ConnectStatus.CONNECTED)
+    self._ipv4_address = TETHERING_IP_ADDRESS
+    self._enqueue_callbacks(self._activated)
+
   def _handle_connected(self, ssid: str):
     """Transition to CONNECTED. Idempotent on (ssid, CONNECTED) so the monitor and
     reconcile paths can both call in without each one killing the previous udhcpc."""
@@ -527,8 +532,11 @@ class WifiManager:
         status = parse_status(self._request("STATUS"))
       except Exception:
         return
-      # wpa_supplicant also reports COMPLETED in AP mode; station DHCP would flush the hotspot.
+      # wpa_supplicant reports COMPLETED in AP mode too; STA path would flush the hotspot. Re-adopt
+      # so a missed startup adoption (e.g. transient STATUS failure) doesn't strand us in DISCONNECTED
+      # while still attached to the AP daemon, which would route station actions to the AP socket.
       if status.get("mode") == "AP":
+        self._adopt_ap_state(status.get("ssid"))
         return
       if status.get("wpa_state") == "COMPLETED" and status.get("ssid"):
         self._handle_connected(status["ssid"])
