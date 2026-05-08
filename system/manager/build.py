@@ -14,22 +14,17 @@ MAX_BUILD_PROGRESS = 100
 
 def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
   env = os.environ.copy()
-  nproc = os.cpu_count()
-  if nproc is None:
-    nproc = 2
-
   extra_args = ["--minimal"] if minimal else []
 
   if AGNOS:
     HARDWARE.set_power_save(False)
     os.sched_setaffinity(0, range(8))  # ensure we can use the isolcpus cores
 
-  # building with all cores can result in using too
-  # much memory, so retry with less parallelism
+  # building with all cores can result in using too much memory, so retry serially
   compile_output: list[bytes] = []
-  for n in (nproc, nproc/2, 1):
+  for parallelism in ([], ["-j1"]):
     compile_output.clear()
-    scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate", *extra_args], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons: subprocess.Popen = subprocess.Popen(["scons", *parallelism, "--cache-populate", *extra_args], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
     assert scons.stderr is not None
 
     # Read progress from stderr and update spinner
