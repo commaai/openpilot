@@ -137,19 +137,21 @@ class MouseEvent(NamedTuple):
 class MouseState:
   def __init__(self, scale: float = 1.0):
     self._scale = scale
-    self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
+    # SPSC: mouse thread appends, main thread popleft-drains. deque ops are atomic; no lock needed.
+    self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
     self._rk = Ratekeeper(MOUSE_THREAD_RATE, print_delay_threshold=None)
-    self._lock = threading.Lock()
     self._exit_event = threading.Event()
     self._thread = None
 
   def get_events(self) -> list[MouseEvent]:
-    with self._lock:
-      events = list(self._events)
-      self._events.clear()
-    return events
+    events: list[MouseEvent] = []
+    while True:
+      try:
+        events.append(self._events.popleft())
+      except IndexError:
+        return events
 
   def start(self):
     self._exit_event.clear()
@@ -163,6 +165,15 @@ class MouseState:
       self._thread.join()
 
   def _run_thread(self):
+    # Drop one priority below main render thread so mouse never round-robins with it.
+    # Mouse still polls at MOUSE_THREAD_RATE since it runs in main's vsync-wait gaps.
+    # TODO: this priority drop slightly worsens the timestamp jitter described in
+    #  _handle_mouse_event's TODO. Reading evdev kernel timestamps directly fixes both
+    #  (event-driven instead of polled, real arrival times instead of monotonic at poll).
+    try:
+      os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(98))
+    except OSError:
+      pass
     while not self._exit_event.is_set():
       rl.poll_input_events()
       self._handle_mouse_event()
@@ -188,8 +199,7 @@ class MouseState:
       # Only add changes
       prev = self._prev_mouse_event[slot]
       if prev is None or ev[:-1] != prev[:-1]:
-        with self._lock:
-          self._events.append(ev)
+        self._events.append(ev)
         self._prev_mouse_event[slot] = ev
 
 

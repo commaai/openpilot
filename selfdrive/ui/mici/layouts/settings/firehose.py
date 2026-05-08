@@ -1,3 +1,4 @@
+import os
 import requests
 import threading
 import time
@@ -213,8 +214,10 @@ class FirehoseLayoutBase(Widget):
 
   def _update_loop(self):
     while self._running:
-      if not ui_state.started and device._awake:
-        self._fetch_firehose_stats()
+      # Kill switch: `touch /tmp/disable_bg_threads` to skip work this iteration
+      if not os.path.exists('/tmp/disable_bg_threads'):
+        if not ui_state.started and device._awake:
+          self._fetch_firehose_stats()
       time.sleep(self.UPDATE_INTERVAL)
 
 

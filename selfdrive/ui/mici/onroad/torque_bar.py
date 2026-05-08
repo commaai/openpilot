@@ -188,6 +188,12 @@ class TorqueBar(Widget):
       self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 
   def _render(self, rect: rl.Rectangle) -> None:
+    import time as _t
+    if not hasattr(self, '_dbg_acc'):
+      self._dbg_acc: dict[str, float] = {}
+      self._dbg_n = 0
+    _ts = _t.monotonic()
+
     # adjust y pos with torque (scalar interp [0.5, 1] -> [a, b])
     abs_t = abs(self._torque_filter.x)
     _f = (abs_t - 0.5) * 2.0  # / 0.5

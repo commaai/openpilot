@@ -71,8 +71,10 @@ class PrimeState:
   def _worker_thread(self) -> None:
     from openpilot.selfdrive.ui.ui_state import ui_state, device
     while self._running:
-      if not ui_state.started and device._awake:
-        self._fetch_prime_status()
+      # Kill switch: `touch /tmp/disable_bg_threads` to skip work this iteration
+      if not os.path.exists('/tmp/disable_bg_threads'):
+        if not ui_state.started and device._awake:
+          self._fetch_prime_status()
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
         if not self._running:

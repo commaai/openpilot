@@ -1,3 +1,4 @@
+import os
 import pyray as rl
 import numpy as np
 import time
@@ -237,6 +238,12 @@ class Device:
     self._brightness_thread: threading.Thread | None = None  # lazy-started after fork
 
   def _brightness_loop(self):
+    # Drop inherited RT99/cpu5 from main thread — this is background I/O.
+    try:
+      os.sched_setaffinity(0, range(os.cpu_count() or 8))
+      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    except OSError:
+      pass
     while True:
       self._brightness_event.wait()
       self._brightness_event.clear()

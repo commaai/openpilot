@@ -1,4 +1,5 @@
 import datetime
+import os
 import threading
 import time
 
@@ -169,6 +170,12 @@ class MiciHomeLayout(Widget):
     super().show_event()
 
   def _params_refresh_loop(self):
+    # Drop inherited RT99/cpu5 from main thread — this is background I/O.
+    try:
+      os.sched_setaffinity(0, range(os.cpu_count() or 8))
+      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    except OSError:
+      pass
     while not self._params_thread_exit.is_set():
       self._version_text = self._get_version_text()
       self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
