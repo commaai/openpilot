@@ -125,7 +125,7 @@ def manager_failed(sm) -> bool:
 
 def panda_disconnected(sm) -> bool:
   if not sm.seen['pandaStates'] or not sm.alive['pandaStates']:
-    return sm.seen['managerState']
+    return True
 
   panda_states = sm['pandaStates']
   if len(panda_states) == 0:
@@ -332,7 +332,6 @@ def main() -> None:
     'selfdriveState',
   ], ignore_avg_freq=['managerState'])
   rk = Ratekeeper(RUNTIME_HZ)
-  led.set(STARTING, force=True)
 
   while not done:
     sm.update(0)
