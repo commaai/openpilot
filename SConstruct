@@ -1,4 +1,3 @@
-import atexit
 import os
 import subprocess
 import sys
@@ -257,11 +256,6 @@ if GetOption('extras') and arch != "larch64":
 env.CompilationDatabase('compile_commands.json')
 
 # progress output
-progress_node_interval = 5
-progress_node_count = 0
-progress_last = -1.
-progress_tty = sys.stderr.isatty()
-
 def count_scons_nodes(nodes):
   seen = set()
   stack = list(nodes)
@@ -273,28 +267,27 @@ def count_scons_nodes(nodes):
     seen.add(node)
     executor = node.get_executor()
     if executor is not None:
-      stack.extend(executor.get_all_prerequisites())
-      stack.extend(executor.get_all_children())
+      stack += executor.get_all_prerequisites() + executor.get_all_children()
 
   return len(seen)
 
-progress_targets = env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)
-progress_total_nodes = count_scons_nodes(progress_targets)
+progress_interval = 5
+progress_count = 0
+progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
+progress_format = "progress: %.1f\n"
 
-def progress_function(node):
-  global progress_last, progress_node_count
-  progress_node_count = min(progress_node_count + progress_node_interval, progress_total_nodes)
-  progress = 100. if progress_total_nodes == 0 else round(100. * progress_node_count / progress_total_nodes, 1)
-  if progress == progress_last:
-    return
-  progress_last = progress
-  if progress_tty:
-    sys.stderr.write("\rBuilding: %5.1f%%" % progress)
-  else:
-    sys.stderr.write("progress: %.1f\n" % progress)
-  sys.stderr.flush()
-
-if progress_tty:
+if sys.stderr.isatty():
+  import atexit
+  progress_format = "\rBuilding: %5.1f%%"
   atexit.register(lambda: sys.stderr.write("\n"))
 
-Progress(progress_function, interval=progress_node_interval)
+def progress_function(node):
+  global progress_count
+  if progress_count >= progress_total:
+    return
+  progress_count = min(progress_count + progress_interval, progress_total)
+  progress = round(100. * progress_count / progress_total, 1)
+  sys.stderr.write(progress_format % progress)
+  sys.stderr.flush()
+
+Progress(progress_function, interval=progress_interval)
