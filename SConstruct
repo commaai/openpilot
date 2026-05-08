@@ -265,24 +265,18 @@ progress_tty = sys.stderr.isatty()
 def count_scons_nodes(nodes):
   seen = set()
   stack = list(nodes)
-  count = 0
 
   while stack:
     node = stack.pop().disambiguate()
     if node in seen:
       continue
-
+    seen.add(node)
     executor = node.get_executor()
-    targets = executor.get_all_targets() if executor is not None else [node]
-    new_targets = [target for target in targets if target not in seen]
-    seen.update(new_targets)
-    count += len(new_targets)
-
     if executor is not None:
       stack.extend(executor.get_all_prerequisites())
       stack.extend(executor.get_all_children())
 
-  return count
+  return len(seen)
 
 progress_targets = env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)
 progress_total_nodes = count_scons_nodes(progress_targets)
