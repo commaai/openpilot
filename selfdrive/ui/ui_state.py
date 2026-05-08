@@ -123,7 +123,7 @@ class UIState:
     self.prime_state.start()  # start thread after manager forks ui
     sections.append(('prime_start', time.monotonic() - t0)); t1 = time.monotonic()
 
-    self.sm.update(0)
+    # self.sm.update(0)
     sections.append(('sm.update', time.monotonic() - t1)); t1 = time.monotonic()
 
     self._update_state()
@@ -141,6 +141,11 @@ class UIState:
             "  ".join(f"{n}={t*1000:.2f}ms" for n, t in sections))
 
   def _params_refresh_loop(self):
+    # TEMP: testing RT99 to see if priority affects spike behavior
+    try:
+      os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(99))
+    except OSError:
+      pass
     while not self._params_thread_exit.is_set():
       self.update_params()
       self._params_thread_exit.wait(PARAM_UPDATE_TIME)
@@ -240,9 +245,8 @@ class Device:
     self._brightness_thread: threading.Thread | None = None  # lazy-started after fork
 
   def _brightness_loop(self):
-    # Drop inherited RT99/cpu5 from main thread — this is background I/O.
+    # Drop inherited RT99 from main thread — background work, never preempt render.
     try:
-      os.sched_setaffinity(0, range(os.cpu_count() or 8))
       os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
     except OSError:
       pass

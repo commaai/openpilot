@@ -1,6 +1,7 @@
 import jwt
 import os
 import requests
+import time
 from datetime import datetime, timedelta, UTC
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
@@ -43,15 +44,20 @@ class Api:
 
 
 def api_get(endpoint, method='GET', timeout=None, access_token=None, session=None, **params):
+  t0 = time.monotonic()
   headers = {}
   if access_token is not None:
     headers['Authorization'] = "JWT " + access_token
 
   headers['User-Agent'] = "openpilot-" + get_version()
+  t_headers = time.monotonic()
 
   # TODO: add session to Api
   req = requests if session is None else session
-  return req.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
+  resp = req.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
+  t_req = time.monotonic()
+  print(f"  >> api_get[{endpoint[:30]}]: headers={(t_headers-t0)*1000:.1f}ms req.request={(t_req-t_headers)*1000:.1f}ms")
+  return resp
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:

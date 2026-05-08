@@ -52,6 +52,16 @@ class PrimeState:
 
     try:
       identity_token = get_token(dongle_id)
+      # FIXME: this api_get call (~127ms) caused multi-ms main-thread spikes when
+      # this thread was enabled. Most of the time is socket I/O (GIL released), but
+      # requests/urllib3/ssl Python internals hold the GIL in 1-5ms chunks between
+      # syscalls — long enough to stall the render thread past CPython's 5ms
+      # switch_interval. Mitigations to consider before re-enabling:
+      #   1. Move the HTTPS to a subprocess (curl) — eliminates GIL impact entirely.
+      #   2. Bump FETCH_INTERVAL to 60s+ and trigger on-demand refresh from screens
+      #      that need fresh prime state (e.g. settings/pair).
+      #   3. Use http.client/socket directly — less Python overhead than requests
+      #      but won't fully eliminate GIL stalls in the SSL/header path.
       response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token, session=self._session)
       if response.status_code == 200:
         data = response.json()
@@ -65,20 +75,19 @@ class PrimeState:
     with self._lock:
       if prime_type != self.prime_type:
         self.prime_type = prime_type
-        self._params.put("PrimeType", int(prime_type))
+        self._params.put_nonblocking("PrimeType", int(prime_type))
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _worker_thread(self) -> None:
-    # Drop inherited RT99/cpu5 from main thread — this is background network I/O.
+    # Drop inherited RT99 from main thread — background work, never preempt render.
     try:
-      os.sched_setaffinity(0, range(os.cpu_count() or 8))
       os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
     except OSError:
       pass
     from openpilot.selfdrive.ui.ui_state import ui_state, device
     while self._running:
       # Networking gate: `touch /tmp/enable_bg_threads` to allow API calls.
-      if False and os.path.exists('/tmp/enable_bg_threads'):  # TEMP: force off for thread bisect
+      if os.path.exists('/tmp/enable_bg_threads'):
         if not ui_state.started and device._awake:
           self._fetch_prime_status()
 
@@ -88,6 +97,7 @@ class PrimeState:
         time.sleep(self.SLEEP_INTERVAL)
 
   def start(self) -> None:
+    return  # disabled: GIL contention from requests/json caused multi-ms main-thread spikes
     if self._thread and self._thread.is_alive():
       return
     self._running = True

@@ -42,7 +42,7 @@ class FirehoseLayoutBase(Widget):
   RED = rl.Color(231, 76, 60, 255)
   GRAY = rl.Color(68, 68, 68, 255)
   LIGHT_GRAY = rl.Color(228, 228, 228, 255)
-  UPDATE_INTERVAL = 30  # seconds
+  UPDATE_INTERVAL = 5  # seconds
 
   def __init__(self):
     super().__init__()
@@ -200,28 +200,36 @@ class FirehoseLayoutBase(Widget):
 
   def _fetch_firehose_stats(self):
     try:
+      t0 = time.monotonic()
       dongle_id = self._params.get("DongleId")
+      t_dongle = time.monotonic()
       if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
         return
       identity_token = get_token(dongle_id)
+      t_token = time.monotonic()
       response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token, session=self._session)
+      t_http = time.monotonic()
       if response.status_code == 200:
         data = response.json()
+        t_json = time.monotonic()
         self._segment_count = data.get("firehose", 0)
-        self._params.put(self.PARAM_KEY, data)
+        self._params.put_nonblocking(self.PARAM_KEY, data)
+        t_set = time.monotonic()
+        print(f">> firehose fetch: dongle={(t_dongle-t0)*1000:.1f}ms token={(t_token-t_dongle)*1000:.1f}ms "
+              f"http={(t_http-t_token)*1000:.1f}ms json={(t_json-t_http)*1000:.1f}ms set={(t_set-t_json)*1000:.1f}ms "
+              f"total={(t_set-t0)*1000:.1f}ms")
     except Exception as e:
       cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def _update_loop(self):
-    # Drop inherited RT99/cpu5 from main thread — this is background network I/O.
+    # Drop inherited RT99 from main thread — background work, never preempt render.
     try:
-      os.sched_setaffinity(0, range(os.cpu_count() or 8))
       os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
     except OSError:
       pass
     while self._running:
       # Networking gate: `touch /tmp/enable_bg_threads` to allow API calls.
-      if False and os.path.exists('/tmp/enable_bg_threads'):  # TEMP: force off for thread bisect
+      if os.path.exists('/tmp/enable_bg_threads'):
         if not ui_state.started and device._awake:
           self._fetch_firehose_stats()
       time.sleep(self.UPDATE_INTERVAL)

@@ -225,7 +225,12 @@ class MiciHomeLayout(Widget):
     self._openpilot_label.render()
 
     if self._version_text is not None:
-      # release branch
+      # TODO: set_text on these labels runs every frame even though _version_text is
+      # set once at init and never changes (manager.py writes Version/GitCommit/etc
+      # at boot). Each set_text re-measures glyph widths / invalidates the label's
+      # cached layout — costs ~0.5ms/frame total across these 4 labels. Move all
+      # label set_text + set_max_width calls into __init__ once _version_text is
+      # populated, leave _render with positioning + draw only.
       release_branch = self._version_text[1] in RELEASE_BRANCHES
       version_pos = rl.Rectangle(text_pos.x, text_pos.y + self._openpilot_label.font_size + 16, 100, 44)
       self._version_label.set_text(self._version_text[0])
