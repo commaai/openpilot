@@ -233,28 +233,28 @@ def engaged_state(sm) -> LedState:
   return blend("engaged_red", YELLOW, CRITICAL, (util - 0.85) / 0.15)
 
 
-def led_state(sm) -> tuple[LedState | None, bool]:
+def led_state(sm) -> LedState | None:
   if panda_disconnected(sm):
-    return None, False
+    return None
 
   if manager_failed(sm) or panda_failed(sm):
-    return CRITICAL, True
+    return CRITICAL
 
   if not sm.seen['deviceState']:
-    return STARTING, True
+    return STARTING
 
   alert = alert_state(sm)
   if alert is not None:
-    return alert, True
+    return alert
 
   if sm.seen['selfdriveState'] and sm.alive['selfdriveState']:
     selfdrive_state = sm['selfdriveState']
     if selfdrive_state.enabled:
-      return engaged_state(sm), False
+      return engaged_state(sm)
     if sm['deviceState'].started and not selfdrive_state.engageable:
-      return WARNING, True
+      return WARNING
 
-  return READY, False
+  return READY
 
 
 def set_startup_once(timeout: int = STARTUP_TIMEOUT) -> None:
@@ -275,11 +275,9 @@ def startup_blink() -> None:
   signal.signal(signal.SIGTERM, sigterm_handler)
 
   end_time = time.monotonic() + STARTUP_TIMEOUT
-  on = False
+  led.set(STARTING, timeout=STARTUP_TIMEOUT, force=True)
   while not done and time.monotonic() < end_time:
-    on = not on
-    led.set(STARTING if on else OFF, force=True)
-    time.sleep(0.35)
+    time.sleep(1.0)
   led.clear()
 
 
@@ -335,14 +333,12 @@ def main() -> None:
 
   while not done:
     sm.update(0)
-    state, should_blink = led_state(sm)
+    state = led_state(sm)
     if state is None:
       if led.last_state is not None:
         led.clear()
-    elif should_blink and int(time.monotonic() * 2) % 2 == 0:
-      led.set(OFF, force=True)
     else:
-      led.set(state, force=should_blink)
+      led.set(state)
     rk.keep_time()
 
   led.clear()
