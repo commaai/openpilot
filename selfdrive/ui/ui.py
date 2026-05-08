@@ -25,7 +25,7 @@ def main():
 
   pm = messaging.PubMaster(['uiDebug'])
   for should_render, frame_time, cpu_time in gui_app.render():
-    t_start = time.monotonic()
+    extra_start = time.monotonic()
     ui_state.update()
 
     if should_render:
@@ -36,9 +36,9 @@ def main():
         except OSError:
           pass
 
-      additional_time = time.monotonic() - t_start
+      extra_cpu = time.monotonic() - extra_start
       msg = messaging.new_message('uiDebug')
-      msg.uiDebug.cpuTimeMillis = (cpu_time + additional_time) * 1000
+      msg.uiDebug.cpuTimeMillis = (cpu_time + extra_cpu) * 1000
       msg.uiDebug.frameTimeMillis = frame_time * 1000
       pm.send('uiDebug', msg)
 
