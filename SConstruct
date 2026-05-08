@@ -1,4 +1,3 @@
-import atexit
 import os
 import subprocess
 import sys
@@ -292,7 +291,6 @@ progress_format = "progress: %.1f\n"
 
 if sys.stderr.isatty():
   progress_format = "\rBuilding: %5.1f%%"
-  atexit.register(lambda: sys.stderr.write("\n"))
 
 def progress_function(node):
   global progress_count
@@ -301,6 +299,8 @@ def progress_function(node):
   progress_count = min(progress_count + progress_interval, progress_total)
   progress = round(100. * progress_count / progress_total, 1)
   sys.stderr.write(progress_format % progress)
+  if progress == 100. and sys.stderr.isatty():
+    sys.stderr.write("\n")
   sys.stderr.flush()
 
 Progress(progress_function, interval=progress_interval)
