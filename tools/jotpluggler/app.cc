@@ -241,9 +241,14 @@ void apply_dbc_override_change(AppSession *session, UiState *state, const std::s
   }
 }
 
-void configure_style() {
-  ImGui::StyleColorsLight();
-  ImPlot::StyleColorsLight();
+void configure_style(UiState *state) {
+  if (state->dark_mode) {
+    ImGui::StyleColorsDark();
+    ImPlot::StyleColorsDark();
+  }else {
+    ImGui::StyleColorsLight();
+    ImPlot::StyleColorsLight();
+  }
 
   ImGuiIO &io = ImGui::GetIO();
   g_ui_font = nullptr;
@@ -314,8 +319,31 @@ void configure_style() {
     {ImGuiCol_TabDimmed, 213, 219, 226}, {ImGuiCol_TabDimmedSelected, 244, 247, 249},
     {ImGuiCol_TabDimmedSelectedOverline, 92, 109, 136}, {ImGuiCol_DockingEmptyBg, 244, 246, 248},
   };
-  for (const auto &c : COLORS) { style.Colors[c.idx] = color_rgb(c.r, c.g, c.b); }
-  style.Colors[ImGuiCol_DockingPreview] = color_rgb(69, 115, 184, 0.22f);
+  constexpr ColorDef DARK_COLORS[] = {
+    {ImGuiCol_WindowBg, 18, 20, 23},     {ImGuiCol_ChildBg, 24, 26, 30},
+    {ImGuiCol_Border, 55, 60, 68},       {ImGuiCol_TitleBg, 20, 22, 26},
+    {ImGuiCol_TitleBgActive, 22, 24, 28},{ImGuiCol_TitleBgCollapsed, 20, 22, 26},
+    {ImGuiCol_Text, 210, 214, 220},      {ImGuiCol_TextDisabled, 120, 128, 138},
+    {ImGuiCol_Button, 34, 38, 44},       {ImGuiCol_ButtonHovered, 44, 49, 57},
+    {ImGuiCol_ButtonActive, 54, 60, 70}, {ImGuiCol_FrameBg, 28, 31, 36},
+    {ImGuiCol_FrameBgHovered, 35, 39, 46},{ImGuiCol_FrameBgActive, 42, 47, 55},
+    {ImGuiCol_Header, 36, 41, 49},       {ImGuiCol_HeaderHovered, 44, 50, 60},
+    {ImGuiCol_HeaderActive, 52, 59, 70}, {ImGuiCol_PopupBg, 24, 27, 32},
+    {ImGuiCol_MenuBarBg, 22, 25, 30},    {ImGuiCol_Separator, 55, 60, 68},
+    {ImGuiCol_ScrollbarBg, 20, 23, 27},  {ImGuiCol_ScrollbarGrab, 60, 66, 76},
+    {ImGuiCol_ScrollbarGrabHovered, 76, 83, 95},{ImGuiCol_ScrollbarGrabActive, 92, 100, 114},
+    {ImGuiCol_Tab, 28, 32, 38},          {ImGuiCol_TabHovered, 40, 46, 54},
+    {ImGuiCol_TabSelected, 34, 39, 47},  {ImGuiCol_TabSelectedOverline, 92, 139, 214},
+    {ImGuiCol_TabDimmed, 24, 27, 33},    {ImGuiCol_TabDimmedSelected, 30, 35, 42},
+    {ImGuiCol_TabDimmedSelectedOverline, 70, 100, 160},{ImGuiCol_DockingEmptyBg, 14, 16, 19},
+  };
+  if(state->dark_mode){
+    for (const auto &c : DARK_COLORS) { style.Colors[c.idx] = color_rgb(c.r, c.g, c.b); }
+    style.Colors[ImGuiCol_DockingPreview] = color_rgb(92, 139, 214, 0.22f);
+  } else {
+    for (const auto &c : COLORS) { style.Colors[c.idx] = color_rgb(c.r, c.g, c.b); }
+    style.Colors[ImGuiCol_DockingPreview] = color_rgb(69, 115, 184, 0.22f);
+  }
 
   ImPlotStyle &plot_style = ImPlot::GetStyle();
   plot_style.PlotBorderSize = 1.0f;
@@ -743,8 +771,13 @@ std::array<uint8_t, 3> app_next_curve_color(const Pane &pane) {
 void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool show_camera_feed) {
   ImGui::SetNextWindowPos(ImVec2(0.0f, ui.top_offset));
   ImGui::SetNextWindowSize(ImVec2(ui.sidebar_width, std::max(1.0f, ui.height - ui.top_offset)));
-  ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(238, 240, 244));
-  ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(190, 197, 205));
+  if (state->dark_mode) {
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(26, 29, 33));
+    ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(55, 60, 68));
+  } else {
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(238, 240, 244));
+    ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(190, 197, 205));
+  }
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoResize |
@@ -1550,11 +1583,19 @@ void draw_pane_windows(AppSession *session, UiState *state) {
     std::optional<PaneDropAction> drop_action;
     bool close_pane_requested = false;
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(250, 250, 251));
-    ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(194, 198, 204));
-    ImGui::PushStyleColor(ImGuiCol_TitleBg, color_rgb(252, 252, 253));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, color_rgb(252, 252, 253));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, color_rgb(252, 252, 253));
+    if (state->dark_mode) {
+      ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(24, 26, 30));
+      ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(55, 60, 68));
+      ImGui::PushStyleColor(ImGuiCol_TitleBg, color_rgb(22, 24, 28));
+      ImGui::PushStyleColor(ImGuiCol_TitleBgActive, color_rgb(22, 24, 28));
+      ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, color_rgb(22, 24, 28));
+    } else {
+      ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(250, 250, 251));
+      ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(194, 198, 204));
+      ImGui::PushStyleColor(ImGuiCol_TitleBg, color_rgb(252, 252, 253));
+      ImGui::PushStyleColor(ImGuiCol_TitleBgActive, color_rgb(252, 252, 253));
+      ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, color_rgb(252, 252, 253));
+    }
     const ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
     const std::string window_name = pane_window_name(tab_state->runtime_id, static_cast<int>(i), pane);
     const bool opened = ImGui::Begin(window_name.c_str(), nullptr, flags);
@@ -1612,8 +1653,13 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
   ImGui::SetNextWindowPos(ImVec2(ui.content_x, ui.content_y));
   ImGui::SetNextWindowSize(ImVec2(ui.content_w, ui.content_h));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(244, 246, 248));
-  ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(186, 191, 198));
+  if (state->dark_mode) {
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(14, 16, 19));
+    ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(50, 55, 63));
+  } else {
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, color_rgb(244, 246, 248));
+    ImGui::PushStyleColor(ImGuiCol_Border, color_rgb(186, 191, 198));
+  }
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoResize |
@@ -1720,16 +1766,22 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
         }
       }
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 5.0f));
-      ImGui::PushStyleColor(ImGuiCol_Tab, color_rgb(210, 217, 225));
-      ImGui::PushStyleColor(ImGuiCol_TabHovered, color_rgb(224, 230, 237));
-      ImGui::PushStyleColor(ImGuiCol_TabSelected, color_rgb(242, 245, 248));
+      if (state->dark_mode) {
+        ImGui::PushStyleColor(ImGuiCol_Tab, color_rgb(28, 32, 38));
+        ImGui::PushStyleColor(ImGuiCol_TabHovered, color_rgb(40, 46, 54));
+        ImGui::PushStyleColor(ImGuiCol_TabSelected, color_rgb(34, 39, 47));
+      } else {
+        ImGui::PushStyleColor(ImGuiCol_Tab, color_rgb(210, 217, 225));
+        ImGui::PushStyleColor(ImGuiCol_TabHovered, color_rgb(224, 230, 237));
+        ImGui::PushStyleColor(ImGuiCol_TabSelected, color_rgb(242, 245, 248));
+      }
       if (ImGui::TabItemButton("   ##new_tab_button", ImGuiTabItemFlags_Trailing)) {
         pending_action = TabActionKind::New;
       }
       {
         const ImRect rect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
-        const ImU32 color = ImGui::GetColorU32(color_rgb(72, 79, 88));
+        const ImU32 color = ImGui::GetColorU32(state->dark_mode ? color_rgb(200, 207, 215) : color_rgb(72, 79, 88));
         const ImVec2 center((rect.Min.x + rect.Max.x) * 0.5f, (rect.Min.y + rect.Max.y) * 0.5f);
         constexpr float half_extent = 6.25f;
         constexpr float thickness = 2.0f;
@@ -1842,7 +1894,7 @@ int run(const Options &options) {
 
   GlfwRuntime glfw_runtime(options);
   ImGuiRuntime imgui_runtime(glfw_runtime.window());
-  configure_style();
+  configure_style(&ui_state);
   session.map_data = std::make_unique<MapDataManager>();
   for (std::unique_ptr<CameraFeedView> &feed : session.pane_camera_feeds) {
     feed = std::make_unique<CameraFeedView>();

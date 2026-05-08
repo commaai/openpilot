@@ -1,4 +1,5 @@
 #include "tools/jotpluggler/internal.h"
+#include "tools/jotpluggler/app.h"
 
 #include "imgui_internal.h"
 
@@ -755,6 +756,11 @@ float draw_main_menu_bar(AppSession *session, UiState *state) {
         clamp_shared_range(state, *session);
         state->suppress_range_side_effects = true;
         state->status_text = "Plot view reset";
+      }
+      ImGui::Separator();
+      if (ImGui::MenuItem("toggle theme")) {
+        state->dark_mode = !state->dark_mode;
+        configure_style(state);
       }
       ImGui::Separator();
       if (ImGui::MenuItem("Close")) {
