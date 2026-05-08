@@ -55,7 +55,7 @@ class FirehoseLayoutBase(Widget):
 
     self._running = True
     self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-    # self._update_thread.start()  # disabled for perf testing
+    self._update_thread.start()
 
   def __del__(self):
     self._running = False
@@ -213,9 +213,15 @@ class FirehoseLayoutBase(Widget):
       cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def _update_loop(self):
+    # Drop inherited RT99/cpu5 from main thread — this is background network I/O.
+    try:
+      os.sched_setaffinity(0, range(os.cpu_count() or 8))
+      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    except OSError:
+      pass
     while self._running:
-      # Kill switch: `touch /tmp/disable_bg_threads` to skip work this iteration
-      if not os.path.exists('/tmp/disable_bg_threads'):
+      # Networking gate: `touch /tmp/enable_bg_threads` to allow API calls.
+      if False and os.path.exists('/tmp/enable_bg_threads'):  # TEMP: force off for thread bisect
         if not ui_state.started and device._awake:
           self._fetch_firehose_stats()
       time.sleep(self.UPDATE_INTERVAL)

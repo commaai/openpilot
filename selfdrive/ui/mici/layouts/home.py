@@ -1,6 +1,4 @@
 import datetime
-import os
-import threading
 import time
 
 from cereal import log
@@ -138,12 +136,9 @@ class MiciHomeLayout(Widget):
     self._did_long_press = False
     self._is_pressed_prev = False
 
-    self._version_text = None
-    self._experimental_mode = False
-
-    self._params_thread_exit = threading.Event()
-    self._params_thread = threading.Thread(target=self._params_refresh_loop, daemon=True)
-    self._params_thread.start()
+    # Version params are written once at boot by manager.py — read on init, never refreshed.
+    # ExperimentalMode lives on ui_state (refreshed by ui_state's params thread every 5s).
+    self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
@@ -169,18 +164,6 @@ class MiciHomeLayout(Widget):
   def show_event(self):
     super().show_event()
 
-  def _params_refresh_loop(self):
-    # Drop inherited RT99/cpu5 from main thread — this is background I/O.
-    try:
-      os.sched_setaffinity(0, range(os.cpu_count() or 8))
-      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
-    except OSError:
-      pass
-    while not self._params_thread_exit.is_set():
-      self._version_text = self._get_version_text()
-      self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
-      self._params_thread_exit.wait(5.0)
-
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
       self._mouse_down_t = time.monotonic()
@@ -193,8 +176,8 @@ class MiciHomeLayout(Widget):
       if time.monotonic() - self._mouse_down_t > 0.5:
         # long gating for experimental mode - only allow toggle if longitudinal control is available
         if ui_state.has_longitudinal_control:
-          self._experimental_mode = not self._experimental_mode
-          ui_state.params.put("ExperimentalMode", self._experimental_mode)
+          ui_state.experimental_mode = not ui_state.experimental_mode
+          ui_state.params.put_bool_nonblocking("ExperimentalMode", ui_state.experimental_mode)
         self._mouse_down_t = None
         self._did_long_press = True
 
@@ -265,7 +248,7 @@ class MiciHomeLayout(Widget):
         self._version_commit_label.render()
 
     # ***** Center-aligned bottom section icons *****
-    self._experimental_icon.set_visible(self._experimental_mode)
+    self._experimental_icon.set_visible(ui_state.experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(ui_state.is_body)
 

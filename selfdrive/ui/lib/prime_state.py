@@ -69,10 +69,16 @@ class PrimeState:
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _worker_thread(self) -> None:
+    # Drop inherited RT99/cpu5 from main thread — this is background network I/O.
+    try:
+      os.sched_setaffinity(0, range(os.cpu_count() or 8))
+      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    except OSError:
+      pass
     from openpilot.selfdrive.ui.ui_state import ui_state, device
     while self._running:
-      # Kill switch: `touch /tmp/disable_bg_threads` to skip work this iteration
-      if not os.path.exists('/tmp/disable_bg_threads'):
+      # Networking gate: `touch /tmp/enable_bg_threads` to allow API calls.
+      if False and os.path.exists('/tmp/enable_bg_threads'):  # TEMP: force off for thread bisect
         if not ui_state.started and device._awake:
           self._fetch_prime_status()
 
@@ -82,7 +88,6 @@ class PrimeState:
         time.sleep(self.SLEEP_INTERVAL)
 
   def start(self) -> None:
-    return  # disabled for perf testing
     if self._thread and self._thread.is_alive():
       return
     self._running = True
