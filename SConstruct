@@ -1,3 +1,4 @@
+import atexit
 import os
 import subprocess
 import sys
@@ -14,7 +15,7 @@ SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
 
-SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
+SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2))))
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
@@ -174,16 +175,6 @@ if not GetOption('verbose'):
   ):
     env[f"{action}COMSTR"] = f"  [{short}] $TARGET"
 
-# progress output
-node_interval = 5
-node_count = 0
-def progress_function(node):
-  global node_count
-  node_count += node_interval
-  sys.stderr.write("progress: %d\n" % node_count)
-if os.environ.get('SCONS_PROGRESS'):
-  Progress(progress_function, interval=node_interval)
-
 # ********** Cython build environment **********
 envCython = env.Clone()
 envCython["CPPPATH"] += [sysconfig.get_paths()['include'], np.get_include()]
@@ -264,3 +255,52 @@ if GetOption('extras') and arch != "larch64":
 
 
 env.CompilationDatabase('compile_commands.json')
+
+# progress output
+progress_node_interval = 5
+progress_node_count = 0
+progress_last = -1.
+progress_tty = sys.stderr.isatty()
+
+def count_scons_nodes(nodes):
+  seen = set()
+  stack = list(nodes)
+  count = 0
+
+  while stack:
+    node = stack.pop().disambiguate()
+    if node in seen:
+      continue
+
+    executor = node.get_executor()
+    targets = executor.get_all_targets() if executor is not None else [node]
+    new_targets = [target for target in targets if target not in seen]
+    seen.update(new_targets)
+    count += len(new_targets)
+
+    if executor is not None:
+      stack.extend(executor.get_all_prerequisites())
+      stack.extend(executor.get_all_children())
+
+  return count
+
+progress_targets = env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)
+progress_total_nodes = count_scons_nodes(progress_targets)
+
+def progress_function(node):
+  global progress_last, progress_node_count
+  progress_node_count = min(progress_node_count + progress_node_interval, progress_total_nodes)
+  progress = 100. if progress_total_nodes == 0 else round(100. * progress_node_count / progress_total_nodes, 1)
+  if progress == progress_last:
+    return
+  progress_last = progress
+  if progress_tty:
+    sys.stderr.write("\rBuilding: %5.1f%%" % progress)
+  else:
+    sys.stderr.write("progress: %.1f\n" % progress)
+  sys.stderr.flush()
+
+if progress_tty:
+  atexit.register(lambda: sys.stderr.write("\n"))
+
+Progress(progress_function, interval=progress_node_interval)
