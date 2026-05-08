@@ -70,8 +70,10 @@ function launch {
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
 
+  ASIUS_LEDD_STARTUP_PID=""
   if [ -f /ASIUS ]; then
-    python3 -m openpilot.selfdrive.ui.ledd --startup-once > /tmp/asius_ledd_startup 2>&1 || true
+    python3 -m openpilot.selfdrive.ui.ledd --startup-blink > /tmp/asius_ledd_startup 2>&1 &
+    ASIUS_LEDD_STARTUP_PID=$!
   fi
 
   # hardware specific init
@@ -86,6 +88,10 @@ function launch {
   cd system/manager
   if [ ! -f $DIR/prebuilt ]; then
     ./build.py
+  fi
+  if [ -n "$ASIUS_LEDD_STARTUP_PID" ]; then
+    kill "$ASIUS_LEDD_STARTUP_PID" 2> /dev/null || true
+    wait "$ASIUS_LEDD_STARTUP_PID" 2> /dev/null || true
   fi
   ./manager.py
 
