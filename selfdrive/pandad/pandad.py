@@ -13,12 +13,6 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 
 
-def panda_autoflash_enabled() -> bool:
-  # Asius panda power/bootkick behavior is still under bring-up. Avoid automatic
-  # firmware writes on openpilot startup; use explicit panda flashing instead.
-  return not os.path.exists("/ASIUS") or os.environ.get("ASIUS_PANDA_AUTOFLASH") == "1"
-
-
 def get_expected_signature() -> bytes:
   try:
     fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
@@ -36,7 +30,6 @@ def flash_panda(panda_serial: str) -> Panda:
     raise
 
   fw_signature = get_expected_signature()
-  autoflash_enabled = panda_autoflash_enabled()
   internal_panda = panda.is_internal()
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
@@ -44,17 +37,11 @@ def flash_panda(panda_serial: str) -> Panda:
   cloudlog.warning(f"Panda {panda_serial} connected, version: {panda_version}, signature {panda_signature.hex()[:16]}, expected {fw_signature.hex()[:16]}")
 
   if panda.bootstub or panda_signature != fw_signature:
-    if autoflash_enabled:
-      cloudlog.info("Panda firmware out of date, update required")
-      panda.flash()
-      cloudlog.info("Done flashing")
-    else:
-      cloudlog.warning("Panda firmware out of date, ASIUS startup autoflash disabled")
+    cloudlog.info("Panda firmware out of date, update required")
+    panda.flash()
+    cloudlog.info("Done flashing")
 
   if panda.bootstub:
-    if not autoflash_enabled:
-      cloudlog.warning("Panda in bootstub, ASIUS startup recovery disabled")
-      raise AssertionError
     bootstub_version = panda.get_version()
     cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. {bootstub_version=}, {internal_panda=}")
     if internal_panda:
@@ -68,10 +55,8 @@ def flash_panda(panda_serial: str) -> Panda:
 
   panda_signature = panda.get_signature()
   if panda_signature != fw_signature:
-    if autoflash_enabled:
-      cloudlog.info("Version mismatch after flashing, exiting")
-      raise AssertionError
-    cloudlog.warning(f"Panda firmware mismatch allowed on ASIUS, signature {panda_signature.hex()[:16]}, expected {fw_signature.hex()[:16]}")
+    cloudlog.info("Version mismatch after flashing, exiting")
+    raise AssertionError
 
   return panda
 
@@ -102,27 +87,21 @@ def main() -> None:
 
       # Handle missing internal panda
       if no_internal_panda_count > 0:
-        if not panda_autoflash_enabled():
-          cloudlog.warning("No pandas found, ASIUS startup panda reset/recovery disabled")
+        if no_internal_panda_count == 3:
+          cloudlog.info("No pandas found, putting internal panda into DFU")
+          HARDWARE.recover_internal_panda()
         else:
-          if no_internal_panda_count == 3:
-            cloudlog.info("No pandas found, putting internal panda into DFU")
-            HARDWARE.recover_internal_panda()
-          else:
-            cloudlog.info("No pandas found, resetting internal panda")
-            HARDWARE.reset_internal_panda()
+          cloudlog.info("No pandas found, resetting internal panda")
+          HARDWARE.reset_internal_panda()
         time.sleep(3)  # wait to come back up
 
       # Flash all Pandas in DFU mode
       dfu_serials = PandaDFU.list()
       if len(dfu_serials) > 0:
-        if panda_autoflash_enabled():
-          for serial in dfu_serials:
-            cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
-            PandaDFU(serial).recover()
-          time.sleep(1)
-        else:
-          cloudlog.warning(f"Panda(s) in DFU mode found, ASIUS startup recovery disabled: {dfu_serials}")
+        for serial in dfu_serials:
+          cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
+          PandaDFU(serial).recover()
+        time.sleep(1)
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
