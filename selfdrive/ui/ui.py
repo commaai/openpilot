@@ -15,7 +15,8 @@ BIG_UI = gui_app.big_ui()
 
 def main():
   cores = {5, }
-  config_realtime_process(0, 51)
+  # above plannerd and radard
+  config_realtime_process(0, 53)
 
   gui_app.init_window("UI")
   if BIG_UI:
