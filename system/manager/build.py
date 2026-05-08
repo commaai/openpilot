@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from pathlib import Path
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from openpilot.common.basedir import BASEDIR
@@ -10,9 +9,6 @@ from openpilot.common.text_window import TextWindow
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.hardware import HARDWARE, AGNOS
 from openpilot.system.version import get_build_metadata
-
-MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9
-CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 
 MAX_BUILD_PROGRESS = 100
 
@@ -73,17 +69,6 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
       with TextWindow("openpilot failed to build\n \n" + error_s) as t:
         t.wait_for_exit()
     exit(1)
-
-  # enforce max cache size
-  cache_files = [f for f in CACHE_DIR.rglob('*') if f.is_file()]
-  cache_files.sort(key=lambda f: f.stat().st_mtime)
-  cache_size = sum(f.stat().st_size for f in cache_files)
-  for f in cache_files:
-    if cache_size < MAX_CACHE_SIZE:
-      break
-    cache_size -= f.stat().st_size
-    f.unlink()
-
 
 if __name__ == "__main__":
   spinner = Spinner()
