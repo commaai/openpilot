@@ -14,7 +14,7 @@ SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
 
-SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
+SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2))))
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
@@ -174,16 +174,6 @@ if not GetOption('verbose'):
   ):
     env[f"{action}COMSTR"] = f"  [{short}] $TARGET"
 
-# progress output
-node_interval = 5
-node_count = 0
-def progress_function(node):
-  global node_count
-  node_count += node_interval
-  sys.stderr.write("progress: %d\n" % node_count)
-if os.environ.get('SCONS_PROGRESS'):
-  Progress(progress_function, interval=node_interval)
-
 # ********** Cython build environment **********
 envCython = env.Clone()
 envCython["CPPPATH"] += [sysconfig.get_paths()['include'], np.get_include()]
@@ -203,8 +193,18 @@ Export('env', 'arch')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
+cache_size_limit = 4e9 if "CI" in os.environ else 2e9
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
+
+def prune_cache_dir(target=None, source=None, env=None):
+  cache_files = sorted((os.path.join(root, f) for root, _, files in os.walk(cache_dir) for f in files), key=os.path.getmtime)
+  cache_size = sum(os.path.getsize(f) for f in cache_files)
+  for f in cache_files:
+    if cache_size < cache_size_limit:
+      break
+    cache_size -= os.path.getsize(f)
+    os.unlink(f)
 
 # ********** start building stuff **********
 
@@ -264,3 +264,37 @@ if GetOption('extras') and arch != "larch64":
 
 
 env.CompilationDatabase('compile_commands.json')
+
+# progress output
+def count_scons_nodes(nodes):
+  seen = set()
+  stack = list(nodes)
+
+  while stack:
+    node = stack.pop().disambiguate()
+    if node in seen:
+      continue
+    seen.add(node)
+    executor = node.get_executor()
+    if executor is not None:
+      stack += executor.get_all_prerequisites() + executor.get_all_children()
+
+  return len(seen)
+
+progress_interval = 5
+progress_count = 0
+progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
+
+def progress_function(node):
+  global progress_count
+  if progress_count >= progress_total:
+    return
+  progress_count = min(progress_count + progress_interval, progress_total)
+  progress = round(100. * progress_count / progress_total, 1)
+  sys.stderr.write("\rBuilding: %5.1f%%" % progress if sys.stderr.isatty() else "progress: %.1f\n" % progress)
+  if progress == 100. and sys.stderr.isatty():
+    sys.stderr.write("\n")
+  sys.stderr.flush()
+
+Progress(progress_function, interval=progress_interval)
+AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)

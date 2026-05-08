@@ -50,7 +50,7 @@ class TestUpdated:
       f"git clone {BASEDIR} {self.git_remote_dir}",
       f"git clone {self.git_remote_dir} {self.basedir}",
       f"cd {self.basedir} && git submodule init && git submodule update",
-      f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
+      f"cd {self.basedir} && scons cereal/ common/"
     ])
 
     self.params = Params(os.path.join(self.basedir, "persist/params"))
