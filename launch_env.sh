@@ -6,6 +6,8 @@ export NUMEXPR_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
+export NO_IMU=1
+
 # models get lower priority than ui
 # - ui is ~5ms
 # - modeld is 20ms
