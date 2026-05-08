@@ -107,7 +107,7 @@ jobs:
         submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
-      run: op build
+      run: scons
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
