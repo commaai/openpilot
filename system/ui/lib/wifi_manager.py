@@ -10,7 +10,6 @@ from enum import IntEnum
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import atomic_write
 from openpilot.system.ui.lib.dhcp_client import DhcpClient
-from openpilot.system.ui.lib.gsm_manager import _GsmManager
 from openpilot.system.ui.lib.wifi_network_store import MeteredType, NetworkStore, NM_CONNECTIONS_DIR
 from openpilot.system.ui.lib.wpa_ctrl import (WpaCtrl, WpaCtrlMonitor, SecurityType,
                                                WPA_SUPPLICANT_CONF, WPA_AP_CONF,
@@ -89,7 +88,6 @@ class WifiManager:
     self._store = NetworkStore()
     self._ctrl: WpaCtrl | None = None
     self._dhcp = DhcpClient()
-    self._gsm = _GsmManager()
 
     # State
     self._wifi_state: WifiState = WifiState()
@@ -1052,12 +1050,6 @@ class WifiManager:
     self._ipv4_address = ""
     self._enqueue_callbacks(self._disconnected)
 
-  def update_gsm_settings(self, roaming: bool, apn: str, metered: bool):
-    """Update GSM settings for cellular connection"""
-    def worker():
-      self._gsm.update_gsm_settings(roaming, apn, metered)
-    threading.Thread(target=worker, daemon=True).start()
-
   def __del__(self):
     self.stop()
 
@@ -1073,4 +1065,3 @@ class WifiManager:
       if self._ctrl is not None:
         self._ctrl.close()
       self._dhcp.stop()
-      self._gsm.close()

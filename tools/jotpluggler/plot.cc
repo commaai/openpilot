@@ -921,28 +921,15 @@ std::optional<PaneMenuAction> draw_pane_context_menu(const WorkspaceTab &tab, in
   ImGui::Separator();
   if (icon_menu_item(icon::ZOOM_OUT, "Zoom Out", nullptr, false, is_plot)) {
     action.kind = PaneMenuActionKind::ResetView;
-  } else if (icon_menu_item(icon::ARROW_LEFT_RIGHT, "Zoom Out Horizontally", nullptr, false, is_plot)) {
-    action.kind = PaneMenuActionKind::ResetHorizontal;
-  } else if (icon_menu_item(icon::ARROW_DOWN_UP, "Zoom Out Vertically", nullptr, false, is_plot)) {
-    action.kind = PaneMenuActionKind::ResetVertical;
   }
   ImGui::Separator();
   if (icon_menu_item(icon::TRASH, "Remove ALL curves", nullptr, false, is_plot)) {
     action.kind = PaneMenuActionKind::Clear;
   }
   ImGui::Separator();
-  icon_menu_item(icon::ARROW_LEFT_RIGHT, "Flip Horizontal Axis", nullptr, false, false);
-  icon_menu_item(icon::ARROW_DOWN_UP, "Flip Vertical Axis", nullptr, false, false);
-  ImGui::Separator();
-  icon_menu_item(icon::FILES, "Copy", nullptr, false, false);
-  icon_menu_item(icon::CLIPBOARD2, "Paste", nullptr, false, false);
   icon_menu_item(icon::FILE_EARMARK_IMAGE, "Copy image to clipboard", nullptr, false, false);
   icon_menu_item(icon::SAVE, "Save plot to file", nullptr, false, false);
   icon_menu_item(icon::BAR_CHART, "Show data statistics", nullptr, false, false);
-  ImGui::Separator();
-  if (icon_menu_item(icon::X_SQUARE, "Close Pane")) {
-    action.kind = PaneMenuActionKind::Close;
-  }
   ImGui::EndPopup();
   if (action.kind == PaneMenuActionKind::None) return std::nullopt;
   return action;

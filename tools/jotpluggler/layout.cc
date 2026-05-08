@@ -92,7 +92,7 @@ bool open_find_signal_result(UiState *state, const std::string &path) {
 }
 
 void draw_open_route_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Open Route", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Open Route")) {
     return;
   }
   ImGui::TextUnformatted("Load a route into the current layout.");
@@ -116,7 +116,7 @@ void draw_open_route_popup(AppSession *session, UiState *state) {
 }
 
 void draw_stream_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Live Stream", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Live Stream")) {
     return;
   }
 
@@ -153,7 +153,7 @@ void draw_stream_popup(AppSession *session, UiState *state) {
 }
 
 void draw_load_layout_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Load Layout", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Load Layout")) {
     return;
   }
   ImGui::TextUnformatted("Load a JotPlugger JSON layout.");
@@ -177,7 +177,7 @@ void draw_load_layout_popup(AppSession *session, UiState *state) {
 }
 
 void draw_save_layout_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Save Layout", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Save Layout")) {
     return;
   }
   ImGui::TextUnformatted("Save the current workspace as a JotPlugger JSON layout.");
@@ -201,7 +201,7 @@ void draw_save_layout_popup(AppSession *session, UiState *state) {
 }
 
 void draw_preferences_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Preferences", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Preferences")) {
     return;
   }
   if (session->map_data) {
@@ -234,7 +234,7 @@ void draw_preferences_popup(AppSession *session, UiState *state) {
 }
 
 void draw_find_signal_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Find Signal", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Find Signal")) {
     return;
   }
   ImGui::TextUnformatted("Search decoded signals across the loaded route.");
@@ -353,7 +353,7 @@ bool save_dbc_editor_contents(AppSession *session, UiState *state) {
 }
 
 void draw_dbc_editor_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("DBC Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("DBC Editor")) {
     return;
   }
   DbcEditorState &editor = state->dbc_editor;
@@ -392,7 +392,7 @@ void draw_dbc_editor_popup(AppSession *session, UiState *state) {
 }
 
 void draw_axis_limits_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Edit Axis Limits", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Edit Axis Limits")) {
     return;
   }
   const WorkspaceTab *tab = app_active_tab(session->layout, *state);
@@ -452,7 +452,7 @@ void draw_error_popup(UiState *state) {
     ImGui::OpenPopup("Error");
     state->open_error_popup = false;
   }
-  if (!ImGui::BeginPopupModal("Error", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Error")) {
     return;
   }
   ImGui::TextWrapped("%s", state->error_text.c_str());

@@ -720,7 +720,6 @@ class TestStop:
     wm._tethering_active = True
     wm._scan_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
     wm._state_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
-    wm._gsm = mocker.MagicMock()
     wm._stop_tethering = mocker.MagicMock()
     wm._exit = False
 
@@ -732,7 +731,6 @@ class TestStop:
     wm._tethering_active = False
     wm._scan_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
     wm._state_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
-    wm._gsm = mocker.MagicMock()
     wm._stop_tethering = mocker.MagicMock()
     wm._exit = False
 

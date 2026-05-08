@@ -45,7 +45,6 @@ def _patch_bringup_sideeffects(wm, mocker):
   # doesn't crash when _exit flips to False for the duration of the test.
   wm._scan_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
   wm._state_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
-  wm._gsm = mocker.MagicMock()
   return mock_run
 
 
@@ -64,7 +63,6 @@ def _patch_sta_daemon_alive(wm, mocker):
   # doesn't crash when _exit flips to False for the duration of the test.
   wm._scan_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
   wm._state_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
-  wm._gsm = mocker.MagicMock()
 
 
 class TestAttachFirst:
@@ -254,7 +252,6 @@ class TestSpawnFallback:
     wm._exit = False
     wm._scan_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
     wm._state_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
-    wm._gsm = mocker.MagicMock()
 
     wm._ensure_wpa_supplicant()
 
@@ -438,7 +435,6 @@ class TestAPModeAdoption:
     wm._exit = False
     wm._scan_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
     wm._state_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
-    wm._gsm = mocker.MagicMock()
 
     ctrl = mocker.MagicMock()
     mocker.patch.object(wpa_ctrl_module, "WpaCtrl", return_value=ctrl)
@@ -596,7 +592,6 @@ class TestStopTetheringRollback:
     wm._exit = False
     wm._scan_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
     wm._state_thread = mocker.MagicMock(is_alive=mocker.MagicMock(return_value=False))
-    wm._gsm = mocker.MagicMock()
 
   def test_rollback_attaches_to_our_own_surviving_daemon(self, wm, mocker):
     """If our STA daemon survived _start_tethering (AP bringup failed before

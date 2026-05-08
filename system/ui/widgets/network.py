@@ -158,10 +158,6 @@ class AdvancedNetworkSettings(Widget):
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
-    # Set initial config
-    metered = self._params.get_bool("GsmMetered")
-    self._wifi_manager.update_gsm_settings(roaming_enabled, self._params.get("GsmApn") or "", metered)
-
   def _on_tethering_finished(self):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
@@ -185,9 +181,7 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_manager.set_tethering_active(checked)
 
   def _toggle_roaming(self):
-    roaming_state = self._roaming_action.get_state()
-    self._params.put_bool("GsmRoaming", roaming_state)
-    self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
+    self._params.put_bool("GsmRoaming", self._roaming_action.get_state())
 
   def _edit_apn(self):
     def update_apn(result: DialogResult):
@@ -200,8 +194,6 @@ class AdvancedNetworkSettings(Widget):
       else:
         self._params.put("GsmApn", apn)
 
-      self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), apn, self._params.get_bool("GsmMetered"))
-
     current_apn = self._params.get("GsmApn") or ""
     self._keyboard.reset(min_text_size=0)
     self._keyboard.set_title(tr("Enter APN"), tr("leave blank for automatic configuration"))
@@ -210,9 +202,7 @@ class AdvancedNetworkSettings(Widget):
     gui_app.push_widget(self._keyboard)
 
   def _toggle_cellular_metered(self):
-    metered = self._cellular_metered_action.get_state()
-    self._params.put_bool("GsmMetered", metered)
-    self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), self._params.get("GsmApn") or "", metered)
+    self._params.put_bool("GsmMetered", self._cellular_metered_action.get_state())
 
   def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)

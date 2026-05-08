@@ -1334,20 +1334,6 @@ bool apply_pane_menu_action(AppSession *session, UiState *state, int pane_index,
       layout_changed = true;
       success_status = "Plot view reset";
       break;
-    case PaneMenuActionKind::ResetHorizontal:
-      reset_shared_range(state, *session);
-      state->follow_latest = session->data_mode == SessionDataMode::Stream;
-      state->suppress_range_side_effects = true;
-      clamp_shared_range(state, *session);
-      persist_shared_range_to_tab(tab, *state);
-      layout_changed = true;
-      success_status = "Horizontal zoom reset";
-      break;
-    case PaneMenuActionKind::ResetVertical:
-      clear_pane_vertical_limits(&tab->panes[static_cast<size_t>(pane_index)]);
-      layout_changed = true;
-      success_status = "Vertical zoom reset";
-      break;
     case PaneMenuActionKind::Clear:
       clear_pane(tab, pane_index);
       tab_state->active_pane_index = pane_index;
