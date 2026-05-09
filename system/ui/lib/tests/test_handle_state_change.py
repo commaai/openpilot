@@ -956,3 +956,48 @@ class TestInitWifiState:
 
     assert wm._wifi_state.status == ConnectStatus.CONNECTING, f"{wpa_state} must map to CONNECTING"
     assert wm._wifi_state.ssid == "HomeNet"
+
+
+class TestSetTetheringPassword:
+  """wpa_supplicant accepts only 8–63 char passphrases or 64-hex raw PSKs.
+  Anything else makes AP bringup fail; persisting an invalid value is sticky."""
+
+  class ImmediateThread:
+    def __init__(self, target=None, daemon=None):
+      self._target = target
+
+    def start(self):
+      if self._target is not None:
+        self._target()
+
+  @pytest.mark.parametrize("password", [
+    "abcdefgh",            # 8 char passphrase (minimum)
+    "a" * 63,              # 63 char passphrase (maximum)
+    "deadbeef" * 8,        # 64-hex raw PSK
+    "DEADBEEF" * 8,        # 64-hex uppercase
+  ])
+  def test_accepts_valid_passwords(self, wm, mocker, password):
+    mocker.patch.object(wifi_manager_module.threading, "Thread", self.ImmediateThread)
+    mocker.patch.object(wifi_manager_module, "atomic_write")
+    wm._tethering_active = False
+
+    wm.set_tethering_password(password)
+
+    assert wm._tethering_psk == password
+
+  @pytest.mark.parametrize("password,reason", [
+    ("", "empty"),
+    ("short", "5 chars"),
+    ("z" * 64, "64-char non-hex (would be quoted as too-long passphrase, AP fails)"),
+    ("a" * 65, "65 char too-long passphrase"),
+    ("a" * 7, "7 chars below minimum"),
+  ])
+  def test_rejects_invalid_passwords(self, wm, mocker, password, reason):
+    mocker.patch.object(wifi_manager_module.threading, "Thread", self.ImmediateThread)
+    aw = mocker.patch.object(wifi_manager_module, "atomic_write")
+    wm._tethering_psk = "PRIOR-WORKING-PASSWORD"
+
+    wm.set_tethering_password(password)
+
+    aw.assert_not_called()
+    assert wm._tethering_psk == "PRIOR-WORKING-PASSWORD", f"prior password must survive ({reason})"

@@ -14,7 +14,7 @@ from openpilot.system.ui.lib.wifi_network_store import MeteredType, NetworkStore
 from openpilot.system.ui.lib.wpa_ctrl import (WpaCtrl, WpaCtrlMonitor, SecurityType,
                                                WPA_SUPPLICANT_CONF, WPA_AP_CONF,
                                                _pkill_wpa_supplicant, _wpa_supplicant_running,
-                                               _sanitize_for_conf, _format_psk_value,
+                                               _sanitize_for_conf, _format_psk_value, _is_raw_psk,
                                                _generate_wpa_conf, parse_event_ssid,
                                                parse_scan_results, flags_to_security_type,
                                                parse_status, dbm_to_percent, decode_ssid,
@@ -935,6 +935,12 @@ class WifiManager:
     return self._store.contains(ssid)
 
   def set_tethering_password(self, password: str):
+    # wpa_supplicant accepts either an 8–63 char passphrase or exactly 64 hex chars
+    # as a pre-hashed PSK. Anything else (e.g. a 64-char non-hex string) makes AP
+    # bringup fail forever with the bad value persisted on disk. Validate up front.
+    if not (8 <= len(password) <= 63 or _is_raw_psk(password)):
+      cloudlog.warning(f"set_tethering_password: rejecting invalid password (len={len(password)})")
+      return
     def worker():
       try:
         with atomic_write(TETHERING_PASSWORD_FILE, overwrite=True) as f:
