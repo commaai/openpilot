@@ -127,6 +127,49 @@ mode=infrastructure
     assert store.get("Bad") is None
     assert store.get("Good") is not None
 
+  def test_save_uses_canonical_uuid_ssid_filename(self, mocker: MockerFixture):
+    """New writes must land at <uuid>-<ssid>.nmconnection, matching netplan's runtime naming."""
+    store = self._make_store(mocker)
+    mock_run = mocker.patch("subprocess.run")
+    store.save_network("MyNet", psk="hunter2")
+
+    install_calls = [c for c in mock_run.call_args_list
+                     if len(c.args[0]) >= 2 and c.args[0][:2] == ["sudo", "install"]
+                     and "-d" not in c.args[0]]
+    assert install_calls, "expected an install call for the keyfile"
+    dest = install_calls[0].args[0][-1]
+    fname = os.path.basename(dest)
+    file_uuid = store.get("MyNet")["uuid"]
+    assert fname == f"{file_uuid}-MyNet.nmconnection"
+
+  def test_save_migrates_legacy_filename(self, mocker: MockerFixture):
+    """Save replaces a legacy percent-encoded file with the canonical name and rms the old."""
+    store = self._make_store(mocker)
+    store._networks["MyNet"] = {
+      "psk": "old", "metered": 0, "hidden": False, "uuid": "abcd-uuid",
+      "_filename": "MyNet.nmconnection",  # legacy percent-encoded
+    }
+    mock_run = mocker.patch("subprocess.run")
+    store.save_network("MyNet", psk="new")
+
+    rm_calls = [c for c in mock_run.call_args_list
+                if len(c.args[0]) >= 2 and c.args[0][:2] == ["sudo", "rm"]]
+    assert any(c.args[0][-1].endswith("MyNet.nmconnection") and "abcd-uuid" not in c.args[0][-1]
+               for c in rm_calls), "legacy file must be removed after canonical write"
+    assert store.get("MyNet")["_filename"] == "abcd-uuid-MyNet.nmconnection"
+
+  def test_save_sanitizes_ssid_in_filename(self, mocker: MockerFixture):
+    store = self._make_store(mocker)
+    mock_run = mocker.patch("subprocess.run")
+    store.save_network("ev/il", psk="x")
+
+    install_calls = [c for c in mock_run.call_args_list
+                     if len(c.args[0]) >= 2 and c.args[0][:2] == ["sudo", "install"]
+                     and "-d" not in c.args[0]]
+    fname = os.path.basename(install_calls[0].args[0][-1])
+    file_uuid = store.get("ev/il")["uuid"]
+    assert fname == f"{file_uuid}-ev_il.nmconnection"
+
   def test_load_skips_ap_mode(self, mocker: MockerFixture):
     content = """\
 [connection]

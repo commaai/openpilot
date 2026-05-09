@@ -4,7 +4,6 @@ import os
 import subprocess
 import tempfile
 import threading
-import urllib.parse
 import uuid
 from enum import IntEnum
 
@@ -20,10 +19,11 @@ class MeteredType(IntEnum):
   NO = 2
 
 
-def _ssid_to_filename(ssid: str) -> str:
-  """Collision-free .nmconnection filename via percent-encoding. Legacy `_`-substituted
-  files still load via the in-file `ssid=` field; the store remembers their original name."""
-  return urllib.parse.quote(ssid, safe="") + ".nmconnection"
+def _canonical_filename(file_uuid: str, ssid: str) -> str:
+  """`<uuid>-<ssid>.nmconnection` matches netplan's runtime keyfile naming. UUID is the
+  stable handle; the SSID suffix is purely cosmetic, so it gets sanitized lossily."""
+  ssid_safe = ssid.replace("/", "_").replace("\0", "_")
+  return f"{file_uuid}-{ssid_safe}.nmconnection"
 
 
 class NetworkStore:
@@ -77,9 +77,9 @@ class NetworkStore:
     entry = dict(entry)
     entry["uuid"] = file_uuid
 
-    # Preserve legacy filenames so we don't orphan non-lossless-named files.
-    fname = entry.get("_filename") or _ssid_to_filename(ssid)
-    entry["_filename"] = fname
+    canonical_fname = _canonical_filename(file_uuid, ssid)
+    old_fname = entry.get("_filename")
+    entry["_filename"] = canonical_fname
 
     cp = configparser.ConfigParser(interpolation=None)
     cp["connection"] = {
@@ -112,12 +112,16 @@ class NetworkStore:
       os.chmod(temp_path, 0o600)
       subprocess.run(["sudo", "install", "-d", "-m", "755", self._directory], check=True)
       subprocess.run(["sudo", "install", "-o", "root", "-g", "root", "-m", "600",
-                      temp_path, os.path.join(self._directory, fname)], check=True)
+                      temp_path, os.path.join(self._directory, canonical_fname)], check=True)
     finally:
       try:
         os.unlink(temp_path)
       except FileNotFoundError:
         pass
+
+    # Migrate from any prior naming (legacy percent-encoded, or earlier UUID with stale ssid suffix).
+    if old_fname and old_fname != canonical_fname:
+      subprocess.run(["sudo", "rm", "-f", os.path.join(self._directory, old_fname)], check=False)
 
     return file_uuid, entry
 
@@ -153,7 +157,7 @@ class NetworkStore:
     with self._lock:
       entry = self._networks.get(ssid)
       if entry is not None:
-        fname = entry.get("_filename") or _ssid_to_filename(ssid)
+        fname = entry.get("_filename") or _canonical_filename(entry.get("uuid", ""), ssid)
         fpath = os.path.join(self._directory, fname)
         subprocess.run(["sudo", "rm", "-f", fpath], check=False)
         del self._networks[ssid]
