@@ -114,8 +114,7 @@ for cfg in MODELD_CONFIGS:
          f'--output {cfg.pkl_path} --frame-skip {frame_skip}'
          + (' --prepare-only' if cfg.prepare_only else ''))
   node = lenv.Command(cfg.pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], cmd)
-  if USBGPU:
-    lenv.SideEffect(usb_gpu_lock, node)
+  lenv.SideEffect(usb_gpu_lock, node)
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_paths(cfg.pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_chunk(target, source, env, pkl=cfg.pkl_path, chunks=chunk_targets):
