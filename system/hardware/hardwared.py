@@ -28,6 +28,7 @@ from openpilot.system.hardware.power_monitoring import PowerMonitoring
 from openpilot.system.hardware.fan_controller import FanController
 from openpilot.system.version import terms_version, training_version
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
+from selfdrive.modeld.helpers import USBGPU_VID, USBGPU_PID
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -37,8 +38,6 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
-USBGPU_VID = 0xADD1
-USBGPU_PID = 0x0001
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -72,16 +71,6 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
   set_offroad_alert(offroad_alert, show_alert, extra_text)
 
-def _usbgpu_present() -> bool:
-  for d in pathlib.Path("/sys/bus/usb/devices").glob("*"):
-    try:
-      if int((d / "idVendor").read_text(), 16) == USBGPU_VID and \
-         int((d / "idProduct").read_text(), 16) == USBGPU_PID:
-        return True
-    except (FileNotFoundError, NotADirectoryError, ValueError):
-      pass
-  return False
-
 
 def usb_gpu_thread(end_event):
   params = Params()
@@ -90,7 +79,7 @@ def usb_gpu_thread(end_event):
   s = socket.socket(socket.AF_NETLINK, socket.SOCK_DGRAM, NETLINK_KOBJECT_UEVENT)
   s.bind((0, 1))
 
-  present = _usbgpu_present()
+  present = usbgpu_present()
   params.put_bool_nonblocking("UsbGpuPresent", present)
   cloudlog.info(f"usb_gpu_thread: started, coldplug present={present}")
 

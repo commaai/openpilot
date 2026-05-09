@@ -10,7 +10,7 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.modeld.helpers import CompileConfig
+from openpilot.selfdrive.modeld.helpers import CompileConfig, usbgpu_present
 from openpilot.system.hardware import HARDWARE, PC
 
 def get_camera_configs():
@@ -20,7 +20,7 @@ def get_camera_configs():
     "mici": (_os_fisheye.width, _os_fisheye.height),
   }
   RELEASE = not (Path(BASEDIR) / '.gitattributes').exists()
-  if RELEASE or PC:
+  if RELEASE or PC: # TODO or CI
     return list(DEVICE_RESOLUTIONS.values())
   return [DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]]
 
@@ -62,13 +62,11 @@ else:
 # same between QCOM or USBGPU path, given we only warp on QCOM for now
 runtime_env = f'WARP_DEV={tg_backend} DM_DEV={tg_backend}'
 
-# poll: usbgpu takes a few seconds to show up
-deadline = time.monotonic() + 10
-while 'AMD' not in (available := probe_devices()):
-  if time.monotonic() > deadline:
-    print(f"USBGPU (AMD) not detected within 10s: {available}", file=sys.stderr)
-    Exit(1)
-  time.sleep(1)
+usbgpu = usbgpu_present()
+if not usbgpu:
+  print(f"USBGPU (AMD) not detected within 10s: {available}", file=sys.stderr)
+  Exit(1)
+
 modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0'
 runtime_env += ' GMMU=0 XDG_CACHE_HOME=/data/tinycache'
 
