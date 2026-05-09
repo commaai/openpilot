@@ -710,9 +710,11 @@ class WifiManager:
           strength = 100 if is_tethering else dbm_to_percent(strongest.signal)
           networks.append(Network(ssid=ssid, strength=strength, security_type=security, is_tethering=is_tethering))
 
-        # Never replace with empty — stale data is better than no data
-        if networks:
-          self._networks = networks
+        # SCAN_RESULTS command failure already early-returns above, so reaching
+        # here means the scan succeeded; an empty result is a real "no APs in
+        # range" signal (drove away, area with no wifi, etc.) and the UI must
+        # see vanished SSIDs disappear instead of holding a stale snapshot.
+        self._networks = networks
         self._update_active_connection_info()
         self._mark_networks_updated()
 
