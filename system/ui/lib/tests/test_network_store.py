@@ -160,7 +160,7 @@ mode=infrastructure
       "psk": "old", "metered": 0, "hidden": False, "uuid": "abcd-uuid",
       "_filename": "MyNet.nmconnection",  # legacy percent-encoded
     }
-    mock_run = mocker.patch("subprocess.run")
+    mock_run = mocker.patch("subprocess.run", return_value=mocker.MagicMock(returncode=0))
     store.save_network("MyNet", psk="new")
 
     rm_calls = [c for c in mock_run.call_args_list
@@ -168,6 +168,34 @@ mode=infrastructure
     assert any(c.args[0][-1].endswith("MyNet.nmconnection") and "abcd-uuid" not in c.args[0][-1]
                for c in rm_calls), "legacy file must be removed after canonical write"
     assert store.get("MyNet")["_filename"] == "abcd-uuid-MyNet.nmconnection"
+
+  def test_save_migration_cleanup_failure_mirrors_content(self, mocker: MockerFixture):
+    """If `sudo rm` of the legacy file fails after the canonical write, both files
+    must hold identical content. Otherwise listdir order on next load would pick
+    a stale winner non-deterministically."""
+    store = self._make_store(mocker)
+    store._networks["MyNet"] = {
+      "psk": "old", "metered": 0, "hidden": False, "uuid": "abcd-uuid",
+      "_filename": "MyNet.nmconnection",
+    }
+    calls = []
+
+    def fake_run(cmd, *args, **kwargs):
+      calls.append(cmd)
+      # Fail the legacy-file rm; succeed everything else.
+      if cmd[:2] == ["sudo", "rm"]:
+        return mocker.MagicMock(returncode=1)
+      return mocker.MagicMock(returncode=0)
+    mocker.patch("subprocess.run", side_effect=fake_run)
+
+    store.save_network("MyNet", psk="new")
+
+    install_to_old = [c for c in calls
+                      if c[:2] == ["sudo", "install"] and len(c) >= 2 and c[-1].endswith("MyNet.nmconnection")
+                      and "abcd-uuid" not in c[-1]]
+    assert install_to_old, "after rm failure, legacy file must be mirrored with current content"
+    # _filename pinned to legacy so future writes keep retrying the cleanup.
+    assert store.get("MyNet")["_filename"] == "MyNet.nmconnection"
 
   def test_save_sanitizes_ssid_in_filename(self, mocker: MockerFixture):
     store = self._make_store(mocker)
@@ -238,6 +266,59 @@ psk=hunter2
     assert store.get("Enterprise") is None, "wpa-eap must be skipped"
     assert store.get("WPA3Net") is None, "sae must be skipped — not driveable"
     assert store.get("Home") is not None, "wpa-psk must load"
+
+  def test_load_skips_wpa_psk_without_inline_secret(self, mocker: MockerFixture):
+    """NM agent-managed secrets (psk-flags=1) live outside the keyfile. Loading
+    with psk="" would render as key_mgmt=NONE — silent demotion to open profile."""
+    content = """\
+[connection]
+id=AgentSecret
+uuid=as-uuid
+type=wifi
+
+[wifi]
+ssid=AgentSecret
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk-flags=1
+"""
+    fpath = os.path.join(self.tmpdir, "AgentSecret.nmconnection")
+    with open(fpath, "w") as f:
+      f.write(content)
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read", return_value=content)
+
+    store = NetworkStore(directory=self.tmpdir)
+
+    assert store.get("AgentSecret") is None, "wpa-psk without inline psk must not load as open"
+
+  def test_load_skips_autoconnect_disabled(self, mocker: MockerFixture):
+    """connection.autoconnect=false is explicit user/provisioning intent. ENABLE_NETWORK
+    all would silently re-arm auto-join after upgrade — drop the entry instead."""
+    content = """\
+[connection]
+id=Disabled
+uuid=disabled-uuid
+type=wifi
+autoconnect=false
+
+[wifi]
+ssid=Disabled
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=hunter2
+"""
+    fpath = os.path.join(self.tmpdir, "Disabled.nmconnection")
+    with open(fpath, "w") as f:
+      f.write(content)
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read", return_value=content)
+
+    store = NetworkStore(directory=self.tmpdir)
+
+    assert store.get("Disabled") is None
 
   def test_load_open_network_no_security_section(self, mocker: MockerFixture):
     """An open profile has no [wifi-security] section; loads with empty psk."""

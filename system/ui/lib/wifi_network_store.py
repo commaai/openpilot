@@ -69,15 +69,29 @@ class NetworkStore:
 
         # An open profile has no [wifi-security] section. A secure profile with a
         # key-mgmt we can't reproduce (wpa-eap, sae, ...) must be skipped entirely.
+        psk = ""
         if cp.has_section("wifi-security"):
           key_mgmt = cp.get("wifi-security", "key-mgmt", fallback="").lower()
           if key_mgmt not in _SUPPORTED_KEY_MGMT:
             cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported key-mgmt={key_mgmt!r}")
             continue
+          psk = cp.get("wifi-security", "psk", fallback="")
+          # NM agent-managed secrets (psk-flags=1) live outside the keyfile. We can't
+          # drive them via wpa_supplicant, and loading with psk="" would render as
+          # key_mgmt=NONE — a secure profile silently demoted to open, inviting spoofs.
+          if key_mgmt == "wpa-psk" and not psk:
+            cloudlog.warning(f"NetworkStore: skipping {ssid!r} (wpa-psk with no inline secret)")
+            continue
+
+        # connection.autoconnect=false is user/provisioning intent — don't load it
+        # only to have ENABLE_NETWORK all silently re-arm the auto-join.
+        if not cp.getboolean("connection", "autoconnect", fallback=True):
+          cloudlog.warning(f"NetworkStore: skipping {ssid!r} (connection.autoconnect=false)")
+          continue
 
         # getint/getboolean can raise ValueError on malformed values; skip the bad profile.
         self._networks[ssid] = {
-          "psk": cp.get("wifi-security", "psk", fallback=""),
+          "psk": psk,
           "metered": cp.getint("connection", "metered", fallback=0),
           "hidden": cp.getboolean("wifi", "hidden", fallback=False),
           "uuid": cp.get("connection", "uuid", fallback=""),
@@ -136,7 +150,20 @@ class NetworkStore:
 
     # Migrate from any prior naming (legacy percent-encoded, or earlier UUID with stale ssid suffix).
     if old_fname and old_fname != canonical_fname:
-      subprocess.run(["sudo", "rm", "-f", os.path.join(self._directory, old_fname)], check=False)
+      old_path = os.path.join(self._directory, old_fname)
+      result = subprocess.run(["sudo", "rm", "-f", old_path], check=False)
+      # If cleanup fails (FS read-only, etc.) both files survive. _load's listdir
+      # order would pick winners non-deterministically. Make both files hold the
+      # same content so the duplicate is harmless; pin _filename to the legacy
+      # name so future updates land there too and we keep retrying the cleanup.
+      if result.returncode != 0:
+        cloudlog.warning(f"NetworkStore: cleanup of legacy {old_fname} failed; mirroring content to keep both files in sync")
+        try:
+          subprocess.run(["sudo", "install", "-o", "root", "-g", "root", "-m", "600",
+                          os.path.join(self._directory, canonical_fname), old_path], check=True)
+        except Exception:
+          cloudlog.exception("NetworkStore: failed to mirror migrated keyfile back to legacy path")
+        entry["_filename"] = old_fname
 
     return file_uuid, entry
 
