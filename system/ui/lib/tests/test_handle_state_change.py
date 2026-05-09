@@ -858,9 +858,10 @@ class TestInitWifiState:
   cases; routing an active hotspot through the station path would call
   _dhcp.start() → ip addr flush wlan0 → drop TETHERING_IP_ADDRESS."""
 
-  def test_ap_mode_adopts_without_starting_dhcp(self, wm):
+  def test_ap_mode_adopts_without_starting_dhcp(self, wm, mocker):
     """Regression: process restart while tethering active must not flush wlan0."""
     from openpilot.system.ui.lib.wifi_manager import TETHERING_IP_ADDRESS
+    mocker.patch.object(wifi_manager_module, "_our_dnsmasq_running", return_value=True)
     wm._tethering_ssid = "weedle-test"
     wm._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=weedle-test\n"
 
@@ -873,9 +874,10 @@ class TestInitWifiState:
     wm._dhcp.start.assert_not_called()
     wm._dhcp.stop.assert_not_called()
 
-  def test_ap_mode_falls_back_to_configured_ssid_if_status_missing(self, wm):
+  def test_ap_mode_falls_back_to_configured_ssid_if_status_missing(self, wm, mocker):
     """If STATUS doesn't echo ssid (should never happen, but be defensive),
     use the configured tethering SSID so we still report CONNECTED."""
+    mocker.patch.object(wifi_manager_module, "_our_dnsmasq_running", return_value=True)
     wm._tethering_ssid = "weedle-fallback"
     wm._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\n"
 
@@ -884,6 +886,19 @@ class TestInitWifiState:
     assert wm._tethering_active is True
     assert wm._wifi_state.ssid == "weedle-fallback"
     wm._dhcp.start.assert_not_called()
+
+  def test_ap_mode_refuses_adoption_when_dnsmasq_dead(self, wm, mocker):
+    """Surviving AP daemon without dnsmasq is half-broken — clients can't get
+    leases. Refuse adoption rather than reporting healthy tethering."""
+    mocker.patch.object(wifi_manager_module, "_our_dnsmasq_running", return_value=False)
+    wm._tethering_ssid = "weedle-test"
+    wm._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=weedle-test\n"
+
+    wm._init_wifi_state()
+
+    assert wm._tethering_active is False
+    # Falls through to the generic STA path which would set DISCONNECTED here
+    # (mode=AP keyed STATUS but adoption refused), letting user toggle tethering off+on to recover.
 
   def test_station_completed_still_starts_dhcp(self, wm):
     """Happy path: attaching to a connected STA daemon must re-launch udhcpc

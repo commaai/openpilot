@@ -69,6 +69,14 @@ class PendingConnection:
   epoch: int
 
 
+# Match our tethering dnsmasq specifically (system dnsmasq, if any, has a different range).
+_DNSMASQ_PGREP = r"dnsmasq.*--dhcp-range=192\.168\.43\.2"
+
+
+def _our_dnsmasq_running() -> bool:
+  return subprocess.run(["pgrep", "-f", _DNSMASQ_PGREP], capture_output=True).returncode == 0
+
+
 def _tethering_nat_rule(op: str) -> list[str]:
   # Source-subnet MASQUERADE (no `-o <iface>`) so the session survives uplink changes.
   # Mirrors NM's nm-firewall-utils.c:_share_iptables_set_masquerade_sync.
@@ -198,8 +206,10 @@ class WifiManager:
         # so the STA path below would flush wlan0 and kill the live hotspot.
         if self._user_epoch != epoch:
           return
-        self._adopt_ap_state(ssid)
-        return
+        if self._adopt_ap_state(ssid):
+          return
+        # dnsmasq is gone — the surviving AP daemon is half-broken. Fall through
+        # to STA so the orphan gets torn down and the user can re-enable tethering.
 
       if wpa_state == "COMPLETED":
         new_status = ConnectStatus.CONNECTED
@@ -388,13 +398,20 @@ class WifiManager:
             pass
         time.sleep(2)
 
-  def _adopt_ap_state(self, ssid: str | None) -> None:
+  def _adopt_ap_state(self, ssid: str | None) -> bool:
     """Mark a live hotspot as active without touching dnsmasq/iptables — those daemons
-    survive UI restart via start_new_session, so adoption only updates manager state."""
+    survive UI restart via start_new_session, so adoption only updates manager state.
+    Returns False (do not adopt) when dnsmasq isn't running, so the caller falls
+    through to a full STA-cleanup-then-rebuild rather than reporting a healthy
+    hotspot whose clients can't get DHCP leases."""
+    if not _our_dnsmasq_running():
+      cloudlog.warning("AP daemon present but our dnsmasq isn't; refusing adoption")
+      return False
     self._tethering_active = True
     self._wifi_state = WifiState(ssid=ssid or self._tethering_ssid, status=ConnectStatus.CONNECTED)
     self._ipv4_address = TETHERING_IP_ADDRESS
     self._enqueue_callbacks(self._activated)
+    return True
 
   def _handle_connected(self, ssid: str):
     """Transition to CONNECTED. Idempotent on (ssid, CONNECTED) so the monitor and
@@ -542,7 +559,9 @@ class WifiManager:
       # so a missed startup adoption (e.g. transient STATUS failure) doesn't strand us in DISCONNECTED
       # while still attached to the AP daemon, which would route station actions to the AP socket.
       if status.get("mode") == "AP":
-        self._adopt_ap_state(status.get("ssid"))
+        if self._adopt_ap_state(status.get("ssid")):
+          return
+        # dnsmasq missing — half-broken AP. Stay DISCONNECTED so the user can recover via tethering toggle.
         return
       if status.get("wpa_state") == "COMPLETED" and status.get("ssid"):
         self._handle_connected(status["ssid"])
@@ -1038,7 +1057,10 @@ class WifiManager:
                                 capture_output=True, check=False)
         if result.returncode != 0:
           break
-    subprocess.run(_tethering_nat_rule("-A"), check=False)
+    # Without MASQUERADE the AP comes up but clients can't reach the uplink — UI
+    # reports a healthy hotspot with broken sharing. Treat this as a hard failure
+    # so the existing _start_tethering rollback path tears the AP back down.
+    subprocess.run(_tethering_nat_rule("-A"), check=True)
     if self._ipv4_forward:
       subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=1"], check=False)
 

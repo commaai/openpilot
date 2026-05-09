@@ -6,6 +6,7 @@ ctrl socket. Designed to coexist with a future systemd/OpenRC-managed
 wpa_supplicant on tici.
 """
 import re
+import subprocess
 
 import pytest
 
@@ -563,6 +564,22 @@ class TestTetheringBringupVerification:
 
     assert wm._dnsmasq_proc is None
     assert wm._ctrl is None
+
+  def test_start_tethering_raises_when_masquerade_install_fails(self, wm, mocker):
+    """If the MASQUERADE insert fails, the AP comes up but clients can't reach
+    the uplink. _start_tethering must raise so the caller's rollback runs,
+    rather than reporting a healthy hotspot with broken sharing."""
+    _patch_tethering_sideeffects(wm, mocker)
+
+    def fake_run(cmd, *args, **kwargs):
+      if (len(cmd) >= 4 and cmd[:2] == ["sudo", "iptables"]
+          and "-A" in cmd and "MASQUERADE" in cmd and kwargs.get("check")):
+        raise subprocess.CalledProcessError(1, cmd)
+      return mocker.MagicMock(returncode=0)
+    wifi_manager_module.subprocess.run.side_effect = fake_run
+
+    with pytest.raises(subprocess.CalledProcessError):
+      wm._start_tethering()
 
   def test_start_tethering_installs_source_based_masquerade(self, wm, mocker):
     """NAT rule must match on source subnet, not -o <iface>, so a mid-
