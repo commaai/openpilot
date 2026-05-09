@@ -215,9 +215,13 @@ class Tici(HardwareBase):
               metered = cp.getint("connection", "metered", fallback=0)
             except (configparser.Error, ValueError):
               continue
-            if metered == 1:  # YES
+            # NM enum: 1=YES, 2=NO, 3=GUESS_YES, 4=GUESS_NO. Treat the GUESS_*
+            # values like the explicit ones — a network NM heuristically classified
+            # as metered (e.g. cell tethering hotspot) shouldn't fall through to
+            # the parent's default of unmetered.
+            if metered in (1, 3):  # YES, GUESS_YES
               return True
-            if metered == 2:  # NO
+            if metered in (2, 4):  # NO, GUESS_NO
               return False
             break
     except Exception:
