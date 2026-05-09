@@ -76,7 +76,7 @@ def touch_thread(end_event):
   event_size = struct.calcsize(event_format)
   event_frame = []
 
-  with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
+  with open("/dev/input/event2", "rb") as event_file:
     fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
     while not end_event.is_set():
       if (count % int(1. / DT_HW)) == 0:
