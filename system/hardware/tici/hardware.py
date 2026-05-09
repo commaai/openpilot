@@ -104,7 +104,7 @@ class Tici(HardwareBase):
           return NetworkType.wifi
         elif dev in ("eth0", "usb0"):
           return NetworkType.ethernet
-        elif dev in ("wwan0", "rmnet_data0"):
+        elif dev in ("wwan0", "rmnet_data0", "ppp0"):
           ms = self.get_modem_state()
           if ms.get('connected'):
             nt = ms.get('network_type', '')
