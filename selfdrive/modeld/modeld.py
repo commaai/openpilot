@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 import os
+os.environ['GMMU=0'] = 1 # for usbgpu fast loading, noop for qcom
+os.environ['XDG_CACHE_HOME'] = '/data/tinycache' # rm after agnos + tg bump
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_env
-set_tinygrad_env()
-WARP_DEV = os.getenv('WARP_DEV')
-
 from tinygrad.tensor import Tensor
-from tinygrad.device import Device
 import time
 import pickle
 import numpy as np

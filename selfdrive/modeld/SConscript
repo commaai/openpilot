@@ -68,7 +68,6 @@ if not usbgpu:
   Exit(1)
 
 modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0'
-runtime_env += ' GMMU=0 XDG_CACHE_HOME=/data/tinycache'
 
 # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
 usb_gpu_lock = File("models/.usb_gpu.lock").abspath
