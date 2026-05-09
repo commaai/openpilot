@@ -150,44 +150,45 @@ class DeveloperLayout(Widget):
       item.action_item.set_state(self._params.get_bool(key))
 
   def _on_enable_ui_debug(self, state: bool):
-    self._params.put_bool("ShowDebugInfo", state)
+    self._params.put_bool_nonblocking("ShowDebugInfo", state)
     gui_app.set_show_touches(state)
     gui_app.set_show_fps(state)
 
   def _on_enable_adb(self, state: bool):
-    self._params.put_bool("AdbEnabled", state)
+    self._params.put_bool_nonblocking("AdbEnabled", state)
 
   def _on_enable_ssh(self, state: bool):
-    self._params.put_bool("SshEnabled", state)
+    self._params.put_bool_nonblocking("SshEnabled", state)
 
   def _on_joystick_debug_mode(self, state: bool):
-    self._params.put_bool("JoystickDebugMode", state)
-    self._params.put_bool("LongitudinalManeuverMode", False)
+    self._params.put_bool_nonblocking("JoystickDebugMode", state)
+    self._params.put_bool_nonblocking("LongitudinalManeuverMode", False)
     self._long_maneuver_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False)
+    self._params.put_bool_nonblocking("LateralManeuverMode", False)
     self._lat_maneuver_toggle.action_item.set_state(False)
 
   def _on_long_maneuver_mode(self, state: bool):
-    self._params.put_bool("LongitudinalManeuverMode", state)
-    self._params.put_bool("JoystickDebugMode", False)
+    self._params.put_bool_nonblocking("LongitudinalManeuverMode", state)
+    self._params.put_bool_nonblocking("JoystickDebugMode", False)
     self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False)
+    self._params.put_bool_nonblocking("LateralManeuverMode", False)
     self._lat_maneuver_toggle.action_item.set_state(False)
 
   def _on_lat_maneuver_mode(self, state: bool):
-    self._params.put_bool("LateralManeuverMode", state)
-    self._params.put_bool("ExperimentalMode", False)
-    self._params.put_bool("JoystickDebugMode", False)
+    self._params.put_bool_nonblocking("LateralManeuverMode", state)
+    self._params.put_bool_nonblocking("ExperimentalMode", False)
+    self._params.put_bool_nonblocking("JoystickDebugMode", False)
     self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("LongitudinalManeuverMode", False)
+    self._params.put_bool_nonblocking("LongitudinalManeuverMode", False)
     self._long_maneuver_toggle.action_item.set_state(False)
 
   def _on_alpha_long_enabled(self, state: bool):
     if state:
       def confirm_callback(result: DialogResult):
         if result == DialogResult.CONFIRM:
+          # blocking: _update_toggles re-reads AlphaLong via ui_state.update_params, would race
           self._params.put_bool("AlphaLongitudinalEnabled", True)
-          self._params.put_bool("OnroadCycleRequested", True)
+          self._params.put_bool_nonblocking("OnroadCycleRequested", True)
           self._update_toggles()
         else:
           self._alpha_long_toggle.action_item.set_state(False)
@@ -200,6 +201,7 @@ class DeveloperLayout(Widget):
       gui_app.push_widget(dlg)
 
     else:
+      # blocking: _update_toggles re-reads AlphaLong via ui_state.update_params, would race
       self._params.put_bool("AlphaLongitudinalEnabled", False)
-      self._params.put_bool("OnroadCycleRequested", True)
+      self._params.put_bool_nonblocking("OnroadCycleRequested", True)
       self._update_toggles()

@@ -138,7 +138,6 @@ class MiciHomeLayout(Widget):
     self._is_pressed_prev = False
 
     self._version_text = None
-    self._experimental_mode = False
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
@@ -164,10 +163,6 @@ class MiciHomeLayout(Widget):
   def show_event(self):
     super().show_event()
     self._version_text = self._get_version_text()
-    self._update_params()
-
-  def _update_params(self):
-    self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
 
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
@@ -181,8 +176,8 @@ class MiciHomeLayout(Widget):
       if time.monotonic() - self._mouse_down_t > 0.5:
         # long gating for experimental mode - only allow toggle if longitudinal control is available
         if ui_state.has_longitudinal_control:
-          self._experimental_mode = not self._experimental_mode
-          ui_state.params.put("ExperimentalMode", self._experimental_mode)
+          ui_state.experimental_mode = not ui_state.experimental_mode
+          ui_state.params.put_bool_nonblocking("ExperimentalMode", ui_state.experimental_mode)
         self._mouse_down_t = None
         self._did_long_press = True
 
@@ -190,7 +185,6 @@ class MiciHomeLayout(Widget):
       # Update version text
       self._version_text = self._get_version_text()
       self._last_refresh = rl.get_time()
-      self._update_params()
 
   def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
                     alert_count_callback: Callable[[], int] | None = None,
@@ -259,7 +253,7 @@ class MiciHomeLayout(Widget):
         self._version_commit_label.render()
 
     # ***** Center-aligned bottom section icons *****
-    self._experimental_icon.set_visible(self._experimental_mode)
+    self._experimental_icon.set_visible(ui_state.experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(ui_state.is_body)
 

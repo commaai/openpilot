@@ -66,7 +66,7 @@ class TrainingGuide(Widget):
       if self._step == DM_RECORD_STEP:
         yes = rl.check_collision_point_rec(mouse_pos, DM_RECORD_YES_RECT)
         print(f"putting RecordFront to {yes}")
-        ui_state.params.put_bool("RecordFront", yes)
+        ui_state.params.put_bool_nonblocking("RecordFront", yes)
 
       # Restart training?
       elif self._step == len(self._image_paths) - 1:
