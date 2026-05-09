@@ -171,13 +171,20 @@ class NetworkStore:
   def remove(self, ssid: str) -> bool:
     with self._lock:
       entry = self._networks.get(ssid)
-      if entry is not None:
-        fname = entry.get("_filename") or _canonical_filename(entry.get("uuid", ""), ssid)
-        fpath = os.path.join(self._directory, fname)
-        subprocess.run(["sudo", "rm", "-f", fpath], check=False)
-        del self._networks[ssid]
-        return True
-      return False
+      if entry is None:
+        return False
+      fname = entry.get("_filename") or _canonical_filename(entry.get("uuid", ""), ssid)
+      fpath = os.path.join(self._directory, fname)
+      result = subprocess.run(["sudo", "rm", "-f", fpath], check=False)
+      # `rm -f` returns 0 even if the file is already absent; non-zero means an
+      # actual failure (FS read-only, sudo broken, etc.). Don't lose the in-memory
+      # entry — _load on next start would restore the file and silently re-enable
+      # auto-connect to a network the user explicitly forgot.
+      if result.returncode != 0:
+        cloudlog.warning(f"NetworkStore: failed to remove {fpath} (rc={result.returncode})")
+        return False
+      del self._networks[ssid]
+      return True
 
   def set_metered(self, ssid: str, metered: int):
     with self._lock:

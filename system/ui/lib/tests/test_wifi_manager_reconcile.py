@@ -331,6 +331,20 @@ def test_persist_pending_connection_clears_on_success(wm, mocker):
   wm._store.save_network.assert_called_once_with("systeam", psk="secret", hidden=False)
 
 
+def test_handle_connected_idempotent_retries_pending_persist(wm, mocker):
+  """If _persist_pending_connection failed (e.g. transient FS error), the pending
+  entry stays populated. A subsequent CONNECTED event for the same SSID must retry
+  the save — otherwise the network is forgotten after restart."""
+  mocker.patch("openpilot.system.ui.lib.wifi_manager._generate_wpa_conf")
+  wm._wifi_state = WifiState(ssid="systeam", status=ConnectStatus.CONNECTED)
+  wm._pending_connection = PendingConnection(ssid="systeam", password="secret", hidden=False, epoch=wm._user_epoch)
+
+  wm._handle_connected("systeam")  # idempotent early-return path
+
+  wm._store.save_network.assert_called_once_with("systeam", psk="secret", hidden=False)
+  assert wm._pending_connection is None
+
+
 def test_reconcile_scanning_then_disconnected_fires_need_auth(wm, mocker):
   """Once SCANNING transitions to DISCONNECTED/INACTIVE, the terminal
   failure path still runs — we just don't run it prematurely on SCANNING."""

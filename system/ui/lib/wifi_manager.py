@@ -418,6 +418,12 @@ class WifiManager:
     reconcile paths can both call in without each one killing the previous udhcpc."""
     if (self._wifi_state.status == ConnectStatus.CONNECTED
         and self._wifi_state.ssid == ssid):
+      # If a prior persist hit a transient FS error, _pending_connection is still
+      # populated for this SSID. Without the retry here, repeat CONNECTED events
+      # short-circuit and the network is forgotten after restart.
+      pending = self._pending_connection
+      if pending is not None and pending.ssid == ssid:
+        self._persist_pending_connection(ssid)
       return
     self._last_connecting_at = 0.0
     self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTED)

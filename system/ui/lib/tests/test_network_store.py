@@ -27,7 +27,7 @@ class TestNetworkStore:
   def test_remove_existing_returns_true(self, mocker: MockerFixture):
     store = self._make_store(mocker)
     store._networks["TestNet"] = {"psk": "pass123", "metered": 0, "hidden": False, "uuid": "abc"}
-    mock_run = mocker.patch("subprocess.run")
+    mock_run = mocker.patch("subprocess.run", return_value=mocker.MagicMock(returncode=0))
     result = store.remove("TestNet")
     assert result is True
     assert "TestNet" not in store._networks
@@ -39,10 +39,21 @@ class TestNetworkStore:
     """Verify remove uses check=False, not check=True (rm -f handles missing files)."""
     store = self._make_store(mocker)
     store._networks["TestNet"] = {"psk": "x", "metered": 0, "hidden": False, "uuid": "abc"}
-    mock_run = mocker.patch("subprocess.run")
+    mock_run = mocker.patch("subprocess.run", return_value=mocker.MagicMock(returncode=0))
     store.remove("TestNet")
     kwargs = mock_run.call_args[1]
     assert kwargs.get("check") is False, "remove() should use check=False since rm -f handles missing files"
+
+  def test_remove_keeps_in_memory_when_rm_fails(self, mocker: MockerFixture):
+    """If `sudo rm` returns non-zero (e.g. FS read-only), the file persists on disk
+    and _load would restore the entry on next start. Don't lose the in-memory mapping
+    in that window — auto-connect to a "forgotten" network is the failure mode here."""
+    store = self._make_store(mocker)
+    store._networks["TestNet"] = {"psk": "x", "metered": 0, "hidden": False, "uuid": "abc"}
+    mocker.patch("subprocess.run", return_value=mocker.MagicMock(returncode=1))
+    result = store.remove("TestNet")
+    assert result is False
+    assert "TestNet" in store._networks, "in-memory entry must survive rm failure"
 
   def test_get_returns_copy(self, mocker: MockerFixture):
     store = self._make_store(mocker)
