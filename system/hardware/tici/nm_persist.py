@@ -118,6 +118,15 @@ def persist_connections(run_dir: str = RUN_DIR, data_dir: str = DATA_DIR, netpla
         # Agent-managed secret outside the keyfile — NetworkStore would refuse it.
         continue
 
+    # NetworkStore also skips connection.autoconnect=false; mirror that filter so
+    # we don't delete the YAML for a manual-only profile that the new stack would
+    # then ignore (the network would silently disappear on upgrade).
+    try:
+      if not cp.getboolean("connection", "autoconnect", fallback=True):
+        continue
+    except ValueError:
+      continue
+
     dest_fname = f"{file_uuid}-{_sanitize_ssid_for_filename(ssid)}.nmconnection"
     dest_path = os.path.join(data_dir, dest_fname)
 

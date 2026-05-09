@@ -640,6 +640,33 @@ class TestConnectWithoutCtrl:
     wm.process_callbacks()
     disconnected_cb.assert_called_once()
 
+  def test_connect_to_network_no_ctrl_skips_reset_when_epoch_advanced(self, wm, mocker):
+    """If a stale worker reaches the no-ctrl branch after a fresher attempt
+    landed, it must not emit a false disconnect for the new attempt."""
+    wm._ctrl = None
+    disconnected_cb = mocker.MagicMock()
+    wm.add_callbacks(disconnected=disconnected_cb)
+
+    captured = []
+
+    def deferred_thread(target=None, daemon=None):
+      class T:
+        def start(_):
+          captured.append(target)
+      return T()
+    mocker.patch.object(wifi_manager_module.threading, "Thread", deferred_thread)
+
+    wm.connect_to_network("OldNet", "passA", hidden=False)
+    # User taps another network in the gap.
+    wm._set_connecting("NewNet")
+    captured[0]()  # run the stale worker
+
+    # New attempt's CONNECTING state must survive.
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+    assert wm._wifi_state.ssid == "NewNet"
+    wm.process_callbacks()
+    disconnected_cb.assert_not_called()
+
   def test_connect_to_network_aborts_when_user_taps_another_network(self, wm, mocker):
     """If the user taps SSID A, then quickly taps SSID B before the worker runs,
     the stale worker for A must not SELECT_NETWORK A and force the wrong network."""
@@ -1006,3 +1033,29 @@ class TestSetTetheringPassword:
 
     aw.assert_not_called()
     assert wm._tethering_psk == "PRIOR-WORKING-PASSWORD", f"prior password must survive ({reason})"
+
+  def test_rejection_fires_callback_so_ui_reenables_controls(self, wm, mocker):
+    """The UI disables tethering controls before calling and only re-enables from
+    activated/disconnected. Without a callback the controls stay stuck."""
+    activated = mocker.MagicMock()
+    disconnected = mocker.MagicMock()
+    wm.add_callbacks(activated=activated, disconnected=disconnected)
+    wm._tethering_active = True
+
+    wm.set_tethering_password("z" * 64)  # invalid (64-char non-hex)
+
+    wm.process_callbacks()
+    activated.assert_called_once(), "tethering still active → fire activated"
+    disconnected.assert_not_called()
+
+  def test_rejection_when_not_tethering_fires_disconnected(self, wm, mocker):
+    activated = mocker.MagicMock()
+    disconnected = mocker.MagicMock()
+    wm.add_callbacks(activated=activated, disconnected=disconnected)
+    wm._tethering_active = False
+
+    wm.set_tethering_password("short")  # invalid
+
+    wm.process_callbacks()
+    disconnected.assert_called_once()
+    activated.assert_not_called()

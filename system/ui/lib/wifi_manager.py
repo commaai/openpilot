@@ -769,6 +769,10 @@ class WifiManager:
     def worker():
       if self._ctrl is None:
         cloudlog.warning("No wpa_supplicant connection")
+        # If a fresher attempt landed during the supplicant-restart window, don't
+        # let this stale worker emit a false disconnect for it.
+        if self._user_epoch != epoch:
+          return
         self._clear_pending_connection(ssid)
         # _init_wifi_state is a no-op while _ctrl is None, so reset CONNECTING inline.
         self._set_connecting(None)
@@ -846,6 +850,10 @@ class WifiManager:
     def worker():
       if self._ctrl is None:
         cloudlog.warning(f"No wpa_supplicant connection for activate {ssid}")
+        # Skip the reset if a fresher attempt has already moved on, otherwise
+        # this stale worker would emit a false disconnect for the new attempt.
+        if self._user_epoch != epoch:
+          return
         # _init_wifi_state is a no-op while _ctrl is None, so reset CONNECTING inline.
         self._set_connecting(None)
         self._enqueue_callbacks(self._disconnected)
@@ -948,6 +956,9 @@ class WifiManager:
     # bringup fail forever with the bad value persisted on disk. Validate up front.
     if not (8 <= len(password) <= 63 or _is_raw_psk(password)):
       cloudlog.warning(f"set_tethering_password: rejecting invalid password (len={len(password)})")
+      # The UI disables tethering controls before calling this and only re-enables
+      # them from activated/disconnected. Notify so the controls don't stay stuck.
+      self._enqueue_callbacks(self._activated if self._tethering_active else self._disconnected)
       return
     def worker():
       try:

@@ -264,6 +264,32 @@ psk-flags=1
     assert os.listdir(self.data_dir) == []
     assert os.path.exists(yaml_path)
 
+  def test_skips_autoconnect_disabled(self, mocker):
+    """NetworkStore skips connection.autoconnect=false. Slurping these keyfiles
+    and deleting their YAMLs would silently lose the user's manual-only profiles."""
+    self._patch_io(mocker)
+    disabled = f"""[connection]
+id=ManualOnly
+type=wifi
+uuid={WIFI_UUID}
+autoconnect=false
+
+[wifi]
+ssid=ManualOnly
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=hunter2
+"""
+    self._write_run_keyfile(f"netplan-NM-{WIFI_UUID}-ManualOnly.nmconnection", disabled)
+    yaml_path = self._write_netplan_yaml(f"90-NM-{WIFI_UUID}.yaml", WIFI_NETPLAN_YAML)
+
+    nm_persist.persist_connections(self.run_dir, self.data_dir, self.netplan_dir)
+
+    assert os.listdir(self.data_dir) == [], "autoconnect=false profile must not be slurped"
+    assert os.path.exists(yaml_path), "YAML must be left in place"
+
   def test_skips_keyfile_without_ssid(self, mocker):
     self._patch_io(mocker)
     self._write_run_keyfile(
