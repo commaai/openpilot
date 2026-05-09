@@ -233,6 +233,25 @@ def test_reconcile_connected_stable_when_still_completed(wm, mocker):
   disconnected.assert_not_called()
 
 
+def test_reconcile_connected_defers_transient_states(wm, mocker):
+  """Mid-roam/rekey wpa_state can be ASSOCIATING/ASSOCIATED/handshake briefly.
+  Treating that as disconnect would flush a live udhcpc lease for nothing."""
+  disconnected = mocker.MagicMock()
+  wm._disconnected.append(disconnected)
+  wm._wifi_state = WifiState(ssid="HomeNet", status=ConnectStatus.CONNECTED)
+  wm._ipv4_address = "10.0.0.5"
+  wm._last_connected_recheck = time.monotonic() - 100
+
+  for transient in ("ASSOCIATING", "ASSOCIATED", "AUTHENTICATING", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE", "SCANNING"):
+    wm._ctrl.request.return_value = f"wpa_state={transient}\nssid=HomeNet\n"
+    wm._last_connected_recheck = time.monotonic() - 100
+    wm._reconcile_connecting_state()
+    assert wm._wifi_state.status == ConnectStatus.CONNECTED, f"{transient} must defer, not disconnect"
+    assert wm._ipv4_address == "10.0.0.5"
+  wm._dhcp.stop.assert_not_called()
+  disconnected.assert_not_called()
+
+
 def test_reconcile_connected_adopts_roamed_ssid(wm, mocker):
   """If STATUS reports COMPLETED on a different SSID than we think we're
   on (monitor socket down during a roam A→B), adopt the new network via

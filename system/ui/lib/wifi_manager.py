@@ -476,10 +476,12 @@ class WifiManager:
             return
           self._last_wrong_key_dispatch[event_ssid] = now
           self._clear_pending_connection(event_ssid)
-          # SELECT_NETWORK disabled every other saved network; re-enable so the
-          # device can auto-fall-back after a failed manual connect.
+          # The runtime network from _add_and_select_network was never persisted; if
+          # we leave it in wpa_supplicant, ENABLE_NETWORK all just re-arms the bad PSK
+          # for retry. Drop it before re-enabling the rest.
           if self._ctrl is not None:
             try:
+              self._remove_wpa_network(event_ssid)
               self._request("ENABLE_NETWORK all")
             except Exception:
               cloudlog.exception("Failed to re-enable saved networks after WRONG_KEY")
@@ -566,6 +568,12 @@ class WifiManager:
         # synthesizing a disconnect that would flush the live lease.
         self._handle_connected(status_ssid)
         return
+      # Normal roam/rekey transits through these states briefly; treating them as
+      # disconnect would flush the live udhcpc lease for nothing. Wait for the
+      # next sample to see the terminal state.
+      if wpa_state in ("SCANNING", "AUTHENTICATING", "ASSOCIATING", "ASSOCIATED",
+                       "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
+        return
       # Actually disconnected under us.
       self._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
       self._dhcp.stop()
@@ -604,8 +612,11 @@ class WifiManager:
       if network is not None and network.security_type != SecurityType.OPEN:
         self._enqueue_callbacks(self._need_auth, current_state.ssid)
       self._clear_pending_connection(current_state.ssid)
-      # SELECT_NETWORK disabled every other saved network; re-enable so auto-fallback works.
+      # Drop the unsaved runtime network so ENABLE_NETWORK all doesn't re-arm
+      # the failed credential for another retry.
       try:
+        if current_state.ssid:
+          self._remove_wpa_network(current_state.ssid)
         self._request("ENABLE_NETWORK all")
       except Exception:
         cloudlog.exception("Failed to re-enable saved networks after stale CONNECTING")
@@ -713,6 +724,7 @@ class WifiManager:
       return
     self._set_connecting(ssid)
     self._set_pending_connection(ssid, password, hidden)
+    epoch = self._user_epoch
 
     def worker():
       if self._ctrl is None:
@@ -724,8 +736,14 @@ class WifiManager:
         return
 
       try:
+        # If the user moved on to a different SSID before this worker ran, abort —
+        # SELECT_NETWORK on a stale ssid would force wpa_supplicant to the wrong network.
+        if self._user_epoch != epoch:
+          return
         # Remove any existing network entry for this SSID
         self._remove_wpa_network(ssid)
+        if self._user_epoch != epoch:
+          return
 
         self._add_and_select_network(ssid, password, hidden)
       except Exception:
@@ -733,9 +751,12 @@ class WifiManager:
         # Setup failed before SELECT_NETWORK could land; STATUS won't tell us anything
         # useful and _init_wifi_state would silently set DISCONNECTED without notifying
         # the UI. Reset CONNECTING and fire disconnected ourselves so the UI unsticks.
-        self._clear_pending_connection(ssid)
-        self._set_connecting(None)
-        self._enqueue_callbacks(self._disconnected)
+        # Only reset if we still own this connect attempt — a fresh user tap may have
+        # already moved on.
+        if self._user_epoch == epoch:
+          self._clear_pending_connection(ssid)
+          self._set_connecting(None)
+          self._enqueue_callbacks(self._disconnected)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -777,6 +798,7 @@ class WifiManager:
       return
     self._set_connecting(ssid)
     self._clear_pending_connection()
+    epoch = self._user_epoch
 
     def worker():
       if self._ctrl is None:
@@ -786,8 +808,19 @@ class WifiManager:
         self._enqueue_callbacks(self._disconnected)
         return
 
+      def reset_to_disconnected():
+        # Mirror the _ctrl is None recovery: _init_wifi_state silently sets DISCONNECTED
+        # without firing the callback, which leaves the UI wedged at CONNECTING.
+        if self._user_epoch == epoch:
+          self._set_connecting(None)
+          self._enqueue_callbacks(self._disconnected)
+
       try:
+        if self._user_epoch != epoch:
+          return
         ids = self._list_network_ids(ssid)
+        if self._user_epoch != epoch:
+          return
         if ids:
           self._request(f"SELECT_NETWORK {ids[0]}")
         else:
@@ -797,10 +830,10 @@ class WifiManager:
             self._add_and_select_network(ssid, entry.get("psk", ""), entry.get("hidden", False))
           else:
             cloudlog.warning(f"Network {ssid} not found for activation")
-            self._init_wifi_state()
+            reset_to_disconnected()
       except Exception:
         cloudlog.exception(f"Failed to activate {ssid}")
-        self._init_wifi_state()
+        reset_to_disconnected()
 
     if block:
       worker()

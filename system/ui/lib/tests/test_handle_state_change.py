@@ -162,6 +162,18 @@ class TestWrongPassword:
     wm.process_callbacks()
     cb.assert_called_once_with("SecNet")
 
+  def test_wrong_key_removes_failed_runtime_network(self, wm, mocker):
+    """The runtime network from _add_and_select_network was never persisted; if it
+    survives the WRONG_KEY, ENABLE_NETWORK all just re-arms the bad PSK for retry."""
+    wm._set_connecting("SecNet")
+    wm._remove_wpa_network = mocker.MagicMock()
+
+    fire(wm, "CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid=\"SecNet\" auth_failures=1 duration=10 reason=WRONG_KEY")
+
+    wm._remove_wpa_network.assert_called_once_with("SecNet")
+    requests = [c.args[0] for c in wm._ctrl.request.call_args_list]
+    assert "ENABLE_NETWORK all" in requests
+
   def test_wrong_key_no_ssid_no_callback(self, wm, mocker):
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
@@ -628,6 +640,30 @@ class TestConnectWithoutCtrl:
     wm.process_callbacks()
     disconnected_cb.assert_called_once()
 
+  def test_connect_to_network_aborts_when_user_taps_another_network(self, wm, mocker):
+    """If the user taps SSID A, then quickly taps SSID B before the worker runs,
+    the stale worker for A must not SELECT_NETWORK A and force the wrong network."""
+    wm._remove_wpa_network = mocker.MagicMock()
+    wm._add_and_select_network = mocker.MagicMock()
+
+    captured = []
+
+    def deferred_thread(target=None, daemon=None):
+      class T:
+        def start(_):
+          captured.append(target)
+      return T()
+
+    mocker.patch.object(wifi_manager_module.threading, "Thread", deferred_thread)
+
+    wm.connect_to_network("NetA", "passA", hidden=False)
+    # User taps the next network before the worker runs.
+    wm._set_connecting("NetB")
+    captured[0]()  # run the deferred A worker
+
+    wm._remove_wpa_network.assert_not_called()
+    wm._add_and_select_network.assert_not_called()
+
   def test_connect_to_network_setup_failure_resets_state(self, wm, mocker):
     """If _add_and_select_network raises (e.g. wpa_supplicant rejects a bad PSK),
     the worker must reset CONNECTING and fire disconnected. Otherwise the UI
@@ -643,6 +679,37 @@ class TestConnectWithoutCtrl:
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert wm._wifi_state.ssid is None
     assert wm._pending_connection is None
+    wm.process_callbacks()
+    disconnected_cb.assert_called_once()
+
+  def test_activate_connection_setup_failure_fires_disconnected(self, wm, mocker):
+    """If _add_and_select_network raises (e.g. migrated keyfile has bad PSK),
+    activate_connection must reset CONNECTING and fire disconnected. Otherwise
+    the UI sticks at CONNECTING until an unrelated event clears it."""
+    wm._list_network_ids = mocker.MagicMock(return_value=[])
+    wm._store.get = mocker.MagicMock(return_value={"psk": "x", "hidden": False})
+    wm._add_and_select_network = mocker.MagicMock(side_effect=OSError("FAIL"))
+    disconnected_cb = mocker.MagicMock()
+    wm.add_callbacks(disconnected=disconnected_cb)
+
+    wm.activate_connection("HomeNet", block=True)
+
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+    assert wm._wifi_state.ssid is None
+    wm.process_callbacks()
+    disconnected_cb.assert_called_once()
+
+  def test_activate_connection_missing_network_fires_disconnected(self, wm, mocker):
+    """Activating a non-existent saved network must reset CONNECTING and notify
+    the UI rather than silently leaving _init_wifi_state to handle it."""
+    wm._list_network_ids = mocker.MagicMock(return_value=[])
+    wm._store.get = mocker.MagicMock(return_value=None)
+    disconnected_cb = mocker.MagicMock()
+    wm.add_callbacks(disconnected=disconnected_cb)
+
+    wm.activate_connection("Vanished", block=True)
+
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     wm.process_callbacks()
     disconnected_cb.assert_called_once()
 
