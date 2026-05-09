@@ -132,6 +132,15 @@ class TestParseScanResults:
     # Round-trip: the decoded str must re-encode to the original AP bytes.
     assert results[0].ssid.encode("utf-8") == b'caf\xc3\xa9 "home"'
 
+  def test_preserves_trailing_space_in_ssid(self):
+    """SSIDs may legally end with spaces and wpa_supplicant leaves printable
+    spaces unescaped. Stripping the whole payload would clip the last line's
+    trailing-space SSID, so connect/forget would target the wrong name."""
+    raw = self.HEADER + "00:11:22:33:44:55\t2437\t-65\t[ESS]\tMyNet \n"
+    results = parse_scan_results(raw)
+    assert len(results) == 1
+    assert results[0].ssid == "MyNet "
+
   def test_missing_ssid_field(self):
     raw = self.HEADER + "00:11:22:33:44:55\t2437\t-65\t[ESS]\n"
     results = parse_scan_results(raw)

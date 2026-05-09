@@ -237,7 +237,10 @@ def decode_ssid(encoded: str) -> str:
 def parse_scan_results(raw: str) -> list[ScanResult]:
   """Parse wpa_supplicant SCAN_RESULTS output (tab-separated, first line is header)."""
   results = []
-  lines = raw.strip().split("\n")
+  # Don't .strip() the whole payload: SSIDs may legally end with spaces and
+  # wpa_supplicant leaves printable spaces unescaped, so a global strip would
+  # clip the last line's trailing-space SSID.
+  lines = raw.splitlines()
   if len(lines) < 2:
     return results
   for line in lines[1:]:
