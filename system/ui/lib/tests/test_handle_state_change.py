@@ -741,6 +741,25 @@ class TestConnectWithoutCtrl:
     assert "DISCONNECT" not in requests
     assert "ENABLE_NETWORK all" in requests
 
+  def test_forget_bails_when_store_rm_fails(self, wm, mocker):
+    """If NetworkStore.remove returns False (file still on disk, will be reloaded
+    at next start), don't tear down the runtime entry or fire `forgotten`. The
+    UI must not claim the network was forgotten when it'll come back on reboot."""
+    wm._store.contains.return_value = True
+    wm._store.remove.return_value = False
+    wm._remove_wpa_network = mocker.MagicMock()
+    forgotten_cb = mocker.MagicMock()
+    wm.add_callbacks(forgotten=forgotten_cb)
+    mocker.patch.object(wifi_manager_module, "_generate_wpa_conf")
+
+    wm.forget_connection("StuckNet", block=True)
+
+    wm._remove_wpa_network.assert_not_called()
+    requests = [c.args[0] for c in wm._ctrl.request.call_args_list]
+    assert "REASSOCIATE" not in requests
+    wm.process_callbacks()
+    forgotten_cb.assert_not_called()
+
   def test_forget_active_reassociates(self, wm, mocker):
     """Forgetting the active connection must DISCONNECT and REASSOCIATE so the
     device falls back to the next saved network."""

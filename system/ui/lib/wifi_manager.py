@@ -113,6 +113,9 @@ class WifiManager:
     self._last_wrong_key_dispatch: dict[str, float] = {}
     self._callback_queue: list[Callable] = []
     self._callback_lock = threading.Lock()
+    # Serializes connect_to_network / activate_connection workers so a stale worker
+    # can't remove a runtime network just added by a fresher worker.
+    self._connect_lock = threading.Lock()
     # Coalesced so an undrained queue (user on another tab) can't grow unboundedly.
     self._networks_updated_pending = False
 
@@ -764,25 +767,21 @@ class WifiManager:
         self._enqueue_callbacks(self._disconnected)
         return
 
-      try:
-        # If the user moved on to a different SSID before this worker ran, abort —
-        # SELECT_NETWORK on a stale ssid would force wpa_supplicant to the wrong network.
+      # Serialize against other workers and recheck epoch inside the lock — otherwise
+      # a stale worker that passed an early epoch check could remove the runtime
+      # network a fresher worker just added (rapid same-SSID retries).
+      with self._connect_lock:
         if self._user_epoch != epoch:
           return
-        # Remove any existing network entry for this SSID
-        self._remove_wpa_network(ssid)
-        if self._user_epoch != epoch:
-          return
-
-        self._add_and_select_network(ssid, password, hidden)
-      except Exception:
-        cloudlog.exception(f"Failed to connect to {ssid}")
-        # Setup failed before SELECT_NETWORK could land; STATUS won't tell us anything
-        # useful and _init_wifi_state would silently set DISCONNECTED without notifying
-        # the UI. Reset CONNECTING and fire disconnected ourselves so the UI unsticks.
-        # Only reset if we still own this connect attempt — a fresh user tap may have
-        # already moved on.
-        if self._user_epoch == epoch:
+        try:
+          self._remove_wpa_network(ssid)
+          self._add_and_select_network(ssid, password, hidden)
+        except Exception:
+          cloudlog.exception(f"Failed to connect to {ssid}")
+          # Setup failed before SELECT_NETWORK could land; STATUS won't tell us
+          # anything useful and _init_wifi_state would silently set DISCONNECTED
+          # without notifying the UI. Reset CONNECTING and fire disconnected
+          # ourselves so the UI unsticks.
           self._clear_pending_connection(ssid)
           self._set_connecting(None)
           self._enqueue_callbacks(self._disconnected)
@@ -794,7 +793,14 @@ class WifiManager:
       self._clear_pending_connection(ssid)
       was_connected = self._wifi_state.ssid == ssid and self._wifi_state.status == ConnectStatus.CONNECTED
 
+      existed = self._store.contains(ssid)
       removed = self._store.remove(ssid)
+      if existed and not removed:
+        # rm failed — the on-disk file survives and _load will restore the entry
+        # at next start. Don't tear down the runtime/regenerate config or fire
+        # `forgotten`, or the UI will lie about state until the file gets restored.
+        cloudlog.warning(f"forget_connection: failed to remove {ssid} from disk; leaving runtime intact")
+        return
       if not removed:
         cloudlog.warning(f"Trying to forget unknown connection: {ssid}")
 
@@ -840,29 +846,29 @@ class WifiManager:
       def reset_to_disconnected():
         # Mirror the _ctrl is None recovery: _init_wifi_state silently sets DISCONNECTED
         # without firing the callback, which leaves the UI wedged at CONNECTING.
-        if self._user_epoch == epoch:
-          self._set_connecting(None)
-          self._enqueue_callbacks(self._disconnected)
+        self._set_connecting(None)
+        self._enqueue_callbacks(self._disconnected)
 
-      try:
+      # Serialize against other connect/activate workers and recheck epoch inside
+      # the lock so a stale worker can't mutate networks added by a fresher one.
+      with self._connect_lock:
         if self._user_epoch != epoch:
           return
-        ids = self._list_network_ids(ssid)
-        if self._user_epoch != epoch:
-          return
-        if ids:
-          self._request(f"SELECT_NETWORK {ids[0]}")
-        else:
-          # Network not in wpa_supplicant's runtime list — add from store
-          entry = self._store.get(ssid)
-          if entry:
-            self._add_and_select_network(ssid, entry.get("psk", ""), entry.get("hidden", False))
+        try:
+          ids = self._list_network_ids(ssid)
+          if ids:
+            self._request(f"SELECT_NETWORK {ids[0]}")
           else:
-            cloudlog.warning(f"Network {ssid} not found for activation")
-            reset_to_disconnected()
-      except Exception:
-        cloudlog.exception(f"Failed to activate {ssid}")
-        reset_to_disconnected()
+            # Network not in wpa_supplicant's runtime list — add from store
+            entry = self._store.get(ssid)
+            if entry:
+              self._add_and_select_network(ssid, entry.get("psk", ""), entry.get("hidden", False))
+            else:
+              cloudlog.warning(f"Network {ssid} not found for activation")
+              reset_to_disconnected()
+        except Exception:
+          cloudlog.exception(f"Failed to activate {ssid}")
+          reset_to_disconnected()
 
     if block:
       worker()

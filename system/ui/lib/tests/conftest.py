@@ -26,6 +26,7 @@ def wm(mocker):
   wm._user_epoch = 0
   wm._callback_queue = []
   wm._callback_lock = threading.Lock()
+  wm._connect_lock = threading.Lock()
   wm._networks_updated_pending = False
   wm._need_auth = []
   wm._activated = []
