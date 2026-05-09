@@ -16,7 +16,7 @@ from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 from openpilot.system.ui.lib.wpa_ctrl import parse_status, dbm_to_percent
 
-NM_CONNECTIONS_DIR = "/data/etc/NetworkManager/system-connections"
+NM_CONNECTIONS_DIRS = ("/data/etc/NetworkManager/system-connections",)
 MODEM_STATE_PATH = "/dev/shm/modem"
 TIMEOUT = 0.1
 
@@ -196,25 +196,39 @@ class Tici(HardwareBase):
                                 capture_output=True, text=True, timeout=2)
         ssid = parse_status(result.stdout).get("ssid")
         if ssid:
-          try:
-            filenames = os.listdir(NM_CONNECTIONS_DIR)
-          except OSError:
-            filenames = []
-          for fname in filenames:
-            if not fname.endswith(".nmconnection"):
-              continue
-            fpath = os.path.join(NM_CONNECTIONS_DIR, fname)
-            raw = sudo_read(fpath)
-            if not raw:
-              continue
-            cp = configparser.ConfigParser(interpolation=None)
+          # Collect all matching profiles across the configured dirs so duplicates
+          # (e.g. one in /run from netplan, one persistent in /etc) all enter the
+          # ranking. Pick the most recently modified — that mirrors NM's "the active
+          # profile is the one most recently touched" heuristic without going through
+          # NM dbus.
+          candidates = []
+          for d in NM_CONNECTIONS_DIRS:
             try:
-              cp.read_string(raw)
-              if cp.get("wifi", "ssid", fallback="") != ssid:
-                continue
-              metered = cp.getint("connection", "metered", fallback=0)
-            except (configparser.Error, ValueError):
+              filenames = os.listdir(d)
+            except OSError:
               continue
+            for fname in filenames:
+              if not fname.endswith(".nmconnection"):
+                continue
+              fpath = os.path.join(d, fname)
+              raw = sudo_read(fpath)
+              if not raw:
+                continue
+              cp = configparser.ConfigParser(interpolation=None)
+              try:
+                cp.read_string(raw)
+                if cp.get("wifi", "ssid", fallback="") != ssid:
+                  continue
+                metered = cp.getint("connection", "metered", fallback=0)
+              except (configparser.Error, ValueError):
+                continue
+              try:
+                mtime = os.path.getmtime(fpath)
+              except OSError:
+                mtime = 0.0
+              candidates.append((mtime, metered))
+          if candidates:
+            _, metered = max(candidates, key=lambda c: c[0])
             # NM enum: 1=YES, 2=NO, 3=GUESS_YES, 4=GUESS_NO. Treat the GUESS_*
             # values like the explicit ones — a network NM heuristically classified
             # as metered (e.g. cell tethering hotspot) shouldn't fall through to
@@ -223,7 +237,6 @@ class Tici(HardwareBase):
               return True
             if metered in (2, 4):  # NO, GUESS_NO
               return False
-            break
     except Exception:
       pass
 
