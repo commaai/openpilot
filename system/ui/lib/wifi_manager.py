@@ -336,6 +336,12 @@ class WifiManager:
     attach_failures = 0
     while not self._exit:
       if self._ctrl is None:
+        # _start_tethering closes _ctrl and pkills the STA daemon before the AP daemon
+        # is up. Spawning STA in that gap races AP bringup and can keep the hotspot
+        # off wlan0. Wait for tethering to finish; _start_tethering will rebind _ctrl.
+        if self._tethering_active:
+          time.sleep(1)
+          continue
         # No owned daemon? Spawn one so wifi doesn't stay dead after a failed
         # initial bringup or a crash. Otherwise just attach.
         daemon_alive = _wpa_supplicant_running(WPA_SUPPLICANT_CONF) or _wpa_supplicant_running(WPA_AP_CONF)
@@ -574,10 +580,15 @@ class WifiManager:
     if time.monotonic() - self._last_connecting_at < CONNECTING_STALE_TIMEOUT_SECONDS:
       return
 
+    # Snapshot the user epoch so a STATUS reply for a stale connect attempt can't
+    # clobber a fresh user-initiated one that started while we were blocked below.
+    epoch = self._user_epoch
     try:
       status = parse_status(self._request("STATUS"))
     except Exception:
       cloudlog.exception("Failed to reconcile wifi state from STATUS")
+      return
+    if self._user_epoch != epoch:
       return
 
     wpa_state = status.get("wpa_state", "")
@@ -719,8 +730,12 @@ class WifiManager:
         self._add_and_select_network(ssid, password, hidden)
       except Exception:
         cloudlog.exception(f"Failed to connect to {ssid}")
+        # Setup failed before SELECT_NETWORK could land; STATUS won't tell us anything
+        # useful and _init_wifi_state would silently set DISCONNECTED without notifying
+        # the UI. Reset CONNECTING and fire disconnected ourselves so the UI unsticks.
         self._clear_pending_connection(ssid)
-        self._init_wifi_state()
+        self._set_connecting(None)
+        self._enqueue_callbacks(self._disconnected)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -741,7 +756,11 @@ class WifiManager:
             self._request("DISCONNECT")
           self._remove_wpa_network(ssid)
           self._request("ENABLE_NETWORK all")
-          self._request("REASSOCIATE")
+          # Reassociate only when the forgotten profile was the live link, so the
+          # device falls back to the next saved network. Otherwise REASSOCIATE
+          # would briefly drop an unrelated active connection.
+          if was_connected:
+            self._request("REASSOCIATE")
         except Exception:
           cloudlog.exception(f"Failed to reconfigure after forgetting {ssid}")
 

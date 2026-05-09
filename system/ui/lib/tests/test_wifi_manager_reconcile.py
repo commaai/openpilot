@@ -64,6 +64,29 @@ def test_reconcile_stale_connecting_to_disconnected_reenables_networks(wm, mocke
   assert "ENABLE_NETWORK all" in requests
 
 
+def test_reconcile_stale_connecting_drops_result_when_user_starts_new_attempt(wm, mocker):
+  """If the user starts connecting to a different network while we're blocked in
+  STATUS, a stale DISCONNECTED for the original SSID must not call _set_connecting(None)
+  and clobber the fresh attempt."""
+  disconnected = mocker.MagicMock()
+  wm._disconnected.append(disconnected)
+  wm._wifi_state = WifiState(ssid="oldnet", status=ConnectStatus.CONNECTING)
+
+  def status_then_user_taps(_cmd):
+    # Mid-STATUS the user taps a new network — _set_connecting bumps _user_epoch.
+    wm._set_connecting("newnet")
+    return "wpa_state=DISCONNECTED\n"
+  wm._ctrl.request.side_effect = status_then_user_taps
+
+  wm._reconcile_connecting_state()
+  wm.process_callbacks()
+
+  # Fresh attempt for "newnet" must survive untouched.
+  assert wm._wifi_state.status == ConnectStatus.CONNECTING
+  assert wm._wifi_state.ssid == "newnet"
+  disconnected.assert_not_called()
+
+
 def test_reconcile_stale_secure_network_prompts_auth(wm, mocker):
   need_auth = mocker.MagicMock()
   wm._need_auth.append(need_auth)

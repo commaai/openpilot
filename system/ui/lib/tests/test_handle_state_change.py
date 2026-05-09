@@ -628,6 +628,24 @@ class TestConnectWithoutCtrl:
     wm.process_callbacks()
     disconnected_cb.assert_called_once()
 
+  def test_connect_to_network_setup_failure_resets_state(self, wm, mocker):
+    """If _add_and_select_network raises (e.g. wpa_supplicant rejects a bad PSK),
+    the worker must reset CONNECTING and fire disconnected. Otherwise the UI
+    stays wedged at CONNECTING until an unrelated event clears it."""
+    wm._remove_wpa_network = mocker.MagicMock()
+    wm._add_and_select_network = mocker.MagicMock(side_effect=OSError("FAIL"))
+    disconnected_cb = mocker.MagicMock()
+    wm.add_callbacks(disconnected=disconnected_cb)
+    mocker.patch.object(wifi_manager_module.threading, "Thread", self.ImmediateThread)
+
+    wm.connect_to_network("HomeNet", "password", hidden=False)
+
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+    assert wm._wifi_state.ssid is None
+    assert wm._pending_connection is None
+    wm.process_callbacks()
+    disconnected_cb.assert_called_once()
+
   def test_activate_connection_without_ctrl_resets_state(self, wm, mocker):
     wm._ctrl = None
     disconnected_cb = mocker.MagicMock()
@@ -640,6 +658,34 @@ class TestConnectWithoutCtrl:
     assert wm._wifi_state.ssid is None
     wm.process_callbacks()
     disconnected_cb.assert_called_once()
+
+  def test_forget_inactive_skips_reassociate(self, wm, mocker):
+    """Forgetting a saved network that isn't the current connection must not
+    REASSOCIATE — the active link is unrelated and a reassociate would briefly
+    drop or renegotiate it for no reason."""
+    wm._remove_wpa_network = mocker.MagicMock()
+    wm._wifi_state = WifiState(ssid="ActiveNet", status=ConnectStatus.CONNECTED)
+    mocker.patch.object(wifi_manager_module, "_generate_wpa_conf")
+
+    wm.forget_connection("OtherSavedNet", block=True)
+
+    requests = [c.args[0] for c in wm._ctrl.request.call_args_list]
+    assert "REASSOCIATE" not in requests
+    assert "DISCONNECT" not in requests
+    assert "ENABLE_NETWORK all" in requests
+
+  def test_forget_active_reassociates(self, wm, mocker):
+    """Forgetting the active connection must DISCONNECT and REASSOCIATE so the
+    device falls back to the next saved network."""
+    wm._remove_wpa_network = mocker.MagicMock()
+    wm._wifi_state = WifiState(ssid="ActiveNet", status=ConnectStatus.CONNECTED)
+    mocker.patch.object(wifi_manager_module, "_generate_wpa_conf")
+
+    wm.forget_connection("ActiveNet", block=True)
+
+    requests = [c.args[0] for c in wm._ctrl.request.call_args_list]
+    assert "DISCONNECT" in requests
+    assert "REASSOCIATE" in requests
 
 
 class TestConnectPersistence:

@@ -353,6 +353,26 @@ class TestMonitorRespawn:
     assert wm._ctrl is None
     dead_ctrl.close.assert_called_once()
 
+  def test_monitor_skips_recovery_while_tethering_active(self, wm, mocker):
+    """During _start_tethering, _ctrl is closed and the STA daemon is killed
+    before the AP daemon is up, with _tethering_active=True. The monitor must
+    not spawn its own STA supplicant in that gap or it races AP bringup."""
+    wm._ctrl = None
+    wm._tethering_active = True
+    wm._exit = False
+    wm._monitor_epoch = 0
+    pgrep = mocker.patch.object(wifi_manager_module, "_wpa_supplicant_running", return_value=False)
+    mocker.patch.object(wifi_manager_module.time, "sleep",
+                        side_effect=lambda *_: setattr(wm, "_exit", True))
+    ensure = mocker.patch.object(wm, "_ensure_wpa_supplicant")
+
+    wm._monitor_state()
+
+    ensure.assert_not_called()
+    # The pgrep that would gate spawn vs attach must also be skipped — we don't
+    # touch the daemon at all while tethering is in transition.
+    pgrep.assert_not_called()
+
   def test_monitor_respawns_after_repeated_attach_failures_with_pgrep_true(self, wm, mocker):
     """P1 regression: pgrep can keep finding the daemon after its ctrl socket has
     been deleted (NM-driven deinit, /var/run cleanup, etc.). try_attach_ctrl
