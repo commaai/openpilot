@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-os.environ['GMMU=0'] = 1 # for usbgpu fast loading, noop for qcom
+os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 os.environ['XDG_CACHE_HOME'] = '/data/tinycache' # rm after agnos + tg bump
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, get_tg_input_devices
 from tinygrad.tensor import Tensor
