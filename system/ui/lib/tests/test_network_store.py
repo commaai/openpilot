@@ -170,6 +170,87 @@ mode=infrastructure
     file_uuid = store.get("ev/il")["uuid"]
     assert fname == f"{file_uuid}-ev_il.nmconnection"
 
+  def test_load_skips_unsupported_key_mgmt(self, mocker: MockerFixture):
+    """Migrated profile with key-mgmt=wpa-eap (no PSK) must NOT load with psk="".
+    Otherwise _generate_wpa_conf would emit key_mgmt=NONE for that SSID and the
+    device would auto-associate to an open spoof of the same SSID."""
+    eap = """\
+[connection]
+id=Enterprise
+uuid=eap-uuid
+type=wifi
+
+[wifi]
+ssid=Enterprise
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-eap
+"""
+    sae = """\
+[connection]
+id=WPA3Net
+uuid=sae-uuid
+type=wifi
+
+[wifi]
+ssid=WPA3Net
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=sae
+psk=somepass
+"""
+    psk = """\
+[connection]
+id=Home
+uuid=psk-uuid
+type=wifi
+
+[wifi]
+ssid=Home
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=hunter2
+"""
+    files = {"a.nmconnection": eap, "b.nmconnection": sae, "c.nmconnection": psk}
+    for fname, content in files.items():
+      with open(os.path.join(self.tmpdir, fname), "w") as f:
+        f.write(content)
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read",
+                 side_effect=lambda p: files[os.path.basename(p)])
+
+    store = NetworkStore(directory=self.tmpdir)
+
+    assert store.get("Enterprise") is None, "wpa-eap must be skipped"
+    assert store.get("WPA3Net") is None, "sae must be skipped — not driveable"
+    assert store.get("Home") is not None, "wpa-psk must load"
+
+  def test_load_open_network_no_security_section(self, mocker: MockerFixture):
+    """An open profile has no [wifi-security] section; loads with empty psk."""
+    content = """\
+[connection]
+id=OpenNet
+uuid=open-uuid
+type=wifi
+
+[wifi]
+ssid=OpenNet
+mode=infrastructure
+"""
+    fpath = os.path.join(self.tmpdir, "OpenNet.nmconnection")
+    with open(fpath, "w") as f:
+      f.write(content)
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read", return_value=content)
+
+    store = NetworkStore(directory=self.tmpdir)
+
+    entry = store.get("OpenNet")
+    assert entry is not None
+    assert entry["psk"] == ""
+
   def test_load_skips_ap_mode(self, mocker: MockerFixture):
     content = """\
 [connection]

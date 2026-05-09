@@ -7,10 +7,17 @@ import threading
 import uuid
 from enum import IntEnum
 
+from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import sudo_read
 
 
 NM_CONNECTIONS_DIR = "/data/etc/NetworkManager/system-connections"
+
+# Only key-mgmt values we can actually drive via wpa_supplicant. Anything else
+# (wpa-eap, sae, ieee8021x, ...) gets skipped on load — coercing those to
+# psk="" would render as key_mgmt=NONE in wpa_supplicant.conf, silently turning
+# a secure profile into an open one for the same SSID and inviting open spoofing.
+_SUPPORTED_KEY_MGMT = {"wpa-psk", "none"}
 
 
 class MeteredType(IntEnum):
@@ -59,6 +66,14 @@ class NetworkStore:
         mode = cp.get("wifi", "mode", fallback="infrastructure")
         if not ssid or mode == "ap":
           continue
+
+        # An open profile has no [wifi-security] section. A secure profile with a
+        # key-mgmt we can't reproduce (wpa-eap, sae, ...) must be skipped entirely.
+        if cp.has_section("wifi-security"):
+          key_mgmt = cp.get("wifi-security", "key-mgmt", fallback="").lower()
+          if key_mgmt not in _SUPPORTED_KEY_MGMT:
+            cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported key-mgmt={key_mgmt!r}")
+            continue
 
         # getint/getboolean can raise ValueError on malformed values; skip the bad profile.
         self._networks[ssid] = {
