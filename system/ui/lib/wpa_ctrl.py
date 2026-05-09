@@ -270,15 +270,20 @@ def flags_to_security_type(flags: str) -> SecurityType:
   if "WEP" in flags_upper:
     return SecurityType.UNSUPPORTED
 
+  # WPA2/WPA3 transitional networks advertise both PSK and SAE; PSK matches first
+  # and connects via WPA-PSK. Pure WPA3-Personal (SAE-only) falls through below.
   if "WPA2-PSK" in flags_upper or "RSN-PSK" in flags_upper:
     return SecurityType.WPA
   if "WPA-PSK" in flags_upper:
     return SecurityType.WPA
+  # SAE-only: would need key_mgmt=SAE, which the current AGNOS kernel + wpa_supplicant
+  # build doesn't support. Mark unsupported so the UI doesn't prompt for a password
+  # only to fail the handshake. Becomes connectable on vamOS + mainline kernel.
   if "SAE" in flags_upper:
-    return SecurityType.WPA  # WPA3-SAE, treat as WPA for connection purposes
+    return SecurityType.UNSUPPORTED
 
   # No security flags → open
-  if "WPA" not in flags_upper and "RSN" not in flags_upper and "SAE" not in flags_upper:
+  if "WPA" not in flags_upper and "RSN" not in flags_upper:
     return SecurityType.OPEN
 
   return SecurityType.UNSUPPORTED

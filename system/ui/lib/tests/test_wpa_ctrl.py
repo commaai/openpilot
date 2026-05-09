@@ -57,7 +57,13 @@ class TestFlagsToSecurityType:
     ("[WPA2-PSK-CCMP][ESS]", SecurityType.WPA),
     ("[RSN-PSK-CCMP]", SecurityType.WPA),
     ("[WPA-PSK-TKIP]", SecurityType.WPA),
-    ("[SAE]", SecurityType.WPA),
+    # WPA2/WPA3 transitional: PSK takes precedence so the network is connectable.
+    ("[WPA2-PSK-CCMP][SAE]", SecurityType.WPA),
+    ("[RSN-PSK-CCMP][SAE-CCMP]", SecurityType.WPA),
+    # WPA3-only (SAE) isn't connectable on the current kernel; surface as unsupported
+    # rather than prompting for a password that will fail the handshake.
+    ("[SAE]", SecurityType.UNSUPPORTED),
+    ("[SAE-CCMP]", SecurityType.UNSUPPORTED),
     ("[ESS]", SecurityType.OPEN),
     ("", SecurityType.OPEN),
     ("[WPA2-EAP-CCMP]", SecurityType.UNSUPPORTED),
