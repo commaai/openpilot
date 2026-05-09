@@ -1,8 +1,8 @@
+import configparser
 import json
 import os
 import subprocess
 import time
-from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
 
@@ -15,22 +15,8 @@ from openpilot.system.hardware.tici.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
-NM = 'org.freedesktop.NetworkManager'
-NM_CON_ACT = NM + '.Connection.Active'
-NM_DEV = NM + '.Device'
-NM_DEV_WL = NM + '.Device.Wireless'
-NM_AP = NM + '.AccessPoint'
-DBUS_PROPS = 'org.freedesktop.DBus.Properties'
-
-class NMMetered(IntEnum):
-  NM_METERED_UNKNOWN = 0
-  NM_METERED_YES = 1
-  NM_METERED_NO = 2
-  NM_METERED_GUESS_YES = 3
-  NM_METERED_GUESS_NO = 4
-
+NM_CONNECTIONS_DIR = "/run/NetworkManager/system-connections"
 MODEM_STATE_PATH = "/dev/shm/modem"
-TIMEOUT = 0.1
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -53,15 +39,6 @@ def get_device_type():
   return model.split('comma ')[-1]
 
 class Tici(HardwareBase):
-  @cached_property
-  def bus(self):
-    import dbus
-    return dbus.SystemBus()
-
-  @cached_property
-  def nm(self):
-    return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
-
   @cached_property
   def amplifier(self):
     if self.get_device_type() == "mici":
@@ -112,33 +89,31 @@ class Tici(HardwareBase):
       f.write(f"{value}\n")
 
   def get_network_type(self):
-    ms = self.get_modem_state()
     try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
-      primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      if primary_type == '802-3-ethernet':
-        return NetworkType.ethernet
-      elif primary_type == '802-11-wireless':
-        return NetworkType.wifi
+      result = subprocess.run(["ip", "route", "get", "1.1.1.1"], capture_output=True, text=True, timeout=2)
+      parts = result.stdout.split()
+      if "dev" in parts:
+        dev = parts[parts.index("dev") + 1]
+        if dev == "wlan0":
+          return NetworkType.wifi
+        if dev in ("eth0", "usb0"):
+          return NetworkType.ethernet
+        if dev in ("wwan0", "ppp0"):
+          ms = self.get_modem_state()
+          if ms.get('connected'):
+            nt = ms.get('network_type', '')
+            if nt == 'nr':
+              return NetworkType.cell5G
+            if nt == 'lte':
+              return NetworkType.cell4G
+            if nt in ('utran', 'umts'):
+              return NetworkType.cell3G
+            if nt == 'gsm':
+              return NetworkType.cell2G
     except Exception:
       pass
 
-    if ms.get('connected'):
-      nt = ms.get('network_type', '')
-      if nt == 'nr':
-        return NetworkType.cell5G
-      elif nt == 'lte':
-        return NetworkType.cell4G
-      elif nt in ('utran', 'umts'):
-        return NetworkType.cell3G
-      elif nt == 'gsm':
-        return NetworkType.cell2G
     return NetworkType.none
-
-  def get_wlan(self):
-    wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
-    return self.bus.get_object(NM, wlan_path)
 
   def get_sim_info(self):
     ms = self.get_modem_state()
@@ -189,13 +164,17 @@ class Tici(HardwareBase):
     try:
       if network_type == NetworkType.none:
         pass
+      elif network_type == NetworkType.ethernet:
+        network_strength = NetworkStrength.great
       elif network_type == NetworkType.wifi:
-        wlan = self.get_wlan()
-        active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        if active_ap_path != "/":
-          active_ap = self.bus.get_object(NM, active_ap_path)
-          strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
-          network_strength = self.parse_strength(strength)
+        result = subprocess.run(["wpa_cli", "-i", "wlan0", "signal_poll"],
+                                capture_output=True, text=True, timeout=2)
+        for line in result.stdout.splitlines():
+          if line.startswith("RSSI="):
+            dbm = int(line.split("=", 1)[1])
+            if -100 < dbm <= 0:
+              network_strength = self.parse_strength(120 + max(-90, min(-20, dbm)))
+            break
       else:  # Cellular
         network_strength = self.parse_strength(self.get_modem_state().get('signal_quality', 0))
     except Exception:
@@ -208,17 +187,47 @@ class Tici(HardwareBase):
       from openpilot.common.params import Params
       return Params().get_bool("GsmMetered")
     try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
-      primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      if network_type == NetworkType.wifi:
+        result = subprocess.run(["wpa_cli", "-i", "wlan0", "status"],
+                                capture_output=True, text=True, timeout=2)
+        ssid = ""
+        for line in result.stdout.splitlines():
+          if line.startswith("ssid="):
+            ssid = line.split("=", 1)[1]
+            break
+        if ssid:
+          ssid_bytes = bytearray()
+          i = 0
+          while i < len(ssid):
+            if ssid[i] == '\\' and i + 3 < len(ssid) and ssid[i+1] == 'x':
+              try:
+                ssid_bytes.append(int(ssid[i+2:i+4], 16))
+                i += 4
+                continue
+              except ValueError:
+                pass
+            ssid_bytes.append(ord(ssid[i]) & 0xff)
+            i += 1
+          ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
 
-      for dev in primary_devices:
-        dev_obj = self.bus.get_object(NM, str(dev))
-        metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-        if network_type == NetworkType.wifi:
-          if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
-            return True
+          for fpath in Path(NM_CONNECTIONS_DIR).glob("*.nmconnection"):
+            raw = sudo_read(str(fpath))
+            if not raw:
+              continue
+            cp = configparser.ConfigParser(interpolation=None)
+            try:
+              cp.read_string(raw)
+              keyfile_ssid = cp.get("wifi", "ssid", fallback="")
+              if keyfile_ssid != ssid and keyfile_ssid != ssid_keyfile_list:
+                continue
+              metered = cp.getint("connection", "metered", fallback=0)
+            except (configparser.Error, ValueError):
+              continue
+            if metered in (1, 3):
+              return True
+            if metered in (2, 4):
+              return False
+            break
     except Exception:
       pass
 
