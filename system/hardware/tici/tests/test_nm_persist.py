@@ -214,6 +214,56 @@ mode=ap
     assert os.listdir(self.data_dir) == [], "AP-mode wifi must not be slurped"
     assert os.path.exists(yaml_path), "AP-mode netplan YAML must be left in place"
 
+  def test_skips_unsupported_key_mgmt(self, mocker):
+    """If we persist a wpa-eap or sae profile and delete its netplan YAML,
+    NetworkStore would later refuse to load the keyfile (no driver path) and the
+    user is left with no working profile and no YAML to fall back to."""
+    self._patch_io(mocker)
+    eap_keyfile = f"""[connection]
+id=Enterprise
+type=wifi
+uuid={WIFI_UUID}
+
+[wifi]
+ssid=Enterprise
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-eap
+"""
+    self._write_run_keyfile(f"netplan-NM-{WIFI_UUID}-Enterprise.nmconnection", eap_keyfile)
+    yaml_path = self._write_netplan_yaml(f"90-NM-{WIFI_UUID}.yaml", WIFI_NETPLAN_YAML)
+
+    nm_persist.persist_connections(self.run_dir, self.data_dir, self.netplan_dir)
+
+    assert os.listdir(self.data_dir) == [], "EAP profile must not be slurped"
+    assert os.path.exists(yaml_path), "EAP netplan YAML must be left in place"
+
+  def test_skips_wpa_psk_without_inline_secret(self, mocker):
+    """Agent-managed secrets (psk-flags=1) live outside the keyfile. Slurping the
+    file with no PSK would let NetworkStore refuse it and we'd lose the network."""
+    self._patch_io(mocker)
+    no_psk = f"""[connection]
+id=AgentSecret
+type=wifi
+uuid={WIFI_UUID}
+
+[wifi]
+ssid=AgentSecret
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk-flags=1
+"""
+    self._write_run_keyfile(f"netplan-NM-{WIFI_UUID}-AgentSecret.nmconnection", no_psk)
+    yaml_path = self._write_netplan_yaml(f"90-NM-{WIFI_UUID}.yaml", WIFI_NETPLAN_YAML)
+
+    nm_persist.persist_connections(self.run_dir, self.data_dir, self.netplan_dir)
+
+    assert os.listdir(self.data_dir) == []
+    assert os.path.exists(yaml_path)
+
   def test_skips_keyfile_without_ssid(self, mocker):
     self._patch_io(mocker)
     self._write_run_keyfile(

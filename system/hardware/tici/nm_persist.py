@@ -28,6 +28,10 @@ RUN_DIR = "/run/NetworkManager/system-connections"
 DATA_DIR = "/data/etc/NetworkManager/system-connections"
 NETPLAN_DIR = "/data/etc/netplan"
 
+# Mirror NetworkStore's filter: persisting a profile NetworkStore would later refuse
+# to load (and deleting its YAML) loses the network across the upgrade.
+_SUPPORTED_KEY_MGMT = {"wpa-psk", "none"}
+
 # netplan-NM-<UUID>(-<ssid suffix>).nmconnection, with UUID in standard 8-4-4-4-12 form.
 _NETPLAN_KEYFILE_RE = re.compile(
   r"^netplan-NM-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-.*)?\.nmconnection$"
@@ -101,6 +105,18 @@ def persist_connections(run_dir: str = RUN_DIR, data_dir: str = DATA_DIR, netpla
     # NetworkStore. Persisting them here is dead clutter.
     if not ssid or mode == "ap":
       continue
+
+    # Profiles NetworkStore can't reproduce (wpa-eap, sae) would be persisted
+    # then dropped on next load, leaving the user with no working profile and no
+    # netplan YAML to fall back to. Leave them where they are.
+    if cp.has_section("wifi-security"):
+      key_mgmt = cp.get("wifi-security", "key-mgmt", fallback="").lower()
+      if key_mgmt not in _SUPPORTED_KEY_MGMT:
+        continue
+      psk = cp.get("wifi-security", "psk", fallback="")
+      if key_mgmt == "wpa-psk" and not psk:
+        # Agent-managed secret outside the keyfile — NetworkStore would refuse it.
+        continue
 
     dest_fname = f"{file_uuid}-{_sanitize_ssid_for_filename(ssid)}.nmconnection"
     dest_path = os.path.join(data_dir, dest_fname)
