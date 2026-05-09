@@ -106,12 +106,17 @@ def persist_connections(run_dir: str = RUN_DIR, data_dir: str = DATA_DIR, netpla
     if not ssid or mode == "ap":
       continue
 
-    # Profiles NetworkStore can't reproduce (wpa-eap, sae) would be persisted
+    # Profiles NetworkStore can't reproduce (wpa-eap, sae, WEP) would be persisted
     # then dropped on next load, leaving the user with no working profile and no
     # netplan YAML to fall back to. Leave them where they are.
     if cp.has_section("wifi-security"):
       key_mgmt = cp.get("wifi-security", "key-mgmt", fallback="").lower()
       if key_mgmt not in _SUPPORTED_KEY_MGMT:
+        continue
+      # WEP: NM uses key-mgmt=none + wep-key*/auth-alg. NetworkStore skips these
+      # so we mustn't delete the YAML that would recreate the NM connection.
+      wep_keys = ("wep-key0", "wep-key1", "wep-key2", "wep-key3", "wep-key-type", "auth-alg")
+      if key_mgmt == "none" and any(cp.has_option("wifi-security", k) for k in wep_keys):
         continue
       psk = cp.get("wifi-security", "psk", fallback="")
       if key_mgmt == "wpa-psk" and not psk:

@@ -1048,6 +1048,18 @@ class TestSetTetheringPassword:
     activated.assert_called_once(), "tethering still active → fire activated"
     disconnected.assert_not_called()
 
+  def test_rejects_byte_length_over_63(self, wm, mocker):
+    """WPA passphrases are limited to 8-63 BYTES, not characters. A 32-char é
+    string is 64 UTF-8 bytes and would make AP bringup fail forever."""
+    mocker.patch.object(wifi_manager_module.threading, "Thread", self.ImmediateThread)
+    aw = mocker.patch.object(wifi_manager_module, "atomic_write")
+    wm._tethering_psk = "PRIOR-WORKING-PASSWORD"
+
+    wm.set_tethering_password("é" * 32)  # 32 chars, 64 bytes
+
+    aw.assert_not_called()
+    assert wm._tethering_psk == "PRIOR-WORKING-PASSWORD"
+
   def test_rejection_when_not_tethering_fires_disconnected(self, wm, mocker):
     activated = mocker.MagicMock()
     disconnected = mocker.MagicMock()

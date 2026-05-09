@@ -140,10 +140,13 @@ class WifiManager:
     atexit.register(self.stop)
 
   def _initialize(self):
-    # Load tethering password from file
+    # Load tethering password from file. WPA passphrases may legally include leading
+    # or trailing spaces, so only trim the file terminator — never .strip() arbitrary
+    # whitespace, or those passwords silently change on next restart.
     try:
       with open(TETHERING_PASSWORD_FILE) as f:
-        self._tethering_psk = f.read().strip()
+        raw = f.read()
+      self._tethering_psk = raw[:-1] if raw.endswith("\n") else raw
     except FileNotFoundError:
       self._tethering_psk = DEFAULT_TETHERING_PASSWORD
 
@@ -961,11 +964,13 @@ class WifiManager:
     return self._store.contains(ssid)
 
   def set_tethering_password(self, password: str):
-    # wpa_supplicant accepts either an 8–63 char passphrase or exactly 64 hex chars
-    # as a pre-hashed PSK. Anything else (e.g. a 64-char non-hex string) makes AP
-    # bringup fail forever with the bad value persisted on disk. Validate up front.
-    if not (8 <= len(password) <= 63 or _is_raw_psk(password)):
-      cloudlog.warning(f"set_tethering_password: rejecting invalid password (len={len(password)})")
+    # wpa_supplicant accepts either an 8–63 BYTE passphrase or exactly 64 hex chars
+    # as a pre-hashed PSK. Counting characters lets a 32-char non-ASCII password
+    # (e.g. 32 'é' = 64 UTF-8 bytes) past the check; AP bringup then fails forever
+    # because the bad value is persisted to /data/tethering_password.
+    pw_bytes = len(password.encode("utf-8"))
+    if not (8 <= pw_bytes <= 63 or _is_raw_psk(password)):
+      cloudlog.warning(f"set_tethering_password: rejecting invalid password (bytes={pw_bytes})")
       # The UI disables tethering controls before calling this and only re-enables
       # them from activated/disconnected. Notify so the controls don't stay stuck.
       self._enqueue_callbacks(self._activated if self._tethering_active else self._disconnected)
@@ -1113,15 +1118,18 @@ class WifiManager:
                                 capture_output=True, check=False)
         if result.returncode != 0:
           break
-    # Without MASQUERADE the AP comes up but clients can't reach the uplink — UI
-    # reports a healthy hotspot with broken sharing. Treat this as a hard failure
-    # so the existing _start_tethering rollback path tears the AP back down.
+    # Without MASQUERADE or ip_forward the AP comes up but clients can't reach the
+    # uplink — UI reports a healthy hotspot with broken sharing. Treat both as hard
+    # failures so the existing _start_tethering rollback path tears the AP back down.
     subprocess.run(_tethering_nat_rule("-A"), check=True)
     if self._ipv4_forward:
-      subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=1"], check=False)
+      subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=1"], check=True)
 
-    # Verify bringup: attach + require STATUS mode=AP, so a surviving STA daemon
-    # can't masquerade as our hotspot.
+    # Verify bringup: pgrep our config (so a surviving foreign or stale AP daemon
+    # can't masquerade as our hotspot with stale credentials), then attach + require
+    # STATUS mode=AP.
+    if not _wpa_supplicant_running(WPA_AP_CONF):
+      raise RuntimeError("AP wpa_supplicant did not start with our config; another daemon likely still owns wlan0")
     try:
       ctrl = WpaCtrl()
       ctrl.open()

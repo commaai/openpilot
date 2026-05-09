@@ -484,6 +484,8 @@ def _patch_tethering_sideeffects(wm, mocker):
   popen.return_value.poll.return_value = None
   mocker.patch.object(wifi_manager_module.time, "sleep")
   mocker.patch.object(wifi_manager_module.os, "open", return_value=0)
+  # Bringup verification pgrep's our AP config; default to "yes, our daemon is up".
+  mocker.patch.object(wifi_manager_module, "_wpa_supplicant_running", return_value=True)
 
   class _DummyFd:
     def __enter__(self):
@@ -574,6 +576,33 @@ class TestTetheringBringupVerification:
     def fake_run(cmd, *args, **kwargs):
       if (len(cmd) >= 4 and cmd[:2] == ["sudo", "ip"]
           and "addr" in cmd and "add" in cmd and kwargs.get("check")):
+        raise subprocess.CalledProcessError(1, cmd)
+      return mocker.MagicMock(returncode=0)
+    wifi_manager_module.subprocess.run.side_effect = fake_run
+
+    with pytest.raises(subprocess.CalledProcessError):
+      wm._start_tethering()
+
+  def test_start_tethering_raises_when_our_ap_pgrep_missing(self, wm, mocker):
+    """If our spawn silently failed and a foreign/stale AP daemon still owns
+    /var/run/wpa_supplicant/wlan0, the STATUS mode=AP check would pass against
+    the stale daemon. Pgrep our config first to refuse that masquerade."""
+    _patch_tethering_sideeffects(wm, mocker)
+    # Override the default "yes, our daemon is up" — pretend our spawn didn't take.
+    mocker.patch.object(wifi_manager_module, "_wpa_supplicant_running", return_value=False)
+
+    with pytest.raises(RuntimeError, match="our config"):
+      wm._start_tethering()
+
+  def test_start_tethering_raises_when_ip_forward_fails(self, wm, mocker):
+    """If sysctl ip_forward=1 fails, AP and MASQUERADE rule are up but the kernel
+    won't forward packets. Treat as hard failure so the rollback path runs."""
+    _patch_tethering_sideeffects(wm, mocker)
+    wm._ipv4_forward = True
+
+    def fake_run(cmd, *args, **kwargs):
+      if (cmd[:2] == ["sudo", "sysctl"]
+          and any("ip_forward=1" in a for a in cmd) and kwargs.get("check")):
         raise subprocess.CalledProcessError(1, cmd)
       return mocker.MagicMock(returncode=0)
     wifi_manager_module.subprocess.run.side_effect = fake_run
