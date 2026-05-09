@@ -565,6 +565,22 @@ class TestTetheringBringupVerification:
     assert wm._dnsmasq_proc is None
     assert wm._ctrl is None
 
+  def test_start_tethering_raises_when_ip_addr_add_fails(self, wm, mocker):
+    """If `ip addr add 192.168.43.1/24` fails (e.g. wlan0 disappeared), the AP
+    has no gateway IP. dnsmasq+iptables would still come up and the STATUS check
+    would still pass, falsely reporting healthy tethering. Fail fast for rollback."""
+    _patch_tethering_sideeffects(wm, mocker)
+
+    def fake_run(cmd, *args, **kwargs):
+      if (len(cmd) >= 4 and cmd[:2] == ["sudo", "ip"]
+          and "addr" in cmd and "add" in cmd and kwargs.get("check")):
+        raise subprocess.CalledProcessError(1, cmd)
+      return mocker.MagicMock(returncode=0)
+    wifi_manager_module.subprocess.run.side_effect = fake_run
+
+    with pytest.raises(subprocess.CalledProcessError):
+      wm._start_tethering()
+
   def test_start_tethering_pkills_old_ap_daemon(self, wm, mocker):
     """If a stale AP daemon survived (e.g. failed adoption, or password change while
     tethering appeared off), it still owns wlan0 and the new spawn would race or fail.

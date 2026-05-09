@@ -408,11 +408,19 @@ class WifiManager:
   def _adopt_ap_state(self, ssid: str | None) -> bool:
     """Mark a live hotspot as active without touching dnsmasq/iptables — those daemons
     survive UI restart via start_new_session, so adoption only updates manager state.
-    Returns False (do not adopt) when dnsmasq isn't running, so the caller falls
-    through to a full STA-cleanup-then-rebuild rather than reporting a healthy
-    hotspot whose clients can't get DHCP leases."""
+    On refusal (dnsmasq dead) closes the AP ctrl handle and pkills the orphan AP
+    daemon so the monitor's STA recovery picks up; otherwise station connect
+    requests would still flow through the AP ctrl socket until the user toggled
+    tethering manually."""
     if not _our_dnsmasq_running():
-      cloudlog.warning("AP daemon present but our dnsmasq isn't; refusing adoption")
+      cloudlog.warning("AP daemon present but our dnsmasq isn't; refusing adoption and tearing down orphan AP")
+      if self._ctrl is not None:
+        try:
+          self._ctrl.close()
+        except Exception:
+          cloudlog.exception("Failed to close AP ctrl on adoption refusal")
+        self._ctrl = None
+      _pkill_wpa_supplicant(WPA_AP_CONF)
       return False
     self._tethering_active = True
     self._wifi_state = WifiState(ssid=ssid or self._tethering_ssid, status=ConnectStatus.CONNECTED)
@@ -1047,10 +1055,12 @@ class WifiManager:
     subprocess.run(["sudo", "wpa_supplicant", "-B", "-i", "wlan0", "-c", WPA_AP_CONF, "-D", "nl80211"], check=False)
     time.sleep(1)
 
-    # Configure AP interface
+    # Configure AP interface. addr/link failures here mean wlan0 has no
+    # 192.168.43.1 — clients could associate and pull dnsmasq leases, but the AP
+    # has no gateway IP. Raise so the existing rollback path runs instead.
     subprocess.run(["sudo", "ip", "addr", "flush", "dev", "wlan0"], check=False)
-    subprocess.run(["sudo", "ip", "addr", "add", f"{TETHERING_IP_ADDRESS}/24", "dev", "wlan0"], check=False)
-    subprocess.run(["sudo", "ip", "link", "set", "wlan0", "up"], check=False)
+    subprocess.run(["sudo", "ip", "addr", "add", f"{TETHERING_IP_ADDRESS}/24", "dev", "wlan0"], check=True)
+    subprocess.run(["sudo", "ip", "link", "set", "wlan0", "up"], check=True)
 
     # Start dnsmasq for DHCP
     subprocess.run(["sudo", "killall", "-q", "dnsmasq"], check=False)

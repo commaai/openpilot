@@ -908,10 +908,11 @@ class TestInitWifiState:
 
   def test_ap_mode_refuses_adoption_when_dnsmasq_dead(self, wm, mocker):
     """Surviving AP daemon without dnsmasq is half-broken — clients can't get
-    leases. Refuse adoption and stay DISCONNECTED rather than treating the
-    COMPLETED status as a station connect (which would start STA DHCP on wlan0
-    and clobber the AP IP)."""
+    leases. Refuse adoption, kill the orphan AP daemon (so the monitor's STA
+    recovery picks up), and stay DISCONNECTED."""
     mocker.patch.object(wifi_manager_module, "_our_dnsmasq_running", return_value=False)
+    pkill = mocker.patch.object(wifi_manager_module, "_pkill_wpa_supplicant")
+    ap_ctrl = wm._ctrl
     wm._tethering_ssid = "weedle-test"
     wm._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=weedle-test\n"
 
@@ -921,6 +922,10 @@ class TestInitWifiState:
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert wm._wifi_state.ssid is None
     wm._dhcp.start.assert_not_called()
+    # Orphan AP must be cleaned up so the next monitor iteration can spawn STA.
+    ap_ctrl.close.assert_called_once()
+    assert wm._ctrl is None
+    pkill.assert_called_with(wifi_manager_module.WPA_AP_CONF)
 
   def test_station_completed_still_starts_dhcp(self, wm):
     """Happy path: attaching to a connected STA daemon must re-launch udhcpc
