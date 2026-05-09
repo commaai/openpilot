@@ -11,7 +11,6 @@ from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-from tinygrad.nn.onnx import OnnxRunner
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
@@ -161,6 +160,14 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
 
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
+  # OnnxRunner does Tensor(0), if no DEV set, probes devices and caches
+  # modeld imports from compile_modeld so devices end up being cached in the parent manager process
+  # we want to avoid this for usbgpu, we want to reinit on onroad transition:
+    # - on ignition cycle gpu loses power, firwmare gets wiped
+    # - if gpu what hotplugged offroad, we want a fresh usb handle
+  # TODO clean fix? assert no open device on modeld startup?
+
+  from tinygrad.nn.onnx import OnnxRunner
   vision_runner = OnnxRunner(vision_onnx)
   policy_runner = OnnxRunner(policy_onnx)
 
