@@ -415,30 +415,30 @@ class TestMultipleDaemonsPrevented:
 
 
 class TestAPModeAdoption:
-  def test_ap_attach_failure_aborts_instead_of_running_sta_cleanup(self, wm, mocker):
-    """P2 regression: when WPA_AP_CONF is detected but try_attach_ctrl() fails
-    transiently, falling through to STA cleanup kills dnsmasq / flushes wlan0
-    / unmanages NM, tearing down a live hotspot. After bounded retries the
-    function must abort (return None) so the caller's monitor retries the
-    whole bringup, leaving the hotspot intact."""
+  def test_ap_attach_failure_kills_orphan_and_runs_sta_recovery(self, wm, mocker):
+    """When WPA_AP_CONF is pgrep-visible but try_attach_ctrl() fails after retries,
+    the AP daemon's ctrl socket is wedged and the hotspot is unmanageable from our
+    side. Kill the orphan and fall through to STA spawn so the user can recover via
+    tethering toggle. Otherwise the monitor would loop forever returning None."""
     def pgrep_side_effect(conf):
+      # AP visible at first; STA absent (so STA recovery fully runs after the AP kill).
       return conf == WPA_AP_CONF
     mocker.patch.object(wpa_ctrl_module, "_wpa_supplicant_running", side_effect=pgrep_side_effect)
     mocker.patch.object(wpa_ctrl_module.os.path, "exists", return_value=True)
     mocker.patch.object(wpa_ctrl_module.time, "sleep")
     mocker.patch.object(wpa_ctrl_module, "try_attach_ctrl", return_value=None)
-    mock_unmanage = mocker.patch.object(wpa_ctrl_module, "_unmanage_wlan0")
+    mocker.patch.object(wpa_ctrl_module, "_unmanage_wlan0")
     mock_pkill = mocker.patch.object(wpa_ctrl_module, "_pkill_wpa_supplicant")
+    mocker.patch.object(wpa_ctrl_module.glob, "glob", return_value=[])
     mock_run = mocker.patch.object(wpa_ctrl_module.subprocess, "run")
 
-    result = wpa_ctrl_module.ensure_wpa_supplicant(lambda: False, "/tmp/ignored")
+    wpa_ctrl_module.ensure_wpa_supplicant(lambda: False, "/tmp/ignored")
 
-    assert result is None
-    mock_unmanage.assert_not_called()
-    mock_pkill.assert_not_called()
+    pkilled = [c.args[0] for c in mock_pkill.call_args_list]
+    assert WPA_AP_CONF in pkilled, "the orphan AP daemon must be killed"
     spawn_cmds = [c for c in mock_run.call_args_list
                   if len(c.args[0]) >= 2 and c.args[0][0] == "sudo" and c.args[0][1] == "wpa_supplicant"]
-    assert not spawn_cmds, f"AP-attach-failure must not trigger STA spawn: {spawn_cmds}"
+    assert spawn_cmds, "STA spawn must run after the AP orphan is killed"
 
   def test_ap_daemon_alive_adopts_before_sta_cleanup(self, wm, mocker):
     """P1 regression: if tethering was active before UI restart, the AP
@@ -564,6 +564,22 @@ class TestTetheringBringupVerification:
 
     assert wm._dnsmasq_proc is None
     assert wm._ctrl is None
+
+  def test_start_tethering_pkills_old_ap_daemon(self, wm, mocker):
+    """If a stale AP daemon survived (e.g. failed adoption, or password change while
+    tethering appeared off), it still owns wlan0 and the new spawn would race or fail.
+    Kill it first so the requested SSID/PSK actually take effect."""
+    _patch_tethering_sideeffects(wm, mocker)
+    pkill = mocker.patch.object(wifi_manager_module, "_pkill_wpa_supplicant")
+    ap_ctrl = mocker.MagicMock()
+    ap_ctrl.request.return_value = f"wpa_state=COMPLETED\nmode=AP\nssid={wm._tethering_ssid}\n"
+    mocker.patch.object(wifi_manager_module, "WpaCtrl", return_value=ap_ctrl)
+
+    wm._start_tethering()
+
+    targets = [c.args[0] for c in pkill.call_args_list]
+    assert WPA_SUPPLICANT_CONF in targets, "STA daemon must be killed"
+    assert WPA_AP_CONF in targets, "old AP daemon must be killed too"
 
   def test_start_tethering_raises_when_masquerade_install_fails(self, wm, mocker):
     """If the MASQUERADE insert fails, the AP comes up but clients can't reach

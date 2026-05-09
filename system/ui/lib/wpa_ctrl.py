@@ -426,8 +426,12 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], nm_connections_dir: s
       if ctrl is not None:
         return ctrl
       time.sleep(0.5)
-    cloudlog.warning("AP daemon detected but ctrl attach kept failing; refusing STA cleanup so hotspot survives")
-    return None
+    # AP process is alive but its ctrl socket is unreachable (deleted/wedged). The
+    # hotspot is unmanageable from our side, so kill it and fall through to STA
+    # spawn — otherwise we'd loop forever returning None and the user can't recover
+    # via tethering toggle since `_start_tethering` only kills STA-config daemons.
+    cloudlog.warning("AP daemon present but ctrl attach failed; killing it so STA spawn can recover")
+    _pkill_wpa_supplicant(WPA_AP_CONF)
 
   # Our own STA daemon is still alive — attach without disturbing NM.
   if _wpa_supplicant_running(WPA_SUPPLICANT_CONF):

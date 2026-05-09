@@ -208,8 +208,12 @@ class WifiManager:
           return
         if self._adopt_ap_state(ssid):
           return
-        # dnsmasq is gone — the surviving AP daemon is half-broken. Fall through
-        # to STA so the orphan gets torn down and the user can re-enable tethering.
+        # dnsmasq is gone — the surviving AP daemon is half-broken. Stay
+        # DISCONNECTED rather than letting the COMPLETED branch below treat this
+        # as a station connect (which would start STA DHCP on wlan0 and clobber
+        # the hotspot's address).
+        self._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
+        return
 
       if wpa_state == "COMPLETED":
         new_status = ConnectStatus.CONNECTED
@@ -1008,9 +1012,12 @@ class WifiManager:
       self._ctrl.close()
       self._ctrl = None
 
-    # Target only our config — never touch a system-managed daemon.
+    # Target only our configs — never touch a system-managed daemon. Kill any
+    # surviving AP daemon too so the new spawn isn't blocked by an orphan
+    # holding wlan0 with stale credentials.
     self._monitor_epoch += 1
     _pkill_wpa_supplicant(WPA_SUPPLICANT_CONF)
+    _pkill_wpa_supplicant(WPA_AP_CONF)
     self._dhcp.stop()
     time.sleep(0.5)
 
