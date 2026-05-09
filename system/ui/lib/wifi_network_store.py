@@ -60,6 +60,12 @@ class NetworkStore:
         else:
           cp.read(fpath)
 
+        # NM keyfile schema documents [802-11-wireless]/[802-11-wireless-security]
+        # as canonical with [wifi]/[wifi-security] as aliases. AGNOS NM 1.46 writes
+        # the alias form for every wifi profile it generates; only hand-written or
+        # imported-from-old-NM keyfiles use canonical names, and none ship with
+        # AGNOS. We deliberately accept only the alias spelling so a keyfile we
+        # can't round-trip (we only write [wifi] back) doesn't get half-migrated.
         if not cp.has_section("wifi"):
           continue
         ssid = cp.get("wifi", "ssid", fallback="")
