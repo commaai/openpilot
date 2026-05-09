@@ -777,6 +777,16 @@ class WifiManager:
     if self._tethering_active:
       cloudlog.warning(f"Ignoring connect to {ssid!r} while tethering is active")
       return
+    # NetworkStore.save_network refuses boundary-whitespace SSID/PSK because
+    # ConfigParser strips it on round-trip. wpa_supplicant would still accept
+    # the runtime SET_NETWORK and we'd connect for the session, but the persist
+    # would be a silent no-op and the credentials would be gone after reboot.
+    # Refuse here so the UI controls unstick instead of pretending to save.
+    if ssid != ssid.strip() or password != password.strip():
+      cloudlog.warning(f"Ignoring connect to {ssid!r}: SSID or password has boundary whitespace")
+      self._set_connecting(None)
+      self._enqueue_callbacks(self._disconnected)
+      return
     self._set_connecting(ssid)
     self._set_pending_connection(ssid, password, hidden)
     epoch = self._user_epoch
