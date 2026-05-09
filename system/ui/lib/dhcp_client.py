@@ -20,6 +20,11 @@ class DhcpClient:
 
   def start(self):
     self.stop()
+    # If a previous UI/manager process crashed, its sudo udhcpc -f survives as
+    # an orphan and self.stop() above can't reach it (we only track our own Popen).
+    # Without this, two udhcpc instances would race lease renewals on the same
+    # interface and the orphan can re-add the address after a managed flush.
+    subprocess.run(["sudo", "pkill", "-f", f"udhcpc.*-i {self._iface}"], check=False)
     self._metric_stop.clear()
     try:
       self._proc = subprocess.Popen(
