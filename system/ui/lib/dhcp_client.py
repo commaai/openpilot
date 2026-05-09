@@ -1,7 +1,6 @@
 """udhcpc lifecycle for a single interface, with a one-shot default-route metric fixup."""
 import subprocess
 import threading
-import time
 
 from openpilot.common.swaglog import cloudlog
 
@@ -41,9 +40,10 @@ class DhcpClient:
     """Replace udhcpc's metric-0 default route with metric 600.
     busybox udhcpc can't set a bind-time metric; without this, wlan0 silently beats
     eth0 on every DHCP bind. Same-router renewals skip the re-install, so a one-shot
-    bump survives the lease."""
-    deadline = time.monotonic() + 10.0
-    while not self._metric_stop.is_set() and time.monotonic() < deadline:
+    bump survives the lease. Polls until the route is bumped or stop() is called;
+    no deadline because udhcpc's worst-case retry window (5×3s + 20s -A backoff)
+    can outlive any short timeout, leaving a metric-0 route to hijack eth0."""
+    while not self._metric_stop.is_set():
       try:
         out = subprocess.check_output(
           ["ip", "-4", "route", "show", "default", "dev", self._iface],
@@ -51,7 +51,7 @@ class DhcpClient:
         ).strip()
       except Exception:
         # Transient: udhcpc may not have installed the route yet, or the iface is briefly down.
-        # Fall through to the throttled wait and retry until the deadline.
+        # Fall through to the throttled wait and retry; stop() unblocks the loop.
         cloudlog.exception("Failed to query wlan0 default route")
         out = ""
 
