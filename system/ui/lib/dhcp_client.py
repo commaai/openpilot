@@ -98,4 +98,9 @@ class DhcpClient:
         except Exception:
           pass
       self._proc = None
+      # Same orphan risk as start(): a previous sudo udhcpc -f can survive our
+      # tracked Popen (e.g. terminate timed out, sudo wrapper died but child
+      # didn't). Without this, the orphan re-adds the address right after the
+      # flush below and resurrects the route after we've moved on.
+      subprocess.run(["sudo", "pkill", "-f", f"udhcpc.*-i {self._iface}"], check=False)
       subprocess.run(["sudo", "ip", "addr", "flush", "dev", self._iface], capture_output=True, check=False)
