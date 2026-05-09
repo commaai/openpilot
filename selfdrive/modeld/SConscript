@@ -71,8 +71,8 @@ if not usbgpu:
   print(f"USBGPU (AMD) not detected: {available}", file=sys.stderr)
   Exit(1)
 
-tg_devices['selfdrive.modeld.modeld']['usbgpu'] = f"WARP_DEV={tg_backend} QUEUE_DEV=USB+AMD:LLVM"
-modeld_tg_flags = f'FLOAT16=1 JIT_BATCH_SIZE=0' # TODO do we need to set DEV? what does onnxrunner use Tensor(0) for?
+tg_devices['selfdrive.modeld.modeld']['usbgpu'] = f"WARP_DEV={tg_backend} QUEUE_DEV=AMD"
+modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0'
 
 # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
 usb_gpu_lock = File("models/.usb_gpu.lock").abspath

@@ -186,7 +186,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   SEED = 42
 
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip)
+    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, QUEUE_DEV)
     np.random.seed(seed)
     Tensor.manual_seed(seed)
 
