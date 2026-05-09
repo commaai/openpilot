@@ -28,8 +28,10 @@ RUN_DIR = "/run/NetworkManager/system-connections"
 DATA_DIR = "/data/etc/NetworkManager/system-connections"
 NETPLAN_DIR = "/data/etc/netplan"
 
-# netplan-NM-<UUID>(-<ssid suffix>).nmconnection
-_NETPLAN_KEYFILE_RE = re.compile(r"^netplan-NM-([0-9a-f-]{36})(?:-.*)?\.nmconnection$")
+# netplan-NM-<UUID>(-<ssid suffix>).nmconnection, with UUID in standard 8-4-4-4-12 form.
+_NETPLAN_KEYFILE_RE = re.compile(
+  r"^netplan-NM-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-.*)?\.nmconnection$"
+)
 
 
 def _sanitize_ssid_for_filename(ssid: str) -> str:
@@ -94,15 +96,17 @@ def persist_connections(run_dir: str = RUN_DIR, data_dir: str = DATA_DIR, netpla
       continue
 
     ssid = cp.get("wifi", "ssid", fallback="")
-    if not ssid:
+    mode = cp.get("wifi", "mode", fallback="infrastructure")
+    # Hotspot profiles (mode=ap) are owned by openpilot's tethering path, not by
+    # NetworkStore. Persisting them here is dead clutter.
+    if not ssid or mode == "ap":
       continue
 
     dest_fname = f"{file_uuid}-{_sanitize_ssid_for_filename(ssid)}.nmconnection"
     dest_path = os.path.join(data_dir, dest_fname)
 
-    # Skip the write if already-persisted content matches; sudo_read strips whitespace
-    # so compare in the same shape.
-    if sudo_read(dest_path) == raw.strip():
+    # sudo_read strips whitespace; raw came from sudo_read so already stripped.
+    if sudo_read(dest_path) == raw:
       _delete_netplan_yaml(file_uuid, netplan_dir)
       continue
 

@@ -195,6 +195,27 @@ class TestNmPersist:
 
     assert os.listdir(self.data_dir) == []
 
+  def test_skips_ap_mode_hotspot(self, mocker):
+    """Hotspot profiles are owned by openpilot's tethering path, not NetworkStore.
+    Persisting them here would just be dead clutter."""
+    self._patch_io(mocker)
+    ap_keyfile = """[connection]
+id=Hotspot
+type=wifi
+uuid={u}
+
+[wifi]
+ssid=weedle-bbc2
+mode=ap
+""".format(u=WIFI_UUID)
+    self._write_run_keyfile(f"netplan-NM-{WIFI_UUID}-weedle-bbc2.nmconnection", ap_keyfile)
+    yaml_path = self._write_netplan_yaml(f"90-NM-{WIFI_UUID}.yaml", WIFI_NETPLAN_YAML)
+
+    nm_persist.persist_connections(self.run_dir, self.data_dir, self.netplan_dir)
+
+    assert os.listdir(self.data_dir) == [], "AP-mode wifi must not be slurped"
+    assert os.path.exists(yaml_path), "AP-mode netplan YAML must be left in place"
+
   def test_skips_keyfile_without_ssid(self, mocker):
     self._patch_io(mocker)
     self._write_run_keyfile(
