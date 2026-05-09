@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_env
-set_tinygrad_env()
-DM_DEV = os.environ['DM_DEV']
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, get_tg_input_devices
 
 from tinygrad.tensor import Tensor
 import time
@@ -30,6 +28,8 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
+    input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu=False)
+    self.DM_DEV = input_devices['DM_DEV']
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
@@ -56,7 +56,7 @@ class ModelState:
     ptr = buf.data.ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=DM_DEV)
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DM_DEV)
 
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])

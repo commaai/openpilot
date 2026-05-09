@@ -1,21 +1,20 @@
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
-COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
+TG_INPUT_DEVICES_PATH = MODELS_DIR / 'tg_input_devices.json'
 
 # usbgpu
 USBGPU_VID = 0xADD1
 USBGPU_PID = 0x0001
 
-def set_tinygrad_env() -> None:
-  with open(COMPILED_FLAGS_PATH) as f:
-    for k, v in json.load(f).items():
-      os.environ[k] = str(v)
+
+def get_tg_input_devices(process_name: str, usbgpu: bool) -> dict[str, str]:
+  with open(TG_INPUT_DEVICES_PATH) as f:
+    return json.load(f)[process_name]['usbgpu' if usbgpu else 'default']
 
 
 def usbgpu_present() -> bool:

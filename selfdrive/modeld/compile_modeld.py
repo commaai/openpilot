@@ -19,6 +19,7 @@ UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
 WARP_DEV = os.getenv('WARP_DEV')
+QUEUE_DEV = os.getenv('QUEUE_DEV')
 
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad):
@@ -81,7 +82,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
@@ -97,10 +98,10 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
   input_queues = {
-    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
-    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
+    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
+    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
+    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2], device=device).contiguous().realize(),
+    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2], device=device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return input_queues, npy
@@ -128,12 +129,12 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(WARP_DEV)
     big_tfm = big_tfm.to(WARP_DEV)
-    desire = desire.to(Device.DEFAULT)
-    traffic_convention = traffic_convention.to(Device.DEFAULT)
+    desire = desire.to(QUEUE_DEV)
+    traffic_convention = traffic_convention.to(QUEUE_DEV)
     Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(QUEUE_DEV)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(QUEUE_DEV)
 
     img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
@@ -197,11 +198,11 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
       big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
-      Device.default.synchronize()
+      Device[QUEUE_DEV].synchronize()
       st = time.perf_counter()
       outs = fn(**input_queues, frame=frame, big_frame=big_frame)
       mt = time.perf_counter()
-      Device.default.synchronize()
+      Device[QUEUE_DEV].synchronize()
       et = time.perf_counter()
       print(f"  [{i+1}/{n_runs}] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
