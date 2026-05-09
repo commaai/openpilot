@@ -13,8 +13,6 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import CompileConfig
 from openpilot.system.hardware import HARDWARE, PC
 
-USBGPU = 'USBGPU' in os.environ
-
 def get_camera_configs():
   DEVICE_RESOLUTIONS = {
     "tici": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
@@ -49,7 +47,6 @@ def probe_devices():
     [sys.executable, '-c', 'from tinygrad import Device\nprint("\\n".join(Device.get_available_devices()))'],
     capture_output=True, text=True, check=True).stdout.strip().splitlines())
 
-
 available = probe_devices()
 if 'CUDA' in available:
   tg_backend = 'CUDA'
@@ -65,21 +62,18 @@ else:
 # same between QCOM or USBGPU path, given we only warp on QCOM for now
 runtime_env = f'WARP_DEV={tg_backend} DM_DEV={tg_backend}'
 
-if USBGPU:
-  # poll: usbgpu takes a few seconds to show up
-  deadline = time.monotonic() + 10
-  while 'AMD' not in (available := probe_devices()):
-    if time.monotonic() > deadline:
-      print(f"USBGPU (AMD) not detected within 10s: {available}", file=sys.stderr)
-      Exit(1)
-    time.sleep(1)
-  modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0'
-  runtime_env += ' GMMU=0 XDG_CACHE_HOME=/data/tinycache'
+# poll: usbgpu takes a few seconds to show up
+deadline = time.monotonic() + 10
+while 'AMD' not in (available := probe_devices()):
+  if time.monotonic() > deadline:
+    print(f"USBGPU (AMD) not detected within 10s: {available}", file=sys.stderr)
+    Exit(1)
+  time.sleep(1)
+modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0'
+runtime_env += ' GMMU=0 XDG_CACHE_HOME=/data/tinycache'
 
-  # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
-  usb_gpu_lock = File("models/.usb_gpu.lock").abspath
-else:
-  modeld_tg_flags = tg_flags
+# the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
+usb_gpu_lock = File("models/.usb_gpu.lock").abspath
 
 compiled_flags = dict(kv.split('=', 1) for kv in runtime_env.split())
 def write_tg_compiled_flags(target, source, env):
