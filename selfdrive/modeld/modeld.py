@@ -3,7 +3,6 @@ import os
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_env
 set_tinygrad_env()
 WARP_DEV = os.getenv('WARP_DEV')
-USBGPU = 'USBGPU' in os.environ
 
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
@@ -150,6 +149,8 @@ class ModelState:
 
 def main(demo=False):
   cloudlog.warning("modeld init")
+  params = Params()
+  USBGPU = params.get_bool("UsbGpuPresent")
 
   if not USBGPU:
     # USB GPU currently saturates a core so can't do this yet,
@@ -189,7 +190,6 @@ def main(demo=False):
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
-  params = Params()
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
