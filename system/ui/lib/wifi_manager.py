@@ -938,12 +938,14 @@ class WifiManager:
 
   def _list_network_ids(self, ssid: str) -> list[str]:
     """Return all wpa_supplicant network ids matching SSID. LIST_NETWORKS emits
-    printf_encode'd SSIDs — decode before comparing or non-ASCII SSIDs silently miss."""
+    printf_encode'd SSIDs — decode before comparing or non-ASCII SSIDs silently miss.
+    Don't .strip() the whole reply: SSIDs may end with spaces, so a trailing-space
+    SSID on the last line would be clipped and miss the match."""
     if self._ctrl is None:
       return []
     try:
       raw = self._request("LIST_NETWORKS")
-      return [parts[0] for line in raw.strip().split("\n")[1:]
+      return [parts[0] for line in raw.splitlines()[1:]
               if len(parts := line.split("\t")) >= 2 and decode_ssid(parts[1]) == ssid]
     except Exception:
       cloudlog.exception("Failed to list networks")

@@ -197,6 +197,70 @@ mode=infrastructure
     # _filename pinned to legacy so future writes keep retrying the cleanup.
     assert store.get("MyNet")["_filename"] == "MyNet.nmconnection"
 
+  def test_save_refuses_ssid_with_boundary_whitespace(self, mocker: MockerFixture):
+    """ConfigParser write+read strips boundary whitespace, so saving an SSID
+    with leading/trailing spaces would silently corrupt it on next restart."""
+    store = self._make_store(mocker)
+    mock_run = mocker.patch("subprocess.run")
+
+    store.save_network(" Cafe", psk="hunter2")
+    store.save_network("Cafe ", psk="hunter2")
+
+    install_calls = [c for c in mock_run.call_args_list
+                     if len(c.args[0]) >= 2 and c.args[0][:2] == ["sudo", "install"]]
+    assert install_calls == [], "boundary-whitespace SSID must not write a keyfile"
+    assert " Cafe" not in store._networks
+    assert "Cafe " not in store._networks
+
+  def test_save_refuses_psk_with_boundary_whitespace(self, mocker: MockerFixture):
+    """Same lossy round-trip applies to the PSK field."""
+    store = self._make_store(mocker)
+    mock_run = mocker.patch("subprocess.run")
+
+    store.save_network("Cafe", psk=" hunter2")
+    store.save_network("Cafe", psk="hunter2 ")
+
+    install_calls = [c for c in mock_run.call_args_list
+                     if len(c.args[0]) >= 2 and c.args[0][:2] == ["sudo", "install"]]
+    assert install_calls == []
+    assert "Cafe" not in store._networks
+
+  def test_remove_deletes_all_duplicate_keyfiles(self, mocker: MockerFixture):
+    """When migration left both legacy and canonical keyfiles for the same SSID,
+    forget must remove ALL of them. Otherwise _load on next start finds the
+    leftover and silently re-enables auto-connect to a forgotten network."""
+    legacy = """\
+[connection]
+id=Dup
+uuid=dup-uuid
+type=wifi
+
+[wifi]
+ssid=Dup
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=x
+"""
+    canonical = legacy
+    with open(os.path.join(self.tmpdir, "Dup.nmconnection"), "w") as f:
+      f.write(legacy)
+    with open(os.path.join(self.tmpdir, "dup-uuid-Dup.nmconnection"), "w") as f:
+      f.write(canonical)
+    contents = {"Dup.nmconnection": legacy, "dup-uuid-Dup.nmconnection": canonical}
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read",
+                 side_effect=lambda p: contents.get(os.path.basename(p), ""))
+
+    store = NetworkStore(directory=self.tmpdir)
+    mock_run = mocker.patch("subprocess.run", return_value=mocker.MagicMock(returncode=0))
+
+    assert store.remove("Dup") is True
+    rm_targets = [c.args[0][-1] for c in mock_run.call_args_list
+                  if len(c.args[0]) >= 2 and c.args[0][:2] == ["sudo", "rm"]]
+    assert any(t.endswith("Dup.nmconnection") for t in rm_targets)
+    assert any(t.endswith("dup-uuid-Dup.nmconnection") for t in rm_targets)
+
   def test_save_sanitizes_ssid_in_filename(self, mocker: MockerFixture):
     store = self._make_store(mocker)
     mock_run = mocker.patch("subprocess.run")

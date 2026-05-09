@@ -184,6 +184,16 @@ class NetworkStore:
       return dict(entry) if entry else None
 
   def save_network(self, ssid: str, psk: str | None = None, metered: int | None = None, hidden: bool | None = None):
+    # ConfigParser.write/get strips boundary whitespace on round-trip, so an SSID
+    # or PSK with leading/trailing spaces would silently change on next restart —
+    # the in-memory connection works for the session, then breaks after reload.
+    # Refuse rather than corrupt; the user gets a clear failure to investigate.
+    if ssid != ssid.strip():
+      cloudlog.warning(f"NetworkStore: refusing to save SSID with boundary whitespace: {ssid!r}")
+      return
+    if psk is not None and psk != psk.strip():
+      cloudlog.warning(f"NetworkStore: refusing to save PSK with boundary whitespace for {ssid!r}")
+      return
     with self._lock:
       existing = dict(self._networks.get(ssid, {}))
       if psk is not None:
@@ -207,18 +217,50 @@ class NetworkStore:
       entry = self._networks.get(ssid)
       if entry is None:
         return False
-      fname = entry.get("_filename") or _canonical_filename(entry.get("uuid", ""), ssid)
-      fpath = os.path.join(self._directory, fname)
-      result = subprocess.run(["sudo", "rm", "-f", fpath], check=False)
-      # `rm -f` returns 0 even if the file is already absent; non-zero means an
-      # actual failure (FS read-only, sudo broken, etc.). Don't lose the in-memory
-      # entry — _load on next start would restore the file and silently re-enable
-      # auto-connect to a network the user explicitly forgot.
-      if result.returncode != 0:
-        cloudlog.warning(f"NetworkStore: failed to remove {fpath} (rc={result.returncode})")
-        return False
+      # Migrated profiles can leave duplicate keyfiles around (legacy + canonical,
+      # or the failed-cleanup mirror path). Removing only the tracked file leaves
+      # the others on disk and _load would silently restore the network. Always
+      # include the canonical and tracked paths plus any other files matching
+      # this SSID on disk, then `rm -f` them all.
+      paths: set[str] = set()
+      paths.add(os.path.join(self._directory, _canonical_filename(entry.get("uuid", ""), ssid)))
+      tracked = entry.get("_filename")
+      if tracked:
+        paths.add(os.path.join(self._directory, tracked))
+      paths.update(self._find_keyfiles_for(ssid))
+      for p in paths:
+        result = subprocess.run(["sudo", "rm", "-f", p], check=False)
+        # `rm -f` returns 0 even if the file is absent; non-zero is a real failure
+        # (FS read-only, sudo broken). Leave the in-memory entry alone — _load on
+        # next start would restore the file and silently re-enable auto-connect.
+        if result.returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to remove {p} (rc={result.returncode})")
+          return False
       del self._networks[ssid]
       return True
+
+  def _find_keyfiles_for(self, ssid: str) -> list[str]:
+    """Return all .nmconnection paths in our directory whose [wifi] ssid == ssid."""
+    matches = []
+    try:
+      filenames = os.listdir(self._directory)
+    except OSError:
+      return matches
+    for fname in filenames:
+      if not fname.endswith(".nmconnection"):
+        continue
+      fpath = os.path.join(self._directory, fname)
+      raw = sudo_read(fpath)
+      if not raw:
+        continue
+      cp = configparser.ConfigParser(interpolation=None)
+      try:
+        cp.read_string(raw)
+      except configparser.Error:
+        continue
+      if cp.get("wifi", "ssid", fallback="") == ssid:
+        matches.append(fpath)
+    return matches
 
   def set_metered(self, ssid: str, metered: int):
     with self._lock:
