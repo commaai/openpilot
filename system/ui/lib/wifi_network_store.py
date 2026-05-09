@@ -75,6 +75,13 @@ class NetworkStore:
           if key_mgmt not in _SUPPORTED_KEY_MGMT:
             cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported key-mgmt={key_mgmt!r}")
             continue
+          # NM stores WEP as `key-mgmt=none` plus `wep-key*`/`wep-key-type`/`auth-alg=shared`.
+          # Loading those as open (psk="") would let _generate_wpa_conf demote the secured
+          # SSID to key_mgmt=NONE — auto-association to an open spoof of the same SSID.
+          wep_keys = ("wep-key0", "wep-key1", "wep-key2", "wep-key3", "wep-key-type", "auth-alg")
+          if key_mgmt == "none" and any(cp.has_option("wifi-security", k) for k in wep_keys):
+            cloudlog.warning(f"NetworkStore: skipping {ssid!r} (WEP profile, unsupported)")
+            continue
           psk = cp.get("wifi-security", "psk", fallback="")
           # NM agent-managed secrets (psk-flags=1) live outside the keyfile. We can't
           # drive them via wpa_supplicant, and loading with psk="" would render as

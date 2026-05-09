@@ -101,6 +101,47 @@ def test_reconcile_stale_secure_network_prompts_auth(wm, mocker):
   need_auth.assert_called_once_with("systeam")
 
 
+def test_reconcile_disconnected_drops_stale_status_when_user_taps(wm, mocker):
+  """While the scanner blocks in STATUS, a user can select another network. The
+  fresh CONNECTING state must not be overwritten by a stale STATUS reply."""
+  activated = mocker.MagicMock()
+  wm._activated.append(activated)
+  wm._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
+
+  def status_then_user_taps(_cmd):
+    wm._set_connecting("NewNet")
+    return "wpa_state=COMPLETED\nssid=OldNet\n"
+  wm._ctrl.request.side_effect = status_then_user_taps
+
+  wm._reconcile_connecting_state()
+
+  # Must NOT _handle_connected("OldNet") which would clobber the new attempt.
+  assert wm._wifi_state.ssid == "NewNet"
+  assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
+
+def test_reconcile_connected_drops_stale_status_when_user_taps(wm, mocker):
+  """Same race on the CONNECTED branch: a stale DISCONNECTED STATUS during a
+  user tap must not flush the live lease and emit a false disconnect."""
+  disconnected = mocker.MagicMock()
+  wm._disconnected.append(disconnected)
+  wm._wifi_state = WifiState(ssid="HomeNet", status=ConnectStatus.CONNECTED)
+  wm._ipv4_address = "10.0.0.5"
+  wm._last_connected_recheck = time.monotonic() - 100
+
+  def status_then_user_taps(_cmd):
+    wm._set_connecting("NewNet")
+    return "wpa_state=DISCONNECTED\n"
+  wm._ctrl.request.side_effect = status_then_user_taps
+
+  wm._reconcile_connecting_state()
+
+  # Old CONNECTED state must not be torn down based on stale STATUS.
+  wm._dhcp.stop.assert_not_called()
+  wm.process_callbacks()
+  disconnected.assert_not_called()
+
+
 def test_reconcile_disconnected_detects_missed_connected(wm, mocker):
   """After tethering stops, monitor may miss CONNECTED event."""
   activated = mocker.MagicMock()

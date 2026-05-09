@@ -293,6 +293,35 @@ psk-flags=1
 
     assert store.get("AgentSecret") is None, "wpa-psk without inline psk must not load as open"
 
+  def test_load_skips_wep_profiles(self, mocker: MockerFixture):
+    """NM stores WEP as key-mgmt=none + wep-key*. Loading with psk='' would render
+    as key_mgmt=NONE in wpa_supplicant.conf — silent demotion to open, inviting
+    auto-association to an open spoof of the same SSID."""
+    content = """\
+[connection]
+id=OldWEP
+uuid=wep-uuid
+type=wifi
+
+[wifi]
+ssid=OldWEP
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=none
+auth-alg=shared
+wep-key0=cafebabe
+wep-key-type=1
+"""
+    fpath = os.path.join(self.tmpdir, "OldWEP.nmconnection")
+    with open(fpath, "w") as f:
+      f.write(content)
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read", return_value=content)
+
+    store = NetworkStore(directory=self.tmpdir)
+
+    assert store.get("OldWEP") is None
+
   def test_load_skips_autoconnect_disabled(self, mocker: MockerFixture):
     """connection.autoconnect=false is explicit user/provisioning intent. ENABLE_NETWORK
     all would silently re-arm auto-join after upgrade — drop the entry instead."""

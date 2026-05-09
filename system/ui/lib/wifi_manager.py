@@ -572,9 +572,14 @@ class WifiManager:
 
     # Detect missed CONNECTED event (e.g. monitor was reconnecting after tethering stop)
     if current_state.status == ConnectStatus.DISCONNECTED:
+      epoch = self._user_epoch
       try:
         status = parse_status(self._request("STATUS"))
       except Exception:
+        return
+      # A user tap during the blocking STATUS bumped the epoch; their CONNECTING
+      # state is fresh, so don't synthesize a connected from the stale STATUS.
+      if self._user_epoch != epoch:
         return
       # wpa_supplicant reports COMPLETED in AP mode too; STA path would flush the hotspot. Re-adopt
       # so a missed startup adoption (e.g. transient STATUS failure) doesn't strand us in DISCONNECTED
@@ -595,9 +600,14 @@ class WifiManager:
       if now - self._last_connected_recheck < SCAN_PERIOD_SECONDS:
         return
       self._last_connected_recheck = now
+      epoch = self._user_epoch
       try:
         status = parse_status(self._request("STATUS"))
       except Exception:
+        return
+      # User started a new connect while we were blocked in STATUS; their fresh
+      # CONNECTING state must not be clobbered by stale STATUS results below.
+      if self._user_epoch != epoch:
         return
       wpa_state = status.get("wpa_state", "")
       status_ssid = status.get("ssid")
