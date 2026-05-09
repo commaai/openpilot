@@ -4,8 +4,6 @@ import shutil
 import subprocess
 import tempfile
 
-import pytest
-
 from openpilot.system.hardware.tici import nm_persist
 
 
@@ -199,15 +197,15 @@ class TestNmPersist:
     """Hotspot profiles are owned by openpilot's tethering path, not NetworkStore.
     Persisting them here would just be dead clutter."""
     self._patch_io(mocker)
-    ap_keyfile = """[connection]
+    ap_keyfile = f"""[connection]
 id=Hotspot
 type=wifi
-uuid={u}
+uuid={WIFI_UUID}
 
 [wifi]
 ssid=weedle-bbc2
 mode=ap
-""".format(u=WIFI_UUID)
+"""
     self._write_run_keyfile(f"netplan-NM-{WIFI_UUID}-weedle-bbc2.nmconnection", ap_keyfile)
     yaml_path = self._write_netplan_yaml(f"90-NM-{WIFI_UUID}.yaml", WIFI_NETPLAN_YAML)
 
@@ -220,13 +218,9 @@ mode=ap
     self._patch_io(mocker)
     self._write_run_keyfile(
       f"netplan-NM-{WIFI_UUID}-noSsid.nmconnection",
-      "[connection]\ntype=wifi\nuuid={u}\n\n[wifi]\nmode=infrastructure\n".format(u=WIFI_UUID),
+      f"[connection]\ntype=wifi\nuuid={WIFI_UUID}\n\n[wifi]\nmode=infrastructure\n",
     )
 
     nm_persist.persist_connections(self.run_dir, self.data_dir, self.netplan_dir)
 
     assert os.listdir(self.data_dir) == []
-
-
-if __name__ == "__main__":
-  pytest.main([__file__, "-v"])
