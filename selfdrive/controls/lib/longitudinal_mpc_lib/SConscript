@@ -1,11 +1,6 @@
-import os
-import shlex
-import sys
-
 Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'np_version', 'acados')
 
 gen = "c_generated_code"
-python = shlex.quote(sys.executable)
 
 casadi_model = [
   f'{gen}/long_model/long_expl_ode_fun.c',
@@ -56,12 +51,13 @@ generated_files = [
   f'{gen}/long_cost/long_cost.h',
 ] + build_files
 
-acados_templates_dir = os.path.join(acados.TEMPLATE_DIR, 'c_templates_tera')
+acados_include_dir = Dir(acados.INCLUDE_DIR)
+acados_template_dir = Dir(acados.TEMPLATE_DIR)
 
 source_list = ['long_mpc.py',
   '#selfdrive/modeld/constants.py',
-  File(os.path.join(acados.INCLUDE_DIR, 'acados_c', 'ocp_nlp_interface.h')),
-  File(os.path.join(acados_templates_dir, 'acados_solver.in.c')),
+  acados_include_dir.File('acados_c/ocp_nlp_interface.h'),
+  acados_template_dir.File('c_templates_tera/acados_solver.in.c'),
 ]
 
 lenv = env.Clone()
@@ -70,7 +66,7 @@ lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
 lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
                               source_list,
-                              f"cd {Dir('.').abspath} && {python} long_mpc.py")
+                              f"cd {Dir('.').abspath} && python3 long_mpc.py")
 lenv.Depends(generated_long, [msgq_python, common_python])
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
@@ -86,8 +82,8 @@ lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                                 LIBS=['m', 'acados', 'hpipm', 'blasfeo', 'qpOASES_e'])
 
 # generate cython stuff
-acados_ocp_solver_pyx = File(os.path.join(acados.TEMPLATE_DIR, 'acados_ocp_solver_pyx.pyx'))
-acados_ocp_solver_common = File(os.path.join(acados.TEMPLATE_DIR, 'acados_solver_common.pxd'))
+acados_ocp_solver_pyx = acados_template_dir.File('acados_ocp_solver_pyx.pyx')
+acados_ocp_solver_common = acados_template_dir.File('acados_solver_common.pxd')
 libacados_ocp_solver_pxd = File(f'{gen}/acados_solver.pxd')
 libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
