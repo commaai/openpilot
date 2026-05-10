@@ -27,6 +27,7 @@ dependencies = [
 
   # vendored native dependencies
   "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
+  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@bootstrap-icons#subdirectory=bootstrap-icons",
   "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
   "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
   "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",

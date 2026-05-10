@@ -122,6 +122,11 @@ wheels = [
 ]
 
 [[package]]
+name = "bootstrap-icons"
+version = "1.10.5.0"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bootstrap-icons&rev=bootstrap-icons#42f03e085741bde46a9c9f76a9244ac0f6ac59d6" }
+
+[[package]]
 name = "bzip2"
 version = "1.0.8"
 source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=release-bzip2#13755b73dbcda1b186641fcccce90d55f815d6bc" }
@@ -745,6 +750,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
+    { name = "bootstrap-icons" },
     { name = "bzip2" },
     { name = "capnproto" },
     { name = "catch2" },
@@ -824,6 +830,7 @@ requires-dist = [
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
+    { name = "bootstrap-icons", git = "https://github.com/commaai/dependencies.git?subdirectory=bootstrap-icons&rev=bootstrap-icons" },
     { name = "bzip2", git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=release-bzip2" },
     { name = "capnproto", git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=release-capnproto" },
     { name = "catch2", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
