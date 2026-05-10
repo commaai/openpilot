@@ -107,7 +107,6 @@ env = Environment(
     "#msgq",
     "#third_party",
     "#third_party/json11",
-    "#third_party/linux/include",
     "#third_party/acados/include",
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",

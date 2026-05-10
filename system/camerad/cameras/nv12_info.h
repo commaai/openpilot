@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <tuple>
 
-#include "third_party/linux/include/msm_media_info.h"
+#include <media/msm_media_info.h>
 
 // Returns NV12 aligned (stride, y_height, uv_height, buffer_size) for the given frame dimensions.
 inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> get_nv12_info(int width, int height) {
