@@ -239,6 +239,7 @@ struct FrameData {
     ar0231 @1;
     ox03c10 @2;
     os04c10 @3;
+    imx219 @4;
   }
 
   deprecated :group {

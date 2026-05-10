@@ -22,7 +22,7 @@ from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
 
 from openpilot.system.version import get_build_metadata
-from openpilot.system.hardware import HARDWARE
+from openpilot.system.hardware import HARDWARE, ASIUS
 
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
@@ -71,25 +71,30 @@ class SelfdriveD:
 
     self.gps_location_service = get_gps_location_service(self.params)
     self.gps_packets = [self.gps_location_service]
-    self.sensor_packets = ["accelerometer", "gyroscope"]
-    self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
+    self.sensor_packets = [] if ASIUS else ["accelerometer", "gyroscope"]
+    self.camera_packets = ["roadCameraState", "wideRoadCameraState"] if ASIUS else \
+                          ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
 
     # TODO: de-couple selfdrived with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
     ignore = self.sensor_packets + self.gps_packets + ['alertDebug', 'lateralManeuverPlan']
+    if ASIUS:
+      ignore += ['driverMonitoringState', 'livePose', 'liveDelay', 'liveParameters',
+                 'liveTorqueParameters', 'driverAssistance']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     if REPLAY:
       # no vipc in replay will make them ignored anyways
       ignore += ['roadCameraState', 'wideRoadCameraState']
+    ignore_avg_freq = ignore + (['modelV2', 'longitudinalPlan', 'radarState'] if ASIUS else [])
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark', 'audioFeedback',
                                    'lateralManeuverPlan'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
-                                  ignore_alive=ignore, ignore_avg_freq=ignore,
+                                  ignore_alive=ignore, ignore_avg_freq=ignore_avg_freq,
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
 
     # read params
@@ -125,6 +130,7 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.dm_lockout_set = False
     self.dm_uncertain_alerted = False
+    self.alert_log_prev: tuple[str, str, str] | None = None
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -235,7 +241,7 @@ class SelfdriveD:
       self.events.add(EventName.lowMemory)
 
     # Alert if fan isn't spinning for 5 seconds
-    if self.sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
+    if not ASIUS and self.sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
       if self.sm['peripheralState'].fanSpeedRpm < 500 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
         # allow enough time for the fan controller in the panda to recover from stalls
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 15.0:
@@ -515,6 +521,12 @@ class SelfdriveD:
     ss.alertType = self.AM.current_alert.alert_type
     ss.alertSound = self.AM.current_alert.audible_alert
     ss.alertHudVisual = self.AM.current_alert.visual_alert
+
+    alert_log = (ss.alertType, ss.alertText1, ss.alertText2)
+    if alert_log != self.alert_log_prev:
+      print(f"selfdrive alert: type={ss.alertType!r} text1={ss.alertText1!r} text2={ss.alertText2!r} "
+            f"engageable={ss.engageable} state={ss.state}", flush=True)
+      self.alert_log_prev = alert_log
 
     self.pm.send('selfdriveState', ss_msg)
 

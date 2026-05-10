@@ -11,6 +11,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.simple_kalman import KF1D
+from openpilot.system.hardware import ASIUS
 
 
 # Default lead acceleration decay set to 50% at 1s
@@ -227,7 +228,7 @@ class RadarD:
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     # *** publish radarState ***
-    self.radar_state_valid = sm.all_checks()
+    self.radar_state_valid = sm.all_checks(['modelV2', 'carState']) if ASIUS else sm.all_checks()
     self.radar_state = log.RadarState.new_message()
     self.radar_state.mdMonoTime = sm.logMonoTime['modelV2']
     self.radar_state.radarErrors = rr.errors
@@ -261,7 +262,8 @@ def main() -> None:
   cloudlog.info("radard got CarParams")
 
   # *** setup messaging
-  sm = messaging.SubMaster(['modelV2', 'carState', 'liveTracks'], poll='modelV2')
+  sm = messaging.SubMaster(['modelV2', 'carState', 'liveTracks'], poll='modelV2',
+                           ignore_avg_freq=['carState'] if ASIUS else [])
   pm = messaging.PubMaster(['radarState'])
 
   RD = RadarD(CP.radarDelay)

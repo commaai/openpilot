@@ -18,7 +18,7 @@ const uint32_t imx219_analog_gains_reg[] = {
 }  // namespace
 
 IMX219::IMX219() {
-  image_sensor = cereal::FrameData::ImageSensor::UNKNOWN;
+  image_sensor = cereal::FrameData::ImageSensor::IMX219;
   bayer_pattern = 0;  // RGGB
   pixel_size_mm = 0.00112;
   data_word = true;

@@ -8,7 +8,7 @@ from openpilot.system.hardware import PC, TICI, ASIUS
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
-NO_IMU = os.getenv("NO_IMU") is not None
+NO_IMU = ASIUS or os.getenv("NO_IMU") is not None
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
@@ -80,7 +80,7 @@ procs = [
   PythonProcess("webcamerad", "tools.webcam.camerad", or_(driverview, webrtc), enabled=WEBCAM),
   PythonProcess("proclogd", "system.proclogd", only_onroad, enabled=platform.system() != "Darwin"),
   PythonProcess("journald", "system.journald", only_onroad, platform.system() != "Darwin"),
-  PythonProcess("micd", "system.micd", iscar),
+  PythonProcess("micd", "system.micd", iscar, enabled=not ASIUS),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "selfdrive.modeld.modeld", always_run if ASIUS else only_onroad),

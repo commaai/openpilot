@@ -448,7 +448,8 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control, 
 }
 
 void pandad_run(std::vector<Panda *> &pandas) {
-  const bool no_fan_control = getenv("NO_FAN_CONTROL") != nullptr;
+  const bool no_fan_control = (getenv("NO_FAN_CONTROL") != nullptr) ||
+                              (Hardware::get_device_type() == cereal::InitData::DeviceType::ASIUS);
   const bool spoofing_started = getenv("STARTED") != nullptr;
   const bool fake_send = getenv("FAKESEND") != nullptr;
 

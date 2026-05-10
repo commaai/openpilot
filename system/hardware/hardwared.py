@@ -55,7 +55,12 @@ else:
   })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 85 if HARDWARE.get_device_type() == "mici" else 75
+if ASIUS:
+  OFFROAD_DANGER_TEMP = 95
+elif HARDWARE.get_device_type() == "mici":
+  OFFROAD_DANGER_TEMP = 85
+else:
+  OFFROAD_DANGER_TEMP = 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
@@ -201,7 +206,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
-  fan_controller = FanController(int(1./DT_HW))
+  fan_controller = None if ASIUS else FanController(int(1./DT_HW))
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
@@ -274,7 +279,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     all_comp_temp = all_temp_filter.update(max(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
-    msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
+    msg.deviceState.fanSpeedPercentDesired = 0 if fan_controller is None else fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
@@ -314,7 +319,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     show_alert = (not onroad_conditions["device_temp_good"] or not startup_conditions["device_temp_engageable"]) and onroad_conditions["ignition"]
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
-    if show_alert:
+    if show_alert and not ASIUS:
       msg.deviceState.fanSpeedPercentDesired = 100
 
     # *** registration check ***

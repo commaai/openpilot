@@ -271,7 +271,8 @@ def main(demo=False):
         cloudlog.debug("vipc_client_extra no frame")
         continue
 
-      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
+      sync_warn_threshold_ns = 25000000 if str(sm["deviceState"].deviceType) == "asius" else 10000000
+      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > sync_warn_threshold_ns:
         cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
                          extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
 
