@@ -72,7 +72,7 @@ if not usbgpu:
   Exit(1)
 
 tg_devices['selfdrive.modeld.modeld']['usbgpu'] = f"WARP_DEV={tg_backend} QUEUE_DEV=AMD"
-modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0' # TODO make it work without setting DEV?
+modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
 
 # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
 usb_gpu_lock = File("models/.usb_gpu.lock").abspath
@@ -156,4 +156,5 @@ def tg_compile(flags, model_name):
     do_chunk,
   )
 
-tg_compile(tg_flags, 'dmonitoring_model')
+dm_dev = tg_devices['selfdrive.modeld.dmonitoringmodeld']['DM_DEV']
+tg_compile(f'{tg_flags} DEV={dm_dev}', 'dmonitoring_model')
