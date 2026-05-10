@@ -156,5 +156,4 @@ def tg_compile(flags, model_name):
     do_chunk,
   )
 
-dm_dev = tg_devices['selfdrive.modeld.dmonitoringmodeld']['DM_DEV']
-tg_compile(f'{tg_flags} DEV={dm_dev}', 'dmonitoring_model')
+tg_compile(f'{tg_flags} DEV={tg_backend}', 'dmonitoring_model')
