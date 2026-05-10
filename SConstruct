@@ -37,8 +37,14 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['bzip2', 'capnproto', 'catch2', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
+pkg_names = ['acados', 'bzip2', 'capnproto', 'catch2', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
+acados = pkgs[pkg_names.index('acados')]
+acados_include_dirs = [
+  acados.INCLUDE_DIR,
+  os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
+  os.path.join(acados.INCLUDE_DIR, "hpipm", "include"),
+]
 
 
 # ***** enforce a whitelist of system libraries *****
@@ -82,10 +88,10 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
-    "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
-    "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
-    "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
+    "PYTHONPATH": Dir("#").abspath,
+    "ACADOS_SOURCE_DIR": acados.DIR,
+    "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
+    "TERA_PATH": acados.TERA_PATH
   },
   CCFLAGS=[
     "-g",
@@ -108,9 +114,7 @@ env = Environment(
     "#third_party",
     "#third_party/json11",
     "#third_party/linux/include",
-    "#third_party/acados/include",
-    "#third_party/acados/include/blasfeo/include",
-    "#third_party/acados/include/hpipm/include",
+    acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
@@ -119,7 +123,6 @@ env = Environment(
     "#third_party",
     "#selfdrive/pandad",
     "#rednose/helpers",
-    f"#third_party/acados/{arch}/lib",
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[],
@@ -188,7 +191,7 @@ else:
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-Export('env', 'arch')
+Export('env', 'arch', 'acados')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
