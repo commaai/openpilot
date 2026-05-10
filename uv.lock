@@ -542,6 +542,11 @@ wheels = [
 ]
 
 [[package]]
+name = "json11"
+version = "20170411.0"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=json11&rev=release-json11#8e7737088f52d10fdea69c28c55e3e40b74af3f3" }
+
+[[package]]
 name = "kiwisolver"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -758,6 +763,7 @@ dependencies = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "json-rpc" },
+    { name = "json11" },
     { name = "libjpeg" },
     { name = "libusb" },
     { name = "libusb1" },
@@ -842,6 +848,7 @@ requires-dist = [
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
+    { name = "json11", git = "https://github.com/commaai/dependencies.git?subdirectory=json11&rev=release-json11" },
     { name = "libjpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=release-libjpeg" },
     { name = "libusb", git = "https://github.com/commaai/dependencies.git?subdirectory=libusb&rev=release-libusb" },
     { name = "libusb1" },

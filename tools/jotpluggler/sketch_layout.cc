@@ -23,7 +23,7 @@
 #include <utility>
 
 #include "common/util.h"
-#include "third_party/json11/json11.hpp"
+#include "json11/json11.hpp"
 #include "tools/replay/logreader.h"
 #include "tools/replay/py_downloader.h"
 
