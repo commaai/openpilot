@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import pickle
+import re
 import time
+from dataclasses import replace
 from functools import partial
 from collections import namedtuple
 
@@ -109,6 +112,34 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
   return input_queues, npy
 
 
+def tune_modeld_jit_launch_sizes(run_policy_jit) -> None:
+  if Device.DEFAULT != "CL":
+    return
+
+  # The fused vision-output kernel runs faster on Adreno with two 197-item
+  # workgroups instead of 197 tiny two-item workgroups.
+  target_name = "r_394_4_16_4_8_8_4_8_4_8_4_16_4_4_4_8_4_16_4_4_4_4"
+  ansi_re = re.compile(r"\x1b\[[0-9;]*m")
+
+  for ei in getattr(getattr(run_policy_jit, "captured", None), "_jit_cache", []):
+    p = getattr(getattr(ei, "prg", None), "p", None)
+    if p is None:
+      continue
+
+    name = ansi_re.sub("", p.name)
+    if name != target_name:
+      continue
+
+    global_size = list(p.global_size or [])
+    local_size = list(p.local_size or [1] * len(global_size))
+    if len(global_size) == 0:
+      continue
+
+    total_work = global_size[0] * local_size[0]
+    if total_work == 394 and p.local_size != [197, 1, 1]:
+      ei.prg.p = replace(p, global_size=[2, 1, 1], local_size=[197, 1, 1])
+
+
 def shift_and_sample(buf, new_val, sample_fn):
   buf.assign(buf[1:].cat(new_val, dim=0).contiguous())
   return sample_fn(buf)
@@ -136,7 +167,10 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
     Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
     img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
+    if os.getenv("MODEL_STALE_BIG_ON_FULL") and not prepare_only:
+      big_img = sample_skip_fn(big_img_q)
+    else:
+      big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -185,8 +219,8 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     n_runs = 1 if testing else 3
 
     for i in range(n_runs):
-      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
-      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
+      frame = Tensor(np.random.randint(0, 256, size=nv12.size, dtype=np.uint8)).to(Device.DEFAULT).realize()
+      big_frame = Tensor(np.random.randint(0, 256, size=nv12.size, dtype=np.uint8)).to(Device.DEFAULT).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
@@ -211,6 +245,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
 
   print('capture + replay')
   run_policy_jit, test_val, test_buffers = random_inputs_run_fn(run_policy_jit, SEED)
+  tune_modeld_jit_launch_sizes(run_policy_jit)
 
   print('pickle round trip')
   with open(pkl_path, "wb") as f:
@@ -218,6 +253,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     print(f"  Saved to {pkl_path}")
   with open(pkl_path, "rb") as f:
     run_policy_jit = pickle.load(f)
+  tune_modeld_jit_launch_sizes(run_policy_jit)
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
 

@@ -28,7 +28,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, tune_modeld_jit_launch_sizes
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -45,6 +45,23 @@ LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 
+
+def tensors_to_numpy_flat(*tensors: Tensor) -> list[np.ndarray]:
+  if Device.DEFAULT == "CL":
+    from tinygrad.dtype import _to_np_dtype
+    from tinygrad.helpers import from_mv
+    from tinygrad.runtime.autogen import opencl as cl
+
+    bufs = []
+    for tensor in tensors:
+      buf = tensor._buffer()
+      raw = bytearray(buf.nbytes)
+      cl.clEnqueueReadBuffer(Device["CL"].queue, buf._buf, False, 0, buf.nbytes, from_mv(memoryview(raw)), 0, None, None)
+      bufs.append((raw, tensor.shape, buf.dtype.base))
+    Device.default.synchronize()
+    return [np.frombuffer(raw, dtype=_to_np_dtype(dtype)).reshape(shape).flatten() for raw, shape, dtype in bufs]
+
+  return [tensor.numpy().flatten() for tensor in tensors]
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -109,9 +126,11 @@ class ModelState:
     self._extra_reuse_period = max(0, int(os.getenv("MODEL_EXTRA_REUSE_PERIOD", default_extra_reuse_period)))
     self._reuse_left = 0
     self._model_eval_count = 0
+    self._stale_big_on_full = ASIUS and Device.DEFAULT == "CL" and os.getenv("MODEL_STALE_BIG_ON_FULL", "1") != "0"
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
+    tune_modeld_jit_launch_sizes(self.run_policy)
     self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
     self.warp_enqueue(
       **self.input_queues,
@@ -124,7 +143,13 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
-    for key in bufs.keys():
+    reuse_last_output = self._last_model_output is not None and self._reuse_left > 0
+    update_keys = list(bufs.keys())
+    if self._stale_big_on_full and not prepare_only and not reuse_last_output and 'big_img' in self.full_frames:
+      update_keys = [k for k in update_keys if k != 'big_img']
+    prime_stale_big = self._stale_big_on_full and self._last_model_output is None and not prepare_only
+
+    for key in update_keys:
       ptr = bufs[key].data.ctypes.data
       yuv_size = self.frame_buf_params[key][3]
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
@@ -149,7 +174,9 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    reuse_last_output = self._last_model_output is not None and self._reuse_left > 0
+    if prime_stale_big:
+      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+
     if prepare_only or reuse_last_output:
       self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
       if prepare_only:
@@ -157,7 +184,7 @@ class ModelState:
       self._reuse_left -= 1
       return self._last_model_output
 
-    vision_output, policy_output = self.run_policy(
+    model_outputs = self.run_policy(
       **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
     self._model_eval_count += 1
@@ -165,8 +192,11 @@ class ModelState:
     if self._extra_reuse_period > 0 and self._model_eval_count % self._extra_reuse_period == 0:
       self._reuse_left += 1
 
-    vision_output = vision_output.numpy().flatten()
-    policy_output = policy_output.numpy().flatten()
+    vision_tensors = model_outputs[:-1]
+    policy_tensor = model_outputs[-1]
+    flat_outputs = tensors_to_numpy_flat(*vision_tensors, policy_tensor)
+    vision_output = np.concatenate(flat_outputs[:-1])
+    policy_output = flat_outputs[-1]
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
