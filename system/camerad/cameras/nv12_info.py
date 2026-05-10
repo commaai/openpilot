@@ -1,14 +1,17 @@
 # Python version of system/camerad/cameras/nv12_info.h
-# Calculations from media/msm_media_info.h (VENUS_BUFFER_SIZE)
+# Calculations from the NV12 case in media/msm_media_info.h (VENUS_BUFFER_SIZE)
 
 def align(val: int, alignment: int) -> int:
   return ((val + alignment - 1) // alignment) * alignment
 
 def get_nv12_info(width: int, height: int) -> tuple[int, int, int, int]:
   """Returns (stride, y_height, uv_height, buffer_size) for NV12 frame dimensions."""
+  if width <= 0 or height <= 0:
+    return 0, 0, 0, 0
+
   stride = align(width, 128)
   y_height = align(height, 32)
-  uv_height = align(height // 2, 16)
+  uv_height = align((height + 1) // 2, 16)
 
   # VENUS_BUFFER_SIZE for NV12
   y_plane = stride * y_height
