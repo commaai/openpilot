@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <unistd.h>
 
-#include "third_party/json11/json11.hpp"
+#include "json11/json11.hpp"
 
 namespace fs = std::filesystem;
 
@@ -292,7 +292,7 @@ void draw_custom_series_help_popup(CustomSeriesEditorState *editor) {
     ImGui::OpenPopup("Custom Series Help");
     editor->open_help = false;
   }
-  if (!ImGui::BeginPopupModal("Custom Series Help", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!app_begin_popup_modal("Custom Series Help")) {
     return;
   }
   ImGui::TextUnformatted("Available variables");

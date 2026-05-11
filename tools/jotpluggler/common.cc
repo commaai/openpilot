@@ -139,6 +139,14 @@ bool env_flag_enabled(const char *name, bool default_value) {
   return !(value == "0" || value == "false" || value == "no" || value == "off");
 }
 
+bool app_begin_popup(const char *str_id, ImGuiWindowFlags flags) {
+  return ImGui::BeginPopup(str_id, flags | ImGuiWindowFlags_NoMove);
+}
+
+bool app_begin_popup_modal(const char *name, bool *p_open, ImGuiWindowFlags flags) {
+  return ImGui::BeginPopupModal(name, p_open, flags | ImGuiWindowFlags_NoMove);
+}
+
 void open_external_url(std::string_view url) {
 #ifdef __APPLE__
   const std::string command = "open " + shell_quote(url) + " &";

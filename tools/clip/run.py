@@ -326,7 +326,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
 
     frame_idx = 0
     with tqdm.tqdm(total=len(message_chunks), desc="Rendering", unit="frame") as pbar:
-      for should_render in gui_app.render():
+      for should_render, _, _ in gui_app.render():
         if frame_idx >= len(message_chunks):
           break
         _, frame_bytes = frame_queue.get()

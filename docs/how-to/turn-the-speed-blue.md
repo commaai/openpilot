@@ -20,7 +20,7 @@ source .venv/bin/activate
 
 Then, compile openpilot:
 ```bash
-scons -j$(nproc)
+scons
 ```
 
 ## 2. Run replay

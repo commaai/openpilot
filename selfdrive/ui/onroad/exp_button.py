@@ -36,7 +36,7 @@ class ExpButton(Widget):
     super()._handle_mouse_release(_)
     if self._is_toggle_allowed():
       new_mode = not self._experimental_mode
-      self._params.put_bool("ExperimentalMode", new_mode)
+      self._params.put_bool_nonblocking("ExperimentalMode", new_mode)
 
       # Hold new state temporarily
       self._held_mode = new_mode
