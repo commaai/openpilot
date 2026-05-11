@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
 import argparse
 import asyncio
+import contextlib
 import json
-import uuid
 import logging
+import uuid
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
+INITIAL_CAMERA = "driver"
+REQUIRED_VIDEO_CODEC = "H264"
 
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
@@ -83,11 +85,16 @@ class CerealProxyRunner:
     assert self.task is None
     self.task = asyncio.create_task(self.run())
 
-  def stop(self):
-    if self.task is None or self.task.done():
+  async def stop(self):
+    if self.task is None:
       return
-    self.task.cancel()
+    task = self.task
     self.task = None
+    if task.done():
+      return
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+      await task
 
   async def run(self):
     from aiortc.exceptions import InvalidStateError
@@ -122,14 +129,11 @@ class StreamSession:
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
-    from teleoprtc.info import parse_info_from_offer
 
-    config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
-    assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
-    for cam in cameras:
-      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
+    self.video_track = LiveStreamVideoStreamTrack(INITIAL_CAMERA) if not debug_mode else VideoStreamTrack()
+    builder.add_video_stream(INITIAL_CAMERA, self.video_track)
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
@@ -145,27 +149,38 @@ class StreamSession:
       self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
     self.run_task: asyncio.Task | None = None
+    self._cleanup_lock = asyncio.Lock()
+    self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
-    self.logger.info("New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
-                      self.identifier, cameras, incoming_services, outgoing_services)
+    self.logger.info(
+      "New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
+      self.identifier, cameras, incoming_services, outgoing_services,
+    )
 
   def start(self):
     self.run_task = asyncio.create_task(self.run())
 
-  def stop(self):
-    if self.run_task.done():
-      return
-    self.run_task.cancel()
+  async def stop(self):
+    if self.run_task is not None and not self.run_task.done() and self.run_task is not asyncio.current_task():
+      self.run_task.cancel()
+      with contextlib.suppress(asyncio.CancelledError):
+        await self.run_task
     self.run_task = None
-    asyncio.run(self.post_run_cleanup())
+    await self.post_run_cleanup()
 
   async def get_answer(self):
     return await self.stream.start()
 
-  async def message_handler(self, message: bytes):
-    assert self.incoming_bridge is not None
+  def message_handler(self, message: bytes):
     try:
-      self.incoming_bridge.send(message)
+      payload = json.loads(message) if isinstance(message, (bytes, str)) else None
+      if not isinstance(payload, dict):
+        raise ValueError
+
+      if self.incoming_bridge is not None:
+        self.incoming_bridge.send(message)
+    except ValueError:
+      self.logger.warning("Ignoring malformed request: %s", payload)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
@@ -175,24 +190,32 @@ class StreamSession:
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-          self.stream.set_message_handler(self.message_handler)
+          # set camera to default
+          self.incoming_bridge.send(json.dumps({"type": "livestreamCameraSwitch", "data": {"camera": INITIAL_CAMERA}}).encode())
+        self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge_runner is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
           self.outgoing_bridge_runner.start()
+
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
-      await self.post_run_cleanup()
 
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
+    finally:
+      await self.post_run_cleanup()
 
   async def post_run_cleanup(self):
-    await self.stream.stop()
-    if self.outgoing_bridge is not None:
-      self.outgoing_bridge_runner.stop()
+    async with self._cleanup_lock:
+      if self._cleanup_done:
+        return
+      self._cleanup_done = True
+      if self.outgoing_bridge_runner is not None:
+        await self.outgoing_bridge_runner.stop()
+      await self.stream.stop()
 
 
 @dataclass
@@ -202,19 +225,84 @@ class StreamRequestBody:
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
 
+def _add_cors_headers(_, response: 'web.Response'):
+  response.headers["Access-Control-Allow-Origin"] = "*"
+  response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+  response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+  response.headers["Access-Control-Allow-Private-Network"] = "true"
+
+
+@web.middleware
+async def cors_middleware(request: 'web.Request', handler):
+  try:
+    response = await handler(request)
+  except web.HTTPException as ex:
+    _add_cors_headers(request, ex)
+    raise
+  _add_cors_headers(request, response)
+  return response
+
+
+async def stream_options(request: 'web.Request'):
+  response = web.Response()
+  _add_cors_headers(request, response)
+  return response
+
+
+def _validate_sdp_video_codecs(sdp: str):
+  import aiortc.sdp
+  desc = aiortc.sdp.SessionDescription.parse(sdp)
+  required_mime = f"video/{REQUIRED_VIDEO_CODEC}"
+  for m in desc.media:
+    if m.kind != "video":
+      continue
+    offered_mimes = {c.mimeType for c in m.rtp.codecs}
+    if required_mime not in offered_mimes:
+      raise web.HTTPBadRequest(
+        text=json.dumps({"error": "unsupported_codec", "message": f"Frontend must offer {REQUIRED_VIDEO_CODEC} via setCodecPreferences()"}),
+        content_type="application/json",
+      )
+
 
 async def get_stream(request: 'web.Request'):
-  stream_dict, debug_mode = request.app['streams'], request.app['debug']
-  raw_body = await request.json()
-  body = StreamRequestBody(**raw_body)
+  logger = logging.getLogger("webrtcd")
+  try:
+    stream_dict, debug_mode = request.app['streams'], request.app['debug']
 
-  session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
-  answer = await session.get_answer()
-  session.start()
+    raw_body = await request.json()
+    body = StreamRequestBody(**raw_body)
+    _validate_sdp_video_codecs(body.sdp)
 
-  stream_dict[session.identifier] = session
+    async with request.app['stream_lock']:
+      # Fully disconnect any other active stream before starting the replacement.
+      for sid, s in list(stream_dict.items()):
+        if s.run_task and not s.run_task.done():
+          try:
+            ch = s.stream.get_messaging_channel()
+            ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
+          except Exception:
+            pass
+        await s.stop()
+        del stream_dict[sid]
 
-  return web.json_response({"sdp": answer.sdp, "type": answer.type})
+      session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
+      try:
+        answer = await session.get_answer()
+      except Exception:
+        await session.stop()
+        raise
+      session.start()
+
+      stream_dict[session.identifier] = session
+
+    response = web.json_response({"sdp": answer.sdp, "type": answer.type})
+    _add_cors_headers(request, response)
+    return response
+  except web.HTTPException:
+    raise
+  except Exception:
+    logger.exception("Error in /stream handler")
+    raise
 
 
 async def get_schema(request: 'web.Request'):
@@ -223,6 +311,7 @@ async def get_schema(request: 'web.Request'):
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
   return web.json_response(schema_dict)
+
 
 async def post_notify(request: 'web.Request'):
   try:
@@ -239,9 +328,10 @@ async def post_notify(request: 'web.Request'):
 
   return web.Response(status=200, text="OK")
 
+
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
-    session.stop()
+    await session.stop()
   del app['streams']
 
 
@@ -251,11 +341,13 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
 
-  app = web.Application()
+  app = web.Application(middlewares=[cors_middleware])
 
   app['streams'] = dict()
+  app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
+  app.router.add_route("OPTIONS", "/stream", stream_options)
   app.router.add_post("/stream", get_stream)
   app.router.add_post("/notify", post_notify)
   app.router.add_get("/schema", get_schema)

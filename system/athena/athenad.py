@@ -28,7 +28,7 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
                        create_connection)
 
 import cereal.messaging as messaging
-from cereal import log
+from cereal import car, log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream
@@ -44,6 +44,7 @@ from openpilot.system.hardware.hw import Paths
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {22, }  # SSH
+WEBRTCD_PORT = 5001
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -536,6 +537,16 @@ def getSshAuthorizedKeys() -> str:
 def getGithubUsername() -> str:
   return cast(str, Params().get("GithubUsername") or "")
 
+
+@dispatcher.add_method
+def getNotCar() -> bool:
+  cp_bytes = Params().get("CarParamsPersistent")
+  if cp_bytes is not None:
+    with car.CarParams.from_bytes(cp_bytes) as CP:
+      return CP.notCar
+  return False
+
+
 @dispatcher.add_method
 def getSimInfo():
   return HARDWARE.get_sim_info()
@@ -555,6 +566,26 @@ def getNetworkMetered() -> bool:
 @dispatcher.add_method
 def getNetworks():
   return HARDWARE.get_networks()
+
+
+@dispatcher.add_method
+def startJoystickStream(sdp: str) -> dict:
+  from openpilot.system.webrtc.webrtcd import StreamRequestBody
+  body = StreamRequestBody(sdp, ["driver"], ["testJoystick", "soundRequest", "livestreamCameraSwitch"], ["carState"])
+  try:
+    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream",
+                       json=asdict(body), timeout=10)
+    if not resp.ok:
+      try:
+        error_body = resp.json()
+        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
+      except ValueError:
+        resp.raise_for_status()
+    return resp.json()
+  except requests.ConnectTimeout:
+    raise Exception("webrtc took too long to respond. is it on?") from None
+  except requests.ConnectionError:
+    raise Exception("webrtc is not running. turn on comma body ignition.") from None
 
 
 @dispatcher.add_method
