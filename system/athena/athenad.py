@@ -571,7 +571,7 @@ def getNetworks():
 @dispatcher.add_method
 def startJoystickStream(sdp: str) -> dict:
   from openpilot.system.webrtc.webrtcd import StreamRequestBody
-  body = StreamRequestBody(sdp, ["driver"], ["testJoystick", "soundRequest", "livestreamCameraSwitch"], ["carState"])
+  body = StreamRequestBody(sdp, ["driver"], ["testJoystick"], ["carState"])
   try:
     resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream",
                        json=asdict(body), timeout=10)

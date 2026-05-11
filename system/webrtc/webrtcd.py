@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
-INITIAL_CAMERA = "driver"
 REQUIRED_VIDEO_CODEC = "H264"
 
 class CerealOutgoingMessageProxy:
@@ -129,11 +128,14 @@ class StreamSession:
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
+    from teleoprtc.info import parse_info_from_offer
 
+    config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
-    self.video_track = LiveStreamVideoStreamTrack(INITIAL_CAMERA) if not debug_mode else VideoStreamTrack()
-    builder.add_video_stream(INITIAL_CAMERA, self.video_track)
+    assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
+    for cam in cameras:
+      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
@@ -172,15 +174,9 @@ class StreamSession:
     return await self.stream.start()
 
   def message_handler(self, message: bytes):
+    assert self.incoming_bridge is not None
     try:
-      payload = json.loads(message) if isinstance(message, (bytes, str)) else None
-      if not isinstance(payload, dict):
-        raise ValueError
-
-      if self.incoming_bridge is not None:
-        self.incoming_bridge.send(message)
-    except ValueError:
-      self.logger.warning("Ignoring malformed request: %s", payload)
+      self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
@@ -190,9 +186,7 @@ class StreamSession:
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-          # set camera to default
-          self.incoming_bridge.send(json.dumps({"type": "livestreamCameraSwitch", "data": {"camera": INITIAL_CAMERA}}).encode())
-        self.stream.set_message_handler(self.message_handler)
+          self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge_runner is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
