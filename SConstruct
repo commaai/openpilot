@@ -18,11 +18,10 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2)
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
-release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=not release,
+          default=os.path.exists(File('#.gitattributes').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform
@@ -188,7 +187,7 @@ else:
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-Export('env', 'arch', 'acados', 'release')
+Export('env', 'arch', 'acados')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
