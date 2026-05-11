@@ -45,10 +45,6 @@ class TestPandad:
     HARDWARE.recover_internal_panda()
     assert Panda.wait_for_dfu(None, 10)
 
-  def _assert_no_panda(self):
-    assert not Panda.wait_for_dfu(None, 3)
-    assert not Panda.wait_for_panda(None, 3)
-
   def _flash_bootstub(self, fn):
     self._go_to_dfu()
     pd = PandaDFU(None)
@@ -90,9 +86,9 @@ class TestPandad:
   def test_recover_from_bad_bootstub(self):
     self._go_to_dfu()
     with PandaDFU(None) as pd:
-      pd.program_bootstub(b"\x00"*1024)
-      pd.reset()
+      pd._handle.program(pd.get_mcu_type().config.bootstub_address, b"\x00"*100)
     HARDWARE.reset_internal_panda()
-    self._assert_no_panda()
+    assert not Panda.list()
+    assert not PandaDFU.list()
 
     self._run_test(60)
