@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import argparse
 import asyncio
 import contextlib
@@ -132,10 +133,13 @@ class StreamSession:
 
     config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
+    self.video_tracks = []
 
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
-      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
+      track = LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()
+      self.video_tracks.append(track)
+      builder.add_video_stream(cam, track)
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
@@ -174,9 +178,28 @@ class StreamSession:
     return await self.stream.start()
 
   def message_handler(self, message: bytes):
-    assert self.incoming_bridge is not None
     try:
-      self.incoming_bridge.send(message)
+      payload = json.loads(message) if isinstance(message, (bytes, str)) else None
+      if isinstance(payload, dict):
+        msg_type = payload.get("type")
+
+        if msg_type == "clockSync":
+          data = payload.get("data", {})
+          pong = json.dumps({"type": "clockSync", "data": {
+            "action": "pong", "browserSendTime": data.get("browserSendTime"), "deviceTime": time.time() * 1000, # noqa: TID251
+          }})
+          self.stream.get_messaging_channel().send(pong)
+          return
+
+        if msg_type == "enableTimingSei":
+          enabled = bool(payload.get("data", {}).get("enabled"))
+          for track in self.video_tracks:
+            if hasattr(track, 'timing_sei_enabled'):
+              track.timing_sei_enabled = enabled
+          return
+
+      if self.incoming_bridge is not None:
+        self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
@@ -186,7 +209,7 @@ class StreamSession:
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-          self.stream.set_message_handler(self.message_handler)
+        self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge_runner is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
