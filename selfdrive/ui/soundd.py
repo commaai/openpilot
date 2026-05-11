@@ -3,7 +3,6 @@ import numpy as np
 import time
 import wave
 
-
 from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -128,7 +127,9 @@ class Soundd:
       self.current_sound_frame = 0
 
   def get_audible_alert(self, sm):
-    if sm.updated['selfdriveState']:
+    if sm.updated['soundRequest'] and sm['soundRequest'].sound.raw != AudibleAlert.none:
+        self.update_alert(sm['soundRequest'].sound.raw)
+    elif sm.updated['selfdriveState']:
       new_alert = sm['selfdriveState'].alertSound.raw
       self.update_alert(new_alert)
     elif check_selfdrive_timeout_alert(sm):
@@ -153,7 +154,7 @@ class Soundd:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
+    sm = messaging.SubMaster(['selfdriveState', 'soundPressure', 'soundRequest'])
 
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)
