@@ -196,18 +196,7 @@ class Tici(HardwareBase):
             ssid = line.split("=", 1)[1]
             break
         if ssid:
-          ssid_bytes = bytearray()
-          i = 0
-          while i < len(ssid):
-            if ssid[i] == '\\' and i + 3 < len(ssid) and ssid[i+1] == 'x':
-              try:
-                ssid_bytes.append(int(ssid[i+2:i+4], 16))
-                i += 4
-                continue
-              except ValueError:
-                pass
-            ssid_bytes.append(ord(ssid[i]) & 0xff)
-            i += 1
+          ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
           ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
 
           for fpath in Path(NM_CONNECTIONS_DIR).glob("*.nmconnection"):
