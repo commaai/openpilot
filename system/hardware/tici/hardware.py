@@ -38,6 +38,10 @@ def get_device_type():
     model = f.read().strip('\x00')
   return model.split('comma ')[-1]
 
+def wpa_cli(cmd):
+  result = subprocess.run(["wpa_cli", "-i", "wlan0", cmd], capture_output=True, text=True, timeout=2)
+  return dict(l.split("=", 1) for l in result.stdout.splitlines() if "=" in l)
+
 class Tici(HardwareBase):
   @cached_property
   def amplifier(self):
@@ -166,14 +170,11 @@ class Tici(HardwareBase):
       elif network_type == NetworkType.ethernet:
         network_strength = NetworkStrength.great
       elif network_type == NetworkType.wifi:
-        result = subprocess.run(["wpa_cli", "-i", "wlan0", "signal_poll"],
-                                capture_output=True, text=True, timeout=2)
-        for line in result.stdout.splitlines():
-          if line.startswith("RSSI="):
-            dbm = int(line.split("=", 1)[1])
-            if -100 < dbm <= 0:
-              network_strength = self.parse_strength(120 + max(-90, min(-20, dbm)))
-            break
+        rssi = wpa_cli("signal_poll").get("RSSI")
+        if rssi is not None:
+          dbm = int(rssi)
+          if -100 < dbm <= 0:
+            network_strength = self.parse_strength(120 + max(-90, min(-20, dbm)))
       else:  # Cellular
         network_strength = self.parse_strength(self.get_modem_state().get('signal_quality', 0))
     except Exception:
@@ -187,13 +188,7 @@ class Tici(HardwareBase):
       return Params().get_bool("GsmMetered")
     try:
       if network_type == NetworkType.wifi:
-        result = subprocess.run(["wpa_cli", "-i", "wlan0", "status"],
-                                capture_output=True, text=True, timeout=2)
-        ssid = ""
-        for line in result.stdout.splitlines():
-          if line.startswith("ssid="):
-            ssid = line.split("=", 1)[1]
-            break
+        ssid = wpa_cli("status").get("ssid", "")
         if ssid:
           ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
           ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
