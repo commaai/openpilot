@@ -241,6 +241,7 @@ class RadarD:
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
       for i in range(2):
+        # Asymmetric filter on lead prob to keep lead when uncertain
         model_prob = leads_v3[i].prob
         if model_prob > self.lead_prob_filters[i].x:
           self.lead_prob_filters[i].x = model_prob
