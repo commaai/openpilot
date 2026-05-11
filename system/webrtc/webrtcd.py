@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
-INITIAL_CAMERA = "driver"
 REQUIRED_VIDEO_CODEC = "H264"
 
 class CerealOutgoingMessageProxy:
@@ -125,17 +124,18 @@ class DynamicPubMaster(messaging.PubMaster):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
+  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
 
     builder = WebRTCAnswerBuilder(sdp)
 
-    builder.add_video_stream(INITIAL_CAMERA, LiveStreamVideoStreamTrack(INITIAL_CAMERA) if not debug_mode else VideoStreamTrack())
+    builder.add_video_stream(init_camera, LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack())
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
+    self.init_camera = init_camera
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
@@ -152,8 +152,8 @@ class StreamSession:
     self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
-      "New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
-      self.identifier, cameras, incoming_services, outgoing_services,
+      "New stream session (%s), init camera %s, incoming services %s, outgoing services %s",
+      self.identifier, init_camera, incoming_services, outgoing_services,
     )
 
   def start(self):
@@ -184,7 +184,7 @@ class StreamSession:
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
           if "livestreamCameraSwitch" in self.incoming_bridge_services:
-            self.incoming_bridge.send(json.dumps({"type": "livestreamCameraSwitch", "data": {"camera": INITIAL_CAMERA}}).encode())
+            self.incoming_bridge.send(json.dumps({"type": "livestreamCameraSwitch", "data": {"camera": self.init_camera}}).encode())
           self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge_runner is not None:
           channel = self.stream.get_messaging_channel()
@@ -214,7 +214,7 @@ class StreamSession:
 @dataclass
 class StreamRequestBody:
   sdp: str
-  cameras: list[str]
+  initCamera: str
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
 
@@ -278,7 +278,7 @@ async def get_stream(request: 'web.Request'):
         await s.stop()
         del stream_dict[sid]
 
-      session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
+      session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
       try:
         answer = await session.get_answer()
       except Exception:
