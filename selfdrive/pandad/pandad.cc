@@ -203,29 +203,13 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
 
   health_t health = *health_opt;
 
-  static std::array<can_health_t, PANDA_CAN_CNT> can_health{};
-  static bool can_health_valid = false;
-  static double last_can_health_update = 0;
-
-  double now = millis_since_boot();
-  if (!can_health_valid || (now - last_can_health_update) > 500) {
-    std::array<can_health_t, PANDA_CAN_CNT> updated_can_health{};
-    bool update_valid = true;
-    for (uint32_t i = 0; i < PANDA_CAN_CNT; i++) {
-      auto can_health_opt = panda->get_can_state(i);
-      if (!can_health_opt) {
-        update_valid = false;
-        break;
-      }
-      updated_can_health[i] = *can_health_opt;
-    }
-    if (update_valid) {
-      can_health = updated_can_health;
-      can_health_valid = true;
-      last_can_health_update = now;
-    } else if (!can_health_valid) {
+  std::array<can_health_t, PANDA_CAN_CNT> can_health{};
+  for (uint32_t i = 0; i < PANDA_CAN_CNT; i++) {
+    auto can_health_opt = panda->get_can_state(i);
+    if (!can_health_opt) {
       return std::nullopt;
     }
+    can_health[i] = *can_health_opt;
   }
 
   if (spoofing_started) {
