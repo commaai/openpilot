@@ -3,7 +3,7 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ICONS_DIR="$DIR/icons"
-BOOTSTRAP_SVG="$DIR/../../third_party/bootstrap/bootstrap-icons.svg"
+BOOTSTRAP_SVG="$(python3 -c 'import bootstrap_icons; print(bootstrap_icons.SVG_PATH)')"
 
 ICON_IDS=(
   arrow-right

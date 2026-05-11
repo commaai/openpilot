@@ -77,13 +77,9 @@ class LSM6DS3_Accel(Sensor):
 
     event = log.SensorEventData.new_message()
     event.timestamp = ts
-    event.version = 1
-    event.sensor = 1  # SENSOR_ACCELEROMETER
-    event.type = 1    # SENSOR_TYPE_ACCELEROMETER
     event.source = self.source
     a = event.init('acceleration')
     a.v = [y, -x, z]
-    a.status = 1
     return event
 
   def shutdown(self) -> None:

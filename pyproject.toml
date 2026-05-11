@@ -27,7 +27,10 @@ dependencies = [
 
   # vendored native dependencies
   "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
+  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@release-bootstrap-icons#subdirectory=bootstrap-icons",
   "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
+  "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
+  "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
   "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
   "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
@@ -36,8 +39,10 @@ dependencies = [
   "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
   "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
   "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
+  "json11 @ git+https://github.com/commaai/dependencies.git@release-json11#subdirectory=json11",
   "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
   "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
+  "xvfb @ git+https://github.com/commaai/dependencies.git@release-xvfb#subdirectory=xvfb",
 
   # body / webrtcd
   "av",
@@ -58,9 +63,6 @@ dependencies = [
   "json-rpc",
   "websocket_client",
 
-  # acados deps
-  "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
-
   # joystickd
   "inputs",
 
@@ -73,7 +75,7 @@ dependencies = [
   "zstandard",
 
   # ui
-  "raylib > 5.5.0.3",
+  "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
   "qrcode",
   "jeepney",
   "pillow",
@@ -82,7 +84,7 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "mkdocs",
+  "zensical",
 ]
 
 testing = [
@@ -107,6 +109,7 @@ dev = [
 ]
 
 tools = [
+  "imgui  @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
@@ -148,7 +151,7 @@ quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
 ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite,ser"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
+skip = "../tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, *.pem, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
 
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 [tool.ruff]
@@ -184,7 +187,6 @@ exclude = [
   "tinygrad_repo",
   "teleoprtc",
   "teleoprtc_repo",
-  "third_party",
   "*.ipynb",
   "generated",
 ]
@@ -194,7 +196,6 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "selfdrive".msg = "Use openpilot.selfdrive"
 "common".msg = "Use openpilot.common"
 "system".msg = "Use openpilot.system"
-"third_party".msg = "Use openpilot.third_party"
 "tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
@@ -224,7 +225,6 @@ exclude = [
   "tinygrad_repo/",
   "teleoprtc/",
   "teleoprtc_repo/",
-  "third_party/",
 ]
 
 [tool.ty.rules]

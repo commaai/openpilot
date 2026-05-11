@@ -1,31 +1,68 @@
 #include "tools/replay/logreader.h"
 
 #include <algorithm>
+#include <chrono>
 #include <utility>
 #include "tools/replay/filereader.h"
+#include "tools/replay/py_downloader.h"
 #include "tools/replay/util.h"
 #include "common/util.h"
 
-bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache) {
+bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache,
+                     const ProgressCallback &progress) {
+  using Clock = std::chrono::steady_clock;
+  compressed_size_ = 0;
+  decompressed_size_ = 0;
+  download_seconds_ = 0.0;
+  decompress_seconds_ = 0.0;
+  parse_seconds_ = 0.0;
+
+  if (progress) {
+    installDownloadProgressHandler([progress](uint64_t cur, uint64_t total, bool success) {
+      if (success) {
+        progress(ProgressStage::Downloading, cur, total);
+      }
+    });
+  }
+  const auto download_start = Clock::now();
   std::string data = FileReader(local_cache).read(url, abort);
+  const auto download_end = Clock::now();
+  if (progress) {
+    installDownloadProgressHandler(nullptr);
+  }
+  compressed_size_ = data.size();
+  download_seconds_ = std::chrono::duration<double>(download_end - download_start).count();
   if (!data.empty()) {
+    const auto decompress_start = Clock::now();
     if (url.find(".bz2") != std::string::npos || util::starts_with(data, "BZh9")) {
       data = decompressBZ2(data, abort);
     } else if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
       data = decompressZST(data, abort);
     }
+    const auto decompress_end = Clock::now();
+    decompress_seconds_ = std::chrono::duration<double>(decompress_end - decompress_start).count();
   }
+  decompressed_size_ = data.size();
 
-  bool success = !data.empty() && load(data.data(), data.size(), abort);
+  bool success = !data.empty() && load(data.data(), data.size(), abort, progress);
   if (filters_.empty())
     raw_ = std::move(data);
   return success;
 }
 
-bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
+bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort,
+                     const ProgressCallback &progress) {
+  using Clock = std::chrono::steady_clock;
+  const auto parse_start = Clock::now();
   try {
     events.reserve(65000);
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)data, size / sizeof(capnp::word));
+    const uint64_t total_bytes = size;
+    const uint64_t report_step = std::max<uint64_t>(1, total_bytes / 200);
+    uint64_t last_reported = 0;
+    if (progress) {
+      progress(ProgressStage::Parsing, 0, total_bytes);
+    }
     while (words.size() > 0 && !(abort && *abort)) {
       capnp::FlatArrayMessageReader reader(words);
       auto event = reader.getRoot<cereal::Event>();
@@ -56,14 +93,29 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
           events.emplace_back(which, sof ? sof : mono_time, event_data, idx.getSegmentNum());
         }
       }
+
+      if (progress) {
+        const uint64_t current_bytes =
+          total_bytes - static_cast<uint64_t>(words.size() * sizeof(capnp::word));
+        if (current_bytes >= total_bytes || current_bytes - last_reported >= report_step) {
+          progress(ProgressStage::Parsing, current_bytes, total_bytes);
+          last_reported = current_bytes;
+        }
+      }
     }
   } catch (const kj::Exception &e) {
     rWarning("Failed to parse log : %s.\nRetrieved %zu events from corrupt log", e.getDescription().cStr(), events.size());
   }
 
+  if (progress) {
+    progress(ProgressStage::Parsing, size, size);
+  }
+
   if (requires_migration) {
     migrateOldEvents();
   }
+
+  parse_seconds_ = std::chrono::duration<double>(Clock::now() - parse_start).count();
 
   if (!events.empty() && !(abort && *abort)) {
     events.shrink_to_fit();
@@ -90,18 +142,19 @@ void LogReader::migrateOldEvents() {
       new_evt.setLogMonoTime(old_evt.getLogMonoTime());
       auto new_state = new_evt.initSelfdriveState();
 
-      new_state.setActive(old_state.getActiveDEPRECATED());
-      new_state.setAlertSize(old_state.getAlertSizeDEPRECATED());
-      new_state.setAlertSound(old_state.getAlertSound2DEPRECATED());
-      new_state.setAlertStatus(old_state.getAlertStatusDEPRECATED());
-      new_state.setAlertText1(old_state.getAlertText1DEPRECATED());
-      new_state.setAlertText2(old_state.getAlertText2DEPRECATED());
-      new_state.setAlertType(old_state.getAlertTypeDEPRECATED());
-      new_state.setEnabled(old_state.getEnabledDEPRECATED());
-      new_state.setEngageable(old_state.getEngageableDEPRECATED());
-      new_state.setExperimentalMode(old_state.getExperimentalModeDEPRECATED());
-      new_state.setPersonality(old_state.getPersonalityDEPRECATED());
-      new_state.setState(old_state.getStateDEPRECATED());
+      auto old_dep = old_state.getDeprecated();
+      new_state.setActive(old_dep.getActive());
+      new_state.setAlertSize(old_dep.getAlertSize());
+      new_state.setAlertSound(old_dep.getAlertSound2());
+      new_state.setAlertStatus(old_dep.getAlertStatus());
+      new_state.setAlertText1(old_dep.getAlertText1());
+      new_state.setAlertText2(old_dep.getAlertText2());
+      new_state.setAlertType(old_dep.getAlertType());
+      new_state.setEnabled(old_dep.getEnabled());
+      new_state.setEngageable(old_dep.getEngageable());
+      new_state.setExperimentalMode(old_dep.getExperimentalMode());
+      new_state.setPersonality(old_dep.getPersonality());
+      new_state.setState(old_dep.getState());
 
       // Serialize the new event to the buffer
       auto buf_size = msg.getSerializedSize();

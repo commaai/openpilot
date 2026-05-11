@@ -76,7 +76,7 @@ def _diff_capnp_values(v1, v2, path, tolerance):
     for i in range(n):
       yield from _diff_capnp_values(v1[i], v2[i], path + (str(i),), tolerance)
     if n2 > n:
-      yield 'add', dot, list(enumerate(v2[n:], n))
+      yield 'add', dot, [(i, v2[i]) for i in range(n, n2)]
     if n1 > n:
       yield 'remove', dot, list(reversed([(i, v1[i]) for i in range(n, n1)]))
 

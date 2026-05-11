@@ -16,17 +16,24 @@ from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.test.helpers import with_processes
 
 
+def publish_device_state(pm, started):
+  msg = messaging.new_message('deviceState')
+  msg.deviceState.started = started
+  pm.send('deviceState', msg)
+
 @retry(attempts=3)
 def setup_pandad():
   params = Params()
   params.clear_all()
-  params.put_bool("IsOnroad", False)
 
+  pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(['pandaStates'])
+  publish_device_state(pm, False)
   with Timeout(90, "pandad didn't start"):
     while sm.recv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
         any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):
-      sm.update(1000)
+      publish_device_state(pm, False)
+      sm.update(100)
 
   # pandad safety setting relies on these params
   cp = car.CarParams.new_message()
@@ -35,14 +42,15 @@ def setup_pandad():
   safety_config.safetyModel = car.CarParams.SafetyModel.allOutput
   cp.safetyConfigs = [safety_config]
 
-  params.put_bool("IsOnroad", True)
   params.put_bool("FirmwareQueryDone", True)
   params.put_bool("ControlsReady", True)
   params.put("CarParams", cp.to_bytes())
 
+  publish_device_state(pm, True)
   with Timeout(90, "pandad didn't set safety mode"):
     while any(ps.safetyModel != car.CarParams.SafetyModel.allOutput for ps in sm['pandaStates']):
-      sm.update(1000)
+      publish_device_state(pm, True)
+      sm.update(100)
 
 def send_random_can_messages(sendcan, count):
   sent_msgs = defaultdict(set)

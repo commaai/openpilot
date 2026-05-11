@@ -3,7 +3,7 @@
 
 In 30 minutes, we'll get an openpilot development environment set up on your computer and make some changes to openpilot's UI.
 
-And if you have a comma 3X, we'll deploy the change to your device for testing.
+And if you have a comma four, we'll deploy the change to your device for testing.
 
 ## 1. Set up your development environment
 
@@ -20,7 +20,7 @@ source .venv/bin/activate
 
 Then, compile openpilot:
 ```bash
-scons -j$(nproc)
+scons
 ```
 
 ## 2. Run replay

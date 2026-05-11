@@ -316,8 +316,9 @@ class GuiApplication:
         self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, daemon=True)
         self._ffmpeg_thread.start()
 
-      # OFFSCREEN disables FPS limiting for fast offline rendering (e.g. clips)
-      rl.set_target_fps(0 if OFFSCREEN else fps)
+      # four display runs slightly faster than 60 FPS, let it dictate rate so we don't drift and drop frames
+      vblank_control = HARDWARE.get_device_type() == 'mici'
+      rl.set_target_fps(0 if OFFSCREEN or vblank_control else fps)
 
       self._target_fps = fps
       self._set_styles()
@@ -452,6 +453,11 @@ class GuiApplication:
 
   def texture(self, asset_path: str, width: int | None = None, height: int | None = None,
               alpha_premultiply=False, keep_aspect_ratio=True, flip_x: bool = False) -> rl.Texture:
+    if width is not None:
+      width = round(width)
+    if height is not None:
+      height = round(height)
+
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}_{keep_aspect_ratio}_{flip_x}"
     if cache_key in self._textures:
       return self._textures[cache_key]
@@ -580,6 +586,8 @@ class GuiApplication:
         self._render_profiler.enable()
 
       while not (self._window_close_requested or rl.window_should_close()):
+        frame_start = time.monotonic()
+
         if PC:
           # Thread is not used on PC, need to manually add mouse events
           self._mouse._handle_mouse_event()
@@ -594,7 +602,7 @@ class GuiApplication:
           if PC:
             rl.poll_input_events()
           time.sleep(1 / self._target_fps)
-          yield False
+          yield False, 0.0, 0.0
           continue
 
         if self._render_texture:
@@ -616,7 +624,9 @@ class GuiApplication:
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
-        yield True
+        frame_time = rl.get_frame_time()
+        cpu_time = time.monotonic() - frame_start
+        yield True, frame_time, cpu_time
 
         if self._scale != 1.0:
           rl.rl_pop_matrix()
