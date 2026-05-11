@@ -160,9 +160,9 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
 
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
-  # OnnxRunner does Tensor(0), if no DEV set, probes devices and caches
+  # OnnxRunner does Tensor(0), and if no DEV set, it probes and caches devices
   # modeld imports from compile_modeld so devices end up being cached in the parent manager process
-  # we want to avoid this for usbgpu, we want to reinit on onroad transition:
+  # we want to avoid this for usbgpu, we want to reinit on onroad transition because:
     # - on ignition cycle gpu loses power, firwmare gets wiped
     # - if gpu what hotplugged offroad, we want a fresh usb handle
   # TODO clean fix? assert no open device on modeld startup?

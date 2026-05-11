@@ -7,7 +7,6 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
 TG_INPUT_DEVICES_PATH = MODELS_DIR / 'tg_input_devices.json'
 
-# usbgpu
 USBGPU_VID = 0xADD1
 USBGPU_PID = 0x0001
 
