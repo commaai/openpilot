@@ -28,7 +28,7 @@ from openpilot.system.hardware.power_monitoring import PowerMonitoring
 from openpilot.system.hardware.fan_controller import FanController
 from openpilot.system.version import terms_version, training_version
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-from selfdrive.modeld.helpers import USBGPU_VID, USBGPU_PID
+from selfdrive.modeld.helpers import USBGPU_VID, USBGPU_PID, usbgpu_present
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
