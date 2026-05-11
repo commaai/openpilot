@@ -1,7 +1,6 @@
 import glob
 import json
 import os
-from pathlib import Path
 from itertools import product
 from SCons.Script import Value
 from tinygrad import Device
@@ -11,7 +10,8 @@ from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import CompileConfig
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.common.basedir import BASEDIR
+
+Import('env', 'arch', 'release')
 
 
 def get_camera_configs():
@@ -20,8 +20,7 @@ def get_camera_configs():
     "tizi": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
     "mici": (_os_fisheye.width, _os_fisheye.height),
   }
-  RELEASE = not (Path(BASEDIR) / '.gitattributes').exists()
-  if RELEASE or PC or 'CI' in os.environ:
+  if release or PC or 'CI' in os.environ:
     return list(DEVICE_RESOLUTIONS.values())
   return [DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]]
 
@@ -29,8 +28,6 @@ CAMERA_CONFIGS = get_camera_configs()
 MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_')
                   for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
 DM_WARP_CONFIGS = [CompileConfig(cam_w, cam_h, True, 'dm_') for cam_w, cam_h in CAMERA_CONFIGS]
-
-Import('env', 'arch')
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
 
