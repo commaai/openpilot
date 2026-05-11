@@ -89,6 +89,7 @@ class Tici(HardwareBase):
       f.write(f"{value}\n")
 
   def get_network_type(self):
+    ms = self.get_modem_state()
     try:
       result = subprocess.run(["ip", "route", "get", "1.1.1.1"], capture_output=True, text=True, timeout=2)
       parts = result.stdout.split()
@@ -98,21 +99,19 @@ class Tici(HardwareBase):
           return NetworkType.wifi
         if dev in ("eth0", "usb0"):
           return NetworkType.ethernet
-        if dev in ("wwan0", "ppp0"):
-          ms = self.get_modem_state()
-          if ms.get('connected'):
-            nt = ms.get('network_type', '')
-            if nt == 'nr':
-              return NetworkType.cell5G
-            if nt == 'lte':
-              return NetworkType.cell4G
-            if nt in ('utran', 'umts'):
-              return NetworkType.cell3G
-            if nt == 'gsm':
-              return NetworkType.cell2G
     except Exception:
       pass
 
+    if ms.get('connected'):
+      nt = ms.get('network_type', '')
+      if nt == 'nr':
+        return NetworkType.cell5G
+      elif nt == 'lte':
+        return NetworkType.cell4G
+      elif nt in ('utran', 'umts'):
+        return NetworkType.cell3G
+      elif nt == 'gsm':
+        return NetworkType.cell2G
     return NetworkType.none
 
   def get_sim_info(self):
