@@ -39,8 +39,8 @@ def get_device_type():
   return model.split('comma ')[-1]
 
 def wpa_cli(cmd):
-  result = subprocess.run(["wpa_cli", "-i", "wlan0", cmd], capture_output=True, text=True, timeout=2)
-  return dict(l.split("=", 1) for l in result.stdout.splitlines() if "=" in l)
+  out = subprocess.check_output(["wpa_cli", "-i", "wlan0", cmd], text=True, timeout=2)
+  return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
 
 class Tici(HardwareBase):
   @cached_property
@@ -95,8 +95,7 @@ class Tici(HardwareBase):
   def get_network_type(self):
     ms = self.get_modem_state()
     try:
-      result = subprocess.run(["ip", "route", "get", "1.1.1.1"], capture_output=True, text=True, timeout=2)
-      parts = result.stdout.split()
+      parts = subprocess.check_output(["ip", "route", "get", "1.1.1.1"], text=True, timeout=2).split()
       if "dev" in parts:
         dev = parts[parts.index("dev") + 1]
         if dev == "wlan0":
