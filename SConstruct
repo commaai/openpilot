@@ -111,14 +111,12 @@ env = Environment(
   CPPPATH=[
     "#",
     "#msgq",
-    "#third_party",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
     "#common",
     "#msgq_repo",
-    "#third_party",
     "#selfdrive/pandad",
     "#rednose/helpers",
     [x.LIB_DIR for x in pkgs],

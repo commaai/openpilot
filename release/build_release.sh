@@ -74,13 +74,6 @@ find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
 rm -f selfdrive/modeld/models/*.onnx
 
-find third_party/ -name '*x86*' -exec rm -r {} +
-find third_party/ -name '*Darwin*' -exec rm -r {} +
-
-
-# Restore third_party
-git checkout third_party/
-
 # Mark as prebuilt release
 touch prebuilt
 
