@@ -3,12 +3,12 @@ import json
 import os
 from itertools import product
 from SCons.Script import Value
-from tinygrad import Device
 from openpilot.common.file_chunker import chunk_file, get_chunk_paths
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import CompileConfig
+from tinygrad import Device
 from openpilot.system.hardware import HARDWARE, PC
 
 Import('env', 'arch', 'release')
