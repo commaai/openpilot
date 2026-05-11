@@ -137,9 +137,7 @@ class StreamSession:
 
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
-      track = LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()
-      self.video_tracks.append(track)
-      builder.add_video_stream(cam, track)
+      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()))
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
