@@ -31,7 +31,6 @@ struct HwmonState {
 };
 
 HwmonState hwmon_state;
-std::atomic<bool> params_is_onroad{false};
 
 bool check_connected(Panda *panda) {
   if (!panda->connected()) {
@@ -115,18 +114,6 @@ void can_recv(Panda *panda, PubMaster *pm) {
   }
 }
 
-void can_recv_thread(Panda *panda) {
-  util::set_thread_name("pandad_can_recv");
-
-  PubMaster pm({"can"});
-  RateKeeper rk("pandad_can_recv", 100);
-
-  while (!do_exit && check_connected(panda)) {
-    can_recv(panda, &pm);
-    rk.keepTime();
-  }
-}
-
 void hwmon_thread() {
   util::set_thread_name("pandad_hwmon");
 
@@ -144,16 +131,6 @@ void hwmon_thread() {
     hwmon_state.initialized.store(true);
 
     util::sleep_for(500);
-  }
-}
-
-void onroad_params_thread() {
-  util::set_thread_name("pandad_params");
-
-  Params params;
-  while (!do_exit) {
-    params_is_onroad.store(params.getBool("IsOnroad"));
-    util::sleep_for(200);
   }
 }
 
@@ -438,21 +415,21 @@ void pandad_run(Panda *panda) {
   const bool spoofing_started = getenv("STARTED") != nullptr;
   const bool fake_send = getenv("FAKESEND") != nullptr;
 
-  // Start the CAN send thread
+  // Start helper threads for event-driven sendcan and slow non-Panda reads.
   std::thread send_thread(can_send_thread, panda, fake_send);
-  std::thread recv_thread(can_recv_thread, panda);
   std::thread hardware_thread(hwmon_thread);
-  std::thread params_thread(onroad_params_thread);
 
   RateKeeper rk("pandad", 100);
   SubMaster sm({"selfdriveState", "deviceState"});
-  PubMaster pm({"pandaStates", "peripheralState"});
+  PubMaster pm({"can", "pandaStates", "peripheralState"});
   PandaSafety panda_safety(panda);
   bool engaged = false;
   bool is_onroad = false;
 
-  // Main loop: process lower priority panda and peripheral state.
+  // Main loop: receive CAN first, then process lower priority panda and peripheral state.
   while (!do_exit && check_connected(panda)) {
+    can_recv(panda, &pm);
+
     // Process peripheral state at 20 Hz
     if (rk.frame() % 5 == 0) {
       process_peripheral_state(panda, &pm, no_fan_control, is_onroad);
@@ -464,8 +441,6 @@ void pandad_run(Panda *panda) {
       engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
       if (sm.updated("deviceState")) {
         is_onroad = sm["deviceState"].getDeviceState().getStarted();
-      } else if (sm.rcv_frame("deviceState") == 0) {
-        is_onroad = params_is_onroad.load();
       }
       process_panda_state(panda, &pm, engaged, is_onroad, spoofing_started);
       panda_safety.configureSafetyMode(is_onroad);
@@ -498,9 +473,7 @@ void pandad_run(Panda *panda) {
   }
 
   send_thread.join();
-  recv_thread.join();
   hardware_thread.join();
-  params_thread.join();
 }
 
 void pandad_main_thread(std::string serial) {
