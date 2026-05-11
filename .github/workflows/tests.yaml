@@ -107,7 +107,7 @@ jobs:
         submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
-      run: scons -j$(nproc)
+      run: scons
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
@@ -130,7 +130,7 @@ jobs:
         submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
-      run: scons -j$(nproc)
+      run: scons
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
@@ -197,7 +197,7 @@ jobs:
         submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
-      run: scons -j$(nproc)
+      run: scons
     - name: Driving test
       timeout-minutes: 2
       run: |
@@ -218,7 +218,7 @@ jobs:
           submodules: true
       - run: ./tools/op.sh setup
       - name: Build openpilot
-        run: scons -j$(nproc)
+        run: scons
       - name: Create UI Report
         run: |
           source selfdrive/test/setup_xvfb.sh

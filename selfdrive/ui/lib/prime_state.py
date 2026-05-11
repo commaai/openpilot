@@ -65,7 +65,7 @@ class PrimeState:
     with self._lock:
       if prime_type != self.prime_type:
         self.prime_type = prime_type
-        self._params.put("PrimeType", int(prime_type))
+        self._params.put_nonblocking("PrimeType", int(prime_type))
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _worker_thread(self) -> None:

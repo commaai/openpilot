@@ -13,7 +13,7 @@ from openpilot.tools.longitudinal_maneuvers.maneuversd import Action, Maneuver a
 # thresholds for starting maneuvers
 MAX_SPEED_DEV = 0.7 # deviation in m/s
 MAX_CURV = 0.002 # 500 m radius
-MAX_ROLL = 0.08 # 4.56°
+MAX_ROLL = 0.12 # 6.8°
 TIMER = 2.0 # sec stable conditions before starting maneuver
 
 @dataclass

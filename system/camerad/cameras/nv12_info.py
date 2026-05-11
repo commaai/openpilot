@@ -1,5 +1,5 @@
 # Python version of system/camerad/cameras/nv12_info.h
-# Calculations from third_party/linux/include/msm_media_info.h (VENUS_BUFFER_SIZE)
+# Calculations from media/msm_media_info.h (VENUS_BUFFER_SIZE)
 
 def align(val: int, alignment: int) -> int:
   return ((val + alignment - 1) // alignment) * alignment

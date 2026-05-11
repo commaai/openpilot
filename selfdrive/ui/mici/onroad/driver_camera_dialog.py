@@ -34,12 +34,14 @@ class BaseDriverCameraDialog(Widget):
     self._eye_fill_texture = None
     self._eye_orange_texture = None
     self._eye_size = 74
+    self._glasses_texture = None
+    self._glasses_size = 171
 
     self._load_eye_textures()
 
   def show_event(self):
     super().show_event()
-    ui_state.params.put_bool("IsDriverViewEnabled", True)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
     self._publish_alert_sound(None)
     device.set_override_interactive_timeout(300)
     ui_state.params.remove("DriverTooDistracted")
@@ -47,7 +49,7 @@ class BaseDriverCameraDialog(Widget):
 
   def hide_event(self):
     super().hide_event()
-    ui_state.params.put_bool("IsDriverViewEnabled", False)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
     device.set_override_interactive_timeout(None)
 
   def _handle_mouse_release(self, _):
@@ -104,12 +106,12 @@ class BaseDriverCameraDialog(Widget):
 
     AudibleAlert = car.CarControl.HUDControl.AudibleAlert
     ALERT_SOUNDS = {
-      log.DriverMonitoringState.AlertLevel.two: AudibleAlert.promptDistracted,
-      log.DriverMonitoringState.AlertLevel.three: AudibleAlert.warningImmediate,
+      'two': AudibleAlert.promptDistracted,
+      'three': AudibleAlert.warningImmediate,
     }
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None:
-      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(dm_state.alertLevel, AudibleAlert.none)
+      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(str(dm_state.alertLevel), AudibleAlert.none)
     self._pm.send('selfdriveState', msg)
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
@@ -133,7 +135,7 @@ class BaseDriverCameraDialog(Widget):
       return
 
     # Show alert level
-    alert_level_str = dm_state.alertLevel
+    alert_level_str = f"{'Pay Attention' if is_vision else 'Touch Wheel'} - level {dm_state.alertLevel}"
     alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if self.driver_state_renderer.is_rhd else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
 
     shadow_rect = rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height)
@@ -152,6 +154,8 @@ class BaseDriverCameraDialog(Widget):
       self._eye_fill_texture = gui_app.texture("icons_mici/onroad/eye_fill.png", self._eye_size, self._eye_size)
     if self._eye_orange_texture is None:
       self._eye_orange_texture = gui_app.texture("icons_mici/onroad/eye_orange.png", self._eye_size, self._eye_size)
+    if self._glasses_texture is None:
+      self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
   def _draw_face_detection(self, rect: rl.Rectangle):
     dm_state = ui_state.sm["driverMonitoringState"]
@@ -198,20 +202,30 @@ class BaseDriverCameraDialog(Widget):
     eye_offset_x = 10
     eye_offset_y = 10
     eye_spacing = self._eye_size + 15
-    eyes_prob = driver_data.eyesVisibleProb
 
     left_eye_x = rect.x + eye_offset_x
     left_eye_y = rect.y + eye_offset_y
+    left_eye_prob = driver_data.leftEyeProb
 
     right_eye_x = rect.x + eye_offset_x + eye_spacing
     right_eye_y = rect.y + eye_offset_y
+    right_eye_prob = driver_data.rightEyeProb
 
     # Draw eyes with opacity based on probability
-    fill_opacity = eyes_prob
-    orange_opacity = 1.0 - eyes_prob
-    for eye_x, eye_y in [(left_eye_x, left_eye_y), (right_eye_x, right_eye_y)]:
+    for eye_x, eye_y, eye_prob in [(left_eye_x, left_eye_y, left_eye_prob), (right_eye_x, right_eye_y, right_eye_prob)]:
+      fill_opacity = eye_prob
+      orange_opacity = 1.0 - eye_prob
+
       rl.draw_texture_v(self._eye_orange_texture, (eye_x, eye_y), rl.Color(255, 255, 255, int(255 * orange_opacity)))
       rl.draw_texture_v(self._eye_fill_texture, (eye_x, eye_y), rl.Color(255, 255, 255, int(255 * fill_opacity)))
+
+    # Draw sunglasses indicator based on sunglasses probability
+    # Position glasses centered between the two eyes at top left
+    glasses_x = rect.x + eye_offset_x - 4
+    glasses_y = rect.y
+    glasses_pos = rl.Vector2(glasses_x, glasses_y)
+    glasses_prob = driver_data.sunglassesProb
+    rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
 
 
 class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
