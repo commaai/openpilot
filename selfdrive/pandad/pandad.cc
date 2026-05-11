@@ -1,6 +1,7 @@
 #include "selfdrive/pandad/pandad.h"
 
 #include <array>
+#include <atomic>
 #include <bitset>
 #include <cassert>
 #include <cerrno>
@@ -22,6 +23,15 @@
 #define SATURATE_IL 1000
 
 ExitHandler do_exit;
+
+struct HwmonState {
+  std::atomic<uint32_t> voltage{0};
+  std::atomic<uint32_t> current{0};
+  std::atomic<bool> initialized{false};
+};
+
+HwmonState hwmon_state;
+std::atomic<bool> params_is_onroad{false};
 
 bool check_connected(Panda *panda) {
   if (!panda->connected()) {
@@ -105,6 +115,48 @@ void can_recv(Panda *panda, PubMaster *pm) {
   }
 }
 
+void can_recv_thread(Panda *panda) {
+  util::set_thread_name("pandad_can_recv");
+
+  PubMaster pm({"can"});
+  RateKeeper rk("pandad_can_recv", 100);
+
+  while (!do_exit && check_connected(panda)) {
+    can_recv(panda, &pm);
+    rk.keepTime();
+  }
+}
+
+void hwmon_thread() {
+  util::set_thread_name("pandad_hwmon");
+
+  while (!do_exit) {
+    double read_time = millis_since_boot();
+    uint32_t voltage = Hardware::get_voltage();
+    uint32_t current = Hardware::get_current();
+    read_time = millis_since_boot() - read_time;
+    if (read_time > 50) {
+      LOGW("reading hwmon took %lfms", read_time);
+    }
+
+    hwmon_state.voltage.store(voltage);
+    hwmon_state.current.store(current);
+    hwmon_state.initialized.store(true);
+
+    util::sleep_for(500);
+  }
+}
+
+void onroad_params_thread() {
+  util::set_thread_name("pandad_params");
+
+  Params params;
+  while (!do_exit) {
+    params_is_onroad.store(params.getBool("IsOnroad"));
+    util::sleep_for(200);
+  }
+}
+
 void fill_panda_state(cereal::PandaState::Builder &ps, cereal::PandaState::PandaType hw_type, const health_t &health) {
   ps.setVoltage(health.voltage_pkt);
   ps.setCurrent(health.current_pkt);
@@ -174,13 +226,29 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
 
   health_t health = *health_opt;
 
-  std::array<can_health_t, PANDA_CAN_CNT> can_health{};
-  for (uint32_t i = 0; i < PANDA_CAN_CNT; i++) {
-    auto can_health_opt = panda->get_can_state(i);
-    if (!can_health_opt) {
+  static std::array<can_health_t, PANDA_CAN_CNT> can_health{};
+  static bool can_health_valid = false;
+  static double last_can_health_update = 0;
+
+  double now = millis_since_boot();
+  if (!can_health_valid || (now - last_can_health_update) > 500) {
+    std::array<can_health_t, PANDA_CAN_CNT> updated_can_health{};
+    bool update_valid = true;
+    for (uint32_t i = 0; i < PANDA_CAN_CNT; i++) {
+      auto can_health_opt = panda->get_can_state(i);
+      if (!can_health_opt) {
+        update_valid = false;
+        break;
+      }
+      updated_can_health[i] = *can_health_opt;
+    }
+    if (update_valid) {
+      can_health = updated_can_health;
+      can_health_valid = true;
+      last_can_health_update = now;
+    } else if (!can_health_valid) {
       return std::nullopt;
     }
-    can_health[i] = *can_health_opt;
   }
 
   if (spoofing_started) {
@@ -235,6 +303,10 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
 }
 
 void send_peripheral_state(Panda *panda, PubMaster *pm) {
+  if (!hwmon_state.initialized.load()) {
+    return;
+  }
+
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
@@ -243,13 +315,8 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
 
-  double read_time = millis_since_boot();
-  ps.setVoltage(Hardware::get_voltage());
-  ps.setCurrent(Hardware::get_current());
-  read_time = millis_since_boot() - read_time;
-  if (read_time > 50) {
-    LOGW("reading hwmon took %lfms", read_time);
-  }
+  ps.setVoltage(hwmon_state.voltage.load());
+  ps.setCurrent(hwmon_state.current.load());
 
   // fall back to panda's voltage and current measurement
   if (ps.getVoltage() == 0 && ps.getCurrent() == 0) {
@@ -373,19 +440,19 @@ void pandad_run(Panda *panda) {
 
   // Start the CAN send thread
   std::thread send_thread(can_send_thread, panda, fake_send);
+  std::thread recv_thread(can_recv_thread, panda);
+  std::thread hardware_thread(hwmon_thread);
+  std::thread params_thread(onroad_params_thread);
 
-  Params params;
   RateKeeper rk("pandad", 100);
-  SubMaster sm({"selfdriveState"});
-  PubMaster pm({"can", "pandaStates", "peripheralState"});
+  SubMaster sm({"selfdriveState", "deviceState"});
+  PubMaster pm({"pandaStates", "peripheralState"});
   PandaSafety panda_safety(panda);
   bool engaged = false;
   bool is_onroad = false;
 
-  // Main loop: receive CAN data and process states
+  // Main loop: process lower priority panda and peripheral state.
   while (!do_exit && check_connected(panda)) {
-    can_recv(panda, &pm);
-
     // Process peripheral state at 20 Hz
     if (rk.frame() % 5 == 0) {
       process_peripheral_state(panda, &pm, no_fan_control, is_onroad);
@@ -395,7 +462,11 @@ void pandad_run(Panda *panda) {
     if (rk.frame() % 10 == 0) {
       sm.update(0);
       engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
-      is_onroad = params.getBool("IsOnroad");
+      if (sm.updated("deviceState")) {
+        is_onroad = sm["deviceState"].getDeviceState().getStarted();
+      } else if (sm.rcv_frame("deviceState") == 0) {
+        is_onroad = params_is_onroad.load();
+      }
       process_panda_state(panda, &pm, engaged, is_onroad, spoofing_started);
       panda_safety.configureSafetyMode(is_onroad);
     }
@@ -427,6 +498,9 @@ void pandad_run(Panda *panda) {
   }
 
   send_thread.join();
+  recv_thread.join();
+  hardware_thread.join();
+  params_thread.join();
 }
 
 void pandad_main_thread(std::string serial) {
