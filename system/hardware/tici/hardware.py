@@ -190,6 +190,7 @@ class Tici(HardwareBase):
       if network_type == NetworkType.wifi:
         ssid = wpa_cli("status").get("ssid", "")
         if ssid:
+          # wpa_cli escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
           ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
           ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
 
