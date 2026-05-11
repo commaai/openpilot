@@ -48,7 +48,7 @@ class DeviceCameraConfig:
 
 _ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
 _os_fisheye = CameraConfig(2688 // 2, 1520 // 2, 567.0 / 4 * 3)
-_asius_road = CameraConfig(1920, 1080, 2648.0)
+_asius_road = CameraConfig(1920, 1080, 2450.0)
 _asius_wide = CameraConfig(1920, 1080, 567.0)
 _ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)
 _os_config = DeviceCameraConfig(CameraConfig(2688 // 2, 1520 // 2, 1522.0 * 3 / 4), _os_fisheye, _os_fisheye)
