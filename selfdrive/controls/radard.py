@@ -242,11 +242,11 @@ class RadarD:
     if len(leads_v3) > 1:
       for i in range(2):
         # Asymmetric filter on lead prob to debounce lead when uncertain
-        model_prob = leads_v3[i].prob
-        if model_prob > self.lead_prob_filters[i].x:
-          self.lead_prob_filters[i].x = model_prob
+        lead_prob = leads_v3[i].prob
+        if lead_prob > self.lead_prob_filters[i].x:
+          self.lead_prob_filters[i].x = lead_prob
         else:
-          self.lead_prob_filters[i].update(model_prob)
+          self.lead_prob_filters[i].update(lead_prob)
 
       self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_prob_filters[0].x, low_speed_override=True)
       self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_prob_filters[1].x, low_speed_override=False)
