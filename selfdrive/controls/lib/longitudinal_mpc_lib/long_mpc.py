@@ -12,7 +12,7 @@ from openpilot.selfdrive.modeld.constants import index_function, ModelConstants
 LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)  # [0, 2, 4, 6, 8, 10]s
 
 if __name__ == '__main__':  # generating code
-  from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+  from acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
   from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
 

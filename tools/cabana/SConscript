@@ -2,6 +2,7 @@ import subprocess
 import os
 import shutil
 
+import bootstrap_icons
 import libusb
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
@@ -80,10 +81,21 @@ if arch != "Darwin":
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
+def write_assets_qrc(target, source, env):
+  with open(str(source[0])) as f:
+    qrc = f.read()
+  with open(str(target[0]), "w") as f:
+    f.write(qrc.replace("@BOOTSTRAP_ICONS_SVG@", str(bootstrap_icons.SVG_PATH)))
+
 # build assets
 assets = "assets/assets.cc"
-assets_src = "assets/assets.qrc"
+assets_src = cabana_env.Command(
+  "assets/assets.generated.qrc",
+  "assets/assets.qrc",
+  write_assets_qrc,
+)
 cabana_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
+cabana_env.Depends(assets_src, str(bootstrap_icons.SVG_PATH))
 cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "assets/assets.o"]))
 
 cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',

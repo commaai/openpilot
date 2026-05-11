@@ -39,7 +39,9 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   """
   global _cached_writer_fields
 
-  dat = log.Event.new_message(valid=valid, logMonoTime=int(time.monotonic() * 1e9))
+  dat = log.Event.new_message()
+  dat.valid = valid
+  dat.logMonoTime = int(time.monotonic() * 1e9)
   can_data = dat.init(msgtype, len(can_msgs))
 
   # Cache schema fields on first call

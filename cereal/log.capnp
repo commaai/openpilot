@@ -273,11 +273,7 @@ struct GPSNMEAData {
   nmea @2 :Text;
 }
 
-# android sensor_event_t
 struct SensorEventData {
-  version @0 :Int32;
-  sensor @1 :Int32;
-  type @2 :Int32;
   timestamp @3 :Int64;
 
   union {
@@ -296,7 +292,10 @@ struct SensorEventData {
 
   struct SensorVec {
     v @0 :List(Float32);
-    status @1 :Int8;
+
+    deprecated :group {
+      status @1 :Int8;
+    }
   }
 
   enum SensorSource {
@@ -314,7 +313,11 @@ struct SensorEventData {
     mmc5603nj @11;
   }
 
+  # formerly based on android sensor_event_t
   deprecated :group {
+    version @0 :Int32;
+    sensor @1 :Int32;
+    type @2 :Int32;
     uncalibrated @10 :Bool;
   }
 }
@@ -457,10 +460,10 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   }
 
   enum ThermalStatus {
-    green @0;
-    yellow @1;
-    red @2;
-    danger @3;
+    ok @0;
+    warmDEPRECATED @1;
+    overheated @2;
+    critical @3;
   }
 
   enum NetworkType {
@@ -2060,16 +2063,14 @@ struct DriverStateV2 {
     facePosition @2 :List(Float32);
     facePositionStd @3 :List(Float32);
     faceProb @4 :Float32;
-    eyesVisibleProb @14 :Float32;
-    eyesClosedProb @15 :Float32;
+    leftEyeProb @5 :Float32;
+    rightEyeProb @6 :Float32;
+    leftBlinkProb @7 :Float32;
+    rightBlinkProb @8 :Float32;
+    sunglassesProb @9 :Float32;
     phoneProb @13 :Float32;
 
     deprecated :group {
-      leftEyeProb @5 :Float32;
-      rightEyeProb @6 :Float32;
-      leftBlinkProb @7 :Float32;
-      rightBlinkProb @8 :Float32;
-      sunglassesProb @9 :Float32;
       notReadyProb @12 :List(Float32);
       occludedProb @10 :Float32;
       readyProb @11 :List(Float32);
@@ -2082,7 +2083,7 @@ struct DriverStateV2 {
   }
 }
 
-struct DriverMonitoringState @0xb83cda094a1da284 {
+struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
   events @18 :List(OnroadEvent);
   faceDetected @1 :Bool;
   isDistracted @2 :Bool;
@@ -2107,6 +2108,75 @@ struct DriverMonitoringState @0xb83cda094a1da284 {
     isPreview @15 :Bool;
     rhdChecked @5 :Bool;
     events @0 :List(Car.OnroadEventDEPRECATED);
+  }
+}
+
+struct DriverMonitoringState {
+  lockout @0 :Bool;
+  alertCountLockoutPercent @1 :Int8;
+  alertTimeLockoutPercent @2 :Int8;
+
+  alwaysOn @3 :Bool;
+  alwaysOnLockout @4 :Bool;
+
+  alertLevel @5 :AlertLevel;
+  activePolicy @6 :MonitoringPolicy;
+  isRHD @7 :Bool;
+  rhdCalibration @8 :CalibrationState;
+
+  visionPolicyState @9 :VisionPolicyState;
+  wheeltouchPolicyState @10 :WheeltouchPolicyState;
+
+  enum AlertLevel {
+    # ordinal must match the name to prevent bugs
+    # comparing against the raw ordinal value
+    none @0;
+    one @1;
+    two @2;
+    three @3;
+  }
+
+  enum MonitoringPolicy {
+    wheeltouch @0;
+    vision @1;
+  }
+
+  struct VisionPolicyState {
+    awarenessPercent @0 :Int8;
+    awarenessStep @1 :Float32;
+    isDistracted @2 :Bool;
+    distractedTypes @3 :DistractedTypes;
+
+    faceDetected @4 :Bool;
+    pose @5 :Pose;
+    wheeltouchFallbackPercent @6 :Int8;
+    uncertainOffroadAlertPercent @7 :Int8;
+
+    struct DistractedTypes {
+      pose @0: Bool;
+      eye @1: Bool;
+      phone @2: Bool;
+    }
+
+    struct Pose {
+      pitch @0 :Float32;
+      yaw @1 :Float32;
+      pitchCalib @2 :CalibrationState;
+      yawCalib @3 :CalibrationState;
+      calibrated @4 :Bool;
+      uncertainty @5 :Float32;
+    }
+  }
+
+  struct WheeltouchPolicyState {
+    awarenessPercent @0 :Int8;
+    awarenessStep @1 :Float32;
+    driverInteracting @2 :Bool;
+  }
+
+  struct CalibrationState {
+    calibratedPercent @0 :Int8;
+    offset @1 :Float32;
   }
 }
 
@@ -2235,7 +2305,8 @@ struct Sentinel {
 }
 
 struct UIDebug {
-  drawTimeMillis @0 :Float32;
+  cpuTimeMillis @0 :Float32;
+  frameTimeMillis @1 :Float32;
 }
 
 struct ManagerState {
@@ -2383,7 +2454,6 @@ struct Event {
     boot @60 :Boot;
 
     # ********** openpilot daemon msgs **********
-    gpsNMEA @3 :GPSNMEAData;
     can @5 :List(CanData);
     controlsState @7 :ControlsState;
     selfdriveState @130 :SelfdriveState;
@@ -2408,7 +2478,6 @@ struct Event {
     qcomGnss @31 :QcomGnss;
     gpsLocationExternal @48 :GpsLocationData;
     gpsLocation @21 :GpsLocationData;
-    gnssMeasurements @91 :GnssMeasurements;
     liveParameters @61 :LiveParametersData;
     liveTorqueParameters @94 :LiveTorqueParametersData;
     liveDelay @146 : LiveDelayData;
@@ -2416,7 +2485,7 @@ struct Event {
     thumbnail @66: Thumbnail;
     onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
-    driverMonitoringState @71: DriverMonitoringState;
+    driverMonitoringState @151 :DriverMonitoringState;
     livePose @129 :LivePose;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
@@ -2442,7 +2511,6 @@ struct Event {
     # systems stuff
     androidLog @20 :AndroidLogEntry;
     managerState @78 :ManagerState;
-    uploaderState @79 :UploaderState;
     procLog @33 :ProcLog;
     clocks @35 :Clocks;
     deviceState @6 :DeviceState;
@@ -2451,12 +2519,6 @@ struct Event {
 
     # touch frame
     touch @135 :List(Touch);
-
-    # navigation
-    navInstruction @82 :NavInstruction;
-    navRoute @83 :NavRoute;
-    navThumbnail @84: Thumbnail;
-    mapRenderState @105: MapRenderState;
 
     # UI services
     uiDebug @102 :UIDebug;
@@ -2559,5 +2621,13 @@ struct Event {
     gyroscope2DEPRECATED @100 :SensorEventData;
     accelerometer2DEPRECATED @101 :SensorEventData;
     temperatureSensor2DEPRECATED @123 :SensorEventData;
+    driverMonitoringStateDEPRECATED @71 :DriverMonitoringStateDEPRECATED;
+    gpsNMEADEPRECATED @3 :GPSNMEAData;
+    uploaderStateDEPRECATED @79 :UploaderState;
+    navInstructionDEPRECATED @82 :NavInstruction;
+    navRouteDEPRECATED @83 :NavRoute;
+    navThumbnailDEPRECATED @84 :Thumbnail;
+    gnssMeasurementsDEPRECATED @91 :GnssMeasurements;
+    mapRenderStateDEPRECATED @105: MapRenderState;
   }
 }

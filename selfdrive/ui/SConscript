@@ -1,4 +1,6 @@
 from pathlib import Path
+import importlib.util
+
 Import('env', 'arch', 'common')
 
 # build the fonts
@@ -18,15 +20,13 @@ env.Command(
 
 if GetOption('extras') and arch == "larch64":
   # build installers
+  raylib_dir = Path(importlib.util.find_spec("raylib").submodule_search_locations[0]) / "install"
   raylib_env = env.Clone()
-  raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+  raylib_env['CPPPATH'] += [str(raylib_dir / "include")]
+  raylib_env['LIBPATH'] += [str(raylib_dir / "lib")]
   raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
-  raylib_libs = common + ["raylib"]
-  if arch == "larch64":
-    raylib_libs += ["GLESv2", "EGL", "gbm", "drm"]
-  else:
-    raylib_libs += ["GL"]
+  raylib_libs = common + ["raylib_comma", "GLESv2", "EGL", "gbm", "drm"]
 
   release = "release3"
   installers = [

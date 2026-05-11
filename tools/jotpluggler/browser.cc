@@ -377,20 +377,16 @@ void draw_browser_node(AppSession *session,
   }
 
   if (node.children.empty()) {
-    const bool selected = browser_selection_contains(*state, node.full_path);
     const std::string value_text = browser_series_value_text(*session, *state, node.full_path);
     const ImGuiStyle &style = ImGui::GetStyle();
     const ImVec2 row_size(std::max(1.0f, ImGui::GetContentRegionAvail().x), ImGui::GetFrameHeight());
     ImGui::PushID(node.full_path.c_str());
     const bool clicked = ImGui::InvisibleButton("##browser_leaf", row_size);
     const bool hovered = ImGui::IsItemHovered();
-    const bool held = ImGui::IsItemActive();
     const ImRect rect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
-    if (selected || hovered) {
-      const ImU32 bg = ImGui::GetColorU32(selected
-        ? (held ? ImGuiCol_HeaderActive : ImGuiCol_Header)
-        : ImGuiCol_HeaderHovered);
+    if (hovered) {
+      const ImU32 bg = ImGui::GetColorU32(ImGuiCol_HeaderHovered);
       draw_list->AddRectFilled(rect.Min, rect.Max, bg, 0.0f);
     }
 
@@ -409,7 +405,7 @@ void draw_browser_node(AppSession *session,
                               nullptr);
     if (!value_text.empty()) {
       app_push_mono_font();
-      ImGui::PushStyleColor(ImGuiCol_Text, selected ? color_rgb(70, 77, 86) : color_rgb(116, 124, 133));
+      ImGui::PushStyleColor(ImGuiCol_Text, color_rgb(116, 124, 133));
       ImGui::RenderTextClipped(ImVec2(value_left, rect.Min.y + style.FramePadding.y),
                                ImVec2(value_right, rect.Max.y),
                                value_text.c_str(),
@@ -452,9 +448,6 @@ void draw_browser_node(AppSession *session,
   }
 
   ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
-  if (!filter.empty()) {
-    flags |= ImGuiTreeNodeFlags_DefaultOpen;
-  }
   const bool open = ImGui::TreeNodeEx(node.label.c_str(), flags);
   if (open) {
     for (const BrowserNode &child : node.children) {

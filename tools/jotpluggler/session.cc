@@ -355,7 +355,7 @@ bool apply_route_slice_change(AppSession *session, UiState *state, std::string_v
   int begin = 0;
   int end = 0;
   if (!parse_slice_spec(slice_text, &begin, &end)) {
-    state->error_text = "Slice must be N or N:M.";
+    state->error_text = "Slice must be N, N:, or N:M.";
     state->open_error_popup = true;
     return false;
   }
@@ -444,8 +444,7 @@ void draw_route_info_popup(AppSession *session, UiState *state, ImVec2 anchor) {
   }
   ImGui::SetNextWindowPos(anchor, ImGuiCond_Appearing);
   ImGui::SetNextWindowSizeConstraints(ImVec2(300.0f, 0.0f), ImVec2(420.0f, FLT_MAX));
-  if (!ImGui::BeginPopup("##route_info_popup",
-                         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
+  if (!app_begin_popup("##route_info_popup", ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
     return;
   }
 
@@ -643,7 +642,7 @@ void draw_route_id_chip(AppSession *session, UiState *state) {
   }
 
   ImGui::SetNextWindowPos(ImVec2(chip_max.x - 60.0f, chip_max.y + 4.0f), ImGuiCond_Appearing);
-  if (ImGui::BeginPopup("##route_selector_popup")) {
+  if (app_begin_popup("##route_selector_popup")) {
     for (LogSelector selector : {LogSelector::Auto, LogSelector::RLog, LogSelector::QLog}) {
       const bool selected = route_id.selector == selector;
       const std::string label = std::string(log_selector_name(selector)) + "  " + log_selector_description(selector);

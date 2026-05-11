@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include "system/camerad/sensors/sensor.h"
-#include "third_party/linux/include/msm_camsensor_sdk.h"
+#include <media/msm_camsensor_sdk.h>
 
 namespace {
 
