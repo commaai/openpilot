@@ -198,8 +198,7 @@ class StreamSession:
               track.timing_sei_enabled = enabled
           return
 
-      if self.incoming_bridge is not None:
-        self.incoming_bridge.send(message)
+      self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
@@ -209,7 +208,7 @@ class StreamSession:
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-        self.stream.set_message_handler(self.message_handler)
+          self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge_runner is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
