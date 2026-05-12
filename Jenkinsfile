@@ -118,6 +118,41 @@ rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
   }
 }
 
+def unlockBuilderCpuCommand() {
+  return """
+set -eux
+
+for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+  online="\${cpu}/online"
+  if [ -w "\${online}" ]; then
+    echo 1 | sudo tee "\${online}"
+  fi
+done
+
+isolated="\$(cat /sys/devices/system/cpu/isolated 2>/dev/null || true)"
+echo "isolated cpus: \${isolated:-none}"
+taskset -pc 0-7 \$\$
+
+for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+  [ -d "\${policy}" ] || continue
+  max="\$(cat "\${policy}/cpuinfo_max_freq")"
+  echo "\${max}" | sudo tee "\${policy}/scaling_max_freq"
+  echo "\${max}" | sudo tee "\${policy}/scaling_min_freq"
+  if grep -qw performance "\${policy}/scaling_available_governors"; then
+    echo performance | sudo tee "\${policy}/scaling_governor"
+  fi
+  echo "\${policy}: governor=\$(cat "\${policy}/scaling_governor") min=\$(cat "\${policy}/scaling_min_freq") max=\$(cat "\${policy}/scaling_max_freq") cur=\$(cat "\${policy}/scaling_cur_freq")"
+done
+
+for governor in /sys/class/devfreq/soc:qcom,cpubw/governor /sys/class/devfreq/soc:qcom,memlat-cpu*/governor; do
+  if [ -w "\${governor}" ]; then
+    echo performance | sudo tee "\${governor}"
+    echo "\${governor}: \$(cat "\${governor}")"
+  fi
+done
+"""
+}
+
 def prepareBuiltTree() {
   stage("build device tree") {
     lock(resource: "", label: "tizi-common", inversePrecedence: true, variable: 'builder_ip', quantity: 1, resourceSelectStrategy: 'random') {
@@ -128,7 +163,8 @@ def prepareBuiltTree() {
             device(builder_ip, "set builder time", "date -s '" + date + "'")
             device(builder_ip, "builder git checkout", "export UNSAFE=1\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
-          device(builder_ip, "build device tree", "cd system/manager && ./build.py")
+          device(builder_ip, "unlock builder cpu", unlockBuilderCpuCommand())
+          device(builder_ip, "build device tree", "cd system/manager && taskset -c 0-7 ./build.py")
           installRsync()
           rsyncBuiltTreeFromDevice(builder_ip)
           env.DEVICE_BUILD_READY = "1"
