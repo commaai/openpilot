@@ -132,7 +132,6 @@ class MiciHomeLayout(Widget):
     self._on_alerts_click: Callable | None = None
     self._alert_count_callback: Callable[[], int] | None = None
 
-    self._last_refresh = 0
     self._mouse_down_t: None | float = None
     self._did_long_press = False
     self._is_pressed_prev = False
@@ -162,7 +161,6 @@ class MiciHomeLayout(Widget):
 
   def show_event(self):
     super().show_event()
-    # self._update_params()
 
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
