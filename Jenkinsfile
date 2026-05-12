@@ -205,17 +205,8 @@ current_id='${env.DEVICE_BUILD_ID ?: ''}'
 ssh_cmd='${rsyncSshCommand(key_file)}'
 remote="comma@${ip}"
 remote_manifest=""
-current_manifest="\${cache}/.ci_manifest"
-old_entries="\$(mktemp)"
-new_entries="\$(mktemp)"
-old_paths="\$(mktemp)"
-new_paths="\$(mktemp)"
-sync_paths="\$(mktemp)"
-changed_paths="\$(mktemp)"
-deleted_paths="\$(mktemp)"
-trap 'rm -f "\${old_entries}" "\${new_entries}" "\${old_paths}" "\${new_paths}" "\${sync_paths}" "\${changed_paths}" "\${deleted_paths}"' EXIT
 
-remote_id="\$(\${ssh_cmd} "\${remote}" "mkdir -p '${env.TEST_DIR}' && rm -rf '${env.TEST_DIR}/.git' '${env.TEST_DIR}/.venv' '${env.TEST_DIR}/.ruff_cache' '${env.TEST_DIR}/.pytest_cache' '${env.TEST_DIR}/.mypy_cache' && rm -f '${env.TEST_DIR}/.sconsign.dblite' && cat '${env.TEST_DIR}/.ci_manifest.id' 2>/dev/null || true")"
+remote_id="\$(\${ssh_cmd} "\${remote}" "cat '${env.TEST_DIR}/.ci_manifest.id' 2>/dev/null || true")"
 if [ -n "\${remote_id}" ] && [ -f "\${cache}/.ci_manifests/\${remote_id}" ]; then
   remote_manifest="\${cache}/.ci_manifests/\${remote_id}"
 fi
@@ -224,6 +215,16 @@ if [ -n "\${current_id}" ] && [ "\${remote_id}" = "\${current_id}" ]; then
   echo "device already has manifest \${current_id}"
 elif [ -n "\${remote_id}" ] && [ -f "\${remote_manifest}" ]; then
   echo "delta sync from \${remote_id} to \${current_id}"
+  \${ssh_cmd} "\${remote}" "mkdir -p '${env.TEST_DIR}' && rm -rf '${env.TEST_DIR}/.git' '${env.TEST_DIR}/.venv' '${env.TEST_DIR}/.ruff_cache' '${env.TEST_DIR}/.pytest_cache' '${env.TEST_DIR}/.mypy_cache' && rm -f '${env.TEST_DIR}/.sconsign.dblite'"
+  current_manifest="\${cache}/.ci_manifest"
+  old_entries="\$(mktemp)"
+  new_entries="\$(mktemp)"
+  old_paths="\$(mktemp)"
+  new_paths="\$(mktemp)"
+  sync_paths="\$(mktemp)"
+  changed_paths="\$(mktemp)"
+  deleted_paths="\$(mktemp)"
+  trap 'rm -f "\${old_entries}" "\${new_entries}" "\${old_paths}" "\${new_paths}" "\${sync_paths}" "\${changed_paths}" "\${deleted_paths}"' EXIT
   awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${remote_manifest}" | sort > "\${old_entries}"
   awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${current_manifest}" | sort > "\${new_entries}"
   cut -f1 "\${old_entries}" > "\${old_paths}"
@@ -245,6 +246,7 @@ elif [ -n "\${remote_id}" ] && [ -f "\${remote_manifest}" ]; then
   fi
 else
   echo "full content sync, remote manifest was \${remote_id:-none}, expected \${previous_id:-none}"
+  \${ssh_cmd} "\${remote}" "mkdir -p '${env.TEST_DIR}' && rm -rf '${env.TEST_DIR}/.git' '${env.TEST_DIR}/.venv' '${env.TEST_DIR}/.ruff_cache' '${env.TEST_DIR}/.pytest_cache' '${env.TEST_DIR}/.mypy_cache' && rm -f '${env.TEST_DIR}/.sconsign.dblite'"
   rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
     --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
     --exclude='.venv' --exclude='.ruff_cache' --exclude='.pytest_cache' --exclude='.mypy_cache' \\
