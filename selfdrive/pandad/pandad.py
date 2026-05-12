@@ -129,9 +129,6 @@ def main() -> None:
       if health["heartbeat_lost"]:
         params.put_bool("PandaHeartbeatLost", True)
         cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
-      if health["som_reset_triggered"]:
-        params.put_bool("PandaSomResetTriggered", True)
-        cloudlog.event("panda.som_reset_triggered", health=health, serial=panda.get_usb_serial())
 
       if first_run:
         # reset panda to ensure we're in a good state
