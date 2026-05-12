@@ -143,10 +143,10 @@ cdef class Params:
 
   def put(self, key, dat, bool block = False):
     """
-    Warning: This function blocks until the param is written to disk!
+    Warning: block=True blocks until the param is written to disk!
     In very rare cases this can take over a second, and your code will hang.
-    Use the put_nonblocking, put_bool_nonblocking in time sensitive code, but
-    in general try to avoid writing params as much as possible.
+    Use block=False in time sensitive code, but in general try to avoid
+    writing params as much as possible.
     """
     cdef string k = self.check_key(key)
     cdef string dat_bytes = self._put_cast(key, dat)
