@@ -145,6 +145,7 @@ elif [ -f "\${old_manifest}" ]; then
   cat "\${changed_paths}" "\${deleted_paths}" > "\${sync_paths}"
   printf '.ci_manifest\\n.ci_manifest.id\\n' >> "\${sync_paths}"
   echo "changed=\$(wc -l < "\${changed_paths}") deleted=\$(wc -l < "\${deleted_paths}")"
+  sed -n '1,40p' "\${changed_paths}"
   rsync -a --delete-missing-args --no-owner --no-group --info=stats2,name0 \\
     --ignore-times \\
     --files-from="\${sync_paths}" \\
@@ -321,7 +322,7 @@ PY
 
 def prepareBuiltTree() {
   stage("build device tree") {
-    lock(resource: "", label: "tizi-common", inversePrecedence: true, variable: 'builder_ip', quantity: 1, resourceSelectStrategy: 'random') {
+    lock(resource: "", label: "tizi-common", inversePrecedence: true, variable: 'builder_ip', quantity: 1, resourceSelectStrategy: 'sequential') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
           retry(3) {
