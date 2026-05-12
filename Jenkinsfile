@@ -112,11 +112,15 @@ old_manifest="\${cache}/.ci_manifest"
 old_id="\$(cat "\${cache}/.ci_manifest.id" 2>/dev/null || true)"
 new_manifest="\$(mktemp)"
 new_id_file="\$(mktemp)"
+old_entries="\$(mktemp)"
+new_entries="\$(mktemp)"
+old_paths="\$(mktemp)"
+new_paths="\$(mktemp)"
 sync_paths="\${cache}/.ci_sync_paths"
 changed_paths="\${cache}/.ci_changed_paths"
 deleted_paths="\${cache}/.ci_deleted_paths"
 cache_updated=0
-trap 'rm -f "\${new_manifest}" "\${new_id_file}"' EXIT
+trap 'rm -f "\${new_manifest}" "\${new_id_file}" "\${old_entries}" "\${new_entries}" "\${old_paths}" "\${new_paths}"' EXIT
 
 ssh_cmd='${rsyncSshCommand(key_file)}'
 ssh_cmd="\${ssh_cmd} comma@${ip}"
@@ -132,28 +136,15 @@ if [ -f "\${old_manifest}" ] && [ "\${old_id}" = "\${new_id}" ]; then
   : > "\${sync_paths}"
   echo "builder cache manifest unchanged: \${new_id}"
 elif [ -f "\${old_manifest}" ]; then
-  python3 - "\${old_manifest}" "\${new_manifest}" "\${changed_paths}" "\${deleted_paths}" "\${sync_paths}" <<'PY'
-from pathlib import Path
-import sys
-
-def load_manifest(path):
-  out = {}
-  for line in Path(path).read_text().splitlines():
-    kind, value, name = line.split("\\t", 2)
-    out[name] = (kind, value)
-  return out
-
-old = load_manifest(sys.argv[1])
-new = load_manifest(sys.argv[2])
-changed = sorted(path for path, value in new.items() if old.get(path) != value)
-deleted = sorted(path for path in old if path not in new)
-
-Path(sys.argv[3]).write_text("".join(f"{path}\\n" for path in changed))
-Path(sys.argv[4]).write_text("".join(f"{path}\\n" for path in deleted))
-Path(sys.argv[5]).write_text("".join(f"{path}\\n" for path in [*changed, *deleted, ".ci_manifest", ".ci_manifest.id"]))
-
-print(f"changed={len(changed)} deleted={len(deleted)}")
-PY
+  awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${old_manifest}" | sort > "\${old_entries}"
+  awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${new_manifest}" | sort > "\${new_entries}"
+  cut -f1 "\${old_entries}" > "\${old_paths}"
+  cut -f1 "\${new_entries}" > "\${new_paths}"
+  comm -13 "\${old_entries}" "\${new_entries}" | cut -f1 > "\${changed_paths}"
+  comm -23 "\${old_paths}" "\${new_paths}" > "\${deleted_paths}"
+  cat "\${changed_paths}" "\${deleted_paths}" > "\${sync_paths}"
+  printf '.ci_manifest\\n.ci_manifest.id\\n' >> "\${sync_paths}"
+  echo "changed=\$(wc -l < "\${changed_paths}") deleted=\$(wc -l < "\${deleted_paths}")"
   rsync -a --delete-missing-args --no-owner --no-group --info=stats2,name0 \\
     --ignore-times \\
     --files-from="\${sync_paths}" \\
