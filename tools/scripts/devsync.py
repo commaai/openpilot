@@ -71,7 +71,6 @@ def main():
   p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
   p.add_argument("--src", type=Path, default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
-  p.add_argument("--no-initial", action="store_true", help="skip the full sync on startup")
   args = p.parse_args()
 
   print(f"[devsync] watching {args.src}")
@@ -103,9 +102,8 @@ def main():
       msg = f"{len(files)} files: {', '.join(files)}" if files else "no changes"
       print(f"[devsync] {dt:.2f}s{ev} · {msg}")
 
-  if not args.no_initial:
-    print("[devsync] initial sync...")
-    run_sync(0, initial=True)
+  print("[devsync] initial sync...")
+  run_sync(0, initial=True)
 
   handler = Handler()
   obs = Observer()
