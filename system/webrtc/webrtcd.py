@@ -190,7 +190,6 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
           self.outgoing_bridge_runner.start()
-
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
@@ -220,48 +219,41 @@ class StreamRequestBody:
 
 
 async def get_stream(request: 'web.Request'):
-  logger = logging.getLogger("webrtcd")
-  try:
-    stream_dict, debug_mode = request.app['streams'], request.app['debug']
+  stream_dict, debug_mode = request.app['streams'], request.app['debug']
 
-    raw_body = await request.json()
-    body = StreamRequestBody(**raw_body)
+  raw_body = await request.json()
+  body = StreamRequestBody(**raw_body)
 
-    async with request.app['stream_lock']:
-      # Fully disconnect any other active stream before starting the replacement.
-      for sid, s in list(stream_dict.items()):
-        if s.run_task and not s.run_task.done():
-          try:
-            ch = s.stream.get_messaging_channel()
-            ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
-          except Exception:
-            pass
-        await s.stop()
-        del stream_dict[sid]
+  async with request.app['stream_lock']:
+    # Fully disconnect any other active stream before starting the replacement.
+    for sid, s in list(stream_dict.items()):
+      if s.run_task and not s.run_task.done():
+        try:
+          ch = s.stream.get_messaging_channel()
+          ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
+        except Exception:
+          pass
+      await s.stop()
+      del stream_dict[sid]
 
-      session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
-      try:
-        answer = await session.get_answer()
-      except ValueError as e:
-        await session.stop()
-        raise web.HTTPBadRequest(
-          text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
-          content_type="application/json",
-        ) from e
-      except Exception:
-        await session.stop()
-        raise
-      session.start()
+    session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
+    try:
+      answer = await session.get_answer()
+    except ValueError as e:
+      await session.stop()
+      raise web.HTTPBadRequest(
+        text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
+        content_type="application/json",
+      ) from e
+    except Exception:
+      await session.stop()
+      raise
+    session.start()
 
-      stream_dict[session.identifier] = session
+    stream_dict[session.identifier] = session
 
-    response = web.json_response({"sdp": answer.sdp, "type": answer.type})
-    return response
-  except web.HTTPException:
-    raise
-  except Exception:
-    logger.exception("Error in /stream handler")
-    raise
+  response = web.json_response({"sdp": answer.sdp, "type": answer.type})
+  return response
 
 
 async def get_schema(request: 'web.Request'):
