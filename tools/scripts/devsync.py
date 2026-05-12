@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import shlex
 import subprocess
 import sys
@@ -29,14 +28,14 @@ def build_rsync_cmd(args) -> list[str]:
     "--files-from=-", "--from0",
     "-e", " ".join(shlex.quote(p) for p in ssh),
     "--out-format=%n",
-    BASEDIR + "/", f"comma@{args.ip}:{args.remote}/",
+    args.src + "/", f"comma@{args.ip}:{args.remote}/",
   ]
 
 
-FILE_LIST = subprocess.check_output(
-  ["git", "-C", BASEDIR, "ls-files", "--recurse-submodules", "-z"]
-)
-TRACKED = {os.path.join(BASEDIR, p) for p in FILE_LIST.decode().split("\0") if p}
+def git_tracked_files(src: str) -> bytes:
+  return subprocess.check_output(
+    ["git", "-C", src, "ls-files", "--recurse-submodules", "-z"]
+  )
 
 
 class Handler(FileSystemEventHandler):
@@ -45,7 +44,7 @@ class Handler(FileSystemEventHandler):
     self.sync_fn = sync_fn
 
   def on_any_event(self, event):
-    if not event.is_directory and event.src_path in TRACKED:
+    if not event.is_directory:
       self.dirty.set()
 
   def run(self):
@@ -60,16 +59,18 @@ def main():
   p = argparse.ArgumentParser()
   p.add_argument("ip", help="device IP / hostname")
   p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
+  p.add_argument("--src", default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
   args = p.parse_args()
 
-  print(f"[devsync] watching {BASEDIR}")
+  print(f"[devsync] watching {args.src}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
 
   def run_sync():
+    file_list = git_tracked_files(args.src)
     cmd = build_rsync_cmd(args)
     t0 = time.monotonic()
-    r = subprocess.run(cmd, input=FILE_LIST, capture_output=True)
+    r = subprocess.run(cmd, input=file_list, capture_output=True)
     dt = time.monotonic() - t0
     if r.returncode:
       print(f"[devsync] ERR rc={r.returncode} in {dt:.2f}s")
@@ -84,7 +85,7 @@ def main():
 
   handler = Handler(run_sync)
   obs = Observer()
-  obs.schedule(handler, BASEDIR, recursive=True)
+  obs.schedule(handler, args.src, recursive=True)
   obs.start()
   handler.run()
 
