@@ -14,11 +14,9 @@ from openpilot.system.hardware.tici import iwlist
 from openpilot.system.hardware.tici.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
-from openpilot.system.ui.lib.wpa_ctrl import parse_status, dbm_to_percent
 
-NM_CONNECTIONS_DIRS = ("/data/etc/NetworkManager/system-connections",)
+NM_CONNECTIONS_DIR = "/run/NetworkManager/system-connections"
 MODEM_STATE_PATH = "/dev/shm/modem"
-TIMEOUT = 0.1
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -39,6 +37,15 @@ def get_device_type():
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
   return model.split('comma ')[-1]
+
+def wpa_cli(cmd):
+  out = subprocess.check_output(["wpa_cli", "-i", "wlan0", cmd], text=True, timeout=2)
+  return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
+
+def get_default_route_iface():
+  with open("/proc/net/route") as f:
+    routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
+  return min(routes)[1] if routes else None
 
 class Tici(HardwareBase):
   @cached_property
@@ -91,34 +98,26 @@ class Tici(HardwareBase):
       f.write(f"{value}\n")
 
   def get_network_type(self):
-    # `ip route show default` is authoritative across wlan/eth/cellular without NM dbus.
+    ms = self.get_modem_state()
     try:
-      result = subprocess.run(["ip", "route", "show", "default"], capture_output=True, text=True, timeout=2)
-      for line in result.stdout.strip().split("\n"):
-        if "dev" not in line:
-          continue
-        parts = line.split()
-        dev_idx = parts.index("dev")
-        dev = parts[dev_idx + 1]
-        if dev == "wlan0":
-          return NetworkType.wifi
-        elif dev in ("eth0", "usb0"):
-          return NetworkType.ethernet
-        elif dev in ("wwan0", "rmnet_data0", "ppp0"):
-          ms = self.get_modem_state()
-          if ms.get('connected'):
-            nt = ms.get('network_type', '')
-            if nt == 'nr':
-              return NetworkType.cell5G
-            elif nt == 'lte':
-              return NetworkType.cell4G
-            elif nt in ('utran', 'umts'):
-              return NetworkType.cell3G
-            elif nt == 'gsm':
-              return NetworkType.cell2G
+      iface = get_default_route_iface()
+      if iface == "wlan0":
+        return NetworkType.wifi
+      if iface in ("eth0", "usb0"):
+        return NetworkType.ethernet
     except Exception:
       pass
 
+    if ms.get('connected'):
+      nt = ms.get('network_type', '')
+      if nt == 'nr':
+        return NetworkType.cell5G
+      elif nt == 'lte':
+        return NetworkType.cell4G
+      elif nt in ('utran', 'umts'):
+        return NetworkType.cell3G
+      elif nt == 'gsm':
+        return NetworkType.cell2G
     return NetworkType.none
 
   def get_sim_info(self):
@@ -170,12 +169,14 @@ class Tici(HardwareBase):
     try:
       if network_type == NetworkType.none:
         pass
+      elif network_type == NetworkType.ethernet:
+        network_strength = NetworkStrength.great
       elif network_type == NetworkType.wifi:
-        result = subprocess.run(["wpa_cli", "-i", "wlan0", "signal_poll"],
-                                capture_output=True, text=True, timeout=2)
-        status = parse_status(result.stdout)
-        if "RSSI" in status:
-          network_strength = self.parse_strength(dbm_to_percent(int(status["RSSI"])))
+        rssi = wpa_cli("signal_poll").get("RSSI")
+        if rssi is not None:
+          dbm = int(rssi)
+          if -100 < dbm <= 0:
+            network_strength = self.parse_strength(120 + max(-90, min(-20, dbm)))
       else:  # Cellular
         network_strength = self.parse_strength(self.get_modem_state().get('signal_quality', 0))
     except Exception:
@@ -189,54 +190,31 @@ class Tici(HardwareBase):
       return Params().get_bool("GsmMetered")
     try:
       if network_type == NetworkType.wifi:
-        # Resolve metered via the .nmconnection that matches the live SSID. NetworkStore
-        # in wifi_manager owns the SSID-to-filename encoding (percent-encoded, lossless),
-        # so match on the ssid field inside each file rather than duplicating the encoding.
-        result = subprocess.run(["wpa_cli", "-i", "wlan0", "status"],
-                                capture_output=True, text=True, timeout=2)
-        ssid = parse_status(result.stdout).get("ssid")
+        ssid = wpa_cli("status").get("ssid", "")
         if ssid:
-          # Collect all matching profiles across the configured dirs so duplicates
-          # (e.g. one in /run from netplan, one persistent in /etc) all enter the
-          # ranking. Pick the most recently modified — that mirrors NM's "the active
-          # profile is the one most recently touched" heuristic without going through
-          # NM dbus.
-          candidates = []
-          for d in NM_CONNECTIONS_DIRS:
-            try:
-              filenames = os.listdir(d)
-            except OSError:
+          # wpa_cli escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
+          ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
+          ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
+
+          for fpath in Path(NM_CONNECTIONS_DIR).glob("*.nmconnection"):
+            raw = sudo_read(str(fpath))
+            if not raw:
               continue
-            for fname in filenames:
-              if not fname.endswith(".nmconnection"):
+            cp = configparser.ConfigParser(interpolation=None)
+            try:
+              cp.read_string(raw)
+              keyfile_ssid = cp.get("wifi", "ssid", fallback="")
+              if keyfile_ssid != ssid and keyfile_ssid != ssid_keyfile_list:
                 continue
-              fpath = os.path.join(d, fname)
-              raw = sudo_read(fpath)
-              if not raw:
-                continue
-              cp = configparser.ConfigParser(interpolation=None)
-              try:
-                cp.read_string(raw)
-                if cp.get("wifi", "ssid", fallback="") != ssid:
-                  continue
-                metered = cp.getint("connection", "metered", fallback=0)
-              except (configparser.Error, ValueError):
-                continue
-              try:
-                mtime = os.path.getmtime(fpath)
-              except OSError:
-                mtime = 0.0
-              candidates.append((mtime, metered))
-          if candidates:
-            _, metered = max(candidates, key=lambda c: c[0])
-            # NM enum: 1=YES, 2=NO, 3=GUESS_YES, 4=GUESS_NO. Treat the GUESS_*
-            # values like the explicit ones — a network NM heuristically classified
-            # as metered (e.g. cell tethering hotspot) shouldn't fall through to
-            # the parent's default of unmetered.
-            if metered in (1, 3):  # YES, GUESS_YES
+              metered = cp.getint("connection", "metered", fallback=0)
+            except (configparser.Error, ValueError):
+              continue
+            # NM metered: 1=YES, 2=NO, 3=GUESS_YES, 4=GUESS_NO
+            if metered in (1, 3):
               return True
-            if metered in (2, 4):  # NO, GUESS_NO
+            if metered in (2, 4):
               return False
+            break
     except Exception:
       pass
 
