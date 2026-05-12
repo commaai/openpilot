@@ -118,20 +118,15 @@ fi
 
 new_manifest="\$(mktemp)"
 new_id_file="\$(mktemp)"
-old_entries="\$(mktemp)"
-new_entries="\$(mktemp)"
-old_paths="\$(mktemp)"
-new_paths="\$(mktemp)"
 sync_paths="\${cache}/.ci_sync_paths"
 changed_paths="\${cache}/.ci_changed_paths"
 deleted_paths="\${cache}/.ci_deleted_paths"
 cache_updated=0
-trap 'rm -f "\${new_manifest}" "\${new_id_file}" "\${old_entries}" "\${new_entries}" "\${old_paths}" "\${new_paths}"' EXIT
+trap 'rm -f "\${new_manifest}" "\${new_id_file}"' EXIT
 
 ssh_cmd='${rsyncSshCommand(key_file)}'
 ssh_cmd="\${ssh_cmd} comma@${ip}"
 
-\${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest'" > "\${new_manifest}"
 \${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest.id'" > "\${new_id_file}"
 new_id="\$(cat "\${new_id_file}")"
 printf '%s\\n' "\${old_id}" > "\${cache}/.ci_previous_manifest.id"
@@ -142,6 +137,12 @@ if [ -f "\${old_manifest}" ] && [ "\${old_id}" = "\${new_id}" ]; then
   : > "\${sync_paths}"
   echo "builder cache manifest unchanged: \${new_id}"
 elif [ -f "\${old_manifest}" ]; then
+  \${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest'" > "\${new_manifest}"
+  old_entries="\$(mktemp)"
+  new_entries="\$(mktemp)"
+  old_paths="\$(mktemp)"
+  new_paths="\$(mktemp)"
+  trap 'rm -f "\${new_manifest}" "\${new_id_file}" "\${old_entries}" "\${new_entries}" "\${old_paths}" "\${new_paths}"' EXIT
   awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${old_manifest}" | sort > "\${old_entries}"
   awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${new_manifest}" | sort > "\${new_entries}"
   cut -f1 "\${old_entries}" > "\${old_paths}"
@@ -159,6 +160,7 @@ elif [ -f "\${old_manifest}" ]; then
     'comma@${ip}:${env.TEST_DIR}/' "\${cache}/"
   cache_updated=1
 else
+  \${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest'" > "\${new_manifest}"
   echo "builder cache has no manifest, doing full content sync"
   rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
     --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
@@ -176,8 +178,10 @@ fi
 if [ "\${cache_updated}" = "1" ]; then
   cp "\${new_manifest}" "\${cache}/.ci_manifest"
   cp "\${new_id_file}" "\${cache}/.ci_manifest.id"
+  cp "\${new_manifest}" "\${manifest_dir}/\${new_id}"
+else
+  cp "\${old_manifest}" "\${manifest_dir}/\${new_id}"
 fi
-cp "\${new_manifest}" "\${manifest_dir}/\${new_id}"
 printf '%s\\n' "\${new_id}" > "\${cache}/.ci_current_manifest.id"
 echo "builder cache previous manifest: \${old_id:-none}"
 echo "builder cache current manifest: \${new_id}"
