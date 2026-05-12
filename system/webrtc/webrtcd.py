@@ -219,11 +219,6 @@ class StreamRequestBody:
   bridge_services_out: list[str] = field(default_factory=list)
 
 
-async def stream_options(request: 'web.Request'):
-  response = web.Response()
-  return response
-
-
 async def get_stream(request: 'web.Request'):
   logger = logging.getLogger("webrtcd")
   try:
