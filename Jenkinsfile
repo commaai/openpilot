@@ -110,6 +110,12 @@ rm -f "\${cache}/.sconsign.dblite"
 
 old_manifest="\${cache}/.ci_manifest"
 old_id="\$(cat "\${cache}/.ci_manifest.id" 2>/dev/null || true)"
+manifest_dir="\${cache}/.ci_manifests"
+mkdir -p "\${manifest_dir}"
+if [ -n "\${old_id}" ] && [ -f "\${old_manifest}" ]; then
+  cp "\${old_manifest}" "\${manifest_dir}/\${old_id}"
+fi
+
 new_manifest="\$(mktemp)"
 new_id_file="\$(mktemp)"
 old_entries="\$(mktemp)"
@@ -171,6 +177,7 @@ if [ "\${cache_updated}" = "1" ]; then
   cp "\${new_manifest}" "\${cache}/.ci_manifest"
   cp "\${new_id_file}" "\${cache}/.ci_manifest.id"
 fi
+cp "\${new_manifest}" "\${manifest_dir}/\${new_id}"
 printf '%s\\n' "\${new_id}" > "\${cache}/.ci_current_manifest.id"
 echo "builder cache previous manifest: \${old_id:-none}"
 echo "builder cache current manifest: \${new_id}"
@@ -197,17 +204,40 @@ previous_id='${env.DEVICE_BUILD_PREVIOUS_ID ?: ''}'
 current_id='${env.DEVICE_BUILD_ID ?: ''}'
 ssh_cmd='${rsyncSshCommand(key_file)}'
 remote="comma@${ip}"
+remote_manifest=""
+current_manifest="\${cache}/.ci_manifest"
+old_entries="\$(mktemp)"
+new_entries="\$(mktemp)"
+old_paths="\$(mktemp)"
+new_paths="\$(mktemp)"
+sync_paths="\$(mktemp)"
+changed_paths="\$(mktemp)"
+deleted_paths="\$(mktemp)"
+trap 'rm -f "\${old_entries}" "\${new_entries}" "\${old_paths}" "\${new_paths}" "\${sync_paths}" "\${changed_paths}" "\${deleted_paths}"' EXIT
 
 remote_id="\$(\${ssh_cmd} "\${remote}" "mkdir -p '${env.TEST_DIR}' && rm -rf '${env.TEST_DIR}/.git' '${env.TEST_DIR}/.venv' '${env.TEST_DIR}/.ruff_cache' '${env.TEST_DIR}/.pytest_cache' '${env.TEST_DIR}/.mypy_cache' && rm -f '${env.TEST_DIR}/.sconsign.dblite' && cat '${env.TEST_DIR}/.ci_manifest.id' 2>/dev/null || true")"
+if [ -n "\${remote_id}" ] && [ -f "\${cache}/.ci_manifests/\${remote_id}" ]; then
+  remote_manifest="\${cache}/.ci_manifests/\${remote_id}"
+fi
 
 if [ -n "\${current_id}" ] && [ "\${remote_id}" = "\${current_id}" ]; then
   echo "device already has manifest \${current_id}"
-elif [ -n "\${previous_id}" ] && [ "\${remote_id}" = "\${previous_id}" ]; then
-  echo "delta sync from \${previous_id} to \${current_id}"
-  if [ -s "\${cache}/.ci_sync_paths" ]; then
+elif [ -n "\${remote_id}" ] && [ -f "\${remote_manifest}" ]; then
+  echo "delta sync from \${remote_id} to \${current_id}"
+  awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${remote_manifest}" | sort > "\${old_entries}"
+  awk -F '\\t' 'BEGIN { OFS = "\\t" } { print \$3, \$1, \$2 }' "\${current_manifest}" | sort > "\${new_entries}"
+  cut -f1 "\${old_entries}" > "\${old_paths}"
+  cut -f1 "\${new_entries}" > "\${new_paths}"
+  comm -13 "\${old_entries}" "\${new_entries}" | cut -f1 > "\${changed_paths}"
+  comm -23 "\${old_paths}" "\${new_paths}" > "\${deleted_paths}"
+  cat "\${changed_paths}" "\${deleted_paths}" > "\${sync_paths}"
+  printf '.ci_manifest\\n.ci_manifest.id\\n' >> "\${sync_paths}"
+  echo "changed=\$(wc -l < "\${changed_paths}") deleted=\$(wc -l < "\${deleted_paths}")"
+  sed -n '1,40p' "\${changed_paths}"
+  if [ -s "\${sync_paths}" ]; then
     rsync -a --delete-missing-args --no-owner --no-group --info=stats2,name0 \\
       --ignore-times \\
-      --files-from="\${cache}/.ci_sync_paths" \\
+      --files-from="\${sync_paths}" \\
       -e '${rsyncSshCommand(key_file)}' \\
       "\${cache}/" "\${remote}:${env.TEST_DIR}/"
   else
