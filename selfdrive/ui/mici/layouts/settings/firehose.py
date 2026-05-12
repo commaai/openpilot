@@ -207,7 +207,7 @@ class FirehoseLayoutBase(Widget):
       if response.status_code == 200:
         data = response.json()
         self._segment_count = data.get("firehose", 0)
-        self._params.put_nonblocking(self.PARAM_KEY, data)
+        self._params.put(self.PARAM_KEY, data)
     except Exception as e:
       cloudlog.error(f"Failed to fetch firehose stats: {e}")
 

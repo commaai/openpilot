@@ -132,13 +132,11 @@ class MiciHomeLayout(Widget):
     self._on_alerts_click: Callable | None = None
     self._alert_count_callback: Callable[[], int] | None = None
 
-    self._last_refresh = 0
     self._mouse_down_t: None | float = None
     self._did_long_press = False
     self._is_pressed_prev = False
 
-    self._version_text = None
-    self._experimental_mode = False
+    self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._egpu_icon = IconWidget("icons_mici/egpu.png", (50, 37))
@@ -163,14 +161,6 @@ class MiciHomeLayout(Widget):
     self._branch_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, scroll=True)
     self._version_commit_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
 
-  def show_event(self):
-    super().show_event()
-    self._version_text = self._get_version_text()
-    self._update_params()
-
-  def _update_params(self):
-    self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
-
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
       self._mouse_down_t = time.monotonic()
@@ -183,16 +173,10 @@ class MiciHomeLayout(Widget):
       if time.monotonic() - self._mouse_down_t > 0.5:
         # long gating for experimental mode - only allow toggle if longitudinal control is available
         if ui_state.has_longitudinal_control:
-          self._experimental_mode = not self._experimental_mode
-          ui_state.params.put("ExperimentalMode", self._experimental_mode)
+          ui_state.experimental_mode = not ui_state.experimental_mode
+          ui_state.params.put("ExperimentalMode", ui_state.experimental_mode, block=True)
         self._mouse_down_t = None
         self._did_long_press = True
-
-    if rl.get_time() - self._last_refresh > 5.0:
-      # Update version text
-      self._version_text = self._get_version_text()
-      self._last_refresh = rl.get_time()
-      self._update_params()
 
   def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
                     alert_count_callback: Callable[[], int] | None = None,
@@ -261,8 +245,8 @@ class MiciHomeLayout(Widget):
         self._version_commit_label.render()
 
     # ***** Center-aligned bottom section icons *****
-    self._experimental_icon.set_visible(self._experimental_mode)
     self._egpu_icon.set_visible(ui_state.params.get_bool("UsbGpuPresent"))
+    self._experimental_icon.set_visible(ui_state.experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(ui_state.is_body)
 

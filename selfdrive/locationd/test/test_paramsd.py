@@ -27,8 +27,8 @@ class TestParamsd:
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
     msg = get_random_live_parameters(CP)
-    params.put("LiveParametersV2", msg.to_bytes())
-    params.put("CarParamsPrevRoute", CP.as_builder().to_bytes())
+    params.put("LiveParametersV2", msg.to_bytes(), block=True)
+    params.put("CarParamsPrevRoute", CP.as_builder().to_bytes(), block=True)
 
     migrate_cached_vehicle_params_if_needed(params) # this is not tested here but should not mess anything up or throw an error
     sr, sf, offset, p_init = retrieve_initial_vehicle_params(params, CP, replay=True, debug=True)
@@ -46,8 +46,8 @@ class TestParamsd:
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
     msg = get_random_live_parameters(CP)
-    params.put("LiveParameters", msg.liveParameters.to_dict())
-    params.put("CarParamsPrevRoute", CP.as_builder().to_bytes())
+    params.put("LiveParameters", msg.liveParameters.to_dict(), block=True)
+    params.put("CarParamsPrevRoute", CP.as_builder().to_bytes(), block=True)
     params.remove("LiveParametersV2")
 
     migrate_cached_vehicle_params_if_needed(params)
@@ -59,7 +59,7 @@ class TestParamsd:
 
   def test_read_saved_params_corrupted_old_format(self):
     params = Params()
-    params.put("LiveParameters", {})
+    params.put("LiveParameters", {}, block=True)
     params.remove("LiveParametersV2")
 
     migrate_cached_vehicle_params_if_needed(params)

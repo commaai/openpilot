@@ -18,11 +18,11 @@ if __name__ == "__main__":
   t = 10 if len(sys.argv) < 2 else int(sys.argv[1])
   while True:
     print("setting alert update")
-    params.put_bool("UpdateAvailable", True)
-    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+    params.put_bool("UpdateAvailable", True, block=True)
+    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR), block=True)
 
     time.sleep(t)
-    params.put_bool("UpdateAvailable", False)
+    params.put_bool("UpdateAvailable", False, block=True)
 
     # cycle through normal alerts
     for a in offroad_alerts:
