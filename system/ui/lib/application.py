@@ -239,11 +239,10 @@ class MouseState:
                 slot_down[current_slot] = True
               slot_changed[current_slot] = True
             elif code == ABS_MT_POSITION_X:
-              # TODO: c4 panel-to-screen axis mapping — adjust if rotated/flipped.
-              slot_x[current_slot] = float(value)
+              slot_y[current_slot] = float(value)
               slot_changed[current_slot] = True
             elif code == ABS_MT_POSITION_Y:
-              slot_y[current_slot] = float(value)
+              slot_x[current_slot] = float(value)
               slot_changed[current_slot] = True
 
           elif etype == EV_SYN and code == 0:
