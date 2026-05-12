@@ -260,6 +260,33 @@ fi
 
 def buildAndPrepareTreeCommand() {
   return """
+if [ ! -f /tmp/openpilot_ci_cpu_unlocked ]; then
+  for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+    online="\${cpu}/online"
+    if [ -w "\${online}" ]; then
+      echo 1 | sudo tee "\${online}"
+    fi
+  done
+
+  for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+    [ -d "\${policy}" ] || continue
+    max="\$(cat "\${policy}/cpuinfo_max_freq")"
+    echo "\${max}" | sudo tee "\${policy}/scaling_max_freq"
+    echo "\${max}" | sudo tee "\${policy}/scaling_min_freq"
+    if grep -qw performance "\${policy}/scaling_available_governors"; then
+      echo performance | sudo tee "\${policy}/scaling_governor"
+    fi
+  done
+
+  for governor in /sys/class/devfreq/soc:qcom,cpubw/governor /sys/class/devfreq/soc:qcom,memlat-cpu*/governor; do
+    if [ -w "\${governor}" ]; then
+      echo performance | sudo tee "\${governor}"
+    fi
+  done
+
+  touch /tmp/openpilot_ci_cpu_unlocked
+fi
+
 cd system/manager
 taskset -c 0-7 ./build.py
 
