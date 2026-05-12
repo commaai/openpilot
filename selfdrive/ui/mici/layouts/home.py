@@ -137,7 +137,7 @@ class MiciHomeLayout(Widget):
     self._did_long_press = False
     self._is_pressed_prev = False
 
-    self._version_text = None
+    self._version_text = self._get_version_text()
     self._experimental_mode = False
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
@@ -163,7 +163,6 @@ class MiciHomeLayout(Widget):
 
   def show_event(self):
     super().show_event()
-    self._version_text = self._get_version_text()
     self._update_params()
 
   def _update_params(self):
@@ -188,7 +187,6 @@ class MiciHomeLayout(Widget):
 
     if rl.get_time() - self._last_refresh > 5.0:
       # Update version text
-      self._version_text = self._get_version_text()
       self._last_refresh = rl.get_time()
       self._update_params()
 
