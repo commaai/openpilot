@@ -159,9 +159,6 @@ class MiciHomeLayout(Widget):
     self._branch_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, scroll=True)
     self._version_commit_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
 
-  def show_event(self):
-    super().show_event()
-
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
       self._mouse_down_t = time.monotonic()
