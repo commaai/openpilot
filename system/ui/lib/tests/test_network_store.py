@@ -100,6 +100,56 @@ method=auto
     assert entry["uuid"] == "test-uuid-123"
     assert entry["metered"] == 0
 
+  def test_load_decodes_nm_byte_list_ssid(self, mocker: MockerFixture):
+    """NM keyfiles can store non-ASCII SSIDs as decimal byte lists."""
+    content = """\
+[connection]
+id=Cafe
+uuid=cafe-uuid
+type=wifi
+metered=1
+
+[wifi]
+ssid=99;97;102;195;169;
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=secret123
+"""
+    with open(os.path.join(self.tmpdir, "Cafe.nmconnection"), "w") as f:
+      f.write(content)
+
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read", return_value=content)
+    store = NetworkStore(directory=self.tmpdir)
+
+    entry = store.get("café")
+    assert entry is not None
+    assert store.get("99;97;102;195;169;") is None
+    assert entry["metered"] == 1
+    assert entry["psk"] == "secret123"
+
+  def test_load_keeps_printable_ascii_semicolon_ssid_literal(self, mocker: MockerFixture):
+    content = """\
+[connection]
+id=Literal
+uuid=literal-uuid
+type=wifi
+metered=1
+
+[wifi]
+ssid=65;66;67;
+mode=infrastructure
+"""
+    with open(os.path.join(self.tmpdir, "Literal.nmconnection"), "w") as f:
+      f.write(content)
+
+    mocker.patch("openpilot.system.ui.lib.wifi_network_store.sudo_read", return_value=content)
+    store = NetworkStore(directory=self.tmpdir)
+
+    assert store.get("65;66;67;") is not None
+    assert store.get("ABC") is None
+
   def test_load_skips_malformed_profile_and_keeps_going(self, mocker: MockerFixture):
     """A single profile with a bad metered/hidden value must not abort _load."""
     bad = """\

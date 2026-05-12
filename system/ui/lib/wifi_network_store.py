@@ -33,6 +33,23 @@ def _canonical_filename(file_uuid: str, ssid: str) -> str:
   return f"{file_uuid}-{ssid_safe}.nmconnection"
 
 
+def _decode_keyfile_ssid(ssid: str) -> str:
+  """Decode NM keyfile byte-list SSIDs while leaving ordinary ASCII literals alone."""
+  if not ssid.endswith(";"):
+    return ssid
+
+  try:
+    ssid_bytes = bytes(int(p) for p in ssid[:-1].split(";"))
+  except ValueError:
+    return ssid
+
+  if not ssid_bytes or all(0x20 <= b <= 0x7e for b in ssid_bytes):
+    return ssid
+  if all(b == 0 for b in ssid_bytes):
+    return ""
+  return ssid_bytes.decode("utf-8", errors="replace")
+
+
 class NetworkStore:
   """Persistent storage for saved WiFi networks using .nmconnection files."""
 
@@ -68,7 +85,7 @@ class NetworkStore:
         # can't round-trip (we only write [wifi] back) doesn't get half-migrated.
         if not cp.has_section("wifi"):
           continue
-        ssid = cp.get("wifi", "ssid", fallback="")
+        ssid = _decode_keyfile_ssid(cp.get("wifi", "ssid", fallback=""))
         mode = cp.get("wifi", "mode", fallback="infrastructure")
         if not ssid or mode == "ap":
           continue
@@ -264,7 +281,7 @@ class NetworkStore:
         cp.read_string(raw)
       except configparser.Error:
         continue
-      if cp.get("wifi", "ssid", fallback="") == ssid:
+      if _decode_keyfile_ssid(cp.get("wifi", "ssid", fallback="")) == ssid:
         matches.append(fpath)
     return matches
 
