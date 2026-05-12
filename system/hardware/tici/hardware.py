@@ -15,7 +15,7 @@ from openpilot.system.hardware.tici.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
-NM_CONNECTIONS_DIR = "/run/NetworkManager/system-connections"
+NM_CONNECTIONS_DIR = "/data/etc/NetworkManager/system-connections"
 MODEM_STATE_PATH = "/dev/shm/modem"
 
 NetworkType = log.DeviceState.NetworkType
