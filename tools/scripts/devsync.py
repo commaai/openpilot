@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import shlex
 import subprocess
 import sys
@@ -28,52 +29,47 @@ def build_rsync_cmd(args) -> list[str]:
     "--files-from=-", "--from0",
     "-e", " ".join(shlex.quote(p) for p in ssh),
     "--out-format=%n",
-    args.src + "/", f"comma@{args.ip}:{args.remote}/",
+    BASEDIR + "/", f"comma@{args.ip}:{args.remote}/",
   ]
 
 
-def git_tracked_files(src: str) -> bytes:
-  return subprocess.check_output(
-    ["git", "-C", src, "ls-files", "--recurse-submodules", "-z"]
-  )
+FILE_LIST = subprocess.check_output(
+  ["git", "-C", BASEDIR, "ls-files", "--recurse-submodules", "-z"]
+)
+TRACKED = {os.path.join(BASEDIR, p) for p in FILE_LIST.decode().split("\0") if p}
 
 
 class Handler(FileSystemEventHandler):
   def __init__(self, sync_fn):
-    self.events = 0
-    self.lock = threading.Lock()
+    self.dirty = threading.Event()
     self.sync_fn = sync_fn
 
   def on_any_event(self, event):
-    if not event.is_directory:
-      with self.lock:
-        self.events += 1
+    if not event.is_directory and event.src_path in TRACKED:
+      self.dirty.set()
 
   def run(self):
     while True:
       time.sleep(1)
-      with self.lock:
-        n, self.events = self.events, 0
-      if n:
-        self.sync_fn(n)
+      if self.dirty.is_set():
+        self.dirty.clear()
+        self.sync_fn()
 
 
 def main():
   p = argparse.ArgumentParser()
   p.add_argument("ip", help="device IP / hostname")
   p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
-  p.add_argument("--src", default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
   args = p.parse_args()
 
-  print(f"[devsync] watching {args.src}")
+  print(f"[devsync] watching {BASEDIR}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
 
-  def run_sync(n_events: int = 0):
-    file_list = git_tracked_files(args.src)
+  def run_sync():
     cmd = build_rsync_cmd(args)
     t0 = time.monotonic()
-    r = subprocess.run(cmd, input=file_list, capture_output=True)
+    r = subprocess.run(cmd, input=FILE_LIST, capture_output=True)
     dt = time.monotonic() - t0
     if r.returncode:
       print(f"[devsync] ERR rc={r.returncode} in {dt:.2f}s")
@@ -81,15 +77,14 @@ def main():
         print(r.stderr.decode().strip(), file=sys.stderr)
       return
     files = [ln for ln in r.stdout.decode().splitlines() if ln.strip()]
-    ev = f" ({n_events} ev)" if n_events else ""
     msg = f"{len(files)} files: {', '.join(files)}" if files else "no changes"
-    print(f"[devsync] {dt:.2f}s{ev} · {msg}")
+    print(f"[devsync] {dt:.2f}s · {msg}")
 
   run_sync()
 
   handler = Handler(run_sync)
   obs = Observer()
-  obs.schedule(handler, args.src, recursive=True)
+  obs.schedule(handler, BASEDIR, recursive=True)
   obs.start()
   handler.run()
 
@@ -98,4 +93,4 @@ if __name__ == "__main__":
   try:
     main()
   except KeyboardInterrupt:
-    pass
+    print("\n[devsync] stopping")
