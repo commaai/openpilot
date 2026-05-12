@@ -110,24 +110,26 @@ rm -f "\${cache}/.sconsign.dblite"
 
 old_manifest="\${cache}/.ci_manifest"
 old_id="\$(cat "\${cache}/.ci_manifest.id" 2>/dev/null || true)"
-new_manifest="\${cache}/.ci_manifest.new"
+new_manifest="\$(mktemp)"
+new_id_file="\$(mktemp)"
 sync_paths="\${cache}/.ci_sync_paths"
 changed_paths="\${cache}/.ci_changed_paths"
 deleted_paths="\${cache}/.ci_deleted_paths"
+cache_updated=0
+trap 'rm -f "\${new_manifest}" "\${new_id_file}"' EXIT
 
 ssh_cmd='${rsyncSshCommand(key_file)}'
 ssh_cmd="\${ssh_cmd} comma@${ip}"
 
 \${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest'" > "\${new_manifest}"
-\${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest.id'" > "\${cache}/.ci_manifest.id.new"
-new_id="\$(cat "\${cache}/.ci_manifest.id.new")"
+\${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest.id'" > "\${new_id_file}"
+new_id="\$(cat "\${new_id_file}")"
 printf '%s\\n' "\${old_id}" > "\${cache}/.ci_previous_manifest.id"
 
 if [ -f "\${old_manifest}" ] && [ "\${old_id}" = "\${new_id}" ]; then
   : > "\${changed_paths}"
   : > "\${deleted_paths}"
   : > "\${sync_paths}"
-  rm -f "\${new_manifest}" "\${cache}/.ci_manifest.id.new"
   echo "builder cache manifest unchanged: \${new_id}"
 elif [ -f "\${old_manifest}" ]; then
   python3 - "\${old_manifest}" "\${new_manifest}" "\${changed_paths}" "\${deleted_paths}" "\${sync_paths}" <<'PY'
@@ -157,6 +159,7 @@ PY
     --files-from="\${sync_paths}" \\
     -e '${rsyncSshCommand(key_file)}' \\
     'comma@${ip}:${env.TEST_DIR}/' "\${cache}/"
+  cache_updated=1
 else
   echo "builder cache has no manifest, doing full content sync"
   rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
@@ -165,17 +168,16 @@ else
     --exclude='__pycache__' --exclude='.sconsign.dblite' \\
     -e '${rsyncSshCommand(key_file)}' \\
     'comma@${ip}:${env.TEST_DIR}/' "\${cache}/"
-  cp "\${new_manifest}" "\${cache}/.ci_manifest"
-  cp "\${cache}/.ci_manifest.id.new" "\${cache}/.ci_manifest.id"
   find "\${cache}" -depth -type d -empty -delete
   : > "\${sync_paths}"
   : > "\${changed_paths}"
   : > "\${deleted_paths}"
+  cache_updated=1
 fi
 
-if [ -f "\${new_manifest}" ]; then
-  mv "\${new_manifest}" "\${cache}/.ci_manifest"
-  mv "\${cache}/.ci_manifest.id.new" "\${cache}/.ci_manifest.id"
+if [ "\${cache_updated}" = "1" ]; then
+  cp "\${new_manifest}" "\${cache}/.ci_manifest"
+  cp "\${new_id_file}" "\${cache}/.ci_manifest.id"
 fi
 printf '%s\\n' "\${new_id}" > "\${cache}/.ci_current_manifest.id"
 echo "builder cache previous manifest: \${old_id:-none}"
