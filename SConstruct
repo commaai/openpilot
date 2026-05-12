@@ -24,7 +24,7 @@ release = not os.path.exists(File('#.gitattributes').abspath) # file absent on r
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=(not TICI or not release),
+          default=(not TICI and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform
