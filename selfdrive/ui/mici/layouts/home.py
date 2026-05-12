@@ -186,7 +186,6 @@ class MiciHomeLayout(Widget):
         self._did_long_press = True
 
     if rl.get_time() - self._last_refresh > 5.0:
-      # Update version text
       self._last_refresh = rl.get_time()
       self._update_params()
 
