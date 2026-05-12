@@ -195,7 +195,7 @@ class SoftwareLayout(Widget):
       # Confirmed selection
       if result == DialogResult.CONFIRM and self._branch_dialog is not None and self._branch_dialog.selection:
         selection = self._branch_dialog.selection
-        ui_state.params.put("UpdaterTargetBranch", selection)
+        ui_state.params.put("UpdaterTargetBranch", selection, block=True)
         self._branch_btn.action_item.set_value(selection)
         os.system("pkill -SIGUSR1 -f system.updated.updated")
       self._branch_dialog = None

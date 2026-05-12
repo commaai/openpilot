@@ -477,7 +477,7 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
   # remove duplicates
   routes = list(dict.fromkeys(routes))
 
-  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
+  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]), block=True)
   return {"success": 1}
 
 

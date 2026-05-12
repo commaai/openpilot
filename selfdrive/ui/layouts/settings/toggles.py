@@ -242,4 +242,4 @@ class TogglesLayout(Widget):
       self._params.put_bool("OnroadCycleRequested", True)
 
   def _set_longitudinal_personality(self, button_index: int):
-    self._params.put("LongitudinalPersonality", button_index)
+    self._params.put("LongitudinalPersonality", button_index, block=True)

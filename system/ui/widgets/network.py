@@ -186,7 +186,7 @@ class AdvancedNetworkSettings(Widget):
       if apn == "":
         self._params.remove("GsmApn")
       else:
-        self._params.put("GsmApn", apn)
+        self._params.put("GsmApn", apn, block=True)
 
     current_apn = self._params.get("GsmApn") or ""
     self._keyboard.reset(min_text_size=0)

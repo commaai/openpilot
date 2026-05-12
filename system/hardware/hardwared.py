@@ -426,7 +426,7 @@ def hardware_thread(end_event, hw_queue) -> None:
       # save last one before going onroad
       if rising_edge_started:
         try:
-          params.put("LastOffroadStatusPacket", dat)
+          params.put("LastOffroadStatusPacket", dat, block=True)
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
@@ -440,8 +440,8 @@ def hardware_thread(end_event, hw_queue) -> None:
     last_uptime_ts = now_ts
 
     if (count % int(60. / DT_HW)) == 0:
-      params.put("UptimeOffroad", uptime_offroad)
-      params.put("UptimeOnroad", uptime_onroad)
+      params.put("UptimeOffroad", uptime_offroad, block=True)
+      params.put("UptimeOnroad", uptime_onroad, block=True)
 
     count += 1
     should_start_prev = should_start

@@ -182,7 +182,7 @@ class MiciHomeLayout(Widget):
         # long gating for experimental mode - only allow toggle if longitudinal control is available
         if ui_state.has_longitudinal_control:
           self._experimental_mode = not self._experimental_mode
-          ui_state.params.put("ExperimentalMode", self._experimental_mode)
+          ui_state.params.put("ExperimentalMode", self._experimental_mode, block=True)
         self._mouse_down_t = None
         self._did_long_press = True
 

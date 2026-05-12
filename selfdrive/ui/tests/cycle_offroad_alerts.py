@@ -19,7 +19,7 @@ if __name__ == "__main__":
   while True:
     print("setting alert update")
     params.put_bool("UpdateAvailable", True)
-    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR), block=True)
 
     time.sleep(t)
     params.put_bool("UpdateAvailable", False)

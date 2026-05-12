@@ -122,7 +122,7 @@ def main() -> None:
       no_internal_panda_count = 0
 
       # log panda fw version
-      params.put("PandaSignatures", panda.get_signature())
+      params.put("PandaSignatures", panda.get_signature(), block=True)
 
       # check health for lost heartbeat
       health = panda.health()

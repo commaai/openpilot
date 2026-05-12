@@ -122,7 +122,7 @@ class Car:
         with open("/cache/params/SecOCKey") as f:
           user_key = f.readline().strip()
           if len(user_key) == 32:
-            self.params.put("SecOCKey", user_key)
+            self.params.put("SecOCKey", user_key, block=True)
       except Exception:
         pass
 
@@ -140,11 +140,11 @@ class Car:
     # Write previous route's CarParams
     prev_cp = self.params.get("CarParamsPersistent")
     if prev_cp is not None:
-      self.params.put("CarParamsPrevRoute", prev_cp)
+      self.params.put("CarParamsPrevRoute", prev_cp, block=True)
 
     # Write CarParams for controls and radard
     cp_bytes = self.CP.to_bytes()
-    self.params.put("CarParams", cp_bytes)
+    self.params.put("CarParams", cp_bytes, block=True)
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 

@@ -375,11 +375,11 @@ class OnboardingWindow(Widget):
     self._completed_callback()
 
   def _on_terms_accepted(self):
-    ui_state.params.put("HasAcceptedTerms", terms_version)
+    ui_state.params.put("HasAcceptedTerms", terms_version, block=True)
     gui_app.push_widget(self._training_guide)
 
   def _on_completed_training(self):
-    ui_state.params.put("CompletedTrainingVersion", training_version)
+    ui_state.params.put("CompletedTrainingVersion", training_version, block=True)
     self.close()
 
   def _render(self, _):

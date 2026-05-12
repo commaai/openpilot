@@ -44,7 +44,7 @@ def setup_pandad():
 
   params.put_bool("FirmwareQueryDone", True)
   params.put_bool("ControlsReady", True)
-  params.put("CarParams", cp.to_bytes())
+  params.put("CarParams", cp.to_bytes(), block=True)
 
   publish_device_state(pm, True)
   with Timeout(90, "pandad didn't set safety mode"):

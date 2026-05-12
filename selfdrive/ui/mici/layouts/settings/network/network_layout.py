@@ -117,7 +117,7 @@ class NetworkLayoutMici(NavScroller):
       if apn == "":
         ui_state.params.remove("GsmApn")
       else:
-        ui_state.params.put("GsmApn", apn)
+        ui_state.params.put("GsmApn", apn, block=True)
 
     current_apn = ui_state.params.get("GsmApn") or ""
     dlg = BigInputDialog("enter APN...", current_apn, minimum_length=0, confirm_callback=update_apn)

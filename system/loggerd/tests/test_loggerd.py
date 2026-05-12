@@ -161,8 +161,8 @@ class TestLoggerd:
     ]
     params = Params()
     for k, _, v in fake_params:
-      params.put(k, v)
-    params.put("AccessToken", "abc")
+      params.put(k, v, block=True)
+    params.put("AccessToken", "abc", block=True)
 
     lr = list(LogReader(str(self._gen_bootlog())))
     initData = lr[0].initData
