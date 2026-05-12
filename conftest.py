@@ -19,12 +19,6 @@ collect_ignore_glob = [
 ]
 
 
-def pytest_sessionstart(session):
-  # TODO: fix tests and enable test order randomization
-  if session.config.pluginmanager.hasplugin('randomly'):
-    session.config.option.randomly_reorganize = False
-
-
 @pytest.hookimpl(hookwrapper=True, trylast=True)
 def pytest_runtest_call(item):
   # ensure we run as a hook after capturemanager's
