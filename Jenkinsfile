@@ -77,6 +77,16 @@ def installRsync() {
   sh script: 'apk add --no-cache rsync', label: 'install rsync'
 }
 
+def ciDockerArgs() {
+  return '--user=root -v /var/jenkins_home/openpilot-device-build-cache:/device-build-cache'
+}
+
+def cleanOldWorkspaceBuildCache() {
+  docker.image('ghcr.io/commaai/alpine-ssh').inside(ciDockerArgs()) {
+    sh script: "rm -rf '${env.WORKSPACE}/.device-build-cache'", label: 'clean old workspace build cache'
+  }
+}
+
 def rsyncSshCommand(String keyFile) {
   return "ssh -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${keyFile}"
 }
@@ -111,7 +121,7 @@ rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
 def prepareBuiltTree() {
   stage("build device tree") {
     lock(resource: "", label: "tizi-common", inversePrecedence: true, variable: 'builder_ip', quantity: 1, resourceSelectStrategy: 'random') {
-      docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
+      docker.image('ghcr.io/commaai/alpine-ssh').inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
           retry(3) {
             def date = sh(script: 'date', returnStdout: true).trim();
@@ -143,7 +153,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     def gitDiff = sh returnStdout: true, script: 'curl -s -H "Authorization: Bearer ${GITHUB_COMMENTS_TOKEN}" https://api.github.com/repos/commaai/openpilot/compare/master...${GIT_BRANCH} | jq .files[].filename || echo "/"', label: 'Getting changes'
 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
-      docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
+      docker.image('ghcr.io/commaai/alpine-ssh').inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
           if (env.DEVICE_BUILD_READY == "1") {
             installRsync()
@@ -223,10 +233,11 @@ node {
   env.PYTHONWARNINGS = "error"
   env.TEST_DIR = "/data/openpilot"
   env.SOURCE_DIR = "/data/openpilot_source/"
-  env.DEVICE_BUILD_DIR = "${env.WORKSPACE}/.device-build-cache/${(env.BRANCH_NAME ?: 'detached').replaceAll('[^A-Za-z0-9_.-]', '_')}"
+  env.DEVICE_BUILD_DIR = "/device-build-cache/${(env.BRANCH_NAME ?: 'detached').replaceAll('[^A-Za-z0-9_.-]', '_')}"
   env.DEVICE_BUILD_READY = "0"
   setupCredentials()
 
+  cleanOldWorkspaceBuildCache()
   def scmVars = checkout(scm)
   env.GIT_BRANCH = scmVars.GIT_BRANCH
   env.GIT_COMMIT = scmVars.GIT_COMMIT
