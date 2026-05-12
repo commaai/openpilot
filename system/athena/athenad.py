@@ -582,10 +582,10 @@ def startJoystickStream(sdp: str) -> dict:
       except ValueError:
         resp.raise_for_status()
     return resp.json()
-  except requests.ConnectTimeout:
-    raise Exception("webrtc took too long to respond. is it on?") from None
-  except requests.ConnectionError:
-    raise Exception("webrtc is not running. turn on comma body ignition.") from None
+  except requests.ConnectTimeout as e:
+    raise Exception("webrtc took too long to respond. is it on?") from e
+  except requests.ConnectionError as e:
+    raise Exception("webrtc is not running. turn on comma body ignition.") from e
 
 
 @dispatcher.add_method
