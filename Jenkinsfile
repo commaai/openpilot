@@ -95,7 +95,8 @@ def rsyncBuiltTreeFromDevice(String ip) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     sh script: """
 mkdir -p '${env.DEVICE_BUILD_DIR}'
-rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
+rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
+  --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
   -e '${rsyncSshCommand(key_file)}' \\
   'comma@${ip}:${env.TEST_DIR}/' '${env.DEVICE_BUILD_DIR}/'
 """, label: 'cache built tree'
@@ -109,11 +110,42 @@ def rsyncBuiltTreeToDevice(String ip) {
 
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     sh script: """
-rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
+rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
+  --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
   -e '${rsyncSshCommand(key_file)}' \\
   '${env.DEVICE_BUILD_DIR}/' 'comma@${ip}:${env.TEST_DIR}/'
 """, label: 'sync built tree'
   }
+}
+
+def writeBuildMetadataCommand() {
+  return """
+python3 - <<'PY'
+import json
+import subprocess
+from pathlib import Path
+
+root = Path(".")
+
+def run(cmd):
+  return subprocess.check_output(cmd, text=True).strip()
+
+metadata = {
+  "channel": "${env.BRANCH_NAME ?: 'unknown'}",
+  "openpilot": {
+    "version": (root / "common/version.h").read_text().split('"')[1],
+    "release_notes": (root / "RELEASES.md").read_text().split("\\n\\n", 1)[0],
+    "git_commit": run(["git", "rev-parse", "HEAD"]),
+    "git_origin": run(["git", "config", "--get", "remote.origin.url"]),
+    "git_commit_date": run(["git", "show", "--no-patch", "--format=%ct %ci", "HEAD"]),
+    "build_style": "ci",
+  },
+}
+
+(root / "build.json").write_text(json.dumps(metadata))
+PY
+cat build.json
+"""
 }
 
 def unlockBuilderCpuCommand() {
@@ -164,6 +196,7 @@ def prepareBuiltTree() {
           device(builder_ip, "unlock builder cpu", unlockBuilderCpuCommand())
           device(builder_ip, "build device tree", "cd system/manager && taskset -c 0-7 ./build.py")
           device(builder_ip, "builder check dirty", "release/check-dirty.sh")
+          device(builder_ip, "write build metadata", writeBuildMetadataCommand())
           installRsync()
           rsyncBuiltTreeFromDevice(builder_ip)
           env.DEVICE_BUILD_READY = "1"
