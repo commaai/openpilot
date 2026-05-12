@@ -136,7 +136,10 @@ asyncio_default_fixture_loop_scope = "function"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
-  "skip_tici_setup: mark test to skip tici setup fixture"
+  "skip_tici_setup: mark test to skip tici setup fixture",
+  "nocapture: don't capture test output",
+  "shared_download_cache: share download cache between tests",
+  "xdist_group_class_property: group tests by a property of the class that contains them",
 ]
 testpaths = [
   "common",
