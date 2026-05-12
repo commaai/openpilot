@@ -28,13 +28,13 @@ def build_rsync_cmd(args) -> list[str]:
     "--files-from=-", "--from0",
     "-e", " ".join(shlex.quote(p) for p in ssh),
     "--out-format=%n",
-    args.src + "/", f"comma@{args.ip}:{args.remote}/",
+    BASEDIR + "/", f"comma@{args.ip}:{args.remote}/",
   ]
 
 
-def git_tracked_files(src: str) -> bytes:
+def git_tracked_files() -> bytes:
   return subprocess.check_output(
-    ["git", "-C", src, "ls-files", "--recurse-submodules", "-z"]
+    ["git", "-C", BASEDIR, "ls-files", "--recurse-submodules", "-z"]
   )
 
 
@@ -59,15 +59,14 @@ def main():
   p = argparse.ArgumentParser()
   p.add_argument("ip", help="device IP / hostname")
   p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
-  p.add_argument("--src", default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
   args = p.parse_args()
 
-  print(f"[devsync] watching {args.src}")
+  print(f"[devsync] watching {BASEDIR}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
 
   def run_sync():
-    file_list = git_tracked_files(args.src)
+    file_list = git_tracked_files()
     cmd = build_rsync_cmd(args)
     t0 = time.monotonic()
     r = subprocess.run(cmd, input=file_list, capture_output=True)
@@ -85,7 +84,7 @@ def main():
 
   handler = Handler(run_sync)
   obs = Observer()
-  obs.schedule(handler, args.src, recursive=True)
+  obs.schedule(handler, BASEDIR, recursive=True)
   obs.start()
   handler.run()
 
