@@ -145,8 +145,8 @@ class Car:
     # Write CarParams for controls and radard
     cp_bytes = self.CP.to_bytes()
     self.params.put("CarParams", cp_bytes, block=True)
-    self.params.put_nonblocking("CarParamsCache", cp_bytes)
-    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
+    self.params.put("CarParamsCache", cp_bytes)
+    self.params.put("CarParamsPersistent", cp_bytes)
 
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
@@ -228,7 +228,7 @@ class Car:
       # TODO: this can make us miss at least a few cycles when doing an ECU knockout
       self.CI.init(self.CP, *self.can_callbacks)
       # signal pandad to switch to car safety mode
-      self.params.put_bool_nonblocking("ControlsReady", True)
+      self.params.put_bool("ControlsReady", True)
 
     if self.sm.all_alive(['carControl']):
       # send car controls over can

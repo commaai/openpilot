@@ -87,7 +87,7 @@ class TestParams:
     q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      Params().put_nonblocking("CarParams", b"test")
+      Params().put("CarParams", b"test")
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
@@ -96,7 +96,7 @@ class TestParams:
     q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      Params().put_bool_nonblocking("CarParams", True)
+      Params().put_bool("CarParams", True)
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"

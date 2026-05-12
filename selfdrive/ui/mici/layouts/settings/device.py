@@ -40,7 +40,7 @@ class ReviewTrainingGuide(TrainingGuide):
   def hide_event(self):
     super().hide_event()
     device.set_override_interactive_timeout(None)
-    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
 
 
 class MiciFccModal(NavRawScrollPanel):

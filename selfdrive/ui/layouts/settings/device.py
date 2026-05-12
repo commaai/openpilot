@@ -166,7 +166,7 @@ class DeviceLayout(Widget):
 
     def perform_reboot(result: DialogResult):
       if not ui_state.engaged and result == DialogResult.CONFIRM:
-        self._params.put_bool_nonblocking("DoReboot", True)
+        self._params.put_bool("DoReboot", True)
 
     dialog = ConfirmDialog(tr("Are you sure you want to reboot?"), tr("Reboot"), callback=perform_reboot)
     gui_app.push_widget(dialog)
@@ -178,7 +178,7 @@ class DeviceLayout(Widget):
 
     def perform_power_off(result: DialogResult):
       if not ui_state.engaged and result == DialogResult.CONFIRM:
-        self._params.put_bool_nonblocking("DoShutdown", True)
+        self._params.put_bool("DoShutdown", True)
 
     dialog = ConfirmDialog(tr("Are you sure you want to power off?"), tr("Power Off"), callback=perform_power_off)
     gui_app.push_widget(dialog)

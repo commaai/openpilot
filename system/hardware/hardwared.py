@@ -430,7 +430,7 @@ def hardware_thread(end_event, hw_queue) -> None:
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
-    params.put_bool_nonblocking("NetworkMetered", msg.deviceState.networkMetered)
+    params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
 
     now_ts = time.monotonic()
     if off_ts:
