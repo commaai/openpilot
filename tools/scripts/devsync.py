@@ -12,7 +12,7 @@ from watchdog.observers import Observer
 from openpilot.common.basedir import BASEDIR
 
 
-def build_rsync_cmd(args, initial: bool) -> list[str]:
+def build_rsync_cmd(args) -> list[str]:
   ssh = [
     "ssh",
     "-o", "ControlMaster=auto",
@@ -23,17 +23,13 @@ def build_rsync_cmd(args, initial: bool) -> list[str]:
   if args.identity:
     ssh += ["-i", args.identity]
 
-  cmd = [
+  return [
     "rsync", "-az",
     "--files-from=-", "--from0",
     "-e", " ".join(shlex.quote(p) for p in ssh),
+    "--out-format=%n",
+    args.src + "/", f"comma@{args.ip}:{args.remote}/",
   ]
-  if initial:
-    cmd.append("--info=progress2,stats1")
-  else:
-    cmd.append("--out-format=%n")
-  cmd += [args.src + "/", f"comma@{args.ip}:{args.remote}/"]
-  return cmd
 
 
 def git_tracked_files(src: str) -> bytes:
@@ -69,34 +65,23 @@ def main():
   print(f"[devsync] watching {args.src}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
 
-  def run_sync(n_events: int, initial: bool = False):
+  def run_sync(n_events: int = 0):
     file_list = git_tracked_files(args.src)
-    n_listed = file_list.count(b"\0")
-    cmd = build_rsync_cmd(args, initial=initial)
+    cmd = build_rsync_cmd(args)
     t0 = time.monotonic()
-    if initial:
-      # stream rsync progress directly to the terminal
-      rc = subprocess.run(cmd, input=file_list).returncode
-      files: list[str] = []
-    else:
-      r = subprocess.run(cmd, input=file_list, capture_output=True)
-      files = [ln for ln in r.stdout.decode().splitlines() if ln.strip()]
-      rc = r.returncode
-      if rc and r.stderr.strip():
-        print(r.stderr.decode().strip(), file=sys.stderr)
+    r = subprocess.run(cmd, input=file_list, capture_output=True)
     dt = time.monotonic() - t0
+    if r.returncode:
+      print(f"[devsync] ERR rc={r.returncode} in {dt:.2f}s")
+      if r.stderr.strip():
+        print(r.stderr.decode().strip(), file=sys.stderr)
+      return
+    files = [ln for ln in r.stdout.decode().splitlines() if ln.strip()]
+    ev = f" ({n_events} ev)" if n_events else ""
+    msg = f"{len(files)} files: {', '.join(files)}" if files else "no changes"
+    print(f"[devsync] {dt:.2f}s{ev} · {msg}")
 
-    if rc != 0:
-      print(f"[devsync] ERR rc={rc} in {dt:.2f}s")
-    elif initial:
-      print(f"[devsync] initial sync done in {dt:.2f}s ({n_listed} tracked files)")
-    else:
-      ev = f" ({n_events} ev)" if n_events else ""
-      msg = f"{len(files)} files: {', '.join(files)}" if files else "no changes"
-      print(f"[devsync] {dt:.2f}s{ev} · {msg}")
-
-  print("[devsync] initial sync...")
-  run_sync(0, initial=True)
+  run_sync()
 
   handler = Handler()
   obs = Observer()
