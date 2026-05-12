@@ -62,27 +62,87 @@ sleep infinity
 EOF
 chmod +x $CONTINUE_PATH
 
+fetch_commit() {
+  if git cat-file -e "$GIT_COMMIT^{commit}" 2>/dev/null; then
+    echo "$GIT_COMMIT already present"
+    return
+  fi
+
+  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin "$GIT_COMMIT"
+}
+
+submodule_paths() {
+  git config --file .gitmodules --get-regexp path 2>/dev/null | awk '{print $2}'
+}
+
+submodules_need_update() {
+  if [ -z "$OLD_HEAD" ]; then
+    return 0
+  fi
+
+  local paths
+  paths="$(submodule_paths)"
+
+  for path in $paths; do
+    if [ ! -e "$path/.git" ]; then
+      return 0
+    fi
+  done
+
+  ! git diff --quiet "$OLD_HEAD" "$GIT_COMMIT" -- .gitmodules $paths
+}
+
+lfs_needs_pull() {
+  if git lfs ls-files | awk '$2 == "-" { found=1 } END { exit found ? 0 : 1 }'; then
+    return 0
+  fi
+
+  if [ -z "$OLD_HEAD" ]; then
+    return 0
+  fi
+
+  if ! git diff --quiet "$OLD_HEAD" "$GIT_COMMIT" -- .gitattributes .lfsconfig; then
+    return 0
+  fi
+
+  git diff --name-only "$OLD_HEAD" "$GIT_COMMIT" -- | git check-attr --stdin filter | grep -q ': filter: lfs'
+}
+
+checkout_common() {
+  local clean_args="$1"
+  local submodule_clean_args="$2"
+
+  OLD_HEAD="$(git rev-parse HEAD 2>/dev/null || true)"
+
+  # cleanup orphaned locks
+  find .git -type f -name "*.lock" -exec rm {} +
+
+  git clean $clean_args
+  fetch_commit
+  GIT_LFS_SKIP_SMUDGE=1 git -c advice.detachedHead=false checkout --force --detach --no-recurse-submodules "$GIT_COMMIT"
+  git clean $clean_args
+
+  if submodules_need_update; then
+    git submodule sync --recursive
+    git submodule update --init --recursive --force --jobs 8
+  else
+    echo "submodules unchanged, skipping submodule update"
+  fi
+  git submodule foreach --recursive "git reset --hard && git clean $submodule_clean_args"
+
+  if lfs_needs_pull; then
+    git lfs pull
+  else
+    echo "LFS files unchanged, skipping git lfs pull"
+  fi
+}
+
 safe_checkout() {
   # completely clean TEST_DIR
 
   cd $SOURCE_DIR
 
-  # cleanup orphaned locks
-  find .git -type f -name "*.lock" -exec rm {} +
-
-  git reset --hard
-  git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
-  find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
-  git reset --hard $GIT_COMMIT
-  git checkout $GIT_COMMIT
-  git clean -xdff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-
-  git lfs pull
-  (ulimit -n 65535 && git lfs prune)
+  checkout_common "-xdff" "-xdff"
 
   echo "git checkout done, t=$SECONDS"
   du -hs $SOURCE_DIR $SOURCE_DIR/.git
@@ -95,20 +155,7 @@ unsafe_checkout() {( set -e
 
   cd $TEST_DIR
 
-  # cleanup orphaned locks
-  find .git -type f -name "*.lock" -exec rm {} +
-
-  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin $GIT_COMMIT
-  git checkout --force --no-recurse-submodules $GIT_COMMIT
-  git reset --hard $GIT_COMMIT
-  git clean -dff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -df"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -df"
-
-  git lfs pull
-  (ulimit -n 65535 && git lfs prune)
+  checkout_common "-dff" "-df"
 )}
 
 export GIT_PACK_THREADS=8

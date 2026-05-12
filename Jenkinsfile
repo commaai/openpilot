@@ -163,8 +163,9 @@ node {
   env.SOURCE_DIR = "/data/openpilot_source/"
   setupCredentials()
 
-  env.GIT_BRANCH = checkout(scm).GIT_BRANCH
-  env.GIT_COMMIT = checkout(scm).GIT_COMMIT
+  def scmVars = checkout(scm)
+  env.GIT_BRANCH = scmVars.GIT_BRANCH
+  env.GIT_COMMIT = scmVars.GIT_COMMIT
 
   def excludeBranches = ['__nightly', 'devel', 'devel-staging', 'release3', 'release3-staging',
                          'release-tici', 'release-tizi', 'release-tizi-staging', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
