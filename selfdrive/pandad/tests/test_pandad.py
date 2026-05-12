@@ -58,16 +58,11 @@ class TestPandad:
       assert p.bootstub
     self._run_test()
 
-  def test_internal_panda_reset(self):
+  def test_in_reset(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_set(GPIO.STM_RST_N, 1)
     assert not Panda.list()
     self._run_test()
-
-  #def test_old_spi_protocol(self):
-  #  # flash firmware with old SPI protocol
-  #  self._flash_bootstub(os.path.join(HERE, "bootstub.panda_h7_spiv0.bin"))
-  #  self._run_test(45)
 
   def test_release_to_devel_bootstub(self):
     st = time.monotonic()
