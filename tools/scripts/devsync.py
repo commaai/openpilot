@@ -13,40 +13,6 @@ from watchdog.observers import Observer
 from openpilot.common.basedir import BASEDIR
 
 
-class Debouncer:
-  def __init__(self, delay: float, fn):
-    self.delay = delay
-    self.fn = fn
-    self.timer: threading.Timer | None = None
-    self.lock = threading.Lock()
-    self.pending = 0
-
-  def trigger(self):
-    with self.lock:
-      self.pending += 1
-      if self.timer is not None:
-        self.timer.cancel()
-      self.timer = threading.Timer(self.delay, self._fire)
-      self.timer.daemon = True
-      self.timer.start()
-
-  def _fire(self):
-    with self.lock:
-      n = self.pending
-      self.pending = 0
-      self.timer = None
-    self.fn(n)
-
-
-class Handler(FileSystemEventHandler):
-  def __init__(self, debouncer: Debouncer):
-    self.debouncer = debouncer
-
-  def on_any_event(self, event):
-    if not event.is_directory:
-      self.debouncer.trigger()
-
-
 def build_ssh_cmd(args) -> str:
   ctl = f"/tmp/devsync-{args.ip}.ctl"
   parts = [
@@ -87,89 +53,74 @@ def git_tracked_files(src: Path) -> bytes:
   )
 
 
+class Handler(FileSystemEventHandler):
+  def __init__(self, events: list[int], lock: threading.Lock):
+    self.events = events
+    self.lock = lock
+
+  def on_any_event(self, event):
+    if not event.is_directory:
+      with self.lock:
+        self.events[0] += 1
+
+
 def main():
   p = argparse.ArgumentParser()
   p.add_argument("ip", help="device IP / hostname")
   p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
   p.add_argument("--src", type=Path, default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
-  p.add_argument("--debounce", type=float, default=1.0, help="seconds to coalesce events before syncing")
   p.add_argument("--delete", action="store_true", help="propagate deletions of tracked files")
   p.add_argument("--no-initial", action="store_true", help="skip the full sync on startup")
   args = p.parse_args()
 
   print(f"[devsync] watching {args.src}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
-  print(f"[devsync] debounce {args.debounce}s, delete={args.delete}")
+  print(f"[devsync] delete={args.delete}")
 
-  syncing = threading.Lock()
-  pending_again = threading.Event()
+  events = [0]
+  events_lock = threading.Lock()
 
-  def run_sync(events: int, initial: bool = False):
-    if not syncing.acquire(blocking=False):
-      # a sync is already in flight; ask it to run again when done
-      pending_again.set()
-      return
-    try:
-      while True:
-        try:
-          file_list = git_tracked_files(args.src)
-        except subprocess.CalledProcessError as e:
-          print(f"[devsync] git ls-files failed: {e}", file=sys.stderr)
-          break
-        n_listed = file_list.count(b"\0")
+  def run_sync(n_events: int, initial: bool = False):
+    file_list = git_tracked_files(args.src)
+    n_listed = file_list.count(b"\0")
+    cmd = build_rsync_cmd(args, initial=initial)
+    t0 = time.monotonic()
+    if initial:
+      # stream rsync progress directly to the terminal
+      rc = subprocess.run(cmd, input=file_list).returncode
+      files: list[str] = []
+    else:
+      r = subprocess.run(cmd, input=file_list, capture_output=True)
+      files = [ln for ln in r.stdout.decode().splitlines() if ln.strip()]
+      rc = r.returncode
+      if rc and r.stderr.strip():
+        print(r.stderr.decode().strip(), file=sys.stderr)
+    dt = time.monotonic() - t0
 
-        cmd = build_rsync_cmd(args, initial=initial)
-        t0 = time.monotonic()
-        try:
-          if initial:
-            # stream rsync progress directly to the terminal
-            rc = subprocess.run(cmd, input=file_list).returncode
-            files: list[str] = []
-            stderr = ""
-          else:
-            r = subprocess.run(cmd, input=file_list, capture_output=True)
-            files = [ln for ln in r.stdout.decode().splitlines() if ln.strip()]
-            rc = r.returncode
-            stderr = r.stderr.decode()
-        except FileNotFoundError:
-          print("[devsync] rsync not found in PATH", file=sys.stderr)
-          sys.exit(1)
-        dt = time.monotonic() - t0
-
-        if rc == 0:
-          if initial:
-            print(f"[devsync] initial sync done in {dt:.2f}s ({n_listed} tracked files)")
-          else:
-            ev = f" ({events} ev)" if events else ""
-            if not files:
-              print(f"[devsync] {dt:.2f}s{ev} · no changes")
-            else:
-              print(f"[devsync] {dt:.2f}s{ev} · {len(files)} files: {', '.join(files)}")
-        else:
-          print(f"[devsync] ERR rc={rc} in {dt:.2f}s")
-          if stderr.strip():
-            print(stderr.strip(), file=sys.stderr)
-
-        if not pending_again.is_set():
-          break
-        pending_again.clear()
-        events = 0
-        initial = False
-    finally:
-      syncing.release()
+    if rc != 0:
+      print(f"[devsync] ERR rc={rc} in {dt:.2f}s")
+    elif initial:
+      print(f"[devsync] initial sync done in {dt:.2f}s ({n_listed} tracked files)")
+    else:
+      ev = f" ({n_events} ev)" if n_events else ""
+      msg = f"{len(files)} files: {', '.join(files)}" if files else "no changes"
+      print(f"[devsync] {dt:.2f}s{ev} · {msg}")
 
   if not args.no_initial:
     print("[devsync] initial sync...")
     run_sync(0, initial=True)
 
-  deb = Debouncer(args.debounce, run_sync)
   obs = Observer()
-  obs.schedule(Handler(deb), str(args.src), recursive=True)
+  obs.schedule(Handler(events, events_lock), str(args.src), recursive=True)
   obs.start()
   try:
     while True:
       time.sleep(1)
+      with events_lock:
+        n, events[0] = events[0], 0
+      if n:
+        run_sync(n)
   except KeyboardInterrupt:
     print("\n[devsync] stopping")
   finally:
