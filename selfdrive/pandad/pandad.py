@@ -78,14 +78,12 @@ def main() -> None:
   count = 0
   while not do_exit:
     try:
-      count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
-
       if (count % 2) == 0:
         HARDWARE.reset_internal_panda()
       else:
         HARDWARE.recover_internal_panda()
-        time.sleep(3)  # wait to come back up
+      count += 1
 
       # Flash all Pandas in DFU mode
       for serial in PandaDFU.list():

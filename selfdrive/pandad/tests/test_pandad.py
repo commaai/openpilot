@@ -50,7 +50,7 @@ class TestPandad:
 
   def test_in_dfu(self):
     HARDWARE.recover_internal_panda()
-    self._run_test(60)
+    self._run_test()
 
   def test_in_bootstub(self):
     with Panda() as p:
@@ -73,7 +73,7 @@ class TestPandad:
     st = time.monotonic()
     self._flash_bootstub(None)
     print("flash done", time.monotonic() - st)
-    self._run_test(45)
+    self._run_test()
 
   def test_recover_from_bad_bootstub(self):
     self._go_to_dfu()
@@ -83,4 +83,4 @@ class TestPandad:
     assert not Panda.list()
     assert not PandaDFU.list()
 
-    self._run_test(60)
+    self._run_test()
