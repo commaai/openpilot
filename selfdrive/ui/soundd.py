@@ -63,7 +63,7 @@ panda_sound_ids: dict[int, int] = {
   AudibleAlert.warningImmediate: 6,
 }
 
-PANDA_SOUND_RESET_DELAY = 0.2
+PANDA_SOUND_REQUEST = 0xfa
 
 def check_selfdrive_timeout_alert(sm):
   ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
@@ -91,8 +91,6 @@ class Soundd:
 
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
     self.panda_handle = None
-    self.panda_pending_sound_id = 0
-    self.panda_pending_start_time = 0.
     self.panda_playing_sound_id = 0
     self.panda_playing_start_time = 0.
     self.panda_repeat_sound = False
@@ -172,23 +170,24 @@ class Soundd:
       self.panda_handle = PandaSpiHandle()
     return self.panda_handle
 
-  def panda_set_sound(self, sound_id: int):
+  def panda_play_sound(self, sound_id: int):
     try:
-      self.panda_connect().controlWrite(0, 0xf6, sound_id, 0, b'', timeout=500)
+      self.panda_connect().controlWrite(0, PANDA_SOUND_REQUEST, sound_id, 0, b'', timeout=500)
     except Exception:
-      cloudlog.exception("failed to set panda sound")
+      cloudlog.exception("failed to play panda sound")
       if self.panda_handle is not None:
         self.panda_handle.close()
       self.panda_handle = None
 
   def panda_request_sound(self, sound_id: int, repeat: bool):
     self.panda_repeat_sound = repeat
-    self.panda_pending_sound_id = 0
     self.panda_playing_sound_id = 0
-    self.panda_set_sound(0)
     if sound_id != 0:
-      self.panda_pending_sound_id = sound_id
-      self.panda_pending_start_time = time.monotonic() + PANDA_SOUND_RESET_DELAY
+      self.panda_play_sound(sound_id)
+      self.panda_playing_sound_id = sound_id
+      self.panda_playing_start_time = time.monotonic()
+    else:
+      self.panda_play_sound(0)
 
   def update_panda_alert(self, new_alert):
     if self.current_alert == new_alert:
@@ -216,20 +215,11 @@ class Soundd:
 
   def update_panda_playback(self):
     now = time.monotonic()
-    if self.panda_pending_sound_id != 0 and now >= self.panda_pending_start_time:
-      self.panda_set_sound(self.panda_pending_sound_id)
-      self.panda_playing_sound_id = self.panda_pending_sound_id
-      self.panda_playing_start_time = now
-      self.panda_pending_sound_id = 0
-
     if self.panda_repeat_sound and self.panda_playing_sound_id != 0:
       duration = self.panda_sound_durations.get(self.current_alert, 3.0)
-      if now - self.panda_playing_start_time >= duration + PANDA_SOUND_RESET_DELAY:
-        sound_id = self.panda_playing_sound_id
-        self.panda_set_sound(0)
-        self.panda_playing_sound_id = 0
-        self.panda_pending_sound_id = sound_id
-        self.panda_pending_start_time = now + PANDA_SOUND_RESET_DELAY
+      if now - self.panda_playing_start_time >= duration:
+        self.panda_play_sound(self.panda_playing_sound_id)
+        self.panda_playing_start_time = now
 
   def calculate_volume(self, weighted_db):
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
@@ -253,7 +243,7 @@ class Soundd:
           self.update_panda_playback()
           rk.keep_time()
       finally:
-        self.panda_set_sound(0)
+        self.panda_play_sound(0)
 
     # sounddevice must be imported after forking processes
     import sounddevice as sd
