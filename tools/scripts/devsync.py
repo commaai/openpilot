@@ -75,8 +75,6 @@ def build_rsync_cmd(args, initial: bool) -> list[str]:
     # only delete on the device if a tracked file was deleted locally
     cmd.append("--delete-missing-args")
     cmd.append("--ignore-missing-args")
-  if args.dry_run:
-    cmd.append("-n")
   src = str(args.src) + "/"
   dst = f"comma@{args.ip}:{args.remote}/"
   cmd += [src, dst]
@@ -92,23 +90,17 @@ def git_tracked_files(src: Path) -> bytes:
 def main():
   p = argparse.ArgumentParser()
   p.add_argument("ip", help="device IP / hostname")
-  p.add_argument("--remote", default="/data/openpilot",
-                 help="remote path on device")
-  p.add_argument("--src", type=Path, default=BASEDIR,
-                 help="local source directory")
+  p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
+  p.add_argument("--src", type=Path, default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
-  p.add_argument("--debounce", type=float, default=1.0,
-                 help="seconds to coalesce events before syncing")
-  p.add_argument("--delete", action="store_true",
-                 help="propagate deletions of tracked files")
-  p.add_argument("--dry-run", action="store_true")
-  p.add_argument("--no-initial", action="store_true",
-                 help="skip the full sync on startup")
+  p.add_argument("--debounce", type=float, default=1.0, help="seconds to coalesce events before syncing")
+  p.add_argument("--delete", action="store_true", help="propagate deletions of tracked files")
+  p.add_argument("--no-initial", action="store_true", help="skip the full sync on startup")
   args = p.parse_args()
 
   print(f"[devsync] watching {args.src}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
-  print(f"[devsync] debounce {args.debounce}s, delete={args.delete}, dry_run={args.dry_run}")
+  print(f"[devsync] debounce {args.debounce}s, delete={args.delete}")
 
   syncing = threading.Lock()
   pending_again = threading.Event()
