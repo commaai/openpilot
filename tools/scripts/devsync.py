@@ -37,10 +37,6 @@ def build_rsync_cmd(args, initial: bool) -> list[str]:
     cmd.append("--info=progress2,stats1")
   else:
     cmd.append("--out-format=%n")
-  if args.delete:
-    # only delete on the device if a tracked file was deleted locally
-    cmd.append("--delete-missing-args")
-    cmd.append("--ignore-missing-args")
   src = str(args.src) + "/"
   dst = f"comma@{args.ip}:{args.remote}/"
   cmd += [src, dst]
@@ -75,13 +71,11 @@ def main():
   p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
   p.add_argument("--src", type=Path, default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
-  p.add_argument("--delete", action="store_true", help="propagate deletions of tracked files")
   p.add_argument("--no-initial", action="store_true", help="skip the full sync on startup")
   args = p.parse_args()
 
   print(f"[devsync] watching {args.src}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
-  print(f"[devsync] delete={args.delete}")
 
   def run_sync(n_events: int, initial: bool = False):
     file_list = git_tracked_files(args.src)
