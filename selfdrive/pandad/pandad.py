@@ -17,7 +17,7 @@ def get_expected_signature() -> bytes:
   fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
   return Panda.get_signature_from_firmware(fn)
 
-def flash_panda(panda_serial: str) -> Panda:
+def flash_panda(panda_serial: str):
   panda = Panda(panda_serial)
   fw_signature = get_expected_signature()
   internal_panda = panda.is_internal()
