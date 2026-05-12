@@ -10,7 +10,7 @@ from pathlib import Path
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-REPO = Path(__file__).resolve().parents[2]
+from openpilot.common.basedir import BASEDIR
 
 # fast in-process filter: drop events under these dir names without bothering git
 IGNORED_DIR_PARTS = {
@@ -67,9 +67,9 @@ class Handler(FileSystemEventHandler):
 
 
 def build_ssh_cmd(args) -> str:
-  ctl = f"/tmp/devsync-{args.user}-{args.ip}-{args.port}.ctl"
+  ctl = f"/tmp/devsync-{args.ip}.ctl"
   parts = [
-    "ssh", "-p", str(args.port),
+    "ssh",
     "-o", "ControlMaster=auto",
     "-o", f"ControlPath={ctl}",
     "-o", "ControlPersist=10m",
@@ -97,7 +97,7 @@ def build_rsync_cmd(args, initial: bool) -> list[str]:
   if args.dry_run:
     cmd.append("-n")
   src = str(args.src) + "/"
-  dst = f"{args.user}@{args.ip}:{args.remote}/"
+  dst = f"comma@{args.ip}:{args.remote}/"
   cmd += [src, dst]
   return cmd
 
@@ -111,12 +111,9 @@ def git_tracked_files(src: Path) -> bytes:
 def main():
   p = argparse.ArgumentParser()
   p.add_argument("ip", help="device IP / hostname")
-  p.add_argument("--user", default="comma")
-  p.add_argument("--port", type=int, default=22,
-                 help="ssh port (AGNOS default 22)")
   p.add_argument("--remote", default="/data/openpilot",
                  help="remote path on device")
-  p.add_argument("--src", type=Path, default=REPO,
+  p.add_argument("--src", type=Path, default=BASEDIR,
                  help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
   p.add_argument("--debounce", type=float, default=1.0,
@@ -126,12 +123,10 @@ def main():
   p.add_argument("--dry-run", action="store_true")
   p.add_argument("--no-initial", action="store_true",
                  help="skip the full sync on startup")
-  p.add_argument("-v", "--verbose", action="store_true",
-                 help="print every transferred path")
   args = p.parse_args()
 
   print(f"[devsync] watching {args.src}")
-  print(f"[devsync] target   {args.user}@{args.ip}:{args.remote} (port {args.port})")
+  print(f"[devsync] target   comma@{args.ip}:{args.remote}")
   print(f"[devsync] debounce {args.debounce}s, delete={args.delete}, dry_run={args.dry_run}")
 
   syncing = threading.Lock()
@@ -173,13 +168,13 @@ def main():
           if initial:
             print(f"[devsync] initial sync done in {dt:.2f}s ({n_listed} tracked files)")
           else:
-            tag = f"{len(files)} files"
-            if events:
-              tag += f" ({events} ev)"
-            print(f"[devsync] {tag} in {dt:.2f}s")
-            if args.verbose:
-              for f in files:
-                print(f"  {f}")
+            ev = f" ({events} ev)" if events else ""
+            if not files:
+              print(f"[devsync] {dt:.2f}s{ev} · no changes")
+            elif len(files) == 1:
+              print(f"[devsync] {dt:.2f}s{ev} · {files[0]}")
+            else:
+              print(f"[devsync] {dt:.2f}s{ev} · {len(files)} files: {', '.join(files)}")
         else:
           print(f"[devsync] ERR rc={rc} in {dt:.2f}s")
           if stderr.strip():
