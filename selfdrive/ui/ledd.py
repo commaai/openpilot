@@ -36,8 +36,8 @@ class LedState:
   blue: int
 
 
-STARTING = LedState("starting", 0, 36, 180)
-READY = LedState("ready", 0, 36, 180)
+STARTING = LedState("starting", 0, 0, 180)
+READY = LedState("ready", 0, 0, 180)
 ENGAGED = LedState("engaged", 0, 180, 35)
 YELLOW = LedState("yellow", 180, 130, 0)
 WARNING = LedState("warning", 180, 130, 0)
