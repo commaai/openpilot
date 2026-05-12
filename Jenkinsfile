@@ -74,7 +74,14 @@ END"""
 }
 
 def installRsync() {
-  sh script: 'apk add --no-cache rsync', label: 'install rsync'
+  sh script: '''
+set -e
+
+if ! command -v rsync >/dev/null; then
+  mkdir -p /device-build-cache/apk
+  apk --cache-dir /device-build-cache/apk add --update-cache rsync
+fi
+''', label: 'install rsync'
 }
 
 def ciDockerArgs() {
@@ -94,13 +101,92 @@ def rsyncSshCommand(String keyFile) {
 def rsyncBuiltTreeFromDevice(String ip) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     sh script: """
-mkdir -p '${env.DEVICE_BUILD_DIR}'
-rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
-  --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
-  -e '${rsyncSshCommand(key_file)}' \\
-  'comma@${ip}:${env.TEST_DIR}/' '${env.DEVICE_BUILD_DIR}/'
+set -e
+
+cache='${env.DEVICE_BUILD_DIR}'
+mkdir -p "\${cache}"
+rm -rf "\${cache}/.git" "\${cache}/.venv" "\${cache}/.ruff_cache" "\${cache}/.pytest_cache" "\${cache}/.mypy_cache"
+rm -f "\${cache}/.sconsign.dblite"
+
+old_manifest="\${cache}/.ci_manifest"
+old_id="\$(cat "\${cache}/.ci_manifest.id" 2>/dev/null || true)"
+new_manifest="\${cache}/.ci_manifest.new"
+sync_paths="\${cache}/.ci_sync_paths"
+changed_paths="\${cache}/.ci_changed_paths"
+deleted_paths="\${cache}/.ci_deleted_paths"
+
+ssh_cmd='${rsyncSshCommand(key_file)}'
+ssh_cmd="\${ssh_cmd} comma@${ip}"
+
+\${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest'" > "\${new_manifest}"
+\${ssh_cmd} "cat '${env.TEST_DIR}/.ci_manifest.id'" > "\${cache}/.ci_manifest.id.new"
+new_id="\$(cat "\${cache}/.ci_manifest.id.new")"
+printf '%s\\n' "\${old_id}" > "\${cache}/.ci_previous_manifest.id"
+
+if [ -f "\${old_manifest}" ] && [ "\${old_id}" = "\${new_id}" ]; then
+  : > "\${changed_paths}"
+  : > "\${deleted_paths}"
+  : > "\${sync_paths}"
+  rm -f "\${new_manifest}" "\${cache}/.ci_manifest.id.new"
+  echo "builder cache manifest unchanged: \${new_id}"
+elif [ -f "\${old_manifest}" ]; then
+  python3 - "\${old_manifest}" "\${new_manifest}" "\${changed_paths}" "\${deleted_paths}" "\${sync_paths}" <<'PY'
+from pathlib import Path
+import sys
+
+def load_manifest(path):
+  out = {}
+  for line in Path(path).read_text().splitlines():
+    kind, value, name = line.split("\\t", 2)
+    out[name] = (kind, value)
+  return out
+
+old = load_manifest(sys.argv[1])
+new = load_manifest(sys.argv[2])
+changed = sorted(path for path, value in new.items() if old.get(path) != value)
+deleted = sorted(path for path in old if path not in new)
+
+Path(sys.argv[3]).write_text("".join(f"{path}\\n" for path in changed))
+Path(sys.argv[4]).write_text("".join(f"{path}\\n" for path in deleted))
+Path(sys.argv[5]).write_text("".join(f"{path}\\n" for path in [*changed, *deleted, ".ci_manifest", ".ci_manifest.id"]))
+
+print(f"changed={len(changed)} deleted={len(deleted)}")
+PY
+  rsync -a --delete-missing-args --no-owner --no-group --info=stats2,name0 \\
+    --ignore-times \\
+    --files-from="\${sync_paths}" \\
+    -e '${rsyncSshCommand(key_file)}' \\
+    'comma@${ip}:${env.TEST_DIR}/' "\${cache}/"
+else
+  echo "builder cache has no manifest, doing full content sync"
+  rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
+    --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
+    --exclude='.venv' --exclude='.ruff_cache' --exclude='.pytest_cache' --exclude='.mypy_cache' \\
+    --exclude='__pycache__' --exclude='.sconsign.dblite' \\
+    -e '${rsyncSshCommand(key_file)}' \\
+    'comma@${ip}:${env.TEST_DIR}/' "\${cache}/"
+  cp "\${new_manifest}" "\${cache}/.ci_manifest"
+  cp "\${cache}/.ci_manifest.id.new" "\${cache}/.ci_manifest.id"
+  find "\${cache}" -depth -type d -empty -delete
+  : > "\${sync_paths}"
+  : > "\${changed_paths}"
+  : > "\${deleted_paths}"
+fi
+
+if [ -f "\${new_manifest}" ]; then
+  mv "\${new_manifest}" "\${cache}/.ci_manifest"
+  mv "\${cache}/.ci_manifest.id.new" "\${cache}/.ci_manifest.id"
+fi
+printf '%s\\n' "\${new_id}" > "\${cache}/.ci_current_manifest.id"
+echo "builder cache previous manifest: \${old_id:-none}"
+echo "builder cache current manifest: \${new_id}"
+echo "builder cache changed paths: \$(wc -l < "\${changed_paths}")"
+echo "builder cache deleted paths: \$(wc -l < "\${deleted_paths}")"
 """, label: 'cache built tree'
   }
+
+  env.DEVICE_BUILD_PREVIOUS_ID = sh(script: "cat '${env.DEVICE_BUILD_DIR}/.ci_previous_manifest.id' 2>/dev/null || true", returnStdout: true).trim()
+  env.DEVICE_BUILD_ID = sh(script: "cat '${env.DEVICE_BUILD_DIR}/.ci_current_manifest.id'", returnStdout: true).trim()
 }
 
 def rsyncBuiltTreeToDevice(String ip) {
@@ -110,18 +196,61 @@ def rsyncBuiltTreeToDevice(String ip) {
 
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     sh script: """
-rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
-  --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
-  -e '${rsyncSshCommand(key_file)}' \\
-  '${env.DEVICE_BUILD_DIR}/' 'comma@${ip}:${env.TEST_DIR}/'
+set -e
+
+cache='${env.DEVICE_BUILD_DIR}'
+previous_id='${env.DEVICE_BUILD_PREVIOUS_ID ?: ''}'
+current_id='${env.DEVICE_BUILD_ID ?: ''}'
+ssh_cmd='${rsyncSshCommand(key_file)}'
+remote="comma@${ip}"
+
+remote_id="\$(\${ssh_cmd} "\${remote}" "mkdir -p '${env.TEST_DIR}' && rm -rf '${env.TEST_DIR}/.git' '${env.TEST_DIR}/.venv' '${env.TEST_DIR}/.ruff_cache' '${env.TEST_DIR}/.pytest_cache' '${env.TEST_DIR}/.mypy_cache' && rm -f '${env.TEST_DIR}/.sconsign.dblite' && cat '${env.TEST_DIR}/.ci_manifest.id' 2>/dev/null || true")"
+
+if [ -n "\${current_id}" ] && [ "\${remote_id}" = "\${current_id}" ]; then
+  echo "device already has manifest \${current_id}"
+elif [ -n "\${previous_id}" ] && [ "\${remote_id}" = "\${previous_id}" ]; then
+  echo "delta sync from \${previous_id} to \${current_id}"
+  if [ -s "\${cache}/.ci_sync_paths" ]; then
+    rsync -a --delete-missing-args --no-owner --no-group --info=stats2,name0 \\
+      --ignore-times \\
+      --files-from="\${cache}/.ci_sync_paths" \\
+      -e '${rsyncSshCommand(key_file)}' \\
+      "\${cache}/" "\${remote}:${env.TEST_DIR}/"
+  else
+    echo "no changed paths to sync"
+  fi
+else
+  echo "full content sync, remote manifest was \${remote_id:-none}, expected \${previous_id:-none}"
+  rsync -a --delete --delete-excluded --checksum --no-owner --no-group --info=stats2,name0 \\
+    --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
+    --exclude='.venv' --exclude='.ruff_cache' --exclude='.pytest_cache' --exclude='.mypy_cache' \\
+    --exclude='__pycache__' --exclude='.sconsign.dblite' \\
+    --exclude='.ci_changed_paths' --exclude='.ci_deleted_paths' --exclude='.ci_sync_paths' \\
+    --exclude='.ci_previous_manifest.id' --exclude='.ci_current_manifest.id' \\
+    -e '${rsyncSshCommand(key_file)}' \\
+    "\${cache}/" "\${remote}:${env.TEST_DIR}/"
+fi
 """, label: 'sync built tree'
   }
 }
 
-def writeBuildMetadataCommand() {
+def buildAndPrepareTreeCommand() {
   return """
+cd system/manager
+taskset -c 0-7 ./build.py
+
+cd "\${TEST_DIR}"
+dirty="\$(git status --porcelain)"
+if [ -n "\${dirty}" ]; then
+  echo "Dirty working tree after build:"
+  echo "\${dirty}"
+  exit 1
+fi
+
 python3 - <<'PY'
+import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -141,45 +270,59 @@ metadata = {
     "build_style": "ci",
   },
 }
-
 (root / "build.json").write_text(json.dumps(metadata))
+
+raw_tracked = subprocess.check_output(["git", "ls-files", "--recurse-submodules", "-s", "-z"])
+tracked = {}
+for record in raw_tracked.split(b"\\0"):
+  if not record:
+    continue
+  metadata, path = record.split(b"\\t", 1)
+  mode, oid, _stage = metadata.split(b" ")
+  tracked[path.decode()] = (mode.decode(), oid.decode())
+
+entries = [("G", f"{mode}:{oid}", path) for path, (mode, oid) in tracked.items()]
+skip_dirs = {".git", ".venv", ".ruff_cache", ".pytest_cache", ".mypy_cache", "__pycache__"}
+skip_files = {".ci_manifest", ".ci_manifest.id", ".sconsign.dblite"}
+
+for dirpath, dirnames, filenames in os.walk(root):
+  dirpath = Path(dirpath)
+
+  keep_dirs = []
+  for name in sorted(dirnames):
+    path = dirpath / name
+    rel = path.relative_to(root).as_posix()
+    if name in skip_dirs or rel.startswith(".git/"):
+      continue
+    if rel in tracked:
+      continue
+    if path.is_symlink():
+      entries.append(("L", os.readlink(path), rel))
+    else:
+      keep_dirs.append(name)
+  dirnames[:] = keep_dirs
+
+  for name in sorted(filenames):
+    path = dirpath / name
+    rel = path.relative_to(root).as_posix()
+    if rel in tracked or name == ".git" or name in skip_files:
+      continue
+    if path.is_symlink():
+      entries.append(("L", os.readlink(path), rel))
+      continue
+
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+      for chunk in iter(lambda: f.read(1024 * 1024), b""):
+        h.update(chunk)
+    entries.append(("F", f"{path.stat().st_size}:{h.hexdigest()}", rel))
+
+manifest = "".join(f"{kind}\\t{value}\\t{rel}\\n" for kind, value, rel in sorted(entries, key=lambda e: e[2]))
+(root / ".ci_manifest").write_text(manifest)
+(root / ".ci_manifest.id").write_text(hashlib.sha256(manifest.encode()).hexdigest() + "\\n")
+print((root / "build.json").read_text())
+print(f"manifest entries={len(entries)} id={(root / '.ci_manifest.id').read_text().strip()}")
 PY
-cat build.json
-"""
-}
-
-def unlockBuilderCpuCommand() {
-  return """
-set -eux
-
-for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
-  online="\${cpu}/online"
-  if [ -w "\${online}" ]; then
-    echo 1 | sudo tee "\${online}"
-  fi
-done
-
-isolated="\$(cat /sys/devices/system/cpu/isolated 2>/dev/null || true)"
-echo "isolated cpus: \${isolated:-none}"
-taskset -pc 0-7 \$\$
-
-for policy in /sys/devices/system/cpu/cpufreq/policy*; do
-  [ -d "\${policy}" ] || continue
-  max="\$(cat "\${policy}/cpuinfo_max_freq")"
-  echo "\${max}" | sudo tee "\${policy}/scaling_max_freq"
-  echo "\${max}" | sudo tee "\${policy}/scaling_min_freq"
-  if grep -qw performance "\${policy}/scaling_available_governors"; then
-    echo performance | sudo tee "\${policy}/scaling_governor"
-  fi
-  echo "\${policy}: governor=\$(cat "\${policy}/scaling_governor") min=\$(cat "\${policy}/scaling_min_freq") max=\$(cat "\${policy}/scaling_max_freq") cur=\$(cat "\${policy}/scaling_cur_freq")"
-done
-
-for governor in /sys/class/devfreq/soc:qcom,cpubw/governor /sys/class/devfreq/soc:qcom,memlat-cpu*/governor; do
-  if [ -w "\${governor}" ]; then
-    echo performance | sudo tee "\${governor}"
-    echo "\${governor}: \$(cat "\${governor}")"
-  fi
-done
 """
 }
 
@@ -190,13 +333,9 @@ def prepareBuiltTree() {
         timeout(time: 35, unit: 'MINUTES') {
           retry(3) {
             def date = sh(script: 'date', returnStdout: true).trim();
-            device(builder_ip, "set builder time", "date -s '" + date + "'")
-            device(builder_ip, "builder git checkout", "export UNSAFE=1\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+            device(builder_ip, "builder git checkout", "date -s '" + date + "'\nexport UNSAFE=1\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
-          device(builder_ip, "unlock builder cpu", unlockBuilderCpuCommand())
-          device(builder_ip, "build device tree", "cd system/manager && taskset -c 0-7 ./build.py")
-          device(builder_ip, "builder check dirty", "release/check-dirty.sh")
-          device(builder_ip, "write build metadata", writeBuildMetadataCommand())
+          device(builder_ip, "build and prepare tree", buildAndPrepareTreeCommand())
           installRsync()
           rsyncBuiltTreeFromDevice(builder_ip)
           env.DEVICE_BUILD_READY = "1"
@@ -228,13 +367,11 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           }
           retry (3) {
             def date = sh(script: 'date', returnStdout: true).trim();
-            device(device_ip, "set time", "date -s '" + date + "'")
             if (env.DEVICE_BUILD_READY == "1") {
-              device(device_ip, "device setup", "export SKIP_GIT_CHECKOUT=1\n" + readFile("selfdrive/test/setup_device_ci.sh"))
-              device(device_ip, "prepare rsync target", "mkdir -p ${env.TEST_DIR}")
+              device(device_ip, "device setup", "date -s '" + date + "'\nmkdir -p ${env.TEST_DIR}\nexport SKIP_GIT_CHECKOUT=1\n" + readFile("selfdrive/test/setup_device_ci.sh"))
               rsyncBuiltTreeToDevice(device_ip)
             } else {
-              device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+              device(device_ip, "git checkout", "date -s '" + date + "'\n" + extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
             }
           }
           steps.each { item ->
