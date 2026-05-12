@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
-REQUIRED_VIDEO_CODEC = "H264"
 
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
@@ -225,21 +224,6 @@ async def stream_options(request: 'web.Request'):
   return response
 
 
-def _validate_sdp_video_codecs(sdp: str):
-  import aiortc.sdp
-  desc = aiortc.sdp.SessionDescription.parse(sdp)
-  required_mime = f"video/{REQUIRED_VIDEO_CODEC}"
-  for m in desc.media:
-    if m.kind != "video":
-      continue
-    offered_mimes = {c.mimeType for c in m.rtp.codecs}
-    if required_mime not in offered_mimes:
-      raise web.HTTPBadRequest(
-        text=json.dumps({"error": "unsupported_codec", "message": f"Frontend must offer {REQUIRED_VIDEO_CODEC} via setCodecPreferences()"}),
-        content_type="application/json",
-      )
-
-
 async def get_stream(request: 'web.Request'):
   logger = logging.getLogger("webrtcd")
   try:
@@ -247,7 +231,6 @@ async def get_stream(request: 'web.Request'):
 
     raw_body = await request.json()
     body = StreamRequestBody(**raw_body)
-    _validate_sdp_video_codecs(body.sdp)
 
     async with request.app['stream_lock']:
       # Fully disconnect any other active stream before starting the replacement.
@@ -264,6 +247,12 @@ async def get_stream(request: 'web.Request'):
       session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
       try:
         answer = await session.get_answer()
+      except ValueError as e:
+        await session.stop()
+        raise web.HTTPBadRequest(
+          text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
+          content_type="application/json",
+        ) from e
       except Exception:
         await session.stop()
         raise
