@@ -133,7 +133,6 @@ class StreamSession:
 
     config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
-    self.video_tracks = []
 
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
