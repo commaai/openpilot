@@ -44,8 +44,8 @@ def wpa_cli(cmd):
 
 def get_default_route_iface():
   with open("/proc/net/route") as f:
-    defaults = [(int(r[6]), r[0]) for l in f.readlines()[1:] if len(r := l.split()) >= 7 and r[1] == "00000000" and int(r[3], 16) & 0x1]
-  return min(defaults)[1] if defaults else None
+    routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
+  return min(routes)[1] if routes else None
 
 class Tici(HardwareBase):
   @cached_property
