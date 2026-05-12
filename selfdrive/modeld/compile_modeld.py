@@ -171,6 +171,9 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   vision_runner = OnnxRunner(vision_onnx)
   policy_runner = OnnxRunner(policy_onnx)
 
+  # TODO should use compile config here, or pass through the script
+  # or maybe we extract the metadata here?
+  # and maybe we fold device info into the metadata?
   with open(metadata_path_for(vision_onnx), 'rb') as f:
     vision_metadata = pickle.load(f)
     vision_features_slice = vision_metadata['output_slices']['hidden_state']

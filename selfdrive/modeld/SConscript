@@ -66,7 +66,7 @@ if USBGPU:
   usbgpu_options += [True]
 
   tg_devices['selfdrive.modeld.modeld']['usbgpu'] = f"WARP_DEV={tg_backend} QUEUE_DEV=AMD"
-  modeld_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
+  usbgpu_tg_flags = f'DEV=USB+AMD:LLVM FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
 
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usb_gpu_lock = File("models/.usb_gpu.lock").abspath
@@ -74,7 +74,7 @@ if USBGPU:
 MODELD_CONFIGS = [ModeldCompileConfig(cam_w, cam_h, prepare_only, usbgpu=usbgpu)
                   for (cam_w, cam_h), prepare_only, usbgpu in product(CAMERA_TARGETS, [True, False], usbgpu_options)]
 
-DM_WARP_CONFIGS = [WarpCompileConfig(cam_w, cam_h, True) for cam_w, cam_h in CAMERA_TARGETS]
+DM_WARP_CONFIGS = [WarpCompileConfig(cam_w, cam_h) for cam_w, cam_h in CAMERA_TARGETS]
 
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
@@ -124,7 +124,9 @@ driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['dri
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 for cfg in MODELD_CONFIGS:
-  cmd = (f'{modeld_tg_flags} {tg_devices["selfdrive.modeld.modeld"]["usbgpu" if usbgpu else "default"]} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
+  cmd_tg_flags = usbgpu_tg_flags if cfg.usbgpu else tg_flags
+  cmd_tg_devices = tg_devices["selfdrive.modeld.modeld"]["usbgpu" if cfg.usbgpu else "default"]
+  cmd = (f'{cmd_tg_flags} {cmd_tg_devices} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
          f'--model-size {model_w}x{model_h} '
          f'--nv12 {",".join(str(x) for x in cfg.nv12)} '
          f'--vision-onnx {cfg.driving_vision_onnx} '

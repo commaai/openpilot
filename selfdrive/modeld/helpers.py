@@ -45,7 +45,7 @@ class ModeldCompileConfig:
 
   @property
   def driving_vision_onnx(self):
-    return MODELS_DIR / f'{self.big_prefix}driving_policy.onnx'
+    return MODELS_DIR / f'{self.big_prefix}driving_vision.onnx'
 
   @property
   def vision_metadata(self):
