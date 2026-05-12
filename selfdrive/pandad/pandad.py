@@ -14,21 +14,11 @@ from openpilot.common.swaglog import cloudlog
 
 
 def get_expected_signature() -> bytes:
-  try:
-    fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
-    return Panda.get_signature_from_firmware(fn)
-  except Exception:
-    cloudlog.exception("Error computing expected signature")
-    return b""
+  fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
+  return Panda.get_signature_from_firmware(fn)
 
 def flash_panda(panda_serial: str) -> Panda:
-  try:
-    panda = Panda(panda_serial)
-  except PandaProtocolMismatch:
-    cloudlog.warning("detected protocol mismatch, reflashing panda")
-    HARDWARE.recover_internal_panda()
-    raise
-
+  panda = Panda(panda_serial)
   fw_signature = get_expected_signature()
   internal_panda = panda.is_internal()
 
@@ -58,7 +48,7 @@ def flash_panda(panda_serial: str) -> Panda:
     cloudlog.info("Version mismatch after flashing, exiting")
     raise AssertionError
 
-  return panda
+  panda.close()
 
 
 def main() -> None:
@@ -121,9 +111,9 @@ def main() -> None:
       cloudlog.exception("pandad.uncaught_exception")
       continue
 
-    # run pandad with all connected serials as arguments
+    # run real pandad
     os.environ['MANAGER_DAEMON'] = 'pandad'
-    process = subprocess.Popen(["./pandad", panda_serial], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
+    process = subprocess.Popen(["./pandad"], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
     process.wait()
 
 

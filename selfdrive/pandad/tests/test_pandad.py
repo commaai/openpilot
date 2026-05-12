@@ -70,7 +70,9 @@ class TestPandad:
   #  self._run_test(45)
 
   def test_release_to_devel_bootstub(self):
+    st = time.monotonic()
     self._flash_bootstub(None)
+    print("flash done", time.monotonic() - st)
     self._run_test(45)
 
   def test_recover_from_bad_bootstub(self):
