@@ -92,7 +92,8 @@ def main() -> None:
         time.sleep(1)
 
       panda_serials = Panda.list()
-      if len(panda_serials) == 0:
+      if len(panda_serials):
+        assert len(panda_serials) == 1
         cloudlog.info(f"{len(panda_serials)} panda found, connecting - {panda_serials}")
         flash_panda(panda_serials[0])
 
