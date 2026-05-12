@@ -159,7 +159,7 @@ def setup_calibration_params() -> None:
 def setup_developer_params() -> None:
   CP = car.CarParams()
   CP.alphaLongitudinalAvailable = True
-  Params().put("CarParamsPersistent", CP.to_bytes())
+  Params().put("CarParamsPersistent", CP.to_bytes(), block=True)
 
 
 # --- Send functions ---

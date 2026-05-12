@@ -161,7 +161,7 @@ class UploadQueueCache:
     try:
       queue: list[UploadItem | None] = list(upload_queue.queue)
       items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
-      Params().put("AthenadUploadQueue", items)
+      Params().put("AthenadUploadQueue", items, block=True)
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
@@ -745,7 +745,7 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
         last_ping = int(time.monotonic() * 1e9)
-        Params().put("LastAthenaPingTime", last_ping)
+        Params().put("LastAthenaPingTime", last_ping, block=True)
     except WebSocketTimeoutException:
       ns_since_last_ping = int(time.monotonic() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:

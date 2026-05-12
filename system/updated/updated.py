@@ -280,7 +280,7 @@ class Updater:
 
     self.params.put_bool("UpdaterFetchAvailable", self.update_available, block=True)
     if len(self.branches):
-      self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
+      self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()), block=True)
 
     last_uptime_onroad = self.params.get("UptimeOnroad", return_default=True)
     last_route_count = self.params.get("RouteCount", return_default=True)
