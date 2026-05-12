@@ -96,7 +96,6 @@ def rsyncBuiltTreeFromDevice(String ip) {
     sh script: """
 mkdir -p '${env.DEVICE_BUILD_DIR}'
 rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
-  --exclude='.git/' --exclude='.git/**' \\
   -e '${rsyncSshCommand(key_file)}' \\
   'comma@${ip}:${env.TEST_DIR}/' '${env.DEVICE_BUILD_DIR}/'
 """, label: 'cache built tree'
@@ -111,7 +110,6 @@ def rsyncBuiltTreeToDevice(String ip) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     sh script: """
 rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
-  --exclude='.git/' --exclude='.git/**' \\
   -e '${rsyncSshCommand(key_file)}' \\
   '${env.DEVICE_BUILD_DIR}/' 'comma@${ip}:${env.TEST_DIR}/'
 """, label: 'sync built tree'
@@ -165,6 +163,7 @@ def prepareBuiltTree() {
           }
           device(builder_ip, "unlock builder cpu", unlockBuilderCpuCommand())
           device(builder_ip, "build device tree", "cd system/manager && taskset -c 0-7 ./build.py")
+          device(builder_ip, "builder check dirty", "release/check-dirty.sh")
           installRsync()
           rsyncBuiltTreeFromDevice(builder_ip)
           env.DEVICE_BUILD_READY = "1"
@@ -197,8 +196,12 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           retry (3) {
             def date = sh(script: 'date', returnStdout: true).trim();
             device(device_ip, "set time", "date -s '" + date + "'")
-            device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
-            rsyncBuiltTreeToDevice(device_ip)
+            if (env.DEVICE_BUILD_READY == "1") {
+              device(device_ip, "prepare rsync target", "mkdir -p ${env.TEST_DIR}")
+              rsyncBuiltTreeToDevice(device_ip)
+            } else {
+              device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+            }
           }
           steps.each { item ->
             def name = item[0]
@@ -208,7 +211,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             def diffPaths = args.diffPaths ?: []
             def cmdTimeout = args.timeout ?: 9999
 
-            if (env.DEVICE_BUILD_READY == "1" && name.toLowerCase().startsWith("build")) {
+            if (env.DEVICE_BUILD_READY == "1" && (name.toLowerCase().startsWith("build") || name == "check dirty")) {
               println "Skipping ${name}: using shared built tree."
               return
             } else if (branch != "master" && !branch.contains("__jenkins_loop_") && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
