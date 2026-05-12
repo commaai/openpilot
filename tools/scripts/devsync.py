@@ -5,7 +5,6 @@ import subprocess
 import sys
 import threading
 import time
-from pathlib import Path
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -13,39 +12,33 @@ from watchdog.observers import Observer
 from openpilot.common.basedir import BASEDIR
 
 
-def build_ssh_cmd(args) -> str:
-  ctl = f"/tmp/devsync-{args.ip}.ctl"
-  parts = [
+def build_rsync_cmd(args, initial: bool) -> list[str]:
+  ssh = [
     "ssh",
     "-o", "ControlMaster=auto",
-    "-o", f"ControlPath={ctl}",
+    "-o", f"ControlPath=/tmp/devsync-{args.ip}.ctl",
     "-o", "ControlPersist=10m",
     "-o", "StrictHostKeyChecking=accept-new",
   ]
   if args.identity:
-    parts += ["-i", args.identity]
-  return " ".join(shlex.quote(p) for p in parts)
+    ssh += ["-i", args.identity]
 
-
-def build_rsync_cmd(args, initial: bool) -> list[str]:
   cmd = [
     "rsync", "-az",
     "--files-from=-", "--from0",
-    "-e", build_ssh_cmd(args),
+    "-e", " ".join(shlex.quote(p) for p in ssh),
   ]
   if initial:
     cmd.append("--info=progress2,stats1")
   else:
     cmd.append("--out-format=%n")
-  src = str(args.src) + "/"
-  dst = f"comma@{args.ip}:{args.remote}/"
-  cmd += [src, dst]
+  cmd += [args.src + "/", f"comma@{args.ip}:{args.remote}/"]
   return cmd
 
 
-def git_tracked_files(src: Path) -> bytes:
+def git_tracked_files(src: str) -> bytes:
   return subprocess.check_output(
-    ["git", "-C", str(src), "ls-files", "--recurse-submodules", "-z"]
+    ["git", "-C", src, "ls-files", "--recurse-submodules", "-z"]
   )
 
 
@@ -69,7 +62,7 @@ def main():
   p = argparse.ArgumentParser()
   p.add_argument("ip", help="device IP / hostname")
   p.add_argument("--remote", default="/data/openpilot", help="remote path on device")
-  p.add_argument("--src", type=Path, default=BASEDIR, help="local source directory")
+  p.add_argument("--src", default=BASEDIR, help="local source directory")
   p.add_argument("-i", "--identity", default=None, help="ssh identity file")
   args = p.parse_args()
 
@@ -107,7 +100,7 @@ def main():
 
   handler = Handler()
   obs = Observer()
-  obs.schedule(handler, str(args.src), recursive=True)
+  obs.schedule(handler, args.src, recursive=True)
   obs.start()
   try:
     while True:
