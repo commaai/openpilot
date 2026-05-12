@@ -89,7 +89,6 @@ def main():
 
   handler = Handler(run_sync)
   obs = Observer()
-  obs.daemon = True
   obs.schedule(handler, args.src, recursive=True)
   obs.start()
   handler.run()
