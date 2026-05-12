@@ -197,6 +197,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             def date = sh(script: 'date', returnStdout: true).trim();
             device(device_ip, "set time", "date -s '" + date + "'")
             if (env.DEVICE_BUILD_READY == "1") {
+              device(device_ip, "device setup", "export SKIP_GIT_CHECKOUT=1\n" + readFile("selfdrive/test/setup_device_ci.sh"))
               device(device_ip, "prepare rsync target", "mkdir -p ${env.TEST_DIR}")
               rsyncBuiltTreeToDevice(device_ip)
             } else {

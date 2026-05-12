@@ -62,6 +62,11 @@ sleep infinity
 EOF
 chmod +x $CONTINUE_PATH
 
+if [ ! -z "$SKIP_GIT_CHECKOUT" ]; then
+  echo "device setup done, skipping git checkout"
+  exit 0
+fi
+
 fetch_commit() {
   if git cat-file -e "$GIT_COMMIT^{commit}" 2>/dev/null; then
     echo "$GIT_COMMIT already present"
