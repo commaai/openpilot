@@ -141,7 +141,7 @@ cdef class Params:
     cdef ParamKeyType t = self.p.getKeyType(k)
     return ensure_bytes(self.python2cpp(type(dat), t, dat, key))
 
-  def put(self, key, dat):
+  def put(self, key, dat, bool block = False):
     """
     Warning: This function blocks until the param is written to disk!
     In very rare cases this can take over a second, and your code will hang.
@@ -151,23 +151,18 @@ cdef class Params:
     cdef string k = self.check_key(key)
     cdef string dat_bytes = self._put_cast(key, dat)
     with nogil:
-      self.p.put(k, dat_bytes)
+      if block:
+        self.p.put(k, dat_bytes)
+      else:
+        self.p.putNonBlocking(k, dat_bytes)
 
-  def put_bool(self, key, bool val):
+  def put_bool(self, key, bool val, bool block = False):
     cdef string k = self.check_key(key)
     with nogil:
-      self.p.putBool(k, val)
-
-  def put_nonblocking(self, key, dat):
-    cdef string k = self.check_key(key)
-    cdef string dat_bytes = self._put_cast(key, dat)
-    with nogil:
-      self.p.putNonBlocking(k, dat_bytes)
-
-  def put_bool_nonblocking(self, key, bool val):
-    cdef string k = self.check_key(key)
-    with nogil:
-      self.p.putBoolNonBlocking(k, val)
+      if block:
+        self.p.putBool(k, val)
+      else:
+        self.p.putBoolNonBlocking(k, val)
 
   def remove(self, key):
     cdef string k = self.check_key(key)
