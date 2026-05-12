@@ -73,6 +73,7 @@ class UIState:
     self.is_metric: bool = self.params.get_bool("IsMetric")
     self.is_release = self.params.get_bool("IsReleaseBranch")
     self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
+    self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
@@ -190,6 +191,8 @@ class UIState:
         self.is_body = self.CP.notCar
         for callback in self._on_body_changed_callbacks:
           callback()
+
+    self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
     self._param_update_time = time.monotonic()
 
