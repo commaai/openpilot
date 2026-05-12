@@ -12,13 +12,6 @@ from watchdog.observers import Observer
 
 from openpilot.common.basedir import BASEDIR
 
-# fast in-process filter: drop events under these dir names without bothering git
-IGNORED_DIR_PARTS = {
-  ".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache",
-  ".venv", "venv", "node_modules", "build", ".scons_cache",
-}
-IGNORED_SUFFIXES = {".pyc", ".pyo", ".o", ".os", ".so", ".d", ".swp", ".swo"}
-
 
 class Debouncer:
   def __init__(self, delay: float, fn):
@@ -49,21 +42,9 @@ class Handler(FileSystemEventHandler):
   def __init__(self, debouncer: Debouncer):
     self.debouncer = debouncer
 
-  @staticmethod
-  def interesting(path: str) -> bool:
-    p = Path(path)
-    if any(part in IGNORED_DIR_PARTS for part in p.parts):
-      return False
-    if p.suffix in IGNORED_SUFFIXES:
-      return False
-    return True
-
   def on_any_event(self, event):
-    if event.is_directory:
-      return
-    if not self.interesting(event.src_path):
-      return
-    self.debouncer.trigger()
+    if not event.is_directory:
+      self.debouncer.trigger()
 
 
 def build_ssh_cmd(args) -> str:
@@ -171,8 +152,6 @@ def main():
             ev = f" ({events} ev)" if events else ""
             if not files:
               print(f"[devsync] {dt:.2f}s{ev} · no changes")
-            elif len(files) == 1:
-              print(f"[devsync] {dt:.2f}s{ev} · {files[0]}")
             else:
               print(f"[devsync] {dt:.2f}s{ev} · {len(files)} files: {', '.join(files)}")
         else:
