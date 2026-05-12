@@ -73,6 +73,61 @@ END"""
   }
 }
 
+def installRsync() {
+  sh script: 'apk add --no-cache rsync', label: 'install rsync'
+}
+
+def rsyncSshCommand(String keyFile) {
+  return "ssh -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${keyFile}"
+}
+
+def rsyncBuiltTreeFromDevice(String ip) {
+  withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
+    sh script: """
+mkdir -p '${env.DEVICE_BUILD_DIR}'
+rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
+  --exclude='.git/' --exclude='.git/**' \\
+  -e '${rsyncSshCommand(key_file)}' \\
+  'comma@${ip}:${env.TEST_DIR}/' '${env.DEVICE_BUILD_DIR}/'
+""", label: 'cache built tree'
+  }
+}
+
+def rsyncBuiltTreeToDevice(String ip) {
+  if (env.DEVICE_BUILD_READY != "1") {
+    return
+  }
+
+  withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
+    sh script: """
+rsync -a --delete --checksum --no-owner --no-group --info=stats2,name0 \\
+  --exclude='.git/' --exclude='.git/**' \\
+  -e '${rsyncSshCommand(key_file)}' \\
+  '${env.DEVICE_BUILD_DIR}/' 'comma@${ip}:${env.TEST_DIR}/'
+""", label: 'sync built tree'
+  }
+}
+
+def prepareBuiltTree() {
+  stage("build device tree") {
+    lock(resource: "", label: "tizi-common", inversePrecedence: true, variable: 'builder_ip', quantity: 1, resourceSelectStrategy: 'random') {
+      docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
+        timeout(time: 35, unit: 'MINUTES') {
+          retry(3) {
+            def date = sh(script: 'date', returnStdout: true).trim();
+            device(builder_ip, "set builder time", "date -s '" + date + "'")
+            device(builder_ip, "builder git checkout", "export UNSAFE=1\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+          }
+          device(builder_ip, "build device tree", "cd system/manager && ./build.py")
+          installRsync()
+          rsyncBuiltTreeFromDevice(builder_ip)
+          env.DEVICE_BUILD_READY = "1"
+        }
+      }
+    }
+  }
+}
+
 def deviceStage(String stageName, String deviceType, List extra_env, def steps) {
   stage(stageName) {
     if (currentBuild.result != null) {
@@ -90,10 +145,14 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
         timeout(time: 35, unit: 'MINUTES') {
+          if (env.DEVICE_BUILD_READY == "1") {
+            installRsync()
+          }
           retry (3) {
             def date = sh(script: 'date', returnStdout: true).trim();
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+            rsyncBuiltTreeToDevice(device_ip)
           }
           steps.each { item ->
             def name = item[0]
@@ -103,7 +162,10 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             def diffPaths = args.diffPaths ?: []
             def cmdTimeout = args.timeout ?: 9999
 
-            if (branch != "master" && !branch.contains("__jenkins_loop_") && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
+            if (env.DEVICE_BUILD_READY == "1" && name.toLowerCase().startsWith("build")) {
+              println "Skipping ${name}: using shared built tree."
+              return
+            } else if (branch != "master" && !branch.contains("__jenkins_loop_") && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
               println "Skipping ${name}: no changes in ${diffPaths}."
               return
             } else {
@@ -161,6 +223,8 @@ node {
   env.PYTHONWARNINGS = "error"
   env.TEST_DIR = "/data/openpilot"
   env.SOURCE_DIR = "/data/openpilot_source/"
+  env.DEVICE_BUILD_DIR = "${env.WORKSPACE}/.device-build-cache/${(env.BRANCH_NAME ?: 'detached').replaceAll('[^A-Za-z0-9_.-]', '_')}"
+  env.DEVICE_BUILD_READY = "0"
   setupCredentials()
 
   def scmVars = checkout(scm)
@@ -200,7 +264,8 @@ node {
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
-    parallel (
+      prepareBuiltTree()
+      parallel (
       'onroad tests': {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd system/manager && ./build.py"),
