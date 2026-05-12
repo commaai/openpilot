@@ -73,8 +73,6 @@ def main():
     dt = time.monotonic() - t0
     if r.returncode:
       print(f"[devsync] ERR rc={r.returncode} in {dt:.2f}s")
-      if r.stderr.strip():
-        print(r.stderr.decode().strip(), file=sys.stderr)
       return
     files = [ln for ln in r.stdout.decode().splitlines() if ln.strip()]
     msg = f"{len(files)} files: {', '.join(files)}" if files else "no changes"
