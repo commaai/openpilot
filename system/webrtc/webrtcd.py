@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import time
 import argparse
 import asyncio
@@ -175,6 +176,7 @@ class StreamSession:
     return await self.stream.start()
 
   def message_handler(self, message: bytes):
+    assert self.incoming_bridge is not None
     try:
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
