@@ -9,7 +9,7 @@ from tinygrad.nn.onnx import OnnxPBParser
 
 def metadata_path_for(onnx_path) -> pathlib.Path:
   p = pathlib.Path(onnx_path)
-  return p.parent / (p.stem.replace('big_','') + '_metadata.pkl') # big/smol share metadata
+  return p.parent / (p.stem + '_metadata.pkl')
 
 
 class MetadataOnnxPBParser(OnnxPBParser):

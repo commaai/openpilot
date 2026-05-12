@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, get_tg_input_devices
+from openpilot.selfdrive.modeld.helpers import ModeldCompileConfig, get_tg_input_devices
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -29,9 +29,6 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-
-VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
-POLICY_METADATA_PATH = MODELS_DIR / 'driving_policy_metadata.pkl'
 
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
@@ -76,16 +73,17 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
+    compile_config = ModeldCompileConfig(cam_w, cam_h, prepare_only=False, usbgpu=usbgpu)
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
     self.WARP_DEV = input_devices['WARP_DEV']
     self.QUEUE_DEV = input_devices['QUEUE_DEV']
-    with open(VISION_METADATA_PATH, 'rb') as f:
+    with open(compile_config.vision_metadata, 'rb') as f:
       vision_metadata = pickle.load(f)
       self.vision_input_shapes =  vision_metadata['input_shapes']
       self.vision_input_names = list(self.vision_input_shapes.keys())
       self.vision_output_slices = vision_metadata['output_slices']
 
-    with open(POLICY_METADATA_PATH, 'rb') as f:
+    with open(compile_config.policy_metadata, 'rb') as f:
       policy_metadata = pickle.load(f)
       self.policy_input_shapes =  policy_metadata['input_shapes']
       self.policy_output_slices = policy_metadata['output_slices']
@@ -98,8 +96,8 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
-    self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
+    self.run_policy = pickle.loads(read_file_chunked(ModeldCompileConfig(cam_w, cam_h, prepare_only=False, usbgpu=usbgpu).pkl_path))
+    self.warp_enqueue = pickle.loads(read_file_chunked(ModeldCompileConfig(cam_w, cam_h, prepare_only=True, usbgpu=usbgpu).pkl_path))
     self.warp_enqueue(
       **self.input_queues,
       frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8', device=self.WARP_DEV).contiguous().realize(),
