@@ -221,7 +221,6 @@ class StreamRequestBody:
 
 async def get_stream(request: 'web.Request'):
   stream_dict, debug_mode = request.app['streams'], request.app['debug']
-
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
 
