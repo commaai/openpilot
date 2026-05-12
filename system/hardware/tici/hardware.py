@@ -42,6 +42,11 @@ def wpa_cli(cmd):
   out = subprocess.check_output(["wpa_cli", "-i", "wlan0", cmd], text=True, timeout=2)
   return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
 
+def get_default_route_iface():
+  with open("/proc/net/route") as f:
+    defaults = [(int(r[6]), r[0]) for l in f.readlines()[1:] if len(r := l.split()) >= 7 and r[1] == "00000000" and int(r[3], 16) & 0x1]
+  return min(defaults)[1] if defaults else None
+
 class Tici(HardwareBase):
   @cached_property
   def amplifier(self):
@@ -95,13 +100,11 @@ class Tici(HardwareBase):
   def get_network_type(self):
     ms = self.get_modem_state()
     try:
-      parts = subprocess.check_output(["ip", "route", "get", "1.1.1.1"], text=True, timeout=2).split()
-      if "dev" in parts:
-        dev = parts[parts.index("dev") + 1]
-        if dev == "wlan0":
-          return NetworkType.wifi
-        if dev in ("eth0", "usb0"):
-          return NetworkType.ethernet
+      iface = get_default_route_iface()
+      if iface == "wlan0":
+        return NetworkType.wifi
+      if iface in ("eth0", "usb0"):
+        return NetworkType.ethernet
     except Exception:
       pass
 
