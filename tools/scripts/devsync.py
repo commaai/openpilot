@@ -39,19 +39,21 @@ def git_tracked_files(src: str) -> bytes:
 
 
 class Handler(FileSystemEventHandler):
-  def __init__(self):
+  def __init__(self, sync_fn):
     self.events = 0
     self.lock = threading.Lock()
+    self.sync_fn = sync_fn
 
   def on_any_event(self, event):
     if not event.is_directory:
       with self.lock:
         self.events += 1
 
-  def drain(self) -> int:
+  def update(self):
     with self.lock:
       n, self.events = self.events, 0
-    return n
+    if n:
+      self.sync_fn(n)
 
 
 def main():
@@ -83,21 +85,14 @@ def main():
 
   run_sync()
 
-  handler = Handler()
+  handler = Handler(run_sync)
   obs = Observer()
+  obs.daemon = True
   obs.schedule(handler, args.src, recursive=True)
   obs.start()
-  try:
-    while True:
-      time.sleep(1)
-      n = handler.drain()
-      if n:
-        run_sync(n)
-  except KeyboardInterrupt:
-    print("\n[devsync] stopping")
-  finally:
-    obs.stop()
-    obs.join()
+  while True:
+    time.sleep(1)
+    handler.update()
 
 
 if __name__ == "__main__":
