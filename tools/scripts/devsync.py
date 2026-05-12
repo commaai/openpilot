@@ -54,14 +54,19 @@ def git_tracked_files(src: Path) -> bytes:
 
 
 class Handler(FileSystemEventHandler):
-  def __init__(self, events: list[int], lock: threading.Lock):
-    self.events = events
-    self.lock = lock
+  def __init__(self):
+    self.events = 0
+    self.lock = threading.Lock()
 
   def on_any_event(self, event):
     if not event.is_directory:
       with self.lock:
-        self.events[0] += 1
+        self.events += 1
+
+  def drain(self) -> int:
+    with self.lock:
+      n, self.events = self.events, 0
+    return n
 
 
 def main():
@@ -77,9 +82,6 @@ def main():
   print(f"[devsync] watching {args.src}")
   print(f"[devsync] target   comma@{args.ip}:{args.remote}")
   print(f"[devsync] delete={args.delete}")
-
-  events = [0]
-  events_lock = threading.Lock()
 
   def run_sync(n_events: int, initial: bool = False):
     file_list = git_tracked_files(args.src)
@@ -111,14 +113,14 @@ def main():
     print("[devsync] initial sync...")
     run_sync(0, initial=True)
 
+  handler = Handler()
   obs = Observer()
-  obs.schedule(Handler(events, events_lock), str(args.src), recursive=True)
+  obs.schedule(handler, str(args.src), recursive=True)
   obs.start()
   try:
     while True:
       time.sleep(1)
-      with events_lock:
-        n, events[0] = events[0], 0
+      n = handler.drain()
       if n:
         run_sync(n)
   except KeyboardInterrupt:
