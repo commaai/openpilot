@@ -154,4 +154,4 @@ const LogCameraInfo stream_driver_camera_info{
 };
 
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
-const LogCameraInfo stream_cameras_logged[] = {stream_driver_camera_info, stream_wide_road_camera_info};
+const LogCameraInfo stream_cameras_logged[] = {stream_driver_camera_info, stream_wide_road_camera_info, stream_driver_camera_info};
