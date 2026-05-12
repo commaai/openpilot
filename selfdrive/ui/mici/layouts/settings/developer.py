@@ -162,32 +162,32 @@ class DeveloperLayoutMici(NavScroller):
       item.set_checked(ui_state.params.get_bool(key))
 
   def _on_joystick_debug_mode(self, state: bool):
-    ui_state.params.put_bool("JoystickDebugMode", state)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False)
+    ui_state.params.put_bool("JoystickDebugMode", state, block=True)
+    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
     self._long_maneuver_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False)
+    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
     self._lat_maneuver_toggle.set_checked(False)
 
   def _on_long_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LongitudinalManeuverMode", state)
-    ui_state.params.put_bool("JoystickDebugMode", False)
+    ui_state.params.put_bool("LongitudinalManeuverMode", state, block=True)
+    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False)
+    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
     self._lat_maneuver_toggle.set_checked(False)
     restart_needed_callback()
 
   def _on_lat_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LateralManeuverMode", state)
-    ui_state.params.put_bool("ExperimentalMode", False)
-    ui_state.params.put_bool("JoystickDebugMode", False)
+    ui_state.params.put_bool("LateralManeuverMode", state, block=True)
+    ui_state.params.put_bool("ExperimentalMode", False, block=True)
+    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False)
+    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
     self._long_maneuver_toggle.set_checked(False)
     restart_needed_callback()
 
   def _on_alpha_long_enabled(self, state: bool):
     def do_toggle(_state: bool):
-      ui_state.params.put_bool("AlphaLongitudinalEnabled", _state)
+      ui_state.params.put_bool("AlphaLongitudinalEnabled", _state, block=True)
       restart_needed_callback()
       self._update_toggles()
 

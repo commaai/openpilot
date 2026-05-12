@@ -139,7 +139,7 @@ def init_overlay() -> None:
   cloudlog.info("preparing new safe staging area")
 
   params = Params()
-  params.put_bool("UpdateAvailable", False)
+  params.put_bool("UpdateAvailable", False, block=True)
   set_consistent_flag(False)
   dismount_overlay()
   run(["sudo", "rm", "-rf", STAGING_ROOT])
@@ -278,7 +278,7 @@ class Updater:
     self.params.put("UpdateFailedCount", failed_count, block=True)
     self.params.put("UpdaterTargetBranch", self.target_branch, block=True)
 
-    self.params.put_bool("UpdaterFetchAvailable", self.update_available)
+    self.params.put_bool("UpdaterFetchAvailable", self.update_available, block=True)
     if len(self.branches):
       self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
@@ -322,7 +322,7 @@ class Updater:
     self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR), block=True)
     self.params.put("UpdaterNewDescription", get_description(FINALIZED), block=True)
     self.params.put("UpdaterNewReleaseNotes", parse_release_notes(FINALIZED), block=True)
-    self.params.put_bool("UpdateAvailable", self.update_ready)
+    self.params.put_bool("UpdateAvailable", self.update_ready, block=True)
 
     # Handle user prompt
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
@@ -381,7 +381,7 @@ class Updater:
 
     # TODO: cleanly interrupt this and invalidate old update
     set_consistent_flag(False)
-    self.params.put_bool("UpdateAvailable", False)
+    self.params.put_bool("UpdateAvailable", False, block=True)
 
     setup_git_options(OVERLAY_MERGED)
 

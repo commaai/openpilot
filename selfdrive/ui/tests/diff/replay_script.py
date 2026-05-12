@@ -126,7 +126,7 @@ def setup_offroad_alerts() -> None:
 
 def setup_update_available(available: bool = True) -> None:
   params = Params()
-  params.put_bool("UpdateAvailable", available)
+  params.put_bool("UpdateAvailable", available, block=True)
   params.put("UpdaterAvailableBranches", ",".join(["test-branch", "test-branch-2", BRANCH_NAME]), block=True)
   if available:
     params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01", block=True)

@@ -206,7 +206,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     # handle requests to cycle system started state
     if params.get_bool("OnroadCycleRequested"):
-      params.put_bool("OnroadCycleRequested", False)
+      params.put_bool("OnroadCycleRequested", False, block=True)
       offroad_cycle_count = sm.frame
     onroad_conditions["not_onroad_cycle"] = (sm.frame - offroad_cycle_count) >= ONROAD_CYCLE_TIME * SERVICE_LIST['pandaStates'].frequency
 
@@ -324,13 +324,13 @@ def hardware_thread(end_event, hw_queue) -> None:
       should_start = should_start and all(startup_conditions.values())
 
     if should_start != should_start_prev or (count == 0):
-      params.put_bool("IsEngaged", False)
+      params.put_bool("IsEngaged", False, block=True)
       engaged_prev = False
 
     if sm.updated['selfdriveState']:
       engaged = sm['selfdriveState'].enabled
       if engaged != engaged_prev:
-        params.put_bool("IsEngaged", engaged)
+        params.put_bool("IsEngaged", engaged, block=True)
         engaged_prev = engaged
 
       try:
@@ -380,7 +380,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     # Check if we need to shut down
     if power_monitor.should_shutdown(onroad_conditions["ignition"], in_car, off_ts, started_seen):
       cloudlog.warning(f"shutting device down, offroad since {off_ts}")
-      params.put_bool("DoShutdown", True)
+      params.put_bool("DoShutdown", True, block=True)
 
     msg.deviceState.started = started_ts is not None
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))

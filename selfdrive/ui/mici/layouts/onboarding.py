@@ -353,7 +353,7 @@ class OnboardingWindow(Widget):
     self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _on_uninstall(self):
-    ui_state.params.put_bool("DoUninstall", True)
+    ui_state.params.put_bool("DoUninstall", True, block=True)
 
   def show_event(self):
     super().show_event()

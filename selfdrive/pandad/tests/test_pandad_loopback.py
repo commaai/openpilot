@@ -42,8 +42,8 @@ def setup_pandad():
   safety_config.safetyModel = car.CarParams.SafetyModel.allOutput
   cp.safetyConfigs = [safety_config]
 
-  params.put_bool("FirmwareQueryDone", True)
-  params.put_bool("ControlsReady", True)
+  params.put_bool("FirmwareQueryDone", True, block=True)
+  params.put_bool("ControlsReady", True, block=True)
   params.put("CarParams", cp.to_bytes(), block=True)
 
   publish_device_state(pm, True)

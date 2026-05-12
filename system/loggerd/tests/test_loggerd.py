@@ -309,7 +309,7 @@ class TestLoggerd:
   @pytest.mark.parametrize("record_front", [True, False])
   def test_record_front(self, record_front):
     params = Params()
-    params.put_bool("RecordFront", record_front)
+    params.put_bool("RecordFront", record_front, block=True)
 
     self._publish_camera_and_audio_messages()
 
@@ -320,7 +320,7 @@ class TestLoggerd:
   @pytest.mark.parametrize("record_audio", [True, False])
   def test_record_audio(self, record_audio):
     params = Params()
-    params.put_bool("RecordAudio", record_audio)
+    params.put_bool("RecordAudio", record_audio, block=True)
 
     self._publish_camera_and_audio_messages()
 

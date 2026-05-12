@@ -92,7 +92,7 @@ class TestUpdated:
     return subprocess.Popen(updated_path, env=os.environ)
 
   def _start_updater(self, offroad=True, nosleep=False):
-    self.params.put_bool("IsOffroad", offroad)
+    self.params.put_bool("IsOffroad", offroad, block=True)
     self.updated_proc = self._get_updated_proc()
     if not nosleep:
       time.sleep(1)

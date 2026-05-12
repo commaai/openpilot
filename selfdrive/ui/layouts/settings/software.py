@@ -168,7 +168,7 @@ class SoftwareLayout(Widget):
   def _on_uninstall(self):
     def handle_uninstall_confirmation(result: DialogResult):
       if result == DialogResult.CONFIRM:
-        ui_state.params.put_bool("DoUninstall", True)
+        ui_state.params.put_bool("DoUninstall", True, block=True)
 
     dialog = ConfirmDialog(tr("Are you sure you want to uninstall?"), tr("Uninstall"), callback=handle_uninstall_confirmation)
     gui_app.push_widget(dialog)
@@ -176,7 +176,7 @@ class SoftwareLayout(Widget):
   def _on_install_update(self):
     # Trigger reboot to install update
     self._install_btn.action_item.set_enabled(False)
-    ui_state.params.put_bool("DoReboot", True)
+    ui_state.params.put_bool("DoReboot", True, block=True)
 
   def _on_select_branch(self):
     # Get available branches and order

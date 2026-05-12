@@ -191,7 +191,7 @@ class ProcessContainer:
     params = Params()
     for k, v in params_config.items():
       if isinstance(v, bool):
-        params.put_bool(k, v)
+        params.put_bool(k, v, block=True)
       else:
         params.put(k, v, block=True)
 

@@ -36,7 +36,7 @@ def manager_init() -> None:
     params.clear_all(ParamKeyFlag.DEVELOPMENT_ONLY)
 
   if params.get_bool("RecordFrontLock"):
-    params.put_bool("RecordFront", True)
+    params.put_bool("RecordFront", True, block=True)
 
   # set unset params to their default value
   for k in params.all_keys():
@@ -59,8 +59,8 @@ def manager_init() -> None:
   params.put("GitCommitDate", build_metadata.openpilot.git_commit_date, block=True)
   params.put("GitBranch", build_metadata.channel, block=True)
   params.put("GitRemote", build_metadata.openpilot.git_origin, block=True)
-  params.put_bool("IsTestedBranch", build_metadata.tested_channel)
-  params.put_bool("IsReleaseBranch", build_metadata.release_channel)
+  params.put_bool("IsTestedBranch", build_metadata.tested_channel, block=True)
+  params.put_bool("IsReleaseBranch", build_metadata.release_channel, block=True)
   params.put("HardwareSerial", serial, block=True)
 
   # set dongle id

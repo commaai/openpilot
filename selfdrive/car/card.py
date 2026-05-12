@@ -33,7 +33,7 @@ def obd_callback(params: Params) -> ObdCallback:
     if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
       cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
       params.remove("ObdMultiplexingChanged")
-      params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
+      params.put_bool("ObdMultiplexingEnabled", obd_multiplexing, block=True)
       params.get_bool("ObdMultiplexingChanged", block=True)
       cloudlog.warning("OBD multiplexing set successfully")
   return set_obd_multiplexing
@@ -102,7 +102,7 @@ class Car:
       self.CP = self.CI.CP
 
       # continue onto next fingerprinting step in pandad
-      self.params.put_bool("FirmwareQueryDone", True)
+      self.params.put_bool("FirmwareQueryDone", True, block=True)
     else:
       self.CI, self.CP = CI, CI.CP
       self.RI = RI

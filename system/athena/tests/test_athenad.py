@@ -74,7 +74,7 @@ class TestAthenadMethods:
     self.params = Params()
     for k, v in self.default_params.items():
       self.params.put(k, v, block=True)
-    self.params.put_bool("GsmMetered", True)
+    self.params.put_bool("GsmMetered", True, block=True)
 
     athenad.upload_queue = queue.PriorityQueue()
     athenad.cur_upload_items.clear()

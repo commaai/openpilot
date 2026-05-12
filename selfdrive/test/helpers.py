@@ -20,7 +20,7 @@ def set_params_enabled():
   params = Params()
   params.put("HasAcceptedTerms", terms_version, block=True)
   params.put("CompletedTrainingVersion", training_version, block=True)
-  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("OpenpilotEnabledToggle", True, block=True)
 
   # valid calib
   msg = messaging.new_message('liveCalibration')

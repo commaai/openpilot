@@ -60,7 +60,7 @@ class TestParams:
       self.params.put("swag", "abc", block=True)
 
     with pytest.raises(UnknownKeyName):
-      self.params.put_bool("swag", True)
+      self.params.put_bool("swag", True, block=True)
 
   def test_remove_not_there(self):
     assert self.params.get("CarParams") is None
@@ -71,10 +71,10 @@ class TestParams:
     self.params.remove("IsMetric")
     assert not self.params.get_bool("IsMetric")
 
-    self.params.put_bool("IsMetric", True)
+    self.params.put_bool("IsMetric", True, block=True)
     assert self.params.get_bool("IsMetric")
 
-    self.params.put_bool("IsMetric", False)
+    self.params.put_bool("IsMetric", False, block=True)
     assert not self.params.get_bool("IsMetric")
 
     self.params.put("IsMetric", True, block=True)

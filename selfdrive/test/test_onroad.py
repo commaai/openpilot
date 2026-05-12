@@ -119,7 +119,7 @@ class TestOnroad:
     # setup env
     params = Params()
     params.remove("CurrentRoute")
-    params.put_bool("RecordFront", True)
+    params.put_bool("RecordFront", True, block=True)
     set_params_enabled()
     os.environ['REPLAY'] = '1'
     os.environ['MSGQ_PREALLOC'] = '1'
