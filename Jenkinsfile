@@ -352,7 +352,7 @@ PY
 
 def prepareBuiltTree() {
   stage("build device tree") {
-    lock(resource: "", label: "tizi-common", inversePrecedence: true, variable: 'builder_ip', quantity: 1, resourceSelectStrategy: 'sequential') {
+    lock(resource: "comma-db5a74d4", inversePrecedence: true, variable: 'builder_ip') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
           retry(3) {
