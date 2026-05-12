@@ -49,11 +49,13 @@ class Handler(FileSystemEventHandler):
       with self.lock:
         self.events += 1
 
-  def update(self):
-    with self.lock:
-      n, self.events = self.events, 0
-    if n:
-      self.sync_fn(n)
+  def run(self):
+    while True:
+      time.sleep(1)
+      with self.lock:
+        n, self.events = self.events, 0
+      if n:
+        self.sync_fn(n)
 
 
 def main():
@@ -90,10 +92,11 @@ def main():
   obs.daemon = True
   obs.schedule(handler, args.src, recursive=True)
   obs.start()
-  while True:
-    time.sleep(1)
-    handler.update()
+  handler.run()
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    pass
