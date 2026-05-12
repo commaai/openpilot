@@ -1,8 +1,11 @@
 import atexit
 import cffi
+import fcntl
 import math
 import os
 import queue
+import select
+import struct
 import time
 import signal
 import sys
@@ -29,6 +32,22 @@ FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
 MAX_TOUCH_SLOTS = 2
 TOUCH_HISTORY_TIMEOUT = 3.0  # Seconds before touch points fade out
+
+# c4 (mici) reads touch events directly from evdev to get real kernel timestamps,
+# which removes the velocity-prediction jitter caused by polling at a fixed rate.
+USE_EVDEV_TOUCH = HARDWARE.get_device_type() == 'mici'
+EVDEV_TOUCH_PATH = "/dev/input/by-path/platform-894000.i2c-event"
+EVDEV_EVENT_FORMAT = "llHHi"
+EVDEV_EVENT_SIZE = struct.calcsize(EVDEV_EVENT_FORMAT)
+EV_SYN = 0
+EV_ABS = 3
+ABS_MT_SLOT = 47
+ABS_MT_POSITION_X = 53
+ABS_MT_POSITION_Y = 54
+ABS_MT_TRACKING_ID = 57
+# EVIOCSCLOCKID(CLOCK_MONOTONIC) so timestamps match time.monotonic() elsewhere.
+EVIOCSCLOCKID = 0x400445a0
+CLOCK_MONOTONIC = 1
 
 BIG_UI = os.getenv("BIG", "0") == "1"
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
@@ -163,16 +182,86 @@ class MouseState:
       self._thread.join()
 
   def _run_thread(self):
+    if USE_EVDEV_TOUCH:
+      try:
+        self._run_evdev_thread()
+        return
+      except Exception:
+        cloudlog.exception("evdev touch thread failed, falling back to raylib polling")
+
     while not self._exit_event.is_set():
       rl.poll_input_events()
       self._handle_mouse_event()
       self._rk.keep_time()
 
+  def _run_evdev_thread(self):
+    # Touch events come straight from the kernel with their own timestamps, so
+    # scroll velocity isn't quantized to a polling rate.
+    with open(EVDEV_TOUCH_PATH, "rb") as f:
+      fd = f.fileno()
+      fcntl.fcntl(fd, fcntl.F_SETFL, os.O_NONBLOCK)
+      try:
+        fcntl.ioctl(fd, EVIOCSCLOCKID, struct.pack("i", CLOCK_MONOTONIC))
+      except OSError:
+        cloudlog.exception("EVIOCSCLOCKID failed; evdev timestamps will be CLOCK_REALTIME")
+
+      slot_x = [0.0] * MAX_TOUCH_SLOTS
+      slot_y = [0.0] * MAX_TOUCH_SLOTS
+      slot_down = [False] * MAX_TOUCH_SLOTS
+      slot_changed = [False] * MAX_TOUCH_SLOTS
+      slot_pressed = [False] * MAX_TOUCH_SLOTS
+      slot_released = [False] * MAX_TOUCH_SLOTS
+      current_slot = 0
+
+      while not self._exit_event.is_set():
+        ready, _, _ = select.select([fd], [], [], 0.1)
+        if not ready:
+          continue
+        try:
+          data = f.read(4096)
+        except BlockingIOError:
+          continue
+        if not data:
+          continue
+
+        for offset in range(0, len(data) - EVDEV_EVENT_SIZE + 1, EVDEV_EVENT_SIZE):
+          sec, usec, etype, code, value = struct.unpack_from(EVDEV_EVENT_FORMAT, data, offset)
+
+          if etype == EV_ABS:
+            if code == ABS_MT_SLOT:
+              current_slot = min(value, MAX_TOUCH_SLOTS - 1)
+            elif code == ABS_MT_TRACKING_ID:
+              if value == -1:
+                slot_released[current_slot] = True
+                slot_down[current_slot] = False
+              else:
+                slot_pressed[current_slot] = True
+                slot_down[current_slot] = True
+              slot_changed[current_slot] = True
+            elif code == ABS_MT_POSITION_X:
+              # TODO: c4 panel-to-screen axis mapping — adjust if rotated/flipped.
+              slot_x[current_slot] = float(value)
+              slot_changed[current_slot] = True
+            elif code == ABS_MT_POSITION_Y:
+              slot_y[current_slot] = float(value)
+              slot_changed[current_slot] = True
+
+          elif etype == EV_SYN and code == 0:
+            t = sec + usec / 1e6
+            for s in range(MAX_TOUCH_SLOTS):
+              if not slot_changed[s]:
+                continue
+              x = slot_x[s] / self._scale if self._scale != 1.0 else slot_x[s]
+              y = slot_y[s] / self._scale if self._scale != 1.0 else slot_y[s]
+              ev = MouseEvent(MousePos(x, y), s, slot_pressed[s], slot_released[s], slot_down[s], t)
+              with self._lock:
+                self._events.append(ev)
+              self._prev_mouse_event[s] = ev
+              slot_changed[s] = False
+              slot_pressed[s] = False
+              slot_released[s] = False
+
   def _handle_mouse_event(self):
-    # TODO: read touch events from evdev directly to get real kernel timestamps.
-    #  Polling at 140Hz with time.monotonic() causes timing jitter that makes scroll
-    #  velocity oscillate (alternating high/low). Real timestamps would also let us
-    #  detect swipe-stop-lift via event gaps instead of the fragile decel heuristic.
     for slot in range(MAX_TOUCH_SLOTS):
       mouse_pos = rl.get_touch_position(slot)
       x = mouse_pos.x / self._scale if self._scale != 1.0 else mouse_pos.x
@@ -599,7 +688,7 @@ class GuiApplication:
 
         # Skip rendering when screen is off
         if not self._should_render:
-          if PC:
+          if PC or USE_EVDEV_TOUCH:
             rl.poll_input_events()
           time.sleep(1 / self._target_fps)
           yield False, 0.0, 0.0
