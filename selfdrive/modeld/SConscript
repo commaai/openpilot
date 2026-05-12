@@ -49,7 +49,7 @@ elif 'QCOM' in available:
   tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
-  tg_flags = f'DEV={tg_backend}'
+  tg_flags = f'DEV={tg_backend} DEBUG=4'
 
 def write_tg_compiled_flags(target, source, env):
   with open(str(target[0]), "w") as f:
