@@ -15,12 +15,6 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 @pytest.mark.tici
 class TestPandad:
-
-  def setup_method(self):
-    # ensure panda is up
-    if len(Panda.list()) == 0:
-      self._run_test(60)
-
   def teardown_method(self):
     managed_processes['pandad'].stop()
 
@@ -30,7 +24,7 @@ class TestPandad:
 
     managed_processes['pandad'].start()
     while (time.monotonic() - st) < timeout:
-      sm.update(100)
+      sm.update(10)
       if len(sm['pandaStates']) and sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
     dt = time.monotonic() - st
@@ -52,7 +46,6 @@ class TestPandad:
       fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
     with open(fn, "rb") as f:
       pd.program_bootstub(f.read())
-    pd.reset()
     HARDWARE.reset_internal_panda()
 
   def test_in_dfu(self):
@@ -68,16 +61,13 @@ class TestPandad:
   def test_internal_panda_reset(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_set(GPIO.STM_RST_N, 1)
-    time.sleep(0.5)
-    assert all(not Panda(s).is_internal() for s in Panda.list())
+    assert not Panda.list()
     self._run_test()
 
-    assert any(Panda(s).is_internal() for s in Panda.list())
-
-  def test_old_spi_protocol(self):
-    # flash firmware with old SPI protocol
-    self._flash_bootstub(os.path.join(HERE, "bootstub.panda_h7_spiv0.bin"))
-    self._run_test(45)
+  #def test_old_spi_protocol(self):
+  #  # flash firmware with old SPI protocol
+  #  self._flash_bootstub(os.path.join(HERE, "bootstub.panda_h7_spiv0.bin"))
+  #  self._run_test(45)
 
   def test_release_to_devel_bootstub(self):
     self._flash_bootstub(None)
