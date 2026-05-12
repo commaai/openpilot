@@ -47,6 +47,7 @@ ABS_MT_POSITION_Y = 54
 ABS_MT_TRACKING_ID = 57
 # EVIOCSCLOCKID(CLOCK_MONOTONIC) so timestamps match time.monotonic() elsewhere.
 EVIOCSCLOCKID = 0x400445a0
+EVIOCGABS_Y = 0x80184576  # EVIOCGABS(ABS_MT_POSITION_Y)
 CLOCK_MONOTONIC = 1
 
 BIG_UI = os.getenv("BIG", "0") == "1"
@@ -205,6 +206,11 @@ class MouseState:
       except OSError:
         cloudlog.exception("EVIOCSCLOCKID failed; evdev timestamps will be CLOCK_REALTIME")
 
+      # Panel Y axis maps to screen X and is mirrored, so use its max for the flip.
+      absinfo = bytearray(struct.calcsize("iiiiii"))
+      fcntl.ioctl(fd, EVIOCGABS_Y, absinfo)
+      _, _, panel_y_max, _, _, _ = struct.unpack("iiiiii", absinfo)
+
       slot_x = [0.0] * MAX_TOUCH_SLOTS
       slot_y = [0.0] * MAX_TOUCH_SLOTS
       slot_down = [False] * MAX_TOUCH_SLOTS
@@ -242,7 +248,7 @@ class MouseState:
               slot_y[current_slot] = float(value)
               slot_changed[current_slot] = True
             elif code == ABS_MT_POSITION_Y:
-              slot_x[current_slot] = float(value)
+              slot_x[current_slot] = float(panel_y_max - value)
               slot_changed[current_slot] = True
 
           elif etype == EV_SYN and code == 0:
