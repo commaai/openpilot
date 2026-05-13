@@ -111,7 +111,7 @@ def usb_gpu_thread(end_event):
     cloudlog.info(f"usb_gpu_thread: matched USBGPU, action={fields['ACTION']}, present {present}->{new_present}")
     if new_present != present:
       present = new_present
-      params.put_bool_nonblocking("UsbGpuPresent", present)
+      params.put_bool("UsbGpuPresent", present)
 
 
 def touch_thread(end_event):
