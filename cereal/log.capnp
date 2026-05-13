@@ -2301,7 +2301,6 @@ struct Sentinel {
 struct UIDebug {
   cpuTimeMillis @0 :Float32;
   frameTimeMillis @1 :Float32;
-  uiStateUpdateTimeMillis @2 :Float32;
 }
 
 struct ManagerState {

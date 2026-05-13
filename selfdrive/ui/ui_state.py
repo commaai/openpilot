@@ -158,7 +158,7 @@ class UIState:
       if state in (log.SelfdriveState.OpenpilotState.preEnabled, log.SelfdriveState.OpenpilotState.overriding):
         self.status = UIStatus.OVERRIDE
       else:
-        self.status = UIStatus.ENGAGED# if ss.enabled else UIStatus.DISENGAGED
+        self.status = UIStatus.ENGAGED if ss.enabled else UIStatus.DISENGAGED
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:

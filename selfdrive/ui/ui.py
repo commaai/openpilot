@@ -28,7 +28,6 @@ def main():
   for should_render, frame_time, cpu_time in gui_app.render():
     extra_start = time.monotonic()
     ui_state.update()
-    ui_state_time = time.monotonic() - extra_start
 
     if should_render:
       # reaffine after power save offlines our core
@@ -42,7 +41,6 @@ def main():
       msg = messaging.new_message('uiDebug')
       msg.uiDebug.cpuTimeMillis = (cpu_time + extra_cpu) * 1000
       msg.uiDebug.frameTimeMillis = frame_time * 1000
-      msg.uiDebug.uiStateUpdateTimeMillis = ui_state_time * 1000
       pm.send('uiDebug', msg)
 
 

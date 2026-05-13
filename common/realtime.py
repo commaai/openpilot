@@ -41,11 +41,6 @@ def config_realtime_process(cores: int | list[int], priority: int) -> None:
   set_core_affinity(c)
 
 
-def drop_realtime() -> None:
-  if sys.platform == 'linux' and not PC:
-    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
-
-
 class Ratekeeper:
   def __init__(self, rate: float, print_delay_threshold: float | None = 0.0) -> None:
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
