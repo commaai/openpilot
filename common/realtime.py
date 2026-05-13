@@ -28,6 +28,11 @@ class Priority:
   CTRL_HIGH = 53
 
 
+def drop_realtime() -> None:
+  if sys.platform == 'linux' and not PC:
+    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+
+
 def set_core_affinity(cores: list[int]) -> None:
   if sys.platform == 'linux' and not PC:
     os.sched_setaffinity(0, cores)
@@ -39,11 +44,6 @@ def config_realtime_process(cores: int | list[int], priority: int) -> None:
     os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(priority))
   c = cores if isinstance(cores, list) else [cores, ]
   set_core_affinity(c)
-
-
-def drop_realtime() -> None:
-  if sys.platform == 'linux' and not PC:
-    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
 
 
 class Ratekeeper:
