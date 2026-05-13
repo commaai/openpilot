@@ -150,6 +150,7 @@ class UIState:
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
 
+    # Update body state
     if self.CP is not None and self.is_body != self.CP.notCar:
       self.is_body = self.CP.notCar
       for callback in self._on_body_changed_callbacks:
