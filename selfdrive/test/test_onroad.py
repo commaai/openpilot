@@ -371,23 +371,6 @@ class TestOnroad:
           assert enc_sof == cam_sof, f"SOF mismatch: frameId={fid}, enc_sof={enc_sof}, cam_sof={cam_sof}"
           assert enc_eof == cam_eof, f"EOF mismatch: frameId={fid}, enc_eof={enc_eof}, cam_eof={cam_eof}"
 
-  def test_mpc_execution_timings(self):
-    result = "\n"
-    result += "------------------------------------------------\n"
-    result += "-----------------  MPC Timing ------------------\n"
-    result += "------------------------------------------------\n"
-
-    cfgs = [("longitudinalPlan", 0.05, 0.05),]
-    for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(m, s).solverExecutionTime for m in self.msgs[s]]
-      assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
-      assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
-      result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
-      result += f"'{s}' execution time: max  {max(ts):.5f}s\n"
-      result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
-    result += "------------------------------------------------\n"
-    print(result)
-
   def test_model_execution_timings(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"

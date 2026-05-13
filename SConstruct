@@ -10,6 +10,8 @@ import numpy as np
 import SCons.Errors
 from SCons.Defaults import _stripixes
 
+TICI = os.path.isfile('/TICI')
+
 SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
@@ -22,14 +24,14 @@ release = not os.path.exists(File('#.gitattributes').abspath) # file absent on r
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=not release,
+          default=(not TICI and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-elif arch == "aarch64" and os.path.isfile('/TICI'):
+elif arch == "aarch64" and TICI:
   arch = "larch64"
 assert arch in [
   "larch64",  # linux tici arm64
