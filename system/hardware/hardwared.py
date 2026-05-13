@@ -108,9 +108,6 @@ def hw_state_thread(end_event, hw_queue):
   prev_hw_state = None
 
   modem_version = None
-  modem_configured = False
-  modem_missing_count = 0
-  modem_restart_count = 0
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -128,18 +125,6 @@ def hw_state_thread(end_event, hw_queue):
           if modem_version is not None:
             cloudlog.event("modem version", version=modem_version)
 
-        if AGNOS and modem_restart_count < 3 and HARDWARE.get_modem_version() is None:
-          # TODO: we may be able to remove this with a MM update
-          # ModemManager's probing on startup can fail
-          # rarely, restart the service to probe again.
-          # Also, AT commands sometimes timeout resulting in ModemManager not
-          # trying to use this modem anymore.
-          modem_missing_count += 1
-          if (modem_missing_count % 4) == 0:
-            modem_restart_count += 1
-            cloudlog.event("restarting ModemManager")
-            os.system("sudo systemctl restart --no-block ModemManager")
-
         tx, rx = HARDWARE.get_modem_data_usage()
 
         hw_state = HardwareState(
@@ -155,11 +140,6 @@ def hw_state_thread(end_event, hw_queue):
           hw_queue.put_nowait(hw_state)
         except queue.Full:
           pass
-
-        if not modem_configured and HARDWARE.get_modem_version() is not None:
-          cloudlog.warning("configuring modem")
-          HARDWARE.configure_modem()
-          modem_configured = True
 
         prev_hw_state = hw_state
       except Exception:
@@ -226,7 +206,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     # handle requests to cycle system started state
     if params.get_bool("OnroadCycleRequested"):
-      params.put_bool("OnroadCycleRequested", False)
+      params.put_bool("OnroadCycleRequested", False, block=True)
       offroad_cycle_count = sm.frame
     onroad_conditions["not_onroad_cycle"] = (sm.frame - offroad_cycle_count) >= ONROAD_CYCLE_TIME * SERVICE_LIST['pandaStates'].frequency
 
@@ -344,13 +324,13 @@ def hardware_thread(end_event, hw_queue) -> None:
       should_start = should_start and all(startup_conditions.values())
 
     if should_start != should_start_prev or (count == 0):
-      params.put_bool("IsEngaged", False)
+      params.put_bool("IsEngaged", False, block=True)
       engaged_prev = False
 
     if sm.updated['selfdriveState']:
       engaged = sm['selfdriveState'].enabled
       if engaged != engaged_prev:
-        params.put_bool("IsEngaged", engaged)
+        params.put_bool("IsEngaged", engaged, block=True)
         engaged_prev = engaged
 
       try:
@@ -400,7 +380,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     # Check if we need to shut down
     if power_monitor.should_shutdown(onroad_conditions["ignition"], in_car, off_ts, started_seen):
       cloudlog.warning(f"shutting device down, offroad since {off_ts}")
-      params.put_bool("DoShutdown", True)
+      params.put_bool("DoShutdown", True, block=True)
 
     msg.deviceState.started = started_ts is not None
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
@@ -446,11 +426,11 @@ def hardware_thread(end_event, hw_queue) -> None:
       # save last one before going onroad
       if rising_edge_started:
         try:
-          params.put("LastOffroadStatusPacket", dat)
+          params.put("LastOffroadStatusPacket", dat, block=True)
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
-    params.put_bool_nonblocking("NetworkMetered", msg.deviceState.networkMetered)
+    params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
 
     now_ts = time.monotonic()
     if off_ts:
@@ -460,8 +440,8 @@ def hardware_thread(end_event, hw_queue) -> None:
     last_uptime_ts = now_ts
 
     if (count % int(60. / DT_HW)) == 0:
-      params.put("UptimeOffroad", uptime_offroad)
-      params.put("UptimeOnroad", uptime_onroad)
+      params.put("UptimeOffroad", uptime_offroad, block=True)
+      params.put("UptimeOnroad", uptime_onroad, block=True)
 
     count += 1
     should_start_prev = should_start

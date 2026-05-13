@@ -69,7 +69,7 @@ async def offer(request: 'web.Request'):
 
 def main():
   # Enable joystick debug mode
-  Params().put_bool("JoystickDebugMode", True)
+  Params().put_bool("JoystickDebugMode", True, block=True)
 
   # App needs to be HTTPS for WebRTC to work on the browser
   ssl_context = create_ssl_context()

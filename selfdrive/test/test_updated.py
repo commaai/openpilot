@@ -50,7 +50,7 @@ class TestUpdated:
       f"git clone {BASEDIR} {self.git_remote_dir}",
       f"git clone {self.git_remote_dir} {self.basedir}",
       f"cd {self.basedir} && git submodule init && git submodule update",
-      f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
+      f"cd {self.basedir} && scons cereal/ common/"
     ])
 
     self.params = Params(os.path.join(self.basedir, "persist/params"))
@@ -92,7 +92,7 @@ class TestUpdated:
     return subprocess.Popen(updated_path, env=os.environ)
 
   def _start_updater(self, offroad=True, nosleep=False):
-    self.params.put_bool("IsOffroad", offroad)
+    self.params.put_bool("IsOffroad", offroad, block=True)
     self.updated_proc = self._get_updated_proc()
     if not nosleep:
       time.sleep(1)

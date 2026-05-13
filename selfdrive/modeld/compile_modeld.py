@@ -12,11 +12,6 @@ from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 from tinygrad.nn.onnx import OnnxRunner
 
-# https://github.com/tinygrad/tinygrad/issues/15682
-from tinygrad.uop.ops import UOp, Ops
-_orig = UOp.__reduce__
-UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig(self)
-
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 
