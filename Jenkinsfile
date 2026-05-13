@@ -1,4 +1,6 @@
-def CI_DOCKER_IMAGE = 'ghcr.io/commaai/alpine-ssh@sha256:e79076caaa7e8bc766fd07e81fe0db5d0449bee936d21a1c11dbe4b95a412063'
+def ciDockerImage() {
+  return 'ghcr.io/commaai/alpine-ssh@sha256:e79076caaa7e8bc766fd07e81fe0db5d0449bee936d21a1c11dbe4b95a412063'
+}
 
 def retryWithDelay(int maxRetries, int delay, Closure body) {
   for (int i = 0; i < maxRetries; i++) {
@@ -80,7 +82,7 @@ def ciDockerArgs() {
 }
 
 def cleanOldWorkspaceBuildCache() {
-  docker.image(CI_DOCKER_IMAGE).inside(ciDockerArgs()) {
+  docker.image(ciDockerImage()).inside(ciDockerArgs()) {
     sh script: "rm -rf '${env.WORKSPACE}/.device-build-cache'", label: 'clean old workspace build cache'
   }
 }
@@ -393,7 +395,7 @@ PY
 def prepareBuiltTree() {
   stage("build device tree") {
     lock(resource: "comma-db5a74d4", inversePrecedence: true, variable: 'builder_ip') {
-      docker.image(CI_DOCKER_IMAGE).inside(ciDockerArgs()) {
+      docker.image(ciDockerImage()).inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
           def controlPath = sshControlPath(builder_ip)
           startSshMaster(builder_ip, controlPath)
@@ -425,7 +427,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     def gitDiff = sh returnStdout: true, script: 'curl -s -H "Authorization: Bearer ${GITHUB_COMMENTS_TOKEN}" https://api.github.com/repos/commaai/openpilot/compare/master...${GIT_BRANCH} | jq .files[].filename || echo "/"', label: 'Getting changes'
 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
-      docker.image(CI_DOCKER_IMAGE).inside(ciDockerArgs()) {
+      docker.image(ciDockerImage()).inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
           def controlPath = sshControlPath(device_ip)
           startSshMaster(device_ip, controlPath)
