@@ -114,7 +114,7 @@ class UIState:
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
     if self._params_thread is None:
-      self._params_thread = threading.Thread(target=self._params_refresh_loop, daemon=True)
+      self._params_thread = threading.Thread(target=self._params_refresh_worker, daemon=True)
       self._params_thread.start()
 
     self.sm.update(0)
@@ -122,7 +122,7 @@ class UIState:
     self._update_status()
     device.update()
 
-  def _params_refresh_loop(self):
+  def _params_refresh_worker(self):
     while True:
       self.update_params()
       time.sleep(PARAM_UPDATE_TIME)
@@ -195,9 +195,9 @@ class UIState:
         for callback in self._on_body_changed_callbacks:
           callback()
 
+    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
     self.is_metric = self.params.get_bool("IsMetric")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
-    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
 
