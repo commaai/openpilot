@@ -22,7 +22,6 @@ dependencies = [
   "scons",
   "pycapnp",
   "Cython",
-  "setuptools",
   "numpy >=2.0",
 
   # vendored native dependencies
