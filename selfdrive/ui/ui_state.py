@@ -7,6 +7,7 @@ from enum import Enum
 from cereal import messaging, car, log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
+from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
@@ -252,6 +253,7 @@ class Device:
       self._brightness_thread.start()
 
   def _brightness_worker(self):
+    drop_realtime()
     while True:
       self._brightness_event.wait()
       self._brightness_event.clear()
