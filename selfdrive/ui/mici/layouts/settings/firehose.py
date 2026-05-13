@@ -5,6 +5,7 @@ import pyray as rl
 
 from openpilot.common.api import api_get
 from openpilot.common.params import Params
+from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 from openpilot.selfdrive.ui.ui_state import ui_state, device
@@ -212,6 +213,7 @@ class FirehoseLayoutBase(Widget):
       cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def _update_loop(self):
+    drop_realtime()
     while self._running:
       if not ui_state.started and device._awake:
         self._fetch_firehose_stats()

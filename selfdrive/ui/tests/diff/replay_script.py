@@ -126,12 +126,12 @@ def setup_offroad_alerts() -> None:
 
 def setup_update_available(available: bool = True) -> None:
   params = Params()
-  params.put_bool("UpdateAvailable", available)
-  params.put("UpdaterAvailableBranches", ",".join(["test-branch", "test-branch-2", BRANCH_NAME]))
+  params.put_bool("UpdateAvailable", available, block=True)
+  params.put("UpdaterAvailableBranches", ",".join(["test-branch", "test-branch-2", BRANCH_NAME]), block=True)
   if available:
-    params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
-    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
-    params.put("UpdaterTargetBranch", BRANCH_NAME)
+    params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01", block=True)
+    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR), block=True)
+    params.put("UpdaterTargetBranch", BRANCH_NAME, block=True)
   else:
     params.remove("UpdaterNewDescription")
     params.remove("UpdaterNewReleaseNotes")
@@ -144,22 +144,22 @@ def setup_calibration_params() -> None:
   calib = messaging.new_message('liveCalibration')
   calib.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
   calib.liveCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
-  params.put("CalibrationParams", calib.to_bytes())
+  params.put("CalibrationParams", calib.to_bytes(), block=True)
   # live delay
   delay = messaging.new_message('liveDelay')
   delay.liveDelay.calPerc = 75
-  params.put("LiveDelay", delay.to_bytes())
+  params.put("LiveDelay", delay.to_bytes(), block=True)
   # live torque parameters
   torque = messaging.new_message('liveTorqueParameters')
   torque.liveTorqueParameters.useParams = True
   torque.liveTorqueParameters.calPerc = 60
-  params.put("LiveTorqueParameters", torque.to_bytes())
+  params.put("LiveTorqueParameters", torque.to_bytes(), block=True)
 
 
 def setup_developer_params() -> None:
   CP = car.CarParams()
   CP.alphaLongitudinalAvailable = True
-  Params().put("CarParamsPersistent", CP.to_bytes())
+  Params().put("CarParamsPersistent", CP.to_bytes(), block=True)
 
 
 # --- Send functions ---
