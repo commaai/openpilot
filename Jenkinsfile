@@ -73,17 +73,6 @@ END"""
   }
 }
 
-def installRsync() {
-  sh script: '''
-set -e
-
-if ! command -v rsync >/dev/null; then
-  mkdir -p /device-build-cache/apk
-  apk --cache-dir /device-build-cache/apk add --update-cache rsync
-fi
-''', label: 'install rsync'
-}
-
 def ciDockerArgs() {
   return '--user=root -v /var/jenkins_home/openpilot-device-build-cache:/device-build-cache'
 }
@@ -100,7 +89,8 @@ def rsyncSshCommand(String keyFile, String controlPath = "") {
 }
 
 def sshControlPath(String ip) {
-  return "/tmp/openpilot-ci-ssh-${ip.replaceAll('[^A-Za-z0-9_.-]', '_')}"
+  def buildId = (env.BUILD_NUMBER ?: 'local').replaceAll('[^A-Za-z0-9_.-]', '_')
+  return "/tmp/op-ci-ssh-${ip.replaceAll('[^A-Za-z0-9_.-]', '_')}-${buildId}"
 }
 
 def startSshMaster(String ip, String controlPath) {
@@ -108,17 +98,8 @@ def startSshMaster(String ip, String controlPath) {
     sh script: """
 set -e
 rm -f '${controlPath}'
-${rsyncSshCommand(key_file)} -o ControlMaster=yes -o ControlPath='${controlPath}' -o ControlPersist=120s 'comma@${ip}' -Nf
+${rsyncSshCommand(key_file)} -o ControlMaster=yes -o ControlPath='${controlPath}' -o ControlPersist=30s 'comma@${ip}' -Nf
 """, label: 'start ssh master'
-  }
-}
-
-def stopSshMaster(String ip, String controlPath) {
-  withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
-    sh script: """
-${rsyncSshCommand(key_file)} -o ControlPath='${controlPath}' -O exit 'comma@${ip}' >/dev/null 2>&1 || true
-rm -f '${controlPath}'
-""", label: 'stop ssh master'
   }
 }
 
@@ -413,19 +394,14 @@ def prepareBuiltTree() {
       docker.image('ghcr.io/commaai/alpine-ssh').inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
           def controlPath = sshControlPath(builder_ip)
-          try {
-            startSshMaster(builder_ip, controlPath)
-            retry(3) {
-              def date = sh(script: 'date', returnStdout: true).trim();
-              device(builder_ip, "builder git checkout", "date -s '" + date + "'\nexport UNSAFE=1\n" + readFile("selfdrive/test/setup_device_ci.sh"), controlPath)
-            }
-            device(builder_ip, "build and prepare tree", buildAndPrepareTreeCommand(), controlPath)
-            installRsync()
-            rsyncBuiltTreeFromDevice(builder_ip, controlPath)
-            env.DEVICE_BUILD_READY = "1"
-          } finally {
-            stopSshMaster(builder_ip, controlPath)
+          startSshMaster(builder_ip, controlPath)
+          retry(3) {
+            def date = sh(script: 'date', returnStdout: true).trim();
+            device(builder_ip, "builder git checkout", "date -s '" + date + "'\nexport UNSAFE=1\n" + readFile("selfdrive/test/setup_device_ci.sh"), controlPath)
           }
+          device(builder_ip, "build and prepare tree", buildAndPrepareTreeCommand(), controlPath)
+          rsyncBuiltTreeFromDevice(builder_ip, controlPath)
+          env.DEVICE_BUILD_READY = "1"
         }
       }
     }
@@ -449,43 +425,36 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside(ciDockerArgs()) {
         timeout(time: 35, unit: 'MINUTES') {
-          if (env.DEVICE_BUILD_READY == "1") {
-            installRsync()
-          }
           def controlPath = sshControlPath(device_ip)
-          try {
-            startSshMaster(device_ip, controlPath)
-            retry (3) {
-              def date = sh(script: 'date', returnStdout: true).trim();
-              if (env.DEVICE_BUILD_READY == "1") {
-                device(device_ip, "device setup", "date -s '" + date + "'\nmkdir -p ${env.TEST_DIR}\nexport SKIP_GIT_CHECKOUT=1\n" + readFile("selfdrive/test/setup_device_ci.sh"), controlPath)
-                rsyncBuiltTreeToDevice(device_ip, controlPath)
-              } else {
-                device(device_ip, "git checkout", "date -s '" + date + "'\n" + extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"), controlPath)
+          startSshMaster(device_ip, controlPath)
+          retry (3) {
+            def date = sh(script: 'date', returnStdout: true).trim();
+            if (env.DEVICE_BUILD_READY == "1") {
+              device(device_ip, "device setup", "date -s '" + date + "'\nmkdir -p ${env.TEST_DIR}\nexport SKIP_GIT_CHECKOUT=1\n" + readFile("selfdrive/test/setup_device_ci.sh"), controlPath)
+              rsyncBuiltTreeToDevice(device_ip, controlPath)
+            } else {
+              device(device_ip, "git checkout", "date -s '" + date + "'\n" + extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"), controlPath)
+            }
+          }
+          steps.each { item ->
+            def name = item[0]
+            def cmd = item[1]
+
+            def args = item[2]
+            def diffPaths = args.diffPaths ?: []
+            def cmdTimeout = args.timeout ?: 9999
+
+            if (env.DEVICE_BUILD_READY == "1" && (name.toLowerCase().startsWith("build") || name == "check dirty")) {
+              println "Skipping ${name}: using shared built tree."
+              return
+            } else if (branch != "master" && !branch.contains("__jenkins_loop_") && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
+              println "Skipping ${name}: no changes in ${diffPaths}."
+              return
+            } else {
+              timeout(time: cmdTimeout, unit: 'SECONDS') {
+                device(device_ip, name, cmd, controlPath)
               }
             }
-            steps.each { item ->
-              def name = item[0]
-              def cmd = item[1]
-
-              def args = item[2]
-              def diffPaths = args.diffPaths ?: []
-              def cmdTimeout = args.timeout ?: 9999
-
-              if (env.DEVICE_BUILD_READY == "1" && (name.toLowerCase().startsWith("build") || name == "check dirty")) {
-                println "Skipping ${name}: using shared built tree."
-                return
-              } else if (branch != "master" && !branch.contains("__jenkins_loop_") && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
-                println "Skipping ${name}: no changes in ${diffPaths}."
-                return
-              } else {
-                timeout(time: cmdTimeout, unit: 'SECONDS') {
-                  device(device_ip, name, cmd, controlPath)
-                }
-              }
-            }
-          } finally {
-            stopSshMaster(device_ip, controlPath)
           }
         }
       }
