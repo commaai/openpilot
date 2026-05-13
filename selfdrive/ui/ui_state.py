@@ -1,3 +1,4 @@
+import os
 import pyray as rl
 import numpy as np
 import time
@@ -13,7 +14,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.hardware import HARDWARE, PC
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
-PARAM_UPDATE_TIME = 5.0
+PARAM_UPDATE_TIME = 0.1  # 10Hz
 
 
 class UIStatus(Enum):
@@ -83,7 +84,8 @@ class UIState:
     self.is_body: bool | None = None
     self.CP: car.CarParams | None = None
     self.light_sensor: float = -1.0
-    self._param_update_time: float = -PARAM_UPDATE_TIME
+
+    self._params_thread: threading.Thread | None = None
 
     # Callbacks
     self._offroad_transition_callbacks: list[Callable[[], None]] = []
@@ -111,12 +113,24 @@ class UIState:
 
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
+    if self._params_thread is None:
+      self._params_thread = threading.Thread(target=self._params_refresh_loop, daemon=True)
+      self._params_thread.start()
+
     self.sm.update(0)
     self._update_state()
     self._update_status()
-    if time.monotonic() - self._param_update_time >= PARAM_UPDATE_TIME:
-      self.update_params()
     device.update()
+
+  def _params_refresh_loop(self):
+    # background — drop to SCHED_OTHER so we never preempt render
+    try:
+      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    except OSError:
+      pass
+    while True:
+      self.update_params()
+      time.sleep(PARAM_UPDATE_TIME)
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -141,12 +155,6 @@ class UIState:
 
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
-
-    # Update recording audio state
-    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
-
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
 
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
@@ -193,8 +201,6 @@ class UIState:
           callback()
 
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
-
-    self._param_update_time = time.monotonic()
 
 
 class Device:
@@ -265,11 +271,11 @@ class Device:
     if not self._awake:
       brightness = 0
 
-    if brightness != self._last_brightness:
-      if self._brightness_thread is None or not self._brightness_thread.is_alive():
-        self._brightness_thread = threading.Thread(target=HARDWARE.set_screen_brightness, args=(brightness,))
-        self._brightness_thread.start()
-        self._last_brightness = brightness
+    # if brightness != self._last_brightness:
+    #   if self._brightness_thread is None or not self._brightness_thread.is_alive():
+    #     self._brightness_thread = threading.Thread(target=HARDWARE.set_screen_brightness, args=(brightness,))
+    #     self._brightness_thread.start()
+    #     self._last_brightness = brightness
 
   def _update_wakefulness(self):
     # Handle interactive timeout

@@ -216,7 +216,7 @@ class AlertRenderer(Widget):
     return AlertLayout(text_rect, icon_layout)
 
   def _render(self, rect: rl.Rectangle) -> bool:
-    alert = self.get_alert(ui_state.sm)
+    alert = None  # self.get_alert(ui_state.sm)
 
     # Animate fade and slide in/out
     self._alert_y_filter.update(self._rect.y - 50 if alert is None else self._rect.y)
