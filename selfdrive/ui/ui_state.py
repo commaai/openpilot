@@ -150,6 +150,11 @@ class UIState:
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
 
+    if self.CP is not None and self.is_body != self.CP.notCar:
+      self.is_body = self.CP.notCar
+      for callback in self._on_body_changed_callbacks:
+        callback()
+
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
       ss = self.sm["selfdriveState"]
@@ -188,11 +193,6 @@ class UIState:
         self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
       else:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
-
-      if self.is_body != self.CP.notCar:
-        self.is_body = self.CP.notCar
-        for callback in self._on_body_changed_callbacks:
-          callback()
 
     self.recording_audio = self.params.get_bool("RecordAudio") and self.started
     self.is_metric = self.params.get_bool("IsMetric")
