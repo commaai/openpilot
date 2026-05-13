@@ -237,7 +237,7 @@ class Device:
     self._interactive_timeout_callbacks.append(callback)
 
   def update(self):
-    self.start_brightness_thread()  # start thread after manager forks ui
+    self._start_brightness_thread()  # start thread after manager forks ui
 
     # do initial reset
     if self._interaction_time <= 0:
@@ -246,7 +246,7 @@ class Device:
     self._update_brightness()
     self._update_wakefulness()
 
-  def start_brightness_thread(self):
+  def _start_brightness_thread(self):
     if self._brightness_thread is None or not self._brightness_thread.is_alive():
       self._brightness_thread = threading.Thread(target=self._brightness_worker, daemon=True)
       self._brightness_thread.start()
