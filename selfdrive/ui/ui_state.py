@@ -123,6 +123,7 @@ class UIState:
     device.update()
 
   def _params_refresh_worker(self):
+    drop_realtime()
     while True:
       self.update_params()
       time.sleep(PARAM_UPDATE_TIME)
