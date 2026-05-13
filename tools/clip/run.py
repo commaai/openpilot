@@ -219,7 +219,7 @@ def load_route_metadata(route):
   params = Params()
   for entry in init_data.params.entries:
     try:
-      params.put(entry.key, params.cpp2python(entry.key, entry.value))
+      params.put(entry.key, params.cpp2python(entry.key, entry.value), block=True)
     except UnknownKeyName:
       pass
 
@@ -333,7 +333,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
 
     frame_idx = 0
     with tqdm.tqdm(total=len(message_chunks), desc="Rendering", unit="frame") as pbar:
-      for should_render in gui_app.render():
+      for should_render, _, _ in gui_app.render():
         if frame_idx >= len(message_chunks):
           break
         _, frame_bytes = frame_queue.get()
