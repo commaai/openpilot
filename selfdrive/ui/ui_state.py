@@ -1,3 +1,4 @@
+import os
 import pyray as rl
 import numpy as np
 import time
@@ -110,13 +111,18 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
-    self.prime_state.start()  # start thread after manager forks ui
     self.sm.update(0)
+    self.start_threads()
     self._update_state()
     self._update_status()
     if time.monotonic() - self._param_update_time >= PARAM_UPDATE_TIME:
       self.update_params()
     device.update()
+
+  def start_threads(self) -> None:
+    # start daemon workers after manager forks ui (no-op if already alive)
+    self.prime_state.start()
+    device.start_threads()
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -210,6 +216,8 @@ class Device:
     self._last_brightness: int = 0
     self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / gui_app.target_fps)
     self._brightness_thread: threading.Thread | None = None
+    self._brightness_event = threading.Event()
+    self._brightness_target: int = 0
 
   @property
   def awake(self) -> bool:
@@ -242,6 +250,22 @@ class Device:
     self._update_brightness()
     self._update_wakefulness()
 
+  def start_threads(self):
+    if self._brightness_thread is None or not self._brightness_thread.is_alive():
+      self._brightness_thread = threading.Thread(target=self._brightness_worker, daemon=True)
+      self._brightness_thread.start()
+
+  def _brightness_worker(self):
+    # background — drop to SCHED_OTHER so we never preempt render
+    try:
+      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    except OSError:
+      pass
+    while True:
+      self._brightness_event.wait()
+      self._brightness_event.clear()
+      HARDWARE.set_screen_brightness(self._brightness_target)
+
   def set_offroad_brightness(self, brightness: int | None):
     if brightness is None:
       brightness = BACKLIGHT_OFFROAD
@@ -266,10 +290,9 @@ class Device:
       brightness = 0
 
     if brightness != self._last_brightness:
-      if self._brightness_thread is None or not self._brightness_thread.is_alive():
-        self._brightness_thread = threading.Thread(target=HARDWARE.set_screen_brightness, args=(brightness,))
-        self._brightness_thread.start()
-        self._last_brightness = brightness
+      self._brightness_target = brightness
+      self._brightness_event.set()
+      self._last_brightness = brightness
 
   def _update_wakefulness(self):
     # Handle interactive timeout
