@@ -2,6 +2,10 @@ def ciDockerImage() {
   return 'ghcr.io/commaai/alpine-ssh@sha256:e79076caaa7e8bc766fd07e81fe0db5d0449bee936d21a1c11dbe4b95a412063'
 }
 
+def ciSyncEpoch() {
+  return 'manifest-after-content-v2'
+}
+
 def retryWithDelay(int maxRetries, int delay, Closure body) {
   for (int i = 0; i < maxRetries; i++) {
     try {
@@ -159,7 +163,6 @@ elif [ -f "\${old_manifest}" ]; then
   comm -13 "\${old_entries}" "\${new_entries}" | cut -f1 > "\${changed_paths}"
   comm -23 "\${old_paths}" "\${new_paths}" > "\${deleted_paths}"
   cat "\${changed_paths}" > "\${sync_paths}"
-  printf '.ci_manifest\\n.ci_manifest.id\\n' >> "\${sync_paths}"
   echo "changed=\$(wc -l < "\${changed_paths}") deleted=\$(wc -l < "\${deleted_paths}")"
   sed -n '1,40p' "\${changed_paths}"
   if [ -s "\${deleted_paths}" ]; then
@@ -184,6 +187,7 @@ else
     --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
     --exclude='.venv' --exclude='.ruff_cache' --exclude='.pytest_cache' --exclude='.mypy_cache' \\
     --exclude='__pycache__' --exclude='.sconsign.dblite' \\
+    --exclude='.ci_manifest' --exclude='.ci_manifest.id' --exclude='.ci_sync_epoch' \\
     -e '${rsyncSshCommand(key_file, controlPath)}' \\
     'comma@${ip}:${env.TEST_DIR}/' "\${cache}/"
   find "\${cache}" -depth -type d -empty -delete
@@ -200,6 +204,7 @@ if [ "\${cache_updated}" = "1" ]; then
 else
   cp "\${old_manifest}" "\${manifest_dir}/\${new_id}"
 fi
+printf '%s\\n' '${ciSyncEpoch()}' > "\${cache}/.ci_sync_epoch"
 printf '%s\\n' "\${new_id}" > "\${cache}/.ci_current_manifest.id"
 echo "builder cache previous manifest: \${old_id:-none}"
 echo "builder cache current manifest: \${new_id}"
@@ -224,11 +229,29 @@ set -e
 cache='${env.DEVICE_BUILD_DIR}'
 previous_id='${env.DEVICE_BUILD_PREVIOUS_ID ?: ''}'
 current_id='${env.DEVICE_BUILD_ID ?: ''}'
+sync_epoch='${ciSyncEpoch()}'
 ssh_cmd='${rsyncSshCommand(key_file, controlPath)}'
 remote="comma@${ip}"
 remote_manifest=""
 
+sync_manifest_to_device() {
+  manifest_paths="\$(mktemp)"
+  printf '.ci_manifest\\n.ci_manifest.id\\n' > "\${manifest_paths}"
+  rsync -a --no-owner --no-group --info=stats2,name0 \\
+    --ignore-times \\
+    --files-from="\${manifest_paths}" \\
+    -e '${rsyncSshCommand(key_file, controlPath)}' \\
+    "\${cache}/" "\${remote}:${env.TEST_DIR}/"
+  rm -f "\${manifest_paths}"
+  \${ssh_cmd} "\${remote}" "printf '%s\\n' '\${sync_epoch}' > '${env.TEST_DIR}/.ci_sync_epoch'"
+}
+
 remote_id="\$(\${ssh_cmd} "\${remote}" "cat '${env.TEST_DIR}/.ci_manifest.id' 2>/dev/null || true")"
+remote_epoch="\$(\${ssh_cmd} "\${remote}" "cat '${env.TEST_DIR}/.ci_sync_epoch' 2>/dev/null || true")"
+if [ "\${remote_epoch}" != "\${sync_epoch}" ]; then
+  echo "device sync epoch was \${remote_epoch:-none}, forcing full content sync"
+  remote_id=""
+fi
 if [ -n "\${remote_id}" ] && [ -f "\${cache}/.ci_manifests/\${remote_id}" ]; then
   remote_manifest="\${cache}/.ci_manifests/\${remote_id}"
 fi
@@ -254,7 +277,6 @@ elif [ -n "\${remote_id}" ] && [ -f "\${remote_manifest}" ]; then
   comm -13 "\${old_entries}" "\${new_entries}" | cut -f1 > "\${changed_paths}"
   comm -23 "\${old_paths}" "\${new_paths}" > "\${deleted_paths}"
   cat "\${changed_paths}" > "\${sync_paths}"
-  printf '.ci_manifest\\n.ci_manifest.id\\n' >> "\${sync_paths}"
   echo "changed=\$(wc -l < "\${changed_paths}") deleted=\$(wc -l < "\${deleted_paths}")"
   sed -n '1,40p' "\${changed_paths}"
   if [ -s "\${deleted_paths}" ]; then
@@ -269,6 +291,7 @@ elif [ -n "\${remote_id}" ] && [ -f "\${remote_manifest}" ]; then
   else
     echo "no changed paths to sync"
   fi
+  sync_manifest_to_device
 else
   echo "full content sync, remote manifest was \${remote_id:-none}, expected \${previous_id:-none}"
   \${ssh_cmd} "\${remote}" "mkdir -p '${env.TEST_DIR}' && rm -rf '${env.TEST_DIR}/.git' '${env.TEST_DIR}/.venv' '${env.TEST_DIR}/.ruff_cache' '${env.TEST_DIR}/.pytest_cache' '${env.TEST_DIR}/.mypy_cache' && rm -f '${env.TEST_DIR}/.sconsign.dblite'"
@@ -276,10 +299,12 @@ else
     --exclude='.git' --exclude='.git/' --exclude='.git/**' \\
     --exclude='.venv' --exclude='.ruff_cache' --exclude='.pytest_cache' --exclude='.mypy_cache' \\
     --exclude='__pycache__' --exclude='.sconsign.dblite' \\
+    --exclude='.ci_manifest' --exclude='.ci_manifest.id' --exclude='.ci_sync_epoch' \\
     --exclude='.ci_changed_paths' --exclude='.ci_deleted_paths' --exclude='.ci_sync_paths' \\
     --exclude='.ci_previous_manifest.id' --exclude='.ci_current_manifest.id' \\
     -e '${rsyncSshCommand(key_file, controlPath)}' \\
     "\${cache}/" "\${remote}:${env.TEST_DIR}/"
+  sync_manifest_to_device
 fi
 """, label: 'sync built tree'
   }
@@ -361,7 +386,7 @@ for record in raw_tracked.split(b"\\0"):
 
 entries = [("G", f"{mode}:{oid}", path) for path, (mode, oid) in tracked.items()]
 skip_dirs = {".git", ".venv", ".ruff_cache", ".pytest_cache", ".mypy_cache", "__pycache__"}
-skip_files = {".ci_manifest", ".ci_manifest.id", ".sconsign.dblite"}
+skip_files = {".ci_manifest", ".ci_manifest.id", ".ci_sync_epoch", ".sconsign.dblite"}
 
 for dirpath, dirnames, filenames in os.walk(root):
   dirpath = Path(dirpath)
