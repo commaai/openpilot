@@ -14,7 +14,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.hardware import HARDWARE, PC
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
-PARAM_UPDATE_TIME = 5.0
+PARAM_UPDATE_TIME = 1 / 5.0
 
 
 class UIStatus(Enum):
@@ -84,7 +84,8 @@ class UIState:
     self.is_body: bool | None = None
     self.CP: car.CarParams | None = None
     self.light_sensor: float = -1.0
-    self._param_update_time: float = -PARAM_UPDATE_TIME
+
+    self._params_thread: threading.Thread | None = None
 
     # Callbacks
     self._offroad_transition_callbacks: list[Callable[[], None]] = []
@@ -112,12 +113,19 @@ class UIState:
 
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
+    if self._params_thread is None:
+      self._params_thread = threading.Thread(target=self._params_refresh_worker, daemon=True)
+      self._params_thread.start()
+
     self.sm.update(0)
     self._update_state()
     self._update_status()
-    if time.monotonic() - self._param_update_time >= PARAM_UPDATE_TIME:
-      self.update_params()
     device.update()
+
+  def _params_refresh_worker(self):
+    while True:
+      self.update_params()
+      time.sleep(PARAM_UPDATE_TIME)
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -143,11 +151,11 @@ class UIState:
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
 
-    # Update recording audio state
-    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
-
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
+    # Update body state
+    if self.CP is not None and self.is_body != self.CP.notCar:
+      self.is_body = self.CP.notCar
+      for callback in self._on_body_changed_callbacks:
+        callback()
 
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
@@ -188,14 +196,10 @@ class UIState:
       else:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
 
-      if self.is_body != self.CP.notCar:
-        self.is_body = self.CP.notCar
-        for callback in self._on_body_changed_callbacks:
-          callback()
-
+    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
-
-    self._param_update_time = time.monotonic()
 
 
 class Device:
