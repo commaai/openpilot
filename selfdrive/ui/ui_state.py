@@ -123,11 +123,6 @@ class UIState:
     device.update()
 
   def _params_refresh_loop(self):
-    # background — drop to SCHED_OTHER so we never preempt render
-    try:
-      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
-    except OSError:
-      pass
     while True:
       self.update_params()
       time.sleep(PARAM_UPDATE_TIME)
