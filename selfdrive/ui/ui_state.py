@@ -14,7 +14,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.hardware import HARDWARE, PC
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
-PARAM_UPDATE_TIME = 0.1  # 10Hz
+PARAM_UPDATE_TIME = 1 / 5.0
 
 
 class UIStatus(Enum):
@@ -200,6 +200,9 @@ class UIState:
         for callback in self._on_body_changed_callbacks:
           callback()
 
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
+    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
 
