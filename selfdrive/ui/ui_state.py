@@ -122,7 +122,7 @@ class UIState:
   def start_threads(self) -> None:
     # start daemon workers after manager forks ui (no-op if already alive)
     self.prime_state.start()
-    device.start_threads()
+    device.start_thread()
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -250,7 +250,7 @@ class Device:
     self._update_brightness()
     self._update_wakefulness()
 
-  def start_threads(self):
+  def start_thread(self):
     if self._brightness_thread is None or not self._brightness_thread.is_alive():
       self._brightness_thread = threading.Thread(target=self._brightness_worker, daemon=True)
       self._brightness_thread.start()
