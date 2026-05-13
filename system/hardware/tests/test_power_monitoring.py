@@ -139,7 +139,7 @@ class TestPowerMonitoring:
   def test_disable_power_down(self, mocker):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    self.params.put_bool("DisablePowerDown", True)
+    self.params.put_bool("DisablePowerDown", True, block=True)
     pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh

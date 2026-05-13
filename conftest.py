@@ -7,22 +7,14 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
 from openpilot.system.hardware import TICI, HARDWARE
 
-# TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
-# pending https://github.com/pytest-dev/pytest-cpp/pull/147
+# these are heavy CI-only tests, invoked explicitly in .github/workflows/tests.yaml
 collect_ignore = [
   "selfdrive/test/process_replay/test_processes.py",
   "selfdrive/test/process_replay/test_regen.py",
 ]
 collect_ignore_glob = [
   "selfdrive/debug/*.py",
-  "selfdrive/modeld/*.py",
 ]
-
-
-def pytest_sessionstart(session):
-  # TODO: fix tests and enable test order randomization
-  if session.config.pluginmanager.hasplugin('randomly'):
-    session.config.option.randomly_reorganize = False
 
 
 @pytest.hookimpl(hookwrapper=True, trylast=True)
@@ -96,15 +88,3 @@ def pytest_collection_modifyitems(config, items):
       class_property_name = item.get_closest_marker('xdist_group_class_property').args[0]
       class_property_value = getattr(item.cls, class_property_name)
       item.add_marker(pytest.mark.xdist_group(class_property_value))
-
-
-@pytest.hookimpl(trylast=True)
-def pytest_configure(config):
-  config_line = "xdist_group_class_property: group tests by a property of the class that contains them"
-  config.addinivalue_line("markers", config_line)
-
-  config_line = "nocapture: don't capture test output"
-  config.addinivalue_line("markers", config_line)
-
-  config_line = "shared_download_cache: share download cache between tests"
-  config.addinivalue_line("markers", config_line)

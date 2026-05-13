@@ -5,8 +5,10 @@ libs = [common, messaging, visionipc,
         'pthread', 'z', 'm', 'zstd']
 frameworks = []
 
-src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
-if arch != "larch64":
+src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/jpeg_encoder.cc']
+if arch == "larch64":
+  src += ['encoder/v4l_encoder.cc']
+else:
   src += ['encoder/ffmpeg_encoder.cc']
   libs += ['yuv']
   if arch == "Darwin":
@@ -14,10 +16,6 @@ if arch != "larch64":
 
 if arch != "Darwin":
   libs += ['va', 'va-drm', 'drm']
-
-if arch == "Darwin":
-  # exclude v4l
-  del src[src.index('encoder/v4l_encoder.cc')]
 
 logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)

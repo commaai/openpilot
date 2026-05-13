@@ -46,7 +46,7 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
-op build
+scons
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
@@ -73,13 +73,6 @@ find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
 rm -f selfdrive/modeld/models/*.onnx
-
-find third_party/ -name '*x86*' -exec rm -r {} +
-find third_party/ -name '*Darwin*' -exec rm -r {} +
-
-
-# Restore third_party
-git checkout third_party/
 
 # Mark as prebuilt release
 touch prebuilt

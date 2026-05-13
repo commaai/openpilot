@@ -316,8 +316,9 @@ class GuiApplication:
         self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, daemon=True)
         self._ffmpeg_thread.start()
 
-      # OFFSCREEN disables FPS limiting for fast offline rendering (e.g. clips)
-      rl.set_target_fps(0 if OFFSCREEN else fps)
+      # four display runs slightly faster than 60 FPS, let it dictate rate so we don't drift and drop frames
+      vblank_control = HARDWARE.get_device_type() == 'mici'
+      rl.set_target_fps(0 if OFFSCREEN or vblank_control else fps)
 
       self._target_fps = fps
       self._set_styles()
