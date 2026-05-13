@@ -110,18 +110,13 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
+    self.prime_state.start()  # start thread after manager forks ui
     self.sm.update(0)
-    self.start_threads()
     self._update_state()
     self._update_status()
     if time.monotonic() - self._param_update_time >= PARAM_UPDATE_TIME:
       self.update_params()
     device.update()
-
-  def start_threads(self) -> None:
-    # start daemon workers after manager forks ui (no-op if already alive)
-    self.prime_state.start()
-    device.start_thread()
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -242,6 +237,8 @@ class Device:
     self._interactive_timeout_callbacks.append(callback)
 
   def update(self):
+    self.start_brightness_thread()  # start thread after manager forks ui
+
     # do initial reset
     if self._interaction_time <= 0:
       self._reset_interactive_timeout()
@@ -249,7 +246,7 @@ class Device:
     self._update_brightness()
     self._update_wakefulness()
 
-  def start_thread(self):
+  def start_brightness_thread(self):
     if self._brightness_thread is None or not self._brightness_thread.is_alive():
       self._brightness_thread = threading.Thread(target=self._brightness_worker, daemon=True)
       self._brightness_thread.start()
