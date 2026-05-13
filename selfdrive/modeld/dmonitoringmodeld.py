@@ -45,7 +45,7 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
-    with open(WarpCompileConfig(cam_w, cam_h, prepare_only=True).pkl_path, "rb") as f:
+    with open(WarpCompileConfig(cam_w, cam_h).pkl_path, "rb") as f:
       self.image_warp = pickle.load(f)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
