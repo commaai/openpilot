@@ -2,7 +2,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from openpilot.selfdrive.modeld.get_model_metadata import metadata_path_for
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
@@ -26,6 +25,11 @@ def usbgpu_present() -> bool:
     except (FileNotFoundError, NotADirectoryError, ValueError):
       pass
   return False
+
+
+def metadata_path_for(onnx_path) -> Path:
+  p = Path(onnx_path)
+  return p.parent / (p.stem + '_metadata.pkl')
 
 
 @dataclass

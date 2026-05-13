@@ -6,10 +6,7 @@ import pickle
 from typing import Any
 
 from tinygrad.nn.onnx import OnnxPBParser
-
-def metadata_path_for(onnx_path) -> pathlib.Path:
-  p = pathlib.Path(onnx_path)
-  return p.parent / (p.stem + '_metadata.pkl')
+from openpilot.selfdrive.modeld.helpers import metadata_path_for
 
 
 class MetadataOnnxPBParser(OnnxPBParser):
