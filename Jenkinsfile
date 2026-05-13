@@ -158,10 +158,19 @@ elif [ -f "\${old_manifest}" ]; then
   cut -f1 "\${new_entries}" > "\${new_paths}"
   comm -13 "\${old_entries}" "\${new_entries}" | cut -f1 > "\${changed_paths}"
   comm -23 "\${old_paths}" "\${new_paths}" > "\${deleted_paths}"
-  cat "\${changed_paths}" "\${deleted_paths}" > "\${sync_paths}"
+  cat "\${changed_paths}" > "\${sync_paths}"
   printf '.ci_manifest\\n.ci_manifest.id\\n' >> "\${sync_paths}"
   echo "changed=\$(wc -l < "\${changed_paths}") deleted=\$(wc -l < "\${deleted_paths}")"
   sed -n '1,40p' "\${changed_paths}"
+  if [ -s "\${deleted_paths}" ]; then
+    while IFS= read -r path; do
+      [ -n "\${path}" ] || continue
+      case "\${path}" in
+        /*|../*|*/../*) echo "refusing to delete unexpected path \${path}" >&2; exit 1 ;;
+      esac
+      rm -rf -- "\${cache}/\${path}"
+    done < "\${deleted_paths}"
+  fi
   rsync -a --delete-missing-args --no-owner --no-group --info=stats2,name0 \\
     --ignore-times \\
     --files-from="\${sync_paths}" \\
@@ -244,10 +253,13 @@ elif [ -n "\${remote_id}" ] && [ -f "\${remote_manifest}" ]; then
   cut -f1 "\${new_entries}" > "\${new_paths}"
   comm -13 "\${old_entries}" "\${new_entries}" | cut -f1 > "\${changed_paths}"
   comm -23 "\${old_paths}" "\${new_paths}" > "\${deleted_paths}"
-  cat "\${changed_paths}" "\${deleted_paths}" > "\${sync_paths}"
+  cat "\${changed_paths}" > "\${sync_paths}"
   printf '.ci_manifest\\n.ci_manifest.id\\n' >> "\${sync_paths}"
   echo "changed=\$(wc -l < "\${changed_paths}") deleted=\$(wc -l < "\${deleted_paths}")"
   sed -n '1,40p' "\${changed_paths}"
+  if [ -s "\${deleted_paths}" ]; then
+    \${ssh_cmd} "\${remote}" "cd '${env.TEST_DIR}' && while IFS= read -r path; do [ -n \"\$path\" ] || continue; case \"\$path\" in /*|../*|*/../*) echo \"refusing to delete unexpected path \$path\" >&2; exit 1 ;; esac; rm -rf -- \"\$path\"; done" < "\${deleted_paths}"
+  fi
   if [ -s "\${sync_paths}" ]; then
     rsync -a --delete-missing-args --no-owner --no-group --info=stats2,name0 \\
       --ignore-times \\
