@@ -178,7 +178,6 @@ lint.ignore = [
 ]
 line-length = 160
 exclude = [
-  "body",
   "cereal",
   "panda",
   "opendbc",
