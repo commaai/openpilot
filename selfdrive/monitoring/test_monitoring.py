@@ -18,8 +18,10 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.leftDriverData.faceOrientation = [0., 0., 0.]
   ds.leftDriverData.facePosition = [0., 0.]
   ds.leftDriverData.faceProb = 1. * face_detected
-  ds.leftDriverData.eyesVisibleProb = 1.
-  ds.leftDriverData.eyesClosedProb = 1. * distracted
+  ds.leftDriverData.leftEyeProb = 1.
+  ds.leftDriverData.rightEyeProb = 1.
+  ds.leftDriverData.leftBlinkProb = 1. * distracted
+  ds.leftDriverData.rightBlinkProb = 1. * distracted
   ds.leftDriverData.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.leftDriverData.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
   # TODO: test both separately when e2e is used

@@ -30,6 +30,29 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 #define OpcodesIFEInitialConfig  0x0
 #define OpcodesIFEUpdate         0x1
 
+// Sensor command values from the SDM845 kernel's private camera header:
+// drivers/media/platform/msm/camera/cam_sensor_module/cam_sensor_utils/cam_sensor_cmn_header.h
+// These are userspace-visible ioctl payload values, but Qualcomm did not export them through UAPI.
+enum {
+  CAMERA_SENSOR_CMD_TYPE_PROBE = 1,
+  CAMERA_SENSOR_CMD_TYPE_PWR_UP = 2,
+  CAMERA_SENSOR_CMD_TYPE_PWR_DOWN = 3,
+  CAMERA_SENSOR_CMD_TYPE_I2C_INFO = 4,
+  CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR = 5,
+  CAMERA_SENSOR_CMD_TYPE_WAIT = 9,
+
+  CAMERA_SENSOR_WAIT_OP_SW_UCND = 3,
+
+  CAMERA_SENSOR_I2C_TYPE_BYTE = 1,
+  CAMERA_SENSOR_I2C_TYPE_WORD = 2,
+
+  I2C_FAST_MODE = 1,
+
+  CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE = 3,
+  CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG = 4,
+  CAM_SENSOR_PACKET_OPCODE_SENSOR_NOP = 127,
+};
+
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
 int device_control(int fd, int op_code, int session_handle, int dev_handle);

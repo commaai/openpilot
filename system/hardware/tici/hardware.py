@@ -414,7 +414,7 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 0)
-    time.sleep(1)
+    time.sleep(0.01)
     gpio_set(GPIO.STM_RST_N, 0)
 
   def recover_internal_panda(self):
@@ -423,9 +423,9 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 1)
-    time.sleep(0.5)
+    time.sleep(0.01)
     gpio_set(GPIO.STM_RST_N, 0)
-    time.sleep(0.5)
+    time.sleep(0.01)
     gpio_set(GPIO.STM_BOOT0, 0)
 
   def booted(self):

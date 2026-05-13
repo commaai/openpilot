@@ -1,7 +1,6 @@
-import time
 import numpy as np
 import pyray as rl
-from cereal import log, messaging
+from cereal import log
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui import UI_BORDER_SIZE
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
@@ -49,12 +48,8 @@ class AugmentedRoadView(CameraView):
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
 
-    # debug
-    self._pm = messaging.PubMaster(['uiDebug'])
-
   def _render(self, rect):
     # Only render when system is started to avoid invalid data access
-    start_draw = time.monotonic()
     if not ui_state.started:
       return
 
@@ -97,11 +92,6 @@ class AugmentedRoadView(CameraView):
 
     # Draw colored border based on driving state
     self._draw_border(rect)
-
-    # publish uiDebug
-    msg = messaging.new_message('uiDebug')
-    msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
-    self._pm.send('uiDebug', msg)
 
   def _handle_mouse_press(self, _):
     if not self._hud_renderer.user_interacting() and self._click_callback is not None:

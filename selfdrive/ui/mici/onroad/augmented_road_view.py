@@ -1,7 +1,6 @@
-import time
 import numpy as np
 import pyray as rl
-from cereal import messaging, car, log
+from cereal import car, log
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
@@ -159,9 +158,6 @@ class AugmentedRoadView(CameraView):
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
-    # debug
-    self._pm = messaging.PubMaster(['uiDebug'])
-
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
     return self._bookmark_icon.is_swiping_left()
@@ -189,7 +185,6 @@ class AugmentedRoadView(CameraView):
       self._offroad_label.render(self._rect)
       return
 
-    start_draw = time.monotonic()
     self._switch_stream_if_needed(ui_state.sm)
 
     # Update calibration before rendering
@@ -247,11 +242,6 @@ class AugmentedRoadView(CameraView):
     self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
-
-    # publish uiDebug
-    msg = messaging.new_message('uiDebug')
-    msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
-    self._pm.send('uiDebug', msg)
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:

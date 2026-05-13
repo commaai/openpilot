@@ -4,7 +4,7 @@
 #include <cmath>
 
 void icon_add_font(float size, bool merge, const ImFont *base_font) {
-  const std::filesystem::path ttf = repo_root() / "third_party" / "bootstrap" / "bootstrap-icons.ttf";
+  const std::filesystem::path ttf = BOOTSTRAP_ICONS_TTF;
   ImGuiIO &io = ImGui::GetIO();
   ImFontConfig config;
   config.MergeMode = merge;
