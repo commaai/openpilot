@@ -80,7 +80,7 @@ def usb_gpu_thread(end_event):
   s.bind((0, 1))
 
   present = usbgpu_present()
-  params.put_bool_nonblocking("UsbGpuPresent", present)
+  params.put_bool("UsbGpuPresent", present)
   cloudlog.info(f"usb_gpu_thread: started, coldplug present={present}")
 
   while not end_event.is_set():
