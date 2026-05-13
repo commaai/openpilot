@@ -385,9 +385,7 @@ class TestOnroad:
       ("driverStateV2", 0.3, 0.05),
     ]
     for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
-      # TODO some init can happen in first iteration
-      ts = ts[1:]
+      ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s] if (m.logMonoTime*1e-9 - self.ts[s]['t'][0]) > LOG_OFFSET]
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
