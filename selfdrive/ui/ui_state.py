@@ -1,4 +1,3 @@
-import os
 import pyray as rl
 import numpy as np
 import time
@@ -256,11 +255,6 @@ class Device:
       self._brightness_thread.start()
 
   def _brightness_worker(self):
-    # background — drop to SCHED_OTHER so we never preempt render
-    try:
-      os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
-    except OSError:
-      pass
     while True:
       self._brightness_event.wait()
       self._brightness_event.clear()
