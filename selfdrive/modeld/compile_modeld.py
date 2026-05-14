@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import pickle
 import time
 from functools import partial
@@ -11,6 +12,8 @@ from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 from tinygrad.nn.onnx import OnnxRunner
+
+from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
@@ -158,20 +161,9 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
 
 
 def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
-                   vision_onnx, policy_onnx, pkl_path):
-  from get_model_metadata import metadata_path_for
-
+                   vision_runner, policy_runner, vision_features_slice,
+                   vision_input_shapes, policy_input_shapes):
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
-
-  vision_runner = OnnxRunner(vision_onnx)
-  policy_runner = OnnxRunner(policy_onnx)
-
-  with open(metadata_path_for(vision_onnx), 'rb') as f:
-    vision_metadata = pickle.load(f)
-    vision_features_slice = vision_metadata['output_slices']['hidden_state']
-    vision_input_shapes = vision_metadata['input_shapes']
-  with open(metadata_path_for(policy_onnx), 'rb') as f:
-    policy_input_shapes = pickle.load(f)['input_shapes']
 
   _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
                          vision_features_slice, frame_skip, prepare_only)
@@ -216,13 +208,10 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   run_policy_jit, test_val, test_buffers = random_inputs_run_fn(run_policy_jit, SEED)
 
   print('pickle round trip')
-  with open(pkl_path, "wb") as f:
-    pickle.dump(run_policy_jit, f)
-    print(f"  Saved to {pkl_path}")
-  with open(pkl_path, "rb") as f:
-    run_policy_jit = pickle.load(f)
+  run_policy_jit = pickle.loads(pickle.dumps(run_policy_jit))
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
+  return run_policy_jit
 
 
 def _parse_size(s):
@@ -240,15 +229,37 @@ def _parse_nv12(s):
 if __name__ == "__main__":
   p = argparse.ArgumentParser()
   p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
-  p.add_argument('--nv12', type=_parse_nv12, required=True,
-                 help=f'NV12 frame layout: {",".join(NV12Frame._fields)}')
+  p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
+                 help='camera resolutions WxH (one or more)')
   p.add_argument('--vision-onnx', required=True)
   p.add_argument('--policy-onnx', required=True)
   p.add_argument('--output', required=True)
-  p.add_argument('--prepare-only', action='store_true')
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
 
   model_w, model_h = args.model_size
-  compile_modeld(args.nv12, model_w, model_h, args.prepare_only, args.frame_skip,
-                 args.vision_onnx, args.policy_onnx, args.output)
+
+  # init runners once so weights are shared
+  from get_model_metadata import metadata_path_for
+  vision_runner = OnnxRunner(args.vision_onnx)
+  policy_runner = OnnxRunner(args.policy_onnx)
+  with open(metadata_path_for(args.vision_onnx), 'rb') as f:
+    vision_metadata = pickle.load(f)
+    vision_features_slice = vision_metadata['output_slices']['hidden_state']
+    vision_input_shapes = vision_metadata['input_shapes']
+  with open(metadata_path_for(args.policy_onnx), 'rb') as f:
+    policy_input_shapes = pickle.load(f)['input_shapes']
+
+  out = {}
+  for cam_w, cam_h in args.camera_resolutions:
+    nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
+    out[f'{cam_w}x{cam_h}'] = {
+      name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
+                           vision_runner, policy_runner, vision_features_slice,
+                           vision_input_shapes, policy_input_shapes)
+      for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
+    }
+
+  with open(args.output, "wb") as f:
+    pickle.dump(out, f)
+  print(f"Saved combined JIT to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")

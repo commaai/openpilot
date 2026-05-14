@@ -1,7 +1,6 @@
 import glob
 import json
 import os
-from itertools import product
 from SCons.Script import Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_paths
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
@@ -26,8 +25,6 @@ def get_camera_configs():
 
 CAMERA_CONFIGS = get_camera_configs()
 
-MODELD_CONFIGS = [CompileConfig(cam_w, cam_h, prepare_only, 'driving_')
-                  for (cam_w, cam_h), prepare_only in product(CAMERA_CONFIGS, [True, False])]
 DM_WARP_CONFIGS = [CompileConfig(cam_w, cam_h, True, 'dm_') for cam_w, cam_h in CAMERA_CONFIGS]
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
@@ -80,20 +77,20 @@ driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['dri
 
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-for cfg in MODELD_CONFIGS:
-  cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
-         f'--model-size {model_w}x{model_h} '
-         f'--nv12 {",".join(str(x) for x in cfg.nv12)} '
-         f'--vision-onnx {File("models/driving_vision.onnx").abspath} '
-         f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
-         f'--output {cfg.pkl_path} --frame-skip {frame_skip}'
-         + (' --prepare-only' if cfg.prepare_only else ''))
-  node = lenv.Command(cfg.pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], cmd)
-  onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
-  chunk_targets = get_chunk_paths(cfg.pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
-  def do_chunk(target, source, env, pkl=cfg.pkl_path, chunks=chunk_targets):
-    chunk_file(pkl, chunks)
-  lenv.Command(chunk_targets, node, do_chunk)
+pkl_path = File("models/driving_tinygrad.pkl").abspath
+camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
+cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
+       f'--model-size {model_w}x{model_h} '
+       f'--camera-resolutions {camera_res_args} '
+       f'--vision-onnx {File("models/driving_vision.onnx").abspath} '
+       f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
+       f'--output {pkl_path} --frame-skip {frame_skip}')
+node = lenv.Command(pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + driving_metadata_deps + [chunker_file, compiled_flags_node], cmd)
+onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
+chunk_targets = get_chunk_paths(pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
+def do_chunk(target, source, env, pkl=pkl_path, chunks=chunk_targets):
+  chunk_file(pkl, chunks)
+lenv.Command(chunk_targets, node, do_chunk)
 
 dm_w, dm_h = DM_INPUT_SIZE
 for cfg in DM_WARP_CONFIGS:
