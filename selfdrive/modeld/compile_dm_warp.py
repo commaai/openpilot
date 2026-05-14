@@ -7,7 +7,8 @@ from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
-from openpilot.selfdrive.modeld.compile_modeld import NV12Frame, warp_perspective_tinygrad, _parse_size, _parse_nv12
+from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
+from openpilot.selfdrive.modeld.compile_modeld import NV12Frame, warp_perspective_tinygrad, _parse_size
 
 
 def make_warp_dm(nv12: NV12Frame, dm_w, dm_h):
@@ -44,11 +45,12 @@ def compile_dm_warp(nv12: NV12Frame, dm_w, dm_h, pkl_path):
 
 if __name__ == "__main__":
   p = argparse.ArgumentParser()
-  p.add_argument('--nv12', type=_parse_nv12, required=True,
-                 help=f'NV12 frame layout: {",".join(NV12Frame._fields)}')
+  p.add_argument('--camera-resolution', type=_parse_size, required=True, help='camera resolution WxH')
   p.add_argument('--warp-to', type=_parse_size, required=True, help='DM input WxH')
   p.add_argument('--output', required=True)
   args = p.parse_args()
 
+  cam_w, cam_h = args.camera_resolution
+  nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
   dm_w, dm_h = args.warp_to
-  compile_dm_warp(args.nv12, dm_w, dm_h, args.output)
+  compile_dm_warp(nv12, dm_w, dm_h, args.output)
