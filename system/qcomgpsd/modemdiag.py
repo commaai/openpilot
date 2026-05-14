@@ -1,5 +1,5 @@
 import select
-from serial import Serial
+from openpilot.common.serial import Serial
 from crcmod import mkCrcFun
 from struct import pack, unpack_from, calcsize
 

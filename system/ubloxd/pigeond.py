@@ -2,13 +2,13 @@
 import sys
 import time
 import signal
-import serial
 import struct
 import requests
 import urllib.parse
 from datetime import datetime, UTC
 
 from cereal import messaging
+from openpilot.common.serial import VTIMESerial
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -64,7 +64,7 @@ def get_assistnow_messages(token: str) -> list[bytes]:
 
 class TTYPigeon:
   def __init__(self):
-    self.tty = serial.VTIMESerial(UBLOX_TTY, baudrate=9600, timeout=0)
+    self.tty = VTIMESerial(UBLOX_TTY, baudrate=9600, timeout=0)
 
   def send(self, dat: bytes) -> None:
     self.tty.write(dat)

@@ -6,7 +6,7 @@ import signal
 import itertools
 import math
 import time
-from serial import Serial
+from openpilot.common.serial import Serial
 import datetime
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack

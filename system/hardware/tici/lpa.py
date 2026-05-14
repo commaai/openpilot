@@ -6,7 +6,6 @@ import fcntl
 import hashlib
 import os
 import requests
-import serial
 import subprocess
 import sys
 import termios
@@ -18,6 +17,7 @@ from typing import Any
 
 from pathlib import Path
 
+from openpilot.common.serial import Serial, SerialException
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
@@ -133,7 +133,7 @@ class AtClient:
     self._device = device
     self._baud = baud
     self._timeout = timeout
-    self._serial: serial.Serial | None = None
+    self._serial: Serial | None = None
 
   def send_raw(self, data: bytes) -> None:
     self._ensure_serial()
@@ -185,14 +185,14 @@ class AtClient:
         pass
       self._serial = None
     if self._serial is None:
-      self._serial = serial.Serial(self._device, baudrate=self._baud, timeout=self._timeout)
+      self._serial = Serial(self._device, baudrate=self._baud, timeout=self._timeout)
 
   def query(self, cmd: str) -> list[str]:
     self._ensure_serial()
     try:
       self._send(cmd)
       return self._expect()
-    except serial.SerialException:
+    except SerialException:
       self._ensure_serial(reconnect=True)
       self._send(cmd)
       return self._expect()
@@ -208,7 +208,7 @@ class AtClient:
     if self._serial:
       try:
         self._serial.reset_input_buffer()
-      except (OSError, serial.SerialException, termios.error):
+      except (OSError, SerialException, termios.error):
         self._ensure_serial(reconnect=True)
     for line in self.query(f'AT+CCHO="{ISDR_AID}"'):
       if line.startswith("+CCHO:") and (ch := line.split(":", 1)[1].strip()):
@@ -230,7 +230,7 @@ class AtClient:
       try:
         self._open_isdr_once()
         return
-      except (RuntimeError, TimeoutError, termios.error, serial.SerialException):
+      except (RuntimeError, TimeoutError, termios.error, SerialException):
         time.sleep(OPEN_ISDR_RETRY_DELAY_S)
         if attempt == OPEN_ISDR_RESET_ATTEMPT:
           self._reset_modem()
