@@ -100,7 +100,7 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    jits = pickle.loads(read_file_chunked(MODELS_DIR / 'driving_tinygrad.pkl'))[f'{cam_w}x{cam_h}']
+    jits = pickle.loads(read_file_chunked(MODELS_DIR / 'driving_tinygrad.pkl'))[(cam_w,cam_h)]
     self.run_policy = jits['run_policy']
     self.warp_enqueue = jits['warp_enqueue']
     self.warp_enqueue(

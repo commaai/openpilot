@@ -11,9 +11,6 @@ from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-from tinygrad.nn.onnx import OnnxRunner
-
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
@@ -219,14 +216,9 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def _parse_nv12(s):
-  parts = s.split(',')
-  assert len(parts) == len(NV12Frame._fields), \
-    f"--nv12 expects {','.join(NV12Frame._fields)} (got {s!r})"
-  return NV12Frame(*(int(x) for x in parts))
-
-
 if __name__ == "__main__":
+  from tinygrad.nn.onnx import OnnxRunner
+  from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
   p = argparse.ArgumentParser()
   p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
   p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
@@ -253,7 +245,7 @@ if __name__ == "__main__":
   out = {}
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    out[f'{cam_w}x{cam_h}'] = {
+    out[(cam_w,cam_h)] = {
       name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
                            vision_runner, policy_runner, vision_features_slice,
                            vision_input_shapes, policy_input_shapes)
