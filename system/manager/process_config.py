@@ -28,7 +28,7 @@ def ublox_available() -> bool:
 def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
-    params.put_bool("UbloxAvailable", use_ublox)
+    params.put_bool("UbloxAvailable", use_ublox, block=True)
   return started and use_ublox
 
 def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:

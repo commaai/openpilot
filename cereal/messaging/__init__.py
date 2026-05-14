@@ -40,12 +40,16 @@ def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event
 
 
 def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
-  args = {
-    'valid': False,
-    'logMonoTime': int(time.monotonic() * 1e9),
-    **kwargs
-  }
-  dat = log.Event.new_message(**args)
+  valid = kwargs.pop('valid', False)
+  log_mono_time = kwargs.pop('logMonoTime', int(time.monotonic() * 1e9))
+
+  # pycapnp 2.2.x's kwargs/from_dict path creates cyclic garbage here. Realtime processes disable GC.
+  dat = log.Event.new_message()
+  dat.valid = valid
+  dat.logMonoTime = log_mono_time
+  for field, value in kwargs.items():
+    setattr(dat, field, value)
+
   if service is not None:
     if size is None:
       dat.init(service)

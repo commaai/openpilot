@@ -202,7 +202,7 @@ class Modem:
   def _publish_state(self, **kwargs):
     self.S.update(kwargs)
     with tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False) as f:
-      json.dump(self.S, f)
+      json.dump(self.S, f, indent=2)
     os.chmod(f.name, 0o644)
     os.replace(f.name, STATE_PATH)
 
@@ -308,7 +308,7 @@ class Modem:
     if not (imei.isdigit() and 14 <= len(imei) <= 17):  # 3GPP TS 23.003
       imei = ""
 
-    iccid = self._atv("AT+QCCID", "+QCCID:") or ""
+    iccid = (self._atv("AT+QCCID", "+QCCID:") or "").rstrip("F")
     if not iccid.isdigit():
       iccid = ""
 
@@ -387,7 +387,7 @@ class Modem:
   def _check_iccid(self, state):
     if state in (State.INITIALIZING, State.DISCONNECTING) or not self.S["iccid"]:
       return
-    iccid = self._atv("AT+QCCID", "+QCCID:")
+    iccid = (self._atv("AT+QCCID", "+QCCID:") or "").rstrip("F")
     if iccid and iccid != self.S["iccid"]:
       logging.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
       self._sim_change = True

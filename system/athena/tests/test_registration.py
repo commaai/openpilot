@@ -37,7 +37,7 @@ class TestRegistration:
     dongle = "DONGLE_ID_123"
     m = mocker.patch("openpilot.system.athena.registration.api_get", autospec=True)
     for persist, params in [(True, True), (True, False), (False, True)]:
-      self.params.put("DongleId", dongle if params else "")
+      self.params.put("DongleId", dongle if params else "", block=True)
       with open(self.dongle_id, "w") as f:
         f.write(dongle if persist else "")
       assert register() == dongle

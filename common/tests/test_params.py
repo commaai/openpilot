@@ -12,17 +12,17 @@ class TestParams:
     self.params = Params()
 
   def test_params_put_and_get(self):
-    self.params.put("DongleId", "cb38263377b873ee")
+    self.params.put("DongleId", "cb38263377b873ee", block=True)
     assert self.params.get("DongleId") == "cb38263377b873ee"
 
   def test_params_non_ascii(self):
     st = b"\xe1\x90\xff"
-    self.params.put("CarParams", st)
+    self.params.put("CarParams", st, block=True)
     assert self.params.get("CarParams") == st
 
   def test_params_get_cleared_manager_start(self):
-    self.params.put("CarParams", b"test")
-    self.params.put("DongleId", "cb38263377b873ee")
+    self.params.put("CarParams", b"test", block=True)
+    self.params.put("DongleId", "cb38263377b873ee", block=True)
     assert self.params.get("CarParams") == b"test"
 
     undefined_param = self.params.get_param_path(uuid.uuid4().hex)
@@ -36,15 +36,15 @@ class TestParams:
     assert not os.path.isfile(undefined_param)
 
   def test_params_two_things(self):
-    self.params.put("DongleId", "bob")
-    self.params.put("AthenadPid", 123)
+    self.params.put("DongleId", "bob", block=True)
+    self.params.put("AthenadPid", 123, block=True)
     assert self.params.get("DongleId") == "bob"
     assert self.params.get("AthenadPid") == 123
 
   def test_params_get_block(self):
     def _delayed_writer():
       time.sleep(0.1)
-      self.params.put("CarParams", b"test")
+      self.params.put("CarParams", b"test", block=True)
     threading.Thread(target=_delayed_writer).start()
     assert self.params.get("CarParams") is None
     assert self.params.get("CarParams", block=True) == b"test"
@@ -57,10 +57,10 @@ class TestParams:
       self.params.get_bool("swag")
 
     with pytest.raises(UnknownKeyName):
-      self.params.put("swag", "abc")
+      self.params.put("swag", "abc", block=True)
 
     with pytest.raises(UnknownKeyName):
-      self.params.put_bool("swag", True)
+      self.params.put_bool("swag", True, block=True)
 
   def test_remove_not_there(self):
     assert self.params.get("CarParams") is None
@@ -71,23 +71,23 @@ class TestParams:
     self.params.remove("IsMetric")
     assert not self.params.get_bool("IsMetric")
 
-    self.params.put_bool("IsMetric", True)
+    self.params.put_bool("IsMetric", True, block=True)
     assert self.params.get_bool("IsMetric")
 
-    self.params.put_bool("IsMetric", False)
+    self.params.put_bool("IsMetric", False, block=True)
     assert not self.params.get_bool("IsMetric")
 
-    self.params.put("IsMetric", True)
+    self.params.put("IsMetric", True, block=True)
     assert self.params.get_bool("IsMetric")
 
-    self.params.put("IsMetric", False)
+    self.params.put("IsMetric", False, block=True)
     assert not self.params.get_bool("IsMetric")
 
   def test_put_non_blocking_with_get_block(self):
     q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      Params().put_nonblocking("CarParams", b"test")
+      Params().put("CarParams", b"test")
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
@@ -96,7 +96,7 @@ class TestParams:
     q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      Params().put_bool_nonblocking("CarParams", True)
+      Params().put_bool("CarParams", True)
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"
@@ -123,19 +123,19 @@ class TestParams:
 
   def test_params_get_type(self):
     # json
-    self.params.put("ApiCache_FirehoseStats", {"a": 0})
+    self.params.put("ApiCache_FirehoseStats", {"a": 0}, block=True)
     assert self.params.get("ApiCache_FirehoseStats") == {"a": 0}
 
     # int
-    self.params.put("BootCount", 1441)
+    self.params.put("BootCount", 1441, block=True)
     assert self.params.get("BootCount") == 1441
 
     # bool
-    self.params.put("AdbEnabled", True)
+    self.params.put("AdbEnabled", True, block=True)
     assert self.params.get("AdbEnabled")
     assert isinstance(self.params.get("AdbEnabled"), bool)
 
     # time
     now = datetime.datetime.now(datetime.UTC)
-    self.params.put("InstallDate", now)
+    self.params.put("InstallDate", now, block=True)
     assert self.params.get("InstallDate") == now

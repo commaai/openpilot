@@ -36,7 +36,7 @@ class TestCalibrationd:
     msg.liveCalibration.validBlocks = random.randint(1, 10)
     msg.liveCalibration.rpyCalib = [random.random() for _ in range(3)]
     msg.liveCalibration.height = [random.random() for _ in range(1)]
-    Params().put("CalibrationParams", msg.to_bytes())
+    Params().put("CalibrationParams", msg.to_bytes(), block=True)
     c = Calibrator(param_put=True)
 
     np.testing.assert_allclose(msg.liveCalibration.rpyCalib, c.rpy)
