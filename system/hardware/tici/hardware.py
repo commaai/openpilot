@@ -15,7 +15,7 @@ from openpilot.system.hardware.tici.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
-NM_CONNECTIONS_DIR = "/run/NetworkManager/system-connections"
+NM_CONNECTIONS_DIRS = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")
 MODEM_STATE_PATH = "/dev/shm/modem"
 
 NetworkType = log.DeviceState.NetworkType
@@ -196,7 +196,7 @@ class Tici(HardwareBase):
           ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
           ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
 
-          for fpath in Path(NM_CONNECTIONS_DIR).glob("*.nmconnection"):
+          for fpath in (p for d in NM_CONNECTIONS_DIRS for p in Path(d).glob("*.nmconnection")):
             raw = sudo_read(str(fpath))
             if not raw:
               continue
