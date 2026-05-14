@@ -209,11 +209,8 @@ class Tici(HardwareBase):
               metered = cp.getint("connection", "metered", fallback=0)
             except (configparser.Error, ValueError):
               continue
-            # NM metered: 1=YES, 2=NO, 3=GUESS_YES, 4=GUESS_NO
-            if metered in (1, 3):
+            if metered == 1:
               return True
-            if metered in (2, 4):
-              return False
             break
     except Exception:
       pass
