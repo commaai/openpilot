@@ -182,7 +182,6 @@ def hardware_thread(end_event, hw_queue) -> None:
   offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
   should_start_prev = False
   in_car = False
-  engaged_prev = False
   pwrsave = False
   offroad_cycle_count = 0
 
@@ -323,15 +322,8 @@ def hardware_thread(end_event, hw_queue) -> None:
     if started_ts is None:
       should_start = should_start and all(startup_conditions.values())
 
-    if should_start != should_start_prev or (count == 0):
-      params.put_bool("IsEngaged", False, block=True)
-      engaged_prev = False
-
     if sm.updated['selfdriveState']:
       engaged = sm['selfdriveState'].enabled
-      if engaged != engaged_prev:
-        params.put_bool("IsEngaged", engaged, block=True)
-        engaged_prev = engaged
 
       try:
         with open('/dev/kmsg', 'w') as kmsg:
