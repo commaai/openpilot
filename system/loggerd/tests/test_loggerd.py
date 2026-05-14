@@ -161,8 +161,8 @@ class TestLoggerd:
     ]
     params = Params()
     for k, _, v in fake_params:
-      params.put(k, v)
-    params.put("AccessToken", "abc")
+      params.put(k, v, block=True)
+    params.put("AccessToken", "abc", block=True)
 
     lr = list(LogReader(str(self._gen_bootlog())))
     initData = lr[0].initData
@@ -188,7 +188,7 @@ class TestLoggerd:
 
   @pytest.mark.xdist_group("camera_encoder_tests")  # setting xdist group ensures tests are run in same worker, prevents encoderd from crashing
   def test_rotation(self):
-    Params().put("RecordFront", True)
+    Params().put("RecordFront", True, block=True)
 
     expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
 
@@ -309,7 +309,7 @@ class TestLoggerd:
   @pytest.mark.parametrize("record_front", [True, False])
   def test_record_front(self, record_front):
     params = Params()
-    params.put_bool("RecordFront", record_front)
+    params.put_bool("RecordFront", record_front, block=True)
 
     self._publish_camera_and_audio_messages()
 
@@ -320,7 +320,7 @@ class TestLoggerd:
   @pytest.mark.parametrize("record_audio", [True, False])
   def test_record_audio(self, record_audio):
     params = Params()
-    params.put_bool("RecordAudio", record_audio)
+    params.put_bool("RecordAudio", record_audio, block=True)
 
     self._publish_camera_and_audio_messages()
 

@@ -19,4 +19,4 @@ if __name__ == "__main__":
 
   cp_bytes = CP.to_bytes()
   for p in ("CarParams", "CarParamsCache", "CarParamsPersistent"):
-    Params().put(p, cp_bytes)
+    Params().put(p, cp_bytes, block=True)
