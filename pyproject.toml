@@ -96,7 +96,6 @@ testing = [
   "pytest-subtests",
   # https://github.com/pytest-dev/pytest-xdist/pull/1229
   "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
-  "pytest-asyncio",
   "pytest-mock",
   "ruff",
   "codespell",
@@ -109,7 +108,7 @@ dev = [
 ]
 
 tools = [
-  "imgui  @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
@@ -128,11 +127,10 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
-asyncio_default_fixture_loop_scope = "function"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
@@ -179,9 +177,7 @@ lint.ignore = [
   "UP045", "UP007",  # these don't play nice with raylib atm
 ]
 line-length = 160
-target-version ="py311"
 exclude = [
-  "body",
   "cereal",
   "panda",
   "opendbc",
@@ -216,7 +212,6 @@ quote-style = "preserve"
 
 [tool.ty.src]
 exclude = [
-  "cereal/",
   "msgq/",
   "msgq_repo/",
   "opendbc/",
@@ -231,27 +226,16 @@ exclude = [
 ]
 
 [tool.ty.rules]
-# Ignore unresolved imports for Cython-compiled modules (.pyx)
-unresolved-import = "ignore"
-# Ignore unresolved attributes - many from capnp and Cython modules
-unresolved-attribute = "ignore"
-# Ignore invalid method overrides - signature variance issues
-invalid-method-override = "ignore"
-# Ignore possibly-missing-attribute - too many false positives
-possibly-missing-attribute = "ignore"
-# Ignore invalid assignment - often intentional monkey-patching
-invalid-assignment = "ignore"
-# Ignore no-matching-overload - numpy/ctypes overload matching issues
-no-matching-overload = "ignore"
-# Ignore invalid-argument-type - many false positives from raylib, ctypes, numpy
-invalid-argument-type = "ignore"
-# Ignore call-non-callable - false positives from dynamic types
-call-non-callable = "ignore"
-# Ignore unsupported-operator - false positives from dynamic types
-unsupported-operator = "ignore"
-# Ignore not-subscriptable - false positives from dynamic types
-not-subscriptable = "ignore"
-# not-iterable errors are now fixed
+unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
+unresolved-attribute = "ignore"  # many from capnp and Cython modules
+invalid-method-override = "ignore"  # signature variance issues
+possibly-missing-attribute = "ignore"  # too many false positives
+invalid-assignment = "ignore"  # often intentional monkey-patching
+no-matching-overload = "ignore"  # numpy/ctypes overload matching issues
+invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
+call-non-callable = "ignore"  # false positives from dynamic types
+unsupported-operator = "ignore" # false positives from dynamic types
+not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
