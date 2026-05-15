@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
-from openpilot.selfdrive.modeld.helpers import ModeldCompileConfig, get_tg_input_devices
+os.environ['DEV'] = 'AMD:LLVM'
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -25,6 +26,7 @@ from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
+from openpilot.selfdrive.modeld.helpers import usbgpu_present
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -73,20 +75,17 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
-    compile_config = ModeldCompileConfig(cam_w, cam_h, prepare_only=False, usbgpu=usbgpu)
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
-    self.WARP_DEV = input_devices['WARP_DEV']
-    self.QUEUE_DEV = input_devices['QUEUE_DEV']
-    with open(compile_config.vision_metadata, 'rb') as f:
-      vision_metadata = pickle.load(f)
-      self.vision_input_shapes =  vision_metadata['input_shapes']
-      self.vision_input_names = list(self.vision_input_shapes.keys())
-      self.vision_output_slices = vision_metadata['output_slices']
+    self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
+    jits = pickle.loads(read_file_chunked(MODELS_DIR / f'{"big_" if usbgpu else ""}driving_tinygrad.pkl'))
+    vision_metadata = jits['metadata']['vision']
+    self.vision_input_shapes =  vision_metadata['input_shapes']
+    self.vision_input_names = list(self.vision_input_shapes.keys())
+    self.vision_output_slices = vision_metadata['output_slices']
 
-    with open(compile_config.policy_metadata, 'rb') as f:
-      policy_metadata = pickle.load(f)
-      self.policy_input_shapes =  policy_metadata['input_shapes']
-      self.policy_output_slices = policy_metadata['output_slices']
+    policy_metadata = jits['metadata']['policy']
+    self.policy_input_shapes =  policy_metadata['input_shapes']
+    self.policy_output_slices = policy_metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
@@ -96,8 +95,8 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = pickle.loads(read_file_chunked(ModeldCompileConfig(cam_w, cam_h, prepare_only=False, usbgpu=usbgpu).pkl_path))
-    self.warp_enqueue = pickle.loads(read_file_chunked(ModeldCompileConfig(cam_w, cam_h, prepare_only=True, usbgpu=usbgpu).pkl_path))
+    self.run_policy = jits[(cam_w,cam_h)]['run_policy']
+    self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
     self.warp_enqueue(
       **self.input_queues,
       frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8', device=self.WARP_DEV).contiguous().realize(),
@@ -147,9 +146,10 @@ class ModelState:
 
 def main(demo=False):
   cloudlog.warning("modeld init")
-  params = Params()
-  USBGPU = params.get_bool("UsbGpuPresent")
 
+  USBGPU = usbgpu_present()
+  params = Params()
+  params.put_bool("UsbGpuPresent", USBGPU)
   if not USBGPU:
     # USB GPU currently saturates a core so can't do this yet,
     # also need to move the aux USB interrupts for good timings
@@ -188,6 +188,7 @@ def main(demo=False):
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
+  params = Params()
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)

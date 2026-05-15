@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 import fcntl
 import os
-import pathlib
 import queue
-import select
-import socket
 import struct
 import threading
 import time
@@ -28,7 +25,6 @@ from openpilot.system.hardware.power_monitoring import PowerMonitoring
 from openpilot.system.hardware.fan_controller import FanController
 from openpilot.system.version import terms_version, training_version
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-from selfdrive.modeld.helpers import USBGPU_VID, USBGPU_PID, usbgpu_present
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -70,49 +66,6 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
     return
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
   set_offroad_alert(offroad_alert, show_alert, extra_text)
-
-
-def usb_gpu_thread(end_event):
-  params = Params()
-
-  NETLINK_KOBJECT_UEVENT = 15
-  s = socket.socket(socket.AF_NETLINK, socket.SOCK_DGRAM, NETLINK_KOBJECT_UEVENT)
-  s.bind((0, 1))
-
-  present = usbgpu_present()
-  params.put_bool("UsbGpuPresent", present)
-  cloudlog.info(f"usb_gpu_thread: started, coldplug present={present}")
-
-  while not end_event.is_set():
-    r, _, _ = select.select([s], [], [], 1.0)
-    if not r:
-      continue
-
-    data = s.recv(8192)
-    fields = {k.decode(): v.decode()
-              for k, v in (kv.split(b"=", 1) for kv in data.split(b"\0") if b"=" in kv)}
-
-    if fields.get("SUBSYSTEM") != "usb" or fields.get("DEVTYPE") != "usb_device":
-      continue
-    if fields.get("ACTION") not in ("add", "remove"):
-      continue
-
-    cloudlog.info(f"usb_gpu_thread: usb uevent action={fields.get('ACTION')} product={fields.get('PRODUCT')} devpath={fields.get('DEVPATH')}")
-
-    parts = fields.get("PRODUCT", "").split("/")
-    try:
-      vid, pid = int(parts[0], 16), int(parts[1], 16)
-    except (ValueError, IndexError):
-      continue
-    if (vid, pid) != (USBGPU_VID, USBGPU_PID):
-      continue
-
-    new_present = fields["ACTION"] == "add"
-    cloudlog.info(f"usb_gpu_thread: matched USBGPU, action={fields['ACTION']}, present {present}->{new_present}")
-    if new_present != present:
-      present = new_present
-      params.put_bool("UsbGpuPresent", present)
-
 
 def touch_thread(end_event):
   count = 0
@@ -505,7 +458,6 @@ def main():
 
   if TICI:
     threads.append(threading.Thread(target=touch_thread, args=(end_event,)))
-    threads.append(threading.Thread(target=usb_gpu_thread, args=(end_event,)))
 
   for t in threads:
     t.start()
