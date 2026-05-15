@@ -35,9 +35,6 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
-POLICY_METADATA_PATH = MODELS_DIR / 'driving_policy_metadata.pkl'
-
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
@@ -81,16 +78,15 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int):
-    with open(VISION_METADATA_PATH, 'rb') as f:
-      vision_metadata = pickle.load(f)
-      self.vision_input_shapes =  vision_metadata['input_shapes']
-      self.vision_input_names = list(self.vision_input_shapes.keys())
-      self.vision_output_slices = vision_metadata['output_slices']
+    jits = pickle.loads(read_file_chunked(MODELS_DIR / 'driving_tinygrad.pkl'))
+    vision_metadata = jits['metadata']['vision']
+    self.vision_input_shapes =  vision_metadata['input_shapes']
+    self.vision_input_names = list(self.vision_input_shapes.keys())
+    self.vision_output_slices = vision_metadata['output_slices']
 
-    with open(POLICY_METADATA_PATH, 'rb') as f:
-      policy_metadata = pickle.load(f)
-      self.policy_input_shapes =  policy_metadata['input_shapes']
-      self.policy_output_slices = policy_metadata['output_slices']
+    policy_metadata = jits['metadata']['policy']
+    self.policy_input_shapes =  policy_metadata['input_shapes']
+    self.policy_output_slices = policy_metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
@@ -100,9 +96,8 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    jits = pickle.loads(read_file_chunked(MODELS_DIR / 'driving_tinygrad.pkl'))[(cam_w,cam_h)]
-    self.run_policy = jits['run_policy']
-    self.warp_enqueue = jits['warp_enqueue']
+    self.run_policy = jits[(cam_w,cam_h)]['run_policy']
+    self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
     self.warp_enqueue(
       **self.input_queues,
       frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').contiguous().realize(),
