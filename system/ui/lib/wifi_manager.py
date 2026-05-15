@@ -15,6 +15,7 @@ from jeepney.io.threading import DBusRouter, open_dbus_connection as open_dbus_c
 from jeepney.low_level import MessageType
 from jeepney.wrappers import Properties
 
+from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
                                                     NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
@@ -326,6 +327,8 @@ class WifiManager:
       self._update_networks(block=False)
 
   def _monitor_state(self):
+    # drop_realtime()
+
     # Filter for signals
     rules = (
       MatchRule(
@@ -367,6 +370,8 @@ class WifiManager:
         except TimeoutError:
           continue
 
+        # print(state_q, new_conn_q, removed_conn_q, props_q)
+
         # Connection added/removed
         while len(removed_conn_q):
           conn_path = removed_conn_q.popleft().body[0]
@@ -379,6 +384,7 @@ class WifiManager:
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
+            pass
             self._update_networks()
 
         # Device state changes
@@ -495,6 +501,7 @@ class WifiManager:
 
   def _network_scanner(self):
     while not self._exit:
+      print('active', self._active)
       if self._active:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
