@@ -28,15 +28,15 @@ def main():
   pm = messaging.PubMaster(['uiDebug'])
   for should_render, frame_time, cpu_time in gui_app.render():
     extra_start = time.monotonic()
-    # ui_state.update()
+    ui_state.update()
 
     if should_render:
       # reaffine after power save offlines our core
-      # if TICI and os.sched_getaffinity(0) != cores:
-      #   try:
-      #     set_core_affinity(list(cores))
-      #   except OSError:
-      #     pass
+      if TICI and os.sched_getaffinity(0) != cores:
+        try:
+          set_core_affinity(list(cores))
+        except OSError:
+          pass
 
       extra_cpu = time.monotonic() - extra_start
       msg = messaging.new_message('uiDebug')
