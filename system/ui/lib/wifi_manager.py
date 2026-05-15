@@ -15,7 +15,6 @@ from jeepney.io.threading import DBusRouter, open_dbus_connection as open_dbus_c
 from jeepney.low_level import MessageType
 from jeepney.wrappers import Properties
 
-from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
                                                     NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
@@ -380,7 +379,6 @@ class WifiManager:
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
-            pass
             self._update_networks()
 
         # Device state changes
