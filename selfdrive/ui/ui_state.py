@@ -75,6 +75,7 @@ class UIState:
     self.is_release = self.params.get_bool("IsReleaseBranch")
     self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
+    self.usbgpu: bool = self.params.get_bool("UsbGpuPresent")
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
