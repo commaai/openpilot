@@ -87,7 +87,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
@@ -103,10 +103,10 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
   input_queues = {
-    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
-    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
+    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
+    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
+    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2], device=device).contiguous().realize(),
+    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2], device=device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return input_queues, npy
@@ -172,7 +172,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   SEED = 42
 
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip)
+    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, Device.DEFAULT)
     np.random.seed(seed)
     Tensor.manual_seed(seed)
 
