@@ -102,6 +102,10 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
+  if 'action_t' in policy_input_shapes:
+    npy['action_t'] = np.zeros(policy_input_shapes['action_t'], dtype=np.float32)
+  if 'prev_action' in policy_input_shapes:
+    npy['prev_action'] = np.zeros(policy_input_shapes['prev_action'][2], dtype=np.float32)
   input_queues = {
     'img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
     'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
@@ -109,6 +113,9 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
     'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2], device=device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
+  if 'prev_action' in policy_input_shapes:
+    pa = policy_input_shapes['prev_action']  # (1, 25, 2)
+    input_queues['prev_action_q'] = Tensor.zeros(frame_skip * (pa[1] - 1) + 1, pa[0], pa[2], device=device).contiguous().realize()
   return input_queues, npy
 
 
@@ -125,18 +132,24 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, model_h,
+def make_run_policy(vision_runner, off_policy_runner, on_policy_runner, nv12: NV12Frame, model_w, model_h,
                     vision_features_slice, frame_skip, prepare_only=False):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
-  def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
+  def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, action_t, tfm, big_tfm, frame, big_frame,
+                 prev_action_q=None, prev_action=None):
     tfm = tfm.to(Device.DEFAULT)
     big_tfm = big_tfm.to(Device.DEFAULT)
     desire = desire.to(Device.DEFAULT)
     traffic_convention = traffic_convention.to(Device.DEFAULT)
-    Tensor.realize(tfm, big_tfm, desire, traffic_convention)
+    action_t = action_t.to(Device.DEFAULT)
+    to_realize = [tfm, big_tfm, desire, traffic_convention, action_t]
+    if prev_action is not None:
+      prev_action = prev_action.to(Device.DEFAULT)
+      to_realize.append(prev_action)
+    Tensor.realize(*to_realize)
 
     img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
     big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
@@ -150,22 +163,32 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
     feat_buf = shift_and_sample(feat_q, new_feat, sample_skip_fn)
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
 
-    inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention}
-    policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
+    inputs = {
+      'features_buffer': feat_buf,
+      'desire_pulse': desire_buf,
+      'traffic_convention': traffic_convention,
+      'action_t': action_t,
+    }
+    if prev_action_q is not None and prev_action is not None:
+      inputs['prev_action'] = shift_and_sample(prev_action_q, prev_action.reshape(1, 1, -1), sample_skip_fn)
+    on_policy_out = next(iter(on_policy_runner(inputs).values())).cast('float32')
+    off_policy_out = next(iter(off_policy_runner(inputs).values())).cast('float32')
 
-    return vision_out, policy_out
+    return vision_out, on_policy_out, off_policy_out
   return run_policy
 
 
 def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
-                   vision_runner, policy_runner, vision_metadata, policy_metadata):
+                   vision_runner, off_policy_runner, on_policy_runner,
+                   vision_metadata, off_policy_metadata, on_policy_metadata):
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
   vision_features_slice = vision_metadata['output_slices']['hidden_state']
   vision_input_shapes = vision_metadata['input_shapes']
-  policy_input_shapes = policy_metadata['input_shapes']
+  policy_input_shapes = on_policy_metadata['input_shapes']
+  assert policy_input_shapes == off_policy_metadata['input_shapes']
 
-  _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
+  _run = make_run_policy(vision_runner, off_policy_runner, on_policy_runner, nv12, model_w, model_h,
                          vision_features_slice, frame_skip, prepare_only)
   run_policy_jit = TinyJit(_run, prune=True)
 
@@ -227,7 +250,8 @@ if __name__ == "__main__":
   p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
                  help='camera resolutions WxH (one or more)')
   p.add_argument('--vision-onnx', required=True)
-  p.add_argument('--policy-onnx', required=True)
+  p.add_argument('--off-policy-onnx', required=True)
+  p.add_argument('--on-policy-onnx', required=True)
   p.add_argument('--output', required=True)
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
@@ -236,16 +260,19 @@ if __name__ == "__main__":
   # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
   vision_runner = OnnxRunner(args.vision_onnx)
-  policy_runner = OnnxRunner(args.policy_onnx)
+  off_policy_runner = OnnxRunner(args.off_policy_onnx)
+  on_policy_runner = OnnxRunner(args.on_policy_onnx)
   out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
-  out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
+  out['metadata']['off_policy'] = make_metadata_dict(args.off_policy_onnx)
+  out['metadata']['on_policy'] = make_metadata_dict(args.on_policy_onnx)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
     model_w, model_h = args.model_size
     out[(cam_w,cam_h)] = {
       name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
-                           vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
+                           vision_runner, off_policy_runner, on_policy_runner,
+                           out['metadata']['vision'], out['metadata']['off_policy'], out['metadata']['on_policy'])
       for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
     }
 

@@ -68,7 +68,7 @@ mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
 modeld_dir = Dir("#selfdrive/modeld").abspath
 compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
-driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_policy']]
+driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_off_policy', 'driving_on_policy']]
 
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
@@ -78,7 +78,8 @@ cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
        f'--model-size {model_w}x{model_h} '
        f'--camera-resolutions {camera_res_args} '
        f'--vision-onnx {File("models/driving_vision.onnx").abspath} '
-       f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
+       f'--off-policy-onnx {File("models/driving_off_policy.onnx").abspath} '
+       f'--on-policy-onnx {File("models/driving_on_policy.onnx").abspath} '
        f'--output {pkl_path} --frame-skip {frame_skip}')
 node = lenv.Command(pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, tg_devices_node], cmd)
 onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
@@ -102,7 +103,6 @@ for cam_w, cam_h in CAMERA_CONFIGS:
          f'--output {dm_pkl_path}')
   lenv.Command(dm_pkl_path, tinygrad_files + compile_dm_warp_script + compile_modeld_script + [tg_devices_node], cmd)
 
-driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['driving_vision', 'driving_policy']]
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
