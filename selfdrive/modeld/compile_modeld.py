@@ -4,7 +4,7 @@ import os
 import pickle
 import time
 from functools import partial
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 import numpy as np
 from tinygrad.tensor import Tensor
@@ -158,9 +158,12 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
 
 
 def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
-                   vision_runner, policy_runner, vision_features_slice,
-                   vision_input_shapes, policy_input_shapes):
+                   vision_runner, policy_runner, vision_metadata, policy_metadata):
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
+
+  vision_features_slice = vision_metadata['output_slices']['hidden_state']
+  vision_input_shapes = vision_metadata['input_shapes']
+  policy_input_shapes = policy_metadata['input_shapes']
 
   _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
                          vision_features_slice, frame_skip, prepare_only)
@@ -229,26 +232,20 @@ if __name__ == "__main__":
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
 
-  model_w, model_h = args.model_size
-
+  out = defaultdict(dict)
   # init runners once so weights are shared
-  from get_model_metadata import metadata_path_for
+  from get_model_metadata import make_metadata_dict
   vision_runner = OnnxRunner(args.vision_onnx)
   policy_runner = OnnxRunner(args.policy_onnx)
-  with open(metadata_path_for(args.vision_onnx), 'rb') as f:
-    vision_metadata = pickle.load(f)
-    vision_features_slice = vision_metadata['output_slices']['hidden_state']
-    vision_input_shapes = vision_metadata['input_shapes']
-  with open(metadata_path_for(args.policy_onnx), 'rb') as f:
-    policy_input_shapes = pickle.load(f)['input_shapes']
+  out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
+  out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
 
-  out = {}
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
+    model_w, model_h = args.model_size
     out[(cam_w,cam_h)] = {
       name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
-                           vision_runner, policy_runner, vision_features_slice,
-                           vision_input_shapes, policy_input_shapes)
+                           vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
       for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
     }
 
