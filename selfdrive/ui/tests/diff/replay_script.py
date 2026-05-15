@@ -354,6 +354,9 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
   def setup_offroad_alerts_and_refresh() -> None:
     """Setup function to trigger offroad alerts and force a refresh on the alerts layout."""
     setup_offroad_alerts()
+    params = Params()
+    main_layout._alerts_layout._pending_params = ({"UpdaterNewDescription": params.get("UpdaterNewDescription")} |
+                                                  {alert_data.key: params.get(alert_data.key) for alert_data in main_layout._alerts_layout.sorted_alerts})
     main_layout._alerts_layout._refresh()
 
   swipe_right(width, wait_after=WAIT_SHORT)  # open alerts
