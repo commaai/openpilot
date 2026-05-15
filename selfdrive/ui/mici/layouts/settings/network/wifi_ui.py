@@ -283,11 +283,11 @@ class WifiUIMici(NavScroller):
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
 
-    self._wifi_manager.add_callbacks(
-      need_auth=self._on_need_auth,
-      forgotten=self._on_forgotten,
-      networks_updated=self._on_network_updated,
-    )
+    # self._wifi_manager.add_callbacks(
+    #   need_auth=self._on_need_auth,
+    #   forgotten=self._on_forgotten,
+    #   networks_updated=self._on_network_updated,
+    # )
 
   @property
   def any_network_forgetting(self) -> bool:

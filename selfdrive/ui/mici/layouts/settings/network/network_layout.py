@@ -13,13 +13,13 @@ class NetworkLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 
-    self._wifi_manager = WifiManager()
-    self._wifi_manager.set_active(False)
+    self._wifi_manager = None  # WifiManager()
+    # self._wifi_manager.set_active(False)
     self._wifi_ui = WifiUIMici(self._wifi_manager)
 
-    self._wifi_manager.add_callbacks(
-      networks_updated=self._on_network_updated,
-    )
+    # self._wifi_manager.add_callbacks(
+    #   networks_updated=self._on_network_updated,
+    # )
 
     # ******** Tethering ********
     def tethering_toggle_callback(checked: bool):

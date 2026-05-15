@@ -322,10 +322,12 @@ class MiciOffroadAlerts(Scroller):
     self.refresh()
 
   def _update_state(self):
+    return
     if self._pending_params is not None:
       self.refresh()
 
   def _render(self, rect: rl.Rectangle):
+    return
     """Render the alerts scroller or empty state."""
     if self.active_alerts() == 0:
       self._empty_label.render(rect)

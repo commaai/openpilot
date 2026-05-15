@@ -328,8 +328,8 @@ class GuiApplication:
       if BURN_IN_MODE and self._burn_in_shader is None:
         self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
 
-      if not PC:
-        self._mouse.start()
+      # if not PC:
+      #   self._mouse.start()
 
   @contextmanager
   def _startup_profile_context(self):

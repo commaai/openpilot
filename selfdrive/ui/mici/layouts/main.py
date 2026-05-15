@@ -40,10 +40,10 @@ class MiciMainLayout(Scroller):
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     self._scroller.add_widgets([
-      self._alerts_layout,
+      # self._alerts_layout,
       self._home_layout,
-      self._car_onroad_layout,
-      self._body_onroad_layout,
+      # self._car_onroad_layout,
+      # self._body_onroad_layout,
     ])
     self._scroller.set_reset_scroll_at_show(False)
 
