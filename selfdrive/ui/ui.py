@@ -17,7 +17,6 @@ def main():
   cores = {5, }
   # above plannerd and radard
   config_realtime_process(0, Priority.CTRL_HIGH)
-  set_core_affinity(list(cores))
 
   gui_app.init_window("UI")
   if BIG_UI:

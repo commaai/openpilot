@@ -327,8 +327,6 @@ class WifiManager:
       self._update_networks(block=False)
 
   def _monitor_state(self):
-    # drop_realtime()
-
     # Filter for signals
     rules = (
       MatchRule(
@@ -369,8 +367,6 @@ class WifiManager:
           self._conn_monitor.recv_messages(timeout=1)
         except TimeoutError:
           continue
-
-        # print(state_q, new_conn_q, removed_conn_q, props_q)
 
         # Connection added/removed
         while len(removed_conn_q):
@@ -501,7 +497,6 @@ class WifiManager:
 
   def _network_scanner(self):
     while not self._exit:
-      print('active', self._active)
       if self._active:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
