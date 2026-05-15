@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'

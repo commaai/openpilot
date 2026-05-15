@@ -47,7 +47,6 @@ else:
   tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   tg_flags = f'DEV={tg_backend}'
 
-
 tg_devices = { # which device to put jit inputs to at runtime
   'selfdrive.modeld.modeld': tg_backend,
   'selfdrive.modeld.dmonitoringmodeld': tg_backend,
