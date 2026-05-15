@@ -214,7 +214,7 @@ class MiciHomeLayout(Widget):
     return version, branch, commit[:7], date_str
 
   def _render(self, _):
-    return
+    # return
     # TODO: why is there extra space here to get it to be flush?
     text_pos = rl.Vector2(self.rect.x - 2 + HOME_PADDING, self.rect.y - 16)
     self._openpilot_label.set_position(text_pos.x, text_pos.y)
