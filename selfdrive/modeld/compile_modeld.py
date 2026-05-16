@@ -7,6 +7,20 @@ from functools import partial
 from collections import namedtuple, defaultdict
 
 import numpy as np
+
+def _patch_tinygrad_fetch_fw():
+  import hashlib, pathlib, zstandard
+  from tinygrad import helpers
+  _orig = helpers.fetch_fw
+  def fetch_fw(path, name, sha256):
+    p = pathlib.Path(f"/usr/lib/firmware/{name}.zst")
+    if p.is_file():
+      blob = zstandard.ZstdDecompressor().decompress(p.read_bytes())
+      if hashlib.sha256(blob).hexdigest() == sha256: return blob
+    return _orig(path, name, sha256)
+  helpers.fetch_fw = fetch_fw
+_patch_tinygrad_fetch_fw()
+
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
