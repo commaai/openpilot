@@ -1,4 +1,6 @@
+import os
 import signal
+import time
 import threading
 import functools
 import numpy as np
@@ -42,7 +44,8 @@ class SimulatorBridge(ABC):
     self.params = Params()
     self.params.put_bool("AlphaLongitudinalEnabled", True, block=True)
 
-    self.rk = Ratekeeper(100, None)
+    self._ci = os.getenv("CI") is not None
+    self.rk = Ratekeeper(20 if self._ci else 100, None)
 
     self.dual_camera = dual_camera
     self.high_quality = high_quality
@@ -204,3 +207,5 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       self.started.value = True
 
       self.rk.keep_time()
+      if self._ci:
+        time.sleep(0.01)  # yield CPU on slow free-tier runners
