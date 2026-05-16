@@ -209,7 +209,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  unblock_stdout()
+  import platform
+  # On macOS simulation runs, Panda3D/MetaDrive initializes Cocoa in the subprocess.
+  # Calling forkpty (unblock_stdout) before that subprocess spawns is unsafe and
+  # causes the MetaDrive process to hang. Skip it when running as a sim server.
+  if not (platform.system() == "Darwin" and os.getenv("SIMULATION") == "1"):
+    unblock_stdout()
 
   try:
     main()
