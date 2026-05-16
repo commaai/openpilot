@@ -299,6 +299,75 @@ class TestCarModelBase(unittest.TestCase):
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+    Fuzzes the CarController's tx messages against panda's safety_tx_hook.
+
+    Feeds random actuation values (deliberately wider than expected limits) to the
+    CarController after warming up both panda and the CarInterface with real CAN data.
+    Verifies that every message openpilot sends with controls_allowed=True is accepted
+    by panda. Mismatches reveal bugs in openpilot's clamping or panda's safety limits.
+    """
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    # Warm up panda's internal safety state with real CAN messages so that
+    # vehicle speed, steering angle, and other state are established before tx checks.
+    CI = self.CarInterface(self.CP.copy())
+    for can in self.can_msgs[:300]:
+      CI.update(can)
+      for msg in filter(lambda m: m.src < 64, can[1]):
+        to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
+        self.safety.safety_rx_hook(to_send)
+
+    # Set panda to allow controls with cruise engaged
+    self.safety.set_controls_allowed(True)
+    self.safety.set_cruise_engaged_prev(True)
+
+    # Draw random actuation values with wider-than-nominal ranges so that
+    # openpilot's clamping logic is exercised. Panda should accept whatever
+    # the clamped CarController outputs.
+    is_angle = self.CP.steerControlType == SteerControlType.angle
+    steer_angle = data.draw(st.floats(-200.0, 200.0)) if is_angle else 0.0
+    steer_torque = 0.0 if is_angle else data.draw(st.floats(-2.0, 2.0))
+    accel = data.draw(st.floats(-8.0, 6.0)) if self.CP.openpilotLongitudinalControl else 0.0
+
+    CC = structs.CarControl(
+      enabled=True,
+      latActive=True,
+      longActive=self.CP.openpilotLongitudinalControl,
+      actuators=structs.CarControl.Actuators(
+        torque=steer_torque,
+        steeringAngleDeg=steer_angle,
+        accel=accel,
+      ),
+    )
+
+    now_nanos = 0
+    msgs_sent = 0
+    rejected: Counter = Counter()
+    for _ in range(round(10.0 / DT_CTRL)):
+      CI.update([])
+      _, sendcan = CI.apply(CC.as_reader(), now_nanos)
+      now_nanos += DT_CTRL * 1e9
+      msgs_sent += len(sendcan)
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        if not self.safety.safety_tx_hook(to_send):
+          rejected[(addr, bus)] += 1
+
+    self.assertGreater(msgs_sent, 0, "CarController sent no messages")
+    self.assertFalse(dict(rejected),
+                     f"panda rejected openpilot messages with controls_allowed=True: {dict(rejected)}")
+
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
   def test_panda_safety_carstate_fuzzy(self, data):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
