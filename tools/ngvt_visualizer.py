@@ -102,7 +102,7 @@ def plot_all_leads(
   save_path: str | None = None,
 ) -> None:
   """
-  Plot every analyzed lead node, coloured by adjusted Braid score.
+  Plot every analyzed lead node, colored by adjusted Braid score.
   Unstable nodes are rendered larger and with a distinct marker.
   """
   stable_pts, stable_scores = [], []

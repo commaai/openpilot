@@ -59,7 +59,7 @@ except ImportError:
     except ImportError:
       print(
         "ERROR: No NgvtBraidEngine backend available.\n"
-        + "  Build the Rust crate:  maturin develop --manifest-path selfdrive/controls/lib/ngvt_braid/Cargo.toml\n"
+        + "  Build the Rust package:  maturin develop --manifest-path selfdrive/controls/lib/ngvt_braid/Cargo.toml\n"
         + "  Or install tinygrad:   pip install tinygrad\n"
         + "  Or install PyTorch:    pip install torch"
       )
