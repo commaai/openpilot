@@ -211,7 +211,14 @@ class Tici(HardwareBase):
               continue
             if metered == 1:
               return True
+            if metered == 2:
+              return False
             break
+
+        # TODO: remove when openpilot owns dhcp and can detect hotspots itself
+        out = subprocess.check_output(["nmcli", "-t", "-f", "GENERAL.METERED", "dev", "show", "wlan0"], text=True, timeout=2)
+        if out.strip().split(":", 1)[-1].startswith("yes"):
+          return True
     except Exception:
       pass
 
