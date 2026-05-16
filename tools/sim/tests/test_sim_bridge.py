@@ -73,8 +73,9 @@ class TestSimBridgeBase:
     assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
 
     failure_states = []
-    while bridge.started.value:
-      continue
+    sim_finish_deadline = time.monotonic() + max_time_per_step
+    while bridge.started.value and time.monotonic() < sim_finish_deadline:
+      time.sleep(0.1)
 
     while not q.empty():
       state = q.get()
