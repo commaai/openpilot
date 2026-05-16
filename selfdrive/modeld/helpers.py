@@ -12,11 +12,11 @@ def get_tg_input_devices(process_name: str, usbgpu: bool):
     return json.load(f)[process_name]['default' if not usbgpu else 'usbgpu']
 
 def usbgpu_present() -> bool:
-  for d in Path("/sys/bus/usb/devices").glob("*"):
-    try:
+  try:
+    for d in Path("/sys/bus/usb/devices").glob("*"):
       if int((d / "idVendor").read_text(), 16) == USBGPU_VID and \
           int((d / "idProduct").read_text(), 16) == USBGPU_PID:
         return True
-    except (FileNotFoundError, NotADirectoryError, ValueError):
-      pass
+  except Exception:
+    pass
   return False
