@@ -64,11 +64,6 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 USBGPU = usbgpu_present() # or release # TODO always build big model on release
 
-# TODO tmp force usbgpu
-if not USBGPU:
-  print(f"USBGPU (AMD) not detected: {available}", file=sys.stderr)
-  Exit(1)
-
 if USBGPU:
   tg_devices['selfdrive.modeld.modeld']['usbgpu'] = {'WARP_DEV': tg_backend, 'QUEUE_DEV': 'AMD'}
   usbgpu_tg_flags = f'DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
