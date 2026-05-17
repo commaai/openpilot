@@ -87,29 +87,31 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
+def make_tensor_inputs(vision_input_shapes, policy_input_shapes, frame_skip):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
-
   fb = policy_input_shapes['features_buffer']  # (1, 25, 512)
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
-  tc = policy_input_shapes['traffic_convention']  # (1, 2)
+  return {
+    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
+    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
+    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
+    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
+  }
 
+
+def make_npy_inputs(policy_input_shapes):
+  dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
+  tc = policy_input_shapes['traffic_convention']  # (1, 2)
   npy = {
     'desire': np.zeros(dp[2], dtype=np.float32),
     'traffic_convention': np.zeros(tc, dtype=np.float32),
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
-  input_queues = {
-    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
-    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
-    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2], device=device).contiguous().realize(),
-    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2], device=device).contiguous().realize(),
-    **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
-  }
-  return input_queues, npy
+  npy_tensors = {k: Tensor(v, device='NPY').realize() for k, v in npy.items()}
+  return npy, npy_tensors
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -172,7 +174,9 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   SEED = 42
 
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, Device.DEFAULT)
+    tensor_inputs = make_tensor_inputs(vision_input_shapes, policy_input_shapes, frame_skip)
+    npy, npy_tensors = make_npy_inputs(policy_input_shapes)
+    input_queues = {**tensor_inputs, **npy_tensors}
     np.random.seed(seed)
     Tensor.manual_seed(seed)
 
@@ -239,6 +243,13 @@ if __name__ == "__main__":
   policy_runner = OnnxRunner(args.policy_onnx)
   out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
   out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
+
+  # pre-allocate device tensor inputs so runtime doesn't need a compiler to zero-init them
+  out['tensor_inputs'] = make_tensor_inputs(
+    out['metadata']['vision']['input_shapes'],
+    out['metadata']['policy']['input_shapes'],
+    args.frame_skip,
+  )
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
