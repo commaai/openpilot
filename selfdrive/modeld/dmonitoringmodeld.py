@@ -22,6 +22,7 @@ SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
 METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'
 
+
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
@@ -51,7 +52,7 @@ class ModelState:
 
     t1 = time.perf_counter()
 
-    ptr = buf.data.ctypes.data
+    ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
       self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DEV)
