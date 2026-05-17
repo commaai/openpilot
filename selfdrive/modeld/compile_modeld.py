@@ -259,6 +259,8 @@ if __name__ == "__main__":
                            vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
       for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
     }
+    # zero frame for JIT warmup so runtime doesn't need a memset kernel
+    out[(cam_w,cam_h)]['dummy_frame'] = Tensor.zeros(nv12.size, dtype='uint8').contiguous().realize()
 
   with open(args.output, "wb") as f:
     pickle.dump(out, f)
