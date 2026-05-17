@@ -94,9 +94,9 @@ class ModelState:
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits[(cam_w,cam_h)]['run_policy']
     self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
-    # warmup JIT with a zero frame copied from host (no device memset kernel)
-    dummy_frame = Tensor(np.zeros(self.frame_buf_params['img'][3], dtype=np.uint8), device='NPY').to(self.DEV).realize()
-    self.warp_enqueue(**self.input_queues, frame=dummy_frame, big_frame=dummy_frame)
+    # warmup JIT with zero frames copied from host (no device memset kernel)
+    def _zero_frame(key): return Tensor(np.zeros(self.frame_buf_params[key][3], dtype=np.uint8), device='NPY').to(self.DEV).realize()
+    self.warp_enqueue(**self.input_queues, frame=_zero_frame('img'), big_frame=_zero_frame('big_img'))
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
