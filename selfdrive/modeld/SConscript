@@ -100,8 +100,8 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--vision-onnx {File(f"models/{prefix}driving_vision.onnx").abspath} '
         f'--policy-onnx {File(f"models/{prefix}driving_policy.onnx").abspath} '
         f'--output {pkl_path} --frame-skip {frame_skip}')
-  # TODO only recompile of changes to tg_devices[modeld][usbgpu]
-  node = lenv.Command(pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, tg_devices_node], cmd)
+  modeld_devices_value = Value(json.dumps(tg_devices['selfdrive.modeld.modeld']['usbgpu' if usbgpu else 'default'], sort_keys=True))
+  node = lenv.Command(pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, modeld_devices_value], cmd)
   if usbgpu:
     lenv.SideEffect(usbgpu_lock, node)
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
