@@ -50,8 +50,8 @@ elif 'QCOM' in available:
   tg_backend = 'QCOM'
   tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
-  tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
-  tg_flags = f'DEV={tg_backend}'
+  tg_backend = 'CPU'
+  tg_flags = f'DEV=CPU' if arch == 'Darwin' else 'DEV=CPU:LLVM'
 
 tg_devices = { # which device to put jit inputs to at runtime
   'selfdrive.modeld.modeld': {
