@@ -272,10 +272,6 @@ if __name__ == "__main__":
         nv12, model_w, model_h, prepare_only, args.frame_skip,
         vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
 
-    make_dummy_frame = TinyJit(lambda: Tensor.zeros(nv12.size, dtype='uint8', device=WARP_DEV).contiguous().realize())
-    for _ in range(2): make_dummy_frame()
-    out[(cam_w,cam_h)]['make_dummy_frame'] = make_dummy_frame
-
   with open(args.output, "wb") as f:
     pickle.dump(out, f)
   print(f"Saved combined JIT to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
