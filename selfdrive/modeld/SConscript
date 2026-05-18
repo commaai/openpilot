@@ -58,10 +58,6 @@ tg_devices = { # which device to put jit inputs to at runtime
   'selfdrive.modeld.dmonitoringmodeld': tg_backend,
 }
 
-USBGPU = usbgpu_present() # or release # TODO always build big model on release
-
-if USBGPU:
-  usbgpu_tg_flags = f'DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
 
 def write_tg_devices(target, source, env):
   with open(str(target[0]), "w") as f:
@@ -83,8 +79,11 @@ compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 
-# the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
-usbgpu_lock = File("models/.usb_gpu.lock").abspath
+USBGPU = usbgpu_present()
+if USBGPU: # or release # TODO always build big model on release:
+  usbgpu_tg_flags = f'DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
+  # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
+  usbgpu_lock = File("models/.usb_gpu.lock").abspath
 
 for usbgpu in [False, True] if USBGPU else [False]:
   prefix = 'big_' if usbgpu else ''
