@@ -32,7 +32,7 @@ NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'u
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
-WARP_DEV = os.getenv('WARP_DEV', os.getenv('DEV'))
+WARP_DEV = os.getenv('WARP_DEV')
 
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
@@ -103,31 +103,29 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_tensor_inputs(vision_input_shapes, policy_input_shapes, frame_skip):
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
+
   fb = policy_input_shapes['features_buffer']  # (1, 25, 512)
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
-  return {
-    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
-    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
-  }
-
-
-def make_npy_inputs(policy_input_shapes):
-  dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
   tc = policy_input_shapes['traffic_convention']  # (1, 2)
+
   npy = {
     'desire': np.zeros(dp[2], dtype=np.float32),
     'traffic_convention': np.zeros(tc, dtype=np.float32),
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
-  npy_tensors = {k: Tensor(v, device='NPY').realize() for k, v in npy.items()}
-  return npy, npy_tensors
+  input_queues = {
+    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
+    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
+    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2], device=device).contiguous().realize(),
+    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2], device=device).contiguous().realize(),
+    **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
+  }
+  return input_queues, npy
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -188,15 +186,11 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
                          vision_features_slice, frame_skip, prepare_only)
   run_policy_jit = TinyJit(_run, prune=True)
-  make_tensor_inputs_jit = TinyJit(lambda: make_tensor_inputs(vision_input_shapes, policy_input_shapes, frame_skip))
-  for _ in range(2): make_tensor_inputs_jit()
 
   SEED = 42
 
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    tensor_inputs = make_tensor_inputs_jit()
-    npy, npy_tensors = make_npy_inputs(policy_input_shapes)
-    input_queues = {**tensor_inputs, **npy_tensors}
+    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, Device.DEFAULT)
     np.random.seed(seed)
     Tensor.manual_seed(seed)
 
@@ -235,7 +229,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   run_policy_jit = pickle.loads(pickle.dumps(run_policy_jit))
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
-  return run_policy_jit, make_tensor_inputs_jit
+  return run_policy_jit
 
 
 def _parse_size(s):
@@ -267,10 +261,11 @@ if __name__ == "__main__":
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
     model_w, model_h = args.model_size
-    for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]:
-      out[(cam_w,cam_h)][name], out['make_tensor_inputs'] = compile_modeld(
-        nv12, model_w, model_h, prepare_only, args.frame_skip,
-        vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
+    out[(cam_w,cam_h)] = {
+      name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
+                           vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
+      for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
+    }
 
   with open(args.output, "wb") as f:
     pickle.dump(out, f)
