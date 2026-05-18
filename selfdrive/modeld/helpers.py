@@ -7,9 +7,9 @@ USBGPU_VID = 0xADD1
 USBGPU_PID = 0x0001
 
 
-def get_tg_input_devices(process_name: str, usbgpu: bool):
+def get_tg_input_devices(process_name: str):
   with open(TG_INPUT_DEVICES_PATH) as f:
-    return json.load(f)[process_name]['default' if not usbgpu else 'usbgpu']
+    return json.load(f)[process_name]
 
 def usbgpu_present() -> bool:
   try:

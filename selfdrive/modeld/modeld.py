@@ -75,8 +75,7 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
-    input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
-    self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
+    self.DEV = get_tg_input_devices(PROCESS_NAME)
     jits = pickle.loads(read_file_chunked(MODELS_DIR / f'{"big_" if usbgpu else ""}driving_tinygrad.pkl'))
     vision_metadata = jits['metadata']['vision']
     self.vision_input_shapes =  vision_metadata['input_shapes']
