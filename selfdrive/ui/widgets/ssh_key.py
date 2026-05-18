@@ -59,8 +59,8 @@ class SshKeyFetcher:
       if not keys:
         raise requests.exceptions.HTTPError("No SSH keys found")
 
-      self._params.put("GithubUsername", username)
-      self._params.put("GithubSshKeys", keys)
+      self._params.put("GithubUsername", username, block=True)
+      self._params.put("GithubSshKeys", keys, block=True)
     except requests.exceptions.Timeout:
       self._error = tr("Request timed out")
     except Exception:

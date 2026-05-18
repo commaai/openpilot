@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "media/cam_sensor_cmn_header.h"
-
 #include "common/params.h"
 #include "common/swaglog.h"
 
