@@ -102,7 +102,6 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--vision-onnx {File(f"models/{prefix}driving_vision.onnx").abspath} '
         f'--policy-onnx {File(f"models/{prefix}driving_policy.onnx").abspath} '
         f'--output {pkl_path} --frame-skip {frame_skip}')
-  # TODO depend on tg_devices_node[usbgpu], don't rebuild all on device change for one
   node = lenv.Command(pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, tg_devices_node], cmd)
   if usbgpu:
     lenv.SideEffect(usbgpu_lock, node)
