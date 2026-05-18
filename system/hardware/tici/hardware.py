@@ -69,9 +69,11 @@ class Tici(HardwareBase):
     return Amplifier()
 
   def get_modem_state(self) -> dict:
-    """Read modem.py state file. Raises if modem.py hasn't published state yet."""
-    with open(MODEM_STATE_PATH) as f:
-      return json.load(f)
+    try:
+      with open(MODEM_STATE_PATH) as f:
+        return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+      return {}
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -112,7 +114,6 @@ class Tici(HardwareBase):
       f.write(f"{value}\n")
 
   def get_network_type(self):
-    ms = self.get_modem_state()
     try:
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
@@ -124,6 +125,7 @@ class Tici(HardwareBase):
     except Exception:
       pass
 
+    ms = self.get_modem_state()
     if ms.get('connected'):
       nt = ms.get('network_type', '')
       if nt == 'nr':
