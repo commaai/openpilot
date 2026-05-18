@@ -123,7 +123,7 @@ class TogglesLayoutMici(NavScroller):
       def on_confirm():
         ui_state.params.put_bool("ExperimentalModeConfirmed", True)
         ui_state.params.put_bool("ExperimentalMode", True)
-        self._update_toggles()
+        self._experimental_btn.set_checked(True)
 
       gui_app.push_widget(ExperimentalModeConfirmPage(on_confirm))
     else:
