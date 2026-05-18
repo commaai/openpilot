@@ -23,9 +23,9 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
-from openpilot.common.file_chunker import read_file_chunked
+from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import usbgpu_present
+from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -76,7 +76,7 @@ class ModelState:
   def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
     self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
-    jits = pickle.loads(read_file_chunked(MODELS_DIR / f'{"big_" if usbgpu else ""}driving_tinygrad.pkl'))
+    jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
     vision_metadata = jits['metadata']['vision']
     self.vision_input_shapes =  vision_metadata['input_shapes']
     self.vision_input_names = list(self.vision_input_shapes.keys())
@@ -146,9 +146,14 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  USBGPU = usbgpu_present()
+  # TODO proper state tracking
+  usbgpu_present = usbgpu_present()
+  usbgpu_compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+  USBGPU = usbgpu_present and usbgpu_compiled
   params = Params()
-  params.put_bool("UsbGpuPresent", USBGPU)
+  params.put_bool("UsbGpuPresent", usbgpu_present)
+  params.put_bool("UsbGpuCompiled", usbgpu_compiled)
+
   if not USBGPU:
     # USB GPU currently saturates a core so can't do this yet,
     # also need to move the aux USB interrupts for good timings

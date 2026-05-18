@@ -11,6 +11,10 @@ def get_tg_input_devices(process_name: str, usbgpu: bool):
   with open(TG_INPUT_DEVICES_PATH) as f:
     return json.load(f)[process_name]['default' if not usbgpu else 'usbgpu']
 
+def modeld_pkl_path(usbgpu: bool):
+  prefix = 'big_' if usbgpu else ''
+  return MODELS_DIR / f'{prefix}driving_tinygrad.pkl'
+
 def usbgpu_present() -> bool:
   for d in Path("/sys/bus/usb/devices").glob("*"):
     try:

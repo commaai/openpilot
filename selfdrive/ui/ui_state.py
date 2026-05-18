@@ -76,6 +76,7 @@ class UIState:
     self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
     self.usbgpu: bool = self.params.get_bool("UsbGpuPresent")
+    self.usbgpu_compiled: bool = self.params.get_bool("UsbGpuCompiled")
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
@@ -203,6 +204,7 @@ class UIState:
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
     self.usbgpu = self.params.get_bool("UsbGpuPresent")
+    self.usbgpu_compiled = self.params.get_bool("UsbGpuCompiled")
 
 
 class Device:

@@ -8,7 +8,7 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_present
+from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_present, modeld_pkl_path
 
 Import('env', 'arch', 'release')
 
@@ -90,7 +90,7 @@ model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 for usbgpu in [False, True] if USBGPU else [False]:
   prefix = 'big_' if usbgpu else ''
-  pkl_path = File(f"models/{prefix}driving_tinygrad.pkl").abspath
+  pkl_path = File(modeld_pkl_path(usbgpu)).abspath
   driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in [f'{prefix}driving_vision', f'{prefix}driving_policy']]
   camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
   cmd_flags = tg_flags if not usbgpu else usbgpu_tg_flags
