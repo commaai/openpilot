@@ -12,6 +12,8 @@ blacklist = [
 
   "matlab.*.md",
 
+  ".onnx", # meh
+
   # no LFS or submodules in release
   ".lfsconfig",
   ".gitattributes",
