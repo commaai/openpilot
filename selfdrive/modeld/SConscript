@@ -58,7 +58,6 @@ tg_devices = { # which device to put jit inputs to at runtime
   'selfdrive.modeld.dmonitoringmodeld': tg_backend,
 }
 
-
 def write_tg_devices(target, source, env):
   with open(str(target[0]), "w") as f:
     json.dump(tg_devices, f)
