@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
-os.environ['DEV'] = 'AMD:LLVM'
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
 from tinygrad.tensor import Tensor
 import time
