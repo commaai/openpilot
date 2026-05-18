@@ -99,8 +99,8 @@ class ModelState:
     self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
     self.warp_enqueue(
       **self.input_queues,
-      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8', device=self.WARP_DEV).contiguous().realize(),
-      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8', device=self.WARP_DEV).contiguous().realize())
+      frame=Tensor(np.zeros(self.frame_buf_params['img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize(),
+      big_frame=Tensor(np.zeros(self.frame_buf_params['big_img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
