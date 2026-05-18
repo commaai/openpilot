@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
-os.environ['DEV'] = 'AMD:LLVM'
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
 from tinygrad.tensor import Tensor
 import time
@@ -22,7 +21,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
+from openpilot.selfdrive.modeld.compile_modeld import make_npy_inputs
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -89,17 +88,16 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+    self.npy, npy_tensors = make_npy_inputs(self.policy_input_shapes)
+    self.input_queues = {**jits['make_tensor_inputs'](), **npy_tensors}
     self.full_frames : dict[str, Tensor] = {}
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits[(cam_w,cam_h)]['run_policy']
     self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
-    self.warp_enqueue(
-      **self.input_queues,
-      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8', device=self.WARP_DEV).contiguous().realize(),
-      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8', device=self.WARP_DEV).contiguous().realize())
+    make_dummy_frame = jits[(cam_w,cam_h)]['make_dummy_frame']
+    self.warp_enqueue(**self.input_queues, frame=make_dummy_frame(), big_frame=make_dummy_frame())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
