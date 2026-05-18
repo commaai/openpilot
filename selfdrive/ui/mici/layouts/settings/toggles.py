@@ -12,7 +12,6 @@ PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
 
 class ExperimentalModeConfirmPage(NavScroller):
-  # TODO: unify with alpha long class by using descriptions
   def __init__(self, on_confirm: Callable[[], None]):
     super().__init__()
 
