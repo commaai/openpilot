@@ -146,13 +146,12 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  # TODO proper state tracking
-  usbgpu_present = usbgpu_present()
-  usbgpu_compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
-  USBGPU = usbgpu_present and usbgpu_compiled
+  _present = usbgpu_present()
+  _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+  USBGPU = _present and _compiled
   params = Params()
-  params.put_bool("UsbGpuPresent", usbgpu_present)
-  params.put_bool("UsbGpuCompiled", usbgpu_compiled)
+  params.put_bool("UsbGpuPresent", _present)
+  params.put_bool("UsbGpuCompiled", _compiled)
 
   if not USBGPU:
     # USB GPU currently saturates a core so can't do this yet,
