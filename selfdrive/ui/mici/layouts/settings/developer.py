@@ -10,32 +10,24 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
 
 
-class ConfirmPage(NavScroller, abc.ABC):
-  def __init__(self, title: str, description: tuple[str, ...], on_confirm: Callable[[], None]):
+class AlphaLongConfirmPage(NavScroller):
+  def __init__(self, on_confirm: Callable[[], None]):
     super().__init__()
 
-    accept = BigConfirmationCircleButton(f"enable {title}",
+    accept = BigConfirmationCircleButton("enable alpha\nlongitudinal",
                                          gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
                                          lambda: self.dismiss(on_confirm))
 
     self._scroller.add_widgets([
-      GreyBigButton(f"enabling {title}", "scroll to continue",
+      GreyBigButton("enabling alpha longitudinal", "scroll to continue",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 64)),
-      *[GreyBigButton(desc) for desc in description],
+      GreyBigButton("", "WARNING: alpha longitudinal control may disable Automatic Emergency Braking (AEB)"),
+      GreyBigButton("", "On this car, openpilot defaults to the stock system's built-in ACC."),
+      GreyBigButton("", "Enabling this will switch to openpilot longitudinal control."),
+      GreyBigButton("", "Using Experimental mode is recommended with openpilot longitudinal control alpha."),
+      GreyBigButton("", "Changing this setting will restart openpilot if the car is powered on."),
       accept,
     ])
-
-
-class AlphaLongConfirmPage(ConfirmPage):
-  def __init__(self, on_confirm: Callable[[], None]):
-    super().__init__("alpha longitudinal",
-                     ("WARNING: alpha longitudinal control may disable Automatic Emergency Braking (AEB)",
-                      "On this car, openpilot defaults to the stock system's built-in ACC.",
-                      "Enabling this will switch to openpilot longitudinal control.",
-                      "Using Experimental mode is recommended with openpilot longitudinal control alpha.",
-                      "Changing this setting will restart openpilot if the car is powered on.",
-                      ),
-                     on_confirm)
 
 
 class DeveloperLayoutMici(NavScroller):

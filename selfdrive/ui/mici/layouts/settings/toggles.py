@@ -4,32 +4,11 @@ from cereal import log
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle, BigToggle, GreyBigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
-from openpilot.selfdrive.ui.mici.layouts.settings.developer import ConfirmPage
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
-
-
-# class ExperimentalModeConfirmPage(ConfirmPage):
-#   def __init__(self, on_confirm: Callable[[], None]):
-#     super().__init__("experimental mode",
-#                      ("openpilot defaults to driving in chill mode.",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       "REPLACE_ME",
-#                       ),
-#                      on_confirm)
 
 
 class ExperimentalModeConfirmPage(NavScroller):
