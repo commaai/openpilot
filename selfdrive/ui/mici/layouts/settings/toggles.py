@@ -4,11 +4,32 @@ from cereal import log
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle, BigToggle, GreyBigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
+from openpilot.selfdrive.ui.mici.layouts.settings.developer import ConfirmPage
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
+
+
+# class ExperimentalModeConfirmPage(ConfirmPage):
+#   def __init__(self, on_confirm: Callable[[], None]):
+#     super().__init__("experimental mode",
+#                      ("openpilot defaults to driving in chill mode.",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       "REPLACE_ME",
+#                       ),
+#                      on_confirm)
 
 
 class ExperimentalModeConfirmPage(NavScroller):
@@ -21,19 +42,18 @@ class ExperimentalModeConfirmPage(NavScroller):
                                          lambda: self.dismiss(on_confirm))
 
     self._scroller.add_widgets([
-      GreyBigButton("experimental mode", "scroll to continue",
-                    gui_app.texture("icons_mici/experimental_mode.png", 64, 64)),
+      GreyBigButton("enabling\nexperimental mode", "scroll to continue",
+                    gui_app.texture("icons_mici/setup/warning.png", 64, 64)),
       GreyBigButton("", "openpilot defaults to driving in chill mode."),
       GreyBigButton("", "Experimental mode enables alpha-level features that aren't ready for chill mode."),
-      GreyBigButton("", "Experimental features are listed below:"),
-      GreyBigButton("End-to-End Longitudinal Control", ""),
+      GreyBigButton("End-to-End Longitudinal Control"),
       GreyBigButton("", "Let the driving model control the gas and brakes."),
       GreyBigButton("", "openpilot will drive as it thinks a human would, including stopping for red lights and stop signs."),
-      GreyBigButton("", "Since the driving model decides the speed to drive, the set speed will only act as an upper bound."),
+      GreyBigButton("", "The set speed will only act as an upper bound."),
       GreyBigButton("", "This is an alpha quality feature; mistakes should be expected."),
-      GreyBigButton("New Driving Visualization", ""),
-      GreyBigButton("", "The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns."),
-      GreyBigButton("", "The Experimental mode logo will also be shown in the top right corner."),
+      GreyBigButton("New Driving Visualization"),
+      GreyBigButton("", "The path will change colors to communicate acceleration intent."),
+      GreyBigButton("", "Red for braking, green for acceleration, and gray for coasting."),
       accept,
     ])
 
