@@ -40,6 +40,7 @@ NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm", 8: "gsm",
                 11: "nr", 12: "nr", 13: "nr"}
 
 DIAL_CID = 1
+WEBBING_ICCID_PREFIX = "8985235"
 
 PPPD_CMD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
@@ -197,6 +198,8 @@ class Modem:
     return os.path.isfile("/lib/systemd/system/ModemManager.service")
 
   def _is_roaming_allowed(self) -> bool:
+    if self.S["iccid"].startswith(WEBBING_ICCID_PREFIX):
+      return True
     return self._read_param("GsmRoaming") == "1"
 
   def _publish_state(self, **kwargs):
@@ -289,6 +292,7 @@ class Modem:
 
     self._configure_modem(identity["modem_version"])
 
+    self.S.update(identity)
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._is_roaming_allowed()
     # blank APN lets the carrier supply one via PCO
