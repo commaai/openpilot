@@ -58,6 +58,7 @@ jobs:
       run: release/check-dirty.sh
     - name: Check file sizes
       timeout-minutes: 1
+      working-directory: ${{ env.STRIPPED_DIR }}
       run: release/check-file-sizes.sh
     - name: Check submodules
       if: github.repository == 'commaai/openpilot'
