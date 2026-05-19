@@ -15,7 +15,7 @@ def _patch_tinygrad_fetch_fw():
   from tinygrad import helpers
   _orig = helpers.fetch_fw
   def fetch_fw(path, name, sha256):
-    p = pathlib.Path(f"/usr/lib/firmware/{name}.zst")
+    p = pathlib.Path(f"/lib/firmware/{path}/{name}.zst")
     if p.is_file():
       blob = zstandard.ZstdDecompressor().stream_reader(p.read_bytes()).read()
       if hashlib.sha256(blob).hexdigest() == sha256:
