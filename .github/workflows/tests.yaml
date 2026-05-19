@@ -60,6 +60,9 @@ jobs:
       if: github.repository == 'commaai/openpilot'
       timeout-minutes: 3
       run: release/check-submodules.sh
+    - name: Check file sizes
+      timeout-minutes: 1
+      run: release/check-file-sizes.sh
 
   build_mac:
     name: build macOS
