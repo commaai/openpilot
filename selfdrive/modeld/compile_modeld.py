@@ -246,7 +246,7 @@ def load_maybe_chunked_onnx(path):
   if os.path.isfile(path):
     return path
   if os.path.isfile(manifest := get_manifest_path(path)):
-    return Tensor(read_file_chunked(path))
+    return Tensor(read_file_chunked(path), device='CPU')
   raise FileNotFoundError(f"no onnx at {path} and no chunk manifest at {manifest}")
 
 
