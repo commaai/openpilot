@@ -3,7 +3,7 @@ import json
 import os
 import sys, subprocess
 from SCons.Script import Value
-from openpilot.common.file_chunker import chunk_file, get_chunk_paths
+from openpilot.common.file_chunker import chunk_file, get_chunk_paths, get_path_or_chunk_paths
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
@@ -91,7 +91,8 @@ frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 for usbgpu in [False, True] if USBGPU else [False]:
   prefix = 'big_' if usbgpu else ''
   pkl_path = File(modeld_pkl_path(usbgpu)).abspath
-  driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in [f'{prefix}driving_vision', f'{prefix}driving_policy']]
+  driving_onnx_deps = [p for m in [f'{prefix}driving_vision', f'{prefix}driving_policy']
+                       for p in get_path_or_chunk_paths(File(f"models/{m}.onnx").abspath)]
   camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
   cmd_flags = tg_flags if not usbgpu else usbgpu_tg_flags
   cmd = (f'{cmd_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '

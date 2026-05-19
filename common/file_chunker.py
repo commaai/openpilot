@@ -29,6 +29,16 @@ def chunk_file(path, targets):
   os.remove(path)
 
 
+def get_path_or_chunk_paths(path):
+  if os.path.isfile(path):
+    return [path]
+  manifest = get_manifest_path(path)
+  if os.path.isfile(manifest):
+    num_chunks = int(Path(manifest).read_text().strip())
+    return [manifest] + [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
+  raise FileNotFoundError(path)
+
+
 def read_file_chunked(path):
   manifest_path = get_manifest_path(path)
   if os.path.isfile(manifest_path):
