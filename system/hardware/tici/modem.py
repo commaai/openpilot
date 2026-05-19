@@ -52,6 +52,7 @@ PPPD_CMD = [
   "user", '""', "password", '""',
 ]
 INITIAL_STATE = {
+  "seconds_since_boot": 0,
   "state": "INITIALIZING",
   "connected": False, "ip_address": "",
   "iccid": "", "mcc_mnc": "", "imei": "", "modem_version": "",
@@ -204,6 +205,7 @@ class Modem:
 
   def _publish_state(self, **kwargs):
     self.S.update(kwargs)
+    self.S["seconds_since_boot"] = time.monotonic()
     with tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False) as f:
       json.dump(self.S, f, indent=2)
     os.chmod(f.name, 0o644)
