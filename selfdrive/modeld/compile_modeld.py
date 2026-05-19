@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import pickle
 import time
 from functools import partial
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 import numpy as np
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-from tinygrad.nn.onnx import OnnxRunner
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
@@ -87,7 +87,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
@@ -103,10 +103,10 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip):
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
   input_queues = {
-    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
-    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
-    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
+    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
+    'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return input_queues, npy
@@ -158,20 +158,12 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
 
 
 def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
-                   vision_onnx, policy_onnx, pkl_path):
-  from get_model_metadata import metadata_path_for
-
+                   vision_runner, policy_runner, vision_metadata, policy_metadata):
   print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
 
-  vision_runner = OnnxRunner(vision_onnx)
-  policy_runner = OnnxRunner(policy_onnx)
-
-  with open(metadata_path_for(vision_onnx), 'rb') as f:
-    vision_metadata = pickle.load(f)
-    vision_features_slice = vision_metadata['output_slices']['hidden_state']
-    vision_input_shapes = vision_metadata['input_shapes']
-  with open(metadata_path_for(policy_onnx), 'rb') as f:
-    policy_input_shapes = pickle.load(f)['input_shapes']
+  vision_features_slice = vision_metadata['output_slices']['hidden_state']
+  vision_input_shapes = vision_metadata['input_shapes']
+  policy_input_shapes = policy_metadata['input_shapes']
 
   _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
                          vision_features_slice, frame_skip, prepare_only)
@@ -180,7 +172,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   SEED = 42
 
   def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip)
+    input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, Device.DEFAULT)
     np.random.seed(seed)
     Tensor.manual_seed(seed)
 
@@ -216,13 +208,10 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   run_policy_jit, test_val, test_buffers = random_inputs_run_fn(run_policy_jit, SEED)
 
   print('pickle round trip')
-  with open(pkl_path, "wb") as f:
-    pickle.dump(run_policy_jit, f)
-    print(f"  Saved to {pkl_path}")
-  with open(pkl_path, "rb") as f:
-    run_policy_jit = pickle.load(f)
+  run_policy_jit = pickle.loads(pickle.dumps(run_policy_jit))
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
+  return run_policy_jit
 
 
 def _parse_size(s):
@@ -230,25 +219,36 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def _parse_nv12(s):
-  parts = s.split(',')
-  assert len(parts) == len(NV12Frame._fields), \
-    f"--nv12 expects {','.join(NV12Frame._fields)} (got {s!r})"
-  return NV12Frame(*(int(x) for x in parts))
-
-
 if __name__ == "__main__":
+  from tinygrad.nn.onnx import OnnxRunner
+  from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
   p = argparse.ArgumentParser()
   p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
-  p.add_argument('--nv12', type=_parse_nv12, required=True,
-                 help=f'NV12 frame layout: {",".join(NV12Frame._fields)}')
+  p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
+                 help='camera resolutions WxH (one or more)')
   p.add_argument('--vision-onnx', required=True)
   p.add_argument('--policy-onnx', required=True)
   p.add_argument('--output', required=True)
-  p.add_argument('--prepare-only', action='store_true')
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
 
-  model_w, model_h = args.model_size
-  compile_modeld(args.nv12, model_w, model_h, args.prepare_only, args.frame_skip,
-                 args.vision_onnx, args.policy_onnx, args.output)
+  out = defaultdict(dict)
+  # init runners once so weights are shared
+  from get_model_metadata import make_metadata_dict
+  vision_runner = OnnxRunner(args.vision_onnx)
+  policy_runner = OnnxRunner(args.policy_onnx)
+  out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
+  out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
+
+  for cam_w, cam_h in args.camera_resolutions:
+    nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
+    model_w, model_h = args.model_size
+    out[(cam_w,cam_h)] = {
+      name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
+                           vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
+      for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
+    }
+
+  with open(args.output, "wb") as f:
+    pickle.dump(out, f)
+  print(f"Saved combined JIT to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
