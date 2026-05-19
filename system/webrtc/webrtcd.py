@@ -252,8 +252,7 @@ async def get_stream(request: 'web.Request'):
 
     stream_dict[session.identifier] = session
 
-  response = web.json_response({"sdp": answer.sdp, "type": answer.type})
-  return response
+  return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
 async def get_schema(request: 'web.Request'):
