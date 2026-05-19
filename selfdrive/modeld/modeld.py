@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
-from openpilot.selfdrive.modeld.helpers import get_tg_input_devices
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -25,7 +24,7 @@ from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
+from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"

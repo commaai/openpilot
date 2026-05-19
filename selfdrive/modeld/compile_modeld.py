@@ -245,9 +245,9 @@ def _parse_size(s):
 def load_onnx(path):
   if os.path.isfile(path):
     return path
-  if os.path.isfile(get_manifest_path(path)):
+  if os.path.isfile(manifest := get_manifest_path(path)):
     return Tensor(read_file_chunked(path))
-  raise FileNotFoundError(path)
+  raise FileNotFoundError(f"no onnx at {path} and no chunk manifest at {manifest}")
 
 
 if __name__ == "__main__":
