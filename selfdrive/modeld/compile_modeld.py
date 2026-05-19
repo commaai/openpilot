@@ -242,7 +242,7 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def load_onnx(path):
+def load_maybe_chunked_onnx(path):
   if os.path.isfile(path):
     return path
   if os.path.isfile(manifest := get_manifest_path(path)):
@@ -266,10 +266,11 @@ if __name__ == "__main__":
   out = defaultdict(dict)
   # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
-  vision_runner = OnnxRunner(load_onnx(args.vision_onnx))
-  policy_runner = OnnxRunner(load_onnx(args.policy_onnx))
-  out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
-  out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
+  vision_runner = OnnxRunner(load_maybe_chunked_onnx(args.vision_onnx))
+  policy_runner = OnnxRunner(load_maybe_chunked_onnx(args.policy_onnx))
+  # TODO dedupe onnx loading
+  out['metadata']['vision'] = make_metadata_dict(load_maybe_chunked_onnx(args.vision_onnx))
+  out['metadata']['policy'] = make_metadata_dict(load_maybe_chunked_onnx(args.policy_onnx))
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
