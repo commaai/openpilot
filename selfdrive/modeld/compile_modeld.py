@@ -32,7 +32,7 @@ NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'u
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
-WARP_DEV = os.getenv('WARP_DEV', os.getenv('DEV'))
+WARP_DEV = os.getenv('WARP_DEV')
 
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
