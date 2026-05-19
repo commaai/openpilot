@@ -1,3 +1,6 @@
+
+#!/usr/bin/env python3
+import sys
 import math
 import os
 from pathlib import Path
@@ -35,3 +38,9 @@ def read_file_chunked(path):
   if os.path.isfile(path):
     return Path(path).read_bytes()
   raise FileNotFoundError(path)
+
+
+if __name__ == "__main__":
+  path = sys.argv[1]
+  chunk_paths = get_chunk_paths(path, os.path.getsize(path))
+  chunk_file(path, chunk_paths)
