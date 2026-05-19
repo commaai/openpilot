@@ -29,6 +29,8 @@ from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
+from openpilot.common.file_chunker import get_manifest_path, read_file_chunked
+
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 
@@ -240,6 +242,14 @@ def _parse_size(s):
   return int(w), int(h)
 
 
+def load_onnx(path):
+  if os.path.isfile(path):
+    return path
+  if os.path.isfile(get_manifest_path(path)):
+    return Tensor(read_file_chunked(path))
+  raise FileNotFoundError(path)
+
+
 if __name__ == "__main__":
   from tinygrad.nn.onnx import OnnxRunner
   from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
@@ -256,8 +266,8 @@ if __name__ == "__main__":
   out = defaultdict(dict)
   # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
-  vision_runner = OnnxRunner(args.vision_onnx)
-  policy_runner = OnnxRunner(args.policy_onnx)
+  vision_runner = OnnxRunner(load_onnx(args.vision_onnx))
+  policy_runner = OnnxRunner(load_onnx(args.policy_onnx))
   out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
   out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
 
