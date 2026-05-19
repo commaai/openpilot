@@ -85,9 +85,9 @@ mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
 modeld_dir = Dir("#selfdrive/modeld").abspath
 compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
-
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
+
 for usbgpu in [False, True] if USBGPU else [False]:
   prefix = 'big_' if usbgpu else ''
   pkl_path = File(modeld_pkl_path(usbgpu)).abspath
@@ -109,7 +109,11 @@ for usbgpu in [False, True] if USBGPU else [False]:
   chunk_targets = get_chunk_paths(pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
   def do_chunk(target, source, env, pkl=pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
-  lenv.Command(chunk_targets, node, do_chunk)
+  lenv.Command(
+    chunk_targets,
+    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, tg_devices_node],
+    [cmd, do_chunk],
+  )
 
 # get model metadata
 fn = File(f"models/dmonitoring_model").abspath
@@ -132,17 +136,12 @@ def tg_compile(flags, model_name):
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
   chunk_targets = get_chunk_paths(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
-  compile_node = lenv.Command(
-    pkl,
-    [onnx_path] + tinygrad_files + [chunker_file, tg_devices_node],
-    f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
-  )
   def do_chunk(target, source, env):
     chunk_file(pkl, chunk_targets)
   return lenv.Command(
     chunk_targets,
-    compile_node,
-    do_chunk,
+    [onnx_path] + tinygrad_files + [chunker_file, tg_devices_node],
+    [f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}', do_chunk],
   )
 
 tg_compile(tg_flags, 'dmonitoring_model')
