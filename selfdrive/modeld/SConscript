@@ -102,19 +102,18 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--policy-onnx {File(f"models/{prefix}driving_policy.onnx").abspath} '
         f'--output {pkl_path} --frame-skip {frame_skip}')
   modeld_devices_value = Value(json.dumps(tg_devices['selfdrive.modeld.modeld']['usbgpu' if usbgpu else 'default'], sort_keys=True))
-  node = lenv.Command(pkl_path, tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, modeld_devices_value], cmd)
-  if usbgpu:
-    lenv.SideEffect(usbgpu_lock, node)
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   size_multiplier = 1 if usbgpu else 2 # TODO make weight dedupe work on QCOM
   chunk_targets = get_chunk_paths(pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
   def do_chunk(target, source, env, pkl=pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
-  lenv.Command(
+  node = lenv.Command(
     chunk_targets,
     tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, tg_devices_node],
     [cmd, do_chunk],
   )
+  if usbgpu:
+    lenv.SideEffect(usbgpu_lock, node)
 
 # get model metadata
 fn = File(f"models/dmonitoring_model").abspath
