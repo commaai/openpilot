@@ -29,7 +29,7 @@ from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
-from openpilot.common.file_chunker import get_manifest_path, read_file_chunked
+from openpilot.common.file_chunker import read_file_chunked
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
