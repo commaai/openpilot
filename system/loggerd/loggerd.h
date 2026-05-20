@@ -28,7 +28,7 @@ const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH"))
 constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
 constexpr char PRESERVE_ATTR_VALUE = '1';
 
-constexpr int STREAM_BITRATE_WIFI = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : STREAM_BITRATE_WIFI;
+constexpr int STREAM_BITRATE_WIFI = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 4'000'000;
 constexpr int STREAM_BITRATE_CELLULAR = 256'000;
 
 struct EncoderSettings {
