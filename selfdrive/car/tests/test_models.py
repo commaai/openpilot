@@ -294,6 +294,54 @@ class TestCarModelBase(unittest.TestCase):
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
     test_car_controller(CC.as_reader())
 
+  @pytest.mark.nocapture
+  @settings(max_examples=max(50, MAX_EXAMPLES // 3), deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """Fuzz tx control-state transitions and assert all generated tx CAN passes safety hooks."""
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    CI = self.CarInterface(self.CP)
+    now_nanos = 0
+
+    steps = data.draw(st.integers(min_value=10, max_value=60))
+    seen_msgs = 0
+    for _ in range(steps):
+      controls_allowed = data.draw(st.booleans())
+      cruise_engaged = data.draw(st.booleans())
+      cancel = data.draw(st.booleans())
+      resume = data.draw(st.booleans())
+
+      self.safety.set_controls_allowed(controls_allowed)
+      self.safety.set_cruise_engaged_prev(cruise_engaged)
+
+      # Keep button states mutually exclusive to match typical real-world use.
+      if cancel:
+        resume = False
+
+      CC = structs.CarControl(
+        enabled=controls_allowed,
+        latActive=data.draw(st.booleans()),
+        longActive=data.draw(st.booleans()),
+        cruiseControl=structs.CarControl.CruiseControl(cancel=cancel, resume=resume),
+      )
+
+      CI.update([])
+      _, sendcan = CI.apply(CC.as_reader(), now_nanos)
+      now_nanos += DT_CTRL * 1e9
+
+      seen_msgs += len(sendcan)
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
+
+    self.assertGreater(seen_msgs, 0)
+
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
