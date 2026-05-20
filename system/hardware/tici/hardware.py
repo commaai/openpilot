@@ -373,7 +373,7 @@ class Tici(HardwareBase):
       pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
       subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
       subprocess.call(["sudo", "taskset", "-pc", "3", pid])
-    except subprocess.CalledProcessException as e:
+    except subprocess.CalledProcessError as e:
       print(str(e))
 
   def get_networks(self):
