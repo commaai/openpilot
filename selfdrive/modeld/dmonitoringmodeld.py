@@ -27,7 +27,7 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
-    self.DEV = get_tg_input_devices(PROCESS_NAME)
+    self.DEV = get_tg_input_devices(PROCESS_NAME, usbgpu=False)['DEV']
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
