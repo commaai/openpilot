@@ -5,6 +5,7 @@ import sysconfig
 import platform
 import shlex
 import importlib
+import importlib.util
 import numpy as np
 
 import SCons.Errors
@@ -48,6 +49,12 @@ acados_include_dirs = [
   os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
   os.path.join(acados.INCLUDE_DIR, "hpipm", "include"),
 ]
+
+panda_spec = importlib.util.find_spec("panda")
+if panda_spec is None or not panda_spec.submodule_search_locations:
+  raise SCons.Errors.UserError("pandacan must be installed to build openpilot")
+panda_dir = panda_spec.submodule_search_locations[0]
+panda_include_dir = os.path.dirname(panda_dir)
 
 
 # ***** enforce a whitelist of system libraries *****
@@ -114,6 +121,7 @@ env = Environment(
   CPPPATH=[
     "#",
     "#msgq",
+    panda_include_dir,
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
   ],
@@ -228,8 +236,8 @@ messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
 
 
-# Build other submodules
-SConscript(['panda/SConscript'])
+# Build panda firmware from the installed pandacan package.
+SConscript(os.path.join(panda_dir, 'SConscript'), variant_dir='panda', duplicate=0)
 
 # Build rednose library
 SConscript(['rednose/SConscript'])

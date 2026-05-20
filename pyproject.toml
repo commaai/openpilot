@@ -50,8 +50,7 @@ dependencies = [
   "aiortc",
 
   # panda
-  "libusb1",
-  "spidev; platform_system == 'Linux'",
+  "pandacan @ git+https://github.com/premkiran2/panda.git@proper-pip-package",
 
   # logging
   "pyzmq",
