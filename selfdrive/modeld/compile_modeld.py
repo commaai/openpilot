@@ -258,11 +258,12 @@ if __name__ == "__main__":
   out = defaultdict(dict)
   # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
-  vision_runner = OnnxRunner(Tensor(read_file_chunked(args.vision_onnx)))
-  policy_runner = OnnxRunner(Tensor(read_file_chunked(args.policy_onnx)))
-  # TODO dedupe onnx loading
-  out['metadata']['vision'] = make_metadata_dict(Tensor(read_file_chunked(args.vision_onnx), device='PYTHON'))
-  out['metadata']['policy'] = make_metadata_dict(Tensor(read_file_chunked(args.policy_onnx), device='PYTHON'))
+  with Context(NOLOCALS=0):
+    vision_runner = OnnxRunner(Tensor(read_file_chunked(args.vision_onnx), device='PYTHON'))
+    policy_runner = OnnxRunner(Tensor(read_file_chunked(args.policy_onnx), device='PYTHON'))
+    # TODO dedupe onnx loading
+    out['metadata']['vision'] = make_metadata_dict(Tensor(read_file_chunked(args.vision_onnx), device='PYTHON'))
+    out['metadata']['policy'] = make_metadata_dict(Tensor(read_file_chunked(args.policy_onnx), device='PYTHON'))
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
