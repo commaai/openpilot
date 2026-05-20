@@ -3,7 +3,7 @@ import json
 import os
 import sys, subprocess
 from SCons.Script import Value
-from openpilot.common.file_chunker import chunk_file, get_chunk_paths, get_path_or_chunk_paths
+from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
@@ -92,7 +92,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
   target_pkl_path = File(modeld_pkl_path(usbgpu)).abspath
   file_prefix, cmd_flags = ('big_', usbgpu_tg_flags) if usbgpu else ('', tg_flags)
   driving_onnx_deps = [p for m in [f'{file_prefix}driving_vision', f'{file_prefix}driving_policy']
-                       for p in get_path_or_chunk_paths(File(f"models/{m}.onnx").abspath)]
+                       for p in get_existing_chunks(File(f"models/{m}.onnx").abspath)]
   camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
   cmd = (f'{cmd_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
         f'--model-size {model_w}x{model_h} '
@@ -102,7 +102,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   size_multiplier = 1 if usbgpu else 2 # TODO make weight dedupe work on QCOM
-  chunk_targets = get_chunk_paths(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
+  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
   def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
   node = lenv.Command(
@@ -133,7 +133,7 @@ def tg_compile(flags, model_name):
   fn = File(f"models/{model_name}").abspath
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
-  chunk_targets = get_chunk_paths(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
+  chunk_targets = get_chunk_targets(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
   def do_chunk(target, source, env):
     chunk_file(pkl, chunk_targets)
   return lenv.Command(
