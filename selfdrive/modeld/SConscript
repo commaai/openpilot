@@ -89,27 +89,25 @@ model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 
 for usbgpu in [False, True] if USBGPU else [False]:
-  prefix = 'big_' if usbgpu else ''
-  pkl_path = File(modeld_pkl_path(usbgpu)).abspath
-  driving_onnx_deps = [p for m in [f'{prefix}driving_vision', f'{prefix}driving_policy']
+  target_pkl_path = File(modeld_pkl_path(usbgpu)).abspath
+  file_prefix, cmd_flags = ('big_', usbgpu_tg_flags) if usbgpu else ('', tg_flags)
+  driving_onnx_deps = [p for m in [f'{file_prefix}driving_vision', f'{file_prefix}driving_policy']
                        for p in get_path_or_chunk_paths(File(f"models/{m}.onnx").abspath)]
   camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
-  cmd_flags = tg_flags if not usbgpu else usbgpu_tg_flags
   cmd = (f'{cmd_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
         f'--model-size {model_w}x{model_h} '
         f'--camera-resolutions {camera_res_args} '
-        f'--vision-onnx {File(f"models/{prefix}driving_vision.onnx").abspath} '
-        f'--policy-onnx {File(f"models/{prefix}driving_policy.onnx").abspath} '
-        f'--output {pkl_path} --frame-skip {frame_skip}')
-  modeld_devices_value = Value(json.dumps(tg_devices['selfdrive.modeld.modeld']['usbgpu' if usbgpu else 'default'], sort_keys=True))
+        f'--vision-onnx {File(f"models/{file_prefix}driving_vision.onnx").abspath} '
+        f'--policy-onnx {File(f"models/{file_prefix}driving_policy.onnx").abspath} '
+        f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   size_multiplier = 1 if usbgpu else 2 # TODO make weight dedupe work on QCOM
-  chunk_targets = get_chunk_paths(pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
-  def do_chunk(target, source, env, pkl=pkl_path, chunks=chunk_targets):
+  chunk_targets = get_chunk_paths(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
+  def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
   node = lenv.Command(
     chunk_targets,
-    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, tg_devices_node],
+    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file],
     [cmd, do_chunk],
   )
   if usbgpu:
