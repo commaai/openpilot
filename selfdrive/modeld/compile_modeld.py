@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import atexit
 import os
 import pickle
 import time
@@ -30,6 +31,7 @@ from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
 from openpilot.common.file_chunker import read_file_chunked
+from openpilot.system.hardware.hw import Paths
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
@@ -242,6 +244,14 @@ def _parse_size(s):
   return int(w), int(h)
 
 
+def read_file_chunked_to_shm(path):
+  shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
+  atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
+  with open(shm_path, 'wb') as f:
+    f.write(read_file_chunked(path))
+  return shm_path
+
+
 if __name__ == "__main__":
   from tinygrad.nn.onnx import OnnxRunner
   from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
@@ -258,12 +268,11 @@ if __name__ == "__main__":
   out = defaultdict(dict)
   # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
-  with Context(NOLOCALS=0):
-    vision_runner = OnnxRunner(Tensor(read_file_chunked(args.vision_onnx), device='PYTHON'))
-    policy_runner = OnnxRunner(Tensor(read_file_chunked(args.policy_onnx), device='PYTHON'))
-    # TODO dedupe onnx loading
-    out['metadata']['vision'] = make_metadata_dict(Tensor(read_file_chunked(args.vision_onnx), device='PYTHON'))
-    out['metadata']['policy'] = make_metadata_dict(Tensor(read_file_chunked(args.policy_onnx), device='PYTHON'))
+  vision_path, policy_path = read_file_chunked_to_shm(args.vision_onnx), read_file_chunked_to_shm(args.policy_onnx)
+  vision_runner = OnnxRunner(vision_path)
+  policy_runner = OnnxRunner(policy_path)
+  out['metadata']['vision'] = make_metadata_dict(vision_path)
+  out['metadata']['policy'] = make_metadata_dict(policy_path)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
