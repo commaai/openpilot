@@ -258,8 +258,8 @@ if __name__ == "__main__":
   out = defaultdict(dict)
   # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
-  vision_runner = OnnxRunner(Tensor(read_file_chunked(args.vision_onnx), device='PYTHON'))
-  policy_runner = OnnxRunner(Tensor(read_file_chunked(args.policy_onnx), device='PYTHON'))
+  vision_runner = OnnxRunner(Tensor(read_file_chunked(args.vision_onnx)))
+  policy_runner = OnnxRunner(Tensor(read_file_chunked(args.policy_onnx)))
   # TODO dedupe onnx loading
   out['metadata']['vision'] = make_metadata_dict(Tensor(read_file_chunked(args.vision_onnx), device='PYTHON'))
   out['metadata']['policy'] = make_metadata_dict(Tensor(read_file_chunked(args.policy_onnx), device='PYTHON'))
