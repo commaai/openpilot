@@ -28,6 +28,9 @@ const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH"))
 constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
 constexpr char PRESERVE_ATTR_VALUE = '1';
 
+constexpr int STREAM_BITRATE_WIFI = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : STREAM_BITRATE_WIFI;
+constexpr int STREAM_BITRATE_CELLULAR = 256'000;
+
 struct EncoderSettings {
   cereal::EncodeIndex::Type encode_type;
   int bitrate;
@@ -47,7 +50,7 @@ struct EncoderSettings {
   }
 
   static EncoderSettings StreamEncoderSettings() {
-    int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 4'000'000;
+    int _stream_bitrate = STREAM_BITRATE_WIFI;
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate , .gop_size = 5};
   }
 };
