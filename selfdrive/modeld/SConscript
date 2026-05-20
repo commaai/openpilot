@@ -76,7 +76,7 @@ def write_tg_devices(target, source, env):
 
 tg_devices_node = lenv.Command(
   str(TG_INPUT_DEVICES_PATH),
-  [Value(json.dumps(tg_devices, sort_keys=True))],
+  [Value(tg_devices)],
   write_tg_devices,
 )
 
