@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+
 import argparse
 import asyncio
 import contextlib
 import json
-import logging
 import uuid
+import logging
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
-REQUIRED_VIDEO_CODEC = "H264"
 
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
@@ -190,7 +190,6 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
           self.outgoing_bridge_runner.start()
-
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
@@ -218,84 +217,41 @@ class StreamRequestBody:
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
 
-def _add_cors_headers(_, response: 'web.Response'):
-  response.headers["Access-Control-Allow-Origin"] = "*"
-  response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-  response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-  response.headers["Access-Control-Allow-Private-Network"] = "true"
-
-
-@web.middleware
-async def cors_middleware(request: 'web.Request', handler):
-  try:
-    response = await handler(request)
-  except web.HTTPException as ex:
-    _add_cors_headers(request, ex)
-    raise
-  _add_cors_headers(request, response)
-  return response
-
-
-async def stream_options(request: 'web.Request'):
-  response = web.Response()
-  _add_cors_headers(request, response)
-  return response
-
-
-def _validate_sdp_video_codecs(sdp: str):
-  import aiortc.sdp
-  desc = aiortc.sdp.SessionDescription.parse(sdp)
-  required_mime = f"video/{REQUIRED_VIDEO_CODEC}"
-  for m in desc.media:
-    if m.kind != "video":
-      continue
-    offered_mimes = {c.mimeType for c in m.rtp.codecs}
-    if required_mime not in offered_mimes:
-      raise web.HTTPBadRequest(
-        text=json.dumps({"error": "unsupported_codec", "message": f"Frontend must offer {REQUIRED_VIDEO_CODEC} via setCodecPreferences()"}),
-        content_type="application/json",
-      )
-
 
 async def get_stream(request: 'web.Request'):
-  logger = logging.getLogger("webrtcd")
-  try:
-    stream_dict, debug_mode = request.app['streams'], request.app['debug']
+  stream_dict, debug_mode = request.app['streams'], request.app['debug']
+  raw_body = await request.json()
+  body = StreamRequestBody(**raw_body)
 
-    raw_body = await request.json()
-    body = StreamRequestBody(**raw_body)
-    _validate_sdp_video_codecs(body.sdp)
+  async with request.app['stream_lock']:
+    # Fully disconnect any other active stream before starting the replacement.
+    for sid, s in list(stream_dict.items()):
+      if s.run_task and not s.run_task.done():
+        try:
+          ch = s.stream.get_messaging_channel()
+          ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
+        except Exception:
+          pass
+      await s.stop()
+      del stream_dict[sid]
 
-    async with request.app['stream_lock']:
-      # Fully disconnect any other active stream before starting the replacement.
-      for sid, s in list(stream_dict.items()):
-        if s.run_task and not s.run_task.done():
-          try:
-            ch = s.stream.get_messaging_channel()
-            ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
-          except Exception:
-            pass
-        await s.stop()
-        del stream_dict[sid]
+    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
+    try:
+      answer = await session.get_answer()
+    except ValueError as e:
+      await session.stop()
+      raise web.HTTPBadRequest(
+        text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
+        content_type="application/json",
+      ) from e
+    except Exception:
+      await session.stop()
+      raise
+    session.start()
 
-      session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
-      try:
-        answer = await session.get_answer()
-      except Exception:
-        await session.stop()
-        raise
-      session.start()
+    stream_dict[session.identifier] = session
 
-      stream_dict[session.identifier] = session
-
-    response = web.json_response({"sdp": answer.sdp, "type": answer.type})
-    _add_cors_headers(request, response)
-    return response
-  except web.HTTPException:
-    raise
-  except Exception:
-    logger.exception("Error in /stream handler")
-    raise
+  return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
 async def get_schema(request: 'web.Request'):
@@ -334,13 +290,12 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
 
-  app = web.Application(middlewares=[cors_middleware])
+  app = web.Application()
 
   app['streams'] = dict()
   app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
-  app.router.add_route("OPTIONS", "/stream", stream_options)
   app.router.add_post("/stream", get_stream)
   app.router.add_post("/notify", post_notify)
   app.router.add_get("/schema", get_schema)
