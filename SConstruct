@@ -303,9 +303,6 @@ def check_build_product_size(target, source, env):
   limit = 50 * 1024 * 1024  # GitHub max size
   for t in target:
     if hasattr(t, 'isfile') and (size := os.path.getsize(t.abspath)) > limit:
-      #raise SCons.Errors.UserError(
-      print(
-        f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the 50 MiB limit"
-      )
+      raise SCons.Errors.UserError(f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the {limit / (1024 * 1024):.1f} MiB limit")
 if not GetOption('extras'):
   AddPostAction(all_scons_nodes, Action(check_build_product_size, None))
