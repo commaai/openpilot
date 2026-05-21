@@ -29,7 +29,7 @@ constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
 constexpr char PRESERVE_ATTR_VALUE = '1';
 
 const int STREAM_BITRATE_WIFI = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 4'000'000;
-constexpr int STREAM_BITRATE_CELLULAR = 256'000;
+constexpr int STREAM_BITRATE_CELLULAR = 512'000;
 
 struct EncoderSettings {
   cereal::EncodeIndex::Type encode_type;
