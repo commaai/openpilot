@@ -571,7 +571,7 @@ def getNetworks():
 @dispatcher.add_method
 def startStream(sdp: str) -> dict:
   from openpilot.system.webrtc.webrtcd import StreamRequestBody
-  bridge_services_in = ["livestreamCameraSwitch"]
+  bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
   cp_bytes = Params().get("CarParams")
