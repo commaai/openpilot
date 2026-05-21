@@ -134,9 +134,12 @@ class StreamSession:
     config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
+    self.video_tracks = []
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
-      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
+      video_track = LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()
+      builder.add_video_stream(cam, video_track)
+      self.video_tracks.append(video_track)
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
