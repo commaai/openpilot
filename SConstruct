@@ -300,11 +300,12 @@ Progress(progress_function, interval=progress_interval)
 AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
 
 def check_build_product_size(target, source, env):
-  limit = 50 * 1024 * 1024
+  limit = 50 * 1024 * 1024  # GitHub max size
   for t in target:
     if hasattr(t, 'isfile') and (size := os.path.getsize(t.abspath)) > limit:
       #raise SCons.Errors.UserError(
       print(
         f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the 50 MiB limit"
       )
-AddPostAction(all_scons_nodes, Action(check_build_product_size, None))
+if not GetOption('extras'):
+  AddPostAction(all_scons_nodes, Action(check_build_product_size, None))
