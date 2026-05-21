@@ -2,6 +2,7 @@
 import datetime
 import os
 import signal
+import subprocess
 import sys
 import time
 import traceback
@@ -20,6 +21,16 @@ from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_I
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
+
+
+def mark_boot_successful() -> None:
+  if not os.path.isfile("/AGNOS"):
+    return
+
+  try:
+    subprocess.check_output(["sudo", "abctl", "--set_success"], stderr=subprocess.STDOUT)
+  except Exception:
+    cloudlog.exception("failed to mark A/B boot successful")
 
 
 def manager_init() -> None:
@@ -86,6 +97,8 @@ def manager_init() -> None:
                        commit=build_metadata.openpilot.git_commit,
                        dirty=build_metadata.openpilot.is_dirty,
                        device=HARDWARE.get_device_type())
+
+  mark_boot_successful()
 
   # preimport all processes
   for p in managed_processes.values():

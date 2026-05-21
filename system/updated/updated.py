@@ -1,42 +1,50 @@
 #!/usr/bin/env python3
-import os
-import re
 import datetime
-import subprocess
+import fcntl
+import hashlib
+import json
+import lzma
+import os
 import psutil
 import shutil
 import signal
-import fcntl
-import time
+import stat
+import struct
+import subprocess
 import threading
-from collections import defaultdict
+import time
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, BinaryIO
+from urllib.parse import urlparse
+
+import requests
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.common.time_helpers import system_time_valid
-from openpilot.common.markdown import parse_markdown
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import AGNOS, HARDWARE
-from openpilot.system.version import get_build_metadata
+from openpilot.system.hardware import HARDWARE
 
-LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
+
+LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/updater.lock")
+MANIFEST_URL = os.getenv("UPDATER_MANIFEST_URL", "https://api.commadotai.com/v1/updater/manifest")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
-OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
-OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
-OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
-FINALIZED = os.path.join(STAGING_ROOT, "finalized")
+VERIFY_CURRENT_SLOT = os.getenv("UPDATER_VERIFY_CURRENT_SLOT", "1") != "0"
+DOWNLOAD_TIMEOUT = 60
+PARTITION_RETRIES = 10
+CHUNK_SIZE = 1024 * 1024
+SLOTS = ("a", "b")
 
-OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
-
-# do not allow to engage after this many hours onroad and this many routes
-HOURS_NO_CONNECTIVITY_MAX = 27
-ROUTES_NO_CONNECTIVITY_MAX = 84
-# send an offroad prompt after this many hours onroad and this many routes
-HOURS_NO_CONNECTIVITY_PROMPT = 23
-ROUTES_NO_CONNECTIVITY_PROMPT = 80
+SPARSE_HEADER = struct.Struct("<IHHHHIIII")
+SPARSE_CHUNK_HEADER = struct.Struct("<HHII")
+SPARSE_MAGIC = 0xED26FF3A
+SPARSE_RAW = 0xCAC1
+SPARSE_FILL = 0xCAC2
+SPARSE_DONT_CARE = 0xCAC3
+SPARSE_CRC32 = 0xCAC4
 
 
 class UserRequest:
@@ -44,15 +52,16 @@ class UserRequest:
   CHECK = 1
   FETCH = 2
 
+
 class WaitTimeHelper:
-  def __init__(self):
+  def __init__(self) -> None:
     self.ready_event = threading.Event()
     self.user_request = UserRequest.NONE
     signal.signal(signal.SIGHUP, self.update_now)
     signal.signal(signal.SIGUSR1, self.check_now)
 
   def update_now(self, signum: int, frame) -> None:
-    cloudlog.info("caught SIGHUP, attempting to downloading update")
+    cloudlog.info("caught SIGHUP, downloading update")
     self.user_request = UserRequest.FETCH
     self.ready_event.set()
 
@@ -64,453 +73,628 @@ class WaitTimeHelper:
   def sleep(self, t: float) -> None:
     self.ready_event.wait(timeout=t)
 
-def write_time_to_param(params, param) -> None:
-  t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-  params.put(param, t, block=True)
 
-def run(cmd: list[str], cwd: str | None = None) -> str:
-  return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
+def run(cmd: list[str], **kwargs) -> str:
+  return subprocess.check_output(cmd, stderr=subprocess.STDOUT, encoding="utf8", **kwargs)
 
 
-def set_consistent_flag(consistent: bool) -> None:
-  os.sync()
-  consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-  if consistent:
-    consistent_file.touch()
-  elif not consistent:
-    consistent_file.unlink(missing_ok=True)
-  os.sync()
-
-def parse_release_notes(basedir: str) -> bytes:
-  try:
-    with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
-      r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
-    try:
-      return bytes(parse_markdown(r.decode("utf-8")), encoding="utf-8")
-    except Exception:
-      return r + b"\n"
-  except FileNotFoundError:
-    pass
-  except Exception:
-    cloudlog.exception("failed to parse release notes")
-  return b""
-
-def setup_git_options(cwd: str) -> None:
-  # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
-  # are outside user control. Make sure Git is set up to ignore system ctimes,
-  # because they change when we make hard links during finalize. Otherwise,
-  # there is a lot of unnecessary churn. This appears to be a common need on
-  # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
-
-  # We are using copytree to copy the directory, which also changes
-  # inode numbers. Ignore those changes too.
-
-  # Set protocol to the new version (default after git 2.26) to reduce data
-  # usage on git fetch --dry-run from about 400KB to 18KB.
-  git_cfg = [
-    ("core.trustctime", "false"),
-    ("core.checkStat", "minimal"),
-    ("protocol.version", "2"),
-    ("gc.auto", "0"),
-    ("gc.autoDetach", "false"),
-  ]
-  for option, value in git_cfg:
-    run(["git", "config", option, value], cwd)
+def write_time_to_param(params: Params, key: str) -> None:
+  params.put(key, datetime.datetime.now(datetime.UTC).replace(tzinfo=None), block=True)
 
 
-def dismount_overlay() -> None:
-  if os.path.ismount(OVERLAY_MERGED):
-    cloudlog.info("unmounting existing overlay")
-    run(["sudo", "umount", "-l", OVERLAY_MERGED])
+def slot_number(slot: str) -> int:
+  assert slot in SLOTS
+  return 0 if slot == "a" else 1
 
 
-def init_overlay() -> None:
+def other_slot(slot: str) -> str:
+  assert slot in SLOTS
+  return "b" if slot == "a" else "a"
 
-  # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
-  if OVERLAY_INIT.is_file() and os.path.ismount(OVERLAY_MERGED):
-    git_dir_path = os.path.join(BASEDIR, ".git")
-    new_files = run(["find", git_dir_path, "-newer", str(OVERLAY_INIT)])
-    if not len(new_files.splitlines()):
-      # A valid overlay already exists
-      return
+
+def partition_size(partition: dict[str, Any]) -> int:
+  size = partition.get("size")
+  if not isinstance(size, int):
+    raise ValueError(f"invalid size for {partition.get('name')}: {size}")
+  return size
+
+
+def partition_hash(partition: dict[str, Any]) -> str:
+  h = partition.get("hash_raw", partition.get("hash"))
+  if not isinstance(h, str):
+    raise ValueError(f"missing hash for {partition.get('name')}")
+  return h.lower()
+
+
+def hash_zeros(digest: "hashlib._Hash", size: int) -> None:
+  zeros = b"\x00" * CHUNK_SIZE
+  while size > 0:
+    n = min(size, len(zeros))
+    digest.update(zeros[:n])
+    size -= n
+
+
+def sha256_path(path: str, size: int) -> str:
+  digest = hashlib.sha256()
+  with open(path, "rb") as f:
+    remaining = size
+    while remaining > 0:
+      chunk = f.read(min(CHUNK_SIZE, remaining))
+      if len(chunk) == 0:
+        return ""
+      digest.update(chunk)
+      remaining -= len(chunk)
+  return digest.hexdigest().lower()
+
+
+def ensure_regular_file_size(f: BinaryIO, size: int) -> None:
+  mode = os.fstat(f.fileno()).st_mode
+  if stat.S_ISREG(mode):
+    f.truncate(size)
+
+
+def url_is_xz(url: str, partition: dict[str, Any]) -> bool:
+  compression = partition.get("compression")
+  path = urlparse(url).path
+  return compression == "xz" or (compression is None and path.endswith((".xz", ".lzma")))
+
+
+class ImageReader:
+  def __init__(self, url: str, compressed: bool):
+    self.url = url
+    self.compressed = compressed
+    self.sha256 = hashlib.sha256()
+    self.buf = b""
+    self.eof = False
+    self.response: requests.Response | None = None
+    self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO) if compressed else None
+
+    parsed = urlparse(url)
+    if parsed.scheme in ("", "file"):
+      self.source = open(parsed.path if parsed.scheme == "file" else url, "rb")
+    elif parsed.scheme in ("http", "https"):
+      self.response = requests.get(url, stream=True, headers={"Accept-Encoding": None}, timeout=DOWNLOAD_TIMEOUT)
+      self.response.raise_for_status()
+      self.source = self.response.raw
     else:
-      cloudlog.info(".git directory changed, recreating overlay")
+      raise ValueError(f"unsupported image URL scheme: {url}")
 
-  cloudlog.info("preparing new safe staging area")
+  def close(self) -> None:
+    self.source.close()
+    if self.response is not None:
+      self.response.close()
 
-  params = Params()
-  params.put_bool("UpdateAvailable", False, block=True)
-  set_consistent_flag(False)
-  dismount_overlay()
-  run(["sudo", "rm", "-rf", STAGING_ROOT])
-  if os.path.isdir(STAGING_ROOT):
-    shutil.rmtree(STAGING_ROOT)
+  def __enter__(self) -> "ImageReader":
+    return self
 
-  for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED]:
-    os.mkdir(dirname, 0o755)
+  def __exit__(self, exc_type, exc_value, traceback) -> None:
+    self.close()
 
-  if os.lstat(BASEDIR).st_dev != os.lstat(OVERLAY_MERGED).st_dev:
-    raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
+  def read(self, size: int) -> bytes:
+    if size <= 0:
+      return b""
 
-  # Leave a timestamped canary in BASEDIR to check at startup. The device clock
-  # should be correct by the time we get here. If the init file disappears, or
-  # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
-  # assume that BASEDIR has used for local development or otherwise modified,
-  # and skips the update activation attempt.
-  consistent_file = Path(os.path.join(BASEDIR, ".overlay_consistent"))
-  if consistent_file.is_file():
-    consistent_file.unlink()
-  OVERLAY_INIT.touch()
+    if self.decompressor is None:
+      data = self.source.read(size)
+      self.sha256.update(data)
+      return data
 
+    while len(self.buf) < size and not self.eof:
+      if self.decompressor.needs_input:
+        compressed = self.source.read(CHUNK_SIZE)
+        if len(compressed) == 0:
+          self.eof = True
+          break
+      else:
+        compressed = b""
+
+      self.buf += self.decompressor.decompress(compressed, max_length=size - len(self.buf))
+      if self.decompressor.eof:
+        self.eof = True
+
+    data, self.buf = self.buf[:size], self.buf[size:]
+    self.sha256.update(data)
+    return data
+
+
+def read_exact(reader: ImageReader, size: int) -> bytes:
+  data = reader.read(size)
+  if len(data) != size:
+    raise EOFError(f"short image read: wanted {size}, got {len(data)}")
+  return data
+
+
+def copy_exact(reader: ImageReader, out: BinaryIO, size: int, digest: "hashlib._Hash") -> None:
+  remaining = size
+  while remaining > 0:
+    data = read_exact(reader, min(CHUNK_SIZE, remaining))
+    digest.update(data)
+    out.write(data)
+    remaining -= len(data)
+
+
+def write_pattern(out: BinaryIO, digest: "hashlib._Hash", pattern: bytes, size: int) -> None:
+  block = (pattern * ((CHUNK_SIZE // len(pattern)) + 1))[:CHUNK_SIZE]
+  remaining = size
+  while remaining > 0:
+    data = block[:min(len(block), remaining)]
+    digest.update(data)
+    out.write(data)
+    remaining -= len(data)
+
+
+def write_sparse_image(reader: ImageReader, out: BinaryIO, digest: "hashlib._Hash") -> None:
+  header = read_exact(reader, SPARSE_HEADER.size)
+  magic, major, minor, file_hdr_sz, chunk_hdr_sz, block_sz, total_blocks, total_chunks, _ = SPARSE_HEADER.unpack(header)
+  if magic != SPARSE_MAGIC or major != 1 or minor != 0:
+    raise ValueError("invalid Android sparse image")
+  if file_hdr_sz < SPARSE_HEADER.size or chunk_hdr_sz < SPARSE_CHUNK_HEADER.size:
+    raise ValueError("invalid Android sparse header size")
+
+  read_exact(reader, file_hdr_sz - SPARSE_HEADER.size)
+  for _ in range(total_chunks):
+    chunk_header = read_exact(reader, chunk_hdr_sz)
+    chunk_type, _, chunk_blocks, total_sz = SPARSE_CHUNK_HEADER.unpack(chunk_header[:SPARSE_CHUNK_HEADER.size])
+    data_sz = total_sz - chunk_hdr_sz
+    out_sz = chunk_blocks * block_sz
+
+    if chunk_type == SPARSE_RAW:
+      if data_sz != out_sz:
+        raise ValueError("invalid sparse raw chunk size")
+      copy_exact(reader, out, data_sz, digest)
+    elif chunk_type == SPARSE_FILL:
+      if data_sz != 4:
+        raise ValueError("invalid sparse fill chunk size")
+      write_pattern(out, digest, read_exact(reader, 4), out_sz)
+    elif chunk_type == SPARSE_DONT_CARE:
+      read_exact(reader, data_sz)
+      hash_zeros(digest, out_sz)
+      out.seek(out_sz, os.SEEK_CUR)
+    elif chunk_type == SPARSE_CRC32:
+      read_exact(reader, data_sz)
+    else:
+      raise ValueError(f"unknown sparse chunk type: {chunk_type}")
+
+  expected_size = total_blocks * block_sz
+  if out.tell() != expected_size:
+    raise ValueError(f"sparse output size mismatch: {out.tell()} != {expected_size}")
+
+
+@dataclass(frozen=True)
+class Manifest:
+  version: str
+  description: str
+  release_notes: bytes
+  partitions: list[dict[str, Any]]
+
+  @classmethod
+  def parse(cls, data: Any) -> "Manifest":
+    if isinstance(data, list):
+      raise ValueError("manifest must include a top-level version")
+
+    version = data.get("version") or data.get("os_version")
+    partitions = data.get("partitions")
+    if not isinstance(version, str) or len(version) == 0:
+      raise ValueError("manifest missing version")
+    if not isinstance(partitions, list) or len(partitions) == 0:
+      raise ValueError("manifest missing partitions")
+
+    for partition in partitions:
+      if not isinstance(partition, dict) or not isinstance(partition.get("name"), str):
+        raise ValueError("invalid partition manifest entry")
+      partition_size(partition)
+      partition_hash(partition)
+      if not isinstance(partition.get("url"), str):
+        raise ValueError(f"missing URL for {partition.get('name')}")
+
+    notes = data.get("release_notes", b"")
+    if isinstance(notes, str):
+      notes = notes.encode("utf8")
+    return cls(version, data.get("description") or version, notes, partitions)
+
+
+class SlotBackend:
+  def current_slot(self) -> str:
+    raise NotImplementedError
+
+  def partition_path(self, slot: str, partition: dict[str, Any]) -> str:
+    raise NotImplementedError
+
+  def set_unbootable(self, slot: str) -> None:
+    raise NotImplementedError
+
+  def set_active(self, slot: str) -> None:
+    raise NotImplementedError
+
+  def mark_successful(self) -> None:
+    raise NotImplementedError
+
+  def os_version(self) -> str:
+    version = HARDWARE.get_os_version()
+    return version or ""
+
+  def target_slot(self) -> str:
+    return other_slot(self.current_slot())
+
+
+class RealSlotBackend(SlotBackend):
+  def current_slot(self) -> str:
+    current = run(["abctl", "--boot_slot"]).strip()
+    if current not in ("_a", "_b"):
+      raise RuntimeError(f"unknown boot slot: {current}")
+    return current[-1]
+
+  def partition_path(self, slot: str, partition: dict[str, Any]) -> str:
+    path = f"/dev/disk/by-partlabel/{partition['name']}"
+    if partition.get("has_ab", True):
+      path += f"_{slot}"
+    return path
+
+  def set_unbootable(self, slot: str) -> None:
+    run(["abctl", "--set_unbootable", str(slot_number(slot))])
+
+  def set_active(self, slot: str) -> None:
+    target = str(slot_number(slot))
+    last_output = ""
+    for _ in range(10):
+      last_output = run(["abctl", "--set_active", target])
+      if "No such file or directory" not in last_output and "lun as boot lun" in last_output:
+        cloudlog.info(f"slot {slot} active for next boot: {last_output}")
+        return
+      cloudlog.error(f"failed to set active slot {slot}: {last_output}")
+      time.sleep(1)
+    raise RuntimeError(f"failed to set active slot {slot}: {last_output}")
+
+  def mark_successful(self) -> None:
+    run(["sudo", "abctl", "--set_success"])
+
+
+class FakeSlotBackend(SlotBackend):
+  def __init__(self, root: str):
+    self.root = Path(root)
+    self.root.mkdir(parents=True, exist_ok=True)
+    if not self.state_path.is_file():
+      self.write_state({"current_slot": "a", "active_slot": "a", "unbootable": [], "successful": []})
+    for slot in SLOTS:
+      (self.root / f"slot_{slot}").mkdir(exist_ok=True)
+
+  @property
+  def state_path(self) -> Path:
+    return self.root / "state.json"
+
+  def read_state(self) -> dict[str, Any]:
+    return json.loads(self.state_path.read_text())
+
+  def write_state(self, state: dict[str, Any]) -> None:
+    self.state_path.write_text(json.dumps(state, sort_keys=True))
+
+  def current_slot(self) -> str:
+    return self.read_state()["current_slot"]
+
+  def partition_path(self, slot: str, partition: dict[str, Any]) -> str:
+    path = self.root / f"slot_{slot}" / partition["name"]
+    path.parent.mkdir(exist_ok=True)
+    return str(path)
+
+  def set_unbootable(self, slot: str) -> None:
+    state = self.read_state()
+    state["unbootable"] = sorted(set(state.get("unbootable", [])) | {slot})
+    self.write_state(state)
+
+  def set_active(self, slot: str) -> None:
+    state = self.read_state()
+    state["active_slot"] = slot
+    state["unbootable"] = [s for s in state.get("unbootable", []) if s != slot]
+    self.write_state(state)
+
+  def mark_successful(self) -> None:
+    state = self.read_state()
+    state["successful"] = sorted(set(state.get("successful", [])) | {state["current_slot"]})
+    self.write_state(state)
+
+  def os_version(self) -> str:
+    version_path = self.root / f"slot_{self.current_slot()}" / "VERSION"
+    return version_path.read_text().strip() if version_path.is_file() else ""
+
+  def set_current_slot(self, slot: str) -> None:
+    state = self.read_state()
+    state["current_slot"] = slot
+    state["active_slot"] = slot
+    self.write_state(state)
+
+  def set_slot_version(self, slot: str, version: str) -> None:
+    (self.root / f"slot_{slot}" / "VERSION").write_text(version)
+
+
+def make_backend() -> SlotBackend:
+  fake_root = os.getenv("UPDATER_FAKE_ROOT")
+  return FakeSlotBackend(fake_root) if fake_root else RealSlotBackend()
+
+
+def open_partition(path: str) -> BinaryIO:
+  Path(path).parent.mkdir(parents=True, exist_ok=True)
+  return open(path, "r+b" if os.path.exists(path) else "w+b")
+
+
+def clear_partition_hash(backend: SlotBackend, slot: str, partition: dict[str, Any]) -> None:
+  path = backend.partition_path(slot, partition)
+  with open_partition(path) as out:
+    out.seek(partition_size(partition))
+    out.write(b"\x00" * 64)
   os.sync()
-  overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
-
-  mount_cmd = ["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED]
-  run(["sudo"] + mount_cmd)
-  run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
-
-  git_diff = run(["git", "diff", "--submodule=diff"], OVERLAY_MERGED)
-  params.put("GitDiff", git_diff, block=True)
-  cloudlog.info(f"git diff output:\n{git_diff}")
 
 
-def finalize_update() -> None:
-  """Take the current OverlayFS merged view and finalize a copy outside of
-  OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
-
-  # Remove the update ready flag and any old updates
-  cloudlog.info("creating finalized version of the overlay")
-  set_consistent_flag(False)
-
-  # Copy the merged overlay view and set the update ready flag
-  if os.path.exists(FINALIZED):
-    shutil.rmtree(FINALIZED)
-  shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
-
-  run(["git", "reset", "--hard"], FINALIZED)
-  run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], FINALIZED)
-
-  cloudlog.info("Starting git cleanup in finalized update")
-  t = time.monotonic()
-  try:
-    run(["git", "gc"], FINALIZED)
-    run(["git", "lfs", "prune"], FINALIZED)
-    cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
-  except subprocess.CalledProcessError:
-    cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
-
-  set_consistent_flag(True)
-  cloudlog.info("done finalizing overlay")
+def write_partition_hash(backend: SlotBackend, slot: str, partition: dict[str, Any]) -> None:
+  path = backend.partition_path(slot, partition)
+  with open_partition(path) as out:
+    out.seek(partition_size(partition))
+    out.write(partition_hash(partition).encode())
+  os.sync()
 
 
-def handle_agnos_update() -> None:
-  from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
+def verify_partition(backend: SlotBackend, slot: str, partition: dict[str, Any], force_full_check: bool = False) -> bool:
+  path = backend.partition_path(slot, partition)
+  if not os.path.exists(path):
+    return False
 
-  cur_version = HARDWARE.get_os_version()
-  updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
+  size = partition_size(partition)
+  expected = partition_hash(partition)
+  if partition.get("full_check", True) or force_full_check:
+    return sha256_path(path, size) == expected
 
-  cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
-  if cur_version == updated_version:
+  with open(path, "rb") as f:
+    f.seek(size)
+    return f.read(64) == expected.encode()
+
+
+def verify_slot(backend: SlotBackend, slot: str, manifest: Manifest, force_full_check: bool = False) -> bool:
+  return all(verify_partition(backend, slot, partition, force_full_check) for partition in manifest.partitions)
+
+
+def flash_partition(backend: SlotBackend, slot: str, partition: dict[str, Any]) -> None:
+  name = partition["name"]
+  if verify_partition(backend, slot, partition):
+    cloudlog.info(f"{name} already flashed on slot {slot}")
     return
 
-  # prevent an openpilot getting swapped in with a mismatched or partially downloaded agnos
-  set_consistent_flag(False)
+  if not partition.get("full_check", True):
+    clear_partition_hash(backend, slot, partition)
 
-  cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
-  set_offroad_alert("Offroad_NeosUpdate", True)
+  path = backend.partition_path(slot, partition)
+  url = partition["url"]
+  expected_raw_hash = partition_hash(partition)
+  raw_hash = hashlib.sha256()
 
-  manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
-  target_slot_number = get_target_slot_number()
-  flash_agnos_update(manifest_path, target_slot_number, cloudlog)
-  set_offroad_alert("Offroad_NeosUpdate", False)
+  with ImageReader(url, url_is_xz(url, partition)) as image, open_partition(path) as out:
+    out.seek(0)
+    if partition.get("sparse", False):
+      write_sparse_image(image, out, raw_hash)
+    else:
+      copy_exact(image, out, partition_size(partition), raw_hash)
 
+    if len(image.read(1)) != 0:
+      raise ValueError(f"{name} image is larger than manifest size")
+
+    size = out.tell()
+    if size != partition_size(partition):
+      raise ValueError(f"{name} size mismatch: {size} != {partition_size(partition)}")
+    ensure_regular_file_size(out, size)
+    os.sync()
+
+  if raw_hash.hexdigest().lower() != expected_raw_hash:
+    raise ValueError(f"{name} raw hash mismatch")
+
+  expected_image_hash = partition.get("hash")
+  if isinstance(expected_image_hash, str) and image.sha256.hexdigest().lower() != expected_image_hash.lower():
+    raise ValueError(f"{name} image hash mismatch")
+
+  if not partition.get("full_check", True):
+    write_partition_hash(backend, slot, partition)
+
+
+def cleanup_old_overlay(basedir: str = BASEDIR, staging_root: str = STAGING_ROOT) -> None:
+  staging = Path(staging_root)
+  if str(staging) in ("", ".") or staging.resolve() in (Path("/"), Path("/data")):
+    raise ValueError(f"refusing to remove unsafe staging root: {staging}")
+
+  merged = staging / "merged"
+  if os.path.ismount(merged):
+    run(["sudo", "umount", "-l", str(merged)])
+  shutil.rmtree(staging, ignore_errors=True)
+
+  for name in (".overlay_init", ".overlay_consistent"):
+    Path(basedir, name).unlink(missing_ok=True)
 
 
 class Updater:
-  def __init__(self):
-    self.params = Params()
-    self.branches = defaultdict(str)
-    self._has_internet: bool = False
+  def __init__(self, params: Params | None = None, backend: SlotBackend | None = None, manifest_url: str = MANIFEST_URL):
+    self.params = params or Params()
+    self.backend = backend or make_backend()
+    self.manifest_url = manifest_url
+    self.verified_current_versions: set[str] = set()
 
-  @property
-  def has_internet(self) -> bool:
-    return self._has_internet
+  def fetch_manifest(self) -> Manifest:
+    parsed = urlparse(self.manifest_url)
+    if parsed.scheme in ("", "file"):
+      path = parsed.path if parsed.scheme == "file" else self.manifest_url
+      return Manifest.parse(json.loads(Path(path).read_text()))
 
-  @property
-  def target_branch(self) -> str:
-    b: str | None = self.params.get("UpdaterTargetBranch")
-    if b is None:
-      b = self.get_branch(BASEDIR)
-    b = {
-      ("tizi", "release3"): "release-tizi",
-      ("tizi", "release3-staging"): "release-tizi-staging",
-      ("mici", "release3"): "release-mici",
-      ("mici", "release3-staging"): "release-mici-staging",
-    }.get((HARDWARE.get_device_type(), b), b)
-    return b
+    query = {
+      "dongle_id": self.params.get("DongleId") or "",
+      "device": HARDWARE.get_device_type(),
+      "version": self.backend.os_version(),
+    }
+    r = requests.get(self.manifest_url, params=query, timeout=DOWNLOAD_TIMEOUT)
+    r.raise_for_status()
+    return Manifest.parse(r.json())
 
-  @property
-  def update_ready(self) -> bool:
-    consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-    if consistent_file.is_file():
-      hash_mismatch = self.get_commit_hash(BASEDIR) != self.branches[self.target_branch]
-      branch_mismatch = self.get_branch(BASEDIR) != self.target_branch
-      on_target_branch = self.get_branch(FINALIZED) == self.target_branch
-      return ((hash_mismatch or branch_mismatch) and on_target_branch)
-    return False
+  def set_descriptions(self, manifest: Manifest) -> None:
+    self.params.put("UpdaterCurrentDescription", self.backend.os_version(), block=True)
+    self.params.put("UpdaterCurrentReleaseNotes", b"", block=True)
+    self.params.put("UpdaterNewDescription", manifest.description, block=True)
+    self.params.put("UpdaterNewReleaseNotes", manifest.release_notes, block=True)
+    self.params.put("UpdaterTargetBranch", "release", block=True)
+    self.params.put("UpdaterAvailableBranches", "release", block=True)
 
-  @property
-  def update_available(self) -> bool:
-    if os.path.isdir(OVERLAY_MERGED) and len(self.branches) > 0:
-      hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
-      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
-      return hash_mismatch or branch_mismatch
-    return False
+  def current_slot_integrity_ok(self, manifest: Manifest) -> bool:
+    if not VERIFY_CURRENT_SLOT or self.backend.os_version() != manifest.version:
+      return True
 
-  def get_branch(self, path: str) -> str:
-    return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
+    key = f"{self.backend.current_slot()}:{manifest.version}"
+    if key in self.verified_current_versions:
+      return True
 
-  def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
-    return run(["git", "rev-parse", "HEAD"], path).rstrip()
+    self.params.put("UpdaterState", "verifying current slot...", block=True)
+    ok = verify_slot(self.backend, self.backend.current_slot(), manifest, force_full_check=True)
+    self.verified_current_versions.add(key)
+    if not ok:
+      cloudlog.error("current slot failed manifest verification")
+    return ok
 
-  def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
-    self.params.put("UpdateFailedCount", failed_count, block=True)
-    self.params.put("UpdaterTargetBranch", self.target_branch, block=True)
+  def mark_ready(self, manifest: Manifest) -> None:
+    self.params.put_bool("UpdaterFetchAvailable", False, block=True)
+    self.params.put_bool("UpdateAvailable", True, block=True)
+    write_time_to_param(self.params, "LastUpdateTime")
+    self.set_descriptions(manifest)
 
-    self.params.put_bool("UpdaterFetchAvailable", self.update_available, block=True)
-    if len(self.branches):
-      self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()), block=True)
+  def install_update(self, manifest: Manifest) -> None:
+    target = self.backend.target_slot()
+    cloudlog.info(f"installing {manifest.version} to slot {target}")
 
-    last_uptime_onroad = self.params.get("UptimeOnroad", return_default=True)
-    last_route_count = self.params.get("RouteCount", return_default=True)
-    if update_success:
-      self.params.put("LastUpdateTime", datetime.datetime.now(datetime.UTC).replace(tzinfo=None), block=True)
-      self.params.put("LastUpdateUptimeOnroad", last_uptime_onroad, block=True)
-      self.params.put("LastUpdateRouteCount", last_route_count, block=True)
-    else:
-      last_uptime_onroad = self.params.get("LastUpdateUptimeOnroad", return_default=True)
-      last_route_count = self.params.get("LastUpdateRouteCount", return_default=True)
-
-    if exception is None:
-      self.params.remove("LastUpdateException")
-    else:
-      self.params.put("LastUpdateException", exception, block=True)
-
-    # Write out current and new version info
-    def get_description(basedir: str) -> str:
-      if not os.path.exists(basedir):
-        return ""
-
-      version = ""
-      branch = ""
-      commit = ""
-      commit_date = ""
-      try:
-        branch = self.get_branch(basedir)
-        commit = self.get_commit_hash(basedir)[:7]
-        with open(os.path.join(basedir, "common", "version.h")) as f:
-          version = f.read().split('"')[1]
-
-        commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
-        dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
-        commit_date = dt.strftime("%b %d")
-      except Exception:
-        cloudlog.exception("updater.get_description")
-      return f"{version} / {branch} / {commit} / {commit_date}"
-    self.params.put("UpdaterCurrentDescription", get_description(BASEDIR), block=True)
-    self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR), block=True)
-    self.params.put("UpdaterNewDescription", get_description(FINALIZED), block=True)
-    self.params.put("UpdaterNewReleaseNotes", parse_release_notes(FINALIZED), block=True)
-    self.params.put_bool("UpdateAvailable", self.update_ready, block=True)
-
-    # Handle user prompt
-    for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
-      set_offroad_alert(alert, False)
-
-    dt_uptime_onroad = (self.params.get("UptimeOnroad", return_default=True) - last_uptime_onroad) / (60*60)
-    dt_route_count = self.params.get("RouteCount", return_default=True) - last_route_count
-    build_metadata = get_build_metadata()
-    if failed_count > 15 and exception is not None and self.has_internet:
-      if build_metadata.tested_channel:
-        extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
-      else:
-        extra_text = exception
-      set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
-    elif failed_count > 0:
-      if dt_uptime_onroad > HOURS_NO_CONNECTIVITY_MAX and dt_route_count > ROUTES_NO_CONNECTIVITY_MAX:
-        set_offroad_alert("Offroad_ConnectivityNeeded", True)
-      elif dt_uptime_onroad > HOURS_NO_CONNECTIVITY_PROMPT and dt_route_count > ROUTES_NO_CONNECTIVITY_PROMPT:
-        remaining = max(HOURS_NO_CONNECTIVITY_MAX - dt_uptime_onroad, 1)
-        set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} hour{'' if remaining == 1 else 's'}.")
-
-  def check_for_update(self) -> None:
-    cloudlog.info("checking for updates")
-
-    excluded_branches = ('release2', 'release2-staging')
-
-    try:
-      run(["git", "ls-remote", "origin", "HEAD"], OVERLAY_MERGED)
-      self._has_internet = True
-    except subprocess.CalledProcessError:
-      self._has_internet = False
-
-    setup_git_options(OVERLAY_MERGED)
-    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
-
-    self.branches = defaultdict(lambda: None)
-    for line in output.split('\n'):
-      ls_remotes_re = r'(?P<commit_sha>\b[0-9a-f]{5,40}\b)(\s+)(refs\/heads\/)(?P<branch_name>.*$)'
-      x = re.fullmatch(ls_remotes_re, line.strip())
-      if x is not None and x.group('branch_name') not in excluded_branches:
-        self.branches[x.group('branch_name')] = x.group('commit_sha')
-
-    cur_branch = self.get_branch(OVERLAY_MERGED)
-    cur_commit = self.get_commit_hash(OVERLAY_MERGED)
-    new_branch = self.target_branch
-    new_commit = self.branches[new_branch]
-    if (cur_branch, cur_commit) != (new_branch, new_commit):
-      cloudlog.info(f"update available, {cur_branch} ({str(cur_commit)[:7]}) -> {new_branch} ({str(new_commit)[:7]})")
-    else:
-      cloudlog.info(f"up to date on {cur_branch} ({str(cur_commit)[:7]})")
-
-  def fetch_update(self) -> None:
-    cloudlog.info("attempting git fetch inside staging overlay")
-
-    self.params.put("UpdaterState", "downloading...", block=True)
-
-    # TODO: cleanly interrupt this and invalidate old update
-    set_consistent_flag(False)
+    self.backend.set_unbootable(target)
     self.params.put_bool("UpdateAvailable", False, block=True)
 
-    setup_git_options(OVERLAY_MERGED)
+    for partition in manifest.partitions:
+      self.params.put("UpdaterState", f"downloading {partition['name']}...", block=True)
+      for retry in range(PARTITION_RETRIES):
+        try:
+          flash_partition(self.backend, target, partition)
+          break
+        except requests.RequestException:
+          cloudlog.exception(f"failed to download {partition['name']}, retrying ({retry})")
+          time.sleep(10)
+      else:
+        raise RuntimeError(f"failed to flash {partition['name']}")
 
-    run(["git", "config", "--replace-all", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"], OVERLAY_MERGED)
+    self.params.put("UpdaterState", "verifying update...", block=True)
+    if not verify_slot(self.backend, target, manifest, force_full_check=True):
+      raise RuntimeError(f"slot {target} failed verification")
 
-    branch = self.target_branch
-    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
-    cloudlog.info("git fetch success: %s", git_fetch_output)
+    self.params.put("UpdaterState", "activating update...", block=True)
+    self.backend.set_active(target)
+    if isinstance(self.backend, FakeSlotBackend):
+      self.backend.set_slot_version(target, manifest.version)
+    self.mark_ready(manifest)
 
-    cloudlog.info("git reset in progress")
-    cmds = [
-      ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
-      ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
-      ["git", "reset", "--hard"],
-      ["git", "clean", "-xdff"],
-      ["git", "submodule", "sync"],
-      ["git", "submodule", "update", "--init", "--recursive"],
-      ["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"],
-    ]
-    r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
-    cloudlog.info("git reset success: %s", '\n'.join(r))
+  def update_once(self, download: bool = True) -> None:
+    self.params.put("UpdaterState", "checking...", block=True)
+    manifest = self.fetch_manifest()
+    self.set_descriptions(manifest)
 
-    # TODO: show agnos download progress
-    if AGNOS:
-      handle_agnos_update()
+    current_ok = self.current_slot_integrity_ok(manifest)
+    update_needed = self.backend.os_version() != manifest.version or not current_ok
+    self.params.put_bool("UpdaterFetchAvailable", update_needed, block=True)
 
-    # Create the finalized, ready-to-swap update
-    self.params.put("UpdaterState", "finalizing update...", block=True)
-    finalize_update()
-    cloudlog.info("finalize success!")
+    if not update_needed:
+      self.params.put_bool("UpdateAvailable", False, block=True)
+      write_time_to_param(self.params, "LastUpdateTime")
+      cloudlog.info(f"up to date on {manifest.version}")
+      return
+
+    target = self.backend.target_slot()
+    if not download:
+      cloudlog.info(f"update available: {self.backend.os_version()} -> {manifest.version}")
+      return
+
+    if verify_slot(self.backend, target, manifest):
+      cloudlog.info(f"slot {target} already contains {manifest.version}, activating")
+      self.backend.set_active(target)
+      self.mark_ready(manifest)
+      return
+
+    self.install_update(manifest)
+
+
+def set_update_alert(failed_count: int, exception: str | None) -> None:
+  set_offroad_alert("Offroad_UpdateFailed", False)
+  if failed_count > 3 and exception is not None:
+    set_offroad_alert("Offroad_UpdateFailed", True, extra_text=exception)
+
+
+def should_download(params: Params, request: int) -> bool:
+  if request == UserRequest.CHECK:
+    return False
+  if request == UserRequest.FETCH:
+    return True
+
+  last_fetch = params.get("UpdaterLastFetchTime")
+  timed_out = last_fetch is None or (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_fetch > datetime.timedelta(days=3))
+  return not params.get_bool("NetworkMetered") or timed_out
 
 
 def main() -> None:
   params = Params()
-
   if params.get_bool("DisableUpdates"):
     cloudlog.warning("updates are disabled by the DisableUpdates param")
-    exit(0)
+    return
 
-  with open(LOCK_FILE, 'w') as ov_lock_fd:
+  with open(LOCK_FILE, "w") as lock:
     try:
-      fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+      fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError as e:
-      raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
+      raise RuntimeError("couldn't get updater lock; is another instance running?") from e
 
-    # Set low io priority
     proc = psutil.Process()
     if psutil.LINUX:
       proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
-    # Check if we just performed an update
-    if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
-      cloudlog.event("update installed")
-
-    if not params.get("InstallDate"):
-      t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-      params.put("InstallDate", t, block=True)
-
-    updater = Updater()
-    update_failed_count = 0 # TODO: Load from param?
+    cleanup_old_overlay()
+    updater = Updater(params)
     wait_helper = WaitTimeHelper()
+    failed_count = 0
 
-    # invalidate old finalized update
-    set_consistent_flag(False)
+    try:
+      updater.backend.mark_successful()
+    except Exception:
+      cloudlog.exception("failed to mark boot successful")
 
-    # set initial state
     params.put("UpdaterState", "idle", block=True)
+    params.put_bool("UpdateAvailable", False, block=True)
 
-    # Run the update loop
     first_run = True
     while True:
       wait_helper.ready_event.clear()
-
-      # Attempt an update
       exception = None
+      download = should_download(params, wait_helper.user_request)
+
       try:
-        # TODO: reuse overlay from previous updated instance if it looks clean
-        init_overlay()
-
-        # ensure we have some params written soon after startup
-        updater.set_params(False, update_failed_count, exception)
-
         if not system_time_valid() or first_run:
           first_run = False
           wait_helper.sleep(60)
           continue
 
-        update_failed_count += 1
-
-        # check for update
-        params.put("UpdaterState", "checking...", block=True)
-        updater.check_for_update()
-
-        # download update
-        last_fetch = params.get("UpdaterLastFetchTime")
-        timed_out = last_fetch is None or (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_fetch > datetime.timedelta(days=3))
-        user_requested_fetch = wait_helper.user_request == UserRequest.FETCH
-        if params.get_bool("NetworkMetered") and not timed_out and not user_requested_fetch:
-          cloudlog.info("skipping fetch, connection metered")
-        elif wait_helper.user_request == UserRequest.CHECK:
-          cloudlog.info("skipping fetch, only checking")
-        else:
-          updater.fetch_update()
+        updater.update_once(download)
+        if download:
           write_time_to_param(params, "UpdaterLastFetchTime")
-        update_failed_count = 0
+        failed_count = 0
+        params.remove("LastUpdateException")
       except subprocess.CalledProcessError as e:
-        cloudlog.event(
-          "update process failed",
-          cmd=e.cmd,
-          output=e.output,
-          returncode=e.returncode
-        )
+        failed_count += 1
+        cloudlog.event("update process failed", cmd=e.cmd, output=e.output, returncode=e.returncode)
         exception = f"command failed: {e.cmd}\n{e.output}"
-        OVERLAY_INIT.unlink(missing_ok=True)
+        params.put("LastUpdateException", exception, block=True)
       except Exception as e:
-        cloudlog.exception("uncaught updated exception, shouldn't happen")
+        failed_count += 1
+        cloudlog.exception("uncaught updated exception")
         exception = str(e)
-        OVERLAY_INIT.unlink(missing_ok=True)
-
-      try:
+        params.put("LastUpdateException", exception, block=True)
+      finally:
+        params.put("UpdateFailedCount", failed_count, block=True)
         params.put("UpdaterState", "idle", block=True)
-        update_successful = (update_failed_count == 0)
-        updater.set_params(update_successful, update_failed_count, exception)
-      except Exception:
-        cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+        set_update_alert(failed_count, exception)
+        wait_helper.user_request = UserRequest.NONE
 
-      # infrequent attempts if we successfully updated recently
-      wait_helper.user_request = UserRequest.NONE
-      wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
+      wait_helper.sleep(5 * 60 if failed_count > 0 else 1.5 * 60 * 60)
 
 
 if __name__ == "__main__":
