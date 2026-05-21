@@ -569,9 +569,18 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startJoystickStream(sdp: str) -> dict:
+def startStream(sdp: str) -> dict:
   from openpilot.system.webrtc.webrtcd import StreamRequestBody
-  body = StreamRequestBody(sdp, ["driver"], ["testJoystick"], ["carState"])
+  bridge_services_in = []
+
+  # get live car params to avoid stale notCar edge case
+  cp_bytes = Params().get("CarParams")
+  if cp_bytes is not None:
+    with car.CarParams.from_bytes(cp_bytes) as CP:
+      if CP.notCar:
+        bridge_services_in.append("testJoystick")
+
+  body = StreamRequestBody(sdp, ["driver"], bridge_services_in, ["carState"])
   try:
     resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream",
                        json=asdict(body), timeout=10)
@@ -582,10 +591,10 @@ def startJoystickStream(sdp: str) -> dict:
       except ValueError:
         resp.raise_for_status()
     return resp.json()
-  except requests.ConnectTimeout:
-    raise Exception("webrtc took too long to respond. is it on?") from None
-  except requests.ConnectionError:
-    raise Exception("webrtc is not running. turn on comma body ignition.") from None
+  except requests.ConnectTimeout as e:
+    raise Exception("webrtc took too long to respond. is it on?") from e
+  except requests.ConnectionError as e:
+    raise Exception("webrtc is not running. turn on comma body ignition.") from e
 
 
 @dispatcher.add_method
