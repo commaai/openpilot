@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import atexit
 import os
 import pickle
 import time
@@ -7,10 +8,30 @@ from functools import partial
 from collections import namedtuple, defaultdict
 
 import numpy as np
+
+def _patch_tinygrad_fetch_fw():
+  import hashlib
+  import pathlib
+  import zstandard
+  from tinygrad import helpers
+  _orig = helpers.fetch_fw
+  def fetch_fw(path, name, sha256):
+    p = pathlib.Path(f"/lib/firmware/{path}/{name}.zst")
+    if p.is_file():
+      blob = zstandard.ZstdDecompressor().stream_reader(p.read_bytes()).read()
+      if hashlib.sha256(blob).hexdigest() == sha256:
+        return blob
+    return _orig(path, name, sha256)
+  helpers.fetch_fw = fetch_fw
+_patch_tinygrad_fetch_fw()
+
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
+
+from openpilot.common.file_chunker import read_file_chunked
+from openpilot.system.hardware.hw import Paths
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
@@ -18,13 +39,15 @@ NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'u
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
+WARP_DEV = os.getenv('WARP_DEV')
+
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
   w_dst, h_dst = dst_shape
   h_src, w_src = src_shape
 
-  x = Tensor.arange(w_dst).reshape(1, w_dst).expand(h_dst, w_dst).reshape(-1)
-  y = Tensor.arange(h_dst).reshape(h_dst, 1).expand(h_dst, w_dst).reshape(-1)
+  x = Tensor.arange(w_dst, device=WARP_DEV).reshape(1, w_dst).expand(h_dst, w_dst).reshape(-1)
+  y = Tensor.arange(h_dst, device=WARP_DEV).reshape(h_dst, 1).expand(h_dst, w_dst).reshape(-1)
 
   # inline 3x3 matmul as elementwise to avoid reduce op (enables fusion with gather)
   src_x = M_inv[0, 0] * x + M_inv[0, 1] * y + M_inv[0, 2]
@@ -68,7 +91,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
 
   def frame_prepare_tinygrad(input_frame, M_inv):
     # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
-    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]])
+    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=WARP_DEV)
     # deinterleave NV12 UV plane (UVUV... -> separate U, V)
     uv = input_frame[uv_offset:uv_offset + uv_height * stride].reshape(uv_height, stride)
     with Context(SPLIT_REDUCEOP=0):
@@ -103,10 +126,10 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
   input_queues = {
-    'img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
-    'big_img_q': Tensor.zeros(img_buf_shape, dtype='uint8', device=device).contiguous().realize(),
-    'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2], device=device).contiguous().realize(),
-    'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2], device=device).contiguous().realize(),
+    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
+    'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return input_queues, npy
@@ -132,14 +155,16 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(Device.DEFAULT)
-    big_tfm = big_tfm.to(Device.DEFAULT)
+    tfm = tfm.to(WARP_DEV)
+    big_tfm = big_tfm.to(WARP_DEV)
     desire = desire.to(Device.DEFAULT)
     traffic_convention = traffic_convention.to(Device.DEFAULT)
     Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
+    img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
 
     if prepare_only:
       return img, big_img
@@ -180,8 +205,8 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     n_runs = 1 if testing else 3
 
     for i in range(n_runs):
-      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
-      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
+      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
+      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
@@ -219,6 +244,14 @@ def _parse_size(s):
   return int(w), int(h)
 
 
+def read_file_chunked_to_shm(path):
+  shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
+  atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
+  with open(shm_path, 'wb') as f:
+    f.write(read_file_chunked(path))
+  return shm_path
+
+
 if __name__ == "__main__":
   from tinygrad.nn.onnx import OnnxRunner
   from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
@@ -235,10 +268,11 @@ if __name__ == "__main__":
   out = defaultdict(dict)
   # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
-  vision_runner = OnnxRunner(args.vision_onnx)
-  policy_runner = OnnxRunner(args.policy_onnx)
-  out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
-  out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
+  vision_path, policy_path = read_file_chunked_to_shm(args.vision_onnx), read_file_chunked_to_shm(args.policy_onnx)
+  vision_runner = OnnxRunner(vision_path)
+  policy_runner = OnnxRunner(policy_path)
+  out['metadata']['vision'] = make_metadata_dict(vision_path)
+  out['metadata']['policy'] = make_metadata_dict(policy_path)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))

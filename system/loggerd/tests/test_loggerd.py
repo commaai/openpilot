@@ -82,7 +82,7 @@ class TestLoggerd:
       assert pm.wait_for_readers_to_update(s, timeout=5)
 
     sent_msgs = defaultdict(list)
-    for _ in range(random.randint(2, 10) * 100):
+    for i in range(random.randint(2, 10) * 100):
       for s in services:
         try:
           m = messaging.new_message(s)
@@ -90,6 +90,12 @@ class TestLoggerd:
           m = messaging.new_message(s, random.randint(2, 10))
         pm.send(s, m)
         sent_msgs[s].append(m)
+
+      # Keep msgq's finite per-service queues from wrapping; this test asserts
+      # that loggerd logged every message we sent.
+      if (i + 1) % 100 == 0:
+        for s in services:
+          assert pm.wait_for_readers_to_update(s, timeout=5)
 
     for s in services:
       assert pm.wait_for_readers_to_update(s, timeout=5)
