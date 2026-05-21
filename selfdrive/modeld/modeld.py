@@ -21,6 +21,7 @@ from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
+from openpilot.selfdrive.modeld.compile_modeld import NV12Frame, bind_camera_vars, make_camera_vars
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -93,12 +94,21 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = jits[(cam_w,cam_h)]['run_policy']
-    self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
+    self.nv12 = NV12Frame(cam_w, cam_h, *self.frame_buf_params['img'])
+    self.max_frame_size = jits.get('max_frame_size', self.nv12.size)
+    self.camera_vars, _ = make_camera_vars(list(jits.get('camera_configs', {self.nv12[:2]: self.nv12}).values()))
+    if 'symbolic' in jits:
+      self.run_policy = jits['symbolic']['run_policy']
+      self.warp_enqueue = jits['symbolic']['warp_enqueue']
+    else:
+      self.run_policy = jits[(cam_w,cam_h)]['run_policy']
+      self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
+    self.camera_args = bind_camera_vars(self.camera_vars, self.nv12) if 'symbolic' in jits else {}
     self.warp_enqueue(
       **self.input_queues,
-      frame=Tensor(np.zeros(self.frame_buf_params['img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize(),
-      big_frame=Tensor(np.zeros(self.frame_buf_params['big_img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize())
+      frame=Tensor(np.zeros(self.max_frame_size, dtype=np.uint8), device=self.WARP_DEV).contiguous().realize(),
+      big_frame=Tensor(np.zeros(self.max_frame_size, dtype=np.uint8), device=self.WARP_DEV).contiguous().realize(),
+      **self.camera_args)
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -108,11 +118,10 @@ class ModelState:
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     for key in bufs.keys():
       ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
-      yuv_size = self.frame_buf_params[key][3]
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
       cache_key = (key, ptr)
       if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
+        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (self.max_frame_size,), dtype='uint8', device=self.WARP_DEV)
       self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
@@ -124,11 +133,11 @@ class ModelState:
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
     if prepare_only:
-      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'], **self.camera_args)
       return None
 
     vision_output, policy_output = self.run_policy(
-      **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
+      **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'], **self.camera_args
     )
 
     vision_output = vision_output.numpy().flatten()

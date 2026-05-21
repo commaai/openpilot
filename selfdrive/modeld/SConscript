@@ -121,12 +121,12 @@ lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_file
 
 dm_w, dm_h = DM_INPUT_SIZE
 compile_dm_warp_script = [File(f"{modeld_dir}/compile_dm_warp.py")]
-for cam_w, cam_h in CAMERA_CONFIGS:
-  dm_pkl_path = File(f"models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
-  cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_dm_warp.py '
-         f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} '
-         f'--output {dm_pkl_path}')
-  lenv.Command(dm_pkl_path, tinygrad_files + compile_dm_warp_script + compile_modeld_script + [tg_devices_node], cmd)
+dm_pkl_path = File("models/dm_warp_tinygrad.pkl").abspath
+camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
+cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_dm_warp.py '
+       f'--camera-resolutions {camera_res_args} --warp-to {dm_w}x{dm_h} '
+       f'--output {dm_pkl_path}')
+lenv.Command(dm_pkl_path, tinygrad_files + compile_dm_warp_script + compile_modeld_script + [Value(camera_res_args), tg_devices_node], cmd)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'

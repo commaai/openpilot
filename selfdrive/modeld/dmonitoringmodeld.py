@@ -16,6 +16,7 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
+from openpilot.selfdrive.modeld.compile_modeld import NV12Frame, bind_camera_vars, make_camera_vars
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -44,8 +45,20 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
-    with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
-      self.image_warp = pickle.load(f)
+    self.nv12 = NV12Frame(cam_w, cam_h, *self.frame_buf_params)
+    dm_warp_path = MODELS_DIR / 'dm_warp_tinygrad.pkl'
+    if dm_warp_path.is_file():
+      with open(dm_warp_path, "rb") as f:
+        dm_warp = pickle.load(f)
+      self.image_warp = dm_warp['warp']
+      self.max_frame_size = dm_warp['max_frame_size']
+      self.camera_vars, _ = make_camera_vars(list(dm_warp['camera_configs'].values()))
+      self.camera_args = bind_camera_vars(self.camera_vars, self.nv12)
+    else:
+      with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
+        self.image_warp = pickle.load(f)
+      self.max_frame_size = self.frame_buf_params[3]
+      self.camera_args = {}
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -55,10 +68,10 @@ class ModelState:
     ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DEV)
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.max_frame_size,), dtype='uint8', device=self.DEV)
 
     self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
+    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'], **self.camera_args)
 
     output = self.model_run(**self.tensor_inputs).numpy().flatten()
 

@@ -26,12 +26,12 @@ def _patch_tinygrad_fetch_fw():
 _patch_tinygrad_fetch_fw()
 
 from tinygrad.tensor import Tensor
+from tinygrad import Variable
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
 from openpilot.common.file_chunker import read_file_chunked
-from openpilot.system.hardware.hw import Paths
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
@@ -41,8 +41,66 @@ UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
 WARP_DEV = os.getenv('WARP_DEV')
 
+_ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE = None
 
-def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
+
+def _optimize_local_size_or_skip(call, prg):
+  try:
+    return _ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE(call, prg)
+  except AssertionError as e:
+    if str(e) != "all optimize_local_size exec failed":
+      raise
+    from dataclasses import replace
+    preferred = (32, 16, 1)
+    local_size = tuple(next(x for x in range(min(preferred[i] if i < len(preferred) else 1, g), 0, -1) if g % x == 0)
+                       for i, g in enumerate(prg.arg.global_size))
+    new_global = tuple(g//l if g % l == 0 else g/l for g, l in zip(prg.arg.global_size, local_size))
+    return call.replace(src=(prg.replace(arg=replace(prg.arg, global_size=new_global, local_size=local_size)), *call.src[1:]))
+
+
+def _patch_tinygrad_local_size_optimizer():
+  global _ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE
+  from tinygrad.engine import realize
+  from tinygrad.uop.ops import Ops, PatternMatcher, UPat
+
+  _ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE = realize.optimize_local_size
+  realize.pm_optimize_local_size = PatternMatcher([
+    (UPat(Ops.CALL, src=(UPat(Ops.PROGRAM, name="prg"),), name="call", allow_any_len=True), _optimize_local_size_or_skip),
+  ])
+
+
+_patch_tinygrad_local_size_optimizer()
+
+
+def make_camera_vars(camera_configs: list[NV12Frame]):
+  max_cam_w = max(nv12.width for nv12 in camera_configs)
+  max_cam_h = max(nv12.height for nv12 in camera_configs)
+  max_stride = max(nv12.stride for nv12 in camera_configs)
+  max_uv_offset = max(nv12.stride * nv12.y_height for nv12 in camera_configs)
+  max_frame_size = max(nv12.size for nv12 in camera_configs)
+  return {
+    'cam_w': Variable('cam_w', 1, max_cam_w),
+    'cam_h': Variable('cam_h', 1, max_cam_h),
+    'chroma_w': Variable('chroma_w', 1, max_cam_w // 2),
+    'chroma_h': Variable('chroma_h', 1, max_cam_h // 2),
+    'stride': Variable('stride', 1, max_stride),
+    'uv_offset': Variable('uv_offset', 1, max_uv_offset),
+  }, max_frame_size
+
+
+def bind_camera_vars(camera_vars, nv12: NV12Frame):
+  values = {
+    'cam_w': nv12.width,
+    'cam_h': nv12.height,
+    'chroma_w': nv12.width // 2,
+    'chroma_h': nv12.height // 2,
+    'stride': nv12.stride,
+    'uv_offset': nv12.stride * nv12.y_height,
+  }
+  return {k: v.bind(values[k]) for k, v in camera_vars.items()}
+
+
+def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride, src_offset=0, x_step=1, channel=0, border_fill_val=None):
   w_dst, h_dst = dst_shape
   h_src, w_src = src_shape
 
@@ -61,7 +119,7 @@ def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad,
   y_round = Tensor.round(src_y)
   x_nn_clipped = x_round.clip(0, w_src - 1).cast('int')
   y_nn_clipped = y_round.clip(0, h_src - 1).cast('int')
-  idx = y_nn_clipped * (w_src + stride_pad) + x_nn_clipped
+  idx = y_nn_clipped * stride + x_nn_clipped * x_step + src_offset + channel
   sampled = src_flat[idx]
 
   if border_fill_val is None:
@@ -84,26 +142,18 @@ def frames_to_tensor(frames):
   return in_img1
 
 
-def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
-  cam_w, cam_h, stride, y_height, uv_height, _ = nv12
-  uv_offset = stride * y_height
-  stride_pad = stride - cam_w
-
-  def frame_prepare_tinygrad(input_frame, M_inv):
+def make_frame_prepare(model_w, model_h):
+  def frame_prepare_tinygrad(input_frame, M_inv, cam_w, cam_h, chroma_w, chroma_h, stride, uv_offset):
     # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
     M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=WARP_DEV)
-    # deinterleave NV12 UV plane (UVUV... -> separate U, V)
-    uv = input_frame[uv_offset:uv_offset + uv_height * stride].reshape(uv_height, stride)
     with Context(SPLIT_REDUCEOP=0):
-      y = warp_perspective_tinygrad(input_frame[:cam_h*stride],
-                                    M_inv, (model_w, model_h),
-                                    (cam_h, cam_w), stride_pad).realize()
-      u = warp_perspective_tinygrad(uv[:cam_h//2, :cam_w:2].flatten(),
-                                    M_inv_uv, (model_w//2, model_h//2),
-                                    (cam_h//2, cam_w//2), 0).realize()
-      v = warp_perspective_tinygrad(uv[:cam_h//2, 1:cam_w:2].flatten(),
-                                    M_inv_uv, (model_w//2, model_h//2),
-                                    (cam_h//2, cam_w//2), 0).realize()
+      y = warp_perspective_tinygrad(input_frame, M_inv, (model_w, model_h),
+                                    (cam_h, cam_w), stride).realize()
+      # Gather directly from interleaved NV12 UV memory so symbolic widths avoid step=2 slicing.
+      u = warp_perspective_tinygrad(input_frame, M_inv_uv, (model_w//2, model_h//2),
+                                    (chroma_h, chroma_w), stride, uv_offset, x_step=2, channel=0).realize()
+      v = warp_perspective_tinygrad(input_frame, M_inv_uv, (model_w//2, model_h//2),
+                                    (chroma_h, chroma_w), stride, uv_offset, x_step=2, channel=1).realize()
     yuv = y.cat(u).cat(v).reshape((model_h * 3 // 2, model_w))
     tensor = frames_to_tensor(yuv)
     return tensor
@@ -148,21 +198,22 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, model_h,
+def make_run_policy(vision_runner, policy_runner, model_w, model_h,
                     vision_features_slice, frame_skip, prepare_only=False):
-  frame_prepare = make_frame_prepare(nv12, model_w, model_h)
+  frame_prepare = make_frame_prepare(model_w, model_h)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
-  def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
+  def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm,
+                 frame, big_frame, cam_w, cam_h, chroma_w, chroma_h, stride, uv_offset):
     tfm = tfm.to(WARP_DEV)
     big_tfm = big_tfm.to(WARP_DEV)
     desire = desire.to(Device.DEFAULT)
     traffic_convention = traffic_convention.to(Device.DEFAULT)
     Tensor.realize(tfm, big_tfm, desire, traffic_convention)
 
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
+    warped_frame = frame_prepare(frame, tfm, cam_w, cam_h, chroma_w, chroma_h, stride, uv_offset).unsqueeze(0).to(Device.DEFAULT)
+    warped_big_frame = frame_prepare(big_frame, big_tfm, cam_w, cam_h, chroma_w, chroma_h, stride, uv_offset).unsqueeze(0).to(Device.DEFAULT)
     img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
 
@@ -182,21 +233,24 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
   return run_policy
 
 
-def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
+def compile_modeld(camera_configs: list[NV12Frame], model_w, model_h, prepare_only, frame_skip,
                    vision_runner, policy_runner, vision_metadata, policy_metadata):
-  print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
+  print(f"Compiling combined policy JIT for {len(camera_configs)} camera sizes (prepare_only={prepare_only})...")
 
   vision_features_slice = vision_metadata['output_slices']['hidden_state']
   vision_input_shapes = vision_metadata['input_shapes']
   policy_input_shapes = policy_metadata['input_shapes']
 
-  _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
+  camera_vars, max_frame_size = make_camera_vars(camera_configs)
+  max_nv12 = max(camera_configs, key=lambda n: n.size)
+
+  _run = make_run_policy(vision_runner, policy_runner, model_w, model_h,
                          vision_features_slice, frame_skip, prepare_only)
   run_policy_jit = TinyJit(_run, prune=True)
 
   SEED = 42
 
-  def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
+  def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True, camera_config=None):
     input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, Device.DEFAULT)
     np.random.seed(seed)
     Tensor.manual_seed(seed)
@@ -205,17 +259,19 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     n_runs = 1 if testing else 3
 
     for i in range(n_runs):
-      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
-      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
+      nv12 = camera_config or camera_configs[0]
+      camera_args = bind_camera_vars(camera_vars, nv12)
+      frame = Tensor.randint(max_frame_size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
+      big_frame = Tensor.randint(max_frame_size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
       st = time.perf_counter()
-      outs = fn(**input_queues, frame=frame, big_frame=big_frame)
+      outs = fn(**input_queues, frame=frame, big_frame=big_frame, **camera_args)
       mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
-      print(f"  [{i+1}/{n_runs}] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
+      print(f"  [{i+1}/{n_runs}] {nv12.width}x{nv12.height} enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
       if i == 0:
         val = [np.copy(v.numpy()) for v in outs]
@@ -236,6 +292,11 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   run_policy_jit = pickle.loads(pickle.dumps(run_policy_jit))
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
+  for i, nv12 in enumerate(camera_configs[1:]):
+    print(f'symbolic replay {nv12.width}x{nv12.height}')
+    random_inputs_run_fn(run_policy_jit, SEED+2+i, camera_config=nv12)
+  run_policy_jit.max_frame_size = max_frame_size
+  run_policy_jit.max_camera_size = (max_nv12.width, max_nv12.height)
   return run_policy_jit
 
 
@@ -245,6 +306,8 @@ def _parse_size(s):
 
 
 def read_file_chunked_to_shm(path):
+  from openpilot.system.hardware.hw import Paths
+
   shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
   atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
   with open(shm_path, 'wb') as f:
@@ -274,14 +337,15 @@ if __name__ == "__main__":
   out['metadata']['vision'] = make_metadata_dict(vision_path)
   out['metadata']['policy'] = make_metadata_dict(policy_path)
 
-  for cam_w, cam_h in args.camera_resolutions:
-    nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    model_w, model_h = args.model_size
-    out[(cam_w,cam_h)] = {
-      name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
-                           vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
-      for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
-    }
+  camera_configs = [NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h)) for cam_w, cam_h in args.camera_resolutions]
+  model_w, model_h = args.model_size
+  out['camera_configs'] = {nv12[:2]: nv12 for nv12 in camera_configs}
+  out['max_frame_size'] = max(nv12.size for nv12 in camera_configs)
+  out['symbolic'] = {
+    name: compile_modeld(camera_configs, model_w, model_h, prepare_only, args.frame_skip,
+                         vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
+    for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
+  }
 
   with open(args.output, "wb") as f:
     pickle.dump(out, f)
