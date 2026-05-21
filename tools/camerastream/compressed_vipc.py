@@ -175,11 +175,9 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
       pc_latency = (time.monotonic()-time_q[0])*1000
       time_q = time_q[1:]
       if debug:
-        print((
-          f" 1 {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} "
-          f"roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms "
-          f"= {process_latency+network_latency+pc_latency:6.2f} ms [{len(evta.data)} bytes] {sock_name}"
-        ))
+        print(f" 1 {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} "
+              f"roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms "
+              f"= {process_latency+network_latency+pc_latency:6.2f} ms [{len(evta.data)} bytes] {sock_name}")
 
 
 class CompressedVipc:
