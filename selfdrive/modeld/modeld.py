@@ -95,10 +95,6 @@ class ModelState:
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits[(cam_w,cam_h)]['run_policy']
     self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
-    self.warp_enqueue(
-      **self.input_queues,
-      frame=Tensor(np.zeros(self.frame_buf_params['img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize(),
-      big_frame=Tensor(np.zeros(self.frame_buf_params['big_img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -123,12 +119,13 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
+    img, big_img = self.warp_enqueue(**{k: self.input_queues[k] for k in ['img_q', 'big_img_q', 'tfm', 'big_tfm']}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+
     if prepare_only:
-      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
       return None
 
     vision_output, policy_output = self.run_policy(
-      **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
+      **{k: self.input_queues[k] for k in ['feat_q', 'desire_q', 'desire', 'traffic_convention']}, img=img, big_img=big_img
     )
 
     vision_output = vision_output.numpy().flatten()
