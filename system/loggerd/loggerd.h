@@ -28,9 +28,6 @@ const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH"))
 constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
 constexpr char PRESERVE_ATTR_VALUE = '1';
 
-const int STREAM_BITRATE_WIFI = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 4'000'000;
-constexpr int STREAM_BITRATE_CELLULAR = 512'000;
-
 struct EncoderSettings {
   cereal::EncodeIndex::Type encode_type;
   int bitrate;
@@ -49,9 +46,13 @@ struct EncoderSettings {
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = 256'000, .gop_size = 15};
   }
 
-  static EncoderSettings StreamEncoderSettings() {
-    int _stream_bitrate = STREAM_BITRATE_WIFI;
+  static EncoderSettings StreamHighEncoderSettings() {
+    int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 4'000'000;
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate , .gop_size = 5};
+  }
+
+  static EncoderSettings StreamLowEncoderSettings() {
+    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = 256'000 , .gop_size = 15};
   }
 };
 
@@ -103,10 +104,19 @@ const EncoderInfo main_driver_encoder_info = {
   INIT_ENCODE_FUNCTIONS(DriverEncode),
 };
 
-const EncoderInfo stream_encoder_info = {
+const EncoderInfo stream_high_encoder_info = {
   .publish_name = "livestreamCameraEncodeData",
   .record = false,
-  .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
+  .get_settings = [](int){return EncoderSettings::StreamHighEncoderSettings();},
+  INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
+};
+
+const EncoderInfo stream_low_encoder_info = {
+  .publish_name = "livestreamCameraEncodeData",
+  .record = false,
+  .frame_width = 526,
+  .frame_height = 330,
+  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
 
@@ -141,19 +151,19 @@ const LogCameraInfo driver_camera_info{
 const LogCameraInfo stream_road_camera_info{
   .thread_name = "road_cam_encoder",
   .stream_type = VISION_STREAM_ROAD,
-  .encoder_infos = {stream_encoder_info}
+  .encoder_infos = {stream_high_encoder_info, stream_low_encoder_info}
 };
 
 const LogCameraInfo stream_wide_road_camera_info{
   .thread_name = "wide_road_cam_encoder",
   .stream_type = VISION_STREAM_WIDE_ROAD,
-  .encoder_infos = {stream_encoder_info}
+  .encoder_infos = {stream_high_encoder_info, stream_low_encoder_info}
 };
 
 const LogCameraInfo stream_driver_camera_info{
   .thread_name = "driver_cam_encoder",
   .stream_type = VISION_STREAM_DRIVER,
-  .encoder_infos = {stream_encoder_info}
+  .encoder_infos = {stream_high_encoder_info, stream_low_encoder_info}
 };
 
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};

@@ -160,7 +160,7 @@ void stream_encoderd_thread(const LogCameraInfo (&cameras)[N]) {
 
   SubMaster sm({"livestreamCameraSwitch", "deviceState"});
   const LogCameraInfo *active_cam = &cameras[0];
-  int stream_bitrate = STREAM_BITRATE_WIFI;
+  int encoder_idx = 0;
 
   while (!do_exit) {
     VisionIpcClient vipc_client("camerad", active_cam->stream_type, false);
@@ -173,12 +173,7 @@ void stream_encoderd_thread(const LogCameraInfo (&cameras)[N]) {
     const VisionBuf &buf_info = vipc_client.buffers[0];
     LOGW("stream encoder init %zux%zu", buf_info.width, buf_info.height);
     assert(buf_info.width > 0 && buf_info.height > 0);
-    EncoderInfo encoder_info = active_cam->encoder_infos[0];
-    encoder_info.get_settings = [base = encoder_info.get_settings, stream_bitrate](int in_width) {
-      EncoderSettings settings = base(in_width);
-      settings.bitrate = stream_bitrate;
-      return settings;
-    };
+    const EncoderInfo &encoder_info = active_cam->encoder_infos[encoder_idx];
     auto encoder = std::make_unique<Encoder>(encoder_info, buf_info.width, buf_info.height);
     encoder->encoder_open();
 
@@ -200,19 +195,11 @@ void stream_encoderd_thread(const LogCameraInfo (&cameras)[N]) {
       }
 
       if (sm.updated("deviceState")) {
-        int new_stream_bitrate = stream_bitrate;
-        switch (sm["deviceState"].getDeviceState().getNetworkType()) {
-          case cereal::DeviceState::NetworkType::WIFI:
-            new_stream_bitrate = STREAM_BITRATE_WIFI;
-            break;
-          default:
-            new_stream_bitrate = STREAM_BITRATE_CELLULAR;
-            break;
-        }
-        if (new_stream_bitrate != stream_bitrate) {
-          LOGW("stream encoder switching bitrate to %d", new_stream_bitrate);
-          stream_bitrate = new_stream_bitrate;
-          break;  // reinit encoder with new bitrate
+        int new_encoder_idx = sm["deviceState"].getDeviceState().getNetworkType() == cereal::DeviceState::NetworkType::WIFI ? 0 : 1;
+        if (new_encoder_idx != encoder_idx) {
+          LOGW("stream encoder switching to encoder_infos[%d]", new_encoder_idx);
+          encoder_idx = new_encoder_idx;
+          break;  // reinit encoder with new settings
         }
       }
 
