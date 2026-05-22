@@ -28,6 +28,11 @@ class Priority:
   CTRL_HIGH = 53
 
 
+def drop_realtime() -> None:
+  if sys.platform == 'linux' and not PC:
+    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+
+
 def set_core_affinity(cores: list[int]) -> None:
   if sys.platform == 'linux' and not PC:
     os.sched_setaffinity(0, cores)

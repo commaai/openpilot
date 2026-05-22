@@ -27,7 +27,7 @@ class TestFeedbackd:
 
   @pytest.mark.parametrize("record_feedback", [False, True])
   def test_audio_feedback(self, record_feedback):
-    Params().put_bool("RecordAudioFeedback", record_feedback)
+    Params().put_bool("RecordAudioFeedback", record_feedback, block=True)
 
     managed_processes["feedbackd"].start()
     assert self.pm.wait_for_readers_to_update('carState', timeout=5)

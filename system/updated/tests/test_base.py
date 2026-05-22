@@ -86,7 +86,7 @@ class TestBaseUpdate:
     mocker.patch("openpilot.common.basedir.BASEDIR", self.basedir)
 
   def set_target_branch(self, branch):
-    self.params.put("UpdaterTargetBranch", branch)
+    self.params.put("UpdaterTargetBranch", branch, block=True)
 
   def setup_basedir_release(self, release):
     self.params = Params()
