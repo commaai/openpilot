@@ -3,8 +3,8 @@ import argparse
 import asyncio
 import contextlib
 import json
-import logging
 import uuid
+import logging
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
@@ -190,7 +190,6 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
           self.outgoing_bridge_runner.start()
-
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
