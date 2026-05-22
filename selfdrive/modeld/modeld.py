@@ -93,8 +93,8 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = jits[(cam_w,cam_h)]['run_policy']
-    self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
+    self.run_policy = jits['run_policy']
+    self.warp_enqueue = jits[(cam_w,cam_h)]
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}

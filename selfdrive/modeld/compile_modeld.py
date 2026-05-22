@@ -41,6 +41,10 @@ UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 WARP_DEV = os.getenv('WARP_DEV')
 
 
+def make_random_images(keys, shape, device=None):
+  return {k: Tensor.randint(shape, low=0, high=256, dtype='uint8', device=device).realize() for k in keys}
+
+
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
   w_dst, h_dst = dst_shape
   h_src, w_src = src_shape
@@ -269,20 +273,13 @@ if __name__ == "__main__":
   run_policy_jit = TinyJit(make_run_policy(vision_runner, policy_runner, vision_metadata['output_slices']['hidden_state'], args.frame_skip), prune=True)
 
   out['metadata']['vision'], out['metadata']['policy'] = vision_metadata, policy_metadata
-  def make_random_model_inputs():
-    return {
-      'img': Tensor.randint(vision_metadata['input_shapes']['img'], low=0, high=256, dtype='uint8').realize(),
-      'big_img': Tensor.randint(vision_metadata['input_shapes']['big_img'], low=0, high=256, dtype='uint8').realize(),
-    }
+
+  make_random_model_inputs = partial(make_random_images, keys=['img', 'big_img'], shape=vision_metadata['input_shapes']['img'])
   out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS, args.frame_skip, vision_metadata, policy_metadata)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    def make_random_warp_inputs():
-      return {
-        'frame': Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize(),
-        'big_frame': Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize(),
-      }
+    make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size, device=WARP_DEV)
     warp_enqueue = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
     out[(cam_w,cam_h)] = compile_jit(warp_enqueue, make_random_warp_inputs, WARP_INPUTS, args.frame_skip, vision_metadata, policy_metadata)
 
