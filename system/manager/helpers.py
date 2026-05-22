@@ -46,8 +46,8 @@ def unblock_stdout() -> None:
 
 
 def write_onroad_params(started, params):
-  params.put_bool("IsOnroad", started)
-  params.put_bool("IsOffroad", not started)
+  params.put_bool("IsOnroad", started, block=True)
+  params.put_bool("IsOffroad", not started, block=True)
 
 
 def save_bootlog():

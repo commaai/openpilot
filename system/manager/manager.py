@@ -36,13 +36,13 @@ def manager_init() -> None:
     params.clear_all(ParamKeyFlag.DEVELOPMENT_ONLY)
 
   if params.get_bool("RecordFrontLock"):
-    params.put_bool("RecordFront", True)
+    params.put_bool("RecordFront", True, block=True)
 
   # set unset params to their default value
   for k in params.all_keys():
     default_value = params.get_default_value(k)
     if default_value is not None and params.get(k) is None:
-      params.put(k, default_value)
+      params.put(k, default_value, block=True)
 
   # Create folders needed for msgq
   try:
@@ -54,14 +54,14 @@ def manager_init() -> None:
 
   # set params
   serial = HARDWARE.get_serial()
-  params.put("Version", build_metadata.openpilot.version)
-  params.put("GitCommit", build_metadata.openpilot.git_commit)
-  params.put("GitCommitDate", build_metadata.openpilot.git_commit_date)
-  params.put("GitBranch", build_metadata.channel)
-  params.put("GitRemote", build_metadata.openpilot.git_origin)
-  params.put_bool("IsTestedBranch", build_metadata.tested_channel)
-  params.put_bool("IsReleaseBranch", build_metadata.release_channel)
-  params.put("HardwareSerial", serial)
+  params.put("Version", build_metadata.openpilot.version, block=True)
+  params.put("GitCommit", build_metadata.openpilot.git_commit, block=True)
+  params.put("GitCommitDate", build_metadata.openpilot.git_commit_date, block=True)
+  params.put("GitBranch", build_metadata.channel, block=True)
+  params.put("GitRemote", build_metadata.openpilot.git_origin, block=True)
+  params.put_bool("IsTestedBranch", build_metadata.tested_channel, block=True)
+  params.put_bool("IsReleaseBranch", build_metadata.release_channel, block=True)
+  params.put("HardwareSerial", serial, block=True)
 
   # set dongle id
   reg_res = register(show_spinner=True)
@@ -173,7 +173,7 @@ def manager_thread() -> None:
     for param in ("DoUninstall", "DoShutdown", "DoReboot"):
       if params.get_bool(param):
         shutdown = True
-        params.put("LastManagerExitReason", f"{param} {datetime.datetime.now()}")
+        params.put("LastManagerExitReason", f"{param} {datetime.datetime.now()}", block=True)
         cloudlog.warning(f"Shutting down manager - {param} set")
 
     if shutdown:
