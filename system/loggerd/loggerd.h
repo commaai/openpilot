@@ -46,7 +46,7 @@ struct EncoderSettings {
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = 256'000, .gop_size = 15};
   }
 
-  static EncoderSettings StreamHighEncoderSettings() {
+  static EncoderSettings StreamEncoderSettings() {
     int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 4'000'000;
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate , .gop_size = 5};
   }
@@ -115,16 +115,7 @@ const EncoderInfo stream_road_encoder_info = {
 const EncoderInfo stream_wide_road_encoder_info = {
   .publish_name = "livestreamWideRoadEncodeData",
   .record = false,
-  .get_settings = [](int){return EncoderSettings::StreamHighEncoderSettings();},
-  INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
-};
-
-const EncoderInfo stream_low_encoder_info = {
-  .publish_name = "livestreamCameraEncodeData",
-  .record = false,
-  .frame_width = 526,
-  .frame_height = 330,
-  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
+  .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
 
@@ -132,6 +123,33 @@ const EncoderInfo stream_driver_encoder_info = {
   .publish_name = "livestreamDriverEncodeData",
   .record = false,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
+  INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
+};
+
+const EncoderInfo stream_low_road_encoder_info = {
+  .publish_name = "livestreamRoadEncodeData",
+  .record = false,
+  .frame_width = 526,
+  .frame_height = 330,
+  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
+  INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
+};
+
+const EncoderInfo stream_low_wide_road_encoder_info = {
+  .publish_name = "livestreamWideRoadEncodeData",
+  .record = false,
+  .frame_width = 526,
+  .frame_height = 330,
+  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
+  INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
+};
+
+const EncoderInfo stream_low_driver_encoder_info = {
+  .publish_name = "livestreamDriverEncodeData",
+  .record = false,
+  .frame_width = 526,
+  .frame_height = 330,
+  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };
 
@@ -183,3 +201,4 @@ const LogCameraInfo stream_driver_camera_info{
 
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
 const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_driver_camera_info};
+const LogCameraInfo low_stream_cameras_logged[] = {stream_low_road_encoder_info, stream_low_wide_road_camera_info, stream_low_driver_camera_info};

@@ -58,6 +58,12 @@ def only_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
 def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started
 
+def network_metered(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return params.get_bool("NetworkMetered")
+
+def network_unmetered(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return not params.get_bool("NetworkMetered")
+
 def or_(*fns):
   return lambda *args: operator.or_(*(fn(*args) for fn in fns))
 
@@ -69,7 +75,8 @@ procs = [
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], and_(notcar, network_unmetered)),
+  NativeProcess("stream_encoderd_low", "system/loggerd", ["./encoderd", "--stream-low"], and_(notcar, network_metered)),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
