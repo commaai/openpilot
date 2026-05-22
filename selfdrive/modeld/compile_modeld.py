@@ -5,7 +5,7 @@ import os
 import pickle
 import time
 from functools import partial
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 
 import numpy as np
 
@@ -32,9 +32,8 @@ from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
 from openpilot.common.file_chunker import read_file_chunked
+from openpilot.selfdrive.modeld.camera_frame import NV12Frame
 
-
-NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
