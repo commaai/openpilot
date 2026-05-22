@@ -54,7 +54,7 @@ def _optimize_local_size_or_skip(call, prg):
     preferred = (32, 16, 1)
     local_size = tuple(next(x for x in range(min(preferred[i] if i < len(preferred) else 1, g), 0, -1) if g % x == 0)
                        for i, g in enumerate(prg.arg.global_size))
-    new_global = tuple(g//l if g % l == 0 else g/l for g, l in zip(prg.arg.global_size, local_size))
+    new_global = tuple(g//l if g % l == 0 else g/l for g, l in zip(prg.arg.global_size, local_size, strict=True))
     return call.replace(src=(prg.replace(arg=replace(prg.arg, global_size=new_global, local_size=local_size)), *call.src[1:]))
 
 
