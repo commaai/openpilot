@@ -19,8 +19,6 @@ def get_camera_configs():
     "tizi": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
     "mici": (_os_fisheye.width, _os_fisheye.height),
   }
-  if release or PC or 'CI' in os.environ:
-    return set(DEVICE_RESOLUTIONS.values())
   return [DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]]
 
 CAMERA_CONFIGS = get_camera_configs()
@@ -48,7 +46,7 @@ if 'CUDA' in available:
   tg_flags = f'DEV={tg_backend}'
 elif 'QCOM' in available:
   tg_backend = 'QCOM'
-  tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
+  tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
   tg_backend = 'CPU'
   tg_flags = f'DEV=CPU' if arch == 'Darwin' else 'DEV=CPU:LLVM'

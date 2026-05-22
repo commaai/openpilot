@@ -40,36 +40,6 @@ UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
 WARP_DEV = os.getenv('WARP_DEV')
 
-_ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE = None
-
-
-def _optimize_local_size_or_skip(call, prg):
-  try:
-    return _ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE(call, prg)
-  except AssertionError as e:
-    if str(e) != "all optimize_local_size exec failed":
-      raise
-    from dataclasses import replace
-    preferred = (32, 16, 1)
-    local_size = tuple(next(x for x in range(min(preferred[i] if i < len(preferred) else 1, g), 0, -1) if g % x == 0)
-                       for i, g in enumerate(prg.arg.global_size))
-    new_global = tuple(g//l if g % l == 0 else g/l for g, l in zip(prg.arg.global_size, local_size, strict=True))
-    return call.replace(src=(prg.replace(arg=replace(prg.arg, global_size=new_global, local_size=local_size)), *call.src[1:]))
-
-
-def _patch_tinygrad_local_size_optimizer():
-  global _ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE
-  from tinygrad.engine import realize
-  from tinygrad.uop.ops import Ops, PatternMatcher, UPat
-
-  _ORIG_TINYGRAD_OPTIMIZE_LOCAL_SIZE = realize.optimize_local_size
-  realize.pm_optimize_local_size = PatternMatcher([
-    (UPat(Ops.CALL, src=(UPat(Ops.PROGRAM, name="prg"),), name="call", allow_any_len=True), _optimize_local_size_or_skip),
-  ])
-
-
-_patch_tinygrad_local_size_optimizer()
-
 
 def make_camera_vars(camera_configs: list[NV12Frame]):
   max_cam_w = max(nv12.width for nv12 in camera_configs)
