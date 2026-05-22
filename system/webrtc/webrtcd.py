@@ -136,7 +136,6 @@ class StreamSession:
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
-    self.init_camera = init_camera
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
