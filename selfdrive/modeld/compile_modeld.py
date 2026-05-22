@@ -30,11 +30,10 @@ from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
-from openpilot.common.file_chunker import read_file_chunked
-from openpilot.system.hardware.hw import Paths
-
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
+WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
+POLICY_INPUTS = ['feat_q', 'desire_q', 'desire', 'traffic_convention']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -148,11 +147,9 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, model_h,
-                    vision_features_slice, frame_skip):
+def make_warp(nv12, model_w, model_h, frame_skip):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
-  sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
   def warp_enqueue(img_q, big_img_q, tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(WARP_DEV)
@@ -164,6 +161,12 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
     img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
     return img, big_img
+  return warp_enqueue
+
+
+def make_run_policy(vision_runner, policy_runner, vision_features_slice, frame_skip):
+  sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
+  sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
 
   def run_policy(img, big_img, feat_q, desire_q, desire, traffic_convention):
     desire = desire.to(Device.DEFAULT)
@@ -178,29 +181,15 @@ def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, mode
     inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention}
     policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
     return vision_out, policy_out
+  return run_policy
 
-  return warp_enqueue, run_policy
 
-
-def compile_modeld(nv12: NV12Frame, model_w, model_h, frame_skip,
-                   vision_runner, policy_runner, vision_metadata, policy_metadata):
-  print(f"Compiling policy JIT for {nv12.width}x{nv12.height} ...")
-
-  vision_features_slice = vision_metadata['output_slices']['hidden_state']
+def compile_jit(jit, make_random_inputs, input_keys, frame_skip, vision_metadata, policy_metadata):
   vision_input_shapes = vision_metadata['input_shapes']
   policy_input_shapes = policy_metadata['input_shapes']
 
-  _warp, _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
-                         vision_features_slice, frame_skip)
-  run_policy_jit = TinyJit(_run, prune=True)
-  warp_jit = TinyJit(_warp, prune=True)
-  def composed_jits(**kwargs):
-    img, big_img = warp_jit(**{k: kwargs[k] for k in ['img_q', 'big_img_q', 'tfm', 'big_tfm', 'frame', 'big_frame']})
-    return run_policy_jit(img=img, big_img=big_img, **{k: kwargs[k] for k in ['feat_q', 'desire_q', 'desire', 'traffic_convention']})
-
   SEED = 42
-
-  def random_inputs_run(seed, test_val=None, test_buffers=None, expect_match=True):
+  def random_inputs_run(fn, seed, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, Device.DEFAULT)
     np.random.seed(seed)
     Tensor.manual_seed(seed)
@@ -209,13 +198,11 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, frame_skip,
     n_runs = 1 if testing else 3
 
     for i in range(n_runs):
-      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
-      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8', device=WARP_DEV).realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
       st = time.perf_counter()
-      outs = composed_jits(**input_queues, frame=frame, big_frame=big_frame)
+      outs = fn(**{k: input_queues[k] for k in input_keys}, **make_random_inputs())
       mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
@@ -234,11 +221,12 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, frame_skip,
     return val, buffers
 
   print('capture + replay')
-  test_val, test_buffers = random_inputs_run(SEED)
-
-  random_inputs_run(SEED, test_val, test_buffers, expect_match=True)
-  random_inputs_run(SEED+1, test_val, test_buffers, expect_match=False)
-  return warp_jit, run_policy_jit
+  test_val, test_buffers = random_inputs_run(jit, SEED)
+  print('pickle round trip')
+  jit = pickle.loads(pickle.dumps(jit))
+  random_inputs_run(jit, SEED, test_val, test_buffers, expect_match=True)
+  random_inputs_run(jit, SEED+1, test_val, test_buffers, expect_match=False)
+  return jit
 
 
 def _parse_size(s):
@@ -247,6 +235,8 @@ def _parse_size(s):
 
 
 def read_file_chunked_to_shm(path):
+  from openpilot.common.file_chunker import read_file_chunked
+  from openpilot.system.hardware.hw import Paths
   shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
   atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
   with open(shm_path, 'wb') as f:
@@ -257,6 +247,7 @@ def read_file_chunked_to_shm(path):
 if __name__ == "__main__":
   from tinygrad.nn.onnx import OnnxRunner
   from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
+  from openpilot.selfdrive.modeld.get_model_metadata import make_metadata_dict
   p = argparse.ArgumentParser()
   p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
   p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
@@ -268,20 +259,33 @@ if __name__ == "__main__":
   args = p.parse_args()
 
   out = defaultdict(dict)
-  # init runners once so weights are shared
-  from get_model_metadata import make_metadata_dict
   vision_path, policy_path = read_file_chunked_to_shm(args.vision_onnx), read_file_chunked_to_shm(args.policy_onnx)
+  model_w, model_h = args.model_size
+
   vision_runner = OnnxRunner(vision_path)
   policy_runner = OnnxRunner(policy_path)
-  out['metadata']['vision'] = make_metadata_dict(vision_path)
-  out['metadata']['policy'] = make_metadata_dict(policy_path)
+  vision_metadata, policy_metadata = make_metadata_dict(vision_path), make_metadata_dict(policy_path)
+
+  run_policy_jit = TinyJit(make_run_policy(vision_runner, policy_runner, vision_metadata['output_slices']['hidden_state'], args.frame_skip), prune=True)
+
+  out['metadata']['vision'], out['metadata']['policy'] = vision_metadata, policy_metadata
+  def make_random_model_inputs():
+    return {
+      'img': Tensor.randint(vision_metadata['input_shapes']['img'], low=0, high=256, dtype='uint8').realize(),
+      'big_img': Tensor.randint(vision_metadata['input_shapes']['big_img'], low=0, high=256, dtype='uint8').realize(),
+    }
+  out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS, args.frame_skip, vision_metadata, policy_metadata)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    model_w, model_h = args.model_size
-    warp_jit, run_policy = compile_modeld(nv12, model_w, model_h, args.frame_skip, vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
-    out[(cam_w,cam_h)] = {'warp_enqueue': warp_jit, 'run_policy': run_policy}
+    def make_random_warp_inputs():
+      return {
+        'frame': Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize(),
+        'big_frame': Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize(),
+      }
+    warp_enqueue = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
+    out[(cam_w,cam_h)] = compile_jit(warp_enqueue, make_random_warp_inputs, WARP_INPUTS, args.frame_skip, vision_metadata, policy_metadata)
 
   with open(args.output, "wb") as f:
     pickle.dump(out, f)
-  print(f"Saved combined JIT to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
+  print(f"Saved JITs to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")

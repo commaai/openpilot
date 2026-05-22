@@ -20,7 +20,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -119,13 +119,13 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    img, big_img = self.warp_enqueue(**{k: self.input_queues[k] for k in ['img_q', 'big_img_q', 'tfm', 'big_tfm']}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+    img, big_img = self.warp_enqueue(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
 
     if prepare_only:
       return None
 
     vision_output, policy_output = self.run_policy(
-      **{k: self.input_queues[k] for k in ['feat_q', 'desire_q', 'desire', 'traffic_convention']}, img=img, big_img=big_img
+      **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
     )
 
     vision_output = vision_output.numpy().flatten()
