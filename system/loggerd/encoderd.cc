@@ -151,72 +151,6 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
   }
 }
 
-template <size_t N>
-void stream_encoderd_thread(const LogCameraInfo (&cameras)[N]) {
-  while (!do_exit) {
-    if (!VisionIpcClient::getAvailableStreams("camerad", false).empty()) break;
-    util::sleep_for(100);
-  }
-
-  SubMaster sm({"livestreamCameraSwitch", "deviceState"});
-  const LogCameraInfo *active_cam = &cameras[0];
-  int encoder_idx = 0;
-
-  while (!do_exit) {
-    VisionIpcClient vipc_client("camerad", active_cam->stream_type, false);
-    if (!vipc_client.connect(false)) {
-      util::sleep_for(5);
-      continue;
-    }
-
-    // init encoder
-    const VisionBuf &buf_info = vipc_client.buffers[0];
-    LOGW("stream encoder init %zux%zu", buf_info.width, buf_info.height);
-    assert(buf_info.width > 0 && buf_info.height > 0);
-    const EncoderInfo &encoder_info = active_cam->encoder_infos[encoder_idx];
-    auto encoder = std::make_unique<Encoder>(encoder_info, buf_info.width, buf_info.height);
-    encoder->encoder_open();
-
-    while (!do_exit) {
-      sm.update(0);
-
-      // Switch camera if the request differs from the current one
-      if (sm.updated("livestreamCameraSwitch")) {
-        auto requested = sm["livestreamCameraSwitch"].getLivestreamCameraSwitch().getCamera();
-        VisionStreamType requested_stream = requested == cereal::LiveStreamCamera::CameraType::DRIVER
-                                                ? VISION_STREAM_DRIVER : VISION_STREAM_WIDE_ROAD;
-        if (requested_stream != active_cam->stream_type) {
-          LOGW("stream encoder switching camera");
-          auto it = std::find_if(std::begin(cameras), std::end(cameras),
-                                 [requested_stream](const auto &cam) { return cam.stream_type == requested_stream; });
-          if (it != std::end(cameras)) active_cam = &(*it);
-          break;  // reinit encoder with new camera selection
-        }
-      }
-
-      if (sm.updated("deviceState")) {
-        int new_encoder_idx = sm["deviceState"].getDeviceState().getNetworkType() == cereal::DeviceState::NetworkType::WIFI ? 0 : 1;
-        if (new_encoder_idx != encoder_idx) {
-          LOGW("stream encoder switching to encoder_infos[%d]", new_encoder_idx);
-          encoder_idx = new_encoder_idx;
-          break;  // reinit encoder with new settings
-        }
-      }
-
-      // encode frame
-      VisionIpcBufExtra extra;
-      VisionBuf *buf = vipc_client.recv(&extra);
-      if (buf == nullptr) continue;
-      if (buf->get_frame_id() != extra.frame_id) continue;
-      if (encoder->encode_frame(buf, &extra) == -1) {
-        LOGE("stream encoder: failed to encode frame. frame_id: %d", extra.frame_id);
-      }
-    }
-
-    encoder->encoder_close();
-  }
-}
-
 int main(int argc, char* argv[]) {
   if (!Hardware::PC()) {
     int ret;
@@ -228,7 +162,7 @@ int main(int argc, char* argv[]) {
   if (argc > 1) {
     std::string arg1(argv[1]);
     if (arg1 == "--stream") {
-      stream_encoderd_thread(stream_cameras_logged);
+      encoderd_thread(stream_cameras_logged);
     } else {
       LOGE("Argument '%s' is not supported", arg1.c_str());
     }

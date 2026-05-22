@@ -131,11 +131,11 @@ class StreamSession:
 
     builder = WebRTCAnswerBuilder(sdp)
 
-    builder.add_video_stream(init_camera, LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack())
+    self.video_track = LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack()
+    builder.add_video_stream(init_camera, self.video_track)
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
-    self.init_camera = init_camera
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
@@ -173,6 +173,13 @@ class StreamSession:
   def message_handler(self, message: bytes):
     assert self.incoming_bridge is not None
     try:
+      msg_json = json.loads(message)
+      if msg_json.get("type") == "livestreamCameraSwitch" and hasattr(self.video_track, "switch_camera"):
+        self.video_track.switch_camera(msg_json["data"]["camera"])
+        return
+
+      if msg_json.get("type") not in self.incoming_bridge_services:
+        return
       self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
@@ -183,8 +190,6 @@ class StreamSession:
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-          if "livestreamCameraSwitch" in self.incoming_bridge_services:
-            self.incoming_bridge.send(json.dumps({"type": "livestreamCameraSwitch", "data": {"camera": self.init_camera}}).encode())
           self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge_runner is not None:
           channel = self.stream.get_messaging_channel()

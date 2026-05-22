@@ -24,17 +24,17 @@ HEADLESS = os.getenv("WINDOWED", "0") != "1"
 
 def setup_state():
   params = Params()
-  params.put("HasAcceptedTerms", terms_version)
-  params.put("CompletedTrainingVersion", training_version)
-  params.put("DongleId", "test123456789")
+  params.put("HasAcceptedTerms", terms_version, block=True)
+  params.put("CompletedTrainingVersion", training_version, block=True)
+  params.put("DongleId", "test123456789", block=True)
   # Combined description for layouts that still use it (BIG home, settings/software)
-  params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
-  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30", block=True)
+  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR), block=True)
   # Params for mici home
-  params.put("Version", "0.10.1")
-  params.put("GitBranch", "test-branch")
-  params.put("GitCommit", "abc12340ff9131237ba23a1d0fbd8edf9c80e87")
-  params.put("GitCommitDate", "'1732924800 2024-11-30 00:00:00 +0000'")
+  params.put("Version", "0.10.1", block=True)
+  params.put("GitBranch", "test-branch", block=True)
+  params.put("GitCommit", "abc12340ff9131237ba23a1d0fbd8edf9c80e87", block=True)
+  params.put("GitCommitDate", "'1732924800 2024-11-30 00:00:00 +0000'", block=True)
 
   # Patch Api.get_token to return a static token so the pairing QR code is deterministic across runs
   Api.get_token = lambda self, payload_extra=None, expiry_hours=0: "test_token"

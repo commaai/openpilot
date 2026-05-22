@@ -14,6 +14,6 @@ if __name__ == "__main__":
   if len(sys.argv) == 3:
     val = sys.argv[2]
     print(f"SET: {key} = {val}")
-    params.put(key, val)
+    params.put(key, val, block=True)
   elif len(sys.argv) == 2:
     print(f"GET: {key} = {params.get(key)}")

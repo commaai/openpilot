@@ -104,8 +104,16 @@ const EncoderInfo main_driver_encoder_info = {
   INIT_ENCODE_FUNCTIONS(DriverEncode),
 };
 
-const EncoderInfo stream_high_encoder_info = {
-  .publish_name = "livestreamCameraEncodeData",
+const EncoderInfo stream_road_encoder_info = {
+  .publish_name = "livestreamRoadEncodeData",
+  //.thumbnail_name = "thumbnail",
+  .record = false,
+  .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
+  INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
+};
+
+const EncoderInfo stream_wide_road_encoder_info = {
+  .publish_name = "livestreamWideRoadEncodeData",
   .record = false,
   .get_settings = [](int){return EncoderSettings::StreamHighEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
@@ -118,6 +126,13 @@ const EncoderInfo stream_low_encoder_info = {
   .frame_height = 330,
   .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
+};
+
+const EncoderInfo stream_driver_encoder_info = {
+  .publish_name = "livestreamDriverEncodeData",
+  .record = false,
+  .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
+  INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };
 
 const EncoderInfo qcam_encoder_info = {
@@ -167,4 +182,4 @@ const LogCameraInfo stream_driver_camera_info{
 };
 
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
-const LogCameraInfo stream_cameras_logged[] = {stream_driver_camera_info, stream_wide_road_camera_info, stream_road_camera_info};
+const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_driver_camera_info};

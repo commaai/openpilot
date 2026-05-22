@@ -84,7 +84,7 @@ class SimulatedCar:
 
     if self.params.get_bool("ObdMultiplexingEnabled") != self.obd_multiplexing:
       self.obd_multiplexing = not self.obd_multiplexing
-      self.params.put_bool("ObdMultiplexingChanged", True)
+      self.params.put_bool("ObdMultiplexingChanged", True, block=True)
 
     dat = messaging.new_message('pandaStates', 1)
     dat.valid = True

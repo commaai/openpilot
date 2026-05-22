@@ -5,6 +5,7 @@
 #include <mutex>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 #include "tools/replay/util.h"
 
@@ -13,9 +14,9 @@ namespace {
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
-// Run a Python command and capture stdout. Optionally parse stderr for PROGRESS lines.
+// Run a Python command and capture stdout. Stderr is left attached to the parent.
 // Returns stdout content. If abort is signaled, kills the child process.
-std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr, bool parse_progress = false) {
+std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
   // Build argv for execvp
   std::vector<const char *> argv;
   argv.push_back("python3");
@@ -27,14 +28,8 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   argv.push_back(nullptr);
 
   int stdout_pipe[2];
-  int stderr_pipe[2];
   if (pipe(stdout_pipe) != 0) {
     rWarning("py_downloader: pipe() failed");
-    return {};
-  }
-  if (pipe(stderr_pipe) != 0) {
-    rWarning("py_downloader: pipe() failed");
-    close(stdout_pipe[0]); close(stdout_pipe[1]);
     return {};
   }
 
@@ -42,7 +37,6 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   if (pid < 0) {
     rWarning("py_downloader: fork() failed");
     close(stdout_pipe[0]); close(stdout_pipe[1]);
-    close(stderr_pipe[0]); close(stderr_pipe[1]);
     return {};
   }
 
@@ -61,11 +55,8 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     unsetenv("OPENPILOT_PREFIX");
 
     close(stdout_pipe[0]);
-    close(stderr_pipe[0]);
     dup2(stdout_pipe[1], STDOUT_FILENO);
-    dup2(stderr_pipe[1], STDERR_FILENO);
     close(stdout_pipe[1]);
-    close(stderr_pipe[1]);
 
     execvp("python3", const_cast<char *const *>(argv.data()));
     _exit(127);
@@ -73,32 +64,28 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
 
   // Parent process
   close(stdout_pipe[1]);
-  close(stderr_pipe[1]);
 
   std::string stdout_data;
-  std::string stderr_buf;
   char buf[4096];
 
-  // Use select() to read from both pipes
+  // Use select() so abort can interrupt while waiting for Python output.
   fd_set rfds;
-  int max_fd = std::max(stdout_pipe[0], stderr_pipe[0]);
-  bool stdout_open = true, stderr_open = true;
+  bool stdout_open = true;
 
-  while (stdout_open || stderr_open) {
+  while (stdout_open) {
     if (abort && *abort) {
       kill(pid, SIGTERM);
       break;
     }
 
     FD_ZERO(&rfds);
-    if (stdout_open) FD_SET(stdout_pipe[0], &rfds);
-    if (stderr_open) FD_SET(stderr_pipe[0], &rfds);
+    FD_SET(stdout_pipe[0], &rfds);
 
     struct timeval tv = {0, 100000};  // 100ms timeout
-    int ret = select(max_fd + 1, &rfds, nullptr, nullptr, &tv);
+    int ret = select(stdout_pipe[0] + 1, &rfds, nullptr, nullptr, &tv);
     if (ret < 0) break;
 
-    if (stdout_open && FD_ISSET(stdout_pipe[0], &rfds)) {
+    if (FD_ISSET(stdout_pipe[0], &rfds)) {
       ssize_t n = read(stdout_pipe[0], buf, sizeof(buf));
       if (n <= 0) {
         stdout_open = false;
@@ -106,45 +93,15 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
         stdout_data.append(buf, n);
       }
     }
-
-    if (stderr_open && FD_ISSET(stderr_pipe[0], &rfds)) {
-      ssize_t n = read(stderr_pipe[0], buf, sizeof(buf));
-      if (n <= 0) {
-        stderr_open = false;
-      } else {
-        stderr_buf.append(buf, n);
-        // Parse complete lines from stderr
-        size_t pos;
-        while ((pos = stderr_buf.find('\n')) != std::string::npos) {
-          std::string line = stderr_buf.substr(0, pos);
-          stderr_buf.erase(0, pos + 1);
-
-          if (parse_progress && line.rfind("PROGRESS:", 0) == 0) {
-            // Parse "PROGRESS:<cur>:<total>"
-            auto colon1 = line.find(':', 9);
-            if (colon1 != std::string::npos) {
-              try {
-                uint64_t cur = std::stoull(line.c_str() + 9);
-                uint64_t total = std::stoull(line.c_str() + colon1 + 1);
-                std::lock_guard<std::mutex> lk(handler_mutex);
-                if (progress_handler) {
-                  progress_handler(cur, total, true);
-                }
-              } catch (...) {}
-            }
-          } else if (line.rfind("ERROR:", 0) == 0) {
-            rWarning("py_downloader: %s", line.c_str() + 6);
-          }
-        }
-      }
-    }
   }
 
   // Drain remaining pipe data to prevent child from blocking on write
-  for (int fd : {stdout_pipe[0], stderr_pipe[0]}) {
-    while (read(fd, buf, sizeof(buf)) > 0) {}
-    close(fd);
+  while (true) {
+    ssize_t n = read(stdout_pipe[0], buf, sizeof(buf));
+    if (n <= 0) break;
+    stdout_data.append(buf, n);
   }
+  close(stdout_pipe[0]);
 
   int status;
   waitpid(pid, &status, 0);
@@ -192,7 +149,7 @@ std::string download(const std::string &url, bool use_cache, std::atomic<bool> *
   if (!use_cache) {
     args.push_back("--no-cache");
   }
-  return runPython(args, abort, true);
+  return runPython(args, abort);
 }
 
 std::string getRouteFiles(const std::string &route) {
