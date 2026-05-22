@@ -92,8 +92,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--policy-onnx {File(f"models/{file_prefix}driving_policy.onnx").abspath} '
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
-  size_multiplier = 1 if usbgpu else 2 # TODO make weight dedupe work on QCOM
-  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
+  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
   node = lenv.Command(
