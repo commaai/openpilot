@@ -61,8 +61,14 @@ source_list = ['long_mpc.py',
 ]
 
 lenv = env.Clone()
-acados_rel_path = Dir(gen).rel_path(Dir(acados.LIB_DIR))
-lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
+copied_acados_libs = []
+if arch != "Darwin":
+  for lib in ["libacados.so", "libblasfeo.so", "libhpipm.so", "libqpOASES_e.so.3.1"]:
+    copied_acados_libs += lenv.Command(f"{gen}/{lib}", Dir(acados.LIB_DIR).File(lib), [Mkdir(Dir(gen)), Copy("$TARGET", "$SOURCE")])
+  lenv["RPATH"] += [lenv.Literal('\\$$ORIGIN')]
+else:
+  acados_rel_path = Dir(gen).rel_path(Dir(acados.LIB_DIR))
+  lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
 lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
                               source_list,
@@ -99,4 +105,5 @@ lenv2.Command(libacados_ocp_solver_c,
   f' {acados_ocp_solver_pyx.get_labspath()}')
 lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c], LIBS=['acados_ocp_solver_long'])
 lenv2.Depends(lib_cython, lib_solver)
+lenv2.Depends(lib_cython, copied_acados_libs)
 lenv2.Depends(libacados_ocp_solver_c, np_version)

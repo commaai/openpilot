@@ -28,7 +28,7 @@ def test_target_branch_migration_from_current_branch(mocker, device_type, branch
 ])
 def test_target_branch_migration_from_param(mocker, device_type, branch, expected):
   params = Params()
-  params.put("UpdaterTargetBranch", branch)
+  params.put("UpdaterTargetBranch", branch, block=True)
 
   mocker.patch("openpilot.system.updated.updated.HARDWARE.get_device_type", return_value=device_type)
 

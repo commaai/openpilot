@@ -45,6 +45,8 @@ cd $TARGET_DIR
 rm -rf .git/modules/
 rm -f panda/board/obj/panda.bin.signed
 
+find selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./common/file_chunker.py {} \;
+
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
 GIT_COMMIT_DATE=$(git --git-dir=$SOURCE_DIR/.git show --no-patch --format='%ct %ci' HEAD)
