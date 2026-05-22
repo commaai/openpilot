@@ -60,6 +60,16 @@ class ModelState:
       self.max_frame_size = self.frame_buf_params[3]
       self.camera_args = {}
 
+  def frame_from_blob(self, ptr: int) -> Tensor:
+    yuv_size = self.frame_buf_params[3]
+    if yuv_size > self.max_frame_size:
+      raise RuntimeError(f"driver frame size {yuv_size} exceeds compiled max frame size {self.max_frame_size}")
+
+    frame = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.DEV)
+    if yuv_size < self.max_frame_size:
+      frame = frame.cat(Tensor.zeros(self.max_frame_size - yuv_size, dtype='uint8', device=self.DEV))
+    return frame
+
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
 
@@ -68,7 +78,7 @@ class ModelState:
     ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.max_frame_size,), dtype='uint8', device=self.DEV)
+      self._blob_cache[ptr] = self.frame_from_blob(ptr)
 
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'], **self.camera_args)

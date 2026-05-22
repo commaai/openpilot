@@ -110,6 +110,16 @@ class ModelState:
       big_frame=Tensor(np.zeros(self.max_frame_size, dtype=np.uint8), device=self.WARP_DEV).contiguous().realize(),
       **self.camera_args)
 
+  def frame_from_blob(self, key: str, ptr: int) -> Tensor:
+    yuv_size = self.frame_buf_params[key][3]
+    if yuv_size > self.max_frame_size:
+      raise RuntimeError(f"{key} frame size {yuv_size} exceeds compiled max frame size {self.max_frame_size}")
+
+    frame = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
+    if yuv_size < self.max_frame_size:
+      frame = frame.cat(Tensor.zeros(self.max_frame_size - yuv_size, dtype='uint8', device=self.WARP_DEV))
+    return frame
+
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
     return parsed_model_outputs
@@ -121,7 +131,7 @@ class ModelState:
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
       cache_key = (key, ptr)
       if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (self.max_frame_size,), dtype='uint8', device=self.WARP_DEV)
+        self._blob_cache[cache_key] = self.frame_from_blob(key, ptr)
       self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
