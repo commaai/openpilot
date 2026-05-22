@@ -142,7 +142,7 @@ class StreamSession:
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
     self.outgoing_bridge_runner: CerealProxyRunner | None = None
     if len(incoming_services) > 0:
-      self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
+      self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master, incoming_services)
     if len(outgoing_services) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
       self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
@@ -176,6 +176,9 @@ class StreamSession:
       msg_json = json.loads(message)
       if msg_json.get("type") == "livestreamCameraSwitch" and hasattr(self.video_track, "switch_camera"):
         self.video_track.switch_camera(msg_json["data"]["camera"])
+        return
+
+      if msg_json.get("type") not in self.incoming_bridge_services:
         return
       self.incoming_bridge.send(message)
     except Exception:
