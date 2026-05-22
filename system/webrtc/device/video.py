@@ -27,7 +27,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     dt = DT_DMON if camera_type == "driver" else DT_MDL
     super().__init__(camera_type, dt)
 
-    self._sock = messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
+    self._sock = self._make_sock(camera_type)
     self._pts = 0
     self._t0_ns = time.monotonic_ns()
     self.timing_sei_enabled = False
@@ -45,6 +45,12 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       time.time() * 1000,  # noqa: TID251
     ) + b'\x80'
     return encode_data.header + sei_nal + encode_data.data
+
+  def _make_sock(self, camera_type: str) -> messaging.SubSocket:
+    return messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
+
+  def switch_camera(self, camera_type: str) -> None:
+    self._sock = self._make_sock(camera_type)
 
   async def recv(self):
     while True:
