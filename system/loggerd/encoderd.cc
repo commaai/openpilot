@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
     std::string arg1(argv[1]);
     if (arg1 == "--stream") {
       encoderd_thread(stream_cameras_logged);
-    } elif (arg1 == "--stream-low") {
+    } else if (arg1 == "--stream-low") {
       encoderd_thread(stream_low_cameras_logged);
     } else {
       LOGE("Argument '%s' is not supported", arg1.c_str());

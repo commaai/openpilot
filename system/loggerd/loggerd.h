@@ -184,21 +184,39 @@ const LogCameraInfo driver_camera_info{
 const LogCameraInfo stream_road_camera_info{
   .thread_name = "road_cam_encoder",
   .stream_type = VISION_STREAM_ROAD,
-  .encoder_infos = {stream_high_encoder_info, stream_low_encoder_info}
+  .encoder_infos = {stream_road_encoder_info}
 };
 
 const LogCameraInfo stream_wide_road_camera_info{
   .thread_name = "wide_road_cam_encoder",
   .stream_type = VISION_STREAM_WIDE_ROAD,
-  .encoder_infos = {stream_high_encoder_info, stream_low_encoder_info}
+  .encoder_infos = {stream_wide_road_encoder_info}
 };
 
 const LogCameraInfo stream_driver_camera_info{
   .thread_name = "driver_cam_encoder",
   .stream_type = VISION_STREAM_DRIVER,
-  .encoder_infos = {stream_high_encoder_info, stream_low_encoder_info}
+  .encoder_infos = {stream_driver_encoder_info}
+};
+
+const LogCameraInfo stream_low_road_camera_info{
+  .thread_name = "road_cam_encoder",
+  .stream_type = VISION_STREAM_ROAD,
+  .encoder_infos = {stream_low_road_encoder_info}
+};
+
+const LogCameraInfo stream_low_wide_road_camera_info{
+  .thread_name = "wide_road_cam_encoder",
+  .stream_type = VISION_STREAM_WIDE_ROAD,
+  .encoder_infos = {stream_low_wide_road_encoder_info}
+};
+
+const LogCameraInfo stream_low_driver_camera_info{
+  .thread_name = "driver_cam_encoder",
+  .stream_type = VISION_STREAM_DRIVER,
+  .encoder_infos = {stream_low_driver_encoder_info}
 };
 
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
 const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_driver_camera_info};
-const LogCameraInfo low_stream_cameras_logged[] = {stream_low_road_encoder_info, stream_low_wide_road_camera_info, stream_low_driver_camera_info};
+const LogCameraInfo stream_low_cameras_logged[] = {stream_low_road_camera_info, stream_low_wide_road_camera_info, stream_low_driver_camera_info};
