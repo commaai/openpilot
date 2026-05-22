@@ -2541,7 +2541,7 @@ struct Event {
     livestreamWideRoadEncodeData @121 :EncodeData;
     livestreamDriverEncodeData @122 :EncodeData;
 
-    soundRequest @154 :SoundRequest;
+    soundRequest @152 :SoundRequest;
 
     # *********** Custom: reserved for forks ***********
 
