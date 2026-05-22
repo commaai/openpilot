@@ -26,7 +26,6 @@ function op_install() {
     cat >> "$RC_FILE" <<EOF
 
 alias op='$OP_SH "\$@"'
-# tab-complete op subcommands (scraped live from op.sh)
 _op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
 complete -F _op_completions -o default op
 EOF
