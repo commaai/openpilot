@@ -100,9 +100,18 @@ const EncoderInfo main_driver_encoder_info = {
   INIT_ENCODE_FUNCTIONS(DriverEncode),
 };
 
+const EncoderInfo qcam_encoder_info = {
+  .publish_name = "qRoadEncodeData",
+  .filename = "qcamera.ts",
+  .include_audio = Params().getBool("RecordAudio"),
+  .frame_width = 526,
+  .frame_height = 330,
+  .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
+  INIT_ENCODE_FUNCTIONS(QRoadEncode),
+};
+
 const EncoderInfo stream_road_encoder_info = {
   .publish_name = "livestreamRoadEncodeData",
-  //.thumbnail_name = "thumbnail",
   .record = false,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
@@ -147,16 +156,6 @@ const EncoderInfo stream_low_driver_encoder_info = {
   .frame_height = 330,
   .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
-};
-
-const EncoderInfo qcam_encoder_info = {
-  .publish_name = "qRoadEncodeData",
-  .filename = "qcamera.ts",
-  .include_audio = Params().getBool("RecordAudio"),
-  .frame_width = 526,
-  .frame_height = 330,
-  .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
-  INIT_ENCODE_FUNCTIONS(QRoadEncode),
 };
 
 const LogCameraInfo road_camera_info{
