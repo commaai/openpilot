@@ -19,7 +19,8 @@ def get_camera_configs():
     "tizi": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
     "mici": (_os_fisheye.width, _os_fisheye.height),
   }
-  return [DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]]
+  return set(DEVICE_RESOLUTIONS.values())
+
 
 CAMERA_CONFIGS = get_camera_configs()
 
