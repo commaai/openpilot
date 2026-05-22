@@ -32,6 +32,12 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self._t0_ns = time.monotonic_ns()
     self.timing_sei_enabled = False
 
+  def _make_sock(self, camera_type: str) -> messaging.SubSocket:
+    return messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
+
+  def switch_camera(self, camera_type: str) -> None:
+    self._sock = self._make_sock(camera_type)
+
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
     if not self.timing_sei_enabled:
@@ -45,12 +51,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       time.time() * 1000,  # noqa: TID251
     ) + b'\x80'
     return encode_data.header + sei_nal + encode_data.data
-
-  def _make_sock(self, camera_type: str) -> messaging.SubSocket:
-    return messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
-
-  def switch_camera(self, camera_type: str) -> None:
-    self._sock = self._make_sock(camera_type)
 
   async def recv(self):
     while True:
