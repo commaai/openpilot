@@ -67,7 +67,7 @@ class TestStreamSession:
       mocked_pubmaster.reset_mock()
 
   def test_livestream_track(self, mocker):
-    fake_msg = messaging.new_message("livestreamCameraEncodeData")
+    fake_msg = messaging.new_message("livestreamDriverEncodeData")
 
     config = {"receive.return_value": fake_msg.to_bytes()}
     mocker.patch("msgq.SubSocket", spec=True, **config)

@@ -2428,15 +2428,6 @@ struct AudioFeedback {
   blockNum @1 :UInt16;
 }
 
-struct LiveStreamCamera {
-  camera @0 :CameraType;
-
-  enum CameraType {
-    driver @0;
-    wideRoad @1;
-  }
-}
-
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2545,9 +2536,6 @@ struct Event {
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
     livestreamDriverEncodeData @122 :EncodeData;
-
-    livestreamCameraEncodeData @152 :EncodeData;
-    livestreamCameraSwitch @153 :LiveStreamCamera;
 
     # *********** Custom: reserved for forks ***********
 
