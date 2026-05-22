@@ -50,10 +50,6 @@ struct EncoderSettings {
     int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 4'000'000;
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate , .gop_size = 5};
   }
-
-  static EncoderSettings StreamLowEncoderSettings() {
-    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = 256'000 , .gop_size = 15};
-  }
 };
 
 class EncoderInfo {
@@ -131,7 +127,7 @@ const EncoderInfo stream_low_road_encoder_info = {
   .record = false,
   .frame_width = 526,
   .frame_height = 330,
-  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
+  .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
 };
 
@@ -140,7 +136,7 @@ const EncoderInfo stream_low_wide_road_encoder_info = {
   .record = false,
   .frame_width = 526,
   .frame_height = 330,
-  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
+  .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
 
@@ -149,7 +145,7 @@ const EncoderInfo stream_low_driver_encoder_info = {
   .record = false,
   .frame_width = 526,
   .frame_height = 330,
-  .get_settings = [](int){return EncoderSettings::StreamLowEncoderSettings();},
+  .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };
 
