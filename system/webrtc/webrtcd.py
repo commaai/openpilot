@@ -142,7 +142,7 @@ class StreamSession:
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
     self.outgoing_bridge_runner: CerealProxyRunner | None = None
     if len(incoming_services) > 0:
-      self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master, incoming_services)
+      self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
       self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
