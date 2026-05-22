@@ -72,7 +72,7 @@ find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm -f selfdrive/modeld/models/*.onnx
+rm -f selfdrive/modeld/models/*.onnx*
 
 # Mark as prebuilt release
 touch prebuilt

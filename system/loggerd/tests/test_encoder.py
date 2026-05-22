@@ -53,7 +53,7 @@ class TestEncoder:
   # TODO: this should run faster than real time
   @parameterized.expand([(True, ), (False, )])
   def test_log_rotation(self, record_front):
-    Params().put_bool("RecordFront", record_front)
+    Params().put_bool("RecordFront", record_front, block=True)
 
     managed_processes['sensord'].start()
     managed_processes['loggerd'].start()
