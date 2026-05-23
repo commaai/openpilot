@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import argparse
 import asyncio
 import contextlib
@@ -173,12 +174,30 @@ class StreamSession:
   def message_handler(self, message: bytes):
     assert self.incoming_bridge is not None
     try:
-      msg_json = json.loads(message)
-      if msg_json.get("type") == "livestreamCameraSwitch" and hasattr(self.video_track, "switch_camera"):
-        self.video_track.switch_camera(msg_json["data"]["camera"])
-        return
+      payload = json.loads(message) if isinstance(message, (bytes, str)) else None
+      if isinstance(payload, dict):
+        msg_type = payload.get("type")
 
-      if msg_json.get("type") not in self.incoming_bridge_services:
+        if msg_type == "livestreamCameraSwitch":
+          self.video_track.switch_camera(payload["data"]["camera"])
+          return
+
+        if msg_type == "clockSync":
+          data = payload.get("data", {})
+          pong = json.dumps({"type": "clockSync", "data": {
+            "action": "pong", "browserSendTime": data.get("browserSendTime"), "deviceTime": time.time() * 1000, # noqa: TID251
+          }})
+          self.stream.get_messaging_channel().send(pong)
+          return
+
+        if msg_type == "enableTimingSei":
+          enabled = bool(payload.get("data", {}).get("enabled"))
+          for track in self.video_tracks:
+            if hasattr(track, 'timing_sei_enabled'):
+              track.timing_sei_enabled = enabled
+          return
+
+      if payload.get("type") not in self.incoming_bridge_services:
         return
       self.incoming_bridge.send(message)
     except Exception:
