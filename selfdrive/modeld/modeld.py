@@ -20,7 +20,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -93,8 +93,12 @@ class ModelState:
     self._blob_cache : dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = jits['run_policy']
-    self.warp_enqueue = jits[(cam_w,cam_h)]
+    self.run_policy = jits[(cam_w,cam_h)]['run_policy']
+    self.warp_enqueue = jits[(cam_w,cam_h)]['warp_enqueue']
+    self.warp_enqueue(
+      **self.input_queues,
+      frame=Tensor(np.zeros(self.frame_buf_params['img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize(),
+      big_frame=Tensor(np.zeros(self.frame_buf_params['big_img'][3], dtype=np.uint8), device=self.WARP_DEV).contiguous().realize())
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -119,13 +123,12 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    img, big_img = self.warp_enqueue(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
-
     if prepare_only:
+      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
       return None
 
     vision_output, policy_output = self.run_policy(
-      **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
+      **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 
     vision_output = vision_output.numpy().flatten()
