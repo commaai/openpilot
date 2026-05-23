@@ -219,7 +219,7 @@ def load_route_metadata(route):
   params = Params()
   for entry in init_data.params.entries:
     try:
-      params.put(entry.key, params.cpp2python(entry.key, entry.value))
+      params.put(entry.key, params.cpp2python(entry.key, entry.value), block=True)
     except UnknownKeyName:
       pass
 

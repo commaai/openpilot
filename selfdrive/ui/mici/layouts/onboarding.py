@@ -69,7 +69,7 @@ class TrainingGuidePreDMTutorial(NavScroller):
   def show_event(self):
     super().show_event()
     # Get driver monitoring model ready for next step
-    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
+    ui_state.params.put_bool("IsDriverViewEnabled", True)
 
 
 class DMBadFaceDetected(NavScroller):
@@ -109,7 +109,7 @@ class TrainingGuideDMTutorial(NavWidget):
 
     # Disable driver monitoring model when device times out for inactivity
     def inactivity_callback():
-      ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
+      ui_state.params.put_bool("IsDriverViewEnabled", False)
 
     device.add_interactive_timeout_callback(inactivity_callback)
 
@@ -121,7 +121,7 @@ class TrainingGuideDMTutorial(NavWidget):
   def _update_state(self):
     super()._update_state()
     if device.awake and not ui_state.params.get_bool("IsDriverViewEnabled"):
-      ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
+      ui_state.params.put_bool("IsDriverViewEnabled", True)
 
     sm = ui_state.sm
     if sm.recv_frame.get("driverMonitoringState", 0) == 0:
@@ -217,11 +217,11 @@ class TrainingGuideRecordFront(NavScroller):
     super().__init__()
 
     def on_accept():
-      ui_state.params.put_bool_nonblocking("RecordFront", True)
+      ui_state.params.put_bool("RecordFront", True)
       continue_callback()
 
     def on_decline():
-      ui_state.params.put_bool_nonblocking("RecordFront", False)
+      ui_state.params.put_bool("RecordFront", False)
       continue_callback()
 
     self._accept_button = BigConfirmationCircleButton("allow data uploading", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
@@ -353,7 +353,7 @@ class OnboardingWindow(Widget):
     self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _on_uninstall(self):
-    ui_state.params.put_bool("DoUninstall", True)
+    ui_state.params.put_bool("DoUninstall", True, block=True)
 
   def show_event(self):
     super().show_event()
@@ -371,15 +371,15 @@ class OnboardingWindow(Widget):
     return self._accepted_terms and self._training_done
 
   def close(self):
-    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
     self._completed_callback()
 
   def _on_terms_accepted(self):
-    ui_state.params.put("HasAcceptedTerms", terms_version)
+    ui_state.params.put("HasAcceptedTerms", terms_version, block=True)
     gui_app.push_widget(self._training_guide)
 
   def _on_completed_training(self):
-    ui_state.params.put("CompletedTrainingVersion", training_version)
+    ui_state.params.put("CompletedTrainingVersion", training_version, block=True)
     self.close()
 
   def _render(self, _):

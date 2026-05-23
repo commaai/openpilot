@@ -10,6 +10,8 @@ import numpy as np
 import SCons.Errors
 from SCons.Defaults import _stripixes
 
+TICI = os.path.isfile('/TICI')
+
 SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
@@ -18,17 +20,18 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2)
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
+release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.exists(File('#.gitattributes').abspath), # minimal by default on release branch (where there's no LFS)
+          default=(not TICI and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-elif arch == "aarch64" and os.path.isfile('/TICI'):
+elif arch == "aarch64" and TICI:
   arch = "larch64"
 assert arch in [
   "larch64",  # linux tici arm64
