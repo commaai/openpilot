@@ -28,7 +28,7 @@ from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, 
 from openpilot.system.hardware import TICI
 
 if TICI:
-  Device['QCOM']
+  from tinygrad.runtime import ops_qcom
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
