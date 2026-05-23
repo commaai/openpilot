@@ -235,7 +235,7 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
   print('pickle round trip')
   run_policy_jit = pickle.loads(pickle.dumps(run_policy_jit))
   random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
-  random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
+  random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=True)
   return run_policy_jit
 
 
