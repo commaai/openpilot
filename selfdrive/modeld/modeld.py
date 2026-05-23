@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
-from tinygrad import Tensor, Device
+from tinygrad.tensor import Tensor
 import time
 import pickle
 import numpy as np
@@ -28,7 +28,7 @@ from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, 
 from openpilot.system.hardware import TICI
 
 if TICI:
-  from tinygrad.runtime import ops_qcom
+  from tinygrad.runtime import ops_qcom # noqa
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
