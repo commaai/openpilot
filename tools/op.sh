@@ -22,14 +22,13 @@ fi
 function op_install() {
   echo "Installing op system-wide..."
   OP_SH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh"
-  if ! grep -q "alias op=" "$RC_FILE" &> /dev/null; then
-    cat >> "$RC_FILE" <<EOF
-
+  CMD=$(cat <<EOF
 alias op='$OP_SH "\$@"'
 _op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
 complete -F _op_completions -o default op
 EOF
-  fi
+)
+  grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 }
 
