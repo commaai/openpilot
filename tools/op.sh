@@ -25,7 +25,7 @@ function op_install() {
   CMD=$(cat <<EOF
 alias op='$OP_SH "\$@"'
 _op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
-complete -F _op_completions -o default op
+[ -n "\$BASH_VERSION" ] && complete -F _op_completions -o default op
 EOF
 )
   grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
