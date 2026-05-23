@@ -205,8 +205,9 @@ def compile_jit(jit, make_random_inputs, input_keys, frame_skip, vision_metadata
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
+      random_inputs = make_random_inputs()
       st = time.perf_counter()
-      outs = fn(**{k: input_queues[k] for k in input_keys}, **make_random_inputs())
+      outs = fn(**{k: input_queues[k] for k in input_keys}, **random_inputs)
       mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
