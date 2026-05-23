@@ -7,24 +7,15 @@ from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_exi
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.system.hardware import HARDWARE, PC
 from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_present, modeld_pkl_path
 
-Import('env', 'arch', 'release')
 
+CAMERA_CONFIGS = [
+  (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
+  (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
+]
 
-def get_camera_configs():
-  DEVICE_RESOLUTIONS = {
-    "tici": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
-    "tizi": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
-    "mici": (_os_fisheye.width, _os_fisheye.height),
-  }
-  if release or PC or 'CI' in os.environ:
-    return set(DEVICE_RESOLUTIONS.values())
-  return [DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]]
-
-CAMERA_CONFIGS = get_camera_configs()
-
+Import('env', 'arch')
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
 
@@ -101,8 +92,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--policy-onnx {File(f"models/{file_prefix}driving_policy.onnx").abspath} '
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
-  size_multiplier = 1 if usbgpu else 2 # TODO make weight dedupe work on QCOM
-  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*size_multiplier)
+  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
   node = lenv.Command(
