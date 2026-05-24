@@ -2,6 +2,7 @@
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
+from tinygrad.dtype import _from_np_dtype
 import time
 import pickle
 import numpy as np
@@ -119,7 +120,7 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    inputs = {**self.input_queues, **{k: Tensor.from_blob(v, shape=v.shape, dtype=v.dtype, device=self.WARP_DEV) for k,v in self.npy.items()}}
+    inputs = {**self.input_queues, **{k: Tensor.from_blob(v.ctypes.data, shape=v.shape, dtype=_from_np_dtype(v.dtype), device=self.WARP_DEV) for k,v in self.npy.items()}}
     img, big_img = self.warp_enqueue(**{k: inputs[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
 
     if prepare_only:

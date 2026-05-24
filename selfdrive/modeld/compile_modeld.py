@@ -28,6 +28,7 @@ _patch_tinygrad_fetch_fw()
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
+from tinygrad.dtype import _from_np_dtype
 from tinygrad.engine.jit import TinyJit
 
 
@@ -207,7 +208,7 @@ def compile_jit(jit, make_random_inputs, input_keys, frame_skip, vision_metadata
       Device.default.synchronize()
       random_inputs = make_random_inputs()
       st = time.perf_counter()
-      inputs = {**input_queues, **{k: Tensor.from_blob(v, shape=v.shape, dtype=v.dtype, device=WARP_DEV) for k,v in npy.items()}}
+      inputs = {**input_queues, **{k: Tensor.from_blob(v.ctypes.data, shape=v.shape, dtype=_from_np_dtype(v.dtype), device=WARP_DEV) for k,v in npy.items()}}
       outs = fn(**{k: inputs[k] for k in input_keys}, **random_inputs)
       mt = time.perf_counter()
       Device.default.synchronize()
