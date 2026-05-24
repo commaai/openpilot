@@ -119,13 +119,14 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    img, big_img = self.warp_enqueue(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+    inputs = {**self.input_queues, **{k: Tensor.from_blob(v, shape=v.shape, dtype=v.dtype, device=self.WARP_DEV) for k,v in self.npy.items()}}
+    img, big_img = self.warp_enqueue(**{k: inputs[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
 
     if prepare_only:
       return None
 
     vision_output, policy_output = self.run_policy(
-      **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
+      **{k: inputs[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
     )
 
     vision_output = vision_output.numpy().flatten()

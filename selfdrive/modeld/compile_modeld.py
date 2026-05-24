@@ -133,7 +133,7 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
     'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
     'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
-    **{k: Tensor.from_blob(v.ctypes.data, v.shape, dtype='float32', device=device).realize() for k, v in npy.items()},
+    # **{k: Tensor.from_blob(v.ctypes.data, v.shape, dtype='float32', device=device).realize() for k, v in npy.items()},
   }
   return input_queues, npy
 
@@ -207,7 +207,8 @@ def compile_jit(jit, make_random_inputs, input_keys, frame_skip, vision_metadata
       Device.default.synchronize()
       random_inputs = make_random_inputs()
       st = time.perf_counter()
-      outs = fn(**{k: input_queues[k] for k in input_keys}, **random_inputs)
+      inputs = {**input_queues, **{k: Tensor.from_blob(v, shape=v.shape, dtype=v.dtype, device=WARP_DEV) for k,v in npy.items()}}
+      outs = fn(**{k: inputs[k] for k in input_keys}, **random_inputs)
       mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
