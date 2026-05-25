@@ -14,9 +14,15 @@ from tinygrad.engine.jit import TinyJit
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
+WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
+POLICY_INPUTS = ['feat_q', 'desire_q', 'desire', 'traffic_convention']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
+
+
+def make_random_images(keys, shape, device=None):
+  return {k: Tensor.randint(shape, low=0, high=256, dtype='uint8', device=device).realize() for k in keys}
 
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
@@ -125,53 +131,49 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_run_policy(vision_runner, policy_runner, nv12: NV12Frame, model_w, model_h,
-                    vision_features_slice, frame_skip, prepare_only=False):
+def make_warp(nv12, model_w, model_h, frame_skip):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
-  sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
 
-  def run_policy(img_q, big_img_q, feat_q, desire_q, desire, traffic_convention, tfm, big_tfm, frame, big_frame):
+  def warp_enqueue(img_q, big_img_q, tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(Device.DEFAULT)
     big_tfm = big_tfm.to(Device.DEFAULT)
+    Tensor.realize(tfm, big_tfm)
+
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
+    img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
+    return img, big_img
+  return warp_enqueue
+
+
+def make_run_policy(vision_runner, policy_runner, vision_features_slice, frame_skip):
+  sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
+  sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
+
+  def run_policy(img, big_img, feat_q, desire_q, desire, traffic_convention):
     desire = desire.to(Device.DEFAULT)
     traffic_convention = traffic_convention.to(Device.DEFAULT)
-    Tensor.realize(tfm, big_tfm, desire, traffic_convention)
-
-    img = shift_and_sample(img_q, frame_prepare(frame, tfm).unsqueeze(0), sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, frame_prepare(big_frame, big_tfm).unsqueeze(0), sample_skip_fn)
-
-    if prepare_only:
-      return img, big_img
-
+    Tensor.realize(desire, traffic_convention)
+    desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
     vision_out = next(iter(vision_runner({'img': img, 'big_img': big_img}).values())).cast('float32')
 
     new_feat = vision_out[:, vision_features_slice].reshape(1, -1).unsqueeze(0)
     feat_buf = shift_and_sample(feat_q, new_feat, sample_skip_fn)
-    desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
 
     inputs = {'features_buffer': feat_buf, 'desire_pulse': desire_buf, 'traffic_convention': traffic_convention}
     policy_out = next(iter(policy_runner(inputs).values())).cast('float32')
-
     return vision_out, policy_out
   return run_policy
 
 
-def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
-                   vision_runner, policy_runner, vision_metadata, policy_metadata):
-  print(f"Compiling combined policy JIT for {nv12.width}x{nv12.height} (prepare_only={prepare_only})...")
-
-  vision_features_slice = vision_metadata['output_slices']['hidden_state']
+def compile_jit(jit, make_random_inputs, input_keys, frame_skip, vision_metadata, policy_metadata):
   vision_input_shapes = vision_metadata['input_shapes']
   policy_input_shapes = policy_metadata['input_shapes']
 
-  _run = make_run_policy(vision_runner, policy_runner, nv12, model_w, model_h,
-                         vision_features_slice, frame_skip, prepare_only)
-  run_policy_jit = TinyJit(_run, prune=True)
-
   SEED = 42
-
-  def random_inputs_run_fn(fn, seed, test_val=None, test_buffers=None, expect_match=True):
+  def random_inputs_run(fn, seed, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy = make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, Device.DEFAULT)
     np.random.seed(seed)
     Tensor.manual_seed(seed)
@@ -180,13 +182,12 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     n_runs = 1 if testing else 3
 
     for i in range(n_runs):
-      frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
-      big_frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
       for v in npy.values():
         v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
+      random_inputs = make_random_inputs()
       st = time.perf_counter()
-      outs = fn(**input_queues, frame=frame, big_frame=big_frame)
+      outs = fn(**{k: input_queues[k] for k in input_keys}, **random_inputs)
       mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
@@ -202,16 +203,15 @@ def compile_modeld(nv12: NV12Frame, model_w, model_h, prepare_only, frame_skip,
     if test_buffers is not None:
       match = all(np.array_equal(a, b) for a, b in zip(buffers, test_buffers, strict=True))
       assert match == expect_match, f"buffers {'differ from' if expect_match else 'match'} baseline (seed={seed})"
-    return fn, val, buffers
+    return val, buffers
 
   print('capture + replay')
-  run_policy_jit, test_val, test_buffers = random_inputs_run_fn(run_policy_jit, SEED)
-
+  test_val, test_buffers = random_inputs_run(jit, SEED)
   print('pickle round trip')
-  run_policy_jit = pickle.loads(pickle.dumps(run_policy_jit))
-  random_inputs_run_fn(run_policy_jit, SEED, test_val, test_buffers, expect_match=True)
-  random_inputs_run_fn(run_policy_jit, SEED+1, test_val, test_buffers, expect_match=False)
-  return run_policy_jit
+  jit = pickle.loads(pickle.dumps(jit))
+  random_inputs_run(jit, SEED, test_val, test_buffers, expect_match=True)
+  random_inputs_run(jit, SEED+1, test_val, test_buffers, expect_match=False)
+  return jit
 
 
 def _parse_size(s):
@@ -232,23 +232,27 @@ if __name__ == "__main__":
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
 
-  out = defaultdict(dict)
-  # init runners once so weights are shared
   from get_model_metadata import make_metadata_dict
+  out = defaultdict(dict)
+  model_w, model_h = args.model_size
+
   vision_runner = OnnxRunner(args.vision_onnx)
   policy_runner = OnnxRunner(args.policy_onnx)
-  out['metadata']['vision'] = make_metadata_dict(args.vision_onnx)
-  out['metadata']['policy'] = make_metadata_dict(args.policy_onnx)
+  vision_metadata, policy_metadata = make_metadata_dict(args.vision_onnx), make_metadata_dict(args.policy_onnx)
+
+  run_policy_jit = TinyJit(make_run_policy(vision_runner, policy_runner, vision_metadata['output_slices']['hidden_state'], args.frame_skip), prune=True)
+
+  out['metadata']['vision'], out['metadata']['policy'] = vision_metadata, policy_metadata
+
+  make_random_model_inputs = partial(make_random_images, keys=['img', 'big_img'], shape=vision_metadata['input_shapes']['img'])
+  out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS, args.frame_skip, vision_metadata, policy_metadata)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    model_w, model_h = args.model_size
-    out[(cam_w,cam_h)] = {
-      name: compile_modeld(nv12, model_w, model_h, prepare_only, args.frame_skip,
-                           vision_runner, policy_runner, out['metadata']['vision'], out['metadata']['policy'])
-      for name, prepare_only in [('warp_enqueue', True), ('run_policy', False)]
-    }
+    make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size)
+    warp_enqueue = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
+    out[(cam_w,cam_h)] = compile_jit(warp_enqueue, make_random_warp_inputs, WARP_INPUTS, args.frame_skip, vision_metadata, policy_metadata)
 
   with open(args.output, "wb") as f:
     pickle.dump(out, f)
-  print(f"Saved combined JIT to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
+  print(f"Saved JITs to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")

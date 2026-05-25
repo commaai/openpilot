@@ -7,23 +7,14 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from tinygrad import Device
-from openpilot.system.hardware import HARDWARE, PC
 from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH
 
-Import('env', 'arch', 'release')
+Import('env', 'arch')
 
-
-def get_camera_configs():
-  DEVICE_RESOLUTIONS = {
-    "tici": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
-    "tizi": (_ar_ox_fisheye.width, _ar_ox_fisheye.height),
-    "mici": (_os_fisheye.width, _os_fisheye.height),
-  }
-  if release or PC or 'CI' in os.environ:
-    return set(DEVICE_RESOLUTIONS.values())
-  return [DEVICE_RESOLUTIONS[HARDWARE.get_device_type()]]
-
-CAMERA_CONFIGS = get_camera_configs()
+CAMERA_CONFIGS = [
+  (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
+  (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
+]
 
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
@@ -67,7 +58,12 @@ tg_devices_node = lenv.Command(
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
 modeld_dir = Dir("#selfdrive/modeld").abspath
-compile_modeld_script = [File(f"{modeld_dir}/compile_modeld.py")]
+compile_modeld_script = [
+  File(f"{modeld_dir}/compile_modeld.py"),
+  File(f"{modeld_dir}/get_model_metadata.py"),
+  File("#system/camerad/cameras/nv12_info.py"),
+  File("#system/hardware/hw.py"),
+]
 driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_policy']]
 
 model_w, model_h = MEDMODEL_INPUT_SIZE
@@ -81,12 +77,12 @@ cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
        f'--policy-onnx {File("models/driving_policy.onnx").abspath} '
        f'--output {pkl_path} --frame-skip {frame_skip}')
 onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
-chunk_targets = get_chunk_paths(pkl_path, estimate_pickle_max_size(onnx_sizes_sum)*2) # TODO make weight dedupe work on QCOM
+chunk_targets = get_chunk_paths(pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
 def do_chunk(target, source, env, pkl=pkl_path, chunks=chunk_targets):
   chunk_file(pkl, chunks)
 lenv.Command(
   chunk_targets,
-  tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), chunker_file, tg_devices_node],
+  tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file, tg_devices_node],
   [cmd, do_chunk],
 )
 
@@ -115,7 +111,7 @@ def tg_compile(flags, model_name):
     chunk_file(pkl, chunk_targets)
   return lenv.Command(
     chunk_targets,
-    [onnx_path] + tinygrad_files + [chunker_file, tg_devices_node],
+    [onnx_path] + tinygrad_files + [Value(chunk_targets), chunker_file, tg_devices_node],
     [f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}', do_chunk],
   )
 
