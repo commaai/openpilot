@@ -72,6 +72,14 @@ void FfmpegEncoder::encoder_close() {
   is_open = false;
 }
 
+bool FfmpegEncoder::set_bitrate(int bitrate) {
+  if (!bitrate_control_unsupported_logged) {
+    LOGD("ignoring adaptive bitrate %d for ffmpeg encoder %s", bitrate, encoder_info.publish_name);
+    bitrate_control_unsupported_logged = true;
+  }
+  return false;
+}
+
 int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   assert(buf->width == this->in_width);
   assert(buf->height == this->in_height);

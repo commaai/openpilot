@@ -1,4 +1,7 @@
+#include <algorithm>
 #include <cassert>
+#include <limits>
+#include <set>
 
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/jpeg_encoder.h"
@@ -44,11 +47,45 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
+bool has_adaptive_bitrate_encoder(const LogCameraInfo &cam_info) {
+  return std::any_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(),
+                     [](const EncoderInfo &info) { return info.adaptive_bitrate; });
+}
+
+void apply_livestream_encoder_control(SubMaster *sm, std::vector<std::unique_ptr<Encoder>> &encoders) {
+  if (sm == nullptr) {
+    return;
+  }
+
+  sm->update(0);
+  if (!sm->updated("livestreamEncoderControl")) {
+    return;
+  }
+
+  auto control = (*sm)["livestreamEncoderControl"].getLivestreamEncoderControl();
+  uint32_t bitrate = control.getBitrate();
+  if (bitrate == 0 || bitrate > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+    LOGE("invalid livestream encoder bitrate %u sequence %u",
+         static_cast<unsigned int>(bitrate), static_cast<unsigned int>(control.getSequence()));
+    return;
+  }
+
+  for (auto &e : encoders) {
+    if (e->supports_adaptive_bitrate()) {
+      e->set_bitrate(static_cast<int>(bitrate));
+    }
+  }
+}
 
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
   std::vector<std::unique_ptr<Encoder>> encoders;
+  std::unique_ptr<SubMaster> livestream_encoder_control_sm;
+  if (has_adaptive_bitrate_encoder(cam_info)) {
+    livestream_encoder_control_sm = std::make_unique<SubMaster>(std::vector<const char *>{"livestreamEncoderControl"});
+  }
+
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   std::unique_ptr<JpegEncoder> jpeg_encoder;
@@ -107,6 +144,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         }
         ++cur_seg;
       }
+
+      apply_livestream_encoder_control(livestream_encoder_control_sm.get(), encoders);
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {

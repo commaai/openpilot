@@ -21,11 +21,13 @@ public:
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open();
   void encoder_close();
+  bool set_bitrate(int bitrate);
 
 private:
   int segment_num = -1;
   int counter = 0;
   bool is_open = false;
+  bool bitrate_control_unsupported_logged = false;
 
   AVCodecContext *codec_ctx;
   AVFrame *frame = NULL;

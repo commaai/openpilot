@@ -3,6 +3,7 @@
 from abc import abstractmethod
 import time
 import argparse
+import os
 import asyncio
 import contextlib
 import json
@@ -127,6 +128,243 @@ class DynamicPubMaster(messaging.PubMaster):
           self.sock[service] = messaging.pub_sock(service)
 
 
+LIVESTREAM_ENCODER_CONTROL = "livestreamEncoderControl"
+STREAM_BITRATE_DEFAULT = 4_000_000
+STREAM_BITRATE_MIN_DEFAULT = 500_000
+BITRATE_ROUNDING = 50_000
+BITRATE_MIN_PUBLISH_DELTA = 100_000
+
+
+def _env_int(name: str, default: int) -> int:
+  try:
+    return int(os.getenv(name, default))
+  except (TypeError, ValueError):
+    return default
+
+
+@dataclass
+class LivestreamStatsSample:
+  packet_loss_fraction: float | None = None
+  packets_lost_delta: int | None = None
+  rtt: float | None = None
+  available_outgoing_bitrate: float | None = None
+  send_bitrate: float | None = None
+
+
+class LivestreamBitrateController:
+  sample_interval = 1.0
+  downshift_congested_samples = 2
+  upshift_clean_samples = 8
+  downshift_factor = 0.70
+  upshift_factor = 1.15
+  loss_fraction_threshold = 0.05
+  rtt_threshold = 0.50
+  available_bitrate_margin = 0.85
+  send_rate_drop_ratio = 0.50
+  send_rate_previous_ratio = 0.75
+  _sequence = 0
+
+  def __init__(self, peer_connection: Any, pub_master: DynamicPubMaster,
+               max_bitrate: int | None = None, min_bitrate: int | None = None):
+    self.peer_connection = peer_connection
+    self.pub_master = pub_master
+    configured_max = max_bitrate if max_bitrate is not None else _env_int("STREAM_BITRATE", STREAM_BITRATE_DEFAULT)
+    configured_min = min_bitrate if min_bitrate is not None else _env_int("STREAM_BITRATE_MIN", STREAM_BITRATE_MIN_DEFAULT)
+    self.max_bitrate = self._round_step(max(BITRATE_ROUNDING, configured_max))
+    self.min_bitrate = min(self.max_bitrate, self._round_step(max(BITRATE_ROUNDING, configured_min)))
+    self.target_bitrate = self.max_bitrate
+    self.task: asyncio.Task | None = None
+    self.clean_samples = 0
+    self.congested_samples = 0
+    self.last_published_bitrate: int | None = None
+    self.prev_packets_lost: dict[str, int] = {}
+    self.prev_outbound_bytes: int | None = None
+    self.prev_outbound_time: float | None = None
+    self.prev_send_bitrate: float | None = None
+    self.logger = logging.getLogger("webrtcd")
+
+  @staticmethod
+  def _round_step(bitrate: float) -> int:
+    return int(round(bitrate / BITRATE_ROUNDING) * BITRATE_ROUNDING)
+
+  def _clamp_and_round(self, bitrate: float) -> int:
+    rounded = self._round_step(bitrate)
+    return max(self.min_bitrate, min(self.max_bitrate, rounded))
+
+  @classmethod
+  def _next_sequence(cls) -> int:
+    cls._sequence = (cls._sequence + 1) & 0xffffffff
+    return cls._sequence
+
+  async def start(self):
+    assert self.task is None
+    await self.pub_master.add_services_if_needed([LIVESTREAM_ENCODER_CONTROL])
+    self._set_target(self.target_bitrate, force=True)
+    self.task = asyncio.create_task(self.run())
+
+  async def stop(self, reset: bool = True):
+    if self.task is not None:
+      task = self.task
+      self.task = None
+      if not task.done():
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+          await task
+    if reset:
+      await self.pub_master.add_services_if_needed([LIVESTREAM_ENCODER_CONTROL])
+      self._set_target(self.max_bitrate, force=True)
+
+  async def run(self):
+    while True:
+      await asyncio.sleep(self.sample_interval)
+      try:
+        sample = await self.collect_stats()
+        self.update_target(sample)
+      except asyncio.CancelledError:
+        raise
+      except Exception:
+        self.logger.exception("livestream bitrate controller failure")
+
+  async def collect_stats(self) -> LivestreamStatsSample:
+    report = await self.peer_connection.getStats()
+    return self.sample_from_stats(report)
+
+  @staticmethod
+  def _stat_get(stat: Any, key: str, default: Any = None) -> Any:
+    if isinstance(stat, dict):
+      return stat.get(key, default)
+    return getattr(stat, key, default)
+
+  def sample_from_stats(self, report: Any) -> LivestreamStatsSample:
+    loss_fractions: list[float] = []
+    packets_lost_delta = 0
+    saw_packets_lost_delta = False
+    rtts: list[float] = []
+    available_bitrates: list[float] = []
+    outbound_bytes = 0
+    saw_outbound_bytes = False
+
+    items = report.items() if hasattr(report, "items") else enumerate(report)
+    for stat_id, stat in items:
+      stat_type = self._stat_get(stat, "type")
+      kind = self._stat_get(stat, "kind", self._stat_get(stat, "mediaType"))
+
+      if stat_type in ("remote-inbound-rtp", "remote-outbound-rtp", "inbound-rtp"):
+        fraction_lost = self._stat_get(stat, "fractionLost")
+        if fraction_lost is not None:
+          loss = max(0.0, float(fraction_lost))
+          if loss > 1.0:
+            loss /= 256.0
+          loss_fractions.append(loss)
+
+        packets_lost = self._stat_get(stat, "packetsLost")
+        if packets_lost is not None:
+          lost = max(0, int(packets_lost))
+          stat_key = str(stat_id)
+          prev_lost = self.prev_packets_lost.get(stat_key)
+          if prev_lost is not None:
+            packets_lost_delta += max(0, lost - prev_lost)
+            saw_packets_lost_delta = True
+          self.prev_packets_lost[stat_key] = lost
+
+      for rtt_field in ("roundTripTime", "currentRoundTripTime"):
+        rtt = self._stat_get(stat, rtt_field)
+        if rtt is not None:
+          rtts.append(float(rtt))
+
+      if stat_type == "candidate-pair":
+        state = self._stat_get(stat, "state")
+        selected = bool(self._stat_get(stat, "selected", False) or self._stat_get(stat, "nominated", False))
+        if state in (None, "succeeded") or selected:
+          available = self._stat_get(stat, "availableOutgoingBitrate")
+          if available is not None and float(available) > 0:
+            available_bitrates.append(float(available))
+
+      if stat_type == "outbound-rtp" and kind in (None, "video"):
+        bytes_sent = self._stat_get(stat, "bytesSent")
+        if bytes_sent is not None:
+          outbound_bytes += max(0, int(bytes_sent))
+          saw_outbound_bytes = True
+
+    send_bitrate = None
+    now = time.monotonic()
+    if saw_outbound_bytes:
+      if self.prev_outbound_bytes is not None and self.prev_outbound_time is not None and now > self.prev_outbound_time:
+        byte_delta = max(0, outbound_bytes - self.prev_outbound_bytes)
+        send_bitrate = byte_delta * 8.0 / (now - self.prev_outbound_time)
+      self.prev_outbound_bytes = outbound_bytes
+      self.prev_outbound_time = now
+
+    return LivestreamStatsSample(
+      packet_loss_fraction=max(loss_fractions) if loss_fractions else None,
+      packets_lost_delta=packets_lost_delta if saw_packets_lost_delta else None,
+      rtt=max(rtts) if rtts else None,
+      available_outgoing_bitrate=min(available_bitrates) if available_bitrates else None,
+      send_bitrate=send_bitrate,
+    )
+
+  def congestion_reasons(self, sample: LivestreamStatsSample) -> list[str]:
+    reasons = []
+    if sample.packet_loss_fraction is not None and sample.packet_loss_fraction >= self.loss_fraction_threshold:
+      reasons.append("packet_loss")
+    if sample.packets_lost_delta is not None and sample.packets_lost_delta > 0:
+      reasons.append("packet_loss_delta")
+    if sample.rtt is not None and sample.rtt >= self.rtt_threshold:
+      reasons.append("rtt")
+    if sample.available_outgoing_bitrate is not None and sample.available_outgoing_bitrate < self.target_bitrate * self.available_bitrate_margin:
+      reasons.append("available_bitrate")
+    if sample.send_bitrate is not None and self.prev_send_bitrate is not None:
+      if sample.send_bitrate < self.target_bitrate * self.send_rate_drop_ratio and \
+         self.prev_send_bitrate > self.target_bitrate * self.send_rate_previous_ratio:
+        reasons.append("send_rate_drop")
+    return reasons
+
+  def update_target(self, sample: LivestreamStatsSample) -> bool:
+    reasons = self.congestion_reasons(sample)
+    changed = False
+
+    if reasons:
+      self.congested_samples += 1
+      self.clean_samples = 0
+      if self.congested_samples >= self.downshift_congested_samples:
+        new_target = self.target_bitrate * self.downshift_factor
+        if sample.available_outgoing_bitrate is not None:
+          new_target = min(new_target, sample.available_outgoing_bitrate * self.available_bitrate_margin)
+        changed = self._set_target(new_target)
+        if changed:
+          self.logger.debug("livestream bitrate downshift to %d after %s", self.target_bitrate, reasons)
+          self.congested_samples = 0
+    else:
+      self.clean_samples += 1
+      self.congested_samples = 0
+      if self.clean_samples >= self.upshift_clean_samples:
+        changed = self._set_target(max(self.target_bitrate + BITRATE_MIN_PUBLISH_DELTA,
+                                       self.target_bitrate * self.upshift_factor))
+        if changed:
+          self.logger.debug("livestream bitrate upshift to %d", self.target_bitrate)
+          self.clean_samples = 0
+
+    if sample.send_bitrate is not None:
+      self.prev_send_bitrate = sample.send_bitrate
+    return changed
+
+  def _set_target(self, bitrate: float, force: bool = False) -> bool:
+    target = self._clamp_and_round(bitrate)
+    if not force and abs(target - self.target_bitrate) < BITRATE_MIN_PUBLISH_DELTA:
+      return False
+    if not force and self.last_published_bitrate is not None and \
+       abs(target - self.last_published_bitrate) < BITRATE_MIN_PUBLISH_DELTA:
+      return False
+
+    self.target_bitrate = target
+    msg = messaging.new_message(LIVESTREAM_ENCODER_CONTROL)
+    msg.livestreamEncoderControl.bitrate = target
+    msg.livestreamEncoderControl.sequence = self._next_sequence()
+    self.pub_master.send(LIVESTREAM_ENCODER_CONTROL, msg)
+    self.last_published_bitrate = target
+    return True
+
+
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
@@ -146,6 +384,7 @@ class StreamSession:
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
+    self.bitrate_controller: LivestreamBitrateController | None = None
     if len(incoming_services) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
@@ -216,6 +455,9 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
+      self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.shared_pub_master)
+      await self.bitrate_controller.start()
+
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
@@ -231,6 +473,9 @@ class StreamSession:
       if self._cleanup_done:
         return
       self._cleanup_done = True
+      if self.bitrate_controller is not None:
+        await self.bitrate_controller.stop(reset=True)
+        self.bitrate_controller = None
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       await self.stream.stop()

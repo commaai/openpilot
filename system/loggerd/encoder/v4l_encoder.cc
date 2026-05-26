@@ -1,4 +1,6 @@
 #include <cassert>
+#include <cerrno>
+#include <cstring>
 #include <string>
 #include <sys/ioctl.h>
 #include <poll.h>
@@ -155,6 +157,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
   assert(strcmp((const char *)cap.card, "msm_vidc_venc") == 0);
 
   EncoderSettings encoder_settings = encoder_info.get_settings(in_width);
+  current_bitrate = encoder_settings.bitrate;
   bool is_h265 = encoder_settings.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C;
 
   struct v4l2_format fmt_out = {
@@ -270,6 +273,31 @@ void V4LEncoder::encoder_open() {
   dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
   this->is_open = true;
   this->counter = 0;
+}
+
+bool V4LEncoder::set_bitrate(int bitrate) {
+  if (bitrate <= 0 || bitrate == current_bitrate) {
+    return !bitrate_control_failed;
+  }
+  if (bitrate_control_failed) {
+    return false;
+  }
+
+  struct v4l2_control ctrl = {
+    .id = V4L2_CID_MPEG_VIDEO_BITRATE,
+    .value = bitrate,
+  };
+  if (util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl) == -1) {
+    int err = errno;
+    LOGE("failed to update %s bitrate to %d: %s(%d); disabling adaptive bitrate",
+         encoder_info.publish_name, bitrate, strerror(err), err);
+    bitrate_control_failed = true;
+    return false;
+  }
+
+  current_bitrate = bitrate;
+  LOGD("updated %s bitrate to %d", encoder_info.publish_name, bitrate);
+  return true;
 }
 
 int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {

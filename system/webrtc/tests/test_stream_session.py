@@ -3,6 +3,7 @@ import json
 import time
 # for aiortc and its dependencies
 import warnings
+from types import SimpleNamespace
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
@@ -11,8 +12,22 @@ from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import capnp
 from cereal import messaging, log
 
-from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
+from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy, \
+  LivestreamBitrateController, LivestreamStatsSample, LIVESTREAM_ENCODER_CONTROL
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+
+
+class FakePubMaster:
+  def __init__(self):
+    self.services = []
+    self.sent = []
+
+  async def add_services_if_needed(self, services):
+    self.services.extend(services)
+
+  def send(self, service, msg):
+    control = msg.livestreamEncoderControl
+    self.sent.append((service, control.bitrate, control.sequence))
 
 
 class TestStreamSession:
@@ -84,4 +99,52 @@ class TestStreamSession:
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
       assert packet.size == 0
+
+  def test_livestream_bitrate_controller_policy(self, mocker):
+    pub_master = FakePubMaster()
+    controller = LivestreamBitrateController(mocker.Mock(), pub_master, max_bitrate=4_000_000, min_bitrate=500_000)
+
+    controller._set_target(controller.target_bitrate, force=True)
+    assert pub_master.sent[-1][:2] == (LIVESTREAM_ENCODER_CONTROL, 4_000_000)
+
+    congested = LivestreamStatsSample(packet_loss_fraction=0.06)
+    assert not controller.update_target(congested)
+    assert controller.target_bitrate == 4_000_000
+
+    assert controller.update_target(congested)
+    assert controller.target_bitrate == 2_800_000
+    assert pub_master.sent[-1][:2] == (LIVESTREAM_ENCODER_CONTROL, 2_800_000)
+
+    clean = LivestreamStatsSample(packet_loss_fraction=0.0, rtt=0.1, available_outgoing_bitrate=4_000_000)
+    for _ in range(7):
+      assert not controller.update_target(clean)
+    assert controller.update_target(clean)
+    assert controller.target_bitrate == 3_200_000
+    assert pub_master.sent[-1][:2] == (LIVESTREAM_ENCODER_CONTROL, 3_200_000)
+
+  def test_livestream_bitrate_controller_stats_sample(self, mocker):
+    pub_master = FakePubMaster()
+    controller = LivestreamBitrateController(mocker.Mock(), pub_master, max_bitrate=4_000_000, min_bitrate=500_000)
+    mocker.patch("openpilot.system.webrtc.webrtcd.time.monotonic", side_effect=[100.0, 101.0])
+
+    first = {
+      "remote": SimpleNamespace(type="remote-inbound-rtp", fractionLost=13, packetsLost=1, roundTripTime=0.2),
+      "pair": SimpleNamespace(type="candidate-pair", state="succeeded", availableOutgoingBitrate=3_000_000),
+      "out": SimpleNamespace(type="outbound-rtp", kind="video", bytesSent=1000),
+    }
+    sample = controller.sample_from_stats(first)
+    assert round(sample.packet_loss_fraction, 4) == round(13 / 256, 4)
+    assert sample.packets_lost_delta is None
+    assert sample.rtt == 0.2
+    assert sample.available_outgoing_bitrate == 3_000_000
+    assert sample.send_bitrate is None
+
+    second = {
+      "remote": SimpleNamespace(type="remote-inbound-rtp", fractionLost=0, packetsLost=3, roundTripTime=0.3),
+      "out": SimpleNamespace(type="outbound-rtp", kind="video", bytesSent=2000),
+    }
+    sample = controller.sample_from_stats(second)
+    assert sample.packets_lost_delta == 2
+    assert sample.rtt == 0.3
+    assert sample.send_bitrate == 8_000
 

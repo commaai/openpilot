@@ -59,6 +59,7 @@ public:
   const char *filename = NULL;
   bool record = true;
   bool include_audio = false;
+  bool adaptive_bitrate = false;
   int frame_width = -1;
   int frame_height = -1;
   int fps = MAIN_FPS;
@@ -104,6 +105,7 @@ const EncoderInfo stream_road_encoder_info = {
   .publish_name = "livestreamRoadEncodeData",
   //.thumbnail_name = "thumbnail",
   .record = false,
+  .adaptive_bitrate = true,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
 };
@@ -111,6 +113,7 @@ const EncoderInfo stream_road_encoder_info = {
 const EncoderInfo stream_wide_road_encoder_info = {
   .publish_name = "livestreamWideRoadEncodeData",
   .record = false,
+  .adaptive_bitrate = true,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
@@ -118,6 +121,7 @@ const EncoderInfo stream_wide_road_encoder_info = {
 const EncoderInfo stream_driver_encoder_info = {
   .publish_name = "livestreamDriverEncodeData",
   .record = false,
+  .adaptive_bitrate = true,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };

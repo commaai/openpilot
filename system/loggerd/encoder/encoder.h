@@ -26,6 +26,9 @@ public:
   virtual int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) = 0;
   virtual void encoder_open() = 0;
   virtual void encoder_close() = 0;
+  virtual bool set_bitrate(int bitrate);
+
+  bool supports_adaptive_bitrate() const { return encoder_info.adaptive_bitrate; }
 
   void publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
