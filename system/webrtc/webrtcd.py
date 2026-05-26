@@ -143,9 +143,8 @@ def _env_int(name: str, default: int) -> int:
 
 class LivestreamBitrateController:
   sample_interval = 0.2
-  backoff_factor = 0.7      # multiplicative decrease on loss
-  upshift_step = 0.05       # additive increase when no loss
-  upshift_floor = 50_000
+  backoff_factor = 0.7        # multiplicative decrease on loss
+  upshift_per_sample = 25_000 # +25 kbps/sample = +125 kbps/sec at 5 Hz
   _sequence = 0
 
   def __init__(self, peer_connection: Any, pub_master: DynamicPubMaster,
@@ -190,8 +189,7 @@ class LivestreamBitrateController:
         if loss_delta > 0:
           self.target = max(float(self.min_bitrate), self.target * self.backoff_factor)
         else:
-          self.target = min(float(self.max_bitrate),
-                            self.target + max(self.upshift_floor, self.target * self.upshift_step))
+          self.target = min(float(self.max_bitrate), self.target + self.upshift_per_sample)
         self._publish(self.target)
       except asyncio.CancelledError:
         raise
