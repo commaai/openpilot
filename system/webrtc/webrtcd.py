@@ -143,8 +143,9 @@ def _env_int(name: str, default: int) -> int:
 
 class LivestreamBitrateController:
   sample_interval = 0.2
-  backoff_factor = 0.7        # multiplicative decrease on loss
-  upshift_per_sample = 25_000 # +25 kbps/sample = +125 kbps/sec at 5 Hz
+  backoff_factor = 0.7         # multiplicative decrease on loss
+  upshift_step = 100_000       # +100 kbps per upshift
+  upshift_clean_samples = 5    # require 5 consecutive clean samples (1 sec) between upshifts
   _sequence = 0
 
   def __init__(self, peer_connection: Any, pub_master: DynamicPubMaster,
@@ -158,6 +159,7 @@ class LivestreamBitrateController:
     self.target = float(self.max_bitrate)
     self.last_sent: int | None = None
     self.prev_lost: int | None = None
+    self.clean_samples = 0
     self.task: asyncio.Task | None = None
     self.logger = logging.getLogger("webrtcd")
 
@@ -188,8 +190,12 @@ class LivestreamBitrateController:
           continue
         if loss_delta > 0:
           self.target = max(float(self.min_bitrate), self.target * self.backoff_factor)
+          self.clean_samples = 0
         else:
-          self.target = min(float(self.max_bitrate), self.target + self.upshift_per_sample)
+          self.clean_samples += 1
+          if self.clean_samples >= self.upshift_clean_samples:
+            self.target = min(float(self.max_bitrate), self.target + self.upshift_step)
+            self.clean_samples = 0
         self._publish(self.target)
       except asyncio.CancelledError:
         raise
