@@ -143,9 +143,8 @@ def _env_int(name: str, default: int) -> int:
 
 class LivestreamBitrateController:
   sample_interval = 0.2
-  send_rate_floor = 0.85
-  backoff_margin = 0.9
-  upshift_step = 0.05
+  backoff_factor = 0.7      # multiplicative decrease on loss
+  upshift_step = 0.05       # additive increase when no loss
   upshift_floor = 50_000
   _sequence = 0
 
@@ -159,9 +158,7 @@ class LivestreamBitrateController:
     self.min_bitrate = min(self.max_bitrate, max(BITRATE_ROUNDING, configured_min))
     self.target = float(self.max_bitrate)
     self.last_sent: int | None = None
-    self.prev_bytes: int | None = None
-    self.prev_lost = 0
-    self.prev_time: float | None = None
+    self.prev_lost: int | None = None
     self.task: asyncio.Task | None = None
     self.logger = logging.getLogger("webrtcd")
 
@@ -187,11 +184,11 @@ class LivestreamBitrateController:
     while True:
       await asyncio.sleep(self.sample_interval)
       try:
-        send_rate, loss_delta = await self._sample()
-        if send_rate is None:
+        loss_delta = await self._sample()
+        if loss_delta is None:
           continue
-        if loss_delta > 0 or send_rate < self.target * self.send_rate_floor:
-          self.target = max(float(self.min_bitrate), send_rate * self.backoff_margin)
+        if loss_delta > 0:
+          self.target = max(float(self.min_bitrate), self.target * self.backoff_factor)
         else:
           self.target = min(float(self.max_bitrate),
                             self.target + max(self.upshift_floor, self.target * self.upshift_step))
@@ -201,24 +198,16 @@ class LivestreamBitrateController:
       except Exception:
         self.logger.exception("livestream bitrate controller failure")
 
-  async def _sample(self) -> tuple[float | None, int]:
+  async def _sample(self) -> int | None:
     report = await self.pc.getStats()
     stats = report.values() if hasattr(report, "values") else report
-    bytes_sent, packets_lost = 0, 0
+    packets_lost = 0
     for s in stats:
-      stype = getattr(s, "type", None)
-      if stype == "outbound-rtp" and getattr(s, "kind", None) in (None, "video"):
-        bytes_sent += max(0, int(getattr(s, "bytesSent", 0) or 0))
-      elif stype in ("remote-inbound-rtp", "remote-outbound-rtp"):
+      if getattr(s, "type", None) in ("remote-inbound-rtp", "remote-outbound-rtp"):
         packets_lost += max(0, int(getattr(s, "packetsLost", 0) or 0))
-
-    now = time.monotonic()
-    send_rate = None
-    if self.prev_bytes is not None and self.prev_time is not None and now > self.prev_time:
-      send_rate = max(0, bytes_sent - self.prev_bytes) * 8.0 / (now - self.prev_time)
-    loss_delta = max(0, packets_lost - self.prev_lost)
-    self.prev_bytes, self.prev_lost, self.prev_time = bytes_sent, packets_lost, now
-    return send_rate, loss_delta
+    loss_delta = None if self.prev_lost is None else max(0, packets_lost - self.prev_lost)
+    self.prev_lost = packets_lost
+    return loss_delta
 
   def _publish(self, bitrate: float):
     target = max(self.min_bitrate, min(self.max_bitrate,
