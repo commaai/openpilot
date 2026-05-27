@@ -8,7 +8,7 @@ import contextlib
 import json
 import uuid
 import logging
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
@@ -17,12 +17,16 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
 import capnp
+import requests
 from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
+
+
+WEBRTCD_PORT = 5001
 
 
 class AsyncTaskRunner:
@@ -242,6 +246,23 @@ class StreamRequestBody:
   initCamera: str
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
+
+
+def post_stream_request(sdp: str, init_camera: str, bridge_services_in: list[str], bridge_services_out: list[str]) -> dict:
+  body = StreamRequestBody(sdp, init_camera, bridge_services_in, bridge_services_out)
+  try:
+    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
+    if not resp.ok:
+      try:
+        error_body = resp.json()
+        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
+      except ValueError:
+        resp.raise_for_status()
+    return resp.json()
+  except requests.ConnectTimeout as e:
+    raise Exception("webrtc took too long to respond. is it on?") from e
+  except requests.ConnectionError as e:
+    raise Exception("webrtc is not running. turn on comma body ignition.") from e
 
 
 async def get_stream(request: 'web.Request'):
