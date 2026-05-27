@@ -1,4 +1,4 @@
-import glob
+import hashlib
 import json
 import os
 import sys, subprocess
@@ -19,9 +19,10 @@ Import('env', 'arch')
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
 
-tinygrad_root = env.Dir("#").abspath
-tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
-                  if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
+tinygrad_root = env.Dir("#tinygrad_repo").abspath
+tinygrad_head = subprocess.check_output(['git', '-C', tinygrad_root, 'rev-parse', 'HEAD'], text=True).strip()
+tinygrad_status = subprocess.check_output(['git', '-C', tinygrad_root, 'status', '--porcelain'], text=True)
+tinygrad_files = [Value(f"tinygrad@{tinygrad_head}-{hashlib.sha256(tinygrad_status.encode()).hexdigest()}")]
 
 def estimate_pickle_max_size(onnx_size):
   return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
