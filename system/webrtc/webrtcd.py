@@ -250,6 +250,8 @@ class StreamSession:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
+      self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
+    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.shared_pub_master)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
@@ -314,10 +316,9 @@ class StreamSession:
           self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
-          self.outgoing_bridge.add_channel(channel)
+          self.outgoing_bridge.proxy.add_channel(channel)
           self.outgoing_bridge.start()
-      self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.shared_pub_master)
-      await self.bitrate_controller.start()
+      self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
 
