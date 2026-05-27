@@ -138,6 +138,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
 
   def __init__(self, peer_connection: Any, pub_master: DynamicPubMaster,
                max_bitrate: int | None = None, min_bitrate: int | None = None):
+    super().__init__()
     self.pc = peer_connection
     self.pub_master = pub_master
     self.service_name = "livestreamEncoderBitrate"
@@ -290,7 +291,7 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
-      self.bitrate_controller.start()
+      await self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
 
