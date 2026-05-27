@@ -133,7 +133,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
   sample_interval = 0.2
   backoff_factor = 0.7         # multiplicative decrease on loss
   upshift_step = 100_000       # +100 kbps per upshift
-  upshift_clean_samples = 5    # require 5 consecutive clean samples (1 sec) between upshifts
+  required_clean_samples = 5   # require 5 consecutive clean samples (1 sec) in order to upshift
   bitrate_rounding = 50_000
 
   def __init__(self, peer_connection: Any, pub_master: DynamicPubMaster,
@@ -169,7 +169,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
           self.clean_samples = 0
         else:
           self.clean_samples += 1
-          if self.clean_samples >= self.upshift_clean_samples:
+          if self.clean_samples >= self.required_clean_samples:
             self.target = min(float(self.max_bitrate), self.target + self.upshift_step)
             self.clean_samples = 0
         self._publish(self.target)
