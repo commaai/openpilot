@@ -51,7 +51,7 @@ void apply_livestream_encoder_control(SubMaster *sm, std::vector<std::unique_ptr
   sm->update(0);
   if (!sm->updated("livestreamEncoderBitrate")) return;
 
-  uint32_t bitrate = (*sm)["livestreamEncoderBitrate"].getLivestreamEncoderBitrate();
+  uint32_t bitrate = (*sm)["livestreamEncoderBitrate"].getLivestreamEncoderBitrate().getBitrate();
   for (auto &e : encoders) {
     e->set_bitrate(static_cast<int>(bitrate));
   }

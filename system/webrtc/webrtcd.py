@@ -3,7 +3,6 @@
 from abc import abstractmethod
 import time
 import argparse
-import os
 import asyncio
 import contextlib
 import json
@@ -195,7 +194,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
                                        int(round(bitrate / self.bitrate_rounding) * self.bitrate_rounding)))
     if target != self.last_sent:
       msg = messaging.new_message(self.service_name)
-      msg.livestreamEncoderBitrate = target
+      msg.livestreamEncoderBitrate.bitrate = target
       self.pub_master.send(self.service_name, msg)
       self.last_sent = target
 
