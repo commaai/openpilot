@@ -72,9 +72,8 @@ void FfmpegEncoder::encoder_close() {
   is_open = false;
 }
 
-bool FfmpegEncoder::set_bitrate(int bitrate) {
+void FfmpegEncoder::set_bitrate(int bitrate) {
   LOGE("ignoring adaptive bitrate %d for ffmpeg encoder %s", bitrate, encoder_info.publish_name);
-  return false;
 }
 
 int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {

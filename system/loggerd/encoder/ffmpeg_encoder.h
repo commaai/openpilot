@@ -21,7 +21,7 @@ public:
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open();
   void encoder_close();
-  bool set_bitrate(int bitrate);
+  void set_bitrate(int bitrate);
 
 private:
   int segment_num = -1;

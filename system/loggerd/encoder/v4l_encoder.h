@@ -13,7 +13,7 @@ public:
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open();
   void encoder_close();
-  bool set_bitrate(int bitrate);
+  void set_bitrate(int bitrate);
 
 private:
   int fd;
@@ -22,6 +22,7 @@ private:
   int segment_num = -1;
   int counter = 0;
   int current_bitrate = -1;
+  bool adaptive_bitrate;
 
   SafeQueue<VisionIpcBufExtra> extras;
 

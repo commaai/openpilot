@@ -1,5 +1,5 @@
+#include <algorithm>
 #include <cassert>
-#include <limits>
 
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/jpeg_encoder.h"
@@ -45,25 +45,26 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
-void apply_livestream_encoder_control(SubMaster *sm, std::vector<std::unique_ptr<Encoder>> &encoders) {
-  if (sm == nullptr) return;
+void apply_bitrate(SubMaster &sm, std::vector<std::unique_ptr<Encoder>> &encoders) {
+  sm.update(0);
+  if (!sm.updated("livestreamEncoderBitrate")) return;
 
-  sm->update(0);
-  if (!sm->updated("livestreamEncoderBitrate")) return;
-
-  uint32_t bitrate = (*sm)["livestreamEncoderBitrate"].getLivestreamEncoderBitrate().getBitrate();
+  uint32_t bitrate = sm["livestreamEncoderBitrate"].getLivestreamEncoderBitrate().getBitrate();
   for (auto &e : encoders) {
     e->set_bitrate(static_cast<int>(bitrate));
   }
 }
 
-void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info, bool is_stream) {
+void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
   std::vector<std::unique_ptr<Encoder>> encoders;
-  std::unique_ptr<SubMaster> livestream_encoder_control_sm;
-  if (is_stream) {
-    livestream_encoder_control_sm = std::make_unique<SubMaster>(std::vector<const char *>{"livestreamEncoderBitrate"});
+
+  std::unique_ptr<SubMaster> bitrate_sm;
+  bool has_adaptive = std::any_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(),
+                                  [](const auto &ei) { return ei.adaptive_bitrate; });
+  if (has_adaptive) {
+    bitrate_sm = std::make_unique<SubMaster>(std::vector<const char *>{"livestreamEncoderBitrate"});
   }
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
@@ -125,7 +126,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info, bool is_str
         ++cur_seg;
       }
 
-      apply_livestream_encoder_control(livestream_encoder_control_sm.get(), encoders);
+      if (bitrate_sm) apply_bitrate(*bitrate_sm, encoders);
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
@@ -144,7 +145,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info, bool is_str
 }
 
 template <size_t N>
-void encoderd_thread(const LogCameraInfo (&cameras)[N], bool is_stream) {
+void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
   EncoderdState s;
 
   std::set<VisionStreamType> streams;
@@ -163,7 +164,7 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N], bool is_stream) {
                              [stream](auto &cam) { return cam.stream_type == stream; });
       assert(it != std::end(cameras));
       ++s.max_waiting;
-      encoder_threads.push_back(std::thread(encoder_thread, &s, *it, is_stream));
+      encoder_threads.push_back(std::thread(encoder_thread, &s, *it));
     }
 
     for (auto &t : encoder_threads) t.join();
@@ -181,12 +182,12 @@ int main(int argc, char* argv[]) {
   if (argc > 1) {
     std::string arg1(argv[1]);
     if (arg1 == "--stream") {
-      encoderd_thread(stream_cameras_logged, true);
+      encoderd_thread(stream_cameras_logged);
     } else {
       LOGE("Argument '%s' is not supported", arg1.c_str());
     }
   } else {
-    encoderd_thread(cameras_logged, false);
+    encoderd_thread(cameras_logged);
   }
   return 0;
 }
