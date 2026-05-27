@@ -1,7 +1,5 @@
-#include <algorithm>
 #include <cassert>
 #include <limits>
-#include <set>
 
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/jpeg_encoder.h"
@@ -48,21 +46,12 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
 }
 
 void apply_livestream_encoder_control(SubMaster *sm, std::vector<std::unique_ptr<Encoder>> &encoders) {
-  if (sm == nullptr) {
-    return;
-  }
+  if (sm == nullptr) return;
 
   sm->update(0);
-  if (!sm->updated("livestreamEncoderBitrate")) {
-    return;
-  }
+  if (!sm->updated("livestreamEncoderBitrate")) return;
 
   uint32_t bitrate = (*sm)["livestreamEncoderBitrate"].getLivestreamEncoderBitrate();
-  if (bitrate == 0 || bitrate > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
-    LOGE("invalid livestream encoder bitrate %u", static_cast<unsigned int>(bitrate));
-    return;
-  }
-
   for (auto &e : encoders) {
     e->set_bitrate(static_cast<int>(bitrate));
   }

@@ -306,7 +306,10 @@ void V4LEncoder::encoder_close() {
 }
 
 bool V4LEncoder::set_bitrate(int bitrate) {
-  if (bitrate <= 0 || bitrate == current_bitrate) return;
+  if (bitrate <= 0 || bitrate == current_bitrate) {
+    LOGE("invalid livestream encoder bitrate %d", bitrate);
+    return;
+  }
   struct v4l2_control ctrl = {
     .id = V4L2_CID_MPEG_VIDEO_BITRATE,
     .value = bitrate,

@@ -22,7 +22,6 @@ private:
   int segment_num = -1;
   int counter = 0;
   int current_bitrate = -1;
-  bool bitrate_control_failed = false;
 
   SafeQueue<VisionIpcBufExtra> extras;
 
