@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from abc import abstractmethod
+import os
 import time
 import argparse
 import asyncio
@@ -128,7 +129,7 @@ class DynamicPubMaster(messaging.PubMaster):
 
 
 class LivestreamBitrateController(AsyncTaskRunner):
-  bitrate_max_default = 4_000_000
+  bitrate_max_default = int(os.environ.get("STREAM_BITRATE", 5_000_000))
   bitrate_min_default = 500_000
   sample_interval = 0.2
   backoff_factor = 0.7         # multiplicative decrease on loss
