@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cassert>
 
 #include "system/loggerd/loggerd.h"
