@@ -9,10 +9,6 @@ VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in
   pm.reset(new PubMaster(std::vector{encoder_info.publish_name}));
 }
 
-bool VideoEncoder::set_bitrate(int) {
-  return false;
-}
-
 void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
                                      unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat) {
   MessageBuilder msg;
