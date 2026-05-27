@@ -58,15 +58,13 @@ void apply_livestream_encoder_control(SubMaster *sm, std::vector<std::unique_ptr
   }
 
   sm->update(0);
-  if (!sm->updated("livestreamEncoderControl")) {
+  if (!sm->updated("livestreamEncoderBitrate")) {
     return;
   }
 
-  auto control = (*sm)["livestreamEncoderControl"].getLivestreamEncoderControl();
-  uint32_t bitrate = control.getBitrate();
+  uint32_t bitrate = (*sm)["livestreamEncoderBitrate"].getLivestreamEncoderBitrate();
   if (bitrate == 0 || bitrate > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
-    LOGE("invalid livestream encoder bitrate %u sequence %u",
-         static_cast<unsigned int>(bitrate), static_cast<unsigned int>(control.getSequence()));
+    LOGE("invalid livestream encoder bitrate %u", static_cast<unsigned int>(bitrate));
     return;
   }
 
@@ -83,7 +81,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   std::vector<std::unique_ptr<Encoder>> encoders;
   std::unique_ptr<SubMaster> livestream_encoder_control_sm;
   if (has_adaptive_bitrate_encoder(cam_info)) {
-    livestream_encoder_control_sm = std::make_unique<SubMaster>(std::vector<const char *>{"livestreamEncoderControl"});
+    livestream_encoder_control_sm = std::make_unique<SubMaster>(std::vector<const char *>{"livestreamEncoderBitrate"});
   }
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);

@@ -127,59 +127,36 @@ class DynamicPubMaster(messaging.PubMaster):
         if service not in self.sock:
           self.sock[service] = messaging.pub_sock(service)
 
-
-LIVESTREAM_ENCODER_CONTROL = "livestreamEncoderControl"
 STREAM_BITRATE_DEFAULT = 4_000_000
 STREAM_BITRATE_MIN_DEFAULT = 500_000
-BITRATE_ROUNDING = 50_000
 
-
-def _env_int(name: str, default: int) -> int:
-  try:
-    return int(os.getenv(name, default))
-  except (TypeError, ValueError):
-    return default
-
-
-class LivestreamBitrateController:
+class LivestreamBitrateController(AsyncTaskRunner):
   sample_interval = 0.2
   backoff_factor = 0.7         # multiplicative decrease on loss
   upshift_step = 100_000       # +100 kbps per upshift
   upshift_clean_samples = 5    # require 5 consecutive clean samples (1 sec) between upshifts
-  _sequence = 0
+  bitrate_rounding = 50_000
 
   def __init__(self, peer_connection: Any, pub_master: DynamicPubMaster,
                max_bitrate: int | None = None, min_bitrate: int | None = None):
     self.pc = peer_connection
     self.pub_master = pub_master
-    configured_max = max_bitrate if max_bitrate is not None else _env_int("STREAM_BITRATE", STREAM_BITRATE_DEFAULT)
-    configured_min = min_bitrate if min_bitrate is not None else _env_int("STREAM_BITRATE_MIN", STREAM_BITRATE_MIN_DEFAULT)
-    self.max_bitrate = max(BITRATE_ROUNDING, configured_max)
-    self.min_bitrate = min(self.max_bitrate, max(BITRATE_ROUNDING, configured_min))
+    self.service_name = "livestreamEncoderBitrate"
+    self.max_bitrate = max_bitrate if max_bitrate is not None else STREAM_BITRATE_DEFAULT
+    self.min_bitrate = min_bitrate if min_bitrate is not None else STREAM_BITRATE_MIN_DEFAULT
     self.target = float(self.max_bitrate)
     self.last_sent: int | None = None
     self.prev_lost: int | None = None
     self.clean_samples = 0
-    self.task: asyncio.Task | None = None
-    self.logger = logging.getLogger("webrtcd")
 
   async def start(self):
-    assert self.task is None
-    await self.pub_master.add_services_if_needed([LIVESTREAM_ENCODER_CONTROL])
+    await self.pub_master.add_services_if_needed([self.service_name])
     self._publish(self.max_bitrate)
-    self.task = asyncio.create_task(self.run())
+    super().start()
 
-  async def stop(self, reset: bool = True):
-    if self.task is not None:
-      task = self.task
-      self.task = None
-      if not task.done():
-        task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-          await task
-    if reset:
-      await self.pub_master.add_services_if_needed([LIVESTREAM_ENCODER_CONTROL])
-      self._publish(self.max_bitrate)
+  async def stop(self):
+    await super().stop()
+    self._publish(self.max_bitrate)
 
   async def run(self):
     while True:
@@ -215,15 +192,12 @@ class LivestreamBitrateController:
 
   def _publish(self, bitrate: float):
     target = max(self.min_bitrate, min(self.max_bitrate,
-                                       int(round(bitrate / BITRATE_ROUNDING) * BITRATE_ROUNDING)))
-    if target == self.last_sent:
-      return
-    LivestreamBitrateController._sequence = (LivestreamBitrateController._sequence + 1) & 0xffffffff
-    msg = messaging.new_message(LIVESTREAM_ENCODER_CONTROL)
-    msg.livestreamEncoderControl.bitrate = target
-    msg.livestreamEncoderControl.sequence = LivestreamBitrateController._sequence
-    self.pub_master.send(LIVESTREAM_ENCODER_CONTROL, msg)
-    self.last_sent = target
+                                       int(round(bitrate / self.bitrate_rounding) * self.bitrate_rounding)))
+    if target != self.last_sent:
+      msg = messaging.new_message(self.service_name)
+      msg.livestreamEncoderBitrate = target
+      self.pub_master.send(self.service_name, msg)
+      self.last_sent = target
 
 
 class StreamSession:
@@ -250,7 +224,6 @@ class StreamSession:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
-      self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
     self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.shared_pub_master)
 
     self.run_task: asyncio.Task | None = None
@@ -336,7 +309,7 @@ class StreamSession:
         return
       self._cleanup_done = True
       if self.bitrate_controller is not None:
-        await self.bitrate_controller.stop(reset=True)
+        await self.bitrate_controller.stop()
         self.bitrate_controller = None
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
