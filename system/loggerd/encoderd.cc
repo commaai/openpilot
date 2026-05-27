@@ -60,6 +60,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
   std::vector<std::unique_ptr<Encoder>> encoders;
 
+  // only add sm if adaptive bitrate is enabled in at least one of the encoders
   std::unique_ptr<SubMaster> bitrate_sm;
   bool has_adaptive = std::any_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(),
                                   [](const auto &ei) { return ei.adaptive_bitrate; });
