@@ -1,6 +1,4 @@
 #include <cassert>
-#include <cerrno>
-#include <cstring>
 #include <string>
 #include <sys/ioctl.h>
 #include <poll.h>
@@ -275,31 +273,6 @@ void V4LEncoder::encoder_open() {
   this->counter = 0;
 }
 
-bool V4LEncoder::set_bitrate(int bitrate) {
-  if (bitrate <= 0 || bitrate == current_bitrate) {
-    return !bitrate_control_failed;
-  }
-  if (bitrate_control_failed) {
-    return false;
-  }
-
-  struct v4l2_control ctrl = {
-    .id = V4L2_CID_MPEG_VIDEO_BITRATE,
-    .value = bitrate,
-  };
-  if (util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl) == -1) {
-    int err = errno;
-    LOGE("failed to update %s bitrate to %d: %s(%d); disabling adaptive bitrate",
-         encoder_info.publish_name, bitrate, strerror(err), err);
-    bitrate_control_failed = true;
-    return false;
-  }
-
-  current_bitrate = bitrate;
-  LOGD("updated %s bitrate to %d", encoder_info.publish_name, bitrate);
-  return true;
-}
-
 int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   struct timeval timestamp {
     .tv_sec = (long)(extra->timestamp_eof/1000000000),
@@ -330,6 +303,19 @@ void V4LEncoder::encoder_close() {
     assert(extras.empty());
   }
   this->is_open = false;
+}
+
+bool V4LEncoder::set_bitrate(int bitrate) {
+  if (bitrate <= 0 || bitrate == current_bitrate) return;
+  struct v4l2_control ctrl = {
+    .id = V4L2_CID_MPEG_VIDEO_BITRATE,
+    .value = bitrate,
+  };
+  if (util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl) == -1) {
+    LOGE("failed to update %s bitrate to %d; disabling adaptive bitrate", encoder_info.publish_name, bitrate);
+    return;
+  }
+  current_bitrate = bitrate;
 }
 
 V4LEncoder::~V4LEncoder() {

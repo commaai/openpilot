@@ -73,10 +73,7 @@ void FfmpegEncoder::encoder_close() {
 }
 
 bool FfmpegEncoder::set_bitrate(int bitrate) {
-  if (!bitrate_control_unsupported_logged) {
-    LOGD("ignoring adaptive bitrate %d for ffmpeg encoder %s", bitrate, encoder_info.publish_name);
-    bitrate_control_unsupported_logged = true;
-  }
+  LOGE("ignoring adaptive bitrate %d for ffmpeg encoder %s", bitrate, encoder_info.publish_name);
   return false;
 }
 
