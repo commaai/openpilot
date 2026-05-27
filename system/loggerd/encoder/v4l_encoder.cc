@@ -307,8 +307,8 @@ void V4LEncoder::encoder_close() {
 }
 
 void V4LEncoder::set_bitrate(int bitrate) {
-  if (!adaptive_bitrate) return;
-  if (bitrate <= 0 || bitrate == current_bitrate) {
+  if (!adaptive_bitrate || bitrate == current_bitrate) return;
+  if (bitrate <= 0) {
     LOGE("invalid livestream encoder bitrate %d", bitrate);
     return;
   }
