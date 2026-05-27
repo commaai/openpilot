@@ -195,6 +195,7 @@ class Controls:
     cs.ufAccelCmd = float(self.LoC.pid.f)
     cs.forceDecel = bool((self.sm['driverMonitoringState'].alertLevel == log.DriverMonitoringState.AlertLevel.three) or
                          (self.sm['selfdriveState'].state == State.softDisabling))
+    CC.forceDecel = cs.forceDecel
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
