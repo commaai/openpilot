@@ -47,11 +47,6 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
-bool has_adaptive_bitrate_encoder(const LogCameraInfo &cam_info) {
-  return std::any_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(),
-                     [](const EncoderInfo &info) { return info.adaptive_bitrate; });
-}
-
 void apply_livestream_encoder_control(SubMaster *sm, std::vector<std::unique_ptr<Encoder>> &encoders) {
   if (sm == nullptr) {
     return;
@@ -69,18 +64,16 @@ void apply_livestream_encoder_control(SubMaster *sm, std::vector<std::unique_ptr
   }
 
   for (auto &e : encoders) {
-    if (e->supports_adaptive_bitrate()) {
-      e->set_bitrate(static_cast<int>(bitrate));
-    }
+    e->set_bitrate(static_cast<int>(bitrate));
   }
 }
 
-void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
+void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info, bool is_stream) {
   util::set_thread_name(cam_info.thread_name);
 
   std::vector<std::unique_ptr<Encoder>> encoders;
   std::unique_ptr<SubMaster> livestream_encoder_control_sm;
-  if (has_adaptive_bitrate_encoder(cam_info)) {
+  if (is_stream) {
     livestream_encoder_control_sm = std::make_unique<SubMaster>(std::vector<const char *>{"livestreamEncoderBitrate"});
   }
 
@@ -162,7 +155,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 }
 
 template <size_t N>
-void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
+void encoderd_thread(const LogCameraInfo (&cameras)[N], bool is_stream) {
   EncoderdState s;
 
   std::set<VisionStreamType> streams;
@@ -181,7 +174,7 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
                              [stream](auto &cam) { return cam.stream_type == stream; });
       assert(it != std::end(cameras));
       ++s.max_waiting;
-      encoder_threads.push_back(std::thread(encoder_thread, &s, *it));
+      encoder_threads.push_back(std::thread(encoder_thread, &s, *it, is_stream));
     }
 
     for (auto &t : encoder_threads) t.join();
@@ -199,12 +192,12 @@ int main(int argc, char* argv[]) {
   if (argc > 1) {
     std::string arg1(argv[1]);
     if (arg1 == "--stream") {
-      encoderd_thread(stream_cameras_logged);
+      encoderd_thread(stream_cameras_logged, true);
     } else {
       LOGE("Argument '%s' is not supported", arg1.c_str());
     }
   } else {
-    encoderd_thread(cameras_logged);
+    encoderd_thread(cameras_logged, false);
   }
   return 0;
 }
