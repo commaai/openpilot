@@ -127,10 +127,10 @@ class DynamicPubMaster(messaging.PubMaster):
         if service not in self.sock:
           self.sock[service] = messaging.pub_sock(service)
 
-STREAM_BITRATE_DEFAULT = 4_000_000
-STREAM_BITRATE_MIN_DEFAULT = 500_000
 
 class LivestreamBitrateController(AsyncTaskRunner):
+  bitrate_max_default = 4_000_000
+  bitrate_min_default = 500_000
   sample_interval = 0.2
   backoff_factor = 0.7         # multiplicative decrease on loss
   upshift_step = 100_000       # +100 kbps per upshift
@@ -142,8 +142,8 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.pc = peer_connection
     self.pub_master = pub_master
     self.service_name = "livestreamEncoderBitrate"
-    self.max_bitrate = max_bitrate if max_bitrate is not None else STREAM_BITRATE_DEFAULT
-    self.min_bitrate = min_bitrate if min_bitrate is not None else STREAM_BITRATE_MIN_DEFAULT
+    self.max_bitrate = max_bitrate if max_bitrate is not None else self.bitrate_max_default
+    self.min_bitrate = min_bitrate if min_bitrate is not None else self.bitrate_min_default
     self.target = float(self.max_bitrate)
     self.last_sent: int | None = None
     self.prev_lost: int | None = None
@@ -289,7 +289,7 @@ class StreamSession:
           self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
-          self.outgoing_bridge.proxy.add_channel(channel)
+          self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
       self.bitrate_controller.start()
 
@@ -310,7 +310,6 @@ class StreamSession:
       self._cleanup_done = True
       if self.bitrate_controller is not None:
         await self.bitrate_controller.stop()
-        self.bitrate_controller = None
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       await self.stream.stop()
