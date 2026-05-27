@@ -73,7 +73,7 @@ void FfmpegEncoder::encoder_close() {
 }
 
 void FfmpegEncoder::set_bitrate(int bitrate) {
-  LOGE("ignoring adaptive bitrate %d for ffmpeg encoder %s", bitrate, encoder_info.publish_name);
+  LOGE("adaptive bitrate is not supported for ffmpeg encoder %s", encoder_info.publish_name);
 }
 
 int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
