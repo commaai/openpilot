@@ -2483,6 +2483,8 @@ struct Event {
     driverMonitoringState @151 :DriverMonitoringState;
     livePose @129 :LivePose;
     modelV2 @75 :ModelDataV2;
+    smolModelV2 @152 :ModelDataV2;
+    bigModelV2 @153 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;
 
