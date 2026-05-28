@@ -317,8 +317,9 @@ def main(demo=False, usbgpu=False):
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send(output_message_name, modelv2_send)
-      pm.send('drivingModelData', drivingdata_send)
-      pm.send('cameraOdometry', posenet_send)
+      if not usbgpu:
+        pm.send('drivingModelData', drivingdata_send)
+        pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
 
 
