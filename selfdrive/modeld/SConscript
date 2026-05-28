@@ -15,7 +15,7 @@ CAMERA_CONFIGS = [
   (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
 ]
 
-Import('env', 'arch')
+Import('env', 'arch', 'release')
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
 
@@ -53,7 +53,7 @@ tg_devices = { # which device to put jit inputs to at runtime
   },
 }
 
-USBGPU = usbgpu_present() # or release # TODO always build big model on release
+USBGPU = usbgpu_present() or release
 if USBGPU:
   tg_devices['selfdrive.modeld.modeld']['usbgpu'] = {'WARP_DEV': tg_backend, 'QUEUE_DEV': 'AMD'}
   usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
