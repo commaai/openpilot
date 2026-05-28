@@ -316,7 +316,11 @@ def main(demo=False, usbgpu=False):
       drivingdata_send.drivingModelData.meta.laneChangeDirection = DH.lane_change_direction
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
-      pm.send(output_message_name, modelv2_send)
+
+      output_send = messaging.new_message(output_message_name)
+      output_send.valid = modelv2_send.valid
+      setattr(output_send, output_message_name, modelv2_send.modelV2)
+      pm.send(output_message_name, output_send)
       if not usbgpu:
         pm.send('drivingModelData', drivingdata_send)
         pm.send('cameraOdometry', posenet_send)
