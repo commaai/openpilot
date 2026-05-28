@@ -395,6 +395,12 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     print(result)
 
+  def test_time_to_first_model(self):
+    onroad_t = next(m.deviceState.startedMonoTime for m in self.msgs['deviceState'] if m.deviceState.started)
+    dt = (self.msgs['modelV2'][0].logMonoTime - onroad_t) / 1e9
+    print(f"\ntime to first modelV2: {dt:.3f}s")
+    assert dt < 1.0, f"first modelV2 took {dt:.3f}s after onroad transition"
+
   def test_timings(self):
     passed = True
     print("\n------------------------------------------------")
