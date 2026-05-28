@@ -180,7 +180,6 @@ class StreamSession:
     return await self.stream.start()
 
   def message_handler(self, message: bytes):
-    assert self.incoming_bridge is not None
     try:
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
@@ -204,7 +203,7 @@ class StreamSession:
             self.video_track.timing_sei_enabled = enabled
           return
 
-      if payload.get("type") not in self.incoming_bridge_services:
+      if self.incoming_bridge is None or payload.get("type") not in self.incoming_bridge_services:
         return
       self.incoming_bridge.send(message)
     except Exception:
@@ -214,9 +213,9 @@ class StreamSession:
     try:
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
+        self.stream.set_message_handler(self.message_handler)
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-          self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
