@@ -2428,10 +2428,6 @@ struct AudioFeedback {
   blockNum @1 :UInt16;
 }
 
-struct SoundRequest {
-  sound @0 :Car.CarControl.HUDControl.AudibleAlert;
-}
-
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2540,8 +2536,6 @@ struct Event {
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
     livestreamDriverEncodeData @122 :EncodeData;
-
-    soundRequest @152 :SoundRequest;
 
     # *********** Custom: reserved for forks ***********
 
