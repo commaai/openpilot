@@ -1,5 +1,5 @@
 import os
-from openpilot.selfdrive.modeld.modeld import main
+from openpilot.selfdrive.modeld.modeld import main as modeld_main
 from openpilot.common.params import Params
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
 from openpilot.common.file_chunker import get_manifest_path
@@ -12,4 +12,4 @@ def main():
   params.put_bool("UsbGpuPresent", _present)
   params.put_bool("UsbGpuCompiled", _compiled)
   if not USBGPU: exit(0)
-  main(usbgpu=USBGPU)
+  modeld_main(usbgpu=USBGPU)
