@@ -576,18 +576,23 @@ def startStream(sdp: str) -> dict:
   if not params.get_bool("IsOnroad"):
     from openpilot.system.manager.process_config import managed_processes
 
-    webrtcd_proc = managed_processes["webrtcd"]
-    if webrtcd_proc.proc is not None and webrtcd_proc.proc.is_alive():
+    stream_procs = [managed_processes[name] for name in ("camerad", "stream_encoderd", "webrtcd")]
+    if any(p.proc is not None and p.proc.is_alive() for p in stream_procs):
       return {"error": "webrtcd is already running"}
-    webrtcd_proc.start()
+    Params().put_bool("IsLiveStreaming", True)
+    for p in stream_procs:
+      p.start()
 
-    def _kill_webrtcd_watchdog():
-      while webrtcd_proc.proc is not None and webrtcd_proc.proc.is_alive():
+    time.sleep(2.0)
+
+    def _kill_stream_watchdog():
+      while any(p.proc is not None and p.proc.is_alive() for p in stream_procs):
         if not params.get_bool("IsLiveStreaming") or params.get_bool("IsOnroad"):
-          webrtcd_proc.stop(block=False)
+          for p in stream_procs:
+            p.stop(block=False)
           return
         time.sleep(1)
-    threading.Thread(target=_kill_webrtcd_watchdog, daemon=True).start()
+    threading.Thread(target=_kill_stream_watchdog, daemon=True).start()
   else:
     # get live car params to avoid stale notCar edge case
     cp_bytes = Params().get("CarParams")
@@ -599,7 +604,6 @@ def startStream(sdp: str) -> dict:
           return {"error": "livestreaming not available while car is running"}
     else:
       return {"error": f"failed to get CarParams"}
-
 
   return post_stream_request(sdp, "wideRoad", bridge_services_in, ["carState"])
 

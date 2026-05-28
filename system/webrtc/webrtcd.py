@@ -212,7 +212,6 @@ class StreamSession:
 
   async def run(self):
     try:
-      Params().put_bool("IsLiveStreaming", True)
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
