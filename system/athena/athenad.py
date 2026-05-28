@@ -574,38 +574,22 @@ def startStream(sdp: str) -> dict:
   bridge_services_in = []
   bridge_services_out = []
 
-  if not params.get_bool("IsOnroad"):
-    from openpilot.system.manager.process_config import managed_processes
-
-    stream_procs = [managed_processes[name] for name in ("camerad", "stream_encoderd", "webrtcd")]
-    if any(p.proc is not None and p.proc.is_alive() for p in stream_procs):
-      return {"error": "webrtcd is already running"}
-    Params().put_bool("IsLiveStreaming", True)
-    for p in stream_procs:
-      p.start()
-
-    time.sleep(2.0)
-
-    def _kill_stream_watchdog():
-      while any(p.proc is not None and p.proc.is_alive() for p in stream_procs):
-        if not params.get_bool("IsLiveStreaming") or params.get_bool("IsOnroad"):
-          for p in stream_procs:
-            p.stop(block=False)
-          return
-        time.sleep(1)
-    threading.Thread(target=_kill_stream_watchdog, daemon=True).start()
+  # get live car params to avoid stale notCar edge case
+  cp_bytes = Params().get("CarParams")
+  if cp_bytes is not None:
+    with car.CarParams.from_bytes(cp_bytes) as CP:
+      if CP.notCar:
+        bridge_services_in.append("testJoystick")
+        bridge_services_out.append("carState")
   else:
-    # get live car params to avoid stale notCar edge case
-    cp_bytes = Params().get("CarParams")
-    if cp_bytes is not None:
-      with car.CarParams.from_bytes(cp_bytes) as CP:
-        if CP.notCar:
-          bridge_services_in.append("testJoystick")
-          bridge_services_out.append("carState")
-        else:
-          return {"error": "livestreaming not available while car is running"}
-    else:
       return {"error": f"failed to get CarParams"}
+
+  if not params.get_bool("IsOnroad"):
+    # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
+    # webrtcd clears IsLiveStreaming when the session ends
+    params.put_bool("IsLiveStreaming", True)
+    # wait for all req services to come up
+    time.sleep(5.0)
 
   return post_stream_request(sdp, "wideRoad", bridge_services_in, bridge_services_out)
 
