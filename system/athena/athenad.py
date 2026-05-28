@@ -572,6 +572,7 @@ def startStream(sdp: str) -> dict:
   from openpilot.system.webrtc.webrtcd import post_stream_request
   params = Params()
   bridge_services_in = []
+  bridge_services_out = []
 
   if not params.get_bool("IsOnroad"):
     from openpilot.system.manager.process_config import managed_processes
@@ -600,12 +601,13 @@ def startStream(sdp: str) -> dict:
       with car.CarParams.from_bytes(cp_bytes) as CP:
         if CP.notCar:
           bridge_services_in.append("testJoystick")
+          bridge_services_out.append("carState")
         else:
           return {"error": "livestreaming not available while car is running"}
     else:
       return {"error": f"failed to get CarParams"}
 
-  return post_stream_request(sdp, "wideRoad", bridge_services_in, ["carState"])
+  return post_stream_request(sdp, "wideRoad", bridge_services_in, bridge_services_out)
 
 
 @dispatcher.add_method
