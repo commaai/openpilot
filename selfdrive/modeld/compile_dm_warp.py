@@ -18,7 +18,7 @@ def make_warp_dm(nv12: NV12Frame, dm_w, dm_h):
   def warp_dm(input_frame, M_inv):
     M_inv = M_inv.to(Device.DEFAULT).realize()
     return warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv,
-                                     (dm_w, dm_h), (cam_h, cam_w), stride_pad, border_fill_val=0).reshape(-1, dm_h * dm_w)
+                                     (dm_w, dm_h), (cam_h, cam_w), stride_pad, border_fill_val=16).reshape(-1, dm_h * dm_w) # Y
   return warp_dm
 
 

@@ -270,4 +270,4 @@ class PubMaster:
       return False
 
   def all_readers_updated(self, s: str) -> bool:
-    return self.sock[s].all_readers_updated()  # type: ignore
+    return self.sock[s].all_readers_updated()
