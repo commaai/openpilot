@@ -11,7 +11,6 @@ import random
 import select
 import socket
 import sys
-import subprocess
 import tempfile
 import threading
 import time
@@ -581,6 +580,14 @@ def startStream(sdp: str) -> dict:
     if webrtcd_proc.proc is not None and webrtcd_proc.proc.is_alive():
       return {"error": "webrtcd is already running"}
     webrtcd_proc.start()
+
+    def _kill_webrtcd_watchdog():
+      while webrtcd_proc.proc is not None and webrtcd_proc.proc.is_alive():
+        if not params.get_bool("IsLiveStreaming") or params.get_bool("IsOnroad"):
+          webrtcd_proc.stop(block=False)
+          return
+        time.sleep(1)
+    threading.Thread(target=_kill_webrtcd_watchdog, daemon=True).start()
   else:
     # get live car params to avoid stale notCar edge case
     cp_bytes = Params().get("CarParams")
@@ -594,7 +601,7 @@ def startStream(sdp: str) -> dict:
       return {"error": f"failed to get CarParams"}
 
 
-  return post_stream_request(sdp, "wideRoad", bridge_services_in, ["carState"], params.get_bool("IsOnroad"))
+  return post_stream_request(sdp, "wideRoad", bridge_services_in, ["carState"])
 
 
 @dispatcher.add_method

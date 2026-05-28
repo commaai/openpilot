@@ -22,6 +22,7 @@ from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
+from openpilot.common.params import Params
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
@@ -211,6 +212,7 @@ class StreamSession:
 
   async def run(self):
     try:
+      Params().put_bool("IsLiveStreaming", True)
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
@@ -229,6 +231,7 @@ class StreamSession:
       self.logger.exception("Stream session failure")
     finally:
       await self.post_run_cleanup()
+      Params().put_bool("IsLiveStreaming", False)
 
   async def post_run_cleanup(self):
     async with self._cleanup_lock:
@@ -238,7 +241,6 @@ class StreamSession:
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       await self.stream.stop()
-
 
 @dataclass
 class StreamRequestBody:
