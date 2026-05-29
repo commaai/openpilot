@@ -319,7 +319,7 @@ void V4LEncoder::set_bitrate(int bitrate) {
   };
 
   if (util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl) == -1) {
-    LOGE("failed to update %s bitrate to %d; disabling adaptive bitrate", encoder_info.publish_name, bitrate);
+    LOGE("failed to update %s bitrate to %d", encoder_info.publish_name, bitrate);
     return;
   }
   current_bitrate = bitrate;
