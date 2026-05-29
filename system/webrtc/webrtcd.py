@@ -2,7 +2,6 @@
 
 import argparse
 import asyncio
-import contextlib
 import json
 import uuid
 import logging
@@ -84,16 +83,11 @@ class CerealProxyRunner:
     assert self.task is None
     self.task = asyncio.create_task(self.run())
 
-  async def stop(self):
-    if self.task is None:
+  def stop(self):
+    if self.task is None or self.task.done():
       return
-    task = self.task
+    self.task.cancel()
     self.task = None
-    if task.done():
-      return
-    task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-      await task
 
   async def run(self):
     from aiortc.exceptions import InvalidStateError
@@ -151,29 +145,24 @@ class StreamSession:
       self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
     self.run_task: asyncio.Task | None = None
-    self._cleanup_lock = asyncio.Lock()
-    self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
-    self.logger.info(
-      "New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
-      self.identifier, cameras, incoming_services, outgoing_services,
-    )
+    self.logger.info("New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
+                      self.identifier, cameras, incoming_services, outgoing_services)
 
   def start(self):
     self.run_task = asyncio.create_task(self.run())
 
-  async def stop(self):
-    if self.run_task is not None and not self.run_task.done() and self.run_task is not asyncio.current_task():
-      self.run_task.cancel()
-      with contextlib.suppress(asyncio.CancelledError):
-        await self.run_task
+  def stop(self):
+    if self.run_task.done():
+      return
+    self.run_task.cancel()
     self.run_task = None
-    await self.post_run_cleanup()
+    asyncio.run(self.post_run_cleanup())
 
   async def get_answer(self):
     return await self.stream.start()
 
-  def message_handler(self, message: bytes):
+  async def message_handler(self, message: bytes):
     assert self.incoming_bridge is not None
     try:
       self.incoming_bridge.send(message)
@@ -194,21 +183,16 @@ class StreamSession:
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
+      await self.post_run_cleanup()
 
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
-    finally:
-      await self.post_run_cleanup()
 
   async def post_run_cleanup(self):
-    async with self._cleanup_lock:
-      if self._cleanup_done:
-        return
-      self._cleanup_done = True
-      if self.outgoing_bridge_runner is not None:
-        await self.outgoing_bridge_runner.stop()
-      await self.stream.stop()
+    await self.stream.stop()
+    if self.outgoing_bridge is not None:
+      self.outgoing_bridge_runner.stop()
 
 
 @dataclass
@@ -224,33 +208,11 @@ async def get_stream(request: 'web.Request'):
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
 
-  async with request.app['stream_lock']:
-    # Fully disconnect any other active stream before starting the replacement.
-    for sid, s in list(stream_dict.items()):
-      if s.run_task and not s.run_task.done():
-        try:
-          ch = s.stream.get_messaging_channel()
-          ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
-        except Exception:
-          pass
-      await s.stop()
-      del stream_dict[sid]
+  session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
+  answer = await session.get_answer()
+  session.start()
 
-    session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
-    try:
-      answer = await session.get_answer()
-    except ValueError as e:
-      await session.stop()
-      raise web.HTTPBadRequest(
-        text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
-        content_type="application/json",
-      ) from e
-    except Exception:
-      await session.stop()
-      raise
-    session.start()
-
-    stream_dict[session.identifier] = session
+  stream_dict[session.identifier] = session
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
@@ -261,7 +223,6 @@ async def get_schema(request: 'web.Request'):
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
   return web.json_response(schema_dict)
-
 
 async def post_notify(request: 'web.Request'):
   try:
@@ -278,10 +239,9 @@ async def post_notify(request: 'web.Request'):
 
   return web.Response(status=200, text="OK")
 
-
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
-    await session.stop()
+    session.stop()
   del app['streams']
 
 
@@ -294,7 +254,6 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app = web.Application()
 
   app['streams'] = dict()
-  app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
