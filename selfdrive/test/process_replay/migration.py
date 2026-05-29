@@ -499,7 +499,6 @@ def migrate_driverMonitoringState(msgs):
       'driverDistracted1': AlertLevel.one, 'driverUnresponsive1': AlertLevel.one,
       'driverDistracted2': AlertLevel.two, 'driverUnresponsive2': AlertLevel.two,
       'driverDistracted3': AlertLevel.three, 'driverUnresponsive3': AlertLevel.three,
-      'tooDistracted': AlertLevel.three,
     }
     for event in old.events:
       level = event_to_alert_level.get(str(event.name))
@@ -510,6 +509,9 @@ def migrate_driverMonitoringState(msgs):
     dm.visionPolicyState.awarenessPercent = int(max(0, min(100, (old.awarenessStatus if old.isActiveMode else old.awarenessActive) * 100)))
     dm.visionPolicyState.awarenessStep = old.stepChange if old.isActiveMode else 0.
     dm.visionPolicyState.isDistracted = old.isDistracted
+    dm.visionPolicyState.distractedTypes.pose = bool(old.distractedType & 1)
+    dm.visionPolicyState.distractedTypes.eye = bool(old.distractedType & 2)
+    dm.visionPolicyState.distractedTypes.phone = bool(old.distractedType & 4)
     dm.visionPolicyState.faceDetected = old.faceDetected
     dm.visionPolicyState.pose.pitchCalib.offset = old.posePitchOffset
     dm.visionPolicyState.pose.pitchCalib.calibratedPercent = int(min(100, old.posePitchValidCount / 600 * 100))
