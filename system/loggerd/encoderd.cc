@@ -44,13 +44,12 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
-void apply_bitrate(SubMaster &sm, std::vector<std::unique_ptr<Encoder>> &encoders) {
-  sm.update(0);
-  if (!sm.updated("livestreamEncoderBitrate")) return;
-
-  uint32_t bitrate = sm["livestreamEncoderBitrate"].getLivestreamEncoderBitrate().getBitrate();
+void apply_bitrate(std::vector<std::unique_ptr<Encoder>> &encoders) {
+  static Params params;
+  int bitrate = params.getInt("LivestreamEncoderBitrate");
+  if (bitrate == 0) return;
   for (auto &e : encoders) {
-    e->set_bitrate(static_cast<int>(bitrate));
+    e->set_bitrate(bitrate);
   }
 }
 
@@ -59,13 +58,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
   std::vector<std::unique_ptr<Encoder>> encoders;
 
-  // only add sm if adaptive bitrate is enabled in at least one of the encoders
-  std::unique_ptr<SubMaster> bitrate_sm;
   bool has_adaptive = std::any_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(),
                                   [](const auto &ei) { return ei.adaptive_bitrate; });
-  if (has_adaptive) {
-    bitrate_sm = std::make_unique<SubMaster>(std::vector<const char *>{"livestreamEncoderBitrate"});
-  }
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
@@ -126,7 +120,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         ++cur_seg;
       }
 
-      if (bitrate_sm) apply_bitrate(*bitrate_sm, encoders);
+      if (has_adaptive) apply_bitrate(encoders);
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {

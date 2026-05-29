@@ -2398,10 +2398,6 @@ struct EncodeData {
   height @5 :UInt32;
 }
 
-struct LivestreamEncoderBitrate {
-  bitrate @0 :UInt32;
-}
-
 struct DebugAlert {
   alertText1 @0 :Text;
   alertText2 @1 :Text;
@@ -2540,7 +2536,6 @@ struct Event {
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
     livestreamDriverEncodeData @122 :EncodeData;
-    livestreamEncoderBitrate @152 :LivestreamEncoderBitrate;
 
     # *********** Custom: reserved for forks ***********
 

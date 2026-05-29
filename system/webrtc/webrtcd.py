@@ -23,6 +23,7 @@ if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
 from openpilot.system.webrtc.schema import generate_field
+from openpilot.common.params import Params
 from cereal import messaging, log
 
 
@@ -137,12 +138,13 @@ class LivestreamBitrateController(AsyncTaskRunner):
   required_clean_samples = 5   # require 5 consecutive clean samples (1 sec) in order to upshift
   bitrate_rounding = 50_000
 
-  def __init__(self, peer_connection: Any, pub_master: DynamicPubMaster,
+  param_name = "LivestreamEncoderBitrate"
+
+  def __init__(self, peer_connection: Any,
                max_bitrate: int | None = None, min_bitrate: int | None = None):
     super().__init__()
     self.pc = peer_connection
-    self.pub_master = pub_master
-    self.service_name = "livestreamEncoderBitrate"
+    self.params = Params()
     self.max_bitrate = max_bitrate if max_bitrate is not None else self.bitrate_max_default
     self.min_bitrate = min_bitrate if min_bitrate is not None else self.bitrate_min_default
     self.target = float(self.max_bitrate)
@@ -151,7 +153,6 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.clean_samples = 0
 
   async def start(self):
-    await self.pub_master.add_services_if_needed([self.service_name])
     self._publish(self.max_bitrate)
     super().start()
 
@@ -195,9 +196,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
     target = max(self.min_bitrate, min(self.max_bitrate,
                                        int(round(bitrate / self.bitrate_rounding) * self.bitrate_rounding)))
     if target != self.last_sent:
-      msg = messaging.new_message(self.service_name)
-      msg.livestreamEncoderBitrate.bitrate = target
-      self.pub_master.send(self.service_name, msg)
+      self.params.put(self.param_name, target)
       self.last_sent = target
 
 
@@ -225,7 +224,7 @@ class StreamSession:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
-    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.shared_pub_master)
+    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
