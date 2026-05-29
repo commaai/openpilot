@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+from abc import abstractmethod
+import time
 import argparse
 import asyncio
+import contextlib
 import json
 import uuid
 import logging
@@ -22,8 +25,35 @@ from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
 
-class CerealOutgoingMessageProxy:
+class AsyncTaskRunner:
+  def __init__(self):
+    self.is_running = False
+    self.task = None
+    self.logger = logging.getLogger("webrtcd")
+
+  def start(self):
+    assert self.task is None
+    self.task = asyncio.create_task(self.run())
+
+  async def stop(self):
+    if self.task is None:
+      return
+    task = self.task
+    self.task = None
+    if task.done():
+      return
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+      await task
+
+  @abstractmethod
+  async def run(self):
+    pass
+
+
+class CerealOutgoingMessageProxy(AsyncTaskRunner):
   def __init__(self, sm: messaging.SubMaster):
+    super().__init__()
     self.sm = sm
     self.channels: list[RTCDataChannel] = []
 
@@ -55,6 +85,19 @@ class CerealOutgoingMessageProxy:
       for channel in self.channels:
         channel.send(encoded_msg)
 
+  async def run(self):
+    from aiortc.exceptions import InvalidStateError
+
+    while True:
+      try:
+        self.update()
+      except InvalidStateError:
+        self.logger.warning("Cereal outgoing proxy invalid state (connection closed)")
+        break
+      except Exception:
+        self.logger.exception("Cereal outgoing proxy failure")
+      await asyncio.sleep(0.01)
+
 
 class CerealIncomingMessageProxy:
   def __init__(self, pm: messaging.PubMaster):
@@ -72,37 +115,6 @@ class CerealIncomingMessageProxy:
     self.pm.send(msg_type, msg)
 
 
-class CerealProxyRunner:
-  def __init__(self, proxy: CerealOutgoingMessageProxy):
-    self.proxy = proxy
-    self.is_running = False
-    self.task = None
-    self.logger = logging.getLogger("webrtcd")
-
-  def start(self):
-    assert self.task is None
-    self.task = asyncio.create_task(self.run())
-
-  def stop(self):
-    if self.task is None or self.task.done():
-      return
-    self.task.cancel()
-    self.task = None
-
-  async def run(self):
-    from aiortc.exceptions import InvalidStateError
-
-    while True:
-      try:
-        self.proxy.update()
-      except InvalidStateError:
-        self.logger.warning("Cereal outgoing proxy invalid state (connection closed)")
-        break
-      except Exception:
-        self.logger.exception("Cereal outgoing proxy failure")
-      await asyncio.sleep(0.01)
-
-
 class DynamicPubMaster(messaging.PubMaster):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
@@ -118,18 +130,15 @@ class DynamicPubMaster(messaging.PubMaster):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
+  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
-    from teleoprtc.info import parse_info_from_offer
 
-    config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
-    assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
-    for cam in cameras:
-      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
+    self.video_track = LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack()
+    builder.add_video_stream(init_camera, self.video_track)
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
@@ -137,34 +146,61 @@ class StreamSession:
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
-    self.outgoing_bridge_runner: CerealProxyRunner | None = None
     if len(incoming_services) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
-      self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
     self.run_task: asyncio.Task | None = None
+    self._cleanup_lock = asyncio.Lock()
+    self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
-    self.logger.info("New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
-                      self.identifier, cameras, incoming_services, outgoing_services)
+    self.logger.info(
+      "New stream session (%s), init camera %s, incoming services %s, outgoing services %s",
+      self.identifier, init_camera, incoming_services, outgoing_services,
+    )
 
   def start(self):
     self.run_task = asyncio.create_task(self.run())
 
-  def stop(self):
-    if self.run_task.done():
-      return
-    self.run_task.cancel()
+  async def stop(self):
+    if self.run_task is not None and not self.run_task.done() and self.run_task is not asyncio.current_task():
+      self.run_task.cancel()
+      with contextlib.suppress(asyncio.CancelledError):
+        await self.run_task
     self.run_task = None
-    asyncio.run(self.post_run_cleanup())
+    await self.post_run_cleanup()
 
   async def get_answer(self):
     return await self.stream.start()
 
-  async def message_handler(self, message: bytes):
+  def message_handler(self, message: bytes):
     assert self.incoming_bridge is not None
     try:
+      payload = json.loads(message) if isinstance(message, (bytes, str)) else None
+      if isinstance(payload, dict):
+        msg_type = payload.get("type")
+
+        if msg_type == "livestreamCameraSwitch":
+          self.video_track.switch_camera(payload["data"]["camera"])
+          return
+
+        if msg_type == "clockSync":
+          data = payload.get("data", {})
+          pong = json.dumps({"type": "clockSync", "data": {
+            "action": "pong", "browserSendTime": data.get("browserSendTime"), "deviceTime": time.time() * 1000, # noqa: TID251
+          }})
+          self.stream.get_messaging_channel().send(pong)
+          return
+
+        if msg_type == "enableTimingSei":
+          enabled = bool(payload.get("data", {}).get("enabled"))
+          if hasattr(self.video_track, 'timing_sei_enabled'):
+            self.video_track.timing_sei_enabled = enabled
+          return
+
+      if payload.get("type") not in self.incoming_bridge_services:
+        return
       self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
@@ -176,29 +212,34 @@ class StreamSession:
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
           self.stream.set_message_handler(self.message_handler)
-        if self.outgoing_bridge_runner is not None:
+        if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
-          self.outgoing_bridge_runner.proxy.add_channel(channel)
-          self.outgoing_bridge_runner.start()
+          self.outgoing_bridge.add_channel(channel)
+          self.outgoing_bridge.start()
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
-      await self.post_run_cleanup()
 
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
+    finally:
+      await self.post_run_cleanup()
 
   async def post_run_cleanup(self):
-    await self.stream.stop()
-    if self.outgoing_bridge is not None:
-      self.outgoing_bridge_runner.stop()
+    async with self._cleanup_lock:
+      if self._cleanup_done:
+        return
+      self._cleanup_done = True
+      if self.outgoing_bridge is not None:
+        await self.outgoing_bridge.stop()
+      await self.stream.stop()
 
 
 @dataclass
 class StreamRequestBody:
   sdp: str
-  cameras: list[str]
+  initCamera: str
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
 
@@ -208,11 +249,33 @@ async def get_stream(request: 'web.Request'):
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
 
-  session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
-  answer = await session.get_answer()
-  session.start()
+  async with request.app['stream_lock']:
+    # Fully disconnect any other active stream before starting the replacement.
+    for sid, s in list(stream_dict.items()):
+      if s.run_task and not s.run_task.done():
+        try:
+          ch = s.stream.get_messaging_channel()
+          ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
+        except Exception:
+          pass
+      await s.stop()
+      del stream_dict[sid]
 
-  stream_dict[session.identifier] = session
+    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
+    try:
+      answer = await session.get_answer()
+    except ValueError as e:
+      await session.stop()
+      raise web.HTTPBadRequest(
+        text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
+        content_type="application/json",
+      ) from e
+    except Exception:
+      await session.stop()
+      raise
+    session.start()
+
+    stream_dict[session.identifier] = session
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
@@ -223,6 +286,7 @@ async def get_schema(request: 'web.Request'):
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
   return web.json_response(schema_dict)
+
 
 async def post_notify(request: 'web.Request'):
   try:
@@ -239,9 +303,10 @@ async def post_notify(request: 'web.Request'):
 
   return web.Response(status=200, text="OK")
 
+
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
-    session.stop()
+    await session.stop()
   del app['streams']
 
 
@@ -254,6 +319,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app = web.Application()
 
   app['streams'] = dict()
+  app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)

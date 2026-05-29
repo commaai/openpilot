@@ -56,7 +56,7 @@ async def ping(request: 'web.Request'):
 
 async def offer(request: 'web.Request'):
   params = await request.json()
-  body = StreamRequestBody(params["sdp"], ["driver"], ["testJoystick"], ["carState"])
+  body = StreamRequestBody(params["sdp"], "driver", ["testJoystick"], ["carState"])
   body_json = json.dumps(dataclasses.asdict(body))
 
   logger.info("Sending offer to webrtcd...")
@@ -69,7 +69,7 @@ async def offer(request: 'web.Request'):
 
 def main():
   # Enable joystick debug mode
-  Params().put_bool("JoystickDebugMode", True)
+  Params().put_bool("JoystickDebugMode", True, block=True)
 
   # App needs to be HTTPS for WebRTC to work on the browser
   ssl_context = create_ssl_context()

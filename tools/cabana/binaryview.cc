@@ -40,14 +40,14 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   addShortcuts();
   setWhatsThis(R"(
     <b>Binary View</b><br/>
-    <!-- TODO: add descprition here -->
+    <!-- TODO: add description here -->
     <span style="color:gray">Shortcuts</span><br />
     Delete Signal:
       <span style="background-color:lightGray;color:gray">&nbsp;x&nbsp;</span>,
       <span style="background-color:lightGray;color:gray">&nbsp;Backspace&nbsp;</span>,
       <span style="background-color:lightGray;color:gray">&nbsp;Delete&nbsp;</span><br />
     Change endianness: <span style="background-color:lightGray;color:gray">&nbsp;e&nbsp; </span><br />
-    Change singedness: <span style="background-color:lightGray;color:gray">&nbsp;s&nbsp;</span><br />
+    Change signedness: <span style="background-color:lightGray;color:gray">&nbsp;s&nbsp;</span><br />
     Open chart:
       <span style="background-color:lightGray;color:gray">&nbsp;c&nbsp;</span>,
       <span style="background-color:lightGray;color:gray">&nbsp;p&nbsp;</span>,

@@ -21,7 +21,6 @@
     "common/**",
     "selfdrive/**",
     "system/**",
-    "third_party/**",
     "tools/**",
   ]
 }

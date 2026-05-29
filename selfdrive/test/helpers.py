@@ -18,15 +18,15 @@ def set_params_enabled():
   os.environ['LOGPRINT'] = "debug"
 
   params = Params()
-  params.put("HasAcceptedTerms", terms_version)
-  params.put("CompletedTrainingVersion", training_version)
-  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put("HasAcceptedTerms", terms_version, block=True)
+  params.put("CompletedTrainingVersion", training_version, block=True)
+  params.put_bool("OpenpilotEnabledToggle", True, block=True)
 
   # valid calib
   msg = messaging.new_message('liveCalibration')
   msg.liveCalibration.validBlocks = 20
   msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
-  params.put("CalibrationParams", msg.to_bytes())
+  params.put("CalibrationParams", msg.to_bytes(), block=True)
 
 def release_only(f):
   @wraps(f)

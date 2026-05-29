@@ -13,7 +13,7 @@ from openpilot.common.basedir import BASEDIR
 
 DIRS = ['cereal', 'openpilot']
 EXTS = ['.png', '.py', '.ttf', '.capnp', '.json', '.fnt', '.mo', '.po']
-EXCLUDE = ['selfdrive/assets/training', 'third_party/raylib/raylib_repo/examples']
+EXCLUDE = ['selfdrive/assets/training']
 INTERPRETER = '/usr/bin/env python3'
 
 

@@ -46,14 +46,14 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
-scons -j$(nproc) --minimal
+scons
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
-  CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
+  CERT=/data/pandaextra/certs/release RELEASE=1 scons panda/
 else
   # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
-  scons -j$(nproc) panda/
+  scons panda/
 fi
 
 # Ensure no submodules in release
@@ -72,14 +72,7 @@ find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm -f selfdrive/modeld/models/*.onnx
-
-find third_party/ -name '*x86*' -exec rm -r {} +
-find third_party/ -name '*Darwin*' -exec rm -r {} +
-
-
-# Restore third_party
-git checkout third_party/
+rm -f selfdrive/modeld/models/*.onnx*
 
 # Mark as prebuilt release
 touch prebuilt

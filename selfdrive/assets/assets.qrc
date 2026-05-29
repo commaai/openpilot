@@ -1,6 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-  <file alias="bootstrap-icons.svg">../../third_party/bootstrap/bootstrap-icons.svg</file>
+  <file alias="bootstrap-icons.svg">@BOOTSTRAP_ICONS_SVG@</file>
   <file>images/button_continue_triangle.svg</file>
   <file>icons/circled_check.svg</file>
   <file>icons/circled_slash.svg</file>

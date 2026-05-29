@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <bitset>
 #include <cassert>
 #include <cerrno>
@@ -52,6 +53,14 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
   }
   return true;
 }
+
+struct HwmonState {
+  std::atomic<uint32_t> voltage{0};
+  std::atomic<uint32_t> current{0};
+  std::atomic<bool> initialized{false};
+};
+
+HwmonState hwmon_state;
 
 Panda *connect(std::string serial="", uint32_t index=0) {
   std::unique_ptr<Panda> panda;
@@ -129,6 +138,26 @@ void can_recv(std::vector<Panda *> &pandas, PubMaster *pm) {
       canData[i].setSrc(raw_can_data[i].src);
     }
     pm->send("can", msg);
+  }
+}
+
+void hwmon_thread() {
+  util::set_thread_name("pandad_hwmon");
+
+  while (!do_exit) {
+    double read_time = millis_since_boot();
+    uint32_t voltage = Hardware::get_voltage();
+    uint32_t current = Hardware::get_current();
+    read_time = millis_since_boot() - read_time;
+    if (read_time > 50) {
+      LOGW("reading hwmon took %lfms", read_time);
+    }
+
+    hwmon_state.voltage.store(voltage);
+    hwmon_state.current.store(current);
+    hwmon_state.initialized.store(true);
+
+    util::sleep_for(500);
   }
 }
 
@@ -292,6 +321,10 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 }
 
 void send_peripheral_state(Panda *panda, PubMaster *pm) {
+  if (!hwmon_state.initialized.load()) {
+    return;
+  }
+
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
@@ -300,13 +333,8 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
 
-  double read_time = millis_since_boot();
-  ps.setVoltage(Hardware::get_voltage());
-  ps.setCurrent(Hardware::get_current());
-  read_time = millis_since_boot() - read_time;
-  if (read_time > 50) {
-    LOGW("reading hwmon took %lfms", read_time);
-  }
+  ps.setVoltage(hwmon_state.voltage.load());
+  ps.setCurrent(hwmon_state.current.load());
 
   // fall back to panda's voltage and current measurement
   if (ps.getVoltage() == 0 && ps.getCurrent() == 0) {
@@ -452,19 +480,19 @@ void pandad_run(std::vector<Panda *> &pandas) {
   const bool spoofing_started = getenv("STARTED") != nullptr;
   const bool fake_send = getenv("FAKESEND") != nullptr;
 
-  // Start the CAN send thread
+  // Start helper threads for event-driven sendcan and slow non-Panda reads.
   std::thread send_thread(can_send_thread, pandas, fake_send);
+  std::thread hardware_thread(hwmon_thread);
 
-  Params params;
   RateKeeper rk("pandad", 100);
-  SubMaster sm({"selfdriveState"});
+  SubMaster sm({"selfdriveState", "deviceState"});
   PubMaster pm({"can", "pandaStates", "peripheralState"});
   PandaSafety panda_safety(pandas);
   Panda *peripheral_panda = pandas[0];
   bool engaged = false;
   bool is_onroad = false;
 
-  // Main loop: receive CAN data and process states
+  // Main loop: receive CAN first, then process lower priority panda and peripheral state.
   while (!do_exit && check_all_connected(pandas)) {
     can_recv(pandas, &pm);
 
@@ -477,7 +505,9 @@ void pandad_run(std::vector<Panda *> &pandas) {
     if (rk.frame() % 10 == 0) {
       sm.update(0);
       engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
-      is_onroad = params.getBool("IsOnroad");
+      if (sm.updated("deviceState")) {
+        is_onroad = sm["deviceState"].getDeviceState().getStarted();
+      }
       process_panda_state(pandas, &pm, engaged, is_onroad, spoofing_started);
       panda_safety.configureSafetyMode(is_onroad);
     }
@@ -513,6 +543,7 @@ void pandad_run(std::vector<Panda *> &pandas) {
   }
 
   send_thread.join();
+  hardware_thread.join();
 }
 
 void pandad_main_thread(std::vector<std::string> serials) {

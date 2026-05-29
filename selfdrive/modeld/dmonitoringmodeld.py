@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
-set_tinygrad_backend_from_compiled_flags()
-
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -24,11 +22,13 @@ SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
 METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'
 
+
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
+    self.DEV = get_tg_input_devices(PROCESS_NAME, usbgpu=False)['DEV']
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
@@ -44,7 +44,7 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
-    with open(CompileConfig(cam_w, cam_h, prefix='dm_', prepare_only=True).pkl_path, "rb") as f:
+    with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
       self.image_warp = pickle.load(f)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
@@ -52,10 +52,10 @@ class ModelState:
 
     t1 = time.perf_counter()
 
-    ptr = buf.data.ctypes.data
+    ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DEV)
 
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
@@ -75,7 +75,7 @@ def parse_model_output(model_output):
     face_descs = model_output[f'face_descs_{ds_suffix}']
     parsed[f'face_descs_{ds_suffix}'] = face_descs[:, :-6]
     parsed[f'face_descs_{ds_suffix}_std'] = safe_exp(face_descs[:, -6:])
-    for key in ['face_prob', 'eyes_visible_prob', 'eyes_closed_prob', 'using_phone_prob']:
+    for key in ['face_prob', 'left_eye_prob', 'right_eye_prob','left_blink_prob', 'right_blink_prob', 'sunglasses_prob', 'using_phone_prob', 'sleep_prob']:
       parsed[f'{key}_{ds_suffix}'] = sigmoid(model_output[f'{key}_{ds_suffix}'])
   return parsed
 
@@ -85,9 +85,13 @@ def fill_driver_data(msg, model_output, ds_suffix):
   msg.facePosition = model_output[f'face_descs_{ds_suffix}'][0, 3:5].tolist()
   msg.facePositionStd = model_output[f'face_descs_{ds_suffix}_std'][0, 3:5].tolist()
   msg.faceProb = model_output[f'face_prob_{ds_suffix}'][0, 0].item()
-  msg.eyesVisibleProb = model_output[f'eyes_visible_prob_{ds_suffix}'][0, 0].item()
-  msg.eyesClosedProb = model_output[f'eyes_closed_prob_{ds_suffix}'][0, 0].item()
+  msg.leftEyeProb = model_output[f'left_eye_prob_{ds_suffix}'][0, 0].item()
+  msg.rightEyeProb = model_output[f'right_eye_prob_{ds_suffix}'][0, 0].item()
+  msg.leftBlinkProb = model_output[f'left_blink_prob_{ds_suffix}'][0, 0].item()
+  msg.rightBlinkProb = model_output[f'right_blink_prob_{ds_suffix}'][0, 0].item()
+  msg.sunglassesProb = model_output[f'sunglasses_prob_{ds_suffix}'][0, 0].item()
   msg.phoneProb = model_output[f'using_phone_prob_{ds_suffix}'][0, 0].item()
+  msg.sleepProb = model_output[f'sleep_prob_{ds_suffix}'][0, 0].item()
 
 def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)
