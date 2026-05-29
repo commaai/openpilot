@@ -16,7 +16,7 @@ if [ -z "$RELEASE_BRANCH" ]; then
   exit 1
 fi
 
-BUILD_BRANCH=release-build
+BUILD_BRANCH=release-mici-staging
 
 
 # set git identity
