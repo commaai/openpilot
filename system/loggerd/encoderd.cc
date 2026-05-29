@@ -46,8 +46,9 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
 
 void apply_bitrate(std::vector<std::unique_ptr<Encoder>> &encoders) {
   static Params params;
-  int bitrate = params.getInt("LivestreamEncoderBitrate");
-  if (bitrate == 0) return;
+  std::string val = params.get("LivestreamEncoderBitrate");
+  if (val.empty()) return;
+  int bitrate = std::stoi(val);
   for (auto &e : encoders) {
     e->set_bitrate(bitrate);
   }

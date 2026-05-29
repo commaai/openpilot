@@ -63,10 +63,6 @@ public:
   inline bool getBool(const std::string &key, bool block = false) {
     return get(key, block) == "1";
   }
-  inline int getInt(const std::string &key, bool block = false) {
-    std::string val = get(key, block);
-    return val.empty() ? 0 : std::stoi(val);
-  }
   std::map<std::string, std::string> readAll();
 
   // helpers for writing values
