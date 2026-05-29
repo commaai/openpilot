@@ -2436,6 +2436,10 @@ struct Touch {
   value @4 :Int32;
 }
 
+struct BodyState {
+  soundRequest @0 :Car.CarControl.HUDControl.AudibleAlert;
+}
+
 struct Event {
   logMonoTime @0 :UInt64;  # nanoseconds
   valid @67 :Bool = true;
@@ -2536,6 +2540,10 @@ struct Event {
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
     livestreamDriverEncodeData @122 :EncodeData;
+
+    # *********** body ***********
+
+    bodyState @152 :BodyState;
 
     # *********** Custom: reserved for forks ***********
 

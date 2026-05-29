@@ -578,7 +578,7 @@ def startStream(sdp: str) -> dict:
   if cp_bytes is not None:
     with car.CarParams.from_bytes(cp_bytes) as CP:
       if CP.notCar:
-        bridge_services_in.append("testJoystick")
+        bridge_services_in += ["testJoystick", "bodyState"]
 
   body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
   try:

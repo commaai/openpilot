@@ -128,15 +128,24 @@ class Soundd:
       self.current_sound_frame = 0
 
   def get_audible_alert(self, sm):
+    new_alert = None
     if sm.updated['selfdriveState']:
       new_alert = sm['selfdriveState'].alertSound.raw
-      self.update_alert(new_alert)
     elif check_selfdrive_timeout_alert(sm):
-      self.update_alert(AudibleAlert.warningImmediate)
+      new_alert = AudibleAlert.warningImmediate
       self.selfdrive_timeout_alert = True
     elif self.selfdrive_timeout_alert:
-      self.update_alert(AudibleAlert.none)
+      new_alert = AudibleAlert.none
       self.selfdrive_timeout_alert = False
+
+    # only allow body sounds when selfdrive isn't alerting so safety alerts are never masked
+    if new_alert in (None, AudibleAlert.none):
+      body_alert = sm['bodyState'].soundRequest.raw
+      if body_alert != AudibleAlert.none:
+        new_alert = body_alert
+
+    if new_alert is not None:
+      self.update_alert(new_alert)
 
   def calculate_volume(self, weighted_db):
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
@@ -153,7 +162,7 @@ class Soundd:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
+    sm = messaging.SubMaster(['selfdriveState', 'soundPressure', 'bodyState'])
 
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)
