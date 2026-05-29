@@ -49,6 +49,12 @@ def _sine_action(amplitude, period, duration):
 
 MANEUVERS = [
   Maneuver(
+    "jitter 20mph",
+    [Action([-0.5 if i % 2 == 0 else 0.5], [(i + 1) / 10]) for i in range(10)],
+    repeat=2,
+    initial_speed=20. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
     "step right 20mph",
     [Action([0.5], [1.0]), Action([-0.5], [1.5])],
     repeat=2,
