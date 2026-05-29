@@ -124,15 +124,18 @@ class DynamicPubMaster(messaging.PubMaster):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
+  def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
+    from teleoprtc.info import parse_info_from_offer
 
+    config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
-    self.video_track = LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack()
-    builder.add_video_stream(init_camera, self.video_track)
+    assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
+    for cam in cameras:
+      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
@@ -152,8 +155,8 @@ class StreamSession:
     self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
-      "New stream session (%s), init camera %s, incoming services %s, outgoing services %s",
-      self.identifier, init_camera, incoming_services, outgoing_services,
+      "New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
+      self.identifier, cameras, incoming_services, outgoing_services,
     )
 
   def start(self):
@@ -173,13 +176,6 @@ class StreamSession:
   def message_handler(self, message: bytes):
     assert self.incoming_bridge is not None
     try:
-      msg_json = json.loads(message)
-      if msg_json.get("type") == "livestreamCameraSwitch" and hasattr(self.video_track, "switch_camera"):
-        self.video_track.switch_camera(msg_json["data"]["camera"])
-        return
-
-      if msg_json.get("type") not in self.incoming_bridge_services:
-        return
       self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
@@ -218,7 +214,7 @@ class StreamSession:
 @dataclass
 class StreamRequestBody:
   sdp: str
-  initCamera: str
+  cameras: list[str]
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
 
@@ -240,7 +236,7 @@ async def get_stream(request: 'web.Request'):
       await s.stop()
       del stream_dict[sid]
 
-    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
+    session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
     try:
       answer = await session.get_answer()
     except ValueError as e:

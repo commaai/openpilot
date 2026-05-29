@@ -580,7 +580,7 @@ def startStream(sdp: str) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
 
-  body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
+  body = StreamRequestBody(sdp, ["driver"], bridge_services_in, ["carState"])
   try:
     resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream",
                        json=asdict(body), timeout=10)
