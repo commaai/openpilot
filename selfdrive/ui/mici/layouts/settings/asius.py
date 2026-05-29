@@ -1,7 +1,7 @@
 from openpilot.common.params import Params
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigCircleParamControl, BigCircleToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigCircleToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -17,19 +17,16 @@ class AsiusLayoutMici(NavScroller):
     lane_turn_toggle = BigParamControl("lane turn desire", "LaneTurnDesire")
     coop_steering_toggle = BigParamControl("cooperative steering", "TeslaCoopSteering")
 
-    self._webrtc_toggle = BigCircleParamControl(gui_app.texture("asius/webrtc_short.png", 82, 82), "EnableWebRTC", icon_offset=(0, 12))
     self._api_toggle = BigCircleToggle(gui_app.texture("asius/asius_short.png", 82, 82), toggle_callback=self._handle_api_toggle, icon_offset=(0, 12))
     self._api_toggle.set_checked(self._params.get("APIHost") == ASIUS_API_HOST)
 
     self._scroller.add_widgets([
-      self._webrtc_toggle,
       self._api_toggle,
       lane_turn_toggle,
       coop_steering_toggle,
     ])
 
     self._refresh_toggles = (
-      ("EnableWebRTC", self._webrtc_toggle),
       ("LaneTurnDesire", lane_turn_toggle),
       ("TeslaCoopSteering", coop_steering_toggle),
     )
@@ -62,4 +59,3 @@ class AsiusLayoutMici(NavScroller):
       self._params.put_bool_nonblocking("DoReboot", True)
 
     gui_app.push_widget(BigConfirmationDialog(title, gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70), confirm_callback=on_confirm, red=True))
-

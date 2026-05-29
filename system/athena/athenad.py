@@ -430,19 +430,6 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
 
 
 @dispatcher.add_method
-def webrtc(sdp: str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
-  if not Params().get_bool("EnableWebRTC"):
-    raise Exception("EnableWebRTC is disabled")
-  try:
-    from openpilot.system.webrtc.session_manager import create_session
-
-    return create_session(sdp, cameras, bridge_services_in, bridge_services_out)
-  except Exception as e:
-    cloudlog.exception("athena.webrtc.exception")
-    return {"error": str(e)}
-
-
-@dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: dict[str, str]) -> UploadFilesToUrlResponse:
   # this is because mypy doesn't understand that the decorator doesn't change the return type
   response: UploadFilesToUrlResponse = uploadFilesToUrls([{

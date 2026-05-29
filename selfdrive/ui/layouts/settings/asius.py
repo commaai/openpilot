@@ -10,7 +10,6 @@ ASIUS_API_HOST = "https://api.asius.ai"
 ASIUS_ATHENA_HOST = "wss://api.asius.ai"
 
 DESCRIPTIONS = {
-  "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
   "LaneTurnDesire": tr_noop("When blinker is on below 20 mph, steer in blinker direction. Useful at intersections and red lights."),
   "TeslaCoopSteering": tr_noop(
     "Allows the driver to provide limited steering input while openpilot is engaged. Blends driver torque into openpilot's steering angle."
@@ -24,11 +23,6 @@ class AsiusLayout(Widget):
     self._params = Params()
 
     self._toggle_defs = {
-      "EnableWebRTC": (
-        lambda: tr("Remote Live Streaming"),
-        DESCRIPTIONS["EnableWebRTC"],
-        "network.png",
-      ),
       "LaneTurnDesire": (
         lambda: tr("Lane Turn Desire"),
         DESCRIPTIONS["LaneTurnDesire"],
