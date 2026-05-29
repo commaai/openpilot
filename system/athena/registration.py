@@ -1,93 +1,128 @@
 #!/usr/bin/env python3
-import time
-import json
-import jwt
-from typing import cast
+from pathlib import Path
+import subprocess
 
-from datetime import datetime, timedelta, UTC
-from openpilot.common.api import api_get, get_key_pair
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat, load_pem_public_key
+
 from openpilot.common.params import Params
-from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import PC
+from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
+BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+ASIUS_DONGLE_ID_LEN = 44
+
 
 def is_registered_device() -> bool:
   dongle = Params().get("DongleId")
   return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
 
+def base58_encode(value: int) -> str:
+  if value == 0:
+    return BASE58[0]
+
+  out = []
+  while value:
+    value, rem = divmod(value, 58)
+    out.append(BASE58[rem])
+  return "".join(reversed(out))
+
+
+def base58_decode(value: str) -> int:
+  decoded = 0
+  for char in value:
+    decoded *= 58
+    decoded += BASE58.index(char)
+  return decoded
+
+
+def is_asius_dongle_id(dongle_id: str | None) -> bool:
+  return dongle_id is not None and len(dongle_id) == ASIUS_DONGLE_ID_LEN and all(char in BASE58 for char in dongle_id)
+
+
+def dongle_id_from_public_key(public_key: str) -> str:
+  key = load_pem_public_key(public_key.encode())
+  if not isinstance(key, ed25519.Ed25519PublicKey):
+    raise ValueError("Asius identity requires an Ed25519 public key")
+
+  public_bytes = key.public_bytes(Encoding.Raw, PublicFormat.Raw)
+  return base58_encode(int.from_bytes(public_bytes, "big")).rjust(ASIUS_DONGLE_ID_LEN, BASE58[0])
+
+
+def public_key_from_dongle_id(dongle_id: str) -> str:
+  if not is_asius_dongle_id(dongle_id):
+    raise ValueError("invalid Asius DongleId")
+
+  encoded = base58_decode(dongle_id)
+  if encoded >= 1 << 256:
+    raise ValueError("invalid Asius DongleId")
+
+  key = ed25519.Ed25519PublicKey.from_public_bytes(encoded.to_bytes(32, "big"))
+  return key.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode()
+
+
+def ed25519_key_paths(identity_dir: Path | None = None) -> tuple[Path, Path]:
+  identity_dir = identity_dir or Path(Paths.persist_root()) / "comma"
+  return identity_dir / "id_ed25519", identity_dir / "id_ed25519.pub"
+
+
+def remount_persist(readwrite: bool) -> None:
+  if Path(Paths.persist_root()) != Path("/persist"):
+    return
+
+  mode = "rw" if readwrite else "ro"
+  subprocess.run(["sudo", "-n", "mount", "-o", f"remount,{mode}", "/persist"], check=True)
+
+
+def create_ed25519_key_pair() -> str:
+  private_key_path, public_key_path = ed25519_key_paths()
+  private_key_path.parent.mkdir(parents=True, exist_ok=True)
+
+  private_key = ed25519.Ed25519PrivateKey.generate()
+  private_key_path.write_bytes(private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
+  private_key_path.chmod(0o600)
+
+  public_key = private_key.public_key().public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+  public_key_path.write_bytes(public_key)
+  return public_key.decode()
+
+
+def ensure_ed25519_key_pair() -> str:
+  private_key_path, public_key_path = ed25519_key_paths()
+  if private_key_path.exists() and public_key_path.exists():
+    return public_key_path.read_text()
+
+  remounted = False
+  try:
+    remount_persist(True)
+    remounted = True
+    return create_ed25519_key_pair()
+  finally:
+    if remounted:
+      try:
+        remount_persist(False)
+      except Exception:
+        cloudlog.exception("failed to remount /persist read-only after Ed25519 key creation")
+
+
 def register(show_spinner=False) -> str | None:
-  """
-  All devices built since March 2024 come with all
-  info stored in /persist/. This is kept around
-  only for devices built before then.
-
-  With a backend update to take serial number instead
-  of dongle ID to some endpoints, this can be removed
-  entirely.
-  """
   params = Params()
-
   dongle_id: str | None = params.get("DongleId")
 
-  # Create registration token, in the future, this key will make JWTs directly
-  jwt_algo, private_key, public_key = get_key_pair()
-
-  if not public_key:
+  try:
+    public_key = ensure_ed25519_key_pair()
+  except Exception:
     dongle_id = UNREGISTERED_DONGLE_ID
-    cloudlog.warning("missing public key")
-  elif dongle_id is None:
-    if show_spinner:
-      spinner = Spinner()
-      spinner.update("registering device")
-
-    # Block until we get the imei
-    serial = HARDWARE.get_serial()
-    device_type = HARDWARE.get_device_type()
-    start_time = time.monotonic()
-    imei1: str | None = None
-    imei2: str | None = None
-    while imei1 is None and imei2 is None:
-      try:
-        imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)
-      except Exception:
-        cloudlog.exception("Error getting imei, trying again...")
-        time.sleep(1)
-
-      if time.monotonic() - start_time > 60 and show_spinner:
-        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
-
-    backoff = 0
-    start_time = time.monotonic()
-    while True:
-      try:
-        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)},
-                                    cast(str, private_key), algorithm=jwt_algo)
-        cloudlog.info("getting pilotauth")
-        resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                       imei=imei1, imei2=imei2, serial=serial, device_type=device_type, public_key=public_key, register_token=register_token)
-
-        if resp.status_code in (402, 403):
-          cloudlog.info(f"Unable to register device, got {resp.status_code}")
-          dongle_id = UNREGISTERED_DONGLE_ID
-        else:
-          dongleauth = json.loads(resp.text)
-          dongle_id = dongleauth["dongle_id"]
-        break
-      except Exception:
-        cloudlog.exception("failed to authenticate")
-        backoff = min(backoff + 1, 15)
-        time.sleep(backoff)
-
-      if time.monotonic() - start_time > 60 and show_spinner:
-        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
-
-    if show_spinner:
-      spinner.close()
+    cloudlog.exception("failed to create Asius Ed25519 identity")
+  else:
+    expected_dongle_id = dongle_id_from_public_key(public_key)
+    if dongle_id != expected_dongle_id:
+      dongle_id = expected_dongle_id
 
   if dongle_id:
     params.put("DongleId", dongle_id, block=True)

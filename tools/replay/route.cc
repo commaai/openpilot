@@ -15,7 +15,7 @@ Route::Route(const std::string &route, const std::string &data_dir, bool auto_so
 
 RouteIdentifier Route::parseRoute(const std::string &str) {
   RouteIdentifier identifier = {};
-  static const std::regex pattern(R"(^(([a-z0-9]{16})[|_/])?(.{20})((--|/)((-?\d+(:(-?\d+)?)?)|(:-?\d+)))?$)");
+  static const std::regex pattern(R"(^(([1-9A-HJ-NP-Za-km-z]{44})[|_/])?(.{20})((--|/)((-?\d+(:(-?\d+)?)?)|(:-?\d+)))?$)");
   std::smatch match;
 
   if (std::regex_match(str, match, pattern)) {

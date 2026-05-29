@@ -10,7 +10,8 @@ from openpilot.common.params import Params
 API_HOST = Params().get("APIHost", return_default=True)
 
 # name: jwt signature algorithm
-KEYS = {"id_rsa": "RS256",
+KEYS = {"id_ed25519": "EdDSA",
+        "id_rsa": "RS256",
         "id_ecdsa": "ES256"}
 
 

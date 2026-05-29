@@ -246,7 +246,7 @@ RouteSelection parse_route_selection(std::string route_name) {
     route.selector_explicit = true;
     route_name.resize(route_name.size() - 2);
   }
-  static const std::regex pattern(R"(^(([a-z0-9]{16})[|_/])?(.{20})((--|/)((-?\d+(:(-?\d+)?)?)|(:-?\d+)))?$)");
+  static const std::regex pattern(R"(^(([1-9A-HJ-NP-Za-km-z]{44})[|_/])?(.{20})((--|/)((-?\d+(:(-?\d+)?)?)|(:-?\d+)))?$)");
   std::smatch match;
   if (!std::regex_match(route_name, match, pattern)) return route;
 

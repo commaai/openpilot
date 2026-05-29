@@ -1,76 +1,96 @@
-import json
-from Crypto.PublicKey import RSA
 from pathlib import Path
 
+import pytest
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
+
 from openpilot.common.params import Params
-from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
-from openpilot.system.athena.tests.helpers import MockResponse
+from openpilot.system.athena.registration import (
+  ASIUS_DONGLE_ID_LEN,
+  dongle_id_from_public_key,
+  public_key_from_dongle_id,
+  register,
+  UNREGISTERED_DONGLE_ID,
+)
 from openpilot.system.hardware.hw import Paths
 
 
 class TestRegistration:
 
-  def setup_method(self):
-    # clear params and setup key paths
+  @pytest.fixture(autouse=True)
+  def setup_identity_root(self, tmp_path, monkeypatch):
     self.params = Params()
+
+    persist_root = tmp_path / "persist"
+    monkeypatch.setattr(Paths, "persist_root", staticmethod(lambda: str(persist_root)))
 
     persist_dir = Path(Paths.persist_root()) / "comma"
     persist_dir.mkdir(parents=True, exist_ok=True)
 
-    self.priv_key = persist_dir / "id_rsa"
-    self.pub_key = persist_dir / "id_rsa.pub"
-    self.dongle_id = persist_dir / "dongle_id"
+    self.priv_key = persist_dir / "id_ed25519"
+    self.pub_key = persist_dir / "id_ed25519.pub"
+    self.rsa_key = persist_dir / "id_rsa"
+    self.rsa_pub_key = persist_dir / "id_rsa.pub"
 
-  def _generate_keys(self):
-    self.pub_key.touch()
-    k = RSA.generate(2048)
-    with open(self.priv_key, "wb") as f:
-      f.write(k.export_key())
-    with open(self.pub_key, "wb") as f:
-      f.write(k.publickey().export_key())
+  def _generate_keys(self) -> str:
+    key = ed25519.Ed25519PrivateKey.generate()
+    self.priv_key.write_bytes(key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
+    self.pub_key.write_bytes(key.public_key().public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
+    return self.pub_key.read_text()
 
-  def test_valid_cache(self, mocker):
-    # if all params are written, return the cached dongle id.
-    # should work with a dongle ID on either /persist/ or normal params
-    self._generate_keys()
+  def test_public_key_roundtrip(self):
+    public_key = self._generate_keys()
+    dongle = dongle_id_from_public_key(public_key)
 
-    dongle = "DONGLE_ID_123"
-    m = mocker.patch("openpilot.system.athena.registration.api_get", autospec=True)
-    for persist, params in [(True, True), (True, False), (False, True)]:
-      self.params.put("DongleId", dongle if params else "", block=True)
-      with open(self.dongle_id, "w") as f:
-        f.write(dongle if persist else "")
-      assert register() == dongle
-      assert not m.called
+    assert len(dongle) == ASIUS_DONGLE_ID_LEN
+    assert public_key_from_dongle_id(dongle) == public_key
 
-  def test_no_keys(self, mocker):
-    # missing pubkey
-    m = mocker.patch("openpilot.system.athena.registration.api_get", autospec=True)
+  def test_valid_cache(self):
+    public_key = self._generate_keys()
+    dongle = dongle_id_from_public_key(public_key)
+
+    self.params.put("DongleId", dongle, block=True)
+    assert register() == dongle
+
+  def test_creates_missing_ed25519_keys(self):
     dongle = register()
-    assert m.call_count == 0
-    assert dongle == UNREGISTERED_DONGLE_ID
+
+    assert self.priv_key.exists()
+    assert self.pub_key.exists()
+    assert dongle == dongle_id_from_public_key(self.pub_key.read_text())
     assert self.params.get("DongleId") == dongle
 
-  def test_missing_cache(self, mocker):
-    # keys exist but no dongle id
-    self._generate_keys()
-    m = mocker.patch("openpilot.system.athena.registration.api_get", autospec=True)
-    dongle = "DONGLE_ID_123"
-    m.return_value = MockResponse(json.dumps({'dongle_id': dongle}), 200)
-    assert register() == dongle
-    assert m.call_count == 1
+  def test_missing_cache(self):
+    public_key = self._generate_keys()
+    dongle = dongle_id_from_public_key(public_key)
 
-    # call again, shouldn't hit the API this time
     assert register() == dongle
-    assert m.call_count == 1
+    assert register() == dongle
     assert self.params.get("DongleId") == dongle
 
-  def test_unregistered(self, mocker):
-    # keys exist, but unregistered
-    self._generate_keys()
-    m = mocker.patch("openpilot.system.athena.registration.api_get", autospec=True)
-    m.return_value = MockResponse(None, 402)
+  def test_invalid_cache_is_replaced(self):
+    public_key = self._generate_keys()
+    self.params.put("DongleId", "0000000000000000", block=True)
+
     dongle = register()
-    assert m.call_count == 1
+    assert dongle == dongle_id_from_public_key(public_key)
+    assert len(dongle) == ASIUS_DONGLE_ID_LEN
+
+  def test_rsa_key_is_ignored(self):
+    self.rsa_key.write_text("existing rsa private key")
+    self.rsa_pub_key.write_text("existing rsa public key")
+
+    dongle = register()
+
+    assert self.rsa_key.read_text() == "existing rsa private key"
+    assert self.rsa_pub_key.read_text() == "existing rsa public key"
+    assert self.priv_key.exists()
+    assert self.pub_key.exists()
+    assert dongle == dongle_id_from_public_key(self.pub_key.read_text())
+
+  def test_key_create_failure(self, monkeypatch):
+    monkeypatch.setattr("openpilot.system.athena.registration.create_ed25519_key_pair", lambda: (_ for _ in ()).throw(OSError("no write")))
+
+    dongle = register()
     assert dongle == UNREGISTERED_DONGLE_ID
     assert self.params.get("DongleId") == dongle

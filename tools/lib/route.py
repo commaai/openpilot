@@ -209,7 +209,7 @@ class RouteName:
     delim = next(c for c in self._name_str if c in ("|", "/"))
     self._dongle_id, self._time_str = self._name_str.split(delim)
 
-    assert len(self._dongle_id) == 16, self._name_str
+    assert len(self._dongle_id) == 44, self._name_str
     assert len(self._time_str) == 20, self._name_str
     self._canonical_name = f"{self._dongle_id}|{self._time_str}"
 

@@ -21,7 +21,7 @@ if __name__ == "__main__":
   r = CommaApi(get_token()).get("v1/me/devices")
   devices = {x['dongle_id']: x['alias'] for x in r}
 
-  if not re.match("[0-9a-zA-Z]{16}", args.device):
+  if not re.fullmatch("[1-9A-HJ-NP-Za-km-z]{44}", args.device):
     user_input = args.device.replace(" ", "").lower()
     matches = { k: v for k, v in devices.items() if isinstance(v, str) and user_input in v.replace(" ", "").lower() }
     if len(matches) == 1:

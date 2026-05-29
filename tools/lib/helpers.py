@@ -1,6 +1,6 @@
 # regex patterns
 class RE:
-  DONGLE_ID = r'(?P<dongle_id>[a-f0-9]{16})'
+  DONGLE_ID = r'(?P<dongle_id>[1-9A-HJ-NP-Za-km-z]{44})'
   TIMESTAMP = r'(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
   LOG_ID_V2 = r'(?P<count>[a-f0-9]{8})--(?P<uid>[a-z0-9]{10})'
   LOG_ID = fr'(?P<log_id>(?:{TIMESTAMP}|{LOG_ID_V2}))'
