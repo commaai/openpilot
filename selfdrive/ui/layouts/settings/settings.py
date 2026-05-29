@@ -2,7 +2,6 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import IntEnum
 from collections.abc import Callable
-from openpilot.selfdrive.ui.layouts.settings.asius import AsiusLayout
 from openpilot.selfdrive.ui.layouts.settings.developer import DeveloperLayout
 from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
@@ -37,8 +36,7 @@ class PanelType(IntEnum):
   TOGGLES = 2
   SOFTWARE = 3
   FIREHOSE = 4
-  ASIUS = 5
-  DEVELOPER = 6
+  DEVELOPER = 5
 
 
 @dataclass
@@ -63,7 +61,6 @@ class SettingsLayout(Widget):
       PanelType.TOGGLES: PanelInfo(tr_noop("Toggles"), TogglesLayout()),
       PanelType.SOFTWARE: PanelInfo(tr_noop("Software"), SoftwareLayout()),
       PanelType.FIREHOSE: PanelInfo(tr_noop("Firehose"), FirehoseLayout()),
-      PanelType.ASIUS: PanelInfo(tr_noop("Asius"), AsiusLayout()),
       PanelType.DEVELOPER: PanelInfo(tr_noop("Developer"), DeveloperLayout()),
     }
 
