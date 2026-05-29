@@ -4,7 +4,7 @@ import cereal.messaging as messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
-from modeld.helpers import usbgpu_present
+from openpilot.selfdrive.modeld.helpers import usbgpu_present
 
 
 def main():
