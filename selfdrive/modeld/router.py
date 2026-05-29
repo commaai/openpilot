@@ -11,8 +11,7 @@ def main():
   sm = SubMaster(['bigModelV2', 'smolModelV2'])
   pm = PubMaster(['modelV2'])
   params = Params()
-  usbgpu_present = usbgpu_present()
-  src = 'bigModelV2' if usbgpu_present else 'smolModelV2'
+  src = 'bigModelV2' if usbgpu_present() else 'smolModelV2'
 
   # fall back to smol once big has been seen and then lags; don't fall back if big was never seen
   big_stale_dt = 1.5 / SERVICE_LIST['bigModelV2'].frequency
