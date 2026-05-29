@@ -10,9 +10,9 @@ import requests
 from openpilot.common.parameterized import parameterized
 
 from cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
+from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode, auto_camera_source
 from openpilot.tools.lib.file_sources import comma_api_source, InternalUnavailableException
-from openpilot.tools.lib.route import SegmentRange
+from openpilot.tools.lib.route import SegmentRange, FileName
 from openpilot.tools.lib.url_file import URLFileException
 
 NUM_SEGS = 17  # number of segments in the test route
@@ -261,3 +261,130 @@ class TestLogReader:
       msgs = list(LogReader(qlog.name, only_union_types=True))
       assert len(msgs) == num_msgs
       [m.which() for m in msgs]
+
+
+TEST_ROUTE_CAM = "344c5c15b34f2d8a/2024-01-03--09-37-12"
+CAMERA_FILE = "fcamera.hevc"
+
+
+class TestCameraSource:
+  def test_auto_camera_source_no_source(self):
+    with pytest.raises(LogsUnavailable):
+      auto_camera_source(f"{TEST_ROUTE_CAM}/0", [], FileName.FCAMERA)
+
+  def test_auto_camera_source_no_source_default_camera(self):
+    with pytest.raises(LogsUnavailable):
+      auto_camera_source(f"{TEST_ROUTE_CAM}/0", [])
+
+  def test_auto_camera_source_found(self, mocker):
+    mock_source = mocker.Mock()
+    mock_source.__name__ = "mock_source"
+    mock_source.return_value = {0: "http://fake/fcamera.hevc"}
+
+    result = auto_camera_source(f"{TEST_ROUTE_CAM}/0", [mock_source], FileName.FCAMERA)
+    assert len(result) == 1
+    assert result[0] == "http://fake/fcamera.hevc"
+
+  def test_auto_camera_source_multiple_segments(self, mocker):
+    mock_source = mocker.Mock()
+    mock_source.__name__ = "mock_source"
+    mock_source.return_value = {0: "http://fake/0/fcamera.hevc", 1: "http://fake/1/fcamera.hevc"}
+
+    result = auto_camera_source(f"{TEST_ROUTE_CAM}/0:2", [mock_source], FileName.FCAMERA)
+    assert len(result) == 2
+
+  def test_auto_camera_source_source_fallback(self, mocker):
+    source_a = mocker.Mock()
+    source_a.__name__ = "source_a"
+    source_a.return_value = {}
+
+    source_b = mocker.Mock()
+    source_b.__name__ = "source_b"
+    source_b.return_value = {0: "http://fake/fcamera.hevc"}
+
+    result = auto_camera_source(f"{TEST_ROUTE_CAM}/0", [source_a, source_b], FileName.FCAMERA)
+    assert len(result) == 1
+    assert source_a.called
+    assert source_b.called
+
+  def test_auto_camera_source_partial_fallback(self, mocker):
+    source_a = mocker.Mock()
+    source_a.__name__ = "source_a"
+    source_a.return_value = {0: "http://fake/0/fcamera.hevc"}
+
+    source_b = mocker.Mock()
+    source_b.__name__ = "source_b"
+    source_b.return_value = {1: "http://fake/1/fcamera.hevc"}
+
+    result = auto_camera_source(f"{TEST_ROUTE_CAM}/0:2", [source_a, source_b], FileName.FCAMERA)
+    assert len(result) == 2
+
+  def test_auto_camera_source_error_then_success(self, mocker):
+    source_a = mocker.Mock()
+    source_a.__name__ = "source_a"
+    source_a.side_effect = Exception("network error")
+
+    source_b = mocker.Mock()
+    source_b.__name__ = "source_b"
+    source_b.return_value = {0: "http://fake/fcamera.hevc"}
+
+    result = auto_camera_source(f"{TEST_ROUTE_CAM}/0", [source_a, source_b], FileName.FCAMERA)
+    assert len(result) == 1
+
+  def test_auto_camera_source_all_fail(self, mocker):
+    source_a = mocker.Mock()
+    source_a.__name__ = "source_a"
+    source_a.side_effect = Exception("network error")
+
+    source_b = mocker.Mock()
+    source_b.__name__ = "source_b"
+    source_b.return_value = {}
+
+    with pytest.raises(LogsUnavailable):
+      auto_camera_source(f"{TEST_ROUTE_CAM}/0:2", [source_a, source_b], FileName.FCAMERA)
+
+  def test_auto_camera_source_route_with_slash(self, mocker):
+    mocker.patch("openpilot.tools.lib.route.get_max_seg_number_cached", return_value=16)
+    mock_source = mocker.Mock()
+    mock_source.__name__ = "mock_source"
+    mock_source.side_effect = lambda sr, seg_idxs, fns: {seg: f"http://fake/{seg}/fcamera.hevc" for seg in seg_idxs}
+
+    result = auto_camera_source(f"{TEST_ROUTE_CAM.replace('/', '|')}", [mock_source], FileName.FCAMERA)
+    assert len(result) == 17
+
+  def test_auto_camera_source_route_with_segment(self, mocker):
+    mock_source = mocker.Mock()
+    mock_source.__name__ = "mock_source"
+    mock_source.side_effect = lambda sr, seg_idxs, fns: {seg: f"http://fake/{seg}/fcamera.hevc" for seg in seg_idxs}
+
+    result = auto_camera_source(f"{TEST_ROUTE_CAM}--5", [mock_source], FileName.FCAMERA)
+    assert len(result) == 1
+
+  def test_comma_api_source_extended(self, mocker):
+    """Verify comma_api_source can serve camera paths"""
+    mock_route = mocker.patch("openpilot.tools.lib.file_sources.Route")
+    mock_route_instance = mock_route.return_value
+    mock_route_instance.log_paths.return_value = ["fake_rlog"]
+    mock_route_instance.qlog_paths.return_value = ["fake_qlog"]
+    mock_route_instance.camera_paths.return_value = ["fake_fcamera"]
+    mock_route_instance.dcamera_paths.return_value = ["fake_dcamera"]
+    mock_route_instance.ecamera_paths.return_value = ["fake_ecamera"]
+    mock_route_instance.qcamera_paths.return_value = ["fake_qcamera"]
+
+    sr = SegmentRange(f"{TEST_ROUTE_CAM}/0")
+    for fns, expected in [
+      (FileName.RLOG, "fake_rlog"),
+      (FileName.QLOG, "fake_qlog"),
+      (FileName.FCAMERA, "fake_fcamera"),
+      (FileName.DCAMERA, "fake_dcamera"),
+      (FileName.ECAMERA, "fake_ecamera"),
+      (FileName.QCAMERA, "fake_qcamera"),
+    ]:
+      result = comma_api_source(sr, [0], fns)
+      assert result[0] == expected, f"Failed for {fns}"
+
+  def test_comma_api_source_unknown_type(self, mocker):
+    mocker.patch("openpilot.tools.lib.file_sources.Route")
+    sr = SegmentRange(f"{TEST_ROUTE_CAM}/0")
+    with pytest.raises(ValueError, match="Unknown file type"):
+      comma_api_source(sr, [0], ("unknown.ext",))

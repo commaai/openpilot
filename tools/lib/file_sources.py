@@ -18,8 +18,18 @@ def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> d
   # comma api will have already checked if the file exists
   if fns == FileName.RLOG:
     return {seg: route.log_paths()[seg] for seg in seg_idxs if route.log_paths()[seg] is not None}
-  else:
+  elif fns == FileName.QLOG:
     return {seg: route.qlog_paths()[seg] for seg in seg_idxs if route.qlog_paths()[seg] is not None}
+  elif fns == FileName.FCAMERA:
+    return {seg: route.camera_paths()[seg] for seg in seg_idxs if route.camera_paths()[seg] is not None}
+  elif fns == FileName.DCAMERA:
+    return {seg: route.dcamera_paths()[seg] for seg in seg_idxs if route.dcamera_paths()[seg] is not None}
+  elif fns == FileName.ECAMERA:
+    return {seg: route.ecamera_paths()[seg] for seg in seg_idxs if route.ecamera_paths()[seg] is not None}
+  elif fns == FileName.QCAMERA:
+    return {seg: route.qcamera_paths()[seg] for seg in seg_idxs if route.qcamera_paths()[seg] is not None}
+  else:
+    raise ValueError(f"Unknown file type: {fns}")
 
 
 def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, endpoint_url: str = DATA_ENDPOINT) -> dict[int, str]:

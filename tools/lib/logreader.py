@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, urlparse
 from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.filereader import FileReader
-from openpilot.tools.lib.file_sources import comma_api_source, internal_source, openpilotci_source, comma_car_segments_source, Source
+from openpilot.tools.lib.file_sources import comma_api_source, internal_source, openpilotci_source, comma_car_segments_source, Source, FileNames
 from openpilot.tools.lib.route import SegmentRange, FileName
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
@@ -146,7 +146,27 @@ def direct_source(file_or_url: str) -> list[str]:
   return [file_or_url]
 
 
-# TODO this should apply to camera files as well
+def auto_camera_source(identifier: str, sources: list[Source], camera_type: FileNames = FileName.FCAMERA) -> list[str]:
+  sr = SegmentRange(identifier)
+  needed_seg_idxs = sr.seg_idxs
+
+  valid_files: dict[int, str] = {}
+  exceptions = {}
+  for source in sources:
+    try:
+      files = source(sr, needed_seg_idxs, camera_type)
+      valid_files |= files
+      needed_seg_idxs = [idx for idx in needed_seg_idxs if idx not in valid_files]
+      if len(needed_seg_idxs) == 0:
+        return list(valid_files.values())
+    except Exception as e:
+      exceptions[source.__name__] = e
+
+  missing = len(needed_seg_idxs)
+  raise LogsUnavailable(f"{missing}/{len(sr.seg_idxs)} camera files were not found for {sr.route_name}, " +
+                        f"camera_type={camera_type}\n\n" +
+                        "Exceptions for sources:\n  - " + "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
+
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
   exceptions = {}
 
