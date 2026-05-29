@@ -192,8 +192,9 @@ class StreamSession:
 
         if msg_type == "enableTimingSei":
           enabled = bool(payload.get("data", {}).get("enabled"))
-          if hasattr(self.video_track, 'timing_sei_enabled'):
-            self.video_track.timing_sei_enabled = enabled
+          for track in self.video_tracks:
+            if hasattr(track, 'timing_sei_enabled'):
+              track.timing_sei_enabled = enabled
           return
 
       if payload.get("type") not in self.incoming_bridge_services:
