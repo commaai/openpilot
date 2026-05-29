@@ -505,6 +505,7 @@ def migrate_driverMonitoringState(msgs):
       if level is not None:
         dm.alertLevel = level
         break
+    dm.lockout = any(str(event.name) == 'tooDistracted' for event in old.events)
 
     dm.visionPolicyState.awarenessPercent = int(max(0, min(100, (old.awarenessStatus if old.isActiveMode else old.awarenessActive) * 100)))
     dm.visionPolicyState.awarenessStep = old.stepChange if old.isActiveMode else 0.
@@ -514,10 +515,10 @@ def migrate_driverMonitoringState(msgs):
     dm.visionPolicyState.distractedTypes.phone = bool(old.distractedType & 4)
     dm.visionPolicyState.faceDetected = old.faceDetected
     dm.visionPolicyState.pose.pitchCalib.offset = old.posePitchOffset
-    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = int(min(100, old.posePitchValidCount / 600 * 100))
+    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = int(min(100, old.posePitchValidCount / 1200 * 100))
     dm.visionPolicyState.pose.yawCalib.offset = old.poseYawOffset
-    dm.visionPolicyState.pose.yawCalib.calibratedPercent = int(min(100, old.poseYawValidCount / 600 * 100))
-    dm.visionPolicyState.pose.calibrated = old.posePitchValidCount >= 600 and old.poseYawValidCount >= 600
+    dm.visionPolicyState.pose.yawCalib.calibratedPercent = int(min(100, old.poseYawValidCount / 1200 * 100))
+    dm.visionPolicyState.pose.calibrated = old.posePitchValidCount >= 1200 and old.poseYawValidCount >= 1200
     dm.visionPolicyState.wheeltouchFallbackPercent = int(min(100, old.hiStdCount / 200 * 100))
     dm.visionPolicyState.uncertainOffroadAlertPercent = int(min(100, old.uncertainCount / 1200 * 100))
     dm.wheeltouchPolicyState.awarenessPercent = int(max(0, min(100, (old.awarenessPassive if old.isActiveMode else old.awarenessStatus) * 100)))
