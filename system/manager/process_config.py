@@ -64,6 +64,9 @@ def or_(*fns):
 def and_(*fns):
   return lambda *args: operator.and_(*(fn(*args) for fn in fns))
 
+def usbgpu_not_failed(started: bool, params: Params, CP: car.CarParams):
+  return not params.get_bool("UsbGpuFailed")
+
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
@@ -80,7 +83,7 @@ procs = [
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "selfdrive.modeld.modeld", only_onroad),
-  PythonProcess("big_modeld", "selfdrive.modeld.big_modeld", only_onroad),
+  PythonProcess("big_modeld", "selfdrive.modeld.big_modeld", and_(only_onroad, usbgpu_not_failed)),
   PythonProcess("modeld_router", "selfdrive.modeld.router", only_onroad),
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 

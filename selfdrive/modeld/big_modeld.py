@@ -11,5 +11,7 @@ def main():
   params = Params()
   params.put_bool("UsbGpuPresent", _present)
   params.put_bool("UsbGpuCompiled", _compiled)
-  if not USBGPU: exit(0)
+  if not USBGPU:
+    params.put_bool("UsbGpuFailed", True)
+    exit(0)
   modeld_main(usbgpu=USBGPU)
