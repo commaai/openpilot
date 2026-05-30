@@ -114,9 +114,9 @@ class Tici(HardwareBase):
   def get_network_type(self):
     try:
       iface = get_default_route_iface()
-      if iface == "wlan0":
+      if iface.startswith('wlan'):
         return NetworkType.wifi
-      if iface in ("eth0", "usb0"):
+      if iface.startswith('eth'):
         return NetworkType.ethernet
     except Exception:
       pass
@@ -223,9 +223,9 @@ class Tici(HardwareBase):
               metered = cp.getint("connection", "metered", fallback=0)
             except (configparser.Error, ValueError):
               continue
-            if metered == 1:
+            if metered == 1:  # NM_METERED_YES
               return True
-            if metered == 2:
+            if metered == 2:  # NM_METERED_NO
               return False
             break
     except Exception:
