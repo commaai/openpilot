@@ -113,11 +113,11 @@ class Tici(HardwareBase):
 
   def get_network_type(self):
     try:
-      iface = get_default_route_iface()
-      if iface.startswith('wlan'):
-        return NetworkType.wifi
-      if iface.startswith('eth'):
-        return NetworkType.ethernet
+      if (iface := get_default_route_iface()):
+        if iface.startswith('wlan'):
+          return NetworkType.wifi
+        if iface.startswith('eth'):
+          return NetworkType.ethernet
     except Exception:
       pass
 
