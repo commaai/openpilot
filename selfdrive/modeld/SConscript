@@ -46,7 +46,8 @@ else:
 
 tg_devices = { # which device to put jit inputs to at runtime
   'selfdrive.modeld.modeld': {
-    'default': {'WARP_DEV': tg_backend, 'QUEUE_DEV': tg_backend}
+    'default': {'WARP_DEV': tg_backend, 'QUEUE_DEV': tg_backend},
+    'usbgpu': {'WARP_DEV': tg_backend, 'QUEUE_DEV': 'AMD'}
   },
   'selfdrive.modeld.dmonitoringmodeld': {
     'default': {'DEV': tg_backend}
@@ -55,7 +56,6 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 USBGPU = usbgpu_present() # or release # TODO always build big model on release
 if USBGPU:
-  tg_devices['selfdrive.modeld.modeld']['usbgpu'] = {'WARP_DEV': tg_backend, 'QUEUE_DEV': 'AMD'}
   usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
