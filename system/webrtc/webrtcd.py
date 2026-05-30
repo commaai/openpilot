@@ -130,6 +130,11 @@ class DynamicPubMaster(messaging.PubMaster):
 
 
 class LivestreamBitrateController(AsyncTaskRunner):
+  bitrates = {
+    "high": int(os.environ.get("STREAM_BITRATE", 5_000_000)),
+    "med": 1_500_000,
+    "low": 500_000,
+  }
   bitrate_max_default = int(os.environ.get("STREAM_BITRATE", 5_000_000))
   bitrate_min_default = 500_000
   sample_interval = 0.2
@@ -151,6 +156,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.last_sent: int | None = None
     self.prev_lost: int | None = None
     self.clean_samples = 0
+    self._auto = True
 
   async def start(self):
     self._publish(self.max_bitrate)
@@ -163,6 +169,8 @@ class LivestreamBitrateController(AsyncTaskRunner):
   async def run(self):
     while True:
       await asyncio.sleep(self.sample_interval)
+      if not self._auto:
+        continue
       try:
         loss_delta = await self._sample()
         if loss_delta is None:
@@ -198,6 +206,13 @@ class LivestreamBitrateController(AsyncTaskRunner):
     if target != self.last_sent:
       self.params.put(self.param_name, target)
       self.last_sent = target
+
+  def set_quality(self, quality):
+    if quality in self.bitrates.keys():
+      self._publish(self.bitrates.get(quality))
+      self._auto = False
+    elif quality == "auto":
+      self._auto = True
 
 
 class StreamSession:
@@ -256,27 +271,25 @@ class StreamSession:
       if isinstance(payload, dict):
         msg_type = payload.get("type")
 
-        if msg_type == "livestreamCameraSwitch":
-          self.video_track.switch_camera(payload["data"]["camera"])
-          return
-
-        if msg_type == "clockSync":
-          data = payload.get("data", {})
-          pong = json.dumps({"type": "clockSync", "data": {
-            "action": "pong", "browserSendTime": data.get("browserSendTime"), "deviceTime": time.time() * 1000, # noqa: TID251
-          }})
-          self.stream.get_messaging_channel().send(pong)
-          return
-
-        if msg_type == "enableTimingSei":
-          enabled = bool(payload.get("data", {}).get("enabled"))
-          if hasattr(self.video_track, 'timing_sei_enabled'):
-            self.video_track.timing_sei_enabled = enabled
-          return
-
-      if payload.get("type") not in self.incoming_bridge_services:
-        return
-      self.incoming_bridge.send(message)
+        match msg_type:
+          case "livestreamCameraSwitch":
+            self.video_track.switch_camera(payload["data"]["camera"])
+          case "livestreamSettings":
+            self.bitrate_controller.set_quality(payload["quality"])
+          case "clockSync":
+            data = payload.get("data", {})
+            pong = json.dumps({"type": "clockSync", "data": {
+              "action": "pong", "browserSendTime": data.get("browserSendTime"), "deviceTime": time.time() * 1000, # noqa: TID251
+            }})
+            self.stream.get_messaging_channel().send(pong)
+          case "enableTimingSei":
+            enabled = bool(payload.get("data", {}).get("enabled"))
+            if hasattr(self.video_track, 'timing_sei_enabled'):
+              self.video_track.timing_sei_enabled = enabled
+          case _:
+            if payload.get("type") not in self.incoming_bridge_services:
+              return
+            self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
