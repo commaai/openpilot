@@ -28,7 +28,6 @@ SafetyModel = car.CarParams.SafetyModel
 SteerControlType = structs.CarParams.SteerControlType
 
 # panda safety stores angle_meas in brand-specific CAN units (angle_deg_to_can in opendbc/safety/modes/*.h).
-# Ford is excluded because it tracks curvature, not steering angle.
 ANGLE_DEG_TO_CAN = {
   "tesla": -10,
   "toyota": 17.452007,
@@ -336,8 +335,6 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_vehicle_speed_min = self.safety.get_vehicle_speed_min()
       prev_panda_vehicle_speed_max = self.safety.get_vehicle_speed_max()
-      prev_panda_angle_meas_min = self.safety.get_angle_meas_min()
-      prev_panda_angle_meas_max = self.safety.get_angle_meas_max()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
@@ -379,15 +376,6 @@ class TestCarModelBase(unittest.TestCase):
         v_ego_raw = CS.vEgoRaw / self.CP.wheelSpeedFactor
         self.assertFalse(v_ego_raw > (self.safety.get_vehicle_speed_max() + 1e-3) or
                          v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
-
-      # check steering angle for angle control cars (panda stores angle_meas in CAN units)
-      # ford excluded since it tracks curvature, not steering angle
-      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and self.CP.brand != "ford" and \
-        (self.safety.get_angle_meas_min() != prev_panda_angle_meas_min or
-         self.safety.get_angle_meas_max() != prev_panda_angle_meas_max):
-        angle_can = CS.steeringAngleDeg * ANGLE_DEG_TO_CAN[self.CP.brand]
-        self.assertFalse(angle_can > (self.safety.get_angle_meas_max() + 1) or
-                         angle_can < (self.safety.get_angle_meas_min() - 1))
 
       if not (self.CP.brand == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
@@ -447,10 +435,10 @@ class TestCarModelBase(unittest.TestCase):
       # check steering angle for angle control cars (panda stores angle_meas in CAN units)
       # ford excluded since it tracks curvature, not steering angle
       if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and self.CP.brand != "ford":
-        angle_can = CS.steeringAngleDeg * ANGLE_DEG_TO_CAN[self.CP.brand]
-        print(angle_can, self.safety.get_angle_meas_min(), self.safety.get_angle_meas_max())
+        angle_can = (CS.steeringAngleDeg + CS.steeringAngleOffsetDeg) * ANGLE_DEG_TO_CAN[self.CP.brand]
         checks['steeringAngle'] += (angle_can > (self.safety.get_angle_meas_max() + 1) or
                                     angle_can < (self.safety.get_angle_meas_min() - 1))
+        print(angle_can, self.safety.get_angle_meas_min(), self.safety.get_angle_meas_max(), checks['steeringAngle'])
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
