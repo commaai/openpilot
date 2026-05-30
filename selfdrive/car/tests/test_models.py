@@ -381,11 +381,11 @@ class TestCarModelBase(unittest.TestCase):
                          v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
 
       # check steering angle for angle control cars (panda stores angle_meas in CAN units)
-      angle_factor = ANGLE_DEG_TO_CAN.get(self.CP.brand)
-      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and angle_factor is not None and \
+      # ford excluded since it tracks curvature, not steering angle
+      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and self.CP.brand != "ford" and \
         (self.safety.get_angle_meas_min() != prev_panda_angle_meas_min or
          self.safety.get_angle_meas_max() != prev_panda_angle_meas_max):
-        angle_can = CS.steeringAngleDeg * angle_factor
+        angle_can = CS.steeringAngleDeg * ANGLE_DEG_TO_CAN[self.CP.brand]
         self.assertFalse(angle_can > (self.safety.get_angle_meas_max() + 1) or
                          angle_can < (self.safety.get_angle_meas_min() - 1))
 
@@ -445,9 +445,9 @@ class TestCarModelBase(unittest.TestCase):
                               v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
 
       # check steering angle for angle control cars (panda stores angle_meas in CAN units)
-      angle_factor = ANGLE_DEG_TO_CAN.get(self.CP.brand)
-      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and angle_factor is not None:
-        angle_can = CS.steeringAngleDeg * angle_factor
+      # ford excluded since it tracks curvature, not steering angle
+      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and self.CP.brand != "ford":
+        angle_can = CS.steeringAngleDeg * ANGLE_DEG_TO_CAN[self.CP.brand]
         print(angle_can, self.safety.get_angle_meas_min(), self.safety.get_angle_meas_max())
         checks['steeringAngle'] += (angle_can > (self.safety.get_angle_meas_max() + 1) or
                                     angle_can < (self.safety.get_angle_meas_min() - 1))
