@@ -40,7 +40,7 @@ function install_linux_deps() {
 
   # normal stuff, this mostly for bare docker images
   if [[ "$missing_linux_deps" -eq 0 ]]; then
-    # the native package managers are slow, so skip if we canNM_CONNECTIONS_DIRS 
+    # the native package managers are slow, so skip if we can
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
     $SUDO apt-get update
