@@ -336,6 +336,8 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_vehicle_speed_min = self.safety.get_vehicle_speed_min()
       prev_panda_vehicle_speed_max = self.safety.get_vehicle_speed_max()
+      prev_panda_angle_meas_min = self.safety.get_angle_meas_min()
+      prev_panda_angle_meas_max = self.safety.get_angle_meas_max()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
@@ -377,6 +379,15 @@ class TestCarModelBase(unittest.TestCase):
         v_ego_raw = CS.vEgoRaw / self.CP.wheelSpeedFactor
         self.assertFalse(v_ego_raw > (self.safety.get_vehicle_speed_max() + 1e-3) or
                          v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
+
+      # check steering angle for angle control cars (panda stores angle_meas in CAN units)
+      angle_factor = ANGLE_DEG_TO_CAN.get(self.CP.brand)
+      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and angle_factor is not None and \
+        (self.safety.get_angle_meas_min() != prev_panda_angle_meas_min or
+         self.safety.get_angle_meas_max() != prev_panda_angle_meas_max):
+        angle_can = CS.steeringAngleDeg * angle_factor
+        self.assertFalse(angle_can > (self.safety.get_angle_meas_max() + 1) or
+                         angle_can < (self.safety.get_angle_meas_min() - 1))
 
       if not (self.CP.brand == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
@@ -437,6 +448,7 @@ class TestCarModelBase(unittest.TestCase):
       angle_factor = ANGLE_DEG_TO_CAN.get(self.CP.brand)
       if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and angle_factor is not None:
         angle_can = CS.steeringAngleDeg * angle_factor
+        print(angle_can, self.safety.get_angle_meas_min(), self.safety.get_angle_meas_max())
         checks['steeringAngle'] += (angle_can > (self.safety.get_angle_meas_max() + 1) or
                                     angle_can < (self.safety.get_angle_meas_min() - 1))
 
