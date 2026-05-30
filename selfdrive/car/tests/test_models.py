@@ -30,7 +30,7 @@ SteerControlType = structs.CarParams.SteerControlType
 # panda safety stores angle_meas in brand-specific CAN units (angle_deg_to_can in opendbc/safety/modes/*.h).
 # Ford is excluded because it tracks curvature, not steering angle.
 ANGLE_DEG_TO_CAN = {
-  "tesla": 10,
+  "tesla": -10,
   "toyota": 17.452007,
   "nissan": 100,
   "psa": 10,
