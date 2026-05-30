@@ -39,7 +39,7 @@ def parameterized_class(attrs, input_list=None):
   def decorator(cls):
     globs = sys._getframe(1).f_globals
     for i, params in enumerate(params_list):
-      # append sanitized string param values (e.g. platform) so -k can filter by them
+      # append sanitized string param values so pytest -k can filter by them
       suffix = "_".join(filter(None, (_to_safe_name(v) for v in params.values() if isinstance(v, str))))
       name = f"{cls.__name__}_{i}" + (f"_{suffix}" if suffix else "")
       new_cls = type(name, (cls,), dict(params))
