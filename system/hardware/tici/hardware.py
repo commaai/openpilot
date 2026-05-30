@@ -190,7 +190,7 @@ class Tici(HardwareBase):
         if rssi is not None:
           dbm = int(rssi)
           if -100 < dbm <= 0:
-            network_strength = self.parse_strength(120 + max(-90, min(-20, dbm)))
+            network_strength = self.parse_strength(120 + max(-100, min(-20, dbm)))
       else:  # Cellular
         network_strength = self.parse_strength(self.get_modem_state().get('signal_quality', 0))
     except Exception:
