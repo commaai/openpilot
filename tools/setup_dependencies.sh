@@ -40,7 +40,7 @@ function install_linux_deps() {
 
   # normal stuff, this mostly for bare docker images
   if [[ "$missing_linux_deps" -eq 0 ]]; then
-    # the native package managers are slow, so skip if we can
+    # the native package managers are slow, so skip if we canNM_CONNECTIONS_DIRS 
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
     $SUDO apt-get update
@@ -116,7 +116,7 @@ function install_python_deps() {
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   install_linux_deps
-  echo "[ ] set up system dependencies t=$SECONDS"
+  echo "[ ] installed system dependencies t=$SECONDS"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   if [[ $SHELL == "/bin/zsh" ]]; then
     RC_FILE="$HOME/.zshrc"
