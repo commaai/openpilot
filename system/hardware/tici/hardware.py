@@ -1,6 +1,7 @@
 import configparser
 import json
 import os
+import socket
 import subprocess
 import time
 from functools import cached_property, lru_cache
@@ -38,9 +39,20 @@ def get_device_type():
     model = f.read().strip('\x00')
   return model.split('comma ')[-1]
 
-def wpa_cli(cmd):
-  out = subprocess.check_output(["wpa_cli", "-i", "wlan0", cmd], text=True, timeout=2)
-  return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
+def wpa_supplicant_cmd(cmd: str, timeout: float = 0.2) -> dict[str, str]:
+  with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
+    sock.settimeout(timeout)
+    sock.bind(f"\0openpilot-wpa-{os.getpid()}-{time.monotonic_ns()}")
+    sock.connect("/run/wpa_supplicant/wlan0")
+    sock.send(cmd.encode())
+
+    while True:
+      out = sock.recv(8192).decode("utf-8", "replace")
+      if out.startswith("<"):
+        continue
+      if out.startswith("FAIL"):
+        return {}
+      return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
 
 def get_default_route_iface():
   with open("/proc/net/route") as f:
@@ -174,7 +186,7 @@ class Tici(HardwareBase):
       elif network_type == NetworkType.ethernet:
         network_strength = NetworkStrength.great
       elif network_type == NetworkType.wifi:
-        rssi = wpa_cli("signal_poll").get("RSSI")
+        rssi = wpa_supplicant_cmd("SIGNAL_POLL").get("RSSI")
         if rssi is not None:
           dbm = int(rssi)
           if -100 < dbm <= 0:
@@ -192,9 +204,9 @@ class Tici(HardwareBase):
       return Params().get_bool("GsmMetered")
     try:
       if network_type == NetworkType.wifi:
-        ssid = wpa_cli("status").get("ssid", "")
+        ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
         if ssid:
-          # wpa_cli escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
+          # wpa_supplicant escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
           ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
           ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
 
@@ -216,11 +228,6 @@ class Tici(HardwareBase):
             if metered == 2:
               return False
             break
-
-        # TODO: remove when openpilot owns dhcp and can detect hotspots itself
-        out = subprocess.check_output(["nmcli", "-t", "-f", "GENERAL.METERED", "dev", "show", "wlan0"], text=True, timeout=2)
-        if out.strip().split(":", 1)[-1].startswith("yes"):
-          return True
     except Exception:
       pass
 
