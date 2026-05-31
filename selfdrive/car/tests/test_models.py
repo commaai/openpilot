@@ -436,9 +436,8 @@ class TestCarModelBase(unittest.TestCase):
       # ford excluded since it tracks curvature, not steering angle
       if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and self.CP.brand != "ford":
         angle_can = (CS.steeringAngleDeg + CS.steeringAngleOffsetDeg) * ANGLE_DEG_TO_CAN[self.CP.brand]
-        checks['steeringAngle'] += (angle_can > (self.safety.get_angle_meas_max() + 1) or
-                                    angle_can < (self.safety.get_angle_meas_min() - 1))
-        print(angle_can, self.safety.get_angle_meas_min(), self.safety.get_angle_meas_max(), checks['steeringAngle'])
+        checks['steeringAngleDeg'] += (angle_can > (self.safety.get_angle_meas_max() + 1) or
+                                       angle_can < (self.safety.get_angle_meas_min() - 1))
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
