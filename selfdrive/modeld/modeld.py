@@ -53,7 +53,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
   else:
     desired_curvature = prev_action.desiredCurvature
 
-  action = log.ModelDataV2.Action.new_message()
+  action = log.ModelDataV2.Action()
   action.desiredCurvature = float(desired_curvature)
   action.desiredAcceleration = float(desired_accel)
   action.shouldStop = bool(should_stop)
