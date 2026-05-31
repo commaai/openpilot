@@ -133,8 +133,9 @@ class LivestreamBitrateController(AsyncTaskRunner):
   bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
   label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0],}
   sample_interval = 0.2
-  high_level = 0.1 # drop when its above % packet loss
-  low_level = 0 # raise when its this % packet loss
+  high_level = 0.1 # drop immediately
+  med_level = 0.05 # drop after # of samples
+  low_level = 0 # raise after # of samples
   param_name = "LivestreamEncoderBitrate"
 
   def __init__(self, peer_connection: Any):
@@ -155,15 +156,17 @@ class LivestreamBitrateController(AsyncTaskRunner):
         continue
 
       loss_rate = await self._sample()
-      # go down
       if loss_rate >= self.high_level and self.bitrate > 0:
+        self.bitrate -= 1
+        self.up_samples *= 2 # exponential backoff of higher bitrate
+        self.up_counter, self.down_counter = 0, 0
+      elif loss_rate >= self.med_level and self.bitrate > 0:
         self.down_counter += 1
         self.up_counter -= 1
         if self.down_counter >= self.down_samples
           self.bitrate -= 1
-          self.up_samples *= 2 # exponential backoff of higher bitrate
+          self.up_samples *= 2
           self.up_counter, self.down_counter = 0, 0
-      # go up
       elif loss_rate <= self.low_level self.bitrate < len(self.bitrates):
         self.up_counter += 1
         self.down_counter -= 1
