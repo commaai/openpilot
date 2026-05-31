@@ -130,85 +130,73 @@ class DynamicPubMaster(messaging.PubMaster):
 
 
 class LivestreamBitrateController(AsyncTaskRunner):
-  bitrates = {
-    "high": int(os.environ.get("STREAM_BITRATE", 5_000_000)),
-    "med": 1_500_000,
-    "low": 500_000,
-  }
-  bitrate_max_default = int(os.environ.get("STREAM_BITRATE", 5_000_000))
-  bitrate_min_default = 500_000
+  bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
+  label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0],}
   sample_interval = 0.2
-  backoff_factor = 0.7         # multiplicative decrease on loss
-  upshift_step = 100_000       # +100 kbps per upshift
-  required_clean_samples = 5   # require 5 consecutive clean samples (1 sec) in order to upshift
-  bitrate_rounding = 50_000
-
+  high_level = 0.1 # drop when its above % packet loss
+  low_level = 0 # raise when its this % packet loss
   param_name = "LivestreamEncoderBitrate"
 
-  def __init__(self, peer_connection: Any,
-               max_bitrate: int | None = None, min_bitrate: int | None = None):
+  def __init__(self, peer_connection: Any):
     super().__init__()
     self.pc = peer_connection
     self.params = Params()
-    self.max_bitrate = max_bitrate if max_bitrate is not None else self.bitrate_max_default
-    self.min_bitrate = min_bitrate if min_bitrate is not None else self.bitrate_min_default
-    self.target = float(self.max_bitrate)
-    self.last_sent: int | None = None
-    self.prev_lost: int | None = None
-    self.clean_samples = 0
+
+    self.bitrate = 0
+    self.prev_bitrate = self.bitrate
+    self.down_counter, self.up_counter = 0, 0
+    self.up_samples, self.down_samples = 5, 5 # 1s
     self._auto = True
-
-  async def start(self):
-    self._publish(self.max_bitrate)
-    super().start()
-
-  async def stop(self):
-    await super().stop()
-    self._publish(self.max_bitrate)
 
   async def run(self):
     while True:
       await asyncio.sleep(self.sample_interval)
       if not self._auto:
         continue
-      try:
-        loss_delta = await self._sample()
-        if loss_delta is None:
-          continue
-        if loss_delta > 0:
-          self.target = max(float(self.min_bitrate), self.target * self.backoff_factor)
-          self.clean_samples = 0
-        else:
-          self.clean_samples += 1
-          if self.clean_samples >= self.required_clean_samples:
-            self.target = min(float(self.max_bitrate), self.target + self.upshift_step)
-            self.clean_samples = 0
-        self._publish(self.target)
-      except asyncio.CancelledError:
-        raise
-      except Exception:
-        self.logger.exception("livestream bitrate controller failure")
 
-  async def _sample(self) -> int | None:
+      loss_rate = await self._sample()
+      # go down
+      if loss_rate >= self.high_level and self.bitrate > 0:
+        self.down_counter += 1
+        self.up_counter -= 1
+        if self.down_counter >= self.down_samples
+          self.bitrate -= 1
+          self.up_samples *= 2 # exponential backoff of higher bitrate
+          self.up_counter, self.down_counter = 0, 0
+      # go up
+      elif loss_rate <= self.low_level self.bitrate < len(self.bitrates):
+        self.up_counter += 1
+        self.down_counter -= 1
+        if self.up_counter >= self.up_samples
+          self.bitrate += 1
+          self.up_counter, self.down_counter = 0, 0
+
+      if self.bitrate != self.prev_bitrate:
+        self._publish(self.bitrates.get(self.bitrate))
+        self.prev_bitrate = self.bitrate
+
+  async def _sample(self) -> float | None:
     report = await self.pc.getStats()
     stats = report.values() if hasattr(report, "values") else report
-    packets_lost = 0
+    packets_lost, packets_sent = 0, 0
     for s in stats:
       if getattr(s, "type", None) in ("remote-inbound-rtp", "remote-outbound-rtp"):
         packets_lost += max(0, int(getattr(s, "packetsLost", 0) or 0))
-    loss_delta = None if self.prev_lost is None else max(0, packets_lost - self.prev_lost)
-    self.prev_lost = packets_lost
-    return loss_delta
+      elif getattr(s, "type", None) == "outbound-rtp":
+        packets_sent += max(0, int(getattr(s, "packetsSent", 0) or 0))
+
+    loss_rate = None
+    if self.prev_lost is not None and self.prev_sent is not None:
+      lost_delta, sent_delta = max(0, packets_lost - self.prev_lost), max(0, packets_sent - self.prev_sent)
+      loss_rate = lost_delta / sent_delta if sent_delta > 0 else 0.0
+    self.prev_lost, self.prev_sent = packets_lost, packets_sent
+    return loss_rate
 
   def _publish(self, bitrate: float):
-    target = max(self.min_bitrate, min(self.max_bitrate,
-                                       int(round(bitrate / self.bitrate_rounding) * self.bitrate_rounding)))
-    if target != self.last_sent:
-      self.params.put(self.param_name, target)
-      self.last_sent = target
+    self.params.put(self.param_name, target)
 
   def set_quality(self, quality):
-    if quality in self.bitrates.keys():
+    if quality in self.label_to_bitrate.keys():
       self._publish(self.bitrates.get(quality))
       self._auto = False
     elif quality == "auto":
