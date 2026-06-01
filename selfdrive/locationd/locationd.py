@@ -209,6 +209,8 @@ class LocationEstimator:
   def get_msg(self, sensors_valid: bool, inputs_valid: bool, filter_valid: bool):
     state, cov = self.kf.x, self.kf.P
     std = np.sqrt(np.diag(cov))
+    filter_time_valid = np.isfinite(self.kf.t)
+    filter_valid = filter_valid and filter_time_valid
 
     orientation_ned, orientation_ned_std = state[States.NED_ORIENTATION], std[States.NED_ORIENTATION]
     velocity_device, velocity_device_std = state[States.DEVICE_VELOCITY], std[States.DEVICE_VELOCITY]
