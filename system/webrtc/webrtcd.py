@@ -131,11 +131,12 @@ class DynamicPubMaster(messaging.PubMaster):
 
 class LivestreamBitrateController(AsyncTaskRunner):
   bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
-  label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0],}
+  label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
   sample_interval = 0.2
   high_level = 0.1 # drop immediately
   med_level = 0.05 # drop after # of samples
   low_level = 0 # raise after # of samples
+  down_samples = 5 # 1s
   param_name = "LivestreamEncoderBitrate"
 
   def __init__(self, peer_connection: Any):
@@ -143,11 +144,10 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.pc = peer_connection
     self.params = Params()
 
-    self.bitrate = 0
-    self.prev_bitrate = self.bitrate
+    self.level = 0
     self.prev_lost, self.prev_sent = None, None
-    self.down_counter, self.up_counter = 0, 0
-    self.up_samples, self.down_samples = 5, 5 # 1s
+    self.counter = 0
+    self.up_samples = 5 # 1s
     self._auto = True
 
   async def run(self):
@@ -159,44 +159,36 @@ class LivestreamBitrateController(AsyncTaskRunner):
       loss_rate = await self._sample()
       if loss_rate is None:
         continue
-      if loss_rate >= self.high_level and self.bitrate > 0:
-        self.bitrate -= 1
-        self.up_samples *= 2 # exponential backoff of higher bitrate
-        self.up_counter, self.down_counter = 0, 0
-      elif loss_rate >= self.med_level and self.bitrate > 0:
-        self.down_counter += 1
-        self.up_counter -= 1
-        if self.down_counter >= self.down_samples:
-          self.bitrate -= 1
-          self.up_samples *= 2
-          self.up_counter, self.down_counter = 0, 0
-      elif loss_rate <= self.low_level and self.bitrate < len(self.bitrates) - 1:
-        self.up_counter += 1
-        self.down_counter -= 1
-        if self.up_counter >= self.up_samples:
-          self.bitrate += 1
-          self.up_counter, self.down_counter = 0, 0
-
-      if self.bitrate != self.prev_bitrate:
-        self._publish(self.bitrates[self.bitrate])
-        self.prev_bitrate = self.bitrate
+      if loss_rate >= self.med_level and self.level > 0:
+        self.counter += 1
+        if self.counter >= self.down_samples or loss_rate >= self.high_level:
+          self.level -= 1
+          self.up_samples *= 2 # exponential backoff before raising again
+          self.counter = 0
+          self._publish(self.bitrates[self.level])
+      elif loss_rate <= self.low_level and self.level < len(self.bitrates) - 1:
+        self.counter -= 1
+        if -self.counter >= self.up_samples:
+          self.level += 1
+          self.counter = 0
+          self._publish(self.bitrates[self.level])
 
   async def _sample(self) -> float | None:
     report = await self.pc.getStats()
-    stats = report.values() if hasattr(report, "values") else report
-    packets_lost, packets_sent = 0, 0
-    for s in stats:
-      if getattr(s, "type", None) in ("remote-inbound-rtp", "remote-outbound-rtp"):
-        packets_lost += max(0, int(getattr(s, "packetsLost", 0) or 0))
-      elif getattr(s, "type", None) == "outbound-rtp":
-        packets_sent += max(0, int(getattr(s, "packetsSent", 0) or 0))
+    packets_lost = packets_sent = 0
+    for s in report.values():
+      if s.type == "remote-inbound-rtp":
+        packets_lost += s.packetsLost
+      elif s.type == "outbound-rtp":
+        packets_sent += s.packetsSent
 
-    loss_rate = None
-    if self.prev_lost is not None and self.prev_sent is not None:
-      lost_delta, sent_delta = max(0, packets_lost - self.prev_lost), max(0, packets_sent - self.prev_sent)
-      loss_rate = lost_delta / sent_delta if sent_delta > 0 else 0.0
+    if self.prev_lost is None:
+      self.prev_lost, self.prev_sent = packets_lost, packets_sent
+      return None
+    lost_delta = max(0, packets_lost - self.prev_lost)
+    sent_delta = max(0, packets_sent - self.prev_sent)
     self.prev_lost, self.prev_sent = packets_lost, packets_sent
-    return loss_rate
+    return lost_delta / sent_delta if sent_delta else 0.0
 
   def _publish(self, bitrate: float):
     self.params.put(self.param_name, bitrate)
