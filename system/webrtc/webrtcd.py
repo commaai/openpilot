@@ -263,15 +263,13 @@ class StreamSession:
           case "livestreamSettings":
             self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "clockSync":
-            data = payload.get("data", {})
             pong = json.dumps({"type": "clockSync", "data": {
-              "action": "pong", "browserSendTime": data.get("browserSendTime"), "deviceTime": time.time() * 1000, # noqa: TID251
+              "action": "pong", "browserSendTime": payload["data"]["browserSendTime"], "deviceTime": time.time() * 1000, # noqa: TID251
             }})
             self.stream.get_messaging_channel().send(pong)
           case "enableTimingSei":
-            enabled = bool(payload.get("data", {}).get("enabled"))
             if hasattr(self.video_track, 'timing_sei_enabled'):
-              self.video_track.timing_sei_enabled = enabled
+              self.video_track.timing_sei_enabled = bool(payload["data"]["enabled"])
           case _:
             if payload.get("type") not in self.incoming_bridge_services:
               return
