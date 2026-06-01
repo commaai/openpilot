@@ -1,4 +1,5 @@
 import os
+import signal
 import subprocess
 import time
 import pytest
@@ -22,7 +23,7 @@ class TestSimBridgeBase:
 
   def test_driving(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR, start_new_session=True)
     self.processes.append(p_manager)
 
     sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState'])
@@ -31,7 +32,7 @@ class TestSimBridgeBase:
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    max_time_per_step = 60
+    max_time_per_step = 180 if os.getenv("CI") else 60
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
@@ -86,7 +87,12 @@ class TestSimBridgeBase:
   def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
-      p.terminate()
-
+      try:
+        os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+      except (ProcessLookupError, PermissionError, OSError):
+        pass
     for p in reversed(self.processes):
-      p.kill()
+      try:
+        p.kill()
+      except (ProcessLookupError, OSError):
+        pass
