@@ -145,6 +145,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
 
     self.bitrate = 0
     self.prev_bitrate = self.bitrate
+    self.prev_lost, self.prev_sent = None, None
     self.down_counter, self.up_counter = 0, 0
     self.up_samples, self.down_samples = 5, 5 # 1s
     self._auto = True
@@ -156,6 +157,8 @@ class LivestreamBitrateController(AsyncTaskRunner):
         continue
 
       loss_rate = await self._sample()
+      if loss_rate is None:
+        continue
       if loss_rate >= self.high_level and self.bitrate > 0:
         self.bitrate -= 1
         self.up_samples *= 2 # exponential backoff of higher bitrate
@@ -167,7 +170,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
           self.bitrate -= 1
           self.up_samples *= 2
           self.up_counter, self.down_counter = 0, 0
-      elif loss_rate <= self.low_level and self.bitrate < len(self.bitrates):
+      elif loss_rate <= self.low_level and self.bitrate < len(self.bitrates) - 1:
         self.up_counter += 1
         self.down_counter -= 1
         if self.up_counter >= self.up_samples:
@@ -175,7 +178,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
           self.up_counter, self.down_counter = 0, 0
 
       if self.bitrate != self.prev_bitrate:
-        self._publish(self.bitrates.get(self.bitrate))
+        self._publish(self.bitrates[self.bitrate])
         self.prev_bitrate = self.bitrate
 
   async def _sample(self) -> float | None:
@@ -199,8 +202,8 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.params.put(self.param_name, bitrate)
 
   def set_quality(self, quality):
-    if quality in self.label_to_bitrate.keys():
-      self._publish(self.bitrates.get(quality))
+    if quality in self.label_to_bitrate:
+      self._publish(self.label_to_bitrate[quality])
       self._auto = False
     elif quality == "auto":
       self._auto = True
@@ -266,7 +269,7 @@ class StreamSession:
           case "livestreamCameraSwitch":
             self.video_track.switch_camera(payload["data"]["camera"])
           case "livestreamSettings":
-            self.bitrate_controller.set_quality(payload["quality"])
+            self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "clockSync":
             data = payload.get("data", {})
             pong = json.dumps({"type": "clockSync", "data": {
@@ -295,7 +298,7 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
-      await self.bitrate_controller.start()
+      self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
 
