@@ -163,14 +163,14 @@ class LivestreamBitrateController(AsyncTaskRunner):
       elif loss_rate >= self.med_level and self.bitrate > 0:
         self.down_counter += 1
         self.up_counter -= 1
-        if self.down_counter >= self.down_samples
+        if self.down_counter >= self.down_samples:
           self.bitrate -= 1
           self.up_samples *= 2
           self.up_counter, self.down_counter = 0, 0
-      elif loss_rate <= self.low_level self.bitrate < len(self.bitrates):
+      elif loss_rate <= self.low_level and self.bitrate < len(self.bitrates):
         self.up_counter += 1
         self.down_counter -= 1
-        if self.up_counter >= self.up_samples
+        if self.up_counter >= self.up_samples:
           self.bitrate += 1
           self.up_counter, self.down_counter = 0, 0
 
@@ -196,7 +196,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
     return loss_rate
 
   def _publish(self, bitrate: float):
-    self.params.put(self.param_name, target)
+    self.params.put(self.param_name, bitrate)
 
   def set_quality(self, quality):
     if quality in self.label_to_bitrate.keys():
