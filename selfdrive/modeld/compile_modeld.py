@@ -121,13 +121,15 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
   fb = policy_input_shapes['features_buffer']  # (1, 25, 512)
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
   tc = policy_input_shapes['traffic_convention']  # (1, 2)
+  #TODO action_t is hardcoded to match tc for future compatibility
+  at = tc
 
   npy = {
     'desire': np.zeros(dp[2], dtype=np.float32),
     'traffic_convention': np.zeros(tc, dtype=np.float32),
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
-    'action_t': np.zeros(tc, dtype=np.float32),
+    'action_t': np.zeros(at, dtype=np.float32),
   }
   input_queues = {
     'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
