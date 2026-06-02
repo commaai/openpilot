@@ -82,7 +82,7 @@ class ModelState:
     self.vision_input_names = list(self.vision_input_shapes.keys())
     self.vision_output_slices = vision_metadata['output_slices']
 
-    policy_metadata = jits['metadata']['policy']
+    policy_metadata = jits['metadata']['on_policy']
     self.policy_input_shapes = policy_metadata['input_shapes']
     self.policy_output_slices = policy_metadata['output_slices']
 
