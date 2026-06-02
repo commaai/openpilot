@@ -33,10 +33,6 @@ if __name__ == "__main__":
   print("|-| -----  | --------- |")
 
   for f in glob.glob(BASEDIR + MODEL_PATH + "/*.onnx"):
-    # TODO: add checkpoint to DM
-    if "dmonitoring" in f:
-      continue
-
     fn = os.path.basename(f)
     master_path = MASTER_PATH + MODEL_PATH + fn
     if os.path.exists(master_path):
