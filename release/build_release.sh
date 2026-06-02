@@ -16,6 +16,8 @@ if [ -z "$RELEASE_BRANCH" ]; then
   exit 1
 fi
 
+BUILD_BRANCH=release-mici-staging
+
 
 # set git identity
 source $DIR/identity.sh
@@ -26,7 +28,7 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
 git remote add origin git@github.com:commaai/openpilot.git
-git checkout --orphan $RELEASE_BRANCH
+git checkout --orphan $BUILD_BRANCH
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -86,9 +88,11 @@ cd $BUILD_DIR
 RELEASE=1 pytest -n0 -s selfdrive/test/test_onroad.py
 #pytest selfdrive/car/tests/test_car_interfaces.py
 
-if [ ! -z "$RELEASE_BRANCH" ]; then
-  echo "[-] pushing release T=$SECONDS"
-  git push -f origin $RELEASE_BRANCH:$RELEASE_BRANCH
-fi
+echo "[-] pushing release T=$SECONDS"
+REFS=()
+for branch in ${RELEASE_BRANCH//,/ }; do
+  REFS+=("$BUILD_BRANCH:$branch")
+done
+git push -f origin "${REFS[@]}"
 
 echo "[-] done T=$SECONDS"

@@ -426,7 +426,7 @@ class SelfdriveD:
 
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
-      if self.sm['modelV2'].frameDropPerc > 20:
+      if self.sm['modelV2'].frameDropPerc > 1:
         self.events.add(EventName.modeldLagging)
 
     # Decrement personality on distance button press

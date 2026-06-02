@@ -26,7 +26,6 @@ from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices
 
-
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
@@ -35,29 +34,33 @@ LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 
 
-
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
                           lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
+  if 'action' not in model_output:
     plan = model_output['plan'][0]
     desired_accel, should_stop = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0],
                                                      plan[:,Plan.ACCELERATION][:,0],
                                                      ModelConstants.T_IDXS,
                                                      action_t=long_action_t)
-    desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
-
     desired_curvature = get_curvature_from_plan(plan[:,Plan.T_FROM_CURRENT_EULER][:,2],
                                                 plan[:,Plan.ORIENTATION_RATE][:,2],
                                                 ModelConstants.T_IDXS,
                                                 v_ego,
                                                 lat_action_t)
-    if v_ego > MIN_LAT_CONTROL_SPEED:
-      desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, LAT_SMOOTH_SECONDS)
-    else:
-      desired_curvature = prev_action.desiredCurvature
+  else:
+    desired_accel = model_output['action'][0,1]
+    desired_curvature = model_output['action'][0,0] / (max(1.0, v_ego))**2
+    should_stop = (v_ego < 0.3 and desired_accel < 0.1)
+  desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
+  if v_ego > MIN_LAT_CONTROL_SPEED:
+    desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, LAT_SMOOTH_SECONDS)
+  else:
+    desired_curvature = prev_action.desiredCurvature
 
-    return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
-                                  desiredAcceleration=float(desired_accel),
-                                  shouldStop=bool(should_stop))
+  return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
+                                desiredAcceleration=float(desired_accel),
+                                shouldStop=bool(should_stop))
+
 
 class FrameMeta:
   frame_id: int = 0
@@ -77,20 +80,20 @@ class ModelState:
     self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
     jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
     vision_metadata = jits['metadata']['vision']
-    self.vision_input_shapes =  vision_metadata['input_shapes']
+    self.vision_input_shapes = vision_metadata['input_shapes']
     self.vision_input_names = list(self.vision_input_shapes.keys())
     self.vision_output_slices = vision_metadata['output_slices']
 
-    policy_metadata = jits['metadata']['policy']
-    self.policy_input_shapes =  policy_metadata['input_shapes']
+    policy_metadata = jits['metadata']['on_policy']
+    self.policy_input_shapes = policy_metadata['input_shapes']
     self.policy_output_slices = policy_metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
     self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
-    self.full_frames : dict[str, Tensor] = {}
-    self._blob_cache : dict[int, Tensor] = {}
+    self.full_frames: dict[str, Tensor] = {}
+    self._blob_cache: dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits['run_policy']
@@ -101,7 +104,7 @@ class ModelState:
     return parsed_model_outputs
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
-                inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
+          inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     for key in bufs.keys():
       ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
       yuv_size = self.frame_buf_params[key][3]
@@ -116,6 +119,7 @@ class ModelState:
     self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
+    self.npy['action_t'][:] = inputs['action_t']
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
@@ -124,18 +128,18 @@ class ModelState:
     if prepare_only:
       return None
 
-    vision_output, policy_output = self.run_policy(
+    vision_output, on_policy_output = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
     )
 
     vision_output = vision_output.numpy().flatten()
-    policy_output = policy_output.numpy().flatten()
+    on_policy_output = on_policy_output.numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
-    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(policy_output, self.policy_output_slices))
+    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
 
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
+      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy()])
     return combined_outputs_dict
 
 
@@ -201,7 +205,6 @@ def main(demo=False):
   buf_main, buf_extra = None, None
   meta_main = FrameMeta()
   meta_extra = FrameMeta()
-
 
   if demo:
     CP = get_demo_car_params()
@@ -284,9 +287,14 @@ def main(demo=False):
 
     bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
     transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
-    inputs:dict[str, np.ndarray] = {
+    frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
+    action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
+    lat_action_t = lat_delay + frame_delay + action_delay
+    long_action_t = long_delay + frame_delay + action_delay
+    inputs: dict[str, np.ndarray] = {
       'desire_pulse': vec_desire,
       'traffic_convention': traffic_convention,
+      'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
     }
 
     mt1 = time.perf_counter()
@@ -299,9 +307,7 @@ def main(demo=False):
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
-      frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
-      action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
-      action = get_action_from_model(model_output, prev_action, lat_delay + frame_delay + action_delay, long_delay + frame_delay + action_delay, v_ego)
+      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
       prev_action = action
       fill_model_msg(drivingdata_send, modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
