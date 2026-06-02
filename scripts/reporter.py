@@ -40,6 +40,5 @@ if __name__ == "__main__":
       master_col = f"[{master}](https://reporter.comma.life/experiment/{master})"
     else:
       master_col = "N/A (new model)"
-    master = get_checkpoint(MASTER_PATH + MODEL_PATH + fn)
     pr = get_checkpoint(BASEDIR + MODEL_PATH + fn)
     print("|", fn, "|", master_col, "|", f"[{pr}](https://reporter.comma.life/experiment/{pr})", "|")
