@@ -84,7 +84,6 @@ Version 0.9.8 (2025-02-28)
   * Power draw reduced 0.5W, which means your device runs cooler
 * Added toggle to enable driver monitoring even when openpilot is not engaged
 * Localizer rewritten to remove GPS dependency at runtime
-* Firehose Mode for maximizing your training data uploads
 * Enable openpilot longitudinal control for Ford Q3 vehicles
 * New Toyota TSS2 longitudinal tune
 * Rivian R1S and R1T support thanks to lukasloetkolben!
@@ -706,7 +705,7 @@ Version 0.6.2 (2019-07-29)
 
 Version 0.6.1 (2019-07-21)
 ========================
- * Remote SSH with comma prime and [ssh.comma.ai](https://ssh.comma.ai)
+ * Remote SSH with [ssh.asius.ai](https://ssh.asius.ai)
  * Panda code Misra-c2012 compliance, tested against cppcheck coverage
  * Lockout openpilot after 3 terminal alerts for driver distracted or unresponsive
  * Toyota Sienna support thanks to wocsor!

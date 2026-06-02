@@ -9,6 +9,8 @@ import contextlib
 import json
 import uuid
 import logging
+import signal
+import subprocess
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
@@ -23,8 +25,69 @@ if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
 from openpilot.system.webrtc.schema import generate_field
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from cereal import messaging, log
+
+
+def _pid_exists(name: str, pattern: str | None = None) -> bool:
+  cmd = ["pgrep", "-x", name] if pattern is None else ["pgrep", "-f", pattern]
+  return subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+
+
+class NativeProcessHandle:
+  def __init__(self, name: str, command: list[str], cwd: str, pattern: str | None = None):
+    self.name = name
+    self.command = command
+    self.cwd = cwd
+    self.pattern = pattern
+    self.proc: subprocess.Popen | None = None
+    self.started_here = False
+    self.logger = logging.getLogger("webrtcd")
+
+  def start(self):
+    if _pid_exists(self.name, self.pattern):
+      self.logger.info("%s already running", self.name)
+      return
+
+    self.proc = subprocess.Popen(
+      self.command,
+      cwd=self.cwd,
+      start_new_session=True,
+      stdin=subprocess.DEVNULL,
+      stdout=subprocess.DEVNULL,
+      stderr=subprocess.DEVNULL,
+    )
+    self.started_here = True
+    self.logger.info("started %s pid=%s", self.name, self.proc.pid)
+
+  async def stop(self):
+    if not self.started_here or self.proc is None or self.proc.poll() is not None:
+      return
+
+    self.logger.info("stopping %s pid=%s", self.name, self.proc.pid)
+    os.killpg(self.proc.pid, signal.SIGINT)
+    try:
+      await asyncio.wait_for(asyncio.to_thread(self.proc.wait), timeout=5)
+    except asyncio.TimeoutError:
+      os.killpg(self.proc.pid, signal.SIGKILL)
+      await asyncio.to_thread(self.proc.wait)
+
+
+class LiveStreamProcessGroup:
+  def __init__(self):
+    self.processes = [
+      NativeProcessHandle("camerad", ["./camerad"], os.path.join(BASEDIR, "system/camerad")),
+      NativeProcessHandle("encoderd", ["./encoderd", "--stream"], os.path.join(BASEDIR, "system/loggerd"), r"(^|/)encoderd --stream$"),
+    ]
+
+  def start(self):
+    for proc in self.processes:
+      proc.start()
+
+  async def stop(self):
+    for proc in reversed(self.processes):
+      await proc.stop()
 
 
 class AsyncTaskRunner:
@@ -230,6 +293,7 @@ class StreamSession:
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
     self._cleanup_done = False
+    self.process_group = LiveStreamProcessGroup() if not debug_mode else None
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
       "New stream session (%s), init camera %s, incoming services %s, outgoing services %s",
@@ -248,10 +312,11 @@ class StreamSession:
     await self.post_run_cleanup()
 
   async def get_answer(self):
+    if self.process_group is not None:
+      self.process_group.start()
     return await self.stream.start()
 
   def message_handler(self, message: bytes):
-    assert self.incoming_bridge is not None
     try:
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
@@ -271,7 +336,7 @@ class StreamSession:
             if hasattr(self.video_track, 'timing_sei_enabled'):
               self.video_track.timing_sei_enabled = bool(payload["data"]["enabled"])
           case _:
-            if payload.get("type") not in self.incoming_bridge_services:
+            if self.incoming_bridge is None or payload.get("type") not in self.incoming_bridge_services:
               return
             self.incoming_bridge.send(message)
     except Exception:
@@ -281,9 +346,9 @@ class StreamSession:
     try:
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
+        self.stream.set_message_handler(self.message_handler)
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-          self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
@@ -310,6 +375,8 @@ class StreamSession:
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       await self.stream.stop()
+      if self.process_group is not None:
+        await self.process_group.stop()
 
 
 @dataclass

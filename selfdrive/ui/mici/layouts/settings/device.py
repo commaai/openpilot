@@ -130,35 +130,24 @@ class UpdaterState(IntEnum):
 
 class PairBigButton(BigButton):
   def __init__(self):
-    super().__init__("pair", "connect.comma.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
+    super().__init__("pair", "app.asius.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
 
   def _get_label_font_size(self):
     return 64
 
   def _update_state(self):
     super()._update_state()
-
-    if ui_state.prime_state.is_paired():
-      self.set_text("paired")
-      if ui_state.prime_state.is_prime():
-        self.set_value("subscribed")
-      else:
-        self.set_value("upgrade to prime")
-    else:
-      self.set_text("pair")
-      self.set_value("connect.comma.ai")
+    self.set_text("pair")
+    self.set_value("app.asius.ai")
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    # TODO: show ad dialog when clicked if not prime
-    if ui_state.prime_state.is_paired():
-      return
     dlg: BigDialog | PairingDialog
     if not system_time_valid():
       dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
-      dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair."))
+      dlg = BigDialog("", tr("Device identity must be ready before pairing."))
     else:
       dlg = PairingDialog()
     gui_app.push_widget(dlg)
@@ -340,8 +329,8 @@ class DeviceLayoutMici(NavScroller):
 
     self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
-      UpdateOpenpilotBigButton(),
       PairBigButton(),
+      UpdateOpenpilotBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
       terms_btn,

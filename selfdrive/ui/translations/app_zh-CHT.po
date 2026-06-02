@@ -20,14 +20,6 @@ msgstr " 您的裝置朝向 {:.1f}° {} 與 {:.1f}° {}。"
 msgid "--"
 msgstr "--"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "1 year of drive storage"
-msgstr "1 年行駛資料儲存"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "24/7 LTE connectivity"
-msgstr "全年無休 LTE 連線"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "2G"
 msgstr "2G"
@@ -96,14 +88,6 @@ msgstr "確定要解除安裝嗎？"
 #: system/ui/widgets/network.py
 msgid "Back"
 msgstr "返回"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Become a comma prime member at connect.comma.ai"
-msgstr "前往 connect.comma.ai 成為 comma prime 會員"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr "將 connect.comma.ai 加到主畫面，像 App 一樣使用"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "CHANGE"
@@ -306,14 +290,6 @@ msgstr "正在遺忘..."
 msgid "Finish Setup"
 msgstr "完成設定"
 
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Firehose"
-msgstr "資料洪流"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "Firehose Mode"
-msgstr "Firehose 模式"
-
 #: system/ui/widgets/network.py
 msgid "Forget"
 msgstr "忘記"
@@ -325,10 +301,6 @@ msgstr "要忘記 Wi‑Fi 網路「{}」嗎？"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "GOOD"
 msgstr "良好"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Go to https://connect.comma.ai on your phone"
-msgstr "在手機上前往 https://connect.comma.ai"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "HIGH"
@@ -424,10 +396,6 @@ msgstr "PANDA"
 msgid "PREVIEW"
 msgstr "預覽"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "PRIME FEATURES:"
-msgstr "PRIME 功能："
-
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Pair Device"
 msgstr "配對裝置"
@@ -439,11 +407,6 @@ msgstr "配對裝置"
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Pair your device to your comma account"
 msgstr "將裝置配對至您的 comma 帳號"
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
-msgstr "將裝置與 comma connect（connect.comma.ai）配對，領取您的 comma prime 優惠。"
 
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Please connect to Wi-Fi to complete initial pairing"
@@ -512,14 +475,6 @@ msgstr "法規"
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Relaxed"
 msgstr "從容"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote access"
-msgstr "遠端存取"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote snapshots"
-msgstr "遠端擷圖"
 
 #: openpilot/selfdrive/ui/widgets/ssh_key.py
 msgid "Request timed out"
@@ -629,10 +584,6 @@ msgstr "未知"
 msgid "Updates are only downloaded while the car is off."
 msgstr "僅在車輛熄火時下載更新。"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Upgrade Now"
-msgstr "立即升級"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
 msgstr "上傳車內鏡頭資料，協助改善駕駛監控演算法。"
@@ -688,10 +639,6 @@ msgstr "相機啟動中"
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "checking..."
 msgstr "檢查中..."
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "comma prime"
-msgstr "comma prime"
 
 #: system/ui/widgets/network.py
 msgid "default"
@@ -808,18 +755,3 @@ msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "{} 分鐘前"
 msgstr[1] "{} 分鐘前"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "目前已有 {} 個您的駕駛片段納入訓練資料集。"
-msgstr[1] "目前已有 {} 個您的駕駛片段納入訓練資料集。"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "✓ SUBSCRIBED"
-msgstr "✓ 已訂閱"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Firehose 模式 🔥"
-

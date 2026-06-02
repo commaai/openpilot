@@ -4,7 +4,6 @@ from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIM
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
 
@@ -91,8 +90,7 @@ class NetworkLayoutMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
-    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    show_cell_settings = True
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)

@@ -18,12 +18,8 @@ from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, Multip
 # These are only used for AdvancedNetworkSettings, standalone apps just need WifiManagerUI
 try:
   from openpilot.common.params import Params
-  from openpilot.selfdrive.ui.ui_state import ui_state
-  from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 except Exception:
   Params = None
-  ui_state = None
-  PrimeType = None
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -252,8 +248,7 @@ class AdvancedNetworkSettings(Widget):
   def _update_state(self):
     self._wifi_manager.process_callbacks()
 
-    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
-    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    show_cell_settings = True
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)

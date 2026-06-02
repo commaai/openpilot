@@ -10,7 +10,6 @@ from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant
 from openpilot.system.updated.updated import parse_release_notes
 
@@ -111,11 +110,6 @@ class Script:
 
 
 # --- Setup functions ---
-
-
-def set_prime_state(prime_type: PrimeType) -> None:
-  from openpilot.selfdrive.ui.ui_state import ui_state
-  ui_state.prime_state.set_type(prime_type)
 
 
 def setup_offroad_alerts() -> None:
@@ -341,7 +335,6 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     lambda: scroll_through_cases(network_cases),
     lambda: scroll_through_cases(device_cases),
     lambda: script.wait(WAIT_SHORT),  # pairing
-    lambda: run_actions(lambda: swipe_up(height * 3), lambda: swipe_down(height * 3)),  # firehose (scroll down and back up)
     lambda: scroll_through_cases(developer_cases),
   ]
 
@@ -391,9 +384,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
     return setup
 
-  def add_prime_state_setup(prime_type: PrimeType) -> None:
-    script.set_send(lambda: set_prime_state(prime_type))
-
   def do_onboarding() -> None:
     """Click through the training guide and close."""
     from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS
@@ -423,10 +413,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
-  # Go through different prime state layouts
-  add_prime_state_setup(PrimeType.LITE)
-  add_prime_state_setup(PrimeType.NONE)
-  add_prime_state_setup(PrimeType.UNPAIRED)
 
   # === Update Available (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_update_available))
@@ -442,7 +428,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   # pair device
   script.click(2000, 450)  # pair device
   script.click(110, 110)  # close pairing dialog
-  add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
   # calibration
   script.setup(setup_calibration_params, wait_after=0)
   script.click(1000, 620)  # expand calibration description
@@ -490,12 +475,9 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 800)  # uninstall
   script.click(650, 750)  # cancel uninstall
 
-  # === Settings - Firehose ===
-  script.click(278, 845)
-
   # === Settings - Developer (set CarParamsPersistent first) ===
   script.setup(setup_developer_params, wait_after=0)
-  script.click(278, 950)
+  script.click(278, 845)
   script.click(1930, 470)  # SSH keys (keyboard)
   script.click(1930, 115)  # click cancel on keyboard
   script.click(2000, 960)  # toggle alpha long

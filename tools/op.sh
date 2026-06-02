@@ -421,7 +421,7 @@ function op_default() {
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
-  echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
+  echo -e "  ${BOLD}ssh${NC}          SSH helper"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Scripts]:${NC}"
   echo -e "  ${BOLD}script${NC}       Run a script (e.g. op script som-debug)"

@@ -6,13 +6,13 @@ import time
 from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.system.athena.p2p import get_inbox_secret
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets.button import IconButton
-from openpilot.selfdrive.ui.ui_state import ui_state
 
 
 class PairingDialog(Widget):
@@ -31,11 +31,11 @@ class PairingDialog(Widget):
   def _get_pairing_url(self) -> str:
     try:
       dongle_id = self.params.get("DongleId") or ""
-      token = Api(dongle_id).get_token({'pair': True})
+      token = Api(dongle_id).get_token({'type': 'pair', 'inboxSecret': get_inbox_secret(self.params)}, expiry_hours=5 / 60)
     except Exception:
       cloudlog.exception("Failed to get pairing token")
       token = ""
-    return f"https://connect.comma.ai/?pair={token}"
+    return f"https://app.asius.ai/?pair={token}"
 
   def _generate_qr_code(self) -> None:
     try:
@@ -68,8 +68,7 @@ class PairingDialog(Widget):
       self.last_qr_generation = current_time
 
   def _update_state(self):
-    if ui_state.prime_state.is_paired():
-      gui_app.pop_widget()
+    pass
 
   def _render(self, rect: rl.Rectangle) -> int:
     rl.clear_background(rl.Color(224, 224, 224, 255))
@@ -89,7 +88,7 @@ class PairingDialog(Widget):
     y += close_size + 40
 
     # Title
-    title = tr("Pair your device to your comma account")
+    title = tr("Pair your device with Asius Connect")
     title_font = gui_app.font(FontWeight.NORMAL)
     left_width = int(content_rect.width * 0.5 - 15)
 
@@ -114,9 +113,9 @@ class PairingDialog(Widget):
 
   def _render_instructions(self, rect: rl.Rectangle) -> None:
     instructions = [
-      tr("Go to https://connect.comma.ai on your phone"),
+      tr("Go to https://athena.asius.ai on your phone"),
       tr("Click \"add new device\" and scan the QR code on the right"),
-      tr("Bookmark connect.comma.ai to your home screen to use it like an app"),
+      tr("Bookmark athena.asius.ai to your home screen to use it like an app"),
     ]
 
     font = gui_app.font(FontWeight.BOLD)

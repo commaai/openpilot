@@ -5,7 +5,6 @@ from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
 from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButton
-from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
@@ -49,13 +48,11 @@ class HomeLayout(Widget):
 
     self.header_rect = rl.Rectangle(0, 0, 0, 0)
     self.content_rect = rl.Rectangle(0, 0, 0, 0)
-    self.left_column_rect = rl.Rectangle(0, 0, 0, 0)
     self.right_column_rect = rl.Rectangle(0, 0, 0, 0)
 
     self.update_notif_rect = rl.Rectangle(0, 0, 200, HEADER_HEIGHT - 10)
     self.alert_notif_rect = rl.Rectangle(0, 0, 220, HEADER_HEIGHT - 10)
 
-    self._prime_widget = PrimeWidget()
     self._setup_widget = SetupWidget()
 
     self._exp_mode_button = ExperimentalModeButton()
@@ -116,12 +113,9 @@ class HomeLayout(Widget):
       self._rect.x + CONTENT_MARGIN, content_y, self._rect.width - 2 * CONTENT_MARGIN, content_height
     )
 
-    left_width = self.content_rect.width - RIGHT_COLUMN_WIDTH - SPACING
-
-    self.left_column_rect = rl.Rectangle(self.content_rect.x, self.content_rect.y, left_width, self.content_rect.height)
-
+    content_width = min(RIGHT_COLUMN_WIDTH, self.content_rect.width)
     self.right_column_rect = rl.Rectangle(
-      self.content_rect.x + left_width + SPACING, self.content_rect.y, RIGHT_COLUMN_WIDTH, self.content_rect.height
+      self.content_rect.x + self.content_rect.width - content_width, self.content_rect.y, content_width, self.content_rect.height
     )
 
     self.update_notif_rect.x = self.header_rect.x
@@ -181,7 +175,6 @@ class HomeLayout(Widget):
     gui_label(version_rect, self._version_text, 48, rl.WHITE, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
 
   def _render_home_content(self):
-    self._render_left_column()
     self._render_right_column()
 
   def _render_update_view(self):
@@ -189,9 +182,6 @@ class HomeLayout(Widget):
 
   def _render_alerts_view(self):
     self.offroad_alert.render(self.content_rect)
-
-  def _render_left_column(self):
-    self._prime_widget.render(self.left_column_rect)
 
   def _render_right_column(self):
     exp_height = 125

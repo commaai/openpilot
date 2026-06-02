@@ -6,7 +6,7 @@ import time
 from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.athena.p2p import get_inbox_secret
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -24,16 +24,16 @@ class PairingDialog(NavWidget):
     self._last_qr_generation = float("-inf")
 
     self._txt_pair = gui_app.texture("icons_mici/settings/device/pair.png", 33, 60)
-    self._pair_label = UnifiedLabel("pair with comma connect", font_size=48, font_weight=FontWeight.BOLD, line_height=0.8)
+    self._pair_label = UnifiedLabel("pair with Asius Connect", font_size=48, font_weight=FontWeight.BOLD, line_height=0.8)
 
   def _get_pairing_url(self) -> str:
     try:
       dongle_id = self._params.get("DongleId") or ""
-      token = Api(dongle_id).get_token({'pair': True})
+      token = Api(dongle_id).get_token({'type': 'pair', 'inboxSecret': get_inbox_secret(self._params)}, expiry_hours=5 / 60)
     except Exception as e:
       cloudlog.warning(f"Failed to get pairing token: {e}")
       token = ""
-    return f"https://connect.comma.ai/?pair={token}"
+    return f"https://app.asius.ai/?pair={token}"
 
   def _generate_qr_code(self) -> None:
     try:
@@ -67,8 +67,6 @@ class PairingDialog(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    if ui_state.prime_state.is_paired() and not self.is_dismissing:
-      self.dismiss()
 
   def _render(self, rect: rl.Rectangle):
     self._check_qr_refresh()

@@ -9,7 +9,6 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.hardware import HARDWARE, PC
 
@@ -60,8 +59,6 @@ class UIState:
         "rawAudioData",
       ]
     )
-
-    self.prime_state = PrimeState()
 
     # UI Status tracking
     self.status: UIStatus = UIStatus.DISENGAGED
@@ -114,7 +111,6 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
-    self.prime_state.start()  # start thread after manager forks ui
     if self._params_thread is None:
       self._params_thread = threading.Thread(target=self._params_refresh_worker, daemon=True)
       self._params_thread.start()

@@ -20,14 +20,6 @@ msgstr " Tu dispositivo está orientado {:.1f}° {} y {:.1f}° {}."
 msgid "--"
 msgstr "--"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "1 year of drive storage"
-msgstr "1 año de almacenamiento de conducción"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "24/7 LTE connectivity"
-msgstr "Conectividad LTE 24/7"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "2G"
 msgstr "2G"
@@ -96,14 +88,6 @@ msgstr "¿Seguro que quieres desinstalar?"
 #: system/ui/widgets/network.py
 msgid "Back"
 msgstr "Atrás"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Become a comma prime member at connect.comma.ai"
-msgstr "Hazte miembro de comma prime en connect.comma.ai"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr "Añade connect.comma.ai a tu pantalla de inicio para usarlo como una app"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "CHANGE"
@@ -306,14 +290,6 @@ msgstr "OLVIDAR..."
 msgid "Finish Setup"
 msgstr "Finalizar configuración"
 
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Firehose"
-msgstr "Flujo masivo"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "Firehose Mode"
-msgstr "Modo Firehose"
-
 #: system/ui/widgets/network.py
 msgid "Forget"
 msgstr "Olvidar"
@@ -325,10 +301,6 @@ msgstr "¿Olvidaste la red Wi-Fi \"{}\"?"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "GOOD"
 msgstr "BUENO"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Go to https://connect.comma.ai on your phone"
-msgstr "Ve a https://connect.comma.ai en tu teléfono"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "HIGH"
@@ -424,10 +396,6 @@ msgstr "PANDA"
 msgid "PREVIEW"
 msgstr "VISTA PREVIA"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "PRIME FEATURES:"
-msgstr "FUNCIONES PRIME:"
-
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Pair Device"
 msgstr "Emparejar dispositivo"
@@ -439,11 +407,6 @@ msgstr "Emparejar dispositivo"
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Pair your device to your comma account"
 msgstr "Empareja tu dispositivo con tu cuenta de comma"
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
-msgstr "Empareja tu dispositivo con comma connect (connect.comma.ai) y reclama tu oferta de comma prime."
 
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Please connect to Wi-Fi to complete initial pairing"
@@ -512,14 +475,6 @@ msgstr "Reglamentario"
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Relaxed"
 msgstr "Relajado"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote access"
-msgstr "Acceso remoto"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote snapshots"
-msgstr "Capturas remotas"
 
 #: openpilot/selfdrive/ui/widgets/ssh_key.py
 msgid "Request timed out"
@@ -629,10 +584,6 @@ msgstr "Desconocido"
 msgid "Updates are only downloaded while the car is off."
 msgstr "Las actualizaciones solo se descargan cuando el coche está apagado."
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Upgrade Now"
-msgstr "Mejorar ahora"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
 msgstr "Sube datos de la cámara orientada al conductor y ayuda a mejorar el algoritmo de supervisión del conductor."
@@ -688,10 +639,6 @@ msgstr "iniciando cámara"
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "checking..."
 msgstr "de cheques..."
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "comma prime"
-msgstr "comma prime"
 
 #: system/ui/widgets/network.py
 msgid "default"
@@ -808,18 +755,3 @@ msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "hace {} minuto"
 msgstr[1] "hace {} minutos"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "{} segmento de tu conducción está en el conjunto de entrenamiento hasta ahora."
-msgstr[1] "{} segmentos de tu conducción están en el conjunto de entrenamiento hasta ahora."
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "✓ SUBSCRIBED"
-msgstr "✓ SUSCRITO"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Modo Firehose 🔥"
-
