@@ -79,32 +79,21 @@ class ModelState:
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
     self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
     jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
-    vision_metadata = jits['metadata']['vision']
-    self.vision_input_shapes = vision_metadata['input_shapes']
-    self.vision_input_names = list(self.vision_input_shapes.keys())
-    self.vision_output_slices = vision_metadata['output_slices']
-
-    off_policy_metadata = jits['metadata']['off_policy']
-    self.off_policy_output_slices = off_policy_metadata['output_slices']
-
-    policy_metadata = jits['metadata']['on_policy']
-    self.policy_input_shapes = policy_metadata['input_shapes']
-    self.policy_output_slices = policy_metadata['output_slices']
+    model_metadata = jits['metadata']['driving']
+    model_input_shapes = model_metadata['input_shapes']
+    self.vision_input_names = [name for name in model_input_shapes if 'img' in name]
+    self.output_slices = model_metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+    self.input_queues, self.npy = make_input_queues(model_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
     self.full_frames: dict[str, Tensor] = {}
     self._blob_cache: dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits['run_policy']
     self.warp_enqueue = jits[(cam_w,cam_h)]
-
-  def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
-    parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
-    return parsed_model_outputs
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
@@ -131,20 +120,19 @@ class ModelState:
     if prepare_only:
       return None
 
-    vision_output, on_policy_output, off_policy_output = self.run_policy(
+    model_output, = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, img=img, big_img=big_img
     )
 
-    vision_output = vision_output.numpy().flatten()
-    off_policy_output = off_policy_output.numpy().flatten()
-    on_policy_output = on_policy_output.numpy().flatten()
-    vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
-    off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(off_policy_output, self.off_policy_output_slices))
-    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
+    model_output = model_output.numpy().flatten()
+    parsed_outputs = {k: model_output[np.newaxis, v] for k,v in self.output_slices.items()}
+    vision_outputs_dict = self.parser.parse_vision_outputs(parsed_outputs)
+    off_policy_outputs_dict = self.parser.parse_off_policy_outputs(parsed_outputs)
+    policy_outputs_dict = self.parser.parse_policy_outputs(parsed_outputs)
     combined_outputs_dict = {**vision_outputs_dict, **off_policy_outputs_dict, **policy_outputs_dict}
 
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy(), off_policy_output.copy()])
+      combined_outputs_dict['raw_pred'] = model_output.copy()
     return combined_outputs_dict
 
 
