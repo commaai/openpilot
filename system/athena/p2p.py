@@ -18,7 +18,14 @@ ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
 ATHENA_BOX_PRIVATE_KEY_PARAM = "AthenadBoxPrivateKey"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-ASIUS_DONGLE_ID_LEN = 44
+KEY_PREFIX = {
+  "ed25519": "e",
+  "x25519": "x",
+}
+KEY_BYTES = {
+  "ed25519": 32,
+  "x25519": 32,
+}
 REPLAY_WINDOW_SECONDS = 300
 SEEN_NONCES: dict[str, int] = {}
 
@@ -50,20 +57,49 @@ def base58_decode(value: str) -> int:
   return decoded
 
 
-def base58_to_bytes(value: str) -> bytes:
-  return base58_decode(value).to_bytes(32, "big")
+def base58_to_bytes(value: str, algorithm: str = "ed25519") -> bytes:
+  prefix = KEY_PREFIX[algorithm]
+  if not value.startswith(prefix):
+    raise ValueError(f"expected {algorithm} key prefix {prefix}")
+  body = value[len(prefix):]
+  if not body:
+    raise ValueError("missing base58 key body")
+  decoded = base58_decode(body)
+  byte_length = KEY_BYTES[algorithm]
+  if decoded >= 1 << (byte_length * 8):
+    raise ValueError("invalid base58 value for byte length")
+  return decoded.to_bytes(byte_length, "big")
 
 
-def bytes_to_base58(value: bytes) -> str:
-  return base58_encode(int.from_bytes(value, "big")).rjust(ASIUS_DONGLE_ID_LEN, BASE58[0])
+def bytes_to_base58(value: bytes, algorithm: str = "ed25519") -> str:
+  byte_length = KEY_BYTES[algorithm]
+  if len(value) != byte_length:
+    raise ValueError(f"expected {byte_length} {algorithm} bytes")
+  return KEY_PREFIX[algorithm] + base58_encode(int.from_bytes(value, "big"))
 
 
 def is_asius_dongle_id(dongle_id: str | None) -> bool:
-  return dongle_id is not None and len(dongle_id) == ASIUS_DONGLE_ID_LEN and all(char in BASE58 for char in dongle_id)
+  if dongle_id is None:
+    return False
+  try:
+    base58_to_bytes(dongle_id, "ed25519")
+    return True
+  except Exception:
+    return False
+
+
+def is_box_key(key: str | None) -> bool:
+  if key is None:
+    return False
+  try:
+    base58_to_bytes(key, "x25519")
+    return True
+  except Exception:
+    return False
 
 
 def random_base58_secret() -> str:
-  return base58_encode(int.from_bytes(os.urandom(32), "big")).rjust(ASIUS_DONGLE_ID_LEN, BASE58[0])
+  return bytes_to_base58(os.urandom(32), "ed25519")
 
 
 def read_raw_param(key: str) -> str | None:
@@ -96,14 +132,14 @@ def bump_acl_epoch(params: Params | None = None) -> int:
 
 def get_box_key_pair(params: Params | None = None) -> tuple[str, str]:
   private_key = read_raw_param(ATHENA_BOX_PRIVATE_KEY_PARAM)
-  if isinstance(private_key, str) and is_asius_dongle_id(private_key):
-    key = x25519.X25519PrivateKey.from_private_bytes(base58_to_bytes(private_key))
+  if isinstance(private_key, str) and is_box_key(private_key):
+    key = x25519.X25519PrivateKey.from_private_bytes(base58_to_bytes(private_key, "x25519"))
   else:
     key = x25519.X25519PrivateKey.generate()
-    private_key = bytes_to_base58(key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption()))
+    private_key = bytes_to_base58(key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption()), "x25519")
     write_raw_param(ATHENA_BOX_PRIVATE_KEY_PARAM, private_key)
 
-  public_key = bytes_to_base58(key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw))
+  public_key = bytes_to_base58(key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw), "x25519")
   return private_key, public_key
 
 
@@ -114,7 +150,7 @@ def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, s
     return {
       public_key: peer
       for public_key, peer in raw_peers.items()
-      if is_asius_dongle_id(public_key) and is_asius_dongle_id(peer.get("boxPublicKey")) and isinstance(peer.get("relayToken"), str)
+      if is_asius_dongle_id(public_key) and is_box_key(peer.get("boxPublicKey")) and isinstance(peer.get("relayToken"), str)
     }
   except Exception:
     return {}
@@ -125,7 +161,7 @@ def save_authorized_peers(peers: dict[str, dict[str, str]], params: Params | Non
 
 
 def authorize_peer(public_key: str, box_public_key: str, relay_token: str, params: Params | None = None) -> dict[str, str]:
-  if not is_asius_dongle_id(public_key) or not is_asius_dongle_id(box_public_key) or not isinstance(relay_token, str):
+  if not is_asius_dongle_id(public_key) or not is_box_key(box_public_key) or not isinstance(relay_token, str):
     raise ValueError("invalid Athena peer key")
 
   params = params or Params()
@@ -171,7 +207,7 @@ def relay_token(recipient: str, sender: str | None = None, expiry_seconds: int =
 
 def verify_identity_signature(public_key: str, signature: str, data: bytes) -> bool:
   try:
-    ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(public_key)).verify(base64url_decode(signature), data)
+    ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(public_key, "ed25519")).verify(base64url_decode(signature), data)
     return True
   except Exception:
     return False
@@ -199,8 +235,8 @@ def payload_key(shared: bytes, sender: str, recipient: str, ephemeral_public_key
 
 def encrypt_payload(text: str, sender: str, recipient: str, recipient_box_public_key: str) -> str:
   ephemeral = x25519.X25519PrivateKey.generate()
-  ephemeral_public_key = bytes_to_base58(ephemeral.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw))
-  shared = ephemeral.exchange(x25519.X25519PublicKey.from_public_bytes(base58_to_bytes(recipient_box_public_key)))
+  ephemeral_public_key = bytes_to_base58(ephemeral.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw), "x25519")
+  shared = ephemeral.exchange(x25519.X25519PublicKey.from_public_bytes(base58_to_bytes(recipient_box_public_key, "x25519")))
   iv = os.urandom(12)
   envelope = {
     "v": 2,
@@ -226,7 +262,7 @@ def verify_pair_token(token: str | None, recipient: str) -> bool:
     unverified = jwt.decode(token, options={"verify_signature": False})
     if unverified.get("to") != recipient:
       return False
-    public_key = ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(recipient))
+    public_key = ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(recipient, "ed25519"))
     verified = jwt.decode(token, public_key, algorithms=["EdDSA"])
     _, box_public_key = get_box_key_pair()
     return verified.get("type") == "pair" and verified.get("boxPublicKey") == box_public_key
@@ -247,8 +283,8 @@ def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
         return None
 
       private_key, _ = get_box_key_pair()
-      shared = x25519.X25519PrivateKey.from_private_bytes(base58_to_bytes(private_key)).exchange(
-        x25519.X25519PublicKey.from_public_bytes(base58_to_bytes(encrypted["eph"]))
+      shared = x25519.X25519PrivateKey.from_private_bytes(base58_to_bytes(private_key, "x25519")).exchange(
+        x25519.X25519PublicKey.from_public_bytes(base58_to_bytes(encrypted["eph"], "x25519"))
       )
       aad = stable_json({key: value for key, value in signed.items() if key != "ciphertext"}).encode()
       plaintext = AESGCM(payload_key(shared, sender, recipient, encrypted["eph"])).decrypt(

@@ -14,7 +14,8 @@ from openpilot.common.swaglog import cloudlog
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-ASIUS_DONGLE_ID_LEN = 44
+ED25519_PREFIX = "e"
+ED25519_KEY_BYTES = 32
 
 
 def is_registered_device() -> bool:
@@ -41,8 +42,34 @@ def base58_decode(value: str) -> int:
   return decoded
 
 
+def bytes_to_dongle_id(value: bytes) -> str:
+  if len(value) != ED25519_KEY_BYTES:
+    raise ValueError("Asius identity requires a 32-byte Ed25519 public key")
+  return ED25519_PREFIX + base58_encode(int.from_bytes(value, "big"))
+
+
+def dongle_id_to_bytes(dongle_id: str) -> bytes:
+  if not dongle_id.startswith(ED25519_PREFIX):
+    raise ValueError("invalid Asius DongleId")
+
+  body = dongle_id[len(ED25519_PREFIX):]
+  if not body or not all(char in BASE58 for char in body):
+    raise ValueError("invalid Asius DongleId")
+
+  encoded = base58_decode(body)
+  if encoded >= 1 << (ED25519_KEY_BYTES * 8):
+    raise ValueError("invalid Asius DongleId")
+  return encoded.to_bytes(ED25519_KEY_BYTES, "big")
+
+
 def is_asius_dongle_id(dongle_id: str | None) -> bool:
-  return dongle_id is not None and len(dongle_id) == ASIUS_DONGLE_ID_LEN and all(char in BASE58 for char in dongle_id)
+  if dongle_id is None:
+    return False
+  try:
+    dongle_id_to_bytes(dongle_id)
+    return True
+  except Exception:
+    return False
 
 
 def dongle_id_from_public_key(public_key: str) -> str:
@@ -51,18 +78,14 @@ def dongle_id_from_public_key(public_key: str) -> str:
     raise ValueError("Asius identity requires an Ed25519 public key")
 
   public_bytes = key.public_bytes(Encoding.Raw, PublicFormat.Raw)
-  return base58_encode(int.from_bytes(public_bytes, "big")).rjust(ASIUS_DONGLE_ID_LEN, BASE58[0])
+  return bytes_to_dongle_id(public_bytes)
 
 
 def public_key_from_dongle_id(dongle_id: str) -> str:
   if not is_asius_dongle_id(dongle_id):
     raise ValueError("invalid Asius DongleId")
 
-  encoded = base58_decode(dongle_id)
-  if encoded >= 1 << 256:
-    raise ValueError("invalid Asius DongleId")
-
-  key = ed25519.Ed25519PublicKey.from_public_bytes(encoded.to_bytes(32, "big"))
+  key = ed25519.Ed25519PublicKey.from_public_bytes(dongle_id_to_bytes(dongle_id))
   return key.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode()
 
 
