@@ -24,7 +24,8 @@ export function pingHeadRequest() {
 
 export function createPeerConnection(pc) {
   var config = {
-    sdpSemantics: 'unified-plan'
+    sdpSemantics: 'unified-plan',
+    iceServers: [{urls: 'stun:stun.l.google.com:19302'}]
   };
 
   pc = new RTCPeerConnection(config);

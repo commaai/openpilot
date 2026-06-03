@@ -1,7 +1,7 @@
 const keyVals = {w: 0, a: 0, s: 0, d: 0}
 
 export function getXY() {
-  let x = -keyVals.w + keyVals.s
+  let x = keyVals.w - keyVals.s
   let y = -keyVals.d + keyVals.a
   return {x, y}
 }

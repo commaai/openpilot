@@ -56,13 +56,14 @@ async def ping(request: 'web.Request'):
 
 async def offer(request: 'web.Request'):
   params = await request.json()
-  body = StreamRequestBody(params["sdp"], "driver", ["testJoystick"], ["carState"])
+  body = StreamRequestBody(params["sdp"], "wideRoad", ["testJoystick"], ["carState"])
   body_json = json.dumps(dataclasses.asdict(body))
 
   logger.info("Sending offer to webrtcd...")
   webrtcd_url = f"http://{WEBRTCD_HOST}:{WEBRTCD_PORT}/stream"
   async with ClientSession() as session, session.post(webrtcd_url, data=body_json) as resp:
-    assert resp.status == 200
+    if resp.status != 200:
+      return web.json_response(await resp.json(), status=resp.status)
     answer = await resp.json()
     return web.json_response(answer)
 
