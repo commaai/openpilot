@@ -16,7 +16,6 @@ from openpilot.common.params import Params
 ATHENA_AUTHORIZED_KEYS_PARAM = "AthenadAuthorizedKeys"
 ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
 ATHENA_BOX_PRIVATE_KEY_PARAM = "AthenadBoxPrivateKey"
-ATHENA_INBOX_SECRET_PARAM = "AthenadInboxSecret"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 ASIUS_DONGLE_ID_LEN = 44
@@ -82,16 +81,6 @@ def write_raw_param(key: str, value: str) -> None:
   os.replace(tmp_path, path)
 
 
-def get_inbox_secret(params: Params | None = None) -> str:
-  secret = read_raw_param(ATHENA_INBOX_SECRET_PARAM)
-  if isinstance(secret, str) and is_asius_dongle_id(secret):
-    return secret
-
-  secret = random_base58_secret()
-  write_raw_param(ATHENA_INBOX_SECRET_PARAM, secret)
-  return secret
-
-
 def get_acl_epoch(params: Params | None = None) -> int:
   try:
     return int(read_raw_param(ATHENA_ACL_EPOCH_PARAM) or "0")
@@ -121,7 +110,12 @@ def get_box_key_pair(params: Params | None = None) -> tuple[str, str]:
 def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
   try:
     peers = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
-    return peers if isinstance(peers, dict) else json.loads(peers or "{}")
+    raw_peers = peers if isinstance(peers, dict) else json.loads(peers or "{}")
+    return {
+      public_key: peer
+      for public_key, peer in raw_peers.items()
+      if is_asius_dongle_id(public_key) and is_asius_dongle_id(peer.get("boxPublicKey"))
+    }
   except Exception:
     return {}
 
@@ -135,21 +129,13 @@ def ssh_key_from_public_key(public_key: str) -> str:
   return f"ssh-ed25519 {base64.b64encode(raw).decode()} athena-{public_key}"
 
 
-def authorize_peer(public_key: str, box_public_key: str | None = None, inbox_secret: str | None = None, params: Params | None = None) -> dict[str, str]:
-  if not is_asius_dongle_id(public_key) or (box_public_key is None and inbox_secret is None):
+def authorize_peer(public_key: str, box_public_key: str, params: Params | None = None) -> dict[str, str]:
+  if not is_asius_dongle_id(public_key) or not is_asius_dongle_id(box_public_key):
     raise ValueError("invalid Athena peer key")
-  if box_public_key is not None and not is_asius_dongle_id(box_public_key):
-    raise ValueError("invalid Athena peer box key")
-  if inbox_secret is not None and not is_asius_dongle_id(inbox_secret):
-    raise ValueError("invalid Athena peer inbox secret")
 
   params = params or Params()
   peers = load_authorized_peers(params)
-  peer = {"publicKey": public_key}
-  if box_public_key is not None:
-    peer["boxPublicKey"] = box_public_key
-  if inbox_secret is not None:
-    peer["inboxSecret"] = inbox_secret
+  peer = {"publicKey": public_key, "boxPublicKey": box_public_key}
   peer["aclEpoch"] = str(bump_acl_epoch(params))
   peers[public_key] = peer
   save_authorized_peers(peers, params)
@@ -160,29 +146,6 @@ def authorize_peer(public_key: str, box_public_key: str | None = None, inbox_sec
     params.put("GithubSshKeys", "\n".join([line for line in ssh_keys.splitlines() if line] + [ssh_key]), block=True)
 
   return peer
-
-
-def encryption_key(public_key: str, inbox_secret: str) -> bytes:
-  return sha256(f"athena-v1:{public_key}:{inbox_secret}".encode()).digest()
-
-
-def encrypt_payload_v1(text: str, public_key: str, inbox_secret: str) -> str:
-  iv = os.urandom(12)
-  ciphertext = AESGCM(encryption_key(public_key, inbox_secret)).encrypt(iv, text.encode(), None)
-  return json.dumps({"v": 1, "alg": "A256GCM", "iv": base64url_encode(iv), "ciphertext": base64url_encode(ciphertext)})
-
-
-def decrypt_payload_v1(payload: str, public_key: str, inbox_secret: str) -> str | None:
-  try:
-    encrypted = json.loads(payload)
-    if encrypted.get("v") != 1 or encrypted.get("alg") != "A256GCM":
-      return None
-    plaintext = AESGCM(encryption_key(public_key, inbox_secret)).decrypt(
-      base64url_decode(encrypted["iv"]), base64url_decode(encrypted["ciphertext"]), None
-    )
-    return plaintext.decode()
-  except Exception:
-    return None
 
 
 def stable_json(value) -> str:
@@ -287,6 +250,6 @@ def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
       )
       return plaintext.decode()
 
-    return decrypt_payload_v1(payload, recipient, get_inbox_secret())
+    return None
   except Exception:
     return None
