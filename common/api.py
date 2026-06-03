@@ -1,7 +1,7 @@
 import jwt
-import os
 import requests
 from datetime import datetime, timedelta, UTC
+from pathlib import Path
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
@@ -9,8 +9,7 @@ from openpilot.common.params import Params
 
 API_HOST = Params().get("APIHost", return_default=True)
 
-# name: jwt signature algorithm
-KEYS = {"id_ed25519": "EdDSA", "id_rsa": "RS256", "id_ecdsa": "ES256"}
+FALLBACK_IDENTITY_DIR = Path("/data/persist/comma")
 
 
 class Api:
@@ -56,8 +55,9 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, session=Non
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:
-  for key in KEYS:
-    if os.path.isfile(Paths.persist_root() + f'/comma/{key}') and os.path.isfile(Paths.persist_root() + f'/comma/{key}.pub'):
-      with open(Paths.persist_root() + f'/comma/{key}') as private, open(Paths.persist_root() + f'/comma/{key}.pub') as public:
-        return KEYS[key], private.read(), public.read()
+  for identity_dir in (Path(Paths.persist_root()) / "comma", FALLBACK_IDENTITY_DIR):
+    private_key_path = identity_dir / "id_ed25519"
+    public_key_path = identity_dir / "id_ed25519.pub"
+    if private_key_path.is_file() and public_key_path.is_file():
+      return "EdDSA", private_key_path.read_text(), public_key_path.read_text()
   return None, None, None

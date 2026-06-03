@@ -631,7 +631,7 @@ def getAuthorizedPeers() -> dict[str, Any]:
         "publicKey": public_key,
         "aclEpoch": peer.get("aclEpoch"),
       }
-      for public_key, peer in load_authorized_peers(params).items()
+      for public_key, peer in load_stored_authorized_peers(params).items()
     ],
   }
 
@@ -1116,7 +1116,7 @@ def _live_state_snapshot(sm: messaging.SubMaster, params: Params) -> dict[str, A
     },
     "params": param_values,
     "services": services,
-    "authorizedPeers": list(load_authorized_peers(params).keys()),
+    "authorizedPeers": list(load_stored_authorized_peers(params).keys()),
   }
 
 

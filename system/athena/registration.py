@@ -13,6 +13,7 @@ from openpilot.common.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
+FALLBACK_IDENTITY_DIR = Path("/data/persist/comma")
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 ED25519_KEY_BYTES = 32
 
@@ -97,8 +98,8 @@ def remount_persist(readwrite: bool) -> None:
   subprocess.run(["sudo", "-n", "mount", "-o", f"remount,{mode}", "/persist"], check=True)
 
 
-def create_ed25519_key_pair() -> str:
-  private_key_path, public_key_path = ed25519_key_paths()
+def create_ed25519_key_pair(identity_dir: Path | None = None) -> str:
+  private_key_path, public_key_path = ed25519_key_paths(identity_dir)
   private_key_path.parent.mkdir(parents=True, exist_ok=True)
 
   private_key = ed25519.Ed25519PrivateKey.generate()
@@ -110,16 +111,33 @@ def create_ed25519_key_pair() -> str:
   return public_key.decode()
 
 
+def prepare_fallback_identity_dir(identity_dir: Path = FALLBACK_IDENTITY_DIR) -> None:
+  try:
+    identity_dir.mkdir(parents=True, exist_ok=True)
+  except PermissionError:
+    subprocess.run(["sudo", "-n", "mkdir", "-p", str(identity_dir)], check=True)
+  if not PC:
+    subprocess.run(["sudo", "-n", "chown", "comma:comma", str(identity_dir)], check=True)
+  identity_dir.chmod(0o700)
+
+
 def ensure_ed25519_key_pair() -> str:
   private_key_path, public_key_path = ed25519_key_paths()
   if private_key_path.exists() and public_key_path.exists():
     return public_key_path.read_text()
+
+  fallback_private_key_path, fallback_public_key_path = ed25519_key_paths(FALLBACK_IDENTITY_DIR)
+  if fallback_private_key_path.exists() and fallback_public_key_path.exists():
+    return fallback_public_key_path.read_text()
 
   remounted = False
   try:
     remount_persist(True)
     remounted = True
     return create_ed25519_key_pair()
+  except OSError:
+    prepare_fallback_identity_dir()
+    return create_ed25519_key_pair(FALLBACK_IDENTITY_DIR)
   finally:
     if remounted:
       try:

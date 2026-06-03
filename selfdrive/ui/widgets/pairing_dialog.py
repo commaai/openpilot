@@ -111,9 +111,9 @@ class PairingDialog(Widget):
 
   def _render_instructions(self, rect: rl.Rectangle) -> None:
     instructions = [
-      tr("Go to https://athena.asius.ai on your phone"),
+      tr("Go to https://app.asius.ai on your phone"),
       tr("Click \"add new device\" and scan the QR code on the right"),
-      tr("Bookmark athena.asius.ai to your home screen to use it like an app"),
+      tr("Bookmark app.asius.ai to your home screen to use it like an app"),
     ]
 
     font = gui_app.font(FontWeight.BOLD)
