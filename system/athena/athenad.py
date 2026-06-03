@@ -1098,14 +1098,14 @@ def _live_state_snapshot(sm: messaging.SubMaster, params: Params) -> dict[str, A
       if sm.recv_frame[service] > 0:
         services[service] = sm[service].to_dict()
     except Exception:
-      cloudlog.exception("athena.live_state.service_failed", service=service)
+      cloudlog.exception("athena.live_state.service_failed service=%s", service)
 
   param_values = {}
   for key in LIVE_STATE_PARAM_KEYS:
     try:
       param_values[key] = _json_safe(params.get(key, return_default=True))
     except Exception:
-      cloudlog.exception("athena.live_state.param_failed", key=key)
+      cloudlog.exception("athena.live_state.param_failed key=%s", key)
 
   return {
     "ts": time.time(),
@@ -1138,7 +1138,7 @@ def broadcast_peer_notification(name: str, payload: Any) -> None:
     try:
       send_peer_payload(public_key, {"type": "notification", "name": name, "payload": payload})
     except Exception:
-      cloudlog.exception("athena.p2p.broadcast_failed", public_key=public_key)
+      cloudlog.exception("athena.p2p.broadcast_failed public_key=%s", public_key)
 
 
 def live_state_handler(end_event: threading.Event) -> None:
