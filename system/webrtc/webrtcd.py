@@ -252,6 +252,7 @@ class StreamSession:
     return await self.stream.start()
 
   def message_handler(self, message: bytes):
+    assert self.incoming_bridge is not None
     try:
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
@@ -271,7 +272,7 @@ class StreamSession:
             if hasattr(self.video_track, 'timing_sei_enabled'):
               self.video_track.timing_sei_enabled = bool(payload["data"]["enabled"])
           case _:
-            if self.incoming_bridge is None or payload.get("type") not in self.incoming_bridge_services:
+            if payload.get("type") not in self.incoming_bridge_services:
               return
             self.incoming_bridge.send(message)
     except Exception:
@@ -281,9 +282,9 @@ class StreamSession:
     try:
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
-        self.stream.set_message_handler(self.message_handler)
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
+          self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
@@ -310,7 +311,6 @@ class StreamSession:
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       await self.stream.stop()
-      Params().put_bool("AthenadWebRTCActive", False, block=True)
 
 
 @dataclass
@@ -338,7 +338,6 @@ async def get_stream(request: 'web.Request'):
       await s.stop()
       del stream_dict[sid]
 
-    Params().put_bool("AthenadWebRTCActive", True, block=True)
     session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
     try:
       answer = await session.get_answer()

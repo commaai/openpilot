@@ -902,15 +902,8 @@ def uninstallSoftware() -> dict[str, int]:
 @dispatcher.add_method
 def startStream(sdp: str) -> dict:
   from openpilot.system.webrtc.webrtcd import StreamRequestBody
-  bridge_services_in = []
+  bridge_services_in = ["testJoystick"]
   bridge_services_out = ["modelV2", "radarState", "carState", "controlsState", "selfdriveState", "liveCalibration"]
-
-  # get live car params to avoid stale notCar edge case
-  cp_bytes = Params().get("CarParams")
-  if cp_bytes is not None:
-    with car.CarParams.from_bytes(cp_bytes) as CP:
-      if CP.notCar:
-        bridge_services_in.append("testJoystick")
 
   body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, bridge_services_out)
   try:
