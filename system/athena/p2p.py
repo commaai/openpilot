@@ -2,7 +2,7 @@ import base64
 import json
 import os
 import time
-from hashlib import sha256
+from hashlib import sha256, sha512
 from pathlib import Path
 
 import jwt
@@ -15,20 +15,14 @@ from openpilot.common.params import Params
 
 ATHENA_AUTHORIZED_KEYS_PARAM = "AthenadAuthorizedKeys"
 ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
-ATHENA_BOX_PRIVATE_KEY_PARAM = "AthenadBoxPrivateKey"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 KEY_PREFIX = {
   "ed25519": "e",
-  "x25519": "x",
 }
 KEY_BYTES = {
   "ed25519": 32,
-  "x25519": 32,
 }
-REPLAY_WINDOW_SECONDS = 300
-SEEN_NONCES: dict[str, int] = {}
-
 
 def base64url_encode(data: bytes) -> str:
   return base64.urlsafe_b64encode(data).decode().rstrip("=")
@@ -88,16 +82,6 @@ def is_asius_dongle_id(dongle_id: str | None) -> bool:
     return False
 
 
-def is_box_key(key: str | None) -> bool:
-  if key is None:
-    return False
-  try:
-    base58_to_bytes(key, "x25519")
-    return True
-  except Exception:
-    return False
-
-
 def random_base58_secret() -> str:
   return bytes_to_base58(os.urandom(32), "ed25519")
 
@@ -130,19 +114,6 @@ def bump_acl_epoch(params: Params | None = None) -> int:
   return epoch
 
 
-def get_box_key_pair(params: Params | None = None) -> tuple[str, str]:
-  private_key = read_raw_param(ATHENA_BOX_PRIVATE_KEY_PARAM)
-  if isinstance(private_key, str) and is_box_key(private_key):
-    key = x25519.X25519PrivateKey.from_private_bytes(base58_to_bytes(private_key, "x25519"))
-  else:
-    key = x25519.X25519PrivateKey.generate()
-    private_key = bytes_to_base58(key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption()), "x25519")
-    write_raw_param(ATHENA_BOX_PRIVATE_KEY_PARAM, private_key)
-
-  public_key = bytes_to_base58(key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw), "x25519")
-  return private_key, public_key
-
-
 def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
   try:
     peers = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
@@ -150,7 +121,7 @@ def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, s
     return {
       public_key: peer
       for public_key, peer in raw_peers.items()
-      if is_asius_dongle_id(public_key) and is_box_key(peer.get("boxPublicKey")) and isinstance(peer.get("relayToken"), str)
+      if is_asius_dongle_id(public_key)
     }
   except Exception:
     return {}
@@ -160,13 +131,13 @@ def save_authorized_peers(peers: dict[str, dict[str, str]], params: Params | Non
   write_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM, json.dumps(peers))
 
 
-def authorize_peer(public_key: str, box_public_key: str, relay_token: str, params: Params | None = None) -> dict[str, str]:
-  if not is_asius_dongle_id(public_key) or not is_box_key(box_public_key) or not isinstance(relay_token, str):
+def authorize_peer(public_key: str, params: Params | None = None) -> dict[str, str]:
+  if not is_asius_dongle_id(public_key):
     raise ValueError("invalid Athena peer key")
 
   params = params or Params()
   peers = load_authorized_peers(params)
-  peer = {"publicKey": public_key, "boxPublicKey": box_public_key, "relayToken": relay_token}
+  peer = {"publicKey": public_key}
   peer["aclEpoch"] = str(bump_acl_epoch(params))
   peers[public_key] = peer
   save_authorized_peers(peers, params)
@@ -192,17 +163,8 @@ def sign_jwt(payload: dict, expiry_seconds: int) -> str:
   return jwt.encode({**payload, "iat": now, "nbf": now, "exp": now + expiry_seconds}, identity_private_key(), algorithm="EdDSA")
 
 
-def pairing_tokens(recipient: str, box_public_key: str, acl_epoch: int, expiry_seconds: int = 300) -> tuple[str, str]:
-  pair_token = sign_jwt({"type": "pair", "to": recipient, "boxPublicKey": box_public_key, "aclEpoch": acl_epoch}, expiry_seconds)
-  relay_token = sign_jwt({"type": "relay", "to": recipient}, expiry_seconds)
-  return pair_token, relay_token
-
-
-def relay_token(recipient: str, sender: str | None = None, expiry_seconds: int = 10 * 365 * 24 * 60 * 60) -> str:
-  payload = {"type": "relay", "to": recipient}
-  if sender is not None:
-    payload["from"] = sender
-  return sign_jwt(payload, expiry_seconds)
+def pairing_token(recipient: str, acl_epoch: int, expiry_seconds: int = 300) -> str:
+  return sign_jwt({"type": "pair", "to": recipient, "aclEpoch": acl_epoch}, expiry_seconds)
 
 
 def verify_identity_signature(public_key: str, signature: str, data: bytes) -> bool:
@@ -213,43 +175,41 @@ def verify_identity_signature(public_key: str, signature: str, data: bytes) -> b
     return False
 
 
-def check_replay(public_key: str, nonce: str, ts: int) -> bool:
-  now = int(time.time())
-  for key, seen_ts in list(SEEN_NONCES.items()):
-    if seen_ts + REPLAY_WINDOW_SECONDS < now:
-      del SEEN_NONCES[key]
-
-  if abs(now - int(ts)) > REPLAY_WINDOW_SECONDS:
-    return False
-
-  key = f"{public_key}:{nonce}"
-  if key in SEEN_NONCES:
-    return False
-  SEEN_NONCES[key] = int(ts)
-  return True
+def x25519_private_from_identity() -> x25519.X25519PrivateKey:
+  raw = identity_private_key().private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
+  digest = bytearray(sha512(raw).digest()[:32])
+  digest[0] &= 248
+  digest[31] &= 127
+  digest[31] |= 64
+  return x25519.X25519PrivateKey.from_private_bytes(bytes(digest))
 
 
-def payload_key(shared: bytes, sender: str, recipient: str, ephemeral_public_key: str) -> bytes:
-  return sha256(f"athena-v2:{base64url_encode(shared)}:{sender}:{recipient}:{ephemeral_public_key}".encode()).digest()
+def x25519_public_from_identity(public_key: str) -> x25519.X25519PublicKey:
+  p = 2**255 - 19
+  raw = bytearray(base58_to_bytes(public_key, "ed25519"))
+  raw[31] &= 0x7f
+  y = int.from_bytes(raw, "little")
+  u = ((1 + y) * pow(1 - y, p - 2, p)) % p
+  return x25519.X25519PublicKey.from_public_bytes(u.to_bytes(32, "little"))
 
 
-def encrypt_payload(text: str, sender: str, recipient: str, recipient_box_public_key: str) -> str:
-  ephemeral = x25519.X25519PrivateKey.generate()
-  ephemeral_public_key = bytes_to_base58(ephemeral.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw), "x25519")
-  shared = ephemeral.exchange(x25519.X25519PublicKey.from_public_bytes(base58_to_bytes(recipient_box_public_key, "x25519")))
+def payload_key(shared: bytes, sender: str, recipient: str) -> bytes:
+  return sha256(f"athena-v3:{base64url_encode(shared)}:{sender}:{recipient}".encode()).digest()
+
+
+def encrypt_payload(text: str, sender: str, recipient: str) -> str:
+  shared = x25519_private_from_identity().exchange(x25519_public_from_identity(recipient))
   iv = os.urandom(12)
   envelope = {
-    "v": 2,
-    "alg": "X25519-A256GCM-Ed25519",
+    "v": 3,
+    "alg": "Ed25519-X25519-A256GCM",
     "from": sender,
     "to": recipient,
-    "eph": ephemeral_public_key,
     "iv": base64url_encode(iv),
     "ts": int(time.time()),
-    "nonce": base64url_encode(os.urandom(16)),
   }
   aad = stable_json(envelope).encode()
-  ciphertext = AESGCM(payload_key(shared, sender, recipient, ephemeral_public_key)).encrypt(iv, text.encode(), aad)
+  ciphertext = AESGCM(payload_key(shared, sender, recipient)).encrypt(iv, text.encode(), aad)
   signed = {**envelope, "ciphertext": base64url_encode(ciphertext)}
   signature = identity_private_key().sign(stable_json(signed).encode())
   return json.dumps({**signed, "sig": base64url_encode(signature)})
@@ -264,8 +224,7 @@ def verify_pair_token(token: str | None, recipient: str) -> bool:
       return False
     public_key = ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(recipient, "ed25519"))
     verified = jwt.decode(token, public_key, algorithms=["EdDSA"])
-    _, box_public_key = get_box_key_pair()
-    return verified.get("type") == "pair" and verified.get("boxPublicKey") == box_public_key
+    return verified.get("type") == "pair"
   except Exception:
     return False
 
@@ -273,7 +232,7 @@ def verify_pair_token(token: str | None, recipient: str) -> bool:
 def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
   try:
     encrypted = json.loads(payload)
-    if encrypted.get("v") == 2 and encrypted.get("alg") == "X25519-A256GCM-Ed25519":
+    if encrypted.get("v") == 3 and encrypted.get("alg") == "Ed25519-X25519-A256GCM":
       if encrypted.get("from") != sender or encrypted.get("to") != recipient:
         return None
 
@@ -282,16 +241,11 @@ def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
       if not verify_identity_signature(sender, signature, stable_json(signed).encode()):
         return None
 
-      private_key, _ = get_box_key_pair()
-      shared = x25519.X25519PrivateKey.from_private_bytes(base58_to_bytes(private_key, "x25519")).exchange(
-        x25519.X25519PublicKey.from_public_bytes(base58_to_bytes(encrypted["eph"], "x25519"))
-      )
+      shared = x25519_private_from_identity().exchange(x25519_public_from_identity(sender))
       aad = stable_json({key: value for key, value in signed.items() if key != "ciphertext"}).encode()
-      plaintext = AESGCM(payload_key(shared, sender, recipient, encrypted["eph"])).decrypt(
+      plaintext = AESGCM(payload_key(shared, sender, recipient)).decrypt(
         base64url_decode(encrypted["iv"]), base64url_decode(encrypted["ciphertext"]), aad
       )
-      if not check_replay(sender, encrypted["nonce"], int(encrypted["ts"])):
-        return None
       return plaintext.decode()
 
     return None

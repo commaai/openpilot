@@ -46,10 +46,8 @@ from openpilot.system.athena.p2p import (
   decrypt_payload,
   encrypt_payload,
   get_acl_epoch,
-  get_box_key_pair,
   load_authorized_peers,
-  pairing_tokens,
-  relay_token,
+  pairing_token,
   save_authorized_peers,
   verify_pair_token,
 )
@@ -629,7 +627,6 @@ def getAuthorizedPeers() -> dict[str, Any]:
     "peers": [
       {
         "publicKey": public_key,
-        "boxPublicKey": peer.get("boxPublicKey"),
         "aclEpoch": peer.get("aclEpoch"),
       }
       for public_key, peer in load_authorized_peers(params).items()
@@ -653,9 +650,7 @@ def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:  # noqa: N803
 def getPairingUrl() -> str:
   params = Params()
   dongle_id = params.get("DongleId") or ""
-  _, box_public_key = get_box_key_pair(params)
-  pair_token, relay_token_value = pairing_tokens(dongle_id, box_public_key, get_acl_epoch(params))
-  return f"https://app.asius.ai/?relay={relay_token_value}#pair={pair_token}"
+  return f"https://app.asius.ai/#pair={pairing_token(dongle_id, get_acl_epoch(params))}"
 
 
 @dispatcher.add_method
@@ -1134,8 +1129,8 @@ def send_peer_payload(to: str, body: dict) -> None:
   if dongle_id is None or peer is None:
     raise Exception("unknown Athena peer")
 
-  payload = encrypt_payload(json.dumps(body), dongle_id, peer["publicKey"], peer["boxPublicKey"])
-  send_queue.put_nowait(json.dumps({"type": "peer", "from": dongle_id, "to": to, "relayToken": peer["relayToken"], "payload": payload}))
+  payload = encrypt_payload(json.dumps(body), dongle_id, peer["publicKey"])
+  send_queue.put_nowait(json.dumps({"type": "peer", "from": dongle_id, "to": to, "payload": payload}))
 
 
 def broadcast_peer_notification(name: str, payload: Any) -> None:
@@ -1202,10 +1197,9 @@ def handle_peer_message(data: str) -> bool:
         raise Exception("pair request sender mismatch")
       if not verify_pair_token(body.get("pairToken"), dongle_id):
         raise Exception("invalid pair token")
-      authorize_peer(body["publicKey"], box_public_key=body["boxPublicKey"], relay_token=body["relayToken"])
+      authorize_peer(body["publicKey"])
       cloudlog.event("athena.p2p.paired", sender=sender)
-      _, box_public_key = get_box_key_pair()
-      send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id, "boxPublicKey": box_public_key, "relayToken": relay_token(dongle_id, sender)})
+      send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id})
       return True
 
     if sender not in load_authorized_peers():
