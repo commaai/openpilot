@@ -15,6 +15,7 @@ from openpilot.common.params import Params
 
 ATHENA_AUTHORIZED_KEYS_PARAM = "AthenadAuthorizedKeys"
 ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
+GITHUB_SSH_KEYS_PARAM = "GithubSshKeys"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 KEY_PREFIX = {
@@ -86,6 +87,40 @@ def random_base58_secret() -> str:
   return bytes_to_base58(os.urandom(32), "ed25519")
 
 
+def read_ssh_string(data: bytes, offset: int) -> tuple[bytes, int]:
+  length = int.from_bytes(data[offset:offset + 4], "big")
+  start = offset + 4
+  end = start + length
+  return data[start:end], end
+
+
+def ssh_public_key_to_identity(key: str) -> str | None:
+  try:
+    key_type, encoded, *_ = key.split()
+    if key_type != "ssh-ed25519":
+      return None
+
+    data = base64.b64decode(encoded)
+    parsed_type, offset = read_ssh_string(data, 0)
+    if parsed_type != b"ssh-ed25519":
+      return None
+
+    public_key, _ = read_ssh_string(data, offset)
+    return bytes_to_base58(public_key, "ed25519")
+  except Exception:
+    return None
+
+
+def load_github_ssh_peers() -> dict[str, dict[str, str]]:
+  keys = read_raw_param(GITHUB_SSH_KEYS_PARAM) or ""
+  peers = {}
+  for key in keys.splitlines():
+    public_key = ssh_public_key_to_identity(key)
+    if public_key is not None:
+      peers[public_key] = {"publicKey": public_key}
+  return peers
+
+
 def read_raw_param(key: str) -> str | None:
   try:
     return (PARAMS_DIR / key).read_text()
@@ -114,10 +149,10 @@ def bump_acl_epoch(params: Params | None = None) -> int:
   return epoch
 
 
-def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
+def load_stored_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
   try:
-    peers = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
-    raw_peers = peers if isinstance(peers, dict) else json.loads(peers or "{}")
+    raw = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
+    raw_peers = raw if isinstance(raw, dict) else json.loads(raw or "{}")
     return {
       public_key: peer
       for public_key, peer in raw_peers.items()
@@ -125,6 +160,12 @@ def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, s
     }
   except Exception:
     return {}
+
+
+def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
+  peers = load_github_ssh_peers()
+  peers.update(load_stored_authorized_peers(params))
+  return peers
 
 
 def save_authorized_peers(peers: dict[str, dict[str, str]], params: Params | None = None) -> None:
@@ -136,7 +177,7 @@ def authorize_peer(public_key: str, params: Params | None = None) -> dict[str, s
     raise ValueError("invalid Athena peer key")
 
   params = params or Params()
-  peers = load_authorized_peers(params)
+  peers = load_stored_authorized_peers(params)
   peer = {"publicKey": public_key}
   peer["aclEpoch"] = str(bump_acl_epoch(params))
   peers[public_key] = peer

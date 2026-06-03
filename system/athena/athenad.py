@@ -47,6 +47,7 @@ from openpilot.system.athena.p2p import (
   encrypt_payload,
   get_acl_epoch,
   load_authorized_peers,
+  load_stored_authorized_peers,
   pairing_token,
   save_authorized_peers,
   verify_pair_token,
@@ -637,7 +638,7 @@ def getAuthorizedPeers() -> dict[str, Any]:
 @dispatcher.add_method
 def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:  # noqa: N803
   params = Params()
-  peers = load_authorized_peers(params)
+  peers = load_stored_authorized_peers(params)
   removed = peers.pop(publicKey, None) is not None
   if removed:
     save_authorized_peers(peers, params)
