@@ -50,6 +50,7 @@ from openpilot.system.athena.p2p import (
   load_stored_authorized_peers,
   pairing_token,
   save_authorized_peers,
+  sync_ssh_keys,
   verify_pair_token,
 )
 
@@ -642,6 +643,7 @@ def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:  # noqa: N803
   removed = peers.pop(publicKey, None) is not None
   if removed:
     save_authorized_peers(peers, params)
+    sync_ssh_keys(params)
     bump_acl_epoch(params)
 
   return {"removed": removed, "aclEpoch": get_acl_epoch(params)}
@@ -936,12 +938,6 @@ def setUpdateBranch(branch: str) -> dict[str, int | str]:
 @dispatcher.add_method
 def installSoftwareUpdate() -> dict[str, int]:
   Params().put_bool("DoReboot", True, block=True)
-  return {"success": 1}
-
-
-@dispatcher.add_method
-def uninstallSoftware() -> dict[str, int]:
-  Params().put_bool("DoUninstall", True, block=True)
   return {"success": 1}
 
 
@@ -1363,6 +1359,11 @@ def main(exit_event: threading.Event | None = None):
     cloudlog.exception("failed to set core affinity")
 
   params = Params()
+  try:
+    sync_ssh_keys(params)
+  except Exception:
+    cloudlog.exception("athena.p2p.sync_ssh_keys_failed")
+
   dongle_id = params.get("DongleId")
   UploadQueueCache.initialize(upload_queue)
 

@@ -5,6 +5,7 @@ from collections.abc import Callable
 from enum import Enum
 
 from openpilot.common.params import Params
+from openpilot.system.athena.p2p import sync_ssh_keys
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -50,6 +51,7 @@ class SshKeyFetcher:
   def clear(self):
     self._params.remove("GithubUsername")
     self._params.remove("GithubSshKeys")
+    sync_ssh_keys(self._params)
 
   def _fetch_thread(self, username: str):
     try:
@@ -61,6 +63,7 @@ class SshKeyFetcher:
 
       self._params.put("GithubUsername", username, block=True)
       self._params.put("GithubSshKeys", keys, block=True)
+      sync_ssh_keys(self._params)
     except requests.exceptions.Timeout:
       self._error = tr("Request timed out")
     except Exception:
@@ -96,7 +99,7 @@ class SshKeyAction(ItemAction):
 
   def _refresh_state(self):
     self._username = self._params.get("GithubUsername")
-    self._state = SshKeyActionState.REMOVE if self._params.get("GithubSshKeys") else SshKeyActionState.ADD
+    self._state = SshKeyActionState.REMOVE if self._username else SshKeyActionState.ADD
 
   def _update_state(self):
     super()._update_state()

@@ -18,6 +18,7 @@ ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
 GITHUB_SSH_KEYS_PARAM = "GithubSshKeys"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+GENERATED_SSH_KEY_COMMENT = "asius-app"
 KEY_BYTES = {
   "ed25519": 32,
 }
@@ -87,6 +88,21 @@ def read_ssh_string(data: bytes, offset: int) -> tuple[bytes, int]:
   return data[start:end], end
 
 
+def write_ssh_string(data: bytes) -> bytes:
+  return len(data).to_bytes(4, "big") + data
+
+
+def identity_to_ssh_public_key(public_key: str) -> str:
+  raw_public_key = base58_to_bytes(public_key, "ed25519")
+  data = write_ssh_string(b"ssh-ed25519") + write_ssh_string(raw_public_key)
+  return f"ssh-ed25519 {base64.b64encode(data).decode()} {GENERATED_SSH_KEY_COMMENT}:{public_key}"
+
+
+def is_generated_ssh_key(key: str) -> bool:
+  parts = key.split()
+  return len(parts) > 2 and parts[2].startswith(GENERATED_SSH_KEY_COMMENT)
+
+
 def ssh_public_key_to_identity(key: str) -> str | None:
   try:
     key_type, encoded, *_ = key.split()
@@ -108,6 +124,8 @@ def load_github_ssh_peers() -> dict[str, dict[str, str]]:
   keys = read_raw_param(GITHUB_SSH_KEYS_PARAM) or ""
   peers = {}
   for key in keys.splitlines():
+    if is_generated_ssh_key(key):
+      continue
     public_key = ssh_public_key_to_identity(key)
     if public_key is not None:
       peers[public_key] = {"publicKey": public_key}
@@ -165,6 +183,27 @@ def save_authorized_peers(peers: dict[str, dict[str, str]], params: Params | Non
   write_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM, json.dumps(peers))
 
 
+def sync_ssh_keys(params: Params | None = None) -> str:
+  lines = []
+  seen = set()
+  for line in (read_raw_param(GITHUB_SSH_KEYS_PARAM) or "").splitlines():
+    line = line.strip()
+    if not line or is_generated_ssh_key(line) or line in seen:
+      continue
+    lines.append(line)
+    seen.add(line)
+
+  for public_key in sorted(load_stored_authorized_peers(params)):
+    line = identity_to_ssh_public_key(public_key)
+    if line not in seen:
+      lines.append(line)
+      seen.add(line)
+
+  keys = "\n".join(lines)
+  write_raw_param(GITHUB_SSH_KEYS_PARAM, keys)
+  return keys
+
+
 def authorize_peer(public_key: str, params: Params | None = None) -> dict[str, str]:
   if not is_asius_dongle_id(public_key):
     raise ValueError("invalid Athena peer key")
@@ -175,6 +214,7 @@ def authorize_peer(public_key: str, params: Params | None = None) -> dict[str, s
   peer["aclEpoch"] = str(bump_acl_epoch(params))
   peers[public_key] = peer
   save_authorized_peers(peers, params)
+  sync_ssh_keys(params)
 
   return peer
 
