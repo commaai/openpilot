@@ -84,6 +84,9 @@ class ModelState:
     self.vision_input_names = list(self.vision_input_shapes.keys())
     self.vision_output_slices = vision_metadata['output_slices']
 
+    off_policy_metadata = jits['metadata']['off_policy']
+    self.off_policy_output_slices = off_policy_metadata['output_slices']
+
     policy_metadata = jits['metadata']['on_policy']
     self.policy_input_shapes = policy_metadata['input_shapes']
     self.policy_output_slices = policy_metadata['output_slices']
@@ -128,18 +131,20 @@ class ModelState:
     if prepare_only:
       return None
 
-    vision_output, on_policy_output = self.run_policy(
-      **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
+    vision_output, on_policy_output, off_policy_output = self.run_policy(
+      **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, img=img, big_img=big_img
     )
 
     vision_output = vision_output.numpy().flatten()
+    off_policy_output = off_policy_output.numpy().flatten()
     on_policy_output = on_policy_output.numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
+    off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(off_policy_output, self.off_policy_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
-    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
+    combined_outputs_dict = {**vision_outputs_dict, **off_policy_outputs_dict, **policy_outputs_dict}
 
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy()])
+      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy(), off_policy_output.copy()])
     return combined_outputs_dict
 
 
