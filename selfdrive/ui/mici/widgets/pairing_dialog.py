@@ -5,7 +5,7 @@ import time
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.system.athena.p2p import get_acl_epoch, get_box_key_pair, pairing_tokens
+from openpilot.system.athena.p2p import get_acl_epoch, pairing_token
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -28,12 +28,11 @@ class PairingDialog(NavWidget):
   def _get_pairing_url(self) -> str:
     try:
       dongle_id = self._params.get("DongleId") or ""
-      _, box_public_key = get_box_key_pair(self._params)
-      pair_token, relay_token = pairing_tokens(dongle_id, box_public_key, get_acl_epoch(self._params))
+      token = pairing_token(dongle_id, get_acl_epoch(self._params))
     except Exception as e:
       cloudlog.warning(f"Failed to get pairing token: {e}")
-      pair_token, relay_token = "", ""
-    return f"https://app.asius.ai/?relay={relay_token}#pair={pair_token}"
+      token = ""
+    return f"https://app.asius.ai/#pair={token}"
 
   def _generate_qr_code(self) -> None:
     try:
