@@ -207,7 +207,8 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.pc = peer_connection
     self.params = Params()
 
-    self.level = 0
+    self.level = 1
+    self._publish(self.bitrates[self.level])
     self.prev_lost, self.prev_sent = None, None
     self.counter = 0
     self.up_samples = 5 # 1s

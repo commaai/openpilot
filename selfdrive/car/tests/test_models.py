@@ -427,8 +427,9 @@ class TestCarModelBase(unittest.TestCase):
                               v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
 
       # check steering angle for angle control cars (panda stores angle_meas in CAN units)
-      # ford excluded since it tracks curvature, not steering angle
-      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and self.CP.brand != "ford":
+      # ford and VW MEB excluded since they track curvature, not steering angle
+      # TODO: add curvature check, standardize CAN units to rm brand specific ANGLE_DEG_TO_CAN
+      if self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar and self.CP.brand not in ("ford", "volkswagen"):
         angle_can = (CS.steeringAngleDeg + CS.steeringAngleOffsetDeg) * ANGLE_DEG_TO_CAN[self.CP.brand]
         checks['steeringAngleDeg'] += (angle_can > (self.safety.get_angle_meas_max() + 1) or
                                        angle_can < (self.safety.get_angle_meas_min() - 1))
