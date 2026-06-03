@@ -40,7 +40,19 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.athena.p2p import authorize_peer, decrypt_payload, encrypt_payload, get_box_key_pair, load_authorized_peers, relay_token, verify_pair_token
+from openpilot.system.athena.p2p import (
+  authorize_peer,
+  bump_acl_epoch,
+  decrypt_payload,
+  encrypt_payload,
+  get_acl_epoch,
+  get_box_key_pair,
+  load_authorized_peers,
+  pairing_tokens,
+  relay_token,
+  save_authorized_peers,
+  verify_pair_token,
+)
 
 
 ATHENA_HOST = Params().get("AthenaHost", return_default=True)
@@ -606,6 +618,43 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 def getPublicKey() -> str | None:
   _, _, public_key = get_key_pair()
   return public_key
+
+
+@dispatcher.add_method
+def getAuthorizedPeers() -> dict[str, Any]:
+  params = Params()
+  return {
+    "aclEpoch": get_acl_epoch(params),
+    "peers": [
+      {
+        "publicKey": public_key,
+        "boxPublicKey": peer.get("boxPublicKey"),
+        "aclEpoch": peer.get("aclEpoch"),
+      }
+      for public_key, peer in load_authorized_peers(params).items()
+    ],
+  }
+
+
+@dispatcher.add_method
+def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:  # noqa: N803
+  params = Params()
+  peers = load_authorized_peers(params)
+  removed = peers.pop(publicKey, None) is not None
+  if removed:
+    save_authorized_peers(peers, params)
+    bump_acl_epoch(params)
+
+  return {"removed": removed, "aclEpoch": get_acl_epoch(params)}
+
+
+@dispatcher.add_method
+def getPairingUrl() -> str:
+  params = Params()
+  dongle_id = params.get("DongleId") or ""
+  _, box_public_key = get_box_key_pair(params)
+  pair_token, relay_token_value = pairing_tokens(dongle_id, box_public_key, get_acl_epoch(params))
+  return f"https://app.asius.ai/?relay={relay_token_value}#pair={pair_token}"
 
 
 @dispatcher.add_method
