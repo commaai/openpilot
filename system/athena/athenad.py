@@ -29,7 +29,7 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
                        create_connection)
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream
@@ -637,7 +637,7 @@ def getAuthorizedPeers() -> dict[str, Any]:
 
 
 @dispatcher.add_method
-def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:  # noqa: N803
+def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:
   params = Params()
   peers = load_stored_authorized_peers(params)
   removed = peers.pop(publicKey, None) is not None
