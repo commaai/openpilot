@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -1108,7 +1109,7 @@ def _live_state_snapshot(sm: messaging.SubMaster, params: Params) -> dict[str, A
       cloudlog.exception("athena.live_state.param_failed key=%s", key)
 
   return {
-    "ts": time.time(),
+    "ts": time.time(),  # noqa: TID251
     "dongleId": params.get("DongleId"),
     "serial": params.get("HardwareSerial"),
     "version": {

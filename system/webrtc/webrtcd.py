@@ -69,7 +69,7 @@ class NativeProcessHandle:
     os.killpg(self.proc.pid, signal.SIGINT)
     try:
       await asyncio.wait_for(asyncio.to_thread(self.proc.wait), timeout=5)
-    except asyncio.TimeoutError:
+    except TimeoutError:
       os.killpg(self.proc.pid, signal.SIGKILL)
       await asyncio.to_thread(self.proc.wait)
 
