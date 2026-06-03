@@ -88,7 +88,7 @@ class PairingDialog(Widget):
     y += close_size + 40
 
     # Title
-    title = tr("Pair your device with Asius Connect")
+    title = tr("Pair your device with Asius App")
     title_font = gui_app.font(FontWeight.NORMAL)
     left_width = int(content_rect.width * 0.5 - 15)
 
