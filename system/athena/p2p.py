@@ -84,10 +84,14 @@ def random_base58_secret() -> str:
   return bytes_to_base58(os.urandom(32), "ed25519")
 
 
+def wall_time() -> float:
+  return time.time()  # noqa: TID251
+
+
 def payload_timestamp_valid(ts: object, max_age_seconds: int = MAX_PAYLOAD_AGE_SECONDS) -> bool:
   if not isinstance(ts, (int, float)):
     return False
-  return abs(time.time() - float(ts)) <= max_age_seconds
+  return abs(wall_time() - float(ts)) <= max_age_seconds
 
 
 def read_ssh_string(data: bytes, offset: int) -> tuple[bytes, int]:
@@ -170,14 +174,14 @@ def bump_acl_epoch(params: Params | None = None) -> int:
 
 
 def enable_pairing_mode(params: Params | None = None, duration_seconds: int = PAIRING_MODE_SECONDS) -> int:
-  pairing_until = int(time.time()) + duration_seconds
+  pairing_until = int(wall_time()) + duration_seconds
   write_raw_param(ATHENA_PAIRING_UNTIL_PARAM, str(pairing_until))
   return pairing_until
 
 
 def pairing_mode_active(params: Params | None = None) -> bool:
   try:
-    return int(read_raw_param(ATHENA_PAIRING_UNTIL_PARAM) or "0") >= int(time.time())
+    return int(read_raw_param(ATHENA_PAIRING_UNTIL_PARAM) or "0") >= int(wall_time())
   except ValueError:
     return False
 
@@ -255,7 +259,7 @@ def identity_private_key() -> ed25519.Ed25519PrivateKey:
 
 
 def sign_jwt(payload: dict, expiry_seconds: int) -> str:
-  now = int(time.time())
+  now = int(wall_time())
   return jwt.encode({**payload, "iat": now, "nbf": now, "exp": now + expiry_seconds}, identity_private_key(), algorithm="EdDSA")
 
 
@@ -307,7 +311,7 @@ def encrypt_payload(text: str, sender: str, recipient: str) -> str:
     "from": sender,
     "to": recipient,
     "iv": base64url_encode(iv),
-    "ts": int(time.time()),
+    "ts": int(wall_time()),
   }
   aad = stable_json(envelope).encode()
   ciphertext = AESGCM(payload_key(shared, sender, recipient)).encrypt(iv, text.encode(), aad)
