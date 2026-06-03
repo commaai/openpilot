@@ -14,7 +14,6 @@ from openpilot.common.swaglog import cloudlog
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-ED25519_PREFIX = "e"
 ED25519_KEY_BYTES = 32
 
 
@@ -45,18 +44,14 @@ def base58_decode(value: str) -> int:
 def bytes_to_dongle_id(value: bytes) -> str:
   if len(value) != ED25519_KEY_BYTES:
     raise ValueError("Asius identity requires a 32-byte Ed25519 public key")
-  return ED25519_PREFIX + base58_encode(int.from_bytes(value, "big"))
+  return base58_encode(int.from_bytes(value, "big"))
 
 
 def dongle_id_to_bytes(dongle_id: str) -> bytes:
-  if not dongle_id.startswith(ED25519_PREFIX):
+  if not dongle_id or not all(char in BASE58 for char in dongle_id):
     raise ValueError("invalid Asius DongleId")
 
-  body = dongle_id[len(ED25519_PREFIX):]
-  if not body or not all(char in BASE58 for char in body):
-    raise ValueError("invalid Asius DongleId")
-
-  encoded = base58_decode(body)
+  encoded = base58_decode(dongle_id)
   if encoded >= 1 << (ED25519_KEY_BYTES * 8):
     raise ValueError("invalid Asius DongleId")
   return encoded.to_bytes(ED25519_KEY_BYTES, "big")

@@ -18,9 +18,6 @@ ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
 GITHUB_SSH_KEYS_PARAM = "GithubSshKeys"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-KEY_PREFIX = {
-  "ed25519": "e",
-}
 KEY_BYTES = {
   "ed25519": 32,
 }
@@ -53,13 +50,9 @@ def base58_decode(value: str) -> int:
 
 
 def base58_to_bytes(value: str, algorithm: str = "ed25519") -> bytes:
-  prefix = KEY_PREFIX[algorithm]
-  if not value.startswith(prefix):
-    raise ValueError(f"expected {algorithm} key prefix {prefix}")
-  body = value[len(prefix):]
-  if not body:
-    raise ValueError("missing base58 key body")
-  decoded = base58_decode(body)
+  if not value:
+    raise ValueError("missing base58 key")
+  decoded = base58_decode(value)
   byte_length = KEY_BYTES[algorithm]
   if decoded >= 1 << (byte_length * 8):
     raise ValueError("invalid base58 value for byte length")
@@ -70,7 +63,7 @@ def bytes_to_base58(value: bytes, algorithm: str = "ed25519") -> str:
   byte_length = KEY_BYTES[algorithm]
   if len(value) != byte_length:
     raise ValueError(f"expected {byte_length} {algorithm} bytes")
-  return KEY_PREFIX[algorithm] + base58_encode(int.from_bytes(value, "big"))
+  return base58_encode(int.from_bytes(value, "big"))
 
 
 def is_asius_dongle_id(dongle_id: str | None) -> bool:
