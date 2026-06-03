@@ -154,7 +154,7 @@ def load_stored_authorized_peers(params: Params | None = None) -> dict[str, dict
     raw = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
     raw_peers = raw if isinstance(raw, dict) else json.loads(raw or "{}")
     return {
-      public_key: peer
+      public_key: {"publicKey": public_key, **({"aclEpoch": peer["aclEpoch"]} if isinstance(peer, dict) and "aclEpoch" in peer else {})}
       for public_key, peer in raw_peers.items()
       if is_asius_dongle_id(public_key)
     }
