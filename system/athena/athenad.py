@@ -32,7 +32,6 @@ import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
@@ -48,7 +47,6 @@ ATHENA_HOST = Params().get("AthenaHost", return_default=True)
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {22, }  # SSH
 WEBRTCD_PORT = 5001
-WEBRTCD_PROC: subprocess.Popen | None = None
 WIFI_MANAGER = None
 
 LOG_ATTR_NAME = 'user.upload'
@@ -901,48 +899,11 @@ def uninstallSoftware() -> dict[str, int]:
   return {"success": 1}
 
 
-def ensure_webrtcd_running(timeout: float = 10.0) -> None:
-  global WEBRTCD_PROC
-
-  health_url = f"http://localhost:{WEBRTCD_PORT}/schema?services=carState"
-  try:
-    requests.get(health_url, timeout=0.2)
-    return
-  except requests.RequestException:
-    pass
-
-  if WEBRTCD_PROC is None or WEBRTCD_PROC.poll() is not None:
-    WEBRTCD_PROC = subprocess.Popen(
-      [sys.executable, "-m", "system.webrtc.webrtcd", "--host", "127.0.0.1", "--port", str(WEBRTCD_PORT)],
-      cwd=BASEDIR,
-      start_new_session=True,
-      stdin=subprocess.DEVNULL,
-      stdout=subprocess.DEVNULL,
-      stderr=subprocess.DEVNULL,
-    )
-    cloudlog.event("athena.webrtcd.started", pid=WEBRTCD_PROC.pid)
-
-  deadline = time.monotonic() + timeout
-  while time.monotonic() < deadline:
-    if WEBRTCD_PROC is not None and WEBRTCD_PROC.poll() is not None:
-      raise Exception(f"webrtcd exited with {WEBRTCD_PROC.returncode}")
-    try:
-      requests.get(health_url, timeout=0.5)
-      return
-    except requests.RequestException:
-      time.sleep(0.2)
-
-  raise Exception("webrtcd did not start")
-
-
 @dispatcher.add_method
-def startStream(sdp: str, cameras: list[str] | None = None,
-                bridge_services_in: list[str] | None = None,
-                bridge_services_out: list[str] | None = None) -> dict:
+def startStream(sdp: str) -> dict:
   from openpilot.system.webrtc.webrtcd import StreamRequestBody
-  cameras = cameras or ["wideRoad"]
-  bridge_services_in = bridge_services_in or []
-  bridge_services_out = bridge_services_out or ["modelV2", "radarState", "carState", "controlsState", "selfdriveState", "liveCalibration"]
+  bridge_services_in = []
+  bridge_services_out = ["modelV2", "radarState", "carState", "controlsState", "selfdriveState", "liveCalibration"]
 
   # get live car params to avoid stale notCar edge case
   cp_bytes = Params().get("CarParams")
@@ -951,9 +912,9 @@ def startStream(sdp: str, cameras: list[str] | None = None,
       if CP.notCar:
         bridge_services_in.append("testJoystick")
 
-  body = StreamRequestBody(sdp, cameras[0], bridge_services_in, bridge_services_out)
+  body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, bridge_services_out)
   try:
-    ensure_webrtcd_running()
+    Params().put_bool("AthenadWebRTCActive", True, block=True)
     resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream",
                        json=asdict(body), timeout=10)
     if not resp.ok:

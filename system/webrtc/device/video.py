@@ -36,7 +36,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     return messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
 
   def switch_camera(self, camera_type: str) -> None:
-    self._dt = DT_DMON if camera_type == "driver" else DT_MDL
     self._sock = self._make_sock(camera_type)
 
   def _build_frame_data(self, msg) -> bytes:

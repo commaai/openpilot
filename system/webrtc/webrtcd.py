@@ -9,8 +9,6 @@ import contextlib
 import json
 import uuid
 import logging
-import signal
-import subprocess
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
@@ -25,69 +23,8 @@ if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
 from openpilot.system.webrtc.schema import generate_field
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from cereal import messaging, log
-
-
-def _pid_exists(name: str, pattern: str | None = None) -> bool:
-  cmd = ["pgrep", "-x", name] if pattern is None else ["pgrep", "-f", pattern]
-  return subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
-
-
-class NativeProcessHandle:
-  def __init__(self, name: str, command: list[str], cwd: str, pattern: str | None = None):
-    self.name = name
-    self.command = command
-    self.cwd = cwd
-    self.pattern = pattern
-    self.proc: subprocess.Popen | None = None
-    self.started_here = False
-    self.logger = logging.getLogger("webrtcd")
-
-  def start(self):
-    if _pid_exists(self.name, self.pattern):
-      self.logger.info("%s already running", self.name)
-      return
-
-    self.proc = subprocess.Popen(
-      self.command,
-      cwd=self.cwd,
-      start_new_session=True,
-      stdin=subprocess.DEVNULL,
-      stdout=subprocess.DEVNULL,
-      stderr=subprocess.DEVNULL,
-    )
-    self.started_here = True
-    self.logger.info("started %s pid=%s", self.name, self.proc.pid)
-
-  async def stop(self):
-    if not self.started_here or self.proc is None or self.proc.poll() is not None:
-      return
-
-    self.logger.info("stopping %s pid=%s", self.name, self.proc.pid)
-    os.killpg(self.proc.pid, signal.SIGINT)
-    try:
-      await asyncio.wait_for(asyncio.to_thread(self.proc.wait), timeout=5)
-    except TimeoutError:
-      os.killpg(self.proc.pid, signal.SIGKILL)
-      await asyncio.to_thread(self.proc.wait)
-
-
-class LiveStreamProcessGroup:
-  def __init__(self):
-    self.processes = [
-      NativeProcessHandle("camerad", ["./camerad"], os.path.join(BASEDIR, "system/camerad")),
-      NativeProcessHandle("encoderd", ["./encoderd", "--stream"], os.path.join(BASEDIR, "system/loggerd"), r"(^|/)encoderd --stream$"),
-    ]
-
-  def start(self):
-    for proc in self.processes:
-      proc.start()
-
-  async def stop(self):
-    for proc in reversed(self.processes):
-      await proc.stop()
 
 
 class AsyncTaskRunner:
@@ -294,7 +231,6 @@ class StreamSession:
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
     self._cleanup_done = False
-    self.process_group = LiveStreamProcessGroup() if not debug_mode else None
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
       "New stream session (%s), init camera %s, incoming services %s, outgoing services %s",
@@ -313,8 +249,6 @@ class StreamSession:
     await self.post_run_cleanup()
 
   async def get_answer(self):
-    if self.process_group is not None:
-      self.process_group.start()
     return await self.stream.start()
 
   def message_handler(self, message: bytes):
@@ -376,8 +310,7 @@ class StreamSession:
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       await self.stream.stop()
-      if self.process_group is not None:
-        await self.process_group.stop()
+      Params().put_bool("AthenadWebRTCActive", False, block=True)
 
 
 @dataclass
@@ -405,6 +338,7 @@ async def get_stream(request: 'web.Request'):
       await s.stop()
       del stream_dict[sid]
 
+    Params().put_bool("AthenadWebRTCActive", True, block=True)
     session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
     try:
       answer = await session.get_answer()
