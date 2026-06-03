@@ -48,7 +48,8 @@ from openpilot.system.athena.p2p import (
   get_acl_epoch,
   load_authorized_peers,
   load_stored_authorized_peers,
-  pairing_token,
+  pairing_mode_active,
+  pairing_url,
   save_authorized_peers,
   sync_ssh_keys,
   verify_pair_token,
@@ -586,10 +587,9 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
     cloudlog.debug("athena.startLocalProxy.starting")
 
-    dongle_id = Params().get("DongleId")
-    identity_token = Api(dongle_id).get_token()
+    proxy_token = base64.urlsafe_b64encode(os.urandom(32)).decode().rstrip("=")
     ws = create_connection(remote_ws_uri,
-                           cookie="jwt=" + identity_token,
+                           cookie="proxy_token=" + proxy_token,
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
@@ -653,7 +653,7 @@ def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:  # noqa: N803
 def getPairingUrl() -> str:
   params = Params()
   dongle_id = params.get("DongleId") or ""
-  return f"https://app.asius.ai/#pair={pairing_token(dongle_id, get_acl_epoch(params))}"
+  return pairing_url(dongle_id, get_acl_epoch(params), params)
 
 
 @dispatcher.add_method
@@ -1192,6 +1192,8 @@ def handle_peer_message(data: str) -> bool:
     if body.get("type") == "pair-request":
       if body.get("publicKey") != sender:
         raise Exception("pair request sender mismatch")
+      if not pairing_mode_active():
+        raise Exception("pairing mode is not active")
       if not verify_pair_token(body.get("pairToken"), dongle_id):
         raise Exception("invalid pair token")
       authorize_peer(body["publicKey"])

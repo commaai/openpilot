@@ -15,10 +15,13 @@ from openpilot.common.params import Params
 
 ATHENA_AUTHORIZED_KEYS_PARAM = "AthenadAuthorizedKeys"
 ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
+ATHENA_PAIRING_UNTIL_PARAM = "AthenadPairingUntil"
 GITHUB_SSH_KEYS_PARAM = "GithubSshKeys"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 GENERATED_SSH_KEY_COMMENT = "asius-app"
+MAX_PAYLOAD_AGE_SECONDS = 60
+PAIRING_MODE_SECONDS = 180
 KEY_BYTES = {
   "ed25519": 32,
 }
@@ -79,6 +82,12 @@ def is_asius_dongle_id(dongle_id: str | None) -> bool:
 
 def random_base58_secret() -> str:
   return bytes_to_base58(os.urandom(32), "ed25519")
+
+
+def payload_timestamp_valid(ts: object, max_age_seconds: int = MAX_PAYLOAD_AGE_SECONDS) -> bool:
+  if not isinstance(ts, (int, float)):
+    return False
+  return abs(time.time() - float(ts)) <= max_age_seconds
 
 
 def read_ssh_string(data: bytes, offset: int) -> tuple[bytes, int]:
@@ -160,6 +169,19 @@ def bump_acl_epoch(params: Params | None = None) -> int:
   return epoch
 
 
+def enable_pairing_mode(params: Params | None = None, duration_seconds: int = PAIRING_MODE_SECONDS) -> int:
+  pairing_until = int(time.time()) + duration_seconds
+  write_raw_param(ATHENA_PAIRING_UNTIL_PARAM, str(pairing_until))
+  return pairing_until
+
+
+def pairing_mode_active(params: Params | None = None) -> bool:
+  try:
+    return int(read_raw_param(ATHENA_PAIRING_UNTIL_PARAM) or "0") >= int(time.time())
+  except ValueError:
+    return False
+
+
 def load_stored_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
   try:
     raw = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
@@ -237,8 +259,13 @@ def sign_jwt(payload: dict, expiry_seconds: int) -> str:
   return jwt.encode({**payload, "iat": now, "nbf": now, "exp": now + expiry_seconds}, identity_private_key(), algorithm="EdDSA")
 
 
-def pairing_token(recipient: str, acl_epoch: int, expiry_seconds: int = 300) -> str:
+def pairing_token(recipient: str, acl_epoch: int, expiry_seconds: int = PAIRING_MODE_SECONDS) -> str:
   return sign_jwt({"type": "pair", "to": recipient, "aclEpoch": acl_epoch}, expiry_seconds)
+
+
+def pairing_url(recipient: str, acl_epoch: int, params: Params | None = None) -> str:
+  enable_pairing_mode(params)
+  return f"https://app.asius.ai/#pair={pairing_token(recipient, acl_epoch)}"
 
 
 def verify_identity_signature(public_key: str, signature: str, data: bytes) -> bool:
@@ -308,6 +335,8 @@ def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
     encrypted = json.loads(payload)
     if encrypted.get("v") == 3 and encrypted.get("alg") == "Ed25519-X25519-A256GCM":
       if encrypted.get("from") != sender or encrypted.get("to") != recipient:
+        return None
+      if not payload_timestamp_valid(encrypted.get("ts")):
         return None
 
       signature = encrypted["sig"]

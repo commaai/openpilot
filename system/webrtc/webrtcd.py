@@ -408,7 +408,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
 
 def main():
   parser = argparse.ArgumentParser(description="WebRTC daemon")
-  parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to listen on")
+  parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to listen on")
   parser.add_argument("--port", type=int, default=5001, help="Port to listen on")
   parser.add_argument("--debug", action="store_true", help="Enable debug mode")
   args = parser.parse_args()

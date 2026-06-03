@@ -31,3 +31,25 @@ def test_sync_ssh_keys_preserves_user_keys_and_tracks_authorized_peers(tmp_path,
   keys = p2p.sync_ssh_keys()
 
   assert keys == GITHUB_KEY
+
+
+def test_payload_timestamp_valid_rejects_old_messages(monkeypatch):
+  monkeypatch.setattr(p2p.time, "time", lambda: 1_000)
+
+  assert p2p.payload_timestamp_valid(1_000)
+  assert p2p.payload_timestamp_valid(941)
+  assert not p2p.payload_timestamp_valid(939)
+  assert not p2p.payload_timestamp_valid("1000")
+
+
+def test_pairing_mode_window(tmp_path, monkeypatch):
+  monkeypatch.setattr(p2p, "PARAMS_DIR", tmp_path)
+  now = 1_000
+  monkeypatch.setattr(p2p.time, "time", lambda: now)
+
+  assert not p2p.pairing_mode_active()
+  assert p2p.enable_pairing_mode(duration_seconds=180) == 1_180
+  assert p2p.pairing_mode_active()
+
+  now = 1_181
+  assert not p2p.pairing_mode_active()
