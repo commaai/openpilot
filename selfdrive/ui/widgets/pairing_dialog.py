@@ -3,10 +3,9 @@ import qrcode
 import numpy as np
 import time
 
-from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.system.athena.p2p import get_acl_epoch, get_box_key_pair
+from openpilot.system.athena.p2p import get_acl_epoch, get_box_key_pair, pairing_tokens
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.multilang import tr
@@ -32,15 +31,11 @@ class PairingDialog(Widget):
     try:
       dongle_id = self.params.get("DongleId") or ""
       _, box_public_key = get_box_key_pair(self.params)
-      token = Api(dongle_id).get_token({
-        'type': 'pair',
-        'boxPublicKey': box_public_key,
-        'aclEpoch': get_acl_epoch(self.params),
-      }, expiry_hours=5 / 60)
+      pair_token, relay_token = pairing_tokens(dongle_id, box_public_key, get_acl_epoch(self.params))
     except Exception:
       cloudlog.exception("Failed to get pairing token")
-      token = ""
-    return f"https://app.asius.ai/?pair={token}"
+      pair_token, relay_token = "", ""
+    return f"https://app.asius.ai/?relay={relay_token}#pair={pair_token}"
 
   def _generate_qr_code(self) -> None:
     try:

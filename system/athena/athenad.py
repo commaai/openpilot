@@ -40,7 +40,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.athena.p2p import authorize_peer, decrypt_payload, encrypt_payload, load_authorized_peers, verify_pair_token
+from openpilot.system.athena.p2p import authorize_peer, decrypt_payload, encrypt_payload, get_box_key_pair, load_authorized_peers, relay_token, verify_pair_token
 
 
 ATHENA_HOST = Params().get("AthenaHost", return_default=True)
@@ -1085,7 +1085,7 @@ def send_peer_payload(to: str, body: dict) -> None:
     raise Exception("unknown Athena peer")
 
   payload = encrypt_payload(json.dumps(body), dongle_id, peer["publicKey"], peer["boxPublicKey"])
-  send_queue.put_nowait(json.dumps({"type": "peer", "from": dongle_id, "to": to, "payload": payload}))
+  send_queue.put_nowait(json.dumps({"type": "peer", "from": dongle_id, "to": to, "relayToken": peer["relayToken"], "payload": payload}))
 
 
 def broadcast_peer_notification(name: str, payload: Any) -> None:
@@ -1152,8 +1152,10 @@ def handle_peer_message(data: str) -> bool:
         raise Exception("pair request sender mismatch")
       if not verify_pair_token(body.get("pairToken"), dongle_id):
         raise Exception("invalid pair token")
-      authorize_peer(body["publicKey"], box_public_key=body["boxPublicKey"])
+      authorize_peer(body["publicKey"], box_public_key=body["boxPublicKey"], relay_token=body["relayToken"])
       cloudlog.event("athena.p2p.paired", sender=sender)
+      _, box_public_key = get_box_key_pair()
+      send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id, "boxPublicKey": box_public_key, "relayToken": relay_token(dongle_id, sender)})
       return True
 
     if sender not in load_authorized_peers():

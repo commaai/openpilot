@@ -114,7 +114,7 @@ def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, s
     return {
       public_key: peer
       for public_key, peer in raw_peers.items()
-      if is_asius_dongle_id(public_key) and is_asius_dongle_id(peer.get("boxPublicKey"))
+      if is_asius_dongle_id(public_key) and is_asius_dongle_id(peer.get("boxPublicKey")) and isinstance(peer.get("relayToken"), str)
     }
   except Exception:
     return {}
@@ -124,13 +124,13 @@ def save_authorized_peers(peers: dict[str, dict[str, str]], params: Params | Non
   write_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM, json.dumps(peers))
 
 
-def authorize_peer(public_key: str, box_public_key: str, params: Params | None = None) -> dict[str, str]:
-  if not is_asius_dongle_id(public_key) or not is_asius_dongle_id(box_public_key):
+def authorize_peer(public_key: str, box_public_key: str, relay_token: str, params: Params | None = None) -> dict[str, str]:
+  if not is_asius_dongle_id(public_key) or not is_asius_dongle_id(box_public_key) or not isinstance(relay_token, str):
     raise ValueError("invalid Athena peer key")
 
   params = params or Params()
   peers = load_authorized_peers(params)
-  peer = {"publicKey": public_key, "boxPublicKey": box_public_key}
+  peer = {"publicKey": public_key, "boxPublicKey": box_public_key, "relayToken": relay_token}
   peer["aclEpoch"] = str(bump_acl_epoch(params))
   peers[public_key] = peer
   save_authorized_peers(peers, params)
@@ -149,6 +149,24 @@ def identity_private_key() -> ed25519.Ed25519PrivateKey:
   if not isinstance(key, ed25519.Ed25519PrivateKey):
     raise ValueError("Athena identity key is not Ed25519")
   return key
+
+
+def sign_jwt(payload: dict, expiry_seconds: int) -> str:
+  now = int(time.time())
+  return jwt.encode({**payload, "iat": now, "nbf": now, "exp": now + expiry_seconds}, identity_private_key(), algorithm="EdDSA")
+
+
+def pairing_tokens(recipient: str, box_public_key: str, acl_epoch: int, expiry_seconds: int = 300) -> tuple[str, str]:
+  pair_token = sign_jwt({"type": "pair", "to": recipient, "boxPublicKey": box_public_key, "aclEpoch": acl_epoch}, expiry_seconds)
+  relay_token = sign_jwt({"type": "relay", "to": recipient}, expiry_seconds)
+  return pair_token, relay_token
+
+
+def relay_token(recipient: str, sender: str | None = None, expiry_seconds: int = 10 * 365 * 24 * 60 * 60) -> str:
+  payload = {"type": "relay", "to": recipient}
+  if sender is not None:
+    payload["from"] = sender
+  return sign_jwt(payload, expiry_seconds)
 
 
 def verify_identity_signature(public_key: str, signature: str, data: bytes) -> bool:
@@ -206,7 +224,7 @@ def verify_pair_token(token: str | None, recipient: str) -> bool:
     if token is None:
       return False
     unverified = jwt.decode(token, options={"verify_signature": False})
-    if unverified.get("identity") != recipient:
+    if unverified.get("to") != recipient:
       return False
     public_key = ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(recipient))
     verified = jwt.decode(token, public_key, algorithms=["EdDSA"])
