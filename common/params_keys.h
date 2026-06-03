@@ -15,6 +15,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"AthenadAuthorizedKeys", {PERSISTENT, JSON}},
     {"AthenadAuthorizedKeysEpoch", {PERSISTENT, INT}},
     {"AthenadBoxPrivateKey", {PERSISTENT | DONT_LOG, STRING}},
+    {"AthenadPairingUntil", {PERSISTENT, INT}},
     {"AthenadWebRTCActive", {CLEAR_ON_MANAGER_START, BOOL}},
     {"AthenadUploadQueue", {PERSISTENT, JSON}},
     {"AthenadRecentlyViewedRoutes", {PERSISTENT, STRING}},
