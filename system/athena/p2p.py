@@ -124,11 +124,6 @@ def save_authorized_peers(peers: dict[str, dict[str, str]], params: Params | Non
   write_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM, json.dumps(peers))
 
 
-def ssh_key_from_public_key(public_key: str) -> str:
-  raw = base58_decode(public_key).to_bytes(32, "big")
-  return f"ssh-ed25519 {base64.b64encode(raw).decode()} athena-{public_key}"
-
-
 def authorize_peer(public_key: str, box_public_key: str, params: Params | None = None) -> dict[str, str]:
   if not is_asius_dongle_id(public_key) or not is_asius_dongle_id(box_public_key):
     raise ValueError("invalid Athena peer key")
@@ -139,11 +134,6 @@ def authorize_peer(public_key: str, box_public_key: str, params: Params | None =
   peer["aclEpoch"] = str(bump_acl_epoch(params))
   peers[public_key] = peer
   save_authorized_peers(peers, params)
-
-  ssh_key = ssh_key_from_public_key(public_key)
-  ssh_keys = params.get("GithubSshKeys") or ""
-  if ssh_key not in ssh_keys.splitlines():
-    params.put("GithubSshKeys", "\n".join([line for line in ssh_keys.splitlines() if line] + [ssh_key]), block=True)
 
   return peer
 
@@ -232,8 +222,6 @@ def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
     if encrypted.get("v") == 2 and encrypted.get("alg") == "X25519-A256GCM-Ed25519":
       if encrypted.get("from") != sender or encrypted.get("to") != recipient:
         return None
-      if not check_replay(sender, encrypted["nonce"], int(encrypted["ts"])):
-        return None
 
       signature = encrypted["sig"]
       signed = {key: value for key, value in encrypted.items() if key != "sig"}
@@ -248,6 +236,8 @@ def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
       plaintext = AESGCM(payload_key(shared, sender, recipient, encrypted["eph"])).decrypt(
         base64url_decode(encrypted["iv"]), base64url_decode(encrypted["ciphertext"]), aad
       )
+      if not check_replay(sender, encrypted["nonce"], int(encrypted["ts"])):
+        return None
       return plaintext.decode()
 
     return None
