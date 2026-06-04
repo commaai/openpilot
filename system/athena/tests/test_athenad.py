@@ -412,13 +412,15 @@ class TestAthenadMethods:
       "GithubUsername": "bad",
       "DongleId": "bad",
       "APIHost": "https://example.com",
+      "AthenaHost": "wss://example.com",
       "IsMetric": True,
     })
 
     assert resp["GithubSshKeys"] == "error: blocked"
     assert resp["GithubUsername"] == "error: blocked"
     assert resp["DongleId"] == "error: blocked"
-    assert resp["APIHost"] == "error: blocked"
+    assert resp["APIHost"] == "ok"
+    assert resp["AthenaHost"] == "ok"
     assert resp["IsMetric"] == "ok"
 
   def test_get_version(self):

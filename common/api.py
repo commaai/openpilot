@@ -1,7 +1,7 @@
 import jwt
+import os
 import requests
 from datetime import datetime, timedelta, UTC
-from pathlib import Path
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
@@ -9,8 +9,8 @@ from openpilot.common.params import Params
 
 API_HOST = Params().get("APIHost", return_default=True)
 
-FALLBACK_IDENTITY_DIR = Path("/data/persist/comma")
-
+KEY = 'id_ed25519'
+KEY_FOLDERS = [Paths.persist_root() + "/comma", "/data/persist/comma"]
 
 class Api:
   def __init__(self, dongle_id):
@@ -55,9 +55,8 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, session=Non
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:
-  for identity_dir in (Path(Paths.persist_root()) / "comma", FALLBACK_IDENTITY_DIR):
-    private_key_path = identity_dir / "id_ed25519"
-    public_key_path = identity_dir / "id_ed25519.pub"
-    if private_key_path.is_file() and public_key_path.is_file():
-      return "EdDSA", private_key_path.read_text(), public_key_path.read_text()
+  for folder in KEY_FOLDERS:
+    if os.path.isfile(folder + f'/{KEY}') and os.path.isfile(folder + f'/{KEY}.pub'):
+      with open(folder + f'/{KEY}') as private, open(folder + f'/{KEY}.pub') as public:
+        return "EdDSA", private.read(), public.read()
   return None, None, None

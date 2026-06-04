@@ -75,9 +75,7 @@ DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 LIVE_STATE_INTERVAL_S = 1.0
 SAVE_PARAMS_BLOCKED_KEYS = {
   "AccessToken",
-  "APIHost",
   "ApiCache_Device",
-  "AthenaHost",
   "AthenadAuthorizedKeys",
   "AthenadAuthorizedKeysEpoch",
   "AthenadPairingUntil",
@@ -93,14 +91,8 @@ SAVE_PARAMS_BLOCKED_KEYS = {
   "SecOCKey",
 }
 LIVE_STATE_SERVICES = [
-  "modelV2",
-  "radarState",
   "deviceState",
-  "controlsState",
-  "selfdriveState",
-  "carState",
   "managerState",
-  "liveCalibration",
 ]
 LIVE_STATE_PARAM_KEYS = [
   "DongleId",
