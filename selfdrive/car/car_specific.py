@@ -1,6 +1,7 @@
 from cereal import car, log
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.car_helpers import interfaces
+from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.interfaces import MAX_CTRL_SPEED
 from opendbc.car.toyota.values import ToyotaFlags
 
@@ -20,6 +21,10 @@ class CarSpecificEvents:
     self.low_speed_alert = False
     self.no_steer_warning = False
     self.silent_steer_warning = True
+
+    # Hyundai openpilot longitudinal button state (see issue #30950)
+    self._hyundai_cruise_speed_set = False  # True after Set is pressed
+    self._hyundai_cruise_paused = False     # True after pause/resume (CAN FD) pauses cruise
 
   def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
     if self.CP.brand in ('body', 'mock'):
@@ -89,6 +94,47 @@ class CarSpecificEvents:
       # TODO: this needs to be implemented generically in carState struct
       # if CC.eps_timer_soft_disable_alert:
       #   events.add(EventName.steerTimeLimit)
+
+    elif self.CP.brand == 'hyundai' and not self.CP.pcmCruise:
+      # Match stock Hyundai longitudinal button behavior (#30950):
+      # - Resume is blocked until Set is first pressed (speed must be set before resuming)
+      # - On CAN FD, the cancel/button-4 is a pause/resume toggle rather than a hard cancel
+      is_canfd = bool(self.CP.flags & HyundaiFlags.CANFD)
+
+      had_speed_set = self._hyundai_cruise_speed_set
+      was_paused = self._hyundai_cruise_paused
+
+      for b in CS.buttonEvents:
+        if b.type == ButtonType.decelCruise and not b.pressed:
+          self._hyundai_cruise_speed_set = True
+          self._hyundai_cruise_paused = False
+        elif b.type == ButtonType.accelCruise and not b.pressed:
+          if self._hyundai_cruise_speed_set:
+            self._hyundai_cruise_paused = False
+        elif b.type == ButtonType.cancel and not b.pressed:
+          if is_canfd and self._hyundai_cruise_speed_set:
+            self._hyundai_cruise_paused = not was_paused  # toggle pause state
+          else:
+            self._hyundai_cruise_speed_set = False
+            self._hyundai_cruise_paused = False
+        elif b.type == ButtonType.mainCruise:
+          self._hyundai_cruise_speed_set = False
+          self._hyundai_cruise_paused = False
+
+      is_set = any(b.type == ButtonType.decelCruise and not b.pressed for b in CS.buttonEvents)
+      is_resume = any(b.type == ButtonType.accelCruise and not b.pressed for b in CS.buttonEvents)
+      is_cancel = any(b.type == ButtonType.cancel and not b.pressed for b in CS.buttonEvents)
+
+      button_enable = (
+        is_set or
+        (is_resume and had_speed_set and not was_paused) or
+        (is_cancel and is_canfd and was_paused and had_speed_set)
+      )
+
+      if EventName.buttonEnable in events.events:
+        events.events.remove(EventName.buttonEnable)
+      if button_enable:
+        events.add(EventName.buttonEnable)
 
     return events
 
