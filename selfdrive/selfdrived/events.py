@@ -612,22 +612,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
-  EventName.laneTurnLeft: {
-    ET.WARNING: Alert(
-      "Turning Left",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.),
-  },
-
-  EventName.laneTurnRight: {
-    ET.WARNING: Alert(
-      "Turning Right",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.),
-  },
-
   EventName.steerSaturated: {
     ET.WARNING: Alert(
       "Take Control",
@@ -1089,20 +1073,6 @@ if HARDWARE.get_device_type() == 'mici':
         "",
         AlertStatus.userPrompt, AlertSize.small,
         Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
-    },
-    EventName.laneTurnLeft: {
-      ET.WARNING: Alert(
-        "Turning Left",
-        "",
-        AlertStatus.normal, AlertSize.small,
-        Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.),
-    },
-    EventName.laneTurnRight: {
-      ET.WARNING: Alert(
-        "Turning Right",
-        "",
-        AlertStatus.normal, AlertSize.small,
-        Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.),
     },
     EventName.steerSaturated: {
       ET.WARNING: Alert(
