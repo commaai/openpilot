@@ -30,7 +30,7 @@ def zmq_sleep(t=1):
 
 # TODO: this should take any capnp struct and returrn a msg with random populated data
 def random_carstate():
-  fields = ["vEgo", "aEgo", "brake", "steeringAngleDeg"]
+  fields = ["vEgo", "aEgo", "steeringTorque", "steeringAngleDeg"]
   msg = messaging.new_message("carState")
   cs = msg.carState
   for f in fields:

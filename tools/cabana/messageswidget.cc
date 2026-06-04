@@ -64,7 +64,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
 
   setWhatsThis(tr(R"(
     <b>Message View</b><br/>
-    <!-- TODO: add descprition here -->
+    <!-- TODO: add description here -->
     <span style="color:gray">Byte color</span><br />
     <span style="color:gray;">■ </span> constant changing<br />
     <span style="color:blue;">■ </span> increasing<br />
@@ -146,7 +146,7 @@ void MessagesWidget::menuAboutToShow() {
   action->setCheckable(true);
   action->setChecked(settings.multiple_lines_hex);
 
-  action = menu->addAction(tr("Show inactive Messages"), model, &MessageListModel::showInactivemessages);
+  action = menu->addAction(tr("Show inactive messages"), model, &MessageListModel::showInactiveMessages);
   action->setCheckable(true);
   action->setChecked(model->show_inactive_messages);
 }
@@ -216,7 +216,7 @@ void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
   filterAndSort();
 }
 
-void MessageListModel::showInactivemessages(bool show) {
+void MessageListModel::showInactiveMessages(bool show) {
   show_inactive_messages = show;
   filterAndSort();
 }
