@@ -10,7 +10,6 @@ from openpilot.selfdrive.selfdrived.events import Events
 ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
 EventName = log.OnroadEvent.EventName
-NetworkLocation = structs.CarParams.NetworkLocation
 
 
 class CarSpecificEvents:
@@ -38,9 +37,6 @@ class CarSpecificEvents:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.brand == 'honda':
-      if self.CP.pcmCruise and CS.vEgo < self.CP.minEnableSpeed:
-        events.add(EventName.belowEngageSpeed)
-
       if self.CP.pcmCruise:
         # we engage when pcm is active (rising edge)
         if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
@@ -62,8 +58,7 @@ class CarSpecificEvents:
         # Only can leave standstill when planner wants to move
         if CS.cruiseState.standstill and not CS.brakePressed and (CC.cruiseControl.resume or self.CP.flags & ToyotaFlags.HYBRID.value):
           events.add(EventName.resumeRequired)
-        if CS.vEgo < self.CP.minEnableSpeed:
-          events.add(EventName.belowEngageSpeed)
+        if CS.cruiseState.belowEngageSpeed:
           if CC.actuators.accel > 0.3:
             # some margin on the actuator to not false trigger cancellation while stopping
             events.add(EventName.speedTooLow)
@@ -72,18 +67,11 @@ class CarSpecificEvents:
             events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'gm':
-      # Enabling at a standstill with brake is allowed
-      # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-      if CS.vEgo < self.CP.minEnableSpeed and not (CS.standstill and CS.brakePressed and
-                                                   self.CP.networkLocation == NetworkLocation.fwdCamera):
-        events.add(EventName.belowEngageSpeed)
       if CS.cruiseState.standstill:
         events.add(EventName.resumeRequired)
 
     elif self.CP.brand == 'volkswagen':
       if self.CP.openpilotLongitudinalControl:
-        if CS.vEgo < self.CP.minEnableSpeed + 0.5:
-          events.add(EventName.belowEngageSpeed)
         if CC.enabled and CS.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
@@ -147,6 +135,8 @@ class CarSpecificEvents:
       events.add(EventName.invalidLkasSetting)
     if CS.lowSpeedAlert:
       events.add(EventName.belowSteerSpeed)
+    if CS.cruiseState.belowEngageSpeed:
+      events.add(EventName.belowEngageSpeed)
     if CS.buttonEnable:
       events.add(EventName.buttonEnable)
 
