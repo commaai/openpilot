@@ -31,8 +31,6 @@ class TestSimBridgeBase:
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    # Allow extra time on slow CI runners (e.g. 2-core GitHub Actions ubuntu-latest)
-    # where MetaDrive rendering via software OpenGL (llvmpipe) can be much slower
     max_time_per_step = int(os.environ.get("MAX_TIME_PER_STEP", 60))
 
     # Wait for bridge to startup

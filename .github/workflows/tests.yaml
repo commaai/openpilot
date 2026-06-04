@@ -190,27 +190,25 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: namespace-profile-amd64-8x16
+    # MetaDrive + openpilot requires the 8-core namespace runner; the 2-core
+    # ubuntu-24.04 runner used for fork PRs cannot complete the test in time.
+    if: >-
+      github.repository == 'commaai/openpilot' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == 'commaai/openpilot')
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 10 || 40 }}
+      timeout-minutes: 10
       run: scons
     - name: Driving test
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 15 || 20 }}
+      timeout-minutes: 15
       env:
-        COLLECT_LOGS: "1"
-        # Allow more time per test phase on slow 2-core free runners where
-        # MetaDrive uses software OpenGL (llvmpipe) and can take 60+ seconds to start
-        MAX_TIME_PER_STEP: ${{ contains(runner.name, 'nsc') && '60' || '120' }}
+        MAX_TIME_PER_STEP: "60"
       run: |
         source selfdrive/test/setup_xvfb.sh
         pytest -s tools/sim/tests/test_metadrive_bridge.py
