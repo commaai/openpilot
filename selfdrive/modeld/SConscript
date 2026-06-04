@@ -52,11 +52,14 @@ else:
 warp_backend = 'CPU' if ASIUS and tg_backend == 'CL' else tg_backend
 if warp_backend != tg_backend:
   tg_flags += f' WARP_DEV={warp_backend}'
+warp_queue_backend = warp_backend if ASIUS and warp_backend != tg_backend else tg_backend
+if warp_queue_backend != tg_backend:
+  tg_flags += f' WARP_QUEUE_DEV={warp_queue_backend}'
 
 tg_devices = { # which device to put jit inputs to at runtime
   'selfdrive.modeld.modeld': {
-    'default': {'WARP_DEV': warp_backend, 'QUEUE_DEV': tg_backend},
-    'usbgpu': {'WARP_DEV': warp_backend, 'QUEUE_DEV': 'AMD'}
+    'default': {'WARP_DEV': warp_backend, 'WARP_QUEUE_DEV': warp_queue_backend, 'QUEUE_DEV': tg_backend},
+    'usbgpu': {'WARP_DEV': warp_backend, 'WARP_QUEUE_DEV': warp_queue_backend, 'QUEUE_DEV': 'AMD'}
   },
   'selfdrive.modeld.dmonitoringmodeld': {
     'default': {'DEV': tg_backend}
@@ -111,7 +114,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
     chunk_file(pkl, chunks)
   node = lenv.Command(
     chunk_targets,
-    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file],
+    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file, tg_devices_node],
     [cmd, Action(do_chunk, "  [CHUNK] $TARGET")],
   )
   if usbgpu:

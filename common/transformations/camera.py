@@ -48,10 +48,9 @@ class DeviceCameraConfig:
 
 _ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
 _os_fisheye = CameraConfig(2688 // 2, 1520 // 2, 567.0 / 4 * 3)
-# Dragon IMX219 raw is 1920x1080. camera_dragon publishes corrected 960x1080
-# square-pixel NV12 frames so modeld, loggerd, and live streams share geometry.
-_asius_road = CameraConfig(960, 1080, 2450.0)
-_asius_wide = CameraConfig(960, 1080, 567.0)
+# Dragon IMX219 uses the full-FOV 2x2 binned 4:3 sensor mode.
+_asius_road = CameraConfig(1640, 1232, 2450.0)
+_asius_wide = CameraConfig(1640, 1232, 567.0)
 _ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)
 _os_config = DeviceCameraConfig(CameraConfig(2688 // 2, 1520 // 2, 1522.0 * 3 / 4), _os_fisheye, _os_fisheye)
 _asius_config = DeviceCameraConfig(_asius_road, _NoneCameraConfig(), _asius_wide)
@@ -74,6 +73,7 @@ DEVICE_CAMERAS = {
 
   # asius Dragon Q6A IMX219
   ("asius", "imx219"): _asius_config,
+  ("asius-v1", "imx219"): _asius_config,
 }
 prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', _ar_ox_config), ('ox03c10', _ar_ox_config), ('os04c10', _os_config)))
 DEVICE_CAMERAS.update({(d, c[0]): c[1] for d, c in prods})

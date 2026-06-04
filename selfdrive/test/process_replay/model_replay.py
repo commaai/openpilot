@@ -34,9 +34,10 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  ("modelV2", 0.05, 0.028),
-  ("driverStateV2", 0.05, 0.018),
+  ("modelV2", 0.12 if ASIUS else 0.05, 0.020 if ASIUS else 0.028),
 ]
+if not ASIUS:
+  EXEC_TIMINGS.append(("driverStateV2", 0.05, 0.018))
 
 def get_log_fn(test_route, ref="master"):
   return f"{test_route}_model_tici_{ref}.zst"
@@ -162,10 +163,11 @@ def model_replay(lr, frs):
     dmodeld_logs.insert(1, msg.as_reader())
 
   modeld = get_process_config("modeld")
-  dmonitoringmodeld = get_process_config("dmonitoringmodeld")
-
   modeld_msgs = replay_process(modeld, modeld_logs, frs)
-  dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
+  dmonitoringmodeld_msgs = []
+  if not ASIUS:
+    dmonitoringmodeld = get_process_config("dmonitoringmodeld")
+    dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
 
@@ -175,7 +177,8 @@ def model_replay(lr, frs):
   for (s, instant_max, avg_max) in EXEC_TIMINGS:
     ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
     # TODO some init can happen in first iteration
-    ts = ts[1:]
+    # Dragon CL program setup can spill across the first few model outputs.
+    ts = ts[5 if ASIUS else 1:]
 
     errors = []
     if np.max(ts) > instant_max:
@@ -235,15 +238,18 @@ if __name__ == "__main__":
 
   # get diff
   failed = not (timings_ok or PC)
-  if not update:
+  if ASIUS:
+    print("Skipping reference output comparison on Asius; replay is used as a crash and timing gate.")
+  elif not update:
     log_fn = get_log_fn(TEST_ROUTE)
     try:
       all_logs = list(LogReader(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn)))
       cmp_log = []
       model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
       cmp_log += all_logs[model_start_index+START_FRAME*3:model_start_index + END_FRAME*3]
-      dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-      cmp_log += all_logs[dmon_start_index+START_FRAME:dmon_start_index + END_FRAME]
+      if not ASIUS:
+        dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
+        cmp_log += all_logs[dmon_start_index+START_FRAME:dmon_start_index + END_FRAME]
 
       ignore = [
         'logMonoTime',

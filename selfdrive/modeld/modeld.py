@@ -99,6 +99,7 @@ class ModelState:
   def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
     self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
+    self.WARP_QUEUE_DEV = input_devices.get('WARP_QUEUE_DEV', self.QUEUE_DEV)
     jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
     vision_metadata = jits['metadata']['vision']
     self.vision_input_shapes = vision_metadata['input_shapes']
@@ -112,14 +113,15 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip,
+                                                    device=self.QUEUE_DEV, warp_queue_device=self.WARP_QUEUE_DEV)
     self.full_frames: dict[str, Tensor] = {}
     self._blob_cache: dict[int, Tensor] = {}
     self._last_model_output: dict[str, np.ndarray] | None = None
     reuse_defaults = ASIUS and Device.DEFAULT == "CL"
-    default_eval_interval = "2" if reuse_defaults else "1"
+    default_eval_interval = "15" if reuse_defaults else "1"
     self._model_eval_interval = max(1, int(os.getenv("MODEL_EVAL_INTERVAL", default_eval_interval)))
-    default_extra_reuse_period = "6" if reuse_defaults else "0"
+    default_extra_reuse_period = "0"
     self._extra_reuse_period = max(0, int(os.getenv("MODEL_EXTRA_REUSE_PERIOD", default_extra_reuse_period)))
     self._reuse_left = 0
     self._model_eval_count = 0
@@ -251,6 +253,7 @@ def main(demo=False):
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
   frame_id = 0
   last_vipc_frame_id = 0
+  last_vipc_timestamp_eof = 0
   run_count = 0
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
@@ -263,7 +266,12 @@ def main(demo=False):
   if demo:
     CP = get_demo_car_params()
   else:
-    CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
+    cp_bytes = params.get("CarParams", block=not ASIUS)
+    if cp_bytes is None:
+      cloudlog.warning("CarParams unavailable, using demo params")
+      CP = get_demo_car_params()
+    else:
+      CP = messaging.log_from_bytes(cp_bytes, car.CarParams)
   cloudlog.info("modeld got CarParams: %s", CP.brand)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
@@ -297,7 +305,9 @@ def main(demo=False):
         cloudlog.debug("vipc_client_extra no frame")
         continue
 
-      sync_warn_threshold_ns = 25000000 if str(sm["deviceState"].deviceType) == "asius" else 10000000
+      device_type = str(sm["deviceState"].deviceType)
+      road_sensor = str(sm["roadCameraState"].sensor)
+      sync_warn_threshold_ns = 25000000 if device_type.startswith("asius") or road_sensor == "imx219" else 10000000
       if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > sync_warn_threshold_ns:
         cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
                          extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
@@ -313,8 +323,11 @@ def main(demo=False):
     frame_id = sm["roadCameraState"].frameId
     v_ego = max(sm["carState"].vEgo, 0.)
     lat_delay = sm["liveDelay"].lateralDelay + LAT_SMOOTH_SECONDS
-    if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
-      device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
+    if (sm.updated["liveCalibration"] or (ASIUS and not live_calib_seen)) and sm.seen['roadCameraState'] and sm.seen['deviceState']:
+      if sm.updated["liveCalibration"]:
+        device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
+      else:
+        device_from_calib_euler = np.zeros(3, dtype=np.float32)
       dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
       model_transform_main = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics, False).astype(np.float32)
       model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics, True).astype(np.float32)
@@ -328,7 +341,15 @@ def main(demo=False):
       vec_desire[desire] = 1
 
     # tracked dropped frames
-    vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
+    if ASIUS:
+      if last_vipc_timestamp_eof == 0:
+        vipc_dropped_frames = 0
+      else:
+        elapsed_ns = max(0, meta_main.timestamp_eof - last_vipc_timestamp_eof)
+        expected_frames = round(elapsed_ns / (DT_MDL * 1e9))
+        vipc_dropped_frames = max(0, expected_frames - 1)
+    else:
+      vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
       frame_dropped_filter.x = 0.
@@ -336,7 +357,7 @@ def main(demo=False):
     run_count = run_count + 1
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
-    prepare_only = vipc_dropped_frames > 0
+    prepare_only = vipc_dropped_frames > 0 and not ASIUS
     if prepare_only:
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
@@ -384,6 +405,7 @@ def main(demo=False):
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
+    last_vipc_timestamp_eof = meta_main.timestamp_eof
 
 
 if __name__ == "__main__":

@@ -46,6 +46,7 @@ UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
 WARP_DEV = os.getenv('WARP_DEV')
+WARP_QUEUE_DEV = os.getenv('WARP_QUEUE_DEV')
 POLICY_NP_DTYPE = np.float16 if os.getenv("FLOAT16") or Device.DEFAULT == "CL" else np.float32
 
 
@@ -121,25 +122,26 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_warp_input_queues(vision_input_shapes, frame_skip, device):
+def make_warp_input_queues(vision_input_shapes, frame_skip, device, warp_queue_device=None):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
+  queue_device = warp_queue_device or WARP_QUEUE_DEV or device
 
   npy = {
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
   input_queues = {
-    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
-    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=queue_device).contiguous().realize(),
+    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=queue_device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return input_queues, npy
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
-  input_queues, npy = make_warp_input_queues(vision_input_shapes, frame_skip, device)
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device, warp_queue_device=None):
+  input_queues, npy = make_warp_input_queues(vision_input_shapes, frame_skip, device, warp_queue_device)
 
   fb = policy_input_shapes['features_buffer']  # (1, 25, 512)
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
@@ -208,11 +210,11 @@ def make_warp(nv12, model_w, model_h, frame_skip):
     big_tfm = big_tfm.to(WARP_DEV)
     Tensor.realize(tfm, big_tfm)
 
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(img_q.device)
     img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(big_img_q.device)
     big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
-    return img, big_img
+    return img.to(Device.DEFAULT), big_img.to(Device.DEFAULT)
   return warp_enqueue
 
 

@@ -14,6 +14,11 @@
 #include "system/loggerd/logger.h"
 
 constexpr int MAIN_FPS = 20;
+#ifdef __ASIUS__
+constexpr int STREAM_FPS = 15;
+#else
+constexpr int STREAM_FPS = MAIN_FPS;
+#endif
 const auto MAIN_ENCODE_TYPE = Hardware::PC() ? cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS : cereal::EncodeIndex::Type::FULL_H_E_V_C;
 #define NO_CAMERA_PATIENCE 500  // fall back to time-based rotation if all cameras are dead
 
@@ -47,8 +52,13 @@ struct EncoderSettings {
   }
 
   static EncoderSettings StreamEncoderSettings() {
+#ifdef __ASIUS__
+    int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 1'500'000;
+    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate , .gop_size = STREAM_FPS};
+#else
     int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 5'000'000;
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate , .gop_size = 5};
+#endif
   }
 };
 
@@ -106,10 +116,9 @@ const EncoderInfo stream_road_encoder_info = {
   //.thumbnail_name = "thumbnail",
   .record = false,
   .adaptive_bitrate = true,
-  // Dragon IMX219 livestreams need non-16:9 display pixels; keep this in the
-  // stream encoder so modeld and recordings still consume full camera frames.
-  .frame_width = 480,
-  .frame_height = 540,
+  .frame_width = 640,
+  .frame_height = 480,
+  .fps = STREAM_FPS,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
 };
@@ -118,8 +127,9 @@ const EncoderInfo stream_wide_road_encoder_info = {
   .publish_name = "livestreamWideRoadEncodeData",
   .record = false,
   .adaptive_bitrate = true,
-  .frame_width = 480,
-  .frame_height = 540,
+  .frame_width = 640,
+  .frame_height = 480,
+  .fps = STREAM_FPS,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
@@ -128,8 +138,9 @@ const EncoderInfo stream_driver_encoder_info = {
   .publish_name = "livestreamDriverEncodeData",
   .record = false,
   .adaptive_bitrate = true,
-  .frame_width = 480,
-  .frame_height = 540,
+  .frame_width = 640,
+  .frame_height = 480,
+  .fps = STREAM_FPS,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };
@@ -164,18 +175,21 @@ const LogCameraInfo driver_camera_info{
 
 const LogCameraInfo stream_road_camera_info{
   .thread_name = "road_cam_encoder",
+  .fps = STREAM_FPS,
   .stream_type = VISION_STREAM_ROAD,
   .encoder_infos = {stream_road_encoder_info},
 };
 
 const LogCameraInfo stream_wide_road_camera_info{
   .thread_name = "wide_road_cam_encoder",
+  .fps = STREAM_FPS,
   .stream_type = VISION_STREAM_WIDE_ROAD,
   .encoder_infos = {stream_wide_road_encoder_info},
 };
 
 const LogCameraInfo stream_driver_camera_info{
   .thread_name = "driver_cam_encoder",
+  .fps = STREAM_FPS,
   .stream_type = VISION_STREAM_DRIVER,
   .encoder_infos = {stream_driver_encoder_info},
 };

@@ -86,7 +86,7 @@ void FfmpegEncoder::encoder_close() {
 }
 
 void FfmpegEncoder::set_bitrate(int bitrate) {
-  LOGE("adaptive bitrate is not supported for ffmpeg encoder %s", encoder_info.publish_name);
+  // Dynamic bitrate changes are only supported by the V4L encoder path.
 }
 
 int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {

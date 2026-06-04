@@ -85,9 +85,11 @@ def manager_init() -> None:
                        dirty=build_metadata.openpilot.is_dirty,
                        device=HARDWARE.get_device_type())
 
-  # preimport all processes
-  for p in managed_processes.values():
-    p.prepare()
+  # On Dragon, importing model/tinygrad paths before forking can leave child
+  # processes stuck in runtime setup. Import inside the child instead.
+  if not ASIUS:
+    for p in managed_processes.values():
+      p.prepare()
 
 
 def manager_cleanup() -> None:

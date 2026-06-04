@@ -28,8 +28,8 @@ ExitHandler do_exit;
 
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != nullptr;
 const int dragon_target_fps = 20;
-const int dragon_frame_height = 1080;
-const int dragon_frame_length_lines_20fps = 2640;
+const int dragon_frame_height = 1232;
+const int dragon_frame_length_lines = 5123;
 
 // Dragon Q6A camera routing:
 //   RDI mode (raw passthrough): CSIPHY -> CSID pad 1 -> VFE RDI0 -> raw Bayer
@@ -107,7 +107,7 @@ static void __attribute__((constructor)) init_gamma_lut() {
 static void set_dragon_sensor_timing(int sensor_fd, int cam_idx) {
   struct v4l2_control vblank_ctrl = {};
   vblank_ctrl.id = V4L2_CID_VBLANK;
-  vblank_ctrl.value = dragon_frame_length_lines_20fps - dragon_frame_height;
+  vblank_ctrl.value = dragon_frame_length_lines - dragon_frame_height;
   if (ioctl(sensor_fd, VIDIOC_S_CTRL, &vblank_ctrl) != 0) {
     LOGE("cam %d: set VBLANK failed: %d (%s)", cam_idx, errno, strerror(errno));
     return;
@@ -119,9 +119,9 @@ static void set_dragon_sensor_timing(int sensor_fd, int cam_idx) {
   }
 
   const int frame_length_lines = dragon_frame_height + vblank_ctrl.value;
-  if (frame_length_lines != dragon_frame_length_lines_20fps) {
+  if (frame_length_lines != dragon_frame_length_lines) {
     LOGE("cam %d: VBLANK readback %d gives FLL=%d, expected FLL=%d for %dfps",
-         cam_idx, vblank_ctrl.value, frame_length_lines, dragon_frame_length_lines_20fps, dragon_target_fps);
+         cam_idx, vblank_ctrl.value, frame_length_lines, dragon_frame_length_lines, dragon_target_fps);
   } else {
     LOG("cam %d: VBLANK set to %d (FLL=%d, %dfps target)",
         cam_idx, vblank_ctrl.value, frame_length_lines, dragon_target_fps);
@@ -199,6 +199,8 @@ public:
   void camera_close();
   void setup_media_links();
   void set_formats();
+  void queue_all_buffers();
+  void stream_on();
   void start_streaming();
   void stop_streaming();
   int dequeue_frame(uint64_t *timestamp);
@@ -402,9 +404,7 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
   set_formats();
   set_dragon_sensor_timing(sensor_fd, cam_idx);
 
-  // IMX219 RDI is 1920x1080, but the Dragon optical path currently produces
-  // a 2:1 horizontal stretch. Publish corrected square-pixel VIPC frames.
-  output_width = sensor->frame_width / 2;
+  output_width = sensor->frame_width;
   output_height = sensor->frame_height;
   auto [s, yh, uvh, sz] = get_nv12_info(output_width, output_height);
   stride = s;
@@ -451,12 +451,17 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
       yuv_size, stride);
 }
 
-void DragonCamera::start_streaming() {
+void DragonCamera::queue_all_buffers() {
   if (!enabled) return;
 
   for (int i = 0; i < n_bufs; i++) {
     queue_frame(i);
   }
+}
+
+void DragonCamera::stream_on() {
+  if (!enabled) return;
+
   int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   if (ioctl(video_fd, VIDIOC_STREAMON, &type) != 0) {
     LOGE("cam %d: STREAMON failed: %d (%s)", cc.camera_num, errno, strerror(errno));
@@ -465,6 +470,11 @@ void DragonCamera::start_streaming() {
   }
 
   LOG("cam %d: RDI streaming started", cc.camera_num);
+}
+
+void DragonCamera::start_streaming() {
+  queue_all_buffers();
+  stream_on();
 }
 
 void DragonCamera::stop_streaming() {
@@ -540,10 +550,10 @@ void DragonCamera::camera_close() {
 class CameraState {
 public:
   DragonCamera camera;
-  int exposure_time = 800;
+  int exposure_time = 1600;
   bool dc_gain_enabled = false;
   int dc_gain_weight = 0;
-  int gain_idx = 0;
+  int gain_idx = 8;
   float analog_gain_frac = 0;
   float cur_ev[3] = {};
   float best_ev_score = 0;
@@ -576,11 +586,19 @@ void CameraState::init(VisionIpcServer *v) {
   camera.camera_open(v);
   if (!camera.enabled) return;
 
+  // The Dragon starts the road sensor first, then wide almost one period later.
+  // Number wide one frame ahead so same-numbered road/wide frames refer to the
+  // same 20 Hz capture instant.
+  if (camera.cc.stream_type == VISION_STREAM_WIDE_ROAD) {
+    frame_id = 1;
+  }
+
   fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
   pm = std::make_unique<PubMaster>(std::vector{camera.cc.publish_name});
 
   float gain = camera.sensor->sensor_analog_gains[gain_idx];
   cur_ev[0] = cur_ev[1] = cur_ev[2] = gain * exposure_time;
+  camera.set_exposure(exposure_time, gain_idx);
 
   set_exposure_rect();
 }
@@ -593,6 +611,28 @@ void CameraState::set_exposure_rect() {
     (int)(camera.sensor->frame_width * 0.9f),
     (int)(camera.sensor->frame_height * 0.75f),
   };
+}
+
+static float calculate_exposure_value_nv12(const uint8_t *y_plane, int stride, Rect ae_xywh, int x_skip, int y_skip) {
+  int lum_med;
+  uint32_t lum_binning[256] = {0};
+
+  unsigned int lum_total = 0;
+  for (int y = ae_xywh.y; y < ae_xywh.y + ae_xywh.h; y += y_skip) {
+    for (int x = ae_xywh.x; x < ae_xywh.x + ae_xywh.w; x += x_skip) {
+      uint8_t lum = y_plane[(y * stride) + x];
+      lum_binning[lum]++;
+      lum_total += 1;
+    }
+  }
+
+  unsigned int lum_cur = 0;
+  for (lum_med = 255; lum_med >= 0; lum_med--) {
+    lum_cur += lum_binning[lum_med];
+    if (lum_cur >= lum_total / 2) break;
+  }
+
+  return lum_med / 256.0f;
 }
 
 void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
@@ -658,6 +698,7 @@ void CameraState::process_rdi_frame(int buf_idx, uint64_t timestamp) {
     debayer_raw10_to_nv12(raw, raw_stride, y_plane, uv_plane,
                            camera.sensor->frame_width, camera.output_width, camera.output_height,
                            camera.stride);
+    set_camera_exposure(calculate_exposure_value_nv12(y_plane, camera.stride, ae_xywh, 4, 4));
   }
 
   VisionIpcBufExtra extra = {frame_id, timestamp, timestamp_eof};
@@ -672,12 +713,11 @@ void CameraState::process_rdi_frame(int buf_idx, uint64_t timestamp) {
   framed.setIntegLines(exposure_time);
   framed.setGain(camera.sensor->sensor_analog_gains[gain_idx]);
   framed.setSensor(camera.sensor->image_sensor);
+  framed.setMeasuredGreyFraction(measured_grey_fraction);
+  framed.setTargetGreyFraction(target_grey_fraction);
   framed.setExposureValPercent(util::map_val(cur_ev[frame_id % 3],
     camera.sensor->min_ev, camera.sensor->max_ev, 0.0f, 100.0f));
   pm->send(camera.cc.publish_name, msg);
-
-  // Leave IMX219 exposure at the kernel/default setting for now. Per-frame
-  // control writes have made one of the Dragon camera streams stop delivering.
 }
 
 void camerad_thread() {
@@ -714,7 +754,13 @@ void camerad_thread() {
   v.start_listener();
 
   for (auto &cam : cams) {
-    cam->camera.start_streaming();
+    cam->camera.queue_all_buffers();
+  }
+  for (auto it = cams.rbegin(); it != cams.rend(); ++it) {
+    (*it)->camera.stream_on();
+    if ((*it)->camera.cc.stream_type == VISION_STREAM_ROAD) {
+      usleep(28000);
+    }
   }
 
   LOG("-- Dragon camerad streaming");

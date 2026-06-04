@@ -22,9 +22,9 @@ IMX219::IMX219() {
   bayer_pattern = 0;  // RGGB
   pixel_size_mm = 0.00112;
   data_word = true;
-  frame_width = 1920;
-  frame_height = 1080;
-  frame_stride = frame_width * 10 / 8;  // 2400 bytes (SRGGB10 packed)
+  frame_width = 1640;
+  frame_height = 1232;
+  frame_stride = frame_width * 10 / 8;  // 2050 bytes (SRGGB10 packed)
   extra_height = 0;
   frame_offset = 0;
 
@@ -36,7 +36,7 @@ IMX219::IMX219() {
   frame_data_type = 0;
   mclk_frequency = 24000000;
 
-  readout_time_ns = 10000000;  // ~10ms for 1080p
+  readout_time_ns = 10000000;
 
   dc_gain_factor = 1.0;
   dc_gain_min_weight = 0;
@@ -44,7 +44,7 @@ IMX219::IMX219() {
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 4;
-  exposure_time_max = 2636;
+  exposure_time_max = 5119;
   analog_gain_min_idx = 0;
   analog_gain_rec_idx = 0;
   analog_gain_max_idx = 15;

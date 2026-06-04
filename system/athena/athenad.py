@@ -601,7 +601,6 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     proxy_token = base64.urlsafe_b64encode(os.urandom(32)).decode().rstrip("=")
     ws = create_connection(remote_ws_uri,
                            cookie="proxy_token=" + proxy_token,
-                           timeout=10,
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
@@ -609,7 +608,6 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    local_sock.settimeout(10)
     local_sock.connect(('127.0.0.1', local_port))
     local_sock.setblocking(False)
 
