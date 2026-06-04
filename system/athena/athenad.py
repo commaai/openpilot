@@ -1227,7 +1227,7 @@ def handle_peer_message(data: str) -> bool:
         raise Exception("invalid pair token")
       authorize_peer(body["publicKey"], label=body.get("label") if isinstance(body.get("label"), str) else None)
       cloudlog.event("athena.websocket.paired", sender=sender)
-      send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id})
+      send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id, "device-type": HARDWARE.get_device_type()})
       return True
 
     if sender not in load_authorized_peers():
