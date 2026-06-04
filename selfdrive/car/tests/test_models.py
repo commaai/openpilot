@@ -311,11 +311,15 @@ class TestCarModelBase(unittest.TestCase):
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
     """
-    Fuzz CarControl inputs across random panda safety states and assert panda's TX hook
-    never blocks messages that openpilot intends to send while controls are allowed.
-    Mirrors the approach of test_panda_safety_carstate_fuzzy for RX, extended to TX.
-    Detects mismatches in TX safety logic between openpilot and panda — e.g. cases where
-    openpilot's car controller encodes a value outside panda's safety envelope.
+    Fuzz CarControl longitudinal inputs across random panda safety states and assert
+    panda's TX hook never blocks messages that openpilot intends to send while controls
+    are allowed. Mirrors the approach of test_panda_safety_carstate_fuzzy for RX.
+    Detects mismatches in longitudinal TX safety logic between openpilot and panda —
+    e.g. cases where the car controller encodes an accel outside panda's safety envelope.
+
+    Lateral (steer) is excluded: panda's per-frame rate limit rejects any steer jump
+    from 0 (cold-start state) regardless of validity, so lateral coverage is left to
+    the deterministic test_panda_safety_tx_cases which runs with zero steer.
     """
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
@@ -329,9 +333,12 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.set_controls_allowed(controls_allowed)
     self.safety.set_cruise_engaged_prev(cruise_engaged)
 
-    # Generate a random CarControl — covers the full range of actuation commands
-    # real_floats=True keeps values finite so the car controller can clip/encode them
+    # Generate a random CarControl — covers the full range of longitudinal actuation.
+    # real_floats=True keeps values finite so the car controller can clip/encode them.
+    # latActive is forced False: panda rate-limits steer from cold-start (prev=0) and
+    # would block any non-zero angle/torque in the first frame regardless of validity.
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+    cc_msg['latActive'] = False
     CC = car.CarControl.new_message(**cc_msg).as_reader()
 
     now_nanos = 0
