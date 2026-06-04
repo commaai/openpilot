@@ -41,6 +41,24 @@ EXEC_TIMINGS = [
 if not ASIUS:
   EXEC_TIMINGS.append(("driverStateV2", 0.05, 0.018))
 
+ASIUS_ACCURACY_CHECKS = [
+  # name, field path, max abs error, p95 abs error, max relative error
+  ("velocity.x", "modelV2.velocity.x", 2.6, 1.8, 0.10),
+  ("acceleration.y", "modelV2.acceleration.y", 0.40, 0.30, None),
+  ("inner lane prob left", "modelV2.laneLineProbs.1", 0.08, 0.06, 0.08),
+  ("inner lane prob right", "modelV2.laneLineProbs.2", 0.08, 0.06, 0.08),
+  ("outer lane prob left", "modelV2.laneLineProbs.0", 0.70, 0.62, 0.90),
+  ("outer lane prob right", "modelV2.laneLineProbs.3", 0.45, 0.38, 0.75),
+  ("lane stds", "modelV2.laneLineStds", 0.22, 0.15, 0.55),
+  ("engaged prob", "modelV2.meta.engagedProb", 0.35, 0.30, 0.55),
+  ("lead prob", "modelV2.leadsV3.0.prob", 0.55, 0.40, 0.75),
+  ("steer override probs", "modelV2.meta.disengagePredictions.steerOverrideProbs", 0.16, 0.10, 0.45),
+  ("camera trans", "cameraOdometry.trans", 0.90, 0.65, None),
+  ("camera trans std", "cameraOdometry.transStd", 0.35, 0.18, 0.55),
+  ("driving left lane prob", "drivingModelData.laneLineMeta.leftProb", 0.08, 0.06, 0.08),
+  ("driving right lane prob", "drivingModelData.laneLineMeta.rightProb", 0.08, 0.06, 0.08),
+]
+
 def get_log_fn(test_route, ref="master"):
   return f"{test_route}_model_tici_{ref}.zst"
 
@@ -63,6 +81,45 @@ def zl(array, fill):
 
 def get_idx_if_non_empty(l, idx=None):
   return l if idx is None else (l[idx] if len(l) > 0 else None)
+
+def get_path_values(logs, path):
+  parts = path.split(".")
+  values = []
+  for msg in logs:
+    if msg.which() != parts[0]:
+      continue
+    value = getattr(msg, parts[0])
+    for part in parts[1:]:
+      value = value[int(part)] if part.isdigit() else getattr(value, part)
+    values.append(np.asarray(value, dtype=np.float64).reshape(-1))
+  return np.asarray(values)
+
+def check_asius_accuracy(proposed, master):
+  rows = []
+  passed = True
+  for name, path, max_abs_limit, p95_abs_limit, max_rel_limit in ASIUS_ACCURACY_CHECKS:
+    proposed_values = get_path_values(proposed, path)
+    master_values = get_path_values(master, path)
+    abs_err = np.abs(proposed_values - master_values)
+    denom = np.maximum(np.maximum(np.abs(proposed_values), np.abs(master_values)), 1e-6)
+    rel_err = abs_err / denom
+
+    max_abs = float(np.nanmax(abs_err))
+    p95_abs = float(np.nanpercentile(abs_err, 95))
+    max_rel = float(np.nanmax(rel_err))
+    ok_abs = max_abs <= max_abs_limit and p95_abs <= p95_abs_limit
+    ok_rel = max_rel_limit is None or max_rel <= max_rel_limit
+    ok = ok_abs and ok_rel
+    passed = passed and ok
+    rel_limit = "-" if max_rel_limit is None else f"{max_rel_limit:.3f}"
+    rows.append([name, max_abs, max_abs_limit, p95_abs, p95_abs_limit, max_rel, rel_limit, "✅" if ok else "❌"])
+
+  print("------------------------------------------------")
+  print("------------ Asius Model Accuracy --------------")
+  print("------------------------------------------------")
+  print(tabulate(rows, ["signal", "max abs", "max abs allowed", "p95 abs", "p95 abs allowed", "max rel", "max rel allowed", "test result"],
+                 tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".4f"))
+  return passed
 
 def generate_report(proposed, master, tmp, commit):
   ModelV2_Plots = zl([
@@ -309,6 +366,8 @@ if __name__ == "__main__":
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs_cmp, tolerance=tolerance, ignore_fields=ignore)
       diff_short, diff_long, output_failed = format_diff(results, log_paths, 'master')
+      if ASIUS:
+        output_failed = (not check_asius_accuracy(log_msgs_cmp, cmp_log)) or output_failed
       failed = output_failed or failed
 
       if "CI" in os.environ:
