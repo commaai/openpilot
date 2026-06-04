@@ -162,12 +162,13 @@ static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
       uint8_t b8 = gamma_lut[b10];
 
       uint8_t g8 = (gr8 + gb8 + 1) >> 1;
-      uint8_t y_top = std::clamp(((66*r8 + 129*gr8 + 25*b8 + 128) >> 8) + 16, 16, 235);
-      uint8_t y_bottom = std::clamp(((66*r8 + 129*gb8 + 25*b8 + 128) >> 8) + 16, 16, 235);
-      y_out[dst_y1 * out_stride + dst_x1] = y_top;
-      y_out[dst_y1 * out_stride + dst_x0] = y_top;
-      y_out[dst_y0 * out_stride + dst_x1] = y_bottom;
-      y_out[dst_y0 * out_stride + dst_x0] = y_bottom;
+      // Keep one luma sample per sensor photosite. Duplicating luma across
+      // each 2x2 Bayer block makes the Dragon preview look horizontally
+      // stretched even though the encoded frame is still 16:9.
+      y_out[dst_y1 * out_stride + dst_x1] = std::clamp((int)r8, 16, 235);
+      y_out[dst_y1 * out_stride + dst_x0] = std::clamp((int)gr8, 16, 235);
+      y_out[dst_y0 * out_stride + dst_x1] = std::clamp((int)gb8, 16, 235);
+      y_out[dst_y0 * out_stride + dst_x0] = std::clamp((int)b8, 16, 235);
 
       // UV from gamma-corrected RGB (BT.601)
       uv_out[dst_uv_y * out_stride + dst_x0]     = std::clamp(((-38*r8 - 74*g8 + 112*b8 + 128) >> 8) + 128, 16, 240);

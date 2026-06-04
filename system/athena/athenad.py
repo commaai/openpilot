@@ -43,6 +43,7 @@ from openpilot.system.athena.websocketd import (
   get_acl_epoch,
   load_authorized_peers,
   pack_peer_message,
+  pairing_device_type,
   pairing_mode_active,
   pairing_url,
   save_authorized_peers,
@@ -600,6 +601,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     proxy_token = base64.urlsafe_b64encode(os.urandom(32)).decode().rstrip("=")
     ws = create_connection(remote_ws_uri,
                            cookie="proxy_token=" + proxy_token,
+                           timeout=10,
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
@@ -607,6 +609,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    local_sock.settimeout(10)
     local_sock.connect(('127.0.0.1', local_port))
     local_sock.setblocking(False)
 
@@ -1227,7 +1230,8 @@ def handle_peer_message(data: str) -> bool:
         raise Exception("invalid pair token")
       authorize_peer(body["publicKey"], label=body.get("label") if isinstance(body.get("label"), str) else None)
       cloudlog.event("athena.websocket.paired", sender=sender)
-      send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id, "device-type": HARDWARE.get_device_type()})
+      device_type = pairing_device_type()
+      send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id, "deviceType": device_type, "device-type": device_type})
       return True
 
     if sender not in load_authorized_peers():

@@ -106,6 +106,10 @@ const EncoderInfo stream_road_encoder_info = {
   //.thumbnail_name = "thumbnail",
   .record = false,
   .adaptive_bitrate = true,
+  // Dragon IMX219 livestreams need non-16:9 display pixels; keep this in the
+  // stream encoder so modeld and recordings still consume full camera frames.
+  .frame_width = 480,
+  .frame_height = 540,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
 };
@@ -114,6 +118,8 @@ const EncoderInfo stream_wide_road_encoder_info = {
   .publish_name = "livestreamWideRoadEncodeData",
   .record = false,
   .adaptive_bitrate = true,
+  .frame_width = 480,
+  .frame_height = 540,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
@@ -122,6 +128,8 @@ const EncoderInfo stream_driver_encoder_info = {
   .publish_name = "livestreamDriverEncodeData",
   .record = false,
   .adaptive_bitrate = true,
+  .frame_width = 480,
+  .frame_height = 540,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };
