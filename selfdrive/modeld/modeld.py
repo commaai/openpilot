@@ -117,14 +117,6 @@ class ModelState:
                                                     device=self.QUEUE_DEV, warp_queue_device=self.WARP_QUEUE_DEV)
     self.full_frames: dict[str, Tensor] = {}
     self._blob_cache: dict[int, Tensor] = {}
-    self._last_model_output: dict[str, np.ndarray] | None = None
-    reuse_defaults = ASIUS and Device.DEFAULT == "CL"
-    default_eval_interval = "15" if reuse_defaults else "1"
-    self._model_eval_interval = max(1, int(os.getenv("MODEL_EVAL_INTERVAL", default_eval_interval)))
-    default_extra_reuse_period = "0"
-    self._extra_reuse_period = max(0, int(os.getenv("MODEL_EXTRA_REUSE_PERIOD", default_extra_reuse_period)))
-    self._reuse_left = 0
-    self._model_eval_count = 0
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits['run_policy']
@@ -176,17 +168,9 @@ class ModelState:
 
     if prepare_only:
       return None
-    if self._last_model_output is not None and self._reuse_left > 0:
-      self._reuse_left -= 1
-      return self._last_model_output
-
     vision_output, on_policy_output = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
     )
-    self._model_eval_count += 1
-    self._reuse_left = self._model_eval_interval - 1
-    if self._extra_reuse_period > 0 and self._model_eval_count % self._extra_reuse_period == 0:
-      self._reuse_left += 1
 
     vision_output, on_policy_output = tensors_to_numpy_flat(vision_output, on_policy_output)
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
@@ -195,7 +179,6 @@ class ModelState:
 
     if SEND_RAW_PRED:
       combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy()])
-    self._last_model_output = combined_outputs_dict
     return combined_outputs_dict
 
 
@@ -307,7 +290,8 @@ def main(demo=False):
 
       device_type = str(sm["deviceState"].deviceType)
       road_sensor = str(sm["roadCameraState"].sensor)
-      sync_warn_threshold_ns = 25000000 if device_type.startswith("asius") or road_sensor == "imx219" else 10000000
+      asius_camera = device_type.startswith("asius") or road_sensor == "imx219"
+      sync_warn_threshold_ns = 25000000 if asius_camera else 10000000
       if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > sync_warn_threshold_ns:
         cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
                          extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
@@ -323,8 +307,11 @@ def main(demo=False):
     frame_id = sm["roadCameraState"].frameId
     v_ego = max(sm["carState"].vEgo, 0.)
     lat_delay = sm["liveDelay"].lateralDelay + LAT_SMOOTH_SECONDS
-    if (sm.updated["liveCalibration"] or (ASIUS and not live_calib_seen)) and sm.seen['roadCameraState'] and sm.seen['deviceState']:
-      if sm.updated["liveCalibration"]:
+    device_type = str(sm["deviceState"].deviceType)
+    road_sensor = str(sm["roadCameraState"].sensor)
+    asius_camera = device_type.startswith("asius") or road_sensor == "imx219"
+    if (sm.updated["liveCalibration"] or (asius_camera and not live_calib_seen)) and sm.seen['roadCameraState'] and sm.seen['deviceState']:
+      if sm.seen["liveCalibration"]:
         device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
       else:
         device_from_calib_euler = np.zeros(3, dtype=np.float32)
@@ -341,7 +328,7 @@ def main(demo=False):
       vec_desire[desire] = 1
 
     # tracked dropped frames
-    if ASIUS:
+    if asius_camera:
       if last_vipc_timestamp_eof == 0:
         vipc_dropped_frames = 0
       else:
@@ -357,7 +344,7 @@ def main(demo=False):
     run_count = run_count + 1
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
-    prepare_only = vipc_dropped_frames > 0 and not ASIUS
+    prepare_only = vipc_dropped_frames > 0 and not asius_camera
     if prepare_only:
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
@@ -388,7 +375,7 @@ def main(demo=False):
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
                      frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen)
 
-      desire_state = modelv2_send.modelV2.meta.desireState
+      desire_state = model_output.get('desire_state_probs', model_output['desire_state'])[0]
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
       r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
       lane_change_prob = l_lane_change_prob + r_lane_change_prob
