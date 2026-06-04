@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import io
 import math
 import os
 from pathlib import Path
@@ -39,14 +40,33 @@ def get_existing_chunks(path):
     return _chunk_paths(path, num_chunks)
   raise FileNotFoundError(path)
 
-def read_file_chunked(path):
+class ChunkStream(io.RawIOBase):
+  def __init__(self, paths):
+    self._files = (open(p, 'rb') for p in paths)
+    self._cur = next(self._files, None)
+
+  def readable(self):
+    return True
+
+  def readinto(self, b):
+    while self._cur is not None:
+      n = self._cur.readinto(b)
+      if n:
+        return n
+      self._cur.close()          # chunk drained (or empty) -> advance to next
+      self._cur = next(self._files, None)
+    return 0                     # no chunks left -> EOF
+
+def open_file_chunked(path):
   manifest_path = get_manifest_path(path)
   if os.path.isfile(manifest_path):
     num_chunks = int(Path(manifest_path).read_text().strip())
-    return b''.join(Path(get_chunk_name(path, i, num_chunks)).read_bytes() for i in range(num_chunks))
-  if os.path.isfile(path):
-    return Path(path).read_bytes()
-  raise FileNotFoundError(path)
+    paths = [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
+  elif os.path.isfile(path):
+    paths = [path]
+  else:
+    raise FileNotFoundError(path)
+  return io.BufferedReader(ChunkStream(paths))
 
 
 if __name__ == "__main__":
