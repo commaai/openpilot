@@ -9,6 +9,25 @@ from collections import namedtuple
 
 import numpy as np
 
+
+class StreamPickler(pickle._Pickler):
+  # tinygrad's Buffer.__reduce__ copies each device buffer out into a fresh host bytearray.
+  # those bytearrays are never shared, but pickle memoizes them and keeps every one alive
+  # until dump() finishes -> peak host RAM = the whole model (OOM on a big model). skipping
+  # the memoize() frees each copyout right after it's written (peak ~= one buffer). the
+  # Buffer objects themselves (incl. view/base sharing) are still memoized, and no
+  # back-reference ever points at a bytearray, so the output is a standard pickle that
+  # loads with unmodified tinygrad. requires protocol 5 (BYTEARRAY8).
+  dispatch = dict(pickle._Pickler.dispatch)
+  def save_bytearray(self, obj):
+    n = len(obj)
+    if n >= self.framer._FRAME_SIZE_TARGET:
+      self._write_large_bytes(pickle.BYTEARRAY8 + n.to_bytes(8, "little"), obj)
+    else:
+      self.write(pickle.BYTEARRAY8 + n.to_bytes(8, "little") + obj)
+  dispatch[bytearray] = save_bytearray
+
+
 def _patch_tinygrad_fetch_fw():
   import hashlib
   import pathlib
@@ -317,5 +336,5 @@ if __name__ == "__main__":
     out[(cam_w,cam_h)] = compile_jit(warp_enqueue, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
 
   with open(args.output, "wb") as f:
-    pickle.dump(out, f)
+    StreamPickler(f, protocol=5).dump(out)
   print(f"Saved JITs to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
