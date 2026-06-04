@@ -27,11 +27,11 @@ def main():
 
   try:
     while 1:
-      cloudlog.info("starting athena daemon")
-      proc = Process(name='athenad', target=launcher, args=('system.athena.athenad', 'athenad'))
+      cloudlog.info("starting websocket daemon")
+      proc = Process(name='websocketd', target=launcher, args=('system.athena.websocketd', 'websocketd'))
       proc.start()
       proc.join()
-      cloudlog.event("athenad exited", exitcode=proc.exitcode)
+      cloudlog.event("websocketd exited", exitcode=proc.exitcode)
       time.sleep(5)
   except Exception:
     cloudlog.exception("manage_athenad.exception")

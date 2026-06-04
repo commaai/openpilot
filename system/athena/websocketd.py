@@ -1,6 +1,8 @@
 import base64
 import json
 import os
+import random
+import threading
 import time
 from hashlib import sha256, sha512
 from pathlib import Path
@@ -9,7 +11,12 @@ import jwt
 from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, load_pem_private_key
+from websocket import WebSocketException, create_connection
 
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.identity import bytes_to_identity, identity_to_bytes, is_dongle_id
 
 
@@ -318,3 +325,70 @@ def unpack_peer_message(data: str, recipient: str) -> tuple[str, dict | None, bo
 
   plaintext = decrypt_payload(message["payload"], sender, recipient)
   return sender, json.loads(plaintext) if plaintext is not None else None, plaintext is None
+
+
+def backoff(retries: int) -> int:
+  return random.randrange(0, min(128, int(2 ** retries)))
+
+
+def main(exit_event: threading.Event | None = None):
+  from openpilot.system.athena import athenad
+
+  try:
+    set_core_affinity([0, 1, 2, 3])
+  except Exception:
+    cloudlog.exception("failed to set core affinity")
+
+  params = Params()
+  try:
+    sync_ssh_keys()
+  except Exception:
+    cloudlog.exception("athena.websocket.sync_ssh_keys_failed")
+
+  dongle_id = params.get("DongleId")
+  athenad.UploadQueueCache.initialize(athenad.upload_queue)
+
+  api = Api(dongle_id)
+
+  conn_start = None
+  conn_retries = 0
+  while exit_event is None or not exit_event.is_set():
+    try:
+      if conn_start is None:
+        conn_start = time.monotonic()
+
+      token = api.get_token()
+      ws_uri = athenad.ATHENA_HOST + "/ws/v2/" + dongle_id + "?token=" + token
+      token_header = jwt.get_unverified_header(token)
+      cloudlog.event("athenad.main.connecting_ws", ws_uri=athenad.ATHENA_HOST + "/ws/v2/" + dongle_id, retries=conn_retries,
+                     token_alg=token_header.get("alg"), token_len=len(token))
+      ws = create_connection(ws_uri,
+                             enable_multithread=True,
+                             timeout=30.0)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=athenad.ATHENA_HOST + "/ws/v2/" + dongle_id, retries=conn_retries,
+                     duration=time.monotonic() - conn_start)
+      conn_start = None
+
+      conn_retries = 0
+      athenad.cur_upload_items.clear()
+
+      athenad.handle_long_poll(ws, exit_event)
+
+      ws.close()
+    except (KeyboardInterrupt, SystemExit):
+      break
+    except (ConnectionError, TimeoutError, WebSocketException):
+      cloudlog.exception("athenad.main.websocket_exception")
+      conn_retries += 1
+      params.remove("LastAthenaPingTime")
+    except Exception:
+      cloudlog.exception("athenad.main.exception")
+
+      conn_retries += 1
+      params.remove("LastAthenaPingTime")
+
+    time.sleep(backoff(conn_retries))
+
+
+if __name__ == "__main__":
+  main()

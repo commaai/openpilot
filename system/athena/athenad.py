@@ -6,7 +6,6 @@ import hashlib
 import json
 import os
 import queue
-import random
 import select
 import socket
 import subprocess
@@ -22,19 +21,17 @@ from typing import Any, cast
 from collections.abc import Callable
 
 import requests
-import jwt
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
+from websocket import (ABNF, WebSocket, WebSocketTimeoutException,
                        create_connection)
 
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.api import Api, get_key_pair
+from openpilot.common.api import get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
-from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
@@ -78,7 +75,6 @@ SAVE_PARAMS_BLOCKED_KEYS = {
   "AthenadAuthorizedKeys",
   "AthenadAuthorizedKeysEpoch",
   "AthenadPairingUntil",
-  "AthenadPid",
   "AthenadUploadQueue",
   "AthenadWebRTCActive",
   "DoUninstall",
@@ -88,6 +84,7 @@ SAVE_PARAMS_BLOCKED_KEYS = {
   "HardwareSerial",
   "LastAthenaPingTime",
   "SecOCKey",
+  "AthenadPid",
 }
 LIVE_STATE_SERVICES = [
   "deviceState",
@@ -1380,68 +1377,3 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
 
     if end_event.wait(5):
       break
-
-
-def backoff(retries: int) -> int:
-  return random.randrange(0, min(128, int(2 ** retries)))
-
-
-def main(exit_event: threading.Event | None = None):
-  try:
-    set_core_affinity([0, 1, 2, 3])
-  except Exception:
-    cloudlog.exception("failed to set core affinity")
-
-  params = Params()
-  try:
-    sync_ssh_keys()
-  except Exception:
-    cloudlog.exception("athena.websocket.sync_ssh_keys_failed")
-
-  dongle_id = params.get("DongleId")
-  UploadQueueCache.initialize(upload_queue)
-
-  api = Api(dongle_id)
-
-  conn_start = None
-  conn_retries = 0
-  while exit_event is None or not exit_event.is_set():
-    try:
-      if conn_start is None:
-        conn_start = time.monotonic()
-
-      token = api.get_token()
-      ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id + "?token=" + token
-      token_header = jwt.get_unverified_header(token)
-      cloudlog.event("athenad.main.connecting_ws", ws_uri=ATHENA_HOST + "/ws/v2/" + dongle_id, retries=conn_retries,
-                     token_alg=token_header.get("alg"), token_len=len(token))
-      ws = create_connection(ws_uri,
-                             enable_multithread=True,
-                             timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ATHENA_HOST + "/ws/v2/" + dongle_id, retries=conn_retries,
-                     duration=time.monotonic() - conn_start)
-      conn_start = None
-
-      conn_retries = 0
-      cur_upload_items.clear()
-
-      handle_long_poll(ws, exit_event)
-
-      ws.close()
-    except (KeyboardInterrupt, SystemExit):
-      break
-    except (ConnectionError, TimeoutError, WebSocketException):
-      cloudlog.exception("athenad.main.websocket_exception")
-      conn_retries += 1
-      params.remove("LastAthenaPingTime")
-    except Exception:
-      cloudlog.exception("athenad.main.exception")
-
-      conn_retries += 1
-      params.remove("LastAthenaPingTime")
-
-    time.sleep(backoff(conn_retries))
-
-
-if __name__ == "__main__":
-  main()
