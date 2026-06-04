@@ -350,10 +350,8 @@ class TestCarModelBase(unittest.TestCase):
     # A failure here means openpilot encoded a value outside panda's safety envelope —
     # a real mismatch in TX logic that needs to be corrected in one or both sides.
     if controls_allowed and cruise_engaged:
-      self.assertFalse(len(blocked_addrs),
-                       f"panda safety_tx_hook blocked messages that openpilot sent "
-                       f"(controls_allowed={controls_allowed}, cruise_engaged={cruise_engaged}): "
-                       f"{dict(blocked_addrs)}")
+      msg = f"panda safety_tx_hook blocked messages openpilot sent (ca={controls_allowed}, ce={cruise_engaged}): {dict(blocked_addrs)}"
+      self.assertFalse(len(blocked_addrs), msg)
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
