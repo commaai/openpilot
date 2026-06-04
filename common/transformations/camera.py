@@ -10,6 +10,7 @@ class CameraConfig:
   width: int
   height: int
   focal_length: float
+  focal_length_y: float | None = None
 
   @property
   def size(self):
@@ -18,9 +19,10 @@ class CameraConfig:
   @property
   def intrinsics(self):
     # aka 'K' aka camera_frame_from_view_frame
+    fy = self.focal_length if self.focal_length_y is None else self.focal_length_y
     return np.array([
       [self.focal_length,  0.0, float(self.width)/2],
-      [0.0, self.focal_length, float(self.height)/2],
+      [0.0, fy, float(self.height)/2],
       [0.0,  0.0, 1.0]
     ])
 
@@ -48,8 +50,12 @@ class DeviceCameraConfig:
 
 _ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
 _os_fisheye = CameraConfig(2688 // 2, 1520 // 2, 567.0 / 4 * 3)
-_asius_road = CameraConfig(1920, 1080, 2450.0)
-_asius_wide = CameraConfig(1920, 1080, 567.0)
+# Dragon IMX219 frames are delivered in a 1920x1080 buffer, but live visual
+# checks show the image has 2:1 horizontal pixel stretch. Modeld consumes the
+# full frame, so represent that with non-square-pixel intrinsics instead of
+# modifying camerad/model inputs.
+_asius_road = CameraConfig(1920, 1080, 4900.0, 2450.0)
+_asius_wide = CameraConfig(1920, 1080, 1134.0, 567.0)
 _ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)
 _os_config = DeviceCameraConfig(CameraConfig(2688 // 2, 1520 // 2, 1522.0 * 3 / 4), _os_fisheye, _os_fisheye)
 _asius_config = DeviceCameraConfig(_asius_road, _NoneCameraConfig(), _asius_wide)
