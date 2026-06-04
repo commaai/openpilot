@@ -19,7 +19,6 @@ from opendbc.car.values import Platform, PLATFORMS
 from opendbc.safety.tests.libsafety import libsafety_py
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
-from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source, internal_source, comma_api_source
@@ -333,13 +332,21 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.set_controls_allowed(controls_allowed)
     self.safety.set_cruise_engaged_prev(cruise_engaged)
 
-    # Generate a random CarControl — covers the full range of longitudinal actuation.
-    # real_floats=True keeps values finite so the car controller can clip/encode them.
-    # latActive is forced False: panda rate-limits steer from cold-start (prev=0) and
-    # would block any non-zero angle/torque in the first frame regardless of validity.
-    cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
-    cc_msg['latActive'] = False
-    CC = car.CarControl.new_message(**cc_msg).as_reader()
+    # Only fuzz longitudinal-relevant fields; leave everything else at safe defaults.
+    # Full FuzzyGenerator is too broad: random cruiseControl.cancel/override, random gas/brake
+    # actuators, and random enabled flag all interact with panda state in ways unrelated to the
+    # accel encoding we're testing here.
+    # gas_pressed_prev must be False — it gates get_longitudinal_allowed() alongside controls_allowed.
+    self.safety.set_gas_pressed_prev(False)
+    long_active = data.draw(st.booleans())
+    accel = data.draw(st.floats(min_value=-4.0, max_value=4.0, allow_nan=False, allow_infinity=False))
+    CC = structs.CarControl(
+      enabled=controls_allowed,
+      longActive=long_active,
+      latActive=False,
+      actuators=structs.CarControl.Actuators(accel=accel),
+      cruiseControl=structs.CarControl.CruiseControl(resume=cruise_engaged),
+    ).as_reader()
 
     now_nanos = 0
     CI = self.CarInterface(self.CP)
