@@ -19,6 +19,7 @@ from opendbc.car.values import Platform, PLATFORMS
 from opendbc.safety.tests.libsafety import libsafety_py
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
+from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source, internal_source, comma_api_source
@@ -301,6 +302,58 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.set_controls_allowed(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
     test_car_controller(CC.as_reader())
+
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+    Fuzz CarControl inputs across random panda safety states and assert panda's TX hook
+    never blocks messages that openpilot intends to send while controls are allowed.
+    Mirrors the approach of test_panda_safety_carstate_fuzzy for RX, extended to TX.
+    Detects mismatches in TX safety logic between openpilot and panda — e.g. cases where
+    openpilot's car controller encodes a value outside panda's safety envelope.
+    """
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    # Draw random panda safety state — the two flags that govern TX permissions
+    controls_allowed = data.draw(st.booleans())
+    cruise_engaged = data.draw(st.booleans())
+    self.safety.set_controls_allowed(controls_allowed)
+    self.safety.set_cruise_engaged_prev(cruise_engaged)
+
+    # Generate a random CarControl — covers the full range of actuation commands
+    # real_floats=True keeps values finite so the car controller can clip/encode them
+    cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+    CC = car.CarControl.new_message(**cc_msg).as_reader()
+
+    now_nanos = 0
+    CI = self.CarInterface(self.CP)
+    blocked_addrs: Counter = Counter()
+
+    for _ in range(round(10.0 / DT_CTRL)):
+      CI.update([])
+      _, sendcan = CI.apply(CC, now_nanos)
+      now_nanos += DT_CTRL * 1e9
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        if not self.safety.safety_tx_hook(to_send):
+          blocked_addrs[hex(addr)] += 1
+
+    # When panda is fully permissive, every message openpilot generated must pass.
+    # A failure here means openpilot encoded a value outside panda's safety envelope —
+    # a real mismatch in TX logic that needs to be corrected in one or both sides.
+    if controls_allowed and cruise_engaged:
+      self.assertFalse(len(blocked_addrs),
+                       f"panda safety_tx_hook blocked messages that openpilot sent "
+                       f"(controls_allowed={controls_allowed}, cruise_engaged={cruise_engaged}): "
+                       f"{dict(blocked_addrs)}")
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
