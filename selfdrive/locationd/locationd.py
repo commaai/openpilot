@@ -100,15 +100,6 @@ class LocationEstimator:
       cloudlog.error("Non-finite values detected, kalman reset")
       self.reset(t)
 
-  def _observe(self, sensor_time: float, kind: ObservationKind, meas: np.ndarray):
-    res = self.kf.predict_and_observe(sensor_time, kind, meas)
-    if res is not None:
-      _, new_x, _, new_P, _, _, (err,), _, _ = res
-      self.observation_errors[kind] = np.array(err)
-      self.observations[kind] = meas
-      return new_x, new_P
-    return None, None
-
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
     new_x, new_P = None, None
     if which == "accelerometer" and msg.which() == "acceleration":
@@ -125,7 +116,11 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
-      new_x, new_P = self._observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
+      acc_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
+      if acc_res is not None:
+        _, new_x, _, new_P, _, _, (acc_err,), _, _ = acc_res
+        self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(acc_err)
+        self.observations[ObservationKind.PHONE_ACCEL] = meas
 
     elif which == "gyroscope" and msg.which() == "gyroUncalibrated":
       sensor_time = msg.timestamp * 1e-9
@@ -147,7 +142,11 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ROTATION_SANITY_CHECK or not gyro_valid:
         return HandleLogResult.INPUT_INVALID
 
-      new_x, new_P = self._observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
+      gyro_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
+      if gyro_res is not None:
+        _, new_x, _, new_P, _, _, (gyro_err,), _, _ = gyro_res
+        self.observation_errors[ObservationKind.PHONE_GYRO] = np.array(gyro_err)
+        self.observations[ObservationKind.PHONE_GYRO] = meas
 
     elif which == "carState":
       self.car_speed = abs(msg.vEgo)
@@ -156,12 +155,20 @@ class LocationEstimator:
         accel_meas = np.array([msg.aEgo, 0, -9.81])
         if np.linalg.norm(accel_meas) >= ACCEL_SANITY_CHECK:
           return HandleLogResult.INPUT_INVALID
-        self._observe(t, ObservationKind.PHONE_ACCEL, accel_meas)
+        acc_res = self.kf.predict_and_observe(t, ObservationKind.PHONE_ACCEL, accel_meas)
+        if acc_res is not None:
+          _, _, _, _, _, _, (acc_err,), _, _ = acc_res
+          self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(acc_err)
+          self.observations[ObservationKind.PHONE_ACCEL] = accel_meas
 
         gyro_meas = np.array([0, 0, -msg.yawRate])
         if np.linalg.norm(gyro_meas) >= ROTATION_SANITY_CHECK:
           return HandleLogResult.INPUT_INVALID
-        new_x, new_P = self._observe(t, ObservationKind.PHONE_GYRO, gyro_meas)
+        gyro_res = self.kf.predict_and_observe(t, ObservationKind.PHONE_GYRO, gyro_meas)
+        if gyro_res is not None:
+          _, new_x, _, new_P, _, _, (gyro_err,), _, _ = gyro_res
+          self.observation_errors[ObservationKind.PHONE_GYRO] = np.array(gyro_err)
+          self.observations[ObservationKind.PHONE_GYRO] = gyro_meas
 
     elif which == "liveCalibration":
       # Note that we use this message during calibration
@@ -221,9 +228,11 @@ class LocationEstimator:
       self._finite_check(t, new_x, new_P)
     return HandleLogResult.SUCCESS
 
-  def get_msg(self, sensors_valid: bool, inputs_valid: bool, filter_valid: bool):
+  def get_msg(self, sensors_valid: bool, inputs_valid: bool, filter_initialized: bool):
     state, cov = self.kf.x, self.kf.P
     std = np.sqrt(np.diag(cov))
+    filter_time_valid = bool(np.isfinite(self.kf.t))
+    filter_valid = filter_initialized and filter_time_valid
 
     orientation_ned, orientation_ned_std = state[States.NED_ORIENTATION], std[States.NED_ORIENTATION]
     velocity_device, velocity_device_std = state[States.DEVICE_VELOCITY], std[States.DEVICE_VELOCITY]
@@ -283,7 +292,6 @@ def main():
   pm = messaging.PubMaster(['livePose'])
   sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry',
                            ignore_avg_freq=['carState'])
-
   # separate sensor sockets for efficiency
   sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
   sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)

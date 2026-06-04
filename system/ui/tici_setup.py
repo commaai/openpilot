@@ -30,7 +30,7 @@ BODY_FONT_SIZE = 80
 BUTTON_HEIGHT = 160
 BUTTON_SPACING = 50
 
-OPENPILOT_URL = "https://openpilot.comma.ai"
+OPENPILOT_URL = "https://openpilot.asius.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
@@ -108,10 +108,10 @@ class Setup(Widget):
                                                       text_color=rl.Color(255, 89, 79, 255),
                                                       text_padding=60)
     self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
-                                                     + "⚠️ It has not been tested by comma.\n\n"
+                                                     + "⚠️ It has not been tested by Asius.\n\n"
                                                      + "⚠️ It may not comply with relevant safety standards.\n\n"
                                                      + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
-                                                     + "If you'd like to proceed, use https://flash.comma.ai "
+                                                     + "If you'd like to proceed, use https://flash.asius.ai "
                                                      + "to restore your device to a factory state later.",
                                                      68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=60)
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
@@ -334,7 +334,7 @@ class Setup(Widget):
   def download(self, url: str):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
-      url = f"https://installer.comma.ai/{url}"
+      url = f"https://installer.asius.ai/{url}"
 
     parsed = urlparse(url, scheme='https')
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()

@@ -32,7 +32,7 @@ from openpilot.selfdrive.ui.mici.widgets.button import BigButton, GreyBigButton
 
 NetworkType = log.DeviceState.NetworkType
 
-OPENPILOT_URL = "https://openpilot.comma.ai"
+OPENPILOT_URL = "https://openpilot.asius.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
@@ -180,10 +180,10 @@ class CustomSoftwareWarningPage(NavScroller):
     self._scroller.add_widgets([
       GreyBigButton("caution: installing\n3rd party software", "swipe down to go back",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
-      GreyBigButton("", "• It has not been tested by comma."),
+      GreyBigButton("", "• It has not been tested by Asius."),
       GreyBigButton("", "• It may not comply with safety standards."),
       GreyBigButton("", "• It may damage your device and/or vehicle."),
-      GreyBigButton("how to restore to a\nfactory state later", "https://flash.comma.ai",
+      GreyBigButton("how to restore to a\nfactory state later", "https://flash.asius.ai",
                     gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
     ])
@@ -316,7 +316,7 @@ class NetworkSetupPageBase(Scroller):
 
     def on_waiting_click():
       offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
-      self._scroller.scroll_to(offset, smooth=True, block_interaction=True)
+      self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
       # trigger grow when wifi button in view
       self._pending_wifi_grow_animation = True
 
@@ -399,7 +399,7 @@ class NetworkSetupPageBase(Scroller):
     self._scroller._layout()
     end_offset = -(self._scroller.content_size - self._rect.width)
     remaining = self._scroller.scroll_panel.get_offset() - end_offset
-    self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
+    self._scroller.scroll_to(remaining, smooth=True, block_interrupt=True, block_widget_interaction=True)
     self._pending_continue_grow_animation = True
 
   def set_custom_software(self, custom_software: bool):
@@ -498,7 +498,7 @@ class Setup(Widget):
   def _download(self, url: str):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
-      url = f"https://installer.comma.ai/{url}"
+      url = f"https://installer.asius.ai/{url}"
 
     parsed = urlparse(url, scheme='https')
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()

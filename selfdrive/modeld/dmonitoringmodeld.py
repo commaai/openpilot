@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 import os
-import ctypes
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
-set_tinygrad_backend_from_compiled_flags()
-
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
 from tinygrad.tensor import Tensor
-from tinygrad.device import Device
 import time
 import pickle
 import numpy as np
@@ -20,18 +16,19 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
-from openpilot.system.hardware import ASIUS
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
 METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'
 
+
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
+    self.DEV = get_tg_input_devices(PROCESS_NAME, usbgpu=False)['DEV']
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
@@ -46,50 +43,27 @@ class ModelState:
     self.frame_buf_params = get_nv12_info(cam_w, cam_h)
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
-    self._last_model_output: dict[str, np.ndarray] | None = None
-    reuse_defaults = ASIUS and Device.DEFAULT == "CL"
-    default_eval_interval = "3" if reuse_defaults else "1"
-    self._model_eval_interval = max(1, int(os.getenv("DMODEL_EVAL_INTERVAL", default_eval_interval)))
-    self._reuse_left = 0
     self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
-    with open(CompileConfig(cam_w, cam_h, prefix='dm_', prepare_only=True).pkl_path, "rb") as f:
+    with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
       self.image_warp = pickle.load(f)
 
-  def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[dict[str, np.ndarray], float, bool]:
-    if self._last_model_output is not None and self._reuse_left > 0:
-      self._reuse_left -= 1
-      return self._last_model_output, 0.0, True
-
+  def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
 
-    ptr = buf.data.ctypes.data
+    ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-    yuv_size = self.frame_buf_params[3]
-    if Device.DEFAULT == "CL":
-      if ptr not in self._blob_cache:
-        self._blob_cache[ptr] = Tensor.empty(yuv_size, dtype='uint8', device=Device.DEFAULT)
-        self._blob_cache[ptr].uop.buffer.ensure_allocated()
-      frame_mv = memoryview((ctypes.c_ubyte * yuv_size).from_address(ptr))
-      self._blob_cache[ptr].uop.buffer.copyin(frame_mv)
-    else:
-      if ptr not in self._blob_cache:
-        self._blob_cache[ptr] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+    if ptr not in self._blob_cache:
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DEV)
 
     self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()
+    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
 
-    output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
+    output = self.model_run(**self.tensor_inputs).numpy().flatten()
 
     t2 = time.perf_counter()
-    raw_pred = output.tobytes() if SEND_RAW_PRED else b''
-    parsed_output = slice_outputs(output, self.output_slices)
-    parsed_output = parse_model_output(parsed_output)
-    parsed_output['raw_pred'] = raw_pred
-    self._last_model_output = parsed_output
-    self._reuse_left = self._model_eval_interval - 1
-    return parsed_output, t2 - t1, False
+    return output, t2 - t1
 
 def slice_outputs(model_outputs, output_slices):
   return  {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -101,7 +75,7 @@ def parse_model_output(model_output):
     face_descs = model_output[f'face_descs_{ds_suffix}']
     parsed[f'face_descs_{ds_suffix}'] = face_descs[:, :-6]
     parsed[f'face_descs_{ds_suffix}_std'] = safe_exp(face_descs[:, -6:])
-    for key in ['face_prob', 'eyes_visible_prob', 'eyes_closed_prob', 'using_phone_prob']:
+    for key in ['face_prob', 'left_eye_prob', 'right_eye_prob','left_blink_prob', 'right_blink_prob', 'sunglasses_prob', 'using_phone_prob', 'sleep_prob']:
       parsed[f'{key}_{ds_suffix}'] = sigmoid(model_output[f'{key}_{ds_suffix}'])
   return parsed
 
@@ -111,9 +85,13 @@ def fill_driver_data(msg, model_output, ds_suffix):
   msg.facePosition = model_output[f'face_descs_{ds_suffix}'][0, 3:5].tolist()
   msg.facePositionStd = model_output[f'face_descs_{ds_suffix}_std'][0, 3:5].tolist()
   msg.faceProb = model_output[f'face_prob_{ds_suffix}'][0, 0].item()
-  msg.eyesVisibleProb = model_output[f'eyes_visible_prob_{ds_suffix}'][0, 0].item()
-  msg.eyesClosedProb = model_output[f'eyes_closed_prob_{ds_suffix}'][0, 0].item()
+  msg.leftEyeProb = model_output[f'left_eye_prob_{ds_suffix}'][0, 0].item()
+  msg.rightEyeProb = model_output[f'right_eye_prob_{ds_suffix}'][0, 0].item()
+  msg.leftBlinkProb = model_output[f'left_blink_prob_{ds_suffix}'][0, 0].item()
+  msg.rightBlinkProb = model_output[f'right_blink_prob_{ds_suffix}'][0, 0].item()
+  msg.sunglassesProb = model_output[f'sunglasses_prob_{ds_suffix}'][0, 0].item()
   msg.phoneProb = model_output[f'using_phone_prob_{ds_suffix}'][0, 0].item()
+  msg.sleepProb = model_output[f'sleep_prob_{ds_suffix}'][0, 0].item()
 
 def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)
@@ -161,10 +139,13 @@ def main():
       calib[:] = np.array(sm["liveCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
-    model_output, gpu_execution_time, reused_output = model.run(buf, calib, model_transform)
+    model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
-    msg = get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof,
-                                 t2 - t1 if reused_output else gpu_execution_time, gpu_execution_time)
+    raw_pred = model_output.tobytes() if SEND_RAW_PRED else b''
+    model_output = slice_outputs(model_output, model.output_slices)
+    model_output = parse_model_output(model_output)
+    model_output['raw_pred'] = raw_pred
+    msg = get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time)
     pm.send("driverStateV2", msg)
 
 

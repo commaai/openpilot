@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 import os
+os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 import ctypes
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, CompileConfig, set_tinygrad_backend_from_compiled_flags
-set_tinygrad_backend_from_compiled_flags()
-
-USBGPU = "USBGPU" in os.environ
-if USBGPU:
-  os.environ['DEV'] = 'AMD'
-  os.environ['AMD_IFACE'] = 'USB'
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 import time
@@ -28,18 +22,15 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, tune_modeld_jit_launch_sizes
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS, tune_modeld_jit_launch_sizes
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
-from openpilot.common.file_chunker import read_file_chunked
+from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
+from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices
 from openpilot.system.hardware import ASIUS
-
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-
-VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
-POLICY_METADATA_PATH = MODELS_DIR / 'driving_policy_metadata.pkl'
 
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
@@ -66,26 +57,31 @@ def tensors_to_numpy_flat(*tensors: Tensor) -> list[np.ndarray]:
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
                           lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
+  if 'action' not in model_output:
     plan = model_output['plan'][0]
     desired_accel, should_stop = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0],
                                                      plan[:,Plan.ACCELERATION][:,0],
                                                      ModelConstants.T_IDXS,
                                                      action_t=long_action_t)
-    desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
-
     desired_curvature = get_curvature_from_plan(plan[:,Plan.T_FROM_CURRENT_EULER][:,2],
                                                 plan[:,Plan.ORIENTATION_RATE][:,2],
                                                 ModelConstants.T_IDXS,
                                                 v_ego,
                                                 lat_action_t)
-    if v_ego > MIN_LAT_CONTROL_SPEED:
-      desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, LAT_SMOOTH_SECONDS)
-    else:
-      desired_curvature = prev_action.desiredCurvature
+  else:
+    desired_accel = model_output['action'][0,1]
+    desired_curvature = model_output['action'][0,0] / (max(1.0, v_ego))**2
+    should_stop = (v_ego < 0.3 and desired_accel < 0.1)
+  desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
+  if v_ego > MIN_LAT_CONTROL_SPEED:
+    desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, LAT_SMOOTH_SECONDS)
+  else:
+    desired_curvature = prev_action.desiredCurvature
 
-    return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
-                                  desiredAcceleration=float(desired_accel),
-                                  shouldStop=bool(should_stop))
+  return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
+                                desiredAcceleration=float(desired_accel),
+                                shouldStop=bool(should_stop))
+
 
 class FrameMeta:
   frame_id: int = 0
@@ -100,24 +96,25 @@ class FrameMeta:
 class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
-  def __init__(self, cam_w: int, cam_h: int):
-    with open(VISION_METADATA_PATH, 'rb') as f:
-      vision_metadata = pickle.load(f)
-      self.vision_input_shapes =  vision_metadata['input_shapes']
-      self.vision_input_names = list(self.vision_input_shapes.keys())
-      self.vision_output_slices = vision_metadata['output_slices']
+  def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
+    input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
+    self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
+    jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
+    vision_metadata = jits['metadata']['vision']
+    self.vision_input_shapes = vision_metadata['input_shapes']
+    self.vision_input_names = list(self.vision_input_shapes.keys())
+    self.vision_output_slices = vision_metadata['output_slices']
 
-    with open(POLICY_METADATA_PATH, 'rb') as f:
-      policy_metadata = pickle.load(f)
-      self.policy_input_shapes =  policy_metadata['input_shapes']
-      self.policy_output_slices = policy_metadata['output_slices']
+    policy_metadata = jits['metadata']['on_policy']
+    self.policy_input_shapes = policy_metadata['input_shapes']
+    self.policy_output_slices = policy_metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
-    self.full_frames : dict[str, Tensor] = {}
-    self._blob_cache : dict[int, Tensor] = {}
+    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+    self.full_frames: dict[str, Tensor] = {}
+    self._blob_cache: dict[int, Tensor] = {}
     self._last_model_output: dict[str, np.ndarray] | None = None
     reuse_defaults = ASIUS and Device.DEFAULT == "CL"
     default_eval_interval = "2" if reuse_defaults else "1"
@@ -126,45 +123,44 @@ class ModelState:
     self._extra_reuse_period = max(0, int(os.getenv("MODEL_EXTRA_REUSE_PERIOD", default_extra_reuse_period)))
     self._reuse_left = 0
     self._model_eval_count = 0
-    self._stale_big_on_full = ASIUS and Device.DEFAULT == "CL" and os.getenv("MODEL_STALE_BIG_ON_FULL", "1") != "0"
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=False).pkl_path))
+    self.run_policy = jits['run_policy']
     tune_modeld_jit_launch_sizes(self.run_policy)
-    self.warp_enqueue = pickle.loads(read_file_chunked(CompileConfig(cam_w, cam_h, prefix='driving_', prepare_only=True).pkl_path))
-    self.warp_enqueue(
-      **self.input_queues,
-      frame=Tensor.zeros(self.frame_buf_params['img'][3], dtype='uint8').contiguous().realize(),
-      big_frame=Tensor.zeros(self.frame_buf_params['big_img'][3], dtype='uint8').contiguous().realize())
+    self.warp_enqueue = jits[(cam_w,cam_h)]
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
     return parsed_model_outputs
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
-                inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
-    reuse_last_output = self._last_model_output is not None and self._reuse_left > 0
-    update_keys = list(bufs.keys())
-    if self._stale_big_on_full and not prepare_only and not reuse_last_output and 'big_img' in self.full_frames:
-      update_keys = [k for k in update_keys if k != 'big_img']
-    prime_stale_big = self._stale_big_on_full and self._last_model_output is None and not prepare_only
-
-    for key in update_keys:
-      ptr = bufs[key].data.ctypes.data
+          inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
+    for key in bufs.keys():
       yuv_size = self.frame_buf_params[key][3]
-      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-      cache_key = (key, ptr)
-      if Device.DEFAULT == "CL":
+      data = bufs[key].data
+      if isinstance(data, memoryview):
+        frame_mv = data.cast('B')[:yuv_size]
+        ptr = ctypes.addressof(ctypes.c_char.from_buffer(frame_mv))
+      else:
+        ptr = data.ctypes.data
+        frame_mv = memoryview((ctypes.c_ubyte * yuv_size).from_address(ptr))
+
+      if Device.DEFAULT == "CL" and self.WARP_DEV == "CL":
+        cache_key = (key, ptr)
         if cache_key not in self._blob_cache:
           self._blob_cache[cache_key] = Tensor.empty(yuv_size, dtype='uint8', device=Device.DEFAULT)
           self._blob_cache[cache_key].uop.buffer.ensure_allocated()
-        frame_mv = memoryview((ctypes.c_ubyte * yuv_size).from_address(ptr))
         self._blob_cache[cache_key].uop.buffer.copyin(frame_mv)
-        self.full_frames[key] = self._blob_cache[cache_key]
+      elif isinstance(data, memoryview):
+        arr = np.frombuffer(frame_mv, dtype=np.uint8, count=yuv_size).copy()
+        self.full_frames[key] = Tensor(arr, device=self.WARP_DEV).contiguous().realize()
+        continue
       else:
+        # There is a ringbuffer of imgs, just cache tensors pointing to all of them.
+        cache_key = (key, ptr)
         if cache_key not in self._blob_cache:
-          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
-        self.full_frames[key] = self._blob_cache[cache_key]
+          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
+      self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
@@ -174,41 +170,42 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    if prime_stale_big:
-      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
+    img, big_img = self.warp_enqueue(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
 
-    if prepare_only or reuse_last_output:
-      self.warp_enqueue(**self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
-      if prepare_only:
-        return None
+    if prepare_only:
+      return None
+    if self._last_model_output is not None and self._reuse_left > 0:
       self._reuse_left -= 1
       return self._last_model_output
 
-    model_outputs = self.run_policy(
-      **self.input_queues, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
+    vision_output, on_policy_output = self.run_policy(
+      **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
     )
     self._model_eval_count += 1
     self._reuse_left = self._model_eval_interval - 1
     if self._extra_reuse_period > 0 and self._model_eval_count % self._extra_reuse_period == 0:
       self._reuse_left += 1
 
-    vision_tensors = model_outputs[:-1]
-    policy_tensor = model_outputs[-1]
-    flat_outputs = tensors_to_numpy_flat(*vision_tensors, policy_tensor)
-    vision_output = np.concatenate(flat_outputs[:-1])
-    policy_output = flat_outputs[-1]
+    vision_output, on_policy_output = tensors_to_numpy_flat(vision_output, on_policy_output)
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
-    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(policy_output, self.policy_output_slices))
+    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
 
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), policy_output.copy()])
+      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy()])
     self._last_model_output = combined_outputs_dict
     return combined_outputs_dict
 
 
 def main(demo=False):
   cloudlog.warning("modeld init")
+
+  _present = usbgpu_present()
+  _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+  USBGPU = _present and _compiled
+  params = Params()
+  params.put_bool("UsbGpuPresent", _present)
+  params.put_bool("UsbGpuCompiled", _compiled)
 
   if not USBGPU:
     # USB GPU currently saturates a core so can't do this yet,
@@ -240,7 +237,7 @@ def main(demo=False):
 
   st = time.monotonic()
   cloudlog.warning("loading model")
-  model = ModelState(vipc_client_main.width, vipc_client_main.height)
+  model = ModelState(vipc_client_main.width, vipc_client_main.height, USBGPU)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
@@ -262,7 +259,6 @@ def main(demo=False):
   buf_main, buf_extra = None, None
   meta_main = FrameMeta()
   meta_extra = FrameMeta()
-
 
   if demo:
     CP = get_demo_car_params()
@@ -346,7 +342,7 @@ def main(demo=False):
 
     bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
     transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
-    inputs:dict[str, np.ndarray] = {
+    inputs: dict[str, np.ndarray] = {
       'desire_pulse': vec_desire,
       'traffic_convention': traffic_convention,
     }
@@ -363,7 +359,9 @@ def main(demo=False):
 
       frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
       action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
-      action = get_action_from_model(model_output, prev_action, lat_delay + frame_delay + action_delay, long_delay + frame_delay + action_delay, v_ego)
+      lat_action_t = lat_delay + frame_delay + action_delay
+      long_action_t = long_delay + frame_delay + action_delay
+      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
       prev_action = action
       fill_model_msg(drivingdata_send, modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,

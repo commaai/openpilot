@@ -18,12 +18,8 @@ from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, Multip
 # These are only used for AdvancedNetworkSettings, standalone apps just need WifiManagerUI
 try:
   from openpilot.common.params import Params
-  from openpilot.selfdrive.ui.ui_state import ui_state
-  from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 except Exception:
   Params = None
-  ui_state = None
-  PrimeType = None
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -175,7 +171,7 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_manager.set_tethering_active(checked)
 
   def _toggle_roaming(self):
-    self._params.put_bool("GsmRoaming", self._roaming_action.get_state())
+    self._params.put_bool("GsmRoaming", self._roaming_action.get_state(), block=True)
 
   def _edit_apn(self):
     def update_apn(result: DialogResult):
@@ -186,7 +182,7 @@ class AdvancedNetworkSettings(Widget):
       if apn == "":
         self._params.remove("GsmApn")
       else:
-        self._params.put("GsmApn", apn)
+        self._params.put("GsmApn", apn, block=True)
 
     current_apn = self._params.get("GsmApn") or ""
     self._keyboard.reset(min_text_size=0)
@@ -196,7 +192,7 @@ class AdvancedNetworkSettings(Widget):
     gui_app.push_widget(self._keyboard)
 
   def _toggle_cellular_metered(self):
-    self._params.put_bool("GsmMetered", self._cellular_metered_action.get_state())
+    self._params.put_bool("GsmMetered", self._cellular_metered_action.get_state(), block=True)
 
   def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)
@@ -252,8 +248,7 @@ class AdvancedNetworkSettings(Widget):
   def _update_state(self):
     self._wifi_manager.process_callbacks()
 
-    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
-    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    show_cell_settings = True
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)

@@ -1,104 +1,49 @@
 #!/usr/bin/env python3
-import time
-import json
-import jwt
-from typing import cast
+from pathlib import Path
 
-from datetime import datetime, timedelta, UTC
-from openpilot.common.api import api_get, get_key_pair
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
+
+from openpilot.common.api import get_key_pair
 from openpilot.common.params import Params
-from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, PC, ASIUS
+from openpilot.system.hardware import PC
+from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.athena.identity import dongle_id_from_public_key
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
-def is_registered_device() -> bool:
-  dongle = Params().get("DongleId")
-  return dongle not in (None, UNREGISTERED_DONGLE_ID)
-
 
 def register(show_spinner=False) -> str | None:
-  """
-  All devices built since March 2024 come with all
-  info stored in /persist/. This is kept around
-  only for devices built before then.
-
-  With a backend update to take serial number instead
-  of dongle ID to some endpoints, this can be removed
-  entirely.
-  """
   params = Params()
-
   dongle_id: str | None = params.get("DongleId")
 
-  # Create registration token, in the future, this key will make JWTs directly
-  jwt_algo, private_key, public_key = get_key_pair()
+  try:
+    _, _, public_key = get_key_pair()
+    if public_key is None:
+      private_key_path = Path(Paths.persist_root()) / "comma" / "id_ed25519"
+      public_key_path = private_key_path.with_suffix(".pub")
+      private_key_path.parent.mkdir(parents=True, exist_ok=True)
 
-  if ASIUS:
-    if dongle_id is None:
-      import secrets
-      dongle_id = secrets.token_hex(8)
-      params.put("DongleId", dongle_id)
-    set_offroad_alert("Offroad_UnregisteredHardware", False)
-    return dongle_id
+      private_key = ed25519.Ed25519PrivateKey.generate()
+      private_key_path.write_bytes(private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
+      private_key_path.chmod(0o600)
 
-  if not public_key:
+      public_key = private_key.public_key().public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+      public_key_path.write_bytes(public_key)
+      public_key = public_key.decode()
+
+    expected_dongle_id = dongle_id_from_public_key(public_key)
+    if dongle_id != expected_dongle_id:
+      dongle_id = expected_dongle_id
+  except Exception:
     dongle_id = UNREGISTERED_DONGLE_ID
-    cloudlog.warning("missing public key")
-  elif dongle_id is None:
-    if show_spinner:
-      spinner = Spinner()
-      spinner.update("registering device")
-
-    # Block until we get the imei
-    serial = HARDWARE.get_serial()
-    device_type = HARDWARE.get_device_type()
-    start_time = time.monotonic()
-    imei1: str | None = None
-    imei2: str | None = None
-    while imei1 is None and imei2 is None:
-      try:
-        imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)
-      except Exception:
-        cloudlog.exception("Error getting imei, trying again...")
-        time.sleep(1)
-
-      if time.monotonic() - start_time > 60 and show_spinner:
-        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
-
-    backoff = 0
-    start_time = time.monotonic()
-    while True:
-      try:
-        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)},
-                                    cast(str, private_key), algorithm=jwt_algo)
-        cloudlog.info("getting pilotauth")
-        resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                       imei=imei1, imei2=imei2, serial=serial, device_type=device_type, public_key=public_key, register_token=register_token)
-
-        if resp.status_code in (402, 403):
-          cloudlog.info(f"Unable to register device, got {resp.status_code}")
-          dongle_id = UNREGISTERED_DONGLE_ID
-        else:
-          dongleauth = json.loads(resp.text)
-          dongle_id = dongleauth["dongle_id"]
-        break
-      except Exception:
-        cloudlog.exception("failed to authenticate")
-        backoff = min(backoff + 1, 15)
-        time.sleep(backoff)
-
-      if time.monotonic() - start_time > 60 and show_spinner:
-        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
-
-    if show_spinner:
-      spinner.close()
+    cloudlog.exception("failed to create Ed25519 identity")
 
   if dongle_id:
-    params.put("DongleId", dongle_id)
+    params.put("DongleId", dongle_id, block=True)
     set_offroad_alert("Offroad_UnregisteredHardware", (dongle_id == UNREGISTERED_DONGLE_ID) and not PC)
   return dongle_id
 

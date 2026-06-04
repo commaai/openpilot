@@ -21,8 +21,14 @@ if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
 fi
 function op_install() {
   echo "Installing op system-wide..."
-  CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
-  grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
+  OP_SH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh"
+  CMD=$(cat <<EOF
+alias op='$OP_SH "\$@"'
+_op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
+[ -n "\$BASH_VERSION" ] && complete -F _op_completions -o default op
+EOF
+)
+  grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 }
 
@@ -415,7 +421,7 @@ function op_default() {
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
-  echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
+  echo -e "  ${BOLD}ssh${NC}          SSH helper"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Scripts]:${NC}"
   echo -e "  ${BOLD}script${NC}       Run a script (e.g. op script som-debug)"

@@ -6,8 +6,15 @@
 #include <utility>
 #include <vector>
 
+#if __has_include("media/cam_isp.h") && __has_include("media/cam_sensor.h")
 #include "media/cam_isp.h"
 #include "media/cam_sensor.h"
+#else
+struct i2c_random_wr_payload {
+  uint32_t reg_addr;
+  uint32_t reg_data;
+};
+#endif
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/sensors/ox03c10_registers.h"

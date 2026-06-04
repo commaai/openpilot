@@ -3,10 +3,9 @@ import qrcode
 import numpy as np
 import time
 
-from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.athena.websocketd import PAIRING_MODE_SECONDS, pairing_url
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -15,7 +14,7 @@ from openpilot.system.ui.widgets.label import UnifiedLabel
 class PairingDialog(NavWidget):
   """Dialog for device pairing with QR code."""
 
-  QR_REFRESH_INTERVAL = 300  # 5 minutes in seconds
+  QR_REFRESH_INTERVAL = PAIRING_MODE_SECONDS
 
   def __init__(self):
     super().__init__()
@@ -24,16 +23,15 @@ class PairingDialog(NavWidget):
     self._last_qr_generation = float("-inf")
 
     self._txt_pair = gui_app.texture("icons_mici/settings/device/pair.png", 33, 60)
-    self._pair_label = UnifiedLabel("pair with comma connect", font_size=48, font_weight=FontWeight.BOLD, line_height=0.8)
+    self._pair_label = UnifiedLabel("pair with Asius App", font_size=48, font_weight=FontWeight.BOLD, line_height=0.8)
 
   def _get_pairing_url(self) -> str:
     try:
       dongle_id = self._params.get("DongleId") or ""
-      token = Api(dongle_id).get_token({'pair': True})
+      return pairing_url(dongle_id)
     except Exception as e:
       cloudlog.warning(f"Failed to get pairing token: {e}")
-      token = ""
-    return f"https://connect.comma.ai/?pair={token}"
+      return ""
 
   def _generate_qr_code(self) -> None:
     try:
@@ -67,8 +65,6 @@ class PairingDialog(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    if ui_state.prime_state.is_paired() and not self.is_dismissing:
-      self.dismiss()
 
   def _render(self, rect: rl.Rectangle):
     self._check_qr_refresh()

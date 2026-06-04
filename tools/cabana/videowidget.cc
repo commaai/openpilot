@@ -51,7 +51,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   updatePlayBtnState();
   setWhatsThis(tr(R"(
     <b>Video</b><br />
-    <!-- TODO: add descprition here -->
+    <!-- TODO: add description here -->
     <span style="color:gray">Timeline color</span>
     <table>
     <tr><td><span style="color:%1;">■ </span>Disengaged </td>

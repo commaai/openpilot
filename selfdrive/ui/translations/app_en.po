@@ -20,14 +20,6 @@ msgstr " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgid "--"
 msgstr "--"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "1 year of drive storage"
-msgstr "1 year of drive storage"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "24/7 LTE connectivity"
-msgstr "24/7 LTE connectivity"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "2G"
 msgstr "2G"
@@ -96,14 +88,6 @@ msgstr "Are you sure you want to uninstall?"
 #: system/ui/widgets/network.py
 msgid "Back"
 msgstr "Back"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Become a comma prime member at connect.comma.ai"
-msgstr "Become a comma prime member at connect.comma.ai"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr "Bookmark connect.comma.ai to your home screen to use it like an app"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "CHANGE"
@@ -306,14 +290,6 @@ msgstr "FORGETTING..."
 msgid "Finish Setup"
 msgstr "Finish Setup"
 
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Firehose"
-msgstr "Firehose"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "Firehose Mode"
-msgstr "Firehose Mode"
-
 #: system/ui/widgets/network.py
 msgid "Forget"
 msgstr "Forget"
@@ -325,10 +301,6 @@ msgstr "Forget Wi-Fi Network \"{}\"?"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "GOOD"
 msgstr "GOOD"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Go to https://connect.comma.ai on your phone"
-msgstr "Go to https://connect.comma.ai on your phone"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "HIGH"
@@ -424,10 +396,6 @@ msgstr "PANDA"
 msgid "PREVIEW"
 msgstr "PREVIEW"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "PRIME FEATURES:"
-msgstr "PRIME FEATURES:"
-
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Pair Device"
 msgstr "Pair Device"
@@ -439,11 +407,6 @@ msgstr "Pair device"
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Pair your device to your comma account"
 msgstr "Pair your device to your comma account"
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
-msgstr "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
 
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Please connect to Wi-Fi to complete initial pairing"
@@ -512,14 +475,6 @@ msgstr "Regulatory"
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Relaxed"
 msgstr "Relaxed"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote access"
-msgstr "Remote access"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote snapshots"
-msgstr "Remote snapshots"
 
 #: openpilot/selfdrive/ui/widgets/ssh_key.py
 msgid "Request timed out"
@@ -629,10 +584,6 @@ msgstr "Unknown"
 msgid "Updates are only downloaded while the car is off."
 msgstr "Updates are only downloaded while the car is off."
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Upgrade Now"
-msgstr "Upgrade Now"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
 msgstr "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
@@ -678,8 +629,8 @@ msgid "You must accept the Terms and Conditions in order to use openpilot."
 msgstr "You must accept the Terms and Conditions in order to use openpilot."
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
-msgstr "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
+msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://asius.ai/terms before continuing."
+msgstr "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://asius.ai/terms before continuing."
 
 #: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
 msgid "camera starting"
@@ -688,10 +639,6 @@ msgstr "camera starting"
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "checking..."
 msgstr "checking..."
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "comma prime"
-msgstr "comma prime"
 
 #: system/ui/widgets/network.py
 msgid "default"
@@ -808,18 +755,3 @@ msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "{} minute ago"
 msgstr[1] "{} minutes ago"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "{} segment of your driving is in the training dataset so far."
-msgstr[1] "{} segments of your driving is in the training dataset so far."
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "✓ SUBSCRIBED"
-msgstr "✓ SUBSCRIBED"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Firehose Mode 🔥"
-

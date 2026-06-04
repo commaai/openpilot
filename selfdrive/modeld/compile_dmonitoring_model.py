@@ -12,7 +12,6 @@ if "JIT_BATCH_SIZE" not in os.environ:
   os.environ["JIT_BATCH_SIZE"] = "0"
 
 from tinygrad import Context, Device, GlobalCounters, Tensor, TinyJit, dtypes
-from tinygrad.engine.realize import CompiledRunner
 from tinygrad.helpers import DEBUG, getenv
 from tinygrad.nn.onnx import OnnxNode, OnnxPBParser, OnnxRunner
 
@@ -72,13 +71,15 @@ def compile(onnx_file):
   read_image_count = 0
   gated_read_image_count = 0
   for ei in run_onnx_jit.captured.jit_cache:
-    if isinstance(ei.prg, CompiledRunner):
-      kernel_count += 1
-      read_image_count += ei.prg.p.src.count("read_image")
-      gated_read_image_count += ei.prg.p.src.count("?read_image")
-      for v in [m.group(1) for m in re.finditer(r'(val\d+)\s*=\s*read_imagef\(', ei.prg.p.src)]:
-        if len(re.findall(fr'[\?\:]{v}\.[xyzw]', ei.prg.p.src)) > 0:
-          gated_read_image_count += 1
+    src = getattr(getattr(getattr(ei, "prg", None), "p", None), "src", "")
+    if not src:
+      continue
+    kernel_count += 1
+    read_image_count += src.count("read_image")
+    gated_read_image_count += src.count("?read_image")
+    for v in [m.group(1) for m in re.finditer(r'(val\d+)\s*=\s*read_imagef\(', src)]:
+      if len(re.findall(fr'[\?\:]{v}\.[xyzw]', src)) > 0:
+        gated_read_image_count += 1
   print(f"{kernel_count=},  {read_image_count=}, {gated_read_image_count=}")
 
   with open(OUTPUT, "wb") as f:

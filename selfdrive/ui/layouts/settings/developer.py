@@ -11,16 +11,16 @@ from openpilot.system.ui.widgets import DialogResult
 
 # Description constants
 DESCRIPTIONS = {
-  'enable_usb_networking': tr_noop(
-    "USB NCM networking allows connecting to your device over USB for SSH access. " +
+  'enable_adb': tr_noop(
+    "ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. " +
     "See https://docs.comma.ai/how-to/connect-to-comma for more info."
   ),
   'ssh_key': tr_noop(
     "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username " +
-    "other than your own. A comma employee will NEVER ask you to add their GitHub username."
+    "other than your own. An Asius employee will NEVER ask you to add their GitHub username."
   ),
   'alpha_longitudinal': tr_noop(
-    "<b>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</b><br><br>" +
+    "<b>WARNING: openpilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB).</b><br><br>" +
     "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
     "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha. " +
     "Changing this setting will restart openpilot if the car is powered on."
@@ -35,11 +35,11 @@ class DeveloperLayout(Widget):
     self._is_release = self._params.get_bool("IsReleaseBranch")
 
     # Build items and keep references for callbacks/state updates
-    self._usb_ncm_toggle = toggle_item(
-      lambda: tr("Enable USB Networking"),
-      description=lambda: tr(DESCRIPTIONS["enable_usb_networking"]),
-      initial_state=self._params.get_bool("UsbNcmEnabled"),
-      callback=self._on_enable_usb_ncm,
+    self._adb_toggle = toggle_item(
+      lambda: tr("Enable ADB"),
+      description=lambda: tr(DESCRIPTIONS["enable_adb"]),
+      initial_state=self._params.get_bool("AdbEnabled"),
+      callback=self._on_enable_adb,
       enabled=ui_state.is_offroad,
     )
 
@@ -91,7 +91,7 @@ class DeveloperLayout(Widget):
     self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
 
     self._scroller = Scroller([
-      self._usb_ncm_toggle,
+      self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys,
       self._joystick_toggle,
@@ -139,7 +139,7 @@ class DeveloperLayout(Widget):
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
     for key, item in (
-      ("UsbNcmEnabled", self._usb_ncm_toggle),
+      ("AdbEnabled", self._adb_toggle),
       ("SshEnabled", self._ssh_toggle),
       ("JoystickDebugMode", self._joystick_toggle),
       ("LongitudinalManeuverMode", self._long_maneuver_toggle),
@@ -150,44 +150,44 @@ class DeveloperLayout(Widget):
       item.action_item.set_state(self._params.get_bool(key))
 
   def _on_enable_ui_debug(self, state: bool):
-    self._params.put_bool("ShowDebugInfo", state)
+    self._params.put_bool("ShowDebugInfo", state, block=True)
     gui_app.set_show_touches(state)
     gui_app.set_show_fps(state)
 
-  def _on_enable_usb_ncm(self, state: bool):
-    self._params.put_bool("UsbNcmEnabled", state)
+  def _on_enable_adb(self, state: bool):
+    self._params.put_bool("AdbEnabled", state, block=True)
 
   def _on_enable_ssh(self, state: bool):
-    self._params.put_bool("SshEnabled", state)
+    self._params.put_bool("SshEnabled", state, block=True)
 
   def _on_joystick_debug_mode(self, state: bool):
-    self._params.put_bool("JoystickDebugMode", state)
-    self._params.put_bool("LongitudinalManeuverMode", False)
+    self._params.put_bool("JoystickDebugMode", state, block=True)
+    self._params.put_bool("LongitudinalManeuverMode", False, block=True)
     self._long_maneuver_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False)
+    self._params.put_bool("LateralManeuverMode", False, block=True)
     self._lat_maneuver_toggle.action_item.set_state(False)
 
   def _on_long_maneuver_mode(self, state: bool):
-    self._params.put_bool("LongitudinalManeuverMode", state)
-    self._params.put_bool("JoystickDebugMode", False)
+    self._params.put_bool("LongitudinalManeuverMode", state, block=True)
+    self._params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False)
+    self._params.put_bool("LateralManeuverMode", False, block=True)
     self._lat_maneuver_toggle.action_item.set_state(False)
 
   def _on_lat_maneuver_mode(self, state: bool):
-    self._params.put_bool("LateralManeuverMode", state)
-    self._params.put_bool("ExperimentalMode", False)
-    self._params.put_bool("JoystickDebugMode", False)
+    self._params.put_bool("LateralManeuverMode", state, block=True)
+    self._params.put_bool("ExperimentalMode", False, block=True)
+    self._params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("LongitudinalManeuverMode", False)
+    self._params.put_bool("LongitudinalManeuverMode", False, block=True)
     self._long_maneuver_toggle.action_item.set_state(False)
 
   def _on_alpha_long_enabled(self, state: bool):
     if state:
       def confirm_callback(result: DialogResult):
         if result == DialogResult.CONFIRM:
-          self._params.put_bool("AlphaLongitudinalEnabled", True)
-          self._params.put_bool("OnroadCycleRequested", True)
+          self._params.put_bool("AlphaLongitudinalEnabled", True, block=True)
+          self._params.put_bool("OnroadCycleRequested", True, block=True)
           self._update_toggles()
         else:
           self._alpha_long_toggle.action_item.set_state(False)
@@ -200,6 +200,6 @@ class DeveloperLayout(Widget):
       gui_app.push_widget(dlg)
 
     else:
-      self._params.put_bool("AlphaLongitudinalEnabled", False)
-      self._params.put_bool("OnroadCycleRequested", True)
+      self._params.put_bool("AlphaLongitudinalEnabled", False, block=True)
+      self._params.put_bool("OnroadCycleRequested", True, block=True)
       self._update_toggles()

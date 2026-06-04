@@ -13,7 +13,7 @@ from openpilot.common.basedir import BASEDIR
 
 DIRS = ['cereal', 'openpilot']
 EXTS = ['.png', '.py', '.ttf', '.capnp', '.json', '.fnt', '.mo', '.po']
-EXCLUDE = ['selfdrive/assets/training', 'third_party/raylib/raylib_repo/examples']
+EXCLUDE = ['selfdrive/assets/training']
 INTERPRETER = '/usr/bin/env python3'
 
 
@@ -23,7 +23,7 @@ def copy(src, dest):
 
 
 if __name__ == '__main__':
-  parser = ArgumentParser(prog='pack.py', description="package script into a portable executable", epilog='comma.ai')
+  parser = ArgumentParser(prog='pack.py', description="package script into a portable executable", epilog='asius.ai')
   parser.add_argument('-e', '--entrypoint', help="function to call in module, default is 'main'", default='main')
   parser.add_argument('-o', '--output', help='output file')
   parser.add_argument('module', help="the module to target, e.g. 'openpilot.system.ui.spinner'")

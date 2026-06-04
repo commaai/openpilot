@@ -11,7 +11,6 @@ from setproctitle import setproctitle
 
 from cereal import car, log
 import cereal.messaging as messaging
-import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -30,7 +29,6 @@ def launcher(proc: str, name: str) -> None:
 
     # add daemon name tag to logs
     cloudlog.bind(daemon=name)
-    sentry.set_tag("daemon", name)
 
     # exec the process
     mod.main()
@@ -39,7 +37,7 @@ def launcher(proc: str, name: str) -> None:
   except Exception:
     # can't install the crash handler because sys.excepthook doesn't play nice
     # with threads, so catch it here.
-    sentry.capture_exception()
+    cloudlog.exception(f"child {proc} crashed")
     raise
 
 
@@ -190,12 +188,8 @@ class PythonProcess(ManagerProcess):
     if self.proc is not None:
       return
 
-    # TODO: this is just a workaround for this tinygrad check:
-    # https://github.com/tinygrad/tinygrad/blob/ac9c96dae1656dc220ee4acc39cef4dd449aa850/tinygrad/device.py#L26
-    name = self.name if "modeld" not in self.name else "MainProcess"
-
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=name, target=self.launcher, args=(self.module, self.name))
+    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
     self.proc.start()
     self.shutting_down = False
 
@@ -240,7 +234,7 @@ class DaemonProcess(ManagerProcess):
                                stderr=open('/dev/null', 'w'),
                                preexec_fn=os.setpgrp)
 
-    self.params.put(self.param_name, proc.pid)
+    self.params.put(self.param_name, proc.pid, block=True)
 
   def stop(self, retry=True, block=True, sig=None) -> None:
     pass

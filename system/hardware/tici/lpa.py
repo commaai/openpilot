@@ -19,7 +19,7 @@ from typing import Any
 from pathlib import Path
 
 from openpilot.common.time_helpers import system_time_valid
-from openpilot.system.hardware.base import LPABase, LPAError, Profile
+from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
 GSMA_CI_BUNDLE = str(Path(__file__).parent / "gsma_ci_bundle.pem")
 
@@ -735,7 +735,10 @@ class TiciLPA(LPABase):
       process_notifications(self._client)
 
   def delete_profile(self, iccid: str) -> None:
-    if self.is_comma_profile(iccid):
+    profile = next((p for p in self.list_profiles() if p.iccid == iccid), None)
+    if profile is None:
+      raise LPAProfileNotFoundError(f"profile not found: {iccid}")
+    if profile.is_comma:
       raise LPAError("refusing to delete a comma profile")
     with self._acquire_channel():
       request = encode_tlv(TAG_DELETE_PROFILE, encode_tlv(TAG_ICCID, string_to_tbcd(iccid)))
@@ -771,13 +774,12 @@ class TiciLPA(LPABase):
         raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
 
   def is_euicc(self) -> bool:
-    # +CCHO:<n> -> eUICC; bare ERROR -> applet absent, non-eUICC; +CME ERROR -> applet
-    # exists but bus busy or modem in transient state, still eUICC.
+    # +CCHO:<n> -> ISD-R applet present, eUICC. Any error -> non-eUICC.
     with self._acquire_lock():
       try:
         lines = self._client.query(f'AT+CCHO="{ISDR_AID}"')
-      except RuntimeError as e:
-        return "+CME ERROR" in str(e)
+      except RuntimeError:
+        return False
       for line in lines:
         if line.startswith("+CCHO:") and (ch := line.split(":", 1)[1].strip()):
           try:

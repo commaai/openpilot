@@ -20,7 +20,7 @@ from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 # Description constants
 DESCRIPTIONS = {
-  'pair_device': tr_noop("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
+  'pair_device': tr_noop("Pair your device with Asius App to manage it."),
   'driver_camera': tr_noop("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
   'reset_calibration': tr_noop("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
   'review_guide': tr_noop("Review the rules, features, and limitations of openpilot"),
@@ -44,7 +44,6 @@ class DeviceLayout(Widget):
   def _initialize_items(self):
     self._pair_device_btn = button_item(lambda: tr("Pair Device"), lambda: tr("PAIR"), lambda: tr(DESCRIPTIONS['pair_device']),
                                         callback=lambda: gui_app.push_widget(PairingDialog()))
-    self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
     self._reset_calib_btn = button_item(lambda: tr("Reset Calibration"), lambda: tr("RESET"), lambda: tr(DESCRIPTIONS['reset_calibration']),
                                         callback=self._reset_calibration_prompt)
@@ -105,7 +104,7 @@ class DeviceLayout(Widget):
       self._params.remove("LiveParameters")
       self._params.remove("LiveParametersV2")
       self._params.remove("LiveDelay")
-      self._params.put_bool("OnroadCycleRequested", True)
+      self._params.put_bool("OnroadCycleRequested", True, block=True)
       self._update_calib_description()
 
     dialog = ConfirmDialog(tr("Are you sure you want to reset calibration?"), tr("Reset"), callback=reset_calibration)
@@ -166,7 +165,7 @@ class DeviceLayout(Widget):
 
     def perform_reboot(result: DialogResult):
       if not ui_state.engaged and result == DialogResult.CONFIRM:
-        self._params.put_bool_nonblocking("DoReboot", True)
+        self._params.put_bool("DoReboot", True)
 
     dialog = ConfirmDialog(tr("Are you sure you want to reboot?"), tr("Reboot"), callback=perform_reboot)
     gui_app.push_widget(dialog)
@@ -178,7 +177,7 @@ class DeviceLayout(Widget):
 
     def perform_power_off(result: DialogResult):
       if not ui_state.engaged and result == DialogResult.CONFIRM:
-        self._params.put_bool_nonblocking("DoShutdown", True)
+        self._params.put_bool("DoShutdown", True)
 
     dialog = ConfirmDialog(tr("Are you sure you want to power off?"), tr("Power Off"), callback=perform_power_off)
     gui_app.push_widget(dialog)

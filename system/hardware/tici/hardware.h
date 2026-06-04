@@ -13,16 +13,18 @@
 class HardwareTici : public HardwareNone {
 public:
   static std::string get_name() {
-    std::string model = util::read_file("/sys/firmware/devicetree/base/model");
-    std::string stripped = util::strip(model);
-
-    if (stripped.rfind("comma ", 0) == 0) {
-      return stripped.substr(6);
-    }
-    if (stripped == "Radxa Dragon Q6A") {
-      return "asius";
-    }
-    return stripped;
+    static const std::string name = []() {
+      std::string model = util::read_file("/sys/firmware/devicetree/base/model");
+      std::string stripped = util::strip(model);
+      if (stripped.rfind("comma ", 0) == 0) {
+        return stripped.substr(6);
+      }
+      if (stripped == "Radxa Dragon Q6A") {
+        return std::string("asius");
+      }
+      return stripped;
+    }();
+    return name;
   }
 
   static cereal::InitData::DeviceType get_device_type() {
@@ -32,7 +34,7 @@ public:
       {"mici", cereal::InitData::DeviceType::MICI},
       {"asius", cereal::InitData::DeviceType::ASIUS},
     };
-    auto it = device_map.find(get_name());
+    static const auto it = device_map.find(get_name());
     assert(it != device_map.end());
     return it->second;
   }
@@ -90,6 +92,7 @@ public:
     temp.erase(temp.find_last_not_of(std::string("\0\r\n", 3))+1);
     ret["boot temp"] = temp;
 
+    // TODO: log something from system and boot
     for (std::string part : {"xbl", "abl", "aop", "devcfg", "xbl_config"}) {
       for (std::string slot : {"a", "b"}) {
         std::string partition = part + "_" + slot;

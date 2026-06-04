@@ -73,8 +73,8 @@ class TestAthenadMethods:
 
     self.params = Params()
     for k, v in self.default_params.items():
-      self.params.put(k, v)
-    self.params.put_bool("GsmMetered", True)
+      self.params.put(k, v, block=True)
+    self.params.put_bool("GsmMetered", True, block=True)
 
     athenad.upload_queue = queue.PriorityQueue()
     athenad.cur_upload_items.clear()
@@ -405,6 +405,23 @@ class TestAthenadMethods:
   def test_get_github_username(self):
     keys = dispatcher["getGithubUsername"]()
     assert keys == self.default_params["GithubUsername"]
+
+  def test_save_params_blocks_security_keys(self):
+    resp = dispatcher["saveParams"]({
+      "GithubSshKeys": "ssh-ed25519 bad",
+      "GithubUsername": "bad",
+      "DongleId": "bad",
+      "APIHost": "https://example.com",
+      "AthenaHost": "wss://example.com",
+      "IsMetric": True,
+    })
+
+    assert resp["GithubSshKeys"] == "error: blocked"
+    assert resp["GithubUsername"] == "error: blocked"
+    assert resp["DongleId"] == "error: blocked"
+    assert resp["APIHost"] == "ok"
+    assert resp["AthenaHost"] == "ok"
+    assert resp["IsMetric"] == "ok"
 
   def test_get_version(self):
     resp = dispatcher["getVersion"]()

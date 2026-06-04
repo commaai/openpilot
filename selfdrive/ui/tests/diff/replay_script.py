@@ -10,7 +10,6 @@ from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant
 from openpilot.system.updated.updated import parse_release_notes
 
@@ -113,11 +112,6 @@ class Script:
 # --- Setup functions ---
 
 
-def set_prime_state(prime_type: PrimeType) -> None:
-  from openpilot.selfdrive.ui.ui_state import ui_state
-  ui_state.prime_state.set_type(prime_type)
-
-
 def setup_offroad_alerts() -> None:
   set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
   set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
@@ -126,12 +120,12 @@ def setup_offroad_alerts() -> None:
 
 def setup_update_available(available: bool = True) -> None:
   params = Params()
-  params.put_bool("UpdateAvailable", available)
-  params.put("UpdaterAvailableBranches", ",".join(["test-branch", "test-branch-2", BRANCH_NAME]))
+  params.put_bool("UpdateAvailable", available, block=True)
+  params.put("UpdaterAvailableBranches", ",".join(["test-branch", "test-branch-2", BRANCH_NAME]), block=True)
   if available:
-    params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
-    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
-    params.put("UpdaterTargetBranch", BRANCH_NAME)
+    params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01", block=True)
+    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR), block=True)
+    params.put("UpdaterTargetBranch", BRANCH_NAME, block=True)
   else:
     params.remove("UpdaterNewDescription")
     params.remove("UpdaterNewReleaseNotes")
@@ -144,22 +138,22 @@ def setup_calibration_params() -> None:
   calib = messaging.new_message('liveCalibration')
   calib.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
   calib.liveCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
-  params.put("CalibrationParams", calib.to_bytes())
+  params.put("CalibrationParams", calib.to_bytes(), block=True)
   # live delay
   delay = messaging.new_message('liveDelay')
   delay.liveDelay.calPerc = 75
-  params.put("LiveDelay", delay.to_bytes())
+  params.put("LiveDelay", delay.to_bytes(), block=True)
   # live torque parameters
   torque = messaging.new_message('liveTorqueParameters')
   torque.liveTorqueParameters.useParams = True
   torque.liveTorqueParameters.calPerc = 60
-  params.put("LiveTorqueParameters", torque.to_bytes())
+  params.put("LiveTorqueParameters", torque.to_bytes(), block=True)
 
 
 def setup_developer_params() -> None:
   CP = car.CarParams()
   CP.alphaLongitudinalAvailable = True
-  Params().put("CarParamsPersistent", CP.to_bytes())
+  Params().put("CarParamsPersistent", CP.to_bytes(), block=True)
 
 
 # --- Send functions ---
@@ -341,7 +335,6 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     lambda: scroll_through_cases(network_cases),
     lambda: scroll_through_cases(device_cases),
     lambda: script.wait(WAIT_SHORT),  # pairing
-    lambda: run_actions(lambda: swipe_up(height * 3), lambda: swipe_down(height * 3)),  # firehose (scroll down and back up)
     lambda: scroll_through_cases(developer_cases),
   ]
 
@@ -354,7 +347,10 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
   def setup_offroad_alerts_and_refresh() -> None:
     """Setup function to trigger offroad alerts and force a refresh on the alerts layout."""
     setup_offroad_alerts()
-    main_layout._alerts_layout.refresh()
+    params = Params()
+    main_layout._alerts_layout._pending_params = ({"UpdaterNewDescription": params.get("UpdaterNewDescription")} |
+                                                  {alert_data.key: params.get(alert_data.key) for alert_data in main_layout._alerts_layout.sorted_alerts})
+    main_layout._alerts_layout._refresh()
 
   swipe_right(width, wait_after=WAIT_SHORT)  # open alerts
   script.setup(setup_offroad_alerts_and_refresh)  # show alerts
@@ -388,9 +384,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
     return setup
 
-  def add_prime_state_setup(prime_type: PrimeType) -> None:
-    script.set_send(lambda: set_prime_state(prime_type))
-
   def do_onboarding() -> None:
     """Click through the training guide and close."""
     from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS
@@ -420,10 +413,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
-  # Go through different prime state layouts
-  add_prime_state_setup(PrimeType.LITE)
-  add_prime_state_setup(PrimeType.NONE)
-  add_prime_state_setup(PrimeType.UNPAIRED)
 
   # === Update Available (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_update_available))
@@ -439,7 +428,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   # pair device
   script.click(2000, 450)  # pair device
   script.click(110, 110)  # close pairing dialog
-  add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
   # calibration
   script.setup(setup_calibration_params, wait_after=0)
   script.click(1000, 620)  # expand calibration description
@@ -487,12 +475,9 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 800)  # uninstall
   script.click(650, 750)  # cancel uninstall
 
-  # === Settings - Firehose ===
-  script.click(278, 845)
-
   # === Settings - Developer (set CarParamsPersistent first) ===
   script.setup(setup_developer_params, wait_after=0)
-  script.click(278, 950)
+  script.click(278, 845)
   script.click(1930, 470)  # SSH keys (keyboard)
   script.click(1930, 115)  # click cancel on keyboard
   script.click(2000, 960)  # toggle alpha long

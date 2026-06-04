@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <unistd.h>
 
-#include "third_party/json11/json11.hpp"
+#include "json11/json11.hpp"
 
 namespace fs = std::filesystem;
 

@@ -66,7 +66,7 @@ class TrainingGuide(Widget):
       if self._step == DM_RECORD_STEP:
         yes = rl.check_collision_point_rec(mouse_pos, DM_RECORD_YES_RECT)
         print(f"putting RecordFront to {yes}")
-        ui_state.params.put_bool("RecordFront", yes)
+        ui_state.params.put_bool("RecordFront", yes, block=True)
 
       # Restart training?
       elif self._step == len(self._image_paths) - 1:
@@ -113,7 +113,7 @@ class TermsPage(Widget):
     self._on_decline = on_decline
 
     self._title = Label(tr("Welcome to openpilot"), font_size=90, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
-    self._desc = Label(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."),
+    self._desc = Label(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://asius.ai/terms before continuing."),
                        font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
 
     self._decline_btn = Button(tr("Decline"), click_callback=on_decline)
@@ -153,7 +153,7 @@ class DeclinePage(Widget):
                                  click_callback=self._on_uninstall_clicked)
 
   def _on_uninstall_clicked(self):
-    ui_state.params.put_bool("DoUninstall", True)
+    ui_state.params.put_bool("DoUninstall", True, block=True)
     gui_app.request_close()
 
   def _render(self, _):
@@ -194,13 +194,13 @@ class OnboardingWindow(Widget):
     self._state = OnboardingState.TERMS
 
   def _on_terms_accepted(self):
-    ui_state.params.put("HasAcceptedTerms", terms_version)
+    ui_state.params.put("HasAcceptedTerms", terms_version, block=True)
     self._state = OnboardingState.ONBOARDING
     if self._training_done:
       gui_app.pop_widget()
 
   def _on_completed_training(self):
-    ui_state.params.put("CompletedTrainingVersion", training_version)
+    ui_state.params.put("CompletedTrainingVersion", training_version, block=True)
 
   def _render(self, _):
     if self._training_guide is None:

@@ -20,14 +20,6 @@ msgstr " デバイスは{:.1f}°{}、{:.1f}°{}の向きです。"
 msgid "--"
 msgstr "--"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "1 year of drive storage"
-msgstr "走行データを1年間保存"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "24/7 LTE connectivity"
-msgstr "24時間365日のLTE接続"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "2G"
 msgstr "2G"
@@ -96,14 +88,6 @@ msgstr "本当にアンインストールしますか？"
 #: system/ui/widgets/network.py
 msgid "Back"
 msgstr "戻る"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Become a comma prime member at connect.comma.ai"
-msgstr "connect.comma.aiで comma prime に加入"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr "connect.comma.aiをホーム画面に追加してアプリのように使いましょう"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "CHANGE"
@@ -306,14 +290,6 @@ msgstr "削除中..."
 msgid "Finish Setup"
 msgstr "セットアップを完了"
 
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Firehose"
-msgstr "大量配信"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "Firehose Mode"
-msgstr "Firehoseモード"
-
 #: system/ui/widgets/network.py
 msgid "Forget"
 msgstr "削除"
@@ -325,10 +301,6 @@ msgstr "Wi‑Fiネットワーク「{}」を削除しますか？"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "GOOD"
 msgstr "良好"
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Go to https://connect.comma.ai on your phone"
-msgstr "スマートフォンで https://connect.comma.ai にアクセス"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "HIGH"
@@ -424,10 +396,6 @@ msgstr "PANDA"
 msgid "PREVIEW"
 msgstr "プレビュー"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "PRIME FEATURES:"
-msgstr "prime の特典:"
-
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Pair Device"
 msgstr "デバイスをペアリング"
@@ -439,11 +407,6 @@ msgstr "デバイスをペアリング"
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Pair your device to your comma account"
 msgstr "デバイスをあなたの comma アカウントにペアリング"
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
-msgstr "デバイスを comma connect（connect.comma.ai）とペアリングして、comma prime 特典を受け取りましょう。"
 
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Please connect to Wi-Fi to complete initial pairing"
@@ -512,14 +475,6 @@ msgstr "規制情報"
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Relaxed"
 msgstr "リラックス"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote access"
-msgstr "リモートアクセス"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Remote snapshots"
-msgstr "リモートスナップショット"
 
 #: openpilot/selfdrive/ui/widgets/ssh_key.py
 msgid "Request timed out"
@@ -629,10 +584,6 @@ msgstr "不明"
 msgid "Updates are only downloaded while the car is off."
 msgstr "アップデートは車両の電源が切れている間のみダウンロードされます。"
 
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "Upgrade Now"
-msgstr "今すぐアップグレード"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
 msgstr "ドライバー向きカメラのデータをアップロードしてモニタリングアルゴリズムの改善に協力してください。"
@@ -678,8 +629,8 @@ msgid "You must accept the Terms and Conditions in order to use openpilot."
 msgstr "openpilotを使用するには、利用規約に同意する必要があります。"
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
-msgstr "openpilotを使用するには利用規約に同意する必要があります。続行する前に https://comma.ai/terms の最新の規約をお読みください。"
+msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://asius.ai/terms before continuing."
+msgstr "openpilotを使用するには利用規約に同意する必要があります。続行する前に https://asius.ai/terms の最新の規約をお読みください。"
 
 #: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
 msgid "camera starting"
@@ -688,10 +639,6 @@ msgstr "カメラを起動中"
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "checking..."
 msgstr "チェック中..."
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "comma prime"
-msgstr "comma prime"
 
 #: system/ui/widgets/network.py
 msgid "default"
@@ -804,17 +751,3 @@ msgstr[0] "{}時間前"
 msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "{}分前"
-
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "これまでにあなたの走行の{}セグメントが学習データセットに含まれています。"
-
-#: openpilot/selfdrive/ui/widgets/prime.py
-msgid "✓ SUBSCRIBED"
-msgstr "✓ 登録済み"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Firehoseモード 🔥"
-

@@ -8,13 +8,16 @@ from openpilot.system.hardware import PC, TICI, ASIUS
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
-NO_IMU = ASIUS or os.getenv("NO_IMU") is not None
+NO_IMU = ASIUS or os.getenv("NO_IMU") == "1"
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
 
 def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and CP.notCar
+
+def webRTCActive(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return params.get_bool("AthenadWebRTCActive")
 
 def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not CP.notCar
@@ -29,7 +32,7 @@ def ublox_available() -> bool:
 def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
-    params.put_bool("UbloxAvailable", use_ublox)
+    params.put_bool("UbloxAvailable", use_ublox, block=True)
   return started and use_ublox
 
 def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
@@ -49,9 +52,6 @@ def not_long_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
 
 def qcomgps(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
-
-def webrtc(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return bool(params.get_bool("EnableWebRTC"))
 
 def always_run(started: bool, params: Params, CP: car.CarParams) -> bool:
   return True
@@ -73,11 +73,11 @@ procs = [
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not ASIUS),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, webrtc), enabled=not ASIUS),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, webRTCActive), enabled=not ASIUS),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
 
-  NativeProcess("camerad", "system/camerad", ["./camerad"], or_(driverview, webrtc), enabled=(not WEBCAM)),
-  PythonProcess("webcamerad", "tools.webcam.camerad", or_(driverview, webrtc), enabled=WEBCAM),
+  NativeProcess("camerad", "system/camerad", ["./camerad"], or_(driverview, webRTCActive), enabled=not WEBCAM),
+  PythonProcess("webcamerad", "tools.webcam.camerad", or_(driverview, webRTCActive), enabled=WEBCAM),
   PythonProcess("proclogd", "system.proclogd", only_onroad, enabled=platform.system() != "Darwin"),
   PythonProcess("journald", "system.journald", only_onroad, platform.system() != "Darwin"),
   PythonProcess("micd", "system.micd", iscar, enabled=not ASIUS),
@@ -111,16 +111,16 @@ procs = [
   PythonProcess("lateral_maneuversd", "tools.lateral_maneuvers.lateral_maneuversd", lat_maneuver),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "system.hardware.hardwared", always_run),
-  PythonProcess("modem", "system.hardware.tici.modem", always_run, enabled=False),
+  PythonProcess("modem", "system.hardware.tici.modem", always_run, enabled=TICI),
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "system.updated.updated", only_offroad, enabled=(TICI)),
+  PythonProcess("updated", "system.updated.updated", only_offroad, enabled=TICI),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "system.statsd", always_run),
   PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", only_onroad, enabled=not ASIUS),
 
   # debug procs
-  NativeProcess("bridge", "cereal/messaging", ["./bridge"], or_(notcar, webrtc), enabled=not ASIUS),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
+  NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar, enabled=not ASIUS),
+  PythonProcess("webrtcd", "system.webrtc.webrtcd", always_run),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]

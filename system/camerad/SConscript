@@ -2,8 +2,9 @@ import os
 Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
 libs = [common, messaging, visionipc]
-common_srcs = ['cameras/camera_common.cc', 'cameras/cdm.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc']
-qcom_srcs = ['cameras/camera_qcom2.cc', 'cameras/spectra.cc'] + common_srcs
+common_srcs = ['cameras/camera_common.cc', 'cameras/cdm.cc']
+qcom_sensor_srcs = ['sensors/ox03c10.cc', 'sensors/os04c10.cc']
+qcom_srcs = ['cameras/camera_qcom2.cc', 'cameras/spectra.cc'] + common_srcs + qcom_sensor_srcs
 dragon_srcs = ['cameras/camera_dragon.cc', 'sensors/imx219.cc'] + common_srcs
 
 if arch != "Darwin":

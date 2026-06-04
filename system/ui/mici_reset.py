@@ -92,7 +92,7 @@ class Reset(Scroller):
         main_card.set_value("reset triggered by\ntapping the screen")
 
     self._scroller.add_widgets([
-      GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
+      GreyBigButton("", "For a deeper reset, go to\nhttps://flash.asius.ai"),
       self._cancel_button,
       self._reboot_button,
       self._reset_button,

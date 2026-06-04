@@ -40,7 +40,7 @@ class ReviewTrainingGuide(TrainingGuide):
   def hide_event(self):
     super().hide_event()
     device.set_override_interactive_timeout(None)
-    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
 
 
 class MiciFccModal(NavRawScrollPanel):
@@ -130,35 +130,24 @@ class UpdaterState(IntEnum):
 
 class PairBigButton(BigButton):
   def __init__(self):
-    super().__init__("pair", "connect.comma.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
+    super().__init__("pair", "app.asius.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
 
   def _get_label_font_size(self):
     return 64
 
   def _update_state(self):
     super()._update_state()
-
-    if ui_state.prime_state.is_paired():
-      self.set_text("paired")
-      if ui_state.prime_state.is_prime():
-        self.set_value("subscribed")
-      else:
-        self.set_value("upgrade to prime")
-    else:
-      self.set_text("pair")
-      self.set_value("connect.comma.ai")
+    self.set_text("pair")
+    self.set_value("app.asius.ai")
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    # TODO: show ad dialog when clicked if not prime
-    if ui_state.prime_state.is_paired():
-      return
     dlg: BigDialog | PairingDialog
     if not system_time_valid():
       dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
-      dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair."))
+      dlg = BigDialog("", tr("Device identity must be ready before pairing."))
     else:
       dlg = PairingDialog()
     gui_app.push_widget(dlg)
@@ -200,7 +189,7 @@ class UpdateOpenpilotBigButton(BigButton):
       if self.get_value() == "download update":
         os.system("pkill -SIGHUP -f system.updated.updated")
       elif self.get_value() == "update now":
-        ui_state.params.put_bool("DoReboot", True)
+        ui_state.params.put_bool("DoReboot", True, block=True)
       else:
         os.system("pkill -SIGUSR1 -f system.updated.updated")
 
@@ -258,6 +247,7 @@ class UpdateOpenpilotBigButton(BigButton):
     elif self._state == UpdaterState.IDLE:
       self.set_rotate_icon(False)
       if failed:
+        self.set_enabled(True)  # allow retry when failure came from updater param
         if self.get_value() != "failed to update":
           self.set_value("failed to update")
 
@@ -292,10 +282,10 @@ class DeviceLayoutMici(NavScroller):
     self._fcc_dialog: HtmlModal | None = None
 
     def power_off_callback():
-      ui_state.params.put_bool("DoShutdown", True)
+      ui_state.params.put_bool("DoShutdown", True, block=True)
 
     def reboot_callback():
-      ui_state.params.put_bool("DoReboot", True)
+      ui_state.params.put_bool("DoReboot", True, block=True)
 
     def reset_calibration_callback():
       params = ui_state.params
@@ -304,10 +294,10 @@ class DeviceLayoutMici(NavScroller):
       params.remove("LiveParameters")
       params.remove("LiveParametersV2")
       params.remove("LiveDelay")
-      params.put_bool("OnroadCycleRequested", True)
+      params.put_bool("OnroadCycleRequested", True, block=True)
 
     def uninstall_openpilot_callback():
-      ui_state.params.put_bool("DoUninstall", True)
+      ui_state.params.put_bool("DoUninstall", True, block=True)
 
     reset_calibration_btn = EngagedConfirmationButton("reset calibration", "reset", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64),
                                                       reset_calibration_callback)
@@ -339,8 +329,8 @@ class DeviceLayoutMici(NavScroller):
 
     self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
-      UpdateOpenpilotBigButton(),
       PairBigButton(),
+      UpdateOpenpilotBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
       terms_btn,

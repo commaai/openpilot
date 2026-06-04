@@ -1,11 +1,12 @@
 #include "system/camerad/cameras/camera_common.h"
 
 #include <cassert>
+#include <cstring>
 #include <string>
 
 #include "common/swaglog.h"
+#if __has_include("media/cam_req_mgr.h")
 #include "system/camerad/cameras/spectra.h"
-
 
 void CameraBuf::init(SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
   vipc_server = v;
@@ -28,6 +29,7 @@ void CameraBuf::init(SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, Vis
   vipc_server->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT, out_img_width, out_img_height, cam->yuv_size, cam->stride, cam->uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", VIPC_BUFFER_COUNT, cam->stride, cam->y_height);
 }
+#endif
 
 CameraBuf::~CameraBuf() {
   if (camera_bufs_raw != nullptr) {

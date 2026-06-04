@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fcntl.h>
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
