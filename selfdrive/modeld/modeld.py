@@ -22,7 +22,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
-from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
+from openpilot.common.file_chunker import open_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices
 
@@ -78,7 +78,8 @@ class ModelState:
   def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
     self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
-    jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
+    with open_file_chunked(modeld_pkl_path(usbgpu)) as f:
+      jits = pickle.load(f)
     vision_metadata = jits['metadata']['vision']
     self.vision_input_shapes = vision_metadata['input_shapes']
     self.vision_input_names = list(self.vision_input_shapes.keys())

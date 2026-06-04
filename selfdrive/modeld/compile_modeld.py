@@ -260,12 +260,13 @@ def _parse_size(s):
 
 
 def read_file_chunked_to_shm(path):
-  from openpilot.common.file_chunker import read_file_chunked
+  import shutil
+  from openpilot.common.file_chunker import open_file_chunked
   from openpilot.system.hardware.hw import Paths
   shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
   atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
-  with open(shm_path, 'wb') as f:
-    f.write(read_file_chunked(path))
+  with open_file_chunked(path) as src, open(shm_path, 'wb') as f:
+    shutil.copyfileobj(src, f)
   return shm_path
 
 
