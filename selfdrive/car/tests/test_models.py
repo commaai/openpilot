@@ -5,7 +5,7 @@ import random
 import unittest # noqa: TID251
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
-from hypothesis import Phase, given, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from openpilot.common.parameterized import parameterized_class
 
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
@@ -306,7 +306,8 @@ class TestCarModelBase(unittest.TestCase):
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+            phases=(Phase.reuse, Phase.generate, Phase.shrink),
+            suppress_health_check=[HealthCheck.differing_executors])
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
     """
@@ -337,7 +338,14 @@ class TestCarModelBase(unittest.TestCase):
     CI = self.CarInterface(self.CP)
     blocked_addrs: Counter = Counter()
 
-    for _ in range(round(10.0 / DT_CTRL)):
+    # Advance the fake microsecond timer at 10 kHz (100 Hz control loop * 100 µs/tick)
+    # so panda's real-time safety checks (RT torque rate, steer-req interval) behave as if
+    # real time is passing. Without this, all frames execute instantly and the RT checks block
+    # messages that would be valid at normal driving cadence.
+    US_PER_FRAME = int(DT_CTRL * 1e6)  # 10 ms = 10,000 µs
+
+    for frame in range(round(10.0 / DT_CTRL)):
+      self.safety.set_timer(frame * US_PER_FRAME)
       CI.update([])
       _, sendcan = CI.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9
@@ -356,7 +364,8 @@ class TestCarModelBase(unittest.TestCase):
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+            phases=(Phase.reuse, Phase.generate, Phase.shrink),
+            suppress_health_check=[HealthCheck.differing_executors])
   @given(data=st.data())
   def test_panda_safety_carstate_fuzzy(self, data):
     """
