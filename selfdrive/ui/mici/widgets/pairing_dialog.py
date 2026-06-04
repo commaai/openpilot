@@ -5,7 +5,7 @@ import time
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.system.athena.p2p import PAIRING_MODE_SECONDS, get_acl_epoch, pairing_url
+from openpilot.system.athena.websocketd import PAIRING_MODE_SECONDS, pairing_url
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -28,7 +28,7 @@ class PairingDialog(NavWidget):
   def _get_pairing_url(self) -> str:
     try:
       dongle_id = self._params.get("DongleId") or ""
-      return pairing_url(dongle_id, get_acl_epoch(self._params), self._params)
+      return pairing_url(dongle_id)
     except Exception as e:
       cloudlog.warning(f"Failed to get pairing token: {e}")
       return ""

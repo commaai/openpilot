@@ -40,18 +40,17 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.athena.p2p import (
+from openpilot.system.athena.websocketd import (
   authorize_peer,
   bump_acl_epoch,
-  decrypt_payload,
-  encrypt_payload,
   get_acl_epoch,
   load_authorized_peers,
-  load_stored_authorized_peers,
+  pack_peer_message,
   pairing_mode_active,
   pairing_url,
   save_authorized_peers,
   sync_ssh_keys,
+  unpack_peer_message,
   verify_pair_token,
 )
 
@@ -637,9 +636,8 @@ def getPublicKey() -> str | None:
 
 @dispatcher.add_method
 def getAuthorizedPeers() -> dict[str, Any]:
-  params = Params()
   return {
-    "aclEpoch": get_acl_epoch(params),
+    "aclEpoch": get_acl_epoch(),
     "peers": [
       {
         "publicKey": public_key,
@@ -647,29 +645,28 @@ def getAuthorizedPeers() -> dict[str, Any]:
         "label": peer.get("label"),
         "createdAt": peer.get("createdAt"),
       }
-      for public_key, peer in load_stored_authorized_peers(params).items()
+      for public_key, peer in load_authorized_peers().items()
     ],
   }
 
 
 @dispatcher.add_method
 def removeAuthorizedPeer(publicKey: str) -> dict[str, Any]:
-  params = Params()
-  peers = load_stored_authorized_peers(params)
+  peers = load_authorized_peers()
   removed = peers.pop(publicKey, None) is not None
   if removed:
-    save_authorized_peers(peers, params)
-    sync_ssh_keys(params)
-    bump_acl_epoch(params)
+    save_authorized_peers(peers)
+    sync_ssh_keys()
+    bump_acl_epoch()
 
-  return {"removed": removed, "aclEpoch": get_acl_epoch(params)}
+  return {"removed": removed, "aclEpoch": get_acl_epoch()}
 
 
 @dispatcher.add_method
 def getPairingUrl() -> str:
   params = Params()
   dongle_id = params.get("DongleId") or ""
-  return pairing_url(dongle_id, get_acl_epoch(params), params)
+  return pairing_url(dongle_id)
 
 
 @dispatcher.add_method
@@ -689,7 +686,7 @@ def setGithubUsername(username: str) -> dict[str, str]:
   if not username:
     params.remove("GithubUsername")
     params.remove("GithubSshKeys")
-    sync_ssh_keys(params)
+    sync_ssh_keys()
     return {"GithubUsername": "ok: removed", "GithubSshKeys": "ok: synced"}
 
   response = requests.get(f"https://github.com/{username}.keys", timeout=15)
@@ -700,7 +697,7 @@ def setGithubUsername(username: str) -> dict[str, str]:
 
   params.put("GithubUsername", username, block=True)
   params.put("GithubSshKeys", keys, block=True)
-  sync_ssh_keys(params)
+  sync_ssh_keys()
   return {"GithubUsername": "ok", "GithubSshKeys": "ok: synced"}
 
 
@@ -1154,7 +1151,7 @@ def _live_state_snapshot(sm: messaging.SubMaster, params: Params) -> dict[str, A
     },
     "params": param_values,
     "services": services,
-    "authorizedPeers": list(load_stored_authorized_peers(params).keys()),
+    "authorizedPeers": list(load_authorized_peers().keys()),
   }
 
 
@@ -1164,8 +1161,7 @@ def send_peer_payload(to: str, body: dict) -> None:
   if dongle_id is None or peer is None:
     raise Exception("unknown Athena peer")
 
-  payload = encrypt_payload(json.dumps(body), dongle_id, peer["publicKey"])
-  send_queue.put_nowait(json.dumps({"type": "peer", "from": dongle_id, "to": to, "payload": payload}))
+  send_queue.put_nowait(pack_peer_message(dongle_id, peer["publicKey"], body))
 
 
 def broadcast_peer_notification(name: str, payload: Any) -> None:
@@ -1173,7 +1169,7 @@ def broadcast_peer_notification(name: str, payload: Any) -> None:
     try:
       send_peer_payload(public_key, {"type": "notification", "name": name, "payload": payload})
     except Exception:
-      cloudlog.exception("athena.p2p.broadcast_failed public_key=%s", public_key)
+      cloudlog.exception("athena.websocket.broadcast_failed public_key=%s", public_key)
 
 
 def live_state_handler(end_event: threading.Event) -> None:
@@ -1183,7 +1179,7 @@ def live_state_handler(end_event: threading.Event) -> None:
   while not end_event.is_set():
     try:
       sm.update(0)
-      if load_authorized_peers(params):
+      if load_authorized_peers():
         broadcast_peer_notification("liveState", _live_state_snapshot(sm, params))
     except Exception:
       cloudlog.exception("athena.live_state_handler.exception")
@@ -1211,21 +1207,19 @@ def handle_athena_call(sender: str, body: dict) -> None:
 
 def handle_peer_message(data: str) -> bool:
   try:
-    message = json.loads(data)
-    if message.get("type") != "peer":
+    dongle_id = Params().get("DongleId")
+    if dongle_id is None:
+      return True
+
+    peer_message = unpack_peer_message(data, dongle_id)
+    if peer_message is None:
       return False
 
-    sender = message["from"]
-    dongle_id = Params().get("DongleId")
-    if dongle_id is None or message.get("to") != dongle_id:
+    sender, body, decrypt_failed = peer_message
+    if body is None:
+      if decrypt_failed:
+        cloudlog.event("athena.websocket.decrypt_failed", sender=sender, error=True)
       return True
-
-    plaintext = decrypt_payload(message["payload"], sender, dongle_id)
-    if plaintext is None:
-      cloudlog.event("athena.p2p.decrypt_failed", sender=sender, error=True)
-      return True
-
-    body = json.loads(plaintext)
 
     if body.get("type") == "pair-request":
       if body.get("publicKey") != sender:
@@ -1235,12 +1229,12 @@ def handle_peer_message(data: str) -> bool:
       if not verify_pair_token(body.get("pairToken"), dongle_id):
         raise Exception("invalid pair token")
       authorize_peer(body["publicKey"], label=body.get("label") if isinstance(body.get("label"), str) else None)
-      cloudlog.event("athena.p2p.paired", sender=sender)
+      cloudlog.event("athena.websocket.paired", sender=sender)
       send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id})
       return True
 
     if sender not in load_authorized_peers():
-      cloudlog.event("athena.p2p.unauthorized", sender=sender, error=True)
+      cloudlog.event("athena.websocket.unauthorized", sender=sender, error=True)
       return True
 
     if body.get("type") == "athena-call":
@@ -1253,7 +1247,7 @@ def handle_peer_message(data: str) -> bool:
         "error": body.get("error"),
       }))
     elif body.get("type") == "notification":
-      cloudlog.event("athena.p2p.notification", sender=sender, name=body.get("name"), payload=body.get("payload"))
+      cloudlog.event("athena.websocket.notification", sender=sender, name=body.get("name"), payload=body.get("payload"))
     elif body.get("method"):
       body["type"] = "athena-call"
       handle_athena_call(sender, body)
@@ -1261,7 +1255,7 @@ def handle_peer_message(data: str) -> bool:
       log_recv_queue.put_nowait(json.dumps(body))
     return True
   except Exception:
-    cloudlog.exception("athena.p2p.handle_peer_message_failed")
+    cloudlog.exception("athena.websocket.handle_peer_message_failed")
     return True
 
 
@@ -1400,9 +1394,9 @@ def main(exit_event: threading.Event | None = None):
 
   params = Params()
   try:
-    sync_ssh_keys(params)
+    sync_ssh_keys()
   except Exception:
-    cloudlog.exception("athena.p2p.sync_ssh_keys_failed")
+    cloudlog.exception("athena.websocket.sync_ssh_keys_failed")
 
   dongle_id = params.get("DongleId")
   UploadQueueCache.initialize(upload_queue)

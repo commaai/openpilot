@@ -5,8 +5,8 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
 
 from openpilot.common.params import Params
+from openpilot.system.athena.identity import DONGLE_ID_LEN
 from openpilot.system.athena.registration import (
-  ASIUS_DONGLE_ID_LEN,
   dongle_id_from_public_key,
   prepare_fallback_identity_dir,
   public_key_from_dongle_id,
@@ -45,7 +45,7 @@ class TestRegistration:
     public_key = self._generate_keys()
     dongle = dongle_id_from_public_key(public_key)
 
-    assert len(dongle) == ASIUS_DONGLE_ID_LEN
+    assert len(dongle) == DONGLE_ID_LEN
     assert public_key_from_dongle_id(dongle) == public_key
 
   def test_valid_cache(self):

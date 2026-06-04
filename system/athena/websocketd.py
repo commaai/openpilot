@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, load_pem_private_key
 
-from openpilot.common.params import Params
+from openpilot.system.athena.identity import bytes_to_identity, identity_to_bytes, is_dongle_id
 
 
 ATHENA_AUTHORIZED_KEYS_PARAM = "AthenadAuthorizedKeys"
@@ -18,16 +18,9 @@ ATHENA_ACL_EPOCH_PARAM = "AthenadAuthorizedKeysEpoch"
 ATHENA_PAIRING_UNTIL_PARAM = "AthenadPairingUntil"
 GITHUB_SSH_KEYS_PARAM = "GithubSshKeys"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
-BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 GENERATED_SSH_KEY_COMMENT = "asius-app"
 MAX_PAYLOAD_AGE_SECONDS = 60
 PAIRING_MODE_SECONDS = 180
-KEY_BYTES = {
-  "ed25519": 32,
-}
-KEY_BASE58_LENGTH = {
-  "ed25519": 44,
-}
 
 def base64url_encode(data: bytes) -> str:
   return base64.urlsafe_b64encode(data).decode().rstrip("=")
@@ -35,56 +28,6 @@ def base64url_encode(data: bytes) -> str:
 
 def base64url_decode(data: str) -> bytes:
   return base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
-
-
-def base58_encode(value: int) -> str:
-  if value == 0:
-    return BASE58[0]
-
-  out = []
-  while value:
-    value, rem = divmod(value, 58)
-    out.append(BASE58[rem])
-  return "".join(reversed(out))
-
-
-def base58_decode(value: str) -> int:
-  decoded = 0
-  for char in value:
-    decoded *= 58
-    decoded += BASE58.index(char)
-  return decoded
-
-
-def base58_to_bytes(value: str, algorithm: str = "ed25519") -> bytes:
-  if len(value) != KEY_BASE58_LENGTH[algorithm]:
-    raise ValueError(f"expected {KEY_BASE58_LENGTH[algorithm]} char {algorithm} base58 key")
-  decoded = base58_decode(value)
-  byte_length = KEY_BYTES[algorithm]
-  if decoded >= 1 << (byte_length * 8):
-    raise ValueError("invalid base58 value for byte length")
-  return decoded.to_bytes(byte_length, "big")
-
-
-def bytes_to_base58(value: bytes, algorithm: str = "ed25519") -> str:
-  byte_length = KEY_BYTES[algorithm]
-  if len(value) != byte_length:
-    raise ValueError(f"expected {byte_length} {algorithm} bytes")
-  return base58_encode(int.from_bytes(value, "big")).rjust(KEY_BASE58_LENGTH[algorithm], BASE58[0])
-
-
-def is_asius_dongle_id(dongle_id: str | None) -> bool:
-  if dongle_id is None:
-    return False
-  try:
-    base58_to_bytes(dongle_id, "ed25519")
-    return True
-  except Exception:
-    return False
-
-
-def random_base58_secret() -> str:
-  return bytes_to_base58(os.urandom(32), "ed25519")
 
 
 def wall_time() -> float:
@@ -109,7 +52,7 @@ def write_ssh_string(data: bytes) -> bytes:
 
 
 def identity_to_ssh_public_key(public_key: str) -> str:
-  raw_public_key = base58_to_bytes(public_key, "ed25519")
+  raw_public_key = identity_to_bytes(public_key)
   data = write_ssh_string(b"ssh-ed25519") + write_ssh_string(raw_public_key)
   return f"ssh-ed25519 {base64.b64encode(data).decode()} {GENERATED_SSH_KEY_COMMENT}:{public_key}"
 
@@ -131,21 +74,9 @@ def ssh_public_key_to_identity(key: str) -> str | None:
       return None
 
     public_key, _ = read_ssh_string(data, offset)
-    return bytes_to_base58(public_key, "ed25519")
+    return bytes_to_identity(public_key)
   except Exception:
     return None
-
-
-def load_github_ssh_peers() -> dict[str, dict[str, str]]:
-  keys = read_raw_param(GITHUB_SSH_KEYS_PARAM) or ""
-  peers = {}
-  for key in keys.splitlines():
-    if is_generated_ssh_key(key):
-      continue
-    public_key = ssh_public_key_to_identity(key)
-    if public_key is not None:
-      peers[public_key] = {"publicKey": public_key}
-  return peers
 
 
 def read_raw_param(key: str) -> str | None:
@@ -163,39 +94,39 @@ def write_raw_param(key: str, value: str) -> None:
   os.replace(tmp_path, path)
 
 
-def get_acl_epoch(params: Params | None = None) -> int:
+def get_acl_epoch() -> int:
   try:
     return int(read_raw_param(ATHENA_ACL_EPOCH_PARAM) or "0")
   except ValueError:
     return 0
 
 
-def bump_acl_epoch(params: Params | None = None) -> int:
-  epoch = get_acl_epoch(params) + 1
+def bump_acl_epoch() -> int:
+  epoch = get_acl_epoch() + 1
   write_raw_param(ATHENA_ACL_EPOCH_PARAM, str(epoch))
   return epoch
 
 
-def enable_pairing_mode(params: Params | None = None, duration_seconds: int = PAIRING_MODE_SECONDS) -> int:
+def enable_pairing_mode(duration_seconds: int = PAIRING_MODE_SECONDS) -> int:
   pairing_until = int(wall_time()) + duration_seconds
   write_raw_param(ATHENA_PAIRING_UNTIL_PARAM, str(pairing_until))
   return pairing_until
 
 
-def pairing_mode_active(params: Params | None = None) -> bool:
+def pairing_mode_active() -> bool:
   try:
     return int(read_raw_param(ATHENA_PAIRING_UNTIL_PARAM) or "0") >= int(wall_time())
   except ValueError:
     return False
 
 
-def load_stored_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str | int]]:
+def load_authorized_peers() -> dict[str, dict[str, str | int]]:
   try:
     raw = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
-    raw_peers = raw if isinstance(raw, dict) else json.loads(raw or "{}")
+    raw_peers = json.loads(raw or "{}")
     peers = {}
     for public_key, peer in raw_peers.items():
-      if not is_asius_dongle_id(public_key):
+      if not is_dongle_id(public_key):
         continue
       record: dict[str, str | int] = {"publicKey": public_key}
       if isinstance(peer, dict):
@@ -211,15 +142,11 @@ def load_stored_authorized_peers(params: Params | None = None) -> dict[str, dict
     return {}
 
 
-def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str | int]]:
-  return load_stored_authorized_peers(params)
-
-
-def save_authorized_peers(peers: dict[str, dict[str, str | int]], params: Params | None = None) -> None:
+def save_authorized_peers(peers: dict[str, dict[str, str | int]]) -> None:
   write_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM, json.dumps(peers))
 
 
-def sync_ssh_keys(params: Params | None = None) -> str:
+def sync_ssh_keys() -> str:
   lines = []
   seen = set()
   for line in (read_raw_param(GITHUB_SSH_KEYS_PARAM) or "").splitlines():
@@ -229,7 +156,7 @@ def sync_ssh_keys(params: Params | None = None) -> str:
     lines.append(line)
     seen.add(line)
 
-  for public_key in sorted(load_stored_authorized_peers(params)):
+  for public_key in sorted(load_authorized_peers()):
     line = identity_to_ssh_public_key(public_key)
     if line not in seen:
       lines.append(line)
@@ -240,19 +167,18 @@ def sync_ssh_keys(params: Params | None = None) -> str:
   return keys
 
 
-def authorize_peer(public_key: str, params: Params | None = None, label: str | None = None) -> dict[str, str | int]:
-  if not is_asius_dongle_id(public_key):
+def authorize_peer(public_key: str, label: str | None = None) -> dict[str, str | int]:
+  if not is_dongle_id(public_key):
     raise ValueError("invalid Athena peer key")
 
-  params = params or Params()
-  peers = load_stored_authorized_peers(params)
+  peers = load_authorized_peers()
   peer = peers.get(public_key, {"publicKey": public_key, "createdAt": int(wall_time())})
   if label:
     peer["label"] = label
-  peer["aclEpoch"] = str(bump_acl_epoch(params))
+  peer["aclEpoch"] = str(bump_acl_epoch())
   peers[public_key] = peer
-  save_authorized_peers(peers, params)
-  sync_ssh_keys(params)
+  save_authorized_peers(peers)
+  sync_ssh_keys()
 
   return peer
 
@@ -279,14 +205,14 @@ def pairing_token(recipient: str, acl_epoch: int, expiry_seconds: int = PAIRING_
   return sign_jwt({"type": "pair", "to": recipient, "aclEpoch": acl_epoch}, expiry_seconds)
 
 
-def pairing_url(recipient: str, acl_epoch: int, params: Params | None = None) -> str:
-  enable_pairing_mode(params)
-  return f"https://app.asius.ai/#pair={pairing_token(recipient, acl_epoch)}"
+def pairing_url(recipient: str) -> str:
+  enable_pairing_mode()
+  return f"https://app.asius.ai/#pair={pairing_token(recipient, get_acl_epoch())}"
 
 
 def verify_identity_signature(public_key: str, signature: str, data: bytes) -> bool:
   try:
-    ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(public_key, "ed25519")).verify(base64url_decode(signature), data)
+    ed25519.Ed25519PublicKey.from_public_bytes(identity_to_bytes(public_key)).verify(base64url_decode(signature), data)
     return True
   except Exception:
     return False
@@ -303,7 +229,7 @@ def x25519_private_from_identity() -> x25519.X25519PrivateKey:
 
 def x25519_public_from_identity(public_key: str) -> x25519.X25519PublicKey:
   p = 2**255 - 19
-  raw = bytearray(base58_to_bytes(public_key, "ed25519"))
+  raw = bytearray(identity_to_bytes(public_key))
   raw[31] &= 0x7f
   y = int.from_bytes(raw, "little")
   u = ((1 + y) * pow(1 - y, p - 2, p)) % p
@@ -332,6 +258,15 @@ def encrypt_payload(text: str, sender: str, recipient: str) -> str:
   return json.dumps({**signed, "sig": base64url_encode(signature)})
 
 
+def pack_peer_message(sender: str, recipient: str, body: dict) -> str:
+  return json.dumps({
+    "type": "peer",
+    "from": sender,
+    "to": recipient,
+    "payload": encrypt_payload(json.dumps(body), sender, recipient),
+  })
+
+
 def verify_pair_token(token: str | None, recipient: str) -> bool:
   try:
     if token is None:
@@ -339,7 +274,7 @@ def verify_pair_token(token: str | None, recipient: str) -> bool:
     unverified = jwt.decode(token, options={"verify_signature": False})
     if unverified.get("to") != recipient:
       return False
-    public_key = ed25519.Ed25519PublicKey.from_public_bytes(base58_to_bytes(recipient, "ed25519"))
+    public_key = ed25519.Ed25519PublicKey.from_public_bytes(identity_to_bytes(recipient))
     verified = jwt.decode(token, public_key, algorithms=["EdDSA"])
     return verified.get("type") == "pair"
   except Exception:
@@ -370,3 +305,16 @@ def decrypt_payload(payload: str, sender: str, recipient: str) -> str | None:
     return None
   except Exception:
     return None
+
+
+def unpack_peer_message(data: str, recipient: str) -> tuple[str, dict | None, bool] | None:
+  message = json.loads(data)
+  if message.get("type") != "peer":
+    return None
+
+  sender = message["from"]
+  if message.get("to") != recipient:
+    return sender, None, False
+
+  plaintext = decrypt_payload(message["payload"], sender, recipient)
+  return sender, json.loads(plaintext) if plaintext is not None else None, plaintext is None
