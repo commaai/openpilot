@@ -158,10 +158,7 @@ def main(demo=False):
   params.put_bool("UsbGpuPresent", _present)
   params.put_bool("UsbGpuCompiled", _compiled)
 
-  if not USBGPU:
-    # USB GPU currently saturates a core so can't do this yet,
-    # also need to move the aux USB interrupts for good timings
-    config_realtime_process(7, 54)
+  config_realtime_process(7, 54)
 
   # visionipc clients
   while True:
