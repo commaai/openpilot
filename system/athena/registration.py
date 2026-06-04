@@ -16,6 +16,7 @@ UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 FALLBACK_IDENTITY_DIR = Path("/data/persist/comma")
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 ED25519_KEY_BYTES = 32
+ASIUS_DONGLE_ID_LEN = 44
 
 
 def is_registered_device() -> bool:
@@ -45,11 +46,11 @@ def base58_decode(value: str) -> int:
 def bytes_to_dongle_id(value: bytes) -> str:
   if len(value) != ED25519_KEY_BYTES:
     raise ValueError("Asius identity requires a 32-byte Ed25519 public key")
-  return base58_encode(int.from_bytes(value, "big"))
+  return base58_encode(int.from_bytes(value, "big")).rjust(ASIUS_DONGLE_ID_LEN, BASE58[0])
 
 
 def dongle_id_to_bytes(dongle_id: str) -> bytes:
-  if not dongle_id or not all(char in BASE58 for char in dongle_id):
+  if len(dongle_id) != ASIUS_DONGLE_ID_LEN or not all(char in BASE58 for char in dongle_id):
     raise ValueError("invalid Asius DongleId")
 
   encoded = base58_decode(dongle_id)

@@ -25,6 +25,9 @@ PAIRING_MODE_SECONDS = 180
 KEY_BYTES = {
   "ed25519": 32,
 }
+KEY_BASE58_LENGTH = {
+  "ed25519": 44,
+}
 
 def base64url_encode(data: bytes) -> str:
   return base64.urlsafe_b64encode(data).decode().rstrip("=")
@@ -54,8 +57,8 @@ def base58_decode(value: str) -> int:
 
 
 def base58_to_bytes(value: str, algorithm: str = "ed25519") -> bytes:
-  if not value:
-    raise ValueError("missing base58 key")
+  if len(value) != KEY_BASE58_LENGTH[algorithm]:
+    raise ValueError(f"expected {KEY_BASE58_LENGTH[algorithm]} char {algorithm} base58 key")
   decoded = base58_decode(value)
   byte_length = KEY_BYTES[algorithm]
   if decoded >= 1 << (byte_length * 8):
@@ -67,7 +70,7 @@ def bytes_to_base58(value: bytes, algorithm: str = "ed25519") -> str:
   byte_length = KEY_BYTES[algorithm]
   if len(value) != byte_length:
     raise ValueError(f"expected {byte_length} {algorithm} bytes")
-  return base58_encode(int.from_bytes(value, "big"))
+  return base58_encode(int.from_bytes(value, "big")).rjust(KEY_BASE58_LENGTH[algorithm], BASE58[0])
 
 
 def is_asius_dongle_id(dongle_id: str | None) -> bool:
@@ -186,26 +189,33 @@ def pairing_mode_active(params: Params | None = None) -> bool:
     return False
 
 
-def load_stored_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
+def load_stored_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str | int]]:
   try:
     raw = read_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM)
     raw_peers = raw if isinstance(raw, dict) else json.loads(raw or "{}")
-    return {
-      public_key: {"publicKey": public_key, **({"aclEpoch": peer["aclEpoch"]} if isinstance(peer, dict) and "aclEpoch" in peer else {})}
-      for public_key, peer in raw_peers.items()
-      if is_asius_dongle_id(public_key)
-    }
+    peers = {}
+    for public_key, peer in raw_peers.items():
+      if not is_asius_dongle_id(public_key):
+        continue
+      record: dict[str, str | int] = {"publicKey": public_key}
+      if isinstance(peer, dict):
+        if isinstance(peer.get("label"), str):
+          record["label"] = peer["label"]
+        if isinstance(peer.get("createdAt"), (int, float)):
+          record["createdAt"] = int(peer["createdAt"])
+        if isinstance(peer.get("aclEpoch"), (str, int)):
+          record["aclEpoch"] = peer["aclEpoch"]
+      peers[public_key] = record
+    return peers
   except Exception:
     return {}
 
 
-def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str]]:
-  peers = load_github_ssh_peers()
-  peers.update(load_stored_authorized_peers(params))
-  return peers
+def load_authorized_peers(params: Params | None = None) -> dict[str, dict[str, str | int]]:
+  return load_stored_authorized_peers(params)
 
 
-def save_authorized_peers(peers: dict[str, dict[str, str]], params: Params | None = None) -> None:
+def save_authorized_peers(peers: dict[str, dict[str, str | int]], params: Params | None = None) -> None:
   write_raw_param(ATHENA_AUTHORIZED_KEYS_PARAM, json.dumps(peers))
 
 
@@ -230,13 +240,15 @@ def sync_ssh_keys(params: Params | None = None) -> str:
   return keys
 
 
-def authorize_peer(public_key: str, params: Params | None = None) -> dict[str, str]:
+def authorize_peer(public_key: str, params: Params | None = None, label: str | None = None) -> dict[str, str | int]:
   if not is_asius_dongle_id(public_key):
     raise ValueError("invalid Athena peer key")
 
   params = params or Params()
   peers = load_stored_authorized_peers(params)
-  peer = {"publicKey": public_key}
+  peer = peers.get(public_key, {"publicKey": public_key, "createdAt": int(wall_time())})
+  if label:
+    peer["label"] = label
   peer["aclEpoch"] = str(bump_acl_epoch(params))
   peers[public_key] = peer
   save_authorized_peers(peers, params)

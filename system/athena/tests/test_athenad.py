@@ -406,6 +406,21 @@ class TestAthenadMethods:
     keys = dispatcher["getGithubUsername"]()
     assert keys == self.default_params["GithubUsername"]
 
+  def test_save_params_blocks_security_keys(self):
+    resp = dispatcher["saveParams"]({
+      "GithubSshKeys": "ssh-ed25519 bad",
+      "GithubUsername": "bad",
+      "DongleId": "bad",
+      "APIHost": "https://example.com",
+      "IsMetric": True,
+    })
+
+    assert resp["GithubSshKeys"] == "error: blocked"
+    assert resp["GithubUsername"] == "error: blocked"
+    assert resp["DongleId"] == "error: blocked"
+    assert resp["APIHost"] == "error: blocked"
+    assert resp["IsMetric"] == "ok"
+
   def test_get_version(self):
     resp = dispatcher["getVersion"]()
     keys = ["version", "remote", "branch", "commit"]

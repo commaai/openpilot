@@ -14,6 +14,14 @@ def test_identity_to_ssh_public_key_round_trip():
   assert p2p.is_generated_ssh_key(ssh_key)
 
 
+def test_ed25519_base58_keys_are_fixed_width():
+  key = p2p.bytes_to_base58(b"\x00" * 31 + b"\x01")
+
+  assert len(key) == 44
+  assert p2p.base58_to_bytes(key) == b"\x00" * 31 + b"\x01"
+  assert not p2p.is_asius_dongle_id(key[1:])
+
+
 def test_sync_ssh_keys_preserves_user_keys_and_tracks_authorized_peers(tmp_path, monkeypatch):
   monkeypatch.setattr(p2p, "PARAMS_DIR", tmp_path)
   other_app_key = p2p.bytes_to_base58(b"\x02" * 32)
@@ -26,11 +34,24 @@ def test_sync_ssh_keys_preserves_user_keys_and_tracks_authorized_peers(tmp_path,
 
   assert keys.splitlines() == [GITHUB_KEY, p2p.identity_to_ssh_public_key(APP_KEY)]
   assert p2p.load_github_ssh_peers() == {}
+  assert p2p.load_authorized_peers() == {APP_KEY: {"publicKey": APP_KEY}}
 
   p2p.write_raw_param(p2p.ATHENA_AUTHORIZED_KEYS_PARAM, "{}")
   keys = p2p.sync_ssh_keys()
 
   assert keys == GITHUB_KEY
+
+
+def test_authorized_peer_metadata(tmp_path, monkeypatch):
+  monkeypatch.setattr(p2p, "PARAMS_DIR", tmp_path)
+  monkeypatch.setattr(p2p, "wall_time", lambda: 1_234)
+
+  peer = p2p.authorize_peer(APP_KEY, label="Karel phone")
+
+  assert peer["publicKey"] == APP_KEY
+  assert peer["label"] == "Karel phone"
+  assert peer["createdAt"] == 1_234
+  assert p2p.load_stored_authorized_peers()[APP_KEY]["label"] == "Karel phone"
 
 
 def test_payload_timestamp_valid_rejects_old_messages(monkeypatch):

@@ -73,6 +73,25 @@ WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 LIVE_STATE_INTERVAL_S = 1.0
+SAVE_PARAMS_BLOCKED_KEYS = {
+  "AccessToken",
+  "APIHost",
+  "ApiCache_Device",
+  "AthenaHost",
+  "AthenadAuthorizedKeys",
+  "AthenadAuthorizedKeysEpoch",
+  "AthenadPairingUntil",
+  "AthenadPid",
+  "AthenadUploadQueue",
+  "AthenadWebRTCActive",
+  "DoUninstall",
+  "DongleId",
+  "GithubSshKeys",
+  "GithubUsername",
+  "HardwareSerial",
+  "LastAthenaPingTime",
+  "SecOCKey",
+}
 LIVE_STATE_SERVICES = [
   "modelV2",
   "radarState",
@@ -471,6 +490,9 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
 
   for key, value in params_to_update.items():
     try:
+      if key in SAVE_PARAMS_BLOCKED_KEYS:
+        results[key] = "error: blocked"
+        continue
       if value is None:
         params.remove(key)
         results[key] = "ok: removed"
@@ -630,6 +652,8 @@ def getAuthorizedPeers() -> dict[str, Any]:
       {
         "publicKey": public_key,
         "aclEpoch": peer.get("aclEpoch"),
+        "label": peer.get("label"),
+        "createdAt": peer.get("createdAt"),
       }
       for public_key, peer in load_stored_authorized_peers(params).items()
     ],
@@ -664,6 +688,28 @@ def getSshAuthorizedKeys() -> str:
 @dispatcher.add_method
 def getGithubUsername() -> str:
   return cast(str, Params().get("GithubUsername") or "")
+
+
+@dispatcher.add_method
+def setGithubUsername(username: str) -> dict[str, str]:
+  params = Params()
+  username = username.strip()
+  if not username:
+    params.remove("GithubUsername")
+    params.remove("GithubSshKeys")
+    sync_ssh_keys(params)
+    return {"GithubUsername": "ok: removed", "GithubSshKeys": "ok: synced"}
+
+  response = requests.get(f"https://github.com/{username}.keys", timeout=15)
+  response.raise_for_status()
+  keys = response.text.strip()
+  if not keys:
+    raise Exception(f"No SSH keys found for user '{username}'")
+
+  params.put("GithubUsername", username, block=True)
+  params.put("GithubSshKeys", keys, block=True)
+  sync_ssh_keys(params)
+  return {"GithubUsername": "ok", "GithubSshKeys": "ok: synced"}
 
 
 @dispatcher.add_method
@@ -1196,7 +1242,7 @@ def handle_peer_message(data: str) -> bool:
         raise Exception("pairing mode is not active")
       if not verify_pair_token(body.get("pairToken"), dongle_id):
         raise Exception("invalid pair token")
-      authorize_peer(body["publicKey"])
+      authorize_peer(body["publicKey"], label=body.get("label") if isinstance(body.get("label"), str) else None)
       cloudlog.event("athena.p2p.paired", sender=sender)
       send_peer_payload(sender, {"type": "pair-response", "publicKey": dongle_id})
       return True
