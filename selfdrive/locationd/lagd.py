@@ -8,6 +8,7 @@ from functools import partial
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import SERVICE_LIST
+from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.swaglog import cloudlog
@@ -19,7 +20,7 @@ BLOCK_NUM_NEEDED = 5
 MOVING_WINDOW_SEC = 60.0
 MIN_OKAY_WINDOW_SEC = 25.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
-MIN_VEGO = 15.0
+MIN_VEGO = 50.0 * CV.MPH_TO_MS
 MIN_ABS_YAW_RATE = 0.0
 MAX_YAW_RATE_SANITY_CHECK = 1.0
 MIN_NCC = 0.95
@@ -411,4 +412,4 @@ def main():
       pm.send('liveDelay', lag_msg_dat)
 
       if sm.frame % 1200 == 0: # cache every 60 seconds
-        params.put_nonblocking("LiveDelay", lag_msg_dat)
+        params.put("LiveDelay", lag_msg_dat)

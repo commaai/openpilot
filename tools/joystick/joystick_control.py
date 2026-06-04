@@ -110,7 +110,7 @@ def send_thread(joystick):
 
 
 def joystick_control_thread(joystick):
-  Params().put_bool('JoystickDebugMode', True)
+  Params().put_bool('JoystickDebugMode', True, block=True)
   threading.Thread(target=send_thread, args=(joystick,), daemon=True).start()
   while True:
     joystick.update()

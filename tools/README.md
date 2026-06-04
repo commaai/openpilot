@@ -29,7 +29,7 @@ source .venv/bin/activate
 
 **4. Build openpilot**
 ``` bash
-scons -u -j$(nproc)
+scons -u
 ```
 
 ## WSL on Windows

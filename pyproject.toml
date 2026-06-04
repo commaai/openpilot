@@ -20,13 +20,14 @@ dependencies = [
   # core
   "cffi",
   "scons",
-  "pycapnp",
+  "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "Cython",
   "setuptools",
   "numpy >=2.0",
 
   # vendored native dependencies
   "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
+  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@release-bootstrap-icons#subdirectory=bootstrap-icons",
   "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
   "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
   "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
@@ -38,6 +39,7 @@ dependencies = [
   "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
   "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
   "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
+  "json11 @ git+https://github.com/commaai/dependencies.git@release-json11#subdirectory=json11",
   "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
   "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
   "xvfb @ git+https://github.com/commaai/dependencies.git@release-xvfb#subdirectory=xvfb",
@@ -73,7 +75,7 @@ dependencies = [
   "zstandard",
 
   # ui
-  "raylib > 5.5.0.3",
+  "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
   "qrcode",
   "jeepney",
   "pillow",
@@ -94,7 +96,6 @@ testing = [
   "pytest-subtests",
   # https://github.com/pytest-dev/pytest-xdist/pull/1229
   "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
-  "pytest-asyncio",
   "pytest-mock",
   "ruff",
   "codespell",
@@ -107,7 +108,7 @@ dev = [
 ]
 
 tools = [
-  "imgui  @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
@@ -126,15 +127,17 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
-asyncio_default_fixture_loop_scope = "function"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
-  "skip_tici_setup: mark test to skip tici setup fixture"
+  "skip_tici_setup: mark test to skip tici setup fixture",
+  "nocapture: don't capture test output",
+  "shared_download_cache: share download cache between tests",
+  "xdist_group_class_property: group tests by a property of the class that contains them",
 ]
 testpaths = [
   "common",
@@ -149,7 +152,7 @@ quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
 ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite,ser"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, *.pem, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
+skip = "../tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, *.pem, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
 
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 [tool.ruff]
@@ -174,9 +177,7 @@ lint.ignore = [
   "UP045", "UP007",  # these don't play nice with raylib atm
 ]
 line-length = 160
-target-version ="py311"
 exclude = [
-  "body",
   "cereal",
   "panda",
   "opendbc",
@@ -185,7 +186,6 @@ exclude = [
   "tinygrad_repo",
   "teleoprtc",
   "teleoprtc_repo",
-  "third_party",
   "*.ipynb",
   "generated",
 ]
@@ -195,7 +195,6 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "selfdrive".msg = "Use openpilot.selfdrive"
 "common".msg = "Use openpilot.common"
 "system".msg = "Use openpilot.system"
-"third_party".msg = "Use openpilot.third_party"
 "tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
@@ -213,7 +212,6 @@ quote-style = "preserve"
 
 [tool.ty.src]
 exclude = [
-  "cereal/",
   "msgq/",
   "msgq_repo/",
   "opendbc/",
@@ -225,31 +223,19 @@ exclude = [
   "tinygrad_repo/",
   "teleoprtc/",
   "teleoprtc_repo/",
-  "third_party/",
 ]
 
 [tool.ty.rules]
-# Ignore unresolved imports for Cython-compiled modules (.pyx)
-unresolved-import = "ignore"
-# Ignore unresolved attributes - many from capnp and Cython modules
-unresolved-attribute = "ignore"
-# Ignore invalid method overrides - signature variance issues
-invalid-method-override = "ignore"
-# Ignore possibly-missing-attribute - too many false positives
-possibly-missing-attribute = "ignore"
-# Ignore invalid assignment - often intentional monkey-patching
-invalid-assignment = "ignore"
-# Ignore no-matching-overload - numpy/ctypes overload matching issues
-no-matching-overload = "ignore"
-# Ignore invalid-argument-type - many false positives from raylib, ctypes, numpy
-invalid-argument-type = "ignore"
-# Ignore call-non-callable - false positives from dynamic types
-call-non-callable = "ignore"
-# Ignore unsupported-operator - false positives from dynamic types
-unsupported-operator = "ignore"
-# Ignore not-subscriptable - false positives from dynamic types
-not-subscriptable = "ignore"
-# not-iterable errors are now fixed
+unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
+unresolved-attribute = "ignore"  # many from capnp and Cython modules
+invalid-method-override = "ignore"  # signature variance issues
+possibly-missing-attribute = "ignore"  # too many false positives
+invalid-assignment = "ignore"  # often intentional monkey-patching
+no-matching-overload = "ignore"  # numpy/ctypes overload matching issues
+invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
+call-non-callable = "ignore"  # false positives from dynamic types
+unsupported-operator = "ignore" # false positives from dynamic types
+not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
