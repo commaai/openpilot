@@ -130,7 +130,7 @@ static void set_dragon_sensor_timing(int sensor_fd, int cam_idx) {
 
 static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
                                    uint8_t *y_out, uint8_t *uv_out,
-                                   int width, int height, int out_stride) {
+                                   int raw_width, int output_width, int height, int out_stride) {
   const int wb_r = 410;   // ~1.60x
   const int wb_g = 256;   // 1.00x
   const int wb_b = 390;   // ~1.52x
@@ -141,14 +141,16 @@ static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
     const int dst_y1 = height - 1 - y;
     const int dst_uv_y = height / 2 - 1 - y / 2;
 
-    for (int x = 0; x < width - 1; x += 2) {
-      const int dst_x0 = width - 2 - x;
-      const int dst_x1 = width - 1 - x;
+    for (int x = 0; x < output_width - 1; x += 2) {
+      int src_x = ((x * raw_width) / output_width) & ~1;
+      src_x = std::min(src_x, raw_width - 2);
+      const int dst_x0 = output_width - 2 - x;
+      const int dst_x1 = output_width - 1 - x;
 
-      int R  = std::max((int)raw10_pixel(raw, y, x, raw_stride) - black, 0);
-      int Gr = std::max((int)raw10_pixel(raw, y, x + 1, raw_stride) - black, 0);
-      int Gb = std::max((int)raw10_pixel(raw, y + 1, x, raw_stride) - black, 0);
-      int B  = std::max((int)raw10_pixel(raw, y + 1, x + 1, raw_stride) - black, 0);
+      int R  = std::max((int)raw10_pixel(raw, y, src_x, raw_stride) - black, 0);
+      int Gr = std::max((int)raw10_pixel(raw, y, src_x + 1, raw_stride) - black, 0);
+      int Gb = std::max((int)raw10_pixel(raw, y + 1, src_x, raw_stride) - black, 0);
+      int B  = std::max((int)raw10_pixel(raw, y + 1, src_x + 1, raw_stride) - black, 0);
 
       int r10 = std::min((R * wb_r) >> 8, 1023);
       int g10_r = std::min((Gr * wb_g) >> 8, 1023);
@@ -162,9 +164,6 @@ static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
       uint8_t b8 = gamma_lut[b10];
 
       uint8_t g8 = (gr8 + gb8 + 1) >> 1;
-      // Keep one luma sample per sensor photosite. Duplicating luma across
-      // each 2x2 Bayer block makes the Dragon preview look horizontally
-      // stretched even though the encoded frame is still 16:9.
       y_out[dst_y1 * out_stride + dst_x1] = std::clamp((int)r8, 16, 235);
       y_out[dst_y1 * out_stride + dst_x0] = std::clamp((int)gr8, 16, 235);
       y_out[dst_y0 * out_stride + dst_x1] = std::clamp((int)gb8, 16, 235);
@@ -191,6 +190,7 @@ public:
   int n_bufs = 4;
   uint32_t frame_size = 0;
 
+  uint32_t output_width = 0, output_height = 0;
   uint32_t stride = 0, y_height = 0, uv_height = 0, yuv_size = 0, uv_offset = 0;
 
   DragonCamera(const CameraConfig &config) : cc(config), enabled(config.enabled) {}
@@ -402,7 +402,11 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
   set_formats();
   set_dragon_sensor_timing(sensor_fd, cam_idx);
 
-  auto [s, yh, uvh, sz] = get_nv12_info(sensor->frame_width, sensor->frame_height);
+  // IMX219 RDI is 1920x1080, but the Dragon optical path currently produces
+  // a 2:1 horizontal stretch. Publish corrected square-pixel VIPC frames.
+  output_width = sensor->frame_width / 2;
+  output_height = sensor->frame_height;
+  auto [s, yh, uvh, sz] = get_nv12_info(output_width, output_height);
   stride = s;
   y_height = yh;
   uv_height = uvh;
@@ -410,7 +414,7 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
   uv_offset = stride * y_height;
 
   v->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT,
-                               sensor->frame_width, sensor->frame_height,
+                               output_width, output_height,
                                yuv_size, stride, uv_offset);
 
   // V4L2 MMAP buffers for raw RDI frames
@@ -652,7 +656,7 @@ void CameraState::process_rdi_frame(int buf_idx, uint64_t timestamp) {
     uint8_t *uv_plane = y_plane + camera.uv_offset;
     int raw_stride = camera.frame_size / camera.sensor->frame_height;
     debayer_raw10_to_nv12(raw, raw_stride, y_plane, uv_plane,
-                           camera.sensor->frame_width, camera.sensor->frame_height,
+                           camera.sensor->frame_width, camera.output_width, camera.output_height,
                            camera.stride);
   }
 
