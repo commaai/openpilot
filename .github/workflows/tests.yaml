@@ -196,19 +196,31 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 10 || 40 }}
       run: scons
     - name: Driving test
-      timeout-minutes: 2
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 15 || 20 }}
+      env:
+        COLLECT_LOGS: "1"
+        # Allow more time per test phase on slow 2-core free runners where
+        # MetaDrive uses software OpenGL (llvmpipe) and can take 60+ seconds to start
+        MAX_TIME_PER_STEP: ${{ contains(runner.name, 'nsc') && '60' || '120' }}
       run: |
         source selfdrive/test/setup_xvfb.sh
         pytest -s tools/sim/tests/test_metadrive_bridge.py
+    - name: Upload driving logs
+      uses: actions/upload-artifact@v6
+      if: always()
+      continue-on-error: true
+      with:
+        name: metadrive-logs-${{ github.run_id }}
+        path: ~/.comma/media/0/realdata/
 
   create_ui_report:
     name: Create UI Report
