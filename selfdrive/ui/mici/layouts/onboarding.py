@@ -324,9 +324,9 @@ class TermsPage(Scroller):
 
     self._scroller.add_widgets([
       self._terms_header,
-      GreyBigButton("swipe for QR code", "or go to https://comma.ai/terms",
+      GreyBigButton("swipe for QR code", "or go to https://asius.ai/terms",
                     gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
-      QRCodeWidget("https://comma.ai/terms"),
+      QRCodeWidget("https://asius.ai/terms"),
       self._must_accept_card,
       self._accept_button,
       self._decline_button,

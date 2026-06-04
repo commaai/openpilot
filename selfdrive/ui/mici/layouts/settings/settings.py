@@ -39,7 +39,7 @@ class SettingsLayout(NavScroller):
       network_btn,
       device_btn,
       PairBigButton(),
-      #BigDialogButton("manual", "", "icons_mici/settings/manual_icon.png", "Check out the mici user\nmanual at comma.ai/setup"),
+      #BigDialogButton("manual", "", "icons_mici/settings/manual_icon.png", "Check out the mici user\nmanual at asius.ai/setup"),
       developer_btn,
     ])
 

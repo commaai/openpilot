@@ -28,7 +28,7 @@ def print_profiles(lpa: LPABase) -> None:
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
+  parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your Asius device', epilog='asius.ai')
   sub = parser.add_subparsers(dest='cmd')
 
   sub.add_parser('list', help='list profiles')

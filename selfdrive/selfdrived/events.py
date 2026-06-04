@@ -823,7 +823,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # For example if the device is pointed too much to the left or the right.
   # Usually this can only be solved by removing the mount from the windshield completely,
   # and attaching while making sure the device is pointed straight forward and is level.
-  # See https://comma.ai/setup for more information
+  # See https://asius.ai/setup for more information
   EventName.calibrationInvalid: {
     ET.PERMANENT: calibration_invalid_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Invalid: Remount Device & Recalibrate"),

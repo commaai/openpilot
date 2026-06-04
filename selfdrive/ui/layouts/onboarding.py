@@ -113,7 +113,7 @@ class TermsPage(Widget):
     self._on_decline = on_decline
 
     self._title = Label(tr("Welcome to openpilot"), font_size=90, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
-    self._desc = Label(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."),
+    self._desc = Label(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://asius.ai/terms before continuing."),
                        font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
 
     self._decline_btn = Button(tr("Decline"), click_callback=on_decline)

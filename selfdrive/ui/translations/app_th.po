@@ -629,8 +629,8 @@ msgid "You must accept the Terms and Conditions in order to use openpilot."
 msgstr "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้งาน openpilot"
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
-msgstr "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้ openpilot อ่านข้อกำหนดล่าสุดได้ที่ https://comma.ai/terms ก่อนดำเนินการต่อ"
+msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://asius.ai/terms before continuing."
+msgstr "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้ openpilot อ่านข้อกำหนดล่าสุดได้ที่ https://asius.ai/terms ก่อนดำเนินการต่อ"
 
 #: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
 msgid "camera starting"

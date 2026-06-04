@@ -240,7 +240,7 @@ msgid "Welcome to openpilot"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
+msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://asius.ai/terms before continuing."
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py

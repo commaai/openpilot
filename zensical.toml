@@ -1,7 +1,7 @@
 [project]
 site_name = "openpilot docs"
 site_url = "https://docs.comma.ai"
-repo_url = "https://github.com/commaai/openpilot/"
+repo_url = "https://github.com/asiusai/openpilot/"
 
 docs_dir = "docs"
 site_dir = "docs_site/"
@@ -12,7 +12,7 @@ nav = [
   { "What is openpilot?" = "index.md" },
   { "How-to" = [
     { "Turn the speed blue" = "how-to/turn-the-speed-blue.md" },
-    { "Connect to a comma 3X or four" = "how-to/connect-to-comma.md" },
+    { "Connect to an Asius device" = "how-to/connect-to-comma.md" },
     { "Add support for a car" = "how-to/car-port.md" },
   ] },
   { "Concepts" = [
@@ -23,14 +23,14 @@ nav = [
   { "Contributing" = [
     { "Feedback" = "contributing/feedback.md" },
     { "Roadmap" = "contributing/roadmap.md" },
-    { "Contributing Guide →" = "https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md" },
+    { "Contributing Guide →" = "https://github.com/asiusai/openpilot/blob/master/docs/CONTRIBUTING.md" },
   ] },
   { "Links" = [
-    { "Blog →" = "https://blog.comma.ai" },
-    { "Bounties →" = "https://comma.ai/bounties" },
-    { "GitHub →" = "https://github.com/commaai" },
-    { "Discord →" = "https://discord.comma.ai" },
-    { "X →" = "https://x.com/comma_ai" },
+    { "Blog →" = "https://asius.ai/blog" },
+    { "Bounties →" = "https://asius.ai/bounties" },
+    { "GitHub →" = "https://github.com/asiusai" },
+    { "Discord →" = "https://discord.asius.ai" },
+    { "X →" = "https://x.com/asiusai" },
   ] },
 ]
 
@@ -48,15 +48,15 @@ features = [
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
-link = "https://github.com/commaai"
+link = "https://github.com/asiusai"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/discord"
-link = "https://discord.comma.ai"
+link = "https://discord.asius.ai"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/x-twitter"
-link = "https://x.com/comma_ai"
+link = "https://x.com/asiusai"
 
 [project.markdown_extensions.attr_list]
 

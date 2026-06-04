@@ -17,7 +17,7 @@ DESCRIPTIONS = {
   ),
   'ssh_key': tr_noop(
     "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username " +
-    "other than your own. A comma employee will NEVER ask you to add their GitHub username."
+    "other than your own. An Asius employee will NEVER ask you to add their GitHub username."
   ),
   'alpha_longitudinal': tr_noop(
     "<b>WARNING: openpilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB).</b><br><br>" +

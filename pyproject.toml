@@ -5,7 +5,7 @@ license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
 authors = [
-  {name = "Vehicle Researcher", email="user@comma.ai"}
+  {name = "Vehicle Researcher", email="user@asius.ai"}
 ]
 
 dependencies = [
@@ -112,7 +112,7 @@ tools = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/commaai/openpilot"
+Homepage = "https://github.com/asiusai/openpilot"
 
 [build-system]
 requires = ["hatchling"]
