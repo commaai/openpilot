@@ -5,7 +5,7 @@ import random
 import unittest # noqa: TID251
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, Phase, given, settings
+from hypothesis import Phase, given, settings
 from openpilot.common.parameterized import parameterized_class
 
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
@@ -305,8 +305,7 @@ class TestCarModelBase(unittest.TestCase):
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink),
-            suppress_health_check=[HealthCheck.differing_executors])
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
     """
@@ -378,8 +377,7 @@ class TestCarModelBase(unittest.TestCase):
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink),
-            suppress_health_check=[HealthCheck.differing_executors])
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_panda_safety_carstate_fuzzy(self, data):
     """
