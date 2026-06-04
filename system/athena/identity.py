@@ -1,3 +1,6 @@
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_public_key
+
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 ED25519_KEY_BYTES = 32
 DONGLE_ID_LEN = 44
@@ -46,3 +49,20 @@ def is_dongle_id(dongle_id: str | None) -> bool:
     return True
   except Exception:
     return False
+
+
+def dongle_id_from_public_key(public_key: str) -> str:
+  key = load_pem_public_key(public_key.encode())
+  if not isinstance(key, ed25519.Ed25519PublicKey):
+    raise ValueError("identity requires an Ed25519 public key")
+
+  public_bytes = key.public_bytes(Encoding.Raw, PublicFormat.Raw)
+  return bytes_to_identity(public_bytes)
+
+
+def public_key_from_dongle_id(dongle_id: str) -> str:
+  if not is_dongle_id(dongle_id):
+    raise ValueError("invalid DongleId")
+
+  key = ed25519.Ed25519PublicKey.from_public_bytes(identity_to_bytes(dongle_id))
+  return key.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode()

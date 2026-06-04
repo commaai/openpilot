@@ -42,7 +42,7 @@ class Paths:
     if PC:
       return os.path.join(Paths.comma_home(), "persist")
     else:
-      return "/persist/"
+      return "/data/persist/"
 
   @staticmethod
   def stats_root() -> str:
