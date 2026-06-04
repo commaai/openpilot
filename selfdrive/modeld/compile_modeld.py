@@ -259,15 +259,19 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def read_file_chunked_to_shm(path):
+def read_file_chunked_to_disk(path):
   import shutil
+  import tempfile
   from openpilot.common.file_chunker import open_file_chunked
-  from openpilot.system.hardware.hw import Paths
-  shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
-  atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
-  with open_file_chunked(path) as src, open(shm_path, 'wb') as f:
+  # Stream the chunks into one file on the same (real) filesystem as the chunks -- NOT /dev/shm --
+  # so models too big to fit in RAM/shm still load. OnnxRunner mmaps the result and pages it in
+  # lazily, so peak memory stays small regardless of model size.
+  fd, dst = tempfile.mkstemp(prefix=os.path.basename(path) + '.', suffix='.assembled',
+                             dir=os.path.dirname(os.path.abspath(path)))
+  atexit.register(lambda: os.path.exists(dst) and os.remove(dst))
+  with os.fdopen(fd, 'wb') as f, open_file_chunked(path) as src:
     shutil.copyfileobj(src, f)
-  return shm_path
+  return dst
 
 
 if __name__ == "__main__":
@@ -286,9 +290,9 @@ if __name__ == "__main__":
   args = p.parse_args()
 
   model_paths = {
-    'vision': read_file_chunked_to_shm(args.vision_onnx),
-    'off_policy': read_file_chunked_to_shm(args.off_policy_onnx),
-    'on_policy': read_file_chunked_to_shm(args.on_policy_onnx),
+    'vision': read_file_chunked_to_disk(args.vision_onnx),
+    'off_policy': read_file_chunked_to_disk(args.off_policy_onnx),
+    'on_policy': read_file_chunked_to_disk(args.on_policy_onnx),
   }
   model_w, model_h = args.model_size
 
