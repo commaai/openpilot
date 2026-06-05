@@ -135,6 +135,7 @@ class Controls:
       actuators.steeringAngleDeg = float(lateral_output)
     elif self.CP.steerControlType == car.CarParams.SteerControlType.curvature:
       actuators.curvature = float(lateral_output)
+      actuators.steeringAngleDeg = math.degrees(self.VM.get_steer_from_curvature(-float(lateral_output), CS.vEgo, lp.roll))
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)

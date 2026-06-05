@@ -6,10 +6,13 @@ from openpilot.common.pid import PIDController
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.drive_helpers import MAX_CURVATURE
 
+CURVATURE_SATURATION_THRESHOLD = 1e-3  # 1/m
+
 
 class LatControlCurvature(LatControl):
   def __init__(self, CP, CI, dt):
     super().__init__(CP, CI, dt)
+    self.sat_check_min_speed = 5.
     self.pid = PIDController(([10., 40.], [0., 1.45]), ([10., 40.], [0., 0.12]),
                              pos_limit=MAX_CURVATURE, neg_limit=-MAX_CURVATURE, rate=1 / dt)
 
@@ -37,11 +40,13 @@ class LatControlCurvature(LatControl):
       pid_log.error = float(desired_curvature - actual_curvature)
       freeze_integrator = steer_limited_by_safety or CS.vEgo < 5 or CS.steeringPressed
 
-      output_curvature = self.pid.update(pid_log.error, speed=CS.vEgo,
-                                         feedforward=feedforward,
-                                         freeze_integrator=freeze_integrator)
+      pid_curvature = self.pid.update(pid_log.error, speed=CS.vEgo,
+                                      feedforward=feedforward,
+                                      freeze_integrator=freeze_integrator)
 
-      saturated = abs(output_curvature) >= MAX_CURVATURE
+      output_curvature = pid_curvature + (CS.steeringCurvature - actual_curvature_vm_no_roll)
+
+      saturated = abs(pid_log.error) > CURVATURE_SATURATION_THRESHOLD
 
       pid_log.active = True
       pid_log.p = float(self.pid.p)
