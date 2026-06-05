@@ -51,8 +51,8 @@ from tinygrad.engine.jit import TinyJit
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
-WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
-POLICY_INPUTS = ['feat_q', 'desire_q', 'all_npy_inputs']
+WARP_INPUTS = ['tfm', 'big_tfm']
+POLICY_INPUTS = ['img_q', 'big_img_q', 'feat_q', 'desire_q', 'all_npy_inputs']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -193,19 +193,16 @@ def sample_desire(buf, frame_skip):
 
 def make_warp(nv12, model_w, model_h, frame_skip):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
-  sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
 
-  def warp_enqueue(img_q, big_img_q, tfm, big_tfm, frame, big_frame):
+  def warp_enqueue(tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(WARP_DEV)
     big_tfm = big_tfm.to(WARP_DEV)
     Tensor.realize(tfm, big_tfm)
 
     warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
     warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
-    warped = Tensor.cat(warped_frame, warped_big_frame, dim=0).to(Device.DEFAULT)
-    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
-    return img, big_img
+    warped = Tensor.cat(warped_frame, warped_big_frame, dim=0)
+    return warped
   return warp_enqueue
 
 
@@ -213,7 +210,6 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   vision_features_slice = model_metadata['vision']['output_slices']['hidden_state']
-
 
   policy_input_shapes = model_metadata['on_policy']['input_shapes']
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
@@ -223,8 +219,14 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
 
   # desire, traffic_convention and action_t arrive packed into one NPY tensor (see make_input_queues),
   # so the host->device copy happens once; slice them back out in the same order they were packed.
-  def run_policy(img, big_img, feat_q, desire_q, all_npy_inputs):
-    all_npy_inputs = all_npy_inputs.to(Device.DEFAULT).realize()
+  def run_policy(warped, img_q, big_img_q, feat_q, desire_q, all_npy_inputs):
+    all_npy_inputs = all_npy_inputs.to(Device.DEFAULT)
+    warped = warped.to(Device.DEFAULT)
+    Tensor.realize(all_npy_inputs, warped)
+
+    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
+
     desire = all_npy_inputs[:d_len]
     traffic_convention = all_npy_inputs[d_len:d_len + tc_len].reshape(tc)
     action_t = all_npy_inputs[d_len + tc_len:].reshape(at)
@@ -341,7 +343,7 @@ if __name__ == "__main__":
 
   make_policy_queues = partial(make_input_queues, out['metadata']['vision']['input_shapes'],
                                out['metadata']['on_policy']['input_shapes'], args.frame_skip)
-  make_random_model_inputs = partial(make_random_images, keys=['img', 'big_img'], shape=out['metadata']['vision']['input_shapes']['img'])
+  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, 128, 256))
   out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
                                   make_policy_queues)
 

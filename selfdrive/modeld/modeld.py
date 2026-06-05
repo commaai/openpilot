@@ -127,13 +127,10 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    img, big_img = self.warp_enqueue(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
-
-    if prepare_only:
-      return None
+    warped = self.warp_enqueue(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
 
     vision_output, on_policy_output, off_policy_output = self.run_policy(
-      **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, img=img, big_img=big_img
+      **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
     )
 
     vision_output = vision_output.numpy().flatten()
