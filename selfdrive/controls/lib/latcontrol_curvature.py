@@ -10,7 +10,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import MAX_CURVATURE
 class LatControlCurvature(LatControl):
   def __init__(self, CP, CI, dt):
     super().__init__(CP, CI, dt)
-    self.pid = PIDController(([10., 40.], [0., 1.45]), ([10., 40.], [0., 0.12]), k_f=1.,
+    self.pid = PIDController(([10., 40.], [0., 1.45]), ([10., 40.], [0., 0.12]),
                              pos_limit=MAX_CURVATURE, neg_limit=-MAX_CURVATURE, rate=1 / dt)
 
   def reset(self):
