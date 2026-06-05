@@ -343,7 +343,7 @@ if __name__ == "__main__":
 
   make_policy_queues = partial(make_input_queues, out['metadata']['vision']['input_shapes'],
                                out['metadata']['on_policy']['input_shapes'], args.frame_skip)
-  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, 128, 256))
+  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, 128, 256), device=WARP_DEV)
   out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
                                   make_policy_queues)
 
