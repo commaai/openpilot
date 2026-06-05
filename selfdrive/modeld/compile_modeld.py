@@ -3,9 +3,7 @@ import argparse
 import atexit
 import os
 import pickle
-import re
 import time
-from dataclasses import replace
 from functools import partial
 from collections import namedtuple
 
@@ -31,23 +29,16 @@ from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-from tinygrad.uop.ops import Ops, UOp
-
-# https://github.com/tinygrad/tinygrad/issues/15682
-_orig_uop_reduce = UOp.__reduce__
-UOp.__reduce__ = lambda self: (UOp.unique, ()) if self.op is Ops.UNIQUE else _orig_uop_reduce(self)
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
-POLICY_INPUTS = ['feat_q', 'desire_q', 'desire', 'traffic_convention']
+POLICY_INPUTS = ['feat_q', 'desire_q', 'desire', 'traffic_convention', 'action_t']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
 WARP_DEV = os.getenv('WARP_DEV')
-WARP_QUEUE_DEV = os.getenv('WARP_QUEUE_DEV')
-POLICY_NP_DTYPE = np.float16 if os.getenv("FLOAT16") or Device.DEFAULT == "CL" else np.float32
 
 
 def make_random_images(keys, shape, device=None):
@@ -122,70 +113,44 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_warp_input_queues(vision_input_shapes, frame_skip, device, warp_queue_device=None):
+def make_warp_input_queues(vision_input_shapes, frame_skip, device):
   img = vision_input_shapes['img']  # (1, 12, 128, 256)
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
-  queue_device = warp_queue_device or WARP_QUEUE_DEV or device
 
   npy = {
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
   input_queues = {
-    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=queue_device).contiguous().realize(),
-    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=queue_device).contiguous().realize(),
+    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return input_queues, npy
 
 
-def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device, warp_queue_device=None):
-  input_queues, npy = make_warp_input_queues(vision_input_shapes, frame_skip, device, warp_queue_device)
+def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
+  input_queues, npy = make_warp_input_queues(vision_input_shapes, frame_skip, device)
 
   fb = policy_input_shapes['features_buffer']  # (1, 25, 512)
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
   tc = policy_input_shapes['traffic_convention']  # (1, 2)
+  #TODO action_t is hardcoded to match tc for future compatibility
+  at = tc
 
   policy_npy = {
-    'desire': np.zeros(dp[2], dtype=POLICY_NP_DTYPE),
-    'traffic_convention': np.zeros(tc, dtype=POLICY_NP_DTYPE),
+    'desire': np.zeros(dp[2], dtype=np.float32),
+    'traffic_convention': np.zeros(tc, dtype=np.float32),
+    'action_t': np.zeros(at, dtype=np.float32),
   }
   npy.update(policy_npy)
   input_queues.update({
-    'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=POLICY_NP_DTYPE), device=device).contiguous().realize(),
-    'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=POLICY_NP_DTYPE), device=device).contiguous().realize(),
+    'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
+    'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
     **{k: Tensor(v, device='NPY').realize() for k, v in policy_npy.items()},
   })
   return input_queues, npy
-
-
-def tune_modeld_jit_launch_sizes(run_policy_jit) -> None:
-  if Device.DEFAULT != "CL":
-    return
-
-  # The fused vision-output kernel runs faster on Adreno with two 197-item
-  # workgroups instead of 197 tiny two-item workgroups.
-  target_name = "r_394_4_16_4_8_8_4_8_4_8_4_16_4_4_4_8_4_16_4_4_4_4"
-  ansi_re = re.compile(r"\x1b\[[0-9;]*m")
-
-  for ei in getattr(getattr(run_policy_jit, "captured", None), "_jit_cache", []):
-    p = getattr(getattr(ei, "prg", None), "p", None)
-    if p is None:
-      continue
-
-    name = ansi_re.sub("", p.name)
-    if name != target_name:
-      continue
-
-    global_size = list(p.global_size or [])
-    local_size = list(p.local_size or [1] * len(global_size))
-    if len(global_size) == 0:
-      continue
-
-    total_work = global_size[0] * local_size[0]
-    if total_work == 394 and p.local_size != [197, 1, 1]:
-      ei.prg.p = replace(p, global_size=[2, 1, 1], local_size=[197, 1, 1])
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -210,11 +175,11 @@ def make_warp(nv12, model_w, model_h, frame_skip):
     big_tfm = big_tfm.to(WARP_DEV)
     Tensor.realize(tfm, big_tfm)
 
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(img_q.device)
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
     img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(big_img_q.device)
     big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
-    return img.to(Device.DEFAULT), big_img.to(Device.DEFAULT)
+    return img, big_img
   return warp_enqueue
 
 
@@ -223,24 +188,26 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   vision_features_slice = model_metadata['vision']['output_slices']['hidden_state']
 
-  def run_policy(img, big_img, feat_q, desire_q, desire, traffic_convention):
+  def run_policy(img, big_img, feat_q, desire_q, desire, traffic_convention, action_t):
     desire = desire.to(Device.DEFAULT)
     traffic_convention = traffic_convention.to(Device.DEFAULT)
-    Tensor.realize(desire, traffic_convention)
+    action_t = action_t.to(Device.DEFAULT)
+    Tensor.realize(desire, traffic_convention, action_t)
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
-    vision_raw = next(iter(model_runners['vision']({'img': img, 'big_img': big_img}).values()))
+    vision_out = next(iter(model_runners['vision']({'img': img, 'big_img': big_img}).values())).cast('float32')
 
-    new_feat = vision_raw[:, vision_features_slice].reshape(1, -1).unsqueeze(0)
+    new_feat = vision_out[:, vision_features_slice].reshape(1, -1).unsqueeze(0)
     feat_buf = shift_and_sample(feat_q, new_feat, sample_skip_fn)
 
     inputs = {
       'features_buffer': feat_buf,
       'desire_pulse': desire_buf,
       'traffic_convention': traffic_convention,
+      'action_t': action_t,
     }
     on_policy_out = next(iter(model_runners['on_policy'](inputs).values())).cast('float32')
     #off_policy_out = next(iter(off_policy_runner(inputs).values())).cast('float32')
-    return vision_raw.cast('float32'), on_policy_out
+    return vision_out, on_policy_out
   return run_policy
 
 
@@ -332,7 +299,6 @@ if __name__ == "__main__":
   make_random_model_inputs = partial(make_random_images, keys=['img', 'big_img'], shape=out['metadata']['vision']['input_shapes']['img'])
   out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
                                   make_policy_queues)
-  tune_modeld_jit_launch_sizes(out['run_policy'])
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))

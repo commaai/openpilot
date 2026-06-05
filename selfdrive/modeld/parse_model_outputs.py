@@ -111,12 +111,7 @@ class Parser:
 
   def parse_policy_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     self.parse_mdn('plan', outs, in_N=0, out_N=0, out_shape=(ModelConstants.IDX_N, ModelConstants.PLAN_WIDTH))
-    if 'desire_state' in outs:
-      outs['desire_state_raw'] = outs['desire_state'].copy()
     self.parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
-    if 'desire_state' in outs:
-      outs['desire_state_probs'] = outs['desire_state']
-      outs['desire_state'] = outs['desire_state_raw']
     return outs
 
   def parse_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:

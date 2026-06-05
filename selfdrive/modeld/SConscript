@@ -4,7 +4,7 @@ import os
 import sys, subprocess
 from SCons.Script import Action, Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks
-from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye, _asius_wide
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_present, modeld_pkl_path
@@ -13,11 +13,9 @@ from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_pre
 CAMERA_CONFIGS = [
   (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
   (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
-  (_asius_wide.width, _asius_wide.height),         # asius: Dragon Q6A IMX219
 ]
 
 Import('env', 'arch')
-ASIUS = os.path.isfile('/ASIUS')
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
 
@@ -26,7 +24,7 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
 def estimate_pickle_max_size(onnx_size):
-  return 2.0 * onnx_size  + 20 * 1024 * 1024  # Dragon CL JIT pickles can grow after local tuning
+  return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
 
 # get fastest TG config
 # probe in subprocess so usbgpu locks gets released on process exit
@@ -42,24 +40,14 @@ if 'CUDA' in available:
 elif 'QCOM' in available:
   tg_backend = 'QCOM'
   tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
-elif 'CL' in available:
-  tg_backend = 'CL'
-  tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 DISABLE_FAST_IDIV=1 EMULATED_DTYPES=long OPENPILOT_HACKS=1'
 else:
-  tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
-  tg_flags = f'DEV={tg_backend} THREADS=0'
-
-warp_backend = 'CPU' if ASIUS and tg_backend == 'CL' else tg_backend
-if warp_backend != tg_backend:
-  tg_flags += f' WARP_DEV={warp_backend}'
-warp_queue_backend = warp_backend if ASIUS and warp_backend != tg_backend else tg_backend
-if warp_queue_backend != tg_backend:
-  tg_flags += f' WARP_QUEUE_DEV={warp_queue_backend}'
+  tg_backend = 'CPU'
+  tg_flags = f'DEV=CPU' if arch == 'Darwin' else 'DEV=CPU:LLVM'
 
 tg_devices = { # which device to put jit inputs to at runtime
   'selfdrive.modeld.modeld': {
-    'default': {'WARP_DEV': warp_backend, 'WARP_QUEUE_DEV': warp_queue_backend, 'QUEUE_DEV': tg_backend},
-    'usbgpu': {'WARP_DEV': warp_backend, 'WARP_QUEUE_DEV': warp_queue_backend, 'QUEUE_DEV': 'AMD'}
+    'default': {'WARP_DEV': tg_backend, 'QUEUE_DEV': tg_backend},
+    'usbgpu': {'WARP_DEV': tg_backend, 'QUEUE_DEV': 'AMD'}
   },
   'selfdrive.modeld.dmonitoringmodeld': {
     'default': {'DEV': tg_backend}
@@ -68,7 +56,7 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 USBGPU = usbgpu_present() # or release # TODO always build big model on release
 if USBGPU:
-  usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={warp_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
+  usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
 
@@ -99,14 +87,14 @@ frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 for usbgpu in [False, True] if USBGPU else [False]:
   target_pkl_path = File(modeld_pkl_path(usbgpu)).abspath
   file_prefix, cmd_flags = ('big_', usbgpu_tg_flags) if usbgpu else ('', tg_flags)
-  driving_onnx_deps = [p for m in [f'{file_prefix}driving_vision', f'{file_prefix}driving_policy']
+  driving_onnx_deps = [p for m in [f'{file_prefix}driving_vision', f'{file_prefix}driving_on_policy']
                        for p in get_existing_chunks(File(f"models/{m}.onnx").abspath)]
   camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
   cmd = (f'{cmd_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
         f'--model-size {model_w}x{model_h} '
         f'--camera-resolutions {camera_res_args} '
         f'--vision-onnx {File(f"models/{file_prefix}driving_vision.onnx").abspath} '
-        f'--on-policy-onnx {File(f"models/{file_prefix}driving_policy.onnx").abspath} '
+        f'--on-policy-onnx {File(f"models/{file_prefix}driving_on_policy.onnx").abspath} '
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
@@ -114,7 +102,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
     chunk_file(pkl, chunks)
   node = lenv.Command(
     chunk_targets,
-    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file, tg_devices_node],
+    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file],
     [cmd, Action(do_chunk, "  [CHUNK] $TARGET")],
   )
   if usbgpu:
@@ -135,21 +123,19 @@ for cam_w, cam_h in CAMERA_CONFIGS:
          f'--output {dm_pkl_path}')
   lenv.Command(dm_pkl_path, tinygrad_files + compile_dm_warp_script + compile_modeld_script + [tg_devices_node], cmd)
 
-def tg_compile(flags, model_name, script=None):
+def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
-  script = script or File(f"{Dir('#tinygrad_repo').abspath}/examples/openpilot/compile3.py")
   chunk_targets = get_chunk_targets(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
   def do_chunk(target, source, env):
     chunk_file(pkl, chunk_targets)
   return lenv.Command(
     chunk_targets,
-    [onnx_path] + tinygrad_files + [script, Value(chunk_targets), chunker_file, tg_devices_node],
-    [f'{pythonpath_string} {flags} python3 {script.abspath} {fn}.onnx {pkl}',
+    [onnx_path] + tinygrad_files + [Value(chunk_targets), chunker_file, tg_devices_node],
+    [f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
      Action(do_chunk, "  [CHUNK] $TARGET")],
   )
 
-if not ASIUS:
-  tg_compile(tg_flags, 'dmonitoring_model', File(f"{modeld_dir}/compile_dmonitoring_model.py"))
+tg_compile(tg_flags, 'dmonitoring_model')

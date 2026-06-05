@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
-import ctypes
 from tinygrad.tensor import Tensor
-from tinygrad.device import Device
 import time
 import pickle
 import numpy as np
@@ -22,12 +20,11 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS, tune_modeld_jit_launch_sizes
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices
-from openpilot.system.hardware import ASIUS
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -35,24 +32,6 @@ SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
-
-
-def tensors_to_numpy_flat(*tensors: Tensor) -> list[np.ndarray]:
-  if Device.DEFAULT == "CL":
-    from tinygrad.dtype import _to_np_dtype
-    from tinygrad.helpers import from_mv
-    from tinygrad.runtime.autogen import opencl as cl
-
-    bufs = []
-    for tensor in tensors:
-      buf = tensor._buffer()
-      raw = bytearray(buf.nbytes)
-      cl.clEnqueueReadBuffer(Device["CL"].queue, buf._buf, False, 0, buf.nbytes, from_mv(memoryview(raw)), 0, None, None)
-      bufs.append((raw, tensor.shape, buf.dtype.base))
-    Device.default.synchronize()
-    return [np.frombuffer(raw, dtype=_to_np_dtype(dtype)).reshape(shape).flatten() for raw, shape, dtype in bufs]
-
-  return [tensor.numpy().flatten() for tensor in tensors]
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -99,7 +78,6 @@ class ModelState:
   def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
     self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
-    self.WARP_QUEUE_DEV = input_devices.get('WARP_QUEUE_DEV', self.QUEUE_DEV)
     jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
     vision_metadata = jits['metadata']['vision']
     self.vision_input_shapes = vision_metadata['input_shapes']
@@ -113,14 +91,12 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip,
-                                                    device=self.QUEUE_DEV, warp_queue_device=self.WARP_QUEUE_DEV)
+    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
     self.full_frames: dict[str, Tensor] = {}
     self._blob_cache: dict[int, Tensor] = {}
     self.parser = Parser()
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits['run_policy']
-    tune_modeld_jit_launch_sizes(self.run_policy)
     self.warp_enqueue = jits[(cam_w,cam_h)]
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
@@ -130,30 +106,12 @@ class ModelState:
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     for key in bufs.keys():
+      ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
       yuv_size = self.frame_buf_params[key][3]
-      data = bufs[key].data
-      if isinstance(data, memoryview):
-        frame_mv = data.cast('B')[:yuv_size]
-        ptr = ctypes.addressof(ctypes.c_char.from_buffer(frame_mv))
-      else:
-        ptr = data.ctypes.data
-        frame_mv = memoryview((ctypes.c_ubyte * yuv_size).from_address(ptr))
-
-      if Device.DEFAULT == "CL" and self.WARP_DEV == "CL":
-        cache_key = (key, ptr)
-        if cache_key not in self._blob_cache:
-          self._blob_cache[cache_key] = Tensor.empty(yuv_size, dtype='uint8', device=Device.DEFAULT)
-          self._blob_cache[cache_key].uop.buffer.ensure_allocated()
-        self._blob_cache[cache_key].uop.buffer.copyin(frame_mv)
-      elif isinstance(data, memoryview):
-        arr = np.frombuffer(frame_mv, dtype=np.uint8, count=yuv_size).copy()
-        self.full_frames[key] = Tensor(arr, device=self.WARP_DEV).contiguous().realize()
-        continue
-      else:
-        # There is a ringbuffer of imgs, just cache tensors pointing to all of them.
-        cache_key = (key, ptr)
-        if cache_key not in self._blob_cache:
-          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
+      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
+      cache_key = (key, ptr)
+      if cache_key not in self._blob_cache:
+        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
       self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
@@ -161,6 +119,7 @@ class ModelState:
     self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
+    self.npy['action_t'][:] = inputs['action_t']
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
@@ -168,11 +127,13 @@ class ModelState:
 
     if prepare_only:
       return None
+
     vision_output, on_policy_output = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS}, img=img, big_img=big_img
     )
 
-    vision_output, on_policy_output = tensors_to_numpy_flat(vision_output, on_policy_output)
+    vision_output = vision_output.numpy().flatten()
+    on_policy_output = on_policy_output.numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
@@ -236,7 +197,6 @@ def main(demo=False):
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
   frame_id = 0
   last_vipc_frame_id = 0
-  last_vipc_timestamp_eof = 0
   run_count = 0
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
@@ -249,12 +209,7 @@ def main(demo=False):
   if demo:
     CP = get_demo_car_params()
   else:
-    cp_bytes = params.get("CarParams", block=not ASIUS)
-    if cp_bytes is None:
-      cloudlog.warning("CarParams unavailable, using demo params")
-      CP = get_demo_car_params()
-    else:
-      CP = messaging.log_from_bytes(cp_bytes, car.CarParams)
+    CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   cloudlog.info("modeld got CarParams: %s", CP.brand)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
@@ -288,11 +243,7 @@ def main(demo=False):
         cloudlog.debug("vipc_client_extra no frame")
         continue
 
-      device_type = str(sm["deviceState"].deviceType)
-      road_sensor = str(sm["roadCameraState"].sensor)
-      asius_camera = device_type.startswith("asius") or road_sensor == "imx219"
-      sync_warn_threshold_ns = 25000000 if asius_camera else 10000000
-      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > sync_warn_threshold_ns:
+      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
         cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
                          extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
 
@@ -307,14 +258,8 @@ def main(demo=False):
     frame_id = sm["roadCameraState"].frameId
     v_ego = max(sm["carState"].vEgo, 0.)
     lat_delay = sm["liveDelay"].lateralDelay + LAT_SMOOTH_SECONDS
-    device_type = str(sm["deviceState"].deviceType)
-    road_sensor = str(sm["roadCameraState"].sensor)
-    asius_camera = device_type.startswith("asius") or road_sensor == "imx219"
-    if (sm.updated["liveCalibration"] or (asius_camera and not live_calib_seen)) and sm.seen['roadCameraState'] and sm.seen['deviceState']:
-      if sm.seen["liveCalibration"]:
-        device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
-      else:
-        device_from_calib_euler = np.zeros(3, dtype=np.float32)
+    if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
+      device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
       dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
       model_transform_main = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics, False).astype(np.float32)
       model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics, True).astype(np.float32)
@@ -328,15 +273,7 @@ def main(demo=False):
       vec_desire[desire] = 1
 
     # tracked dropped frames
-    if asius_camera:
-      if last_vipc_timestamp_eof == 0:
-        vipc_dropped_frames = 0
-      else:
-        elapsed_ns = max(0, meta_main.timestamp_eof - last_vipc_timestamp_eof)
-        expected_frames = round(elapsed_ns / (DT_MDL * 1e9))
-        vipc_dropped_frames = max(0, expected_frames - 1)
-    else:
-      vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
+    vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
       frame_dropped_filter.x = 0.
@@ -344,15 +281,20 @@ def main(demo=False):
     run_count = run_count + 1
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
-    prepare_only = vipc_dropped_frames > 0 and not asius_camera
+    prepare_only = vipc_dropped_frames > 0
     if prepare_only:
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
     bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
     transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
+    frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
+    action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
+    lat_action_t = lat_delay + frame_delay + action_delay
+    long_action_t = long_delay + frame_delay + action_delay
     inputs: dict[str, np.ndarray] = {
       'desire_pulse': vec_desire,
       'traffic_convention': traffic_convention,
+      'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
     }
 
     mt1 = time.perf_counter()
@@ -365,34 +307,27 @@ def main(demo=False):
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
-      frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
-      action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
-      lat_action_t = lat_delay + frame_delay + action_delay
-      long_action_t = long_delay + frame_delay + action_delay
       action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
       prev_action = action
       fill_model_msg(drivingdata_send, modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
                      frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen)
 
-      desire_state = model_output.get('desire_state_probs', model_output['desire_state'])[0]
+      desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
       r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
       lane_change_prob = l_lane_change_prob + r_lane_change_prob
       DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
       modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
       modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
-      modelv2_send.modelV2.meta.laneTurnDirection = DH.lane_turn_direction
       drivingdata_send.drivingModelData.meta.laneChangeState = DH.lane_change_state
       drivingdata_send.drivingModelData.meta.laneChangeDirection = DH.lane_change_direction
-      drivingdata_send.drivingModelData.meta.laneTurnDirection = DH.lane_turn_direction
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
-    last_vipc_timestamp_eof = meta_main.timestamp_eof
 
 
 if __name__ == "__main__":

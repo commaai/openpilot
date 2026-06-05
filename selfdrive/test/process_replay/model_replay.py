@@ -12,7 +12,7 @@ import numpy as np
 from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
-from openpilot.system.hardware import ASIUS, PC
+from openpilot.system.hardware import PC
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
@@ -34,29 +34,8 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  # Dragon Q6A health uses the current full per-frame CL runtime as a regression
-  # gate; PC/TICI CI keeps the upstream tighter threshold.
-  ("modelV2", 0.14 if ASIUS else 0.05, 0.120 if ASIUS else 0.028),
-]
-if not ASIUS:
-  EXEC_TIMINGS.append(("driverStateV2", 0.05, 0.018))
-
-ASIUS_ACCURACY_CHECKS = [
-  # name, field path, max abs error, p95 abs error, max relative error
-  ("velocity.x", "modelV2.velocity.x", 2.6, 1.8, 0.10),
-  ("acceleration.y", "modelV2.acceleration.y", 0.40, 0.30, None),
-  ("inner lane prob left", "modelV2.laneLineProbs.1", 0.08, 0.06, 0.08),
-  ("inner lane prob right", "modelV2.laneLineProbs.2", 0.08, 0.06, 0.08),
-  ("outer lane prob left", "modelV2.laneLineProbs.0", 0.70, 0.62, 0.90),
-  ("outer lane prob right", "modelV2.laneLineProbs.3", 0.45, 0.38, 0.75),
-  ("lane stds", "modelV2.laneLineStds", 0.22, 0.15, 0.55),
-  ("engaged prob", "modelV2.meta.engagedProb", 0.35, 0.30, 0.55),
-  ("lead prob", "modelV2.leadsV3.0.prob", 0.55, 0.40, 0.75),
-  ("steer override probs", "modelV2.meta.disengagePredictions.steerOverrideProbs", 0.16, 0.10, 0.45),
-  ("camera trans", "cameraOdometry.trans", 0.90, 0.65, None),
-  ("camera trans std", "cameraOdometry.transStd", 0.35, 0.18, 0.55),
-  ("driving left lane prob", "drivingModelData.laneLineMeta.leftProb", 0.08, 0.06, 0.08),
-  ("driving right lane prob", "drivingModelData.laneLineMeta.rightProb", 0.08, 0.06, 0.08),
+  ("modelV2", 0.05, 0.028),
+  ("driverStateV2", 0.05, 0.018),
 ]
 
 def get_log_fn(test_route, ref="master"):
@@ -81,45 +60,6 @@ def zl(array, fill):
 
 def get_idx_if_non_empty(l, idx=None):
   return l if idx is None else (l[idx] if len(l) > 0 else None)
-
-def get_path_values(logs, path):
-  parts = path.split(".")
-  values = []
-  for msg in logs:
-    if msg.which() != parts[0]:
-      continue
-    value = getattr(msg, parts[0])
-    for part in parts[1:]:
-      value = value[int(part)] if part.isdigit() else getattr(value, part)
-    values.append(np.asarray(value, dtype=np.float64).reshape(-1))
-  return np.asarray(values)
-
-def check_asius_accuracy(proposed, master):
-  rows = []
-  passed = True
-  for name, path, max_abs_limit, p95_abs_limit, max_rel_limit in ASIUS_ACCURACY_CHECKS:
-    proposed_values = get_path_values(proposed, path)
-    master_values = get_path_values(master, path)
-    abs_err = np.abs(proposed_values - master_values)
-    denom = np.maximum(np.maximum(np.abs(proposed_values), np.abs(master_values)), 1e-6)
-    rel_err = abs_err / denom
-
-    max_abs = float(np.nanmax(abs_err))
-    p95_abs = float(np.nanpercentile(abs_err, 95))
-    max_rel = float(np.nanmax(rel_err))
-    ok_abs = max_abs <= max_abs_limit and p95_abs <= p95_abs_limit
-    ok_rel = max_rel_limit is None or max_rel <= max_rel_limit
-    ok = ok_abs and ok_rel
-    passed = passed and ok
-    rel_limit = "-" if max_rel_limit is None else f"{max_rel_limit:.3f}"
-    rows.append([name, max_abs, max_abs_limit, p95_abs, p95_abs_limit, max_rel, rel_limit, "✅" if ok else "❌"])
-
-  print("------------------------------------------------")
-  print("------------ Asius Model Accuracy --------------")
-  print("------------------------------------------------")
-  print(tabulate(rows, ["signal", "max abs", "max abs allowed", "p95 abs", "p95 abs allowed", "max rel", "max rel allowed", "test result"],
-                 tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".4f"))
-  return passed
 
 def generate_report(proposed, master, tmp, commit):
   ModelV2_Plots = zl([
@@ -222,11 +162,10 @@ def model_replay(lr, frs):
     dmodeld_logs.insert(1, msg.as_reader())
 
   modeld = get_process_config("modeld")
+  dmonitoringmodeld = get_process_config("dmonitoringmodeld")
+
   modeld_msgs = replay_process(modeld, modeld_logs, frs)
-  dmonitoringmodeld_msgs = []
-  if not ASIUS:
-    dmonitoringmodeld = get_process_config("dmonitoringmodeld")
-    dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
+  dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
 
@@ -236,8 +175,7 @@ def model_replay(lr, frs):
   for (s, instant_max, avg_max) in EXEC_TIMINGS:
     ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
     # TODO some init can happen in first iteration
-    # Dragon CL program setup can spill across the first few model outputs.
-    ts = ts[5 if ASIUS else 1:]
+    ts = ts[1:]
 
     errors = []
     if np.max(ts) > instant_max:
@@ -252,8 +190,9 @@ def model_replay(lr, frs):
   print("----------------- Model Timing -----------------")
   print("------------------------------------------------")
   print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".4f"))
+  assert timings_ok or PC
 
-  return msgs, timings_ok
+  return msgs
 
 
 def get_frames():
@@ -292,25 +231,19 @@ if __name__ == "__main__":
 
   log_msgs = []
   # run replays
-  model_msgs, timings_ok = model_replay(lr, frs)
-  log_msgs += model_msgs
+  log_msgs += model_replay(lr, frs)
 
   # get diff
-  failed = not (timings_ok or PC)
+  failed = False
   if not update:
     log_fn = get_log_fn(TEST_ROUTE)
     try:
       all_logs = list(LogReader(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn)))
       cmp_log = []
       model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
-      # Match the timing warmup skip: Dragon CL setup and queue priming can
-      # affect the first few model publishes.
-      model_warmup_outputs = 5 if ASIUS else 0
-      cmp_log += all_logs[model_start_index+(START_FRAME+model_warmup_outputs)*3:model_start_index + END_FRAME*3]
-      log_msgs_cmp = log_msgs[model_warmup_outputs*3:] if ASIUS else log_msgs
-      if not ASIUS:
-        dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-        cmp_log += all_logs[dmon_start_index+START_FRAME:dmon_start_index + END_FRAME]
+      cmp_log += all_logs[model_start_index+START_FRAME*3:model_start_index + END_FRAME*3]
+      dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
+      cmp_log += all_logs[dmon_start_index+START_FRAME:dmon_start_index + END_FRAME]
 
       ignore = [
         'logMonoTime',
@@ -321,7 +254,7 @@ if __name__ == "__main__":
         'driverStateV2.modelExecutionTime',
         'driverStateV2.gpuExecutionTime'
       ]
-      if PC or ASIUS:
+      if PC:
         # TODO We ignore whole bunch so we can compare important stuff
         # like posenet with reasonable tolerance
         ignore += ['modelV2.acceleration.x',
@@ -342,33 +275,11 @@ if __name__ == "__main__":
         for i in range(2):
           for field in ('x', 'y', 'z', 't'):
             ignore.append(f'modelV2.roadEdges.{i}.{field}')
-        ignore.append('modelV2.roadEdgeStds')
-      if ASIUS:
-        # These fields drift on Dragon's CL/tinygrad path while the control-
-        # relevant trajectories, inner lane probabilities, pose, and most
-        # lead/disengage outputs remain compared against the master reference.
-        ignore += [
-          'cameraOdometry.transStd',
-          'modelV2.acceleration.y',
-          'modelV2.confidence',
-          'modelV2.laneLineProbs.0',
-          'modelV2.laneLineProbs.3',
-          'modelV2.laneLineStds',
-          'modelV2.leadsV3.0.prob',
-          'modelV2.meta.desireState',
-        ]
-        for side in ('leftDriverData', 'rightDriverData'):
-          ignore.append(f'driverStateV2.{side}.eyesVisibleProb')
-          for field in ('leftEyeProb', 'rightEyeProb', 'leftBlinkProb', 'rightBlinkProb'):
-            ignore.append(f'driverStateV2.{side}.deprecated.{field}')
-      tolerance = .32 if ASIUS else (.3 if PC else None)
+      tolerance = .3 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
-      results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs_cmp, tolerance=tolerance, ignore_fields=ignore)
-      diff_short, diff_long, output_failed = format_diff(results, log_paths, 'master')
-      if ASIUS:
-        output_failed = (not check_asius_accuracy(log_msgs_cmp, cmp_log)) or output_failed
-      failed = output_failed or failed
+      results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
+      diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
         comment_replay_report(log_msgs, cmp_log, log_msgs)
