@@ -245,7 +245,7 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
     }
     on_policy_out = next(iter(model_runners['on_policy'](inputs).values())).cast('float32')
     off_policy_out = next(iter(model_runners['off_policy'](inputs).values())).cast('float32')
-    return vision_out, on_policy_out, off_policy_out
+    return Tensor.cat(vision_out[0], on_policy_out[0], off_policy_out[0])
   return run_policy
 
 
@@ -272,8 +272,8 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
       print(f"  [{i+1}/{n_runs}] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
       if i == 0:
-        val = [np.copy(v.numpy()) for v in outs]
-        buffers = [np.copy(v.numpy().copy()) for v in input_queues.values()]
+        val = np.copy(outs.numpy())
+        buffers = [np.copy(v.numpy()) for v in input_queues.values()]
 
     if test_val is not None:
       match = all(np.array_equal(a, b) for a, b in zip(val, test_val, strict=True))

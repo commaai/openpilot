@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
+os.environ['AM_POWER_LIMIT'] = '100'
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -129,13 +130,18 @@ class ModelState:
 
     warped = self.warp_enqueue(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
 
-    vision_output, on_policy_output, off_policy_output = self.run_policy(
+    outputs = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
     )
+    outputs = outputs.numpy()
+    vision_end = max(s.stop for s in self.vision_output_slices.values() if s.stop)
+    on_policy_end = vision_end + max(s.stop for s in self.policy_output_slices.values() if s.stop)
+    off_policy_end = on_policy_end + max(s.stop for s in self.off_policy_output_slices.values() if s.stop)
+    vision_output, on_policy_output, off_policy_output = outputs[:vision_end][None], outputs[vision_end:on_policy_end][None], outputs[on_policy_end:off_policy_end][None]
 
-    vision_output = vision_output.numpy().flatten()
-    off_policy_output = off_policy_output.numpy().flatten()
-    on_policy_output = on_policy_output.numpy().flatten()
+    vision_output = vision_output.flatten()
+    off_policy_output = off_policy_output.flatten()
+    on_policy_output = on_policy_output.flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
     off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(off_policy_output, self.off_policy_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
