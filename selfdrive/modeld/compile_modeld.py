@@ -194,10 +194,11 @@ def make_warp(nv12, model_w, model_h, frame_skip):
     big_tfm = big_tfm.to(WARP_DEV)
     Tensor.realize(tfm, big_tfm)
 
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
-    img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
+    warped = Tensor.cat(warped_frame, warped_big_frame, axis=0).to(Device.DEFAULT)
+    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
     return img, big_img
   return warp_enqueue
 
