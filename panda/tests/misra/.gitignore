@@ -1,0 +1,5 @@
+*.pdf
+*.txt
+.output.log
+new_table
+cppcheck/

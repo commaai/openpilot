@@ -1,0 +1,241 @@
+[project]
+name = "openpilot"
+requires-python = ">= 3.12.3, < 3.13"
+license = {text = "MIT License"}
+version = "0.1.0"
+description = "an open source driver assistance system"
+authors = [
+  {name = "Vehicle Researcher", email="user@comma.ai"}
+]
+
+dependencies = [
+  # multiple users
+  "sounddevice",  # micd + soundd
+  "pyserial",     # pigeond + qcomgpsd
+  "requests",     # many one-off uses
+  "sympy",        # rednose + friends
+  "crcmod-plus",  # cars + qcomgpsd
+  "tqdm",         # cars (fw_versions.py) on start + many one-off uses
+
+  # core
+  "cffi",
+  "scons",
+  "pycapnp",
+  "Cython",
+  "setuptools",
+  "numpy >=2.0",
+
+  # vendored native dependencies
+  "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
+  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@release-bootstrap-icons#subdirectory=bootstrap-icons",
+  "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
+  "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
+  "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
+  "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
+  "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
+  "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
+  "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
+  "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
+  "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
+  "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
+  "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
+  "json11 @ git+https://github.com/commaai/dependencies.git@release-json11#subdirectory=json11",
+  "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
+  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
+  "xvfb @ git+https://github.com/commaai/dependencies.git@release-xvfb#subdirectory=xvfb",
+
+  # body / webrtcd
+  "av",
+  "aiohttp",
+  "aiortc",
+
+  # panda
+  "libusb1",
+  "spidev; platform_system == 'Linux'",
+
+  # logging
+  "pyzmq",
+  "sentry-sdk",
+  "xattr",  # used in place of 'os.getxattr' for macOS compatibility
+
+  # athena
+  "PyJWT",
+  "json-rpc",
+  "websocket_client",
+
+  # joystickd
+  "inputs",
+
+  # these should be removed
+  "psutil",
+  "pycryptodome", # used in updated/casync, panda, body, and a test
+  "setproctitle",
+
+  # logreader
+  "zstandard",
+
+  # ui
+  "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
+  "qrcode",
+  "jeepney",
+  "pillow",
+]
+
+[project.optional-dependencies]
+docs = [
+  "Jinja2",
+  "zensical",
+]
+
+testing = [
+  "coverage",
+  "hypothesis ==6.47.*",
+  "ty",
+  "pytest",
+  "pytest-cpp",
+  "pytest-subtests",
+  # https://github.com/pytest-dev/pytest-xdist/pull/1229
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
+  "pytest-mock",
+  "ruff",
+  "codespell",
+  "pre-commit-hooks",
+]
+
+dev = [
+  "matplotlib",
+  "opencv-python-headless",
+]
+
+tools = [
+  "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
+]
+
+[project.urls]
+Homepage = "https://github.com/commaai/openpilot"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [ "." ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+cpp_files = "test_*"
+cpp_harness = "selfdrive/test/cpp_harness.py"
+python_files = "test_*.py"
+markers = [
+  "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
+  "tici: tests that are only meant to run on the C3/C3X",
+  "skip_tici_setup: mark test to skip tici setup fixture",
+  "nocapture: don't capture test output",
+  "shared_download_cache: share download cache between tests",
+  "xdist_group_class_property: group tests by a property of the class that contains them",
+]
+testpaths = [
+  "common",
+  "selfdrive",
+  "system",
+  "tools",
+  "cereal",
+]
+
+[tool.codespell]
+quiet-level = 3
+# if you've got a short variable name that's getting flagged, add it here
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite,ser"
+builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
+skip = "../tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, *.pem, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
+
+# https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
+[tool.ruff]
+indent-width = 2
+lint.select = [
+  "E", "F", "W", "PIE", "C4", "ISC", "A", "B",
+  "NPY", # numpy
+  "UP",  # pyupgrade
+  "TRY203", "TRY400", "TRY401", # try/excepts
+  "RUF008", "RUF100",
+  "TID251",
+  "PLE", "PLR1704",
+]
+lint.ignore = [
+  "E741",
+  "E402",
+  "C408",
+  "ISC003",
+  "B027",
+  "B024",
+  "NPY002",  # new numpy random syntax is worse
+  "UP045", "UP007",  # these don't play nice with raylib atm
+]
+line-length = 160
+exclude = [
+  "cereal",
+  "panda",
+  "opendbc",
+  "opendbc_repo",
+  "rednose_repo",
+  "tinygrad_repo",
+  "teleoprtc",
+  "teleoprtc_repo",
+  "*.ipynb",
+  "generated",
+]
+lint.flake8-implicit-str-concat.allow-multiline = false
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"selfdrive".msg = "Use openpilot.selfdrive"
+"common".msg = "Use openpilot.common"
+"system".msg = "Use openpilot.system"
+"tools".msg = "Use openpilot.tools"
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"unittest".msg = "Use pytest"
+"time.time".msg = "Use time.monotonic"
+
+# raylib banned APIs
+"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
+"pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
+"pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
+"pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
+"pyray.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
+
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.ty.src]
+exclude = [
+  "msgq/",
+  "msgq_repo/",
+  "opendbc/",
+  "opendbc_repo/",
+  "panda/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "teleoprtc/",
+  "teleoprtc_repo/",
+]
+
+[tool.ty.rules]
+unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
+unresolved-attribute = "ignore"  # many from capnp and Cython modules
+invalid-method-override = "ignore"  # signature variance issues
+possibly-missing-attribute = "ignore"  # too many false positives
+invalid-assignment = "ignore"  # often intentional monkey-patching
+no-matching-overload = "ignore"  # numpy/ctypes overload matching issues
+invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
+call-non-callable = "ignore"  # false positives from dynamic types
+unsupported-operator = "ignore" # false positives from dynamic types
+not-subscriptable = "ignore" # false positives from dynamic types
+
+[tool.uv]
+python-preference = "only-managed"

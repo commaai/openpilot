@@ -1,0 +1,180 @@
+#include "tools/replay/py_downloader.h"
+
+#include <csignal>
+#include <fcntl.h>
+#include <mutex>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <vector>
+
+#include "tools/replay/util.h"
+
+namespace {
+
+static std::mutex handler_mutex;
+static DownloadProgressHandler progress_handler = nullptr;
+
+// Run a Python command and capture stdout. Stderr is left attached to the parent.
+// Returns stdout content. If abort is signaled, kills the child process.
+std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
+  // Build argv for execvp
+  std::vector<const char *> argv;
+  argv.push_back("python3");
+  argv.push_back("-m");
+  argv.push_back("openpilot.tools.lib.file_downloader");
+  for (const auto &a : args) {
+    argv.push_back(a.c_str());
+  }
+  argv.push_back(nullptr);
+
+  int stdout_pipe[2];
+  if (pipe(stdout_pipe) != 0) {
+    rWarning("py_downloader: pipe() failed");
+    return {};
+  }
+
+  pid_t pid = fork();
+  if (pid < 0) {
+    rWarning("py_downloader: fork() failed");
+    close(stdout_pipe[0]); close(stdout_pipe[1]);
+    return {};
+  }
+
+  if (pid == 0) {
+    // Child process — detach from controlling terminal so Python
+    // cannot corrupt terminal settings needed by ncurses in the parent.
+    setsid();
+    int devnull = open("/dev/null", O_RDONLY);
+    if (devnull >= 0) {
+      dup2(devnull, STDIN_FILENO);
+      if (devnull > STDERR_FILENO) close(devnull);
+    }
+
+    // Clear OPENPILOT_PREFIX so the Python process uses default paths
+    // (e.g. ~/.comma/auth.json). The prefix is only for IPC in the parent.
+    unsetenv("OPENPILOT_PREFIX");
+
+    close(stdout_pipe[0]);
+    dup2(stdout_pipe[1], STDOUT_FILENO);
+    close(stdout_pipe[1]);
+
+    execvp("python3", const_cast<char *const *>(argv.data()));
+    _exit(127);
+  }
+
+  // Parent process
+  close(stdout_pipe[1]);
+
+  std::string stdout_data;
+  char buf[4096];
+
+  // Use select() so abort can interrupt while waiting for Python output.
+  fd_set rfds;
+  bool stdout_open = true;
+
+  while (stdout_open) {
+    if (abort && *abort) {
+      kill(pid, SIGTERM);
+      break;
+    }
+
+    FD_ZERO(&rfds);
+    FD_SET(stdout_pipe[0], &rfds);
+
+    struct timeval tv = {0, 100000};  // 100ms timeout
+    int ret = select(stdout_pipe[0] + 1, &rfds, nullptr, nullptr, &tv);
+    if (ret < 0) break;
+
+    if (FD_ISSET(stdout_pipe[0], &rfds)) {
+      ssize_t n = read(stdout_pipe[0], buf, sizeof(buf));
+      if (n <= 0) {
+        stdout_open = false;
+      } else {
+        stdout_data.append(buf, n);
+      }
+    }
+  }
+
+  // Drain remaining pipe data to prevent child from blocking on write
+  while (true) {
+    ssize_t n = read(stdout_pipe[0], buf, sizeof(buf));
+    if (n <= 0) break;
+    stdout_data.append(buf, n);
+  }
+  close(stdout_pipe[0]);
+
+  int status;
+  waitpid(pid, &status, 0);
+
+  const bool aborted = abort && *abort;
+  const bool expected_sigterm = aborted && WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM;
+  bool failed = aborted ||
+                (WIFEXITED(status) && WEXITSTATUS(status) != 0) ||
+                WIFSIGNALED(status);
+  if (failed) {
+    if (expected_sigterm) {
+      // Route/camera teardown cancels outstanding downloader subprocesses.
+      // Keep that expected shutdown path quiet.
+    } else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+      rWarning("py_downloader: process exited with code %d", WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+      rWarning("py_downloader: process killed by signal %d", WTERMSIG(status));
+    }
+    std::lock_guard<std::mutex> lk(handler_mutex);
+    if (progress_handler) {
+      progress_handler(0, 0, false);
+    }
+    return {};
+  }
+
+  // Trim trailing newline
+  while (!stdout_data.empty() && (stdout_data.back() == '\n' || stdout_data.back() == '\r')) {
+    stdout_data.pop_back();
+  }
+
+  return stdout_data;
+}
+
+}  // namespace
+
+void installDownloadProgressHandler(DownloadProgressHandler handler) {
+  std::lock_guard<std::mutex> lk(handler_mutex);
+  progress_handler = handler;
+}
+
+namespace PyDownloader {
+
+std::string download(const std::string &url, bool use_cache, std::atomic<bool> *abort) {
+  std::vector<std::string> args = {"download", url};
+  if (!use_cache) {
+    args.push_back("--no-cache");
+  }
+  return runPython(args, abort);
+}
+
+std::string getRouteFiles(const std::string &route) {
+  return runPython({"route-files", route});
+}
+
+std::string getDevices() {
+  return runPython({"devices"});
+}
+
+std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms, int64_t end_ms, bool preserved) {
+  std::vector<std::string> args = {"device-routes", dongle_id};
+  if (preserved) {
+    args.push_back("--preserved");
+  } else {
+    if (start_ms > 0) {
+      args.push_back("--start");
+      args.push_back(std::to_string(start_ms));
+    }
+    if (end_ms > 0) {
+      args.push_back("--end");
+      args.push_back(std::to_string(end_ms));
+    }
+  }
+  return runPython(args);
+}
+
+}  // namespace PyDownloader

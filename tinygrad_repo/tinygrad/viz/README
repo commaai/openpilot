@@ -1,0 +1,61 @@
+VIZ is a tool for inspecting tinygrad's compilation process and performance profiling.
+
+to use:
+1. Run tinygrad with VIZ=1 (this saves the pkls and launches the server in interactive shells)
+2. That's it!
+
+This can:
+1. See all schedules
+2. See all graphs and how they were rewritten
+3. See generated code
+4. See profile
+5. (AMD only) see instruction level SQTT profile
+
+VIZ pkls can be viewed in two ways:
+
+1. Web browser: python -m tinygrad.viz.serve
+2. Command line: python -m tinygrad.viz.cli
+
+By default, VIZ UIs automatically load the latest files.
+
+user story: viewing profiling data
+* tinygrad ran 32 LLM decode steps:
+web: click "profiler", view the timeline of all python codegen and GPU kernels.
+cli: Run `DEBUG=3 python -m tinygrad.viz.cli --json` to extract kernel timing info and ASTs in JSON format.
+  - note: Make sure to add NO_COLOR=1 to disable colored output.
+
+user story: viewing code
+* tinygrad ran 3 schedules: init the model + first train step, train step, test step
+  * schedule 1 (123) = main.py:97
+  * schedule 2 (97) = main.py:97
+  * schedule 3 (10) = main.py:145
+* web: click "schedule 1", get list of kernels (like DEBUG=2)
+* cli: `python -m tinygrad.viz.cli -s TINY "Schedule 3 Kernels n1"`
+  * kernel 1 "E_34_34" -- 'sin'
+  * kernel 2 "R_4545"
+* web: click "E_34_34"
+* cli: `python -m tinygrad.viz.cli -s TINY "do_to_program for E_34_34" "initial symbolic"`
+  * pre-rewritten UOp graph (step through rewrite here)
+  * post-rewritten UOp graph
+  * UOp list
+  * generated code
+
+user story: debugging scheduler
+* tinygrad ran 3 schedules: init the model + first train step, train step, test step
+  * ...
+* click "schedule 1 graph", get a graph of the schedule in UOps
+  * step through rewrite rules
+  * see how things are broken into kernels
+  * see why two kernels didn't fuse
+
+user story: SQTT / PMC profiling
+
+note: SQTT has additional overhead, to enable it, set VIZ=2.
+
+* tinygrad ran custom assembly GEMM kernel.
+* web: click "SQTT gemm SE:1 PKTS", see wave instruction scheduling and CU execution unit occupancy at every clock cycle.
+* cli: python -m tinygrad.viz.cli -s "kernel SQTT SE:0 PKTS"
+
+* get bank conflicts:
+* web: click "gemm PMC"
+* cli: python -m tinygrad.viz.cli -s "gemm PMC" | rg -A 16 SQC_LDS_BANK_CONFLICT

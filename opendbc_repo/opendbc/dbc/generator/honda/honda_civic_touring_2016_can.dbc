@@ -1,0 +1,18 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _lkas_hud_5byte.dbc";
+CM_ "IMPORT _nidec_scm_group_b.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+CM_ "IMPORT _steering_control_a.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
+
+BO_ 493 HUD_SETTING: 5 XXX
+ SG_ IMPERIAL_UNIT : 5|1@0+ (1,0) [0|1] "" EON
+
+BO_ 545 ECON_STATUS: 6 XXX
+ SG_ ECON_ON_2 : 37|2@0+ (1,0) [0|3] "" EON
+ SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
+
+VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;

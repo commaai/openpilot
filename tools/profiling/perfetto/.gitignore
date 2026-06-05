@@ -1,0 +1,7 @@
+trace_*
+
+tracebox
+trace_processor
+
+perfetto/
+configs/
