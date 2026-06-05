@@ -3,6 +3,7 @@ import fcntl
 import os
 import sys
 import pathlib
+import platform
 import shutil
 import signal
 import subprocess
@@ -13,6 +14,12 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 
 def unblock_stdout() -> None:
+  # forkpty() is unsafe on macOS: the Objective-C runtime aborts on fork() once
+  # frameworks have initialized. Skip it for simulation runs, where stdout
+  # forwarding is only a convenience and MetaDrive/Panda3D initialize GUI state.
+  if platform.system() == "Darwin" and os.getenv("SIMULATION") == "1":
+    return
+
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0:  # parent

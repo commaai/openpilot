@@ -57,7 +57,10 @@ class SimulatorBridge(ABC):
     self.world: World | None = None
 
     self.past_startup_engaged = False
+    self.startup_seen_engageable = False
     self.startup_button_prev = True
+    self.startup_prelaunch_speed = 0.0
+    self.startup_prelaunch_throttle = 0.0
 
     self.test_run = False
 
@@ -178,9 +181,19 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
         steer_op = self.simulated_car.sm['carControl'].actuators.steeringAngleDeg
 
         self.past_startup_engaged = True
-      elif not self.past_startup_engaged and self.simulated_car.sm['selfdriveState'].engageable:
-        self.simulator_state.cruise_button = CruiseButtons.DECEL_SET if self.startup_button_prev else CruiseButtons.MAIN # force engagement on startup
-        self.startup_button_prev = not self.startup_button_prev
+      elif not self.past_startup_engaged:
+        self.startup_seen_engageable = self.startup_seen_engageable or self.simulated_car.sm['selfdriveState'].engageable
+
+        # Roll the simulated car before auto-engaging so openpilot does not start in the low-speed stopping band.
+        # Once active, the bridge passes through carControl without overriding the longitudinal command.
+        should_prelaunch = (self.startup_prelaunch_speed > 0.0 and self.startup_seen_engageable and
+                            self.simulator_state.velocity is not None and self.simulator_state.speed < self.startup_prelaunch_speed)
+        if should_prelaunch:
+          throttle_manual = max(throttle_manual, self.startup_prelaunch_throttle)
+          self.simulator_state.user_gas = throttle_manual
+        elif self.simulated_car.sm['selfdriveState'].engageable:
+          self.simulator_state.cruise_button = CruiseButtons.DECEL_SET if self.startup_button_prev else CruiseButtons.MAIN # force engagement on startup
+          self.startup_button_prev = not self.startup_button_prev
 
       throttle_out = throttle_op if self.simulator_state.is_engaged else throttle_manual
       brake_out = brake_op if self.simulator_state.is_engaged else brake_manual

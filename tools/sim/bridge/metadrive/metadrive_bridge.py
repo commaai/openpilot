@@ -1,4 +1,5 @@
 import math
+import sys
 from multiprocessing import Queue
 
 from metadrive.component.sensors.base_camera import _cuda_enable
@@ -56,6 +57,9 @@ class MetaDriveBridge(SimulatorBridge):
     self.should_render = False
     self.test_run = test_run
     self.test_duration = test_duration if self.test_run else math.inf
+    if sys.platform == "darwin" and self.test_run:
+      self.startup_prelaunch_speed = 1.0
+      self.startup_prelaunch_throttle = 0.12
 
   def spawn_world(self, queue: Queue):
     sensors = {
