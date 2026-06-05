@@ -52,7 +52,7 @@ from tinygrad.engine.jit import TinyJit
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
-POLICY_INPUTS = ['feat_q', 'desire_q', 'desire', 'traffic_convention', 'action_t']
+POLICY_INPUTS = ['feat_q', 'desire_q', 'all_npy_inputs']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -158,16 +158,22 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
   #TODO action_t is hardcoded to match tc for future compatibility
   at = tc
 
+  # pack desire, traffic_convention and action_t into one contiguous host buffer so they copy to the
+  # device in a single transfer (per-tensor copies are expensive on the usbgpu path). the npy entries
+  # are views into the shared buffer, so modeld's in-place writes still land in it; run_policy slices
+  # it back out in the same order. see POLICY_INPUTS / make_run_policy.
+  d_len, tc_len, at_len = dp[2], int(np.prod(tc)), int(np.prod(at))
+  all_npy_inputs = np.zeros(d_len + tc_len + at_len, dtype=np.float32)
   policy_npy = {
-    'desire': np.zeros(dp[2], dtype=np.float32),
-    'traffic_convention': np.zeros(tc, dtype=np.float32),
-    'action_t': np.zeros(at, dtype=np.float32),
+    'desire': all_npy_inputs[:d_len],
+    'traffic_convention': all_npy_inputs[d_len:d_len + tc_len].reshape(tc),
+    'action_t': all_npy_inputs[d_len + tc_len:].reshape(at),
   }
   npy.update(policy_npy)
   input_queues.update({
     'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
-    **{k: Tensor(v, device='NPY').realize() for k, v in policy_npy.items()},
+    'all_npy_inputs': Tensor(all_npy_inputs, device='NPY').realize(),
   })
   return input_queues, npy
 
@@ -196,7 +202,7 @@ def make_warp(nv12, model_w, model_h, frame_skip):
 
     warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
     warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
-    warped = Tensor.cat(warped_frame, warped_big_frame, axis=0).to(Device.DEFAULT)
+    warped = Tensor.cat(warped_frame, warped_big_frame, dim=0).to(Device.DEFAULT)
     img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
     return img, big_img
@@ -208,11 +214,21 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   vision_features_slice = model_metadata['vision']['output_slices']['hidden_state']
 
-  def run_policy(img, big_img, feat_q, desire_q, desire, traffic_convention, action_t):
-    desire = desire.to(Device.DEFAULT)
-    traffic_convention = traffic_convention.to(Device.DEFAULT)
-    action_t = action_t.to(Device.DEFAULT)
-    Tensor.realize(desire, traffic_convention, action_t)
+
+  policy_input_shapes = model_metadata['on_policy']['input_shapes']
+  dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
+  tc = policy_input_shapes['traffic_convention']  # (1, 2)
+  at = tc
+  d_len, tc_len = dp[2], int(np.prod(tc))
+
+  # desire, traffic_convention and action_t arrive packed into one NPY tensor (see make_input_queues),
+  # so the host->device copy happens once; slice them back out in the same order they were packed.
+  def run_policy(img, big_img, feat_q, desire_q, all_npy_inputs):
+    all_npy_inputs = all_npy_inputs.to(Device.DEFAULT).realize()
+    desire = all_npy_inputs[:d_len]
+    traffic_convention = all_npy_inputs[d_len:d_len + tc_len].reshape(tc)
+    action_t = all_npy_inputs[d_len + tc_len:].reshape(at)
+
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
     vision_out = next(iter(model_runners['vision']({'img': img, 'big_img': big_img}).values())).cast('float32')
 
