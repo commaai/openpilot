@@ -131,10 +131,10 @@ class Controls:
                                                      self.steer_limited_by_safety, self.desired_curvature,
                                                      curvature_limited, lat_delay)
     actuators.torque = float(steer)
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      actuators.steeringAngleDeg = float(lateral_output)
-    elif self.CP.steerControlType == car.CarParams.SteerControlType.curvature:
+    if self.CP.steerControlType == car.CarParams.SteerControlType.curvature:
       actuators.curvature = float(lateral_output)
+    else:
+      actuators.steeringAngleDeg = float(lateral_output)
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
