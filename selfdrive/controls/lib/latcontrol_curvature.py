@@ -5,7 +5,7 @@ from openpilot.common.pid import PIDController
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.drive_helpers import MAX_CURVATURE
 
-CURVATURE_SATURATION_THRESHOLD = 1e-4
+CURVATURE_SATURATION_THRESHOLD = 1e-3
 
 
 class LatControlCurvature(LatControl):
