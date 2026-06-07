@@ -9,9 +9,9 @@ System tools like top/htop can only show current cpu usage values, so I write th
     Monitor multiple processes simuteneously.
   Sample usage:
     root@localhost:/data/openpilot$ python selfdrive/debug/cpu_usage_stat.py pandad,ubloxd
-    ('Add monitored proc:', './pandad')
+    ('Add monitored proc:', 'selfdrive.pandad.pandad')
     ('Add monitored proc:', 'python locationd/ubloxd.py')
-    pandad: 1.96%, min: 1.96%, max: 1.96%, acc: 1.96%
+    pandad.py: 1.96%, min: 1.96%, max: 1.96%, acc: 1.96%
     ubloxd.py: 0.39%, min: 0.39%, max: 0.39%, acc: 0.39%
 '''
 import psutil

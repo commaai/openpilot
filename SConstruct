@@ -120,7 +120,6 @@ env = Environment(
   LIBPATH=[
     "#common",
     "#msgq_repo",
-    "#selfdrive/pandad",
     "#rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
@@ -244,7 +243,6 @@ if arch == "larch64":
 
 # Build selfdrive
 SConscript([
-  'selfdrive/pandad/SConscript',
   'selfdrive/controls/lib/lateral_mpc_lib/SConscript',
   'selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
   'selfdrive/locationd/SConscript',
