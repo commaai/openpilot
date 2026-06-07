@@ -11,6 +11,7 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.pins import GPIO
 
 HERE = os.path.dirname(os.path.realpath(__file__))
+pytestmark = pytest.mark.xdist_group("pandad_recovery")
 
 
 @pytest.mark.tici
