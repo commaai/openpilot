@@ -876,8 +876,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.radarTempUnavailable: {
-    ET.SOFT_DISABLE: soft_disable_alert("Radar Temporarily Unavailable"),
-    ET.NO_ENTRY: NoEntryAlert("Radar Temporarily Unavailable"),
+    # ET.SOFT_DISABLE: soft_disable_alert("Radar Temporarily Unavailable"),
+    # ET.NO_ENTRY: NoEntryAlert("Radar Temporarily Unavailable"),
   },
 
   # Every frame from the camera should be processed by the model. If modeld
