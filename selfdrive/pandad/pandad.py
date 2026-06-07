@@ -908,6 +908,8 @@ def pandad_main_thread(serial: str | None = None) -> None:
 
 def check_heartbeat_lost() -> None:
   try:
+    if PandaDFU.list():
+      return
     for serial in PandadPanda.list_pandas():
       panda = PandadPanda(serial)
       try:
@@ -936,13 +938,16 @@ def main() -> None:
   while not shutdown_event.is_set():
     try:
       cloudlog.event("pandad.flash_and_connect", count=count)
-      if (count % 2) == 0:
-        HARDWARE.reset_internal_panda()
-      else:
-        HARDWARE.recover_internal_panda()
-      count += 1
+      dfu_serials = PandaDFU.list()
+      if not dfu_serials:
+        if (count % 2) == 0:
+          HARDWARE.reset_internal_panda()
+        else:
+          HARDWARE.recover_internal_panda()
+        count += 1
+        dfu_serials = PandaDFU.list()
 
-      for serial in PandaDFU.list():
+      for serial in dfu_serials:
         cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
         PandaDFU(serial).recover()
         time.sleep(1)
