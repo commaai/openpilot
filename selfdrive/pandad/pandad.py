@@ -660,8 +660,8 @@ def can_recv_thread(panda: PandadPanda) -> None:
   while not exit_event.is_set() and panda.connected:
     comms_healthy, can_msgs = panda.can_receive()
     can_msgs = [msg for msg in can_msgs if msg[2] < 192]
-    pm.send("can", can_list_to_can_capnp(can_msgs, valid=comms_healthy))
     rk.keep_time()
+    pm.send("can", can_list_to_can_capnp(can_msgs, valid=comms_healthy))
 
 
 def hwmon_thread(hwmon_state: HwmonState, lock: threading.Lock) -> None:
