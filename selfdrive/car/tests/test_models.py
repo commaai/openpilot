@@ -40,6 +40,7 @@ JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
+MAX_TX_EXAMPLES = int(os.environ.get("MAX_TX_EXAMPLES", "30"))
 CI = os.environ.get("CI", None) is not None
 
 
@@ -174,10 +175,63 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: check safetyModel is in release panda build
     self.safety = libsafety_py.libsafety
 
+    self._reset_panda_safety()
+
+  def _reset_panda_safety(self):
     cfg = self.CP.safetyConfigs[-1]
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
+
+  def _assert_panda_safety_tx_allowed(self, car_control, duration=2.0, min_msgs_sent=1):
+    now_nanos = 0
+    msgs_sent = 0
+    CI = self.CarInterface(self.CP.copy())
+    for _ in range(round(duration / DT_CTRL)):
+      CI.update([])
+      _, sendcan = CI.apply(car_control, now_nanos)
+
+      now_nanos += int(DT_CTRL * 1e9)
+      msgs_sent += len(sendcan)
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus, car_control))
+
+    # Make sure we attempted to send messages
+    self.assertGreater(msgs_sent, min_msgs_sent)
+
+  def _draw_car_control(self, data, controls_allowed):
+    def draw_float(min_value, max_value):
+      return data.draw(st.floats(min_value=min_value, max_value=max_value, allow_nan=False, allow_infinity=False))
+
+    # Keep active fuzzing close to zero so the test looks for openpilot/panda tx mismatches,
+    # not intentionally unsafe actuator commands.
+    scale = 1.0 if controls_allowed else 0.0
+    long_control_states = ("pid", "stopping", "starting") if controls_allowed else ("off",)
+    resume = controls_allowed and data.draw(st.booleans())
+    cancel = (not controls_allowed) and data.draw(st.booleans())
+    left_blinker = data.draw(st.booleans())
+
+    return structs.CarControl(
+      enabled=controls_allowed,
+      latActive=controls_allowed and data.draw(st.booleans()),
+      longActive=controls_allowed and data.draw(st.booleans()),
+      currentCurvature=draw_float(-0.00005 * scale, 0.00005 * scale),
+      leftBlinker=left_blinker,
+      rightBlinker=(not left_blinker) and data.draw(st.booleans()),
+      actuators=structs.CarControl.Actuators(
+        torque=draw_float(-0.002 * scale, 0.002 * scale),
+        steeringAngleDeg=draw_float(-0.2 * scale, 0.2 * scale),
+        curvature=draw_float(-0.00005 * scale, 0.00005 * scale),
+        accel=draw_float(-0.02 * scale, 0.02 * scale),
+        longControlState=data.draw(st.sampled_from(long_control_states)),
+      ),
+      cruiseControl=structs.CarControl.CruiseControl(
+        cancel=cancel,
+        resume=resume,
+        override=data.draw(st.booleans()),
+      ),
+    ).as_reader()
 
   def test_car_params(self):
     if self.CP.dashcamOnly:
@@ -271,36 +325,41 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
 
-    def test_car_controller(car_control):
-      now_nanos = 0
-      msgs_sent = 0
-      CI = self.CarInterface(self.CP)
-      for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
-        CI.update([])
-        _, sendcan = CI.apply(car_control, now_nanos)
-
-        now_nanos += DT_CTRL * 1e9
-        msgs_sent += len(sendcan)
-        for addr, dat, bus in sendcan:
-          to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
-          self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
-
-      # Make sure we attempted to send messages
-      self.assertGreater(msgs_sent, 50)
-
     # Make sure we can send all messages while inactive
     CC = structs.CarControl()
-    test_car_controller(CC.as_reader())
+    self._assert_panda_safety_tx_allowed(CC.as_reader(), duration=10.0, min_msgs_sent=50)
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(cancel=True))
-    test_car_controller(CC.as_reader())
+    self._assert_panda_safety_tx_allowed(CC.as_reader(), duration=10.0, min_msgs_sent=50)
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
-    test_car_controller(CC.as_reader())
+    self._assert_panda_safety_tx_allowed(CC.as_reader(), duration=10.0, min_msgs_sent=50)
+
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_TX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """Fuzz generated TX messages against panda safety with matching controls state."""
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    controls_allowed = data.draw(st.booleans())
+    cruise_engaged = controls_allowed or data.draw(st.booleans())
+    self._reset_panda_safety()
+    self.safety.set_controls_allowed(controls_allowed)
+    self.safety.set_cruise_engaged_prev(cruise_engaged)
+
+    CC = self._draw_car_control(data, controls_allowed)
+    self._assert_panda_safety_tx_allowed(CC)
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
