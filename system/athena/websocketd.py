@@ -18,7 +18,6 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.identity import bytes_to_identity, identity_to_bytes, is_dongle_id
-from openpilot.system.hardware import HARDWARE
 
 
 ATHENA_AUTHORIZED_KEYS_PARAM = "AthenadAuthorizedKeys"
@@ -28,7 +27,7 @@ GITHUB_SSH_KEYS_PARAM = "GithubSshKeys"
 PARAMS_DIR = Path(os.getenv("PARAMS_DIR", "/data/params/d"))
 GENERATED_SSH_KEY_COMMENT = "asius-app"
 MAX_PAYLOAD_AGE_SECONDS = 60
-PAIRING_MODE_SECONDS = 600
+PAIRING_MODE_SECONDS = 180
 
 def base64url_encode(data: bytes) -> str:
   return base64.urlsafe_b64encode(data).decode().rstrip("=")
@@ -209,14 +208,8 @@ def sign_jwt(payload: dict, expiry_seconds: int) -> str:
   return jwt.encode({**payload, "iat": now, "nbf": now, "exp": now + expiry_seconds}, identity_private_key(), algorithm="EdDSA")
 
 
-def pairing_device_type() -> str:
-  device_type = HARDWARE.get_device_type()
-  return "asius-v1" if device_type == "asius" else device_type
-
-
 def pairing_token(recipient: str, acl_epoch: int, expiry_seconds: int = PAIRING_MODE_SECONDS) -> str:
-  device_type = pairing_device_type()
-  return sign_jwt({"type": "pair", "to": recipient, "aclEpoch": acl_epoch, "deviceType": device_type, "device-type": device_type}, expiry_seconds)
+  return sign_jwt({"type": "pair", "to": recipient, "aclEpoch": acl_epoch}, expiry_seconds)
 
 
 def pairing_url(recipient: str) -> str:

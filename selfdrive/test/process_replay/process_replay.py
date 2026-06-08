@@ -12,7 +12,6 @@ from typing import Any
 from collections.abc import Callable, Iterable
 from tqdm import tqdm
 import capnp
-from openpilot.system.hardware import ASIUS
 from openpilot.system.hardware.hw import Paths
 
 import cereal.messaging as messaging
@@ -217,8 +216,7 @@ class ProcessContainer:
   def _start_process(self):
     if self.capture is not None:
       self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)
-    if not ASIUS:
-      self.process.prepare()
+    self.process.prepare()
     self.process.start()
 
   def start(

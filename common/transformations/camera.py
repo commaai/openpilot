@@ -49,11 +49,11 @@ class DeviceCameraConfig:
 _ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
 _os_fisheye = CameraConfig(2688 // 2, 1520 // 2, 567.0 / 4 * 3)
 # Dragon IMX219 uses the full-FOV 2x2 binned 4:3 sensor mode.
-_asius_road = CameraConfig(1640, 1232, 2450.0)
-_asius_wide = CameraConfig(1640, 1232, 567.0)
+_imx219_road = CameraConfig(1640, 1232, 2450.0)
+_imx219_wide = CameraConfig(1640, 1232, 567.0)
 _ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)
 _os_config = DeviceCameraConfig(CameraConfig(2688 // 2, 1520 // 2, 1522.0 * 3 / 4), _os_fisheye, _os_fisheye)
-_asius_config = DeviceCameraConfig(_asius_road, _NoneCameraConfig(), _asius_wide)
+_imx219_config = DeviceCameraConfig(_imx219_road, _NoneCameraConfig(), _imx219_wide)
 _neo_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), _NoneCameraConfig())
 
 DEVICE_CAMERAS = {
@@ -71,9 +71,8 @@ DEVICE_CAMERAS = {
   # simulator (emulates a tici)
   ("pc", "unknown"): _ar_ox_config,
 
-  # asius Dragon Q6A IMX219
-  ("asius", "imx219"): _asius_config,
-  ("asius-v1", "imx219"): _asius_config,
+  # Asius One IMX219
+  ("one", "imx219"): _imx219_config,
 }
 prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', _ar_ox_config), ('ox03c10', _ar_ox_config), ('os04c10', _os_config)))
 DEVICE_CAMERAS.update({(d, c[0]): c[1] for d, c in prods})

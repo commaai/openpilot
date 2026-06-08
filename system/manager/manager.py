@@ -11,7 +11,7 @@ import cereal.messaging as messaging
 from openpilot.common.utils import atomic_write
 from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.text_window import TextWindow
-from openpilot.system.hardware import HARDWARE, ASIUS
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
 from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes
@@ -85,11 +85,9 @@ def manager_init() -> None:
                        dirty=build_metadata.openpilot.is_dirty,
                        device=HARDWARE.get_device_type())
 
-  # On Dragon, importing model/tinygrad paths before forking can leave child
-  # processes stuck in runtime setup. Import inside the child instead.
-  if not ASIUS:
-    for p in managed_processes.values():
-      p.prepare()
+  # preimport all processes
+  for p in managed_processes.values():
+    p.prepare()
 
 
 def manager_cleanup() -> None:
@@ -227,9 +225,8 @@ if __name__ == "__main__":
     # Show last 3 lines of traceback
     error = traceback.format_exc(-3)
     error = "Manager failed to start\n\n" + error
-    if not ASIUS:
-      with TextWindow(error) as t:
-        t.wait_for_exit()
+    with TextWindow(error) as t:
+      t.wait_for_exit()
 
     raise
 

@@ -20,7 +20,7 @@ public:
         return stripped.substr(6);
       }
       if (stripped == "Radxa Dragon Q6A") {
-        return std::string("asius");
+        return std::string("one");
       }
       return stripped;
     }();
@@ -32,7 +32,7 @@ public:
       {"tici", cereal::InitData::DeviceType::TICI},
       {"tizi", cereal::InitData::DeviceType::TIZI},
       {"mici", cereal::InitData::DeviceType::MICI},
-      {"asius", cereal::InitData::DeviceType::ASIUS},
+      {"one", cereal::InitData::DeviceType::ONE},
     };
     static const auto it = device_map.find(get_name());
     assert(it != device_map.end());
@@ -79,7 +79,7 @@ public:
       {"lsblk", util::check_output("lsblk -o NAME,SIZE,STATE,VENDOR,MODEL,REV,SERIAL")},
     };
 
-    if (get_device_type() == cereal::InitData::DeviceType::ASIUS) {
+    if (get_device_type() == cereal::InitData::DeviceType::ONE) {
       return ret;
     }
 

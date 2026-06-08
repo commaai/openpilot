@@ -17,7 +17,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, TICI, AGNOS, ASIUS, PC
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS, PC
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
@@ -55,12 +55,7 @@ else:
   })
 
 # Override to highest thermal band when offroad and above this temp
-if ASIUS:
-  OFFROAD_DANGER_TEMP = 95
-elif HARDWARE.get_device_type() == "mici":
-  OFFROAD_DANGER_TEMP = 85
-else:
-  OFFROAD_DANGER_TEMP = 75
+OFFROAD_DANGER_TEMP = 85 if HARDWARE.get_device_type() == "mici" else 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
@@ -81,12 +76,7 @@ def touch_thread(end_event):
   event_size = struct.calcsize(event_format)
   event_frame = []
 
-  event_path = "/dev/input/by-path/platform-894000.i2c-event"
-  if not os.path.exists(event_path):
-    end_event.wait()
-    return
-
-  with open(event_path, "rb") as event_file:
+  with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
     fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
     while not end_event.is_set():
       if (count % int(1. / DT_HW)) == 0:
@@ -206,7 +196,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
-  fan_controller = None if ASIUS else FanController(int(1./DT_HW))
+  fan_controller = FanController(int(1./DT_HW))
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
@@ -279,7 +269,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     all_comp_temp = all_temp_filter.update(max(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
-    msg.deviceState.fanSpeedPercentDesired = 0 if fan_controller is None else fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
+    msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
@@ -319,7 +309,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     show_alert = (not onroad_conditions["device_temp_good"] or not startup_conditions["device_temp_engageable"]) and onroad_conditions["ignition"]
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
-    if show_alert and not ASIUS:
+    if show_alert:
       msg.deviceState.fanSpeedPercentDesired = 100
 
     # *** registration check ***
@@ -466,7 +456,7 @@ def main():
     threading.Thread(target=hardware_thread, args=(end_event, hw_queue)),
   ]
 
-  if TICI or ASIUS:
+  if TICI:
     threads.append(threading.Thread(target=touch_thread, args=(end_event,)))
 
   for t in threads:

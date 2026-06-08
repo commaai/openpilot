@@ -6,14 +6,14 @@ import subprocess
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.spinner import Spinner
 from openpilot.common.text_window import TextWindow
-from openpilot.system.hardware import HARDWARE, AGNOS, ASIUS
+from openpilot.system.hardware import HARDWARE, AGNOS
 
 def build() -> None:
   spinner = Spinner()
   spinner.update_progress(0, 100)
 
-  if AGNOS or ASIUS:
-    HARDWARE.set_power_save(False)
+  HARDWARE.set_power_save(False)
+  if AGNOS:
     os.sched_setaffinity(0, range(8))  # ensure we can use the isolcpus cores
 
   # building with all cores can result in using too much memory, so retry serially
@@ -56,7 +56,7 @@ def build() -> None:
 
     # Show TextWindow
     spinner.close()
-    if not os.getenv("CI") and not ASIUS:
+    if not os.getenv("CI"):
       with TextWindow("openpilot failed to build\n \n" + error_s) as t:
         t.wait_for_exit()
     exit(1)

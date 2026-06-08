@@ -17,7 +17,7 @@ from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
 
-NO_IMU = ASIUS or os.environ.get("NO_IMU") == "1"
+NO_IMU = os.environ.get("NO_IMU") == "1"
 
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
@@ -293,8 +293,7 @@ def main():
   SIMULATION = bool(int(os.getenv("SIMULATION", "0")))
 
   pm = messaging.PubMaster(['livePose'])
-  sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry',
-                           ignore_avg_freq=['carState'])
+  sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
   # separate sensor sockets for efficiency
   sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
   sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)

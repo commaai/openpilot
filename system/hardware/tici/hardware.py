@@ -74,7 +74,7 @@ def get_device_type():
   if model.startswith(comma_prefix):
     return model[len(comma_prefix):]
   if model == "Radxa Dragon Q6A":
-    return "asius"
+    return "one"
   return model
 
 def wpa_supplicant_cmd(cmd: str, timeout: float = 0.2) -> dict[str, str]:
@@ -100,7 +100,7 @@ def get_default_route_iface():
 class Tici(HardwareBase):
   @cached_property
   def amplifier(self):
-    if self.get_device_type() in ("mici", "asius"):
+    if self.get_device_type() in ("mici", "one"):
       return None
     return Amplifier()
 
@@ -127,7 +127,7 @@ class Tici(HardwareBase):
     self.reboot()
 
   def get_serial(self):
-    if self.get_device_type() == "asius":
+    if self.get_device_type() == "one":
       with open("/sys/devices/soc0/serial_number") as f:
         return f.read().strip()
 
@@ -293,7 +293,7 @@ class Tici(HardwareBase):
 
   def get_thermal_config(self):
     device_type = self.get_device_type()
-    if device_type == "asius":
+    if device_type == "one":
       return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-thermal") for i in range(8)],
                            gpu=[ThermalZone("gpuss0-thermal"), ThermalZone("gpuss1-thermal")],
                            dsp=ThermalZone("nspss0-thermal"),
@@ -393,7 +393,7 @@ class Tici(HardwareBase):
     os.system("sudo chmod a+w /dev/kmsg")
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
-    if self.get_device_type() != "asius":
+    if self.get_device_type() != "one":
       gpio_init(GPIO.SOM_ST_IO, True)
       gpio_set(GPIO.SOM_ST_IO, 1)
 
@@ -404,12 +404,10 @@ class Tici(HardwareBase):
 
     # move these off the default core
     affine_irq(1, "msm_vidc")  # encoders
-    affine_irq(1, "i2c_geni")  # sensors
-
-    # *** GPU config ***
+    affine_irq(1, "i2c_geni")  # sensorsoneover_internal_p # *** GPU config ***
     affine_irq(5, "fts_ts")    # touch
     affine_irq(5, "msm_drm")   # display
-    if self.get_device_type() == "asius":
+    if self.get_device_type() == "one":
       sudo_write("userspace", "/sys/class/devfreq/3d00000.gpu/governor")
       sudo_write("812000000", "/sys/class/devfreq/3d00000.gpu/userspace/set_freq")
       raise_thermal_limits()
@@ -474,12 +472,9 @@ class Tici(HardwareBase):
     return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
 
   def has_internal_panda(self):
-    return self.get_device_type() != "asius"
+    return True
 
   def reset_internal_panda(self):
-    if not self.has_internal_panda():
-      return
-
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
 
@@ -489,9 +484,6 @@ class Tici(HardwareBase):
     gpio_set(GPIO.STM_RST_N, 0)
 
   def recover_internal_panda(self):
-    if not self.has_internal_panda():
-      return
-
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
 

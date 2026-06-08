@@ -11,4 +11,5 @@ public:
   static bool PC() { return true; }
   static bool TICI() { return util::getenv("TICI", 0) == 1; }
   static bool AGNOS() { return util::getenv("TICI", 0) == 1; }
+  static bool ASIUS() { return util::getenv("ASIUS", 0) == 1; }
 };

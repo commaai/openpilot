@@ -7,6 +7,8 @@ export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
 export NO_IMU=1
+export NO_FAN_CONTROL=1
+export NO_DCAM=1
 
 # models get lower priority than ui
 # - ui is ~5ms

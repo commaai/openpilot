@@ -29,10 +29,7 @@ def remove_ignored_fields(msg, ignore):
       else:
         attr = getattr(attr, k)
 
-    if keys[-1].isdigit():
-      v = attr[int(keys[-1])]
-    else:
-      v = getattr(attr, keys[-1])
+    v = getattr(attr, keys[-1])
 
     if isinstance(v, bool):
       val = False
@@ -40,15 +37,10 @@ def remove_ignored_fields(msg, ignore):
       val = 0
     elif isinstance(v, (list, capnp.lib.capnp._DynamicListBuilder)):
       val = []
-    elif isinstance(v, _DynamicEnum):
-      val = 0
     else:
       raise NotImplementedError(f"Unknown type: {type(v)}")
 
-    if keys[-1].isdigit():
-      attr[int(keys[-1])] = val
-    else:
-      setattr(attr, keys[-1], val)
+    setattr(attr, keys[-1], val)
   return msg
 
 

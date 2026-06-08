@@ -183,7 +183,7 @@ struct InitData {
     pc @5;
     tizi @6;
     mici @7;
-    asius @8;
+    one @8;
   }
 
   struct PandaInfo {
@@ -615,7 +615,7 @@ struct PandaState @0xa7649e2575e4591e {
     redPandaV2 @8;
     tres @9;
     cuatro @10;
-    asius @11;
+    one @11;
   }
 
   enum HarnessStatus {
