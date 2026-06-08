@@ -30,7 +30,6 @@ def remove_ignored_fields(msg, ignore):
         attr = getattr(attr, k)
 
     v = getattr(attr, keys[-1])
-
     if isinstance(v, bool):
       val = False
     elif isinstance(v, numbers.Number):
@@ -39,7 +38,6 @@ def remove_ignored_fields(msg, ignore):
       val = []
     else:
       raise NotImplementedError(f"Unknown type: {type(v)}")
-
     setattr(attr, keys[-1], val)
   return msg
 

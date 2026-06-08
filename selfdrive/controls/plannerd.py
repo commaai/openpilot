@@ -6,7 +6,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.ldw import LaneDepartureWarning
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 import cereal.messaging as messaging
-from openpilot.system.hardware import ASIUS
 
 
 def main():
@@ -21,8 +20,7 @@ def main():
   longitudinal_planner = LongitudinalPlanner(CP)
   pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance'])
   sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'liveParameters', 'radarState', 'modelV2', 'selfdriveState'],
-                           poll='modelV2',
-                           ignore_avg_freq=['carControl', 'carState', 'controlsState', 'selfdriveState'] if ASIUS else [])
+                           poll='modelV2')
 
   while True:
     sm.update()
@@ -32,7 +30,7 @@ def main():
 
       ldw.update(sm.frame, sm['modelV2'], sm['carState'], sm['carControl'])
       msg = messaging.new_message('driverAssistance')
-      msg.valid = sm.all_checks(['carState', 'carControl', 'modelV2'] if ASIUS else ['carState', 'carControl', 'modelV2', 'liveParameters'])
+      msg.valid = sm.all_checks(['carState', 'carControl', 'modelV2', 'liveParameters'])
       msg.driverAssistance.leftLaneDeparture = ldw.left
       msg.driverAssistance.rightLaneDeparture = ldw.right
       pm.send('driverAssistance', msg)
