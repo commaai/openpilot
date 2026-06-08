@@ -70,6 +70,7 @@ _services: dict[str, tuple] = {
   "wideRoadCameraState": (True, 20., 20),
   "drivingModelData": (True, 20., 10),
   "modelV2": (True, 20., None, QueueSize.BIG),
+  # TODO ensure no re-publishing delay and switch should_log=False
   "smolModelV2": (True, 20., None, QueueSize.BIG),
   "bigModelV2": (True, 20., None, QueueSize.BIG),
   "managerState": (True, 2., 1),
