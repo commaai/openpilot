@@ -70,11 +70,8 @@ def get_device_type():
   # lru_cache and cache can cause memory leaks when used in classes
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
-  comma_prefix = "comma "
-  if model.startswith(comma_prefix):
-    return model[len(comma_prefix):]
-  if model == "Radxa Dragon Q6A":
-    return "one"
+  if model.startswith(("comma ", "asius ")):
+    return model[6:]
   return model
 
 def wpa_supplicant_cmd(cmd: str, timeout: float = 0.2) -> dict[str, str]:

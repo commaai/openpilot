@@ -19,7 +19,7 @@ public:
       if (stripped.rfind("comma ", 0) == 0) {
         return stripped.substr(6);
       }
-      if (stripped == "Radxa Dragon Q6A") {
+      if (stripped == "asius one") {
         return std::string("one");
       }
       return stripped;

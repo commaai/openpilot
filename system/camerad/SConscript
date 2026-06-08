@@ -5,10 +5,10 @@ libs = [common, messaging, visionipc]
 common_srcs = ['cameras/camera_common.cc', 'cameras/cdm.cc']
 qcom_sensor_srcs = ['sensors/ox03c10.cc', 'sensors/os04c10.cc']
 qcom_srcs = ['cameras/camera_qcom2.cc', 'cameras/spectra.cc'] + common_srcs + qcom_sensor_srcs
-dragon_srcs = ['cameras/camera_dragon.cc', 'sensors/imx219.cc'] + common_srcs
+one_srcs = ['cameras/camera_one.cc', 'sensors/imx219.cc'] + common_srcs
 
 if arch != "Darwin":
-  camera_obj = env.Object(dragon_srcs if os.path.exists("/ASIUS") else qcom_srcs)
+  camera_obj = env.Object(one_srcs if os.path.exists("/ASIUS") else qcom_srcs)
   env.Program('camerad', ['main.cc', camera_obj], LIBS=libs)
 
 if GetOption("extras") and arch == "x86_64":

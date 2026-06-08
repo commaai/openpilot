@@ -48,7 +48,7 @@ class DeviceCameraConfig:
 
 _ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
 _os_fisheye = CameraConfig(2688 // 2, 1520 // 2, 567.0 / 4 * 3)
-# Dragon IMX219 uses the full-FOV 2x2 binned 4:3 sensor mode.
+# Asius One IMX219 uses the full-FOV 2x2 binned 4:3 sensor mode.
 _imx219_road = CameraConfig(1640, 1232, 2450.0)
 _imx219_wide = CameraConfig(1640, 1232, 567.0)
 _ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)

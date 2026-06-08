@@ -27,14 +27,14 @@
 ExitHandler do_exit;
 
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != nullptr;
-const int dragon_target_fps = 20;
-const int dragon_frame_height = 1232;
-const int dragon_frame_length_lines = 5123;
+const int one_target_fps = 20;
+const int one_frame_height = 1232;
+const int one_frame_length_lines = 5123;
 
-// Dragon Q6A camera routing:
+// Asius One camera routing:
 //   RDI mode (raw passthrough): CSIPHY -> CSID pad 1 -> VFE RDI0 -> raw Bayer
 // RDI requires CSID N -> VFE N pairing.
-struct DragonCamConfig {
+struct OneCamConfig {
   uint32_t csiphy_entity;
   uint32_t csid_entity;
   uint32_t vfe_rdi_entity;
@@ -63,13 +63,13 @@ static uint32_t find_media_entity(int media_fd, const char *name) {
   return 0;
 }
 
-static DragonCamConfig resolve_cam_config(int media_fd, int cam_idx) {
+static OneCamConfig resolve_cam_config(int media_fd, int cam_idx) {
   static const struct { int csiphy; int csid; int rdi_vfe; const char *sensor; } routing[] = {
     {2, 2, 2, "imx219 18-0010"},
     {3, 3, 3, "imx219 21-0010"},
   };
   auto &r = routing[cam_idx];
-  DragonCamConfig cfg = {};
+  OneCamConfig cfg = {};
   cfg.sensor_name = r.sensor;
   cfg.csiphy_entity = find_media_entity(media_fd, util::string_format("msm_csiphy%d", r.csiphy).c_str());
   cfg.csid_entity = find_media_entity(media_fd, util::string_format("msm_csid%d", r.csid).c_str());
@@ -81,7 +81,7 @@ static DragonCamConfig resolve_cam_config(int media_fd, int cam_idx) {
   return cfg;
 }
 
-static DragonCamConfig dragon_cams[2];
+static OneCamConfig one_cams[2];
 
 
 struct V4LBuf {
@@ -104,10 +104,10 @@ static void __attribute__((constructor)) init_gamma_lut() {
   }
 }
 
-static void set_dragon_sensor_timing(int sensor_fd, int cam_idx) {
+static void set_one_sensor_timing(int sensor_fd, int cam_idx) {
   struct v4l2_control vblank_ctrl = {};
   vblank_ctrl.id = V4L2_CID_VBLANK;
-  vblank_ctrl.value = dragon_frame_length_lines - dragon_frame_height;
+  vblank_ctrl.value = one_frame_length_lines - one_frame_height;
   if (ioctl(sensor_fd, VIDIOC_S_CTRL, &vblank_ctrl) != 0) {
     LOGE("cam %d: set VBLANK failed: %d (%s)", cam_idx, errno, strerror(errno));
     return;
@@ -118,13 +118,13 @@ static void set_dragon_sensor_timing(int sensor_fd, int cam_idx) {
     return;
   }
 
-  const int frame_length_lines = dragon_frame_height + vblank_ctrl.value;
-  if (frame_length_lines != dragon_frame_length_lines) {
+  const int frame_length_lines = one_frame_height + vblank_ctrl.value;
+  if (frame_length_lines != one_frame_length_lines) {
     LOGE("cam %d: VBLANK readback %d gives FLL=%d, expected FLL=%d for %dfps",
-         cam_idx, vblank_ctrl.value, frame_length_lines, dragon_frame_length_lines, dragon_target_fps);
+         cam_idx, vblank_ctrl.value, frame_length_lines, one_frame_length_lines, one_target_fps);
   } else {
     LOG("cam %d: VBLANK set to %d (FLL=%d, %dfps target)",
-        cam_idx, vblank_ctrl.value, frame_length_lines, dragon_target_fps);
+        cam_idx, vblank_ctrl.value, frame_length_lines, one_target_fps);
   }
 }
 
@@ -176,7 +176,7 @@ static void debayer_raw10_to_nv12(const uint8_t *raw, int raw_stride,
   }
 }
 
-class DragonCamera {
+class OneCamera {
 public:
   CameraConfig cc;
   std::unique_ptr<SensorInfo> sensor;
@@ -193,7 +193,7 @@ public:
   uint32_t output_width = 0, output_height = 0;
   uint32_t stride = 0, y_height = 0, uv_height = 0, yuv_size = 0, uv_offset = 0;
 
-  DragonCamera(const CameraConfig &config) : cc(config), enabled(config.enabled) {}
+  OneCamera(const CameraConfig &config) : cc(config), enabled(config.enabled) {}
 
   void camera_open(VisionIpcServer *v);
   void camera_close();
@@ -260,7 +260,7 @@ static void reset_all_media_links() {
   LOG("reset all media links");
 }
 
-void DragonCamera::setup_media_links() {
+void OneCamera::setup_media_links() {
   int media_fd = open("/dev/media0", O_RDWR);
   if (media_fd < 0) {
     LOGE("failed to open /dev/media0");
@@ -268,7 +268,7 @@ void DragonCamera::setup_media_links() {
   }
 
   int cam_idx = cc.camera_num;
-  auto &dcfg = dragon_cams[cam_idx];
+  auto &dcfg = one_cams[cam_idx];
 
   struct media_link_desc link = {};
 
@@ -291,9 +291,9 @@ void DragonCamera::setup_media_links() {
   LOG("cam %d: media links set up (RDI mode)", cam_idx);
 }
 
-void DragonCamera::set_formats() {
+void OneCamera::set_formats() {
   int cam_idx = cc.camera_num;
-  auto &dcfg = dragon_cams[cam_idx];
+  auto &dcfg = one_cams[cam_idx];
 
   // set format on CSIPHY subdev
   int csiphy_fd = open(util::string_format("/dev/v4l-subdev%d", dcfg.csiphy_subdev).c_str(), O_RDWR);
@@ -365,7 +365,7 @@ void DragonCamera::set_formats() {
   }
 }
 
-void DragonCamera::camera_open(VisionIpcServer *v) {
+void OneCamera::camera_open(VisionIpcServer *v) {
   if (!enabled) return;
 
   sensor = std::make_unique<IMX219>();
@@ -373,7 +373,7 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
   stream_type = cc.stream_type;
 
   int cam_idx = cc.camera_num;
-  auto &dcfg = dragon_cams[cam_idx];
+  auto &dcfg = one_cams[cam_idx];
 
   // open video device
   int dev = dcfg.rdi_video_dev;
@@ -402,7 +402,7 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
 
   setup_media_links();
   set_formats();
-  set_dragon_sensor_timing(sensor_fd, cam_idx);
+  set_one_sensor_timing(sensor_fd, cam_idx);
 
   output_width = sensor->frame_width;
   output_height = sensor->frame_height;
@@ -451,7 +451,7 @@ void DragonCamera::camera_open(VisionIpcServer *v) {
       yuv_size, stride);
 }
 
-void DragonCamera::queue_all_buffers() {
+void OneCamera::queue_all_buffers() {
   if (!enabled) return;
 
   for (int i = 0; i < n_bufs; i++) {
@@ -459,7 +459,7 @@ void DragonCamera::queue_all_buffers() {
   }
 }
 
-void DragonCamera::stream_on() {
+void OneCamera::stream_on() {
   if (!enabled) return;
 
   int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
@@ -472,17 +472,17 @@ void DragonCamera::stream_on() {
   LOG("cam %d: RDI streaming started", cc.camera_num);
 }
 
-void DragonCamera::start_streaming() {
+void OneCamera::start_streaming() {
   queue_all_buffers();
   stream_on();
 }
 
-void DragonCamera::stop_streaming() {
+void OneCamera::stop_streaming() {
   int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   ioctl(video_fd, VIDIOC_STREAMOFF, &type);
 }
 
-void DragonCamera::queue_frame(int index) {
+void OneCamera::queue_frame(int index) {
   struct v4l2_buffer vbuf = {};
   struct v4l2_plane planes[1] = {};
   vbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
@@ -494,7 +494,7 @@ void DragonCamera::queue_frame(int index) {
   if (ret != 0) LOGE("cam %d: QBUF idx=%d failed: %d (%s)", cc.camera_num, index, errno, strerror(errno));
 }
 
-int DragonCamera::dequeue_frame(uint64_t *timestamp) {
+int OneCamera::dequeue_frame(uint64_t *timestamp) {
   struct pollfd pfd = {video_fd, POLLIN, 0};
   int ret = poll(&pfd, 1, 20);
   if (ret == 0) return -ETIMEDOUT;
@@ -514,7 +514,7 @@ int DragonCamera::dequeue_frame(uint64_t *timestamp) {
   return dbuf.index;
 }
 
-void DragonCamera::set_exposure(int exposure_time, int gain_idx) {
+void OneCamera::set_exposure(int exposure_time, int gain_idx) {
   if (sensor_fd < 0) return;
 
   struct v4l2_control ctrl = {};
@@ -528,7 +528,7 @@ void DragonCamera::set_exposure(int exposure_time, int gain_idx) {
   ioctl(sensor_fd, VIDIOC_S_CTRL, &ctrl);
 }
 
-void DragonCamera::camera_close() {
+void OneCamera::camera_close() {
   if (video_fd >= 0) {
     stop_streaming();
     for (int i = 0; i < n_bufs; i++) {
@@ -549,7 +549,7 @@ void DragonCamera::camera_close() {
 
 class CameraState {
 public:
-  DragonCamera camera;
+  OneCamera camera;
   int exposure_time = 1600;
   bool dc_gain_enabled = false;
   int dc_gain_weight = 0;
@@ -586,7 +586,7 @@ void CameraState::init(VisionIpcServer *v) {
   camera.camera_open(v);
   if (!camera.enabled) return;
 
-  // The Dragon starts the road sensor first, then wide almost one period later.
+  // The One starts the road sensor first, then wide almost one period later.
   // Number wide one frame ahead so same-numbered road/wide frames refer to the
   // same 20 Hz capture instant.
   if (camera.cc.stream_type == VISION_STREAM_WIDE_ROAD) {
@@ -721,7 +721,7 @@ void CameraState::process_rdi_frame(int buf_idx, uint64_t timestamp) {
 }
 
 void camerad_thread() {
-  LOG("-- Dragon camerad starting (RDI sw debayer)");
+  LOG("-- One camerad starting (RDI sw debayer)");
 
   VisionIpcServer v("camerad");
 
@@ -731,10 +731,10 @@ void camerad_thread() {
     return;
   }
   for (int i = 0; i < 2; i++) {
-    dragon_cams[i] = resolve_cam_config(media_fd, i);
+    one_cams[i] = resolve_cam_config(media_fd, i);
     LOG("cam %d: csiphy=%u csid=%u vfe_rdi=%u rdi_dev=%d",
-        i, dragon_cams[i].csiphy_entity, dragon_cams[i].csid_entity,
-        dragon_cams[i].vfe_rdi_entity, dragon_cams[i].rdi_video_dev);
+        i, one_cams[i].csiphy_entity, one_cams[i].csid_entity,
+        one_cams[i].vfe_rdi_entity, one_cams[i].rdi_video_dev);
   }
   close(media_fd);
 
@@ -763,7 +763,7 @@ void camerad_thread() {
     }
   }
 
-  LOG("-- Dragon camerad streaming");
+  LOG("-- One camerad streaming");
 
   while (!do_exit) {
     for (auto &cam : cams) {
@@ -791,7 +791,7 @@ void camerad_thread() {
     }
   }
 
-  LOG("-- Dragon camerad stopping");
+  LOG("-- One camerad stopping");
   for (auto &cam : cams) {
     cam->camera.stop_streaming();
   }
