@@ -16,7 +16,7 @@ MAX_ERR_FRAMES = 1
 DT = 0.05
 
 
-def process_messages(estimator, lag_frames, n_frames, vego=20.0, rejection_threshold=0.0):
+def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_threshold=0.0):
   for i in range(n_frames):
     t = i * estimator.dt
     desired_la = np.cos(10 * t) * 0.3
