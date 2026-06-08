@@ -27,7 +27,6 @@ DESCRIPTIONS = {
     "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
     "without a turn signal activated while driving over 31 mph (50 km/h)."
   ),
-  "LaneTurnDesire": tr_noop("When blinker is on below 20 mph, steer in blinker direction. Useful at intersections and red lights."),
   "AlwaysOnDM": tr_noop("Enable driver monitoring even when openpilot is not engaged."),
   'RecordFront': tr_noop("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
   "IsMetric": tr_noop("Display speed in km/h instead of mph."),
@@ -65,12 +64,6 @@ class TogglesLayout(Widget):
         lambda: tr("Enable Lane Departure Warnings"),
         DESCRIPTIONS["IsLdwEnabled"],
         "warning.png",
-        False,
-      ),
-      "LaneTurnDesire": (
-        lambda: tr("Lane Turn Desire"),
-        DESCRIPTIONS["LaneTurnDesire"],
-        "chffr_wheel.png",
         False,
       ),
       "AlwaysOnDM": (

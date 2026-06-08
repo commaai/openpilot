@@ -1,11 +1,9 @@
 from cereal import log
 from openpilot.common.constants import CV
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
-TurnDirection = log.TurnDirection
 
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
@@ -31,12 +29,6 @@ DESIRES = {
   },
 }
 
-TURN_DESIRES = {
-  TurnDirection.none: log.Desire.none,
-  TurnDirection.turnLeft: log.Desire.turnLeft,
-  TurnDirection.turnRight: log.Desire.turnRight,
-}
-
 
 class DesireHelper:
   def __init__(self):
@@ -47,9 +39,6 @@ class DesireHelper:
     self.keep_pulse_timer = 0.0
     self.prev_one_blinker = False
     self.desire = log.Desire.none
-    self.lane_turn_direction = TurnDirection.none
-
-    self._lane_turn_enabled = Params().get_bool("LaneTurnDesire")
 
   @staticmethod
   def get_lane_change_direction(CS):
@@ -59,12 +48,6 @@ class DesireHelper:
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
-
-    # Lane turn desire: steer in blinker direction at low speed
-    if self._lane_turn_enabled and one_blinker and below_lane_change_speed:
-      self.lane_turn_direction = TurnDirection.turnLeft if carstate.leftBlinker else TurnDirection.turnRight
-    else:
-      self.lane_turn_direction = TurnDirection.none
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
@@ -123,10 +106,7 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker
 
-    if self.lane_turn_direction != TurnDirection.none:
-      self.desire = TURN_DESIRES[self.lane_turn_direction]
-    else:
-      self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
+    self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Send keep pulse once per second during LaneChangeStart.preLaneChange
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.laneChangeStarting):

@@ -362,7 +362,14 @@ class Tici(HardwareBase):
       if powersave_enabled and n == '4':
         continue
       gov = 'ondemand' if powersave_enabled else 'performance'
+<<<<<<< HEAD
       sudo_write_if_exists(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
+=======
+      sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
+      if not powersave_enabled:
+        # cap max core freq to 1689 Mhz
+        sudo_write('1689600', f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_max_freq')
+>>>>>>> master
 
     # *** IRQ config ***
 

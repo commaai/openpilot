@@ -132,8 +132,6 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     userBookmark @95;
     excessiveActuation @96;
     audioFeedback @97;
-    laneTurnLeft @100;
-    laneTurnRight @101;
 
     soundsUnavailableDEPRECATED @47;
   }
@@ -403,12 +401,6 @@ enum LaneChangeDirection {
   none @0;
   left @1;
   right @2;
-}
-
-enum TurnDirection {
-  none @0;
-  turnLeft @1;
-  turnRight @2;
 }
 
 struct CanData {
@@ -829,7 +821,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     debugState @59 :LateralDebugState;
     torqueState @60 :LateralTorqueState;
 
-    curvatureStateDEPRECATED @65 :Deprecated.LateralCurvatureState;
+    curvatureState @65 :LateralCurvatureState;
     lqrStateDEPRECATED @55 :Deprecated.LateralLQRState;
     indiStateDEPRECATED @52 :Deprecated.LateralINDIState;
   }
@@ -876,6 +868,18 @@ struct ControlsState @0x97ff69c53601abf1 {
     steeringAngleDeg @1 :Float32;
     output @2 :Float32;
     saturated @3 :Bool;
+  }
+
+  struct LateralCurvatureState @0xad9d8095c06f7c61 {
+    active @0 :Bool;
+    actualCurvature @1 :Float32;
+    desiredCurvature @2 :Float32;
+    error @3 :Float32;
+    p @4 :Float32;
+    i @5 :Float32;
+    f @6 :Float32;
+    output @7 :Float32;
+    saturated @8 :Bool;
   }
 
   deprecated :group {
@@ -962,7 +966,6 @@ struct DrivingModelData {
   struct MetaData {
     laneChangeState @0 :LaneChangeState;
     laneChangeDirection @1 :LaneChangeDirection;
-    laneTurnDirection @2 :TurnDirection;
   }
 }
 
@@ -1050,7 +1053,7 @@ struct ModelDataV2 {
     hardBrakePredicted @7 :Bool;
     laneChangeState @8 :LaneChangeState;
     laneChangeDirection @9 :LaneChangeDirection;
-    laneTurnDirection @10 :TurnDirection;
+
 
     deprecated :group {
       brakeDisengageProb @2 :Float32;

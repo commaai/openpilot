@@ -35,7 +35,6 @@ State = log.SelfdriveState.OpenpilotState
 PandaType = log.PandaState.PandaType
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
-TurnDirection = log.TurnDirection
 EventName = log.OnroadEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
@@ -301,13 +300,6 @@ class SelfdriveD:
     elif self.sm['modelV2'].meta.laneChangeState in (LaneChangeState.laneChangeStarting,
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
-
-    # Handle lane turn desire
-    lane_turn_direction = self.sm['modelV2'].meta.laneTurnDirection
-    if lane_turn_direction == TurnDirection.turnLeft:
-      self.events.add(EventName.laneTurnLeft)
-    elif lane_turn_direction == TurnDirection.turnRight:
-      self.events.add(EventName.laneTurnRight)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput

@@ -186,7 +186,7 @@ class TestCarModelBase(unittest.TestCase):
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
 
-    if self.CP.steerControlType != SteerControlType.angle:
+    if self.CP.steerControlType not in (SteerControlType.angle, SteerControlType.curvature):
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))

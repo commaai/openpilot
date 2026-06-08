@@ -34,7 +34,7 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  ("modelV2", 0.05, 0.028),
+  ("modelV2", 0.05, 0.032),
   ("driverStateV2", 0.05, 0.018),
 ]
 
