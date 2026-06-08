@@ -29,6 +29,7 @@ DESIRES = {
   },
 }
 
+
 class DesireHelper:
   def __init__(self):
     self.lane_change_state = LaneChangeState.off

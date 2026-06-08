@@ -266,6 +266,9 @@ class LocationEstimator:
 
 
 def sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, simulation):
+  if (NO_IMU):
+    return True
+
   cur_time = time.monotonic()
   for which, msgs in [("accelerometer", acc_msgs), ("gyroscope", gyro_msgs)]:
     if len(msgs) > 0:
@@ -344,14 +347,12 @@ def main():
           elif res == HandleLogResult.SUCCESS:
             observation_input_invalid[which] *= input_invalid_decay[which]
     else:
-      filter_initialized = sm.all_checks() if NO_IMU else \
-        sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < input_invalid_threshold[s] for s in critcal_services)
       inputs_valid = sm.all_valid() and critical_service_inputs_valid
-      sensors_valid = True if NO_IMU else \
-        sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
       pm.send("livePose", msg)
