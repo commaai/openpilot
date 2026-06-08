@@ -59,7 +59,6 @@ def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started
 
 def livestream(started: bool, params: Params, CP: car.CarParams) -> bool:
-  # alive offroad; onroad only on a non-car device (e.g. comma body)
   return params.get_bool("IsLiveStreaming")
 
 def or_(*fns):
@@ -68,12 +67,15 @@ def or_(*fns):
 def and_(*fns):
   return lambda *args: operator.and_(*(fn(*args) for fn in fns))
 
+def not_(*fns):
+  return lambda *args: operator.not_(*(fn(*args) for fn in fns))
+
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, livestream)),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], and_(livestream, not_(iscar))),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], or_(driverview, livestream), enabled=not WEBCAM),
@@ -119,7 +121,7 @@ procs = [
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", or_(notcar, livestream)),
+  PythonProcess("webrtcd", "system.webrtc.webrtcd", and_(livestream, not_(iscar))),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
