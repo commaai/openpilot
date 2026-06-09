@@ -55,73 +55,81 @@ sleep infinity
 EOF
 chmod +x $CONTINUE_PATH
 
-safe_checkout() {
-  # completely clean TEST_DIR
+export GIT_PACK_THREADS=8
+# write LFS pointers during checkout, then batch download in git lfs pull
+export GIT_LFS_SKIP_SMUDGE=1
 
-  cd $SOURCE_DIR
+# NOTE: bash ignores set -e inside functions invoked on the left of ||, even when
+# re-asserted, so the bodies are explicit && chains ending in a HEAD assertion.
 
-  # cleanup orphaned locks
-  find .git -type f -name "*.lock" -exec rm {} +
-
-  git reset --hard
-  git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
-  find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
-  git reset --hard $GIT_COMMIT
-  git checkout $GIT_COMMIT
-  git clean -xdff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-
-  git lfs pull
-  (ulimit -n 65535 && git lfs prune)
-
-  echo "git checkout done, t=$SECONDS"
-  du -hs $SOURCE_DIR $SOURCE_DIR/.git
-
-  rsync -a --delete $SOURCE_DIR $TEST_DIR
-}
-
-unsafe_checkout() {( set -e
-  # checkout directly in test dir, leave old build products
-
-  cd $TEST_DIR
+# bring the repo in $1 to $GIT_COMMIT; $2 is the set of git-clean flags
+sync_repo() {( set -e
+  cd "$1" &&
+  CLEAN_FLAGS="$2" &&
 
   # cleanup orphaned locks
-  find .git -type f -name "*.lock" -exec rm {} +
+  find .git -type f -name "*.lock" -exec rm {} + &&
 
-  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin $GIT_COMMIT
-  git checkout --force --no-recurse-submodules $GIT_COMMIT
-  git reset --hard $GIT_COMMIT
-  git clean -dff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -df"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -df"
+  git fetch --no-tags --no-recurse-submodules --depth 1 origin $GIT_COMMIT &&
+  git -c checkout.workers=8 checkout --force --no-recurse-submodules $GIT_COMMIT &&
+  # release builds and sudo'd tests leave root-owned files behind
+  { git clean $CLEAN_FLAGS || { sudo chown -R comma: . && git clean $CLEAN_FLAGS; }; } &&
+  git submodule sync &&
+  git -c checkout.workers=8 submodule update --init --recursive --force --jobs 6 &&
+  git submodule foreach --recursive "git reset --hard && git clean $CLEAN_FLAGS" &&
+  git lfs pull &&
+  (ulimit -n 65535 && git lfs prune) &&
 
-  git lfs pull
-  (ulimit -n 65535 && git lfs prune)
+  [ "$(git rev-parse HEAD)" = "$GIT_COMMIT" ]
 )}
 
-export GIT_PACK_THREADS=8
+safe_checkout() {( set -e
+  # completely clean TEST_DIR: bring SOURCE_DIR to a pristine $GIT_COMMIT, then mirror it.
+  # both the checkout and the mirror are incremental, so this is fast for small diffs.
+  sync_repo $SOURCE_DIR "-xdff" &&
+
+  echo "git checkout done, t=$SECONDS" &&
+
+  # pack files are content-addressed (same name = same content), but git freshens their
+  # mtimes on object reuse, so sync them by name only or a plain rsync re-copies the big
+  # base pack on every run. refs/HEAD sync last, so TEST_DIR is never ahead of its objects.
+  mkdir -p $TEST_DIR/.git/objects/pack &&
+  rsync -a --delete --ignore-existing --include='pack-*' --exclude='*' ${SOURCE_DIR%/}/.git/objects/pack/ $TEST_DIR/.git/objects/pack/ &&
+  rsync -a --delete --exclude='/.git/objects/pack/pack-*' $SOURCE_DIR $TEST_DIR &&
+
+  [ "$(git -C $TEST_DIR rev-parse HEAD)" = "$GIT_COMMIT" ]
+)}
+
+unsafe_checkout() {( set -e
+  # checkout directly in TEST_DIR, leaving old build products around
+  sync_repo $TEST_DIR "-dff"
+)}
+
+nuke_checkout() {( set -e
+  # last resort: start over from scratch.
+  # nuking can't fix a network failure or an unfetchable commit (GitHub only
+  # serves advertised tips), so don't throw away good local state for those.
+  git ls-remote https://github.com/commaai/openpilot.git | grep -q "^$GIT_COMMIT"
+
+  # the shell may be sitting inside one of the dirs we're about to delete
+  cd /
+
+  sudo rm -rf $SOURCE_DIR $TEST_DIR
+  git clone --depth 1 https://github.com/commaai/openpilot.git $SOURCE_DIR
+  safe_checkout
+)}
 
 # set up environment
 if [ ! -d "$SOURCE_DIR" ]; then
-  git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
+  git clone --depth 1 https://github.com/commaai/openpilot.git $SOURCE_DIR
 fi
 
 if [ ! -z "$UNSAFE" ]; then
   echo "trying unsafe checkout"
-  set +e
-  unsafe_checkout
-  if [[ "$?" -ne 0 ]]; then
-    safe_checkout
-  fi
-  set -e
+  unsafe_checkout || safe_checkout || nuke_checkout
 else
   echo "doing safe checkout"
-  safe_checkout
+  safe_checkout || nuke_checkout
 fi
 
 echo "$TEST_DIR synced with $GIT_COMMIT, t=$SECONDS"
