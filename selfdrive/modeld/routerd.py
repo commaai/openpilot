@@ -9,7 +9,7 @@ from openpilot.selfdrive.modeld.helpers import usbgpu_present
 
 def main():
   sm = SubMaster(['bigModelV2', 'smolModelV2'])
-  pm = PubMaster(['modelV2'])
+  pm = PubMaster(['modelV2']) # TODO also publish a message with one bit to say which message is being forward
   params = Params()
   src = 'bigModelV2' if usbgpu_present() else 'smolModelV2'
 
@@ -28,6 +28,9 @@ def main():
       msg.valid = sm.valid[src]
       msg.modelV2 = sm[src]
       pm.send('modelV2', msg)
+
+  # TODO prune modelv2 to make drivingModelData
+  # and forward odom
 
 
 if __name__ == "__main__":
