@@ -569,29 +569,27 @@ def getNetworks():
 
 @dispatcher.add_method
 def startStream(sdp: str) -> dict:
-  from openpilot.system.webrtc.webrtcd import post_stream_request
+  from openpilot.system.webrtc.webrtcd import post_stream_request, wait_for_webrtcd
   params = Params()
   bridge_services_in = []
-  bridge_services_out = []
 
   # get live car params to avoid stale notCar edge case
-  cp_bytes = Params().get("CarParams")
+  cp_bytes = Params().get("CarParamsPersistent")
   if cp_bytes is not None:
     with car.CarParams.from_bytes(cp_bytes) as CP:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
-        bridge_services_out.append("carState")
   else:
-      return {"error": f"failed to get CarParams"}
+      raise Exception("failed to get CarParamsPersistent")
 
   if not params.get_bool("IsOnroad"):
     # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
     # webrtcd clears IsLiveStreaming when the session ends
     params.put_bool("IsLiveStreaming", True)
-    # wait for all req services to come up
-    time.sleep(5.0)
+    # wait for webrtcd end points to wake up
+    wait_for_webrtcd()
 
-  return post_stream_request(sdp, "wideRoad", bridge_services_in, bridge_services_out)
+  return post_stream_request(sdp, "wideRoad", bridge_services_in, ["carState", "deviceState.started"])
 
 
 @dispatcher.add_method

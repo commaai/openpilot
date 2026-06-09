@@ -57,9 +57,20 @@ class AsyncTaskRunner:
 
 
 class CerealOutgoingMessageProxy(AsyncTaskRunner):
-  def __init__(self, sm: messaging.SubMaster):
+  def __init__(self, outgoing_services: list[str]):
     super().__init__()
-    self.sm = sm
+    # entries may be "service" (whole message) or "service.field" (only selected fields)
+    self.field_filter: dict[str, set[str] | None] = {}
+    for entry in outgoing_services:
+      service, _, field_name = entry.partition(".")
+      if field_name:
+        fields = self.field_filter.setdefault(service, set())
+        assert fields is not None, f"cannot mix whole-message and field selection for {service}"
+        fields.add(field_name)
+      else:
+        assert service not in self.field_filter, f"cannot mix whole-message and field selection for {service}"
+        self.field_filter[service] = None
+    self.sm = messaging.SubMaster(list(self.field_filter))
     self.channels: list[RTCDataChannel] = []
 
   def add_channel(self, channel: 'RTCDataChannel'):
@@ -83,7 +94,12 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
     for service, updated in self.sm.updated.items():
       if not updated:
         continue
-      msg_dict = self.to_json(self.sm[service])
+      fields = self.field_filter.get(service)
+      if fields is None:
+        msg_dict = self.to_json(self.sm[service])
+      else:
+        msg = self.sm[service]
+        msg_dict = {field_name: self.to_json(getattr(msg, field_name)) for field_name in fields}
       mono_time, valid = self.sm.logMonoTime[service], self.sm.valid[service]
       outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
       encoded_msg = json.dumps(outgoing_msg).encode()
@@ -154,7 +170,7 @@ class StreamSession:
     if len(incoming_services) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
-      self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
+      self.outgoing_bridge = CerealOutgoingMessageProxy(outgoing_services)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
@@ -260,9 +276,21 @@ def post_stream_request(sdp: str, init_camera: str, bridge_services_in: list[str
         resp.raise_for_status()
     return resp.json()
   except requests.ConnectTimeout as e:
-    raise Exception("webrtc took too long to respond. is it on?") from e
+    raise Exception("webrtc took too long to respond. is the comma body ignition on?") from e
   except requests.ConnectionError as e:
-    raise Exception("webrtc is not running. turn on comma body ignition.") from e
+    raise e
+
+
+def wait_for_webrtcd(max_retries: float = 10.0) -> None:
+  attempts = 0
+  while attempts < max_retries:
+    try:
+      if requests.get(f"http://localhost:{WEBRTCD_PORT}/schema", timeout=1).ok:
+        return
+    except requests.ConnectionError:
+      attempts += 1
+      time.sleep(0.1)
+  raise TimeoutError("webrtcd did not come up")
 
 
 async def get_stream(request: 'web.Request'):
@@ -302,7 +330,7 @@ async def get_stream(request: 'web.Request'):
 
 
 async def get_schema(request: 'web.Request'):
-  services = request.query["services"].split(",")
+  services = request.query.get("services", "").split(",")
   services = [s for s in services if s]
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
@@ -333,9 +361,6 @@ async def on_shutdown(app: 'web.Application'):
 
 def webrtcd_thread(host: str, port: int, debug: bool):
   logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
-  logging_level = logging.DEBUG if debug else logging.INFO
-  logging.getLogger("WebRTCStream").setLevel(logging_level)
-  logging.getLogger("webrtcd").setLevel(logging_level)
 
   app = web.Application()
 
