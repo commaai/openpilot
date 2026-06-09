@@ -144,7 +144,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[0].set_ylabel('Lateral Accel (m/s^2)')
       for ct, cv in cross_markers:
         ax[0].plot(ct, cv, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
-      ax[0].legend(prop={'size': 30}, loc='upper right')
+      ax[0].legend(prop={'size': 30})
 
       ax[1].grid(linewidth=4)
       if CP.steerControlType == car.CarParams.SteerControlType.angle:
