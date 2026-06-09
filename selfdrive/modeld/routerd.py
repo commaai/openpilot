@@ -19,12 +19,18 @@ def main():
     sm.update()
   src = 'bigModelV2' if (sm['usbgpuState'].usbgpuPresent and sm['usbgpuState'].usbgpuCompiled) else 'smolModelV2'
 
-  # fall back to smol if the usbgpu disappears, or once big has been seen and then lags
+  # fall back to smol if the usbgpu disappears, or once big has settled and then lags
   big_stale_dt = 1.5 / SERVICE_LIST['bigModelV2'].frequency
+  big_grace_dt = 5.  # ignore big lagging for a bit after it first comes up
+  big_first_t = None
   while True:
     sm.update()
+    if sm.updated['bigModelV2'] and big_first_t is None:
+      big_first_t = time.monotonic()
+
     if src == 'bigModelV2':
-      big_lagged = sm.seen['bigModelV2'] and (time.monotonic() - sm.recv_time['bigModelV2']) >= big_stale_dt
+      settled = big_first_t is not None and (time.monotonic() - big_first_t) >= big_grace_dt
+      big_lagged = settled and (time.monotonic() - sm.recv_time['bigModelV2']) >= big_stale_dt
       if big_lagged or not sm['usbgpuState'].usbgpuPresent:
         src = 'smolModelV2'
         params.put_bool("UsbgpuFailed", True)
