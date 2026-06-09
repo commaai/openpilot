@@ -2453,6 +2453,10 @@ struct UsbgpuState {
   usbgpuCompiled @1 :Bool;
 }
 
+struct ModelSource {
+  big @0 :Bool;
+}
+
 struct Event {
   logMonoTime @0 :UInt64;  # nanoseconds
   valid @67 :Bool = true;
@@ -2503,6 +2507,7 @@ struct Event {
     smolModelV2 @152 :ModelDataV2;
     bigModelV2 @153 :ModelDataV2;
     usbgpuState @154 :UsbgpuState;
+    modelSource @155 :ModelSource;
     drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;
 

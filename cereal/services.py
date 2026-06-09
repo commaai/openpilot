@@ -74,6 +74,7 @@ _services: dict[str, tuple] = {
   # TODO ensure no re-publishing delay and switch should_log=False
   "smolModelV2": (True, 20., None, QueueSize.BIG),
   "bigModelV2": (True, 20., None, QueueSize.BIG),
+  "modelSource": (True, 20., 10),
   "managerState": (True, 2., 1),
   "qRoadEncodeIdx": (False, 20.),
   "userBookmark": (True, 0., 1),
