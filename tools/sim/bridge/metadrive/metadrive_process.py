@@ -3,27 +3,31 @@ import time
 import numpy as np
 
 from collections import namedtuple
-from panda3d.core import Vec3
 from multiprocessing.connection import Connection
-
-from metadrive.engine.core.engine_core import EngineCore
-from metadrive.engine.core.image_buffer import ImageBuffer
-from metadrive.envs.metadrive_env import MetaDriveEnv
-from metadrive.obs.image_obs import ImageObservation
 
 from openpilot.common.realtime import Ratekeeper
 
 from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
 
-C3_POSITION = Vec3(0.0, 0, 1.22)
-C3_HPR = Vec3(0, 0,0)
+# C3_POSITION and C3_HPR defined inside metadrive_process (lazy panda3d import)
 
 
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
 metadrive_vehicle_state = namedtuple("metadrive_vehicle_state", ["velocity", "position", "bearing", "steering_angle"])
 
 def apply_metadrive_patches(arrive_dest_done=True):
+  # Lazy imports: panda3d/metadrive initialize Cocoa, unsafe before fork on macOS
+  global C3_POSITION, C3_HPR
+  from panda3d.core import Vec3
+  C3_POSITION = Vec3(0.0, 0, 1.22)
+  C3_HPR = Vec3(0, 0, 0)
+
+  from metadrive.engine.core.engine_core import EngineCore
+  from metadrive.engine.core.image_buffer import ImageBuffer
+  from metadrive.envs.metadrive_env import MetaDriveEnv
+  from metadrive.obs.image_obs import ImageObservation
+
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
   def add_image_sensor_patched(self, name: str, cls, args):
     if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
@@ -48,9 +52,13 @@ def apply_metadrive_patches(arrive_dest_done=True):
   if not arrive_dest_done:
     MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
+  return {'EngineCore': EngineCore, 'ImageBuffer': ImageBuffer, 'MetaDriveEnv': MetaDriveEnv, 'ImageObservation': ImageObservation}
+
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
                       exit_event, op_engaged, test_duration, test_run):
+  # Lazy imports inside subprocess only — safe on macOS
+  from metadrive.envs.metadrive_env import MetaDriveEnv
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 

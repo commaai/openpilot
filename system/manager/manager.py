@@ -209,7 +209,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  unblock_stdout()
+  import sys
+  if not (sys.platform == "darwin" and os.environ.get("SIMULATION") == "1"):
+    unblock_stdout()
 
   try:
     main()

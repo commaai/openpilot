@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal import messaging
@@ -64,7 +65,7 @@ class Camerad:
     return rgb_to_nv12(rgb)
 
   def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
-    eof = int(frame_id * 0.05 * 1e9)
+    eof = int(time.monotonic() * 1e9)
     self.vipc_server.send(yuv_type, yuv, frame_id, eof, eof)
 
     dat = messaging.new_message(pub_type, valid=True)
