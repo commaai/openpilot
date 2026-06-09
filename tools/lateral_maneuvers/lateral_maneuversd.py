@@ -67,6 +67,12 @@ MANEUVERS = [
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
+    "jitter 20mph",
+    [Action([-0.5 if i % 2 == 0 else 0.5], [0.1]) for i in range(10)],
+    repeat=2,
+    initial_speed=20. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
     "step right 30mph",
     [Action([0.5], [1.0]), Action([-0.5], [1.5])],
     repeat=2,

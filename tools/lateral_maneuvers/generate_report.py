@@ -76,7 +76,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       v_ego = [m.vEgo for m in carState]
       cross_markers = []
 
-      if description.startswith('sine'):
+      if description.startswith(('sine', 'jitter')):
         amplitude = max(abs(lat_accel(lp.desiredCurvature, v) - baseline_accel)
                         for lp, v in zip(lateralPlan, v_ego, strict=False))
         threshold = amplitude * 0.5
@@ -133,7 +133,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[0].grid(linewidth=4)
       desired_label = 'lateralManeuverPlan.desiredCurvature * vEgo^2'
       desired_lat_accel = [lat_accel(m.desiredCurvature, v) for m, v in zip(lateralPlan, v_ego, strict=False)]
-      if description.startswith('sine'):
+      if description.startswith(('sine', 'jitter')):
         ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel, 'C1', label=desired_label, linewidth=6)
       else:
         t_desired = [t_lateralPlan[0]] + t_lateralPlan[:len(desired_lat_accel)]
