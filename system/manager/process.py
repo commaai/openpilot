@@ -1,4 +1,5 @@
 import importlib
+import multiprocessing
 import os
 import signal
 import time
@@ -178,7 +179,7 @@ class PythonProcess(ManagerProcess):
     self.restart_if_crash = restart_if_crash
 
   def prepare(self) -> None:
-    if self.enabled:
+    if self.enabled and multiprocessing.get_start_method() == "fork":
       cloudlog.info(f"preimporting {self.module}")
       importlib.import_module(self.module)
 
