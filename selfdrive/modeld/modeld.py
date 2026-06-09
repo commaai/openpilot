@@ -151,7 +151,8 @@ class ModelState:
 def main(demo=False, usbgpu=False):
   cloudlog.warning("modeld init")
 
-  config_realtime_process(7, 54)
+  priority = 54 + usbgpu
+  config_realtime_process(7, priority)
 
   output_message_name = 'smolModelV2' if not usbgpu else 'bigModelV2'
 
