@@ -51,6 +51,8 @@ def report(platform, route, _description, CP, ID, maneuvers):
     builder.append("<div style='border-top: 1px solid #000; margin: 20px 0;'></div>\n")
     builder.append(f"<h2>{description}</h2>\n")
     for run, msgs in enumerate(completed_runs):
+      last_active = max(m.logMonoTime for m in msgs if m.which() == 'lateralManeuverPlan' and m.valid)
+      msgs = [m for m in msgs if m.logMonoTime <= last_active]
       t_carControl, carControl = zip(*[(m.logMonoTime, m.carControl) for m in msgs if m.which() == 'carControl'], strict=True)
       t_carState, carState = zip(*[(m.logMonoTime, m.carState) for m in msgs if m.which() == 'carState'], strict=True)
       t_controlsState, controlsState = zip(*[(m.logMonoTime, m.controlsState) for m in msgs if m.which() == 'controlsState'], strict=True)
@@ -128,57 +130,60 @@ def report(platform, route, _description, CP, ID, maneuvers):
             target_cross_times.setdefault(description, [])
 
       plt.rcParams['font.size'] = 40
-      fig = plt.figure(figsize=(30, 30))
-      ax = fig.subplots(4, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 3, 3]})
+      fig = plt.figure(figsize=(30, 40))
+      ax = fig.subplots(5, 1, sharex=True, gridspec_kw={'height_ratios': [5, 5, 3, 3, 3]})
 
       ax[0].grid(linewidth=4)
+      desired_label = 'lateralManeuverPlan.desiredCurvature * vEgo^2'
       desired_lat_accel = [lat_accel(m.desiredCurvature, v) for m, v in zip(lateralPlan, v_ego, strict=False)]
       if description.startswith('sine'):
-        ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel, label='desired lat accel', linewidth=6)
+        ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel, 'C1', label=desired_label, linewidth=6)
       else:
         t_desired = [t_lateralPlan[0]] + t_lateralPlan[:len(desired_lat_accel)]
         desired_lat_accel = [baseline_accel] + desired_lat_accel
-        ax[0].step(t_desired, desired_lat_accel, label='desired lat accel', linewidth=6, where='post')
+        ax[0].step(t_desired, desired_lat_accel, 'C1', label=desired_label, linewidth=6, where='post')
       actual_lat_accel = [lat_accel(cs.curvature, v) for cs, v in zip(controlsState, v_ego, strict=False)]
-      ax[0].plot(t_controlsState[:len(actual_lat_accel)], actual_lat_accel, label='actual lat accel', linewidth=6)
+      ax[0].plot(t_controlsState[:len(actual_lat_accel)], actual_lat_accel, 'g', label='controlsState.curvature * vEgo^2', linewidth=6)
       ax[0].set_ylabel('Lateral Accel (m/s^2)')
-
       for ct, cv in cross_markers:
         ax[0].plot(ct, cv, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
-
-      ax2 = ax[0].twinx()
-      if CP.steerControlType == car.CarParams.SteerControlType.angle:
-        ax2.plot(t_carOutput, [-m.actuatorsOutput.steeringAngleDeg for m in carOutput], 'C2', label='steer angle', linewidth=6)
-      else:
-        ax2.plot(t_carOutput, [-m.actuatorsOutput.torque for m in carOutput], 'C2', label='steer torque', linewidth=6)
-
-      h1, l1 = ax[0].get_legend_handles_labels()
-      h2, l2 = ax2.get_legend_handles_labels()
-      ax[0].legend(h1 + h2, l1 + l2, prop={'size': 30})
+      ax[0].legend(prop={'size': 30})
 
       ax[1].grid(linewidth=4)
-      ax[1].plot(t_carState, [v * CV.MS_TO_MPH for v in v_ego], label='vEgo', linewidth=6)
-      ax[1].set_ylabel('Velocity (mph)')
-      ax[1].yaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
-      ax[1].legend()
+      if CP.steerControlType == car.CarParams.SteerControlType.angle:
+        steer_field, steer_ylabel = 'steeringAngleDeg', 'Steer angle (deg)'
+      elif CP.steerControlType == car.CarParams.SteerControlType.curvature:
+        steer_field, steer_ylabel = 'curvature', 'Curvature (1/m)'
+      else:
+        steer_field, steer_ylabel = 'torque', 'Steer torque'
+      ax[1].plot(t_carControl, [getattr(m.actuators, steer_field) for m in carControl], 'C1', label=f'carControl.actuators.{steer_field}', linewidth=6)
+      ax[1].plot(t_carOutput, [getattr(m.actuatorsOutput, steer_field) for m in carOutput], 'g', label=f'carOutput.actuatorsOutput.{steer_field}', linewidth=6)
+      ax[1].set_ylabel(steer_ylabel)
+      ax[1].legend(prop={'size': 30})
+
+      ax[2].grid(linewidth=4)
+      ax[2].plot(t_carState, [v * CV.MS_TO_MPH for v in v_ego], label='carState.vEgo', linewidth=6)
+      ax[2].set_ylabel('Velocity (mph)')
+      ax[2].yaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
+      ax[2].legend()
 
       t_accel = np.array(t_controlsState[:len(actual_lat_accel)])
       raw_jerk = np.gradient(actual_lat_accel, t_accel)
       dt_avg = np.mean(np.diff(t_accel))
       jerk_filter = FirstOrderFilter(0.0, 1 / (2 * np.pi * LP_FILTER_CUTOFF_HZ), dt_avg)
       filtered_jerk = [jerk_filter.update(j) for j in raw_jerk]
-      ax[2].grid(linewidth=4)
-      ax[2].plot(t_accel, filtered_jerk, label='actual jerk', linewidth=6)
+      ax[3].grid(linewidth=4)
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
         desired_jerk = [cs.lateralControlState.torqueState.desiredLateralJerk for cs in controlsState]
-        ax[2].plot(t_controlsState[:len(controlsState)], desired_jerk, label='desired jerk', linewidth=6)
-      ax[2].set_ylabel('Jerk (m/s^3)')
-      ax[2].legend()
+        ax[3].plot(t_controlsState, desired_jerk, 'C1', label='desired jerk', linewidth=6)
+      ax[3].plot(t_accel, filtered_jerk, 'g', label='d/dt(controlsState.curvature * vEgo^2)', linewidth=6)
+      ax[3].set_ylabel('Jerk (m/s^3)')
+      ax[3].legend(prop={'size': 30})
 
-      ax[3].grid(linewidth=4)
-      ax[3].plot(t_carControl, [math.degrees(m.orientationNED[0]) for m in carControl], label='roll', linewidth=6)
-      ax[3].set_ylabel('Roll (deg)')
-      ax[3].legend()
+      ax[4].grid(linewidth=4)
+      ax[4].plot(t_carControl, [math.degrees(m.orientationNED[0]) for m in carControl], label='carControl.orientationNED[0]', linewidth=6)
+      ax[4].set_ylabel('Roll (deg)')
+      ax[4].legend()
 
       ax[-1].set_xlabel("Time (s)")
       fig.tight_layout()
