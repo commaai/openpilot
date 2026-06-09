@@ -3,7 +3,6 @@ import argparse
 import base64
 import io
 import math
-import numpy as np
 import os
 import webbrowser
 from collections import defaultdict
@@ -12,8 +11,6 @@ import matplotlib.pyplot as plt
 from openpilot.common.utils import tabulate
 
 from cereal import car
-from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.controls.lib.latcontrol_torque import LP_FILTER_CUTOFF_HZ
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.constants import CV
@@ -130,8 +127,8 @@ def report(platform, route, _description, CP, ID, maneuvers):
             target_cross_times.setdefault(description, [])
 
       plt.rcParams['font.size'] = 40
-      fig = plt.figure(figsize=(30, 40))
-      ax = fig.subplots(5, 1, sharex=True, gridspec_kw={'height_ratios': [5, 5, 3, 3, 3]})
+      fig = plt.figure(figsize=(30, 32))
+      ax = fig.subplots(4, 1, sharex=True, gridspec_kw={'height_ratios': [5, 5, 3, 3]})
 
       ax[0].grid(linewidth=4)
       desired_label = 'lateralManeuverPlan.desiredCurvature * vEgo^2'
@@ -147,7 +144,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[0].set_ylabel('Lateral Accel (m/s^2)')
       for ct, cv in cross_markers:
         ax[0].plot(ct, cv, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
-      ax[0].legend(prop={'size': 30})
+      ax[0].legend(prop={'size': 30}, loc='upper right')
 
       ax[1].grid(linewidth=4)
       if CP.steerControlType == car.CarParams.SteerControlType.angle:
@@ -167,23 +164,10 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[2].yaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
       ax[2].legend()
 
-      t_accel = np.array(t_controlsState[:len(actual_lat_accel)])
-      raw_jerk = np.gradient(actual_lat_accel, t_accel)
-      dt_avg = np.mean(np.diff(t_accel))
-      jerk_filter = FirstOrderFilter(0.0, 1 / (2 * np.pi * LP_FILTER_CUTOFF_HZ), dt_avg)
-      filtered_jerk = [jerk_filter.update(j) for j in raw_jerk]
       ax[3].grid(linewidth=4)
-      if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        desired_jerk = [cs.lateralControlState.torqueState.desiredLateralJerk for cs in controlsState]
-        ax[3].plot(t_controlsState, desired_jerk, 'C1', label='desired jerk', linewidth=6)
-      ax[3].plot(t_accel, filtered_jerk, 'g', label='d/dt(controlsState.curvature * vEgo^2)', linewidth=6)
-      ax[3].set_ylabel('Jerk (m/s^3)')
-      ax[3].legend(prop={'size': 30})
-
-      ax[4].grid(linewidth=4)
-      ax[4].plot(t_carControl, [math.degrees(m.orientationNED[0]) for m in carControl], label='carControl.orientationNED[0]', linewidth=6)
-      ax[4].set_ylabel('Roll (deg)')
-      ax[4].legend()
+      ax[3].plot(t_carControl, [math.degrees(m.orientationNED[0]) for m in carControl], label='carControl.orientationNED[0]', linewidth=6)
+      ax[3].set_ylabel('Roll (deg)')
+      ax[3].legend()
 
       ax[-1].set_xlabel("Time (s)")
       fig.tight_layout()
