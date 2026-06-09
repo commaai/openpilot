@@ -2448,6 +2448,11 @@ struct Touch {
   value @4 :Int32;
 }
 
+struct UsbgpuState {
+  usbgpuPresent @0 :Bool;
+  usbgpuCompiled @1 :Bool;
+}
+
 struct Event {
   logMonoTime @0 :UInt64;  # nanoseconds
   valid @67 :Bool = true;
@@ -2497,6 +2502,7 @@ struct Event {
     modelV2 @75 :ModelDataV2;
     smolModelV2 @152 :ModelDataV2;
     bigModelV2 @153 :ModelDataV2;
+    usbgpuState @154 :UsbgpuState;
     drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;
 

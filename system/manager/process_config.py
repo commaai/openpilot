@@ -65,7 +65,7 @@ def and_(*fns):
   return lambda *args: operator.and_(*(fn(*args) for fn in fns))
 
 def usbgpu_not_failed(started: bool, params: Params, CP: car.CarParams):
-  return not params.get_bool("UsbGpuFailed")
+  return not params.get_bool("UsbgpuFailed")
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),

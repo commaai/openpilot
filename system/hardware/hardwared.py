@@ -15,7 +15,9 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.utils import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_HW
+from openpilot.common.realtime import DT_HW, Ratekeeper
+from openpilot.common.file_chunker import get_manifest_path
+from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS, PC
 from openpilot.system.loggerd.config import get_available_percent
@@ -100,6 +102,24 @@ def touch_thread(end_event):
 
       count += 1
       time.sleep(DT_HW)
+
+
+def usbgpu_thread(end_event):
+  pm = messaging.PubMaster(['usbgpuState'])
+  params = Params()
+  compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+  params.put_bool("UsbgpuCompiled", compiled)
+
+  rk = Ratekeeper(5.)
+  while not end_event.is_set():
+    present = usbgpu_present()
+    params.put_bool("UsbgpuPresent", present)
+
+    msg = messaging.new_message('usbgpuState', valid=True)
+    msg.usbgpuState.usbgpuPresent = present
+    msg.usbgpuState.usbgpuCompiled = compiled
+    pm.send('usbgpuState', msg)
+    rk.keep_time()
 
 
 def hw_state_thread(end_event, hw_queue):
@@ -454,6 +474,7 @@ def main():
   threads = [
     threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
     threading.Thread(target=hardware_thread, args=(end_event, hw_queue)),
+    threading.Thread(target=usbgpu_thread, args=(end_event,)),
   ]
 
   if TICI:

@@ -21,7 +21,7 @@ def main():
       big_lagged = sm.seen['bigModelV2'] and (time.monotonic() - sm.recv_time['bigModelV2']) >= big_stale_dt
       if big_lagged:
         src = 'smolModelV2'
-        params.put_bool("UsbGpuFailed", True)
+        params.put_bool("UsbgpuFailed", True)
 
     if sm.updated[src]:
       msg = messaging.new_message('modelV2')
