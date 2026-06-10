@@ -83,7 +83,7 @@ procs = [
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "selfdrive.modeld.modeld", only_onroad),
-  PythonProcess("big_modeld", "selfdrive.modeld.big_modeld", and_(only_onroad, usbgpu_not_failed)),
+  PythonProcess("big_modeld", "selfdrive.modeld.big_modeld", and_(only_onroad, usbgpu_not_failed), sigkill=True),
   PythonProcess("routerd", "selfdrive.modeld.routerd", only_onroad),
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 
