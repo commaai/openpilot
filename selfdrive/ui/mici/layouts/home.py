@@ -248,8 +248,9 @@ class MiciHomeLayout(Widget):
 
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(ui_state.experimental_mode)
-    self._egpu_icon.set_visible(ui_state.usbgpu and ui_state.usbgpu_compiled)
-    self._egpu_icon_gray.set_visible(ui_state.usbgpu and not ui_state.usbgpu_compiled)
+    show_egpu = ui_state.usbgpu and not (ui_state.started and ui_state.usbgpu_failed)
+    self._egpu_icon.set_visible(show_egpu and ui_state.usbgpu_compiled)
+    self._egpu_icon_gray.set_visible(show_egpu and not ui_state.usbgpu_compiled)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(ui_state.is_body)
 
