@@ -605,12 +605,9 @@ def startStream(sdp: str) -> dict:
         resp.raise_for_status()
     return resp.json()
   except requests.ConnectTimeout as e:
-    raise Exception("webrtc took too long to respond. is it on?") from e
+    raise Exception("webrtc took too long to respond. is the comma body on?") from e
   except requests.ConnectionError as e:
     raise Exception("webrtc is not running. turn on comma body ignition.") from e
-  except Exception as e:
-    raise Exception("webrtcd encountered an error. please check the browser console logs for more details") from e
-
 
 @dispatcher.add_method
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
