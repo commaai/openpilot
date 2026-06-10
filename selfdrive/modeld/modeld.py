@@ -325,7 +325,6 @@ def main(demo=False):
 
       fill_driving_model_data(drivingdata_send, modelv2_send)
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
-
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
