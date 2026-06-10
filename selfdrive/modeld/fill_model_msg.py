@@ -55,7 +55,9 @@ def fill_lane_line_meta(builder, lane_lines, lane_line_probs):
   builder.rightY = lane_lines[2].y[0]
   builder.rightProb = lane_line_probs[2]
 
-def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelV2: capnp._DynamicStructReader) -> None:
+def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelv2_send: capnp._DynamicStructBuilder) -> None:
+  msg.valid = modelv2_send.valid
+  modelV2 = modelv2_send.modelV2
   driving_model_data = msg.drivingModelData
   driving_model_data.frameId = modelV2.frameId
   driving_model_data.frameIdExtra = modelV2.frameIdExtra

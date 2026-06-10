@@ -306,6 +306,8 @@ def main(demo=False):
 
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2', valid=live_calib_seen)
+      drivingdata_send = messaging.new_message('drivingModelData')
+      posenet_send = messaging.new_message('cameraOdometry')
       modelv2 = modelv2_send.modelV2
 
       action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
@@ -322,10 +324,7 @@ def main(demo=False):
       modelv2.meta.laneChangeState = DH.lane_change_state
       modelv2.meta.laneChangeDirection = DH.lane_change_direction
 
-      drivingdata_send = messaging.new_message('drivingModelData', valid=live_calib_seen)
-      fill_driving_model_data(drivingdata_send, modelv2)
-
-      posenet_send = messaging.new_message('cameraOdometry')
+      fill_driving_model_data(drivingdata_send, modelv2_send)
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
 
       pm.send('modelV2', modelv2_send)
