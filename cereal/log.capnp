@@ -460,10 +460,10 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   }
 
   enum ThermalStatus {
-    green @0;
-    yellow @1;
-    red @2;
-    danger @3;
+    ok @0;
+    warmDEPRECATED @1;
+    overheated @2;
+    critical @3;
   }
 
   enum NetworkType {
@@ -818,7 +818,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     debugState @59 :LateralDebugState;
     torqueState @60 :LateralTorqueState;
 
-    curvatureStateDEPRECATED @65 :Deprecated.LateralCurvatureState;
+    curvatureState @65 :LateralCurvatureState;
     lqrStateDEPRECATED @55 :Deprecated.LateralLQRState;
     indiStateDEPRECATED @52 :Deprecated.LateralINDIState;
   }
@@ -865,6 +865,18 @@ struct ControlsState @0x97ff69c53601abf1 {
     steeringAngleDeg @1 :Float32;
     output @2 :Float32;
     saturated @3 :Bool;
+  }
+
+  struct LateralCurvatureState @0xad9d8095c06f7c61 {
+    active @0 :Bool;
+    actualCurvature @1 :Float32;
+    desiredCurvature @2 :Float32;
+    error @3 :Float32;
+    p @4 :Float32;
+    i @5 :Float32;
+    f @6 :Float32;
+    output @7 :Float32;
+    saturated @8 :Bool;
   }
 
   deprecated :group {
@@ -2057,16 +2069,15 @@ struct DriverStateV2 {
     facePosition @2 :List(Float32);
     facePositionStd @3 :List(Float32);
     faceProb @4 :Float32;
-    eyesVisibleProb @14 :Float32;
-    eyesClosedProb @15 :Float32;
+    leftEyeProb @5 :Float32;
+    rightEyeProb @6 :Float32;
+    leftBlinkProb @7 :Float32;
+    rightBlinkProb @8 :Float32;
+    sunglassesProb @9 :Float32;
     phoneProb @13 :Float32;
+    sleepProb @14 :Float32;
 
     deprecated :group {
-      leftEyeProb @5 :Float32;
-      rightEyeProb @6 :Float32;
-      leftBlinkProb @7 :Float32;
-      rightBlinkProb @8 :Float32;
-      sunglassesProb @9 :Float32;
       notReadyProb @12 :List(Float32);
       occludedProb @10 :Float32;
       readyProb @11 :List(Float32);
@@ -2301,7 +2312,8 @@ struct Sentinel {
 }
 
 struct UIDebug {
-  drawTimeMillis @0 :Float32;
+  cpuTimeMillis @0 :Float32;
+  frameTimeMillis @1 :Float32;
 }
 
 struct ManagerState {

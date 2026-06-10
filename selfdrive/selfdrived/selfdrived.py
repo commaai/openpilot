@@ -191,7 +191,7 @@ class SelfdriveD:
     if not self.CP.notCar:
       # Block engaging until ignition cycle after max number or time of distractions
       if self.sm['driverMonitoringState'].lockout and not self.dm_lockout_set:
-        self.params.put_bool_nonblocking("DriverTooDistracted", True)
+        self.params.put_bool("DriverTooDistracted", True)
         self.dm_lockout_set = True
       # No entry conditions
       if self.sm['driverMonitoringState'].lockout or self.sm['driverMonitoringState'].alwaysOnLockout:
@@ -227,7 +227,7 @@ class SelfdriveD:
         self.events.add(EventName.pedalPressed)
 
     # Create events for temperature, disk space, and memory
-    if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
+    if self.sm['deviceState'].thermalStatus >= ThermalStatus.overheated:
       self.events.add(EventName.overheat)
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
       self.events.add(EventName.outOfSpace)
@@ -332,12 +332,13 @@ class SelfdriveD:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
-    if self.sm['radarState'].radarErrors.canError:
-      self.events.add(EventName.canError)
-    elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
-      self.events.add(EventName.radarTempUnavailable)
-    elif any(self.sm['radarState'].radarErrors.to_dict().values()):
-      self.events.add(EventName.radarFault)
+    if self.CP.openpilotLongitudinalControl:
+      if self.sm['radarState'].radarErrors.canError:
+        self.events.add(EventName.canError)
+      elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
+        self.events.add(EventName.radarTempUnavailable)
+      elif any(self.sm['radarState'].radarErrors.to_dict().values()):
+        self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:
@@ -349,7 +350,7 @@ class SelfdriveD:
     has_disable_events = self.events.contains(ET.NO_ENTRY) and (self.events.contains(ET.SOFT_DISABLE) or self.events.contains(ET.IMMEDIATE_DISABLE))
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
     if not self.sm.all_checks() and no_system_errors:
-      # In CI simulation, comm timing is unreliable on slow runners — log only, don't fire disable events
+      # In CI simulation, comm timing is unreliable on slow runners, so log only.
       if not (SIMULATION and CI):
         if not self.sm.all_alive():
           self.events.add(EventName.commIssue)
@@ -421,7 +422,7 @@ class SelfdriveD:
 
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
-      modeld_lag_threshold = 80 if (SIMULATION and CI) else 20
+      modeld_lag_threshold = 80 if (SIMULATION and CI) else 1
       if self.sm['modelV2'].frameDropPerc > modeld_lag_threshold:
         self.events.add(EventName.modeldLagging)
 
@@ -429,7 +430,7 @@ class SelfdriveD:
     if self.CP.openpilotLongitudinalControl:
       if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
         self.personality = (self.personality - 1) % 3
-        self.params.put_nonblocking('LongitudinalPersonality', self.personality)
+        self.params.put('LongitudinalPersonality', self.personality)
         self.events.add(EventName.personalityChanged)
 
   def data_sample(self):

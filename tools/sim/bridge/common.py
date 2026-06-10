@@ -42,7 +42,7 @@ class SimulatorBridge(ABC):
   def __init__(self, dual_camera, high_quality):
     set_params_enabled()
     self.params = Params()
-    self.params.put_bool("AlphaLongitudinalEnabled", True)
+    self.params.put_bool("AlphaLongitudinalEnabled", True, block=True)
 
     self._ci = os.getenv("CI") is not None
     self.rk = Ratekeeper(20 if self._ci else 100, None)

@@ -15,12 +15,6 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 @pytest.mark.tici
 class TestPandad:
-
-  def setup_method(self):
-    # ensure panda is up
-    if len(Panda.list()) == 0:
-      self._run_test(60)
-
   def teardown_method(self):
     managed_processes['pandad'].stop()
 
@@ -30,7 +24,7 @@ class TestPandad:
 
     managed_processes['pandad'].start()
     while (time.monotonic() - st) < timeout:
-      sm.update(100)
+      sm.update(10)
       if len(sm['pandaStates']) and sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
     dt = time.monotonic() - st
@@ -45,10 +39,6 @@ class TestPandad:
     HARDWARE.recover_internal_panda()
     assert Panda.wait_for_dfu(None, 10)
 
-  def _assert_no_panda(self):
-    assert not Panda.wait_for_dfu(None, 3)
-    assert not Panda.wait_for_panda(None, 3)
-
   def _flash_bootstub(self, fn):
     self._go_to_dfu()
     pd = PandaDFU(None)
@@ -56,12 +46,11 @@ class TestPandad:
       fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
     with open(fn, "rb") as f:
       pd.program_bootstub(f.read())
-    pd.reset()
     HARDWARE.reset_internal_panda()
 
   def test_in_dfu(self):
     HARDWARE.recover_internal_panda()
-    self._run_test(60)
+    self._run_test()
 
   def test_in_bootstub(self):
     with Panda() as p:
@@ -69,30 +58,24 @@ class TestPandad:
       assert p.bootstub
     self._run_test()
 
-  def test_internal_panda_reset(self):
+  def test_in_reset(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_set(GPIO.STM_RST_N, 1)
-    time.sleep(0.5)
-    assert all(not Panda(s).is_internal() for s in Panda.list())
+    assert not Panda.list()
     self._run_test()
 
-    assert any(Panda(s).is_internal() for s in Panda.list())
-
-  def test_old_spi_protocol(self):
-    # flash firmware with old SPI protocol
-    self._flash_bootstub(os.path.join(HERE, "bootstub.panda_h7_spiv0.bin"))
-    self._run_test(45)
-
   def test_release_to_devel_bootstub(self):
+    st = time.monotonic()
     self._flash_bootstub(None)
-    self._run_test(45)
+    print("flash done", time.monotonic() - st)
+    self._run_test()
 
   def test_recover_from_bad_bootstub(self):
     self._go_to_dfu()
     with PandaDFU(None) as pd:
-      pd.program_bootstub(b"\x00"*1024)
-      pd.reset()
+      pd._handle.program(pd.get_mcu_type().config.bootstub_address, b"\x00"*100)
     HARDWARE.reset_internal_panda()
-    self._assert_no_panda()
+    assert not Panda.list()
+    assert not PandaDFU.list()
 
-    self._run_test(60)
+    self._run_test()

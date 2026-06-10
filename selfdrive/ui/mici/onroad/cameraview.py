@@ -150,15 +150,11 @@ class CameraView(Widget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _offroad_transition(self):
-    # Reconnect if not first time going onroad
-    if ui_state.is_onroad() and self.frame is not None:
-      # Prevent old frames from showing when going onroad. Qt has a separate thread
-      # which drains the VisionIpcClient SubSocket for us. Re-connecting is not enough
-      # and only clears internal buffers, not the message queue.
-      self.available_streams.clear()
-      if self.client:
-        del self.client
-      self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
+    # Drain queued SubSocket messages to prevent old frames from showing when going
+    # onroad. Qt had a separate thread which drains the VisionIpcClient SubSocket for us.
+    if self.client and self.client.is_connected():
+      while self.client.recv(timeout_ms=0) is not None:
+        pass
     self.frame = None
 
   def _set_placeholder_color(self, color: rl.Color):
@@ -312,8 +308,8 @@ class CameraView(Widget):
       y_data = self.frame.data[: self.frame.uv_offset]
       uv_data = self.frame.data[self.frame.uv_offset:]
 
-      rl.update_texture(self.texture_y, rl.ffi.cast("void *", y_data.ctypes.data))
-      rl.update_texture(self.texture_uv, rl.ffi.cast("void *", uv_data.ctypes.data))
+      rl.update_texture(self.texture_y, rl.ffi.cast("void *", rl.ffi.from_buffer(y_data)))
+      rl.update_texture(self.texture_uv, rl.ffi.cast("void *", rl.ffi.from_buffer(uv_data)))
       self._texture_needs_update = False
 
     # Render with shader

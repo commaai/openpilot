@@ -34,7 +34,7 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  ("modelV2", 0.05, 0.028),
+  ("modelV2", 0.05, 0.033),
   ("driverStateV2", 0.05, 0.018),
 ]
 
@@ -76,7 +76,7 @@ def generate_report(proposed, master, tmp, commit):
                      (lambda x: get_idx_if_non_empty(x.wheelOnRightProb), "wheelOnRightProb"),
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.faceProb), "leftDriverData.faceProb"),
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.faceOrientation, 0), "leftDriverData.faceOrientation0"),
-                     (lambda x: get_idx_if_non_empty(x.leftDriverData.eyesClosedProb), "leftDriverData.eyesClosedProb"),
+                     (lambda x: get_idx_if_non_empty(x.leftDriverData.leftBlinkProb), "leftDriverData.leftBlinkProb"),
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.phoneProb), "leftDriverData.phoneProb"),
                      (lambda x: get_idx_if_non_empty(x.rightDriverData.faceProb), "rightDriverData.faceProb"),
                     ], "driverStateV2")

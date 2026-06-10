@@ -136,6 +136,8 @@ class Plant:
           'modelV2': model.modelV2}
     self.planner.update(sm)
     self.acceleration = self.planner.output_a_target
+    if self.planner.output_should_stop:
+      self.acceleration = min(-0.5, self.acceleration)
     self.speed = self.speed + self.acceleration * self.ts
     self.should_stop = self.planner.output_should_stop
     fcw = self.planner.fcw

@@ -353,7 +353,7 @@ class MiciKeyboard(Widget):
 
           # draw black circle behind selected key
           circle_alpha = int(self._selected_key_filter.x * 225)
-          rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
+          rl.draw_circle_gradient(rl.Vector2(key_x + key.rect.width / 2, key_y + key.rect.height / 2),
                                   SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
           # move other keys away from selected key a bit

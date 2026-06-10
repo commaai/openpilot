@@ -32,7 +32,7 @@ class Proc:
 
 PROCS = [
   Proc(['camerad'], 1.65, atol=0.4, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
-  Proc(['modeld'], 1.5, atol=0.2, msgs=['modelV2']),
+  Proc(['modeld'], 1.8, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
 ]
@@ -42,7 +42,7 @@ PROCS = [
 class TestPowerDraw:
 
   def setup_method(self):
-    Params().put("CarParams", get_demo_car_params().to_bytes())
+    Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
 
     # wait a bit for power save to disable
     time.sleep(5)

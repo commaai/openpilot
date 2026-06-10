@@ -48,7 +48,7 @@ def sudo_write(val: str, path: str) -> None:
 
 def sudo_read(path: str) -> str:
   try:
-    return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8').strip()
+    return subprocess.check_output(["sudo", "cat", "--", path], encoding='utf8').strip()
   except Exception:
     return ""
 

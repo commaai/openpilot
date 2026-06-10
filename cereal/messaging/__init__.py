@@ -259,11 +259,11 @@ class PubMaster:
     self.sock[s].send(dat)
 
   def wait_for_readers_to_update(self, s: str, timeout: int, dt: float = 0.05) -> bool:
-    for _ in range(int(timeout*(1./dt))):
-      if self.sock[s].all_readers_updated():
-        return True
-      time.sleep(dt)
-    return False
+    try:
+      self.sock[s].wait_for_readers(timeout=timeout, interval=dt)
+      return True
+    except TimeoutError:
+      return False
 
   def all_readers_updated(self, s: str) -> bool:
-    return self.sock[s].all_readers_updated()  # type: ignore
+    return self.sock[s].all_readers_updated()

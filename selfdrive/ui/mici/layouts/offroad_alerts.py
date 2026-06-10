@@ -1,9 +1,11 @@
 import pyray as rl
 import re
+import threading
 import time
 from dataclasses import dataclass
 from enum import IntEnum
 from openpilot.common.params import Params
+from openpilot.common.realtime import drop_realtime
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
@@ -195,7 +197,6 @@ class MiciOffroadAlerts(Scroller):
     self.params = Params()
     self.sorted_alerts: list[AlertData] = []
     self.alert_items: list[AlertItem] = []
-    self._last_refresh = 0.0
 
     # Create empty state label
     self._empty_label = UnifiedLabel(tr("no alerts"), 65, FontWeight.DISPLAY, rl.WHITE,
@@ -205,8 +206,16 @@ class MiciOffroadAlerts(Scroller):
     # Build initial alert list
     self._build_alerts()
 
+    # Start param thread
+    self._pending_params: dict | None = None
+    self._params_thread = threading.Thread(target=self._params_worker, daemon=True)
+    self._params_thread.start()
+
   def active_alerts(self) -> int:
     return sum(alert.visible for alert in self.sorted_alerts)
+
+  def max_severity(self) -> int | None:
+    return max((alert.severity for alert in self.sorted_alerts if alert.visible), default=None)
 
   def scrolling(self):
     return self._scroller.scroll_panel.is_touch_valid()
@@ -234,12 +243,19 @@ class MiciOffroadAlerts(Scroller):
       self.alert_items.append(alert_item)
       self._scroller.add_widget(alert_item)
 
-  def refresh(self) -> int:
+  def _params_worker(self):
+    drop_realtime()
+    while True:
+      self._pending_params = ({"UpdaterNewDescription": self.params.get("UpdaterNewDescription")} |
+                              {alert_data.key: self.params.get(alert_data.key) for alert_data in self.sorted_alerts})
+      time.sleep(REFRESH_INTERVAL)
+
+  def _refresh(self) -> int:
     """Refresh alerts from params and return active count."""
     active_count = 0
 
     # Handle UpdateAvailable alert specially
-    update_available = self.params.get_bool("UpdateAvailable")
+    update_available = self._pending_params["UpdateAvailable"]
     update_alert_data = next((alert_data for alert_data in self.sorted_alerts if alert_data.key == "UpdateAvailable"), None)
 
     if update_alert_data:
@@ -247,7 +263,7 @@ class MiciOffroadAlerts(Scroller):
         version_string = ""
 
         # Get new version description and parse version and date
-        new_desc = self.params.get("UpdaterNewDescription") or ""
+        new_desc = self._pending_params["UpdaterNewDescription"] or ""
         if new_desc:
           # format: "version / branch / commit / date"
           parts = new_desc.split(" / ")
@@ -268,11 +284,16 @@ class MiciOffroadAlerts(Scroller):
         continue  # Skip, already handled above
 
       text = ""
-      alert_json = self.params.get(alert_data.key)
+      alert_json = self._pending_params[alert_data.key]
 
       if alert_json:
         text = alert_json.get("text", "").replace("%1", alert_json.get("extra", ""))
 
+      if text and not alert_data.visible:
+        # Bump newly visible alerts to the top, severity sort keeps it at the top of its category
+        widget = next(w for w in self._scroller.items if w.alert_data is alert_data)
+        self._scroller.items.remove(widget)
+        self._scroller.items.insert(0, widget)
       alert_data.text = text
       alert_data.visible = bool(text)
 
@@ -283,21 +304,16 @@ class MiciOffroadAlerts(Scroller):
     for alert_item in self.alert_items:
       alert_item.update_alert_data(alert_item.alert_data)
 
-    return active_count
+    self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
 
-  def show_event(self):
-    """Reset scroll position when shown and refresh alerts."""
-    super().show_event()
-    self._last_refresh = time.monotonic()
-    self.refresh()
+    return active_count
 
   def _update_state(self):
     """Periodically refresh alerts."""
-    # Refresh alerts periodically, not every frame
-    current_time = time.monotonic()
-    if current_time - self._last_refresh >= REFRESH_INTERVAL:
-      self.refresh()
-      self._last_refresh = current_time
+    # Refresh alerts when thread updates params
+    if self._pending_params is not None:
+      self._refresh()
+      self._pending_params = None
 
   def _render(self, rect: rl.Rectangle):
     """Render the alerts scroller or empty state."""
