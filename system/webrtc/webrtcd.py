@@ -284,12 +284,10 @@ class StreamSession:
 
     pc = self.stream.peer_connection
     if pc.iceConnectionState not in ("new", "checking"):
-      self.logger.info("ICE already %s, ignoring candidate (%s)", pc.iceConnectionState, self.identifier)
       return
 
     # a null/empty candidate signals end-of-candidates per the WebRTC convention
     if not candidate_init or not candidate_init.get("candidate"):
-      self.logger.info("End-of-candidates received (%s)", self.identifier)
       await pc.addIceCandidate(None)
       return
 
@@ -297,7 +295,6 @@ class StreamSession:
     candidate.sdpMid = candidate_init.get("sdpMid")
     candidate.sdpMLineIndex = candidate_init.get("sdpMLineIndex")
     await pc.addIceCandidate(candidate)
-    self.logger.info("added candidate (%s)", candidate_init["candidate"])
 
   def message_handler(self, message: bytes):
     assert self.incoming_bridge is not None
@@ -406,22 +403,13 @@ async def get_stream(request: 'web.Request'):
 
 
 async def post_candidate(request: 'web.Request'):
-  try:
-    body = await request.json()
-  except Exception as e:
-    raise web.HTTPBadRequest(text="Invalid JSON") from e
-
+  body = await request.json()
   session = request.app.get('streams', {}).get(body.get("session_id"))
-  if session is None:
-    # the session may have been torn down already; trickled candidates are benign here
-    return web.Response(status=404, text="unknown session")
 
   try:
     await session.add_ice_candidate(body.get("candidate"))
   except Exception as e:
-    raise web.HTTPBadRequest(text=json.dumps({"error": "invalid_candidate", "message": str(e)}),
-                             content_type="application/json") from e
-
+    raise web.HTTPBadRequest(text=json.dumps({"error": "invalid_candidate", "message": str(e)}), content_type="application/json") from e
   return web.Response(status=200, text="OK")
 
 

@@ -604,15 +604,12 @@ def startStream(sdp: str) -> dict:
       resp.raise_for_status()
   return resp.json()
 
+
 @dispatcher.add_method
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
-  try:
-    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
-                             json={"session_id": session_id, "candidate": candidate}, timeout=10)
-  except requests.ConnectionError:
-    cloudlog.exception("athenad.addIceCandidate.connection_error")
-    return {"success": 0}
-  return {"success": 1 if resp.ok else 0}
+  if session_id is None: return Exception("cannot add ice candidate without session_id")
+  return WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
+                            json={"session_id": session_id, "candidate": candidate}, timeout=10)
 
 
 @dispatcher.add_method
