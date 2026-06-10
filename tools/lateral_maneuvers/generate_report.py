@@ -173,7 +173,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       jerk_filter = FirstOrderFilter(0.0, 1 / (2 * np.pi * LP_FILTER_CUTOFF_HZ), dt_avg)
       filtered_jerk = [jerk_filter.update(j) for j in raw_jerk]
       ax[3].grid(linewidth=4)
-      ax[3].plot(t_accel, filtered_jerk, 'b', label='d/dt(controlsState.curvature * vEgo^2)', linewidth=6)
+      ax[3].plot(t_accel, filtered_jerk, label='d/dt(controlsState.curvature * vEgo^2)', linewidth=6)
       ax[3].set_ylabel('Jerk (m/s^3)')
       ax[3].legend()
 
