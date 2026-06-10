@@ -69,12 +69,15 @@ def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelv2_send: capn
   fill_lane_line_meta(driving_model_data.laneLineMeta, modelV2.laneLines, modelV2.laneLineProbs)
   fill_xyz_poly(driving_model_data.path, ModelConstants.POLY_PATH_DEGREE, modelV2.position.x, modelV2.position.y, modelV2.position.z)
 
-def fill_model_msg(modelV2: capnp._DynamicStructBuilder, net_output_data: dict[str, np.ndarray], action: log.ModelDataV2.Action,
+def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, np.ndarray], action: log.ModelDataV2.Action,
                    publish_state: PublishState, vipc_frame_id: int, vipc_frame_id_extra: int,
-                   frame_id: int, frame_drop: float, timestamp_eof: int, model_execution_time: float) -> None:
+                   frame_id: int, frame_drop: float, timestamp_eof: int, model_execution_time: float,
+                   valid: bool) -> None:
   frame_age = frame_id - vipc_frame_id if frame_id > vipc_frame_id else 0
   frame_drop_perc = frame_drop * 100
+  msg.valid = valid
 
+  modelV2 = msg.modelV2
   modelV2.frameId = vipc_frame_id
   modelV2.frameIdExtra = vipc_frame_id_extra
   modelV2.frameAge = frame_age
