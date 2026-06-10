@@ -24,7 +24,7 @@ from collections.abc import Callable
 
 import requests
 from http.cookiejar import DefaultCookiePolicy
-from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK, Retry
+from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
@@ -87,7 +87,7 @@ UPLOAD_SESS.mount("http://", UploadTOSAdapter())
 UPLOAD_SESS.mount("https://", UploadTOSAdapter())
 
 WEBRTCD_SESS = requests.Session()
-WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=Retry(connect=2, read=0, backoff_factor=0.1)))
+WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=0))
 WEBRTCD_SESS.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
 
 
@@ -594,15 +594,22 @@ def startStream(sdp: str) -> dict:
         bridge_services_in.append("testJoystick")
 
   body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
-  resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
-                           json=asdict(body), timeout=10)
-  if not resp.ok:
-    try:
-      error_body = resp.json()
-      raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
-    except ValueError:
-      resp.raise_for_status()
-  return resp.json()
+  try:
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
+                       json=asdict(body), timeout=10)
+    if not resp.ok:
+      try:
+        error_body = resp.json()
+        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
+      except ValueError:
+        resp.raise_for_status()
+    return resp.json()
+  except requests.ConnectTimeout as e:
+    raise Exception("webrtc took too long to respond. is it on?") from e
+  except requests.ConnectionError as e:
+    raise Exception("webrtc is not running. turn on comma body ignition.") from e
+  except Exception as e:
+    raise Exception("webrtcd encountered an error. please check the browser console logs for more details") from e
 
 
 @dispatcher.add_method
