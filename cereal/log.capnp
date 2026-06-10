@@ -2450,6 +2450,7 @@ struct Touch {
 
 struct UsbgpuState {
   usbgpuPresent @0 :Bool;
+  usbgpuCompiled @1 :Bool;
 }
 
 struct ModelSource {
