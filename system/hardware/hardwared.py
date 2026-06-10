@@ -117,7 +117,6 @@ def usbgpu_thread(end_event):
 
     msg = messaging.new_message('usbgpuState', valid=True)
     msg.usbgpuState.usbgpuPresent = present
-    msg.usbgpuState.usbgpuCompiled = compiled
     pm.send('usbgpuState', msg)
     rk.keep_time()
 
