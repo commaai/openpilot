@@ -138,7 +138,8 @@ cancelled_uploads: set[str] = set()
 cur_upload_items: dict[int, UploadItem | None] = {}
 
 send_seq = itertools.count()
-def queue_send(data: str, priority: int = SEND_PRIORITY_HIGH) -> None:
+def send_queue_push(data: str, priority: int) -> None:
+  assert priority is not None, "send queue priority must be specified"
   send_queue.put_nowait((priority, next(send_seq), data)) # tie-break with a monotonic counter
 
 
@@ -215,7 +216,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       if "method" in data:
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
         response = JSONRPCResponseManager.handle(data, dispatcher)
-        queue_send(response.json)
+        send_queue_push(response.json)
       elif "id" in data and ("result" in data or "error" in data):
         log_recv_queue.put_nowait(data)
       else:
@@ -224,7 +225,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       pass
     except Exception as e:
       cloudlog.exception("athena jsonrpc handler failed")
-      queue_send(json.dumps({"error": str(e)}))
+      send_queue_push(json.dumps({"error": str(e)}))
 
 
 def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = True) -> None:
@@ -672,7 +673,7 @@ def log_handler(end_event: threading.Event) -> None:
               "jsonrpc": "2.0",
               "id": log_entry
             }
-            queue_send(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
+            send_queue_push(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
             curr_log = log_entry
         except OSError:
           pass  # file could be deleted by log rotation
@@ -723,7 +724,7 @@ def stat_handler(end_event: threading.Event) -> None:
               "jsonrpc": "2.0",
               "id": stat_filenames[0]
             }
-            queue_send(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
+            send_queue_push(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
           os.remove(stat_path)
         last_scan = curr_scan
     except Exception:
