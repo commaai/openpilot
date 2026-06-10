@@ -251,6 +251,26 @@ class StreamSession:
   async def get_answer(self):
     return await self.stream.start()
 
+  async def add_ice_candidate(self, candidate_init: dict | None):
+    from aiortc.sdp import candidate_from_sdp
+
+    pc = self.stream.peer_connection
+    if pc.iceConnectionState not in ("new", "checking"):
+      self.logger.info("ICE already %s, ignoring candidate (%s)", pc.iceConnectionState, self.identifier)
+      return
+
+    # a null/empty candidate signals end-of-candidates per the WebRTC convention
+    if not candidate_init or not candidate_init.get("candidate"):
+      self.logger.info("End-of-candidates received (%s)", self.identifier)
+      await pc.addIceCandidate(None)
+      return
+
+    candidate = candidate_from_sdp(candidate_init["candidate"].split(":", 1)[1])
+    candidate.sdpMid = candidate_init.get("sdpMid")
+    candidate.sdpMLineIndex = candidate_init.get("sdpMLineIndex")
+    await pc.addIceCandidate(candidate)
+    self.logger.info("added candidate (%s)", candidate_init["candidate"])
+
   def message_handler(self, message: bytes):
     assert self.incoming_bridge is not None
     try:
@@ -354,7 +374,27 @@ async def get_stream(request: 'web.Request'):
 
     stream_dict[session.identifier] = session
 
-  return web.json_response({"sdp": answer.sdp, "type": answer.type})
+  return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session.identifier})
+
+
+async def post_candidate(request: 'web.Request'):
+  try:
+    body = await request.json()
+  except Exception as e:
+    raise web.HTTPBadRequest(text="Invalid JSON") from e
+
+  session = request.app.get('streams', {}).get(body.get("session_id"))
+  if session is None:
+    # the session may have been torn down already; trickled candidates are benign here
+    return web.Response(status=404, text="unknown session")
+
+  try:
+    await session.add_ice_candidate(body.get("candidate"))
+  except Exception as e:
+    raise web.HTTPBadRequest(text=json.dumps({"error": "invalid_candidate", "message": str(e)}),
+                             content_type="application/json") from e
+
+  return web.Response(status=200, text="OK")
 
 
 async def get_schema(request: 'web.Request'):
@@ -400,6 +440,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
+  app.router.add_post("/candidate", post_candidate)
   app.router.add_post("/notify", post_notify)
   app.router.add_get("/schema", get_schema)
 
