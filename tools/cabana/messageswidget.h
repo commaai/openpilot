@@ -36,7 +36,7 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return items_.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
-  void showInactivemessages(bool show);
+  void showInactiveMessages(bool show);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   bool filterAndSort();
   void dbcModified();

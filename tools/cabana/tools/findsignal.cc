@@ -98,9 +98,9 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
   message_group = new QGroupBox(tr("Messages"), this);
   QFormLayout *message_layout = new QFormLayout(message_group);
   message_layout->addRow(tr("Bus"), bus_edit = new QLineEdit());
-  bus_edit->setPlaceholderText(tr("comma-seperated values. Leave blank for all"));
+  bus_edit->setPlaceholderText(tr("comma-separated values. Leave blank for all"));
   message_layout->addRow(tr("Address"), address_edit = new QLineEdit());
-  address_edit->setPlaceholderText(tr("comma-seperated hex values. Leave blank for all"));
+  address_edit->setPlaceholderText(tr("comma-separated hex values. Leave blank for all"));
   QHBoxLayout *hlayout = new QHBoxLayout();
   hlayout->addWidget(first_time_edit = new QLineEdit("0"));
   hlayout->addWidget(new QLabel("-"));
