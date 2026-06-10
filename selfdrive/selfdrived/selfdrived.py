@@ -86,7 +86,7 @@ class SelfdriveD:
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark', 'audioFeedback',
-                                   'lateralManeuverPlan'] + \
+                                   'lateralManeuverPlan', 'modelSource'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore,
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
@@ -119,6 +119,7 @@ class SelfdriveD:
     self.events_prev = []
     self.logged_comm_issue = None
     self.not_running_prev = None
+    self.using_usbgpu_prev = False
     self.experimental_mode = False
     self.personality = self.params.get("LongitudinalPersonality", return_default=True)
     self.recalibrating_seen = False
@@ -420,6 +421,11 @@ class SelfdriveD:
     if not SIMULATION or REPLAY:
       if self.sm['modelV2'].frameDropPerc > 1:
         self.events.add(EventName.modeldLagging)
+
+    if self.sm.updated['modelSource']:
+      if self.using_usbgpu_prev and not self.sm['modelSource'].big:
+        self.events.add(EventName.modelFallback)
+      self.using_usbgpu_prev = self.sm['modelSource'].big
 
     # Decrement personality on distance button press
     if self.CP.openpilotLongitudinalControl:
