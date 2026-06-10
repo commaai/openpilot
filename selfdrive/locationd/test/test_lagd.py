@@ -5,7 +5,7 @@ import pytest
 
 from cereal import messaging, log, car
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
-                                               BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC
+                                               BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC, VERSION
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
 from openpilot.common.params import Params
@@ -53,6 +53,7 @@ class TestLagd:
     msg = messaging.new_message('liveDelay')
     msg.liveDelay.lateralDelayEstimate = random.random()
     msg.liveDelay.validBlocks = random.randint(1, 10)
+    msg.liveDelay.version = VERSION
     params.put("LiveDelay", msg.to_bytes(), block=True)
     params.put("CarParamsPrevRoute", CP.as_builder().to_bytes(), block=True)
 
@@ -62,6 +63,20 @@ class TestLagd:
     lag, valid_blocks = saved_lag_params
     assert lag == msg.liveDelay.lateralDelayEstimate
     assert valid_blocks == msg.liveDelay.validBlocks
+
+  def test_read_invalid_saved_params(self, subtests):
+    params = Params()
+
+    lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
+    CP = next(m for m in lr if m.which() == "carParams").carParams
+
+    for msg_dict in [{'version': 0}, {'status': 'invalid'}, {'validBlocks': 100}]:
+       with subtests.test(msg=f"liveDelay={msg_dict}"):
+        msg = messaging.new_message('liveDelay')
+        msg.liveDelay = msg_dict
+        params.put("LiveDelay", msg.to_bytes(), block=True)
+        params.put("CarParamsPrevRoute", CP.as_builder().to_bytes(), block=True)
+        assert retrieve_initial_lag(params, CP) is None
 
   def test_ncc(self):
     lag_frames = random.randint(1, 19)
