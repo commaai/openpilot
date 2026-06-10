@@ -2,6 +2,7 @@
 
 from abc import abstractmethod
 import os
+import socket
 import time
 import argparse
 import asyncio
@@ -25,6 +26,37 @@ if TYPE_CHECKING:
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
+
+from aiortc.mediastreams import VideoStreamTrack
+from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+from teleoprtc import WebRTCAnswerBuilder
+
+import aioice.ice
+
+
+# route lookup for 8.8.8.8 and bind the socket's source address accordingly
+# return which local IP was chosen by kernel, that is the primary IP (wlan0 or ppp0)
+def _default_route_ip() -> str | None:
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  try:
+    s.connect(("8.8.8.8", 53))  # selects a route, sends nothing
+    return s.getsockname()[0]
+  except OSError:
+    return None
+  finally:
+    s.close()
+
+# aioice patch: gather ICE candidates only on the default-route interface
+_get_host_addresses = aioice.ice.get_host_addresses
+
+def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
+  addresses = _get_host_addresses(use_ipv4, use_ipv6)
+  primary = _default_route_ip()
+  if primary not in addresses:
+    return addresses
+  return [a for a in addresses if a == primary or ":" in a]  # keep IPv6 as-is, they never query STUN
+
+aioice.ice.get_host_addresses = _primary_host_addresses
 
 
 class AsyncTaskRunner:
@@ -206,10 +238,6 @@ class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
   def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
-    from aiortc.mediastreams import VideoStreamTrack
-    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from teleoprtc import WebRTCAnswerBuilder
-
     builder = WebRTCAnswerBuilder(sdp)
 
     self.video_track = LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack()

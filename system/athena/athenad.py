@@ -23,7 +23,8 @@ from typing import cast
 from collections.abc import Callable
 
 import requests
-from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
+from http.cookiejar import DefaultCookiePolicy
+from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK, Retry
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
@@ -84,6 +85,10 @@ class UploadTOSAdapter(HTTPAdapter):
 UPLOAD_SESS = requests.Session()
 UPLOAD_SESS.mount("http://", UploadTOSAdapter())
 UPLOAD_SESS.mount("https://", UploadTOSAdapter())
+
+WEBRTCD_SESS = requests.Session()
+WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=Retry(connect=2, read=0, backoff_factor=0.1)))
+WEBRTCD_SESS.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
 
 
 @dataclass
@@ -589,25 +594,24 @@ def startStream(sdp: str) -> dict:
         bridge_services_in.append("testJoystick")
 
   body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
-  try:
-    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream",
-                       json=asdict(body), timeout=10)
-    if not resp.ok:
-      try:
-        error_body = resp.json()
-        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
-      except ValueError:
-        resp.raise_for_status()
-    return resp.json()
-  except requests.ConnectTimeout as e:
-    raise Exception("webrtc took too long to respond. is it on?") from e
-  except requests.ConnectionError as e:
-    raise Exception("webrtc is not running. turn on comma body ignition.") from e
+  resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
+                           json=asdict(body), timeout=10)
+  if not resp.ok:
+    try:
+      error_body = resp.json()
+      raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
+    except ValueError:
+      resp.raise_for_status()
+  return resp.json()
 
 @dispatcher.add_method
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
-  resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
-                       json={"session_id": session_id, "candidate": candidate}, timeout=10)
+  try:
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
+                             json={"session_id": session_id, "candidate": candidate}, timeout=10)
+  except requests.ConnectionError:
+    cloudlog.exception("athenad.addIceCandidate.connection_error")
+    return {"success": 0}
   return {"success": 1 if resp.ok else 0}
 
 
