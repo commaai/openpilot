@@ -216,7 +216,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       if "method" in data:
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
         response = JSONRPCResponseManager.handle(data, dispatcher)
-        send_queue_push(response.json)
+        send_queue_push(response.json, SEND_PRIORITY_HIGH)
       elif "id" in data and ("result" in data or "error" in data):
         log_recv_queue.put_nowait(data)
       else:
@@ -225,7 +225,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       pass
     except Exception as e:
       cloudlog.exception("athena jsonrpc handler failed")
-      send_queue_push(json.dumps({"error": str(e)}))
+      send_queue_push(json.dumps({"error": str(e)}), SEND_PRIORITY_HIGH)
 
 
 def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = True) -> None:
