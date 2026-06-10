@@ -40,7 +40,6 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.webrtc.webrtcd import StreamRequestBody
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -579,6 +578,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def startStream(sdp: str) -> dict:
+  from openpilot.system.webrtc.webrtcd import StreamRequestBody
   bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
@@ -606,6 +606,7 @@ def startStream(sdp: str) -> dict:
 
 @dispatcher.add_method
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
+  if session_id is None: return Exception("cannot add ice candidate without session_id")
   resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
                        json={"session_id": session_id, "candidate": candidate}, timeout=10)
   return {"success": 1 if resp.ok else 0}
