@@ -71,7 +71,7 @@ class TestLagd:
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
     for msg_dict in [{'version': 0}, {'status': 'invalid'}, {'validBlocks': 100}]:
-       with subtests.test(msg=f"liveDelay={msg_dict}"):
+      with subtests.test(msg=f"liveDelay={msg_dict}"):
         msg = messaging.new_message('liveDelay')
         msg.liveDelay = msg_dict
         params.put("LiveDelay", msg.to_bytes(), block=True)
