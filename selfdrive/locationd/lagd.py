@@ -374,7 +374,7 @@ def retrieve_initial_lag(params: Params, CP: car.CarParams):
         lag, valid_blocks, status, version = ld.lateralDelayEstimate, ld.validBlocks, ld.status, ld.version
         assert valid_blocks <= BLOCK_NUM, "Invalid number of valid blocks"
         assert status != log.LiveDelayData.Status.invalid, "Lag estimate is invalid"
-        assert version == VERSION, "Lag estimate is from an old version"
+        assert version == VERSION, "Lag estimate is from an different version"
         return lag, valid_blocks
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial lag: {e}")
