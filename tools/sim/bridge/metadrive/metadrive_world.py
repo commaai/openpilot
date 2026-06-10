@@ -10,7 +10,6 @@ if sys.platform == "darwin":
 else:
   mp_ctx = multiprocessing
 
-from multiprocessing import Pipe
 
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
