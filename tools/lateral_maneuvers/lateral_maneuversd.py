@@ -110,6 +110,8 @@ def main():
   maneuvers = iter(MANEUVERS)
   maneuver = None
   complete_cnt = 0
+  aborted_cnt = 0
+  abort_reason = ''
   display_holdoff = 0
   prev_text = ''
 
@@ -135,6 +137,15 @@ def main():
     elif maneuver is not None:
       override = sm['carState'].steeringPressed or sm['carState'].gasPressed or sm['carState'].brakePressed
       if override:
+        # show why an active run was aborted
+        if maneuver.active:
+          aborted_cnt = int(2.0 / DT_MDL)
+          if sm['carState'].steeringPressed:
+            abort_reason = 'steering pressed'
+          elif sm['carState'].gasPressed:
+            abort_reason = 'gas override'
+          else:
+            abort_reason = 'brake pressed'
         maneuver.reset()
 
       roll = sm['carControl'].orientationNED[0] if len(sm['carControl'].orientationNED) == 3 else 0.0
@@ -152,6 +163,10 @@ def main():
         else:
           alert_msg.alertDebug.alertText1 = f'Active {accel:+.1f}m/s² {max(action_remaining, 0):.1f}s'
         alert_msg.alertDebug.alertText2 = maneuver.description
+      elif aborted_cnt > 0:
+        aborted_cnt -= 1
+        alert_msg.alertDebug.alertText1 = f'Aborted: {abort_reason}'
+        alert_msg.alertDebug.alertText2 = maneuver.description
       elif not (abs(v_ego - maneuver.initial_speed) < MAX_SPEED_DEV and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
       elif maneuver._ready_cnt > 0:
@@ -161,6 +176,8 @@ def main():
       else:
         curv_ok = abs(curvature) < MAX_CURV
         reason = 'road not straight' if not curv_ok else 'road not flat'
+        if override:
+          reason = 'driver override'
         alert_msg.alertDebug.alertText1 = f'Waiting: {reason}'
         alert_msg.alertDebug.alertText2 = maneuver.description
     else:
