@@ -411,8 +411,6 @@ async def get_stream(request: 'web.Request'):
 async def post_candidate(request: 'web.Request'):
   body = await request.json()
   session = request.app.get('streams', {}).get(body.get("session_id"))
-  if session is None:
-    return web.Response(status=200, text="OK")
 
   try:
     await session.add_ice_candidate(body.get("candidate"))
