@@ -2,6 +2,7 @@
 
 from abc import abstractmethod
 import os
+import socket
 import time
 import argparse
 import asyncio
@@ -25,6 +26,36 @@ if TYPE_CHECKING:
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
+
+from aiortc import RTCBundlePolicy, RTCConfiguration, RTCPeerConnection
+from aiortc.mediastreams import VideoStreamTrack
+from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+from teleoprtc import WebRTCAnswerBuilder
+
+import aioice.ice
+
+
+# socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
+# return the source interfaces IP which is the default interface of the device
+def _default_route_ip() -> str | None:
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  try:
+    s.connect(("8.8.8.8", 53))  # selects a route, sends nothing
+    return s.getsockname()[0]
+  except OSError:
+    return None
+  finally:
+    s.close()
+
+# aioice patch: gather ICE candidates only on the default-route interface
+_get_host_addresses = aioice.ice.get_host_addresses
+def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
+  addresses = _get_host_addresses(use_ipv4, use_ipv6)
+  primary = _default_route_ip()
+  if primary not in addresses:
+    return addresses
+  return [a for a in addresses if a == primary]
+aioice.ice.get_host_addresses = _primary_host_addresses
 
 
 class AsyncTaskRunner:
@@ -206,10 +237,6 @@ class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
   def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
-    from aiortc.mediastreams import VideoStreamTrack
-    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from teleoprtc import WebRTCAnswerBuilder
-
     builder = WebRTCAnswerBuilder(sdp)
 
     self.video_track = LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack()
@@ -327,6 +354,8 @@ class StreamSession:
         await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
+      if self.video_track is not None:
+        self.video_track.stop()
       await self.stream.stop()
 
 
@@ -353,7 +382,7 @@ async def get_stream(request: 'web.Request'):
         except Exception:
           pass
       await s.stop()
-      del stream_dict[sid]
+      stream_dict.pop(sid, None)
 
     session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
     try:
@@ -367,9 +396,14 @@ async def get_stream(request: 'web.Request'):
     except Exception:
       await session.stop()
       raise
+    stream_dict[session.identifier] = session
     session.start()
 
-    stream_dict[session.identifier] = session
+    session_id = session.identifier
+
+    def remove_finished_session(_: asyncio.Task) -> None:
+      stream_dict.pop(session_id, None)
+    session.run_task.add_done_callback(remove_finished_session)
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session.identifier})
 
@@ -409,6 +443,26 @@ async def post_notify(request: 'web.Request'):
   return web.Response(status=200, text="OK")
 
 
+async def on_startup(app: 'web.Application'):
+  logger = logging.getLogger("webrtcd")
+  start_time = time.monotonic()
+  pc = None
+
+  # warmup imports for webrtc stack
+  try:
+    pc = RTCPeerConnection(RTCConfiguration(bundlePolicy=RTCBundlePolicy.MAX_BUNDLE))
+    pc.addTransceiver("video", direction="recvonly")
+    pc.createDataChannel("data", ordered=True)
+    offer = await pc.createOffer()
+    await asyncio.wait_for(pc.setLocalDescription(offer), timeout=1.5)
+    logger.info("Warmed WebRTC stack in %.1f ms", (time.monotonic() - start_time) * 1000)
+  except Exception:
+    logger.exception("WebRTC stack warmup failed")
+  finally:
+    if pc is not None:
+      await pc.close()
+
+
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
     await session.stop()
@@ -426,6 +480,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app['streams'] = dict()
   app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
+  app.on_startup.append(on_startup)
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
   app.router.add_post("/candidate", post_candidate)

@@ -40,6 +40,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
+from openpilot.system.webrtc.webrtcd import StreamRequestBody
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -83,6 +84,9 @@ class UploadTOSAdapter(HTTPAdapter):
 UPLOAD_SESS = requests.Session()
 UPLOAD_SESS.mount("http://", UploadTOSAdapter())
 UPLOAD_SESS.mount("https://", UploadTOSAdapter())
+
+WEBRTCD_SESS = requests.Session()
+WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=0))
 
 
 @dataclass
@@ -578,7 +582,6 @@ def getNetworks():
 
 @dispatcher.add_method
 def startStream(sdp: str) -> dict:
-  from openpilot.system.webrtc.webrtcd import StreamRequestBody
   bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
@@ -590,7 +593,7 @@ def startStream(sdp: str) -> dict:
 
   body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
   try:
-    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream",
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
                        json=asdict(body), timeout=10)
     if not resp.ok:
       try:
@@ -600,7 +603,7 @@ def startStream(sdp: str) -> dict:
         resp.raise_for_status()
     return resp.json()
   except requests.ConnectTimeout as e:
-    raise Exception("webrtc took too long to respond. is it on?") from e
+    raise Exception("webrtc took too long to respond. is the comma body on?") from e
   except requests.ConnectionError as e:
     raise Exception("webrtc is not running. turn on comma body ignition.") from e
 
@@ -608,8 +611,8 @@ def startStream(sdp: str) -> dict:
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
   if session_id is None:
     return Exception("cannot add ice candidate without session_id")
-  resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
-                       json={"session_id": session_id, "candidate": candidate}, timeout=10)
+  resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
+                            json={"session_id": session_id, "candidate": candidate}, timeout=10)
   return resp.json()
 
 @dispatcher.add_method
