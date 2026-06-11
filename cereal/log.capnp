@@ -132,6 +132,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     userBookmark @95;
     excessiveActuation @96;
     audioFeedback @97;
+    modelFallback @100;
 
     soundsUnavailableDEPRECATED @47;
   }
@@ -985,6 +986,7 @@ struct ModelDataV2 {
   timestampEof @3 :UInt64;
   modelExecutionTime @15 :Float32;
   rawPredictions @16 :Data;
+  usingGpu @27 :Bool;
 
   # predicted future position, orientation, etc..
   position @4 :XYZTData;
