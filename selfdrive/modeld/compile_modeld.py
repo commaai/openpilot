@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import atexit
+import math
 import os
 import pickle
+import tempfile
 import time
 from functools import partial
 from collections import namedtuple
@@ -33,7 +35,7 @@ from tinygrad.engine.jit import TinyJit
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
-POLICY_INPUTS = ['feat_q', 'desire_q', 'desire', 'traffic_convention', 'action_t']
+POLICY_INPUTS = ['feat_q', 'desire_q', 'packed_npy_inputs']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -130,25 +132,28 @@ def make_warp_input_queues(vision_input_shapes, frame_skip, device):
   return input_queues, npy
 
 
+def get_policy_npy_shapes(policy_input_shapes):
+  dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
+  tc = policy_input_shapes['traffic_convention']  # (1, 2)
+  #TODO action_t is hardcoded to match tc for future compatibility
+  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(tc)}
+  return shapes, [math.prod(s) for s in shapes.values()]
+
+
 def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
   input_queues, npy = make_warp_input_queues(vision_input_shapes, frame_skip, device)
 
   fb = policy_input_shapes['features_buffer']  # (1, 25, 512)
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
-  tc = policy_input_shapes['traffic_convention']  # (1, 2)
-  #TODO action_t is hardcoded to match tc for future compatibility
-  at = tc
 
-  policy_npy = {
-    'desire': np.zeros(dp[2], dtype=np.float32),
-    'traffic_convention': np.zeros(tc, dtype=np.float32),
-    'action_t': np.zeros(at, dtype=np.float32),
-  }
-  npy.update(policy_npy)
+  shapes, sizes = get_policy_npy_shapes(policy_input_shapes)
+  packed_npy_inputs = np.zeros(sum(sizes), dtype=np.float32)
+  # views into the packed inputs, to be refilled at runtime
+  npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)})
   input_queues.update({
     'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
-    **{k: Tensor(v, device='NPY').realize() for k, v in policy_npy.items()},
+    'packed_npy_inputs': Tensor(packed_npy_inputs, device='NPY').realize(),
   })
   return input_queues, npy
 
@@ -175,10 +180,11 @@ def make_warp(nv12, model_w, model_h, frame_skip):
     big_tfm = big_tfm.to(WARP_DEV)
     Tensor.realize(tfm, big_tfm)
 
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0).to(Device.DEFAULT)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0).to(Device.DEFAULT)
-    img = shift_and_sample(img_q, warped_frame, sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, warped_big_frame, sample_skip_fn)
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
+    warped = Tensor.cat(warped_frame, warped_big_frame).to(Device.DEFAULT)
+    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
     return img, big_img
   return warp_enqueue
 
@@ -187,12 +193,11 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   vision_features_slice = model_metadata['vision']['output_slices']['hidden_state']
+  npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['on_policy']['input_shapes'])
 
-  def run_policy(img, big_img, feat_q, desire_q, desire, traffic_convention, action_t):
-    desire = desire.to(Device.DEFAULT)
-    traffic_convention = traffic_convention.to(Device.DEFAULT)
-    action_t = action_t.to(Device.DEFAULT)
-    Tensor.realize(desire, traffic_convention, action_t)
+  def run_policy(img, big_img, feat_q, desire_q, packed_npy_inputs):
+    packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT).realize()
+    desire, traffic_convention, action_t = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
     vision_out = next(iter(model_runners['vision']({'img': img, 'big_img': big_img}).values())).cast('float32')
 
@@ -206,8 +211,7 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
       'action_t': action_t,
     }
     on_policy_out = next(iter(model_runners['on_policy'](inputs).values())).cast('float32')
-    off_policy_out = next(iter(model_runners['off_policy'](inputs).values())).cast('float32')
-    return vision_out, on_policy_out, off_policy_out
+    return Tensor.cat(vision_out, on_policy_out, dim=1),
   return run_policy
 
 
@@ -262,11 +266,11 @@ def _parse_size(s):
 def read_file_chunked_to_shm(path):
   from openpilot.common.file_chunker import read_file_chunked
   from openpilot.system.hardware.hw import Paths
-  shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
-  atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
-  with open(shm_path, 'wb') as f:
+  with tempfile.NamedTemporaryFile(prefix='compile_modeld_', dir=Paths.shm_path(), delete=False) as f:
     f.write(read_file_chunked(path))
-  return shm_path
+    tmp_path = f.name
+  atexit.register(lambda: os.path.exists(tmp_path) and os.remove(tmp_path))
+  return tmp_path
 
 
 if __name__ == "__main__":
@@ -278,7 +282,6 @@ if __name__ == "__main__":
   p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
                  help='camera resolutions WxH (one or more)')
   p.add_argument('--vision-onnx', required=True)
-  p.add_argument('--off-policy-onnx', required=True)
   p.add_argument('--on-policy-onnx', required=True)
   p.add_argument('--output', required=True)
   p.add_argument('--frame-skip', type=int, required=True)
@@ -286,15 +289,12 @@ if __name__ == "__main__":
 
   model_paths = {
     'vision': read_file_chunked_to_shm(args.vision_onnx),
-    'off_policy': read_file_chunked_to_shm(args.off_policy_onnx),
     'on_policy': read_file_chunked_to_shm(args.on_policy_onnx),
   }
   model_w, model_h = args.model_size
 
   model_runners = {name: OnnxRunner(path) for name, path in model_paths.items()}
   out = {'metadata': {name: make_metadata_dict(path) for name, path in model_paths.items()}}
-
-  assert out['metadata']['off_policy']['input_shapes'] == out['metadata']['on_policy']['input_shapes']
 
   run_policy_jit = TinyJit(make_run_policy(model_runners, out['metadata'], args.frame_skip), prune=True)
 

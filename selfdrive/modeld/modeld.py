@@ -21,7 +21,7 @@ from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
-from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
+from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import read_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices
@@ -83,9 +83,7 @@ class ModelState:
     self.vision_input_shapes = vision_metadata['input_shapes']
     self.vision_input_names = list(self.vision_input_shapes.keys())
     self.vision_output_slices = vision_metadata['output_slices']
-
-    off_policy_metadata = jits['metadata']['off_policy']
-    self.off_policy_output_slices = off_policy_metadata['output_slices']
+    self.vision_output_len = vision_metadata['output_shapes']['outputs'][1]
 
     policy_metadata = jits['metadata']['on_policy']
     self.policy_input_shapes = policy_metadata['input_shapes']
@@ -131,20 +129,16 @@ class ModelState:
     if prepare_only:
       return None
 
-    vision_output, on_policy_output, off_policy_output = self.run_policy(
+    outs, = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, img=img, big_img=big_img
     )
-
-    vision_output = vision_output.numpy().flatten()
-    off_policy_output = off_policy_output.numpy().flatten()
-    on_policy_output = on_policy_output.numpy().flatten()
+    vision_output, on_policy_output = np.split(outs.numpy()[0], [self.vision_output_len])
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
-    off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(off_policy_output, self.off_policy_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
-    combined_outputs_dict = {**vision_outputs_dict, **off_policy_outputs_dict, **policy_outputs_dict}
+    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
 
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy(), off_policy_output.copy()])
+      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy()])
     return combined_outputs_dict
 
 
@@ -311,7 +305,7 @@ def main(demo=False):
 
       action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
       prev_action = action
-      fill_model_msg(drivingdata_send, modelv2_send, model_output, action,
+      fill_model_msg(modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
                      frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen)
 
@@ -322,9 +316,8 @@ def main(demo=False):
       DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
       modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
       modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
-      drivingdata_send.drivingModelData.meta.laneChangeState = DH.lane_change_state
-      drivingdata_send.drivingModelData.meta.laneChangeDirection = DH.lane_change_direction
 
+      fill_driving_model_data(drivingdata_send, modelv2_send)
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
