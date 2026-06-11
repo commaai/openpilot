@@ -551,8 +551,8 @@ CONFIGS = [
   ProcessConfig(
     proc_name="modeld",
     pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "liveDelay", "driverMonitoringState", "carState", "carControl"],
-    subs=["modelV2", "drivingModelData", "cameraOdometry"],
-    ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
+    subs=["smolModelV2", "cameraOdometry"],
+    ignore=["logMonoTime", "smolModelV2.frameDropPerc", "smolModelV2.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
@@ -560,6 +560,13 @@ CONFIGS = [
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
     init_callback=get_car_params_callback,
+  ),
+  ProcessConfig(
+    proc_name="routerd",
+    pubs=["smolModelV2", "bigModelV2", "usbgpuState"],
+    subs=["modelV2", "drivingModelData", "modelSource"],
+    ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
+    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",

@@ -9,6 +9,7 @@ from itertools import zip_longest
 
 import matplotlib.pyplot as plt
 import numpy as np
+import cereal.messaging as messaging
 from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
@@ -161,10 +162,16 @@ def model_replay(lr, frs):
     modeld_logs.insert(1, msg.as_reader())
     dmodeld_logs.insert(1, msg.as_reader())
 
+  # no usbgpu in replay, mock usbgpuState so routerd uses the small model
+  usbgpu_msg = messaging.new_message('usbgpuState', valid=True)
+  usbgpu_msg.logMonoTime = lr[0].logMonoTime
+  modeld_logs.insert(1, usbgpu_msg.as_reader())
+
   modeld = get_process_config("modeld")
+  routerd = get_process_config("routerd")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
-  modeld_msgs = replay_process(modeld, modeld_logs, frs)
+  modeld_msgs = replay_process([modeld, routerd], modeld_logs, frs)
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
@@ -239,11 +246,9 @@ if __name__ == "__main__":
     log_fn = get_log_fn(TEST_ROUTE)
     try:
       all_logs = list(LogReader(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn)))
-      cmp_log = []
-      model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
-      cmp_log += all_logs[model_start_index+START_FRAME*3:model_start_index + END_FRAME*3]
-      dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-      cmp_log += all_logs[dmon_start_index+START_FRAME:dmon_start_index + END_FRAME]
+      model_msgs = ("modelV2", "smolModelV2", "drivingModelData", "modelSource", "cameraOdometry")
+      cmp_log = [m for m in all_logs if m.which() in model_msgs][START_FRAME*len(model_msgs):END_FRAME*len(model_msgs)]
+      cmp_log += [m for m in all_logs if m.which() == "driverStateV2"][START_FRAME:END_FRAME]
 
       ignore = [
         'logMonoTime',
@@ -278,7 +283,9 @@ if __name__ == "__main__":
       tolerance = .3 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
-      results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
+      # smolModelV2 is a copy of modelV2, no need to compare it twice
+      results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore,
+                                                   ignore_msgs=["smolModelV2", "modelSource"])
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
