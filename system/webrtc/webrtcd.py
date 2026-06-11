@@ -218,6 +218,7 @@ class StreamSession:
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
 
+    self.params = Params()
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
@@ -297,6 +298,7 @@ class StreamSession:
 
   async def run(self):
     try:
+      self.params.put("LivestreamRequestKeyframe", True, block=False)
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:

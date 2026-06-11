@@ -325,6 +325,17 @@ void V4LEncoder::set_bitrate(int bitrate) {
   current_bitrate = bitrate;
 }
 
+void V4LEncoder::request_keyframe() {
+  struct v4l2_control ctrl = {
+    .id = V4L2_CID_MPEG_VIDC_VIDEO_REQUEST_IFRAME,
+    .value = 1,
+  };
+
+  if (util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl) == -1) {
+    LOGE("failed to request keyframe for %s", encoder_info.publish_name);
+  }
+}
+
 V4LEncoder::~V4LEncoder() {
   encoder_close();
   v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;

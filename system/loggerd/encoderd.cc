@@ -54,6 +54,14 @@ void apply_bitrate(std::vector<std::unique_ptr<Encoder>> &encoders) {
   }
 }
 
+void apply_request_keyframe(std::vector<std::unique_ptr<Encoder>> &encoders) {
+  static Params params;
+  if (!params.getBool("LivestreamRequestKeyframe")) return;
+  for (auto &e : encoders) {
+    e->request_keyframe();
+  }
+}
+
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
@@ -121,7 +129,10 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         ++cur_seg;
       }
 
-      if (has_adaptive) apply_bitrate(encoders);
+      if (has_adaptive) {
+        apply_bitrate(encoders);
+        apply_request_keyframe(encoders);
+      }
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
