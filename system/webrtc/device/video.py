@@ -37,9 +37,8 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self._pts = 0
     self._t0_ns = time.monotonic_ns()
     self.timing_sei_enabled = False
-    self._seen_keyframe = False
-
     self.params = Params()
+    self._seen_keyframe = False
 
   def stop(self) -> None:
     super().stop()
@@ -50,9 +49,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   def switch_camera(self, camera_type: str) -> None:
     self._sock = self._make_sock(camera_type)
-    # the new camera's stream needs its own keyframe (header is only sent on keyframes)
-    # self._seen_keyframe = False
-    # self.params.put("LivestreamRequestKeyframe", True, block=False)
 
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
@@ -75,7 +71,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       msg = messaging.recv_one_or_none(self._sock)
       if msg is not None:
         if not self._seen_keyframe and (getattr(msg, msg.which()).idx.flags & V4L2_BUF_FLAG_KEYFRAME):
-          # got the keyframe we requested on startup; stop forcing them so the encoder runs a normal GOP
           self._seen_keyframe = True
           self.params.put("LivestreamRequestKeyframe", False, block=False)
         break
