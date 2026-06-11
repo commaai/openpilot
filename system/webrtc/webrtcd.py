@@ -325,6 +325,7 @@ class StreamSession:
       if self._cleanup_done:
         return
       self._cleanup_done = True
+      self.params.put("LivestreamRequestKeyframe", False)
       if self.bitrate_controller is not None:
         await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
