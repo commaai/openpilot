@@ -88,7 +88,6 @@ UPLOAD_SESS.mount("https://", UploadTOSAdapter())
 
 WEBRTCD_SESS = requests.Session()
 WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=0))
-WEBRTCD_SESS.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
 
 
 @dataclass

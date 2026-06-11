@@ -54,7 +54,7 @@ def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
   primary = _default_route_ip()
   if primary not in addresses:
     return addresses
-  return [a for a in addresses if a == primary or ":" in a]  # keep IPv6 as-is, they never query STUN
+  return [a for a in addresses if a == primary]
 aioice.ice.get_host_addresses = _primary_host_addresses
 
 
