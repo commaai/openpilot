@@ -79,20 +79,15 @@ class ModelState:
     input_devices = get_tg_input_devices(PROCESS_NAME, usbgpu)
     self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
     jits = pickle.loads(read_file_chunked(modeld_pkl_path(usbgpu)))
-    vision_metadata = jits['metadata']['vision']
-    self.vision_input_shapes = vision_metadata['input_shapes']
-    self.vision_input_names = list(self.vision_input_shapes.keys())
-    self.vision_output_slices = vision_metadata['output_slices']
-    self.vision_output_len = vision_metadata['output_shapes']['outputs'][1]
-
-    policy_metadata = jits['metadata']['on_policy']
-    self.policy_input_shapes = policy_metadata['input_shapes']
-    self.policy_output_slices = policy_metadata['output_slices']
+    metadata = jits['metadata']
+    self.input_shapes = metadata['input_shapes']
+    self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
+    self.output_slices = metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
     self.full_frames: dict[str, Tensor] = {}
     self._blob_cache: dict[int, Tensor] = {}
     self.parser = Parser()
@@ -132,14 +127,12 @@ class ModelState:
     outs, = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, img=img, big_img=big_img
     )
-    vision_output, on_policy_output = np.split(outs.numpy()[0], [self.vision_output_len])
-    vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
-    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
-    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
+    model_output = outs.numpy()[0]
+    outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
 
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([vision_output.copy(), on_policy_output.copy()])
-    return combined_outputs_dict
+      outputs_dict['raw_pred'] = model_output.copy()
+    return outputs_dict
 
 
 def main(demo=False):
