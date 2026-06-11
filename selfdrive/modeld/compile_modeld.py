@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import atexit
+import math
 import os
 import pickle
 import time
@@ -33,7 +34,7 @@ from tinygrad.engine.jit import TinyJit
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
-POLICY_INPUTS = ['feat_q', 'desire_q', 'desire', 'traffic_convention', 'action_t']
+POLICY_INPUTS = ['feat_q', 'desire_q', 'packed_npy_inputs']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -130,25 +131,28 @@ def make_warp_input_queues(vision_input_shapes, frame_skip, device):
   return input_queues, npy
 
 
+def get_policy_npy_shapes(policy_input_shapes):
+  dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
+  tc = policy_input_shapes['traffic_convention']  # (1, 2)
+  #TODO action_t is hardcoded to match tc for future compatibility
+  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(tc)}
+  return shapes, [math.prod(s) for s in shapes.values()]
+
+
 def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, device):
   input_queues, npy = make_warp_input_queues(vision_input_shapes, frame_skip, device)
 
   fb = policy_input_shapes['features_buffer']  # (1, 25, 512)
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
-  tc = policy_input_shapes['traffic_convention']  # (1, 2)
-  #TODO action_t is hardcoded to match tc for future compatibility
-  at = tc
 
-  policy_npy = {
-    'desire': np.zeros(dp[2], dtype=np.float32),
-    'traffic_convention': np.zeros(tc, dtype=np.float32),
-    'action_t': np.zeros(at, dtype=np.float32),
-  }
-  npy.update(policy_npy)
+  shapes, sizes = get_policy_npy_shapes(policy_input_shapes)
+  packed_npy_inputs = np.zeros(sum(sizes), dtype=np.float32)
+  # views into the packed inputs, to be refilled at runtime
+  npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])))})
   input_queues.update({
     'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
-    **{k: Tensor(v, device='NPY').realize() for k, v in policy_npy.items()},
+    'packed_npy_inputs': Tensor(packed_npy_inputs, device='NPY').realize(),
   })
   return input_queues, npy
 
@@ -188,12 +192,11 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   vision_features_slice = model_metadata['vision']['output_slices']['hidden_state']
+  npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['on_policy']['input_shapes'])
 
-  def run_policy(img, big_img, feat_q, desire_q, desire, traffic_convention, action_t):
-    desire = desire.to(Device.DEFAULT)
-    traffic_convention = traffic_convention.to(Device.DEFAULT)
-    action_t = action_t.to(Device.DEFAULT)
-    Tensor.realize(desire, traffic_convention, action_t)
+  def run_policy(img, big_img, feat_q, desire_q, packed_npy_inputs):
+    packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT).realize()
+    desire, traffic_convention, action_t = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
     vision_out = next(iter(model_runners['vision']({'img': img, 'big_img': big_img}).values())).cast('float32')
 
