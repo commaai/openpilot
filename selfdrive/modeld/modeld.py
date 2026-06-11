@@ -83,6 +83,7 @@ class ModelState:
     self.vision_input_shapes = vision_metadata['input_shapes']
     self.vision_input_names = list(self.vision_input_shapes.keys())
     self.vision_output_slices = vision_metadata['output_slices']
+    self.vision_output_len = vision_metadata['output_shapes']['outputs'][1]
 
     off_policy_metadata = jits['metadata']['off_policy']
     self.off_policy_output_slices = off_policy_metadata['output_slices']
@@ -90,6 +91,7 @@ class ModelState:
     policy_metadata = jits['metadata']['on_policy']
     self.policy_input_shapes = policy_metadata['input_shapes']
     self.policy_output_slices = policy_metadata['output_slices']
+    self.on_policy_output_len = policy_metadata['output_shapes']['outputs'][1]
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
@@ -131,13 +133,11 @@ class ModelState:
     if prepare_only:
       return None
 
-    vision_output, on_policy_output, off_policy_output = self.run_policy(
+    outs, = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, img=img, big_img=big_img
     )
+    vision_output, on_policy_output, off_policy_output = np.split(outs.numpy()[0], [self.vision_output_len, self.vision_output_len+self.on_policy_output_len])
 
-    vision_output = vision_output.numpy().flatten()
-    off_policy_output = off_policy_output.numpy().flatten()
-    on_policy_output = on_policy_output.numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(vision_output, self.vision_output_slices))
     off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(off_policy_output, self.off_policy_output_slices))
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(on_policy_output, self.policy_output_slices))
