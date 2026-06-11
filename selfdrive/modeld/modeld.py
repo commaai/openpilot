@@ -5,6 +5,7 @@ from tinygrad.tensor import Tensor
 import time
 import pickle
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.messaging import PubMaster, SubMaster
@@ -185,7 +186,11 @@ def main(demo=False):
 
   st = time.monotonic()
   cloudlog.warning("loading model")
-  model = ModelState(vipc_client_main.width, vipc_client_main.height, USBGPU)
+  model = ModelState(vipc_client_main.width, vipc_client_main.height, usbgpu=False)
+  big_model = None
+  if USBGPU:
+    big_model = ModelState(vipc_client_main.width, vipc_client_main.height, usbgpu=True)
+    big_executor = ThreadPoolExecutor(max_workers=1)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
@@ -300,7 +305,16 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
+    big_future = big_executor.submit(big_model.run, bufs, transforms, inputs, prepare_only) if big_model is not None else None
     model_output = model.run(bufs, transforms, inputs, prepare_only)
+    if big_future is not None:
+      try:
+        timeout = DT_MDL if run_count > 10 else 5.
+        model_output = big_future.result(timeout=timeout)
+      except Exception:
+        cloudlog.exception("big model failed, falling back to small model")
+        big_executor.shutdown(wait=False)
+        big_model = None
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
