@@ -19,6 +19,7 @@ def main():
   while not sm.seen['usbgpuState']:
     sm.update()
   src = 'bigModelV2' if (sm['usbgpuState'].usbgpuPresent and params.get_bool("UsbgpuCompiled")) else 'smolModelV2'
+  big_first_t = None
 
   while True:
     sm.update()
