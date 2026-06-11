@@ -138,8 +138,8 @@ def main():
       override = sm['carState'].steeringPressed or sm['carState'].gasPressed
       disengaged = maneuver.active and not sm['carControl'].latActive
       if override or disengaged:
-        # show why an active run was aborted
-        if maneuver.active and override:
+        # show why an active run or starting countdown was aborted
+        if (maneuver.active or maneuver._ready_cnt > 0) and override:
           aborted_cnt = int(2.0 / DT_MDL)
           abort_reason = 'steering pressed' if sm['carState'].steeringPressed else 'gas pressed'
         maneuver.reset()
@@ -165,7 +165,6 @@ def main():
         alert_msg.alertDebug.alertText2 = maneuver.description
       elif override:
         alert_msg.alertDebug.alertText1 = 'Driver override'
-        alert_msg.alertDebug.alertText2 = maneuver.description
       elif not (abs(v_ego - maneuver.initial_speed) < MAX_SPEED_DEV and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
       elif maneuver._ready_cnt > 0:
