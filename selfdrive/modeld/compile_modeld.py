@@ -208,7 +208,7 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
     }
     on_policy_out = next(iter(model_runners['on_policy'](inputs).values())).cast('float32')
     off_policy_out = next(iter(model_runners['off_policy'](inputs).values())).cast('float32')
-    return vision_out, on_policy_out, off_policy_out
+    return Tensor.cat(vision_out, on_policy_out, off_policy_out, dim=1),
   return run_policy
 
 
