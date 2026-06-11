@@ -20,10 +20,10 @@ TIMER = 2.0 # sec stable conditions before starting maneuver
 class Maneuver(_Maneuver):
   _baseline_curvature: float = 0.0
 
-  def get_accel(self, v_ego: float, lat_active: bool, override: bool, curvature: float, roll: float) -> float:
+  def get_accel(self, v_ego: float, lat_active: bool, curvature: float, roll: float) -> float:
     self._run_completed = False
     # only start maneuver on straight, flat roads
-    ready = abs(v_ego - self.initial_speed) < MAX_SPEED_DEV and lat_active and not override and abs(curvature) < MAX_CURV and abs(roll) < MAX_ROLL
+    ready = abs(v_ego - self.initial_speed) < MAX_SPEED_DEV and lat_active and abs(curvature) < MAX_CURV and abs(roll) < MAX_ROLL
     self._ready_cnt = (self._ready_cnt + 1) if ready else max(self._ready_cnt - 1, 0)
 
     if self._ready_cnt > (TIMER / DT_MDL):
@@ -135,17 +135,18 @@ def main():
       alert_msg.alertDebug.alertText1 = 'Completed'
       alert_msg.alertDebug.alertText2 = maneuver.description
     elif maneuver is not None:
-      override = sm['carState'].steeringPressed or sm['carState'].gasPressed
-      disengaged = maneuver.active and not sm['carControl'].latActive
-      if override or disengaged:
-        # show why an active run or starting countdown was aborted
-        if (maneuver.active or maneuver._ready_cnt > 0) and override:
-          aborted_cnt = int(2.0 / DT_MDL)
-          abort_reason = 'steering pressed' if sm['carState'].steeringPressed else 'gas pressed'
+      # any driver input aborts the maneuver
+      CS = sm['carState']
+      if CS.steeringPressed or CS.gasPressed:
+        aborted_cnt = int(2.0 / DT_MDL)
+        abort_reason = 'steering pressed' if CS.steeringPressed else 'gas pressed'
+      aborted = aborted_cnt > 0
+      speed_out_of_range = maneuver.active and abs(v_ego - maneuver.initial_speed) > MAX_SPEED_DEV
+      if aborted or speed_out_of_range:
         maneuver.reset()
 
       roll = sm['carControl'].orientationNED[0] if len(sm['carControl'].orientationNED) == 3 else 0.0
-      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, override, curvature, roll)
+      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, curvature, roll)
 
       if maneuver._run_completed:
         complete_cnt = int(1.0 / DT_MDL)
@@ -163,8 +164,6 @@ def main():
         aborted_cnt -= 1
         alert_msg.alertDebug.alertText1 = f'Aborted: {abort_reason}'
         alert_msg.alertDebug.alertText2 = maneuver.description
-      elif override:
-        alert_msg.alertDebug.alertText1 = 'Driver override'
       elif not (abs(v_ego - maneuver.initial_speed) < MAX_SPEED_DEV and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
       elif maneuver._ready_cnt > 0:
