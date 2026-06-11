@@ -305,7 +305,6 @@ def main(demo=False, usbgpu=False):
 
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')
-      drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
       action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
@@ -322,7 +321,6 @@ def main(demo=False, usbgpu=False):
       modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
       modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
 
-      fill_driving_model_data(drivingdata_send, modelv2_send)
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
 
       output_send = messaging.new_message(output_message_name)
@@ -330,7 +328,7 @@ def main(demo=False, usbgpu=False):
       setattr(output_send, output_message_name, modelv2_send.modelV2)
       pm.send(output_message_name, output_send)
       if not usbgpu:
-        pm.send('drivingModelData', drivingdata_send)
+        # TODO forward, or keep as is: always use small model odom?
         pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
 

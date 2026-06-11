@@ -5,13 +5,14 @@ from cereal.messaging import PubMaster, SubMaster
 from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
+from openpilot.selfdrive.modeld.fill_model_msg import fill_driving_model_data
 
 
 def main():
   config_realtime_process(7, 54)
 
   sm = SubMaster(['bigModelV2', 'smolModelV2', 'usbgpuState'])
-  pm = PubMaster(['modelV2', 'modelSource'])
+  pm = PubMaster(['modelV2', 'modelSource', 'drivingModelData'])
   params = Params()
 
   # decide the initial source from the first usbgpuState
@@ -39,14 +40,16 @@ def main():
       msg = messaging.new_message('modelV2')
       msg.valid = sm.valid[src]
       msg.modelV2 = sm[src]
-      pm.send('modelV2', msg)
+
+      drivingdata_send = messaging.new_message('drivingModelData')
+      fill_driving_model_data(drivingdata_send, msg)
 
       source = messaging.new_message('modelSource', valid=True)
       source.modelSource.big = src == 'bigModelV2'
-      pm.send('modelSource', source)
 
-  # TODO prune modelv2 to make drivingModelData
-  # and forward odom
+      pm.send('modelV2', msg)
+      pm.send('drivingModelData', drivingdata_send)
+      pm.send('modelSource', source)
 
 
 if __name__ == "__main__":
