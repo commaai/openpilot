@@ -18,7 +18,6 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
-from aiortc import RTCBundlePolicy, RTCConfiguration, RTCPeerConnection, RTCRtpSender
 import capnp
 from aiohttp import web
 if TYPE_CHECKING:
@@ -28,6 +27,7 @@ from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
 
+from aiortc import RTCBundlePolicy, RTCConfiguration, RTCPeerConnection
 from aiortc.mediastreams import VideoStreamTrack
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 from teleoprtc import WebRTCAnswerBuilder
@@ -35,8 +35,8 @@ from teleoprtc import WebRTCAnswerBuilder
 import aioice.ice
 
 
-# route lookup for 8.8.8.8 and bind the socket's source address accordingly
-# return which local IP was chosen by kernel, that is the primary IP (wlan0 or ppp0)
+# socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
+# return the source interfaces IP which is the default interface of the device
 def _default_route_ip() -> str | None:
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   try:
@@ -49,14 +49,12 @@ def _default_route_ip() -> str | None:
 
 # aioice patch: gather ICE candidates only on the default-route interface
 _get_host_addresses = aioice.ice.get_host_addresses
-
 def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
   addresses = _get_host_addresses(use_ipv4, use_ipv6)
   primary = _default_route_ip()
   if primary not in addresses:
     return addresses
   return [a for a in addresses if a == primary or ":" in a]  # keep IPv6 as-is, they never query STUN
-
 aioice.ice.get_host_addresses = _primary_host_addresses
 
 
@@ -452,8 +450,8 @@ async def on_startup(app: 'web.Application'):
   start_time = time.monotonic()
   pc = None
 
+  # warmup imports for webrtc stack
   try:
-    RTCRtpSender.getCapabilities("video")
     pc = RTCPeerConnection(RTCConfiguration(bundlePolicy=RTCBundlePolicy.MAX_BUNDLE))
     pc.addTransceiver("video", direction="recvonly")
     pc.createDataChannel("data", ordered=True)
