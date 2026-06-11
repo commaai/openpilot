@@ -18,6 +18,7 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
+from aiortc import RTCBundlePolicy, RTCConfiguration, RTCPeerConnection, RTCRtpSender
 import capnp
 from aiohttp import web
 if TYPE_CHECKING:
@@ -355,6 +356,8 @@ class StreamSession:
         await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
+      if self.video_track is not None:
+        self.video_track.stop()
       await self.stream.stop()
 
 
@@ -381,7 +384,7 @@ async def get_stream(request: 'web.Request'):
         except Exception:
           pass
       await s.stop()
-      del stream_dict[sid]
+      stream_dict.pop(sid, None)
 
     session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
     try:
@@ -395,9 +398,14 @@ async def get_stream(request: 'web.Request'):
     except Exception:
       await session.stop()
       raise
+    stream_dict[session.identifier] = session
     session.start()
 
-    stream_dict[session.identifier] = session
+    session_id = session.identifier
+
+    def remove_finished_session(_: asyncio.Task) -> None:
+      stream_dict.pop(session_id, None)
+    session.run_task.add_done_callback(remove_finished_session)
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session.identifier})
 
@@ -405,6 +413,8 @@ async def get_stream(request: 'web.Request'):
 async def post_candidate(request: 'web.Request'):
   body = await request.json()
   session = request.app.get('streams', {}).get(body.get("session_id"))
+  if session is None:
+    return web.Response(status=200, text="OK")
 
   try:
     await session.add_ice_candidate(body.get("candidate"))
@@ -437,6 +447,26 @@ async def post_notify(request: 'web.Request'):
   return web.Response(status=200, text="OK")
 
 
+async def on_startup(app: 'web.Application'):
+  logger = logging.getLogger("webrtcd")
+  start_time = time.monotonic()
+  pc = None
+
+  try:
+    RTCRtpSender.getCapabilities("video")
+    pc = RTCPeerConnection(RTCConfiguration(bundlePolicy=RTCBundlePolicy.MAX_BUNDLE))
+    pc.addTransceiver("video", direction="recvonly")
+    pc.createDataChannel("data", ordered=True)
+    offer = await pc.createOffer()
+    await asyncio.wait_for(pc.setLocalDescription(offer), timeout=1.5)
+    logger.info("Warmed WebRTC stack in %.1f ms", (time.monotonic() - start_time) * 1000)
+  except Exception:
+    logger.exception("WebRTC stack warmup failed")
+  finally:
+    if pc is not None:
+      await pc.close()
+
+
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
     await session.stop()
@@ -454,6 +484,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app['streams'] = dict()
   app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
+  app.on_startup.append(on_startup)
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
   app.router.add_post("/candidate", post_candidate)

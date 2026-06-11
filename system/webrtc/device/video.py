@@ -4,6 +4,7 @@ import time
 
 import av
 from teleoprtc.tracks import TiciVideoStreamTrack
+from aiortc import MediaStreamError
 
 from cereal import messaging
 from openpilot.common.realtime import DT_MDL, DT_DMON
@@ -32,6 +33,10 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self._t0_ns = time.monotonic_ns()
     self.timing_sei_enabled = False
 
+  def stop(self) -> None:
+    super().stop()
+    self._sock = None
+
   def _make_sock(self, camera_type: str) -> messaging.SubSocket:
     return messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
 
@@ -54,6 +59,8 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   async def recv(self):
     while True:
+      if self.readyState != "live":
+        raise MediaStreamError
       msg = messaging.recv_one_or_none(self._sock)
       if msg is not None:
         break
