@@ -151,10 +151,7 @@ class ModelState:
 def main(demo=False, usbgpu=False):
   cloudlog.warning("modeld init")
 
-  if not usbgpu:
-    config_realtime_process(7, 54)
-
-  output_message_name = 'smolModelV2' if not usbgpu else 'bigModelV2'
+  config_realtime_process(7, 54)
 
   # visionipc clients
   while True:
@@ -185,9 +182,7 @@ def main(demo=False, usbgpu=False):
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
-  to_publish = [output_message_name]
-  if not usbgpu: # only smol publishes odom for now
-    to_publish += "drivingModelData", "cameraOdometry"
+  to_publish = ['bigModelV2'] if usbgpu else ['smolModelV2', 'cameraOdometry']
   pm = PubMaster(to_publish)
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
@@ -323,10 +318,10 @@ def main(demo=False, usbgpu=False):
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
 
-      output_send = messaging.new_message(output_message_name)
-      output_send.valid = modelv2_send.valid
-      setattr(output_send, output_message_name, modelv2_send.modelV2)
-      pm.send(output_message_name, output_send)
+      pub_name = 'bigModelV2' if usbgpu else 'smolModelV2'
+      output_send = messaging.new_message(pub_name, valid=modelv2_send.valid)
+      setattr(output_send, pub_name, modelv2_send.modelV2)
+      pm.send(pub_name, output_send)
       if not usbgpu:
         # TODO forward, or keep as is: always use small model odom?
         pm.send('cameraOdometry', posenet_send)
