@@ -48,7 +48,7 @@ function retry() {
 }
 
 function op_run_command() {
-  CMD="$@"
+  CMD="$*"
 
   echo -e "${BOLD}Running command →${NC} $CMD │"
   for ((i=0; i<$((19 + ${#CMD})); i++)); do
@@ -57,7 +57,7 @@ function op_run_command() {
   echo -e "┘\n"
 
   if [[ -z "$DRY" ]]; then
-    eval "$CMD"
+    "$@"
   fi
 }
 
@@ -310,33 +310,33 @@ function op_build() {
     op_run_command system/manager/build.py
   else
     # scons is fine on PC
-    op_run_command scons $@
+    op_run_command scons "$@"
   fi
 }
 
 function op_juggle() {
   op_before_cmd
-  op_run_command tools/plotjuggler/juggle.py $@
+  op_run_command tools/plotjuggler/juggle.py "$@"
 }
 
 function op_lint() {
   op_before_cmd
-  op_run_command scripts/lint/lint.sh $@
+  op_run_command scripts/lint/lint.sh "$@"
 }
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest $@
+  op_run_command pytest "$@"
 }
 
 function op_replay() {
   op_before_cmd
-  op_run_command tools/replay/replay $@
+  op_run_command tools/replay/replay "$@"
 }
 
 function op_cabana() {
   op_before_cmd
-  op_run_command tools/cabana/cabana $@
+  op_run_command tools/cabana/cabana "$@"
 }
 
 function op_sim() {
@@ -347,7 +347,7 @@ function op_sim() {
 
 function op_clip() {
   op_before_cmd
-  op_run_command tools/clip/run.py $@
+  op_run_command tools/clip/run.py "$@"
 }
 
 function op_switch() {
@@ -489,4 +489,4 @@ function _op() {
   esac
 }
 
-_op $@
+_op "$@"
