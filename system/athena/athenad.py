@@ -23,7 +23,6 @@ from typing import cast
 from collections.abc import Callable
 
 import requests
-from http.cookiejar import DefaultCookiePolicy
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
