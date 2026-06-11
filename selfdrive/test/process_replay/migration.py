@@ -12,7 +12,7 @@ from opendbc.car.ford.values import CAR as FORD, FordFlags, FordSafetyFlags
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
 from opendbc.car.gm.values import GMSafetyFlags
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
+from openpilot.selfdrive.modeld.fill_model_msg import fill_driving_model_data
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan
 from openpilot.system.manager.process_config import managed_processes
@@ -145,15 +145,8 @@ def migrate_driverAssistance(msgs):
 def migrate_drivingModelData(msgs):
   add_ops = []
   for _, msg in msgs:
-    dmd = messaging.new_message('drivingModelData', valid=msg.valid, logMonoTime=msg.logMonoTime)
-    for field in ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "action"]:
-      setattr(dmd.drivingModelData, field, getattr(msg.modelV2, field))
-    for meta_field in ["laneChangeState", "laneChangeState"]:
-      setattr(dmd.drivingModelData.meta, meta_field, getattr(msg.modelV2.meta, meta_field))
-    if len(msg.modelV2.laneLines) and len(msg.modelV2.laneLineProbs):
-      fill_lane_line_meta(dmd.drivingModelData.laneLineMeta, msg.modelV2.laneLines, msg.modelV2.laneLineProbs)
-    if all(len(a) for a in [msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z]):
-      fill_xyz_poly(dmd.drivingModelData.path, ModelConstants.POLY_PATH_DEGREE, msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z)
+    dmd = messaging.new_message('drivingModelData', logMonoTime=msg.logMonoTime)
+    fill_driving_model_data(dmd, msg)
     add_ops.append(as_reader(dmd))
   return [], add_ops, []
 

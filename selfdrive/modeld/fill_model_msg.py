@@ -66,8 +66,11 @@ def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelv2_send: capn
   driving_model_data.action = modelV2.action
   driving_model_data.meta.laneChangeState = modelV2.meta.laneChangeState
   driving_model_data.meta.laneChangeDirection = modelV2.meta.laneChangeDirection
-  fill_lane_line_meta(driving_model_data.laneLineMeta, modelV2.laneLines, modelV2.laneLineProbs)
-  fill_xyz_poly(driving_model_data.path, ModelConstants.POLY_PATH_DEGREE, modelV2.position.x, modelV2.position.y, modelV2.position.z)
+  # old logs migrated by process_replay can have empty modelV2
+  if len(modelV2.laneLines) and len(modelV2.laneLineProbs):
+    fill_lane_line_meta(driving_model_data.laneLineMeta, modelV2.laneLines, modelV2.laneLineProbs)
+  if all(len(a) for a in [modelV2.position.x, modelV2.position.y, modelV2.position.z]):
+    fill_xyz_poly(driving_model_data.path, ModelConstants.POLY_PATH_DEGREE, modelV2.position.x, modelV2.position.y, modelV2.position.z)
 
 def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, np.ndarray], action: log.ModelDataV2.Action,
                    publish_state: PublishState, vipc_frame_id: int, vipc_frame_id_extra: int,
