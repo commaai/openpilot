@@ -119,6 +119,7 @@ class SelfdriveD:
     self.events_prev = []
     self.logged_comm_issue = None
     self.not_running_prev = None
+    self.using_gpu_prev = False
     self.experimental_mode = False
     self.personality = self.params.get("LongitudinalPersonality", return_default=True)
     self.recalibrating_seen = False
@@ -421,6 +422,11 @@ class SelfdriveD:
     if not SIMULATION or REPLAY:
       if self.sm['modelV2'].frameDropPerc > 1:
         self.events.add(EventName.modeldLagging)
+
+    if self.sm.updated['modelV2']:
+      if self.using_gpu_prev and not self.sm['modelV2'].usingGpu:
+        self.events.add(EventName.modelFallback)
+      self.using_gpu_prev = self.sm['modelV2'].usingGpu
 
     # Decrement personality on distance button press
     if self.CP.openpilotLongitudinalControl:

@@ -889,6 +889,14 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: modeld_lagging_alert,
   },
 
+  EventName.modelFallback: {
+    ET.WARNING: Alert(
+      "external gpu dropped, internal compute active",
+      "",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.MID, VisualAlert.none, AudibleAlert.prompt, 2.5),
+  },
+
   # Besides predicting the path, lane lines and lead car data the model also
   # predicts the current velocity and rotation speed of the car. If the model is
   # very uncertain about the current velocity while the car is moving, this
