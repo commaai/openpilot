@@ -7,6 +7,8 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.modeld.fill_model_msg import fill_driving_model_data
 
+MAX_WARMUP_TIME = 0.5
+MAX_DT = 0.05
 
 def main():
   config_realtime_process(7, 54)
@@ -15,23 +17,18 @@ def main():
   pm = PubMaster(['modelV2', 'modelSource', 'drivingModelData'])
   params = Params()
 
-  # decide the initial source from the first usbgpuState
   while not sm.seen['usbgpuState']:
     sm.update()
   src = 'bigModelV2' if (sm['usbgpuState'].usbgpuPresent and sm['usbgpuState'].usbgpuCompiled) else 'smolModelV2'
 
-  # fall back to smol if the usbgpu disappears, or once big has settled and then lags
-  big_stale_dt = 1.5 / SERVICE_LIST['bigModelV2'].frequency
-  big_grace_dt = 5.  # ignore big lagging for a bit after it first comes up
-  big_first_t = None
   while True:
     sm.update()
     if sm.updated['bigModelV2'] and big_first_t is None:
       big_first_t = time.monotonic()
 
     if src == 'bigModelV2':
-      settled = big_first_t is not None and (time.monotonic() - big_first_t) >= big_grace_dt
-      big_lagged = settled and (time.monotonic() - sm.recv_time['bigModelV2']) >= big_stale_dt
+      settled = big_first_t is not None and (time.monotonic() - big_first_t) >= MAX_WARMUP_TIME
+      big_lagged = settled and (time.monotonic() - sm.recv_time['bigModelV2']) >= MAX_DT
       if big_lagged or not sm['usbgpuState'].usbgpuPresent:
         src = 'smolModelV2'
         params.put_bool("UsbgpuFailed", True)
