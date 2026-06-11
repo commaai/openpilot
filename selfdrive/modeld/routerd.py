@@ -2,7 +2,6 @@
 import time
 import cereal.messaging as messaging
 from cereal.messaging import PubMaster, SubMaster
-from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.modeld.fill_model_msg import fill_driving_model_data
