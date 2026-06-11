@@ -210,8 +210,7 @@ def make_run_policy(model_runners, model_metadata, frame_skip):
       'action_t': action_t,
     }
     on_policy_out = next(iter(model_runners['on_policy'](inputs).values())).cast('float32')
-    off_policy_out = next(iter(model_runners['off_policy'](inputs).values())).cast('float32')
-    return Tensor.cat(vision_out, on_policy_out, off_policy_out, dim=1),
+    return Tensor.cat(vision_out, on_policy_out, dim=1),
   return run_policy
 
 
@@ -282,7 +281,6 @@ if __name__ == "__main__":
   p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
                  help='camera resolutions WxH (one or more)')
   p.add_argument('--vision-onnx', required=True)
-  p.add_argument('--off-policy-onnx', required=True)
   p.add_argument('--on-policy-onnx', required=True)
   p.add_argument('--output', required=True)
   p.add_argument('--frame-skip', type=int, required=True)
@@ -290,15 +288,12 @@ if __name__ == "__main__":
 
   model_paths = {
     'vision': read_file_chunked_to_shm(args.vision_onnx),
-    'off_policy': read_file_chunked_to_shm(args.off_policy_onnx),
     'on_policy': read_file_chunked_to_shm(args.on_policy_onnx),
   }
   model_w, model_h = args.model_size
 
   model_runners = {name: OnnxRunner(path) for name, path in model_paths.items()}
   out = {'metadata': {name: make_metadata_dict(path) for name, path in model_paths.items()}}
-
-  assert out['metadata']['off_policy']['input_shapes'] == out['metadata']['on_policy']['input_shapes']
 
   run_policy_jit = TinyJit(make_run_policy(model_runners, out['metadata'], args.frame_skip), prune=True)
 
