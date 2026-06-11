@@ -4,6 +4,7 @@ import atexit
 import math
 import os
 import pickle
+import tempfile
 import time
 from functools import partial
 from collections import namedtuple
@@ -265,11 +266,11 @@ def _parse_size(s):
 def read_file_chunked_to_shm(path):
   from openpilot.common.file_chunker import read_file_chunked
   from openpilot.system.hardware.hw import Paths
-  shm_path = os.path.join(Paths.shm_path(), os.path.basename(path))
-  atexit.register(lambda: os.path.exists(shm_path) and os.remove(shm_path))
-  with open(shm_path, 'wb') as f:
+  with tempfile.NamedTemporaryFile(prefix='compile_modeld_', dir=Paths.shm_path(), delete=False) as f:
     f.write(read_file_chunked(path))
-  return shm_path
+    tmp_path = f.name
+  atexit.register(lambda: os.path.exists(tmp_path) and os.remove(tmp_path))
+  return tmp_path
 
 
 if __name__ == "__main__":
