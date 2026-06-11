@@ -606,11 +606,11 @@ def startStream(sdp: str) -> dict:
 
 @dispatcher.add_method
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
-  if session_id is None: return Exception("cannot add ice candidate without session_id")
+  if session_id is None:
+    return Exception("cannot add ice candidate without session_id")
   resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
                        json={"session_id": session_id, "candidate": candidate}, timeout=10)
-  return {"success": 1 if resp.ok else 0}
-
+  return resp.json()
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
