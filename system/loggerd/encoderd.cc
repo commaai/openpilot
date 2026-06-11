@@ -44,11 +44,24 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
+void apply_bitrate(std::vector<std::unique_ptr<Encoder>> &encoders) {
+  static Params params;
+  std::string val = params.get("LivestreamEncoderBitrate");
+  if (val.empty()) return;
+  int bitrate = std::stoi(val);
+  for (auto &e : encoders) {
+    e->set_bitrate(bitrate);
+  }
+}
 
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
   std::vector<std::unique_ptr<Encoder>> encoders;
+
+  bool has_adaptive = std::any_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(),
+                                  [](const auto &ei) { return ei.adaptive_bitrate; });
+
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   std::unique_ptr<JpegEncoder> jpeg_encoder;
@@ -107,6 +120,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         }
         ++cur_seg;
       }
+
+      if (has_adaptive) apply_bitrate(encoders);
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
