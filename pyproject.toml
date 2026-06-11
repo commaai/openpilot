@@ -25,24 +25,24 @@ dependencies = [
   "setuptools",
   "numpy >=2.0",
 
-  # vendored native dependencies
-  "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
-  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@release-bootstrap-icons#subdirectory=bootstrap-icons",
-  "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
-  "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
-  "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
-  "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
-  "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
-  "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
-  "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
-  "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
-  "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
-  "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
-  "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
-  "json11 @ git+https://github.com/commaai/dependencies.git@release-json11#subdirectory=json11",
-  "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
-  "xvfb @ git+https://github.com/commaai/dependencies.git@release-xvfb#subdirectory=xvfb",
+  # vendored native dependencies, served from https://commaai.github.io/dependencies/simple/
+  "bzip2 ==1.0.8",
+  "bootstrap-icons ==1.10.5.0",
+  "capnproto ==1.0.1",
+  "catch2 ==2.13.10",
+  "acados ==0.2.2",
+  "eigen ==3.4.0",
+  "ffmpeg ==7.1.0",
+  "libjpeg ==3.1.0",
+  "libyuv ==1922.0",
+  "zstd ==1.5.6",
+  "ncurses ==6.5",
+  "zeromq ==4.3.5",
+  "libusb ==1.0.29",
+  "json11 ==20170411.0",
+  "git-lfs ==3.6.1",
+  "gcc-arm-none-eabi ==13.2.1",
+  "xvfb ==1.20.11.post1",
 
   # body / webrtcd
   "av",
@@ -75,7 +75,7 @@ dependencies = [
   "zstandard",
 
   # ui
-  "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
+  "raylib ==6.0.0.0",
   "qrcode",
   "jeepney",
   "pillow",
@@ -108,7 +108,7 @@ dev = [
 ]
 
 tools = [
-  "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "imgui ==1.92.7",
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
@@ -239,3 +239,31 @@ not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
+
+# pre-built wheels for the vendored native dependencies, see
+# https://github.com/commaai/dependencies
+[[tool.uv.index]]
+name = "comma-dependencies"
+url = "https://commaai.github.io/dependencies/simple/"
+explicit = true
+
+[tool.uv.sources]
+acados = { index = "comma-dependencies" }
+bootstrap-icons = { index = "comma-dependencies" }
+bzip2 = { index = "comma-dependencies" }
+capnproto = { index = "comma-dependencies" }
+catch2 = { index = "comma-dependencies" }
+eigen = { index = "comma-dependencies" }
+ffmpeg = { index = "comma-dependencies" }
+gcc-arm-none-eabi = { index = "comma-dependencies" }
+git-lfs = { index = "comma-dependencies" }
+imgui = { index = "comma-dependencies" }
+json11 = { index = "comma-dependencies" }
+libjpeg = { index = "comma-dependencies" }
+libusb = { index = "comma-dependencies" }
+libyuv = { index = "comma-dependencies" }
+ncurses = { index = "comma-dependencies" }
+raylib = { index = "comma-dependencies" }
+xvfb = { index = "comma-dependencies" }
+zeromq = { index = "comma-dependencies" }
+zstd = { index = "comma-dependencies" }

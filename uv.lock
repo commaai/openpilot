@@ -5,9 +5,14 @@ requires-python = ">=3.12.3, <3.13"
 [[package]]
 name = "acados"
 version = "0.2.2"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados#25933c81c7db5573afe38f012f52befc15cdb804" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
 dependencies = [
     { name = "numpy" },
+]
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/acados/v0.2.2/acados-0.2.2-py3-none-linux_aarch64.whl", hash = "sha256:87ae7df799d7492afe26696352bcc923a8481c868e85bdeca986ce44900f4501" },
+    { url = "https://github.com/commaai/dependencies/releases/download/acados/v0.2.2/acados-0.2.2-py3-none-linux_x86_64.whl", hash = "sha256:ce952a43e87660c8a91807df66113461808b81c2f383b8415fa4fe0a4b3a0dee" },
+    { url = "https://github.com/commaai/dependencies/releases/download/acados/v0.2.2/acados-0.2.2-py3-none-macosx_11_0_arm64.whl", hash = "sha256:75b8434ffad05e33bb3ad5f10011a60d7d701cad74e35f2317771bdff1d68ed0" },
 ]
 
 [[package]]
@@ -124,22 +129,38 @@ wheels = [
 [[package]]
 name = "bootstrap-icons"
 version = "1.10.5.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bootstrap-icons&rev=release-bootstrap-icons#d7e41838af9320328dd7102f9288a94f0cf0fa9f" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/bootstrap-icons/v1.10.5.0/bootstrap_icons-1.10.5.0-py3-none-any.whl", hash = "sha256:986039c7657b0f7ab74ffbe7296ae34ba8ed80df7c7309fd399e6b92ce849638" },
+]
 
 [[package]]
 name = "bzip2"
 version = "1.0.8"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=release-bzip2#12916f9f84848239e5a69a8c5a282f3dcb0d86a3" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/bzip2/v1.0.8/bzip2-1.0.8-py3-none-linux_aarch64.whl", hash = "sha256:0d5d8a8f864a93a3f6db33e931ee43114e57e7a6c5e9aaf5d757397e736959b3" },
+    { url = "https://github.com/commaai/dependencies/releases/download/bzip2/v1.0.8/bzip2-1.0.8-py3-none-linux_x86_64.whl", hash = "sha256:7a9828612d349c6099c002b39bcc10d8dcee3ff8e30187d12be5a0fa67a617be" },
+    { url = "https://github.com/commaai/dependencies/releases/download/bzip2/v1.0.8/bzip2-1.0.8-py3-none-macosx_11_0_arm64.whl", hash = "sha256:f4ee2903d6f993c6fc2f5c81eced1cb0760b0b97245bad860bdbd16683809e20" },
+]
 
 [[package]]
 name = "capnproto"
 version = "1.0.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=release-capnproto#a75eb83bd98440e890261f82aa8dcfbda0b0a206" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/capnproto/v1.0.1/capnproto-1.0.1-py3-none-linux_aarch64.whl", hash = "sha256:b0ba77c0c5a3a1b4e025b788607ffc3a8b3df92474e7dede865356c13085d884" },
+    { url = "https://github.com/commaai/dependencies/releases/download/capnproto/v1.0.1/capnproto-1.0.1-py3-none-linux_x86_64.whl", hash = "sha256:546d844272d5c877af420004afc2e30f9ebb89900d9574376cf323c7f95c7ee4" },
+    { url = "https://github.com/commaai/dependencies/releases/download/capnproto/v1.0.1/capnproto-1.0.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:0e960f4702e8d94d64e88f2c2d76adbad3b9292e896b0dd32dac7bb559d8639e" },
+]
 
 [[package]]
 name = "catch2"
 version = "2.13.10"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2#7287b4c99d23fdd87e66f9941b0e35ece6b4d91b" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/catch2/v2.13.10/catch2-2.13.10-py3-none-any.whl", hash = "sha256:4462e317ce85eb2cac7b2447a01646c4bad744fce8752b4273e9486b3b07c979" },
+]
 
 [[package]]
 name = "certifi"
@@ -381,7 +402,12 @@ wheels = [
 [[package]]
 name = "eigen"
 version = "3.4.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=release-eigen#f855b17636a376d8399f3df03629ff3e535f6b22" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/eigen/v3.4.0/eigen-3.4.0-py3-none-linux_aarch64.whl", hash = "sha256:b2c0596517f0fc12498a1a24da50aa87dee4a63371253bea8d3744d3a3e6998a" },
+    { url = "https://github.com/commaai/dependencies/releases/download/eigen/v3.4.0/eigen-3.4.0-py3-none-linux_x86_64.whl", hash = "sha256:1358eea113df2edbccde448542655ab92070425ccc93485c0be6faab4174add5" },
+    { url = "https://github.com/commaai/dependencies/releases/download/eigen/v3.4.0/eigen-3.4.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:2dc3cae703fb5ff82da880009200ed1e49a7d6c4cb50d9023f5efd5a7d3fa730" },
+]
 
 [[package]]
 name = "execnet"
@@ -395,7 +421,12 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=release-ffmpeg#f5153626027621f8ac0cdec056d254d3a1ef6acd" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/ffmpeg/v7.1.0/ffmpeg-7.1.0-py3-none-linux_aarch64.whl", hash = "sha256:d3e152de310131209dcc170d9dd371b0f7e4996f19ab4ef4fadde20b31801e0c" },
+    { url = "https://github.com/commaai/dependencies/releases/download/ffmpeg/v7.1.0/ffmpeg-7.1.0-py3-none-linux_x86_64.whl", hash = "sha256:0f32030b33c1f7fca499c18c1bb18913f0382f0ff5a236420de46e394c551b3e" },
+    { url = "https://github.com/commaai/dependencies/releases/download/ffmpeg/v7.1.0/ffmpeg-7.1.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:5fd626cc271bbc12e9e9e6293ba914e7af4ac6b1996409397b099949572428ba" },
+]
 
 [[package]]
 name = "fonttools"
@@ -442,12 +473,22 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=release-gcc-arm-none-eabi#15791161bd7a752ef821ad6d999a364b13d6e9ca" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/gcc-arm-none-eabi/v13.2.1/gcc_arm_none_eabi-13.2.1-py3-none-linux_aarch64.whl", hash = "sha256:5cd289ba3e3c27151c77d21c42a3ee38a719db8532de867430d719963ea80f52" },
+    { url = "https://github.com/commaai/dependencies/releases/download/gcc-arm-none-eabi/v13.2.1/gcc_arm_none_eabi-13.2.1-py3-none-linux_x86_64.whl", hash = "sha256:b074f11ec886b1a2986167d9c49243ff177bfaef19d29e90552941ec57bca11c" },
+    { url = "https://github.com/commaai/dependencies/releases/download/gcc-arm-none-eabi/v13.2.1/gcc_arm_none_eabi-13.2.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:a70a68dd2134d00a881831fc65bab04400c4b723eac85eb2a2f82bb246007e05" },
+]
 
 [[package]]
 name = "git-lfs"
 version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=release-git-lfs#035fb711541a6d8609bb57b26c2f31813c743eb3" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/git-lfs/v3.6.1/git_lfs-3.6.1-py3-none-linux_aarch64.whl", hash = "sha256:f1fc29136237b02267b3a75325b343c970f38635aa7d58d0c2a0f3b58d16a95f" },
+    { url = "https://github.com/commaai/dependencies/releases/download/git-lfs/v3.6.1/git_lfs-3.6.1-py3-none-linux_x86_64.whl", hash = "sha256:c4516785e6c0dd4d50e5e13607f926c29d48f3e8f33f5c1a32e1f959b0698582" },
+    { url = "https://github.com/commaai/dependencies/releases/download/git-lfs/v3.6.1/git_lfs-3.6.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:a18612ac0a2257695ab86b9e402f8629e48da7adf4e50dc44da3c1ac5db47dc3" },
+]
 
 [[package]]
 name = "google-crc32c"
@@ -496,7 +537,12 @@ wheels = [
 [[package]]
 name = "imgui"
 version = "1.92.7"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=release-imgui#af4a30c3930c5e19cf8cea128e342686ba283624" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/imgui/v1.92.7/imgui-1.92.7-py3-none-linux_aarch64.whl", hash = "sha256:d6b9006ca733aa01c6cecc819cf1841afdabfd8744a698d81b935b34ce9875ac" },
+    { url = "https://github.com/commaai/dependencies/releases/download/imgui/v1.92.7/imgui-1.92.7-py3-none-linux_x86_64.whl", hash = "sha256:16433b98c203da4847d836b65b168be6681a3caf6f641d3426cdfee97ec87522" },
+    { url = "https://github.com/commaai/dependencies/releases/download/imgui/v1.92.7/imgui-1.92.7-py3-none-macosx_11_0_arm64.whl", hash = "sha256:5265443d5a370e7afda123adf08db8e73b616bd518190395f5440c6e0972ca6d" },
+]
 
 [[package]]
 name = "iniconfig"
@@ -549,7 +595,12 @@ wheels = [
 [[package]]
 name = "json11"
 version = "20170411.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=json11&rev=release-json11#0443a506c32eadfec2071a7c163c38c6c7b81d66" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/json11/v20170411.0/json11-20170411.0-py3-none-linux_aarch64.whl", hash = "sha256:6bba8b0fe49745e15353ef24d9882074b1d55eb1c4270691ec101b35812b8340" },
+    { url = "https://github.com/commaai/dependencies/releases/download/json11/v20170411.0/json11-20170411.0-py3-none-linux_x86_64.whl", hash = "sha256:e4bbe5aae45851a213db583c39a9f21f57846f0359f8c78124989a784ed64eaa" },
+    { url = "https://github.com/commaai/dependencies/releases/download/json11/v20170411.0/json11-20170411.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:8142c5c90027eab5b419796eb24bb19787f7d51c1ca203aea0c4d4b9e8c3dd23" },
+]
 
 [[package]]
 name = "kiwisolver"
@@ -581,12 +632,22 @@ wheels = [
 [[package]]
 name = "libjpeg"
 version = "3.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=release-libjpeg#a615ec26d971cc4cca9a1a426e2c996760fe3c7f" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/libjpeg/v3.1.0/libjpeg-3.1.0-py3-none-linux_aarch64.whl", hash = "sha256:34e209b4aa26129b0dea7a0de68d83aee66ea7729a7491e8de03918bf8fc6c81" },
+    { url = "https://github.com/commaai/dependencies/releases/download/libjpeg/v3.1.0/libjpeg-3.1.0-py3-none-linux_x86_64.whl", hash = "sha256:d17645901f8b40b9d2170943bdbd512d4a1a358e4bd06b4149507dcb21dd939b" },
+    { url = "https://github.com/commaai/dependencies/releases/download/libjpeg/v3.1.0/libjpeg-3.1.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:cc42a728404d933bc65b212e07a5dd1fdb5d866c44654124e6322501e7596dd2" },
+]
 
 [[package]]
 name = "libusb"
 version = "1.0.29"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libusb&rev=release-libusb#23132cff0d629bf69590e23b6a682950433aaec8" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/libusb/v1.0.29/libusb-1.0.29-py3-none-linux_aarch64.whl", hash = "sha256:690d409cbe4c6bc063c5d83ef37f33e6805cbccae07e70eb03b7294971725285" },
+    { url = "https://github.com/commaai/dependencies/releases/download/libusb/v1.0.29/libusb-1.0.29-py3-none-linux_x86_64.whl", hash = "sha256:6d853e2f6a2a1a99c46a25ab267a057ecaecb652576b96a2429b7dff504e73bb" },
+    { url = "https://github.com/commaai/dependencies/releases/download/libusb/v1.0.29/libusb-1.0.29-py3-none-macosx_11_0_arm64.whl", hash = "sha256:8e7abb1b8f5202431c19db0ffc52ae8aba055f1dd15df5d138361b78726b70c8" },
+]
 
 [[package]]
 name = "libusb1"
@@ -602,7 +663,12 @@ wheels = [
 [[package]]
 name = "libyuv"
 version = "1922.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=release-libyuv#70295e7a22d89f9c5bdb61dd93c30f0cbb55d815" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/libyuv/v1922.0/libyuv-1922.0-py3-none-linux_aarch64.whl", hash = "sha256:356610bee142c192e9b8abad9d120025c61709e6b24579131a9c62e3a3c3aa72" },
+    { url = "https://github.com/commaai/dependencies/releases/download/libyuv/v1922.0/libyuv-1922.0-py3-none-linux_x86_64.whl", hash = "sha256:1dae2af22c5e3a5d4e65a29f94bf5ef46efb905745e7f5005a5851710b5f9f15" },
+    { url = "https://github.com/commaai/dependencies/releases/download/libyuv/v1922.0/libyuv-1922.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:4a0082fa2a43d4f290876b3333c393d406f35cede2b49642937ad37daa6677ae" },
+]
 
 [[package]]
 name = "markdown"
@@ -707,7 +773,12 @@ wheels = [
 [[package]]
 name = "ncurses"
 version = "6.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=release-ncurses#eae89aae0266b3fbae7b808a3c0c19a97a82a81c" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/ncurses/v6.5/ncurses-6.5-py3-none-linux_aarch64.whl", hash = "sha256:d6466b0b80ece831cc1474873c50ff56f61bb825645c8126175be8a5b3475fd1" },
+    { url = "https://github.com/commaai/dependencies/releases/download/ncurses/v6.5/ncurses-6.5-py3-none-linux_x86_64.whl", hash = "sha256:4e68c92deb18fa847f4c80a9192cbe432b849d20556424c193745b2574d67e97" },
+    { url = "https://github.com/commaai/dependencies/releases/download/ncurses/v6.5/ncurses-6.5-py3-none-macosx_11_0_arm64.whl", hash = "sha256:340bba3514cb1dfbb7bb344d6947052cc6d288634209f97333dff2d030e46f49" },
+]
 
 [[package]]
 name = "numpy"
@@ -831,37 +902,37 @@ tools = [
 
 [package.metadata]
 requires-dist = [
-    { name = "acados", git = "https://github.com/commaai/dependencies.git?subdirectory=acados&rev=release-acados" },
+    { name = "acados", specifier = "==0.2.2", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
-    { name = "bootstrap-icons", git = "https://github.com/commaai/dependencies.git?subdirectory=bootstrap-icons&rev=release-bootstrap-icons" },
-    { name = "bzip2", git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=release-bzip2" },
-    { name = "capnproto", git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=release-capnproto" },
-    { name = "catch2", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
+    { name = "bootstrap-icons", specifier = "==1.10.5.0", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "bzip2", specifier = "==1.0.8", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "capnproto", specifier = "==1.0.1", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "catch2", specifier = "==2.13.10", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "coverage", marker = "extra == 'testing'" },
     { name = "crcmod-plus" },
     { name = "cython" },
-    { name = "eigen", git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=release-eigen" },
-    { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=release-ffmpeg" },
-    { name = "gcc-arm-none-eabi", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=release-gcc-arm-none-eabi" },
-    { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=release-git-lfs" },
+    { name = "eigen", specifier = "==3.4.0", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "ffmpeg", specifier = "==7.1.0", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "gcc-arm-none-eabi", specifier = "==13.2.1", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "git-lfs", specifier = "==3.6.1", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
-    { name = "imgui", marker = "extra == 'tools'", git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=release-imgui" },
+    { name = "imgui", marker = "extra == 'tools'", specifier = "==1.92.7", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
-    { name = "json11", git = "https://github.com/commaai/dependencies.git?subdirectory=json11&rev=release-json11" },
-    { name = "libjpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=release-libjpeg" },
-    { name = "libusb", git = "https://github.com/commaai/dependencies.git?subdirectory=libusb&rev=release-libusb" },
+    { name = "json11", specifier = "==20170411.0", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "libjpeg", specifier = "==3.1.0", index = "https://commaai.github.io/dependencies/simple/" },
+    { name = "libusb", specifier = "==1.0.29", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "libusb1" },
-    { name = "libyuv", git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=release-libyuv" },
+    { name = "libyuv", specifier = "==1922.0", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", git = "https://github.com/commaai/metadrive.git?rev=minimal" },
-    { name = "ncurses", git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=release-ncurses" },
+    { name = "ncurses", specifier = "==6.5", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opencv-python-headless", marker = "extra == 'dev'" },
     { name = "pillow" },
@@ -878,7 +949,7 @@ requires-dist = [
     { name = "pytest-xdist", marker = "extra == 'testing'", git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da" },
     { name = "pyzmq" },
     { name = "qrcode" },
-    { name = "raylib", git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=release-raylib" },
+    { name = "raylib", specifier = "==6.0.0.0", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
     { name = "scons" },
@@ -892,11 +963,11 @@ requires-dist = [
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
     { name = "xattr" },
-    { name = "xvfb", git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb" },
+    { name = "xvfb", specifier = "==1.20.11.post1", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "zensical", marker = "extra == 'docs'" },
-    { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=release-zeromq" },
+    { name = "zeromq", specifier = "==4.3.5", index = "https://commaai.github.io/dependencies/simple/" },
     { name = "zstandard" },
-    { name = "zstd", git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=release-zstd" },
+    { name = "zstd", specifier = "==1.5.6", index = "https://commaai.github.io/dependencies/simple/" },
 ]
 provides-extras = ["docs", "testing", "dev", "tools"]
 
@@ -1302,9 +1373,15 @@ wheels = [
 [[package]]
 name = "raylib"
 version = "6.0.0.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=release-raylib#dbf05cd774c2f74a70a0ee9ebb80015ed70ce718" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
 dependencies = [
     { name = "cffi" },
+]
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/raylib/v6.0.0.0/raylib-6.0.0.0-py3-none-linux_aarch64.whl", hash = "sha256:8e1807290c9fc9630e3d84dcf6648ea53c23f26521601ed44de800c1fd41cf73" },
+    { url = "https://github.com/commaai/dependencies/releases/download/raylib/v6.0.0.0/raylib-6.0.0.0-py3-none-linux_x86_64.whl", hash = "sha256:67796f710fd523d0f9595f93b810fef0d1c2a792523caf9b04780dace1241e15" },
+    { url = "https://github.com/commaai/dependencies/releases/download/raylib/v6.0.0.0/raylib-6.0.0.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:44e35c194d285ab76e79ff8029c169b80d4e492af3a232276636990ad1cc3280" },
+    { url = "https://github.com/commaai/dependencies/releases/download/raylib/v6.0.0.0/raylib-6.0.0.0-py3-none-macosx_15_0_arm64.whl", hash = "sha256:ac7afebc8ce8f8eba8293f298f7844a75f2171f876bf9fe934a03c44048a3ddb" },
 ]
 
 [[package]]
@@ -1560,7 +1637,12 @@ wheels = [
 [[package]]
 name = "xvfb"
 version = "1.20.11.post1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb#f0bb0b0d9154ea7858f3c0333b607ba7d356b571" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/xvfb/v1.20.11.post1/xvfb-1.20.11.post1-py3-none-linux_aarch64.whl", hash = "sha256:85321578c758da516a55f9905831d668059c73f2718587825da69ae98d0f8d3b" },
+    { url = "https://github.com/commaai/dependencies/releases/download/xvfb/v1.20.11.post1/xvfb-1.20.11.post1-py3-none-linux_x86_64.whl", hash = "sha256:1cb4a72c7c9f5fed83a0d3f6315d75456284956f11d97308eaea8f25a8353642" },
+    { url = "https://github.com/commaai/dependencies/releases/download/xvfb/v1.20.11.post1/xvfb-1.20.11.post1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:e43c2fcedd2003e4aaa1d1048038e05b7b01be75af52684b2ceb1708b9e16cd9" },
+]
 
 [[package]]
 name = "yarl"
@@ -1626,7 +1708,12 @@ wheels = [
 [[package]]
 name = "zeromq"
 version = "4.3.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=release-zeromq#40b29e8e88a69802e8afc4f71f5c955bc2d5c74c" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/zeromq/v4.3.5/zeromq-4.3.5-py3-none-linux_aarch64.whl", hash = "sha256:8cf61bc4dc07fe6e51de88f9468593f94a3aa4aac0b527f0fabc8ee3d8c7a30b" },
+    { url = "https://github.com/commaai/dependencies/releases/download/zeromq/v4.3.5/zeromq-4.3.5-py3-none-linux_x86_64.whl", hash = "sha256:08b3e6a17602ebbf42dba16a68d2b51d276f209d35bc0794b338783efd248c1d" },
+    { url = "https://github.com/commaai/dependencies/releases/download/zeromq/v4.3.5/zeromq-4.3.5-py3-none-macosx_11_0_arm64.whl", hash = "sha256:5f67eac16b6cfeb52e8b0683108a400da41843cba17f15cddac8d702aac28a9d" },
+]
 
 [[package]]
 name = "zstandard"
@@ -1656,4 +1743,9 @@ wheels = [
 [[package]]
 name = "zstd"
 version = "1.5.6"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=release-zstd#13015596466eb68825f109ad0d5aefa6330cc495" }
+source = { registry = "https://commaai.github.io/dependencies/simple/" }
+wheels = [
+    { url = "https://github.com/commaai/dependencies/releases/download/zstd/v1.5.6/zstd-1.5.6-py3-none-linux_aarch64.whl", hash = "sha256:129546e7bc5139cba86439cb854dd08bbb4ad22e04992ccd91cc8d1411b73e1b" },
+    { url = "https://github.com/commaai/dependencies/releases/download/zstd/v1.5.6/zstd-1.5.6-py3-none-linux_x86_64.whl", hash = "sha256:e05a87a888fc5c1265a15042b6db6424af352da78927f70577d5ee0a24b562f7" },
+    { url = "https://github.com/commaai/dependencies/releases/download/zstd/v1.5.6/zstd-1.5.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:b9712b2caeba24a3f930d08ef0afe43bfaaa881c3b67ecf2405a93bff0f66b2c" },
+]
