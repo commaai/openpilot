@@ -148,7 +148,7 @@ def make_input_queues(vision_input_shapes, policy_input_shapes, frame_skip, devi
   shapes, sizes = get_policy_npy_shapes(policy_input_shapes)
   packed_npy_inputs = np.zeros(sum(sizes), dtype=np.float32)
   # views into the packed inputs, to be refilled at runtime
-  npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])))}, strict=True)
+  npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)})
   input_queues.update({
     'feat_q': Tensor(np.zeros((frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
