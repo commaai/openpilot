@@ -138,7 +138,7 @@ def main():
       # any driver input aborts the maneuver
       CS = sm['carState']
       if CS.steeringPressed or CS.gasPressed:
-        aborted_cnt = int(2.0 / DT_MDL)
+        aborted_cnt = int(1.0 / DT_MDL)
         abort_reason = 'steering pressed' if CS.steeringPressed else 'gas pressed'
       aborted = aborted_cnt > 0
       speed_out_of_range = maneuver.active and abs(v_ego - maneuver.initial_speed) > MAX_SPEED_DEV
@@ -162,7 +162,7 @@ def main():
         alert_msg.alertDebug.alertText2 = maneuver.description
       elif aborted_cnt > 0:
         aborted_cnt -= 1
-        alert_msg.alertDebug.alertText1 = f'Aborted: {abort_reason}'
+        alert_msg.alertDebug.alertText1 = abort_reason
         alert_msg.alertDebug.alertText2 = maneuver.description
       elif not (abs(v_ego - maneuver.initial_speed) < MAX_SPEED_DEV and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
