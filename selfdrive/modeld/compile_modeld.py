@@ -136,7 +136,8 @@ def get_policy_npy_shapes(input_shapes):
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
   tc = input_shapes['traffic_convention']  # (1, 2)
   at = input_shapes['action_t']  # (1, 2)
-  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at)}
+  fb = input_shapes['features_buffer']  # (1, 24, 512)
+  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], fb[2])}
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
@@ -151,7 +152,7 @@ def make_input_queues(input_shapes, frame_skip, device):
   # views into the packed inputs, to be refilled at runtime
   npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)})
   input_queues.update({
-    'feat_q': Tensor(np.zeros((frame_skip * fb[1] + 1, fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
+    'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
     'packed_npy_inputs': Tensor(packed_npy_inputs, device='NPY').realize(),
   })
@@ -192,15 +193,15 @@ def make_warp(nv12, model_w, model_h, frame_skip):
 def make_run_policy(model_runner, model_metadata, frame_skip):
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
-  vision_features_slice = model_metadata['output_slices']['hidden_state']
   npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['input_shapes'])
 
   def run_policy(img, big_img, feat_q, desire_q, packed_npy_inputs):
     packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT).realize()
-    desire, traffic_convention, action_t = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
+    desire, traffic_convention, action_t, prev_feat = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
-    # past features only; the model computes the current frame's feature and appends it internally
-    feat_buf = sample_skip_fn(feat_q[1:])
+    # the queue holds past features only; the model computes the current frame's feature and appends it
+    # internally, and the runtime feeds it back as prev_feat on the next frame
+    feat_buf = shift_and_sample(feat_q, prev_feat.reshape(1, 1, -1), sample_skip_fn)
 
     inputs = {
       'img': img,
@@ -211,9 +212,6 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
       'action_t': action_t,
     }
     out = next(iter(model_runner(inputs).values())).cast('float32')
-
-    new_feat = out[:, vision_features_slice].reshape(1, 1, -1)
-    feat_q.assign(feat_q[1:].cat(new_feat, dim=0).contiguous()).realize()
     return out,
   return run_policy
 
