@@ -200,8 +200,6 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
     packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT).realize()
     desire, traffic_convention, action_t, prev_feat = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
-    # the queue holds past features only; the model computes the current frame's feature and appends it
-    # internally, and the runtime feeds it back as prev_feat on the next frame
     feat_buf = shift_and_sample(feat_q, prev_feat.reshape(1, 1, -1), sample_skip_fn)
 
     inputs = {
