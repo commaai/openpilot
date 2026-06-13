@@ -29,7 +29,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     "road": "livestreamRoadEncodeData",
   }
 
-  def __init__(self, camera_type: str):
+  def __init__(self, camera_type: str, video_enabled: bool):
     dt = DT_DMON if camera_type == "driver" else DT_MDL
     super().__init__(camera_type, dt)
 
@@ -38,7 +38,8 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self._t0_ns = time.monotonic_ns()
     self.timing_sei_enabled = False
     self.params = Params()
-    self._seen_keyframe = False
+    self.seen_keyframe = False
+    self.video_enabled = video_enabled
 
   def stop(self) -> None:
     super().stop()
@@ -49,6 +50,10 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   def switch_camera(self, camera_type: str) -> None:
     self._sock = self._make_sock(camera_type)
+
+  def enable_video(self, enabled: bool):
+    self.video_enabled = enabled
+    if not enabled: self.seen_keyframe = False
 
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
@@ -68,10 +73,16 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     while True:
       if self.readyState != "live":
         raise MediaStreamError
+
+      # while video is disabled, pause here without returning
+      if not self.video_enabled:
+        await asyncio.sleep(0.005)
+        continue
+
       msg = messaging.recv_one_or_none(self._sock)
       if msg is not None:
-        if not self._seen_keyframe and (getattr(msg, msg.which()).idx.flags & V4L2_BUF_FLAG_KEYFRAME):
-          self._seen_keyframe = True
+        if not self.seen_keyframe and (getattr(msg, msg.which()).idx.flags & V4L2_BUF_FLAG_KEYFRAME):
+          self.seen_keyframe = True
           self.params.put("LivestreamRequestKeyframe", False, block=False)
         break
       await asyncio.sleep(0.005)

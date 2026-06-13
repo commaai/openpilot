@@ -581,7 +581,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str, session_id: str | None) -> dict:
+def startStream(sdp: str, session_id: str | None = None, video_enabled: bool = True) -> dict:
   bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
@@ -592,19 +592,25 @@ def startStream(sdp: str, session_id: str | None) -> dict:
         bridge_services_in.append("testJoystick")
 
   t_start = time.monotonic()
-  body = StreamRequestBody(sdp, "wideRoad", session_id, bridge_services_in, ["carState"])
+  body = StreamRequestBody(
+    sdp=sdp,
+    initCamera="wideRoad",
+    session_id=session_id,
+    video_enabled=video_enabled,
+    bridge_services_in=bridge_services_in,
+    bridge_services_out=["carState"],
+  )
   try:
     resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
                        json=asdict(body), timeout=10)
     t_end = time.monotonic()
     if not resp.ok:
       try:
-        error_body = resp.json()
-        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
+        message = resp.json().get("message", f"webrtcd returned {resp.status_code}")
       except ValueError:
-        resp.raise_for_status()
+        message = resp.text or f"webrtcd returned {resp.status_code}"
+      raise Exception(message)
     ret = resp.json()
-    print("/stream took: ", (t_end - t_start) * 1000)
     ret["time"] = (t_end - t_start) * 1000
     return ret
   except requests.ConnectTimeout as e:
@@ -618,13 +624,7 @@ def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
     raise Exception("cannot add ice candidate without session_id")
   resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
                             json={"session_id": session_id, "candidate": candidate}, timeout=10)
-  if not resp.ok:
-    try:
-      error_body = resp.json()
-      raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
-    except ValueError:
-      resp.raise_for_status()
-  return {"success": True}
+  return resp.json()
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
