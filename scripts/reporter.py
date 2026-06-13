@@ -37,8 +37,8 @@ if __name__ == "__main__":
     master_path = MASTER_PATH + MODEL_PATH + fn
     if os.path.exists(master_path):
       master = get_checkpoint(master_path)
-      master_col = f"[{master}](https://reporter.comma.life/experiment/{master})"
+      master_col = f"[{master}](https://reporter.comma.life/{master})"
     else:
       master_col = "N/A (new model)"
     pr = get_checkpoint(BASEDIR + MODEL_PATH + fn)
-    print("|", fn, "|", master_col, "|", f"[{pr}](https://reporter.comma.life/experiment/{pr})", "|")
+    print("|", fn, "|", master_col, "|", f"[{pr}](https://reporter.comma.life/{pr})", "|")
