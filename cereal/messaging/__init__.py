@@ -40,16 +40,12 @@ def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event
 
 
 def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
-  valid = kwargs.pop('valid', False)
-  log_mono_time = kwargs.pop('logMonoTime', int(time.monotonic() * 1e9))
-
-  # pycapnp 2.2.x's kwargs/from_dict path creates cyclic garbage here. Realtime processes disable GC.
-  dat = log.Event.new_message()
-  dat.valid = valid
-  dat.logMonoTime = log_mono_time
-  for field, value in kwargs.items():
-    setattr(dat, field, value)
-
+  args = {
+    'valid': False,
+    'logMonoTime': int(time.monotonic() * 1e9),
+    **kwargs
+  }
+  dat = log.Event.new_message(**args)
   if service is not None:
     if size is None:
       dat.init(service)
@@ -263,11 +259,11 @@ class PubMaster:
     self.sock[s].send(dat)
 
   def wait_for_readers_to_update(self, s: str, timeout: int, dt: float = 0.05) -> bool:
-    for _ in range(int(timeout*(1./dt))):
-      if self.sock[s].all_readers_updated():
-        return True
-      time.sleep(dt)
-    return False
+    try:
+      self.sock[s].wait_for_readers(timeout=timeout, interval=dt)
+      return True
+    except TimeoutError:
+      return False
 
   def all_readers_updated(self, s: str) -> bool:
-    return self.sock[s].all_readers_updated()  # type: ignore
+    return self.sock[s].all_readers_updated()

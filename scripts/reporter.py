@@ -25,7 +25,9 @@ class MetadataOnnxPBParser(OnnxPBParser):
 def get_checkpoint(f):
   model = MetadataOnnxPBParser(f).parse()
   metadata = {prop["key"]: prop["value"] for prop in model["metadata_props"]}
-  return metadata['model_checkpoint'].split('/')[0]
+  # "<uuid>" or ".../<run_uuid>/<step>"; combined models list vision then policy
+  parts = metadata['model_checkpoint'].split('/')
+  return parts[-2] if len(parts) > 1 else parts[0]
 
 
 if __name__ == "__main__":
@@ -34,6 +36,11 @@ if __name__ == "__main__":
 
   for f in glob.glob(BASEDIR + MODEL_PATH + "/*.onnx"):
     fn = os.path.basename(f)
-    master = get_checkpoint(MASTER_PATH + MODEL_PATH + fn)
+    master_path = MASTER_PATH + MODEL_PATH + fn
+    if os.path.exists(master_path):
+      master = get_checkpoint(master_path)
+      master_col = f"[{master}](https://reporter.comma.life/{master})"
+    else:
+      master_col = "N/A (new model)"
     pr = get_checkpoint(BASEDIR + MODEL_PATH + fn)
-    print("|", fn, "|", f"[{master}](https://reporterv2.comma.life/{master})", "|", f"[{pr}](https://reporterv2.comma.life/{pr})", "|")
+    print("|", fn, "|", master_col, "|", f"[{pr}](https://reporter.comma.life/{pr})", "|")

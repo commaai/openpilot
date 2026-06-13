@@ -2,6 +2,11 @@
 import numpy as np
 
 from openpilot.common.pid import PIDController
+from openpilot.system.hardware import HARDWARE
+
+# raise fan setpoint on tici/tizi to reduce noise
+# after raising LMH threshold in AGNOS 18.1 to prevent CPU throttling
+OFFSET = 0 if HARDWARE.get_device_type() == "mici" else 5
 
 
 class FanController:
@@ -18,6 +23,6 @@ class FanController:
     self.last_ignition = ignition
 
     return int(self.controller.update(
-                 error=(cur_temp - 75),  # temperature setpoint in C
-                 feedforward=np.interp(cur_temp, [60.0, 100.0], [0, 100])
+                 error=(cur_temp - (75 + OFFSET)),  # temperature setpoint in C
+                 feedforward=np.interp(cur_temp, [60.0 + OFFSET, 100.0 + OFFSET], [0, 100])
               ))
