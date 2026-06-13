@@ -137,6 +137,7 @@ def get_policy_npy_shapes(input_shapes):
   tc = input_shapes['traffic_convention']  # (1, 2)
   at = input_shapes['action_t']  # (1, 2)
   fb = input_shapes['features_buffer']  # (1, 24, 512)
+  # TODO prev_feat shouldn't exist and be handled inside the JIT, but corrupt on QCOM for now
   shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], fb[2])}
   return shapes, [math.prod(s) for s in shapes.values()]
 
