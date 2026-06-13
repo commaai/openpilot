@@ -25,7 +25,9 @@ class MetadataOnnxPBParser(OnnxPBParser):
 def get_checkpoint(f):
   model = MetadataOnnxPBParser(f).parse()
   metadata = {prop["key"]: prop["value"] for prop in model["metadata_props"]}
-  return metadata['model_checkpoint'].split('/')[-2]  # .../<run_uuid>/<step>; combined models list vision then policy
+  # "<uuid>" or ".../<run_uuid>/<step>"; combined models list vision then policy
+  parts = metadata['model_checkpoint'].split('/')
+  return parts[-2] if len(parts) > 1 else parts[0]
 
 
 if __name__ == "__main__":
