@@ -240,16 +240,16 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False, video_enabled: bool = True):
+  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False, video_enabled: bool = True, session_id: str | None = None):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
 
-    self.identifier = str(uuid.uuid4())
+    self.identifier = session_id or str(uuid.uuid4())
     self.params = Params()
     builder = WebRTCAnswerBuilder(sdp)
 
-    self.video_enabled = video_enabled
+    self.video_enabled = video_enabled or True # if video_enabled is None, default to enabled video
     self.video_track = LiveStreamVideoStreamTrack(init_camera, self.video_enabled) if not debug_mode else VideoStreamTrack()
     builder.add_video_stream(init_camera, self.video_track)
     self.stream = builder.stream()
@@ -404,27 +404,26 @@ async def get_stream(request: 'web.Request'):
       await s.stop()
       stream_dict.pop(sid, None)
 
-    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode, body.video_enabled)
-    session_key = body.session_id or session.identifier
-    stream_dict[session_key] = session
+    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode, body.video_enabled, body.session_id)
+    stream_dict[session.identifier] = session
     try:
       answer = await session.get_answer()
     except ValueError as e:
       await session.stop()
-      stream_dict.pop(session_key, None)
+      stream_dict.pop(session.identifier, None)
       raise e
     except Exception as e:
       await session.stop()
-      stream_dict.pop(session_key, None)
+      stream_dict.pop(session.identifier, None)
       logging.getLogger("webrtcd").exception("Failed to create stream answer")
       raise e
     session.start()
 
     def remove_finished_session(_: asyncio.Task) -> None:
-      stream_dict.pop(session_key, None)
+      stream_dict.pop(session.identifier, None)
     session.run_task.add_done_callback(remove_finished_session)
 
-  return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session_key})
+  return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session.identifier})
 
 
 async def post_candidate(request: 'web.Request'):

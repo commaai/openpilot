@@ -581,7 +581,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str, session_id: str | None = None, video_enabled: bool = True) -> dict:
+def startStream(sdp: str, session_id: str | None = None, video_enabled: bool | None = None) -> dict:
   bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
