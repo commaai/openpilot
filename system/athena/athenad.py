@@ -595,14 +595,13 @@ def startStream(sdp: str, session_id: str | None = None, video_enabled: bool | N
   body = StreamRequestBody(
     sdp=sdp,
     initCamera="wideRoad",
-    session_id=session_id,
-    video_enabled=video_enabled,
     bridge_services_in=bridge_services_in,
     bridge_services_out=["carState"],
+    session_id=session_id,
+    video_enabled=video_enabled,
   )
   try:
-    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
-                       json=asdict(body), timeout=10)
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
     if not resp.ok:
       try:
@@ -622,8 +621,7 @@ def startStream(sdp: str, session_id: str | None = None, video_enabled: bool | N
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
   if session_id is None:
     raise Exception("cannot add ice candidate without session_id")
-  resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
-                            json={"session_id": session_id, "candidate": candidate}, timeout=10)
+  resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate", json={"session_id": session_id, "candidate": candidate}, timeout=10)
   return resp.json()
 
 @dispatcher.add_method

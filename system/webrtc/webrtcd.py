@@ -81,15 +81,18 @@ class AsyncTaskRunner:
 
 
 class CerealOutgoingMessageProxy(AsyncTaskRunner):
-  def __init__(self, services: list[str], enabled: bool):
+  def __init__(self, services: list[str], enabled: bool = True):
     super().__init__()
     self.services = list(services)
     self.sm = messaging.SubMaster(self.services)
     self.channels: list[RTCDataChannel] = []
-    self.enabled = enabled
+    self._enabled = enabled
 
   def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)
+
+  def enable(self, enable: bool):
+    self._enabled = enable
 
   def to_json(self, msg_content: Any):
     if isinstance(msg_content, capnp._DynamicStructReader):
@@ -182,12 +185,15 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.counter = 0
     self.up_samples = 5 # 1s
     self._auto = True
-    self.enabled = enabled
+    self._enabled = enabled
+
+  def enable(self, enable: bool):
+    self._enabled = enable
 
   async def run(self):
     while True:
       await asyncio.sleep(self.sample_interval)
-      if not self.enabled:
+      if not self._enabled:
         continue
       if not self._auto:
         continue
@@ -240,7 +246,16 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False, video_enabled: bool = True, session_id: str | None = None):
+  def __init__(
+    self,
+    sdp: str,
+    init_camera: str,
+    incoming_services: list[str],
+    outgoing_services: list[str],
+    session_id: str,
+    enabled: bool | None = None,
+    debug_mode: bool = False,
+  ):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
@@ -249,12 +264,11 @@ class StreamSession:
     self.params = Params()
     builder = WebRTCAnswerBuilder(sdp)
 
-    self.video_enabled = video_enabled or True # if video_enabled is None, default to enabled video
-    self.video_track = LiveStreamVideoStreamTrack(init_camera, self.video_enabled) if not debug_mode else VideoStreamTrack()
+    self.enabled = enabled if enabled else True # default to enabled
+    self.video_track = LiveStreamVideoStreamTrack(init_camera, self.enabled) if not debug_mode else VideoStreamTrack()
     builder.add_video_stream(init_camera, self.video_track)
     self.stream = builder.stream()
 
-    self.params = Params()
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
@@ -262,8 +276,8 @@ class StreamSession:
     if len(incoming_services) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
-      self.outgoing_bridge = CerealOutgoingMessageProxy(outgoing_services, video_enabled)
-    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.params, video_enabled)
+      self.outgoing_bridge = CerealOutgoingMessageProxy(outgoing_services, self.enabled)
+    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.params, self.enabled)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
@@ -271,7 +285,7 @@ class StreamSession:
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
       "New stream session (%s), init camera %s, video enabled %s, incoming services %s, outgoing services %s",
-      self.identifier, init_camera, video_enabled, incoming_services, outgoing_services,
+      self.identifier, init_camera, enabled, incoming_services, outgoing_services,
     )
 
   def start(self):
@@ -318,9 +332,9 @@ class StreamSession:
             self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
-            self.video_track.enable_video(enabled)
-            self.outgoing_bridge.enabled = enabled
-            self.bitrate_controller.enabled = enabled
+            self.video_track.enable(enabled)
+            self.outgoing_bridge.enable(enabled)
+            self.bitrate_controller.enable(enabled)
             if not enabled:
               self.params.put("LivestreamRequestKeyframe", True)
           case "clockSync":
@@ -340,7 +354,8 @@ class StreamSession:
 
   async def run(self):
     try:
-      if self.video_enabled: self.params.put("LivestreamRequestKeyframe", True)
+      if self.enabled:
+        self.params.put("LivestreamRequestKeyframe", True)
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
@@ -350,12 +365,10 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
-      if self.video_enabled: self.bitrate_controller.start()
+      self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
-
       await self.stream.wait_for_disconnection()
-
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
@@ -368,8 +381,7 @@ class StreamSession:
         return
       self._cleanup_done = True
       self.params.put("LivestreamRequestKeyframe", False)
-      if self.bitrate_controller is not None:
-        await self.bitrate_controller.stop()
+      await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       if self.video_track is not None:
@@ -405,19 +417,16 @@ async def get_stream(request: 'web.Request'):
       await s.stop()
       stream_dict.pop(sid, None)
 
+    # create new stream
     session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode, body.video_enabled, body.session_id)
     stream_dict[session.identifier] = session
     try:
       answer = await session.get_answer()
-    except ValueError as e:
-      await session.stop()
-      stream_dict.pop(session.identifier, None)
-      raise e
-    except Exception as e:
+    except Exception:
       await session.stop()
       stream_dict.pop(session.identifier, None)
       logging.getLogger("webrtcd").exception("Failed to create stream answer")
-      raise e
+      raise
     session.start()
 
     def remove_finished_session(_: asyncio.Task) -> None:
@@ -433,10 +442,7 @@ async def post_candidate(request: 'web.Request'):
   if session is None:
     raise Exception("stream session not found")
 
-  try:
-    await session.add_ice_candidate(body.get("candidate"))
-  except Exception as e:
-    raise e
+  await session.add_ice_candidate(body.get("candidate"))
   return web.json_response({"success": True})
 
 
