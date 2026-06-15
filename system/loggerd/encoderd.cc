@@ -44,7 +44,7 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
-void apply_bitrate(std::vector<std::unique_ptr<Encoder>> &e) {
+void encoder_set_bitrate(std::vector<std::unique_ptr<Encoder>> &e) {
   static Params params;
   std::string val = params.get("LivestreamEncoderBitrate");
   if (val.empty()) return;
@@ -52,7 +52,7 @@ void apply_bitrate(std::vector<std::unique_ptr<Encoder>> &e) {
   e->set_bitrate(bitrate);
 }
 
-void apply_request_keyframe(std::vector<std::unique_ptr<Encoder>> &e) {
+void encoder_request_keyframe(std::vector<std::unique_ptr<Encoder>> &e) {
   static Params params;
   if (!params.getBool("LivestreamRequestKeyframe")) return;
   e->request_keyframe();
@@ -125,8 +125,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         if (cam_info.encoder_infos[i].is_live) {
-          apply_bitrate(encoders[i]);
-          apply_request_keyframe(encoders[i]);
+          encoder_set_bitrate(encoders[i]);
+          encoder_request_keyframe(encoders[i]);
         }
 
         int out_id = encoders[i]->encode_frame(buf, &extra);
