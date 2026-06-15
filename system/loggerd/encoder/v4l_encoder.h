@@ -23,7 +23,6 @@ private:
   int segment_num = -1;
   int counter = 0;
   int current_bitrate = -1;
-  bool adaptive_bitrate;
 
   SafeQueue<VisionIpcBufExtra> extras;
 
