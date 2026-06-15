@@ -417,7 +417,7 @@ async def get_stream(request: 'web.Request'):
       stream_dict.pop(sid, None)
 
     # create new stream
-    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode, body.video_enabled, body.session_id)
+    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, body.session_id, body.video_enabled, debug_mode)
     stream_dict[session.identifier] = session
     try:
       answer = await session.get_answer()
