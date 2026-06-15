@@ -354,8 +354,7 @@ class StreamSession:
 
   async def run(self):
     try:
-      if self.enabled:
-        self.params.put("LivestreamRequestKeyframe", True)
+      self.params.put("LivestreamRequestKeyframe", True)
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
