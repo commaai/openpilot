@@ -601,8 +601,7 @@ def startStream(sdp: str) -> dict:
         raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
       except ValueError:
         resp.raise_for_status()
-    ret = resp.json()
-    return ret
+    return resp.json()
   except requests.ConnectTimeout as e:
     raise Exception("webrtc took too long to respond. is the comma body on?") from e
   except requests.ConnectionError as e:

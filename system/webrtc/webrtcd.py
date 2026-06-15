@@ -399,6 +399,7 @@ async def get_stream(request: 'web.Request'):
       ) from e
     except Exception:
       await session.stop()
+      raise
     stream_dict[session.identifier] = session
     session.start()
 
