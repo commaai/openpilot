@@ -366,7 +366,6 @@ class StreamSession:
 class StreamRequestBody:
   sdp: str
   initCamera: str
-  session_id: str | None
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
 

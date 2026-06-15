@@ -613,6 +613,7 @@ def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
     return Exception("cannot add ice candidate without session_id")
   resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
                             json={"session_id": session_id, "candidate": candidate}, timeout=10)
+  return resp.json()
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
