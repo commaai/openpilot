@@ -53,7 +53,8 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   def enable(self, enabled: bool):
     self.video_enabled = enabled
-    if not enabled: self.seen_keyframe = False
+    if not enabled:
+      self.seen_keyframe = False
 
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
