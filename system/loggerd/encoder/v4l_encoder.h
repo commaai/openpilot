@@ -14,7 +14,6 @@ public:
   void encoder_open();
   void encoder_close();
   void set_bitrate(int bitrate);
-  void request_keyframe();
 
 private:
   int fd;

@@ -76,10 +76,6 @@ void FfmpegEncoder::set_bitrate(int bitrate) {
   LOGE("adaptive bitrate is not supported for ffmpeg encoder %s", encoder_info.publish_name);
 }
 
-void FfmpegEncoder::request_keyframe() {
-  LOGE("keyframe request is not supported for ffmpeg encoder %s", encoder_info.publish_name);
-}
-
 int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   assert(buf->width == this->in_width);
   assert(buf->height == this->in_height);
