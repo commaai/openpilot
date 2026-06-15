@@ -81,6 +81,9 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
       msg = messaging.recv_one_or_none(self._sock)
       if msg is not None:
+        if not self._seen_keyframe and (getattr(msg, msg.which()).idx.flags & V4L2_BUF_FLAG_KEYFRAME):
+          self._seen_keyframe = True
+          self.params.put("LivestreamRequestKeyframe", False, block=False)
         break
       await asyncio.sleep(0.005)
 

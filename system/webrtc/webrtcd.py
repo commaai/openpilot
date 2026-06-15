@@ -254,6 +254,7 @@ class StreamSession:
     builder.add_video_stream(init_camera, self.video_track)
     self.stream = builder.stream()
 
+    self.params = Params()
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
