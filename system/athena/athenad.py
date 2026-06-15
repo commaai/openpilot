@@ -40,7 +40,6 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.webrtc.webrtcd import StreamRequestBody
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -582,6 +581,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def startStream(sdp: str, session_id: str | None = None, video_enabled: bool | None = None) -> dict:
+  from openpilot.system.webrtc.webrtcd import StreamRequestBody
   bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
@@ -616,13 +616,6 @@ def startStream(sdp: str, session_id: str | None = None, video_enabled: bool | N
     raise Exception("webrtc took too long to respond. is the comma body on?") from e
   except requests.ConnectionError as e:
     raise Exception("webrtc is not running. turn on comma body ignition.") from e
-
-@dispatcher.add_method
-def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
-  if session_id is None:
-    raise Exception("cannot add ice candidate without session_id")
-  resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate", json={"session_id": session_id, "candidate": candidate}, timeout=10)
-  return resp.json()
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:

@@ -252,7 +252,6 @@ class StreamSession:
     init_camera: str,
     incoming_services: list[str],
     outgoing_services: list[str],
-    session_id: str,
     enabled: bool | None = None,
     debug_mode: bool = False,
   ):
@@ -260,7 +259,7 @@ class StreamSession:
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
 
-    self.identifier = session_id or str(uuid.uuid4())
+    self.identifier = str(uuid.uuid4())
     self.params = Params()
     builder = WebRTCAnswerBuilder(sdp)
 
@@ -301,23 +300,6 @@ class StreamSession:
 
   async def get_answer(self):
     return await self.stream.start()
-
-  async def add_ice_candidate(self, candidate_init: dict | None):
-    from aiortc.sdp import candidate_from_sdp
-
-    pc = self.stream.peer_connection
-    if pc.iceConnectionState not in ("new", "checking"):
-      return
-
-    # a null/empty candidate signals end-of-candidates per the WebRTC convention
-    if not candidate_init or not candidate_init.get("candidate"):
-      await pc.addIceCandidate(None)
-      return
-
-    candidate = candidate_from_sdp(candidate_init["candidate"].split(":", 1)[1])
-    candidate.sdpMid = candidate_init.get("sdpMid")
-    candidate.sdpMLineIndex = candidate_init.get("sdpMLineIndex")
-    await pc.addIceCandidate(candidate)
 
   def message_handler(self, message: bytes):
     try:
@@ -432,17 +414,7 @@ async def get_stream(request: 'web.Request'):
       stream_dict.pop(session.identifier, None)
     session.run_task.add_done_callback(remove_finished_session)
 
-  return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session.identifier})
-
-
-async def post_candidate(request: 'web.Request'):
-  body = await request.json()
-  session = request.app.get('streams', {}).get(body.get("session_id"))
-  if session is None:
-    raise Exception("stream session not found")
-
-  await session.add_ice_candidate(body.get("candidate"))
-  return web.json_response({"success": True})
+  return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
 async def get_schema(request: 'web.Request'):
@@ -499,7 +471,6 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
-  app.router.add_post("/candidate", post_candidate)
   app.router.add_post("/notify", post_notify)
   app.router.add_get("/schema", get_schema)
 
