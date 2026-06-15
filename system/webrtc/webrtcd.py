@@ -170,10 +170,10 @@ class LivestreamBitrateController(AsyncTaskRunner):
   down_samples = 5 # 1s
   param_name = "LivestreamEncoderBitrate"
 
-  def __init__(self, peer_connection: Any, params):
+  def __init__(self, peer_connection: Any):
     super().__init__()
     self.pc = peer_connection
-    self.params = params
+    self.params = Params()
 
     self.level = 1
     self._publish(self.bitrates[self.level])
@@ -254,7 +254,7 @@ class StreamSession:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
-    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.params)
+    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
