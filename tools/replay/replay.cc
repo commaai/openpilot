@@ -193,7 +193,7 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
     auto event = reader.getRoot<cereal::Event>();
     uint64_t wall_time = event.getInitData().getWallTimeNanos();
     if (wall_time > 0) {
-      route_date_time_ = wall_time / 1e6;
+      route_date_time_ = wall_time / 1e9;
     }
   }
 
