@@ -314,9 +314,7 @@ class StreamSession:
           case "livestreamCameraSwitch":
             self.video_track.switch_camera(payload["data"]["camera"])
           case "livestreamSettings":
-            self.video_quality = payload["data"]["quality"]
-            if self.bitrate_controller is not None:
-              self.bitrate_controller.set_quality(self.video_quality)
+            self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
             self.video_track.enable_video(enabled)
