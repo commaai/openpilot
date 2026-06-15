@@ -123,7 +123,7 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
     from aiortc.exceptions import InvalidStateError
 
     while True:
-      if not self.enabled:
+      if not self._enabled:
         await asyncio.sleep(0.01)
         continue
       try:
