@@ -581,7 +581,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str, session_id: str | None) -> dict:
+def startStream(sdp: str) -> dict:
   bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
@@ -591,12 +591,10 @@ def startStream(sdp: str, session_id: str | None) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
 
-  t_start = time.monotonic()
-  body = StreamRequestBody(sdp, "wideRoad", session_id, bridge_services_in, ["carState"])
+  body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
   try:
     resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
                        json=asdict(body), timeout=10)
-    t_end = time.monotonic()
     if not resp.ok:
       try:
         error_body = resp.json()
@@ -604,8 +602,6 @@ def startStream(sdp: str, session_id: str | None) -> dict:
       except ValueError:
         resp.raise_for_status()
     ret = resp.json()
-    print("/stream took: ", (t_end - t_start) * 1000)
-    ret["time"] = (t_end - t_start) * 1000
     return ret
   except requests.ConnectTimeout as e:
     raise Exception("webrtc took too long to respond. is the comma body on?") from e
@@ -615,16 +611,9 @@ def startStream(sdp: str, session_id: str | None) -> dict:
 @dispatcher.add_method
 def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
   if session_id is None:
-    raise Exception("cannot add ice candidate without session_id")
+    return Exception("cannot add ice candidate without session_id")
   resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
                             json={"session_id": session_id, "candidate": candidate}, timeout=10)
-  if not resp.ok:
-    try:
-      error_body = resp.json()
-      raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
-    except ValueError:
-      resp.raise_for_status()
-  return {"success": True}
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:

@@ -325,7 +325,7 @@ class StreamSession:
 
   async def run(self):
     try:
-      self.params.put("LivestreamRequestKeyframe", True, block=False)
+      self.params.put("LivestreamRequestKeyframe", True)
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
@@ -389,7 +389,6 @@ async def get_stream(request: 'web.Request'):
       stream_dict.pop(sid, None)
 
     session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
-    stream_dict[body.session_id] = session
     try:
       answer = await session.get_answer()
     except ValueError as e:
@@ -400,11 +399,13 @@ async def get_stream(request: 'web.Request'):
       ) from e
     except Exception:
       await session.stop()
-      raise
+    stream_dict[session.identifier] = session
     session.start()
 
+    session_id = session.identifier
+
     def remove_finished_session(_: asyncio.Task) -> None:
-      stream_dict.pop(body.session_id, None)
+      stream_dict.pop(session_id, None)
     session.run_task.add_done_callback(remove_finished_session)
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session.identifier})
@@ -413,8 +414,6 @@ async def get_stream(request: 'web.Request'):
 async def post_candidate(request: 'web.Request'):
   body = await request.json()
   session = request.app.get('streams', {}).get(body.get("session_id"))
-  if len(request.app.get('streams', {})) == 0:
-    return web.Response(status=404, text=json.dumps({"error": "session_not_found", "message": "Stream session not available yet"}), content_type="application/json")
 
   try:
     await session.add_ice_candidate(body.get("candidate"))
