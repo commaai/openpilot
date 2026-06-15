@@ -156,7 +156,6 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
 
   EncoderSettings encoder_settings = encoder_info.get_settings(in_width);
   current_bitrate = encoder_settings.bitrate;
-  adaptive_bitrate = encoder_info.adaptive_bitrate;
   bool is_h265 = encoder_settings.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C;
 
   struct v4l2_format fmt_out = {
@@ -307,7 +306,7 @@ void V4LEncoder::encoder_close() {
 }
 
 void V4LEncoder::set_bitrate(int bitrate) {
-  if (!adaptive_bitrate || bitrate == current_bitrate) return;
+  if (bitrate == current_bitrate) return;
   if (bitrate <= 0) {
     LOGE("invalid livestream encoder bitrate %d", bitrate);
     return;
