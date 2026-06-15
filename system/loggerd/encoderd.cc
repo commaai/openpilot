@@ -44,7 +44,7 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
-void encoder_set_bitrate(std::vector<std::unique_ptr<Encoder>> &e) {
+void encoder_set_bitrate(std::unique_ptr<Encoder> &e) {
   static Params params;
   std::string val = params.get("LivestreamEncoderBitrate");
   if (val.empty()) return;
@@ -52,7 +52,7 @@ void encoder_set_bitrate(std::vector<std::unique_ptr<Encoder>> &e) {
   e->set_bitrate(bitrate);
 }
 
-void encoder_request_keyframe(std::vector<std::unique_ptr<Encoder>> &e) {
+void encoder_request_keyframe(std::unique_ptr<Encoder> &e) {
   static Params params;
   if (!params.getBool("LivestreamRequestKeyframe")) return;
   e->request_keyframe();
