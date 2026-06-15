@@ -27,11 +27,6 @@ from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
 
-from aiortc import RTCBundlePolicy, RTCConfiguration, RTCPeerConnection
-from aiortc.mediastreams import VideoStreamTrack
-from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-from teleoprtc import WebRTCAnswerBuilder
-
 import aioice.ice
 
 
@@ -237,6 +232,10 @@ class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
   def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
+    from aiortc.mediastreams import VideoStreamTrack
+    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+    from teleoprtc import WebRTCAnswerBuilder
+
     builder = WebRTCAnswerBuilder(sdp)
 
     self.video_track = LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack()
@@ -446,26 +445,6 @@ async def post_notify(request: 'web.Request'):
   return web.Response(status=200, text="OK")
 
 
-async def on_startup(app: 'web.Application'):
-  logger = logging.getLogger("webrtcd")
-  start_time = time.monotonic()
-  pc = None
-
-  # warmup imports for webrtc stack
-  try:
-    pc = RTCPeerConnection(RTCConfiguration(bundlePolicy=RTCBundlePolicy.MAX_BUNDLE))
-    pc.addTransceiver("video", direction="recvonly")
-    pc.createDataChannel("data", ordered=True)
-    offer = await pc.createOffer()
-    await asyncio.wait_for(pc.setLocalDescription(offer), timeout=1.5)
-    logger.info("Warmed WebRTC stack in %.1f ms", (time.monotonic() - start_time) * 1000)
-  except Exception:
-    logger.exception("WebRTC stack warmup failed")
-  finally:
-    if pc is not None:
-      await pc.close()
-
-
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
     await session.stop()
@@ -483,7 +462,6 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app['streams'] = dict()
   app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
-  app.on_startup.append(on_startup)
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
   app.router.add_post("/candidate", post_candidate)
