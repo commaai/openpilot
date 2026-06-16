@@ -21,13 +21,12 @@ import capnp
 from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
+import aioice.ice
 
 from openpilot.system.webrtc.models import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
-
-import aioice.ice
 
 
 # socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
