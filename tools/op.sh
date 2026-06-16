@@ -21,8 +21,14 @@ if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
 fi
 function op_install() {
   echo "Installing op system-wide..."
-  CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
-  grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
+  OP_SH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh"
+  CMD=$(cat <<EOF
+alias op='$OP_SH "\$@"'
+_op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
+[ -n "\$BASH_VERSION" ] && complete -F _op_completions -o default op
+EOF
+)
+  grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 }
 
@@ -42,7 +48,7 @@ function retry() {
 }
 
 function op_run_command() {
-  CMD="$@"
+  CMD="$*"
 
   echo -e "${BOLD}Running command →${NC} $CMD │"
   for ((i=0; i<$((19 + ${#CMD})); i++)); do
@@ -51,7 +57,7 @@ function op_run_command() {
   echo -e "┘\n"
 
   if [[ -z "$DRY" ]]; then
-    eval "$CMD"
+    "$@"
   fi
 }
 
@@ -304,33 +310,33 @@ function op_build() {
     op_run_command system/manager/build.py
   else
     # scons is fine on PC
-    op_run_command scons $@
+    op_run_command scons "$@"
   fi
 }
 
 function op_juggle() {
   op_before_cmd
-  op_run_command tools/plotjuggler/juggle.py $@
+  op_run_command tools/plotjuggler/juggle.py "$@"
 }
 
 function op_lint() {
   op_before_cmd
-  op_run_command scripts/lint/lint.sh $@
+  op_run_command scripts/lint/lint.sh "$@"
 }
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest $@
+  op_run_command pytest "$@"
 }
 
 function op_replay() {
   op_before_cmd
-  op_run_command tools/replay/replay $@
+  op_run_command tools/replay/replay "$@"
 }
 
 function op_cabana() {
   op_before_cmd
-  op_run_command tools/cabana/cabana $@
+  op_run_command tools/cabana/cabana "$@"
 }
 
 function op_sim() {
@@ -341,7 +347,7 @@ function op_sim() {
 
 function op_clip() {
   op_before_cmd
-  op_run_command tools/clip/run.py $@
+  op_run_command tools/clip/run.py "$@"
 }
 
 function op_switch() {
@@ -483,4 +489,4 @@ function _op() {
   esac
 }
 
-_op $@
+_op "$@"

@@ -312,8 +312,15 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     camera_paths = route.qcamera_paths() if use_qcam else route.camera_paths()
     frame_queue = FrameQueue(camera_paths, start, end, fps=FRAMERATE, use_qcam=use_qcam)
 
+    ecamera_paths = route.ecamera_paths() if not use_qcam else []
+    wide_frame_queue: FrameQueue | None = None
+    if any(p for p in ecamera_paths[seg_start:seg_end] if p):
+      wide_frame_queue = FrameQueue(ecamera_paths, start, end, fps=FRAMERATE)
+
     vipc = VisionIpcServer("camerad")
     vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 4, frame_queue.frame_w, frame_queue.frame_h)
+    if wide_frame_queue:
+      vipc.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 4, wide_frame_queue.frame_w, wide_frame_queue.frame_h)
     vipc.start_listener()
 
     patch_submaster(message_chunks, ui_state)
@@ -331,6 +338,9 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
           break
         _, frame_bytes = frame_queue.get()
         vipc.send(VisionStreamType.VISION_STREAM_ROAD, frame_bytes, frame_idx, int(frame_idx * 5e7), int(frame_idx * 5e7))
+        if wide_frame_queue:
+          _, wide_bytes = wide_frame_queue.get()
+          vipc.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, wide_bytes, frame_idx, int(frame_idx * 5e7), int(frame_idx * 5e7))
         ui_state.update()
         if should_render:
           road_view.render()
@@ -340,6 +350,8 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     timer.lap("render")
 
     frame_queue.stop()
+    if wide_frame_queue:
+      wide_frame_queue.stop()
     gui_app.close()
     timer.lap("ffmpeg")
 
