@@ -36,6 +36,8 @@ LAG_CANDIDATE_CORR_THRESHOLD = 0.9
 SMOOTH_K = 5
 SMOOTH_SIGMA = 1.0
 
+VERSION = 1  # bump this to invalidate old parameter caches
+
 
 def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int, sigma: float) -> np.ndarray:
   assert k >= 1 and k % 2 == 1, "k must be positive and odd"
@@ -248,6 +250,7 @@ class LateralLagEstimator:
                             (self.min_valid_block_count * self.block_size), 100)
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
+    liveDelay.version = VERSION
 
     return msg
 
@@ -368,9 +371,10 @@ def retrieve_initial_lag(params: Params, CP: car.CarParams):
         if last_CP.carFingerprint != CP.carFingerprint:
           raise Exception("Car model mismatch")
 
-        lag, valid_blocks, status = ld.lateralDelayEstimate, ld.validBlocks, ld.status
+        lag, valid_blocks, status, version = ld.lateralDelayEstimate, ld.validBlocks, ld.status, ld.version
         assert valid_blocks <= BLOCK_NUM, "Invalid number of valid blocks"
         assert status != log.LiveDelayData.Status.invalid, "Lag estimate is invalid"
+        assert version == VERSION, f"Lag estimate is from a different version (got {version}, expected {VERSION})"
         return lag, valid_blocks
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial lag: {e}")

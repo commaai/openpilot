@@ -4,9 +4,15 @@ import time
 
 import av
 from teleoprtc.tracks import TiciVideoStreamTrack
+from aiortc import MediaStreamError
 
 from cereal import messaging
 from openpilot.common.realtime import DT_MDL, DT_DMON
+from openpilot.common.params import Params
+
+
+# v4l2 buffer flag marking an encoded keyframe (linux/videodev2.h)
+V4L2_BUF_FLAG_KEYFRAME = 0x8
 
 # arbitrary 16-byte UUID identifying openpilot frame-timing SEI messages
 TIMING_SEI_UUID = bytes([
@@ -23,7 +29,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     "road": "livestreamRoadEncodeData",
   }
 
-  def __init__(self, camera_type: str):
+  def __init__(self, camera_type: str, video_enabled: bool = True):
     dt = DT_DMON if camera_type == "driver" else DT_MDL
     super().__init__(camera_type, dt)
 
@@ -31,12 +37,24 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self._pts = 0
     self._t0_ns = time.monotonic_ns()
     self.timing_sei_enabled = False
+    self.params = Params()
+    self._seen_keyframe = False
+    self.video_enabled = video_enabled
+
+  def stop(self) -> None:
+    super().stop()
+    self._sock = None
 
   def _make_sock(self, camera_type: str) -> messaging.SubSocket:
     return messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
 
   def switch_camera(self, camera_type: str) -> None:
     self._sock = self._make_sock(camera_type)
+
+  def enable(self, enabled: bool):
+    self.video_enabled = enabled
+    if not enabled:
+      self._seen_keyframe = False
 
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
@@ -54,8 +72,19 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   async def recv(self):
     while True:
+      if self.readyState != "live":
+        raise MediaStreamError
+
+      # while video is disabled, pause here without returning
+      if not self.video_enabled:
+        await asyncio.sleep(0.005)
+        continue
+
       msg = messaging.recv_one_or_none(self._sock)
       if msg is not None:
+        if not self._seen_keyframe and (getattr(msg, msg.which()).idx.flags & V4L2_BUF_FLAG_KEYFRAME):
+          self._seen_keyframe = True
+          self.params.put("LivestreamRequestKeyframe", False, block=False)
         break
       await asyncio.sleep(0.005)
 

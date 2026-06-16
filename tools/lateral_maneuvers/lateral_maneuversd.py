@@ -12,7 +12,7 @@ from openpilot.tools.longitudinal_maneuvers.maneuversd import Action, Maneuver a
 
 # thresholds for starting maneuvers
 MAX_SPEED_DEV = 0.7 # deviation in m/s
-MAX_CURV = 0.002 # 500 m radius
+MAX_CURV = 0.004 # 250 m radius
 MAX_ROLL = 0.12 # 6.8°
 TIMER = 2.0 # sec stable conditions before starting maneuver
 
@@ -67,6 +67,12 @@ MANEUVERS = [
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
+    "jitter 20mph",
+    [Action([-0.5 if i % 2 == 0 else 0.5], [0.1]) for i in range(10)],
+    repeat=2,
+    initial_speed=20. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
     "step right 30mph",
     [Action([0.5], [1.0]), Action([-0.5], [1.5])],
     repeat=2,
@@ -84,6 +90,12 @@ MANEUVERS = [
     repeat=2,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
+  Maneuver(
+    "jitter 30mph",
+    [Action([-0.5 if i % 2 == 0 else 0.5], [0.1]) for i in range(10)],
+    repeat=2,
+    initial_speed=30. * CV.MPH_TO_MS,
+  ),
 ]
 
 
@@ -98,6 +110,8 @@ def main():
   maneuvers = iter(MANEUVERS)
   maneuver = None
   complete_cnt = 0
+  aborted_cnt = 0
+  abort_reason = ''
   display_holdoff = 0
   prev_text = ''
 
@@ -121,8 +135,14 @@ def main():
       alert_msg.alertDebug.alertText1 = 'Completed'
       alert_msg.alertDebug.alertText2 = maneuver.description
     elif maneuver is not None:
-      # reset maneuver on steering override or out of range speed
-      if sm['carState'].steeringPressed or (maneuver.active and abs(v_ego - maneuver.initial_speed) > MAX_SPEED_DEV):
+      # any driver input aborts the maneuver
+      CS = sm['carState']
+      if CS.steeringPressed or CS.gasPressed:
+        aborted_cnt = int(1.0 / DT_MDL)
+        abort_reason = ('steering pressed' if CS.steeringPressed else 'gas pressed').ljust(20)
+      aborted = aborted_cnt > 0
+      speed_out_of_range = maneuver.active and abs(v_ego - maneuver.initial_speed) > MAX_SPEED_DEV
+      if aborted or speed_out_of_range:
         maneuver.reset()
 
       roll = sm['carControl'].orientationNED[0] if len(sm['carControl'].orientationNED) == 3 else 0.0
@@ -140,6 +160,9 @@ def main():
         else:
           alert_msg.alertDebug.alertText1 = f'Active {accel:+.1f}m/s² {max(action_remaining, 0):.1f}s'
         alert_msg.alertDebug.alertText2 = maneuver.description
+      elif aborted_cnt > 0:
+        aborted_cnt -= 1
+        alert_msg.alertDebug.alertText1 = abort_reason
       elif not (abs(v_ego - maneuver.initial_speed) < MAX_SPEED_DEV and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
       elif maneuver._ready_cnt > 0:
