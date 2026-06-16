@@ -10,7 +10,6 @@ import contextlib
 import json
 import uuid
 import logging
-from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
@@ -23,6 +22,7 @@ from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
+from openpilot.system.webrtc.models import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
@@ -256,7 +256,7 @@ class StreamSession:
   ):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from teleoprtc import WebRTCAnswerBuilder
+    from teleoprtc.builder import WebRTCAnswerBuilder
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
@@ -370,15 +370,6 @@ class StreamSession:
       await self.stream.stop()
 
 
-@dataclass
-class StreamRequestBody:
-  sdp: str
-  initCamera: str
-  video_enabled: bool = True
-  bridge_services_in: list[str] = field(default_factory=list)
-  bridge_services_out: list[str] = field(default_factory=list)
-
-
 async def get_stream(request: 'web.Request'):
   stream_dict, debug_mode = request.app['streams'], request.app['debug']
   raw_body = await request.json()
@@ -455,11 +446,25 @@ async def error_middleware(request: 'web.Request', handler):
     return web.json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
 
 
+def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
+  if debug_mode:
+    from aiortc.mediastreams import VideoStreamTrack
+    assert VideoStreamTrack
+  from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+  from teleoprtc.builder import WebRTCAnswerBuilder
+  assert LiveStreamVideoStreamTrack
+  assert WebRTCAnswerBuilder
+
+
 def webrtcd_thread(host: str, port: int, debug: bool):
   logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
+  prewarm_start = time.monotonic()
+  prewarm_stream_session_imports(debug)
+  prewarm_end = time.monotonic()
+  print(f"webrtc prewarm finished in {(prewarm_end - prewarm_start) * 1000} ms")
 
   app = web.Application(middlewares=[error_middleware])
 
