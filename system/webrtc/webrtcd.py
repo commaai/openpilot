@@ -253,7 +253,8 @@ class StreamSession:
     enabled: bool | None = None,
     debug_mode: bool = False
   ):
-    from aiortc.mediastreams import VideoStreamTrack
+    if debug_mode:
+      from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc.builder import WebRTCAnswerBuilder
 
