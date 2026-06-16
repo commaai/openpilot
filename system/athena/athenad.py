@@ -599,9 +599,8 @@ def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
     if not resp.ok:
       try:
         message = resp.json().get("message", f"webrtcd returned {resp.status_code}")
-      except ValueError:
-        message = resp.text or f"webrtcd returned {resp.status_code}"
-      raise Exception(message)
+      except:
+        raise Exception(message)
     ret = resp.json()
     ret["time"] = (t_end - t_start) * 1000
     return ret
