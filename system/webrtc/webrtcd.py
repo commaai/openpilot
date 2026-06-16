@@ -464,7 +464,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   prewarm_start = time.monotonic()
   prewarm_stream_session_imports(debug)
   prewarm_end = time.monotonic()
-  print(f"webrtc prewarm finished in {(prewarm_end - prewarm_start) * 1000} ms")
+  logging.getLogger("webrtcd").info(f"webrtc prewarm finished in {(prewarm_end - prewarm_start) * 1000} ms")
 
   app = web.Application(middlewares=[error_middleware])
 
