@@ -212,7 +212,7 @@ def migrate_cached_vehicle_params_if_needed(params: Params):
     last_parameters_msg.liveParameters.steerRatio = last_parameters_data_old['steerRatio']
     last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_data_old['stiffnessFactor']
     last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_data_old['angleOffsetAverageDeg']
-    params.put("LiveParametersV2", last_parameters_msg.to_bytes())
+    params.put("LiveParametersV2", last_parameters_msg.to_bytes(), block=True)
   except Exception as e:
     cloudlog.error(f"Failed to perform parameter migration: {e}")
     params.remove("LiveParameters")
@@ -290,7 +290,7 @@ def main():
 
       msg_dat = msg.to_bytes()
       if sm.frame % 1200 == 0:  # once a minute
-        params.put_nonblocking("LiveParametersV2", msg_dat)
+        params.put("LiveParametersV2", msg_dat)
 
       pm.send('liveParameters', msg_dat)
 

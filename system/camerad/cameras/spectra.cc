@@ -10,7 +10,6 @@
 #include "media/cam_isp.h"
 #include "media/cam_icp.h"
 #include "media/cam_isp_ife.h"
-#include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 
 #include "common/util.h"

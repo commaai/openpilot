@@ -100,7 +100,7 @@ private:
   std::atomic<bool> exit_ = false;
   std::atomic<bool> interrupt_requested_ = false;
   bool events_ready_ = false;
-  std::time_t route_date_time_;
+  std::time_t route_date_time_ = 0;
   uint64_t route_start_ts_ = 0;
   std::atomic<uint64_t> cur_mono_time_ = 0;
   cereal::Event::Which cur_which_ = cereal::Event::Which::INIT_DATA;

@@ -7,10 +7,6 @@ from typing import Any
 
 from tinygrad.nn.onnx import OnnxPBParser
 
-def metadata_path_for(onnx_path) -> pathlib.Path:
-  p = pathlib.Path(onnx_path)
-  return p.parent / (p.stem + '_metadata.pkl')
-
 
 class MetadataOnnxPBParser(OnnxPBParser):
   def _parse_ModelProto(self) -> dict:
@@ -39,21 +35,21 @@ def get_metadata_value_by_name(model: dict[str, Any], name: str) -> str | Any:
   return None
 
 
-if __name__ == "__main__":
-  model_path = pathlib.Path(sys.argv[1])
+def make_metadata_dict(model_path):
   model = MetadataOnnxPBParser(model_path).parse()
   output_slices = get_metadata_value_by_name(model, 'output_slices')
   assert output_slices is not None, 'output_slices not found in metadata'
-
-  metadata = {
+  return {
     'model_checkpoint': get_metadata_value_by_name(model, 'model_checkpoint'),
     'output_slices': pickle.loads(codecs.decode(output_slices.encode(), "base64")),
     'input_shapes': dict(get_name_and_shape(x) for x in model["graph"]["input"]),
     'output_shapes': dict(get_name_and_shape(x) for x in model["graph"]["output"]),
   }
 
-  metadata_path = metadata_path_for(model_path)
-  with open(metadata_path, 'wb') as f:
-    pickle.dump(metadata, f)
 
+if __name__ == "__main__":
+  model_path = pathlib.Path(sys.argv[1])
+  metadata_path = model_path.parent / (model_path.stem + '_metadata.pkl')
+  with open(metadata_path, 'wb') as f:
+    pickle.dump(make_metadata_dict(model_path), f)
   print(f'saved metadata to {metadata_path}')

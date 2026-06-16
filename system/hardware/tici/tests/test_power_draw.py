@@ -42,7 +42,7 @@ PROCS = [
 class TestPowerDraw:
 
   def setup_method(self):
-    Params().put("CarParams", get_demo_car_params().to_bytes())
+    Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
 
     # wait a bit for power save to disable
     time.sleep(5)

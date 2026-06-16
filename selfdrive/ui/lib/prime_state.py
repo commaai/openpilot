@@ -6,6 +6,7 @@ import time
 
 from openpilot.common.api import api_get
 from openpilot.common.params import Params
+from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
@@ -69,6 +70,7 @@ class PrimeState:
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _worker_thread(self) -> None:
+    drop_realtime()
     from openpilot.selfdrive.ui.ui_state import ui_state, device
     while self._running:
       if not ui_state.started and device._awake:

@@ -1,7 +1,5 @@
 import os
-import threading
 import pyray as rl
-from enum import IntEnum
 from collections.abc import Callable
 
 from openpilot.common.basedir import BASEDIR
@@ -40,7 +38,7 @@ class ReviewTrainingGuide(TrainingGuide):
   def hide_event(self):
     super().hide_event()
     device.set_override_interactive_timeout(None)
-    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
 
 
 class MiciFccModal(NavRawScrollPanel):
@@ -122,12 +120,6 @@ class DeviceInfoLayoutMici(Widget):
     self._serial_number_text_label.render()
 
 
-class UpdaterState(IntEnum):
-  IDLE = 0
-  WAITING_FOR_UPDATER = 1
-  UPDATER_RESPONDING = 2
-
-
 class PairBigButton(BigButton):
   def __init__(self):
     super().__init__("pair", "connect.comma.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
@@ -164,127 +156,6 @@ class PairBigButton(BigButton):
     gui_app.push_widget(dlg)
 
 
-UPDATER_TIMEOUT = 10.0  # seconds to wait for updater to respond
-
-
-class UpdateOpenpilotBigButton(BigButton):
-  def __init__(self):
-    self._txt_update_icon = gui_app.texture("icons_mici/settings/device/update.png", 64, 75)
-    self._txt_reboot_icon = gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70)
-    self._txt_up_to_date_icon = gui_app.texture("icons_mici/settings/device/up_to_date.png", 64, 64)
-    super().__init__("update openpilot", "", self._txt_update_icon)
-
-    self._waiting_for_updater_t: float | None = None
-    self._hide_value_t: float | None = None
-    self._state: UpdaterState = UpdaterState.IDLE
-
-    ui_state.add_offroad_transition_callback(self.offroad_transition)
-
-  def offroad_transition(self):
-    if ui_state.is_offroad():
-      self.set_enabled(True)
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-
-    if not system_time_valid():
-      dlg = BigDialog("", tr("Please connect to Wi-Fi to update."))
-      gui_app.push_widget(dlg)
-      return
-
-    self.set_enabled(False)
-    self._state = UpdaterState.WAITING_FOR_UPDATER
-    self.set_icon(self._txt_update_icon)
-
-    def run():
-      if self.get_value() == "download update":
-        os.system("pkill -SIGHUP -f system.updated.updated")
-      elif self.get_value() == "update now":
-        ui_state.params.put_bool("DoReboot", True)
-      else:
-        os.system("pkill -SIGUSR1 -f system.updated.updated")
-
-    threading.Thread(target=run, daemon=True).start()
-
-  def set_value(self, value: str):
-    super().set_value(value)
-    if value:
-      self.set_text("")
-    else:
-      self.set_text("update openpilot")
-
-  def _update_state(self):
-    super()._update_state()
-
-    if ui_state.started:
-      self.set_enabled(False)
-      return
-
-    updater_state = ui_state.params.get("UpdaterState") or ""
-    failed_count = ui_state.params.get("UpdateFailedCount")
-    failed = False if failed_count is None else int(failed_count) > 0
-
-    if ui_state.params.get_bool("UpdateAvailable"):
-      self.set_rotate_icon(False)
-      self.set_enabled(True)
-      if self.get_value() != "update now":
-        self.set_value("update now")
-        self.set_icon(self._txt_reboot_icon)
-
-    elif self._state == UpdaterState.WAITING_FOR_UPDATER:
-      self.set_rotate_icon(True)
-      if updater_state != "idle":
-        self._state = UpdaterState.UPDATER_RESPONDING
-
-      # Recover from updater not responding (time invalid shortly after boot)
-      if self._waiting_for_updater_t is None:
-        self._waiting_for_updater_t = rl.get_time()
-
-      if self._waiting_for_updater_t is not None and rl.get_time() - self._waiting_for_updater_t > UPDATER_TIMEOUT:
-        self.set_rotate_icon(False)
-        self.set_value("updater failed\nto respond")
-        self._state = UpdaterState.IDLE
-        self._hide_value_t = rl.get_time()
-
-    elif self._state == UpdaterState.UPDATER_RESPONDING:
-      if updater_state == "idle":
-        self.set_rotate_icon(False)
-        self._state = UpdaterState.IDLE
-        self._hide_value_t = rl.get_time()
-      else:
-        if self.get_value() != updater_state:
-          self.set_value(updater_state)
-
-    elif self._state == UpdaterState.IDLE:
-      self.set_rotate_icon(False)
-      if failed:
-        if self.get_value() != "failed to update":
-          self.set_value("failed to update")
-
-      elif ui_state.params.get_bool("UpdaterFetchAvailable"):
-        self.set_enabled(True)
-        if self.get_value() != "download update":
-          self.set_value("download update")
-
-      elif self._hide_value_t is not None:
-        self.set_enabled(True)
-        if self.get_value() == "checking...":
-          self.set_value("up to date")
-          self.set_icon(self._txt_up_to_date_icon)
-
-        # Hide previous text after short amount of time (up to date or failed)
-        if rl.get_time() - self._hide_value_t > 3.0:
-          self._hide_value_t = None
-          self.set_value("")
-          self.set_icon(self._txt_update_icon)
-      else:
-        if self.get_value() != "":
-          self.set_value("")
-
-    if self._state != UpdaterState.WAITING_FOR_UPDATER:
-      self._waiting_for_updater_t = None
-
-
 class DeviceLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
@@ -292,10 +163,10 @@ class DeviceLayoutMici(NavScroller):
     self._fcc_dialog: HtmlModal | None = None
 
     def power_off_callback():
-      ui_state.params.put_bool("DoShutdown", True)
+      ui_state.params.put_bool("DoShutdown", True, block=True)
 
     def reboot_callback():
-      ui_state.params.put_bool("DoReboot", True)
+      ui_state.params.put_bool("DoReboot", True, block=True)
 
     def reset_calibration_callback():
       params = ui_state.params
@@ -304,17 +175,10 @@ class DeviceLayoutMici(NavScroller):
       params.remove("LiveParameters")
       params.remove("LiveParametersV2")
       params.remove("LiveDelay")
-      params.put_bool("OnroadCycleRequested", True)
-
-    def uninstall_openpilot_callback():
-      ui_state.params.put_bool("DoUninstall", True)
+      params.put_bool("OnroadCycleRequested", True, block=True)
 
     reset_calibration_btn = EngagedConfirmationButton("reset calibration", "reset", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64),
                                                       reset_calibration_callback)
-
-    uninstall_openpilot_btn = EngagedConfirmationButton("uninstall openpilot", "uninstall",
-                                                        gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
-                                                        uninstall_openpilot_callback, exit_on_confirm=False)
 
     reboot_btn = EngagedConfirmationCircleButton("reboot", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
                                                  reboot_callback, exit_on_confirm=False)
@@ -339,14 +203,12 @@ class DeviceLayoutMici(NavScroller):
 
     self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
-      UpdateOpenpilotBigButton(),
       PairBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
       terms_btn,
       regulatory_btn,
       reset_calibration_btn,
-      uninstall_openpilot_btn,
       reboot_btn,
       self._power_off_btn,
     ])
