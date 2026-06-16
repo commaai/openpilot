@@ -593,7 +593,8 @@ def startStream(sdp: str) -> dict:
 
   body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
   try:
-    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
+                    json=asdict(body), timeout=10)
     if not resp.ok:
       raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
     return resp.json()
