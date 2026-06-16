@@ -273,16 +273,17 @@ def count_scons_nodes(nodes):
     if node in seen:
       continue
     seen.add(node)
+    if hasattr(node, 'has_builder') and node.has_builder():
+      build_product_nodes.add(node)
     executor = node.get_executor()
     if executor is not None:
       stack += executor.get_all_prerequisites() + executor.get_all_children()
 
-  all_scons_nodes.append(seen)
   return len(seen)
 
 progress_interval = 5
 progress_count = 0
-all_scons_nodes = list()
+build_product_nodes = set()
 progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
 
 def progress_function(node):
@@ -302,7 +303,7 @@ AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
 def check_build_product_size(target, source, env):
   limit = 50 * 1024 * 1024  # GitHub max size
   for t in target:
-    if hasattr(t, 'isfile') and (size := os.path.getsize(t.abspath)) > limit:
+    if hasattr(t, 'isfile') and t.isfile() and (size := os.path.getsize(t.abspath)) > limit:
       raise SCons.Errors.UserError(f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the {limit / (1024 * 1024):.1f} MiB limit")
 if not GetOption('extras'):
-  AddPostAction(all_scons_nodes, Action(check_build_product_size, None))
+  AddPostAction(list(build_product_nodes), Action(check_build_product_size, None))
