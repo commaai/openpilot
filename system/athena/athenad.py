@@ -593,14 +593,9 @@ def startStream(sdp: str) -> dict:
 
   body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
   try:
-    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
-                       json=asdict(body), timeout=10)
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     if not resp.ok:
-      try:
-        error_body = resp.json()
-        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
-      except ValueError:
-        resp.raise_for_status()
+      raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
     return resp.json()
   except requests.ConnectTimeout as e:
     raise Exception("webrtc took too long to respond. is the comma body on?") from e

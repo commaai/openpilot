@@ -372,12 +372,6 @@ async def get_stream(request: 'web.Request'):
     session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
     try:
       answer = await session.get_answer()
-    except ValueError as e:
-      await session.stop()
-      raise web.HTTPBadRequest(
-        text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
-        content_type="application/json",
-      ) from e
     except Exception:
       await session.stop()
       raise
@@ -421,13 +415,24 @@ async def on_shutdown(app: 'web.Application'):
   del app['streams']
 
 
+@web.middleware
+async def error_middleware(request: 'web.Request', handler):
+  try:
+    return await handler(request)
+  except web.HTTPException:
+    raise  # intentional responses (400/404/etc.) pass through untouched
+  except Exception as e:
+    logging.getLogger("webrtcd").exception("Unhandled error handling %s", request.path)
+    return web.json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
+
+
 def webrtcd_thread(host: str, port: int, debug: bool):
   logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
 
-  app = web.Application()
+  app = web.Application(middlewares=[error_middleware])
 
   app['streams'] = dict()
   app['stream_lock'] = asyncio.Lock()
