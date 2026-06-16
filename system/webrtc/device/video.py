@@ -7,7 +7,7 @@ from teleoprtc.tracks import TiciVideoStreamTrack
 from aiortc import MediaStreamError
 
 from cereal import messaging
-from openpilot.common.realtime import DT_MDL, DT_DMON
+from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 
 
@@ -30,8 +30,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   }
 
   def __init__(self, camera_type: str, video_enabled: bool = True):
-    dt = DT_DMON if camera_type == "driver" else DT_MDL
-    super().__init__(camera_type, dt)
+    super().__init__(camera_type, DT_MDL)
 
     self._sock = self._make_sock(camera_type)
     self._pts = 0
