@@ -60,8 +60,7 @@ class AsyncTaskRunner:
     self.logger = logging.getLogger("webrtcd")
 
   def start(self):
-    if self.task is not None and not self.task.done():
-      return
+    assert self.task is None
     self.task = asyncio.create_task(self.run())
 
   async def stop(self):
@@ -83,8 +82,8 @@ class AsyncTaskRunner:
 class CerealOutgoingMessageProxy(AsyncTaskRunner):
   def __init__(self, services: list[str], enabled: bool = True):
     super().__init__()
-    self.services = list(services)
     self.sm = messaging.SubMaster(self.services)
+    self.services = list(services)
     self.channels: list[RTCDataChannel] = []
     self._enabled = enabled
 
@@ -174,7 +173,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
   down_samples = 5 # 1s
   param_name = "LivestreamEncoderBitrate"
 
-  def __init__(self, peer_connection: Any, params, enabled):
+  def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
     super().__init__()
     self.pc = peer_connection
     self.params = params

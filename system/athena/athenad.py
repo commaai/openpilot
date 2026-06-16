@@ -580,7 +580,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str, session_id: str | None = None, video_enabled: bool | None = None) -> dict:
+def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
   from openpilot.system.webrtc.webrtcd import StreamRequestBody
   bridge_services_in = []
 
@@ -592,14 +592,7 @@ def startStream(sdp: str, session_id: str | None = None, video_enabled: bool | N
         bridge_services_in.append("testJoystick")
 
   t_start = time.monotonic()
-  body = StreamRequestBody(
-    sdp=sdp,
-    initCamera="wideRoad",
-    bridge_services_in=bridge_services_in,
-    bridge_services_out=["carState"],
-    session_id=session_id,
-    video_enabled=video_enabled,
-  )
+  body = StreamRequestBody(sdp=sdp, initCamera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], video_enabled=video_enabled)
   try:
     resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
