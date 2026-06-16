@@ -82,8 +82,8 @@ class AsyncTaskRunner:
 class CerealOutgoingMessageProxy(AsyncTaskRunner):
   def __init__(self, services: list[str], enabled: bool = True):
     super().__init__()
-    self.sm = messaging.SubMaster(self.services)
     self.services = list(services)
+    self.sm = messaging.SubMaster(self.services)
     self.channels: list[RTCDataChannel] = []
     self._enabled = enabled
 
