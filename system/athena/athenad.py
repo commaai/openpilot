@@ -580,7 +580,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str) -> dict:
+def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
   from openpilot.system.webrtc.webrtcd import StreamRequestBody
   bridge_services_in = []
 
@@ -591,13 +591,16 @@ def startStream(sdp: str) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
 
-  body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
+  t_start = time.monotonic()
+  body = StreamRequestBody(sdp=sdp, initCamera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], video_enabled=video_enabled)
   try:
-    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
-                    json=asdict(body), timeout=10)
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
+    t_end = time.monotonic()
     if not resp.ok:
       raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
-    return resp.json()
+    ret = resp.json()
+    ret["time"] = (t_end - t_start) * 1000
+    return ret
   except requests.ConnectTimeout as e:
     raise Exception("webrtc took too long to respond. is the comma body on?") from e
   except requests.ConnectionError as e:
