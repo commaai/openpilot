@@ -1,5 +1,6 @@
 import os
 import subprocess
+import bootstrap_icons
 import imgui
 import libusb
 from opendbc import get_generated_dbcs
@@ -16,6 +17,7 @@ jot_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 jot_env["CXXFLAGS"] += [
   "-DGLFW_INCLUDE_NONE",
   '-DJOTP_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
+  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
 ]
 
 def materialize_generated_dbcs(target, source, env):

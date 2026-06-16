@@ -1,11 +1,32 @@
+from collections.abc import Callable
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl, GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationCircleButton
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
+
+
+class AlphaLongConfirmPage(NavScroller):
+  def __init__(self, on_confirm: Callable[[], None]):
+    super().__init__()
+
+    accept = BigConfirmationCircleButton("enable alpha\nlongitudinal",
+                                         gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
+                                         lambda: self.dismiss(on_confirm))
+
+    self._scroller.add_widgets([
+      GreyBigButton("enabling alpha longitudinal", "scroll to continue",
+                    gui_app.texture("icons_mici/setup/warning.png", 64, 64)),
+      GreyBigButton("", "WARNING: alpha longitudinal control may disable Automatic Emergency Braking (AEB)"),
+      GreyBigButton("", "On this car, openpilot defaults to the stock system's built-in ACC."),
+      GreyBigButton("", "Enabling this will switch to openpilot longitudinal control."),
+      GreyBigButton("", "Using Experimental mode is recommended with openpilot longitudinal control alpha."),
+      GreyBigButton("", "Changing this setting will restart openpilot if the car is powered on."),
+      accept,
+    ])
 
 
 class DeveloperLayoutMici(NavScroller):
@@ -131,6 +152,7 @@ class DeveloperLayoutMici(NavScroller):
 
       long_man_enabled = ui_state.has_longitudinal_control and ui_state.is_offroad()
       self._long_maneuver_toggle.set_enabled(long_man_enabled)
+      self._lat_maneuver_toggle.set_enabled(ui_state.is_offroad())
     else:
       self._long_maneuver_toggle.set_enabled(False)
       self._lat_maneuver_toggle.set_enabled(False)
@@ -141,31 +163,38 @@ class DeveloperLayoutMici(NavScroller):
       item.set_checked(ui_state.params.get_bool(key))
 
   def _on_joystick_debug_mode(self, state: bool):
-    ui_state.params.put_bool("JoystickDebugMode", state)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False)
+    ui_state.params.put_bool("JoystickDebugMode", state, block=True)
+    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
     self._long_maneuver_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False)
+    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
     self._lat_maneuver_toggle.set_checked(False)
 
   def _on_long_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LongitudinalManeuverMode", state)
-    ui_state.params.put_bool("JoystickDebugMode", False)
+    ui_state.params.put_bool("LongitudinalManeuverMode", state, block=True)
+    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False)
+    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
     self._lat_maneuver_toggle.set_checked(False)
-    restart_needed_callback(state)
+    restart_needed_callback()
 
   def _on_lat_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LateralManeuverMode", state)
-    ui_state.params.put_bool("ExperimentalMode", False)
-    ui_state.params.put_bool("JoystickDebugMode", False)
+    ui_state.params.put_bool("LateralManeuverMode", state, block=True)
+    ui_state.params.put_bool("ExperimentalMode", False, block=True)
+    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False)
+    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
     self._long_maneuver_toggle.set_checked(False)
-    restart_needed_callback(state)
+    restart_needed_callback()
 
   def _on_alpha_long_enabled(self, state: bool):
-    # TODO: show confirmation dialog before enabling
-    ui_state.params.put_bool("AlphaLongitudinalEnabled", state)
-    restart_needed_callback(state)
-    self._update_toggles()
+    def do_toggle(_state: bool):
+      ui_state.params.put_bool("AlphaLongitudinalEnabled", _state, block=True)
+      restart_needed_callback()
+      self._update_toggles()
+
+    if state:
+      # Don't show enabled state until confirm
+      self._alpha_long_toggle.set_checked(False)
+      gui_app.push_widget(AlphaLongConfirmPage(lambda: do_toggle(True)))
+    else:
+      do_toggle(False)

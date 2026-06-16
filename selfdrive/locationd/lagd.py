@@ -8,6 +8,7 @@ from functools import partial
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import SERVICE_LIST
+from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.swaglog import cloudlog
@@ -19,7 +20,7 @@ BLOCK_NUM_NEEDED = 5
 MOVING_WINDOW_SEC = 60.0
 MIN_OKAY_WINDOW_SEC = 25.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
-MIN_VEGO = 15.0
+MIN_VEGO = 50.0 * CV.MPH_TO_MS
 MIN_ABS_YAW_RATE = 0.0
 MAX_YAW_RATE_SANITY_CHECK = 1.0
 MIN_NCC = 0.95
@@ -34,6 +35,8 @@ CORR_BORDER_OFFSET = 5
 LAG_CANDIDATE_CORR_THRESHOLD = 0.9
 SMOOTH_K = 5
 SMOOTH_SIGMA = 1.0
+
+VERSION = 1  # bump this to invalidate old parameter caches
 
 
 def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int, sigma: float) -> np.ndarray:
@@ -247,6 +250,7 @@ class LateralLagEstimator:
                             (self.min_valid_block_count * self.block_size), 100)
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
+    liveDelay.version = VERSION
 
     return msg
 
@@ -367,9 +371,10 @@ def retrieve_initial_lag(params: Params, CP: car.CarParams):
         if last_CP.carFingerprint != CP.carFingerprint:
           raise Exception("Car model mismatch")
 
-        lag, valid_blocks, status = ld.lateralDelayEstimate, ld.validBlocks, ld.status
+        lag, valid_blocks, status, version = ld.lateralDelayEstimate, ld.validBlocks, ld.status, ld.version
         assert valid_blocks <= BLOCK_NUM, "Invalid number of valid blocks"
         assert status != log.LiveDelayData.Status.invalid, "Lag estimate is invalid"
+        assert version == VERSION, f"Lag estimate is from a different version (got {version}, expected {VERSION})"
         return lag, valid_blocks
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial lag: {e}")
@@ -411,4 +416,4 @@ def main():
       pm.send('liveDelay', lag_msg_dat)
 
       if sm.frame % 1200 == 0: # cache every 60 seconds
-        params.put_nonblocking("LiveDelay", lag_msg_dat)
+        params.put("LiveDelay", lag_msg_dat)

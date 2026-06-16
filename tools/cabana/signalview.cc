@@ -495,7 +495,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
-    <!-- TODO: add descprition here -->
+    <!-- TODO: add description here -->
   )"));
 }
 

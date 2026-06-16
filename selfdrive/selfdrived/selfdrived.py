@@ -190,7 +190,7 @@ class SelfdriveD:
     if not self.CP.notCar:
       # Block engaging until ignition cycle after max number or time of distractions
       if self.sm['driverMonitoringState'].lockout and not self.dm_lockout_set:
-        self.params.put_bool_nonblocking("DriverTooDistracted", True)
+        self.params.put_bool("DriverTooDistracted", True)
         self.dm_lockout_set = True
       # No entry conditions
       if self.sm['driverMonitoringState'].lockout or self.sm['driverMonitoringState'].alwaysOnLockout:
@@ -331,12 +331,13 @@ class SelfdriveD:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
-    if self.sm['radarState'].radarErrors.canError:
-      self.events.add(EventName.canError)
-    elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
-      self.events.add(EventName.radarTempUnavailable)
-    elif any(self.sm['radarState'].radarErrors.to_dict().values()):
-      self.events.add(EventName.radarFault)
+    if self.CP.openpilotLongitudinalControl:
+      if self.sm['radarState'].radarErrors.canError:
+        self.events.add(EventName.canError)
+      elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
+        self.events.add(EventName.radarTempUnavailable)
+      elif any(self.sm['radarState'].radarErrors.to_dict().values()):
+        self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:
@@ -418,14 +419,14 @@ class SelfdriveD:
 
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
-      if self.sm['modelV2'].frameDropPerc > 20:
+      if self.sm['modelV2'].frameDropPerc > 1:
         self.events.add(EventName.modeldLagging)
 
     # Decrement personality on distance button press
     if self.CP.openpilotLongitudinalControl:
       if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
         self.personality = (self.personality - 1) % 3
-        self.params.put_nonblocking('LongitudinalPersonality', self.personality)
+        self.params.put('LongitudinalPersonality', self.personality)
         self.events.add(EventName.personalityChanged)
 
   def data_sample(self):

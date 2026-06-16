@@ -13,8 +13,11 @@
 class HardwareTici : public HardwareNone {
 public:
   static std::string get_name() {
-    std::string model = util::read_file("/sys/firmware/devicetree/base/model");
-    return util::strip(model.substr(std::string("comma ").size()));
+    static const std::string name = []() {
+      std::string model = util::read_file("/sys/firmware/devicetree/base/model");
+      return util::strip(model.substr(std::string("comma ").size()));
+    }();
+    return name;
   }
 
   static cereal::InitData::DeviceType get_device_type() {
@@ -23,7 +26,7 @@ public:
       {"tizi", cereal::InitData::DeviceType::TIZI},
       {"mici", cereal::InitData::DeviceType::MICI}
     };
-    auto it = device_map.find(get_name());
+    static const auto it = device_map.find(get_name());
     assert(it != device_map.end());
     return it->second;
   }

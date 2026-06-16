@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import fcntl
 import os
 import sys
 import signal
@@ -85,23 +86,26 @@ def try_setup_logs(diag, logs):
   return setup_logs(diag, logs)
 
 AT_PORT = "/dev/modem_at0"
+AT_LOCK = "/dev/shm/modem.lock"  # shared with modem.py and LPA
 
 @retry(attempts=5, delay=1.0)
 def at_cmd(cmd: str) -> str:
-  with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
-    ser.reset_input_buffer()
-    ser.write(f"{cmd}\r".encode())
-    lines = []
-    while True:
-      line = ser.readline()
-      if not line:
-        raise RuntimeError(f"AT command timeout: {cmd}")
-      line = line.decode('utf-8', errors='replace').strip()
-      if line in ("OK", "ERROR") or line.startswith("+CME ERROR"):
-        break
-      if line and line != cmd:
-        lines.append(line)
-  return '\n'.join(lines)
+  with os.fdopen(os.open(AT_LOCK, os.O_CREAT | os.O_RDWR, 0o666), "r+") as lock:
+    fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+    with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
+      ser.reset_input_buffer()
+      ser.write(f"{cmd}\r".encode())
+      lines = []
+      while True:
+        line = ser.readline()
+        if not line:
+          raise RuntimeError(f"AT command timeout: {cmd}")
+        line = line.decode('utf-8', errors='replace').strip()
+        if line in ("OK", "ERROR") or line.startswith("+CME ERROR"):
+          break
+        if line and line != cmd:
+          lines.append(line)
+    return '\n'.join(lines)
 
 def gps_enabled() -> bool:
   return "QGPS: 1" in at_cmd("AT+QGPS?")

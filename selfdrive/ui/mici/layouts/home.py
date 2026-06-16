@@ -14,7 +14,6 @@ from openpilot.system.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
-SETTINGS_ZONE_WIDTH = 280
 ALERTS_ZONE_WIDTH = 180
 
 NetworkType = log.DeviceState.NetworkType
@@ -39,11 +38,16 @@ class AlertsPill(Widget):
     self.set_rect(rl.Rectangle(0, 0, 104, 52))
 
     self._pill_bg_txt = gui_app.texture("icons_mici/alerts_pill.png", 104, 52)
-    self._warning_txt = gui_app.texture("icons_mici/offroad_alerts/red_warning.png", 36, 36)
+    self._icon_red = gui_app.texture("icons_mici/offroad_alerts/red_warning.png", 36, 36)
+    self._icon_orange = gui_app.texture("icons_mici/offroad_alerts/orange_warning.png", 36, 36)
+    self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 36, 36)
     self._alert_count_callback: Callable[[], int] | None = None
+    self._max_severity_callback: Callable[[], int | None] | None = None
 
-  def set_alert_count_callback(self, callback: Callable[[], int] | None):
+  def set_alert_count_callback(self, callback: Callable[[], int] | None,
+                               severity_callback: Callable[[], int | None] | None = None):
     self._alert_count_callback = callback
+    self._max_severity_callback = severity_callback
 
   def _render(self, _):
     alert_count = self._alert_count_callback() if self._alert_count_callback else 0
@@ -51,9 +55,17 @@ class AlertsPill(Widget):
       pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
       rl.draw_texture_ex(self._pill_bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, rl.WHITE)
 
+      severity = self._max_severity_callback() if self._max_severity_callback else None
+      if severity == -1:
+        warning_txt = self._icon_green
+      elif severity is not None and severity > 0:
+        warning_txt = self._icon_red
+      else:
+        warning_txt = self._icon_orange
+
       warn_x = self.rect.x + self.ICON_OFFSET
-      warn_y = self.rect.y + (pill_h - self._warning_txt.height) / 2
-      rl.draw_texture_ex(self._warning_txt, rl.Vector2(warn_x, warn_y), 0.0, 1.0, rl.WHITE)
+      warn_y = self.rect.y + (pill_h - warning_txt.height) / 2
+      rl.draw_texture_ex(warning_txt, rl.Vector2(warn_x, warn_y), 0.0, 1.0, rl.WHITE)
 
       count_rect = rl.Rectangle(self.rect.x + self.COUNT_OFFSET, self.rect.y, pill_w - self.COUNT_OFFSET, pill_h)
       gui_label(count_rect, str(alert_count), font_size=36,
@@ -120,15 +132,15 @@ class MiciHomeLayout(Widget):
     self._on_alerts_click: Callable | None = None
     self._alert_count_callback: Callable[[], int] | None = None
 
-    self._last_refresh = 0
     self._mouse_down_t: None | float = None
     self._did_long_press = False
     self._is_pressed_prev = False
 
-    self._version_text = None
-    self._experimental_mode = False
+    self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
+    self._egpu_icon = IconWidget("icons_mici/egpu.png", (50, 37))
+    self._egpu_icon_gray = IconWidget("icons_mici/egpu_gray.png", (50, 37))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
     self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
 
@@ -138,6 +150,8 @@ class MiciHomeLayout(Widget):
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
+      self._egpu_icon,
+      self._egpu_icon_gray,
       self._body_icon,
       self._mic_icon,
     ], spacing=18)
@@ -148,14 +162,6 @@ class MiciHomeLayout(Widget):
     self._date_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
     self._branch_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, scroll=True)
     self._version_commit_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
-
-  def show_event(self):
-    super().show_event()
-    self._version_text = self._get_version_text()
-    self._update_params()
-
-  def _update_params(self):
-    self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
 
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
@@ -169,34 +175,28 @@ class MiciHomeLayout(Widget):
       if time.monotonic() - self._mouse_down_t > 0.5:
         # long gating for experimental mode - only allow toggle if longitudinal control is available
         if ui_state.has_longitudinal_control:
-          self._experimental_mode = not self._experimental_mode
-          ui_state.params.put("ExperimentalMode", self._experimental_mode)
+          ui_state.experimental_mode = not ui_state.experimental_mode
+          ui_state.params.put("ExperimentalMode", ui_state.experimental_mode, block=True)
         self._mouse_down_t = None
         self._did_long_press = True
 
-    if rl.get_time() - self._last_refresh > 5.0:
-      # Update version text
-      self._version_text = self._get_version_text()
-      self._last_refresh = rl.get_time()
-      self._update_params()
-
   def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
-                    alert_count_callback: Callable[[], int] | None = None):
+                    alert_count_callback: Callable[[], int] | None = None,
+                    max_severity_callback: Callable[[], int | None] | None = None):
     self._on_settings_click = on_settings
     self._on_alerts_click = on_alerts
     self._alert_count_callback = alert_count_callback
-    self._alerts_pill.set_alert_count_callback(alert_count_callback)
+    self._alerts_pill.set_alert_count_callback(alert_count_callback, max_severity_callback)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
       relative_x = mouse_pos.x - self.rect.x
       has_alerts = self._alert_count_callback and self._alert_count_callback() > 0
-      if relative_x < SETTINGS_ZONE_WIDTH:
-        if self._on_settings_click:
-          self._on_settings_click()
-      elif has_alerts and relative_x > self.rect.width - ALERTS_ZONE_WIDTH:
+      if has_alerts and relative_x > self.rect.width - ALERTS_ZONE_WIDTH:
         if self._on_alerts_click:
           self._on_alerts_click()
+      elif self._on_settings_click:
+        self._on_settings_click()
     self._did_long_press = False
 
   def _get_version_text(self) -> tuple[str, str, str, str] | None:
@@ -247,7 +247,9 @@ class MiciHomeLayout(Widget):
         self._version_commit_label.render()
 
     # ***** Center-aligned bottom section icons *****
-    self._experimental_icon.set_visible(self._experimental_mode)
+    self._experimental_icon.set_visible(ui_state.experimental_mode)
+    self._egpu_icon.set_visible(ui_state.usbgpu and ui_state.usbgpu_compiled)
+    self._egpu_icon_gray.set_visible(ui_state.usbgpu and not ui_state.usbgpu_compiled)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(ui_state.is_body)
 

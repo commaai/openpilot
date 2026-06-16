@@ -1,5 +1,6 @@
 moc_*
 *.moc
+*.generated.qrc
 
 assets.cc
 

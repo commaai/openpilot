@@ -35,7 +35,7 @@ if segment >= len(segments):
 
 fr = FrameReader(segments[segment])
 if frame >= fr.frame_count:
-  raise Exception("frame {frame} not found, got {fr.frame_count} frames")
+  raise Exception(f"frame {frame} not found, got {fr.frame_count} frames")
 
 im = Image.fromarray(fr.get(frame))
 fn = f"uxxx_{route.replace('|', '_')}_{segment}_{frame}.png"

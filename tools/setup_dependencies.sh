@@ -30,23 +30,34 @@ function install_linux_deps() {
     SUDO="sudo"
   fi
 
+  local missing_linux_deps=0
+  for cmd in gcc g++ make curl curl-config git; do
+    if ! command -v "$cmd" > /dev/null 2>&1; then
+      missing_linux_deps=1
+      break
+    fi
+  done
+
   # normal stuff, this mostly for bare docker images
-  if command -v apt-get > /dev/null 2>&1; then
+  if [[ "$missing_linux_deps" -eq 0 ]]; then
+    # the native package managers are slow, so skip if we can
+    echo "[ ] system packages already installed t=$SECONDS"
+  elif command -v apt-get > /dev/null 2>&1; then
     $SUDO apt-get update
-    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xvfb
+    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git
   elif command -v dnf > /dev/null 2>&1; then
-    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git xorg-x11-server-Xvfb
+    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
   elif command -v yum > /dev/null 2>&1; then
-    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git xorg-x11-server-Xvfb
+    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
   elif command -v pacman > /dev/null 2>&1; then
-    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git xorg-server-xvfb
+    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git
   elif command -v zypper > /dev/null 2>&1; then
     $SUDO zypper --non-interactive refresh
-    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git xorg-x11-server
+    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git
   elif command -v apk > /dev/null 2>&1; then
-    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git xvfb
+    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git
   elif command -v xbps-install > /dev/null 2>&1; then
-    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales xorg-server-xvfb
+    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales
   else
     echo "Unsupported Linux distribution. Supported package managers: apt-get, dnf, yum, pacman, zypper, apk, xbps-install."
     exit 1

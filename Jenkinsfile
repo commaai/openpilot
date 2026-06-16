@@ -12,7 +12,7 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec /usr/bin/bash <<'END'
+ssh -o ControlMaster=auto -o ControlPath=/tmp/ssh_control_%C -o ControlPersist=yes -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec /usr/bin/bash <<'END'
 
 set -e
 
@@ -166,8 +166,8 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
-  def excludeBranches = ['__nightly', 'devel', 'devel-staging', 'release3', 'release3-staging',
-                         'release-tici', 'release-tizi', 'release-tizi-staging', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
+  def excludeBranches = ['__nightly', 'devel', 'devel-staging',
+                         'release-tizi', 'release-tizi-staging', 'release-mici', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
   if (env.BRANCH_NAME != 'master' && !env.BRANCH_NAME.contains('__jenkins_loop_')) {
@@ -179,7 +179,7 @@ node {
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
-        step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging $SOURCE_DIR/release/build_release.sh && git push -f origin release-tizi-staging:release-mici-staging"),
+        step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/release/build_release.sh"),
       ])
     }
 
@@ -247,7 +247,6 @@ node {
           step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
           step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
-          step("test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", [diffPaths: ["system/qcomgpsd/"]]),
         ])
       },
 

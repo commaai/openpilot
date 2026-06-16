@@ -1,9 +1,9 @@
-import math
+import configparser
+import json
 import os
+import socket
 import subprocess
 import time
-import tempfile
-from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
 
@@ -16,50 +16,10 @@ from openpilot.system.hardware.tici.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
-NM = 'org.freedesktop.NetworkManager'
-NM_CON_ACT = NM + '.Connection.Active'
-NM_DEV = NM + '.Device'
-NM_DEV_WL = NM + '.Device.Wireless'
-NM_DEV_STATS = NM + '.Device.Statistics'
-NM_AP = NM + '.AccessPoint'
-DBUS_PROPS = 'org.freedesktop.DBus.Properties'
-
-MM = 'org.freedesktop.ModemManager1'
-MM_MODEM = MM + ".Modem"
-MM_MODEM_SIMPLE = MM + ".Modem.Simple"
-MM_SIM = MM + ".Sim"
-
-class MM_MODEM_STATE(IntEnum):
-  FAILED        = -1
-  UNKNOWN       = 0
-  INITIALIZING  = 1
-  LOCKED        = 2
-  DISABLED      = 3
-  DISABLING     = 4
-  ENABLING      = 5
-  ENABLED       = 6
-  SEARCHING     = 7
-  REGISTERED    = 8
-  DISCONNECTING = 9
-  CONNECTING    = 10
-  CONNECTED     = 11
-
-class NMMetered(IntEnum):
-  NM_METERED_UNKNOWN = 0
-  NM_METERED_YES = 1
-  NM_METERED_NO = 2
-  NM_METERED_GUESS_YES = 3
-  NM_METERED_GUESS_NO = 4
-
-TIMEOUT = 0.1
-REFRESH_RATE_MS = 1000
+MODEM_STATE_PATH = "/dev/shm/modem"
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
-
-# https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
-MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
-MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 
 def affine_irq(val, action):
@@ -78,25 +38,39 @@ def get_device_type():
     model = f.read().strip('\x00')
   return model.split('comma ')[-1]
 
+def wpa_supplicant_cmd(cmd: str, timeout: float = 0.2) -> dict[str, str]:
+  with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
+    sock.settimeout(timeout)
+    sock.bind(f"\0openpilot-wpa-{os.getpid()}-{time.monotonic_ns()}")
+    sock.connect("/run/wpa_supplicant/wlan0")
+    sock.send(cmd.encode())
+
+    while True:
+      out = sock.recv(8192).decode("utf-8", "replace")
+      if out.startswith("<"):
+        continue
+      if out.startswith("FAIL"):
+        return {}
+      return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
+
+def get_default_route_iface():
+  with open("/proc/net/route") as f:
+    routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
+  return min(routes)[1] if routes else None
+
 class Tici(HardwareBase):
-  @cached_property
-  def bus(self):
-    import dbus
-    return dbus.SystemBus()
-
-  @cached_property
-  def nm(self):
-    return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
-
-  @property # this should not be cached, in case the modemmanager restarts
-  def mm(self):
-    return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
-
   @cached_property
   def amplifier(self):
     if self.get_device_type() == "mici":
       return None
     return Amplifier()
+
+  def get_modem_state(self) -> dict:
+    try:
+      with open(MODEM_STATE_PATH) as f:
+        return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+      return {}
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -138,67 +112,37 @@ class Tici(HardwareBase):
 
   def get_network_type(self):
     try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
-      primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-      if primary_type == '802-3-ethernet':
-        return NetworkType.ethernet
-      elif primary_type == '802-11-wireless':
-        return NetworkType.wifi
-      else:
-        active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        for conn in active_connections:
-          c = self.bus.get_object(NM, conn)
-          tp = c.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-          if tp == 'gsm':
-            modem = self.get_modem()
-            access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-            if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
-              return NetworkType.cell4G
-            elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
-              return NetworkType.cell3G
-            else:
-              return NetworkType.cell2G
+      if (iface := get_default_route_iface()):
+        if iface.startswith('wlan'):
+          return NetworkType.wifi
+        if iface.startswith('eth'):
+          return NetworkType.ethernet
     except Exception:
       pass
 
+    ms = self.get_modem_state()
+    if ms.get('connected'):
+      nt = ms.get('network_type', '')
+      if nt == 'nr':
+        return NetworkType.cell5G
+      elif nt == 'lte':
+        return NetworkType.cell4G
+      elif nt in ('utran', 'umts'):
+        return NetworkType.cell3G
+      elif nt == 'gsm':
+        return NetworkType.cell2G
     return NetworkType.none
 
-  def get_modem(self):
-    objects = self.mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=TIMEOUT)
-    modem_path = list(objects.keys())[0]
-    return self.bus.get_object(MM, modem_path)
-
-  def get_wlan(self):
-    wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
-    return self.bus.get_object(NM, wlan_path)
-
-  def get_wwan(self):
-    wwan_path = self.nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
-    return self.bus.get_object(NM, wwan_path)
-
   def get_sim_info(self):
-    modem = self.get_modem()
-    sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-    if sim_path == "/":
-      return {
-        'sim_id': '',
-        'mcc_mnc': None,
-        'network_type': ["Unknown"],
-        'sim_state': ["ABSENT"],
-        'data_connected': False
-      }
-    else:
-      sim = self.bus.get_object(MM, sim_path)
-      return {
-        'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
-        'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
-        'network_type': ["Unknown"],
-        'sim_state': ["READY"],
-        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
-      }
+    ms = self.get_modem_state()
+    sim_id = ms.get('iccid', '')
+    return {
+      'sim_id': sim_id,
+      'mcc_mnc': ms.get('mcc_mnc') or None,
+      'network_type': ["Unknown"],
+      'sim_state': ["ABSENT"] if not sim_id else ["READY"],
+      'data_connected': ms.get('connected', False),
+    }
 
   def get_sim_lpa(self) -> LPABase:
     return TiciLPA()
@@ -206,40 +150,21 @@ class Tici(HardwareBase):
   def get_imei(self, slot):
     if slot != 0:
       return ""
-
-    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    return self.get_modem_state().get('imei', '')
 
   def get_network_info(self):
     if self.get_device_type() == "mici":
       return None
-    try:
-      modem = self.get_modem()
-      info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-    except Exception:
-      return None
 
-    if info and info.startswith('+QNWINFO: '):
-      info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
-      extra = "" if extra is None else extra.replace('+QENG: "servingcell",', '').replace('"', '')
-      state = "" if state is None else MM_MODEM_STATE(state).name
-
-      if len(info) != 4:
-        return None
-
-      technology, operator, band, channel = info
-
-      return({
-        'technology': technology,
-        'operator': operator,
-        'band': band,
-        'channel': int(channel),
-        'extra': extra,
-        'state': state,
-      })
-    else:
-      return None
+    ms = self.get_modem_state()
+    return {
+      'technology': ms.get('network_type', '').upper() if ms.get('network_type') else '',
+      'operator': ms.get('operator', ''),
+      'band': ms.get('band', ''),
+      'channel': ms.get('channel', 0),
+      'extra': ms.get('extra', ''),
+      'state': ms.get('state', 'UNKNOWN'),
+    }
 
   def parse_strength(self, percentage):
     if percentage < 25:
@@ -257,59 +182,62 @@ class Tici(HardwareBase):
     try:
       if network_type == NetworkType.none:
         pass
+      elif network_type == NetworkType.ethernet:
+        network_strength = NetworkStrength.great
       elif network_type == NetworkType.wifi:
-        wlan = self.get_wlan()
-        active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        if active_ap_path != "/":
-          active_ap = self.bus.get_object(NM, active_ap_path)
-          strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
-          network_strength = self.parse_strength(strength)
+        rssi = wpa_supplicant_cmd("SIGNAL_POLL").get("RSSI")
+        if rssi is not None:
+          dbm = int(rssi)
+          if -100 < dbm <= 0:
+            network_strength = self.parse_strength(120 + max(-100, min(-20, dbm)))
       else:  # Cellular
-        modem = self.get_modem()
-        strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
-        network_strength = self.parse_strength(strength)
+        network_strength = self.parse_strength(self.get_modem_state().get('signal_quality', 0))
     except Exception:
       pass
 
     return network_strength
 
   def get_network_metered(self, network_type) -> bool:
+    if network_type in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
+      from openpilot.common.params import Params
+      return Params().get_bool("GsmMetered")
     try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
-      primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      if network_type == NetworkType.wifi:
+        ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
+        if ssid:
+          # wpa_supplicant escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
+          ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
+          ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
 
-      for dev in primary_devices:
-        dev_obj = self.bus.get_object(NM, str(dev))
-        metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-        if network_type == NetworkType.wifi:
-          if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
-            return True
-        elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
-          if metered_prop == NMMetered.NM_METERED_NO:
-            return False
+          nm_dirs = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")
+          for fpath in (p for d in nm_dirs for p in Path(d).glob("*.nmconnection")):
+            raw = sudo_read(str(fpath))
+            if not raw:
+              continue
+            cp = configparser.ConfigParser(interpolation=None)
+            try:
+              cp.read_string(raw)
+              keyfile_ssid = cp.get("wifi", "ssid", fallback="")
+              if keyfile_ssid != ssid and keyfile_ssid != ssid_keyfile_list:
+                continue
+              metered = cp.getint("connection", "metered", fallback=0)
+            except (configparser.Error, ValueError):
+              continue
+            if metered == 1:  # NM_METERED_YES
+              return True
+            if metered == 2:  # NM_METERED_NO
+              return False
+            break
     except Exception:
       pass
 
     return super().get_network_metered(network_type)
 
   def get_modem_version(self):
-    try:
-      modem = self.get_modem()
-      return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-    except Exception:
-      return None
+    return self.get_modem_state().get('modem_version') or None
 
   def get_modem_temperatures(self):
-    timeout = 0.2  # Default timeout is too short
-    try:
-      modem = self.get_modem()
-      temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
-      return list(filter(lambda t: t != 255, map(int, temps.split(' ')[1].split(','))))
-    except Exception:
-      return []
-
+    return self.get_modem_state().get('temperatures', [])
 
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
@@ -385,6 +313,9 @@ class Tici(HardwareBase):
         continue
       gov = 'ondemand' if powersave_enabled else 'performance'
       sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
+      if not powersave_enabled:
+        # cap max core freq to 1689 Mhz
+        sudo_write('1689600', f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_max_freq')
 
     # *** IRQ config ***
 
@@ -452,70 +383,8 @@ class Tici(HardwareBase):
       pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
       subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
       subprocess.call(["sudo", "taskset", "-pc", "3", pid])
-    except subprocess.CalledProcessException as e:
+    except subprocess.CalledProcessError as e:
       print(str(e))
-
-  def configure_modem(self):
-    sim_id = self.get_sim_info().get('sim_id', '')
-
-    cmds = []
-    modem = self.get_modem()
-
-    # Quectel EG25
-    if self.get_device_type() in ("tizi", ):
-      # clear out old blue prime initial APN
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
-
-      cmds += [
-        # SIM hot swap
-        'AT+QSIMDET=1,0',
-        'AT+QSIMSTAT=1',
-
-        # configure modem as data-centric
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]
-
-    # Quectel EG916
-    else:
-      # this modem gets upset with too many AT commands
-      if sim_id is None or len(sim_id) == 0:
-        cmds += [
-          # SIM sleep disable
-          'AT$QCSIMSLEEP=0',
-          'AT$QCSIMCFG=SimPowerSave,0',
-
-          # ethernet config
-          'AT$QCPCFG=usbNet,1',
-        ]
-
-    for cmd in cmds:
-      try:
-        modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      except Exception:
-        pass
-
-    # eSIM prime
-    dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
-    if self.get_sim_lpa().is_comma_profile(sim_id) and not os.path.exists(dest):
-      with open(Path(__file__).parent/'esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
-        dat = f.read()
-        dat = dat.replace("sim-id=", f"sim-id={sim_id}")
-        tf.write(dat)
-        tf.flush()
-
-        # needs to be root
-        os.system(f"sudo cp {tf.name} {dest}")
-      os.system(f"sudo nmcli con load {dest}")
-
-  def reboot_modem(self):
-    modem = self.get_modem()
-    for state in (0, 1):
-      try:
-        modem.Command(f'AT+CFUN={state}', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      except Exception:
-        pass
 
   def get_networks(self):
     r = {}
@@ -545,20 +414,8 @@ class Tici(HardwareBase):
     return r
 
   def get_modem_data_usage(self):
-    try:
-      wwan = self.get_wwan()
-
-      # Ensure refresh rate is set so values don't go stale
-      refresh_rate = wwan.Get(NM_DEV_STATS, 'RefreshRateMs', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      if refresh_rate != REFRESH_RATE_MS:
-        u = type(refresh_rate)
-        wwan.Set(NM_DEV_STATS, 'RefreshRateMs', u(REFRESH_RATE_MS), dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-      tx = wwan.Get(NM_DEV_STATS, 'TxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      rx = wwan.Get(NM_DEV_STATS, 'RxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      return int(tx), int(rx)
-    except Exception:
-      return -1, -1
+    ms = self.get_modem_state()
+    return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
 
   def has_internal_panda(self):
     return True
@@ -569,7 +426,7 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 0)
-    time.sleep(1)
+    time.sleep(0.01)
     gpio_set(GPIO.STM_RST_N, 0)
 
   def recover_internal_panda(self):
@@ -578,9 +435,9 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 1)
-    time.sleep(0.5)
+    time.sleep(0.01)
     gpio_set(GPIO.STM_RST_N, 0)
-    time.sleep(0.5)
+    time.sleep(0.01)
     gpio_set(GPIO.STM_BOOT0, 0)
 
   def booted(self):
@@ -592,7 +449,6 @@ class Tici(HardwareBase):
 
 if __name__ == "__main__":
   t = Tici()
-  t.configure_modem()
   t.initialize_hardware()
   t.set_power_save(False)
   print(t.get_sim_info())
