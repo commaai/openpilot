@@ -597,11 +597,7 @@ def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
     resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
     if not resp.ok:
-      try:
-        error_body = resp.json()
-        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
-      except ValueError:
-        resp.raise_for_status()
+      raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
     ret = resp.json()
     ret["time"] = (t_end - t_start) * 1000
     return ret
