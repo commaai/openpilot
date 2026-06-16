@@ -246,15 +246,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(
-    self,
-    sdp: str,
-    init_camera: str,
-    incoming_services: list[str],
-    outgoing_services: list[str],
-    enabled: bool | None = None,
-    debug_mode: bool = False,
-  ):
+  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], enabled: bool | None = None, debug_mode: bool = False,):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
@@ -375,7 +367,6 @@ class StreamSession:
 class StreamRequestBody:
   sdp: str
   initCamera: str
-  session_id: str | None = None
   video_enabled: bool = True
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
@@ -398,8 +389,7 @@ async def get_stream(request: 'web.Request'):
       await s.stop()
       stream_dict.pop(sid, None)
 
-    # create new stream
-    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, body.session_id, body.video_enabled, debug_mode)
+    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, body.video_enabled, debug_mode)
     stream_dict[session.identifier] = session
     try:
       answer = await session.get_answer()
