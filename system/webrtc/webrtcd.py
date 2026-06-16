@@ -245,7 +245,15 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], enabled: bool | None = None, debug_mode: bool = False,):
+  def __init__(
+    self,
+    sdp: str,
+    init_camera: str,
+    incoming_services: list[str],
+    outgoing_services: list[str],
+    enabled: bool | None = None,
+    debug_mode: bool = False
+  ):
     from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc import WebRTCAnswerBuilder
