@@ -140,7 +140,7 @@ class UIState:
         # Check ignition status across all pandas
         if self.panda_type != log.PandaState.PandaType.unknown:
           self.ignition = any(state.ignitionLine or state.ignitionCan for state in panda_states)
-    elif time.monotonic() - self.sm.recv_time["pandaStates"] > 5.0:
+    elif not self.sm.alive["pandaStates"]:
       self.panda_type = log.PandaState.PandaType.unknown
 
     # Handle wide road camera state updates
