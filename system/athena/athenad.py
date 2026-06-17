@@ -40,7 +40,6 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.webrtc.webrtcd import StreamRequestBody
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -581,7 +580,8 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str) -> dict:
+def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
+  from openpilot.system.webrtc.models import StreamRequestBody
   bridge_services_in = []
 
   # get live car params to avoid stale notCar edge case
@@ -591,29 +591,20 @@ def startStream(sdp: str) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
 
-  body = StreamRequestBody(sdp, "wideRoad", bridge_services_in, ["carState"])
+  t_start = time.monotonic()
+  body = StreamRequestBody(sdp=sdp, initCamera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], video_enabled=video_enabled)
   try:
-    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream",
-                       json=asdict(body), timeout=10)
+    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
+    t_end = time.monotonic()
     if not resp.ok:
-      try:
-        error_body = resp.json()
-        raise Exception(error_body.get("message", f"webrtcd returned {resp.status_code}"))
-      except ValueError:
-        resp.raise_for_status()
-    return resp.json()
+      raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
+    ret = resp.json()
+    ret["time"] = (t_end - t_start) * 1000
+    return ret
   except requests.ConnectTimeout as e:
     raise Exception("webrtc took too long to respond. is the comma body on?") from e
   except requests.ConnectionError as e:
     raise Exception("webrtc is not running. turn on comma body ignition.") from e
-
-@dispatcher.add_method
-def addIceCandidate(session_id: str, candidate: dict | None) -> dict:
-  if session_id is None:
-    return Exception("cannot add ice candidate without session_id")
-  resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/candidate",
-                            json={"session_id": session_id, "candidate": candidate}, timeout=10)
-  return resp.json()
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:

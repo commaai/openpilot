@@ -32,12 +32,11 @@ class TestStreamSession:
     expected_json = json.dumps(expected_dict).encode()
 
     channel = mocker.Mock(spec=RTCDataChannel)
-    mocked_submaster = messaging.SubMaster(["customReservedRawData0"])
+    proxy = CerealOutgoingMessageProxy(["customReservedRawData0"])
     def mocked_update(t):
-      mocked_submaster.update_msgs(0, [test_msg])
+      proxy.sm.update_msgs(0, [test_msg])
 
     mocker.patch.object(messaging.SubMaster, "update", side_effect=mocked_update)
-    proxy = CerealOutgoingMessageProxy(mocked_submaster)
     proxy.add_channel(channel)
 
     proxy.update()
