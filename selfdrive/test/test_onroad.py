@@ -48,6 +48,7 @@ PROCS = {
   "selfdrive.modeld.modeld": 22.0,
   "selfdrive.modeld.dmonitoringmodeld": 18.0,
   "system.hardware.hardwared": 4.0,
+  "system.hardware.usbd": 1.0,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.locationd.locationd": 25.0,
