@@ -305,6 +305,7 @@ class StreamSession:
             self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
+            self.enabled = enabled
             self.video_track.enable(enabled)
             self.outgoing_bridge.enable(enabled)
             self.bitrate_controller.enable(enabled)
@@ -370,7 +371,8 @@ async def get_stream(request: 'web.Request'):
   async with request.app['stream_lock']:
     active = any(s.run_task and not s.run_task.done() for s in stream_dict.values())
     if active:
-      if body.enabled is False: # enabled = None defaults to video enabled
+      active_enabled = any(s.run_task and not s.run_task.done() and s.enabled for s in stream_dict.values())
+      if active_enabled and body.enabled is False: # enabled = None defaults to video enabled
         return web.json_response({"error": "busy", "message": "someone else is connected."})
 
       for sid, s in list(stream_dict.items()):
