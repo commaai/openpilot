@@ -76,7 +76,7 @@ class AugmentedRoadView(CameraView):
     )
 
     # Render the base camera view
-    super()._render(rect)
+    super()._render(self._content_rect)
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
@@ -175,10 +175,13 @@ class AugmentedRoadView(CameraView):
     w, h = self._content_rect.width, self._content_rect.height
     cx, cy = intrinsic[0, 2], intrinsic[1, 2]
 
+    # Ensure zoom views the whole area
+    zoom = max(zoom, w / (2 * cx), h / (2 * cy))
+
     # Calculate max allowed offsets with margins
     margin = 5
-    max_x_offset = cx * zoom - w / 2 - margin
-    max_y_offset = cy * zoom - h / 2 - margin
+    max_x_offset = max(0.0, cx * zoom - w / 2 - margin)
+    max_y_offset = max(0.0, cy * zoom - h / 2 - margin)
 
     # Calculate and clamp offsets to prevent out-of-bounds issues
     try:

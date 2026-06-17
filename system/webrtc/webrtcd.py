@@ -10,7 +10,6 @@ import contextlib
 import json
 import uuid
 import logging
-from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
@@ -22,17 +21,12 @@ import capnp
 from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
+import aioice.ice
 
+from openpilot.system.webrtc.models import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
-
-from aiortc import RTCBundlePolicy, RTCConfiguration, RTCPeerConnection
-from aiortc.mediastreams import VideoStreamTrack
-from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-from teleoprtc import WebRTCAnswerBuilder
-
-import aioice.ice
 
 
 # socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
@@ -54,7 +48,7 @@ def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
   primary = _default_route_ip()
   if primary not in addresses:
     return addresses
-  return [a for a in addresses if a == primary]
+  return [primary, ]
 aioice.ice.get_host_addresses = _primary_host_addresses
 
 
@@ -85,13 +79,18 @@ class AsyncTaskRunner:
 
 
 class CerealOutgoingMessageProxy(AsyncTaskRunner):
-  def __init__(self, sm: messaging.SubMaster):
+  def __init__(self, services: list[str], enabled: bool = True):
     super().__init__()
-    self.sm = sm
+    self.services = list(services)
+    self.sm = messaging.SubMaster(self.services)
     self.channels: list[RTCDataChannel] = []
+    self._enabled = enabled
 
   def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)
+
+  def enable(self, enable: bool):
+    self._enabled = enable
 
   def to_json(self, msg_content: Any):
     if isinstance(msg_content, capnp._DynamicStructReader):
@@ -122,6 +121,9 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
     from aiortc.exceptions import InvalidStateError
 
     while True:
+      if not self._enabled:
+        await asyncio.sleep(0.01)
+        continue
       try:
         self.update()
       except InvalidStateError:
@@ -170,21 +172,27 @@ class LivestreamBitrateController(AsyncTaskRunner):
   down_samples = 5 # 1s
   param_name = "LivestreamEncoderBitrate"
 
-  def __init__(self, peer_connection: Any):
+  def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
     super().__init__()
     self.pc = peer_connection
-    self.params = Params()
+    self.params = params
 
-    self.level = 1
+    self.level = 2
     self._publish(self.bitrates[self.level])
     self.prev_lost, self.prev_sent = None, None
     self.counter = 0
     self.up_samples = 5 # 1s
     self._auto = True
+    self._enabled = enabled
+
+  def enable(self, enable: bool):
+    self._enabled = enable
 
   async def run(self):
     while True:
       await asyncio.sleep(self.sample_interval)
+      if not self._enabled:
+        continue
       if not self._auto:
         continue
 
@@ -236,14 +244,28 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, sdp: str, init_camera: str, incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
+  def __init__(
+    self,
+    sdp: str,
+    init_camera: str,
+    incoming_services: list[str],
+    outgoing_services: list[str],
+    enabled: bool | None = None,
+    debug_mode: bool = False
+  ):
+    if debug_mode:
+      from aiortc.mediastreams import VideoStreamTrack
+    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+    from teleoprtc.builder import WebRTCAnswerBuilder
+
+    self.identifier = str(uuid.uuid4())
+    self.params = Params()
     builder = WebRTCAnswerBuilder(sdp)
 
-    self.video_track = LiveStreamVideoStreamTrack(init_camera) if not debug_mode else VideoStreamTrack()
+    self.enabled = enabled if enabled is not None else True # default to enabled
+    self.video_track = LiveStreamVideoStreamTrack(init_camera, self.enabled) if not debug_mode else VideoStreamTrack()
     builder.add_video_stream(init_camera, self.video_track)
-
     self.stream = builder.stream()
-    self.identifier = str(uuid.uuid4())
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = incoming_services
@@ -252,16 +274,16 @@ class StreamSession:
     if len(incoming_services) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(outgoing_services) > 0:
-      self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
-    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection)
+      self.outgoing_bridge = CerealOutgoingMessageProxy(outgoing_services, self.enabled)
+    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.params, self.enabled)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
     self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
-      "New stream session (%s), init camera %s, incoming services %s, outgoing services %s",
-      self.identifier, init_camera, incoming_services, outgoing_services,
+      "New stream session (%s), init camera %s, video enabled %s, incoming services %s, outgoing services %s",
+      self.identifier, init_camera, enabled, incoming_services, outgoing_services,
     )
 
   def start(self):
@@ -278,25 +300,7 @@ class StreamSession:
   async def get_answer(self):
     return await self.stream.start()
 
-  async def add_ice_candidate(self, candidate_init: dict | None):
-    from aiortc.sdp import candidate_from_sdp
-
-    pc = self.stream.peer_connection
-    if pc.iceConnectionState not in ("new", "checking"):
-      return
-
-    # a null/empty candidate signals end-of-candidates per the WebRTC convention
-    if not candidate_init or not candidate_init.get("candidate"):
-      await pc.addIceCandidate(None)
-      return
-
-    candidate = candidate_from_sdp(candidate_init["candidate"].split(":", 1)[1])
-    candidate.sdpMid = candidate_init.get("sdpMid")
-    candidate.sdpMLineIndex = candidate_init.get("sdpMLineIndex")
-    await pc.addIceCandidate(candidate)
-
   def message_handler(self, message: bytes):
-    assert self.incoming_bridge is not None
     try:
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
@@ -307,6 +311,13 @@ class StreamSession:
             self.video_track.switch_camera(payload["data"]["camera"])
           case "livestreamSettings":
             self.bitrate_controller.set_quality(payload["data"]["quality"])
+          case "livestreamVideoEnable":
+            enabled = payload["data"]["enabled"]
+            self.video_track.enable(enabled)
+            self.outgoing_bridge.enable(enabled)
+            self.bitrate_controller.enable(enabled)
+            if not enabled:
+              self.params.put("LivestreamRequestKeyframe", True)
           case "clockSync":
             pong = json.dumps({"type": "clockSync", "data": {
               "action": "pong", "browserSendTime": payload["data"]["browserSendTime"], "deviceTime": time.time() * 1000, # noqa: TID251
@@ -324,6 +335,7 @@ class StreamSession:
 
   async def run(self):
     try:
+      self.params.put("LivestreamRequestKeyframe", True)
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
@@ -336,9 +348,7 @@ class StreamSession:
       self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
-
       await self.stream.wait_for_disconnection()
-
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
@@ -350,21 +360,14 @@ class StreamSession:
       if self._cleanup_done:
         return
       self._cleanup_done = True
-      if self.bitrate_controller is not None:
-        await self.bitrate_controller.stop()
+      self.params.put("LivestreamRequestKeyframe", False)
+      await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       if self.video_track is not None:
         self.video_track.stop()
+        self.video_track = None
       await self.stream.stop()
-
-
-@dataclass
-class StreamRequestBody:
-  sdp: str
-  initCamera: str
-  bridge_services_in: list[str] = field(default_factory=list)
-  bridge_services_out: list[str] = field(default_factory=list)
 
 
 async def get_stream(request: 'web.Request'):
@@ -378,45 +381,28 @@ async def get_stream(request: 'web.Request'):
       if s.run_task and not s.run_task.done():
         try:
           ch = s.stream.get_messaging_channel()
-          ch.send(json.dumps({"type": "connectionReplaced", "data": "Another device has connected, closing this session."}))
+          ch.send(json.dumps({"type": "disconnect", "data": "Another device has connected, closing this session."}))
         except Exception:
           pass
       await s.stop()
       stream_dict.pop(sid, None)
 
-    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, debug_mode)
+    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, body.video_enabled, debug_mode)
+    stream_dict[session.identifier] = session
     try:
       answer = await session.get_answer()
-    except ValueError as e:
-      await session.stop()
-      raise web.HTTPBadRequest(
-        text=json.dumps({"error": "invalid_sdp", "message": str(e)}),
-        content_type="application/json",
-      ) from e
     except Exception:
       await session.stop()
+      stream_dict.pop(session.identifier, None)
+      logging.getLogger("webrtcd").exception("Failed to create stream answer")
       raise
-    stream_dict[session.identifier] = session
     session.start()
 
-    session_id = session.identifier
-
     def remove_finished_session(_: asyncio.Task) -> None:
-      stream_dict.pop(session_id, None)
+      stream_dict.pop(session.identifier, None)
     session.run_task.add_done_callback(remove_finished_session)
 
-  return web.json_response({"sdp": answer.sdp, "type": answer.type, "session_id": session.identifier})
-
-
-async def post_candidate(request: 'web.Request'):
-  body = await request.json()
-  session = request.app.get('streams', {}).get(body.get("session_id"))
-
-  try:
-    await session.add_ice_candidate(body.get("candidate"))
-  except Exception as e:
-    raise web.HTTPBadRequest(text=json.dumps({"error": "invalid_candidate", "message": str(e)}), content_type="application/json") from e
-  return web.Response(status=200, text="OK")
+  return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
 async def get_schema(request: 'web.Request'):
@@ -443,30 +429,36 @@ async def post_notify(request: 'web.Request'):
   return web.Response(status=200, text="OK")
 
 
-async def on_startup(app: 'web.Application'):
-  logger = logging.getLogger("webrtcd")
-  start_time = time.monotonic()
-  pc = None
-
-  # warmup imports for webrtc stack
-  try:
-    pc = RTCPeerConnection(RTCConfiguration(bundlePolicy=RTCBundlePolicy.MAX_BUNDLE))
-    pc.addTransceiver("video", direction="recvonly")
-    pc.createDataChannel("data", ordered=True)
-    offer = await pc.createOffer()
-    await asyncio.wait_for(pc.setLocalDescription(offer), timeout=1.5)
-    logger.info("Warmed WebRTC stack in %.1f ms", (time.monotonic() - start_time) * 1000)
-  except Exception:
-    logger.exception("WebRTC stack warmup failed")
-  finally:
-    if pc is not None:
-      await pc.close()
-
-
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
+    try:
+      ch = session.stream.get_messaging_channel()
+      ch.send(json.dumps({"type": "disconnect", "data": "device stream has been stopped."}))
+    except Exception:
+      pass
     await session.stop()
   del app['streams']
+
+
+@web.middleware
+async def error_middleware(request: 'web.Request', handler):
+  try:
+    return await handler(request)
+  except web.HTTPException:
+    raise  # intentional responses (400/404/etc.) pass through untouched
+  except Exception as e:
+    logging.getLogger("webrtcd").exception("Unhandled error handling %s", request.path)
+    return web.json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
+
+
+def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
+  if debug_mode:
+    from aiortc.mediastreams import VideoStreamTrack
+    assert VideoStreamTrack
+  from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+  from teleoprtc.builder import WebRTCAnswerBuilder
+  assert LiveStreamVideoStreamTrack
+  assert WebRTCAnswerBuilder
 
 
 def webrtcd_thread(host: str, port: int, debug: bool):
@@ -474,16 +466,18 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
+  prewarm_start = time.monotonic()
+  prewarm_stream_session_imports(debug)
+  prewarm_end = time.monotonic()
+  logging.getLogger("webrtcd").info(f"webrtc prewarm finished in {(prewarm_end - prewarm_start) * 1000} ms")
 
-  app = web.Application()
+  app = web.Application(middlewares=[error_middleware])
 
   app['streams'] = dict()
   app['stream_lock'] = asyncio.Lock()
   app['debug'] = debug
-  app.on_startup.append(on_startup)
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
-  app.router.add_post("/candidate", post_candidate)
   app.router.add_post("/notify", post_notify)
   app.router.add_get("/schema", get_schema)
 
