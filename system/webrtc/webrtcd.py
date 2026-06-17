@@ -442,8 +442,6 @@ async def on_shutdown(app: 'web.Application'):
 async def error_middleware(request: 'web.Request', handler):
   try:
     return await handler(request)
-  except web.HTTPException:
-    raise  # intentional responses (400/404/etc.) pass through untouched
   except Exception as e:
     logging.getLogger("webrtcd").exception("Unhandled error handling %s", request.path)
     return web.json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
