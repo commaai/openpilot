@@ -91,11 +91,17 @@ class Car:
 
       alpha_long_allowed = self.params.get_bool("AlphaLongitudinalEnabled")
 
-      cached_params = None
-      cached_params_raw = self.params.get("CarParamsCache")
-      if cached_params_raw is not None:
-        with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
-          cached_params = _cached_params
+      forced_fingerprint = self.params.get("ForceCarFingerprint")
+      if forced_fingerprint:
+        cloudlog.warning(f"Manual car fingerprint override active: {forced_fingerprint}")
+        cached_params = car.CarParams.new_message()
+        cached_params.carFingerprint = forced_fingerprint
+      else:
+        cached_params = None
+        cached_params_raw = self.params.get("CarParamsCache")
+        if cached_params_raw is not None:
+          with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
+            cached_params = _cached_params
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), alpha_long_allowed, is_release, cached_params)
       self.RI = interfaces[self.CI.CP.carFingerprint].RadarInterface(self.CI.CP)
