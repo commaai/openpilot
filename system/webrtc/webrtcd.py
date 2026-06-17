@@ -22,6 +22,8 @@ from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 import aioice.ice
+import aiortc.rtcrtpsender
+from aiortc.rtp import RTCP_PSFB_APP, RtcpPsfbPacket, unpack_remb_fci
 
 from openpilot.system.webrtc.models import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
@@ -50,6 +52,17 @@ def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
     return addresses
   return [primary, ]
 aioice.ice.get_host_addresses = _primary_host_addresses
+
+# aiortc patch: capture the browser's Receiver Estimated Maximum Bitrate on each sender
+_handle_rtcp_packet = aiortc.rtcrtpsender.RTCRtpSender._handle_rtcp_packet
+async def _handle_rtcp_packet_with_remb(self, packet):
+  if isinstance(packet, RtcpPsfbPacket) and packet.fmt == RTCP_PSFB_APP:
+    with contextlib.suppress(ValueError):
+      bitrate, ssrcs = unpack_remb_fci(packet.fci)
+      if self._ssrc in ssrcs:
+        self._remb_bitrate = bitrate
+  return await _handle_rtcp_packet(self, packet)
+aiortc.rtcrtpsender.RTCRtpSender._handle_rtcp_packet = _handle_rtcp_packet_with_remb
 
 
 class AsyncTaskRunner:
@@ -165,11 +178,10 @@ class DynamicPubMaster(messaging.PubMaster):
 class LivestreamBitrateController(AsyncTaskRunner):
   bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
   label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
-  sample_interval = 0.2
-  high_level = 0.1 # drop immediately
-  med_level = 0.05 # drop after # of samples
-  low_level = 0 # raise after # of samples
-  down_samples = 5 # 1s
+  sample_interval = 1
+  lower_factor = 0.9   # drop a level when the estimate falls below this fraction of the current level
+  probe_after = 10     # stable samples before probing one level up (REMB can't reveal unused headroom)
+  settle_samples = 3   # samples to let REMB ramp to the new send rate after a probe before judging it
   param_name = "LivestreamEncoderBitrate"
 
   def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
@@ -177,11 +189,10 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.pc = peer_connection
     self.params = params
 
-    self.level = 2
+    self.level = len(self.bitrates) - 1
     self._publish(self.bitrates[self.level])
-    self.prev_lost, self.prev_sent = None, None
-    self.counter = 0
-    self.up_samples = 5 # 1s
+    self.stable = 0
+    self.settle = 0
     self._auto = True
     self._enabled = enabled
 
@@ -191,44 +202,39 @@ class LivestreamBitrateController(AsyncTaskRunner):
   async def run(self):
     while True:
       await asyncio.sleep(self.sample_interval)
-      if not self._enabled:
-        continue
-      if not self._auto:
+      if not self._enabled or not self._auto:
         continue
 
-      loss_rate = await self._sample()
-      if loss_rate is None:
+      estimate = self._bandwidth_estimate()
+      if estimate is None:
         continue
-      if loss_rate >= self.med_level and self.level > 0:
-        self.counter += 1
-        if self.counter >= self.down_samples or loss_rate >= self.high_level:
+
+      if self.settle > 0:
+        self.settle -= 1
+        continue
+
+      if estimate < self.bitrates[self.level] * self.lower_factor:
+        while self.level > 0 and estimate < self.bitrates[self.level] * self.lower_factor:
           self.level -= 1
-          self.up_samples *= 2 # exponential backoff before raising again
-          self.counter = 0
-          self._publish(self.bitrates[self.level])
-      elif loss_rate <= self.low_level and self.level < len(self.bitrates) - 1:
-        self.counter -= 1
-        if -self.counter >= self.up_samples:
-          self.level += 1
-          self.counter = 0
-          self._publish(self.bitrates[self.level])
+        self.stable = 0
+      elif self.level < len(self.bitrates) - 1:
+        self.stable += 1
+        if self.stable < self.probe_after:
+          continue
+        self.level += 1
+        self.stable = 0
+        self.settle = self.settle_samples
+      else:
+        continue
+      self._publish(self.bitrates[self.level])
 
-  async def _sample(self) -> float | None:
-    report = await self.pc.getStats()
-    packets_lost = packets_sent = 0
-    for s in report.values():
-      if s.type == "remote-inbound-rtp":
-        packets_lost += s.packetsLost
-      elif s.type == "outbound-rtp":
-        packets_sent += s.packetsSent
-
-    if self.prev_lost is None:
-      self.prev_lost, self.prev_sent = packets_lost, packets_sent
-      return None
-    lost_delta = max(0, packets_lost - self.prev_lost)
-    sent_delta = max(0, packets_sent - self.prev_sent)
-    self.prev_lost, self.prev_sent = packets_lost, packets_sent
-    return lost_delta / sent_delta if sent_delta else 0.0
+  def _bandwidth_estimate(self) -> float | None:
+    estimate = None
+    for sender in self.pc.getSenders():
+      bitrate = getattr(sender, "_remb_bitrate", None)
+      if bitrate is not None:
+        estimate = bitrate if estimate is None else min(estimate, bitrate)
+    return estimate
 
   def _publish(self, bitrate: float):
     self.params.put(self.param_name, bitrate)
