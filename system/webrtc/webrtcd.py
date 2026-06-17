@@ -369,8 +369,9 @@ async def get_stream(request: 'web.Request'):
   body = StreamRequestBody(**raw_body)
 
   async with request.app['stream_lock']:
+    # don't remove existing connection on prewarm request
     enabled = any(s.run_task and not s.run_task.done() and s.enabled for s in stream_dict.values())
-    if enabled and body.enabled is False: # enabled = None defaults to video enabled
+    if enabled and not body.enabled:
       return web.json_response({"error": "busy", "message": "someone else is connected."})
 
     for sid, s in list(stream_dict.items()):
