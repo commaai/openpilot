@@ -414,6 +414,10 @@ struct CanData {
 struct DeviceState @0xa4d8b5af2aa492eb {
   deviceType @45 :InitData.DeviceType;
 
+  # usb
+  chestnutPresent @51 :Bool;
+  usbState @52 :UsbState;
+
   networkType @22 :NetworkType;
   networkInfo @31 :NetworkInfo;
   networkStrength @24 :NetworkStrength;
@@ -685,11 +689,23 @@ struct PeripheralState {
 }
 
 struct UsbState {
-  connected @0 :Bool;
-  speedMbps @1 :UInt16;
-  pmActive @2 :Bool;
-  disconnectCount @3 :UInt32;
-  overCurrentCount @4 :UInt32;
+  vbusMv @0 :UInt32;
+  devices @1 :List(Device);
+
+  struct Device {
+    busnum @0 :UInt8;
+    devnum @1 :UInt8;
+    vendorId @2 :UInt16;
+    productId @3 :UInt16;
+    speedMbps @4 :UInt16;
+    product @5 :Text;
+    pmActive @6 :Bool;
+    runtimeSuspendedMs @7 :UInt64;
+
+    # error counters
+    overCurrentCount @8 :UInt32;
+    linkErrorCount @9 :UInt32;
+  }
 }
 
 struct RadarState @0x9a185389d6fdd05f {
@@ -2480,7 +2496,6 @@ struct Event {
     temperatureSensor @97 :SensorEventData;
     pandaStates @81 :List(PandaState);
     peripheralState @80 :PeripheralState;
-    usbState @152 :UsbState;
     radarState @13 :RadarState;
     liveTracks @131 :Car.RadarData;
     sendcan @17 :List(CanData);

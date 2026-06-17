@@ -18,6 +18,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS, PC
+from openpilot.system.hardware.usb import UsbLogger
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
@@ -153,6 +154,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates"], poll="pandaStates")
 
+  usb_logger = UsbLogger()
   count = 0
 
   onroad_conditions: dict[str, bool] = {
@@ -255,6 +257,11 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.modemTempC = last_hw_state.modem_temps
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
+
+    try:
+      usb_logger.update(msg.deviceState)
+    except Exception:
+      cloudlog.exception("usb_logger update failed")
 
     # this subset is only used for offroad
     temp_sources = [
