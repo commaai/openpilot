@@ -580,7 +580,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str, enabled: bool | None = None) -> dict:
+def startStream(sdp: str, enabled: bool) -> dict:
   from openpilot.system.webrtc.models import StreamRequestBody
   bridge_services_in = []
 

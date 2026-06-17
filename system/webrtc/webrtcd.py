@@ -254,7 +254,7 @@ class StreamSession:
     self.params = Params()
     builder = WebRTCAnswerBuilder(body.sdp)
 
-    self.enabled = body.enabled if body.enabled is not None else True # default to enabled
+    self.enabled = body.enabled
     self.video_track = LiveStreamVideoStreamTrack(body.init_camera, self.enabled) if not debug_mode else VideoStreamTrack()
     builder.add_video_stream(body.init_camera, self.video_track)
     self.stream = builder.stream()
