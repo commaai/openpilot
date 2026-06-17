@@ -369,21 +369,19 @@ async def get_stream(request: 'web.Request'):
   body = StreamRequestBody(**raw_body)
 
   async with request.app['stream_lock']:
-    active = any(s.run_task and not s.run_task.done() for s in stream_dict.values())
-    if active:
-      active_enabled = any(s.run_task and not s.run_task.done() and s.enabled for s in stream_dict.values())
-      if active_enabled and body.enabled is False: # enabled = None defaults to video enabled
-        return web.json_response({"error": "busy", "message": "someone else is connected."})
+    enabled = any(s.run_task and not s.run_task.done() and s.enabled for s in stream_dict.values())
+    if enabled and body.enabled is False: # enabled = None defaults to video enabled
+      return web.json_response({"error": "busy", "message": "someone else is connected."})
 
-      for sid, s in list(stream_dict.items()):
-        if s.run_task and not s.run_task.done():
-          try:
-            ch = s.stream.get_messaging_channel()
-            ch.send(json.dumps({"type": "disconnect", "data": "Another device has connected, closing this session."}))
-          except Exception:
-            pass
-        await s.stop()
-        stream_dict.pop(sid, None)
+    for sid, s in list(stream_dict.items()):
+      if s.run_task and not s.run_task.done():
+        try:
+          ch = s.stream.get_messaging_channel()
+          ch.send(json.dumps({"type": "disconnect", "data": "Another device has connected, closing this session."}))
+        except Exception:
+          pass
+      await s.stop()
+      stream_dict.pop(sid, None)
 
     session = StreamSession(body, debug_mode)
     stream_dict[session.identifier] = session
