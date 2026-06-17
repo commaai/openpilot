@@ -1,27 +1,38 @@
 #!/usr/bin/env python3
-import os
+from pathlib import Path
 
 from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.modeld.helpers import USBGPU_VID, USBGPU_PID
 
 RATE = 10  # Hz
-DEVICE = "/sys/bus/usb/devices/4-1"  # aux USB
-PORT = "/sys/bus/usb/devices/usb4/4-0:1.0/usb4-port1"
 
 
-def read(attr: str) -> str | None:
+def find_device() -> Path | None:
+  # discover the eGPU by VID/PID
+  for d in Path("/sys/bus/usb/devices").glob("*"):
+    try:
+      if int((d / "idVendor").read_text(), 16) == USBGPU_VID and \
+          int((d / "idProduct").read_text(), 16) == USBGPU_PID:
+        return d
+    except Exception:
+      pass
+  return None
+
+
+def read(device: Path, attr: str) -> str | None:
   try:
-    with open(os.path.join(DEVICE, attr)) as f:
-      return f.read().strip()
+    return (device / attr).read_text().strip()
   except OSError:
     return None
 
 
-def over_current_count() -> int:
+def over_current_count(device: Path) -> int:
+  # upstream root-hub port, e.g. device "4-1" -> usb4/4-0:1.0/usb4-port1
+  bus, _, port = device.name.partition("-")
   try:
-    with open(os.path.join(PORT, "over_current_count")) as f:
-      return int(f.read())
+    return int((Path(f"/sys/bus/usb/devices/usb{bus}/{bus}-0:1.0/usb{bus}-port{port}") / "over_current_count").read_text())
   except (OSError, ValueError):
     return 0
 
@@ -33,22 +44,24 @@ def main():
   was_connected = False
 
   while True:
-    speed = read("speed")
-    connected = speed is not None
+    device = find_device()
+    connected = device is not None
     if was_connected and not connected:
       disconnect_count += 1
       cloudlog.event("usb_disconnected", count=disconnect_count)
     elif connected and not was_connected:
-      cloudlog.event("usb_connected", idVendor=read("idVendor"), idProduct=read("idProduct"), speed=speed)
+      cloudlog.event("usb_connected", speed=read(device, "speed"))
     was_connected = connected
 
     msg = messaging.new_message('usbState', valid=True)
     state = msg.usbState
     state.connected = connected
-    state.speedMbps = int(speed) if (speed and speed.isdigit()) else 0
-    state.pmActive = read("power/runtime_status") == "active"
+    if device is not None:
+      speed = read(device, "speed")
+      state.speedMbps = int(speed) if (speed and speed.isdigit()) else 0
+      state.pmActive = read(device, "power/runtime_status") == "active"
+      state.overCurrentCount = over_current_count(device)
     state.disconnectCount = disconnect_count
-    state.overCurrentCount = over_current_count()
 
     pm.send('usbState', msg)
     rk.keep_time()
