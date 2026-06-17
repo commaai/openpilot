@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import io
+import itertools
 import json
 import os
 import queue
@@ -56,6 +57,9 @@ WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 
+SEND_PRIORITY_HIGH = 0
+SEND_PRIORITY_LOW = 1
+
 # https://bytesolutions.com/dscp-tos-cos-precedence-conversion-chart,
 # https://en.wikipedia.org/wiki/Differentiated_services
 UPLOAD_TOS = 0x20  # CS1, low priority background traffic
@@ -78,6 +82,9 @@ class UploadTOSAdapter(HTTPAdapter):
 UPLOAD_SESS = requests.Session()
 UPLOAD_SESS.mount("http://", UploadTOSAdapter())
 UPLOAD_SESS.mount("https://", UploadTOSAdapter())
+
+WEBRTCD_SESS = requests.Session()
+WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=0))
 
 
 @dataclass
@@ -125,13 +132,17 @@ class UploadItem:
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
-send_queue: Queue[str] = queue.Queue()
+send_queue: Queue[tuple[int, int, str]] = queue.PriorityQueue()
 upload_queue: Queue[UploadItem] = queue.PriorityQueue()
-low_priority_send_queue: Queue[str] = queue.Queue()
 log_recv_queue: Queue[str] = queue.Queue()
 cancelled_uploads: set[str] = set()
 
 cur_upload_items: dict[int, UploadItem | None] = {}
+
+send_seq = itertools.count()
+def send_queue_push(data: str, priority: int) -> None:
+  assert priority is not None, "send queue priority must be specified"
+  send_queue.put_nowait((priority, next(send_seq), data)) # tie-break with a monotonic counter
 
 
 def strip_zst_extension(fn: str) -> str:
@@ -207,7 +218,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       if "method" in data:
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
         response = JSONRPCResponseManager.handle(data, dispatcher)
-        send_queue.put_nowait(response.json)
+        send_queue_push(response.json, SEND_PRIORITY_HIGH)
       elif "id" in data and ("result" in data or "error" in data):
         log_recv_queue.put_nowait(data)
       else:
@@ -216,7 +227,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       pass
     except Exception as e:
       cloudlog.exception("athena jsonrpc handler failed")
-      send_queue.put_nowait(json.dumps({"error": str(e)}))
+      send_queue_push(json.dumps({"error": str(e)}), SEND_PRIORITY_HIGH)
 
 
 def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = True) -> None:
@@ -568,8 +579,8 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str) -> dict:
-  from openpilot.system.webrtc.webrtcd import post_stream_request, wait_for_webrtcd
+def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
+  from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
   params = Params()
   bridge_services_in = []
 
@@ -588,6 +599,7 @@ def startStream(sdp: str) -> dict:
     params.put_bool("IsLiveStreaming", True)
     # wait for webrtcd end points to wake up
     wait_for_webrtcd()
+
 
   return post_stream_request(sdp, "wideRoad", bridge_services_in, ["carState", "deviceState.started"])
 
@@ -661,7 +673,7 @@ def log_handler(end_event: threading.Event) -> None:
               "jsonrpc": "2.0",
               "id": log_entry
             }
-            low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
+            send_queue_push(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
             curr_log = log_entry
         except OSError:
           pass  # file could be deleted by log rotation
@@ -712,7 +724,7 @@ def stat_handler(end_event: threading.Event) -> None:
               "jsonrpc": "2.0",
               "id": stat_filenames[0]
             }
-            low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
+            send_queue_push(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
           os.remove(stat_path)
         last_scan = curr_scan
     except Exception:
@@ -794,10 +806,7 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
 def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
   while not end_event.is_set():
     try:
-      try:
-        data = send_queue.get_nowait()
-      except queue.Empty:
-        data = low_priority_send_queue.get(timeout=1)
+      _, _, data = send_queue.get(timeout=1)
       for i in range(0, len(data), WS_FRAME_SIZE):
         frame = data[i:i+WS_FRAME_SIZE]
         last = i + WS_FRAME_SIZE >= len(data)

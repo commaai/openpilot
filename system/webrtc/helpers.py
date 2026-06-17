@@ -1,0 +1,44 @@
+import time
+import requests
+from dataclasses import asdict, dataclass, field
+
+
+WEBRTCD_PORT = 5001
+
+
+@dataclass
+class StreamRequestBody:
+  sdp: str
+  initCamera: str
+  video_enabled: bool = True
+  bridge_services_in: list[str] = field(default_factory=list)
+  bridge_services_out: list[str] = field(default_factory=list)
+
+
+def post_stream_request(body: StreamRequestBody) -> dict:
+  t_start = time.monotonic()
+  body = StreamRequestBody(body)
+  try:
+    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
+    t_end = time.monotonic()
+    if not resp.ok:
+      raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
+    ret = resp.json()
+    ret["time"] = (t_end - t_start) * 1000
+    return ret
+  except requests.ConnectTimeout as e:
+    raise Exception("webrtc took too long to respond. is the comma body on?") from e
+  except requests.ConnectionError as e:
+    raise Exception("webrtc is not running. turn on comma body ignition.") from e
+
+
+def wait_for_webrtcd(max_retries: float = 10.0) -> None:
+  attempts = 0
+  while attempts < max_retries:
+    try:
+      if requests.get(f"http://localhost:{WEBRTCD_PORT}/schema", timeout=1).ok:
+        return
+    except requests.ConnectionError:
+      attempts += 1
+      time.sleep(0.1)
+  raise TimeoutError("webrtcd did not come up")
