@@ -684,6 +684,14 @@ struct PeripheralState {
   }
 }
 
+struct UsbState {
+  connected @0 :Bool;
+  speedMbps @1 :UInt16;
+  pmActive @2 :Bool;
+  disconnectCount @3 :UInt32;
+  overCurrentCount @4 :UInt32;
+}
+
 struct RadarState @0x9a185389d6fdd05f {
   mdMonoTime @6 :UInt64;
   carStateMonoTime @11 :UInt64;
@@ -2472,6 +2480,7 @@ struct Event {
     temperatureSensor @97 :SensorEventData;
     pandaStates @81 :List(PandaState);
     peripheralState @80 :PeripheralState;
+    usbState @152 :UsbState;
     radarState @13 :RadarState;
     liveTracks @131 :Car.RadarData;
     sendcan @17 :List(CanData);
