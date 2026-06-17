@@ -580,7 +580,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
+def startStream(sdp: str, enabled: bool | None = None) -> dict:
   from openpilot.system.webrtc.models import StreamRequestBody
   bridge_services_in = []
 
@@ -592,12 +592,10 @@ def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
         bridge_services_in.append("testJoystick")
 
   t_start = time.monotonic()
-  body = StreamRequestBody(sdp=sdp, initCamera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], video_enabled=video_enabled)
+  body = StreamRequestBody(sdp=sdp, init_camera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], enabled=enabled)
   try:
     resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
-    if not resp.ok:
-      raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
     ret = resp.json()
     ret["time"] = (t_end - t_start) * 1000
     return ret
