@@ -244,15 +244,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(
-    self,
-    sdp: str,
-    init_camera: str,
-    incoming_services: list[str],
-    outgoing_services: list[str],
-    enabled: bool | None = None,
-    debug_mode: bool = False
-  ):
+  def __init__(self, body: StreamRequestBody, debug_mode: bool = False):
     if debug_mode:
       from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
@@ -260,21 +252,21 @@ class StreamSession:
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
-    builder = WebRTCAnswerBuilder(sdp)
+    builder = WebRTCAnswerBuilder(body.sdp)
 
-    self.enabled = enabled if enabled is not None else True # default to enabled
-    self.video_track = LiveStreamVideoStreamTrack(init_camera, self.enabled) if not debug_mode else VideoStreamTrack()
-    builder.add_video_stream(init_camera, self.video_track)
+    self.enabled = body.enabled
+    self.video_track = LiveStreamVideoStreamTrack(body.init_camera, self.enabled) if not debug_mode else VideoStreamTrack()
+    builder.add_video_stream(body.init_camera, self.video_track)
     self.stream = builder.stream()
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
-    self.incoming_bridge_services = incoming_services
+    self.incoming_bridge_services = body.bridge_services_in
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
     self.bitrate_controller: LivestreamBitrateController | None = None
-    if len(incoming_services) > 0:
+    if len(body.bridge_services_in) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
-    if len(outgoing_services) > 0:
-      self.outgoing_bridge = CerealOutgoingMessageProxy(outgoing_services, self.enabled)
+    if len(body.bridge_services_out) > 0:
+      self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.enabled)
     self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.params, self.enabled)
 
     self.run_task: asyncio.Task | None = None
@@ -283,7 +275,7 @@ class StreamSession:
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
       "New stream session (%s), init camera %s, video enabled %s, incoming services %s, outgoing services %s",
-      self.identifier, init_camera, enabled, incoming_services, outgoing_services,
+      self.identifier, body.init_camera, body.enabled, body.bridge_services_in, body.bridge_services_out,
     )
 
   def start(self):
@@ -313,6 +305,7 @@ class StreamSession:
             self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
+            self.enabled = enabled
             self.video_track.enable(enabled)
             self.outgoing_bridge.enable(enabled)
             self.bitrate_controller.enable(enabled)
@@ -376,7 +369,11 @@ async def get_stream(request: 'web.Request'):
   body = StreamRequestBody(**raw_body)
 
   async with request.app['stream_lock']:
-    # Fully disconnect any other active stream before starting the replacement.
+    # don't remove existing connection on prewarm request
+    enabled = any(s.run_task and not s.run_task.done() and s.enabled for s in stream_dict.values())
+    if enabled and not body.enabled:
+      return web.json_response({"error": "busy", "message": "someone else is connected."})
+
     for sid, s in list(stream_dict.items()):
       if s.run_task and not s.run_task.done():
         try:
@@ -387,7 +384,7 @@ async def get_stream(request: 'web.Request'):
       await s.stop()
       stream_dict.pop(sid, None)
 
-    session = StreamSession(body.sdp, body.initCamera, body.bridge_services_in, body.bridge_services_out, body.video_enabled, debug_mode)
+    session = StreamSession(body, debug_mode)
     stream_dict[session.identifier] = session
     try:
       answer = await session.get_answer()
@@ -444,8 +441,6 @@ async def on_shutdown(app: 'web.Application'):
 async def error_middleware(request: 'web.Request', handler):
   try:
     return await handler(request)
-  except web.HTTPException:
-    raise  # intentional responses (400/404/etc.) pass through untouched
   except Exception as e:
     logging.getLogger("webrtcd").exception("Unhandled error handling %s", request.path)
     return web.json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
