@@ -579,7 +579,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def startStream(sdp: str, video_enabled: bool | None = None) -> dict:
+def startStream(sdp: str, enabled: bool) -> dict:
   from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
   params = Params()
   bridge_services_in = []

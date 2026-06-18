@@ -17,12 +17,10 @@ class StreamRequestBody:
 
 def post_stream_request(body: StreamRequestBody) -> dict:
   t_start = time.monotonic()
-  body = StreamRequestBody(body)
+  body = StreamRequestBody(sdp=sdp, init_camera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], enabled=enabled)
   try:
     resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
-    if not resp.ok:
-      raise Exception(resp.json().get("message", f"webrtcd returned {resp.status_code}"))
     ret = resp.json()
     ret["time"] = (t_end - t_start) * 1000
     return ret
