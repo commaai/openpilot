@@ -176,12 +176,20 @@ class DynamicPubMaster(messaging.PubMaster):
 
 
 class LivestreamBitrateController(AsyncTaskRunner):
-  bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
-  label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
+  bitrates = [
+    500_000,
+    1_000_000,
+    1_500_000,
+    2_500_000,
+    4_000_000,
+    5_000_000,
+  ]
+  label_to_bitrate = { "high": bitrates[5], "med": bitrates[2], "low": bitrates[0]}
   sample_interval = 0.5
   higher_factor = 1.5
   lower_factor = 0.9
-  settle_samples = 10
+  loss_threshold = 0.05
+  backoff_steps = 2
   param_name = "LivestreamEncoderBitrate"
 
   def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
@@ -189,9 +197,9 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.pc = peer_connection
     self.params = params
 
-    self.level = len(self.bitrates) - 1
+    self.level = 5
     self._publish(self.bitrates[self.level])
-    self.settle = 0
+    self.backoff = 0
     self._auto = True
     self._enabled = enabled
 
@@ -199,30 +207,27 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self._enabled = enable
 
   async def run(self):
-    prev_estimate = None
     while True:
       await asyncio.sleep(self.sample_interval)
       if not self._enabled or not self._auto:
         continue
 
       estimate = self._bandwidth_estimate()
-      if estimate is None:
+      loss = await self._packet_loss()
+      if estimate is None or loss is None:
         continue
 
-      if self.settle > 0:
-        self.settle -= 1
-        # if slope is not positive, allow revert to lower level
-        if estimate - prev_estimate > 0:
+      if estimate < self.bitrates[self.level] * self.lower_factor or loss > self.loss_threshold:
+        if self.level > 0:
+          self.level -= 1
+          self.backoff = self.backoff_steps
+          self.backoff_steps *= 2
+      elif estimate > self.bitrates[self.level] * self.higher_factor or loss < self.loss_threshold:
+        if self.backoff > 0:
+          self.backoff -= 1
           continue
-
-      if self.level > 0 and estimate < self.bitrates[self.level] * self.lower_factor:
-        self.level -= 1
-        self.settle = self.settle_samples
-      elif self.level < 2 and estimate > self.bitrates[self.level] * self.higher_factor:
-        self.level += 1
-        self.settle = self.settle_samples
+        if self.level < 2: self.level += 1
       self._publish(self.bitrates[self.level])
-      prev_estimate = estimate
 
   def _bandwidth_estimate(self) -> float | None:
     estimate = None
@@ -231,6 +236,14 @@ class LivestreamBitrateController(AsyncTaskRunner):
       if bitrate is not None:
         estimate = bitrate if estimate is None else min(estimate, bitrate)
     return estimate
+
+  async def _packet_loss(self) -> float:
+    report = await self.pc.getStats()
+    loss = 0.0
+    for s in report.values():
+      if s.type == "remote-inbound-rtp":
+        loss = max(loss, s.fractionLost / 256)  # fractionLost is the raw 8-bit RR field, not a fraction
+    return loss
 
   def _publish(self, bitrate: float):
     self.params.put(self.param_name, bitrate)
