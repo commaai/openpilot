@@ -178,10 +178,10 @@ class DynamicPubMaster(messaging.PubMaster):
 class LivestreamBitrateController(AsyncTaskRunner):
   bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
   label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
-  sample_interval = 1
-  lower_factor = 0.9   # drop a level when the estimate falls below this fraction of the current level
-  probe_after = 10     # stable samples before probing one level up (REMB can't reveal unused headroom)
-  settle_samples = 3   # samples to let REMB ramp to the new send rate after a probe before judging it
+  sample_interval = 0.5
+  higher_factor = 1.5
+  lower_factor = 0.9
+  settle_samples = 10
   param_name = "LivestreamEncoderBitrate"
 
   def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
@@ -191,7 +191,6 @@ class LivestreamBitrateController(AsyncTaskRunner):
 
     self.level = len(self.bitrates) - 1
     self._publish(self.bitrates[self.level])
-    self.stable = 0
     self.settle = 0
     self._auto = True
     self._enabled = enabled
@@ -200,6 +199,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self._enabled = enable
 
   async def run(self):
+    prev_estimate = None
     while True:
       await asyncio.sleep(self.sample_interval)
       if not self._enabled or not self._auto:
@@ -211,22 +211,18 @@ class LivestreamBitrateController(AsyncTaskRunner):
 
       if self.settle > 0:
         self.settle -= 1
-        continue
-
-      if estimate < self.bitrates[self.level] * self.lower_factor:
-        while self.level > 0 and estimate < self.bitrates[self.level] * self.lower_factor:
-          self.level -= 1
-        self.stable = 0
-      elif self.level < len(self.bitrates) - 1:
-        self.stable += 1
-        if self.stable < self.probe_after:
+        # if slope is not positive, allow revert to lower level
+        if estimate - prev_estimate > 0:
           continue
-        self.level += 1
-        self.stable = 0
+
+      if self.level > 0 and estimate < self.bitrates[self.level] * self.lower_factor:
+        self.level -= 1
         self.settle = self.settle_samples
-      else:
-        continue
+      elif self.level < 2 and estimate > self.bitrates[self.level] * self.higher_factor:
+        self.level += 1
+        self.settle = self.settle_samples
       self._publish(self.bitrates[self.level])
+      prev_estimate = estimate
 
   def _bandwidth_estimate(self) -> float | None:
     estimate = None
