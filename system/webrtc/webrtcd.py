@@ -439,7 +439,7 @@ async def post_notify(request: 'web.Request'):
 
 
 async def on_shutdown(app: 'web.Application'):
-  for session in app['streams'].values():
+  for session in list(app['streams'].values()):
     try:
       ch = session.stream.get_messaging_channel()
       ch.send(json.dumps({"type": "disconnect", "data": "device streaming has been stopped."}))
