@@ -580,7 +580,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def startStream(sdp: str, enabled: bool) -> dict:
-  from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
+  from openpilot.system.webrtc.helpers import post_stream_request, wait_for_webrtcd
   params = Params()
   bridge_services_in = []
 
@@ -600,8 +600,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
     # wait for webrtcd end points to wake up
     wait_for_webrtcd()
 
-
-  return post_stream_request(sdp, "wideRoad", bridge_services_in, ["carState", "deviceState.started"])
+  return post_stream_request(sdp, "wideRoad", enabled, bridge_services_in, ["carState", "deviceState.started"])
 
 
 @dispatcher.add_method

@@ -5,19 +5,18 @@ from dataclasses import asdict, dataclass, field
 
 WEBRTCD_PORT = 5001
 
-
 @dataclass
 class StreamRequestBody:
   sdp: str
-  initCamera: str
-  video_enabled: bool = True
+  init_camera: str
+  enabled: bool
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
 
 
 def post_stream_request(body: StreamRequestBody) -> dict:
   t_start = time.monotonic()
-  body = StreamRequestBody(sdp=sdp, init_camera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], enabled=enabled)
+  body = StreamRequestBody(body)
   try:
     resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
