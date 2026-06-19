@@ -8,7 +8,6 @@ LaneChangeDirection = log.LaneChangeDirection
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 LANE_CHANGE_START_TIME = 0.5
-LANE_CHANGE_FINISH_TIME = 1.0
 
 class DesireHelper:
   def __init__(self):
@@ -61,24 +60,18 @@ class DesireHelper:
         self.lane_change_timer += DT_MDL
 
         if lane_change_prob < 0.02 and self.lane_change_timer >= LANE_CHANGE_START_TIME:
-          self.lane_change_state = LaneChangeState.laneChangeFinishing
-          self.lane_change_timer = 0.0
-
-      elif self.lane_change_state == LaneChangeState.laneChangeFinishing:
-        self.lane_change_timer += DT_MDL
-
-        if self.lane_change_timer >= LANE_CHANGE_FINISH_TIME:
-          self.lane_change_direction = LaneChangeDirection.none
           self.lane_change_timer = 0.0
           if one_blinker:
             self.lane_change_state = LaneChangeState.preLaneChange
+            self.lane_change_direction = self.get_lane_change_direction(carstate)
           else:
             self.lane_change_state = LaneChangeState.off
+            self.lane_change_direction = LaneChangeDirection.none
 
     self.prev_one_blinker = one_blinker
 
     self.desire = log.Desire.none
-    if self.lane_change_state in (LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing):
+    if self.lane_change_state == LaneChangeState.laneChangeStarting:
       if self.lane_change_direction == LaneChangeDirection.left:
         self.desire = log.Desire.laneChangeLeft
       elif self.lane_change_direction == LaneChangeDirection.right:
