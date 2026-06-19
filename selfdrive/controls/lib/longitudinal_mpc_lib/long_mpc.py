@@ -313,7 +313,7 @@ class LongitudinalMpc:
     lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
     return lead_xv
 
-  def update(self, radarstate, v_cruise, personality=log.LongitudinalPersonality.standard):
+  def update(self, radarstate, v_cruise, personality=log.LongitudinalPersonality.standard, ignore_cruise=False):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
@@ -335,8 +335,16 @@ class LongitudinalMpc:
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1), v_lower, v_upper)
     cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, t_follow)
 
-    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-    self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
+    if ignore_cruise:
+      if not radarstate.leadOne.status:
+        lead_0_obstacle = np.full_like(lead_0_obstacle, 1e8)
+      if not radarstate.leadTwo.status:
+        lead_1_obstacle = np.full_like(lead_1_obstacle, 1e8)
+      x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle])
+      self.source = MPC_SOURCES[np.argmin(x_obstacles[0])] if self.status else LongitudinalPlanSource.e2e
+    else:
+      x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
+      self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
 
     self.yref[:,:] = 0.0
     for i in range(N):
