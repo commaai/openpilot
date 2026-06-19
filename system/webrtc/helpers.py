@@ -16,7 +16,6 @@ class StreamRequestBody:
 
 def post_stream_request(body: StreamRequestBody) -> dict:
   t_start = time.monotonic()
-  body = StreamRequestBody(body)
   try:
     resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
@@ -29,7 +28,7 @@ def post_stream_request(body: StreamRequestBody) -> dict:
     raise Exception("webrtc is not running. turn on comma body ignition.") from e
 
 
-def wait_for_webrtcd(max_retries: float = 10.0) -> None:
+def wait_for_webrtcd(max_retries: float = 20.0) -> None:
   attempts = 0
   while attempts < max_retries:
     try:
