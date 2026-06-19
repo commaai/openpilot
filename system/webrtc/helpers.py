@@ -23,9 +23,9 @@ def post_stream_request(body: StreamRequestBody) -> dict:
     ret["time"] = (t_end - t_start) * 1000
     return ret
   except requests.ConnectTimeout as e:
-    raise Exception("webrtc took too long to respond. is the comma body on?") from e
+    raise Exception("webrtc took too long to respond.") from e
   except requests.ConnectionError as e:
-    raise Exception("webrtc is not running. turn on comma body ignition.") from e
+    raise Exception("webrtc server on device is not running.") from e
 
 
 def wait_for_webrtcd(max_retries: float = 10) -> None:
@@ -37,4 +37,4 @@ def wait_for_webrtcd(max_retries: float = 10) -> None:
     except requests.ConnectionError:
       attempts += 1
       time.sleep(0.5)
-  raise TimeoutError("webrtcd did not come up")
+  raise TimeoutError("webrtcd did not initialize in time.")

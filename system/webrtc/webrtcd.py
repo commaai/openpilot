@@ -442,7 +442,7 @@ async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
     try:
       ch = session.stream.get_messaging_channel()
-      ch.send(json.dumps({"type": "disconnect", "data": "device stream has been stopped."}))
+      ch.send(json.dumps({"type": "disconnect", "data": "device streaming has been stopped."}))
     except Exception:
       pass
     await session.stop()
