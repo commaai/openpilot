@@ -81,18 +81,8 @@ class AsyncTaskRunner:
 class CerealOutgoingMessageProxy(AsyncTaskRunner):
   def __init__(self, services: list[str], enabled: bool = True):
     super().__init__()
-    # entries may be "service" (whole message) or "service.field" (only selected fields)
-    self.field_filter: dict[str, set[str] | None] = {}
-    for entry in services:
-      service, _, field_name = entry.partition(".")
-      if field_name:
-        fields = self.field_filter.setdefault(service, set())
-        assert fields is not None, f"cannot mix whole-message and field selection for {service}"
-        fields.add(field_name)
-      else:
-        assert service not in self.field_filter, f"cannot mix whole-message and field selection for {service}"
-        self.field_filter[service] = None
-    self.sm = messaging.SubMaster(list(self.field_filter))
+    self.services = list(services)
+    self.sm = messaging.SubMaster(self.services)
     self.channels: list[RTCDataChannel] = []
     self._enabled = enabled
 
@@ -120,12 +110,7 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
     for service, updated in self.sm.updated.items():
       if not updated:
         continue
-      fields = self.field_filter.get(service)
-      if fields is None:
-        msg_dict = self.to_json(self.sm[service])
-      else:
-        msg = self.sm[service]
-        msg_dict = {field_name: self.to_json(getattr(msg, field_name)) for field_name in fields}
+      msg_dict = self.to_json(self.sm[service])
       mono_time, valid = self.sm.logMonoTime[service], self.sm.valid[service]
       outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
       encoded_msg = json.dumps(outgoing_msg).encode()
