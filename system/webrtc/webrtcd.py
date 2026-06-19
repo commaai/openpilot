@@ -344,7 +344,7 @@ class StreamSession:
   async def run(self):
     try:
       self.params.put("LivestreamRequestKeyframe", True)
-      await self.stream.wait_for_connection()
+      await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
       if self.stream.has_messaging_channel():
         self.stream.set_message_handler(self.message_handler)
         if self.incoming_bridge is not None:
