@@ -347,7 +347,6 @@ class StreamSession:
       self.logger.exception("Stream session failure")
     finally:
       await self.post_run_cleanup()
-      Params().put_bool("IsLiveStreaming", False)
 
   async def post_run_cleanup(self):
     async with self._cleanup_lock:
@@ -362,6 +361,17 @@ class StreamSession:
         self.video_track.stop()
         self.video_track = None
       await self.stream.stop()
+
+
+def schedule_teardown(app):
+  # if nothing connects for 5 seconds, tear down livestreaming processes
+  h = app.get('teardown')
+  if h:
+      h.cancel()
+  def clear():
+      if not app['streams']:
+          Params().put_bool("IsLiveStreaming", False)
+  app['teardown'] = asyncio.get_running_loop().call_later(5.0, clear)
 
 
 async def get_stream(request: 'web.Request'):
@@ -398,6 +408,7 @@ async def get_stream(request: 'web.Request'):
 
     def remove_finished_session(_: asyncio.Task) -> None:
       stream_dict.pop(session.identifier, None)
+      schedule_teardown(request.app)
     session.run_task.add_done_callback(remove_finished_session)
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
