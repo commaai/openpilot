@@ -28,7 +28,7 @@ def post_stream_request(body: StreamRequestBody) -> dict:
     raise Exception("webrtc is not running. turn on comma body ignition.") from e
 
 
-def wait_for_webrtcd(max_retries: float = 20.0) -> None:
+def wait_for_webrtcd(max_retries: float = 10) -> None:
   attempts = 0
   while attempts < max_retries:
     try:
@@ -36,5 +36,5 @@ def wait_for_webrtcd(max_retries: float = 20.0) -> None:
         return
     except requests.ConnectionError:
       attempts += 1
-      time.sleep(0.1)
+      time.sleep(0.5)
   raise TimeoutError("webrtcd did not come up")
