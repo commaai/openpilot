@@ -1,9 +1,59 @@
 import pyray as rl
 
+from cereal import log
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
+
+NetworkStrength = log.DeviceState.NetworkStrength
+NetworkType = log.DeviceState.NetworkType
+
+
+class EsimNetworkButton(BigButton):
+  def __init__(self, cellular_manager: CellularManager):
+    self._cellular_manager = cellular_manager
+    self._cell_none_icon = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 64, 47)
+    self._cell_low_icon = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 64, 47)
+    self._cell_medium_icon = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 64, 47)
+    self._cell_high_icon = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 64, 47)
+    self._cell_full_icon = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 64, 47)
+    super().__init__("esim", "loading...", self._cell_none_icon, scroll=True)
+
+  def _update_state(self):
+    super()._update_state()
+    self.set_enabled(self._cellular_manager.is_euicc is not False)
+    text, value, icon = self._compute_state()
+    self.set_text(text)
+    self.set_value(value)
+    self.set_icon(icon)
+
+  def _compute_state(self):
+    cm = self._cellular_manager
+    if cm.is_euicc is False:
+      iccid = cm.modem_state.get("iccid") or ""
+      if not iccid:
+        return "sim", "no sim", self._cell_none_icon
+      value = cm.modem_ip or "obtaining IP..."
+      return f"sim (...{iccid[-4:]})", value, self._cell_icon()
+
+    active = cm.active_profile
+    if active is None:
+      return "esim", "loading...", self._cell_none_icon
+    return active.display_name, cm.modem_ip or "obtaining IP...", self._cell_icon()
+
+  def _cell_icon(self):
+    # read directly from HARDWARE so it reflects modem state even when wifi is the active connection
+    strength = HARDWARE.get_network_strength(NetworkType.cell4G)
+    return {
+      NetworkStrength.unknown: self._cell_none_icon,
+      NetworkStrength.poor: self._cell_low_icon,
+      NetworkStrength.moderate: self._cell_medium_icon,
+      NetworkStrength.good: self._cell_high_icon,
+      NetworkStrength.great: self._cell_full_icon,
+    }.get(strength, self._cell_none_icon)
 
 
 class WifiNetworkButton(BigButton):
