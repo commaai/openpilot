@@ -584,7 +584,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
   params = Params()
   bridge_services_in = []
 
-  # get live car params to avoid stale notCar edge case
+  # stale car params case taken care of by webrtcd being shut off on ignition
   cp_bytes = Params().get("CarParamsPersistent")
   if cp_bytes is not None:
     with car.CarParams.from_bytes(cp_bytes) as CP:
