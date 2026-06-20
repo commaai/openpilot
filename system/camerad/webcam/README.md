@@ -1,13 +1,5 @@
 # Run openpilot with webcam on PC
 
-What's needed:
-- Ubuntu 24.04 ([WSL2 is not supported](https://github.com/commaai/openpilot/issues/34216)) or macOS
-- GPU (recommended)
-- One USB webcam, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615, NexiGo N60)
-- [Car harness](https://comma.ai/shop/products/comma-car-harness)
-- [panda](https://comma.ai/shop/panda)
-- USB-A to USB-A cable to connect panda to your computer
-
 ## Setup openpilot
 - Follow [this readme](../README.md) to install and build the requirements
 
@@ -16,6 +8,7 @@ What's needed:
 - Connect your computer to panda
 
 ## GO
+
 ```
 USE_WEBCAM=1 system/manager/manager.py
 ```
