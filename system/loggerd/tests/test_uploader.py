@@ -4,7 +4,7 @@ import threading
 import logging
 import json
 from pathlib import Path
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.loggerd.uploader import main, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE

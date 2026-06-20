@@ -6,7 +6,7 @@ import subprocess
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.spinner import Spinner
 from openpilot.common.text_window import TextWindow
-from openpilot.system.hardware import HARDWARE, AGNOS
+from openpilot.common.hardware import HARDWARE, AGNOS
 
 def build() -> None:
   spinner = Spinner()

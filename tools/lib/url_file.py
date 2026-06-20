@@ -9,7 +9,7 @@ from urllib3.response import BaseHTTPResponse
 from urllib3.util import Timeout
 
 from openpilot.common.utils import atomic_write
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 from urllib3.exceptions import MaxRetryError
 
 #  Cache chunk size

@@ -6,7 +6,7 @@ import tempfile
 import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile, prune_cache
 import openpilot.tools.lib.url_file as url_file_module
 

@@ -2,14 +2,14 @@
 
 #include <string>
 
-#include "system/hardware/base.h"
+#include "common/hardware/base.h"
 #include "common/util.h"
 
 #if __TICI__
-#include "system/hardware/tici/hardware.h"
+#include "common/hardware/tici/hardware.h"
 #define Hardware HardwareTici
 #else
-#include "system/hardware/pc/hardware.h"
+#include "common/hardware/pc/hardware.h"
 #define Hardware HardwarePC
 #endif
 

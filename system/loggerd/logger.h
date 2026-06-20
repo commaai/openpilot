@@ -6,7 +6,7 @@
 
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 #include "system/loggerd/zstd_writer.h"
 
 constexpr int LOG_COMPRESSION_LEVEL = 10;

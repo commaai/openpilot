@@ -10,8 +10,8 @@ from openpilot.common.api import api_get, get_key_pair
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, PC
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware import HARDWARE, PC
+from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 
 

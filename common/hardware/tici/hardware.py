@@ -11,10 +11,10 @@ from cereal import log
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
-from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
+from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.common.esim.lpa import TiciLPA
-from openpilot.system.hardware.tici.pins import GPIO
-from openpilot.system.hardware.tici.amplifier import Amplifier
+from openpilot.common.hardware.tici.pins import GPIO
+from openpilot.common.hardware.tici.amplifier import Amplifier
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 

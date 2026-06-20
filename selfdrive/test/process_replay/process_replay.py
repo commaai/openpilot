@@ -12,7 +12,7 @@ from typing import Any
 from collections.abc import Callable, Iterable
 from tqdm import tqdm
 import capnp
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 
 import cereal.messaging as messaging
 from cereal import car

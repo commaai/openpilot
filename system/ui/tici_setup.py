@@ -11,7 +11,7 @@ from enum import IntEnum
 import pyray as rl
 
 from cereal import log
-from openpilot.system.hardware import HARDWARE
+from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.widgets import DialogResult, Widget

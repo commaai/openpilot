@@ -3,7 +3,7 @@ import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.hardware import TICI
+from openpilot.common.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from openpilot.common.utils import tabulate
 
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 
 
 def format_car_params(CP):

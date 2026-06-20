@@ -17,7 +17,7 @@ import sys
 import tempfile
 import shutil
 
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib.api import CommaApi, UnauthorizedError, APIError
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.url_file import URLFile

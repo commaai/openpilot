@@ -7,7 +7,7 @@
 #include <algorithm>  // for std::clamp
 
 #include "common/util.h"
-#include "system/hardware/base.h"
+#include "common/hardware/base.h"
 
 class HardwareTici : public HardwareNone {
 public:

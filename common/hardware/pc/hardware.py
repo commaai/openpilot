@@ -1,5 +1,5 @@
 from cereal import log
-from openpilot.system.hardware.base import HardwareBase
+from openpilot.common.hardware.base import HardwareBase
 
 class Pc(HardwareBase):
   def get_device_type(self):

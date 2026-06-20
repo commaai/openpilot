@@ -6,7 +6,7 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/version.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 #include "json11/json11.hpp"
 
 std::string daemon_name = "testy";

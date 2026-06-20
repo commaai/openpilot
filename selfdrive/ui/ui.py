@@ -3,7 +3,7 @@ import os
 import time
 
 from cereal import messaging
-from openpilot.system.hardware import TICI
+from openpilot.common.hardware import TICI
 from openpilot.common.realtime import Priority, config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout

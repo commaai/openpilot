@@ -10,7 +10,7 @@ from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_c
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
 from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.system.hardware import PC
+from openpilot.common.hardware import PC
 
 MAX_ERR_FRAMES = 1
 DT = 0.05

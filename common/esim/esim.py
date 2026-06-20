@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from openpilot.system.hardware import HARDWARE
+from openpilot.common.hardware import HARDWARE
 from openpilot.common.esim.base import LPABase, Profile
 
 
