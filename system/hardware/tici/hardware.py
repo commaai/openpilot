@@ -12,7 +12,6 @@ from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
 from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
-from openpilot.system.hardware.tici import iwlist
 from openpilot.common.esim.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
@@ -386,33 +385,6 @@ class Tici(HardwareBase):
       subprocess.call(["sudo", "taskset", "-pc", "3", pid])
     except subprocess.CalledProcessError as e:
       print(str(e))
-
-  def get_networks(self):
-    r = {}
-
-    wlan = iwlist.scan()
-    if wlan is not None:
-      r['wlan'] = wlan
-
-    lte_info = self.get_network_info()
-    if lte_info is not None:
-      extra = lte_info['extra']
-
-      # <state>,"LTE",<is_tdd>,<mcc>,<mnc>,<cellid>,<pcid>,<earfcn>,<freq_band_ind>,
-      # <ul_bandwidth>,<dl_bandwidth>,<tac>,<rsrp>,<rsrq>,<rssi>,<sinr>,<srxlev>
-      if 'LTE' in extra:
-        extra = extra.split(',')
-        try:
-          r['lte'] = [{
-            "mcc": int(extra[3]),
-            "mnc": int(extra[4]),
-            "cid": int(extra[5], 16),
-            "nmr": [{"pci": int(extra[6]), "earfcn": int(extra[7])}],
-          }]
-        except (ValueError, IndexError):
-          pass
-
-    return r
 
   def get_modem_data_usage(self):
     ms = self.get_modem_state()
