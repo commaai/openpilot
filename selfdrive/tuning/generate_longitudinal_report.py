@@ -2,40 +2,18 @@
 import argparse
 import base64
 import io
-import os
 import math
-import pprint
-import webbrowser
 from collections import defaultdict
-from pathlib import Path
 import matplotlib.pyplot as plt
 from openpilot.common.utils import tabulate
 
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.system.hardware.hw import Paths
-
-
-def format_car_params(CP):
-  return pprint.pformat({k: v for k, v in CP.to_dict().items() if not k.endswith('DEPRECATED')}, indent=2)
+from openpilot.selfdrive.tuning.maneuver_helpers import init_report_builder, load_maneuver_route, write_report
 
 
 def report(platform, route, _description, CP, ID, maneuvers):
-  output_path = Path(__file__).resolve().parent / "longitudinal_reports"
-  output_fn = output_path / f"{platform}_{route.replace('/', '_')}.html"
-  output_path.mkdir(exist_ok=True)
   target_cross_times = defaultdict(list)
+  builder = init_report_builder("Longitudinal maneuver report", platform, route, _description, CP, ID)
 
-  builder = [
-    "<style>summary { cursor: pointer; }\n td, th { padding: 8px; } </style>\n",
-    "<h1>Longitudinal maneuver report</h1>\n",
-    f"<h3>{platform}</h3>\n",
-    f"<h3>{route}</h3>\n",
-    f"<h3>{ID.gitCommit}, {ID.gitBranch}, {ID.gitRemote}</h3>\n",
-  ]
-  if _description is not None:
-    builder.append(f"<h3>Description: {_description}</h3>\n")
-  builder.append(f"<details><summary><h3 style='display: inline-block;'>CarParams</h3></summary><pre>{format_car_params(CP)}</pre></details>\n")
-  builder.append('{ summary }')  # to be replaced below
   for description, runs in maneuvers:
     print(f'plotting maneuver: {description}, runs: {len(runs)}')
     builder.append("<div style='border-top: 1px solid #000; margin: 20px 0;'></div>\n")
@@ -138,14 +116,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
     table.append(l)
   summary.append(tabulate(table, headers=cols, tablefmt='html', numalign='left') + '\n')
 
-  sum_idx = builder.index('{ summary }')
-  builder[sum_idx:sum_idx + 1] = summary
-
-  with open(output_fn, "w") as f:
-    f.write(''.join(builder))
-
-  print(f"\nOpening report: {output_fn}\n")
-  webbrowser.open_new_tab(str(output_fn))
+  write_report("longitudinal_reports", platform, route, builder, summary)
 
 
 if __name__ == '__main__':
@@ -155,33 +126,5 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  if '/' in args.route or '|' in args.route:
-    lr = LogReader(args.route)
-  else:
-    segs = [seg for seg in os.listdir(Paths.log_root()) if args.route in seg]
-    lr = LogReader([os.path.join(Paths.log_root(), seg, 'rlog.zst') for seg in segs])
-
-  CP = lr.first('carParams')
-  ID = lr.first('initData')
-  platform = CP.carFingerprint
-  print('processing report for', platform)
-
-  maneuvers: list[tuple[str, list[list]]] = []
-  active_prev = False
-  description_prev = None
-
-  for msg in lr:
-    if msg.which() == 'alertDebug':
-      active = 'Maneuver Active' in msg.alertDebug.alertText1
-      if active and not active_prev:
-        if msg.alertDebug.alertText2 == description_prev:
-          maneuvers[-1][1].append([])
-        else:
-          maneuvers.append((msg.alertDebug.alertText2, [[]]))
-        description_prev = maneuvers[-1][0]
-      active_prev = active
-
-    if active_prev:
-      maneuvers[-1][1][-1].append(msg)
-
+  platform, CP, ID, maneuvers = load_maneuver_route(args.route, lambda text: 'Maneuver Active' in text)
   report(platform, args.route, args.description, CP, ID, maneuvers)

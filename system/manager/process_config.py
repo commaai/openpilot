@@ -96,7 +96,7 @@ procs = [
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
   PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
   PythonProcess("controlsd", "selfdrive.controls.controlsd", and_(not_joystick, iscar)),
-  PythonProcess("joystickd", "tools.joystick.joystickd", or_(joystick, notcar)),
+  PythonProcess("joystickd", "selfdrive.tuning.joystickd", or_(joystick, notcar)),
   PythonProcess("selfdrived", "selfdrive.selfdrived.selfdrived", only_onroad),
   PythonProcess("card", "selfdrive.car.card", only_onroad),
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
@@ -108,8 +108,8 @@ procs = [
   PythonProcess("ubloxd", "system.ubloxd.ubloxd", ublox, enabled=TICI),
   PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
   PythonProcess("plannerd", "selfdrive.controls.plannerd", not_long_maneuver),
-  PythonProcess("maneuversd", "tools.longitudinal_maneuvers.maneuversd", long_maneuver),
-  PythonProcess("lateral_maneuversd", "tools.lateral_maneuvers.lateral_maneuversd", lat_maneuver),
+  PythonProcess("maneuversd", "selfdrive.tuning.maneuversd", long_maneuver),
+  PythonProcess("lateral_maneuversd", "selfdrive.tuning.lateral_maneuversd", lat_maneuver),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "system.hardware.hardwared", always_run),
   PythonProcess("modem", "system.hardware.tici.modem", always_run, enabled=TICI),
@@ -122,7 +122,7 @@ procs = [
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", or_(and_(livestream, not_(iscar)), notcar)),
-  PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
+  PythonProcess("joystick", "selfdrive.tuning.joystick_control", and_(joystick, iscar)),
 ]
 
 managed_processes = {p.name: p for p in procs}

@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.tests.test_following_distance import desired_follow_distance
-from openpilot.tools.longitudinal_maneuvers.maneuver_helpers import Axis, axis_labels
+from openpilot.selfdrive.tuning.maneuver_helpers import Axis, axis_labels
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 

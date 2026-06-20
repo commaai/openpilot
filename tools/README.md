@@ -48,7 +48,6 @@ Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md
 ```
 ├── cabana/             # View and plot CAN messages from drives or in realtime
 ├── camerastream/       # Cameras stream over the network
-├── joystick/           # Control your car with a joystick
 ├── lib/                # Libraries to support the tools and reading openpilot logs
 ├── plotjuggler/        # A tool to plot openpilot logs
 ├── replay/             # Replay drives and mock openpilot services

@@ -8,7 +8,7 @@ from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
-from openpilot.tools.longitudinal_maneuvers.maneuversd import Action, Maneuver as _Maneuver
+from openpilot.selfdrive.tuning.maneuversd import Action, Maneuver as _Maneuver
 
 # thresholds for starting maneuvers
 MAX_SPEED_DEV = 0.7 # deviation in m/s
