@@ -45,13 +45,6 @@ class Paths:
       return "/persist/"
 
   @staticmethod
-  def stats_root() -> str:
-    if PC:
-      return str(Path(Paths.comma_home()) / "stats")
-    else:
-      return "/data/stats/"
-
-  @staticmethod
   def config_root() -> str:
     if PC:
       return Paths.comma_home()

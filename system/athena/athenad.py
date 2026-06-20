@@ -12,7 +12,6 @@ import random
 import select
 import socket
 import sys
-import tempfile
 import threading
 import time
 from dataclasses import asdict, dataclass, replace
@@ -186,7 +185,6 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler3'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler4'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
-    threading.Thread(target=stat_handler, args=(end_event,), name='stat_handler'),
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
     for x in range(HANDLER_THREADS)
@@ -693,34 +691,6 @@ def log_handler(end_event: threading.Event) -> None:
 
     except Exception:
       cloudlog.exception("athena.log_handler.exception")
-
-
-def stat_handler(end_event: threading.Event) -> None:
-  STATS_DIR = Paths.stats_root()
-  last_scan = 0.0
-
-  while not end_event.is_set():
-    curr_scan = time.monotonic()
-    try:
-      if curr_scan - last_scan > 10:
-        stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)))
-        if len(stat_filenames) > 0:
-          stat_path = os.path.join(STATS_DIR, stat_filenames[0])
-          with open(stat_path) as f:
-            jsonrpc = {
-              "method": "storeStats",
-              "params": {
-                "stats": f.read()
-              },
-              "jsonrpc": "2.0",
-              "id": stat_filenames[0]
-            }
-            send_queue_push(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
-          os.remove(stat_path)
-        last_scan = curr_scan
-    except Exception:
-      cloudlog.exception("athena.stat_handler.exception")
-    time.sleep(0.1)
 
 
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
