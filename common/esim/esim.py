@@ -2,7 +2,7 @@
 
 import argparse
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.hardware.base import LPABase, Profile
+from openpilot.common.esim.base import LPABase, Profile
 
 
 def sorted_profiles(lpa: LPABase) -> list[Profile]:
