@@ -68,7 +68,7 @@ PROCS = {
   "system.loggerd.deleter": 1.0,
   "./pandad": 19.0,
   "system.qcomgpsd.qcomgpsd": 1.0,
-  "system.hardware.tici.modem": 10.0,
+  "common.hardware.tici.modem": 10.0,
 }
 
 TIMINGS = {

@@ -204,7 +204,7 @@ def finalize_update() -> None:
 
 
 def handle_agnos_update() -> None:
-  from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
+  from openpilot.common.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
 
   cur_version = HARDWARE.get_os_version()
   updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \

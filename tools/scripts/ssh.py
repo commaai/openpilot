@@ -14,7 +14,7 @@ if __name__ == "__main__":
   parser.add_argument("device", help="device name or dongle id")
   parser.add_argument("--host", help="ssh jump server host", default="ssh.comma.ai")
   parser.add_argument("--port", help="ssh jump server port", default=22, type=int)
-  parser.add_argument("--key", help="ssh key", default=os.path.join(BASEDIR, "system/hardware/tici/id_rsa"))
+  parser.add_argument("--key", help="ssh key", default=os.path.join(BASEDIR, "common/hardware/tici/id_rsa"))
   parser.add_argument("--debug", help="enable debug output", action="store_true")
   args = parser.parse_args()
 

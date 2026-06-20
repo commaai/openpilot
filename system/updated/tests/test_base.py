@@ -235,8 +235,8 @@ class ParamsBaseUpdateTest(TestBaseUpdate):
     with self.additional_context(), processes_context(["updated"]) as [updated]:
       mocker.patch("openpilot.common.hardware.AGNOS", "True")
       mocker.patch("openpilot.common.hardware.tici.hardware.Tici.get_os_version", "1.2")
-      mocker.patch("openpilot.system.hardware.tici.agnos.get_target_slot_number")
-      mocker.patch("openpilot.system.hardware.tici.agnos.flash_agnos_update")
+      mocker.patch("openpilot.common.hardware.tici.agnos.get_target_slot_number")
+      mocker.patch("openpilot.common.hardware.tici.agnos.flash_agnos_update")
 
       self._test_params("release3", False, False)
       self.wait_for_idle()
