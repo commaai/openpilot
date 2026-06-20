@@ -5,7 +5,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import cast
 from openpilot.system.ui.lib.application import gui_app, MouseEvent
-from openpilot.system.hardware import TICI
+from openpilot.common.hardware import TICI
 from collections import deque
 
 MIN_VELOCITY = 10  # px/s, changes from auto scroll to steady state

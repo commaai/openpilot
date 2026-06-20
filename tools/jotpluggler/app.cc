@@ -3,7 +3,7 @@
 #include "tools/jotpluggler/common.h"
 #include "tools/jotpluggler/internal.h"
 #include "tools/jotpluggler/map.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 #include "imgui_impl_glfw.h"
 
 #include "imgui_internal.h"

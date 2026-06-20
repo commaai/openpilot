@@ -7,7 +7,7 @@ from enum import IntEnum
 
 import pyray as rl
 
-from openpilot.system.hardware import PC
+from openpilot.common.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle

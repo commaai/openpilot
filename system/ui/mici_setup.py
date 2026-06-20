@@ -13,7 +13,7 @@ import pyray as rl
 
 from cereal import log
 from openpilot.common.filter_simple import BounceFilter
-from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.common.hardware import HARDWARE, TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid

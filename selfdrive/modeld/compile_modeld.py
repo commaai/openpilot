@@ -265,7 +265,7 @@ def _parse_size(s):
 
 def read_file_chunked_to_shm(path):
   from openpilot.common.file_chunker import read_file_chunked
-  from openpilot.system.hardware.hw import Paths
+  from openpilot.common.hardware.hw import Paths
   with tempfile.NamedTemporaryFile(prefix='compile_modeld_', dir=Paths.shm_path(), delete=False) as f:
     f.write(read_file_chunked(path))
     tmp_path = f.name

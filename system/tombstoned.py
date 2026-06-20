@@ -10,7 +10,7 @@ import glob
 from typing import NoReturn
 
 import openpilot.system.sentry as sentry
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 

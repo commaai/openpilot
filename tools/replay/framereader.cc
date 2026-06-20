@@ -9,7 +9,7 @@
 #include "libyuv.h"
 #include "tools/replay/py_downloader.h"
 #include "tools/replay/util.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 
 #ifdef __APPLE__
 #define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX

@@ -12,7 +12,7 @@
 #include "common/queue.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 
 namespace {
 

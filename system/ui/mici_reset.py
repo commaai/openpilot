@@ -7,7 +7,7 @@ from enum import IntEnum
 
 import pyray as rl
 
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.mici_setup import GreyBigButton, FailedPage

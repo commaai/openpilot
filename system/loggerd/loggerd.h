@@ -6,7 +6,7 @@
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
 #include "msgq/visionipc/visionipc_client.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"

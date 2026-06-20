@@ -12,9 +12,9 @@ from cereal import messaging
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import TICI
+from openpilot.common.hardware import TICI
 from openpilot.common.gpio import gpio_init, gpio_set
-from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.common.hardware.tici.pins import GPIO
 
 UBLOX_TTY = "/dev/ttyHS0"
 

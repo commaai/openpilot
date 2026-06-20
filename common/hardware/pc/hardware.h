@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "system/hardware/base.h"
+#include "common/hardware/base.h"
 
 class HardwarePC : public HardwareNone {
 public:

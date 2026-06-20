@@ -35,11 +35,11 @@ from openpilot.common.api import Api, get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')

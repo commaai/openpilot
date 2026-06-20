@@ -5,7 +5,7 @@ from pathlib import Path
 from openpilot.common.params import Params
 from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
 from openpilot.system.athena.tests.helpers import MockResponse
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 
 
 class TestRegistration:

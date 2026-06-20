@@ -1,5 +1,5 @@
 #include "tools/jotpluggler/internal.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 
 #include <unistd.h>
 

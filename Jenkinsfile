@@ -246,7 +246,7 @@ node {
           step("build openpilot", "cd system/manager && ./build.py"),
           step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
+          step("test amp", "pytest common/hardware/tici/tests/test_amplifier.py"),
         ])
       },
 

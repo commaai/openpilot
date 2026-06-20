@@ -79,7 +79,7 @@ compile_modeld_script = [
   File(f"{modeld_dir}/compile_modeld.py"),
   File(f"{modeld_dir}/get_model_metadata.py"),
   File("#system/camerad/cameras/nv12_info.py"),
-  File("#system/hardware/hw.py"),
+  File("#common/hardware/hw.py"),
 ]
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ

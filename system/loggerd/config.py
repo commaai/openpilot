@@ -1,5 +1,5 @@
 import os
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.hardware.hw import Paths
 
 
 CAMERA_FPS = 20

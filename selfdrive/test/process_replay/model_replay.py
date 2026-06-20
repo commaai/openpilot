@@ -12,7 +12,7 @@ import numpy as np
 from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
-from openpilot.system.hardware import PC
+from openpilot.common.hardware import PC
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process

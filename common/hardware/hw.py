@@ -2,7 +2,7 @@ import os
 import platform
 from pathlib import Path
 
-from openpilot.system.hardware import PC
+from openpilot.common.hardware import PC
 
 DEFAULT_DOWNLOAD_CACHE_ROOT = "/tmp/comma_download_cache"
 

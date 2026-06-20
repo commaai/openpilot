@@ -15,7 +15,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 
 #define MAX_IR_PANDA_VAL 50
 #define CUTOFF_IL 400

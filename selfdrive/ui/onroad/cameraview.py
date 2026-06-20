@@ -4,7 +4,7 @@ import pyray as rl
 
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import TICI
+from openpilot.common.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
 from openpilot.system.ui.widgets import Widget

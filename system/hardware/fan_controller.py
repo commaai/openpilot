@@ -2,7 +2,7 @@
 import numpy as np
 
 from openpilot.common.pid import PIDController
-from openpilot.system.hardware import HARDWARE
+from openpilot.common.hardware import HARDWARE
 
 # raise fan setpoint on tici/tizi to reduce noise
 # after raising LMH threshold in AGNOS 18.1 to prevent CPU throttling

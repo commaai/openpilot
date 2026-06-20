@@ -5,7 +5,7 @@
 
 #include "common/params.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
+#include "common/hardware/hw.h"
 
 class OpenpilotPrefix {
 public:

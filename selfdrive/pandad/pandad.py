@@ -9,7 +9,7 @@ import subprocess
 from panda import Panda, PandaDFU, PandaProtocolMismatch, McuType, FW_PATH
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.system.hardware import HARDWARE
+from openpilot.common.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 
 

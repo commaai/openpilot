@@ -5,7 +5,7 @@ import threading
 import pyray as rl
 
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
-from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.common.hardware import HARDWARE, TICI
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets.nav_widget import NavWidget
