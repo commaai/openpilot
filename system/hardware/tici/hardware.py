@@ -147,9 +147,7 @@ class Tici(HardwareBase):
   def get_sim_lpa(self) -> LPABase:
     return TiciLPA()
 
-  def get_imei(self, slot):
-    if slot != 0:
-      return ""
+  def get_imei(self):
     return self.get_modem_state().get('imei', '')
 
   def get_network_info(self):
@@ -232,9 +230,6 @@ class Tici(HardwareBase):
       pass
 
     return super().get_network_metered(network_type)
-
-  def get_modem_version(self):
-    return self.get_modem_state().get('modem_version') or None
 
   def get_modem_temperatures(self):
     return self.get_modem_state().get('temperatures', [])
@@ -389,9 +384,6 @@ class Tici(HardwareBase):
   def get_modem_data_usage(self):
     ms = self.get_modem_state()
     return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
-
-  def has_internal_panda(self):
-    return True
 
   def reset_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)

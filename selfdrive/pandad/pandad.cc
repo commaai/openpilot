@@ -1,7 +1,6 @@
 #include "selfdrive/pandad/pandad.h"
 
 #include <array>
-#include <atomic>
 #include <bitset>
 #include <cassert>
 #include <cerrno>
@@ -23,14 +22,6 @@
 #define SATURATE_IL 1000
 
 ExitHandler do_exit;
-
-struct HwmonState {
-  std::atomic<uint32_t> voltage{0};
-  std::atomic<uint32_t> current{0};
-  std::atomic<bool> initialized{false};
-};
-
-HwmonState hwmon_state;
 
 bool check_connected(Panda *panda) {
   if (!panda->connected()) {
@@ -111,26 +102,6 @@ void can_recv(Panda *panda, PubMaster *pm) {
       canData[i].setSrc(raw_can_data[i].src);
     }
     pm->send("can", msg);
-  }
-}
-
-void hwmon_thread() {
-  util::set_thread_name("pandad_hwmon");
-
-  while (!do_exit) {
-    double read_time = millis_since_boot();
-    uint32_t voltage = Hardware::get_voltage();
-    uint32_t current = Hardware::get_current();
-    read_time = millis_since_boot() - read_time;
-    if (read_time > 50) {
-      LOGW("reading hwmon took %lfms", read_time);
-    }
-
-    hwmon_state.voltage.store(voltage);
-    hwmon_state.current.store(current);
-    hwmon_state.initialized.store(true);
-
-    util::sleep_for(500);
   }
 }
 
@@ -264,7 +235,8 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
 }
 
 void send_peripheral_state(Panda *panda, PubMaster *pm) {
-  if (!hwmon_state.initialized.load()) {
+  auto health_opt = panda->get_state();
+  if (!health_opt) {
     return;
   }
 
@@ -276,18 +248,9 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
 
-  ps.setVoltage(hwmon_state.voltage.load());
-  ps.setCurrent(hwmon_state.current.load());
-
-  // fall back to panda's voltage and current measurement
-  if (ps.getVoltage() == 0 && ps.getCurrent() == 0) {
-    auto health_opt = panda->get_state();
-    if (health_opt) {
-      health_t health = *health_opt;
-      ps.setVoltage(health.voltage_pkt);
-      ps.setCurrent(health.current_pkt);
-    }
-  }
+  health_t health = *health_opt;
+  ps.setVoltage(health.voltage_pkt);
+  ps.setCurrent(health.current_pkt);
 
   uint16_t fan_speed_rpm = panda->get_fan_speed();
   ps.setFanSpeedRpm(fan_speed_rpm);
@@ -399,9 +362,8 @@ void pandad_run(Panda *panda) {
   const bool spoofing_started = getenv("STARTED") != nullptr;
   const bool fake_send = getenv("FAKESEND") != nullptr;
 
-  // Start helper threads for event-driven sendcan and slow non-Panda reads.
+  // Start helper thread for event-driven sendcan.
   std::thread send_thread(can_send_thread, panda, fake_send);
-  std::thread hardware_thread(hwmon_thread);
 
   RateKeeper rk("pandad", 100);
   SubMaster sm({"selfdriveState", "deviceState"});
@@ -457,7 +419,6 @@ void pandad_run(Panda *panda) {
   }
 
   send_thread.join();
-  hardware_thread.join();
 }
 
 void pandad_main_thread(std::string serial) {

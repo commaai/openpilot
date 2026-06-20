@@ -85,7 +85,7 @@ class HardwareBase(ABC):
   def get_device_type(self):
     pass
 
-  def get_imei(self, slot) -> str:
+  def get_imei(self) -> str:
     return ""
 
   def get_serial(self):
@@ -142,17 +142,11 @@ class HardwareBase(ABC):
   def get_gpu_usage_percent(self):
     return 0
 
-  def get_modem_version(self):
-    return None
-
   def get_modem_temperatures(self):
     return []
 
   def initialize_hardware(self):
     pass
-
-  def has_internal_panda(self) -> bool:
-    return False
 
   def reset_internal_panda(self):
     pass
@@ -162,12 +156,6 @@ class HardwareBase(ABC):
 
   def get_modem_data_usage(self):
     return -1, -1
-
-  def get_voltage(self) -> float:
-    return 0.
-
-  def get_current(self) -> float:
-    return 0.
 
   def set_ir_power(self, percent: int):
     pass
