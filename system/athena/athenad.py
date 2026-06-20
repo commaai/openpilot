@@ -83,9 +83,6 @@ UPLOAD_SESS = requests.Session()
 UPLOAD_SESS.mount("http://", UploadTOSAdapter())
 UPLOAD_SESS.mount("https://", UploadTOSAdapter())
 
-WEBRTCD_SESS = requests.Session()
-WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=0))
-
 
 @dataclass
 class UploadFile:
