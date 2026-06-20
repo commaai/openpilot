@@ -653,6 +653,7 @@ struct UiState {
   bool fps_overlay_initialized = false;
   bool suppress_range_side_effects = false;
   bool browser_nodes_dirty = false;
+  bool dark_mode = false;
   int active_tab_index = 0;
   int next_tab_runtime_id = 1;
   int requested_tab_index = -1;
@@ -885,3 +886,4 @@ private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
+void configure_style(UiState *ui_state);
