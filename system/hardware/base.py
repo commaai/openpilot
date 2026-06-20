@@ -85,7 +85,7 @@ class HardwareBase(ABC):
   def get_device_type(self):
     pass
 
-  def get_imei(self, slot) -> str:
+  def get_imei(self) -> str:
     return ""
 
   def get_serial(self):
@@ -150,9 +150,6 @@ class HardwareBase(ABC):
 
   def initialize_hardware(self):
     pass
-
-  def has_internal_panda(self) -> bool:
-    return False
 
   def reset_internal_panda(self):
     pass
