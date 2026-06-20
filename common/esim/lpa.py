@@ -19,7 +19,7 @@ from typing import Any
 from pathlib import Path
 
 from openpilot.common.time_helpers import system_time_valid
-from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
+from openpilot.common.esim.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
 GSMA_CI_BUNDLE = str(Path(__file__).parent / "gsma_ci_bundle.pem")
 

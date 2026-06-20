@@ -298,7 +298,7 @@ function op_check() {
 
 function op_esim() {
   op_before_cmd
-  op_run_command system/hardware/esim.py "$@"
+  op_run_command common/esim/esim.py "$@"
 }
 
 function op_build() {
