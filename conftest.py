@@ -12,9 +12,6 @@ collect_ignore = [
   "selfdrive/test/process_replay/test_processes.py",
   "selfdrive/test/process_replay/test_regen.py",
 ]
-collect_ignore_glob = [
-  "selfdrive/debug/*.py",
-]
 
 
 def pytest_sessionstart(session):
