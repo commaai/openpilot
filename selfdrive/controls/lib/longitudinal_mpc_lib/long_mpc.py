@@ -57,6 +57,7 @@ COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 CRUISE_MIN_ACCEL = -1.2
 CRUISE_MAX_ACCEL = 1.6
+CRUISE_MAX_ACCEL_EXP = 3.0
 MIN_X_LEAD_FACTOR = 0.5
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
@@ -313,7 +314,7 @@ class LongitudinalMpc:
     lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
     return lead_xv
 
-  def update(self, radarstate, v_cruise, personality=log.LongitudinalPersonality.standard, ignore_cruise=False):
+  def update(self, radarstate, v_cruise, personality=log.LongitudinalPersonality.standard, experimental_mode=False):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
@@ -331,20 +332,13 @@ class LongitudinalMpc:
     # when the leads are no factor.
     v_lower = v_ego + (T_IDXS * CRUISE_MIN_ACCEL * 1.05)
     # TODO does this make sense when max_a is negative?
-    v_upper = v_ego + (T_IDXS * CRUISE_MAX_ACCEL * 1.05)
+    cruise_max_accel = CRUISE_MAX_ACCEL_EXP if experimental_mode else CRUISE_MAX_ACCEL
+    v_upper = v_ego + (T_IDXS * cruise_max_accel * 1.05)
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1), v_lower, v_upper)
     cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, t_follow)
 
-    if ignore_cruise:
-      if not radarstate.leadOne.status:
-        lead_0_obstacle = np.full_like(lead_0_obstacle, 1e8)
-      if not radarstate.leadTwo.status:
-        lead_1_obstacle = np.full_like(lead_1_obstacle, 1e8)
-      x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle])
-      self.source = MPC_SOURCES[np.argmin(x_obstacles[0])] if self.status else LongitudinalPlanSource.e2e
-    else:
-      x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-      self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
+    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
+    self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
 
     self.yref[:,:] = 0.0
     for i in range(N):
