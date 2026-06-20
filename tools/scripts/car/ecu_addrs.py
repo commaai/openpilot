@@ -26,9 +26,9 @@ if __name__ == "__main__":
   # Set up params for pandad
   params = Params()
   params.remove("FirmwareQueryDone")
-  params.put_bool("IsOnroad", False, block=True)
+  params.put_bool("IsOffroad", True, block=True)
   time.sleep(0.2)  # thread is 10 Hz
-  params.put_bool("IsOnroad", True, block=True)
+  params.put_bool("IsOffroad", False, block=True)
 
   obd_callback(params)(not args.no_obd)
 
