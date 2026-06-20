@@ -6,7 +6,7 @@ Welcome to the first part of the comma CTF!
 * everything you'll need to find the flags is in the openpilot repo
   * grep is also your friend
   * first, [setup](https://github.com/commaai/openpilot/tree/master/tools#setup-your-pc) your PC
-  * read the docs & checkout out the tools in tools/ and selfdrive/debug/
+  * read the docs & checkout out the tools in tools/
   * tip: once you get the replay and UI up, start by familiarizing yourself with seeking in replay
 
 getting started
