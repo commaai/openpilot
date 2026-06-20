@@ -45,7 +45,6 @@ from openpilot.system.hardware.hw import Paths
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {22, }  # SSH
-WEBRTCD_PORT = 5001
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -83,9 +82,6 @@ class UploadTOSAdapter(HTTPAdapter):
 UPLOAD_SESS = requests.Session()
 UPLOAD_SESS.mount("http://", UploadTOSAdapter())
 UPLOAD_SESS.mount("https://", UploadTOSAdapter())
-
-WEBRTCD_SESS = requests.Session()
-WEBRTCD_SESS.mount("http://", HTTPAdapter(max_retries=0))
 
 
 @dataclass
@@ -581,28 +577,28 @@ def getNetworks():
 
 @dispatcher.add_method
 def startStream(sdp: str, enabled: bool) -> dict:
-  from openpilot.system.webrtc.models import StreamRequestBody
+  from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
+  params = Params()
   bridge_services_in = []
 
-  # get live car params to avoid stale notCar edge case
-  cp_bytes = Params().get("CarParams")
+  # stale car params case taken care of by webrtcd being shut off on ignition
+  cp_bytes = Params().get("CarParamsPersistent")
   if cp_bytes is not None:
     with car.CarParams.from_bytes(cp_bytes) as CP:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
+  else:
+      raise Exception("failed to get CarParamsPersistent")
 
-  t_start = time.monotonic()
-  body = StreamRequestBody(sdp=sdp, init_camera="wideRoad", bridge_services_in=bridge_services_in, bridge_services_out=["carState"], enabled=enabled)
-  try:
-    resp = WEBRTCD_SESS.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
-    t_end = time.monotonic()
-    ret = resp.json()
-    ret["time"] = (t_end - t_start) * 1000
-    return ret
-  except requests.ConnectTimeout as e:
-    raise Exception("webrtc took too long to respond. is the comma body on?") from e
-  except requests.ConnectionError as e:
-    raise Exception("webrtc is not running. turn on comma body ignition.") from e
+  if not params.get_bool("IsOnroad"):
+    # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
+    # webrtcd clears IsLiveStreaming when the session ends
+    params.put_bool("IsLiveStreaming", True)
+    # wait for webrtcd end points to wake up
+    wait_for_webrtcd()
+
+  return post_stream_request(StreamRequestBody(sdp, "wideRoad", enabled, bridge_services_in, ["carState", "deviceState"]))
+
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:

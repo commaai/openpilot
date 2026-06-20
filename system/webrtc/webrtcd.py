@@ -23,7 +23,7 @@ if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 import aioice.ice
 
-from openpilot.system.webrtc.models import StreamRequestBody
+from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from cereal import messaging, log
@@ -329,11 +329,11 @@ class StreamSession:
   async def run(self):
     try:
       self.params.put("LivestreamRequestKeyframe", True)
-      await self.stream.wait_for_connection()
+      await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
       if self.stream.has_messaging_channel():
+        self.stream.set_message_handler(self.message_handler)
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
-          self.stream.set_message_handler(self.message_handler)
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
@@ -361,6 +361,17 @@ class StreamSession:
         self.video_track.stop()
         self.video_track = None
       await self.stream.stop()
+
+
+def schedule_teardown(app):
+  # if nothing connects for 5 seconds, tear down livestreaming processes
+  h = app.get('teardown')
+  if h:
+      h.cancel()
+  def clear():
+      if not app['streams']:
+          Params().put_bool("IsLiveStreaming", False)
+  app['teardown'] = asyncio.get_running_loop().call_later(5.0, clear)
 
 
 async def get_stream(request: 'web.Request'):
@@ -397,13 +408,14 @@ async def get_stream(request: 'web.Request'):
 
     def remove_finished_session(_: asyncio.Task) -> None:
       stream_dict.pop(session.identifier, None)
+      schedule_teardown(request.app)
     session.run_task.add_done_callback(remove_finished_session)
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
 async def get_schema(request: 'web.Request'):
-  services = request.query["services"].split(",")
+  services = request.query.get("services", "").split(",")
   services = [s for s in services if s]
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
@@ -427,10 +439,10 @@ async def post_notify(request: 'web.Request'):
 
 
 async def on_shutdown(app: 'web.Application'):
-  for session in app['streams'].values():
+  for session in list(app['streams'].values()):
     try:
       ch = session.stream.get_messaging_channel()
-      ch.send(json.dumps({"type": "disconnect", "data": "device stream has been stopped."}))
+      ch.send(json.dumps({"type": "disconnect", "data": "device streaming has been stopped."}))
     except Exception:
       pass
     await session.stop()
@@ -458,9 +470,6 @@ def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
 
 def webrtcd_thread(host: str, port: int, debug: bool):
   logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
-  logging_level = logging.DEBUG if debug else logging.INFO
-  logging.getLogger("WebRTCStream").setLevel(logging_level)
-  logging.getLogger("webrtcd").setLevel(logging_level)
   prewarm_start = time.monotonic()
   prewarm_stream_session_imports(debug)
   prewarm_end = time.monotonic()
