@@ -210,7 +210,7 @@ node {
       'HW + Unit Tests': {
         deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
-          step("test power draw", "pytest -s common/hardware/tici/tests/test_power_draw.py"),
+          step("test power draw", "pytest -s selfdrive/test//test_power_draw.py"),
           step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py", [diffPaths: ["system/loggerd/"]]),
           step("test manager", "pytest system/manager/test/test_manager.py"),
         ])
