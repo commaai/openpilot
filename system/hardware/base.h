@@ -24,6 +24,4 @@ public:
   static void set_ir_power(int percentage) {}
 
   static bool PC() { return false; }
-  static bool TICI() { return false; }
-  static bool AGNOS() { return false; }
 };

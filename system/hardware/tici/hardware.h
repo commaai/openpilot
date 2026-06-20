@@ -22,7 +22,6 @@ public:
 
   static cereal::InitData::DeviceType get_device_type() {
     static const std::map<std::string, cereal::InitData::DeviceType> device_map = {
-      {"tici", cereal::InitData::DeviceType::TICI},
       {"tizi", cereal::InitData::DeviceType::TIZI},
       {"mici", cereal::InitData::DeviceType::MICI}
     };
@@ -54,8 +53,7 @@ public:
 
   static void set_ir_power(int percent) {
     auto device = get_device_type();
-    if (device == cereal::InitData::DeviceType::TICI ||
-        device == cereal::InitData::DeviceType::TIZI) {
+    if (device == cereal::InitData::DeviceType::TIZI) {
       return;
     }
 
