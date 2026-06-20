@@ -7,7 +7,7 @@ from collections import namedtuple
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal import messaging
 
-from openpilot.tools.webcam.camera import Camera
+from openpilot.system.camerad.webcam.camera import Camera
 from openpilot.common.realtime import Ratekeeper
 
 ROAD_CAM = os.getenv("ROAD_CAM", "0")
