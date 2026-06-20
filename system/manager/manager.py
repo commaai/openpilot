@@ -13,7 +13,7 @@ from openpilot.common.utils import atomic_write
 from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.text_window import TextWindow
 from openpilot.common.hardware import HARDWARE
-from openpilot.system.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
+from openpilot.system.manager.helpers import unblock_stdout, save_bootlog
 from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
@@ -121,7 +121,7 @@ def manager_thread() -> None:
   sm = messaging.SubMaster(['deviceState', 'carParams', 'pandaStates'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
-  write_onroad_params(False, params)
+  params.put_bool("IsOffroad", True, block=True)
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   started_prev = False
@@ -141,9 +141,9 @@ def manager_thread() -> None:
     if ignition and not ignition_prev:
       params.clear_all(ParamKeyFlag.CLEAR_ON_IGNITION_ON)
 
-    # update onroad params, which drives pandad's safety setter thread
+    # update offroad state for services that don't subscribe to deviceState
     if started != started_prev:
-      write_onroad_params(started, params)
+      params.put_bool("IsOffroad", not started, block=True)
 
     started_prev = started
     ignition_prev = ignition

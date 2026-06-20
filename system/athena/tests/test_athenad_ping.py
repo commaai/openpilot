@@ -7,7 +7,6 @@ from typing import cast
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.athena import athenad
-from openpilot.system.manager.helpers import write_onroad_params
 from openpilot.common.hardware import TICI
 
 TIMEOUT_TOLERANCE = 20  # seconds
@@ -93,10 +92,10 @@ class TestAthenadPing:
 
   @pytest.mark.skipif(not TICI, reason="only run on desk")
   def test_offroad(self, subtests, mocker) -> None:
-    write_onroad_params(False, self.params)
+    self.params.put_bool("IsOffroad", True, block=True)
     self.assertTimeout(60 + TIMEOUT_TOLERANCE, subtests, mocker)  # based using TCP keepalive settings
 
   @pytest.mark.skipif(not TICI, reason="only run on desk")
   def test_onroad(self, subtests, mocker) -> None:
-    write_onroad_params(True, self.params)
+    self.params.put_bool("IsOffroad", False, block=True)
     self.assertTimeout(21 + TIMEOUT_TOLERANCE, subtests, mocker)
