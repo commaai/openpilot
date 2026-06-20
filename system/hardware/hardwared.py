@@ -17,7 +17,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, TICI, AGNOS, PC
+from openpilot.system.hardware import HARDWARE, TICI, PC
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
@@ -107,8 +107,6 @@ def hw_state_thread(end_event, hw_queue):
   count = 0
   prev_hw_state = None
 
-  modem_version = None
-
   while not end_event.is_set():
     # these are expensive calls. update every 10s
     if (count % int(10. / DT_HW)) == 0:
@@ -117,13 +115,6 @@ def hw_state_thread(end_event, hw_queue):
         modem_temps = HARDWARE.get_modem_temperatures()
         if len(modem_temps) == 0 and prev_hw_state is not None:
           modem_temps = prev_hw_state.modem_temps
-
-        # Log modem version once
-        if AGNOS and (modem_version is None):
-          modem_version = HARDWARE.get_modem_version()
-
-          if modem_version is not None:
-            cloudlog.event("modem version", version=modem_version)
 
         tx, rx = HARDWARE.get_modem_data_usage()
 

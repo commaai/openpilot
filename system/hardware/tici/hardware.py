@@ -231,9 +231,6 @@ class Tici(HardwareBase):
 
     return super().get_network_metered(network_type)
 
-  def get_modem_version(self):
-    return self.get_modem_state().get('modem_version') or None
-
   def get_modem_temperatures(self):
     return self.get_modem_state().get('temperatures', [])
 
