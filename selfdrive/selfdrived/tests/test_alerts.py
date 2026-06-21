@@ -8,11 +8,12 @@ from cereal import log, car
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET
-from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET, Events
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert, AlertManager
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
 
 AlertSize = log.SelfdriveState.AlertSize
+EventName = log.OnroadEvent.EventName
 
 OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")
 
@@ -103,6 +104,32 @@ class TestAlerts:
 
         if event_type not in (ET.WARNING, ET.PERMANENT, ET.PRE_ENABLE):
           assert a.creation_delay == 0.
+
+  # processNotRunning is a controls crash; when not engaged it should be shown over a
+  # downstream fault like steerUnavailable. https://github.com/commaai/openpilot/issues/34751
+  def test_process_not_running_permanent_not_shadowed(self):
+    events = Events()
+    events.add(EventName.steerUnavailable)
+    events.add(EventName.processNotRunning)
+    callback_args = [self.CP, self.CS, self.sm, False, 100, log.LongitudinalPersonality.standard]
+    alerts = events.create_alerts([ET.PERMANENT], callback_args)
+
+    am = AlertManager()
+    am.add_many(0, alerts)
+    am.process_alerts(0, set())
+    assert am.current_alert.alert_text_1 == "Process Not Running"
+
+  # ...but when engaged, the permanent alert must NOT mask the soft disable "take control" warning
+  def test_process_not_running_permanent_does_not_mask_soft_disable(self):
+    events = Events()
+    events.add(EventName.processNotRunning)
+    callback_args = [self.CP, self.CS, self.sm, False, 100, log.LongitudinalPersonality.standard]
+    alerts = events.create_alerts([ET.PERMANENT, ET.SOFT_DISABLE], callback_args)
+
+    am = AlertManager()
+    am.add_many(0, alerts)
+    am.process_alerts(0, set())
+    assert am.current_alert.alert_text_1 == "TAKE CONTROL IMMEDIATELY"
 
   def test_offroad_alerts(self):
     params = Params()
