@@ -40,10 +40,7 @@ class Api:
     return self.request('POST', *args, **kwargs)
 
   def request(self, method, endpoint, timeout=None, access_token=None, session=None, **params):
-    session = self.session if session is None else session
-    access_token = self.token if access_token is None else access_token
-    return request_api(method, endpoint, session=session, timeout=timeout,
-                       access_token=access_token, user_agent=self.user_agent, params=params)
+    return self._send(method, endpoint, timeout=timeout, access_token=access_token, session=session, params=params)
 
   def get_json(self, *args, **kwargs):
     return self.request_json('GET', *args, **kwargs)
@@ -51,19 +48,20 @@ class Api:
   def post_json(self, *args, **kwargs):
     return self.request_json('POST', *args, **kwargs)
 
-  def request_json(self, method, endpoint, timeout=None, access_token=None, session=None, params=None, **kwargs):
+  def request_json(self, method, endpoint, **kwargs):
+    with self._send(method, endpoint, **kwargs) as resp:
+      return parse_api_response(resp)
+
+  def _send(self, method, endpoint, timeout=None, access_token=None, session=None, params=None, **kwargs):
     session = self.session if session is None else session
     access_token = self.token if access_token is None else access_token
-    with request_api(method, endpoint, session=session, timeout=timeout, access_token=access_token,
-                     user_agent=self.user_agent, params=params, **kwargs) as resp:
-      return parse_api_response(resp)
+    return request_api(method, endpoint, session=session, timeout=timeout,
+                       access_token=access_token, user_agent=self.user_agent, params=params, **kwargs)
 
   def get_token(self, payload_extra=None, expiry_hours=1):
     if self.dongle_id is None:
       raise ValueError("dongle_id is required to generate an API token")
-    if self.jwt_algorithm is None or self.private_key is None:
-      self.jwt_algorithm, self.private_key, _ = get_key_pair()
-    if self.jwt_algorithm is None or self.private_key is None:
+    if self.private_key is None:
       raise ValueError("private key is required to generate an API token")
 
     now = datetime.now(UTC).replace(tzinfo=None)
@@ -81,25 +79,22 @@ class Api:
     return token
 
 
-class APIError(Exception):
+class _APIException(Exception):
   def __init__(self, message, status_code=None):
     super().__init__(message)
     self.status_code = status_code
 
 
-class UnauthorizedError(Exception):
-  def __init__(self, message, status_code=None):
-    super().__init__(message)
-    self.status_code = status_code
+class APIError(_APIException):
+  pass
+
+
+class UnauthorizedError(_APIException):
+  pass
 
 
 def _api_url(endpoint):
   return API_HOST + "/" + endpoint.lstrip("/")
-
-
-def _request(method, endpoint, session=None, **kwargs):
-  req = requests if session is None else session
-  return req.request(method, _api_url(endpoint), **kwargs)
 
 
 def default_user_agent():
@@ -117,8 +112,8 @@ def request_api(method, endpoint, session=None, timeout=None, access_token=None,
   request_headers = api_headers(access_token, user_agent)
   if headers is not None:
     request_headers.update(headers)
-  return _request(method, endpoint, session=session, timeout=timeout,
-                  headers=request_headers, params=params, **kwargs)
+  req = requests if session is None else session
+  return req.request(method, _api_url(endpoint), timeout=timeout, headers=request_headers, params=params, **kwargs)
 
 
 def parse_api_response(resp):
