@@ -104,12 +104,13 @@ testing = [
 
 dev = [
   "matplotlib",
-  "opencv-python-headless",
 ]
 
 tools = [
   "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
-  "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
+
+  # this can be added back once it's stripped down some more
+  #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
 [project.urls]

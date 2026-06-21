@@ -11,6 +11,8 @@ from openpilot.common.hardware import TICI, HARDWARE
 collect_ignore = [
   "selfdrive/test/process_replay/test_processes.py",
   "selfdrive/test/process_replay/test_regen.py",
+
+  "tools/sim/",
 ]
 
 
