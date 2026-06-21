@@ -61,10 +61,12 @@ class RunningStatFilter:
     self.filtered_stat.reset()
 
   def push_and_update(self, new_data):
-    _std_last = self.raw_stat.std()
+    # std is monotonic in variance, so compare variance directly and skip
+    # the two per-update sqrt() calls (this is the dmonitoringd hot path).
+    _var_last = self.raw_stat.variance()
     self.raw_stat.push_data(new_data)
-    _delta_std = self.raw_stat.std() - _std_last
-    if _delta_std <= 0:
+    _delta_var = self.raw_stat.variance() - _var_last
+    if _delta_var <= 0:
       self.filtered_stat.push_data(new_data)
     else:
       pass
