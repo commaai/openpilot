@@ -7,7 +7,7 @@ from openpilot.common.swaglog import cloudlog
 
 
 def main():
-  pm = messaging.PubMaster(['androidLog'])
+  pm = messaging.PubMaster(['operatingSystemLog'])
   cmd = ['journalctl', '-f', '-o', 'json']
   proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
   assert proc.stdout is not None
@@ -22,8 +22,8 @@ def main():
         cloudlog.exception("failed to parse journalctl output")
         continue
 
-      msg = messaging.new_message('androidLog')
-      entry = msg.androidLog
+      msg = messaging.new_message('operatingSystemLog')
+      entry = msg.operatingSystemLog
       entry.ts = int(kv.get('__REALTIME_TIMESTAMP', 0))
       entry.message = json.dumps(kv)
       if '_PID' in kv:
@@ -33,7 +33,7 @@ def main():
       if 'SYSLOG_IDENTIFIER' in kv:
         entry.tag = kv['SYSLOG_IDENTIFIER']
 
-      pm.send('androidLog', msg)
+      pm.send('operatingSystemLog', msg)
   finally:
     proc.terminate()
     proc.wait()
