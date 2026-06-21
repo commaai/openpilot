@@ -2,7 +2,7 @@ import functools
 import re
 
 from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.api import CommaApi
+from openpilot.common.api import CommaApi
 from openpilot.tools.lib.helpers import RE
 
 
