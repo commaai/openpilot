@@ -17,10 +17,21 @@ KEYS = {"id_rsa": "RS256",
 
 
 class Api:
-  def __init__(self, dongle_id, session=None):
+  def __init__(self, dongle_id=None, token=None, session=None, user_agent=None, retry=False):
     self.dongle_id = dongle_id
+    self.token = token
+    self.user_agent = user_agent or default_user_agent()
     self.session = session
-    self.jwt_algorithm, self.private_key, _ = get_key_pair()
+    self.jwt_algorithm, self.private_key, _ = get_key_pair() if dongle_id is not None else (None, None, None)
+
+    if retry and session is None:
+      self.session = requests.Session()
+      retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+      self.session.mount('https://', HTTPAdapter(max_retries=retries))
+
+  @classmethod
+  def from_user_token(cls, token=None, session=None):
+    return cls(token=token, session=session, user_agent=TOOLS_USER_AGENT, retry=True)
 
   def get(self, *args, **kwargs):
     return self.request('GET', *args, **kwargs)
@@ -30,10 +41,31 @@ class Api:
 
   def request(self, method, endpoint, timeout=None, access_token=None, session=None, **params):
     session = self.session if session is None else session
-    return api_get(endpoint, method=method, timeout=timeout, access_token=access_token,
-                   session=session, **params)
+    access_token = self.token if access_token is None else access_token
+    return request_api(method, endpoint, session=session, timeout=timeout,
+                       access_token=access_token, user_agent=self.user_agent, params=params)
+
+  def get_json(self, *args, **kwargs):
+    return self.request_json('GET', *args, **kwargs)
+
+  def post_json(self, *args, **kwargs):
+    return self.request_json('POST', *args, **kwargs)
+
+  def request_json(self, method, endpoint, timeout=None, access_token=None, session=None, params=None, **kwargs):
+    session = self.session if session is None else session
+    access_token = self.token if access_token is None else access_token
+    with request_api(method, endpoint, session=session, timeout=timeout, access_token=access_token,
+                     user_agent=self.user_agent, params=params, **kwargs) as resp:
+      return parse_api_response(resp)
 
   def get_token(self, payload_extra=None, expiry_hours=1):
+    if self.dongle_id is None:
+      raise ValueError("dongle_id is required to generate an API token")
+    if self.jwt_algorithm is None or self.private_key is None:
+      self.jwt_algorithm, self.private_key, _ = get_key_pair()
+    if self.jwt_algorithm is None or self.private_key is None:
+      raise ValueError("private key is required to generate an API token")
+
     now = datetime.now(UTC).replace(tzinfo=None)
     payload = {
       'identity': self.dongle_id,
@@ -49,42 +81,16 @@ class Api:
     return token
 
 
-class CommaApi:
-  def __init__(self, token=None, session=None):
-    self.session = session or requests.Session()
-    self.session.headers['User-Agent'] = TOOLS_USER_AGENT
-    if token:
-      self.session.headers['Authorization'] = 'JWT ' + token
-
-    if session is None:
-      retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
-      self.session.mount('https://', HTTPAdapter(max_retries=retries))
-
-  def request(self, method, endpoint, **kwargs):
-    with _request(method, endpoint, session=self.session, **kwargs) as resp:
-      resp_json = resp.json()
-      if isinstance(resp_json, dict) and resp_json.get('error'):
-        if resp.status_code in [401, 403]:
-          raise UnauthorizedError('Unauthorized. Authenticate with tools/lib/auth.py', resp.status_code)
-
-        raise APIError(str(resp.status_code) + ":" + resp_json.get('description', str(resp_json['error'])), resp.status_code)
-      return resp_json
-
-  def get(self, endpoint, **kwargs):
-    return self.request('GET', endpoint, **kwargs)
-
-  def post(self, endpoint, **kwargs):
-    return self.request('POST', endpoint, **kwargs)
-
-
 class APIError(Exception):
   def __init__(self, message, status_code=None):
     super().__init__(message)
     self.status_code = status_code
 
 
-class UnauthorizedError(APIError):
-  pass
+class UnauthorizedError(Exception):
+  def __init__(self, message, status_code=None):
+    super().__init__(message)
+    self.status_code = status_code
 
 
 def _api_url(endpoint):
@@ -96,14 +102,38 @@ def _request(method, endpoint, session=None, **kwargs):
   return req.request(method, _api_url(endpoint), **kwargs)
 
 
-def api_get(endpoint, method='GET', timeout=None, access_token=None, session=None, **params):
-  headers = {}
+def default_user_agent():
+  return "openpilot-" + get_version()
+
+
+def api_headers(access_token=None, user_agent=None):
+  headers = {'User-Agent': user_agent or default_user_agent()}
   if access_token is not None:
     headers['Authorization'] = "JWT " + access_token
+  return headers
 
-  headers['User-Agent'] = "openpilot-" + get_version()
 
-  return _request(method, endpoint, session=session, timeout=timeout, headers=headers, params=params)
+def request_api(method, endpoint, session=None, timeout=None, access_token=None, user_agent=None, params=None, headers=None, **kwargs):
+  request_headers = api_headers(access_token, user_agent)
+  if headers is not None:
+    request_headers.update(headers)
+  return _request(method, endpoint, session=session, timeout=timeout,
+                  headers=request_headers, params=params, **kwargs)
+
+
+def parse_api_response(resp):
+  resp_json = resp.json()
+  if isinstance(resp_json, dict) and resp_json.get('error'):
+    if resp.status_code in [401, 403]:
+      raise UnauthorizedError('Unauthorized. Authenticate with tools/lib/auth.py', resp.status_code)
+
+    raise APIError(str(resp.status_code) + ":" + resp_json.get('description', str(resp_json['error'])), resp.status_code)
+  return resp_json
+
+
+def api_get(endpoint, method='GET', timeout=None, access_token=None, session=None, **params):
+  return request_api(method, endpoint, session=session, timeout=timeout,
+                     access_token=access_token, params=params)
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:

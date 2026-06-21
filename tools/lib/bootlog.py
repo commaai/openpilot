@@ -2,7 +2,7 @@ import functools
 import re
 
 from openpilot.tools.lib.auth_config import get_token
-from openpilot.common.api import CommaApi
+from openpilot.common.api import Api
 from openpilot.tools.lib.helpers import RE
 
 
@@ -52,6 +52,6 @@ def get_bootlog_from_id(bootlog_id: str) -> Bootlog | None:
   return None
 
 def get_bootlogs(dongle_id: str) -> list[Bootlog]:
-  api = CommaApi(get_token())
-  r = api.get(f'v1/devices/{dongle_id}/bootlogs')
+  api = Api.from_user_token(get_token())
+  r = api.get_json(f'v1/devices/{dongle_id}/bootlogs')
   return [Bootlog(b) for b in r]
