@@ -6,7 +6,7 @@
 #include <vector>
 #include <memory>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot/cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 

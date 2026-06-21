@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import linear_model
+import openpilot.cereal  # noqa: F401
 from opendbc.car.toyota.values import STEER_THRESHOLD
 
 from openpilot.tools.lib.logreader import LogReader

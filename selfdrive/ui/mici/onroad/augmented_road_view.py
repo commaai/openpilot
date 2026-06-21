@@ -1,6 +1,6 @@
 import numpy as np
 import pyray as rl
-from cereal import car, log
+from openpilot.cereal import car, log
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH

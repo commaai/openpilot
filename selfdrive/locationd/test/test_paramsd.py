@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params, migrate_cached_vehicle_params_if_needed
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE

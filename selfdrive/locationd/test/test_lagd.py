@@ -3,7 +3,7 @@ import numpy as np
 import time
 import pytest
 
-from cereal import messaging, log, car
+from openpilot.cereal import messaging, log, car
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
                                                BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC, VERSION
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams

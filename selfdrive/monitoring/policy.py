@@ -2,8 +2,8 @@ from collections import defaultdict
 from math import atan2, radians
 import numpy as np
 
-from cereal import car, log
-import cereal.messaging as messaging
+from openpilot.cereal import car, log
+import openpilot.cereal.messaging as messaging
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params

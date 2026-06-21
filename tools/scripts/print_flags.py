@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import openpilot.cereal  # noqa: F401
 from opendbc.car.values import BRANDS
 
 for brand in BRANDS:

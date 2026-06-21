@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "cereal/services.h"
+#include "openpilot/cereal/services.h"
 
 #include <QButtonGroup>
 #include <QFileInfo>
@@ -33,7 +33,7 @@ DeviceStream::~DeviceStream() {
 void DeviceStream::start() {
   if (!zmq_address.isEmpty()) {
     bridge_process = new QProcess(this);
-    QString bridge_path = QCoreApplication::applicationDirPath() + "/../../cereal/messaging/bridge";
+    QString bridge_path = QCoreApplication::applicationDirPath() + "/../../openpilot/cereal/messaging/bridge";
     bridge_process->start(QFileInfo(bridge_path).absoluteFilePath(), QStringList { zmq_address, "/\"can/\"" });
 
     if (!bridge_process->waitForStarted()) {

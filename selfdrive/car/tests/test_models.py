@@ -8,6 +8,7 @@ import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from openpilot.common.parameterized import parameterized_class
 
+import openpilot.cereal  # noqa: F401
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces

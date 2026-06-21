@@ -6,8 +6,8 @@ import sys
 import time
 import traceback
 
-from cereal import log
-import cereal.messaging as messaging
+from openpilot.cereal import log
+import openpilot.cereal.messaging as messaging
 import openpilot.system.sentry as sentry
 from openpilot.common.utils import atomic_write
 from openpilot.common.params import Params, ParamKeyFlag

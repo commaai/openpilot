@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import pyray as rl
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.tools.replay.lib.ui_helpers import (

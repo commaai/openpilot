@@ -8,6 +8,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
 
+import openpilot.cereal  # noqa: F401
 from opendbc.car.car_helpers import interface_names
 from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url

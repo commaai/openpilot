@@ -3,6 +3,7 @@
 import argparse
 import struct
 from enum import IntEnum
+import openpilot.cereal  # noqa: F401
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
   DATA_IDENTIFIER_TYPE, ACCESS_TYPE

@@ -7,7 +7,7 @@ import pyray as rl
 from tqdm import tqdm
 from typing import Literal
 from collections.abc import Callable
-from cereal.messaging import PubMaster
+from openpilot.cereal.messaging import PubMaster
 from openpilot.common.api import Api
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

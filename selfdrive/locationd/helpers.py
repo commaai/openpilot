@@ -2,7 +2,7 @@ import numpy as np
 from typing import Any
 from functools import cache
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 
 

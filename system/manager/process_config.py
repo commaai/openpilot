@@ -2,7 +2,7 @@ import os
 import operator
 import platform
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.params import Params
 from openpilot.common.hardware import PC, TICI
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
@@ -119,7 +119,7 @@ procs = [
   PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", only_onroad),
 
   # debug procs
-  NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
+  NativeProcess("bridge", "openpilot/cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", or_(and_(livestream, not_(iscar)), notcar)),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]

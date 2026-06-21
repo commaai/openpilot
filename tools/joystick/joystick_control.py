@@ -5,7 +5,7 @@ import threading
 import numpy as np
 from inputs import UnpluggedError, get_gamepad
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.hardware import HARDWARE
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     print('- `R`: Resets axes')
     print('- `C`: Cancel cruise control')
   else:
-    print('Using joystick, make sure to run cereal/messaging/bridge on your device if running over the network!')
+    print('Using joystick, make sure to run openpilot/cereal/messaging/bridge on your device if running over the network!')
     print('If not running on a comma device, the mapping may need to be adjusted.')
 
   joystick = Keyboard() if args.keyboard else Joystick()

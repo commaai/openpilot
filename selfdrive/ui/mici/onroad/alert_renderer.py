@@ -5,7 +5,7 @@ import pyray as rl
 import random
 import string
 from dataclasses import dataclass
-from cereal import messaging, log, car
+from openpilot.cereal import messaging, log, car
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.hardware import TICI

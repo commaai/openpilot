@@ -27,9 +27,9 @@ from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
 
-import cereal.messaging as messaging
-from cereal import car, log
-from cereal.services import SERVICE_LIST
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal import car, log
+from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params

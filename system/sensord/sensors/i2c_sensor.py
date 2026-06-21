@@ -2,7 +2,7 @@ import time
 import ctypes
 from collections.abc import Iterable
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.i2c import SMBus
 
 

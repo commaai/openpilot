@@ -2,6 +2,7 @@
 import sys
 import argparse
 from subprocess import check_output, CalledProcessError
+import openpilot.cereal  # noqa: F401
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, SESSION_TYPE, DTC_REPORT_TYPE, DTC_STATUS_MASK_TYPE, get_dtc_num_as_str, get_dtc_status_names
 from opendbc.car.structs import CarParams

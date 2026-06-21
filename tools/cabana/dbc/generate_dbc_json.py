@@ -2,6 +2,7 @@
 import argparse
 import json
 
+import openpilot.cereal  # noqa: F401
 from opendbc.car import Bus
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.values import PLATFORMS

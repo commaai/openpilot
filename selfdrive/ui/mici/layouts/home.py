@@ -1,7 +1,7 @@
 import datetime
 import time
 
-from cereal import log
+from openpilot.cereal import log
 import pyray as rl
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget

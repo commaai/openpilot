@@ -321,7 +321,7 @@ if __name__ == "__main__":
   repo_root = Path(sys.argv[1]).resolve()
   output = Path(sys.argv[2])
   capnp.remove_import_hook()
-  log = capnp.load(str(repo_root / "cereal" / "log.capnp"))
+  log = capnp.load(str(repo_root / "openpilot" / "cereal" / "log.capnp"))
   generated = Generator(log.Event.schema).generate()
   output.parent.mkdir(parents=True, exist_ok=True)
   output.write_text(generated)

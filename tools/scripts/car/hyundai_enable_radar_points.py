@@ -16,6 +16,7 @@ import argparse
 from typing import NamedTuple
 from subprocess import check_output, CalledProcessError
 
+import openpilot.cereal  # noqa: F401
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 from opendbc.car.structs import CarParams

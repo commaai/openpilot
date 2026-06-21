@@ -6,8 +6,8 @@ import numpy as np
 from collections import defaultdict
 from dataclasses import dataclass
 
-from cereal import log
-from cereal import messaging
+from openpilot.cereal import log
+from openpilot.cereal import messaging
 from openpilot.system.ubloxd.ubx import Ubx
 from openpilot.system.ubloxd.gps import Gps
 from openpilot.system.ubloxd.glonass import Glonass

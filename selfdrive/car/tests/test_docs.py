@@ -1,4 +1,5 @@
 
+import openpilot.cereal  # noqa: F401
 from opendbc.car.docs import generate_cars_md, get_all_car_docs
 from openpilot.selfdrive.car.docs import CARS_MD_TEMPLATE
 

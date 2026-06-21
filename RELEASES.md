@@ -1104,7 +1104,7 @@ Version 0.2.1  (2016-12-14)
 
 Version 0.2  (2016-12-12)
 =========================
- * Car/Radar abstraction layers have shipped, see cereal/car.capnp
+ * Car/Radar abstraction layers have shipped, see openpilot/cereal/car.capnp
  * controlsd has been refactored
  * Shipped plant model and testing maneuvers
  * visiond exits more gracefully now

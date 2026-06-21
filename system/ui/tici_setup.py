@@ -10,7 +10,7 @@ from enum import IntEnum
 
 import pyray as rl
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE

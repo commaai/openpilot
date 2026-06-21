@@ -2,7 +2,7 @@
 import argparse
 import json
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.tools.lib.logreader import LogReader
 
 LEVELS = {

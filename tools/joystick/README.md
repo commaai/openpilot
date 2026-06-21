@@ -36,7 +36,7 @@ In order to use a joystick over the network, we need to run joystick_control loc
 3. Run bridge with your laptop's IP address. This republishes the `testJoystick` packets sent from your laptop so that openpilot can receive them:
    ```shell
    # on your comma device
-   cereal/messaging/bridge {LAPTOP_IP} testJoystick
+   openpilot/cereal/messaging/bridge {LAPTOP_IP} testJoystick
    ```
 4. Start joystick_control on your laptop in ZMQ mode.
    ```shell

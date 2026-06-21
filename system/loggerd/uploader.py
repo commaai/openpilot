@@ -9,8 +9,8 @@ import traceback
 import datetime
 from collections.abc import Iterator
 
-from cereal import log
-import cereal.messaging as messaging
+from openpilot.cereal import log
+import openpilot.cereal.messaging as messaging
 from openpilot.common.api import Api
 from openpilot.common.utils import get_upload_stream
 from openpilot.common.params import Params

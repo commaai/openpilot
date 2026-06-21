@@ -1,6 +1,6 @@
-from cereal import car
-from cereal import messaging
-from cereal.messaging import SubMaster, PubMaster
+from openpilot.cereal import car
+from openpilot.cereal import messaging
+from openpilot.cereal.messaging import SubMaster, PubMaster
 from openpilot.selfdrive.ui.soundd import SELFDRIVE_STATE_TIMEOUT, check_selfdrive_timeout_alert
 
 import time

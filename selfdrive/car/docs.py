@@ -3,6 +3,7 @@ import argparse
 import os
 
 from openpilot.common.basedir import BASEDIR
+import openpilot.cereal  # noqa: F401
 from opendbc.car.docs import get_all_car_docs, generate_cars_md
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")

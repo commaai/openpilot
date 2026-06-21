@@ -2,6 +2,7 @@
 import sys
 import argparse
 from subprocess import check_output, CalledProcessError
+import openpilot.cereal  # noqa: F401
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, MessageTimeoutError, SESSION_TYPE, DTC_GROUP_TYPE
 from opendbc.car.structs import CarParams

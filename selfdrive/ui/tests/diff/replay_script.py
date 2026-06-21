@@ -5,8 +5,8 @@ from dataclasses import dataclass
 
 import math
 
-from cereal import car, log, messaging
-from cereal.messaging import PubMaster
+from openpilot.cereal import car, log, messaging
+from openpilot.cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert

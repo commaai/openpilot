@@ -11,7 +11,7 @@ from collections.abc import Callable
 
 import pyray as rl
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.filter_simple import BounceFilter
 from openpilot.common.hardware import HARDWARE, TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity

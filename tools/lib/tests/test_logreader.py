@@ -9,7 +9,7 @@ import requests
 
 from openpilot.common.parameterized import parameterized
 
-from cereal import log as capnp_log
+from openpilot.cereal import log as capnp_log
 from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
 from openpilot.tools.lib.file_sources import comma_api_source, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange

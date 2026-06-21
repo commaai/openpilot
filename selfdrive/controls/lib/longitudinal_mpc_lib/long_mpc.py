@@ -2,7 +2,7 @@
 import os
 import time
 import numpy as np
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog

@@ -14,7 +14,7 @@
 #include <thread>
 #include <vector>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot/cereal/messaging/messaging.h"
 #include "msgq/visionipc/visionipc.h"
 #include "common/queue.h"
 #include "system/loggerd/loggerd.h"

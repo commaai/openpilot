@@ -1,7 +1,7 @@
 #include <cassert>
 #include <string>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot/cereal/messaging/messaging.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "system/loggerd/logger.h"

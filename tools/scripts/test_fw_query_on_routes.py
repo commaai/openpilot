@@ -5,6 +5,7 @@ import argparse
 import os
 import traceback
 from tqdm import tqdm
+import openpilot.cereal  # noqa: F401
 from opendbc.car.car_helpers import interface_names
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.fw_versions import VERSIONS, match_fw_to_car

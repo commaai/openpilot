@@ -3,8 +3,8 @@
 #include <cstdlib>
 #include <vector>
 
-#include "cereal/messaging/messaging.h"
-#include "cereal/services.h"
+#include "openpilot/cereal/messaging/messaging.h"
+#include "openpilot/cereal/services.h"
 #include "msgq/visionipc/visionipc_client.h"
 #include "common/hardware/hw.h"
 #include "common/params.h"

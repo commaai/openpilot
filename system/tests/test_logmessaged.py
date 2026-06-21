@@ -2,7 +2,7 @@ import glob
 import os
 import time
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog, ipchandler

@@ -10,6 +10,7 @@ import requests
 import argparse
 from functools import partial
 
+import openpilot.cereal  # noqa: F401
 from opendbc.car.fingerprints import MIGRATION
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog

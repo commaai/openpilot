@@ -4,7 +4,7 @@
 #include <climits>
 
 #include "catch2/catch.hpp"
-#include "cereal/messaging/messaging.h"
+#include "openpilot/cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "selfdrive/pandad/panda.h"
 

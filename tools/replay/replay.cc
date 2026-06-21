@@ -4,7 +4,7 @@
 #include <csignal>
 #include <iomanip>
 #include <sstream>
-#include "cereal/services.h"
+#include "openpilot/cereal/services.h"
 #include "common/params.h"
 #include "tools/replay/util.h"
 

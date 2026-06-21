@@ -8,9 +8,9 @@ import time
 from openpilot.common.parameterized import parameterized
 import pytest
 
-from cereal import log, car
-import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
+from openpilot.cereal import log, car
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal.services import SERVICE_LIST
 
 events = [evt for evt in log.Event.schema.union_fields if evt in SERVICE_LIST.keys()]
 

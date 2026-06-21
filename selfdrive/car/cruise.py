@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.constants import CV
 
 

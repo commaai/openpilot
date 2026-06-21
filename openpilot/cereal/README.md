@@ -76,7 +76,7 @@ index 1209f3fd9..b189f58b6 100644
 Example
 ---
 ```python
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 # in subscriber
 sm = messaging.SubMaster(['sensorEvents'])

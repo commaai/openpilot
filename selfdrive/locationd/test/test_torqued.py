@@ -1,4 +1,4 @@
-from cereal import car
+from openpilot.cereal import car
 from openpilot.selfdrive.locationd.torqued import TorqueEstimator
 
 

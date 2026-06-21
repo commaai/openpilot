@@ -1,6 +1,6 @@
 import numpy as np
 import pyray as rl
-from cereal import log
+from openpilot.cereal import log
 from dataclasses import dataclass
 from openpilot.selfdrive.ui import UI_BORDER_SIZE
 from openpilot.selfdrive.ui.ui_state import ui_state

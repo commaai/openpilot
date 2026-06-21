@@ -1,7 +1,7 @@
 import numpy as np
 
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-from cereal import messaging
+from openpilot.cereal import messaging
 
 from openpilot.tools.sim.lib.common import W, H
 
