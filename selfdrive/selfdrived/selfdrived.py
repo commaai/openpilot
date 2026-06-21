@@ -21,7 +21,7 @@ from openpilot.selfdrive.selfdrived.helpers import ExcessiveActuationCheck
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
 
-from openpilot.system.version import get_build_metadata
+from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware import HARDWARE
 
 REPLAY = "REPLAY" in os.environ

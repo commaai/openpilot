@@ -11,7 +11,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import Label
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.version import terms_version, training_version
+from openpilot.common.version import terms_version, training_version
 
 DEBUG = False
 

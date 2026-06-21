@@ -12,7 +12,7 @@ from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.mici_setup import GreyBigButton, BigPillButton
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.version import terms_version, training_version
+from openpilot.common.version import terms_version, training_version
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer

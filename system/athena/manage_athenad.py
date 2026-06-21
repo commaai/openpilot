@@ -7,7 +7,7 @@ from openpilot.common.params import Params
 from openpilot.system.manager.process import launcher
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import HARDWARE
-from openpilot.system.version import get_build_metadata
+from openpilot.common.version import get_build_metadata
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 
