@@ -104,7 +104,6 @@ testing = [
 
 dev = [
   "matplotlib",
-  "opencv-python-headless",
 ]
 
 tools = [
