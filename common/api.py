@@ -3,7 +3,7 @@ import os
 import requests
 from datetime import datetime, timedelta, UTC
 from openpilot.common.hardware.hw import Paths
-from openpilot.system.version import get_version
+from openpilot.common.version import get_version
 
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 

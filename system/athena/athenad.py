@@ -37,7 +37,7 @@ from openpilot.common.realtime import set_core_affinity
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_build_metadata
+from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
 
 

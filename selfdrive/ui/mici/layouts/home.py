@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.version import RELEASE_BRANCHES
+from openpilot.common.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8

@@ -12,7 +12,7 @@ from typing import NoReturn
 import openpilot.system.sentry as sentry
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_build_metadata
+from openpilot.common.version import get_build_metadata
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")
