@@ -13,7 +13,7 @@ LEVELS = {
   "CRITICAL": 50,
 }
 
-ANDROID_LOG_SOURCE = {
+OPERATING_SYSTEM_LOG_SOURCE = {
   0: "MAIN",
   1: "RADIO",
   2: "EVENTS",
@@ -34,8 +34,8 @@ def print_logmessage(t, msg, min_level):
     print(f"[{t / 1e9:.6f}] decode error: {msg}")
 
 
-def print_androidlog(t, msg):
-  source = ANDROID_LOG_SOURCE[msg.id]
+def print_operating_system_log(t, msg):
+  source = msg.tag or OPERATING_SYSTEM_LOG_SOURCE.get(msg.id, "SYSTEM")
   try:
     m = json.loads(msg.message)['MESSAGE']
   except Exception:
@@ -65,15 +65,15 @@ if __name__ == "__main__":
           print_logmessage(m.logMonoTime-st, m.logMessage, min_level)
         elif m.which() == 'errorLogMessage':
           print_logmessage(m.logMonoTime-st, m.errorLogMessage, min_level)
-        elif m.which() == 'androidLog':
-          print_androidlog(m.logMonoTime-st, m.androidLog)
+        elif m.which() == 'operatingSystemLog':
+          print_operating_system_log(m.logMonoTime-st, m.operatingSystemLog)
   else:
-    sm = messaging.SubMaster(['logMessage', 'androidLog'], addr=args.addr)
+    sm = messaging.SubMaster(['logMessage', 'operatingSystemLog'], addr=args.addr)
     while True:
       sm.update()
 
       if sm.updated['logMessage']:
         print_logmessage(sm.logMonoTime['logMessage'], sm['logMessage'], min_level)
 
-      if sm.updated['androidLog']:
-        print_androidlog(sm.logMonoTime['androidLog'], sm['androidLog'])
+      if sm.updated['operatingSystemLog']:
+        print_operating_system_log(sm.logMonoTime['operatingSystemLog'], sm['operatingSystemLog'])

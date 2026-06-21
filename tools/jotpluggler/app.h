@@ -143,7 +143,7 @@ struct CameraFeedIndex {
 
 enum class LogOrigin : uint8_t {
   Log,
-  Android,
+  OperatingSystem,
   Alert,
 };
 
