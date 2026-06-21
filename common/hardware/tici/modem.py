@@ -505,7 +505,10 @@ class Modem:
       except (AddressValueError, ValueError):
         pass
     if not dns_servers:
-      dns_servers = ["8.8.8.8", "1.1.1.1"]
+      dns_servers = [
+        "8.8.8.8",  # Google
+        "1.1.1.1",  # Cloudflare
+      ]
       logging.warning(f"no cellular DNS servers reported by modem: {v!r}; using fallback {dns_servers}")
     return dns_servers
 
