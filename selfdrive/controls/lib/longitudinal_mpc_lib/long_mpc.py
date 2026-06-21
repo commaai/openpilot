@@ -7,8 +7,9 @@ from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild
-from openpilot.selfdrive.modeld.constants import index_function
-from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from openpilot.selfdrive.modeld.constants import index_function, ModelConstants
+
+LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)  # [0, 2, 4, 6, 8, 10]s
 
 if __name__ == '__main__':  # generating code
   from acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -56,7 +57,7 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 CRUISE_MIN_ACCEL = -1.2
-CRUISE_MAX_ACCEL = 1.6
+CRUISE_MAX_ACCEL = 2.0
 MIN_X_LEAD_FACTOR = 0.5
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
@@ -249,6 +250,8 @@ class LongitudinalMpc:
     self.time_linearization = 0.0
     self.time_integrator = 0.0
     self.x0 = np.zeros(X_DIM)
+    self.lead_xv_0 = np.zeros((N+1, 2))
+    self.lead_xv_1 = np.zeros((N+1, 2))
     self.set_weights()
 
   def set_cost_weights(self, cost_weights, constraint_cost_weights):
@@ -282,44 +285,40 @@ class LongitudinalMpc:
       for i in range(N+1):
         self.solver.set(i, 'x', self.x0)
 
-  @staticmethod
-  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
-    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
-    v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
-    x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
-    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
-    return lead_xv
-
-  def process_lead(self, lead):
+  def process_lead(self, model_lead, radar_lead):
     v_ego = self.x0[1]
-    if lead is not None and lead.status:
-      x_lead = lead.dRel
-      v_lead = lead.vLead
-      a_lead = lead.aLeadK
-      a_lead_tau = lead.aLeadTau
+    if model_lead.prob > 0.5 and radar_lead.status:
+      # Anchor at radar's trusted h=0, use model's delta for h>0. On radarless, radarState
+      # is synthesized from the model (radard.get_RadarState_from_vision), so this collapses
+      # to `x - RADAR_TO_CAMERA` and `v_ego + (model.v - model_v_ego)` — identical to the
+      # prior formula. On radar cars, real radar measurements anchor the trajectory.
+      x_lead_traj = float(radar_lead.dRel) + (np.asarray(model_lead.x, dtype=np.float64) - model_lead.x[0])
+      v_lead_traj = float(radar_lead.vLead) + (np.asarray(model_lead.v, dtype=np.float64) - model_lead.v[0])
     else:
-      # Fake a fast lead car, so mpc can keep running in the same mode
-      x_lead = 50.0
-      v_lead = v_ego + 10.0
-      a_lead = 0.0
-      a_lead_tau = _LEAD_ACCEL_TAU
+      # Fake a fast lead so MPC stays in the same mode.
+      x_lead_traj = 50.0 + (v_ego + 10.0) * LEAD_T_IDXS_MODEL
+      v_lead_traj = np.full_like(LEAD_T_IDXS_MODEL, v_ego + 10.0)
 
-    # MPC will not converge if immediate crash is expected
-    # Clip lead distance to what is still possible to brake for
-    min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
-    x_lead = np.clip(x_lead, min_x_lead, 1e8)
-    v_lead = np.clip(v_lead, 0.0, 1e8)
-    a_lead = np.clip(a_lead, -10., 5.)
-    lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
-    return lead_xv
+    # MPC won't converge on immediate crashes; lift h=0 to the minimum braking distance.
+    v_lead_0 = v_lead_traj[0]
+    min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead_0) * (v_ego - v_lead_0) / (-ACCEL_MIN * 2)
+    x_lead_traj[0] = max(x_lead_traj[0], min_x_lead)
+    v_lead_traj = np.clip(v_lead_traj, 0.0, 1e8)
 
-  def update(self, radarstate, v_cruise, personality=log.LongitudinalPersonality.standard):
+    x_lead_mpc = np.maximum.accumulate(np.interp(T_IDXS, LEAD_T_IDXS_MODEL, x_lead_traj))
+    v_lead_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, v_lead_traj)
+    return np.column_stack((x_lead_mpc, v_lead_mpc))
+
+  def update(self, v_cruise, modelV2, radarstate, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
-    self.status = radarstate.leadOne.status or radarstate.leadTwo.status
+    model_leads = modelV2.leadsV3
+    self.status = model_leads[0].prob > 0.5 or model_leads[1].prob > 0.5
 
-    lead_xv_0 = self.process_lead(radarstate.leadOne)
-    lead_xv_1 = self.process_lead(radarstate.leadTwo)
+    lead_xv_0 = self.process_lead(model_leads[0], radarstate.leadOne)
+    lead_xv_1 = self.process_lead(model_leads[1], radarstate.leadTwo)
+    self.lead_xv_0 = lead_xv_0
+    self.lead_xv_1 = lead_xv_1
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
@@ -352,7 +351,7 @@ class LongitudinalMpc:
 
     self.run()
     if (np.any(lead_xv_0[FCW_IDXS,0] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
-            radarstate.leadOne.modelProb > 0.9):
+            model_leads[0].prob > 0.9):
       self.crash_cnt += 1
     else:
       self.crash_cnt = 0
