@@ -55,7 +55,7 @@ acados_include_dir = Dir(acados.INCLUDE_DIR)
 acados_template_dir = Dir(acados.TEMPLATE_DIR)
 
 source_list = ['long_mpc.py',
-  '#selfdrive/modeld/constants.py',
+  '#openpilot/selfdrive/modeld/constants.py',
   acados_include_dir.File('acados_c/ocp_nlp_interface.h'),
   acados_template_dir.File('c_templates_tera/acados_solver.in.c'),
 ]

@@ -50,9 +50,9 @@ class TrainingGuide(Widget):
     threading.Thread(target=self._preload_thread, daemon=True).start()
 
   def _load_image_paths(self):
-    paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
+    paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "openpilot/selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
-    self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
+    self._image_paths = [os.path.join(BASEDIR, "openpilot/selfdrive/assets/training", fn) for fn in paths]
 
   def _preload_thread(self):
     # PNG loading is slow in raylib, so we preload in a thread and upload to GPU in main thread

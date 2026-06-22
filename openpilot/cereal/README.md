@@ -24,17 +24,17 @@ things are not. Read more details [here](https://capnproto.org/language.html).
 ### Custom forks
 
 Forks of [openpilot](https://github.com/commaai/openpilot) might want to add things to the messaging
-spec, however this could conflict with future changes made in mainline cereal/openpilot. Rebasing against mainline openpilot
+spec, however this could conflict with future changes made in mainline openpilot's cereal spec. Rebasing against mainline openpilot
 then means breaking backwards-compatibility with all old logs of your fork. So we added reserved events in
-[custom.capnp](custom.capnp) that we will leave empty in mainline cereal/openpilot. **If you only modify those, you can ensure your
+[custom.capnp](custom.capnp) that we will leave empty in mainline openpilot's cereal spec. **If you only modify those, you can ensure your
 fork will remain backwards-compatible with all versions of mainline openpilot and your fork.**
 
 An example of compatible changes:
 ```diff
-diff --git a/cereal/custom.capnp b/cereal/custom.capnp
+diff --git a/openpilot/cereal/custom.capnp b/openpilot/cereal/custom.capnp
 index 3348e859e..3365c7b98 100644
---- a/cereal/custom.capnp
-+++ b/cereal/custom.capnp
+--- a/openpilot/cereal/custom.capnp
++++ b/openpilot/cereal/custom.capnp
 @@ -10,7 +10,11 @@ $Cxx.namespace("cereal");
  # DO rename the structs
  # DON'T change the identifier (e.g. @0x81c2f05a394cf4af)
@@ -48,10 +48,10 @@ index 3348e859e..3365c7b98 100644
  }
 
  struct CustomReserved1 @0xaedffd8f31e7b55d {
-diff --git a/cereal/log.capnp b/cereal/log.capnp
+diff --git a/openpilot/cereal/log.capnp b/openpilot/cereal/log.capnp
 index 1209f3fd9..b189f58b6 100644
---- a/cereal/log.capnp
-+++ b/cereal/log.capnp
+--- a/openpilot/cereal/log.capnp
++++ b/openpilot/cereal/log.capnp
 @@ -2558,14 +2558,14 @@ struct Event {
 
      # DO change the name of the field

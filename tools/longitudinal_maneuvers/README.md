@@ -35,7 +35,7 @@ Test your vehicle's longitudinal control tuning with this tool. The tool will te
 8. Gather the route ID and then run the report generator. The file will be exported to the same directory:
 
     ```sh
-    $ python tools/longitudinal_maneuvers/generate_report.py 57048cfce01d9625/0000010e--5b26bc3be7 'pcm accel compensation'
+    $ python openpilot/tools/longitudinal_maneuvers/generate_report.py 57048cfce01d9625/0000010e--5b26bc3be7 'pcm accel compensation'
 
     processing report for LEXUS_ES_TSS2
     plotting maneuver: start from stop, runs: 4

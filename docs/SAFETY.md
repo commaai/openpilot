@@ -35,8 +35,8 @@ For additional safety implementation details, refer to [panda safety model](http
 
 ### Forks of openpilot
 
-* Do not disable or nerf [driver monitoring](https://github.com/commaai/openpilot/tree/master/selfdrive/monitoring)
-* Do not disable or nerf [excessive actuation checks](https://github.com/commaai/openpilot/tree/master/selfdrive/selfdrived/helpers.py)
+* Do not disable or nerf [driver monitoring](https://github.com/commaai/openpilot/tree/master/openpilot/selfdrive/monitoring)
+* Do not disable or nerf [excessive actuation checks](https://github.com/commaai/openpilot/tree/master/openpilot/selfdrive/selfdrived/helpers.py)
 * If your fork modifies any of the code in `opendbc/safety/`:
    * your fork cannot use the openpilot trademark
    * your fork must preserve the full [safety test suite](https://github.com/commaai/opendbc/tree/master/opendbc/safety/tests) and all tests must pass, including any new coverage required by the fork's changes

@@ -1,4 +1,4 @@
-# tools/car_porting
+# openpilot/tools/car_porting
 
 Check out [this blog post](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) for a high-level overview of porting a car.
 
@@ -6,46 +6,46 @@ Check out [this blog post](https://blog.comma.ai/how-to-write-a-car-port-for-ope
 
 Testing car ports in your car is very time-consuming. Check out these utilities to do basic checks on your work before running it in your car.
 
-### [Cabana](/tools/cabana/README.md)
+### [Cabana](/openpilot/tools/cabana/README.md)
 
 View your car's CAN signals through DBC files, which openpilot uses to parse and create messages that talk to the car.
 
 Example:
 ```bash
-> tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
+> openpilot/tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
 ```
 
-### [tools/car_porting/auto_fingerprint.py](/tools/car_porting/auto_fingerprint.py)
+### [openpilot/tools/car_porting/auto_fingerprint.py](/openpilot/tools/car_porting/auto_fingerprint.py)
 
 Given a route and platform, automatically inserts FW fingerprints from the platform into the correct place in fingerprints.py
 
 Example:
 ```bash
-> python3 tools/car_porting/auto_fingerprint.py '1bbe6bf2d62f58a8|2022-07-14--17-11-43' 'OUTBACK'
+> python3 openpilot/tools/car_porting/auto_fingerprint.py '1bbe6bf2d62f58a8|2022-07-14--17-11-43' 'OUTBACK'
 Attempting to add fw version for:  OUTBACK
 ```
 
-### [selfdrive/car/tests/test_car_interfaces.py](/selfdrive/car/tests/test_car_interfaces.py)
+### [openpilot/selfdrive/car/tests/test_car_interfaces.py](/openpilot/selfdrive/car/tests/test_car_interfaces.py)
 
 Finds common bugs for car interfaces, without even requiring a route.
 
 
 #### Example: Typo in signal name
 ```bash
-> pytest selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
+> pytest openpilot/selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
 
 =====================================================================
-FAILED selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
+FAILED openpilot/selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
 
 ```
 
-### [tools/car_porting/test_car_model.py](/tools/car_porting/test_car_model.py)
+### [openpilot/tools/car_porting/test_car_model.py](/openpilot/tools/car_porting/test_car_model.py)
 
 Given a route, runs most of the car interface to check for common errors like missing signals, blocked panda messages, and safety mismatches.
 
 #### Example: panda safety mismatch for gasPressed
 ```bash
-> python3 tools/car_porting/test_car_model.py '4822a427b188122a|2023-08-14--16-22-21'
+> python3 openpilot/tools/car_porting/test_car_model.py '4822a427b188122a|2023-08-14--16-22-21'
 
 =====================================================================
 FAIL: test_panda_safety_carstate (__main__.CarModelTestCase.test_panda_safety_carstate)
@@ -59,7 +59,7 @@ AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'ga
 
 ## Jupyter notebooks
 
-To use these notebooks, install Jupyter within your [openpilot virtual environment](/tools/README.md).
+To use these notebooks, install Jupyter within your [openpilot virtual environment](/openpilot/tools/README.md).
 
 ```bash
 uv pip install jupyter ipykernel
@@ -71,7 +71,7 @@ Launching:
 jupyter notebook
 ```
 
-### [examples/subaru_steer_temp_fault.ipynb](/tools/car_porting/examples/subaru_steer_temp_fault.ipynb)
+### [examples/subaru_steer_temp_fault.ipynb](/openpilot/tools/car_porting/examples/subaru_steer_temp_fault.ipynb)
 
 An example of searching through a database of segments for a specific condition, and plotting the results.
 
@@ -79,7 +79,7 @@ An example of searching through a database of segments for a specific condition,
 
 *a plot of the steer_warning vs steering angle, where we can see it is clearly caused by a large steering angle change*
 
-### [examples/subaru_long_accel.ipynb](/tools/car_porting/examples/subaru_long_accel.ipynb)
+### [examples/subaru_long_accel.ipynb](/openpilot/tools/car_porting/examples/subaru_long_accel.ipynb)
 
 An example of plotting the response of an actuator when it is active.
 
@@ -87,7 +87,7 @@ An example of plotting the response of an actuator when it is active.
 
 *a plot of the brake_pressure vs acceleration, where we can see it is a fairly linear response.*
 
-### [examples/ford_vin_fingerprint.ipynb](/tools/car_porting/examples/ford_vin_fingerprint.ipynb)
+### [examples/ford_vin_fingerprint.ipynb](/openpilot/tools/car_porting/examples/ford_vin_fingerprint.ipynb)
 
 In this example, we use the public comma car segments database to check if vin fingerprinting is feasible for ford.
 
@@ -109,7 +109,7 @@ vin: 3FTTW8E31PRXXXXXX real platform: FORD MAVERICK 1ST GEN              determi
 vin: 3FTTW8E99NRXXXXXX real platform: FORD MAVERICK 1ST GEN              determined platform: mock                              correct: False
 ```
 
-### [examples/find_segments_with_message.ipynb](/tools/car_porting/examples/find_segments_with_message.ipynb)
+### [examples/find_segments_with_message.ipynb](/openpilot/tools/car_porting/examples/find_segments_with_message.ipynb)
 
 Searches for segments where a set of given CAN message IDs are present. In the example, we search for all messages
 used for CAN-based ignition detection.

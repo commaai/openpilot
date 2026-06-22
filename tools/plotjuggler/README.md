@@ -6,7 +6,7 @@
 
 Once you've [set up the openpilot environment](../README.md), this command will download PlotJuggler and install our plugins:
 
-`cd tools/plotjuggler && ./juggle.py --install`
+`cd openpilot/tools/plotjuggler && ./juggle.py --install`
 
 ## Usage
 

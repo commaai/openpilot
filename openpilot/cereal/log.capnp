@@ -1270,7 +1270,7 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
 struct LiveLocationKalman {
 
   # More info on reference frames:
-  # https://github.com/commaai/openpilot/tree/master/common/transformations
+  # https://github.com/commaai/openpilot/tree/master/openpilot/common/transformations
 
   positionECEF @0 : Measurement;
   positionGeodetic @1 : Measurement;
@@ -1327,7 +1327,7 @@ struct LiveLocationKalman {
 
 struct LivePose {
   # More info on reference frames:
-  # https://github.com/commaai/openpilot/tree/master/common/transformations
+  # https://github.com/commaai/openpilot/tree/master/openpilot/common/transformations
   orientationNED @0 :XYZMeasurement;
   velocityDevice @1 :XYZMeasurement;
   accelerationDevice @2 :XYZMeasurement;

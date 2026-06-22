@@ -10,7 +10,7 @@ class TextWindow:
     try:
       self.text_proc = subprocess.Popen(["./text.py", text],
                                         stdin=subprocess.PIPE,
-                                        cwd=os.path.join(BASEDIR, "system", "ui"),
+                                        cwd=os.path.join(BASEDIR, "openpilot/system", "ui"),
                                         close_fds=True)
     except OSError:
       self.text_proc = None

@@ -10,7 +10,7 @@ try:
 except ImportError:
   Params = None
 
-SYSTEM_UI_DIR = os.path.join(BASEDIR, "system", "ui")
+SYSTEM_UI_DIR = os.path.join(BASEDIR, "openpilot/system", "ui")
 UI_DIR = files("openpilot.selfdrive.ui")
 TRANSLATIONS_DIR = UI_DIR.joinpath("translations")
 LANGUAGES_FILE = TRANSLATIONS_DIR.joinpath("languages.json")

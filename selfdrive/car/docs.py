@@ -6,7 +6,7 @@ from openpilot.common.basedir import BASEDIR
 from opendbc.car.docs import get_all_car_docs, generate_cars_md
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
-CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
+CARS_MD_TEMPLATE = os.path.join(BASEDIR, "openpilot/selfdrive", "car", "CARS_template.md")
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",

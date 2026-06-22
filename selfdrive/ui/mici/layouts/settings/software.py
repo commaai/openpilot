@@ -103,9 +103,9 @@ class CheckUpdateButton(BigButton):
 
     def run():
       if self.get_value() == "download update":
-        os.system("pkill -SIGHUP -f system.updated.updated")
+        os.system("pkill -SIGHUP -f openpilot.system.updated.updated")
       else:
-        os.system("pkill -SIGUSR1 -f system.updated.updated")
+        os.system("pkill -SIGUSR1 -f openpilot.system.updated.updated")
 
     threading.Thread(target=run, daemon=True).start()
 
@@ -251,7 +251,7 @@ class TargetBranchButton(BigButton):
   def _on_select(self, branch: str):
     ui_state.params.put("UpdaterTargetBranch", branch, block=True)
     self.set_value(branch)
-    os.system("pkill -SIGUSR1 -f system.updated.updated")
+    os.system("pkill -SIGUSR1 -f openpilot.system.updated.updated")
 
 
 class SoftwareLayoutMici(NavScroller):

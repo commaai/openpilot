@@ -215,5 +215,5 @@ class DeviceLayoutMici(NavScroller):
 
   def _on_regulatory(self):
     if not self._fcc_dialog:
-      self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html"))
+      self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "openpilot/selfdrive/assets/offroad/mici_fcc.html"))
     gui_app.push_widget(self._fcc_dialog)

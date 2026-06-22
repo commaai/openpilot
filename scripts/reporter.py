@@ -7,7 +7,7 @@ from tinygrad.nn.onnx import OnnxPBParser
 BASEDIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../"))
 
 MASTER_PATH = os.getenv("MASTER_PATH", BASEDIR)
-MODEL_PATH = "/selfdrive/modeld/models/"
+MODEL_PATH = "/openpilot/selfdrive/modeld/models/"
 
 
 class MetadataOnnxPBParser(OnnxPBParser):

@@ -8,7 +8,7 @@ Before starting a replay, you need to authenticate with your comma account using
 
 ```bash
 # Authenticate to access routes from your comma account:
-python3 tools/lib/auth.py
+python3 openpilot/tools/lib/auth.py
 ```
 
 ## Replay a Remote Route
@@ -16,13 +16,13 @@ You can replay a route from your comma account by specifying the route name.
 
 ```bash
 # Start a replay with a specific route:
-tools/replay/replay <route-name>
+openpilot/tools/replay/replay <route-name>
 
 # Example:
-tools/replay/replay '5beb9b58bd12b691/0000010a--a51155e496'
+openpilot/tools/replay/replay '5beb9b58bd12b691/0000010a--a51155e496'
 
 # Replay the default demo route:
-tools/replay/replay --demo
+openpilot/tools/replay/replay --demo
 ```
 
 ## Replay a Local Route
@@ -30,14 +30,14 @@ To replay a route stored locally on your machine, specify the route name and pro
 
 ```bash
 # Replay a local route
-tools/replay/replay <route-name> --data_dir="/path_to/route"
+openpilot/tools/replay/replay <route-name> --data_dir="/path_to/route"
 
 # Example:
 # If you have a local route stored at /path_to_routes with segments like:
 # 5beb9b58bd12b691/0000010a--a51155e496--0
 # 5beb9b58bd12b691/0000010a--a51155e496--1
 # You can replay it like this:
-tools/replay/replay "5beb9b58bd12b691/0000010a--a51155e496" --data_dir="/path_to_routes"
+openpilot/tools/replay/replay "5beb9b58bd12b691/0000010a--a51155e496" --data_dir="/path_to_routes"
 ```
 
 ## Send Messages via ZMQ
@@ -45,15 +45,15 @@ By default, replay sends messages via MSGQ. To switch to ZMQ, set the ZMQ enviro
 
 ```bash
 # Start replay and send messages via ZMQ:
-ZMQ=1 tools/replay/replay <route-name>
+ZMQ=1 openpilot/tools/replay/replay <route-name>
 ```
 
 ## Usage
 For more information on available options and arguments, use the help command:
 
 ``` bash
-$ tools/replay/replay -h
-Usage: tools/replay/replay [options] route
+$ openpilot/tools/replay/replay -h
+Usage: openpilot/tools/replay/replay [options] route
 Mock openpilot components by publishing logged messages.
 
 Options:
@@ -87,16 +87,16 @@ Arguments:
 To visualize the replay within the openpilot UI, run the following commands:
 
 ```bash
-tools/replay/replay <route-name>
-cd selfdrive/ui && ./ui.py
+openpilot/tools/replay/replay <route-name>
+cd openpilot/selfdrive/ui && ./ui.py
 ```
 
 ## Work with plotjuggler
 If you want to use replay with plotjuggler, you can stream messages by running:
 
 ```bash
-tools/replay/replay <route-name>
-tools/plotjuggler/juggle.py --stream
+openpilot/tools/replay/replay <route-name>
+openpilot/tools/plotjuggler/juggle.py --stream
 ```
 
 ## watch3
@@ -107,10 +107,10 @@ simply replay a route using the `--dcam` and `--ecam` flags:
 
 ```bash
 # start a replay
-cd tools/replay && ./replay --demo --dcam --ecam
+cd openpilot/tools/replay && ./replay --demo --dcam --ecam
 
 # then start watch3
-cd selfdrive/ui && ./watch3.py
+cd openpilot/selfdrive/ui && ./watch3.py
 ```
 
 ![](https://i.imgur.com/IeaOdAb.png)

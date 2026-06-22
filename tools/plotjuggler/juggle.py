@@ -33,7 +33,7 @@ def print_jotpluggler_banner():
   reset = "\033[0m" if purple else ""
   print(f"{purple}+-------------------------------------------------------------+{reset}")
   print(f"{purple}|{reset} JotPluggler is the future! Try it like this:                {purple}|{reset}")
-  print(f"{purple}|{reset}   ./tools/jotpluggler/jotpluggler --demo --layout tuning    {purple}|{reset}")
+  print(f"{purple}|{reset}   ./openpilot/tools/jotpluggler/jotpluggler --demo --layout tuning    {purple}|{reset}")
   print(f"{purple}|{reset}                                                             {purple}|{reset}")
   print(f"{purple}|{reset} PlotJuggler will be deleted soon.                           {purple}|{reset}")
   print(f"{purple}|{reset} Missing a feature? Open an issue or post in #dev-openpilot. {purple}|{reset}")

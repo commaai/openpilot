@@ -7,7 +7,7 @@ openpilot implements a [bridge](run_bridge.py) that allows it to run in the [Met
 First, start openpilot.
 ``` bash
 # Run locally
-./tools/sim/launch_openpilot.sh
+./openpilot/tools/sim/launch_openpilot.sh
 ```
 
 ## Bridge usage
@@ -44,7 +44,7 @@ options:
 ## MetaDrive
 
 ### Launching Metadrive
-Start bridge processes located in tools/sim:
+Start bridge processes located in openpilot/tools/sim:
 ``` bash
 ./run_bridge.py
 ```

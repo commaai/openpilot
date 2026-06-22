@@ -10,7 +10,7 @@
 ## GO
 
 ```
-USE_WEBCAM=1 system/manager/manager.py
+USE_WEBCAM=1 openpilot/system/manager/manager.py
 ```
 - Start the car, then the UI should show the road webcam's view
 - Adjust and secure the webcam
@@ -20,5 +20,5 @@ USE_WEBCAM=1 system/manager/manager.py
 
 Use the `ROAD_CAM` (default 0) and optional `DRIVER_CAM`, `WIDE_CAM` environment variables to specify which camera is which (ie. `ROAD_CAM=1` uses `/dev/video1`, on Ubuntu, for the road camera):
 ```
-USE_WEBCAM=1 ROAD_CAM=1 system/manager/manager.py
+USE_WEBCAM=1 ROAD_CAM=1 openpilot/system/manager/manager.py
 ```

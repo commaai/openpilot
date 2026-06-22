@@ -14,7 +14,7 @@ The car must be off, and openpilot must be offroad before starting `joystick_con
 SSH into your comma device and start joystick_control with the following command:
 
 ```shell
-tools/joystick/joystick_control.py --keyboard
+openpilot/tools/joystick/joystick_control.py --keyboard
 ```
 
 The available buttons and axes will print showing their key mappings. In general, the WASD keys control gas and brakes and steering torque in 5% increments.
@@ -42,7 +42,7 @@ In order to use a joystick over the network, we need to run joystick_control loc
    ```shell
    # on your laptop
    export ZMQ=1
-   tools/joystick/joystick_control.py
+   openpilot/tools/joystick/joystick_control.py
    ```
 
 ---

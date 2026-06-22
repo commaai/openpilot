@@ -28,7 +28,7 @@ Test your vehicle's lateral control tuning with this tool. The tool will test th
 8. Gather the route ID and then run the report generator. The file will be exported to the same directory:
 
     ```sh
-    $ python tools/lateral_maneuvers/generate_report.py 98395b7c5b27882e/000001cc--5a73bde686
+    $ python openpilot/tools/lateral_maneuvers/generate_report.py 98395b7c5b27882e/000001cc--5a73bde686
 
     processing report for KIA_EV6
     plotting maneuver: step right 20mph, runs: 3

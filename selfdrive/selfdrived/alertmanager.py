@@ -9,7 +9,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import Alert, EmptyAlert
 
 
-with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")) as f:
+with open(os.path.join(BASEDIR, "openpilot/selfdrive/selfdrived/alerts_offroad.json")) as f:
   OFFROAD_ALERTS = json.load(f)
 
 

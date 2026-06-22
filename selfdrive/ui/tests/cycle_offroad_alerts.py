@@ -12,7 +12,7 @@ from openpilot.system.updated.updated import parse_release_notes
 if __name__ == "__main__":
   params = Params()
 
-  with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")) as f:
+  with open(os.path.join(BASEDIR, "openpilot/selfdrive/selfdrived/alerts_offroad.json")) as f:
     offroad_alerts = json.load(f)
 
   t = 10 if len(sys.argv) < 2 else int(sys.argv[1])

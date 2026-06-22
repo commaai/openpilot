@@ -9,7 +9,7 @@ from openpilot.cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.sim.bridge.common import QueueMessageType
 
-SIM_DIR = os.path.join(BASEDIR, "tools/sim")
+SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
 
 class TestSimBridgeBase:
   @classmethod
