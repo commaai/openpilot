@@ -31,10 +31,10 @@ fork will remain backwards-compatible with all versions of mainline openpilot an
 
 An example of compatible changes:
 ```diff
-diff --git a/cereal/custom.capnp b/cereal/custom.capnp
+diff --git a/openpilot/cereal/custom.capnp b/openpilot/cereal/custom.capnp
 index 3348e859e..3365c7b98 100644
---- a/cereal/custom.capnp
-+++ b/cereal/custom.capnp
+--- a/openpilot/cereal/custom.capnp
++++ b/openpilot/cereal/custom.capnp
 @@ -10,7 +10,11 @@ $Cxx.namespace("cereal");
  # DO rename the structs
  # DON'T change the identifier (e.g. @0x81c2f05a394cf4af)
@@ -48,10 +48,10 @@ index 3348e859e..3365c7b98 100644
  }
 
  struct CustomReserved1 @0xaedffd8f31e7b55d {
-diff --git a/cereal/log.capnp b/cereal/log.capnp
+diff --git a/openpilot/cereal/log.capnp b/openpilot/cereal/log.capnp
 index 1209f3fd9..b189f58b6 100644
---- a/cereal/log.capnp
-+++ b/cereal/log.capnp
+--- a/openpilot/cereal/log.capnp
++++ b/openpilot/cereal/log.capnp
 @@ -2558,14 +2558,14 @@ struct Event {
 
      # DO change the name of the field

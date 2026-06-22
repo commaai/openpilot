@@ -140,7 +140,7 @@ if __name__ == '__main__':
     print('- `R`: Resets axes')
     print('- `C`: Cancel cruise control')
   else:
-    print('Using joystick, make sure to run cereal/messaging/bridge on your device if running over the network!')
+    print('Using joystick, make sure to run openpilot/cereal/messaging/bridge on your device if running over the network!')
     print('If not running on a comma device, the mapping may need to be adjusted.')
 
   joystick = Keyboard() if args.keyboard else Joystick()

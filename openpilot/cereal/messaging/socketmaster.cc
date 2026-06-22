@@ -3,8 +3,8 @@
 #include <string>
 #include <mutex>
 
-#include "cereal/services.h"
-#include "cereal/messaging/messaging.h"
+#include "openpilot/cereal/services.h"
+#include "openpilot/cereal/messaging/messaging.h"
 
 const bool SIMULATION = (getenv("SIMULATION") != nullptr) && (std::string(getenv("SIMULATION")) == "1");
 

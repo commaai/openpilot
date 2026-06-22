@@ -1,4 +1,4 @@
-#include "cereal/messaging/bridge_zmq.h"
+#include "openpilot/cereal/messaging/bridge_zmq.h"
 
 #include <cassert>
 #include <cstring>

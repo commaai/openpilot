@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot/cereal/gen/cpp/log.capnp.h"
 #include "tools/replay/util.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};

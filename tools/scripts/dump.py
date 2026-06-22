@@ -25,7 +25,7 @@ def hexdump(msg):
 
 if __name__ == "__main__":
 
-  parser = argparse.ArgumentParser(description='Dump communication sockets. See cereal/services.py for a complete list of available sockets.')
+  parser = argparse.ArgumentParser(description='Dump communication sockets. See openpilot/cereal/services.py for a complete list of available sockets.')
   parser.add_argument('--pipe', action='store_true')
   parser.add_argument('--raw', action='store_true')
   parser.add_argument('--json', action='store_true')
