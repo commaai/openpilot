@@ -1,6 +1,6 @@
 import pytest
 import cereal.messaging as messaging
-from cereal import car
+from opendbc.car.structs import car
 from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 

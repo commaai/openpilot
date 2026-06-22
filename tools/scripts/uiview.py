@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import time
 
-from cereal import car, log, messaging
+from cereal import log, messaging
+from opendbc.car.structs import car
 from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware import HARDWARE

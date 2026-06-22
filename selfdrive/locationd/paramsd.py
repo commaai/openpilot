@@ -4,7 +4,8 @@ import numpy as np
 import capnp
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
+from opendbc.car.structs import car
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 
-from cereal import car
+from opendbc.car.structs import car
 from openpilot.common.params import Params
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader

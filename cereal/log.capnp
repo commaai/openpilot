@@ -1,7 +1,7 @@
-using Cxx = import "./include/c++.capnp";
+using Cxx = import "/include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Car = import "car.capnp";
+using Car = import "/car.capnp";
 using Deprecated = import "deprecated.capnp";
 using Custom = import "custom.capnp";
 

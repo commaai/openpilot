@@ -5,7 +5,8 @@ import threading
 
 import cereal.messaging as messaging
 
-from cereal import car, log
+from cereal import log
+from opendbc.car.structs import car
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 

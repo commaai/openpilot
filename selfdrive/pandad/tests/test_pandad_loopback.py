@@ -7,7 +7,8 @@ from collections import defaultdict
 from pprint import pprint
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
+from opendbc.car.structs import car
 from opendbc.car.can_definitions import CanData
 from openpilot.common.utils import retry
 from openpilot.common.params import Params

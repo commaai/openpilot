@@ -8,7 +8,8 @@ import time
 from openpilot.common.parameterized import parameterized
 import pytest
 
-from cereal import log, car
+from cereal import log
+from opendbc.car.structs import car
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 
