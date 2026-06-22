@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHONPATH: ${{ github.workspace }}
+  PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/first_party"
 
 jobs:
   package_updates:

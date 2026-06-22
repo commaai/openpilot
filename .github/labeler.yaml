@@ -4,7 +4,7 @@ CI / testing:
 
 car:
   - changed-files:
-    - any-glob-to-all-files: '{openpilot/selfdrive/car/**,opendbc_repo}'
+    - any-glob-to-all-files: '{openpilot/selfdrive/car/**,first_party/opendbc_repo}'
 
 simulation:
   - changed-files:

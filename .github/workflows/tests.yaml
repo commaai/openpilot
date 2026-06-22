@@ -19,7 +19,7 @@ concurrency:
 
 env:
   CI: 1
-  PYTHONPATH: ${{ github.workspace }}
+  PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/first_party"
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
-      PYTHONPATH: /tmp/releasepilot
+      PYTHONPATH: "/tmp/releasepilot:/tmp/releasepilot/first_party"
     steps:
     - uses: actions/checkout@v6
       with:

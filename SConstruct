@@ -91,7 +91,7 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath,
+    "PYTHONPATH": Dir("#").abspath + os.pathsep + Dir("#first_party").abspath,
     "ACADOS_SOURCE_DIR": acados.DIR,
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
@@ -114,24 +114,25 @@ env = Environment(
   CPPPATH=[
     "#",
     "#openpilot",
-    "#msgq",
+    "#first_party",
+    "#first_party/msgq",
     "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
     "#openpilot/common",
-    "#msgq_repo",
+    "#first_party/msgq_repo",
     "#openpilot/selfdrive/pandad",
-    "#rednose/helpers",
+    "#first_party/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT="#first_party",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  toolpath=["#site_scons/site_tools", "#first_party/rednose_repo/site_scons/site_tools"],
 )
 if arch != "larch64":
   env['_LIBFLAGS'] = _libflags
@@ -221,7 +222,7 @@ Export('common')
 # Enable swaglog include in submodules
 env_swaglog = env.Clone()
 env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
-SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
+SConscript(['first_party/msgq_repo/SConscript'], exports={'env': env_swaglog})
 
 SConscript(['openpilot/cereal/SConscript'])
 
@@ -231,10 +232,10 @@ Export('messaging')
 
 
 # Build other submodules
-SConscript(['panda/SConscript'])
+SConscript(['first_party/panda/SConscript'])
 
 # Build rednose library
-SConscript(['rednose/SConscript'])
+SConscript(['first_party/rednose/SConscript'])
 
 # Build system services
 SConscript([

@@ -103,7 +103,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         id: find_diff
         run: |
-          export PYTHONPATH=${{ github.workspace }}
+          export PYTHONPATH=${{ github.workspace }}:${{ github.workspace }}/first_party
           baseurl="https://github.com/commaai/ci-artifacts/raw/refs/heads/${{ env.BRANCH_NAME }}"
 
           COMMENT=""

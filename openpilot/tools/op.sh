@@ -281,7 +281,7 @@ function op_script() {
   op_before_cmd
 
   case $1 in
-    som-debug )  op_run_command panda/scripts/som_debug.sh "${@:2}" ;;
+    som-debug )  op_run_command first_party/panda/scripts/som_debug.sh "${@:2}" ;;
     * )
       echo -e "Unknown script '$1'. Available scripts:"
       echo -e "  ${BOLD}som-debug${NC}    SOM serial debug console via panda"

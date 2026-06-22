@@ -65,6 +65,10 @@ fi
 
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
+# submodules now live under first_party/; add it to the path (set after sourcing
+# profiles since those reset PYTHONPATH to /data/pythonpath)
+export PYTHONPATH="/data/pythonpath:/data/pythonpath/first_party"
+
 cd ${env.TEST_DIR} || true
 time ${cmd}
 END"""
@@ -237,8 +241,8 @@ node {
       },
       'replay': {
         deviceStage("model-replay", "tizi-replay", ["UNSAFE=1"], [
-          step("build", "cd openpilot/system/manager && ./build.py", [diffPaths: ["openpilot/selfdrive/modeld/", "tinygrad_repo", "openpilot/selfdrive/test/process_replay/model_replay.py"]]),
-          step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py", [diffPaths: ["openpilot/selfdrive/modeld/", "tinygrad_repo", "openpilot/selfdrive/test/process_replay/model_replay.py"]]),
+          step("build", "cd openpilot/system/manager && ./build.py", [diffPaths: ["openpilot/selfdrive/modeld/", "first_party/tinygrad_repo", "openpilot/selfdrive/test/process_replay/model_replay.py"]]),
+          step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py", [diffPaths: ["openpilot/selfdrive/modeld/", "first_party/tinygrad_repo", "openpilot/selfdrive/test/process_replay/model_replay.py"]]),
         ])
       },
       'tizi': {

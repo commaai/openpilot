@@ -95,8 +95,8 @@ event_extractors = jot_env.Command("generated_event_extractors.h", [
     "generate_event_extractors.py",
     jot_env.Glob("#openpilot/cereal/*.capnp"),
     jot_env.Glob("#openpilot/cereal/include/*.capnp"),
-    "#opendbc_repo/opendbc/car/car.capnp",
-    "#opendbc_repo/opendbc/car/include/c++.capnp",
+    "#first_party/opendbc_repo/opendbc/car/car.capnp",
+    "#first_party/opendbc_repo/opendbc/car/include/c++.capnp",
   ],
   generate_event_extractors,
 )

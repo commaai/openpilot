@@ -38,8 +38,8 @@ cp -pR --parents $(./release/release_files.py) $BUILD_DIR/
 # in the directory
 cd $BUILD_DIR
 
-rm -f panda/board/obj/panda.bin.signed
-rm -f panda/board/obj/panda_h7.bin.signed
+rm -f first_party/panda/board/obj/panda.bin.signed
+rm -f first_party/panda/board/obj/panda_h7.bin.signed
 
 VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 echo "[-] committing version $VERSION T=$SECONDS"
@@ -47,15 +47,15 @@ git add -f .
 git commit -a -m "openpilot v$VERSION release"
 
 # Build
-export PYTHONPATH="$BUILD_DIR"
+export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/first_party"
 scons
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
-  CERT=/data/pandaextra/certs/release RELEASE=1 scons panda/
+  CERT=/data/pandaextra/certs/release RELEASE=1 scons first_party/panda/
 else
   # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
-  scons panda/
+  scons first_party/panda/
 fi
 
 # Ensure no submodules in release

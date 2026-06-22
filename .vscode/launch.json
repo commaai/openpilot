@@ -53,7 +53,7 @@
       "request": "attach",
       "pid": "${command:pickMyProcess}",
       "sourceMap": {
-        ".": "${workspaceFolder}/opendbc/safety"
+        ".": "${workspaceFolder}/first_party/opendbc/safety"
       },
       "initCommands": [
         "script import time; time.sleep(3)"
@@ -63,14 +63,14 @@
       "name": "Replay drive",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/opendbc/safety/tests/safety_replay/replay_drive.py",
+      "program": "${workspaceFolder}/first_party/opendbc/safety/tests/safety_replay/replay_drive.py",
       "args": [
         "${input:replayArg}"
       ],
       "console": "integratedTerminal",
       "justMyCode": false,
       "env": {
-        "PYTHONPATH": "${workspaceFolder}"
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/first_party"
       },
       "subProcess": true,
       "stopOnEntry": false

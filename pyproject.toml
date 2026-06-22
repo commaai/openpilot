@@ -123,13 +123,15 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [
   "openpilot",
-  "msgq",
-  "opendbc",
-  "panda",
-  "rednose",
-  "teleoprtc",
-  "tinygrad",
+  "first_party/msgq",
+  "first_party/opendbc",
+  "first_party/panda",
+  "first_party/rednose",
+  "first_party/teleoprtc",
+  "first_party/tinygrad",
 ]
+# submodules live under first_party/; add it to the editable install's import path
+dev-mode-dirs = [ ".", "first_party" ]
 
 [tool.hatch.metadata]
 allow-direct-references = true

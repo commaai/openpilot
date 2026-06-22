@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
 SITE_DIR = REPO_ROOT / "docs_site"
 sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "first_party"))
 # Local docs build helpers live under docs/ so they stay near the content
 # source. The wrapper prunes them from docs_site/ after build.
 sys.path.insert(0, str(DOCS_DIR))

@@ -43,7 +43,7 @@ cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
 # in the directory
 cd $TARGET_DIR
 rm -rf .git/modules/
-rm -f panda/board/obj/panda.bin.signed
+rm -f first_party/panda/board/obj/panda.bin.signed
 
 find openpilot/selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 

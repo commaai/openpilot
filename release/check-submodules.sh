@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 while read hash submodule ref; do
-  if [ "$submodule" = "tinygrad_repo" ]; then
+  if [ "$submodule" = "first_party/tinygrad_repo" ]; then
     echo "Skipping $submodule"
     continue
   fi
