@@ -46,7 +46,6 @@ dependencies = [
 
   # body / webrtcd
   "av",
-  "aiohttp",
   "aiortc",
 
   # panda
