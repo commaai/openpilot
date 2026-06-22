@@ -63,8 +63,8 @@ cabana "5beb9b58bd12b691/0000010a--a51155e496" --dcam --ecam
 [SSH into your device](https://github.com/commaai/openpilot/wiki/SSH) and start the bridge with the following command:
 
 ```shell
-cd /data/openpilot/cereal/messaging/
-./bridge &
+cd /data/openpilot
+./openpilot/cereal/messaging/bridge &
 ```
 
 Then Run Cabana with the device's IP address:

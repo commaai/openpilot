@@ -1,7 +1,7 @@
 #include "tools/jotpluggler/app.h"
 #include "tools/jotpluggler/common.h"
 
-#include "cereal/services.h"
+#include "openpilot/cereal/services.h"
 #include "common/timing.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"

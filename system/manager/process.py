@@ -9,9 +9,9 @@ from multiprocessing import Process
 
 from setproctitle import setproctitle
 
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.structs import car
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

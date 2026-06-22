@@ -2,7 +2,6 @@
 import argparse
 import sys
 import unittest # noqa: TID251
-
 from opendbc.car.tests.routes import CarTestRoute
 from openpilot.selfdrive.car.tests.test_models import TestCarModel
 from openpilot.tools.lib.route import SegmentRange

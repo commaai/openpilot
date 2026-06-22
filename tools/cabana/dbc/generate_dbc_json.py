@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import json
-
 from opendbc.car import Bus
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.values import PLATFORMS

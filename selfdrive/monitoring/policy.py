@@ -2,9 +2,9 @@ from collections import defaultdict
 from math import atan2, radians
 import numpy as np
 
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.structs import car
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params

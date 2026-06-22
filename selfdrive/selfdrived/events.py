@@ -5,9 +5,9 @@ import os
 from enum import IntEnum
 from collections.abc import Callable
 
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.structs import car
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.constants import CV
 from openpilot.common.git import get_short_branch
 from openpilot.common.realtime import DT_CTRL
@@ -1101,7 +1101,7 @@ if HARDWARE.get_device_type() == 'mici':
 
 if __name__ == '__main__':
   # print all alerts by type and priority
-  from cereal.services import SERVICE_LIST
+  from openpilot.cereal.services import SERVICE_LIST
   from collections import defaultdict
 
   event_names = {v: k for k, v in EventName.schema.enumerants.items()}

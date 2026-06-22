@@ -1,4 +1,4 @@
-from cereal import messaging
+from openpilot.cereal import messaging
 
 
 def generate_livePose():

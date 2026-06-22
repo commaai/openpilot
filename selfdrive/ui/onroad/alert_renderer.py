@@ -1,7 +1,7 @@
 import time
 import pyray as rl
 from dataclasses import dataclass
-from cereal import messaging, log
+from openpilot.cereal import messaging, log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight

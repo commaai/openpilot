@@ -7,7 +7,6 @@ import traceback
 from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
-
 from opendbc.car.car_helpers import interface_names
 from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url

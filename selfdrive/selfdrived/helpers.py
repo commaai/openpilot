@@ -1,7 +1,7 @@
 import math
 from enum import StrEnum, auto
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from opendbc.car.structs import car
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.helpers import Pose

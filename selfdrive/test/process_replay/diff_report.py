@@ -1,6 +1,5 @@
 import os
 from collections import defaultdict
-
 from opendbc.car.tests.car_diff import format_diff, format_numeric_diffs
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
 from openpilot.selfdrive.test.process_replay.process_replay import PROC_REPLAY_DIR

@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot/cereal/gen/cpp/log.capnp.h"
 
 // no-op base hw class
 class HardwareNone {

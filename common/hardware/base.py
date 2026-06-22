@@ -2,7 +2,7 @@ import os
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, fields
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.esim.base import LPABase
 
 NetworkType = log.DeviceState.NetworkType

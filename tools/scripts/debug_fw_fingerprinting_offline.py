@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-
 from opendbc.car import uds
 from openpilot.tools.lib.live_logreader import live_logreader
 from openpilot.tools.lib.logreader import LogReader, ReadMode

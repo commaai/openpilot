@@ -1,5 +1,5 @@
 import numpy as np
-from cereal import messaging
+from openpilot.cereal import messaging
 from opendbc.car.structs import car
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.car import structs

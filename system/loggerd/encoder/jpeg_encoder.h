@@ -7,7 +7,7 @@
 #include <jpeglib.h>
 #include <vector>
 #include <memory>
-#include "cereal/messaging/messaging.h"
+#include "openpilot/cereal/messaging/messaging.h"
 #include "msgq/visionipc/visionbuf.h"
 
 class JpegEncoder {

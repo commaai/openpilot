@@ -26,7 +26,7 @@ import aioice.ice
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
-from cereal import messaging, log
+from openpilot.cereal import messaging, log
 
 
 # socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)

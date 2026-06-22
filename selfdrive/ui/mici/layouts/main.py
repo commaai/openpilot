@@ -1,5 +1,5 @@
 import pyray as rl
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.ui.mici.layouts.home import MiciHomeLayout
 from openpilot.selfdrive.ui.mici.layouts.settings.settings import SettingsLayout
 from openpilot.selfdrive.ui.mici.layouts.offroad_alerts import MiciOffroadAlerts

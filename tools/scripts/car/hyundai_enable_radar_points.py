@@ -15,7 +15,6 @@ import sys
 import argparse
 from typing import NamedTuple
 from subprocess import check_output, CalledProcessError
-
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 from opendbc.car.structs import CarParams

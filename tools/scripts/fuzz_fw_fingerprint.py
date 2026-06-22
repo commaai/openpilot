@@ -3,7 +3,6 @@ import random
 from collections import defaultdict
 
 from tqdm import tqdm
-
 from opendbc.car.fw_versions import match_fw_to_car_fuzzy
 from opendbc.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from opendbc.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS

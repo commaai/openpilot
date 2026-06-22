@@ -11,8 +11,8 @@ import datetime
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
-from cereal import log
-import cereal.messaging as messaging
+from openpilot.cereal import log
+import openpilot.cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.common.utils import retry
 from openpilot.common.time_helpers import system_time_valid

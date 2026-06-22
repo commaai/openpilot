@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot/cereal/gen/cpp/log.capnp.h"
 
 inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"AccessToken", {CLEAR_ON_MANAGER_START | DONT_LOG, STRING}},

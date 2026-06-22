@@ -1,5 +1,5 @@
 #include "selfdrive/pandad/pandad.h"
-#include "cereal/messaging/messaging.h"
+#include "openpilot/cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 
 void PandaSafety::configureSafetyMode(bool is_onroad) {

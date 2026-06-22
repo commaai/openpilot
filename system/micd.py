@@ -3,7 +3,7 @@ import numpy as np
 from functools import cache
 import threading
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog

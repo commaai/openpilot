@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "msgq/impl_msgq.h"
-#include "cereal/messaging/bridge_zmq.h"
+#include "openpilot/cereal/messaging/bridge_zmq.h"
 
 class MsgqToZmq {
 public:

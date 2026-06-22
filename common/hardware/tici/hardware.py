@@ -7,7 +7,7 @@ import time
 from functools import cached_property, lru_cache
 from pathlib import Path
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase

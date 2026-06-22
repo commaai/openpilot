@@ -10,9 +10,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from openpilot.common.utils import tabulate
 
-from cereal import log
-import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
+from openpilot.cereal import log
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params

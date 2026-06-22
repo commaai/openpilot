@@ -2,7 +2,7 @@
 import json
 import subprocess
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.swaglog import cloudlog
 
 

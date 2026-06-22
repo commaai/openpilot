@@ -13,8 +13,8 @@
 #include <mutex>
 #include <libusb-1.0/libusb.h>
 
-#include "cereal/gen/cpp/car.capnp.h"
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot/cereal/gen/cpp/car.capnp.h"
+#include "openpilot/cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
 #include "panda/board/can.h"
 

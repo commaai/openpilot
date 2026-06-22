@@ -5,8 +5,8 @@ import ctypes
 import select
 import threading
 
-import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.utils import sudo_write
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog

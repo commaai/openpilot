@@ -1,4 +1,4 @@
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.structs import car
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.car_helpers import interfaces

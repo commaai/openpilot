@@ -4,8 +4,8 @@ import argparse
 import json
 import codecs
 
-from cereal import log
-from cereal.services import SERVICE_LIST
+from openpilot.cereal import log
+from openpilot.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.live_logreader import raw_live_logreader
 
 
@@ -25,7 +25,7 @@ def hexdump(msg):
 
 if __name__ == "__main__":
 
-  parser = argparse.ArgumentParser(description='Dump communication sockets. See cereal/services.py for a complete list of available sockets.')
+  parser = argparse.ArgumentParser(description='Dump communication sockets. See openpilot/cereal/services.py for a complete list of available sockets.')
   parser.add_argument('--pipe', action='store_true')
   parser.add_argument('--raw', action='store_true')
   parser.add_argument('--json', action='store_true')

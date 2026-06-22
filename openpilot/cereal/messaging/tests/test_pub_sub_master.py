@@ -2,11 +2,11 @@ import random
 import time
 from typing import Sized, cast
 
-import cereal.messaging as messaging
-from cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
                                                   random_bytes, random_carstate, assert_carstate, \
                                                   zmq_sleep
-from cereal.services import SERVICE_LIST
+from openpilot.cereal.services import SERVICE_LIST
 
 
 class TestSubMaster:

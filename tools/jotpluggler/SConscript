@@ -93,8 +93,8 @@ generated_dbc_stamp = jot_env.Command(f"generated_dbcs/.stamp", [], materialize_
 car_fingerprint_to_dbc = jot_env.Command("car_fingerprint_to_dbc.h", [], write_car_fingerprint_to_dbc_header)
 event_extractors = jot_env.Command("generated_event_extractors.h", [
     "generate_event_extractors.py",
-    jot_env.Glob("#cereal/*.capnp"),
-    jot_env.Glob("#cereal/include/*.capnp"),
+    jot_env.Glob("#openpilot/cereal/*.capnp"),
+    jot_env.Glob("#openpilot/cereal/include/*.capnp"),
     "#opendbc_repo/opendbc/car/car.capnp",
     "#opendbc_repo/opendbc/car/include/c++.capnp",
   ],

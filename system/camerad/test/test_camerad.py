@@ -3,7 +3,7 @@ import time
 import pytest
 import numpy as np
 
-from cereal.services import SERVICE_LIST
+from openpilot.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 from openpilot.system.camerad.snapshot import get_snapshots
 from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context

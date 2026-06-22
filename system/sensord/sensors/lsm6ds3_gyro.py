@@ -2,7 +2,7 @@ import os
 import math
 import time
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
 class LSM6DS3_Gyro(Sensor):

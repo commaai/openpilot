@@ -7,7 +7,7 @@
 ### On the device
 SSH into the device and run following in separate terminals:
 
-`cd /data/openpilot/cereal/messaging && ./bridge`
+`cd /data/openpilot && ./openpilot/cereal/messaging/bridge`
 
 `cd /data/openpilot/system/loggerd && ./encoderd`
 
@@ -18,8 +18,8 @@ Note that both the device and your PC must be on the same openpilot commit.
 Alternatively paste this as a single command:
 ```
 (
-  cd /data/openpilot/cereal/messaging/
-  ./bridge &
+  cd /data/openpilot
+  ./openpilot/cereal/messaging/bridge &
 
   cd /data/openpilot/system/camerad/
   ./camerad &

@@ -1,7 +1,7 @@
 import os
 import math
 
-from cereal import messaging, log
+from openpilot.cereal import messaging, log
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
