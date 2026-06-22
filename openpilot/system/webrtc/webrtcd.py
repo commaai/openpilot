@@ -394,19 +394,6 @@ def _text_response(text: str, status: int = 200) -> tuple[int, bytes, str]:
   return (status, text.encode(), "text/plain; charset=utf-8")
 
 
-# (class name, reason phrase) reproducing aiohttp 3.13.5's HTTPException, formatted as its error middleware did
-_AIOHTTP_ERRORS = {
-  "not_found": ("HTTPNotFound", "Not Found"),
-  "method_not_allowed": ("HTTPMethodNotAllowed", "Method Not Allowed"),
-  "bad_request": ("HTTPBadRequest", "Bad Request"),
-}
-
-
-def _aiohttp_error_response(error: str, status: int = 500) -> tuple[int, bytes, str]:
-  error_type, reason = _AIOHTTP_ERRORS[error]
-  return _json_response({"error": "exception", "message": f"{error_type}: {reason}"}, status=status)
-
-
 async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, bytes, str]:
   stream_dict, debug_mode = state.streams, state.debug
   body = StreamRequestBody(**json.loads(raw_body))
@@ -508,9 +495,9 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
 
     try:
       if allowed is None:
-        result = _aiohttp_error_response("not_found")
+        result = _json_response({"error": "not found"}, status=404)
       elif self.command not in allowed:
-        result = _aiohttp_error_response("method_not_allowed")
+        result = _json_response({"error": "method not allowed"}, status=405)
       elif parsed.path == "/schema":
         services = parse_qs(parsed.query).get("services", [""])[0]
         result = self._run(handle_get_schema(self.server.state, services))
@@ -520,7 +507,7 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
         try:
           payload = json.loads(self._read_body())
         except Exception:
-          result = _aiohttp_error_response("bad_request")
+          result = _json_response({"error": "bad request"}, status=400)
         else:
           result = self._run(handle_post_notify(self.server.state, payload))
     except Exception as e:
