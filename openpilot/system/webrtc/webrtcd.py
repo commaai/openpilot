@@ -394,7 +394,16 @@ def _text_response(text: str, status: int = 200) -> tuple[int, bytes, str]:
   return (status, text.encode(), "text/plain; charset=utf-8")
 
 
-def _aiohttp_error_response(error_type: str, reason: str, status: int = 500) -> tuple[int, bytes, str]:
+# (class name, reason phrase) reproducing aiohttp 3.13.5's HTTPException, formatted as its error middleware did
+_AIOHTTP_ERRORS = {
+  "not_found": ("HTTPNotFound", "Not Found"),
+  "method_not_allowed": ("HTTPMethodNotAllowed", "Method Not Allowed"),
+  "bad_request": ("HTTPBadRequest", "Bad Request"),
+}
+
+
+def _aiohttp_error_response(error: str, status: int = 500) -> tuple[int, bytes, str]:
+  error_type, reason = _AIOHTTP_ERRORS[error]
   return _json_response({"error": "exception", "message": f"{error_type}: {reason}"}, status=status)
 
 
@@ -471,6 +480,13 @@ async def on_shutdown(state: ServerState):
 class WebrtcdHandler(BaseHTTPRequestHandler):
   protocol_version = "HTTP/1.1"
 
+  # path -> allowed methods (aiohttp registered POST /stream, POST /notify, GET /schema + its auto HEAD)
+  _routes = {
+    "/schema": ("GET", "HEAD"),
+    "/stream": ("POST",),
+    "/notify": ("POST",),
+  }
+
   def _send(self, status: int, body: bytes, content_type: str) -> None:
     self.send_response(status)
     self.send_header("Content-Type", content_type)
@@ -479,60 +495,45 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
     if self.command != "HEAD":
       self.wfile.write(body)
 
-  def _dispatch_request(self, write_head_only: bool = False) -> None:
+  def _read_body(self) -> bytes:
+    length = int(self.headers.get("Content-Length", 0))
+    return self.rfile.read(length) if length else b""
+
+  def _run(self, coro) -> tuple[int, bytes, str]:
+    return asyncio.run_coroutine_threadsafe(coro, self.server.loop).result()
+
+  def _dispatch_request(self) -> None:
     parsed = urlparse(self.path)
-    method = self.command
+    allowed = self._routes.get(parsed.path)
 
     try:
-      if parsed.path == "/schema":
-        if method not in ("GET", "HEAD"):
-          result = _aiohttp_error_response("HTTPMethodNotAllowed", "Method Not Allowed")
-        else:
-          services = parse_qs(parsed.query).get("services", [""])[0]
-          future = asyncio.run_coroutine_threadsafe(handle_get_schema(self.server.state, services), self.server.loop)
-          result = future.result()
+      if allowed is None:
+        result = _aiohttp_error_response("not_found")
+      elif self.command not in allowed:
+        result = _aiohttp_error_response("method_not_allowed")
+      elif parsed.path == "/schema":
+        services = parse_qs(parsed.query).get("services", [""])[0]
+        result = self._run(handle_get_schema(self.server.state, services))
       elif parsed.path == "/stream":
-        if method != "POST":
-          result = _aiohttp_error_response("HTTPMethodNotAllowed", "Method Not Allowed")
+        result = self._run(handle_get_stream(self.server.state, self._read_body()))
+      else:  # /notify
+        try:
+          payload = json.loads(self._read_body())
+        except Exception:
+          result = _aiohttp_error_response("bad_request")
         else:
-          length = int(self.headers.get("Content-Length", 0))
-          raw = self.rfile.read(length) if length else b""
-          future = asyncio.run_coroutine_threadsafe(handle_get_stream(self.server.state, raw), self.server.loop)
-          result = future.result()
-      elif parsed.path == "/notify":
-        if method != "POST":
-          result = _aiohttp_error_response("HTTPMethodNotAllowed", "Method Not Allowed")
-        else:
-          length = int(self.headers.get("Content-Length", 0))
-          raw = self.rfile.read(length) if length else b""
-          try:
-            payload = json.loads(raw)
-          except Exception:
-            result = _aiohttp_error_response("HTTPBadRequest", "Bad Request")
-          else:
-            future = asyncio.run_coroutine_threadsafe(handle_post_notify(self.server.state, payload), self.server.loop)
-            result = future.result()
-      else:
-        result = _aiohttp_error_response("HTTPNotFound", "Not Found")
+          result = self._run(handle_post_notify(self.server.state, payload))
     except Exception as e:
       logging.getLogger("webrtcd").exception("Unhandled error handling %s", self.path)
       result = _json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
 
-    status, body, content_type = result
-    if write_head_only:
-      command, self.command = self.command, "HEAD"
-      try:
-        self._send(status, body, content_type)
-      finally:
-        self.command = command
-    else:
-      self._send(status, body, content_type)
+    self._send(*result)
 
   def do_GET(self) -> None:
     self._dispatch_request()
 
   def do_HEAD(self) -> None:
-    self._dispatch_request(write_head_only=True)
+    self._dispatch_request()
 
   def do_POST(self) -> None:
     self._dispatch_request()
