@@ -18,12 +18,10 @@ from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
-
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=RuntimeWarning)  # TODO: remove this when google-crc32c publish a python3.12 wheel
+warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
 import capnp
-
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 import aioice.ice
@@ -46,21 +44,14 @@ def _default_route_ip() -> str | None:
   finally:
     s.close()
 
-
 # aioice patch: gather ICE candidates only on the default-route interface
 _get_host_addresses = aioice.ice.get_host_addresses
-
-
 def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
   addresses = _get_host_addresses(use_ipv4, use_ipv6)
   primary = _default_route_ip()
   if primary not in addresses:
     return addresses
-  return [
-    primary,
-  ]
-
-
+  return [primary, ]
 aioice.ice.get_host_addresses = _primary_host_addresses
 
 
@@ -176,12 +167,12 @@ class DynamicPubMaster(messaging.PubMaster):
 
 class LivestreamBitrateController(AsyncTaskRunner):
   bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
-  label_to_bitrate = {"high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
+  label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
   sample_interval = 0.2
-  high_level = 0.1  # drop immediately
-  med_level = 0.05  # drop after # of samples
-  low_level = 0  # raise after # of samples
-  down_samples = 5  # 1s
+  high_level = 0.1 # drop immediately
+  med_level = 0.05 # drop after # of samples
+  low_level = 0 # raise after # of samples
+  down_samples = 5 # 1s
   param_name = "LivestreamEncoderBitrate"
 
   def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
@@ -193,7 +184,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self._publish(self.bitrates[self.level])
     self.prev_lost, self.prev_sent = None, None
     self.counter = 0
-    self.up_samples = 5  # 1s
+    self.up_samples = 5 # 1s
     self._auto = True
     self._enabled = enabled
 
@@ -215,7 +206,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
         self.counter += 1
         if self.counter >= self.down_samples or loss_rate >= self.high_level:
           self.level -= 1
-          self.up_samples *= 2  # exponential backoff before raising again
+          self.up_samples *= 2 # exponential backoff before raising again
           self.counter = 0
           self._publish(self.bitrates[self.level])
       elif loss_rate <= self.low_level and self.level < len(self.bitrates) - 1:
@@ -287,11 +278,7 @@ class StreamSession:
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
       "New stream session (%s), init camera %s, video enabled %s, incoming services %s, outgoing services %s",
-      self.identifier,
-      body.init_camera,
-      self.enabled,
-      body.bridge_services_in,
-      body.bridge_services_out,
+      self.identifier, body.init_camera, body.enabled, body.bridge_services_in, body.bridge_services_out,
     )
 
   def start(self):
@@ -328,16 +315,9 @@ class StreamSession:
             if not enabled:
               self.params.put("LivestreamRequestKeyframe", True)
           case "clockSync":
-            pong = json.dumps(
-              {
-                "type": "clockSync",
-                "data": {
-                  "action": "pong",
-                  "browserSendTime": payload["data"]["browserSendTime"],
-                  "deviceTime": time.time() * 1000,  # noqa: TID251
-                },
-              }
-            )
+            pong = json.dumps({"type": "clockSync", "data": {
+              "action": "pong", "browserSendTime": payload["data"]["browserSendTime"], "deviceTime": time.time() * 1000, # noqa: TID251
+            }})
             self.stream.get_messaging_channel().send(pong)
           case "enableTimingSei":
             if hasattr(self.video_track, 'timing_sei_enabled'):
@@ -592,11 +572,9 @@ async def _shutdown(server: WebrtcdHTTPServer, state: ServerState, loop: asyncio
 def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
   if debug_mode:
     from aiortc.mediastreams import VideoStreamTrack
-
     assert VideoStreamTrack
   from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
   from teleoprtc.builder import WebRTCAnswerBuilder
-
   assert LiveStreamVideoStreamTrack
   assert WebRTCAnswerBuilder
 
@@ -649,5 +627,5 @@ def main():
   webrtcd_thread(args.host, args.port, args.debug)
 
 
-if __name__ == "__main__":
+if __name__=="__main__":
   main()
