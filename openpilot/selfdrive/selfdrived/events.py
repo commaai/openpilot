@@ -868,6 +868,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
     ET.NO_ENTRY: process_not_running_alert,
+    ET.PERMANENT: NormalPermanentAlert("Process Not Running", priority=Priority.LOW),
     ET.SOFT_DISABLE: soft_disable_alert("Process Not Running"),
   },
 
