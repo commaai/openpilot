@@ -189,7 +189,7 @@ PythonEvalResult evaluate_custom_python_series(const AppSession &session,
 
     const CommandResult process = run_process_capture_output({
       "python3",
-      (repo_root() / "tools" / "jotpluggler" / "math_eval.py").string(),
+      (repo_root() / "openpilot" / "tools" / "jotpluggler" / "math_eval.py").string(),
       manifest_path.string(),
       globals_path.string(),
       code_path.string(),

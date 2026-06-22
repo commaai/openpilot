@@ -49,7 +49,7 @@ std::string layout_name_from_arg(const std::string &layout_arg) {
 }
 
 fs::path layouts_dir() {
-  return repo_root() / "tools" / "jotpluggler" / "layouts";
+  return repo_root() / "openpilot" / "tools" / "jotpluggler" / "layouts";
 }
 
 std::string sanitize_layout_stem(std::string_view name) {
@@ -249,7 +249,7 @@ void configure_style() {
   g_ui_font = nullptr;
   g_ui_bold_font = nullptr;
   g_mono_font = nullptr;
-  const fs::path fonts_dir = repo_root() / "selfdrive" / "assets" / "fonts";
+  const fs::path fonts_dir = repo_root() / "openpilot" / "selfdrive" / "assets" / "fonts";
   ImFontConfig font_cfg;
   font_cfg.OversampleH = 2;
   font_cfg.OversampleV = 2;

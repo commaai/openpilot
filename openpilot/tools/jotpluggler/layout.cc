@@ -274,7 +274,7 @@ std::string default_dbc_template() {
 }
 
 DbcEditorSource resolve_dbc_editor_source(const std::string &dbc_name) {
-  const fs::path generated_dbc_dir = repo_root() / "tools" / "jotpluggler" / "generated_dbcs";
+  const fs::path generated_dbc_dir = repo_root() / "openpilot" / "tools" / "jotpluggler" / "generated_dbcs";
   const std::array<DbcEditorSource, 2> candidates = {{
     {.path = repo_root() / "opendbc" / "dbc" / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Opendbc},
     {.path = generated_dbc_dir / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Generated},
@@ -334,7 +334,7 @@ bool save_dbc_editor_contents(AppSession *session, UiState *state) {
   }
   try {
     dbc::Database::fromContent(editor.text, editor.save_name + ".dbc");
-    const fs::path generated_dbc_dir = repo_root() / "tools" / "jotpluggler" / "generated_dbcs";
+    const fs::path generated_dbc_dir = repo_root() / "openpilot" / "tools" / "jotpluggler" / "generated_dbcs";
     fs::create_directories(generated_dbc_dir);
     const fs::path output = generated_dbc_dir / (editor.save_name + ".dbc");
     write_file_or_throw(output, editor.text);
