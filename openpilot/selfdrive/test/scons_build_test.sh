@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR=$(dirname "$0")
-BASEDIR=$(realpath "$SCRIPT_DIR/../../")
+BASEDIR=$(realpath "$SCRIPT_DIR/../../../")
 cd $BASEDIR
 
 # tests that our build system's dependencies are configured properly,

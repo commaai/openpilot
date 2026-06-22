@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR=$(dirname "$0")
-BASEDIR=$(realpath "$SCRIPT_DIR/../../../")
+BASEDIR=$(realpath "$SCRIPT_DIR/../../../../")
 cd $BASEDIR
 
 export MAX_EXAMPLES=300
