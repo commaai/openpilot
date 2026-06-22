@@ -1,15 +1,10 @@
 import asyncio
 import json
 import time
-# for aiortc and its dependencies
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
-from aiortc import RTCDataChannel
-from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import capnp
 from openpilot.cereal import messaging, log
+from teleoprtc.tracks import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 
 from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
@@ -31,7 +26,8 @@ class TestStreamSession:
     expected_dict = {"type": "customReservedRawData0", "logMonoTime": 123, "valid": True, "data": "test"}
     expected_json = json.dumps(expected_dict).encode()
 
-    channel = mocker.Mock(spec=RTCDataChannel)
+    channel = mocker.Mock()
+    channel.is_open.return_value = True
     proxy = CerealOutgoingMessageProxy(["customReservedRawData0"])
     def mocked_update(t):
       proxy.sm.update_msgs(0, [test_msg])
@@ -83,4 +79,3 @@ class TestStreamSession:
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
       assert packet.size == 0
-

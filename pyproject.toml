@@ -46,7 +46,7 @@ dependencies = [
 
   # body / webrtcd
   "av",
-  "aiortc",
+  "libdatachannel-py>=2026.1.0.dev2",
 
   # panda
   "libusb1",

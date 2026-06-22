@@ -16,15 +16,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import Any, TYPE_CHECKING
 
-# aiortc and its dependencies have lots of internal warnings :(
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
-
 import capnp
 if TYPE_CHECKING:
-  from aiortc.rtcdatachannel import RTCDataChannel
-import aioice.ice
+  from teleoprtc.stream import RTCDataChannelAdapter
 
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
@@ -43,17 +37,6 @@ def _default_route_ip() -> str | None:
     return None
   finally:
     s.close()
-
-# aioice patch: gather ICE candidates only on the default-route interface
-_get_host_addresses = aioice.ice.get_host_addresses
-def _primary_host_addresses(use_ipv4: bool, use_ipv6: bool) -> list[str]:
-  addresses = _get_host_addresses(use_ipv4, use_ipv6)
-  primary = _default_route_ip()
-  if primary not in addresses:
-    return addresses
-  return [primary, ]
-aioice.ice.get_host_addresses = _primary_host_addresses
-
 
 class AsyncTaskRunner:
   def __init__(self):
@@ -86,10 +69,10 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
     super().__init__()
     self.services = list(services)
     self.sm = messaging.SubMaster(self.services)
-    self.channels: list[RTCDataChannel] = []
+    self.channels: list[RTCDataChannelAdapter] = []
     self._enabled = enabled
 
-  def add_channel(self, channel: 'RTCDataChannel'):
+  def add_channel(self, channel: 'RTCDataChannelAdapter'):
     self.channels.append(channel)
 
   def enable(self, enable: bool):
@@ -118,20 +101,17 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
       outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
       encoded_msg = json.dumps(outgoing_msg).encode()
       for channel in self.channels:
+        if hasattr(channel, "is_open") and not channel.is_open():
+          continue
         channel.send(encoded_msg)
 
   async def run(self):
-    from aiortc.exceptions import InvalidStateError
-
     while True:
       if not self._enabled:
         await asyncio.sleep(0.01)
         continue
       try:
         self.update()
-      except InvalidStateError:
-        self.logger.warning("Cereal outgoing proxy invalid state (connection closed)")
-        break
       except Exception:
         self.logger.exception("Cereal outgoing proxy failure")
       await asyncio.sleep(0.01)
@@ -217,6 +197,8 @@ class LivestreamBitrateController(AsyncTaskRunner):
           self._publish(self.bitrates[self.level])
 
   async def _sample(self) -> float | None:
+    if not hasattr(self.pc, "getStats"):
+      return None
     report = await self.pc.getStats()
     packets_lost = packets_sent = 0
     for s in report.values():
@@ -248,17 +230,15 @@ class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
   def __init__(self, body: StreamRequestBody, debug_mode: bool = False):
-    if debug_mode:
-      from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc.builder import WebRTCAnswerBuilder
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
-    builder = WebRTCAnswerBuilder(body.sdp)
+    builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
     self.enabled = body.enabled
-    self.video_track = LiveStreamVideoStreamTrack(body.init_camera, self.enabled) if not debug_mode else VideoStreamTrack()
+    self.video_track = LiveStreamVideoStreamTrack(body.init_camera, self.enabled)
     builder.add_video_stream(body.init_camera, self.video_track)
     self.stream = builder.stream()
 
@@ -305,13 +285,16 @@ class StreamSession:
           case "livestreamCameraSwitch":
             self.video_track.switch_camera(payload["data"]["camera"])
           case "livestreamSettings":
-            self.bitrate_controller.set_quality(payload["data"]["quality"])
+            if self.bitrate_controller is not None:
+              self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
             self.enabled = enabled
             self.video_track.enable(enabled)
-            self.outgoing_bridge.enable(enabled)
-            self.bitrate_controller.enable(enabled)
+            if self.outgoing_bridge is not None:
+              self.outgoing_bridge.enable(enabled)
+            if self.bitrate_controller is not None:
+              self.bitrate_controller.enable(enabled)
             if not enabled:
               self.params.put("LivestreamRequestKeyframe", True)
           case "clockSync":
@@ -325,7 +308,8 @@ class StreamSession:
           case _:
             if payload.get("type") not in self.incoming_bridge_services:
               return
-            self.incoming_bridge.send(message)
+            if self.incoming_bridge is not None:
+              self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
@@ -341,7 +325,8 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
-      self.bitrate_controller.start()
+      if self.bitrate_controller is not None:
+        self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
       await self.stream.wait_for_disconnection()
@@ -357,7 +342,8 @@ class StreamSession:
         return
       self._cleanup_done = True
       self.params.put("LivestreamRequestKeyframe", False)
-      await self.bitrate_controller.stop()
+      if self.bitrate_controller is not None:
+        await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       if self.video_track is not None:
@@ -558,9 +544,6 @@ async def _shutdown(server: WebrtcdHTTPServer, state: ServerState, loop: asyncio
 
 
 def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
-  if debug_mode:
-    from aiortc.mediastreams import VideoStreamTrack
-    assert VideoStreamTrack
   from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
   from teleoprtc.builder import WebRTCAnswerBuilder
   assert LiveStreamVideoStreamTrack

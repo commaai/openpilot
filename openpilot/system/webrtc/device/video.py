@@ -3,8 +3,7 @@ import struct
 import time
 
 import av
-from teleoprtc.tracks import TiciVideoStreamTrack
-from aiortc import MediaStreamError
+from teleoprtc.tracks import MediaStreamError, TiciVideoStreamTrack
 
 from openpilot.cereal import messaging
 from openpilot.common.realtime import DT_MDL
@@ -54,6 +53,9 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self.video_enabled = enabled
     if not enabled:
       self._seen_keyframe = False
+
+  def request_keyframe(self) -> None:
+    self.params.put("LivestreamRequestKeyframe", True, block=False)
 
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
