@@ -28,7 +28,8 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
                        create_connection)
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
+from opendbc.car.structs import car
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream

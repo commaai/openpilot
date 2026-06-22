@@ -11,7 +11,8 @@ import capnp
 import numpy as np
 from typing import NoReturn
 
-from cereal import log, car
+from cereal import log
+from opendbc.car.structs import car
 import cereal.messaging as messaging
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.constants import CV

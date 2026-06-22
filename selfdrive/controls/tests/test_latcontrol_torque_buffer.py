@@ -1,6 +1,7 @@
 from openpilot.common.parameterized import parameterized
 
-from cereal import car, log
+from cereal import log
+from opendbc.car.structs import car
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.toyota.values import CAR as TOYOTA
 from opendbc.car.vehicle_model import VehicleModel

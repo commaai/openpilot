@@ -11,7 +11,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from openpilot.common.utils import tabulate
 
-from cereal import car
+from opendbc.car.structs import car
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LP_FILTER_CUTOFF_HZ
 from openpilot.tools.lib.logreader import LogReader

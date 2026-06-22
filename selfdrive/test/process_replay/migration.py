@@ -5,7 +5,8 @@ import capnp
 import functools
 import traceback
 
-from cereal import messaging, car, log
+from cereal import messaging, log
+from opendbc.car.structs import car
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import EPS_SCALE, ToyotaSafetyFlags
 from opendbc.car.ford.values import CAR as FORD, FordFlags, FordSafetyFlags

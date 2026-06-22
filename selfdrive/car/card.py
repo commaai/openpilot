@@ -5,7 +5,8 @@ import threading
 
 import cereal.messaging as messaging
 
-from cereal import car, log
+from cereal import log
+from opendbc.car.structs import car
 
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper

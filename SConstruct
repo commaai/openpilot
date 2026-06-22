@@ -114,6 +114,7 @@ env = Environment(
   CPPPATH=[
     "#",
     "#msgq",
+    "#cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
   ],

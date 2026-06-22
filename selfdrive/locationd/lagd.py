@@ -6,7 +6,8 @@ from collections import deque
 from functools import partial
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
+from opendbc.car.structs import car
 from cereal.services import SERVICE_LIST
 from openpilot.common.constants import CV
 from openpilot.common.params import Params

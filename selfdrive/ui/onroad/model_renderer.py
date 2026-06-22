@@ -1,7 +1,8 @@
 import colorsys
 import numpy as np
 import pyray as rl
-from cereal import messaging, car
+from cereal import messaging
+from opendbc.car.structs import car
 from dataclasses import dataclass, field
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params

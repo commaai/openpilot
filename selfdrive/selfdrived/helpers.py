@@ -1,7 +1,8 @@
 import math
 from enum import StrEnum, auto
 
-from cereal import car, messaging
+from cereal import messaging
+from opendbc.car.structs import car
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.helpers import Pose
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY

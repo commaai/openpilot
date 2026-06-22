@@ -2,7 +2,7 @@ import os
 import operator
 import platform
 
-from cereal import car
+from opendbc.car.structs import car
 from openpilot.common.params import Params
 from openpilot.common.hardware import PC, TICI
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
