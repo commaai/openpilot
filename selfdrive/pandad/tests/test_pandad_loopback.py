@@ -6,8 +6,8 @@ import pytest
 from collections import defaultdict
 from pprint import pprint
 
-import cereal.messaging as messaging
-from cereal import log
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal import log
 from opendbc.car.structs import car
 from opendbc.car.can_definitions import CanData
 from openpilot.common.utils import retry

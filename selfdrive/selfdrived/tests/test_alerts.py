@@ -4,9 +4,9 @@ import os
 import random
 from PIL import Image, ImageDraw, ImageFont
 
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.structs import car
-from cereal.messaging import SubMaster
+from openpilot.cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET

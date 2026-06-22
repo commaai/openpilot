@@ -1,4 +1,4 @@
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.hardware.base import HardwareBase
 
 class Pc(HardwareBase):

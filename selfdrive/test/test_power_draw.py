@@ -5,8 +5,8 @@ import numpy as np
 from dataclasses import dataclass
 from openpilot.common.utils import tabulate
 
-import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal.services import SERVICE_LIST
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params

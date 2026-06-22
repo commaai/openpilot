@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from opendbc.car.structs import car

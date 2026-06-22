@@ -7,8 +7,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal.services import SERVICE_LIST
 
 
 @dataclass

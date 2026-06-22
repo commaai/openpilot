@@ -2,7 +2,7 @@
 import os
 from typing import NoReturn, TypedDict
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 

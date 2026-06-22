@@ -2,7 +2,7 @@ import math
 import numpy as np
 from collections import deque
 
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.filter_simple import FirstOrderFilter

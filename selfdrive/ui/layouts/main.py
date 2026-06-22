@@ -1,6 +1,6 @@
 import pyray as rl
 from enum import IntEnum
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH

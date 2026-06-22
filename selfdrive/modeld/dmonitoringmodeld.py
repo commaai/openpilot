@@ -6,8 +6,8 @@ import time
 import pickle
 import numpy as np
 
-from cereal import messaging
-from cereal.messaging import PubMaster, SubMaster
+from openpilot.cereal import messaging
+from openpilot.cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process

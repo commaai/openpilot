@@ -1,4 +1,4 @@
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.common.constants import CV
 

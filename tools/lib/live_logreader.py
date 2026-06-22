@@ -1,6 +1,6 @@
 import os
-from cereal import log as capnp_log, messaging
-from cereal.services import SERVICE_LIST
+from openpilot.cereal import log as capnp_log, messaging
+from openpilot.cereal.services import SERVICE_LIST
 
 from openpilot.tools.lib.logreader import LogIterable, RawLogIterable
 

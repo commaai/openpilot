@@ -5,10 +5,10 @@ import capnp
 from collections import deque
 from functools import partial
 
-import cereal.messaging as messaging
-from cereal import log
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal import log
 from opendbc.car.structs import car
-from cereal.services import SERVICE_LIST
+from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process

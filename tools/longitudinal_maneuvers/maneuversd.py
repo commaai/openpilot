@@ -2,7 +2,7 @@
 import numpy as np
 from dataclasses import dataclass
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from opendbc.car.structs import car
 from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL

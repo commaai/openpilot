@@ -11,7 +11,7 @@ from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
 
-DIRS = ['cereal', 'openpilot']
+DIRS = ['openpilot']
 EXTS = ['.png', '.py', '.ttf', '.capnp', '.json', '.fnt', '.mo', '.po']
 EXCLUDE = ['selfdrive/assets/training']
 INTERPRETER = '/usr/bin/env python3'

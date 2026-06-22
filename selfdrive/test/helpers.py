@@ -7,7 +7,7 @@ import pytest
 
 from functools import wraps
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.version import training_version, terms_version

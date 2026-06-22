@@ -5,10 +5,10 @@ from tinygrad.tensor import Tensor
 import time
 import pickle
 import numpy as np
-import cereal.messaging as messaging
-from cereal import log
+import openpilot.cereal.messaging as messaging
+from openpilot.cereal import log
 from opendbc.car.structs import car
-from cereal.messaging import PubMaster, SubMaster
+from openpilot.cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog

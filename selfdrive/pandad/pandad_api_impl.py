@@ -1,5 +1,5 @@
 import time
-from cereal import log
+from openpilot.cereal import log
 
 NO_TRAVERSAL_LIMIT = 2**64 - 1
 

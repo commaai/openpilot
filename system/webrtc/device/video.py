@@ -6,7 +6,7 @@ import av
 from teleoprtc.tracks import TiciVideoStreamTrack
 from aiortc import MediaStreamError
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 

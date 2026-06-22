@@ -1,6 +1,6 @@
 import numpy as np
 import pyray as rl
-from cereal import log
+from openpilot.cereal import log
 from opendbc.car.structs import car
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus

@@ -4,7 +4,7 @@ from typing import Any
 from collections.abc import Callable
 from functools import cache
 
-from cereal import log
+from openpilot.cereal import log
 
 DrawType = Callable[[st.SearchStrategy], Any]
 

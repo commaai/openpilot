@@ -197,6 +197,7 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "common".msg = "Use openpilot.common"
 "system".msg = "Use openpilot.system"
 "tools".msg = "Use openpilot.tools"
+"cereal".msg = "Use openpilot.cereal"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
 "time.time".msg = "Use time.monotonic"

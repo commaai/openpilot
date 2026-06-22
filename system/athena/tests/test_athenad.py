@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from cereal import messaging
+from openpilot.cereal import messaging
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
