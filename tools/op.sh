@@ -116,7 +116,7 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs files..."
-  if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
+  if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -201,7 +201,7 @@ function op_setup() {
 
   echo "Installing dependencies..."
   st="$(date +%s)"
-  SETUP_SCRIPT="tools/setup_dependencies.sh"
+  SETUP_SCRIPT="openpilot/tools/setup_dependencies.sh"
   if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     return 1
@@ -234,7 +234,7 @@ function op_setup() {
 
 function op_auth() {
   op_before_cmd
-  op_run_command tools/lib/auth.py "$@"
+  op_run_command openpilot/tools/lib/auth.py "$@"
 }
 
 function op_activate_venv() {
@@ -269,12 +269,12 @@ function op_venv() {
 
 function op_adb() {
   op_before_cmd
-  op_run_command tools/scripts/adb_ssh.sh "$@"
+  op_run_command openpilot/tools/scripts/adb_ssh.sh "$@"
 }
 
 function op_ssh() {
   op_before_cmd
-  op_run_command tools/scripts/ssh.py "$@"
+  op_run_command openpilot/tools/scripts/ssh.py "$@"
 }
 
 function op_script() {
@@ -298,7 +298,7 @@ function op_check() {
 
 function op_esim() {
   op_before_cmd
-  op_run_command common/esim/esim.py "$@"
+  op_run_command openpilot/common/esim/esim.py "$@"
 }
 
 function op_build() {
@@ -307,7 +307,7 @@ function op_build() {
   cd "$CDIR"
   if [[ -f "/AGNOS" ]]; then
     # needed on AGNOS to not run out of memory
-    op_run_command system/manager/build.py
+    op_run_command openpilot/system/manager/build.py
   else
     # scons is fine on PC
     op_run_command scons "$@"
@@ -316,7 +316,7 @@ function op_build() {
 
 function op_juggle() {
   op_before_cmd
-  op_run_command tools/plotjuggler/juggle.py "$@"
+  op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
 }
 
 function op_lint() {
@@ -331,23 +331,23 @@ function op_test() {
 
 function op_replay() {
   op_before_cmd
-  op_run_command tools/replay/replay "$@"
+  op_run_command openpilot/tools/replay/replay "$@"
 }
 
 function op_cabana() {
   op_before_cmd
-  op_run_command tools/cabana/cabana "$@"
+  op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
 function op_sim() {
   op_before_cmd
-  op_run_command exec tools/sim/run_bridge.py &
-  op_run_command exec tools/sim/launch_openpilot.sh
+  op_run_command exec openpilot/tools/sim/run_bridge.py &
+  op_run_command exec openpilot/tools/sim/launch_openpilot.sh
 }
 
 function op_clip() {
   op_before_cmd
-  op_run_command tools/clip/run.py "$@"
+  op_run_command openpilot/tools/clip/run.py "$@"
 }
 
 function op_switch() {

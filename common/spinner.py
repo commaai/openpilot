@@ -8,7 +8,7 @@ class Spinner:
     try:
       self.spinner_proc = subprocess.Popen(["./spinner.py"],
                                            stdin=subprocess.PIPE,
-                                           cwd=os.path.join(BASEDIR, "system", "ui"),
+                                           cwd=os.path.join(BASEDIR, "openpilot/system", "ui"),
                                            close_fds=True)
     except OSError:
       self.spinner_proc = None

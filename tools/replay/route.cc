@@ -123,7 +123,7 @@ bool Route::loadFromServer() {
   if (json.is_object() && json["error"].is_string()) {
     const std::string &error = json["error"].string_value();
     if (error == "unauthorized") {
-      rWarning(">> Unauthorized. Authenticate with tools/lib/auth.py <<");
+      rWarning(">> Unauthorized. Authenticate with openpilot/tools/lib/auth.py <<");
       err_ = RouteLoadError::Unauthorized;
     } else if (error == "not_found") {
       rWarning("The specified route could not be found on the server.");

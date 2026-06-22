@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
-DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
+DIFF_OUT_DIR = Path(BASEDIR) / "openpilot" / "selfdrive" / "ui" / "tests" / "diff" / "report"
 HTML_TEMPLATE_PATH = Path(__file__).with_name("diff_template.html")
 
 

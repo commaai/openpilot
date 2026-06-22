@@ -35,39 +35,39 @@ LOG_OFFSET = 8
 MAX_TOTAL_CPU = 350.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
-  "selfdrive.controls.controlsd": 16.0,
-  "selfdrive.selfdrived.selfdrived": 16.0,
-  "selfdrive.car.card": 26.0,
+  "openpilot.selfdrive.controls.controlsd": 16.0,
+  "openpilot.selfdrive.selfdrived.selfdrived": 16.0,
+  "openpilot.selfdrive.car.card": 26.0,
   "./loggerd": 14.0,
   "./encoderd": 13.0,
   "./camerad": 10.0,
-  "selfdrive.controls.plannerd": 8.0,
-  "selfdrive.ui.ui": 40.0,
-  "system.sensord.sensord": 13.0,
-  "selfdrive.controls.radard": 2.0,
-  "selfdrive.modeld.modeld": 22.0,
-  "selfdrive.modeld.dmonitoringmodeld": 18.0,
-  "system.hardware.hardwared": 4.0,
-  "selfdrive.locationd.calibrationd": 2.0,
-  "selfdrive.locationd.torqued": 5.0,
-  "selfdrive.locationd.locationd": 25.0,
-  "selfdrive.locationd.paramsd": 9.0,
-  "selfdrive.locationd.lagd": 11.0,
-  "selfdrive.ui.soundd": 3.0,
-  "selfdrive.ui.feedback.feedbackd": 1.0,
-  "selfdrive.monitoring.dmonitoringd": 4.0,
-  "system.proclogd": 7.0,
-  "system.logmessaged": 1.0,
-  "system.tombstoned": 0,
-  "system.journald": 1.0,
-  "system.micd": 5.0,
-  "system.timed": 0,
-  "selfdrive.pandad.pandad": 0,
-  "system.loggerd.uploader": 15.0,
-  "system.loggerd.deleter": 1.0,
+  "openpilot.selfdrive.controls.plannerd": 8.0,
+  "openpilot.selfdrive.ui.ui": 40.0,
+  "openpilot.system.sensord.sensord": 13.0,
+  "openpilot.selfdrive.controls.radard": 2.0,
+  "openpilot.selfdrive.modeld.modeld": 22.0,
+  "openpilot.selfdrive.modeld.dmonitoringmodeld": 18.0,
+  "openpilot.system.hardware.hardwared": 4.0,
+  "openpilot.selfdrive.locationd.calibrationd": 2.0,
+  "openpilot.selfdrive.locationd.torqued": 5.0,
+  "openpilot.selfdrive.locationd.locationd": 25.0,
+  "openpilot.selfdrive.locationd.paramsd": 9.0,
+  "openpilot.selfdrive.locationd.lagd": 11.0,
+  "openpilot.selfdrive.ui.soundd": 3.0,
+  "openpilot.selfdrive.ui.feedback.feedbackd": 1.0,
+  "openpilot.selfdrive.monitoring.dmonitoringd": 4.0,
+  "openpilot.system.proclogd": 7.0,
+  "openpilot.system.logmessaged": 1.0,
+  "openpilot.system.tombstoned": 0,
+  "openpilot.system.journald": 1.0,
+  "openpilot.system.micd": 5.0,
+  "openpilot.system.timed": 0,
+  "openpilot.selfdrive.pandad.pandad": 0,
+  "openpilot.system.loggerd.uploader": 15.0,
+  "openpilot.system.loggerd.deleter": 1.0,
   "./pandad": 19.0,
-  "system.qcomgpsd.qcomgpsd": 1.0,
-  "common.hardware.tici.modem": 10.0,
+  "openpilot.system.qcomgpsd.qcomgpsd": 1.0,
+  "openpilot.common.hardware.tici.modem": 10.0,
 }
 
 TIMINGS = {
@@ -129,7 +129,7 @@ class TestOnroad:
     # start manager and run openpilot for TEST_DURATION
     proc = None
     try:
-      manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
+      manager_path = os.path.join(BASEDIR, "openpilot/system/manager/manager.py")
       cls.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
 

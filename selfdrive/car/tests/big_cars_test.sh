@@ -6,6 +6,6 @@ cd $BASEDIR
 
 export MAX_EXAMPLES=300
 export INTERNAL_SEG_CNT=300
-export INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt
+export INTERNAL_SEG_LIST=openpilot/selfdrive/car/tests/test_models_segs.txt
 
-cd selfdrive/car/tests && pytest test_models.py test_car_interfaces.py
+cd openpilot/selfdrive/car/tests && pytest test_models.py test_car_interfaces.py

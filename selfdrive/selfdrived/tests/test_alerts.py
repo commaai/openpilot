@@ -15,7 +15,7 @@ from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
 
 AlertSize = log.SelfdriveState.AlertSize
 
-OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")
+OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "openpilot/selfdrive/selfdrived/alerts_offroad.json")
 
 # TODO: add callback alerts
 ALERTS = []
@@ -48,7 +48,7 @@ class TestAlerts:
 
   # ensure alert text doesn't exceed allowed width
   def test_alert_text_length(self):
-    font_path = os.path.join(BASEDIR, "selfdrive/assets/fonts")
+    font_path = os.path.join(BASEDIR, "openpilot/selfdrive/assets/fonts")
     regular_font_path = os.path.join(font_path, "Inter-SemiBold.ttf")
     bold_font_path = os.path.join(font_path, "Inter-Bold.ttf")
     semibold_font_path = os.path.join(font_path, "Inter-SemiBold.ttf")

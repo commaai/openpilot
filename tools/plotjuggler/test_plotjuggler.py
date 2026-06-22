@@ -11,7 +11,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE, install
 
-PJ_DIR = os.path.join(BASEDIR, "tools/plotjuggler")
+PJ_DIR = os.path.join(BASEDIR, "openpilot/tools/plotjuggler")
 
 class TestPlotJuggler:
 

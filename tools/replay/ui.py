@@ -54,7 +54,7 @@ def ui_thread(addr):
   rl.set_target_fps(60)
 
   # Load font
-  font_path = os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf")
+  font_path = os.path.join(BASEDIR, "openpilot/selfdrive/assets/fonts/JetBrainsMono-Medium.ttf")
   font = rl.load_font_ex(font_path, 32, None, 0)
 
   camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)

@@ -1,4 +1,4 @@
-# Python version of system/camerad/cameras/nv12_info.h
+# Python version of openpilot/system/camerad/cameras/nv12_info.h
 # Calculations from media/msm_media_info.h (VENUS_BUFFER_SIZE)
 
 def align(val: int, alignment: int) -> int:

@@ -185,7 +185,7 @@ class DeviceLayout(Widget):
 
   def _on_regulatory(self):
     if not self._fcc_dialog:
-      self._fcc_dialog = HtmlModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+      self._fcc_dialog = HtmlModal(os.path.join(BASEDIR, "openpilot/selfdrive/assets/offroad/fcc.html"))
     gui_app.push_widget(self._fcc_dialog)
 
   def _on_review_training_guide(self):

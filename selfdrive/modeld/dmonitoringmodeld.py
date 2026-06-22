@@ -17,7 +17,7 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
-PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
+PROCESS_NAME = "openpilot.selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
 METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'

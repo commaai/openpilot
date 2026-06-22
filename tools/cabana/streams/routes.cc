@@ -88,7 +88,7 @@ void RoutesDialog::parseDeviceList(const QString &json, bool success, int error_
       device_list_->addItem(dongle_id, dongle_id);
     }
   } else {
-    QMessageBox::warning(this, tr("Error"), error_code == 401 ? tr("Unauthorized. Authenticate with tools/lib/auth.py") : tr("Network error"));
+    QMessageBox::warning(this, tr("Error"), error_code == 401 ? tr("Unauthorized. Authenticate with openpilot/tools/lib/auth.py") : tr("Network error"));
     reject();
   }
 }

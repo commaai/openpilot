@@ -60,7 +60,7 @@ qt_flags = [
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui', ]
+qt_env['LIBPATH'] += ['#openpilot/selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
 base_frameworks = qt_env['FRAMEWORKS']
@@ -112,8 +112,8 @@ cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_lib
 if GetOption('extras'):
   cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
 
-output_json_file = 'tools/cabana/dbc/car_fingerprint_to_dbc.json'
+output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
-                                  "python3 tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
-cabana_env.Depends(generate_dbc, ["#common", '#opendbc_repo', "#openpilot/cereal", "#msgq_repo"])
+                                  "python3 openpilot/tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
+cabana_env.Depends(generate_dbc, ["#openpilot/common", '#opendbc_repo', "#openpilot/cereal", "#msgq_repo"])

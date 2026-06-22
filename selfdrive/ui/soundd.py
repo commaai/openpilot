@@ -85,7 +85,7 @@ class Soundd:
     for sound in sound_list:
       filename, play_count, volume = sound_list[sound]
 
-      with wave.open(BASEDIR + "/selfdrive/assets/sounds/" + filename, 'r') as wavefile:
+      with wave.open(BASEDIR + "/openpilot/selfdrive/assets/sounds/" + filename, 'r') as wavefile:
         assert wavefile.getnchannels() == 1
         assert wavefile.getsampwidth() == 2
         assert wavefile.getframerate() == SAMPLE_RATE

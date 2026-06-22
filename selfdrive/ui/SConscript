@@ -4,8 +4,8 @@ import importlib.util
 Import('env', 'arch', 'common')
 
 # build the fonts
-generator = File("#selfdrive/assets/fonts/process.py")
-source_files = Glob("#selfdrive/assets/fonts/*.ttf") + Glob("#selfdrive/assets/fonts/*.otf")
+generator = File("#openpilot/selfdrive/assets/fonts/process.py")
+source_files = Glob("#openpilot/selfdrive/assets/fonts/*.ttf") + Glob("#openpilot/selfdrive/assets/fonts/*.otf")
 output_files = [
   (f"#{Path(f.path).with_suffix('.fnt')}", f"#{Path(f.path).with_suffix('.png')}")
   for f in source_files

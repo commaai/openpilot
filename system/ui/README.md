@@ -15,6 +15,6 @@ Quick start:
 * https://electronstudio.github.io/raylib-python-cffi/README.html#quickstart
 
 Style guide:
-* All graphical elements should subclass [`Widget`](/system/ui/widgets/__init__.py).
+* All graphical elements should subclass [`Widget`](/openpilot/system/ui/widgets/__init__.py).
   * Prefer a stateful widget over a function for easy migration from QT
 * All internal class variables and functions should be prefixed with `_`

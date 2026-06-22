@@ -128,9 +128,9 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/common --ignore=openpilot/selfdrive --ignore=openpilot/system --ignore=openpilot/tools --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/ --ignore=selfdrive/modeld -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "-Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
-cpp_harness = "selfdrive/test/cpp_harness.py"
+cpp_harness = "openpilot/selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
@@ -141,11 +141,7 @@ markers = [
   "xdist_group_class_property: group tests by a property of the class that contains them",
 ]
 testpaths = [
-  "common",
-  "selfdrive",
-  "system",
-  "tools",
-  "openpilot/cereal",
+  "openpilot",
 ]
 
 [tool.codespell]
@@ -153,7 +149,7 @@ quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
 ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite,ser"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "../tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, *.pem, ./openpilot/cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
+skip = "*.po, uv.lock, *.onnx, *.pem, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, openpilot/tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html, openpilot/selfdrive/assets/offroad/mici_fcc.html"
 
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 [tool.ruff]
@@ -180,13 +176,6 @@ lint.ignore = [
 line-length = 160
 exclude = [
   "openpilot/cereal",
-  "panda",
-  "opendbc",
-  "opendbc_repo",
-  "rednose_repo",
-  "tinygrad_repo",
-  "teleoprtc",
-  "teleoprtc_repo",
   "*.ipynb",
   "generated",
 ]
@@ -210,21 +199,6 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.format]
 quote-style = "preserve"
-
-[tool.ty.src]
-exclude = [
-  "msgq/",
-  "msgq_repo/",
-  "opendbc/",
-  "opendbc_repo/",
-  "panda/",
-  "rednose/",
-  "rednose_repo/",
-  "tinygrad/",
-  "tinygrad_repo/",
-  "teleoprtc/",
-  "teleoprtc_repo/",
-]
 
 [tool.ty.rules]
 unresolved-import = "ignore"  # Cython-compiled modules (.pyx)

@@ -16,7 +16,7 @@ CAMERA_CONFIGS = [
 ]
 
 Import('env', 'arch')
-chunker_file = File("#common/file_chunker.py")
+chunker_file = File("#openpilot/common/file_chunker.py")
 lenv = env.Clone()
 
 tinygrad_root = env.Dir("#").abspath
@@ -45,11 +45,11 @@ else:
   tg_flags = f'DEV=CPU' if arch == 'Darwin' else 'DEV=CPU:LLVM'
 
 tg_devices = { # which device to put jit inputs to at runtime
-  'selfdrive.modeld.modeld': {
+  'openpilot.selfdrive.modeld.modeld': {
     'default': {'WARP_DEV': tg_backend, 'QUEUE_DEV': tg_backend},
     'usbgpu': {'WARP_DEV': tg_backend, 'QUEUE_DEV': 'AMD'}
   },
-  'selfdrive.modeld.dmonitoringmodeld': {
+  'openpilot.selfdrive.modeld.dmonitoringmodeld': {
     'default': {'DEV': tg_backend}
   },
 }
@@ -74,12 +74,12 @@ tg_devices_node = lenv.Command(
 # tinygrad calls brew which needs a $HOME in the env
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
-modeld_dir = Dir("#selfdrive/modeld").abspath
+modeld_dir = Dir("#openpilot/selfdrive/modeld").abspath
 compile_modeld_script = [
   File(f"{modeld_dir}/compile_modeld.py"),
   File(f"{modeld_dir}/get_model_metadata.py"),
-  File("#system/camerad/cameras/nv12_info.py"),
-  File("#common/hardware/hw.py"),
+  File("#openpilot/system/camerad/cameras/nv12_info.py"),
+  File("#openpilot/common/hardware/hw.py"),
 ]
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
@@ -109,8 +109,8 @@ for usbgpu in [False, True] if USBGPU else [False]:
 
 # get model metadata
 fn = File(f"models/dmonitoring_model").abspath
-script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
-cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+script_files = [File(Dir("#openpilot/selfdrive/modeld").File("get_model_metadata.py").abspath)]
+cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#openpilot/selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
 lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files + [tg_devices_node], cmd)
 
 dm_w, dm_h = DM_INPUT_SIZE

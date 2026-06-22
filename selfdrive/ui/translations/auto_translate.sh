@@ -15,7 +15,7 @@ command -v codex >/dev/null || {
 }
 
 codex exec --cd "$ROOT" -c 'model_reasoning_effort="low"' --dangerously-bypass-approvals-and-sandbox "$(cat <<EOF
-Update openpilot UI translations in selfdrive/ui/translations.
+Update openpilot UI translations in openpilot/selfdrive/ui/translations.
 - Translate English UI text naturally.
 - Preserve placeholders (%n, %1, {}, {:.1f}), HTML/tags, and plural forms.
 - Edit .po files in place.

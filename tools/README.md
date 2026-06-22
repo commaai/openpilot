@@ -18,7 +18,7 @@ git clone https://github.com/commaai/openpilot.git
 **2. Run the setup script**
 ``` bash
 cd openpilot
-tools/op.sh setup
+openpilot/tools/op.sh setup
 ```
 
 **3. Activate a Python shell**
@@ -41,7 +41,7 @@ Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install
 **NOTE**: If you are running WSL 2 and experiencing performance issues with the UI or simulator, you may need to explicitly enable hardware acceleration by setting `GALLIUM_DRIVER=d3d12` before commands. Add `export GALLIUM_DRIVER=d3d12` to your `~/.bashrc` file to make it automatic for future sessions.
 
 ## CTF
-Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md).
+Learn about the openpilot ecosystem and tools by playing our [CTF](/openpilot/tools/CTF.md).
 
 ## Directory Structure
 

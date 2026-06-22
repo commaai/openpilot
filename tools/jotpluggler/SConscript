@@ -83,7 +83,7 @@ def write_car_fingerprint_to_dbc_header(target, source, env):
 def generate_event_extractors(target, source, env):
   subprocess.check_call([
     "python3",
-    "tools/jotpluggler/generate_event_extractors.py",
+    "openpilot/tools/jotpluggler/generate_event_extractors.py",
     os.path.realpath(BASEDIR),
     str(target[0]),
   ])
