@@ -2,7 +2,7 @@
 import openpilot.cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.cereal import car
+from opendbc.car.structs import car
 from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
 
 FEEDBACK_MAX_DURATION = 10.0

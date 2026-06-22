@@ -15,7 +15,7 @@ import capnp
 from openpilot.common.hardware.hw import Paths
 
 import openpilot.cereal.messaging as messaging
-from openpilot.cereal import car
+from opendbc.car.structs import car
 from openpilot.cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from opendbc.car.can_definitions import CanData

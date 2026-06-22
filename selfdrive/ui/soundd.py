@@ -4,7 +4,8 @@ import time
 import wave
 
 
-from openpilot.cereal import car, messaging
+from openpilot.cereal import messaging
+from opendbc.car.structs import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import Ratekeeper

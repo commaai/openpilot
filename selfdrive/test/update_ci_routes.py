@@ -6,8 +6,6 @@ import sys
 from collections.abc import Iterable
 
 from tqdm import tqdm
-
-import openpilot.cereal  # noqa: F401
 from opendbc.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
 from openpilot.tools.lib.azure_container import AzureContainer

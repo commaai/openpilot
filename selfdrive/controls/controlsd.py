@@ -2,7 +2,8 @@
 import math
 from numbers import Number
 
-from openpilot.cereal import car, log
+from openpilot.cereal import log
+from opendbc.car.structs import car
 import openpilot.cereal.messaging as messaging
 from openpilot.common.constants import CV
 from openpilot.common.params import Params

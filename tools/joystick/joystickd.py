@@ -3,7 +3,8 @@
 import math
 import numpy as np
 
-from openpilot.cereal import messaging, car
+from openpilot.cereal import messaging
+from opendbc.car.structs import car
 from opendbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL, Ratekeeper
 from openpilot.common.params import Params

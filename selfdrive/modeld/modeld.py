@@ -6,7 +6,8 @@ import time
 import pickle
 import numpy as np
 import openpilot.cereal.messaging as messaging
-from openpilot.cereal import car, log
+from openpilot.cereal import log
+from opendbc.car.structs import car
 from openpilot.cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params

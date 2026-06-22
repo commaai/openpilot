@@ -5,7 +5,8 @@ import threading
 
 import openpilot.cereal.messaging as messaging
 
-from openpilot.cereal import car, log
+from openpilot.cereal import log
+from opendbc.car.structs import car
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 

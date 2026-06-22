@@ -7,8 +7,6 @@ from collections import namedtuple
 from enum import Enum
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
-
-import openpilot.cereal  # noqa: F401
 from opendbc.car.honda.values import CruiseButtons
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper

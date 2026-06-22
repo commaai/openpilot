@@ -5,7 +5,8 @@ from dataclasses import dataclass
 
 import math
 
-from openpilot.cereal import car, log, messaging
+from openpilot.cereal import log, messaging
+from opendbc.car.structs import car
 from openpilot.cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

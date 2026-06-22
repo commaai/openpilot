@@ -8,7 +8,6 @@ COMMA_CAR_SEGMENTS_BRANCH = os.environ.get("COMMA_CAR_SEGMENTS_BRANCH", "main")
 COMMA_CAR_SEGMENTS_LFS_INSTANCE = os.environ.get("COMMA_CAR_SEGMENTS_LFS_INSTANCE", COMMA_CAR_SEGMENTS_REPO)
 
 def get_comma_car_segments_database():
-  import openpilot.cereal  # noqa: F401
   from opendbc.car.fingerprints import MIGRATION
 
   database = requests.get(get_repo_raw_url("database.json")).json()

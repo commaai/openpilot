@@ -2,7 +2,8 @@
 import time
 import random
 
-from openpilot.cereal import car, log
+from openpilot.cereal import log
+from opendbc.car.structs import car
 import openpilot.cereal.messaging as messaging
 from opendbc.car.honda.interface import CarInterface
 from openpilot.common.realtime import DT_CTRL

@@ -1,5 +1,6 @@
 import numpy as np
-from openpilot.cereal import car, messaging
+from openpilot.cereal import messaging
+from opendbc.car.structs import car
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.car import structs
 from opendbc.car.lateral import get_friction, FRICTION_THRESHOLD

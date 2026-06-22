@@ -5,7 +5,8 @@ from collections import deque
 from typing import Any
 
 import capnp
-from openpilot.cereal import messaging, log, car
+from openpilot.cereal import messaging, log
+from opendbc.car.structs import car
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process

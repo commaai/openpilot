@@ -3,7 +3,7 @@ import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from openpilot.common.parameterized import parameterized
 
-from openpilot.cereal import car
+from opendbc.car.structs import car
 from opendbc.car import DT_CTRL
 from opendbc.car.structs import CarParams
 from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface

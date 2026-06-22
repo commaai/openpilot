@@ -3,7 +3,8 @@ import time
 import threading
 from collections.abc import Callable
 from enum import Enum
-from openpilot.cereal import messaging, car, log
+from openpilot.cereal import messaging, log
+from opendbc.car.structs import car
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime

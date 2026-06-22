@@ -1,4 +1,4 @@
-using Cxx = import "./include/c++.capnp";
+using Cxx = import "/include/c++.capnp";
 $Cxx.namespace("cereal");
 
 @0x80ef1ec4889c2a63;

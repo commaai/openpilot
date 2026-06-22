@@ -2,7 +2,6 @@
 
 import argparse
 from collections import defaultdict
-import openpilot.cereal  # noqa: F401
 from opendbc.car.debug.format_fingerprints import format_brand_fw_versions
 
 from opendbc.car.fingerprints import MIGRATION

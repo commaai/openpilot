@@ -5,7 +5,8 @@ import os
 from enum import IntEnum
 from collections.abc import Callable
 
-from openpilot.cereal import log, car
+from openpilot.cereal import log
+from opendbc.car.structs import car
 import openpilot.cereal.messaging as messaging
 from openpilot.common.constants import CV
 from openpilot.common.git import get_short_branch
