@@ -2,7 +2,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-ROOT="$(cd "$DIR/../" && pwd)"
+ROOT="$(git -C "$DIR" rev-parse --show-toplevel)"
 
 function retry() {
   local attempts=$1
