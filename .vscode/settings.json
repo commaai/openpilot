@@ -17,10 +17,5 @@
     "**/.git",
     "**/.venv",
     "**/__pycache__",
-    // exclude old build artifact directories that still exist at the root
-    "common/**",
-    "selfdrive/**",
-    "system/**",
-    "tools/**",
   ]
 }
