@@ -86,6 +86,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
     def gitDiff = sh returnStdout: true, script: 'curl -s -H "Authorization: Bearer ${GITHUB_COMMENTS_TOKEN}" https://api.github.com/repos/commaai/openpilot/compare/master...${GIT_BRANCH} | jq .files[].filename || echo "/"', label: 'Getting changes'
+    def usesSharedFfmpeg = sh returnStatus: true, script: "grep -q 'dependencies.git@ffmpeg-shared#subdirectory=ffmpeg' pyproject.toml"
 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
@@ -95,7 +96,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
-          if (branch == "shared-ffmpeg") {
+          if (usesSharedFfmpeg == 0) {
             timeout(time: 1200, unit: 'SECONDS') {
               device(device_ip, "sync ffmpeg dependency", "uv pip install --python /usr/local/venv/bin/python --reinstall --no-deps 'ffmpeg @ git+https://github.com/commaai/dependencies.git@ffmpeg-shared#subdirectory=ffmpeg'")
             }
