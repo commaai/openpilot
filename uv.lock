@@ -395,7 +395,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=ffmpeg-shared#8b4a004a7acbe6348c75fa7670d20ab77daa6875" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=ffmpeg-shared#1c0a0ba350db10e978eaf0eed25c409325bd40c5" }
 
 [[package]]
 name = "fonttools"
