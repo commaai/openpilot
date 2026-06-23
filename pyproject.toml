@@ -46,7 +46,6 @@ dependencies = [
 
   # body / webrtcd
   "av",
-  "aiohttp",
   "aiortc",
 
   # panda
@@ -68,7 +67,7 @@ dependencies = [
 
   # these should be removed
   "psutil",
-  "pycryptodome", # used in updated/casync, panda, body, and a test
+  "pycryptodome", # used in panda, body, and a test
   "setproctitle",
 
   # logreader
@@ -104,12 +103,13 @@ testing = [
 
 dev = [
   "matplotlib",
-  "opencv-python-headless",
 ]
 
 tools = [
   "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
-  "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
+
+  # this can be added back once it's stripped down some more
+  #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
 [project.urls]
@@ -120,16 +120,24 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = [ "." ]
+packages = [
+  "openpilot",
+  "msgq",
+  "opendbc",
+  "panda",
+  "rednose",
+  "teleoprtc",
+  "tinygrad",
+]
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/ --ignore=selfdrive/modeld -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "-Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
-cpp_harness = "selfdrive/test/cpp_harness.py"
+cpp_harness = "openpilot/selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
@@ -140,11 +148,7 @@ markers = [
   "xdist_group_class_property: group tests by a property of the class that contains them",
 ]
 testpaths = [
-  "common",
-  "selfdrive",
-  "system",
-  "tools",
-  "cereal",
+  "openpilot",
 ]
 
 [tool.codespell]
@@ -152,7 +156,7 @@ quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
 ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite,ser"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "../tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, *.pem, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
+skip = "*.po, uv.lock, *.onnx, *.pem, */c_generated_code/*, docs/assets/*, openpilot/tools/plotjuggler/layouts/*, openpilot/selfdrive/assets/offroad/mici_fcc.html"
 
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 [tool.ruff]
@@ -178,24 +182,13 @@ lint.ignore = [
 ]
 line-length = 160
 exclude = [
-  "cereal",
-  "panda",
-  "opendbc",
-  "opendbc_repo",
-  "rednose_repo",
-  "tinygrad_repo",
-  "teleoprtc",
-  "teleoprtc_repo",
+  "openpilot/cereal",
   "*.ipynb",
   "generated",
 ]
 lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-"selfdrive".msg = "Use openpilot.selfdrive"
-"common".msg = "Use openpilot.common"
-"system".msg = "Use openpilot.system"
-"tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
 "time.time".msg = "Use time.monotonic"
@@ -209,21 +202,6 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.format]
 quote-style = "preserve"
-
-[tool.ty.src]
-exclude = [
-  "msgq/",
-  "msgq_repo/",
-  "opendbc/",
-  "opendbc_repo/",
-  "panda/",
-  "rednose/",
-  "rednose_repo/",
-  "tinygrad/",
-  "tinygrad_repo/",
-  "teleoprtc/",
-  "teleoprtc_repo/",
-]
 
 [tool.ty.rules]
 unresolved-import = "ignore"  # Cython-compiled modules (.pyx)

@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
-      - 'selfdrive/modeld/models/*.onnx'
+      - 'openpilot/selfdrive/modeld/models/*.onnx'
   workflow_dispatch:
 
 jobs:

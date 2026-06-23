@@ -45,13 +45,13 @@ cd $TARGET_DIR
 rm -rf .git/modules/
 rm -f panda/board/obj/panda.bin.signed
 
-find selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./common/file_chunker.py {} \;
+find openpilot/selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
 GIT_COMMIT_DATE=$(git --git-dir=$SOURCE_DIR/.git show --no-patch --format='%ct %ci' HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
-VERSION=$(cat $SOURCE_DIR/common/version.h | awk -F\" '{print $2}')
+VERSION=$(cat $SOURCE_DIR/openpilot/common/version.h | awk -F\" '{print $2}')
 
 echo -n "$GIT_HASH" > git_src_commit
 echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
