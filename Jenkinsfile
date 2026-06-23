@@ -98,7 +98,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           }
           if (usesSharedFfmpeg == 0) {
             timeout(time: 1200, unit: 'SECONDS') {
-              device(device_ip, "sync ffmpeg dependency", "uv pip install --python /usr/local/venv/bin/python --reinstall --no-deps 'ffmpeg @ git+https://github.com/commaai/dependencies.git@ffmpeg-shared#subdirectory=ffmpeg'")
+              device(device_ip, "sync ffmpeg dependency", "PYTHONWARNINGS=default uv pip install --python /usr/local/venv/bin/python --reinstall --no-deps 'ffmpeg @ git+https://github.com/commaai/dependencies.git@ffmpeg-shared#subdirectory=ffmpeg'")
             }
           }
           steps.each { item ->
