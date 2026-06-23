@@ -95,9 +95,9 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
-          if (branch != "master" && !branch.contains("__jenkins_loop_") && hasPathChanged(gitDiff, ["pyproject.toml", "uv.lock"])) {
-            timeout(time: 600, unit: 'SECONDS') {
-              device(device_ip, "sync python deps", "UV_PROJECT_ENVIRONMENT=/usr/local/venv uv sync --frozen --all-extras")
+          if (branch == "shared-ffmpeg") {
+            timeout(time: 1200, unit: 'SECONDS') {
+              device(device_ip, "sync ffmpeg dependency", "uv pip install --python /usr/local/venv/bin/python --reinstall --no-deps 'ffmpeg @ git+https://github.com/commaai/dependencies.git@ffmpeg-shared#subdirectory=ffmpeg'")
             }
           }
           steps.each { item ->
