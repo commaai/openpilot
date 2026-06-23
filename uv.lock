@@ -395,7 +395,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=shared-ffmpeg#a15fc4b86bd9736f5eaadf6ffc56bee15c1d3ef8" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=ffmpeg-shared#8b4a004a7acbe6348c75fa7670d20ab77daa6875" }
 
 [[package]]
 name = "fonttools"
@@ -845,7 +845,7 @@ requires-dist = [
     { name = "crcmod-plus" },
     { name = "cython" },
     { name = "eigen", git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=release-eigen" },
-    { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=shared-ffmpeg" },
+    { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=ffmpeg-shared" },
     { name = "gcc-arm-none-eabi", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=release-gcc-arm-none-eabi" },
     { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=release-git-lfs" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
