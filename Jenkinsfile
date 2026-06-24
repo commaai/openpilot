@@ -63,6 +63,8 @@ if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
 fi
 
+export LD_LIBRARY_PATH="$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/usr/local/lib:${LD_LIBRARY_PATH:-}"
+
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
@@ -204,14 +206,14 @@ node {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("check dirty", "tools/release/check-dirty.sh"),
-          step("onroad tests", "LD_LIBRARY_PATH=/usr/local/lib pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
+          step("onroad tests", "pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
         ])
       },
       'HW + Unit Tests': {
         deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test power draw", "pytest -s openpilot/selfdrive/test//test_power_draw.py"),
-          step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/"]]),
+          step("test encoder", "pytest openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/"]]),
           step("test manager", "pytest openpilot/system/manager/test/test_manager.py"),
         ])
       },
