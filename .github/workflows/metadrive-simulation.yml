@@ -110,11 +110,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -e .
-          python -m pip install metadrive-simulator pytest-timeout
+          python -m pip install \
+            "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal" \
+            pytest-timeout
+
 
       - name: Pull MetaDrive assets
         run: |
-          python -m metadrive.pull_asset
+          python - <<'PY'
+          try:
+            from metadrive.pull_asset import pull_asset
+            pull_asset()
+          except ImportError:
+            import metadrive.pull_asset
+          PY
 
       - name: Build openpilot
         run: |
