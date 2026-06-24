@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-ROOT = HERE + "/.."
+ROOT = os.path.abspath(os.path.join(HERE, "../.."))
 
 blacklist = [
   ".git/",
