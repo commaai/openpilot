@@ -1,0 +1,192 @@
+name: MetaDrive Simulation Test
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/metadrive-simulation.yml"
+      - "tools/sim/**"
+      - "selfdrive/**"
+      - "system/**"
+      - "cereal/**"
+      - "openpilot/**"
+      - "pyproject.toml"
+      - "uv.lock"
+  workflow_dispatch:
+
+concurrency:
+  group: metadrive-simulation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metadrive-simulation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    env:
+      DISPLAY: ":99"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      GALLIUM_DRIVER: "llvmpipe"
+      LP_NUM_THREADS: "4"
+      MESA_GL_VERSION_OVERRIDE: "3.3"
+      MESA_GLSL_VERSION_OVERRIDE: "330"
+      SIMULATION: "1"
+      PASSIVE: "0"
+      SKIP_FW_QUERY: "1"
+      CI: "true"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout openpilot
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: false
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc "$AGENT_TOOLSDIRECTORY" || true
+          df -h
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            git \
+            curl \
+            ca-certificates \
+            capnproto \
+            libcapnp-dev \
+            ffmpeg \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libegl1 \
+            libegl1-mesa-dev \
+            libgles2-mesa-dev \
+            libgl1-mesa-dev \
+            libgl1-mesa-dri \
+            libglx-mesa0 \
+            libglu1-mesa-dev \
+            mesa-utils \
+            mesa-common-dev \
+            xvfb \
+            x11-utils \
+            pulseaudio \
+            portaudio19-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset > /tmp/xvfb.log 2>&1 &
+          echo "XVFB_PID=$!" >> "$GITHUB_ENV"
+          sleep 5
+
+          if ! xdpyinfo -display :99 >/dev/null 2>&1; then
+            echo "Xvfb failed to start"
+            cat /tmp/xvfb.log
+            exit 1
+          fi
+
+      - name: Verify software OpenGL
+        run: |
+          glxinfo | grep -E "OpenGL renderer|OpenGL version" || true
+
+      - name: Start virtual audio
+        run: |
+          pulseaudio --start --exit-idle-time=-1 || true
+          sleep 2
+          pactl load-module module-null-sink sink_name=virtual-speaker || true
+          pactl set-default-sink virtual-speaker || true
+          pactl list sinks short || true
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -e .
+          python -m pip install metadrive-simulator pytest-timeout
+
+      - name: Pull MetaDrive assets
+        run: |
+          python -m metadrive.pull_asset
+
+      - name: Build openpilot
+        run: |
+          scons -u -j$(nproc)
+
+      - name: Run MetaDrive simulation test
+        id: metadrive_test
+        timeout-minutes: 15
+        run: |
+          python -m pytest tools/sim/tests/test_metadrive_bridge.py::TestMetaDriveBridge::test_driving \
+            -v \
+            --tb=short \
+            --timeout=900 \
+            --log-cli-level=INFO
+
+      - name: Collect simulation artifacts
+        if: always()
+        run: |
+          mkdir -p simulation_artifacts
+
+          for location in /tmp /tmp/comma "$HOME/.comma" "$GITHUB_WORKSPACE"; do
+            if [ -d "$location" ]; then
+              find "$location" \( \
+                -name "*.qlog" -o \
+                -name "*.rlog" -o \
+                -name "*.hevc" -o \
+                -name "fcamera.hevc" -o \
+                -name "dcamera.hevc" -o \
+                -name "ecamera.hevc" -o \
+                -name "error.log" -o \
+                -name "crash.log" -o \
+                -name "*.log" \
+              \) -type f -exec cp --parents {} simulation_artifacts/ \; 2>/dev/null || true
+            fi
+          done
+
+          cat > simulation_artifacts/metadata.txt << EOF
+          MetaDrive Simulation Test
+          =========================
+          Run ID: ${{ github.run_id }}
+          Run attempt: ${{ github.run_attempt }}
+          Commit: ${{ github.sha }}
+          Test outcome: ${{ steps.metadrive_test.outcome }}
+          Date: $(date -Iseconds)
+
+          System
+          ======
+          OS: $(uname -a)
+          Python: $(python --version 2>&1)
+          OpenGL:
+          $(glxinfo | grep -E "OpenGL renderer|OpenGL version" || true)
+
+          Files
+          =====
+          EOF
+
+          find simulation_artifacts -type f -maxdepth 10 -print >> simulation_artifacts/metadata.txt
+          cat simulation_artifacts/metadata.txt
+
+      - name: Upload simulation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metadrive-simulation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: simulation_artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Cleanup
+        if: always()
+        run: |
+          pulseaudio --kill || true
+          if [ -n "${XVFB_PID:-}" ]; then
+            kill "$XVFB_PID" || true
+          fi
