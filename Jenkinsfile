@@ -179,7 +179,7 @@ node {
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
-        step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/release/build_release.sh"),
+        step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/tools/release/build_release.sh"),
       ])
     }
 
@@ -187,12 +187,12 @@ node {
       parallel (
         'nightly': {
           deviceStage("build nightly", "tizi-needs-can", [], [
-            step("build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"),
+            step("build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/tools/release/build_release.sh"),
           ])
         },
         'nightly-dev': {
           deviceStage("build nightly-dev", "tizi-needs-can", [], [
-            step("build nightly-dev", "PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/release/build_release.sh"),
+            step("build nightly-dev", "PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/tools/release/build_release.sh"),
           ])
         },
       )
@@ -203,7 +203,7 @@ node {
       'onroad tests': {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
-          step("check dirty", "release/check-dirty.sh"),
+          step("check dirty", "tools/release/check-dirty.sh"),
           step("onroad tests", "pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
         ])
       },
