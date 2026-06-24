@@ -63,7 +63,7 @@ if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
 fi
 
-export LD_LIBRARY_PATH="$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/usr/local/lib:${LD_LIBRARY_PATH:-}"
+export LD_LIBRARY_PATH="\$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/usr/local/lib:\${LD_LIBRARY_PATH:-}"
 
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
