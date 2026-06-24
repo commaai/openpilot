@@ -12,12 +12,14 @@ from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.honda.values import HondaFlags
+from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from opendbc.car.values import Platform, PLATFORMS
 from opendbc.safety.tests.libsafety import libsafety_py
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
+from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.common.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source, internal_source, comma_api_source
@@ -40,6 +42,9 @@ INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
+
+MAX_CURVATURE = 0.2  # selfdrive/controls/lib/drive_helpers.py
+NUM_TX_FUZZY_FRAMES = 20
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
@@ -300,6 +305,68 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.set_controls_allowed(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
     test_car_controller(CC.as_reader())
+
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+      For each example, fuzz a sequence of CarControl actuator commands and send them
+      through the car interface, checking that panda safety never blocks a message
+      openpilot generates. Catches state-history bugs (eg. panda#1948) that a single
+      fixed CarControl can't exercise.
+    """
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    active = data.draw(st.booleans())
+    self.safety.set_controls_allowed(active)
+    self.safety.set_cruise_engaged_prev(data.draw(st.booleans()))
+
+    def get_fuzzed_actuators():
+      # structural scaffold via FuzzyGenerator handles enums + any future fields generically
+      actuators_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl.Actuators, real_floats=True)
+      if not active:
+        # mirrors controlsd: actuators are reset/neutral when not active
+        return {'longControlState': actuators_msg['longControlState']}
+
+      # override known numeric fields with the physically realistic ranges controlsd
+      # actually enforces before calling CarController.apply() (eg. ACCEL_MIN/MAX, normalized
+      # torque, MAX_CURVATURE), since unconstrained float32 fuzzing produces inputs openpilot
+      # would never generate and panda is correct to reject. Drawn as a single fixed_dictionaries
+      # strategy (not one draw per field) to keep the number of draws per frame low.
+      actuators_msg.update(data.draw(st.fixed_dictionaries({
+        'accel': st.floats(min_value=ACCEL_MIN, max_value=ACCEL_MAX, allow_nan=False, allow_infinity=False),
+        'torque': st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False),
+        'curvature': st.floats(min_value=-MAX_CURVATURE, max_value=MAX_CURVATURE, allow_nan=False, allow_infinity=False),
+        'steeringAngleDeg': st.floats(min_value=-180.0, max_value=180.0, allow_nan=False, allow_infinity=False),
+        'speed': st.floats(min_value=0.0, max_value=45.0, allow_nan=False, allow_infinity=False),
+        'gas': st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False),
+        'brake': st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False),
+      })))
+      return actuators_msg
+
+    CI = self.CarInterface(self.CP)
+    now_nanos = 0
+    msgs_sent = 0
+    for _ in range(NUM_TX_FUZZY_FRAMES):
+      CC = car.CarControl.new_message(actuators=get_fuzzed_actuators(), enabled=active,
+                                       latActive=active, longActive=active)
+      CI.update([])
+      _, sendcan = CI.apply(CC.as_reader(), now_nanos)
+      now_nanos += DT_CTRL * 1e9
+      msgs_sent += len(sendcan)
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus, active))
+
+    # Make sure we attempted to send messages
+    self.assertGreater(msgs_sent, 0)
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
