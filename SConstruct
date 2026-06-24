@@ -43,6 +43,7 @@ assert arch in [
 pkg_names = ['acados', 'bzip2', 'capnproto', 'catch2', 'eigen', 'ffmpeg', 'json11', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
+ffmpeg = pkgs[pkg_names.index('ffmpeg')]
 acados_include_dirs = [
   acados.INCLUDE_DIR,
   os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
@@ -68,6 +69,12 @@ def _resolve_lib(env, name):
       f = File(os.path.join(p, f'lib{name}{ext}'))
       if f.exists() or f.has_builder():
         return name
+
+    if arch == "Darwin" and os.path.isdir(p):
+      prefix = f'lib{name}.'
+      for entry in sorted(os.listdir(p)):
+        if entry.startswith(prefix) and entry.endswith('.dylib'):
+          return File(os.path.join(p, entry))
   if name in allowed_system_libs:
     return name
   raise SCons.Errors.UserError(f"Unexpected non-vendored library '{name}'")
@@ -126,7 +133,7 @@ env = Environment(
     "#rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
-  RPATH=[],
+  RPATH=[ffmpeg.LIB_DIR],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",

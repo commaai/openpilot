@@ -102,11 +102,11 @@ event_extractors = jot_env.Command("generated_event_extractors.h", [
 )
 
 libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"),
-        "avformat", "avcodec", "avutil", "x264", "yuv", "z", "bz2", "zstd", "m", "pthread", "usb-1.0"]
+        "avformat", "avcodec", "avutil", "yuv", "bz2", "zstd", "m", "pthread", "usb-1.0"]
 if arch == "Darwin":
   jot_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
 else:
-  libs += ["GL", "dl", "va", "va-drm", "drm"]
+  libs += ["GL", "dl"]
 
 program = jot_env.Program("jotpluggler", jot_env.Glob("*.cc"), LIBS=libs)
 jot_env.Depends(program, generated_dbc_stamp)
