@@ -283,7 +283,7 @@ class TestOnroad:
     print("--------------- Memory Usage -------------------")
     print("------------------------------------------------")
 
-    from openpilot.tools.scripts.mem_usage import print_report
+    from tools.scripts.mem_usage import print_report
     print_report(self.msgs['procLog'], self.msgs['deviceState'])
 
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
