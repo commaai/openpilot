@@ -25,13 +25,55 @@ class TestSimBridgeBase:
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
     self.processes.append(p_manager)
 
-    sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState'])
+    sm = messaging.SubMaster([
+      'selfdriveState', 'onroadEvents', 'managerState', 'livePose', 'modelV2',
+      'cameraOdometry', 'carParams', 'carState',
+    ])
     q = Queue()
     bridge = self.create_bridge()
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
     max_time_per_step = 60
+
+    def get_debug_state():
+      return {
+        'livePose': {
+          'valid': sm.valid['livePose'],
+          'alive': sm.alive['livePose'],
+          'inputsOK': sm['livePose'].inputsOK,
+          'posenetOK': sm['livePose'].posenetOK,
+          'sensorsOK': sm['livePose'].sensorsOK,
+        },
+        'cameraOdometry': {
+          'valid': sm.valid['cameraOdometry'],
+          'alive': sm.alive['cameraOdometry'],
+        },
+        'modelV2': {
+          'valid': sm.valid['modelV2'],
+          'alive': sm.alive['modelV2'],
+          'frameDropPerc': sm['modelV2'].frameDropPerc,
+        },
+        'carParams': {
+          'valid': sm.valid['carParams'],
+          'openpilotLongitudinalControl': sm['carParams'].openpilotLongitudinalControl,
+          'pcmCruise': sm['carParams'].pcmCruise,
+        },
+        'carState': {
+          'valid': sm.valid['carState'],
+          'canValid': sm['carState'].canValid,
+          'buttonEnable': sm['carState'].buttonEnable,
+          'buttonEvents': [(b.type.raw, b.pressed) for b in sm['carState'].buttonEvents],
+          'cruiseEnabled': sm['carState'].cruiseState.enabled,
+          'cruiseAvailable': sm['carState'].cruiseState.available,
+          'vEgo': sm['carState'].vEgo,
+        },
+        'selfdriveState': {
+          'engageable': sm['selfdriveState'].engageable,
+          'enabled': sm['selfdriveState'].enabled,
+          'active': sm['selfdriveState'].active,
+        },
+      }
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
@@ -43,18 +85,20 @@ class TestSimBridgeBase:
     no_car_events_issues_once = False
     car_event_issues = []
     not_running = []
+    debug_state = {}
     while time.monotonic() < start_time + max_time_per_step:
       sm.update()
 
       not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
       car_event_issues = [event.name for event in sm['onroadEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
+      debug_state = get_debug_state()
 
       if sm.all_alive() and len(car_event_issues) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
         break
 
     assert no_car_events_issues_once, \
-                    f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'"
+                    f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}', debug state '{debug_state}'"
 
     start_time = time.monotonic()
     min_counts_control_active = 100
@@ -69,7 +113,8 @@ class TestSimBridgeBase:
         if control_active == min_counts_control_active:
           break
 
-    assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
+    assert min_counts_control_active == control_active, \
+      f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}, debug state '{get_debug_state()}'"
 
     failure_states = []
     while bridge.started.value:
