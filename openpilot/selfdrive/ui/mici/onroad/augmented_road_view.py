@@ -10,6 +10,7 @@ from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
+from openpilot.selfdrive.ui.mici.onroad.debug_overlay import DebugOverlay
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -152,6 +153,7 @@ class AugmentedRoadView(CameraView):
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer()
     self._confidence_ball = ConfidenceBall()
+    self._debug_overlay = DebugOverlay()
     self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
@@ -231,6 +233,10 @@ class AugmentedRoadView(CameraView):
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
     self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
+
+    # debug overlay yields to alerts and the set speed flash so it never blocks them
+    if alert_to_render is None and not self._hud_renderer.drawing_top_icons():
+      self._debug_overlay.render(self._content_rect)
 
     # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
