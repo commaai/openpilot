@@ -112,6 +112,7 @@ jobs:
           python -m pip install -e .
           python -m pip install \
             "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal" \
+            imgui \
             pytest-timeout
 
 
