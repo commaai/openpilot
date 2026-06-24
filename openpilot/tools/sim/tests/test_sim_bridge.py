@@ -1,4 +1,6 @@
 import os
+import shutil
+import signal
 import subprocess
 import time
 import pytest
@@ -22,7 +24,7 @@ class TestSimBridgeBase:
 
   def test_driving(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR, start_new_session=True)
     self.processes.append(p_manager)
 
     sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState'])
@@ -86,7 +88,34 @@ class TestSimBridgeBase:
   def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
-      p.terminate()
+      try:
+        if isinstance(p, subprocess.Popen):
+          os.killpg(os.getpgid(p.pid), signal.SIGINT)
+        else:
+          p.terminate()
+      except (ProcessLookupError, PermissionError, OSError):
+        pass
+
+    time.sleep(1)
+    self._preserve_logs()
 
     for p in reversed(self.processes):
-      p.kill()
+      try:
+        if isinstance(p, subprocess.Popen):
+          os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+        else:
+          p.kill()
+      except (ProcessLookupError, PermissionError, OSError):
+        pass
+
+  def _preserve_logs(self):
+    save_dir = os.getenv("SIM_LOG_SAVE_DIR")
+    if save_dir is None:
+      return
+
+    from openpilot.common.hardware.hw import Paths
+
+    log_root = Paths.log_root()
+    if os.path.exists(log_root):
+      shutil.rmtree(save_dir, ignore_errors=True)
+      shutil.copytree(log_root, save_dir)
