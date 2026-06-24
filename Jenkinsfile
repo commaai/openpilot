@@ -204,7 +204,7 @@ node {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("check dirty", "tools/release/check-dirty.sh"),
-          step("onroad tests", "pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
+          step("onroad tests", "LD_LIBRARY_PATH=/usr/local/lib pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
         ])
       },
       'HW + Unit Tests': {
