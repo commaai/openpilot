@@ -118,11 +118,8 @@ jobs:
       - name: Pull MetaDrive assets
         run: |
           python - <<'PY'
-          try:
-            from metadrive.pull_asset import pull_asset
-            pull_asset()
-          except ImportError:
-            import metadrive.pull_asset
+          from metadrive.pull_asset import pull_asset
+          pull_asset(False)
           PY
 
       - name: Build openpilot
