@@ -21,6 +21,10 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
 
+# Cruise speed limit (moved out of the MPC)
+CRUISE_MAX_ACCEL = 1.6
+CRUISE_JERK = 0.5  # m/s^3, max rate of change of cruise limit acceleration
+
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
@@ -55,6 +59,7 @@ class LongitudinalPlanner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
+    self.a_cruise = 0.0
     self.prev_accel_clip = [ACCEL_MIN, ACCEL_MAX]
     self.output_a_target = 0.0
     self.output_should_stop = False
@@ -111,7 +116,7 @@ class LongitudinalPlanner:
 
     self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['radarState'], v_cruise, personality=sm['selfdriveState'].personality)
+    self.mpc.update(sm['radarState'], personality=sm['selfdriveState'].personality)
 
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
@@ -129,7 +134,21 @@ class LongitudinalPlanner:
 
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
     output_a_target_mpc, output_should_stop_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
-                                                                        action_t=action_t)
+                                                                        action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+
+    # Apply cruise speed limit outside the MPC
+    v_err = v_cruise - v_ego
+    if force_slow_decel:
+      a_cruise_target = ACCEL_MIN
+    elif v_err > 0:
+      a_cruise_target = CRUISE_MAX_ACCEL * np.clip(v_err / (CRUISE_MAX_ACCEL**2 / (2 * CRUISE_JERK)), 0, 1)
+    else:
+      a_cruise_target = 0.0
+    self.a_cruise = float(np.clip(a_cruise_target, self.a_cruise - CRUISE_JERK * self.dt, self.a_cruise + CRUISE_JERK * self.dt))
+    if self.a_cruise < output_a_target_mpc:
+      output_a_target_mpc = self.a_cruise
+      self.mpc.source = LongitudinalPlanSource.cruise
+
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
