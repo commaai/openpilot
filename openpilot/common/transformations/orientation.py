@@ -25,11 +25,10 @@ def numpy_wrap(function, input_shape, output_shape) -> Callable[..., np.ndarray]
 
     # Add empty dimension if inputs is not a list
     if len(shape) == len(input_shape):
-      inp.shape = (1, ) + inp.shape
+      inp = inp.reshape((1, ) + inp.shape)
 
     result = np.asarray([function(*args, i) for i in inp])
-    result.shape = out_shape
-    return result
+    return result.reshape(out_shape)
   return f
 
 

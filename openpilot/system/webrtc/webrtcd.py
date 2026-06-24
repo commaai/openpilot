@@ -10,6 +10,10 @@ import contextlib
 import json
 import uuid
 import logging
+import signal
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse, parse_qs
 from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
@@ -18,7 +22,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
 import capnp
-from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 import aioice.ice
@@ -363,27 +366,43 @@ class StreamSession:
       await self.stream.stop()
 
 
-def schedule_teardown(app):
-  # if nothing connects for 5 seconds, tear down livestreaming processes
-  h = app.get('teardown')
-  if h:
-      h.cancel()
+class ServerState:
+  def __init__(self, debug: bool):
+    self.streams: dict[str, StreamSession] = {}
+    self.stream_lock = asyncio.Lock()
+    self.debug = debug
+    self.teardown: asyncio.TimerHandle | None = None
+
+
+# if nothing connects for 5 seconds, tear down livestreaming processes
+def schedule_teardown(state: ServerState):
+  if state.teardown is not None:
+    state.teardown.cancel()
+
   def clear():
-      if not app['streams']:
-          Params().put_bool("IsLiveStreaming", False)
-  app['teardown'] = asyncio.get_running_loop().call_later(5.0, clear)
+    if not state.streams:
+      Params().put_bool("IsLiveStreaming", False)
+
+  state.teardown = asyncio.get_running_loop().call_later(5.0, clear)
 
 
-async def get_stream(request: 'web.Request'):
-  stream_dict, debug_mode = request.app['streams'], request.app['debug']
-  raw_body = await request.json()
-  body = StreamRequestBody(**raw_body)
+def _json_response(obj: Any, status: int = 200) -> tuple[int, bytes, str]:
+  return (status, json.dumps(obj).encode(), "application/json; charset=utf-8")
 
-  async with request.app['stream_lock']:
+
+def _text_response(text: str, status: int = 200) -> tuple[int, bytes, str]:
+  return (status, text.encode(), "text/plain; charset=utf-8")
+
+
+async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, bytes, str]:
+  stream_dict, debug_mode = state.streams, state.debug
+  body = StreamRequestBody(**json.loads(raw_body))
+
+  async with state.stream_lock:
     # don't remove existing connection on prewarm request
     enabled = any(s.run_task and not s.run_task.done() and s.enabled for s in stream_dict.values())
     if enabled and not body.enabled:
-      return web.json_response({"error": "busy", "message": "someone else is connected."})
+      return _json_response({"error": "busy", "message": "someone else is connected."})
 
     for sid, s in list(stream_dict.items()):
       if s.run_task and not s.run_task.done():
@@ -408,54 +427,134 @@ async def get_stream(request: 'web.Request'):
 
     def remove_finished_session(_: asyncio.Task) -> None:
       stream_dict.pop(session.identifier, None)
-      schedule_teardown(request.app)
+      schedule_teardown(state)
+
     session.run_task.add_done_callback(remove_finished_session)
 
-  return web.json_response({"sdp": answer.sdp, "type": answer.type})
+  return _json_response({"sdp": answer.sdp, "type": answer.type})
 
 
-async def get_schema(request: 'web.Request'):
-  services = request.query.get("services", "").split(",")
+async def handle_get_schema(state: ServerState, services_param: str) -> tuple[int, bytes, str]:
+  services = services_param.split(",")
   services = [s for s in services if s]
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
-  return web.json_response(schema_dict)
+  return _json_response(schema_dict)
 
 
-async def post_notify(request: 'web.Request'):
-  try:
-    payload = await request.json()
-  except Exception as e:
-    raise web.HTTPBadRequest(text="Invalid JSON") from e
-
-  for session in list(request.app.get('streams', {}).values()):
+async def handle_post_notify(state: ServerState, payload: Any) -> tuple[int, bytes, str]:
+  for session in list(state.streams.values()):
     try:
       ch = session.stream.get_messaging_channel()
       ch.send(json.dumps(payload))
     except Exception:
       continue
 
-  return web.Response(status=200, text="OK")
+  return _text_response("OK")
 
 
-async def on_shutdown(app: 'web.Application'):
-  for session in list(app['streams'].values()):
+async def on_shutdown(state: ServerState):
+  for session in list(state.streams.values()):
     try:
       ch = session.stream.get_messaging_channel()
       ch.send(json.dumps({"type": "disconnect", "data": "device streaming has been stopped."}))
     except Exception:
       pass
     await session.stop()
-  del app['streams']
+  state.streams.clear()
 
 
-@web.middleware
-async def error_middleware(request: 'web.Request', handler):
-  try:
-    return await handler(request)
-  except Exception as e:
-    logging.getLogger("webrtcd").exception("Unhandled error handling %s", request.path)
-    return web.json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
+class WebrtcdHandler(BaseHTTPRequestHandler):
+  protocol_version = "HTTP/1.1"
+
+  # path -> allowed methods (aiohttp registered POST /stream, POST /notify, GET /schema + its auto HEAD)
+  _routes = {
+    "/schema": ("GET", "HEAD"),
+    "/stream": ("POST",),
+    "/notify": ("POST",),
+  }
+
+  def _send(self, status: int, body: bytes, content_type: str) -> None:
+    self.send_response(status)
+    self.send_header("Content-Type", content_type)
+    self.send_header("Content-Length", str(len(body)))
+    self.end_headers()
+    if self.command != "HEAD":
+      self.wfile.write(body)
+
+  def _read_body(self) -> bytes:
+    length = int(self.headers.get("Content-Length", 0))
+    return self.rfile.read(length) if length else b""
+
+  def _run(self, coro) -> tuple[int, bytes, str]:
+    return asyncio.run_coroutine_threadsafe(coro, self.server.loop).result()
+
+  def _dispatch_request(self) -> None:
+    parsed = urlparse(self.path)
+    allowed = self._routes.get(parsed.path)
+
+    try:
+      if allowed is None:
+        result = _json_response({"error": "not found"}, status=404)
+      elif self.command not in allowed:
+        result = _json_response({"error": "method not allowed"}, status=405)
+      elif parsed.path == "/schema":
+        services = parse_qs(parsed.query).get("services", [""])[0]
+        result = self._run(handle_get_schema(self.server.state, services))
+      elif parsed.path == "/stream":
+        result = self._run(handle_get_stream(self.server.state, self._read_body()))
+      else:  # /notify
+        try:
+          payload = json.loads(self._read_body())
+        except Exception:
+          result = _json_response({"error": "bad request"}, status=400)
+        else:
+          result = self._run(handle_post_notify(self.server.state, payload))
+    except Exception as e:
+      logging.getLogger("webrtcd").exception("Unhandled error handling %s", self.path)
+      result = _json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
+
+    self._send(*result)
+
+  def do_GET(self) -> None:
+    self._dispatch_request()
+
+  def do_HEAD(self) -> None:
+    self._dispatch_request()
+
+  def do_POST(self) -> None:
+    self._dispatch_request()
+
+  def do_PUT(self) -> None:
+    self._dispatch_request()
+
+  def do_DELETE(self) -> None:
+    self._dispatch_request()
+
+  def do_PATCH(self) -> None:
+    self._dispatch_request()
+
+  def do_OPTIONS(self) -> None:
+    self._dispatch_request()
+
+  def log_message(self, fmt, *args) -> None:
+    # silence default access logging; errors are logged explicitly in _dispatch_request
+    pass
+
+
+class WebrtcdHTTPServer(ThreadingHTTPServer):
+  daemon_threads = True
+  allow_reuse_address = True
+  state: ServerState
+  loop: asyncio.AbstractEventLoop
+
+
+async def _shutdown(server: WebrtcdHTTPServer, state: ServerState, loop: asyncio.AbstractEventLoop) -> None:
+  # stop accepting new HTTP connections (blocks until serve_forever returns, so
+  # run it off the loop) then tear down active stream sessions.
+  await loop.run_in_executor(None, server.shutdown)
+  await on_shutdown(state)
+  loop.stop()
 
 
 def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
@@ -475,17 +574,35 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   prewarm_end = time.monotonic()
   logging.getLogger("webrtcd").info(f"webrtc prewarm finished in {(prewarm_end - prewarm_start) * 1000} ms")
 
-  app = web.Application(middlewares=[error_middleware])
+  loop = asyncio.new_event_loop()
+  asyncio.set_event_loop(loop)
+  state = ServerState(debug)
 
-  app['streams'] = dict()
-  app['stream_lock'] = asyncio.Lock()
-  app['debug'] = debug
-  app.on_shutdown.append(on_shutdown)
-  app.router.add_post("/stream", get_stream)
-  app.router.add_post("/notify", post_notify)
-  app.router.add_get("/schema", get_schema)
+  server = WebrtcdHTTPServer((host, port), WebrtcdHandler)
+  server.state = state
+  server.loop = loop
 
-  web.run_app(app, host=host, port=port)
+  # serve HTTP on a daemon thread so the asyncio loop can own the main thread
+  http_thread = threading.Thread(target=server.serve_forever, name="webrtcd-http", daemon=True)
+  http_thread.start()
+
+  shutting_down = False
+
+  def request_shutdown() -> None:
+    nonlocal shutting_down
+    if shutting_down:
+      return
+    shutting_down = True
+    loop.create_task(_shutdown(server, state, loop))
+
+  for sig in (signal.SIGINT, signal.SIGTERM):
+    loop.add_signal_handler(sig, request_shutdown)
+
+  try:
+    loop.run_forever()
+  finally:
+    server.server_close()
+    loop.close()
 
 
 def main():
