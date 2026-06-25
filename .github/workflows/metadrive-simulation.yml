@@ -144,7 +144,8 @@ jobs:
             -v \
             --tb=short \
             --timeout=900 \
-            --log-cli-level=INFO
+            --log-cli-level=INFO \
+            -s
       - name: Print failure diagnostics
         if: failure()
         run: |
