@@ -451,7 +451,7 @@ def process_notifications(client: AtClient) -> None:
       response = es10x_command(client, request)
       content = require_tag(require_tag(response, TAG_RETRIEVE_NOTIFICATION, "RetrieveNotificationsListResponse"),
                             TAG_OK, "RetrieveNotificationsListResponse")
-      pending_notif = next((v for t, v in iter_tlv(content) if t in (TAG_PROFILE_INSTALL_RESULT, 0x30)), None)
+      pending_notif = next((content[start:end] for t, _, start, end in iter_tlv(content, with_positions=True) if t in (TAG_PROFILE_INSTALL_RESULT, 0x30)), None)
       if pending_notif is None:
         raise RuntimeError("Missing PendingNotification")
 
