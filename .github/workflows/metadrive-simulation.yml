@@ -137,6 +137,7 @@ jobs:
         timeout-minutes: 15
         run: |
           python -m pytest tools/sim/tests/test_metadrive_bridge.py::TestMetaDriveBridge::test_driving \
+            -c /dev/null \
             -v \
             --tb=short \
             --timeout=900 \
