@@ -30,6 +30,21 @@ function install_linux_deps() {
     SUDO="sudo"
   fi
 
+  function disable_github_actions_azure_cli_apt_source() {
+    if [[ -z "${GITHUB_ACTIONS:-}" || ! -d "/etc/apt/sources.list.d" ]]; then
+      return
+    fi
+
+    # GitHub-hosted Ubuntu runners preinstall an azure-cli apt source. We don't
+    # use azure-cli, and if that external repo returns 403, apt-get update fails
+    # before openpilot dependencies can be installed.
+    local source_file
+    while IFS= read -r source_file; do
+      echo "Disabling GitHub Actions azure-cli apt source: $source_file"
+      $SUDO mv "$source_file" "$source_file.disabled"
+    done < <(grep -ril "packages.microsoft.com/repos/azure-cli" /etc/apt/sources.list.d 2>/dev/null || true)
+  }
+
   local missing_linux_deps=0
   for cmd in gcc g++ make curl curl-config git; do
     if ! command -v "$cmd" > /dev/null 2>&1; then
@@ -43,6 +58,7 @@ function install_linux_deps() {
     # the native package managers are slow, so skip if we can
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
+    disable_github_actions_azure_cli_apt_source
     $SUDO apt-get update
     $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git
   elif command -v dnf > /dev/null 2>&1; then
