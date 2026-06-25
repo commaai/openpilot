@@ -292,6 +292,12 @@ def process_not_running_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   return NoEntryAlert(msg, alert_text_1="Process Not Running")
 
 
+def process_not_running_permanent(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
+  msg = ', '.join(not_running)
+  return NormalPermanentAlert("Process Not Running", msg, priority=Priority.LOW)
+
+
 def comm_issue_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   bs = [s for s in sm.data.keys() if not sm.all_checks([s, ])]
   msg = ', '.join(bs[:4])  # can't fit too many on one line
@@ -869,6 +875,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.processNotRunning: {
     ET.NO_ENTRY: process_not_running_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Process Not Running"),
+    ET.PERMANENT: process_not_running_permanent,
   },
 
   EventName.radarFault: {
