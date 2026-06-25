@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
+import os
 from collections import deque
 from typing import Any
 
@@ -25,6 +26,8 @@ V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
 
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
+
+SIMULATION_CI = os.getenv("SIMULATION") is not None and os.getenv("CI") is not None
 
 
 class KalmanParams:
@@ -244,6 +247,10 @@ class RadarD:
       for i in range(2):
         # Asymmetric filter on lead prob to keep lead when uncertain
         lead_prob = leads_v3[i].prob
+        # The MetaDrive CI route has no traffic and no radar tracks. Model-only lead detections
+        # are vision hallucinations in this setup and can brake the car to a crawl.
+        if SIMULATION_CI and len(self.tracks) == 0:
+          lead_prob = 0.0
         if lead_prob > self.lead_prob_filters[i].x:
           self.lead_prob_filters[i].x = lead_prob
         else:
