@@ -41,12 +41,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          lfs: true
+          lfs: false
 
       - name: Pull Git LFS files
         run: |
           git lfs install
-          git lfs pull
+          git lfs pull --include="openpilot/selfdrive/assets/fonts/*.ttf" --exclude=""
 
       - name: Free disk space
         run: |
