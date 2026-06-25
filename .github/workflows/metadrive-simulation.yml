@@ -115,12 +115,11 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -e .
+          python -m pip install -e ".[testing]"
           python -m pip install \
             "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal" \
             "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui" \
-            pytest-timeout \
-            pytest-xdist
+            pytest-timeout
 
       - name: Pull MetaDrive assets
         run: |
@@ -137,10 +136,9 @@ jobs:
         id: metadrive_test
         timeout-minutes: 15
         run: |
-          PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/openpilot:${PYTHONPATH:-}" "$pythonLocation/bin/python" -m pytest \
-            --rootdir="$GITHUB_WORKSPACE" \
-            -c /dev/null \
+          "$pythonLocation/bin/python" -m pytest \
             "$GITHUB_WORKSPACE/openpilot/tools/sim/tests/test_metadrive_bridge.py::TestMetaDriveBridge::test_driving" \
+            -o addopts="" \
             -v \
             --tb=short \
             --timeout=900 \
