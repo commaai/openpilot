@@ -2141,6 +2141,7 @@ struct DriverMonitoringState {
   lockoutRecoveryPercent @11 :Int8;
   alert3Count @12 :Int8;
   noResponseCount @13 :Int8;
+  noResponseForceDecel @14 :Bool;
 
   alwaysOn @3 :Bool;
   alwaysOnLockout @4 :Bool;
