@@ -139,7 +139,7 @@ jobs:
           python -m pytest \
             --rootdir="$GITHUB_WORKSPACE" \
             -c /dev/null \
-            "$GITHUB_WORKSPACE/tools/sim/tests/test_metadrive_bridge.py::TestMetaDriveBridge::test_driving" \
+            "$GITHUB_WORKSPACE/openpilot/tools/sim/tests/test_metadrive_bridge.py::TestMetaDriveBridge::test_driving" \
             -v \
             --tb=short \
             --timeout=900 \
