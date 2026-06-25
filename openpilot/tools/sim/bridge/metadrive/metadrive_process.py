@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import numpy as np
 
@@ -18,6 +19,7 @@ from openpilot.tools.sim.lib.camerad import W, H
 
 C3_POSITION = Vec3(0.0, 0, 1.22)
 C3_HPR = Vec3(0, 0,0)
+METADRIVE_CI = os.getenv("METADRIVE_CI") is not None
 
 
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
@@ -72,7 +74,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   def reset():
     env.reset()
-    env.vehicle.config["max_speed_km_h"] = 1000
+    env.vehicle.config["max_speed_km_h"] = 20 if METADRIVE_CI and test_run else 1000
     lane_idx_prev, _ = get_current_lane_info(env.vehicle)
 
     simulation_state = metadrive_simulation_state(
