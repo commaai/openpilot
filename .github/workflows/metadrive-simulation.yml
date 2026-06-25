@@ -46,7 +46,7 @@ jobs:
       - name: Pull font LFS assets
         run: |
           git lfs install
-          git lfs pull --include="openpilot/selfdrive/assets/fonts/*,openpilot/selfdrive/modeld/models/*" --exclude=""
+          git lfs pull --include="openpilot/selfdrive/assets/fonts/*,openpilot/selfdrive/assets/sounds/*,openpilot/selfdrive/modeld/models/*" --exclude=""
 
       - name: Free disk space
         run: |
