@@ -30,7 +30,7 @@ Each car brand is supported by a standard interface structure in `opendbc/car/[b
 
 For historical reasons, openpilot still contains a small amount of car-specific logic. This will eventually be migrated to opendbc or otherwise removed.
 
-* `selfdrive/car/car_specific.py`: Brand-specific event logic
+* `openpilot/selfdrive/car/car_specific.py`: Brand-specific event logic
 
 # How do I port car?
 

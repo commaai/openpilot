@@ -6,9 +6,9 @@
       "type": "pickString",
       "description": "Select the process to debug",
       "options": [
-        "selfdrive/controls/controlsd.py",
-        "system/timed/timed.py",
-        "tools/sim/run_bridge.py"
+        "openpilot/selfdrive/controls/controlsd.py",
+        "openpilot/system/timed/timed.py",
+        "openpilot/tools/sim/run_bridge.py"
       ]
     },
     {
@@ -16,7 +16,7 @@
       "type": "pickString",
       "description": "Select the process to debug",
       "options": [
-        "selfdrive/ui/ui"
+        "openpilot/selfdrive/ui/ui"
       ]
     },
     {

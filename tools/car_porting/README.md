@@ -6,13 +6,13 @@ Check out [this blog post](https://blog.comma.ai/how-to-write-a-car-port-for-ope
 
 Testing car ports in your car is very time-consuming. Check out these utilities to do basic checks on your work before running it in your car.
 
-### [Cabana](/tools/cabana/README.md)
+### [Cabana](/openpilot/tools/cabana/README.md)
 
 View your car's CAN signals through DBC files, which openpilot uses to parse and create messages that talk to the car.
 
 Example:
 ```bash
-> tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
+> openpilot/tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
 ```
 
 ### [tools/car_porting/auto_fingerprint.py](/tools/car_porting/auto_fingerprint.py)
@@ -25,17 +25,17 @@ Example:
 Attempting to add fw version for:  OUTBACK
 ```
 
-### [selfdrive/car/tests/test_car_interfaces.py](/selfdrive/car/tests/test_car_interfaces.py)
+### [openpilot/selfdrive/car/tests/test_car_interfaces.py](/openpilot/selfdrive/car/tests/test_car_interfaces.py)
 
 Finds common bugs for car interfaces, without even requiring a route.
 
 
 #### Example: Typo in signal name
 ```bash
-> pytest selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
+> pytest openpilot/selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
 
 =====================================================================
-FAILED selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
+FAILED openpilot/selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
 
 ```
 

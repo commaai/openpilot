@@ -21,8 +21,14 @@ if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
 fi
 function op_install() {
   echo "Installing op system-wide..."
-  CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
-  grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
+  OP_SH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh"
+  CMD=$(cat <<EOF
+alias op='$OP_SH "\$@"'
+_op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
+[ -n "\$BASH_VERSION" ] && complete -F _op_completions -o default op
+EOF
+)
+  grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 }
 
@@ -42,7 +48,7 @@ function retry() {
 }
 
 function op_run_command() {
-  CMD="$@"
+  CMD="$*"
 
   echo -e "${BOLD}Running command →${NC} $CMD │"
   for ((i=0; i<$((19 + ${#CMD})); i++)); do
@@ -51,7 +57,7 @@ function op_run_command() {
   echo -e "┘\n"
 
   if [[ -z "$DRY" ]]; then
-    eval "$CMD"
+    "$@"
   fi
 }
 
@@ -69,7 +75,7 @@ function op_get_openpilot_dir() {
 
   # Fallback to hardcoded directories if not found
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-  for dir in "${SCRIPT_DIR%/tools}" "$HOME/openpilot" "/data/openpilot"; do
+  for dir in "$(readlink -f "$SCRIPT_DIR/../..")" "$HOME/openpilot" "/data/openpilot"; do
     if [[ -f "$dir/launch_openpilot.sh" ]]; then
       OPENPILOT_ROOT="$dir"
       return 0
@@ -110,7 +116,7 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs files..."
-  if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
+  if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -228,7 +234,7 @@ function op_setup() {
 
 function op_auth() {
   op_before_cmd
-  op_run_command tools/lib/auth.py "$@"
+  op_run_command openpilot/tools/lib/auth.py "$@"
 }
 
 function op_activate_venv() {
@@ -292,7 +298,7 @@ function op_check() {
 
 function op_esim() {
   op_before_cmd
-  op_run_command system/hardware/esim.py "$@"
+  op_run_command openpilot/common/esim/esim.py "$@"
 }
 
 function op_build() {
@@ -301,47 +307,47 @@ function op_build() {
   cd "$CDIR"
   if [[ -f "/AGNOS" ]]; then
     # needed on AGNOS to not run out of memory
-    op_run_command system/manager/build.py
+    op_run_command openpilot/system/manager/build.py
   else
     # scons is fine on PC
-    op_run_command scons $@
+    op_run_command scons "$@"
   fi
 }
 
 function op_juggle() {
   op_before_cmd
-  op_run_command tools/plotjuggler/juggle.py $@
+  op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
 }
 
 function op_lint() {
   op_before_cmd
-  op_run_command scripts/lint/lint.sh $@
+  op_run_command scripts/lint/lint.sh "$@"
 }
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest $@
+  op_run_command pytest "$@"
 }
 
 function op_replay() {
   op_before_cmd
-  op_run_command tools/replay/replay $@
+  op_run_command openpilot/tools/replay/replay "$@"
 }
 
 function op_cabana() {
   op_before_cmd
-  op_run_command tools/cabana/cabana $@
+  op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
 function op_sim() {
   op_before_cmd
-  op_run_command exec tools/sim/run_bridge.py &
-  op_run_command exec tools/sim/launch_openpilot.sh
+  op_run_command exec openpilot/tools/sim/run_bridge.py &
+  op_run_command exec openpilot/tools/sim/launch_openpilot.sh
 }
 
 function op_clip() {
   op_before_cmd
-  op_run_command tools/clip/run.py $@
+  op_run_command openpilot/tools/clip/run.py "$@"
 }
 
 function op_switch() {
@@ -483,4 +489,4 @@ function _op() {
   esac
 }
 
-_op $@
+_op "$@"

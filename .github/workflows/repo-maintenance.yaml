@@ -46,7 +46,7 @@ jobs:
         git add .
     - name: update car docs
       run: |
-        python selfdrive/car/docs.py
+        python openpilot/selfdrive/car/docs.py
         git add docs/CARS.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
