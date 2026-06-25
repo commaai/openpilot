@@ -1,60 +1,65 @@
 import pyray as rl
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_label
 
-# onroad debug overlay: live control numbers (lat accel, curvature, ...) on the driving view
-# gated by the OnroadDebugOverlay param, mici only
+# onroad debug overlay: live actual vs desired lateral accel and model exec timing on the driving view
+# gated by the OnroadDebugOverlay param, mici only. small label over a big value so it reads at arm's
+# length on the tiny screen. top-right corner clears every other element. plain curvature * v^2, no roll comp.
 
-FONT_SIZE = 14
-PAD = 8
-BOX_W = 196
-BOX_H = 128
+LABEL_SIZE = 18
+VALUE_SIZE = 37
+PAD = 3
+ROW_GAP = 2
+TOP_MARGIN = 4
+RIGHT_GAP = 74  # right edge sits just past the widest label, clear of the confidence ball
+BOX_W = 142
+
+WHITE = rl.Color(255, 255, 255, 235)
 
 
 class DebugOverlay(Widget):
   def __init__(self):
     super().__init__()
-    self._lines: list[str] = []
+    self._label_font = gui_app.font(FontWeight.MEDIUM)
+    self._value_font = gui_app.font(FontWeight.BOLD)
+    self._rows: list[tuple[str, str]] = []
 
   def _update_state(self):
     if not ui_state.onroad_debug_overlay or not ui_state.started:
-      self._lines = []
+      self._rows = []
       return
 
     sm = ui_state.sm
-    # skip until each service has arrived since going onroad, else we'd show stale numbers as live
-    if any(sm.recv_frame[s] < ui_state.started_frame for s in ('carState', 'controlsState', 'carControl')):
-      self._lines = []
+    # skip until each service is alive and has arrived since going onroad, else we'd show stale numbers as live
+    services = ('carState', 'controlsState', 'modelV2')
+    if any(sm.recv_frame[s] < ui_state.started_frame or not sm.alive[s] for s in services):
+      self._rows = []
       return
 
-    cs = sm['carState']
     controls_state = sm['controlsState']
-    car_control = sm['carControl']
+    v_ego_sq = sm['carState'].vEgo ** 2
+    actual_lat_accel = controls_state.curvature * v_ego_sq
+    desired_lat_accel = controls_state.desiredCurvature * v_ego_sq
+    model_ms = sm['modelV2'].modelExecutionTime * 1000.0
 
-    v_ego = cs.vEgo
-    actual_lat_accel = controls_state.curvature * v_ego ** 2
-    desired_lat_accel = controls_state.desiredCurvature * v_ego ** 2
-
-    self._lines = [
-      f"v_ego      {v_ego:5.1f} m/s",
-      f"steer ang  {cs.steeringAngleDeg:5.1f} deg",
-      f"lat acc    {actual_lat_accel:5.2f}",
-      f"des acc    {desired_lat_accel:5.2f}",
-      f"acc err    {desired_lat_accel - actual_lat_accel:5.2f}",
-      f"lat act    {'Y' if car_control.latActive else 'N'}",
+    self._rows = [
+      ("actual lat accel", f"{actual_lat_accel:.2f}"),
+      ("desired lat accel", f"{desired_lat_accel:.2f}"),
+      ("model ms", f"{model_ms:.1f}"),
     ]
 
   def _render(self, rect: rl.Rectangle):
-    if not self._lines:
+    if not self._rows:
       return
 
-    # left edge, vertically centered: clears alerts/set-speed (top), wheel and torque bar (bottom), path (center)
-    box = rl.Rectangle(rect.x + 6, rect.y + (rect.height - BOX_H) / 2, BOX_W, BOX_H)
-    rl.draw_rectangle_rounded(box, 0.15, 10, rl.Color(0, 0, 0, 150))
+    row_h = LABEL_SIZE + VALUE_SIZE + ROW_GAP
+    box_h = len(self._rows) * row_h - ROW_GAP + PAD * 2
+    box = rl.Rectangle(rect.x + rect.width - BOX_W - RIGHT_GAP, rect.y + TOP_MARGIN, BOX_W, box_h)
+    rl.draw_rectangle_rounded(box, 0.12, 10, rl.Color(0, 0, 0, 150))
 
-    row_h = (box.height - PAD * 2) / len(self._lines)
-    for i, line in enumerate(self._lines):
-      row = rl.Rectangle(box.x + PAD, box.y + PAD + i * row_h, box.width - PAD * 2, row_h)
-      gui_label(row, line, FONT_SIZE, rl.Color(255, 255, 255, 235), font_weight=FontWeight.MEDIUM)
+    y = box.y + PAD
+    for label, value in self._rows:
+      rl.draw_text_ex(self._label_font, label, rl.Vector2(box.x + PAD, y), LABEL_SIZE, 0, WHITE)
+      rl.draw_text_ex(self._value_font, value, rl.Vector2(box.x + PAD, y + LABEL_SIZE + 2), VALUE_SIZE, 0, WHITE)
+      y += row_h

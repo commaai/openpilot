@@ -234,15 +234,15 @@ class AugmentedRoadView(CameraView):
     self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
-    # debug overlay yields to alerts and the set speed flash so it never blocks them
-    if alert_to_render is None and not self._hud_renderer.drawing_top_icons():
-      self._debug_overlay.render(self._content_rect)
-
     # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
     # End clipping region
     rl.end_scissor_mode()
+
+    # debug overlay on the right side of the screen
+    if ui_state.onroad_debug_overlay and alert_to_render is None:
+      self._debug_overlay.render(self.rect)
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
