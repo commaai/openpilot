@@ -1,3 +1,4 @@
+import os
 import pytest
 import warnings
 
@@ -11,7 +12,7 @@ from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 class TestMetaDriveBridge(TestSimBridgeBase):
   @pytest.fixture(autouse=True)
   def setup_create_bridge(self, test_duration):
-    self.test_duration = 30
+    self.test_duration = 120 if os.getenv("GITHUB_ACTIONS") == "true" else 30
 
   def create_bridge(self):
     return MetaDriveBridge(False, False, self.test_duration, True)
