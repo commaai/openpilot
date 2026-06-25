@@ -86,7 +86,7 @@ class LocationEstimator:
 
   def _validate_timestamp(self, t: float):
     kf_t = self.kf.t
-    invalid = not np.isnan(kf_t) and (kf_t - t) > MAX_FILTER_REWIND_TIME
+    invalid = kf_t is not None and not np.isnan(kf_t) and (kf_t - t) > MAX_FILTER_REWIND_TIME
     if invalid:
       cloudlog.warning("Observation timestamp is older than the max rewind threshold of the filter")
     return not invalid
@@ -96,6 +96,31 @@ class LocationEstimator:
     if not all_finite:
       cloudlog.error("Non-finite values detected, kalman reset")
       self.reset(t)
+
+  def _predict_and_observe_camera_odometry(self, t: float, rot_device: np.ndarray, rot_device_noise: np.ndarray,
+                                           trans_device: np.ndarray, trans_device_noise: np.ndarray):
+    ekf = self.kf.filter
+    # Camera rotation and translation have the same delayed timestamp. Rewind once, apply both updates,
+    # then fast-forward once instead of replaying all newer IMU observations twice.
+    if ekf.filter_time is not None and t < ekf.filter_time:
+      if len(ekf.rewind_t) == 0 or t < ekf.rewind_t[0] or t < ekf.rewind_t[-1] - ekf.max_rewind_age:
+        ekf.logger.error(f"observation too old at {t:.3f} with filter at {ekf.filter_time:.3f}, ignoring")
+        return None, None
+      rewound = ekf.rewind(t)
+    else:
+      rewound = []
+
+    rot_R = np.array([np.diag(rot_device_noise)])
+    trans_R = np.array([np.diag(trans_device_noise)])
+    cam_odo_rot_res = ekf._predict_and_update_batch(t, ObservationKind.CAMERA_ODO_ROTATION, np.atleast_2d(rot_device),
+                                                    rot_R, [[]])
+    cam_odo_trans_res = ekf._predict_and_update_batch(t, ObservationKind.CAMERA_ODO_TRANSLATION,
+                                                      np.atleast_2d(trans_device), trans_R, [[]])
+
+    for r in rewound:
+      ekf._predict_and_update_batch(*r)
+
+    return cam_odo_rot_res, cam_odo_trans_res
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
     new_x, new_P = None, None
@@ -190,8 +215,8 @@ class LocationEstimator:
       rot_device_noise = rot_device_std ** 2
       trans_device_noise = trans_device_std ** 2
 
-      cam_odo_rot_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_ROTATION, rot_device, np.array([np.diag(rot_device_noise)]))
-      cam_odo_trans_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, np.array([np.diag(trans_device_noise)]))
+      cam_odo_rot_res, cam_odo_trans_res = self._predict_and_observe_camera_odometry(t, rot_device, rot_device_noise,
+                                                                                     trans_device, trans_device_noise)
       self.camodo_yawrate_distribution =  np.array([rot_device[2], rot_device_std[2]])
       if cam_odo_rot_res is not None:
         _, new_x, _, new_P, _, _, (cam_odo_rot_err,), _, _ = cam_odo_rot_res
@@ -209,7 +234,8 @@ class LocationEstimator:
   def get_msg(self, sensors_valid: bool, inputs_valid: bool, filter_initialized: bool):
     state, cov = self.kf.x, self.kf.P
     std = np.sqrt(np.diag(cov))
-    filter_time_valid = bool(np.isfinite(self.kf.t))
+    kf_t = self.kf.t
+    filter_time_valid = kf_t is not None and bool(np.isfinite(kf_t))
     filter_valid = filter_initialized and filter_time_valid
 
     orientation_ned, orientation_ned_std = state[States.NED_ORIENTATION], std[States.NED_ORIENTATION]
@@ -241,7 +267,7 @@ class LocationEstimator:
     livePose.inputsOK = inputs_valid
     livePose.posenetOK = not std_spike or self.car_speed <= 5.0
     livePose.sensorsOK = sensors_valid
-    livePose.timestamp = int(np.nan_to_num(self.kf.t) * 1e9)
+    livePose.timestamp = int(np.nan_to_num(kf_t) * 1e9) if kf_t is not None else 0
 
     return msg
 

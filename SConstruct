@@ -233,9 +233,6 @@ Export('messaging')
 # Build other submodules
 SConscript(['panda/SConscript'])
 
-# Build rednose library
-SConscript(['rednose/SConscript'])
-
 # Build system services
 SConscript([
   'openpilot/system/loggerd/SConscript',

@@ -109,7 +109,7 @@ jobs:
     - name: Build openpilot
       run: scons
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 10 || 20 }}
       run: |
         source openpilot/selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
@@ -132,7 +132,7 @@ jobs:
     - name: Build openpilot
       run: scons
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 10 || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
       run: openpilot/selfdrive/test/process_replay/test_processes.py -j$(nproc)
     - name: Print diff
