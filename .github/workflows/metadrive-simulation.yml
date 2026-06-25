@@ -33,6 +33,7 @@ jobs:
       SIMULATION: "1"
       PASSIVE: "0"
       SKIP_FW_QUERY: "1"
+      ONNXCPU: 1
       CI: "true"
       PYTHONUNBUFFERED: "1"
 
@@ -177,7 +178,7 @@ jobs:
             echo "----- $f -----"
             tail -200 "$f" || true
           done
-          
+
       - name: Print simulation logs on failure
         if: failure()
         run: |
