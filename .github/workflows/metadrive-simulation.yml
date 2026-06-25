@@ -137,7 +137,7 @@ jobs:
         id: metadrive_test
         timeout-minutes: 15
         run: |
-          sudo -E nice -n -10 "$pythonLocation/bin/python" -m pytest \
+          PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/openpilot:${PYTHONPATH:-}" "$pythonLocation/bin/python" -m pytest \
             --rootdir="$GITHUB_WORKSPACE" \
             -c /dev/null \
             "$GITHUB_WORKSPACE/openpilot/tools/sim/tests/test_metadrive_bridge.py::TestMetaDriveBridge::test_driving" \
