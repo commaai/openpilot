@@ -19,7 +19,7 @@ from openpilot.common.hardware import HARDWARE
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+AudibleAlert = log.SelfdriveState.AudibleAlert
 EventName = log.OnroadEvent.EventName
 
 
@@ -118,7 +118,7 @@ class Alert:
                alert_size: log.SelfdriveState.AlertSize,
                priority: Priority,
                visual_alert: car.CarControl.HUDControl.VisualAlert,
-               audible_alert: car.CarControl.HUDControl.AudibleAlert,
+               audible_alert: log.SelfdriveState.AudibleAlert,
                duration: float,
                creation_delay: float = 0.):
 
@@ -183,7 +183,7 @@ class ImmediateDisableAlert(Alert):
 
 
 class EngagementAlert(Alert):
-  def __init__(self, audible_alert: car.CarControl.HUDControl.AudibleAlert):
+  def __init__(self, audible_alert: log.SelfdriveState.AudibleAlert):
     super().__init__("", "",
                      AlertStatus.normal, AlertSize.none,
                      Priority.MID, VisualAlert.none,
@@ -518,7 +518,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Pay Attention",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+      Priority.LOW, VisualAlert.none, AudibleAlert.preAlert, .1),
   },
 
   EventName.driverDistracted2: {
@@ -1038,7 +1038,7 @@ if HARDWARE.get_device_type() == 'mici':
         "Pay Attention",
         "",
         AlertStatus.normal, AlertSize.small,
-        Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
+        Priority.LOW, VisualAlert.none, AudibleAlert.preAlert, 2),
     },
     EventName.driverDistracted2: {
       ET.PERMANENT: Alert(

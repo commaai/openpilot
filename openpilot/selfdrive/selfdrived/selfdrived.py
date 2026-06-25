@@ -189,10 +189,13 @@ class SelfdriveD:
 
     # Handle DM
     if not self.CP.notCar:
-      # Block engaging until ignition cycle after max number or time of distractions
+      # Block engaging until lockout times out or ignition reset
       if self.sm['driverMonitoringState'].lockout and not self.dm_lockout_set:
         self.params.put_bool("DriverTooDistracted", True)
         self.dm_lockout_set = True
+      elif not self.sm['driverMonitoringState'].lockout and self.dm_lockout_set:
+        self.params.remove("DriverTooDistracted")
+        self.dm_lockout_set = False
       # No entry conditions
       if self.sm['driverMonitoringState'].lockout or self.sm['driverMonitoringState'].alwaysOnLockout:
         self.events.add(EventName.tooDistracted)

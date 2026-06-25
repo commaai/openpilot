@@ -771,7 +771,7 @@ struct SelfdriveState {
   alertStatus @5 :AlertStatus;
   alertSize @6 :AlertSize;
   alertType @7 :Text;
-  alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
+  alertSound @8 :AudibleAlert;
   alertHudVisual @12 :Car.CarControl.HUDControl.VisualAlert;
 
   # configurable driving settings
@@ -797,6 +797,24 @@ struct SelfdriveState {
     small @1;
     mid @2;
     full @3;
+  }
+
+  enum AudibleAlert {
+    none @0;
+
+    engage @1;
+    disengage @2;
+    refuse @3;
+
+    warningSoft @4;
+    warningImmediate @5;
+
+    prompt @6;
+    promptRepeat @7;
+    promptDistracted @8;
+
+    confirmation @9;
+    preAlert @10;
   }
 }
 
@@ -918,7 +936,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     alertStatus @38 :SelfdriveState.AlertStatus;
     alertSize @39 :SelfdriveState.AlertSize;
     alertType @44 :Text;
-    alertSound2 @56 :Car.CarControl.HUDControl.AudibleAlert;
+    alertSound2 @56 :SelfdriveState.AudibleAlert;
     engageable @41 :Bool;  # can OP be engaged?
     state @31 :SelfdriveState.OpenpilotState;
     enabled @19 :Bool;
@@ -2120,8 +2138,9 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
 
 struct DriverMonitoringState {
   lockout @0 :Bool;
-  alertCountLockoutPercent @1 :Int8;
-  alertTimeLockoutPercent @2 :Int8;
+  lockoutRecoveryPercent @11 :Int8;
+  alert3Count @12 :Int8;
+  noResponseCount @13 :Int8;
 
   alwaysOn @3 :Bool;
   alwaysOnLockout @4 :Bool;
@@ -2184,6 +2203,11 @@ struct DriverMonitoringState {
   struct CalibrationState {
     calibratedPercent @0 :Int8;
     offset @1 :Float32;
+  }
+
+  deprecated :group {
+    alertCountLockoutPercent @1 :Int8;
+    alertTimeLockoutPercent @2 :Int8;
   }
 }
 
