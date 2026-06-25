@@ -27,13 +27,13 @@ jobs:
       DISPLAY: ":99"
       LIBGL_ALWAYS_SOFTWARE: "1"
       GALLIUM_DRIVER: "llvmpipe"
-      LP_NUM_THREADS: "4"
+      LP_NUM_THREADS: "2"
       MESA_GL_VERSION_OVERRIDE: "3.3"
       MESA_GLSL_VERSION_OVERRIDE: "330"
       SIMULATION: "1"
       PASSIVE: "0"
       SKIP_FW_QUERY: "1"
-      ONNXCPU: 1
+      ONNXCPU: "1"
       CI: "true"
       PYTHONUNBUFFERED: "1"
 
