@@ -33,7 +33,7 @@ def execute_and_process_notifications(lpa: LPABase, operation) -> None:
   try:
     operation()
   finally:
-    time.sleep(1)
+    time.sleep(1)  # Need to wait for 1s after the operation is finished so the eUICC/modem can settle down.
     try:
       lpa.process_notifications()
     except Exception as e:
