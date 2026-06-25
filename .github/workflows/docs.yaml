@@ -45,7 +45,7 @@ jobs:
       run: |
         set -x
 
-        source release/identity.sh
+        source tools/release/identity.sh
 
         cd openpilot-docs
         git checkout --orphan tmp

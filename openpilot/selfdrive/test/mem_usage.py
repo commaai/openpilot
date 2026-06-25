@@ -1,12 +1,9 @@
-#!/usr/bin/env python3
-import argparse
 import os
 from collections import defaultdict
 
 import numpy as np
 
 from openpilot.common.utils import tabulate
-from openpilot.tools.lib.logreader import LogReader
 
 DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
 MB = 1024 * 1024
@@ -210,29 +207,3 @@ def print_report(proc_logs, device_states=None):
 
   print_process_tables(op_procs, other_procs, total_mb, use_pss)
   print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss)
-
-
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Analyze memory usage from route logs")
-  parser.add_argument("route", nargs="?", default=None, help="route ID or local rlog path")
-  parser.add_argument("--demo", action="store_true", help=f"use demo route ({DEMO_ROUTE})")
-  args = parser.parse_args()
-
-  if args.demo:
-    route = DEMO_ROUTE
-  elif args.route:
-    route = args.route
-  else:
-    parser.error("provide a route or use --demo")
-
-  print(f"Reading logs from: {route}")
-
-  proc_logs = []
-  device_states = []
-  for msg in LogReader(route):
-    if msg.which() == 'procLog':
-      proc_logs.append(msg)
-    elif msg.which() == 'deviceState':
-      device_states.append(msg)
-
-  print_report(proc_logs, device_states)

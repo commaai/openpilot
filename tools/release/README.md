@@ -11,7 +11,7 @@
   - [ ] push the new branch
 - [ ] push to staging:
   - [ ] make sure you are on the newly created release master branch (`zerotentwo`)
-  - [ ] run `BRANCH=devel-staging release/build_stripped.sh`. Jenkins will then automatically build staging on device, run `test_onroad` and update the staging branch
+  - [ ] run `BRANCH=devel-staging tools/release/build_stripped.sh`. Jenkins will then automatically build staging on device, run `test_onroad` and update the staging branch
 - [ ] bump version on master: `openpilot/common/version.h` and `RELEASES.md`
 - [ ] post on Discord, tag `@release crew`
 
