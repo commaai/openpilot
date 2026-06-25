@@ -118,8 +118,8 @@ jobs:
           python -m pip install \
             "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal" \
             "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui" \
-            pytest-timeout
-
+            pytest-timeout \
+            pytest-xdist
 
       - name: Pull MetaDrive assets
         run: |
