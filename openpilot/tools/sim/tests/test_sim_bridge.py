@@ -118,4 +118,4 @@ class TestSimBridgeBase:
     log_root = Paths.log_root()
     if os.path.exists(log_root):
       shutil.rmtree(save_dir, ignore_errors=True)
-      shutil.copytree(log_root, save_dir)
+      shutil.copytree(log_root, save_dir, ignore=shutil.ignore_patterns("*.lock"))
