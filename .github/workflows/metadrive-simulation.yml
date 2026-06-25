@@ -35,6 +35,7 @@ jobs:
       SKIP_FW_QUERY: "1"
       ONNXCPU: "1"
       CI: "true"
+      CI_DISABLE_SOUNDD: "1"
       PYTHONUNBUFFERED: "1"
 
     steps:
@@ -110,6 +111,7 @@ jobs:
           sleep 2
           pactl load-module module-null-sink sink_name=virtual-speaker || true
           pactl set-default-sink virtual-speaker || true
+          pactl info || true
           pactl list sinks short || true
 
       - name: Install Python dependencies
