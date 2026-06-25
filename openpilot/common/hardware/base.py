@@ -1,3 +1,4 @@
+import math
 import os
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, fields
@@ -28,8 +29,9 @@ class ThermalZone:
     try:
       with open(f"/sys/devices/virtual/thermal/thermal_zone{self.zone_number}/temp") as f:
         return int(f.read()) / self.scale
-    except FileNotFoundError:
-      return 0
+    except (OSError, ValueError):
+      # the zone doesn't exist, or the underlying sensor read failed (e.g. a PMIC regmap error)
+      return math.nan
 
 @dataclass
 class ThermalConfig:
