@@ -41,7 +41,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          lfs: false
+          lfs: true
+
+      - name: Pull Git LFS files
+        run: |
+          git lfs install
+          git lfs pull
 
       - name: Free disk space
         run: |
