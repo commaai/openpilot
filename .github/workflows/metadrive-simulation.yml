@@ -144,7 +144,40 @@ jobs:
             --tb=short \
             --timeout=900 \
             --log-cli-level=INFO
+      - name: Print failure diagnostics
+        if: failure()
+        run: |
+          echo "=== Disk ==="
+          df -h || true
 
+          echo "=== Memory ==="
+          free -h || true
+
+          echo "=== OOM / kernel messages ==="
+          dmesg -T | grep -Ei "killed process|out of memory|oom|modeld|python" | tail -100 || true
+
+          echo "=== Running processes ==="
+          ps aux | sort -nrk 4 | head -40 || true
+
+          echo "=== Find logs ==="
+          find /tmp "$HOME/.comma"* "$GITHUB_WORKSPACE" -type f \( \
+            -name "*.log" -o \
+            -name "crash*" -o \
+            -name "error*" -o \
+            -name "*.txt" \
+          \) 2>/dev/null | sort | head -200
+
+          echo "=== Tail logs ==="
+          for f in $(find /tmp "$HOME/.comma"* "$GITHUB_WORKSPACE" -type f \( \
+            -name "*.log" -o \
+            -name "crash*" -o \
+            -name "error*" \
+          \) 2>/dev/null | sort | head -80); do
+            echo ""
+            echo "----- $f -----"
+            tail -200 "$f" || true
+          done
+          
       - name: Print simulation logs on failure
         if: failure()
         run: |
