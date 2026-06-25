@@ -51,13 +51,17 @@ class MetaDriveWorld(World):
     print("---- Spawning Metadrive world, this might take awhile ----")
     print("----------------------------------------------------------")
 
-    self.vehicle_last_pos = self.vehicle_state_recv.recv().position # wait for a state message to ensure metadrive is launched
+    self.vehicle_last_pos = self._position_tuple(self.vehicle_state_recv.recv().position) # wait for a state message to ensure metadrive is launched
     self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "started"))
 
     self.steer_ratio = 15
     self.vc = [0.0,0.0]
     self.reset_time = 0
     self.should_reset = False
+
+  @staticmethod
+  def _position_tuple(position):
+    return (float(position[0]), float(position[1]))
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
@@ -84,7 +88,7 @@ class MetaDriveWorld(World):
   def read_sensors(self, state: SimulatorState):
     while self.vehicle_state_recv.poll(0):
       md_vehicle: metadrive_vehicle_state = self.vehicle_state_recv.recv()
-      curr_pos = md_vehicle.position
+      curr_pos = self._position_tuple(md_vehicle.position)
 
       state.velocity = md_vehicle.velocity
       state.bearing = md_vehicle.bearing
