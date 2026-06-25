@@ -43,10 +43,10 @@ jobs:
           submodules: recursive
           lfs: false
 
-      - name: Pull Git LFS files
+      - name: Pull font LFS assets
         run: |
           git lfs install
-          git lfs pull --include="openpilot/selfdrive/assets/fonts/*.ttf" --exclude=""
+          git lfs pull --include="openpilot/selfdrive/assets/fonts/*" --exclude=""
 
       - name: Free disk space
         run: |
