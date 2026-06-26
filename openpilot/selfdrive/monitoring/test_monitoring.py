@@ -1,5 +1,3 @@
-import numpy as np
-
 from openpilot.cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.selfdrive.monitoring.policy import DriverMonitoring, DRIVER_MONITOR_SETTINGS
