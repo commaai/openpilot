@@ -35,9 +35,8 @@ class DRIVER_MONITOR_SETTINGS:
     self._VISION_POLICY_ALERT_2_TIMEOUT = 8.
     self._VISION_POLICY_ALERT_3_TIMEOUT = 13.
 
-    # no response = alert_3 sustained for certain amount of time; timeouts are 10s after alert_2
-    self._WHEELTOUCH_POLICY_NO_RESPONSE_TIMEOUT = 0. # 15 + 10 - 25
-    self._VISION_POLICY_NO_RESPONSE_TIMEOUT = 5. # 8 + 10 - 13
+    # no response = alert_3 sustained for certain amount of time
+    self._NO_RESPONSE_TIMEOUT = 5.
 
     # lockout specs
     self._MAX_ALERT_3 = 2
@@ -151,7 +150,7 @@ class DriverMonitoring:
     self.face_detected = False
     self.alert_3_cnt = 0
     self.cnt_since_alert_3 = 0
-    self.no_response_timeout = 0
+    self.no_response_timeout = int(self.settings._NO_RESPONSE_TIMEOUT / DT_DMON)
     self.no_response_cnt = 0
     self.lockout_time = 0
     self.step_change = 0.
@@ -193,7 +192,6 @@ class DriverMonitoring:
       self.threshold_alert_1 = 1. - self.settings._VISION_POLICY_ALERT_1_TIMEOUT / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       self.threshold_alert_2 = 1. - self.settings._VISION_POLICY_ALERT_2_TIMEOUT / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
       self.step_change = DT_DMON / self.settings._VISION_POLICY_ALERT_3_TIMEOUT
-      self.no_response_timeout = int(self.settings._VISION_POLICY_NO_RESPONSE_TIMEOUT / DT_DMON)
       self.active_policy = MonitoringPolicy.vision
     else:
       if self.active_policy == MonitoringPolicy.vision:
@@ -203,7 +201,6 @@ class DriverMonitoring:
       self.threshold_alert_1 = 1. - self.settings._WHEELTOUCH_POLICY_ALERT_1_TIMEOUT / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
       self.threshold_alert_2 = 1. - self.settings._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
       self.step_change = DT_DMON / self.settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT
-      self.no_response_timeout = int(self.settings._WHEELTOUCH_POLICY_NO_RESPONSE_TIMEOUT / DT_DMON)
       self.active_policy = MonitoringPolicy.wheeltouch
 
   def _set_pose_strictness(self, brake_disengage_prob, car_speed):

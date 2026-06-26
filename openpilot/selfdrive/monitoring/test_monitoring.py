@@ -92,7 +92,7 @@ class TestMonitoring:
     assert d_status.too_distracted
     assert d_status.lockout_time > 0
 
-  # no face -> wheeltouch red logs an immediate unavailability response (no-response timeout is 0)
+  # no face -> wheeltouch red, sustained past the no-response timeout -> unavailability response + lockout
   def test_invisible_lockout(self):
     _, d_status = self._run_seq(always_no_face, always_false, always_true, always_false)
     s = d_status.settings
