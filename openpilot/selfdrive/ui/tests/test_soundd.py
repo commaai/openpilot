@@ -1,5 +1,4 @@
-from openpilot.cereal import log
-from openpilot.cereal import messaging
+from openpilot.cereal import log, messaging
 from openpilot.cereal.messaging import SubMaster, PubMaster
 from openpilot.selfdrive.ui.soundd import SELFDRIVE_STATE_TIMEOUT, check_selfdrive_timeout_alert
 

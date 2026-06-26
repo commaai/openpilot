@@ -10,8 +10,9 @@ from opendbc.car.structs import car
 import openpilot.cereal.messaging as messaging
 from openpilot.common.constants import CV
 from openpilot.common.git import get_short_branch
-from openpilot.common.realtime import DT_CTRL
+from openpilot.common.realtime import DT_CTRL, DT_DMON
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
+from openpilot.selfdrive.monitoring.policy import DRIVER_MONITOR_SETTINGS
 from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
 from openpilot.selfdrive.ui.feedback.feedbackd import FEEDBACK_MAX_DURATION
 from openpilot.common.hardware import HARDWARE
@@ -22,6 +23,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = log.SelfdriveState.AudibleAlert
 EventName = log.OnroadEvent.EventName
 
+DMON_LOCKOUT_TIME = DRIVER_MONITOR_SETTINGS()._LOCKOUT_TIME
 
 # Alert priorities
 class Priority(IntEnum):
@@ -262,6 +264,13 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
     f"Drive Above {get_display_speed(MIN_SPEED_FILTER, metric)}",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
+
+
+def too_distracted_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  if sm['driverMonitoringState'].lockout:
+    mins_left = max(1, round((100 - sm['driverMonitoringState'].lockoutRecoveryPercent) / 100 * DMON_LOCKOUT_TIME * DT_DMON / 60.))
+    return NoEntryAlert("Too Distracted", f"{mins_left} minute{'s' if mins_left != 1 else ''} Left")
+  return NoEntryAlert("Pay Attention to Engage")
 
 
 def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
@@ -518,7 +527,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Pay Attention",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+      Priority.LOW, VisualAlert.none, AudibleAlert.preAlert, .1),
   },
 
   EventName.driverDistracted2: {
@@ -785,7 +794,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.tooDistracted: {
-    ET.NO_ENTRY: NoEntryAlert("Distraction Level Too High"),
+    ET.NO_ENTRY: too_distracted_alert,
   },
 
   EventName.excessiveActuation: {
@@ -1038,7 +1047,7 @@ if HARDWARE.get_device_type() == 'mici':
         "Pay Attention",
         "",
         AlertStatus.normal, AlertSize.small,
-        Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
+        Priority.LOW, VisualAlert.none, AudibleAlert.preAlert, 2),
     },
     EventName.driverDistracted2: {
       ET.PERMANENT: Alert(

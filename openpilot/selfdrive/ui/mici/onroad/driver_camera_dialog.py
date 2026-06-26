@@ -106,6 +106,7 @@ class BaseDriverCameraDialog(Widget):
 
     AudibleAlert = log.SelfdriveState.AudibleAlert
     ALERT_SOUNDS = {
+      'one': AudibleAlert.preAlert,
       'two': AudibleAlert.promptDistracted,
       'three': AudibleAlert.warningImmediate,
     }
