@@ -791,6 +791,8 @@ struct SelfdriveState {
     prompt @6;
     promptRepeat @7;
     promptDistracted @8;
+
+    preAlert @9;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
