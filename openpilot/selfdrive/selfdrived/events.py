@@ -23,6 +23,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = log.SelfdriveState.AudibleAlert
 EventName = log.OnroadEvent.EventName
 
+DMON_LOCKOUT_TIME = DRIVER_MONITOR_SETTINGS()._LOCKOUT_TIME
 
 # Alert priorities
 class Priority(IntEnum):
@@ -267,8 +268,8 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
 
 def too_distracted_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   if sm['driverMonitoringState'].lockout:
-    mins_left = round((100 - sm['driverMonitoringState'].lockoutRecoveryPercent) / 100 * DRIVER_MONITOR_SETTINGS()._LOCKOUT_TIME * DT_DMON / 60.)
-    return NoEntryAlert(f"Too Distracted: {max(1, mins_left)} min Left")
+    mins_left = round((100 - sm['driverMonitoringState'].lockoutRecoveryPercent) / 100 * DMON_LOCKOUT_TIME * DT_DMON / 60.)
+    return NoEntryAlert("Too Distracted", f"{max(1, mins_left)} min Left")
   return NoEntryAlert("Pay Attention to Engage")
 
 
