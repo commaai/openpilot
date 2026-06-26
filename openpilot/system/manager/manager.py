@@ -209,7 +209,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  unblock_stdout()
+  # forkpty is unsafe on macOS when the MetaDrive subprocess will later initialize
+  # Cocoa/Panda3D — the inherited PTY fd state causes hangs. Skip it for sim runs.
+  if not (sys.platform == "darwin" and os.getenv("SIMULATION") == "1"):
+    unblock_stdout()
 
   try:
     main()
