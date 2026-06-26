@@ -7,7 +7,7 @@ Those commands must be run in the root directory of openpilot, **not /docs**
 
 **1. Install the docs dependencies**
 ``` bash
-uv pip install .[docs]
+uv pip install '.[docs]'
 ```
 
 **2. Build the new site**
