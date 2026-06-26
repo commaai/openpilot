@@ -34,7 +34,7 @@ def fft_next_good_size(n: int) -> int:
 
 
 def parabolic_peak_interp(R, max_index):
-  if max_index == 0 or max_index == len(R) - 1:
+  if max_index <= 0 or max_index >= len(R) - 1:
     return max_index
 
   y_m1, y_0, y_p1 = R[max_index - 1], R[max_index], R[max_index + 1]
