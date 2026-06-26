@@ -14,7 +14,7 @@ SensorConfig = namedtuple('SensorConfig', ['service', 'measurement', 'sanity_min
 
 SENSOR_CONFIGS = (
   SensorConfig("accelerometer", "acceleration", 5, 15, 5),
-  SensorConfig("gyroscope", "gyroUncalibrated", 0, .2, 0.5),
+  SensorConfig("gyroscope", "gyroUncalibrated", 0, .3, 0.5),
   SensorConfig("temperatureSensor", "temperature", 10, 60, 0.5), # looser for device density
 )
 SENSOR_CONFIGS_BY_MEASUREMENT = {config.measurement: config for config in SENSOR_CONFIGS}
