@@ -378,8 +378,8 @@ class TestCarModelBase(unittest.TestCase):
         to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
         self.assertTrue(self.safety.safety_tx_hook(to_send),
                         f"panda safety TX blocked msg: addr={hex(addr)}, bus={bus}, "
-                        f"enabled={enabled}, lat_active={lat_active}, long_active={long_active}, "
-                        f"controls_allowed={controls_allowed}, cruise_engaged={cruise_engaged}")
+                        + f"enabled={enabled}, lat_active={lat_active}, long_active={long_active}, "
+                        + f"controls_allowed={controls_allowed}, cruise_engaged={cruise_engaged}")
 
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
