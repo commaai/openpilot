@@ -1,4 +1,5 @@
 import os
+import math
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, fields
 
@@ -20,16 +21,22 @@ class ThermalZone:
       for n in os.listdir("/sys/devices/virtual/thermal"):
         if not n.startswith("thermal_zone"):
           continue
-        with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
-          if f.read().strip() == self.name:
-            self.zone_number = int(n.removeprefix("thermal_zone"))
-            break
+        try:
+          with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
+            if f.read().strip() == self.name:
+              self.zone_number = int(n.removeprefix("thermal_zone"))
+              break
+        except OSError:
+          continue
+
+    if self.zone_number < 0:
+      return math.nan
 
     try:
       with open(f"/sys/devices/virtual/thermal/thermal_zone{self.zone_number}/temp") as f:
         return int(f.read()) / self.scale
-    except FileNotFoundError:
-      return 0
+    except (OSError, ValueError):
+      return math.nan
 
 @dataclass
 class ThermalConfig:

@@ -341,10 +341,14 @@ def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.Sub
   return NoEntryAlert(alert_text_1=title, alert_text_2=text)
 
 def overheat_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  cpu = max(sm['deviceState'].cpuTempC, default=0.)
-  gpu = max(sm['deviceState'].gpuTempC, default=0.)
-  temp = max((cpu, gpu, sm['deviceState'].memoryTempC))
-  return NormalPermanentAlert("System Overheated", f"{temp:.0f} °C")
+  temps = [
+    *sm['deviceState'].cpuTempC,
+    *sm['deviceState'].gpuTempC,
+    sm['deviceState'].memoryTempC,
+    sm['deviceState'].maxTempC,
+  ]
+  temp = max((t for t in temps if math.isfinite(t)), default=math.nan)
+  return NormalPermanentAlert("System Overheated", f"{temp:.0f} °C" if math.isfinite(temp) else "Temperature unavailable")
 
 
 def low_memory_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:

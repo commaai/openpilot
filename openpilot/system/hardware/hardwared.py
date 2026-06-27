@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import fcntl
+import math
 import os
 import queue
 import struct
 import threading
 import time
 from collections import OrderedDict, namedtuple
+from collections.abc import Iterable
 
 import psutil
 
@@ -65,6 +67,10 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
     return
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
   set_offroad_alert(offroad_alert, show_alert, extra_text)
+
+def max_finite(values: Iterable[float]) -> float | None:
+  finite_values = [v for v in values if math.isfinite(v)]
+  return max(finite_values, default=None)
 
 def touch_thread(end_event):
   count = 0
@@ -249,17 +255,18 @@ def hardware_thread(end_event, hw_queue) -> None:
     # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC, default=0.),
-      max(msg.deviceState.gpuTempC, default=0.),
+      *msg.deviceState.cpuTempC,
+      *msg.deviceState.gpuTempC,
     ]
-    offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
+    offroad_temp = max_finite(temp_sources)
+    offroad_comp_temp = offroad_temp_filter.update(offroad_temp) if offroad_temp is not None else math.nan
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
-    all_comp_temp = all_temp_filter.update(max(temp_sources))
+    all_temp = max_finite([*temp_sources, *msg.deviceState.pmicTempC])
+    all_comp_temp = all_temp_filter.update(all_temp) if all_temp is not None else math.nan
     msg.deviceState.maxTempC = all_comp_temp
 
-    msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
+    msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp if math.isfinite(all_comp_temp) else 0., onroad_conditions["ignition"])
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
@@ -295,7 +302,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.critical
-    extra_text = f"{offroad_comp_temp:.1f}C"
+    extra_text = f"{offroad_comp_temp:.1f}C" if math.isfinite(offroad_comp_temp) else "N/A"
     show_alert = (not onroad_conditions["device_temp_good"] or not startup_conditions["device_temp_engageable"]) and onroad_conditions["ignition"]
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
