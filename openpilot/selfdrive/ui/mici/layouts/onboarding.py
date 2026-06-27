@@ -100,7 +100,7 @@ class TrainingGuideDMTutorial(NavWidget):
     self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 42, 42))
     self._good_button.set_touch_valid_callback(lambda: self.enabled and not self.is_dismissing)  # for nav stack
 
-    self._good_button.set_click_callback(continue_callback)
+    self._good_button.set_click_callback(lambda: self._complete(continue_callback))
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
@@ -111,12 +111,21 @@ class TrainingGuideDMTutorial(NavWidget):
     def inactivity_callback():
       ui_state.params.put_bool("IsDriverViewEnabled", False)
 
-    device.add_interactive_timeout_callback(inactivity_callback)
+    self._inactivity_callback = inactivity_callback
 
   def show_event(self):
     super().show_event()
     self._dialog.show_event()
+    device.add_interactive_timeout_callback(self._inactivity_callback)
     self._progress.x = 0.0
+
+  def hide_event(self):
+    super().hide_event()
+    device.remove_interactive_timeout_callback(self._inactivity_callback)
+
+  def _complete(self, continue_callback: Callable[[], None]):
+    device.remove_interactive_timeout_callback(self._inactivity_callback)
+    continue_callback()
 
   def _update_state(self):
     super()._update_state()
