@@ -2,12 +2,13 @@ import random
 import numpy as np
 
 from openpilot.cereal import messaging
-from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params, migrate_cached_vehicle_params_if_needed
-from openpilot.selfdrive.locationd.models.car_kf import CarKalman
+from openpilot.selfdrive.locationd.paramsd import VehicleParamsLearner, retrieve_initial_vehicle_params, migrate_cached_vehicle_params_if_needed
+from openpilot.selfdrive.locationd.models.car_kf import CarKalman, States
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
 from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader
+from opendbc.car.structs import car
 
 
 def get_random_live_parameters(CP):
@@ -17,6 +18,53 @@ def get_random_live_parameters(CP):
   msg.liveParameters.angleOffsetAverageDeg = random.random()
   msg.liveParameters.debugFilterState.std = [random.random() for _ in range(CarKalman.P_initial.shape[0])]
   return msg
+
+
+def _make_car_state(speed: float, gear: car.CarState.GearShifter, steering_angle: float = 0.0):
+  msg = messaging.new_message('carState')
+  msg.carState.vEgo = speed
+  msg.carState.gearShifter = gear
+  msg.carState.steeringAngleDeg = steering_angle
+  return msg.carState
+
+
+class TestVehicleParamsLearner:
+  def _make_learner(self):
+    CP = car.CarParams()
+    CP.mass = 1700
+    CP.rotationalInertia = 2500
+    CP.centerToFront = 1.2
+    CP.wheelbase = 2.7
+    CP.tireStiffnessFront = 1.0
+    CP.tireStiffnessRear = 1.0
+    CP.steerRatio = 13.0
+    return VehicleParamsLearner(CP, steer_ratio=13.0, stiffness_factor=1.0, angle_offset=0.0)
+
+  def test_not_active_in_reverse(self):
+    learner = self._make_learner()
+    # Speed above MIN_ACTIVE_SPEED but in reverse — must not activate
+    cs = _make_car_state(speed=3.0, gear=car.CarState.GearShifter.reverse)
+    learner.handle_log(0.0, 'carState', cs)
+    assert not learner.active, "paramsd must not activate while in reverse gear"
+
+  def test_active_in_drive(self):
+    learner = self._make_learner()
+    cs = _make_car_state(speed=3.0, gear=car.CarState.GearShifter.drive)
+    learner.handle_log(0.0, 'carState', cs)
+    assert learner.active, "paramsd should activate when driving forward"
+
+  def test_stiffness_unchanged_during_reverse(self):
+    learner = self._make_learner()
+    initial_stiffness = float(learner.kf.x[States.STIFFNESS].item())
+
+    # Simulate reverse at walking speed
+    for i in range(50):
+      cs = _make_car_state(speed=2.0, gear=car.CarState.GearShifter.reverse)
+      learner.handle_log(i * 0.05, 'carState', cs)
+
+    final_stiffness = float(learner.kf.x[States.STIFFNESS].item())
+    np.testing.assert_allclose(final_stiffness, initial_stiffness,
+                               err_msg="Stiffness should not drift while vehicle is in reverse")
 
 
 class TestParamsd:
