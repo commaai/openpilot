@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import numpy as np
 
@@ -93,7 +94,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       img = img.get() # convert cupy array to numpy
     return img
 
-  rk = Ratekeeper(100, None)
+  _ci = os.getenv("CI") is not None
+  rk = Ratekeeper(20 if _ci else 100, None)
 
   steer_ratio = 8
   vc = [0,0]
