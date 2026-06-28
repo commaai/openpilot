@@ -1,4 +1,5 @@
 import importlib
+import multiprocessing
 import os
 import signal
 import time
@@ -179,7 +180,10 @@ class PythonProcess(ManagerProcess):
     self.restart_if_crash = restart_if_crash
 
   def prepare(self) -> None:
-    if self.enabled:
+    # pre-importing is only a copy-on-write optimization for the "fork" start method.
+    # with "spawn" (the default on macOS) every child re-imports anyway, and pre-importing
+    # some modules (e.g. the UI, which initializes Cocoa) in the manager breaks on macOS.
+    if self.enabled and multiprocessing.get_start_method() == "fork":
       cloudlog.info(f"preimporting {self.module}")
       importlib.import_module(self.module)
 
