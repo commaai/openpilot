@@ -112,15 +112,17 @@ env = Environment(
   CFLAGS=["-std=gnu11"],
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
-    "#",
+    "#openpilot",
     "#msgq",
+    "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
+    "#",
   ],
   LIBPATH=[
-    "#common",
+    "#openpilot/common",
     "#msgq_repo",
-    "#selfdrive/pandad",
+    "#openpilot/selfdrive/pandad",
     "#rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
@@ -210,7 +212,7 @@ def prune_cache_dir(target=None, source=None, env=None):
 # ********** start building stuff **********
 
 # Build common module
-SConscript(['common/SConscript'])
+SConscript(['openpilot/common/SConscript'])
 Import('_common')
 common = [_common, 'json11', 'zmq']
 Export('common')
@@ -221,7 +223,7 @@ env_swaglog = env.Clone()
 env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
 SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
 
-SConscript(['cereal/SConscript'])
+SConscript(['openpilot/cereal/SConscript'])
 
 Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
@@ -236,28 +238,28 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/loggerd/SConscript',
+  'openpilot/system/loggerd/SConscript',
 ])
 
 if arch == "larch64":
-  SConscript(['system/camerad/SConscript'])
+  SConscript(['openpilot/system/camerad/SConscript'])
 
 # Build selfdrive
 SConscript([
-  'selfdrive/pandad/SConscript',
-  'selfdrive/controls/lib/lateral_mpc_lib/SConscript',
-  'selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
-  'selfdrive/locationd/SConscript',
-  'selfdrive/modeld/SConscript',
-  'selfdrive/ui/SConscript',
+  'openpilot/selfdrive/pandad/SConscript',
+  'openpilot/selfdrive/controls/lib/lateral_mpc_lib/SConscript',
+  'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+  'openpilot/selfdrive/locationd/SConscript',
+  'openpilot/selfdrive/modeld/SConscript',
+  'openpilot/selfdrive/ui/SConscript',
 ])
 
 # Build desktop-only tools
 if GetOption('extras') and arch != "larch64":
   SConscript([
-    'tools/replay/SConscript',
-    'tools/cabana/SConscript',
-    'tools/jotpluggler/SConscript',
+    'openpilot/tools/replay/SConscript',
+    'openpilot/tools/cabana/SConscript',
+    'openpilot/tools/jotpluggler/SConscript',
   ])
 
 
@@ -273,6 +275,8 @@ def count_scons_nodes(nodes):
     if node in seen:
       continue
     seen.add(node)
+    if hasattr(node, 'has_builder') and node.has_builder():
+      build_product_nodes.add(node)
     executor = node.get_executor()
     if executor is not None:
       stack += executor.get_all_prerequisites() + executor.get_all_children()
@@ -281,6 +285,7 @@ def count_scons_nodes(nodes):
 
 progress_interval = 5
 progress_count = 0
+build_product_nodes = set()
 progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
 
 def progress_function(node):
@@ -296,3 +301,11 @@ def progress_function(node):
 
 Progress(progress_function, interval=progress_interval)
 AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
+
+def check_build_product_size(target, source, env):
+  limit = 50 * 1024 * 1024  # GitHub max size
+  for t in target:
+    if hasattr(t, 'isfile') and t.isfile() and (size := os.path.getsize(t.abspath)) > limit:
+      raise SCons.Errors.UserError(f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the {limit / (1024 * 1024):.1f} MiB limit")
+if not GetOption('extras'):
+  AddPostAction(list(build_product_nodes), Action(check_build_product_size, None))

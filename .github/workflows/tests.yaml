@@ -46,20 +46,20 @@ jobs:
         command: git lfs pull
     - name: Build devel
       timeout-minutes: 1
-      run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
+      run: TARGET_DIR=$STRIPPED_DIR tools/release/build_stripped.sh
     - run: ./tools/op.sh setup
     - name: Build openpilot and run checks
       timeout-minutes: 30
       working-directory: ${{ env.STRIPPED_DIR }}
-      run: python3 system/manager/build.py
+      run: python3 openpilot/system/manager/build.py
     - name: Run tests
       timeout-minutes: 1
       working-directory: ${{ env.STRIPPED_DIR }}
-      run: release/check-dirty.sh
+      run: tools/release/check-dirty.sh
     - name: Check submodules
       if: github.repository == 'commaai/openpilot'
       timeout-minutes: 3
-      run: release/check-submodules.sh
+      run: tools/release/check-submodules.sh
 
   build_mac:
     name: build macOS
@@ -111,7 +111,7 @@ jobs:
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
-        source selfdrive/test/setup_xvfb.sh
+        source openpilot/selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
         $PYTEST --collect-only -m 'not slow' -qq
         MAX_EXAMPLES=1 $PYTEST -m 'not slow'
@@ -134,27 +134,27 @@ jobs:
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
-      run: selfdrive/test/process_replay/test_processes.py -j$(nproc)
+      run: openpilot/selfdrive/test/process_replay/test_processes.py -j$(nproc)
     - name: Print diff
       id: print-diff
       if: always()
-      run: cat selfdrive/test/process_replay/diff.txt
+      run: cat openpilot/selfdrive/test/process_replay/diff.txt
     - name: Print diff report
       if: always()
-      run: cat selfdrive/test/process_replay/diff_report.txt
+      run: cat openpilot/selfdrive/test/process_replay/diff_report.txt
     - uses: actions/upload-artifact@v6
       if: always()
       continue-on-error: true
       with:
         name: process_replay_diff.txt
-        path: selfdrive/test/process_replay/diff.txt
+        path: openpilot/selfdrive/test/process_replay/diff.txt
     - name: Upload diff report
       uses: actions/upload-artifact@v6
       if: always() && github.event_name == 'pull_request'
       continue-on-error: true
       with:
         name: diff_report_${{ github.event.number }}
-        path: selfdrive/test/process_replay/diff_report.txt
+        path: openpilot/selfdrive/test/process_replay/diff_report.txt
     - name: Checkout ci-artifacts
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
       uses: actions/checkout@v4
@@ -170,7 +170,7 @@ jobs:
         git config user.email "<>"
         git fetch origin process-replay || true
         git checkout process-replay 2>/dev/null || git checkout --orphan process-replay
-        cp ${{ github.workspace }}/selfdrive/test/process_replay/fakedata/*.zst .
+        cp ${{ github.workspace }}/openpilot/selfdrive/test/process_replay/fakedata/*.zst .
         echo "${{ github.sha }}" > ref_commit
         git add .
         git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}" || echo "No changes to commit"
@@ -186,7 +186,7 @@ jobs:
       timeout-minutes: 4
       env:
         ONNXCPU: 1
-      run: $PYTEST selfdrive/test/process_replay/test_regen.py
+      run: $PYTEST openpilot/selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving
@@ -207,8 +207,8 @@ jobs:
     - name: Driving test
       timeout-minutes: 2
       run: |
-        source selfdrive/test/setup_xvfb.sh
-        pytest -s tools/sim/tests/test_metadrive_bridge.py
+        source openpilot/selfdrive/test/setup_xvfb.sh
+        pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
@@ -227,11 +227,11 @@ jobs:
         run: scons
       - name: Create UI Report
         run: |
-          source selfdrive/test/setup_xvfb.sh
-          python3 selfdrive/ui/tests/diff/replay.py
-          python3 selfdrive/ui/tests/diff/replay.py --big
+          source openpilot/selfdrive/test/setup_xvfb.sh
+          python3 openpilot/selfdrive/ui/tests/diff/replay.py
+          python3 openpilot/selfdrive/ui/tests/diff/replay.py --big
       - name: Upload UI Report
         uses: actions/upload-artifact@v6
         with:
           name: ui-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
-          path: selfdrive/ui/tests/diff/report
+          path: openpilot/selfdrive/ui/tests/diff/report
