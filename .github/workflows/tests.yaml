@@ -194,12 +194,7 @@ jobs:
       fail-fast: false
       matrix:
         run: [1, 2, 3]
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ubuntu-24.04
     env:
       ONNXCPU: 1
     steps:
@@ -222,17 +217,7 @@ jobs:
       timeout-minutes: 5
       run: |
         source openpilot/selfdrive/test/setup_xvfb.sh
-        set +e
-        top -b -c -w 512 -d 5 > /tmp/top.log 2>&1 &
-        TOP_PID=$!
         pytest -n0 -s openpilot/tools/sim/tests/test_metadrive_bridge.py
-        CODE=$?
-        kill $TOP_PID 2>/dev/null
-        echo "===== CPU saturation over time (overall) ====="
-        grep "%Cpu" /tmp/top.log || true
-        echo "===== key processes CPU over time ====="
-        grep -E "modeld|metadrive|camerad|locationd|plannerd|controlsd" /tmp/top.log || true
-        exit $CODE
   create_ui_report:
     name: Create UI Report
     runs-on: ${{
