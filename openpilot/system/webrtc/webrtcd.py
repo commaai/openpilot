@@ -153,6 +153,44 @@ class CerealIncomingMessageProxy:
     self.pm.send(msg_type, msg)
 
 
+class IncomingAudioCerealProxy(AsyncTaskRunner):
+  def __init__(self, track: Any):
+    super().__init__()
+    from av.audio.resampler import AudioResampler
+
+    from openpilot.selfdrive.ui.soundd import SAMPLE_RATE as SOUND_SAMPLE_RATE
+    from openpilot.system.webrtc.device.audio import WEBRTC_AUDIO_SERVICE
+
+    self.track = track
+    self.service = WEBRTC_AUDIO_SERVICE
+    self.pm = messaging.PubMaster([self.service])
+    self.resampler = AudioResampler(format="s16", layout="mono", rate=SOUND_SAMPLE_RATE)
+
+  def _publish(self, frame: Any) -> None:
+    data = frame.to_ndarray().tobytes()
+    if not data:
+      return
+
+    msg = messaging.new_message(self.service, valid=True)
+    msg.webrtcAudioData.data = data
+    msg.webrtcAudioData.sampleRate = frame.sample_rate
+    self.pm.send(self.service, msg)
+
+  async def run(self):
+    from aiortc.mediastreams import MediaStreamError
+
+    while True:
+      try:
+        frame = await self.track.recv()
+        for resampled_frame in self.resampler.resample(frame):
+          self._publish(resampled_frame)
+      except MediaStreamError:
+        break
+      except Exception:
+        self.logger.exception("Incoming audio cereal proxy failure")
+        await asyncio.sleep(0.1)
+
+
 class DynamicPubMaster(messaging.PubMaster):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
@@ -251,7 +289,9 @@ class StreamSession:
     if debug_mode:
       from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+    from openpilot.system.webrtc.device.audio import LiveStreamAudioStreamTrack
     from teleoprtc.builder import WebRTCAnswerBuilder
+    from teleoprtc.info import parse_info_from_offer
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
@@ -260,6 +300,17 @@ class StreamSession:
     self.enabled = body.enabled
     self.video_track = LiveStreamVideoStreamTrack(body.init_camera, self.enabled) if not debug_mode else VideoStreamTrack()
     builder.add_video_stream(body.init_camera, self.video_track)
+
+    audio_info = parse_info_from_offer(body.sdp)
+    self.incoming_audio_enabled = audio_info.incoming_audio_track
+    self.outgoing_audio_enabled = audio_info.expected_audio_track
+    self.audio_track: LiveStreamAudioStreamTrack | None = None
+    self.incoming_audio_proxy: IncomingAudioCerealProxy | None = None
+    if self.incoming_audio_enabled:
+      builder.offer_to_receive_audio_stream()
+    if self.outgoing_audio_enabled:
+      self.audio_track = LiveStreamAudioStreamTrack()
+      builder.add_audio_stream(self.audio_track)
     self.stream = builder.stream()
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
@@ -341,6 +392,9 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
+      if self.incoming_audio_enabled and self.stream.has_incoming_audio_track():
+        self.incoming_audio_proxy = IncomingAudioCerealProxy(self.stream.get_incoming_audio_track())
+        self.incoming_audio_proxy.start()
       self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
@@ -360,9 +414,14 @@ class StreamSession:
       await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
+      if self.incoming_audio_proxy is not None:
+        await self.incoming_audio_proxy.stop()
       if self.video_track is not None:
         self.video_track.stop()
         self.video_track = None
+      if self.audio_track is not None:
+        self.audio_track.stop()
+        self.audio_track = None
       await self.stream.stop()
 
 
@@ -561,8 +620,10 @@ def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
   if debug_mode:
     from aiortc.mediastreams import VideoStreamTrack
     assert VideoStreamTrack
+  from openpilot.system.webrtc.device.audio import LiveStreamAudioStreamTrack
   from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
   from teleoprtc.builder import WebRTCAnswerBuilder
+  assert LiveStreamAudioStreamTrack
   assert LiveStreamVideoStreamTrack
   assert WebRTCAnswerBuilder
 
