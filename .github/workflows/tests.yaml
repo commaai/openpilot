@@ -209,6 +209,10 @@ jobs:
       with:
         submodules: true
     - run: ./tools/op.sh setup
+    - name: Install MetaDrive
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        uv pip install --python .venv/bin/python "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal"
     - name: Build openpilot
       run: scons
     - name: Set up dummy audio
