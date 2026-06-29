@@ -202,8 +202,6 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     env:
       ONNXCPU: 1
-      SIM_LOGS: 1
-      LOG_ROOT: /tmp/openpilot-sim-logs/${{ matrix.run }}
     steps:
     - uses: actions/checkout@v6
       with:
@@ -235,17 +233,6 @@ jobs:
         echo "===== key processes CPU over time ====="
         grep -E "modeld|metadrive|camerad|locationd|plannerd|controlsd" /tmp/top.log || true
         exit $CODE
-    - name: Upload simulator logs
-      uses: actions/upload-artifact@v6
-      if: always()
-      with:
-        name: metadrive-sim-logs-${{ matrix.run }}
-        path: |
-          /tmp/openpilot-sim-logs/${{ matrix.run }}/**/qlog.zst
-          /tmp/openpilot-sim-logs/${{ matrix.run }}/**/rlog.zst
-          /tmp/openpilot-sim-logs/${{ matrix.run }}/**/*.hevc
-          /tmp/openpilot-sim-logs/${{ matrix.run }}/**/qcamera.ts
-
   create_ui_report:
     name: Create UI Report
     runs-on: ${{
