@@ -28,10 +28,10 @@ scons
 We'll run the `replay` tool with the demo route to get data streaming for testing our UI changes.
 ```bash
 # in terminal 1
-tools/replay/replay --demo
+openpilot/tools/replay/replay --demo
 
 # in terminal 2
-./selfdrive/ui/ui.py
+./openpilot/selfdrive/ui/ui.py
 ```
 
 The openpilot UI should launch and show a replay of the demo route.
@@ -45,10 +45,10 @@ Now let’s update the speed display color in the UI.
 
 Search for the function responsible for rendering the current speed:
 ```bash
-git grep "_draw_current_speed" selfdrive/ui/onroad/hud_renderer.py
+git grep "_draw_current_speed" openpilot/selfdrive/ui/onroad/hud_renderer.py
 ```
 
-You'll find the relevant code inside `selfdrive/ui/onroad/hud_renderer.py`, in this function:
+You'll find the relevant code inside `openpilot/selfdrive/ui/onroad/hud_renderer.py`, in this function:
 
 ```python
 def _draw_current_speed(self, rect: rl.Rectangle) -> None:
@@ -72,7 +72,7 @@ Change `COLORS.white` to make it **blue** instead of white. A nice soft blue is 
 
 After making changes, re-run the UI to see your new UI:
 ```bash
-./selfdrive/ui/ui.py
+./openpilot/selfdrive/ui/ui.py
 ```
 ![](https://blog.comma.ai/img/blue_speed_ui.png)
 

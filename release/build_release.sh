@@ -41,7 +41,7 @@ cd $BUILD_DIR
 rm -f panda/board/obj/panda.bin.signed
 rm -f panda/board/obj/panda_h7.bin.signed
 
-VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
+VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git commit -a -m "openpilot v$VERSION release"
@@ -74,7 +74,7 @@ find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm -f selfdrive/modeld/models/*.onnx*
+rm -f openpilot/selfdrive/modeld/models/*.onnx*
 
 # Mark as prebuilt release
 touch prebuilt
@@ -85,8 +85,8 @@ git commit --amend -m "openpilot v$VERSION"
 
 # Run tests
 cd $BUILD_DIR
-RELEASE=1 pytest -n0 -s selfdrive/test/test_onroad.py
-#pytest selfdrive/car/tests/test_car_interfaces.py
+RELEASE=1 pytest -n0 -s openpilot/selfdrive/test/test_onroad.py
+#pytest openpilot/selfdrive/car/tests/test_car_interfaces.py
 
 echo "[-] pushing release T=$SECONDS"
 REFS=()

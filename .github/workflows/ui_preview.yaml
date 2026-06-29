@@ -8,9 +8,9 @@ on:
     branches:
       - 'master'
     paths:
-      - 'selfdrive/assets/**'
-      - 'selfdrive/ui/**'
-      - 'system/ui/**'
+      - 'openpilot/selfdrive/assets/**'
+      - 'openpilot/selfdrive/ui/**'
+      - 'openpilot/system/ui/**'
   workflow_dispatch:
 
 env:
@@ -115,13 +115,13 @@ jobs:
             cp "${{ github.workspace }}/master_${name}/${video}.mp4" "${{ github.workspace }}/pr_ui/${video}_master.mp4"
 
             diff_exit_code=0
-            python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py \
+            python3 ${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/diff.py \
               "${{ github.workspace }}/pr_ui/${video}_master.mp4" \
               "${{ github.workspace }}/pr_ui/${video}_proposed.mp4" \
               "${diff_name}.html" --basedir "$baseurl" --no-open || diff_exit_code=$?
 
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${{ github.workspace }}/pr_ui/"
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.mp4" "${{ github.workspace }}/pr_ui/"
+            cp "${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/report/${diff_name}.html" "${{ github.workspace }}/pr_ui/"
+            cp "${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/report/${diff_name}.mp4" "${{ github.workspace }}/pr_ui/"
 
             REPORT_URL="https://commaai.github.io/ci-artifacts/${diff_name}_pr_${{ github.event.number }}.html"
             if [ $diff_exit_code -eq 0 ]; then
@@ -156,7 +156,7 @@ jobs:
           for variant in $VARIANTS; do
             IFS=':' read -r name _ _ <<< "$variant"
             diff_name="${name}_diff"
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${diff_name}_pr_${{ github.event.number }}.html"
+            cp "${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/report/${diff_name}.html" "${diff_name}_pr_${{ github.event.number }}.html"
             git add "${diff_name}_pr_${{ github.event.number }}.html"
           done
           git commit -m "ui diff reports for PR #${{ github.event.number }}" || echo "No changes to commit"

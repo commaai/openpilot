@@ -5,15 +5,14 @@ import pytest
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
+from openpilot.common.hardware import TICI, HARDWARE
 
 # these are heavy CI-only tests, invoked explicitly in .github/workflows/tests.yaml
 collect_ignore = [
-  "selfdrive/test/process_replay/test_processes.py",
-  "selfdrive/test/process_replay/test_regen.py",
-]
-collect_ignore_glob = [
-  "selfdrive/debug/*.py",
+  "openpilot/selfdrive/test/process_replay/test_processes.py",
+  "openpilot/selfdrive/test/process_replay/test_regen.py",
+
+  "openpilot/tools/sim/",
 ]
 
 
