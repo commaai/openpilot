@@ -195,7 +195,7 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
 
   def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
     packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
-    warped = warped.to(Device.DEFAUKT)
+    warped = warped.to(Device.DEFAULT)
     Tensor.realize(packed_npy_inputs, warped)
 
     img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
