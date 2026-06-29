@@ -1,5 +1,6 @@
 import ctypes
 import functools
+import math
 import multiprocessing
 import numpy as np
 import time
@@ -36,6 +37,7 @@ class MetaDriveWorld(World):
     self.first_engage = None
     self.last_check_timestamp = 0
     self.distance_moved = 0
+    self.max_speed = 0
 
     self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
                               functools.partial(metadrive_process, dual_camera, config,
@@ -92,30 +94,34 @@ class MetaDriveWorld(World):
       state.valid = True
 
       is_engaged = state.is_engaged
+      current_time = time.monotonic()
       if is_engaged and self.first_engage is None:
-        self.first_engage = time.monotonic()
+        self.first_engage = current_time
+        self.last_check_timestamp = current_time
+        self.distance_moved = 0
+        self.max_speed = 0
         self.op_engaged.set()
 
-      # check moving 5 seconds after engaged, doesn't move right away
-      after_engaged_check = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run
+      step_distance = math.hypot(curr_pos[0] - self.vehicle_last_pos[0], curr_pos[1] - self.vehicle_last_pos[1])
+      if is_engaged:
+        self.distance_moved += step_distance
+        self.max_speed = max(self.max_speed, state.speed)
 
-      x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
-      y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])
-      dist_threshold = 1
-      if x_dist >= dist_threshold or y_dist >= dist_threshold: # position not the same during staying still, > threshold is considered moving
-        self.distance_moved += x_dist + y_dist
+      # check moving 5 seconds after engaged, doesn't move right away
+      after_engaged_check = is_engaged and current_time - self.first_engage >= 5 and self.test_run
 
       time_check_threshold = 29
-      current_time = time.monotonic()
       since_last_check = current_time - self.last_check_timestamp
       if since_last_check >= time_check_threshold:
-        if after_engaged_check and self.distance_moved == 0:
+        if after_engaged_check and self.distance_moved < 1 and self.max_speed < 0.1:
           self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving" : True}))
           self.exit_event.set()
 
         self.last_check_timestamp = current_time
         self.distance_moved = 0
-        self.vehicle_last_pos = curr_pos
+        self.max_speed = 0
+
+      self.vehicle_last_pos = curr_pos
 
   def read_cameras(self):
     pass

@@ -59,9 +59,16 @@ class TestSimBridgeBase:
     start_time = time.monotonic()
     min_counts_control_active = 100
     control_active = 0
+    last_blocking_events: list[str] = []
+    last_engageable = None
+    last_enabled = None
 
     while time.monotonic() < start_time + max_time_per_step:
       sm.update()
+
+      last_blocking_events = [event.name for event in sm['onroadEvents']]
+      last_engageable = sm['selfdriveState'].engageable
+      last_enabled = sm['selfdriveState'].enabled
 
       if sm.all_alive() and sm['selfdriveState'].active:
         control_active += 1
@@ -69,11 +76,16 @@ class TestSimBridgeBase:
         if control_active == min_counts_control_active:
           break
 
-    assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
+    assert min_counts_control_active == control_active, \
+                    f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}. " + \
+                    f"Last seen: engageable={last_engageable} enabled={last_enabled} events={last_blocking_events}"
 
     failure_states = []
-    while bridge.started.value:
-      continue
+    finish_timeout = max_time_per_step + getattr(self, "test_duration", 30)
+    finish_wait_start = time.monotonic()
+    while bridge.started.value and time.monotonic() < finish_wait_start + finish_timeout:
+      time.sleep(0.1)
+    assert not bridge.started.value, "Simulator did not finish before timeout"
 
     while not q.empty():
       state = q.get()

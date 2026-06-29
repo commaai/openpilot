@@ -6,7 +6,11 @@ export SIMULATION="1"
 export SKIP_FW_QUERY="1"
 export FINGERPRINT="HONDA_CIVIC_2022"
 
-export BLOCK="${BLOCK},camerad,loggerd,encoderd,micd,logmessaged,manage_athenad"
+block_list="camerad,micd,logmessaged,manage_athenad"
+if [[ -z "$SIM_LOGS" ]]; then
+  block_list="$block_list,loggerd,encoderd"
+fi
+export BLOCK="${BLOCK},${block_list}"
 if [[ "$CI" ]]; then
   # TODO: offscreen UI should work
   export BLOCK="${BLOCK},ui"

@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import numpy as np
 
@@ -51,6 +52,11 @@ def apply_metadrive_patches(arrive_dest_done=True):
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
                       exit_event, op_engaged, test_duration, test_run):
+  if test_run:
+    # Deprioritize the simulator's render/physics process so it doesn't starve
+    # modeld/controlsd for CPU on shared CI runners.
+    os.nice(10)
+
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -146,9 +152,13 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         )
         simulation_state_send.send(simulation_state)
 
-      if dual_camera:
-        wide_road_image[...] = get_cam_as_rgb("rgb_wide")
-      road_image[...] = get_cam_as_rgb("rgb_road")
+      # Rendering the camera dominates the per-step cost. Under CI CPU load it
+      # can starve the physics loop, so render at 2Hz while keeping the shared
+      # image available at the full env-step rate.
+      if rk.frame % 50 == 0:
+        if dual_camera:
+          wide_road_image[...] = get_cam_as_rgb("rgb_wide")
+        road_image[...] = get_cam_as_rgb("rgb_road")
       image_lock.release()
 
     rk.keep_time()
