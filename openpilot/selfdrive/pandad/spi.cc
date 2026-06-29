@@ -54,7 +54,7 @@ private:
          util::hexdump(tx_buf, std::min((int)header.tx_len, 8)).c_str()); \
       } while (0)
 
-PandaSpiHandle::PandaSpiHandle(std::string serial) {
+PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   int ret;
   const int uid_len = 12;
   uint8_t uid[uid_len] = {0};
