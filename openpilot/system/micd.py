@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-import numpy as np
 from functools import cache
+from pathlib import Path
+import re
 import threading
+import time
+
+import numpy as np
 
 from openpilot.cereal import messaging
 from openpilot.common.realtime import Ratekeeper
@@ -13,6 +17,151 @@ FFT_SAMPLES = 1600 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 16000
 SAMPLE_BUFFER = 800  # 50ms
+SOUND_DEVICE_CHECK_INTERVAL = 1.0
+
+AudioDevice = dict[str, object]
+AudioDeviceSignature = tuple[int, str, int, int, int]
+
+ALSA_CARD_RE = re.compile(r"^\s*(\d+)\s+\[([^\]]+)\]:.*usb", re.IGNORECASE)
+ALSA_DEVICE_CARD_RE = re.compile(r"(?:^|[:,(])CARD=([^,):]+)")
+ALSA_DEVICE_HW_RE = re.compile(r"(?:^|[(:])(?:plug)?hw:([^,)]+)")
+
+
+def _device_value(device: AudioDevice, key: str, default: object = None) -> object:
+  return device.get(key, default)
+
+
+def _device_int(device: AudioDevice, key: str, default: int = 0) -> int:
+  try:
+    return int(device.get(key, default))
+  except (TypeError, ValueError):
+    return default
+
+
+def _device_sample_rate(device: AudioDevice) -> int:
+  try:
+    return int(float(device.get("default_samplerate", 0)))
+  except (TypeError, ValueError):
+    return 0
+
+
+def get_audio_device_signature(index: int, device: AudioDevice) -> AudioDeviceSignature:
+  return (
+    index,
+    str(_device_value(device, "name", "")),
+    _device_int(device, "hostapi", -1),
+    _device_int(device, "max_input_channels"),
+    _device_sample_rate(device),
+  )
+
+
+def stable_audio_device_signature(signature: AudioDeviceSignature) -> tuple[str, int, int, int]:
+  return signature[1:]
+
+
+def audio_device_can_input(device: AudioDevice) -> bool:
+  return _device_int(device, "max_input_channels") > 0
+
+
+def query_audio_input_devices(sd) -> dict[AudioDeviceSignature, AudioDevice]:
+  return {
+    get_audio_device_signature(index, device): device
+    for index, device in enumerate(sd.query_devices())
+    if audio_device_can_input(device)
+  }
+
+
+def find_audio_input_device(sd, signature: AudioDeviceSignature) -> int | None:
+  stable_signature = stable_audio_device_signature(signature)
+  fallback_index = None
+
+  for index, device in enumerate(sd.query_devices()):
+    if not audio_device_can_input(device):
+      continue
+
+    device_signature = get_audio_device_signature(index, device)
+    if device_signature == signature:
+      return index
+
+    if stable_audio_device_signature(device_signature) == stable_signature:
+      fallback_index = index
+
+  return fallback_index
+
+
+def get_usb_audio_cards(asound_root: Path = Path("/proc/asound")) -> set[str]:
+  usb_cards: set[str] = set()
+
+  try:
+    for card_path in asound_root.glob("card*"):
+      card_number = card_path.name.removeprefix("card")
+      if not card_number.isdigit() or not (card_path / "usbid").exists():
+        continue
+
+      usb_cards.add(card_number)
+      try:
+        usb_cards.add((card_path / "id").read_text(encoding="utf-8").strip())
+      except OSError:
+        pass
+  except OSError:
+    pass
+
+  try:
+    cards = (asound_root / "cards").read_text(encoding="utf-8")
+  except OSError:
+    return {card for card in usb_cards if card}
+
+  for line in cards.splitlines():
+    match = ALSA_CARD_RE.match(line)
+    if match is not None:
+      usb_cards.add(match.group(1).strip())
+      usb_cards.add(match.group(2).strip())
+
+  return {card for card in usb_cards if card}
+
+
+def get_alsa_card_tokens_from_device_name(name: str) -> set[str]:
+  tokens: set[str] = set()
+
+  for pattern in (ALSA_DEVICE_CARD_RE, ALSA_DEVICE_HW_RE):
+    for match in pattern.finditer(name):
+      token = match.group(1).strip()
+      if token:
+        tokens.add(token)
+
+  return tokens
+
+
+def normalize_audio_card_tokens(tokens: set[str]) -> set[str]:
+  return tokens | {token.lower() for token in tokens}
+
+
+def is_usb_audio_input_device(device: AudioDevice, usb_audio_cards: set[str] | None = None) -> bool:
+  if not audio_device_can_input(device):
+    return False
+
+  device_name = str(_device_value(device, "name", ""))
+  if "usb" in device_name.lower():
+    return True
+
+  if usb_audio_cards is None:
+    usb_audio_cards = get_usb_audio_cards()
+
+  device_card_tokens = normalize_audio_card_tokens(get_alsa_card_tokens_from_device_name(device_name))
+  return bool(device_card_tokens & normalize_audio_card_tokens(usb_audio_cards))
+
+
+def audio_input_device_is_present(sd, signature: AudioDeviceSignature, usb_audio_cards: set[str]) -> bool:
+  device_card_tokens = normalize_audio_card_tokens(get_alsa_card_tokens_from_device_name(signature[1]))
+  if device_card_tokens and not (device_card_tokens & normalize_audio_card_tokens(usb_audio_cards)):
+    return False
+
+  return find_audio_input_device(sd, signature) is not None
+
+
+def describe_audio_input_device(signature: AudioDeviceSignature) -> str:
+  index, name, hostapi, channels, samplerate = signature
+  return f"index={index} name={name!r} hostapi={hostapi} input_channels={channels} default_samplerate={samplerate}"
 
 
 @cache
@@ -48,6 +197,10 @@ class Mic:
     self.pm = messaging.PubMaster(['soundPressure', 'rawAudioData'])
 
     self.measurements = np.empty(0)
+    self.input_device_signature: AudioDeviceSignature | None = None
+    self.known_input_devices: set[AudioDeviceSignature] = set()
+    self.known_usb_audio_cards: set[str] = set()
+    self.last_sound_device_check_time = 0.
 
     self.sound_pressure = 0
     self.sound_pressure_weighted = 0
@@ -94,21 +247,129 @@ class Mic:
 
         self.measurements = self.measurements[FFT_SAMPLES:]
 
+  def reset_audio_device_tracking(self, sd) -> None:
+    self.known_usb_audio_cards = get_usb_audio_cards()
+    self.known_input_devices = set(query_audio_input_devices(sd))
+    self.last_sound_device_check_time = time.monotonic()
+
+  def select_preferred_usb_input_device(self, input_devices: dict[AudioDeviceSignature, AudioDevice],
+                                        usb_audio_cards: set[str],
+                                        preferred_usb_audio_cards: set[str] | None = None) -> AudioDeviceSignature | None:
+    candidates: list[tuple[int, int, AudioDeviceSignature]] = []
+    new_input_devices = set(input_devices) - self.known_input_devices
+    preferred_usb_audio_cards = preferred_usb_audio_cards or set()
+    normalized_preferred_usb_audio_cards = normalize_audio_card_tokens(preferred_usb_audio_cards)
+
+    for signature, device in input_devices.items():
+      if not is_usb_audio_input_device(device, usb_audio_cards):
+        continue
+
+      device_card_tokens = normalize_audio_card_tokens(get_alsa_card_tokens_from_device_name(str(_device_value(device, "name", ""))))
+      preferred_card_match = bool(device_card_tokens & normalized_preferred_usb_audio_cards)
+      new_input_device = signature in new_input_devices
+
+      if not preferred_card_match and not new_input_device:
+        continue
+
+      candidates.append((2 if preferred_card_match else 1, signature[0], signature))
+
+    if not candidates:
+      return None
+
+    return max(candidates)[2]
+
+  def refresh_usb_input_device(self, sd, preferred_usb_audio_cards: set[str]) -> AudioDeviceSignature | None:
+    sd._terminate()
+    sd._initialize()
+
+    usb_audio_cards = get_usb_audio_cards()
+    input_devices = query_audio_input_devices(sd)
+    input_device_signature = self.select_preferred_usb_input_device(input_devices, usb_audio_cards, preferred_usb_audio_cards)
+    self.known_usb_audio_cards = usb_audio_cards
+    self.known_input_devices.update(input_devices)
+
+    return input_device_signature
+
+  def check_for_input_device_changes(self, sd) -> tuple[AudioDeviceSignature | None, set[str], bool]:
+    now = time.monotonic()
+    if now - self.last_sound_device_check_time < SOUND_DEVICE_CHECK_INTERVAL:
+      return None, set(), False
+
+    self.last_sound_device_check_time = now
+    usb_audio_cards = get_usb_audio_cards()
+    new_usb_audio_cards = usb_audio_cards - self.known_usb_audio_cards
+    selected_input_removed = False
+
+    try:
+      input_devices = query_audio_input_devices(sd)
+      if self.input_device_signature is not None:
+        selected_input_removed = not audio_input_device_is_present(sd, self.input_device_signature, usb_audio_cards)
+
+      input_device_signature = self.select_preferred_usb_input_device(input_devices, usb_audio_cards, new_usb_audio_cards)
+      self.known_input_devices.update(input_devices)
+    except Exception:
+      cloudlog.exception("micd failed to query audio input devices")
+      input_device_signature = None
+
+    self.known_usb_audio_cards = usb_audio_cards
+    return input_device_signature, new_usb_audio_cards, selected_input_removed
+
   @retry(attempts=10, delay=3)
   def get_stream(self, sd):
     # reload sounddevice to reinitialize portaudio
     sd._terminate()
     sd._initialize()
-    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
+
+    device = None
+    if self.input_device_signature is not None:
+      device = find_audio_input_device(sd, self.input_device_signature)
+      if device is None:
+        cloudlog.warning(f"micd could not find selected audio input device: {describe_audio_input_device(self.input_device_signature)}")
+        self.input_device_signature = None
+
+    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER, device=device)
 
   def micd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    with self.get_stream(sd) as stream:
-      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
-      while True:
-        self.update()
+    pending_usb_audio_cards: set[str] = set()
+    while True:
+      if pending_usb_audio_cards:
+        input_device_signature = self.refresh_usb_input_device(sd, pending_usb_audio_cards)
+        pending_usb_audio_cards = set()
+        if input_device_signature is not None:
+          self.input_device_signature = input_device_signature
+          cloudlog.info(f"micd switching to new USB audio input: {describe_audio_input_device(input_device_signature)}")
+
+      with self.get_stream(sd) as stream:
+        self.reset_audio_device_tracking(sd)
+
+        cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
+        while True:
+          self.update()
+
+          input_device_signature, new_usb_audio_cards, selected_input_removed = self.check_for_input_device_changes(sd)
+          if selected_input_removed:
+            cloudlog.info("micd selected USB audio input removed; switching to system default")
+            self.input_device_signature = None
+            break
+          if input_device_signature is not None:
+            self.input_device_signature = input_device_signature
+            cloudlog.info(f"micd switching to new USB audio input: {describe_audio_input_device(input_device_signature)}")
+            break
+          if new_usb_audio_cards:
+            pending_usb_audio_cards = new_usb_audio_cards
+            cloudlog.info(f"micd found new USB audio card ids: {sorted(new_usb_audio_cards)}")
+            break
+
+          if not stream.active:
+            if self.input_device_signature is not None:
+              cloudlog.warning("micd selected audio input stream stopped; switching to system default")
+              self.input_device_signature = None
+            else:
+              cloudlog.warning("micd audio input stream stopped; reopening system default")
+            break
 
 
 def main():
