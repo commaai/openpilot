@@ -20,8 +20,11 @@ def read_int(path: Path, base: int = 10) -> int:
 
 
 def usb_devices() -> list[Path]:
-  devices = (d for d in USB_DEVICES_PATH.glob("*") if (d / "idVendor").exists())
-  return sorted(devices, key=lambda p: p.name)
+  try:
+    devices = (d for d in USB_DEVICES_PATH.glob("*") if (d / "idVendor").exists())
+    return sorted(devices, key=lambda p: p.name)
+  except OSError:
+    return []
 
 
 def controller(device: Path) -> Path | None:
@@ -48,9 +51,8 @@ def update_usb_state(device_state) -> None:
     entry.vendorId = vendor_id
     entry.productId = product_id
     entry.speedMbps = read_int(device / "speed")
-    entry.product = read(device / "product") or ""
     entry.manufacturer = read(device / "manufacturer") or ""
-
+    entry.product = read(device / "product") or ""
     ctrl = controller(device)
     if ctrl is not None:
       entry.linkErrorCount = read_int(ctrl / "portli", 0) & 0xFFFF

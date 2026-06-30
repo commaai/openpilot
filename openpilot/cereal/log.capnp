@@ -697,8 +697,8 @@ struct UsbState {
     vendorId @2 :UInt16;
     productId @3 :UInt16;
     speedMbps @4 :UInt16;
-    product @5 :Text;
     manufacturer @6 :Text;
+    product @5 :Text;
 
     # SuperSpeed link errors
     linkErrorCount @7 :UInt16;
