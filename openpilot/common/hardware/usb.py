@@ -13,16 +13,10 @@ def read(path: Path) -> str | None:
 
 
 def read_int(path: Path, base: int = 10) -> int:
-  s = read(path)
   try:
-    if s is None:
-      return 0
-    return int(s, base)
-  except ValueError:
-    try:
-      return int(float(s)) if base == 10 else 0
-    except ValueError:
-      return 0
+    return int(path.read_text(), base)
+  except (OSError, ValueError):
+    return 0
 
 
 def usb_devices() -> list[Path]:
@@ -55,6 +49,7 @@ def update_usb_state(device_state) -> None:
     entry.productId = product_id
     entry.speedMbps = read_int(device / "speed")
     entry.product = read(device / "product") or ""
+    entry.manufacturer = read(device / "manufacturer") or ""
 
     ctrl = controller(device)
     if ctrl is not None:

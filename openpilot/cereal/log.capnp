@@ -698,9 +698,10 @@ struct UsbState {
     productId @3 :UInt16;
     speedMbps @4 :UInt16;
     product @5 :Text;
+    manufacturer @6 :Text;
 
-    # SuperSpeed link error count when exposed by the kernel.
-    linkErrorCount @6 :UInt16;
+    # SuperSpeed link errors
+    linkErrorCount @7 :UInt16;
   }
 }
 
