@@ -34,8 +34,8 @@ from tinygrad.engine.jit import TinyJit
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
-WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
-POLICY_INPUTS = ['feat_q', 'desire_q', 'packed_npy_inputs']
+WARP_INPUTS = ['tfm', 'big_tfm']
+POLICY_INPUTS = ['img_q', 'big_img_q', 'feat_q', 'desire_q', 'packed_npy_inputs']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -175,20 +175,17 @@ def sample_desire(buf, frame_skip):
 
 def make_warp(nv12, model_w, model_h, frame_skip):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
-  sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
 
-  def warp_enqueue(img_q, big_img_q, tfm, big_tfm, frame, big_frame):
+  def warp(tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(WARP_DEV)
     big_tfm = big_tfm.to(WARP_DEV)
     Tensor.realize(tfm, big_tfm)
 
     warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
     warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
-    warped = Tensor.cat(warped_frame, warped_big_frame).to(Device.DEFAULT)
-    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
-    return img, big_img
-  return warp_enqueue
+    return Tensor.cat(warped_frame, warped_big_frame)
+
+  return warp
 
 
 def make_run_policy(model_runner, model_metadata, frame_skip):
@@ -196,8 +193,14 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['input_shapes'])
 
-  def run_policy(img, big_img, feat_q, desire_q, packed_npy_inputs):
-    packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT).realize()
+  def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
+    packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
+    warped = warped.to(Device.DEFAULT)
+    Tensor.realize(packed_npy_inputs, warped)
+
+    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
+
     desire, traffic_convention, action_t, prev_feat = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
     feat_buf = shift_and_sample(feat_q, prev_feat.reshape(1, 1, -1), sample_skip_fn)
@@ -295,16 +298,16 @@ if __name__ == "__main__":
   run_policy_jit = TinyJit(make_run_policy(model_runner, out['metadata'], args.frame_skip), prune=True)
 
   make_policy_queues = partial(make_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-  make_random_model_inputs = partial(make_random_images, keys=['img', 'big_img'], shape=out['metadata']['input_shapes']['img'])
+  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, *out['metadata']['input_shapes']['img'][2:]))
   out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
                                   make_policy_queues)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
     make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size, device=WARP_DEV)
-    warp_enqueue = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
+    warp = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
     make_warp_queues = partial(make_warp_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-    out[(cam_w,cam_h)] = compile_jit(warp_enqueue, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
+    out[(cam_w,cam_h)] = compile_jit(warp, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
 
   with open(args.output, "wb") as f:
     pickle.dump(out, f)
