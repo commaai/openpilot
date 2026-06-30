@@ -6,6 +6,7 @@ import os
 import pickle
 import tempfile
 import time
+import shutil
 from functools import partial
 from collections import namedtuple
 
@@ -266,12 +267,11 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def read_file_chunked_to_shm(path):
-  from openpilot.common.file_chunker import read_file_chunked
-  from openpilot.common.hardware.hw import Paths
-  with tempfile.NamedTemporaryFile(prefix='compile_modeld_', dir=Paths.shm_path(), delete=False) as f:
-    f.write(read_file_chunked(path))
-    tmp_path = f.name
+def read_file_chunked_to_disk(path):
+  from openpilot.common.file_chunker import open_file_chunked
+  tmp_path = f'{path}.unchunked'
+  with open(tmp_path, 'wb') as f, open_file_chunked(path) as src:
+    shutil.copyfileobj(src, f)
   atexit.register(lambda: os.path.exists(tmp_path) and os.remove(tmp_path))
   return tmp_path
 
