@@ -22,13 +22,12 @@ def get_chunk_targets(path, file_size):
 
 def chunk_file(path, targets):
   manifest_path, *chunk_paths = targets
-  with open(path, 'rb') as f:
-    data = f.read()
-  actual_num_chunks = max(1, math.ceil(len(data) / CHUNK_SIZE))
+  actual_num_chunks = max(1, math.ceil(os.path.getsize(path) / CHUNK_SIZE))
   assert len(chunk_paths) >= actual_num_chunks, f"Allowed {len(chunk_paths)} chunks but needs at least {actual_num_chunks}, for path {path}"
-  for i, chunk_path in enumerate(chunk_paths):
-    with open(chunk_path, 'wb') as f:
-      f.write(data[i * CHUNK_SIZE:(i + 1) * CHUNK_SIZE])
+  with open(path, 'rb') as f:
+    for chunk_path in chunk_paths:
+      with open(chunk_path, 'wb') as out:
+        out.write(f.read(CHUNK_SIZE))
   Path(manifest_path).write_text(str(len(chunk_paths)))
   os.remove(path)
 
