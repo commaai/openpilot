@@ -12,7 +12,7 @@ from collections import namedtuple
 
 import numpy as np
 
-from openpilot.selfdrive.modeld.helpers import dump_oob
+from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
 
 def _patch_tinygrad_fetch_fw():
   import hashlib
