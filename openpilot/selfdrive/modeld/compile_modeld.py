@@ -156,7 +156,9 @@ def get_policy_npy_shapes(input_shapes):
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
   tc = input_shapes['traffic_convention']  # (1, 2)
   at = input_shapes['action_t']  # (1, 2)
-  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at)}
+  fb = input_shapes['features_buffer']  # (1, 24, 512)
+  # TODO prev_feat shouldn't exist and be handled inside the JIT, but corrupt on QCOM for now
+  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], fb[2])}
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
@@ -210,7 +212,6 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['input_shapes'])
-  hidden_state_slice = model_metadata['output_slices']['hidden_state']
 
   def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
     packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
@@ -220,9 +221,9 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
     img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
 
-    desire, traffic_convention, action_t = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
+    desire, traffic_convention, action_t, prev_feat = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
-    feat_buf = sample_skip_fn(feat_q)
+    feat_buf = shift_and_sample(feat_q, prev_feat.reshape(1, 1, -1), sample_skip_fn)
 
     inputs = {
       'img': img,
@@ -233,8 +234,6 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
       'action_t': action_t,
     }
     out = next(iter(model_runner(inputs).values())).cast('float32')
-    feat_q.assign(feat_q[1:].cat(out[:, hidden_state_slice].reshape(1, 1, -1), dim=0).contiguous())
-    Tensor.realize(out, feat_q)
     return out,
   return run_policy
 
