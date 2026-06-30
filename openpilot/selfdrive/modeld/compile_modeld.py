@@ -12,6 +12,8 @@ from collections import namedtuple
 
 import numpy as np
 
+from openpilot.selfdrive.modeld.helpers import dump_oob
+
 def _patch_tinygrad_fetch_fw():
   import hashlib
   import pathlib
@@ -325,5 +327,5 @@ if __name__ == "__main__":
     out[(cam_w,cam_h)] = compile_jit(warp, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
 
   with open(args.output, "wb") as f:
-    pickle.dump(out, f)
+    dump_oob(out, f)
   print(f"Saved JITs to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
