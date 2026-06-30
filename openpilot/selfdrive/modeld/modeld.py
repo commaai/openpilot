@@ -3,7 +3,6 @@ import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
 import time
-import pickle
 import numpy as np
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
