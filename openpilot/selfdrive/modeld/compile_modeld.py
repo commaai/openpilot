@@ -273,7 +273,10 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
   print('capture + replay')
   test_val, test_buffers = random_inputs_run(jit, SEED)
   print('pickle round trip')
-  jit = pickle.loads(pickle.dumps(jit))
+  with tempfile.TemporaryFile(dir=".") as f:
+    dump_oob(jit, f)
+    f.seek(0)
+    jit = load_oob(f)
   random_inputs_run(jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run(jit, SEED+1, test_val, test_buffers, expect_match=False)
   return jit

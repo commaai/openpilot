@@ -21,7 +21,7 @@ def modeld_pkl_path(usbgpu: bool):
   return MODELS_DIR / f'{prefix}driving_tinygrad.pkl'
 
 def dump_oob(obj, f):
-  with tempfile.TemporaryFile() as tmp:
+  with tempfile.TemporaryFile(dir=".") as tmp:
     def buffer_callback(pb: pickle.PickleBuffer):
       m = pb.raw()
       tmp.write(struct.pack('<q', m.nbytes))
