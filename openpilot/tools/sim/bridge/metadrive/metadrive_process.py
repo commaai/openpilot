@@ -55,7 +55,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   if test_run:
     # Deprioritize the simulator's render/physics process so it doesn't starve
     # modeld/controlsd for CPU on shared CI runners.
-    os.nice(10)
+    os.nice(19)
 
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
