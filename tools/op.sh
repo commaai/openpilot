@@ -201,7 +201,7 @@ function op_setup() {
 
   echo "Installing dependencies..."
   st="$(date +%s)"
-  SETUP_SCRIPT="openpilot/tools/setup_dependencies.sh"
+  SETUP_SCRIPT="tools/setup_dependencies.sh"
   if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     return 1
@@ -269,12 +269,12 @@ function op_venv() {
 
 function op_adb() {
   op_before_cmd
-  op_run_command openpilot/tools/scripts/adb_ssh.sh "$@"
+  op_run_command tools/scripts/adb_ssh.sh "$@"
 }
 
 function op_ssh() {
   op_before_cmd
-  op_run_command openpilot/tools/scripts/ssh.py "$@"
+  op_run_command tools/scripts/ssh.py "$@"
 }
 
 function op_script() {

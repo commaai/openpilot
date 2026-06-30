@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 
 import openpilot.cereal.messaging as messaging
-from openpilot.tools.scripts.can_table import can_table
+from tools.scripts.car.can_table import can_table
 from openpilot.tools.lib.logreader import LogIterable, LogReader
 
 RED = '\033[91m'
