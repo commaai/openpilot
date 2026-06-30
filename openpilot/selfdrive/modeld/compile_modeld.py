@@ -298,7 +298,7 @@ if __name__ == "__main__":
   run_policy_jit = TinyJit(make_run_policy(model_runner, out['metadata'], args.frame_skip), prune=True)
 
   make_policy_queues = partial(make_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, *out['metadata']['input_shapes']['img'][2:]))
+  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, *out['metadata']['input_shapes']['img'][2:]), device=WARP_DEV)
   out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
                                   make_policy_queues)
 
