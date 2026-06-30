@@ -250,7 +250,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     try:
       update_usb_state(msg.deviceState)
     except Exception:
-      cloudlog.exception("usb_logger update failed")
+      cloudlog.exception("Error getting USB state")
 
     # this subset is only used for offroad
     temp_sources = [
