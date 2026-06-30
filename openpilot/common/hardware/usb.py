@@ -27,37 +27,37 @@ def usb_devices() -> list[Path]:
     return []
 
 
-def controller(device: Path) -> Path | None:
-  try:
-    for parent in device.resolve().parents:
-      if parent.name.endswith(".ssusb"):
-        return parent
-  except OSError:
-    pass
-  return None
+def get_usb_state() -> list[dict]:
+  devices = []
+  for device in usb_devices():
+    vendor_id = read_int(device / "idVendor", 16)
+    product_id = read_int(device / "idProduct", 16)
+    devices.append({
+      "busnum": read_int(device / "busnum"),
+      "devnum": read_int(device / "devnum"),
+      "vendorId": vendor_id,
+      "productId": product_id,
+      "speedMbps": read_int(device / "speed"),
+      "manufacturer": read(device / "manufacturer") or "",
+      "product": read(device / "product") or "",
+    })
+  return devices
 
 
-def update_usb_state(device_state) -> None:
-  devices = usb_devices()
+def set_usb_state(device_state, devices: list[dict]) -> None:
   entries = device_state.usbState.init('devices', len(devices))
 
   chestnut_present = False
   for entry, device in zip(entries, devices, strict=True):
-    vendor_id = read_int(device / "idVendor", 16)
-    product_id = read_int(device / "idProduct", 16)
+    entry.busnum = device["busnum"]
+    entry.devnum = device["devnum"]
+    entry.vendorId = device["vendorId"]
+    entry.productId = device["productId"]
+    entry.speedMbps = device["speedMbps"]
+    entry.manufacturer = device["manufacturer"]
+    entry.product = device["product"]
 
-    entry.busnum = read_int(device / "busnum")
-    entry.devnum = read_int(device / "devnum")
-    entry.vendorId = vendor_id
-    entry.productId = product_id
-    entry.speedMbps = read_int(device / "speed")
-    entry.manufacturer = read(device / "manufacturer") or ""
-    entry.product = read(device / "product") or ""
-    ctrl = controller(device)
-    if ctrl is not None:
-      entry.linkErrorCount = read_int(ctrl / "portli", 0) & 0xFFFF
-
-    if (vendor_id, product_id) == (CHESTNUT_VENDOR_ID, CHESTNUT_PRODUCT_ID):
+    if (entry.vendorId, entry.productId) == (CHESTNUT_VENDOR_ID, CHESTNUT_PRODUCT_ID):
       chestnut_present = True
 
   device_state.chestnutPresent = chestnut_present

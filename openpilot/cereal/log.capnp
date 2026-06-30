@@ -700,8 +700,6 @@ struct UsbState {
     manufacturer @6 :Text;
     product @5 :Text;
 
-    # SuperSpeed link errors
-    linkErrorCount @7 :UInt16;
   }
 }
 
