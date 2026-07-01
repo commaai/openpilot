@@ -33,8 +33,11 @@ Refer to **slice_outputs** and **parse_vision_outputs/parse_policy_outputs** in 
 
 
 ## Driver Monitoring Model
-* .onnx model can be run with onnx runtimes
-* .dlc file is a pre-quantized model and only runs on qualcomm DSPs
+* `dmonitoring_model.onnx` is the source model and can be inspected with ONNX tooling.
+* openpilot's runtime uses tinygrad artifacts generated from the ONNX model:
+  * `dmonitoring_model_tinygrad.pkl` for model inference
+  * `dmonitoring_model_metadata.pkl` for input shapes and output slices
+  * `dm_warp_<camera_width>x<camera_height>_tinygrad.pkl` for the driver-camera luminance warp
 
 ### input format
 * single image W = 1440 H = 960 luminance channel (Y) from the planar YUV420 format:
