@@ -44,6 +44,9 @@ class ChunkStream(io.RawIOBase):
     self._paths = iter(paths)
     self._buf = memoryview(b'')
 
+  def readable(self):
+    return True
+
   def readinto(self, b):
     n = 0
     while n < len(b):
@@ -69,7 +72,7 @@ def open_file_chunked(path):
     paths = [path]
   else:
     raise FileNotFoundError(path)
-  return ChunkStream(paths)
+  return io.BufferedReader(ChunkStream(paths))
 
 
 if __name__ == "__main__":
