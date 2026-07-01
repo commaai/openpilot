@@ -40,7 +40,8 @@ def load_oob(f):
   def buffers():
     prev = None
     while (h := f.read(8)):
-      if prev is not None: prev.release()
+      if prev is not None:
+        prev.release()
       buf = bytearray(struct.unpack('<q', h)[0])
       f.readinto(buf)
       prev = pickle.PickleBuffer(buf)
