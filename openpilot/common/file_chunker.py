@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import io
 import sys
 import math
 import os
@@ -21,13 +22,12 @@ def get_chunk_targets(path, file_size):
 
 def chunk_file(path, targets):
   manifest_path, *chunk_paths = targets
-  with open(path, 'rb') as f:
-    data = f.read()
-  actual_num_chunks = max(1, math.ceil(len(data) / CHUNK_SIZE))
+  actual_num_chunks = max(1, math.ceil(os.path.getsize(path) / CHUNK_SIZE))
   assert len(chunk_paths) >= actual_num_chunks, f"Allowed {len(chunk_paths)} chunks but needs at least {actual_num_chunks}, for path {path}"
-  for i, chunk_path in enumerate(chunk_paths):
-    with open(chunk_path, 'wb') as f:
-      f.write(data[i * CHUNK_SIZE:(i + 1) * CHUNK_SIZE])
+  with open(path, 'rb') as f:
+    for chunk_path in chunk_paths:
+      with open(chunk_path, 'wb') as out:
+        out.write(f.read(CHUNK_SIZE))
   Path(manifest_path).write_text(str(len(chunk_paths)))
   os.remove(path)
 
@@ -39,14 +39,33 @@ def get_existing_chunks(path):
     return _chunk_paths(path, num_chunks)
   raise FileNotFoundError(path)
 
-def read_file_chunked(path):
+class ChunkStream(io.RawIOBase):
+  def __init__(self, paths):
+    self._files = (open(p, 'rb') for p in paths)
+    self._cur = next(self._files, None)
+
+  def readable(self):
+    return True
+
+  def readinto(self, b):
+    while self._cur is not None:
+      n = self._cur.readinto(b)
+      if n:
+        return n
+      self._cur.close()
+      self._cur = next(self._files, None)
+    return 0
+
+def open_file_chunked(path):
   manifest_path = get_manifest_path(path)
   if os.path.isfile(manifest_path):
     num_chunks = int(Path(manifest_path).read_text().strip())
-    return b''.join(Path(get_chunk_name(path, i, num_chunks)).read_bytes() for i in range(num_chunks))
-  if os.path.isfile(path):
-    return Path(path).read_bytes()
-  raise FileNotFoundError(path)
+    paths = [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
+  elif os.path.isfile(path):
+    paths = [path]
+  else:
+    raise FileNotFoundError(path)
+  return io.BufferedReader(ChunkStream(paths))
 
 
 if __name__ == "__main__":
