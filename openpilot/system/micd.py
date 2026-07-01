@@ -18,6 +18,7 @@ REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 16000
 SAMPLE_BUFFER = 800  # 50ms
 SOUND_DEVICE_CHECK_INTERVAL = 1.0
+INPUT_SAMPLE_RATE_FALLBACKS = (48000, 44100)
 
 AudioDevice = dict[str, object]
 AudioDeviceSignature = tuple[int, str, int, int, int]
@@ -45,6 +46,19 @@ def _device_sample_rate(device: AudioDevice) -> int:
     return 0
 
 
+def sample_buffer_for_sample_rate(sample_rate: int) -> int:
+  return max(1, round(SAMPLE_BUFFER * sample_rate / SAMPLE_RATE))
+
+
+def unique_valid_sample_rates(sample_rates: list[int]) -> list[int]:
+  valid_sample_rates: list[int] = []
+  for sample_rate in sample_rates:
+    if sample_rate > 0 and sample_rate not in valid_sample_rates:
+      valid_sample_rates.append(sample_rate)
+
+  return valid_sample_rates
+
+
 def get_audio_device_signature(index: int, device: AudioDevice) -> AudioDeviceSignature:
   return (
     index,
@@ -69,6 +83,13 @@ def query_audio_input_devices(sd) -> dict[AudioDeviceSignature, AudioDevice]:
     for index, device in enumerate(sd.query_devices())
     if audio_device_can_input(device)
   }
+
+
+def query_audio_input_device(sd, device: int | None) -> AudioDevice | None:
+  try:
+    return sd.query_devices(device, "input")
+  except Exception:
+    return None
 
 
 def find_audio_input_device(sd, signature: AudioDeviceSignature) -> int | None:
@@ -164,6 +185,19 @@ def describe_audio_input_device(signature: AudioDeviceSignature) -> str:
   return f"index={index} name={name!r} hostapi={hostapi} input_channels={channels} default_samplerate={samplerate}"
 
 
+def get_input_sample_rate_candidates(sd, device: int | None, signature: AudioDeviceSignature | None) -> list[int]:
+  sample_rates = [SAMPLE_RATE]
+  if signature is not None:
+    sample_rates.append(signature[4])
+
+  device_info = query_audio_input_device(sd, device)
+  if device_info is not None:
+    sample_rates.append(_device_sample_rate(device_info))
+
+  sample_rates.extend(INPUT_SAMPLE_RATE_FALLBACKS)
+  return unique_valid_sample_rates(sample_rates)
+
+
 @cache
 def get_a_weighting_filter():
   # Calculate the A-weighting filter
@@ -201,6 +235,10 @@ class Mic:
     self.known_input_devices: set[AudioDeviceSignature] = set()
     self.known_usb_audio_cards: set[str] = set()
     self.last_sound_device_check_time = 0.
+    self.input_sample_rate = SAMPLE_RATE
+    self.resample_input_sample_rate = SAMPLE_RATE
+    self.resample_position = 0.0
+    self.resample_last_sample: float | None = None
 
     self.sound_pressure = 0
     self.sound_pressure_weighted = 0
@@ -222,6 +260,45 @@ class Mic:
     self.pm.send('soundPressure', msg)
     self.rk.keep_time()
 
+  def reset_audio_resampler(self, input_sample_rate: int | None = None) -> None:
+    self.resample_input_sample_rate = self.input_sample_rate if input_sample_rate is None else input_sample_rate
+    self.resample_position = 0.0
+    self.resample_last_sample = None
+
+  def resample_to_output_sample_rate(self, samples: np.ndarray, input_sample_rate: int) -> np.ndarray:
+    if samples.size == 0:
+      return samples
+
+    if input_sample_rate == SAMPLE_RATE:
+      self.reset_audio_resampler(input_sample_rate)
+      return samples
+
+    if input_sample_rate != self.resample_input_sample_rate:
+      self.reset_audio_resampler(input_sample_rate)
+
+    step = input_sample_rate / SAMPLE_RATE
+    start = self.resample_position
+    stop = samples.size - 1
+
+    if self.resample_last_sample is None:
+      start = max(start, 0.0)
+      sample_positions = np.arange(samples.size)
+      input_samples = samples
+    else:
+      sample_positions = np.arange(-1, samples.size)
+      input_samples = np.concatenate(([self.resample_last_sample], samples))
+
+    if start <= stop:
+      output_positions = np.arange(start, stop + np.finfo(float).eps, step)
+      output_samples = np.interp(output_positions, sample_positions, input_samples).astype(samples.dtype)
+      self.resample_position = output_positions[-1] + step - samples.size
+    else:
+      output_samples = np.empty(0, dtype=samples.dtype)
+      self.resample_position = start - samples.size
+
+    self.resample_last_sample = float(samples[-1])
+    return output_samples
+
   def callback(self, indata, frames, time, status):
     """
     Using amplitude measurements, calculate an uncalibrated sound pressure and sound pressure level.
@@ -229,14 +306,18 @@ class Mic:
 
     Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
     """
+    audio_samples = self.resample_to_output_sample_rate(indata[:, 0], self.input_sample_rate)
+    if audio_samples.size == 0:
+      return
+
     msg = messaging.new_message('rawAudioData', valid=True)
-    audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
+    audio_data_int_16 = (audio_samples * 32767).astype(np.int16)
     msg.rawAudioData.data = audio_data_int_16.tobytes()
     msg.rawAudioData.sampleRate = SAMPLE_RATE
     self.pm.send('rawAudioData', msg)
 
     with self.lock:
-      self.measurements = np.concatenate((self.measurements, indata[:, 0]))
+      self.measurements = np.concatenate((self.measurements, audio_samples))
 
       while self.measurements.size >= FFT_SAMPLES:
         measurements = self.measurements[:FFT_SAMPLES]
@@ -327,7 +408,24 @@ class Mic:
         cloudlog.warning(f"micd could not find selected audio input device: {describe_audio_input_device(self.input_device_signature)}")
         self.input_device_signature = None
 
-    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER, device=device)
+    sample_rates = get_input_sample_rate_candidates(sd, device, self.input_device_signature)
+    last_exception: Exception | None = None
+    for sample_rate in sample_rates:
+      try:
+        stream = sd.InputStream(channels=1, samplerate=sample_rate, callback=self.callback,
+                                blocksize=sample_buffer_for_sample_rate(sample_rate), device=device)
+      except Exception as e:
+        last_exception = e
+        cloudlog.warning(f"micd failed to open audio input at {sample_rate} Hz with device={device}: {e}")
+        continue
+
+      self.input_sample_rate = int(stream.samplerate)
+      self.reset_audio_resampler()
+      return stream
+
+    if last_exception is not None:
+      raise last_exception
+    raise RuntimeError("micd found no audio input sample rate candidates")
 
   def micd_thread(self):
     # sounddevice must be imported after forking processes

@@ -19,9 +19,10 @@ from openpilot.system import micd
 from openpilot.common.hardware import HARDWARE
 
 SAMPLE_RATE = 48000
-SAMPLE_BUFFER = 4096 # (approx 100ms)
-WEBRTC_AUDIO_BUFFER_FRAMES = SAMPLE_RATE # 1s max queued remote audio
-WEBRTC_AUDIO_PREBUFFER_FRAMES = SAMPLE_RATE // 5 # 200ms before starting remote audio playback
+SAMPLE_BUFFER = SAMPLE_RATE // 100 # 10ms
+WEBRTC_AUDIO_BUFFER_FRAMES = SAMPLE_RATE // 20 # 50ms max queued remote audio
+WEBRTC_AUDIO_TARGET_BUFFER_FRAMES = SAMPLE_RATE // 50 # trim queued remote audio back to 20ms
+WEBRTC_AUDIO_PREBUFFER_FRAMES = 0 # play remote audio as soon as it arrives
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
@@ -275,8 +276,19 @@ class Soundd:
     with self.webrtc_audio_lock:
       self.webrtc_audio.append(data)
       self.webrtc_audio_frames += data.size
-      while self.webrtc_audio_frames > WEBRTC_AUDIO_BUFFER_FRAMES:
-        self.webrtc_audio_frames -= self.webrtc_audio.popleft().size
+      if self.webrtc_audio_frames > WEBRTC_AUDIO_BUFFER_FRAMES:
+        self._drop_webrtc_audio_until_locked(WEBRTC_AUDIO_TARGET_BUFFER_FRAMES)
+
+  def _drop_webrtc_audio_until_locked(self, target_frames: int) -> None:
+    while self.webrtc_audio and self.webrtc_audio_frames > target_frames:
+      drop_frames = self.webrtc_audio_frames - target_frames
+      data = self.webrtc_audio[0]
+      if drop_frames >= data.size:
+        self.webrtc_audio_frames -= data.size
+        self.webrtc_audio.popleft()
+      else:
+        self.webrtc_audio[0] = data[drop_frames:]
+        self.webrtc_audio_frames -= drop_frames
 
   def get_webrtc_audio_data(self, frames: int) -> np.ndarray:
     ret = np.zeros(frames, dtype=np.float32)
