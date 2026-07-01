@@ -46,24 +46,20 @@ Refer to **slice_outputs** and **parse_vision_outputs/parse_policy_outputs** in 
 * **calib**: camera calibration angles (roll, pitch, yaw) from liveCalibration: 1 x 3 float32 tensor
 
 ### output format
-* 84 x float32 outputs = 2 + 41 * 2 ([parsing example](https://github.com/commaai/openpilot/blob/22ce4e17ba0d3bfcf37f8255a4dd1dc683fe0c38/openpilot/selfdrive/modeld/models/dmonitoring.cc#L33))
-  * for each person in the front seats (2 * 41)
-    * face pose: 12 = 6 + 6
-      * face orientation [pitch, yaw, roll] in camera frame: 3
-      * face position [dx, dy] relative to image center: 2
-      * normalized face size: 1
-      * standard deviations for above outputs: 6
-    * face visible probability: 1
-    * eyes: 20 = (8 + 1) + (8 + 1) + 1 + 1
-      * eye position and size, and their standard deviations: 8
-      * eye visible probability: 1
-      * eye closed probability: 1
-    * wearing sunglasses probability: 1
-    * face occluded probability: 1
-    * touching wheel probability: 1
-    * paying attention probability: 1
-    * (deprecated) distracted probabilities: 2
-    * using phone probability: 1
-    * distracted probability: 1
-  * common outputs 1
-    * left hand drive probability: 1
+* 553 x float32 raw model outputs. Output names and slices are stored in the ONNX metadata and exported to `dmonitoring_model_metadata.pkl`.
+* Per-driver outputs, first for `lhd` and then for `rhd`:
+  * face descriptors: 12 floats
+    * face orientation [pitch, yaw, roll] in camera frame: 3
+    * face position [dx, dy] relative to image center: 2
+    * normalized face size: 1
+    * standard deviations for above outputs: 6
+  * face visible probability: 1
+  * left eye visible probability: 1
+  * right eye visible probability: 1
+  * wearing sunglasses probability: 1
+  * left eye closed probability: 1
+  * right eye closed probability: 1
+  * using phone probability: 1
+  * sleep probability: 1
+* common outputs:
+  * wheel-on-right probability: 1
