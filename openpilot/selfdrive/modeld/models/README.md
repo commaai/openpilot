@@ -40,10 +40,10 @@ Refer to **slice_outputs** and **parse_vision_outputs/parse_policy_outputs** in 
   * `dm_warp_<camera_width>x<camera_height>_tinygrad.pkl` for the driver-camera luminance warp
 
 ### input format
-* single image W = 1440 H = 960 luminance channel (Y) from the planar YUV420 format:
+* **input_img**: single image W = 1440 H = 960 luminance channel (Y) warped from the driver-camera NV12/YUV frame:
   * full input size is 1440 * 960 = 1382400
-  * normalized ranging from 0.0 to 1.0 in float32 (onnx runner) or ranging from 0 to 255 in uint8 (snpe runner)
-* camera calibration angles (roll, pitch, yaw) from liveCalibration: 3 x float32 inputs
+  * represented as a 1 x 1382400 uint8 tensor ranging from 0 to 255
+* **calib**: camera calibration angles (roll, pitch, yaw) from liveCalibration: 1 x 3 float32 tensor
 
 ### output format
 * 84 x float32 outputs = 2 + 41 * 2 ([parsing example](https://github.com/commaai/openpilot/blob/22ce4e17ba0d3bfcf37f8255a4dd1dc683fe0c38/openpilot/selfdrive/modeld/models/dmonitoring.cc#L33))
