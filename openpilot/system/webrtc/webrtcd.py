@@ -365,6 +365,11 @@ class StreamSession:
             self.bitrate_controller.enable(enabled)
             if not enabled:
               self.params.put("LivestreamRequestKeyframe", True)
+          case "speakerVolume":
+            from openpilot.selfdrive.ui.soundd import SPEAKER_VOLUME_PARAM, sanitize_speaker_volume
+            data = payload.get("data", {})
+            volume = data.get("volume") if isinstance(data, dict) else None
+            self.params.put(SPEAKER_VOLUME_PARAM, sanitize_speaker_volume(volume))
           case "clockSync":
             pong = json.dumps({"type": "clockSync", "data": {
               "action": "pong", "browserSendTime": payload["data"]["browserSendTime"], "deviceTime": time.time() * 1000, # noqa: TID251

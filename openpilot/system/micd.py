@@ -16,7 +16,7 @@ RATE = 10
 FFT_SAMPLES = 1600 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 16000
-SAMPLE_BUFFER = 800  # 50ms
+SAMPLE_BUFFER = 160  # 10ms
 SOUND_DEVICE_CHECK_INTERVAL = 1.0
 INPUT_SAMPLE_RATE_FALLBACKS = (48000, 44100)
 
@@ -328,14 +328,17 @@ class Mic:
 
         self.measurements = self.measurements[FFT_SAMPLES:]
 
-  def reset_audio_device_tracking(self, sd) -> None:
+  def reset_audio_device_tracking(self, sd) -> dict[AudioDeviceSignature, AudioDevice]:
     self.known_usb_audio_cards = get_usb_audio_cards()
-    self.known_input_devices = set(query_audio_input_devices(sd))
+    input_devices = query_audio_input_devices(sd)
+    self.known_input_devices = set(input_devices)
     self.last_sound_device_check_time = time.monotonic()
+    return input_devices
 
   def select_preferred_usb_input_device(self, input_devices: dict[AudioDeviceSignature, AudioDevice],
                                         usb_audio_cards: set[str],
-                                        preferred_usb_audio_cards: set[str] | None = None) -> AudioDeviceSignature | None:
+                                        preferred_usb_audio_cards: set[str] | None = None,
+                                        allow_existing_usb_devices: bool = False) -> AudioDeviceSignature | None:
     candidates: list[tuple[int, int, AudioDeviceSignature]] = []
     new_input_devices = set(input_devices) - self.known_input_devices
     preferred_usb_audio_cards = preferred_usb_audio_cards or set()
@@ -349,23 +352,26 @@ class Mic:
       preferred_card_match = bool(device_card_tokens & normalized_preferred_usb_audio_cards)
       new_input_device = signature in new_input_devices
 
-      if not preferred_card_match and not new_input_device:
+      if not preferred_card_match and not new_input_device and not allow_existing_usb_devices:
         continue
 
-      candidates.append((2 if preferred_card_match else 1, signature[0], signature))
+      priority = 2 if preferred_card_match else 1 if new_input_device else 0
+      candidates.append((priority, signature[0], signature))
 
     if not candidates:
       return None
 
     return max(candidates)[2]
 
-  def refresh_usb_input_device(self, sd, preferred_usb_audio_cards: set[str]) -> AudioDeviceSignature | None:
+  def refresh_usb_input_device(self, sd, preferred_usb_audio_cards: set[str],
+                               allow_existing_usb_devices: bool = False) -> AudioDeviceSignature | None:
     sd._terminate()
     sd._initialize()
 
     usb_audio_cards = get_usb_audio_cards()
     input_devices = query_audio_input_devices(sd)
-    input_device_signature = self.select_preferred_usb_input_device(input_devices, usb_audio_cards, preferred_usb_audio_cards)
+    input_device_signature = self.select_preferred_usb_input_device(input_devices, usb_audio_cards, preferred_usb_audio_cards,
+                                                                    allow_existing_usb_devices)
     self.known_usb_audio_cards = usb_audio_cards
     self.known_input_devices.update(input_devices)
 
@@ -431,6 +437,12 @@ class Mic:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
+    input_device_signature = self.refresh_usb_input_device(sd, set(), allow_existing_usb_devices=True)
+    if input_device_signature is not None:
+      self.input_device_signature = input_device_signature
+      cloudlog.info(f"micd starting with USB audio input: {describe_audio_input_device(input_device_signature)}")
+    startup_usb_input_check = input_device_signature is None
+
     pending_usb_audio_cards: set[str] = set()
     while True:
       if pending_usb_audio_cards:
@@ -441,7 +453,16 @@ class Mic:
           cloudlog.info(f"micd switching to new USB audio input: {describe_audio_input_device(input_device_signature)}")
 
       with self.get_stream(sd) as stream:
-        self.reset_audio_device_tracking(sd)
+        input_devices = self.reset_audio_device_tracking(sd)
+
+        if startup_usb_input_check and self.input_device_signature is None:
+          startup_usb_input_check = False
+          input_device_signature = self.select_preferred_usb_input_device(input_devices, self.known_usb_audio_cards,
+                                                                          allow_existing_usb_devices=True)
+          if input_device_signature is not None:
+            self.input_device_signature = input_device_signature
+            cloudlog.info(f"micd switching to USB audio input present at startup: {describe_audio_input_device(input_device_signature)}")
+            continue
 
         cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
         while True:

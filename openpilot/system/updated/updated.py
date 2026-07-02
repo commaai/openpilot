@@ -153,10 +153,10 @@ def init_overlay() -> None:
     raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
 
   # Leave a timestamped canary in BASEDIR to check at startup. The device clock
-  # should be correct by the time we get here. If the init file disappears, or
-  # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
-  # assume that BASEDIR has used for local development or otherwise modified,
-  # and skips the update activation attempt.
+  # should be correct by the time we get here. If the init file disappears, the
+  # worktree is dirty, or critical git metadata is newer than .overlay_init,
+  # launch can assume that BASEDIR has been used for local development or
+  # otherwise modified, and skip the update activation attempt.
   consistent_file = Path(os.path.join(BASEDIR, ".overlay_consistent"))
   if consistent_file.is_file():
     consistent_file.unlink()

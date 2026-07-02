@@ -11,6 +11,7 @@ import numpy as np
 from openpilot.cereal import log, messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
@@ -21,14 +22,20 @@ from openpilot.common.hardware import HARDWARE
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = SAMPLE_RATE // 100 # 10ms
 WEBRTC_AUDIO_BUFFER_FRAMES = SAMPLE_RATE // 20 # 50ms max queued remote audio
-WEBRTC_AUDIO_TARGET_BUFFER_FRAMES = SAMPLE_RATE // 50 # trim queued remote audio back to 20ms
-WEBRTC_AUDIO_PREBUFFER_FRAMES = 0 # play remote audio as soon as it arrives
+WEBRTC_AUDIO_TARGET_BUFFER_FRAMES = SAMPLE_RATE * 40 // 1000 # trim queued remote audio back to 40ms
+WEBRTC_AUDIO_PREBUFFER_FRAMES = WEBRTC_AUDIO_TARGET_BUFFER_FRAMES # wait for 40ms before starting remote audio
+WEBRTC_AUDIO_FADE_FRAMES = SAMPLE_RATE // 200 # 5ms crossfade for queue discontinuities
+WEBRTC_AUDIO_HEALTH_LOG_INTERVAL = 5.0
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
 SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
 FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 SOUND_DEVICE_CHECK_INTERVAL = 1.0
+SPEAKER_VOLUME_PARAM = "SpeakerVolume"
+SPEAKER_VOLUME_MIN = 0
+SPEAKER_VOLUME_MAX = 100
+SPEAKER_VOLUME_DEFAULT = 100
 
 AMBIENT_DB = 24 # DB where MIN_VOLUME is applied
 DB_SCALE = 30 # AMBIENT_DB + DB_SCALE is where MAX_VOLUME is applied
@@ -76,6 +83,20 @@ def check_selfdrive_timeout_alert(sm):
       return True
 
   return False
+
+
+def sanitize_speaker_volume(volume: object | None) -> int:
+  if volume is None:
+    return SPEAKER_VOLUME_DEFAULT
+
+  try:
+    return max(SPEAKER_VOLUME_MIN, min(SPEAKER_VOLUME_MAX, int(volume)))
+  except (TypeError, ValueError):
+    return SPEAKER_VOLUME_DEFAULT
+
+
+def speaker_volume_gain(volume: object | None) -> float:
+  return sanitize_speaker_volume(volume) / SPEAKER_VOLUME_MAX
 
 
 def _device_value(device: AudioDevice, key: str, default: object = None) -> object:
@@ -210,9 +231,11 @@ def describe_audio_device(signature: AudioDeviceSignature) -> str:
 class Soundd:
   def __init__(self):
     self.load_sounds()
+    self.params = Params()
 
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
+    self.speaker_volume = 1.0
     self.current_sound_frame = 0
 
     self.ramp_start_volume = MIN_VOLUME
@@ -225,6 +248,12 @@ class Soundd:
     self.webrtc_audio_frames = 0
     self.webrtc_audio_lock = threading.Lock()
     self.webrtc_audio_playing = False
+    self.webrtc_audio_last_sample = 0.0
+    self.webrtc_audio_fade_anchor = 0.0
+    self.webrtc_audio_fade_in_remaining = 0
+    self.webrtc_audio_underruns = 0
+    self.webrtc_audio_drops = 0
+    self.last_webrtc_audio_health_log_time = 0.
     self.output_device_signature: AudioDeviceSignature | None = None
     self.known_output_devices: set[AudioDeviceSignature] = set()
     self.known_usb_audio_cards: set[str] = set()
@@ -277,18 +306,62 @@ class Soundd:
       self.webrtc_audio.append(data)
       self.webrtc_audio_frames += data.size
       if self.webrtc_audio_frames > WEBRTC_AUDIO_BUFFER_FRAMES:
-        self._drop_webrtc_audio_until_locked(WEBRTC_AUDIO_TARGET_BUFFER_FRAMES)
+        dropped_frames = self._drop_webrtc_audio_until_locked(WEBRTC_AUDIO_TARGET_BUFFER_FRAMES)
+        if dropped_frames > 0:
+          self.webrtc_audio_drops += 1
+          self.webrtc_audio_fade_anchor = self.webrtc_audio_last_sample
+          self.webrtc_audio_fade_in_remaining = WEBRTC_AUDIO_FADE_FRAMES
+          self._log_webrtc_audio_health_locked("overrun")
 
-  def _drop_webrtc_audio_until_locked(self, target_frames: int) -> None:
+  def _drop_webrtc_audio_until_locked(self, target_frames: int) -> int:
+    dropped_frames = 0
     while self.webrtc_audio and self.webrtc_audio_frames > target_frames:
       drop_frames = self.webrtc_audio_frames - target_frames
       data = self.webrtc_audio[0]
       if drop_frames >= data.size:
         self.webrtc_audio_frames -= data.size
+        dropped_frames += data.size
         self.webrtc_audio.popleft()
       else:
         self.webrtc_audio[0] = data[drop_frames:]
         self.webrtc_audio_frames -= drop_frames
+        dropped_frames += drop_frames
+    return dropped_frames
+
+  def _log_webrtc_audio_health_locked(self, reason: str) -> None:
+    now = time.monotonic()
+    if now - self.last_webrtc_audio_health_log_time < WEBRTC_AUDIO_HEALTH_LOG_INTERVAL:
+      return
+
+    self.last_webrtc_audio_health_log_time = now
+    queue_ms = self.webrtc_audio_frames * 1000.0 / SAMPLE_RATE
+    cloudlog.warning(f"soundd webrtc audio {reason}: queue={queue_ms:.1f}ms underruns={self.webrtc_audio_underruns} drops={self.webrtc_audio_drops}")
+
+  def _apply_webrtc_audio_fade_in_locked(self, audio: np.ndarray, start: int, frames: int) -> None:
+    if self.webrtc_audio_fade_in_remaining <= 0 or frames <= 0:
+      return
+
+    fade_frames = min(frames, self.webrtc_audio_fade_in_remaining)
+    fade_offset = WEBRTC_AUDIO_FADE_FRAMES - self.webrtc_audio_fade_in_remaining
+    gains = (np.arange(fade_offset, fade_offset + fade_frames, dtype=np.float32) + 1.0) / WEBRTC_AUDIO_FADE_FRAMES
+    fade_slice = audio[start:start+fade_frames]
+    audio[start:start+fade_frames] = (self.webrtc_audio_fade_anchor * (1.0 - gains)) + (fade_slice * gains)
+    self.webrtc_audio_fade_in_remaining -= fade_frames
+
+  def _conceal_webrtc_audio_underrun_locked(self, audio: np.ndarray, start: int, frames: int) -> None:
+    if frames <= 0:
+      return
+
+    fade_frames = min(frames, WEBRTC_AUDIO_FADE_FRAMES)
+    if fade_frames > 0:
+      audio[start:start+fade_frames] = np.linspace(self.webrtc_audio_last_sample, 0.0, fade_frames, dtype=np.float32)
+
+    self.webrtc_audio_last_sample = 0.0
+    self.webrtc_audio_fade_anchor = 0.0
+    self.webrtc_audio_fade_in_remaining = WEBRTC_AUDIO_FADE_FRAMES
+    self.webrtc_audio_playing = False
+    self.webrtc_audio_underruns += 1
+    self._log_webrtc_audio_health_locked("underrun")
 
   def get_webrtc_audio_data(self, frames: int) -> np.ndarray:
     ret = np.zeros(frames, dtype=np.float32)
@@ -298,12 +371,15 @@ class Soundd:
         if self.webrtc_audio_frames < WEBRTC_AUDIO_PREBUFFER_FRAMES:
           return ret
         self.webrtc_audio_playing = True
+        self.webrtc_audio_fade_anchor = self.webrtc_audio_last_sample
+        self.webrtc_audio_fade_in_remaining = WEBRTC_AUDIO_FADE_FRAMES
 
       written_frames = 0
       while written_frames < frames and self.webrtc_audio:
         data = self.webrtc_audio[0]
         frames_to_write = min(data.size, frames - written_frames)
         ret[written_frames:written_frames+frames_to_write] = data[:frames_to_write]
+        self._apply_webrtc_audio_fade_in_locked(ret, written_frames, frames_to_write)
         written_frames += frames_to_write
         self.webrtc_audio_frames -= frames_to_write
 
@@ -313,7 +389,9 @@ class Soundd:
           self.webrtc_audio[0] = data[frames_to_write:]
 
       if written_frames < frames:
-        self.webrtc_audio_playing = False
+        self._conceal_webrtc_audio_underrun_locked(ret, written_frames, frames - written_frames)
+      else:
+        self.webrtc_audio_last_sample = float(ret[-1])
 
     return ret
 
@@ -327,7 +405,7 @@ class Soundd:
   def callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
     if status:
       cloudlog.warning(f"soundd stream over/underflow: {status}")
-    audio = self.get_sound_data(frames) + self.get_webrtc_audio_data(frames)
+    audio = self.get_sound_data(frames) + self.get_webrtc_audio_data(frames) * self.speaker_volume
     data_out[:frames, 0] = np.clip(audio, -1.0, 1.0)
 
   def update_alert(self, new_alert):
@@ -354,14 +432,20 @@ class Soundd:
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
     return math.pow(VOLUME_BASE, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
 
-  def reset_audio_device_tracking(self, sd) -> None:
+  def update_speaker_volume(self) -> None:
+    self.speaker_volume = speaker_volume_gain(self.params.get(SPEAKER_VOLUME_PARAM, return_default=True))
+
+  def reset_audio_device_tracking(self, sd) -> dict[AudioDeviceSignature, AudioDevice]:
     self.known_usb_audio_cards = get_usb_audio_cards()
-    self.known_output_devices = set(query_audio_output_devices(sd))
+    output_devices = query_audio_output_devices(sd)
+    self.known_output_devices = set(output_devices)
     self.last_sound_device_check_time = time.monotonic()
+    return output_devices
 
   def select_preferred_usb_output_device(self, output_devices: dict[AudioDeviceSignature, AudioDevice],
                                          usb_audio_cards: set[str],
-                                         preferred_usb_audio_cards: set[str] | None = None) -> AudioDeviceSignature | None:
+                                         preferred_usb_audio_cards: set[str] | None = None,
+                                         allow_existing_usb_devices: bool = False) -> AudioDeviceSignature | None:
     candidates: list[tuple[int, int, AudioDeviceSignature]] = []
     new_output_devices = set(output_devices) - self.known_output_devices
     preferred_usb_audio_cards = preferred_usb_audio_cards or set()
@@ -375,23 +459,26 @@ class Soundd:
       preferred_card_match = bool(device_card_tokens & normalized_preferred_usb_audio_cards)
       new_output_device = signature in new_output_devices
 
-      if not preferred_card_match and not new_output_device:
+      if not preferred_card_match and not new_output_device and not allow_existing_usb_devices:
         continue
 
-      candidates.append((2 if preferred_card_match else 1, signature[0], signature))
+      priority = 2 if preferred_card_match else 1 if new_output_device else 0
+      candidates.append((priority, signature[0], signature))
 
     if not candidates:
       return None
 
     return max(candidates)[2]
 
-  def refresh_usb_output_device(self, sd, preferred_usb_audio_cards: set[str]) -> AudioDeviceSignature | None:
+  def refresh_usb_output_device(self, sd, preferred_usb_audio_cards: set[str],
+                                allow_existing_usb_devices: bool = False) -> AudioDeviceSignature | None:
     sd._terminate()
     sd._initialize()
 
     usb_audio_cards = get_usb_audio_cards()
     output_devices = query_audio_output_devices(sd)
-    output_device_signature = self.select_preferred_usb_output_device(output_devices, usb_audio_cards, preferred_usb_audio_cards)
+    output_device_signature = self.select_preferred_usb_output_device(output_devices, usb_audio_cards, preferred_usb_audio_cards,
+                                                                      allow_existing_usb_devices)
     self.known_usb_audio_cards = usb_audio_cards
     self.known_output_devices.update(output_devices)
 
@@ -439,6 +526,12 @@ class Soundd:
     sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
     threading.Thread(target=self.webrtc_audio_thread, daemon=True).start()
 
+    output_device_signature = self.refresh_usb_output_device(sd, set(), allow_existing_usb_devices=True)
+    if output_device_signature is not None:
+      self.output_device_signature = output_device_signature
+      cloudlog.info(f"soundd starting with USB audio output: {describe_audio_device(output_device_signature)}")
+    startup_usb_output_check = output_device_signature is None
+
     pending_usb_audio_cards: set[str] = set()
     while True:
       if pending_usb_audio_cards:
@@ -450,7 +543,16 @@ class Soundd:
 
       with self.get_stream(sd) as stream:
         rk = Ratekeeper(20)
-        self.reset_audio_device_tracking(sd)
+        output_devices = self.reset_audio_device_tracking(sd)
+
+        if startup_usb_output_check and self.output_device_signature is None:
+          startup_usb_output_check = False
+          output_device_signature = self.select_preferred_usb_output_device(output_devices, self.known_usb_audio_cards,
+                                                                            allow_existing_usb_devices=True)
+          if output_device_signature is not None:
+            self.output_device_signature = output_device_signature
+            cloudlog.info(f"soundd switching to USB audio output present at startup: {describe_audio_device(output_device_signature)}")
+            continue
 
         cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
         while True:
@@ -462,6 +564,7 @@ class Soundd:
             if self.current_alert == AudibleAlert.none:
               self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
+          self.update_speaker_volume()
           self.get_audible_alert(sm)
 
           # Ramp up immediate warning sound over 4s
