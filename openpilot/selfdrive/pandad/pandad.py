@@ -76,14 +76,11 @@ def main() -> None:
     cloudlog.exception("pandad.uncaught_exception")
 
   count = 0
+  selected_serial = last_serial = None
+  using_usb_panda = False
   while not do_exit:
     try:
       cloudlog.event("pandad.flash_and_connect", count=count)
-      if (count % 2) == 0:
-        HARDWARE.reset_internal_panda()
-      else:
-        HARDWARE.recover_internal_panda()
-      count += 1
 
       # Flash all Pandas in DFU mode
       for serial in PandaDFU.list():
@@ -91,9 +88,21 @@ def main() -> None:
         PandaDFU(serial).recover()
         time.sleep(1)
 
-      panda_serials = Panda.list()
-      if len(panda_serials):
+      # prefer a USB panda (e.g. red panda for CAN FD) over the internal SPI panda
+      panda_serials = Panda.list(usb_only=True)
+      if panda_serials:
+        cloudlog.info(f"USB panda found, ignoring internal panda {panda_serials}")
+        using_usb_panda = True
+      else:
+        panda_serials = Panda.list()
+
+      # never hotswap to a different panda than the one we already connected to
+      if selected_serial is not None and panda_serials != [selected_serial]:
+        if panda_serials != last_serial: # only log if the list of pandas has changed
+          cloudlog.error(f"panda {selected_serial} no longer present or preferred ({panda_serials}), attempting to reconnect...")
+      elif panda_serials:
         assert len(panda_serials) == 1
+        selected_serial = panda_serials[0]
         cloudlog.info(f"{len(panda_serials)} panda found, connecting - {panda_serials}")
         flash_panda(panda_serials[0])
 
@@ -101,6 +110,18 @@ def main() -> None:
         os.environ['MANAGER_DAEMON'] = 'pandad'
         process = subprocess.Popen(["./pandad"], cwd=os.path.join(BASEDIR, "openpilot/selfdrive/pandad"))
         process.wait()
+
+      last_serial= panda_serials
+
+      if not using_usb_panda:
+        if (count % 2) == 0:
+          HARDWARE.reset_internal_panda()
+        else:
+          HARDWARE.recover_internal_panda()
+      count += 1
+
+      time.sleep(0.5) # Prevent busy loop if no panda is connected
+
     # TODO: wrap all panda exceptions in a base panda exception
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
