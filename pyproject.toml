@@ -29,6 +29,9 @@ dependencies = [
   "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
 
+  # webrtcd
+  "pywebrtc-audio",  # webrtcd outgoing audio AEC
+
   # athena
   "PyJWT[crypto]",
   "websocket_client",
