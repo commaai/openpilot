@@ -73,7 +73,7 @@ _services: dict[str, tuple] = {
   "qRoadEncodeIdx": (False, 20.),
   "userBookmark": (True, 0., 1),
   "soundPressure": (True, 10., 10),
-  "rawAudioData": (False, 20.),
+  "rawAudioData": (False, 100.),
   "webrtcAudioData": (False, 50.),
   "bookmarkButton": (True, 0., 1),
   "roadEncodeData": (False, 20., None, QueueSize.BIG),
