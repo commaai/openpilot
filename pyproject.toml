@@ -47,6 +47,7 @@ dependencies = [
   # body / webrtcd
   "av",
   "aiortc",
+  "pywebrtc-audio",  # webrtcd outgoing audio AEC
 
   # panda
   "libusb1",
