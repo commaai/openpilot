@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from math import atan2, radians
 import numpy as np
 
@@ -77,6 +77,9 @@ class DRIVER_MONITOR_SETTINGS:
     self._HI_STD_FALLBACK_TIME = int(10  / DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
+    self._SLEEP_WINDOW = int(20 / DT_DMON)
+    self._SLEEP_R1_THRESHOLD = -0.3
+
     self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
     self._POSE_OFFSET_MIN_COUNT = int(60 / DT_DMON)  # valid data counts before calibration completes, 1min cumulative
     self._POSE_OFFSET_MAX_COUNT = int(360 / DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
@@ -105,6 +108,27 @@ class DriverBlink:
   def __init__(self):
     self.left = 0.
     self.right = 0.
+
+class SleepFilter:
+  def __init__(self, window, thresh):
+    self.buf = deque(maxlen=window)
+    self.thresh = thresh
+    self.sleep_detected = False
+
+  @staticmethod
+  def _lag1(x):
+    dx = np.diff(x)
+    dx = dx - dx.mean()
+    denom = np.dot(dx, dx)
+    return np.dot(dx[1:], dx[:-1]) / denom if denom > 1e-12 else 0.0
+
+  def update(self, orientation, position, blink):
+    self.buf.append((orientation[0], orientation[1], orientation[2], position[0], position[1], blink))
+    if len(self.buf) < self.buf.maxlen:
+      self.sleep_detected = False
+    else:
+      a = np.array(self.buf)
+      self.sleep_detected = max(self._lag1(a[:, k]) for k in range(6)) < self.thresh
 
 # model output refers to center of undistorted+leveled image
 ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].dcam
@@ -138,6 +162,7 @@ class DriverMonitoring:
     self.pose = DriverPose(settings=self.settings)
     self.blink = DriverBlink()
     self.phone_prob = 0.
+    self.sleep_filter = SleepFilter(self.settings._SLEEP_WINDOW, self.settings._SLEEP_R1_THRESHOLD)
 
     self.alert_level = AlertLevel.none
     self.always_on = always_on
@@ -238,6 +263,7 @@ class DriverMonitoring:
     self.distracted_types['pose'] = bool((pitch_error > pitch_threshold) or (yaw_error > yaw_threshold))
     self.distracted_types['eye'] = bool((self.blink.left + self.blink.right)*0.5 > self.settings._BLINK_THRESHOLD)
     self.distracted_types['phone'] = bool(self.phone_prob > self.settings._PHONE_THRESH)
+    self.distracted_types['sleep'] = bool(self.sleep_filter.sleep_detected)
 
   def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, lowspeed, demo_mode=False, steering_angle_deg=0.):
     rhd_pred = driver_state.wheelOnRightProb
@@ -275,6 +301,8 @@ class DriverMonitoring:
     self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
                       * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.phone_prob = driver_data.phoneProb
+
+    self.sleep_filter.update(driver_data.faceOrientation, driver_data.facePosition, 0.5*(driver_data.leftBlinkProb+driver_data.rightBlinkProb))
 
     self._get_distracted_types()
     self.driver_distracted = any(self.distracted_types.values()) and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
@@ -398,6 +426,7 @@ class DriverMonitoring:
     dm.visionPolicyState.distractedTypes.pose = self.distracted_types['pose']
     dm.visionPolicyState.distractedTypes.eye = self.distracted_types['eye']
     dm.visionPolicyState.distractedTypes.phone = self.distracted_types['phone']
+    dm.visionPolicyState.distractedTypes.sleep = self.distracted_types['sleep']
     dm.visionPolicyState.faceDetected = self.face_detected
     dm.visionPolicyState.pose.pitch = self.pose.pitch
     dm.visionPolicyState.pose.yaw = self.pose.yaw
