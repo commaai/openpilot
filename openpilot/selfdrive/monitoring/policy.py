@@ -79,6 +79,7 @@ class DRIVER_MONITOR_SETTINGS:
 
     self._SLEEP_WINDOW = int(20 / DT_DMON)
     self._SLEEP_R1_THRESHOLD = -0.3
+    self._SLEEP_FILTER_TS = 1.0
 
     self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
     self._POSE_OFFSET_MIN_COUNT = int(60 / DT_DMON)  # valid data counts before calibration completes, 1min cumulative
@@ -110,9 +111,10 @@ class DriverBlink:
     self.right = 0.
 
 class SleepFilter:
-  def __init__(self, window, thresh):
+  def __init__(self, window, thresh, ts):
     self.buf = deque(maxlen=window)
     self.thresh = thresh
+    self.lpf = FirstOrderFilter(0., ts, DT_DMON)
     self.sleep_detected = False
 
   @staticmethod
@@ -124,11 +126,12 @@ class SleepFilter:
 
   def update(self, orientation, position, blink):
     self.buf.append((orientation[0], orientation[1], orientation[2], position[0], position[1], blink))
-    if len(self.buf) < self.buf.maxlen:
-      self.sleep_detected = False
-    else:
+    still = False
+    if len(self.buf) == self.buf.maxlen:
       a = np.array(self.buf)
-      self.sleep_detected = max(self._lag1(a[:, k]) for k in range(6)) < self.thresh
+      still = max(self._lag1(a[:, k]) for k in range(6)) < self.thresh
+    self.lpf.update(1.0 if still else 0.0)
+    self.sleep_detected = self.lpf.x > 0.5
 
 # model output refers to center of undistorted+leveled image
 ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].dcam
@@ -162,7 +165,7 @@ class DriverMonitoring:
     self.pose = DriverPose(settings=self.settings)
     self.blink = DriverBlink()
     self.phone_prob = 0.
-    self.sleep_filter = SleepFilter(self.settings._SLEEP_WINDOW, self.settings._SLEEP_R1_THRESHOLD)
+    self.sleep_filter = SleepFilter(self.settings._SLEEP_WINDOW, self.settings._SLEEP_R1_THRESHOLD, self.settings._SLEEP_FILTER_TS)
 
     self.alert_level = AlertLevel.none
     self.always_on = always_on
