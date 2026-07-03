@@ -4,6 +4,7 @@
 #include <string>
 
 #include "tools/cabana/imgui/app.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/replaystream.h"
 
 namespace {
@@ -124,7 +125,11 @@ int main(int argc, char *argv[]) {
     std::cerr << "cabana(imgui): live streams are not wired up yet (Phase 6 of MIGRATION.md); starting empty.\n";
   }
   if (!options.dbc_path.empty()) {
-    std::cerr << "cabana(imgui): DBC loading is not wired up yet (Phase 3 of MIGRATION.md); starting empty.\n";
+    std::string error;
+    if (!dbc()->open(SOURCE_ALL, options.dbc_path, &error)) {
+      std::cerr << "Failed to load DBC file " << options.dbc_path << ": " << error << "\n";
+      return 1;
+    }
   }
 
   std::unique_ptr<AbstractStream> stream;

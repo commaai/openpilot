@@ -6,3 +6,9 @@ void draw_charts_panel(AppState & /*app*/) {
   }
   ImGui::End();
 }
+
+void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool show) {}
+
+bool charts_is_showing(const MessageId &id, const cabana::Signal *sig) {
+  return false;
+}

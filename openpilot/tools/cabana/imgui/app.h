@@ -97,6 +97,10 @@ void draw_video_panel(AppState &app);
 void draw_charts_panel(AppState &app);
 void draw_transport_bar(AppState &app);
 
+// charts API (defined in charts_panel.cc; panel state is file-local there)
+void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool show);
+bool charts_is_showing(const MessageId &id, const cabana::Signal *sig);
+
 // shared widgets (defined in messages_panel.cc)
 ImU32 to_im_color(const ColorRGBA &c);
 // hex byte cells as in Qt's MessageBytesDelegate; colors may be null (no highlight)
