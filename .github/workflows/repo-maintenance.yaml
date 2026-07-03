@@ -3,6 +3,8 @@ name: repo maintenance
 on:
   schedule:
     - cron: "0 14 * * 1" # every Monday at 2am UTC (6am PST)
+  pull_request:
+    types: [closed]
   workflow_dispatch:
 
 env:
@@ -12,7 +14,9 @@ jobs:
   package_updates:
     name: package_updates
     runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
+    if: >-
+      github.repository == 'commaai/openpilot' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
     - uses: actions/checkout@v7
       with:
@@ -71,3 +75,150 @@ jobs:
           ${{ steps.pip_tree.outputs.PIP_TREE }}
           ```
         labels: bot
+
+  delete_on_merge:
+    name: delete merged branch
+    if: >-
+      github.repository == 'commaai/openpilot' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete merged PR branch
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+            const isFork = pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`;
+
+            if (isFork) {
+              console.log(`Skipping fork branch: ${branch}`);
+              return;
+            }
+
+            if (isProtectedBranch(branch)) {
+              console.log(`Skipping protected branch: ${branch}`);
+              return;
+            }
+
+            await deleteBranch(branch, pr.number);
+
+            function isProtectedBranch(name) {
+              const exact = new Set([
+                'master',
+                'nightly',
+                'nightly-dev',
+                'release2',
+                'release3',
+                'release3-staging',
+                'release-tici',
+                'release-tizi',
+                'release-tizi-staging',
+                'release-mici',
+                'release-mici-staging',
+              ]);
+              if (exact.has(name)) return true;
+              return name.startsWith('__jenkins') || name.startsWith('tmp-jenkins');
+            }
+
+            async function deleteBranch(branch, prNumber) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `heads/${branch}`,
+                });
+                console.log(`Deleted branch ${branch} (PR #${prNumber})`);
+              } catch (error) {
+                if (error.status === 422) {
+                  console.log(`Branch ${branch} already deleted (PR #${prNumber})`);
+                  return;
+                }
+                throw error;
+              }
+            }
+
+  cleanup_merged:
+    name: cleanup merged branches
+    if: >-
+      github.repository == 'commaai/openpilot' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Delete branches for merged PRs
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const days = 180;
+            const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .slice(0, 10);
+            const query = `repo:${context.repo.owner}/${context.repo.repo} is:pr is:merged merged:>=${since}`;
+            let deleted = 0;
+            let skipped = 0;
+
+            for await (const response of github.paginate.iterator(github.rest.search.issuesAndPullRequests, {
+              q: query,
+              per_page: 100,
+            })) {
+              for (const item of response.data.items) {
+                const { data: pr } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: item.number,
+                });
+
+                const branch = pr.head.ref;
+                const isFork = pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`;
+                if (isFork) {
+                  skipped++;
+                  continue;
+                }
+                if (isProtectedBranch(branch)) {
+                  skipped++;
+                  continue;
+                }
+
+                try {
+                  await github.rest.git.deleteRef({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: `heads/${branch}`,
+                  });
+                  console.log(`Deleted branch ${branch} (PR #${pr.number})`);
+                  deleted++;
+                } catch (error) {
+                  if (error.status === 422) {
+                    skipped++;
+                    continue;
+                  }
+                  throw error;
+                }
+              }
+            }
+
+            console.log(`Done. Deleted ${deleted} branches, skipped ${skipped}.`);
+
+            function isProtectedBranch(name) {
+              const exact = new Set([
+                'master',
+                'nightly',
+                'nightly-dev',
+                'release2',
+                'release3',
+                'release3-staging',
+                'release-tici',
+                'release-tizi',
+                'release-tizi-staging',
+                'release-mici',
+                'release-mici-staging',
+              ]);
+              if (exact.has(name)) return true;
+              return name.startsWith('__jenkins') || name.startsWith('tmp-jenkins');
+            }
