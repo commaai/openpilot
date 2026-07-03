@@ -1,13 +1,12 @@
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "tools/cabana/imgui/app.h"
+#include "tools/cabana/streams/replaystream.h"
 
 namespace {
-
-// keep in sync with tools/replay/replay.h (not linked until Phase 2)
-constexpr const char *DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496";
 
 void print_usage(const char *argv0) {
   std::cerr
@@ -103,7 +102,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Invalid theme: " << theme << "\n";
         return 2;
       }
-      options.dark_theme = theme == "dark";
+      options.dark_theme = (theme == "dark");
     } else if (arg == "--help" || arg == "-h") {
       print_usage(argv[0]);
       return 0;
@@ -124,9 +123,27 @@ int main(int argc, char *argv[]) {
       !options.socketcan_device.empty() || !options.zmq_address.empty()) {
     std::cerr << "cabana(imgui): live streams are not wired up yet (Phase 6 of MIGRATION.md); starting empty.\n";
   }
-  if (!options.route.empty() || !options.dbc_path.empty()) {
-    std::cerr << "cabana(imgui): route/DBC loading is not wired up yet (Phase 2/3 of MIGRATION.md); starting empty.\n";
+  if (!options.dbc_path.empty()) {
+    std::cerr << "cabana(imgui): DBC loading is not wired up yet (Phase 3 of MIGRATION.md); starting empty.\n";
   }
 
-  return run(options);
+  std::unique_ptr<AbstractStream> stream;
+  if (!options.route.empty()) {
+    // flag mapping mirrors the old Qt tools/cabana/cabana.cc main()
+    uint32_t replay_flags = REPLAY_FLAG_NONE;
+    if (options.ecam) replay_flags |= REPLAY_FLAG_ECAM;
+    if (options.qcam) replay_flags |= REPLAY_FLAG_QCAMERA;
+    if (options.dcam) replay_flags |= REPLAY_FLAG_DCAM;
+    if (options.no_vipc) replay_flags |= REPLAY_FLAG_NO_VIPC;
+
+    auto replay_stream = std::make_unique<ReplayStream>();
+    if (!replay_stream->loadRoute(options.route, options.data_dir, replay_flags, options.auto_source)) {
+      return 1;  // error already printed by loadRoute
+    }
+    stream = std::move(replay_stream);
+  } else {
+    stream = std::make_unique<DummyStream>();
+  }
+
+  return run(options, std::move(stream));
 }

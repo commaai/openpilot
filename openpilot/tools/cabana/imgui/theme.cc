@@ -4,6 +4,8 @@
 
 #include "implot.h"
 
+#include "tools/cabana/settings.h"
+
 namespace fs = std::filesystem;
 
 namespace {
@@ -112,6 +114,11 @@ void load_fonts() {
   g_mono_font = add_font_with_icons(fonts_dir / "JetBrainsMono-Medium.ttf", MONO_FONT_SIZE);
   if (g_ui_bold_font == nullptr) g_ui_bold_font = g_ui_font;
   if (g_mono_font == nullptr) g_mono_font = g_ui_font;
+}
+
+Theme theme_from_settings() {
+  // settings.theme: 0 (auto) and LIGHT_THEME both render light for now.
+  return settings.theme == DARK_THEME ? Theme::Dark : Theme::Light;
 }
 
 void apply_theme(Theme theme) {

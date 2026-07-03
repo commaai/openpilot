@@ -1,28 +1,36 @@
 #include "tools/cabana/imgui/app.h"
 
+#include <algorithm>
+#include <chrono>
+#include <cstdlib>
 #include <string>
 
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
+#include "imgui_internal.h"
 
 #include <GLFW/glfw3.h>
+
+#include "tools/cabana/settings.h"
 
 namespace fs = std::filesystem;
 
 namespace {
 
-constexpr float STATUS_BAR_HEIGHT = 28.0f;
+constexpr float MESSAGES_WIDTH_RATIO = 0.30f;
+constexpr float RIGHT_COLUMN_WIDTH_RATIO = 0.27f;
+constexpr float VIDEO_HEIGHT_RATIO = 0.45f;
 
-struct AppState {
-  Theme theme = Theme::Light;
-  bool theme_changed = false;
-  bool show_about = false;
-  bool request_close = false;
-  std::string status_text = "no stream";
-};
+fs::path config_dir() {
+  if (const char *xdg = std::getenv("XDG_CONFIG_HOME"); xdg != nullptr && xdg[0] != '\0') {
+    return fs::path(xdg) / "cabana";
+  }
+  const char *home = std::getenv("HOME");
+  return fs::path(home != nullptr ? home : "") / ".config" / "cabana";
+}
 
-void draw_menu_bar(AppState *state) {
+void draw_menu_bar(AppState &app) {
   if (!ImGui::BeginMainMenuBar()) return;
 
   if (ImGui::BeginMenu("File")) {
@@ -35,7 +43,7 @@ void draw_menu_bar(AppState *state) {
     ImGui::Separator();
     ImGui::MenuItem("Save DBC...", "Ctrl+S", false, false);
     ImGui::Separator();
-    if (ImGui::MenuItem("Exit", "Ctrl+Q")) state->request_close = true;
+    if (ImGui::MenuItem("Exit", "Ctrl+Q")) app.request_close = true;
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Edit")) {
@@ -46,10 +54,12 @@ void draw_menu_bar(AppState *state) {
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("View")) {
-    const bool dark = state->theme == Theme::Dark;
+    const bool dark = app.theme == Theme::Dark;
     if (ImGui::MenuItem("Dark Theme", nullptr, dark)) {
-      state->theme = dark ? Theme::Light : Theme::Dark;
-      state->theme_changed = true;
+      app.theme = dark ? Theme::Light : Theme::Dark;
+      app.theme_changed = true;
+      settings.theme = dark ? LIGHT_THEME : DARK_THEME;
+      settings.changed();
     }
     ImGui::MenuItem("Full Screen", "F11", false, false);
     ImGui::EndMenu();
@@ -61,73 +71,60 @@ void draw_menu_bar(AppState *state) {
   }
   if (ImGui::BeginMenu("Help")) {
     ImGui::MenuItem("Help", "F1", false, false);
-    if (ImGui::MenuItem("About")) state->show_about = true;
+    if (ImGui::MenuItem("About")) app.show_about = true;
     ImGui::EndMenu();
   }
   ImGui::EndMainMenuBar();
 }
 
-void draw_centered_text(const char *text) {
-  const float width = ImGui::GetContentRegionAvail().x;
-  ImGui::SetCursorPosX((width - ImGui::CalcTextSize(text).x) * 0.5f);
-  ImGui::TextUnformatted(text);
+// First run (no persisted imgui.ini dock node): lay out the shell like Qt
+// cabana's mainwin.cc createDockWindows()/createDockWidgets() -- Messages on
+// the left, Video/Charts stacked on the right, detail view in the center.
+void build_default_layout(ImGuiID dockspace_id, const ImVec2 &size) {
+  ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
+  ImGui::DockBuilderSetNodeSize(dockspace_id, size);
+
+  ImGuiID left_id = 0, remainder_id = 0, right_id = 0, center_id = 0, video_id = 0, charts_id = 0;
+  ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, MESSAGES_WIDTH_RATIO, &left_id, &remainder_id);
+  const float right_ratio = RIGHT_COLUMN_WIDTH_RATIO / (1.0f - MESSAGES_WIDTH_RATIO);
+  ImGui::DockBuilderSplitNode(remainder_id, ImGuiDir_Right, right_ratio, &right_id, &center_id);
+  ImGui::DockBuilderSplitNode(right_id, ImGuiDir_Up, VIDEO_HEIGHT_RATIO, &video_id, &charts_id);
+
+  ImGui::DockBuilderDockWindow(MESSAGES_WINDOW_TITLE, left_id);
+  ImGui::DockBuilderDockWindow(VIDEO_WINDOW_TITLE, video_id);
+  ImGui::DockBuilderDockWindow(CHARTS_WINDOW_TITLE, charts_id);
+  ImGui::DockBuilderDockWindow(CENTER_WINDOW_TITLE, center_id);
+
+  ImGui::DockBuilderFinish(dockspace_id);
 }
 
-void draw_shortcut_row(const char *title, const char *key) {
-  const float center = ImGui::GetContentRegionAvail().x * 0.5f;
-  const float title_w = ImGui::CalcTextSize(title).x;
-  ImGui::SetCursorPosX(center - title_w - ImGui::GetStyle().ItemSpacing.x);
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextDisabled("%s", title);
-  ImGui::SameLine(center);
-  ImGui::BeginDisabled();
-  ImGui::Button(key);
-  ImGui::EndDisabled();
-}
-
-// mirrors CenterWidget::createWelcomeWidget() in tools/cabana/detailwidget.cc
-void draw_welcome(const ImVec2 &pos, const ImVec2 &size) {
+void draw_dockspace(AppState &app, const ImVec2 &pos, const ImVec2 &size) {
   ImGui::SetNextWindowPos(pos);
   ImGui::SetNextWindowSize(size);
-  ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_ChildBg));
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav;
-  if (ImGui::Begin("##welcome", nullptr, flags)) {
-    const float content_height = 50.0f + 4 * (ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y);
-    ImGui::SetCursorPosY((size.y - content_height) * 0.5f);
-    push_bold_font(50.0f);
-    draw_centered_text("CABANA");
-    pop_bold_font();
-    ImGui::Spacing();
-    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-    draw_centered_text("<- Select a message to view details");
-    ImGui::PopStyleColor();
-    ImGui::Spacing();
-    draw_shortcut_row("Pause", "Space");
-    draw_shortcut_row("Help", "F1");
-    draw_shortcut_row("WhatsThis", "Shift+F1");
-  }
-  ImGui::End();
-  ImGui::PopStyleColor();
-}
-
-void draw_status_bar(AppState *state, const ImVec2 &pos, float width) {
-  ImGui::SetNextWindowPos(pos);
-  ImGui::SetNextWindowSize(ImVec2(width, STATUS_BAR_HEIGHT));
-  const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav;
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 5.0f));
-  if (ImGui::Begin("##statusbar", nullptr, flags)) {
-    ImGui::TextUnformatted(state->status_text.c_str());
-  }
-  ImGui::End();
+                                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  ImGui::Begin("##dockspace_host", nullptr, flags);
   ImGui::PopStyleVar();
+
+  const ImGuiID dockspace_id = ImGui::GetID("CabanaDockspace");
+  if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
+    build_default_layout(dockspace_id, size);
+  }
+  ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_AutoHideTabBar);
+  ImGui::End();
+
+  draw_messages_panel(app);
+  draw_video_panel(app);
+  draw_charts_panel(app);
+  draw_detail_panel(app);
 }
 
-void draw_about_popup(AppState *state) {
-  if (state->show_about) {
+void draw_about_popup(AppState &app) {
+  if (app.show_about) {
     ImGui::OpenPopup("About Cabana");
-    state->show_about = false;
+    app.show_about = false;
   }
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   if (ImGui::BeginPopupModal("About Cabana", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -144,30 +141,33 @@ void draw_about_popup(AppState *state) {
   }
 }
 
-void draw_ui(AppState *state) {
+void draw_ui(AppState &app) {
   const ImGuiIO &io = ImGui::GetIO();
   const bool ctrl = io.KeyCtrl || io.KeySuper;
   if (!io.WantTextInput && ctrl && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
-    state->request_close = true;
+    app.request_close = true;
+  }
+  if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) {
+    app.stream->pause(!app.stream->isPaused());
   }
 
-  draw_menu_bar(state);
+  draw_menu_bar(app);
 
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
   const ImVec2 work_pos = viewport->WorkPos;
   const ImVec2 work_size = viewport->WorkSize;
-  const float content_height = work_size.y - STATUS_BAR_HEIGHT;
-  draw_welcome(work_pos, ImVec2(work_size.x, content_height));
-  draw_status_bar(state, ImVec2(work_pos.x, work_pos.y + content_height), work_size.x);
-  draw_about_popup(state);
+  const float content_height = work_size.y - TRANSPORT_BAR_HEIGHT;
+  draw_dockspace(app, work_pos, ImVec2(work_size.x, content_height));
+  draw_transport_bar(app);
+  draw_about_popup(app);
 }
 
-void render_frame(GLFWwindow *window, AppState *state, const fs::path *capture_path) {
+void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_path) {
   glfwPollEvents();
 
-  if (state->theme_changed) {
-    apply_theme(state->theme);
-    state->theme_changed = false;
+  if (app.theme_changed) {
+    apply_theme(app.theme);
+    app.theme_changed = false;
   }
 
   int framebuffer_width = 0;
@@ -178,12 +178,14 @@ void render_frame(GLFWwindow *window, AppState *state, const fs::path *capture_p
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  draw_ui(state);
+  app.stream->update();
+
+  draw_ui(app);
 
   ImGui::Render();
-  if (state->request_close) {
+  if (app.request_close) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
-    state->request_close = false;
+    app.request_close = false;
   }
 
   glViewport(0, 0, framebuffer_width, framebuffer_height);
@@ -199,26 +201,58 @@ void render_frame(GLFWwindow *window, AppState *state, const fs::path *capture_p
 
 }  // namespace
 
-int run(const Options &options) {
+int run(const Options &options, std::unique_ptr<AbstractStream> stream) {
+  const fs::path settings_dir = config_dir();
+  std::error_code ec;
+  fs::create_directories(settings_dir, ec);
+  const std::string ini_path = (settings_dir / "imgui.ini").string();
+
   GlfwRuntime glfw_runtime(options);
   ImGuiRuntime imgui_runtime(glfw_runtime.window());
+  ImGui::GetIO().IniFilename = ini_path.c_str();
   load_fonts();
 
-  AppState state;
-  state.theme = options.dark_theme ? Theme::Dark : Theme::Light;
-  apply_theme(state.theme);
+  AppState app;
+  app.stream = std::move(stream);
+  can = app.stream.get();
+
+  app.theme = theme_from_settings();
+  if (options.dark_theme.has_value()) {
+    app.theme = *options.dark_theme ? Theme::Dark : Theme::Light;
+    settings.theme = *options.dark_theme ? DARK_THEME : LIGHT_THEME;
+  }
+  apply_theme(app.theme);
+
+  app.stream->start();
 
   if (!options.output_path.empty()) {
     const fs::path capture_path = options.output_path;
     for (int i = 0; i < 3; ++i) {
-      render_frame(glfw_runtime.window(), &state, nullptr);
+      render_frame(glfw_runtime.window(), app, nullptr);
     }
-    render_frame(glfw_runtime.window(), &state, &capture_path);
+    if (has_stream(app)) {
+      // Pump real frames so the capture is data-bearing instead of a route
+      // that never advanced past t=0.
+      const double target_sec = std::min(30.0, app.stream->maxSeconds() * 0.5);
+      app.stream->setSpeed(5.0f);
+      const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(90);
+      while (app.stream->currentSec() < target_sec && std::chrono::steady_clock::now() < deadline) {
+        render_frame(glfw_runtime.window(), app, nullptr);
+      }
+      app.stream->setSpeed(1.0f);
+      if (!app.selected_msg_id && !can->lastMessages().empty()) {
+        // select the busiest message so panel captures are populated
+        auto busiest = std::max_element(can->lastMessages().begin(), can->lastMessages().end(),
+                                        [](const auto &a, const auto &b) { return a.second.count < b.second.count; });
+        app.selected_msg_id = busiest->first;
+      }
+    }
+    render_frame(glfw_runtime.window(), app, &capture_path);
     if (!options.show) return 0;
   }
 
   while (!glfwWindowShouldClose(glfw_runtime.window())) {
-    render_frame(glfw_runtime.window(), &state, nullptr);
+    render_frame(glfw_runtime.window(), app, nullptr);
   }
   return 0;
 }
