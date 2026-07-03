@@ -88,11 +88,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const days = 180;
-            const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .slice(0, 10);
-            const query = `repo:${context.repo.owner}/${context.repo.repo} is:pr is:merged merged:>=${since}`;
+            const query = `repo:${context.repo.owner}/${context.repo.repo} is:pr is:merged`;
             let deleted = 0;
             let skipped = 0;
 
