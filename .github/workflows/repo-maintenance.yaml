@@ -77,39 +77,28 @@ jobs:
         labels: bot
 
   cleanup_merged_branches:
-    name: cleanup merged branches
     if: github.repository == 'commaai/openpilot'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: read
     steps:
-      - name: Delete branches for merged PRs
-        uses: actions/github-script@v9
+      - uses: actions/github-script@v9
         with:
           script: |
-            const query = `repo:${context.repo.owner}/${context.repo.repo} is:pr is:merged`;
-            let deleted = 0;
-            let skipped = 0;
+            const upstream = `${context.repo.owner}/${context.repo.repo}`;
 
-            for await (const response of github.paginate.iterator(github.rest.search.issuesAndPullRequests, {
-              q: query,
+            for await (const response of github.paginate.iterator(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
               per_page: 100,
             })) {
-              for (const item of response.data.items) {
-                const { data: pr } = await github.rest.pulls.get({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  pull_number: item.number,
-                });
+              for (const pr of response.data) {
+                if (!pr.merged_at) continue;
+                if (pr.head.repo.full_name !== upstream) continue;
 
                 const branch = pr.head.ref;
-                const isFork = pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`;
-                if (isFork) {
-                  skipped++;
-                  continue;
-                }
-
                 try {
                   await github.rest.git.deleteRef({
                     owner: context.repo.owner,
@@ -117,16 +106,12 @@ jobs:
                     ref: `heads/${branch}`,
                   });
                   console.log(`Deleted branch ${branch} (PR #${pr.number})`);
-                  deleted++;
                 } catch (error) {
                   if (error.status === 422 || error.status === 403) {
                     console.log(`Skipping branch ${branch} (PR #${pr.number}): ${error.message}`);
-                    skipped++;
                     continue;
                   }
                   throw error;
                 }
               }
             }
-
-            console.log(`Done. Deleted ${deleted} branches, skipped ${skipped}.`);
