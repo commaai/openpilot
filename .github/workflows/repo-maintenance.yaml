@@ -113,10 +113,6 @@ jobs:
                   skipped++;
                   continue;
                 }
-                if (isProtectedBranch(branch)) {
-                  skipped++;
-                  continue;
-                }
 
                 try {
                   await github.rest.git.deleteRef({
@@ -127,7 +123,8 @@ jobs:
                   console.log(`Deleted branch ${branch} (PR #${pr.number})`);
                   deleted++;
                 } catch (error) {
-                  if (error.status === 422) {
+                  if (error.status === 422 || error.status === 403) {
+                    console.log(`Skipping branch ${branch} (PR #${pr.number}): ${error.message}`);
                     skipped++;
                     continue;
                   }
@@ -137,21 +134,3 @@ jobs:
             }
 
             console.log(`Done. Deleted ${deleted} branches, skipped ${skipped}.`);
-
-            function isProtectedBranch(name) {
-              const exact = new Set([
-                'master',
-                'nightly',
-                'nightly-dev',
-                'release2',
-                'release3',
-                'release3-staging',
-                'release-tici',
-                'release-tizi',
-                'release-tizi-staging',
-                'release-mici',
-                'release-mici-staging',
-              ]);
-              if (exact.has(name)) return true;
-              return name.startsWith('__jenkins') || name.startsWith('tmp-jenkins');
-            }
