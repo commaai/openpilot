@@ -16,11 +16,11 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: true
       - name: Checkout master
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: master
           path: base
@@ -36,7 +36,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Post model report comment
-        uses: marocchino/sticky-pull-request-comment@baa7203ed60924babbe5dcd0ac8eae3b66ec5e16
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0
         with:
           header: model-review
           message: ${{ steps.report.outputs.content }}
