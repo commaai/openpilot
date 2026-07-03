@@ -1,8 +1,42 @@
 #include "tools/cabana/dbc/dbc.h"
 
 #include <algorithm>
+#include <cmath>
 
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/utils/util_core.h"
+
+namespace {
+
+ColorRGBA hsvToRgb(float h, float s, float v) {
+  auto clamp01 = [](float x) { return std::max(0.0f, std::min(1.0f, x)); };
+  h = clamp01(h);
+  s = clamp01(s);
+  v = clamp01(v);
+
+  float r = v, g = v, b = v;
+  if (s > 0.0f) {
+    float hh = h * 6.0f;
+    if (hh >= 6.0f) hh = 0.0f;
+    int i = static_cast<int>(hh);
+    float f = hh - i;
+    float p = v * (1.0f - s);
+    float q = v * (1.0f - s * f);
+    float t = v * (1.0f - s * (1.0f - f));
+    switch (i) {
+      case 0: r = v; g = t; b = p; break;
+      case 1: r = q; g = v; b = p; break;
+      case 2: r = p; g = v; b = t; break;
+      case 3: r = p; g = q; b = v; break;
+      case 4: r = t; g = p; b = v; break;
+      default: r = v; g = p; b = q; break;
+    }
+  }
+
+  auto to255 = [&clamp01](float x) { return static_cast<uint8_t>(std::lround(clamp01(x) * 255.0f)); };
+  return ColorRGBA{to255(r), to255(g), to255(b), 255};
+}
+
+}  // namespace
 
 // cabana::Msg
 
@@ -135,7 +169,7 @@ void cabana::Signal::update() {
   float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
   float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
 
-  color = QColor::fromHsvF(h, s, v);
+  color = hsvToRgb(h, s, v);
   precision = std::max(num_decimals(factor), num_decimals(offset));
 }
 

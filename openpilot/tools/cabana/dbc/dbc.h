@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
@@ -8,12 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include <QColor>
-#include <QMetaType>
-
 const std::string UNTITLED = "untitled";
 const std::string DEFAULT_NODE_NAME = "XXX";
 constexpr int CAN_MAX_DATA_BYTES = 64;
+
+struct ColorRGBA {
+  uint8_t r = 0, g = 0, b = 0, a = 255;
+};
 
 struct MessageId {
   uint8_t source = 0;
@@ -49,8 +51,6 @@ struct MessageId {
   }
 };
 
-Q_DECLARE_METATYPE(MessageId);
-
 template <>
 struct std::hash<MessageId> {
   std::size_t operator()(const MessageId &k) const noexcept {
@@ -59,7 +59,6 @@ struct std::hash<MessageId> {
 };
 
 typedef std::vector<std::pair<double, std::string>> ValueDescription;
-Q_DECLARE_METATYPE(ValueDescription);
 
 namespace cabana {
 
@@ -92,7 +91,7 @@ public:
   std::string receiver_name;
   ValueDescription val_desc;
   int precision = 0;
-  QColor color;
+  ColorRGBA color;
 
   // Multiplexed
   int multiplex_value = 0;

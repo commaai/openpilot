@@ -1,27 +1,25 @@
 #pragma once
 
-#include <QObject>
-#include <memory>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "tools/cabana/dbc/dbcfile.h"
+#include "tools/cabana/utils/event.h"
 
 typedef std::set<int> SourceSet;
 const SourceSet SOURCE_ALL = {-1};
 const int INVALID_SOURCE = 0xff;
 inline bool operator<(const std::shared_ptr<DBCFile> &l, const std::shared_ptr<DBCFile> &r) { return l.get() < r.get(); }
 
-class DBCManager : public QObject {
-  Q_OBJECT
-
+class DBCManager {
 public:
-  DBCManager(QObject *parent) : QObject(parent) {}
-  ~DBCManager() {}
-  bool open(const SourceSet &sources, const std::string &dbc_file_name, QString *error = nullptr);
-  bool open(const SourceSet &sources, const std::string &name, const std::string &content, QString *error = nullptr);
+  DBCManager() = default;
+  ~DBCManager() = default;
+  bool open(const SourceSet &sources, const std::string &dbc_file_name, std::string *error = nullptr);
+  bool open(const SourceSet &sources, const std::string &name, const std::string &content, std::string *error = nullptr);
   void close(const SourceSet &sources);
   void close(DBCFile *dbc_file);
   void closeAll();
@@ -49,14 +47,13 @@ public:
   inline DBCFile *findDBCFile(const MessageId &id) { return findDBCFile(id.source); }
   std::set<DBCFile *> allDBCFiles();
 
-signals:
-  void signalAdded(MessageId id, const cabana::Signal *sig);
-  void signalRemoved(const cabana::Signal *sig);
-  void signalUpdated(const cabana::Signal *sig);
-  void msgUpdated(MessageId id);
-  void msgRemoved(MessageId id);
-  void DBCFileChanged();
-  void maskUpdated();
+  Event<MessageId, const cabana::Signal *> signalAdded;
+  Event<const cabana::Signal *> signalRemoved;
+  Event<const cabana::Signal *> signalUpdated;
+  Event<MessageId> msgUpdated;
+  Event<MessageId> msgRemoved;
+  Event<> DBCFileChanged;
+  Event<> maskUpdated;
 
 private:
   std::map<int, std::shared_ptr<DBCFile>> dbc_files;

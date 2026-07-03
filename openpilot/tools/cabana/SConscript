@@ -1,3 +1,8 @@
+# Qt cabana is frozen during the ImGui migration (see imgui/MIGRATION.md): the
+# core (dbc/, streams/, ...) is being de-Qt'd in place, which breaks the Qt
+# widgets' build. The Qt sources remain as the parity reference until the flip.
+Return()
+
 import subprocess
 import os
 import shutil

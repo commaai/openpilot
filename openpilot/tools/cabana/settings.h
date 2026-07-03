@@ -1,18 +1,14 @@
 #pragma once
 
-#include <QByteArray>
-#include <QComboBox>
-#include <QDialog>
-#include <QGroupBox>
-#include <QLineEdit>
-#include <QSpinBox>
+#include <string>
+#include <vector>
+
+#include "tools/cabana/utils/event.h"
 
 #define LIGHT_THEME 1
 #define DARK_THEME 2
 
-class Settings : public QObject {
-  Q_OBJECT
-
+class Settings {
 public:
   enum DragDirection {
     MsbFirst,
@@ -23,6 +19,8 @@ public:
 
   Settings();
   ~Settings();
+
+  void save() const;
 
   bool absolute_time = false;
   int fps = 10;
@@ -36,38 +34,22 @@ public:
   bool multiple_lines_hex = false;
   bool log_livestream = true;
   bool suppress_defined_signals = false;
-  QString log_path;
-  QString last_dir;
-  QString last_route_dir;
-  QByteArray geometry;
-  QByteArray video_splitter_state;
-  QByteArray window_state;
-  QStringList recent_files;
-  QByteArray message_header_state;
+  std::string log_path;
+  std::string last_dir;
+  std::string last_route_dir;
+  std::vector<std::string> recent_files;
   DragDirection drag_direction = MsbFirst;
 
   // session data
-  QString recent_dbc_file;
-  QString active_msg_id;
-  QStringList selected_msg_ids;
-  QStringList active_charts;
+  std::string recent_dbc_file;
+  std::string active_msg_id;
+  std::vector<std::string> selected_msg_ids;
+  std::vector<std::string> active_charts;
 
-signals:
-  void changed();
-};
+  Event<> changed;
 
-class SettingsDlg : public QDialog {
-public:
-  SettingsDlg(QWidget *parent);
-  void save();
-  QSpinBox *fps;
-  QSpinBox *cached_minutes;
-  QSpinBox *chart_height;
-  QComboBox *chart_series_type;
-  QComboBox *theme;
-  QGroupBox *log_livestream;
-  QLineEdit *log_path;
-  QComboBox *drag_direction;
+private:
+  void load();
 };
 
 extern Settings settings;

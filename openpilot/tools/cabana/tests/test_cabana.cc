@@ -1,6 +1,4 @@
-
-#undef INFO
-#include <QDir>
+#include <filesystem>
 
 #include "catch2/catch.hpp"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -143,15 +141,20 @@ CM_ SG_ 162 signal_1 "signal comment with \"escaped quotes\"";
 }
 
 TEST_CASE("parse_opendbc") {
-  QDir dir(OPENDBC_FILE_PATH);
-  QStringList errors;
-  for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+  std::vector<std::string> errors;
+  for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH)) {
+    if (!entry.is_regular_file() || entry.path().extension() != ".dbc") continue;
     try {
-      auto dbc = DBCFile(dir.filePath(fn).toStdString());
+      auto dbc = DBCFile(entry.path().string());
     } catch (std::exception &e) {
       errors.push_back(e.what());
     }
   }
-  INFO(errors.join("\n").toStdString());
+  std::string joined;
+  for (const auto &e : errors) {
+    if (!joined.empty()) joined += "\n";
+    joined += e;
+  }
+  INFO(joined);
   REQUIRE(errors.empty());
 }
