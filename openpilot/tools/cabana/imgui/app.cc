@@ -48,9 +48,11 @@ void draw_menu_bar(AppState &app) {
   if (!ImGui::BeginMainMenuBar()) return;
 
   if (ImGui::BeginMenu("File")) {
-    ImGui::MenuItem("Open Stream...", nullptr, false, false);
+    if (ImGui::MenuItem("Open Stream...")) open_stream_selector();
     ImGui::Separator();
     draw_dbc_file_menu_items(app);
+    ImGui::Separator();
+    if (ImGui::MenuItem("Export to CSV...", nullptr, false, has_stream(app))) open_export_csv();
     ImGui::Separator();
     if (ImGui::MenuItem("Exit", "Ctrl+Q")) app.request_close = true;
     ImGui::EndMenu();
@@ -58,7 +60,7 @@ void draw_menu_bar(AppState &app) {
   if (ImGui::BeginMenu("Edit")) {
     draw_dbc_edit_menu_items();
     ImGui::Separator();
-    ImGui::MenuItem("Settings...", "Ctrl+,", false, false);
+    if (ImGui::MenuItem("Settings...", "Ctrl+,")) open_settings_dialog();
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("View")) {
@@ -73,12 +75,12 @@ void draw_menu_bar(AppState &app) {
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Tools")) {
-    ImGui::MenuItem("Find Signal...", nullptr, false, false);
-    ImGui::MenuItem("Find Similar Bits...", nullptr, false, false);
+    if (ImGui::MenuItem("Find Signal...", nullptr, false, has_stream(app))) open_find_signal();
+    if (ImGui::MenuItem("Find Similar Bits...", nullptr, false, has_stream(app))) open_find_similar_bits();
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Help")) {
-    ImGui::MenuItem("Help", "F1", false, false);
+    if (ImGui::MenuItem("Help", "F1")) toggle_help_overlay();
     if (ImGui::MenuItem("About")) app.show_about = true;
     ImGui::EndMenu();
   }
@@ -160,6 +162,9 @@ void draw_ui(AppState &app) {
   if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) {
     app.stream->pause(!app.stream->isPaused());
   }
+  if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
+    toggle_help_overlay();
+  }
 
   // DBC-aware close: consume the trigger edge here (both Ctrl+Q above and
   // the GLFW window-close callback below set this) and route it through the
@@ -180,6 +185,12 @@ void draw_ui(AppState &app) {
   draw_transport_bar(app);
   draw_about_popup(app);
   draw_dbc_modals();
+  draw_stream_selector(app);
+  draw_find_signal(app);
+  draw_find_similar_bits(app);
+  draw_settings_dialog(app);
+  draw_route_tools(app);
+  draw_help_overlay(app);
 }
 
 void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_path) {

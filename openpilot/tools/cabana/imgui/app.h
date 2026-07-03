@@ -97,6 +97,22 @@ void draw_video_panel(AppState &app);
 void draw_charts_panel(AppState &app);
 void draw_transport_bar(AppState &app);
 
+// tool windows/dialogs: each owns its file; open_*() requests it, draw_*()
+// runs every frame from app.cc
+void draw_stream_selector(AppState &app);  // stream_selector.cc
+void open_stream_selector();
+void draw_find_signal(AppState &app);  // find_signal.cc
+void open_find_signal();
+void draw_find_similar_bits(AppState &app);  // find_similar_bits.cc
+void open_find_similar_bits();
+void draw_settings_dialog(AppState &app);  // settings_dialog.cc
+void open_settings_dialog();
+void draw_help_overlay(AppState &app);  // help_overlay.cc
+void toggle_help_overlay();
+void draw_route_tools(AppState &app);  // routes_dialog.cc: remote route browser + CSV export
+void open_remote_route_browser(std::string *out_route);  // picked route written to *out_route on confirm
+void open_export_csv();
+
 // charts API (defined in charts_panel.cc; panel state is file-local there)
 void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool show);
 bool charts_is_showing(const MessageId &id, const cabana::Signal *sig);
