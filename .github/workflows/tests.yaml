@@ -35,11 +35,11 @@ jobs:
       STRIPPED_DIR: /tmp/releasepilot
       PYTHONPATH: /tmp/releasepilot
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - name: Getting LFS files
-      uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e
+      uses: nick-fields/retry@v4
       with:
         timeout_minutes: 2
         max_attempts: 3
@@ -65,7 +65,7 @@ jobs:
     name: build macOS
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - name: Remove Homebrew from environment
@@ -85,7 +85,7 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - run: ./tools/op.sh setup
@@ -102,7 +102,7 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - run: ./tools/op.sh setup
@@ -125,7 +125,7 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - run: ./tools/op.sh setup
@@ -142,14 +142,14 @@ jobs:
     - name: Print diff report
       if: always()
       run: cat openpilot/selfdrive/test/process_replay/diff_report.txt
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: always()
       continue-on-error: true
       with:
         name: process_replay_diff.txt
         path: openpilot/selfdrive/test/process_replay/diff.txt
     - name: Upload diff report
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: always() && github.event_name == 'pull_request'
       continue-on-error: true
       with:
@@ -157,7 +157,7 @@ jobs:
         path: openpilot/selfdrive/test/process_replay/diff_report.txt
     - name: Checkout ci-artifacts
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: commaai/ci-artifacts
         ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
@@ -176,7 +176,7 @@ jobs:
         git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}" || echo "No changes to commit"
     - name: Push refs
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
-      uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e
+      uses: nick-fields/retry@v4
       with:
         timeout_minutes: 2
         max_attempts: 3
@@ -198,7 +198,7 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     if: false  # FIXME: Started to timeout recently
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - run: ./tools/op.sh setup
@@ -219,7 +219,7 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - run: ./tools/op.sh setup
@@ -231,7 +231,7 @@ jobs:
           python3 openpilot/selfdrive/ui/tests/diff/replay.py
           python3 openpilot/selfdrive/ui/tests/diff/replay.py --big
       - name: Upload UI Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ui-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
           path: openpilot/selfdrive/ui/tests/diff/report

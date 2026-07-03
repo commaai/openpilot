@@ -11,7 +11,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: false
 
@@ -23,7 +23,7 @@ jobs:
 
     # Check PR target branch
     - name: check branch
-      uses: Vankka/pr-target-branch-action@def32ec9d93514138d6ac0132ee62e120a72aed5
+      uses: Vankka/pr-target-branch-action@v3
       if: github.repository == 'commaai/openpilot'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

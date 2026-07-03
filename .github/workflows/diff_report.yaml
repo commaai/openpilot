@@ -17,7 +17,7 @@ jobs:
     - name: Wait for process replay
       id: wait
       continue-on-error: true
-      uses: lewagon/wait-on-check-action@v1.3.4
+      uses: lewagon/wait-on-check-action@v1.8.1
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         check-name: process replay
@@ -26,7 +26,7 @@ jobs:
         wait-interval: 20
     - name: Download diff
       if: steps.wait.outcome == 'success'
-      uses: dawidd6/action-download-artifact@v6
+      uses: dawidd6/action-download-artifact@v21
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         workflow: tests.yaml
@@ -37,9 +37,9 @@ jobs:
         allow_forks: true
     - name: Comment on PR
       if: steps.wait.outcome == 'success'
-      uses: thollander/actions-comment-pull-request@v2
+      uses: thollander/actions-comment-pull-request@v3
       with:
-        filePath: diff_report.txt
-        comment_tag: diff_report
-        pr_number: ${{ github.event.number }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        file-path: diff_report.txt
+        comment-tag: diff_report
+        pr-number: ${{ github.event.number }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
