@@ -1,0 +1,24 @@
+import os
+
+import bootstrap_icons
+import imgui
+from openpilot.common.basedir import BASEDIR
+
+Import('env', 'arch')
+
+cabana_imgui_env = env.Clone()
+cabana_imgui_env["LIBPATH"] += [imgui.MESA_DIR]
+cabana_imgui_env["CPPPATH"] += [imgui.INCLUDE_DIR]
+cabana_imgui_env["CXXFLAGS"] += [
+  "-DGLFW_INCLUDE_NONE",
+  '-DCABANA_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
+  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
+]
+
+libs = [File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"), "m", "pthread"]
+if arch == "Darwin":
+  cabana_imgui_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo"]
+else:
+  libs += ["GL", "dl"]
+
+cabana_imgui_env.Program('_cabana_imgui', cabana_imgui_env.Glob('*.cc'), LIBS=libs)

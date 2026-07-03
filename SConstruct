@@ -259,6 +259,7 @@ if GetOption('extras') and arch != "larch64":
   SConscript([
     'openpilot/tools/replay/SConscript',
     'openpilot/tools/cabana/SConscript',
+    'openpilot/tools/cabana/imgui/SConscript',
     'openpilot/tools/jotpluggler/SConscript',
   ])
 
