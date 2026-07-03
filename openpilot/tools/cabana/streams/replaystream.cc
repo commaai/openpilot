@@ -1,16 +1,11 @@
 #include "tools/cabana/streams/replaystream.h"
 
-#include <QLabel>
-#include <QFileDialog>
-#include <QGridLayout>
-#include <QMessageBox>
-#include <QPushButton>
+#include <cstdio>
 
-#include "common/timing.h"
 #include "common/util.h"
-#include "tools/cabana/streams/routes.h"
+#include "tools/cabana/settings.h"
 
-ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
+ReplayStream::ReplayStream() {
   unsetenv("ZMQ");
   setenv("COMMA_CACHE", "/tmp/comma_download_cache", 1);
 
@@ -19,9 +14,18 @@ ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   op_prefix = std::make_unique<OpenpilotPrefix>();
 #endif
 
-  QObject::connect(&settings, &Settings::changed, this, [this]() {
+  settings.changed.connect([this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
+}
+
+ReplayStream::~ReplayStream() {
+  {
+    std::lock_guard lk(merge_mutex_);
+    aborting_ = true;
+  }
+  merge_cv_.notify_all();
+  replay.reset();
 }
 
 void ReplayStream::mergeSegments() {
@@ -52,44 +56,82 @@ bool ReplayStream::loadRoute(const std::string &route, const std::string &data_d
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
 
-  // Forward replay callbacks to corresponding Qt signals.
-  replay->onSeeking = [this](double sec) { emit seeking(sec); };
+  // Replay invokes these callbacks either synchronously on the calling
+  // thread (e.g. seeking into an already-loaded segment resolves inline) or
+  // asynchronously from a replay-owned thread. The old Qt::AutoConnection
+  // handled this transparently (direct call vs. queued); onUiThread() makes
+  // the same distinction explicit: run inline on the UI thread, otherwise
+  // enqueue for AbstractStream::update() to drain -- never touch UI state
+  // directly from a replay thread. See abstractstream.h for the contract.
+  replay->onSeeking = [this](double sec) {
+    auto action = [this, sec]() {
+      current_sec_ = sec;
+      seeking(sec);
+    };
+    if (onUiThread()) action(); else enqueue(std::move(action));
+  };
   replay->onSeekedTo = [this](double sec) {
-    emit seekedTo(sec);
+    auto action = [this, sec]() {
+      seekedTo(sec);
+      updateLastMsgsTo(sec);
+    };
+    if (onUiThread()) {
+      action();
+    } else {
+      enqueue(std::move(action));
+    }
+    // Always consume seek_finished_ (updateLastMsgsTo sets it unconditionally);
+    // inline it returns immediately, async it blocks the replay thread until
+    // the UI thread has drained the action.
     waitForSeekFinshed();
   };
-  replay->onQLogLoaded = [this](std::shared_ptr<LogReader> qlog) { emit qLogLoaded(qlog); };
-  replay->onSegmentsMerged = [this]() { QMetaObject::invokeMethod(this, &ReplayStream::mergeSegments, Qt::BlockingQueuedConnection); };
+  replay->onQLogLoaded = [this](std::shared_ptr<LogReader> qlog) {
+    auto action = [this, qlog]() { qLogLoaded(qlog); };
+    if (onUiThread()) action(); else enqueue(std::move(action));
+  };
+  replay->onSegmentsMerged = [this]() {
+    if (onUiThread()) {
+      mergeSegments();
+      return;
+    }
+    // Mirrors the old Qt::BlockingQueuedConnection: block this (replay)
+    // thread until the UI thread has run mergeSegments().
+    std::unique_lock lock(merge_mutex_);
+    if (aborting_) return;
+    merge_done_ = false;
+    enqueue([this]() {
+      mergeSegments();
+      std::lock_guard lk(merge_mutex_);
+      merge_done_ = true;
+      merge_cv_.notify_one();
+    });
+    merge_cv_.wait(lock, [this]() { return merge_done_ || aborting_.load(); });
+  };
 
   bool success = replay->load();
   if (!success) {
     if (replay->lastRouteError() == RouteLoadError::Unauthorized) {
       auto auth_content = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
-      QString message;
       if (auth_content.empty()) {
-        message = "Authentication Required. Please run the following command to authenticate:\n\n"
-                  "python3 openpilot/tools/lib/auth.py\n\n"
-                  "This will grant access to routes from your comma account.";
+        fprintf(stderr, "Authentication Required. Please run the following command to authenticate:\n\n"
+                        "python3 openpilot/tools/lib/auth.py\n\n"
+                        "This will grant access to routes from your comma account.\n");
       } else {
-        message = tr("Access Denied. You do not have permission to access route:\n\n%1\n\n"
-                     "This is likely a private route.").arg(QString::fromStdString(route));
+        fprintf(stderr, "Access Denied. You do not have permission to access route:\n\n%s\n\n"
+                        "This is likely a private route.\n", route.c_str());
       }
-      QMessageBox::warning(nullptr, tr("Access Denied"), message);
     } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
-      QMessageBox::warning(nullptr, tr("Network Error"),
-                          tr("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(QString::fromStdString(route)));
+      fprintf(stderr, "Unable to load the route:\n\n %s.\n\nPlease check your network connection and try again.\n", route.c_str());
     } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {
-      QMessageBox::warning(nullptr, tr("Route Not Found"),
-                           tr("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(QString::fromStdString(route)));
+      fprintf(stderr, "The specified route could not be found:\n\n %s.\n\nPlease check the route name and try again.\n", route.c_str());
     } else {
-      QMessageBox::warning(nullptr, tr("Route Load Failed"), tr("Failed to load route: '%1'").arg(QString::fromStdString(route)));
+      fprintf(stderr, "Failed to load route: '%s'\n", route.c_str());
     }
   }
   return success;
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
-  static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = toSeconds(event->mono_time);
     capnp::FlatArrayMessageReader reader(event->data);
@@ -100,77 +142,10 @@ bool ReplayStream::eventFilter(const Event *event) {
       updateEvent(id, current_sec, (const uint8_t*)dat.begin(), dat.size());
     }
   }
-
-  double ts = millis_since_boot();
-  if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
-    emit privateUpdateLastMsgsSignal();
-    prev_update_ts = ts;
-  }
   return true;
 }
 
 void ReplayStream::pause(bool pause) {
   replay->pause(pause);
-  emit(pause ? paused() : resume());
-}
-
-
-// OpenReplayWidget
-
-OpenReplayWidget::OpenReplayWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
-  QGridLayout *grid_layout = new QGridLayout(this);
-  grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
-  grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
-  route_edit->setPlaceholderText(tr("Enter route name or browse for local/remote route"));
-  auto browse_remote_btn = new QPushButton(tr("Remote route..."), this);
-  grid_layout->addWidget(browse_remote_btn, 0, 2);
-  auto browse_local_btn = new QPushButton(tr("Local route..."), this);
-  grid_layout->addWidget(browse_local_btn, 0, 3);
-
-  QHBoxLayout *camera_layout = new QHBoxLayout();
-  for (auto c : {tr("Road camera"), tr("Driver camera"), tr("Wide road camera")})
-    camera_layout->addWidget(cameras.emplace_back(new QCheckBox(c, this)));
-  cameras[0]->setChecked(true);
-  camera_layout->addStretch(1);
-  grid_layout->addItem(camera_layout, 1, 1);
-
-  setMinimumWidth(550);
-  QObject::connect(browse_local_btn, &QPushButton::clicked, [=]() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);
-    if (!dir.isEmpty()) {
-      route_edit->setText(dir);
-      settings.last_route_dir = QFileInfo(dir).absolutePath();
-    }
-  });
-  QObject::connect(browse_remote_btn, &QPushButton::clicked, [this]() {
-    RoutesDialog route_dlg(this);
-    if (route_dlg.exec()) {
-      route_edit->setText(route_dlg.route());
-    }
-  });
-}
-
-AbstractStream *OpenReplayWidget::open() {
-  QString route = route_edit->text();
-  QString data_dir;
-  if (int idx = route.lastIndexOf('/'); idx != -1 && util::file_exists(route.toStdString())) {
-    data_dir = route.mid(0, idx + 1);
-    route = route.mid(idx + 1);
-  }
-
-  bool is_valid_format = Route::parseRoute(route.toStdString()).str.size() > 0;
-  if (!is_valid_format) {
-    QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
-  } else {
-    auto replay_stream = std::make_unique<ReplayStream>(qApp);
-    uint32_t flags = REPLAY_FLAG_NONE;
-    if (cameras[1]->isChecked()) flags |= REPLAY_FLAG_DCAM;
-    if (cameras[2]->isChecked()) flags |= REPLAY_FLAG_ECAM;
-    if (flags == REPLAY_FLAG_NONE && !cameras[0]->isChecked()) flags = REPLAY_FLAG_NO_VIPC;
-
-    if (replay_stream->loadRoute(route.toStdString(), data_dir.toStdString(), flags)) {
-      return replay_stream.release();
-    }
-  }
-  return nullptr;
+  pause ? paused() : resume();
 }

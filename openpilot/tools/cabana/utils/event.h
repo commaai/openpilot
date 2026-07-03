@@ -8,6 +8,13 @@
 // Not thread-safe: connect and emit only from the UI thread. Producer threads
 // stage data under a mutex and events are emitted from AbstractStream::update()
 // or direct API calls on the UI thread.
+//
+// Namespaced (rather than global, like the rest of tools/cabana) because
+// tools/replay/seg_mgr.h declares an unrelated, non-template `class Event`
+// (a replayed log event) that streams/ needs alongside this one in the same
+// translation units.
+namespace cabana {
+
 template <typename... Args>
 class Event {
 public:
@@ -19,3 +26,5 @@ public:
 private:
   std::vector<std::function<void(Args...)>> callbacks_;
 };
+
+}  // namespace cabana

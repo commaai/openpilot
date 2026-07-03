@@ -47,13 +47,13 @@ public:
   inline DBCFile *findDBCFile(const MessageId &id) { return findDBCFile(id.source); }
   std::set<DBCFile *> allDBCFiles();
 
-  Event<MessageId, const cabana::Signal *> signalAdded;
-  Event<const cabana::Signal *> signalRemoved;
-  Event<const cabana::Signal *> signalUpdated;
-  Event<MessageId> msgUpdated;
-  Event<MessageId> msgRemoved;
-  Event<> DBCFileChanged;
-  Event<> maskUpdated;
+  cabana::Event<MessageId, const cabana::Signal *> signalAdded;
+  cabana::Event<const cabana::Signal *> signalRemoved;
+  cabana::Event<const cabana::Signal *> signalUpdated;
+  cabana::Event<MessageId> msgUpdated;
+  cabana::Event<MessageId> msgRemoved;
+  cabana::Event<> DBCFileChanged;
+  cabana::Event<> maskUpdated;
 
 private:
   std::map<int, std::shared_ptr<DBCFile>> dbc_files;

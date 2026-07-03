@@ -46,7 +46,7 @@ public:
   std::vector<std::string> selected_msg_ids;
   std::vector<std::string> active_charts;
 
-  Event<> changed;
+  cabana::Event<> changed;
 
 private:
   void load();

@@ -3,9 +3,6 @@
 #include <memory>
 #include <vector>
 
-#include <QComboBox>
-#include <QFormLayout>
-
 #include "tools/cabana/streams/livestream.h"
 #include "tools/cabana/panda.h"
 
@@ -24,9 +21,8 @@ struct PandaStreamConfig {
 };
 
 class PandaStream : public LiveStream {
-  Q_OBJECT
 public:
-  PandaStream(QObject *parent, PandaStreamConfig config_ = {});
+  PandaStream(PandaStreamConfig config_ = {});
   ~PandaStream() { stop(); }
   inline std::string routeName() const override {
     return "Panda: " + config.serial;
@@ -37,21 +33,5 @@ protected:
   void streamThread() override;
 
   std::unique_ptr<Panda> panda;
-  PandaStreamConfig config = {};
-};
-
-class OpenPandaWidget : public AbstractOpenStreamWidget {
-  Q_OBJECT
-
-public:
-  OpenPandaWidget(QWidget *parent = nullptr);
-  AbstractStream *open() override;
-
-private:
-  void refreshSerials();
-  void buildConfigForm();
-
-  QComboBox *serial_edit;
-  QFormLayout *form_layout;
   PandaStreamConfig config = {};
 };
