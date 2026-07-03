@@ -293,49 +293,64 @@ void forget_signal(const cabana::Signal *sig) {
 }
 
 void ensure_connected() {
+  // Global objects (dbc(), UndoStack::instance()): connect once, keep the
+  // once-guard.
   static bool connected = false;
-  if (connected) return;
-  connected = true;
-
-  // mirrors QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState)
-  can->msgsReceived.connect([](const std::set<MessageId> *msgs, bool /*has_new_ids*/) {
-    if (!g_state.has_msg_id) return;
-    if (msgs != nullptr && !msgs->count(g_state.msg_id)) return;
-    g_state.sparkline_dirty = true;
-  });
-  dbc()->DBCFileChanged.connect([]() {
-    g_state.ui.clear();
-    g_state.sparklines.clear();
-    g_state.sparkline_dirty = true;
-    set_selected_signal(nullptr);
-    set_hovered_signal(nullptr);
-  });
-  // mirrors SignalModel::handleMsgChanged(): full refresh when the current message itself changes
-  dbc()->msgUpdated.connect([](MessageId id) {
-    if (g_state.has_msg_id && id.address == g_state.msg_id.address) {
-      g_state.ui.clear();
-      g_state.sparkline_dirty = true;
-    }
-  });
-  dbc()->msgRemoved.connect([](MessageId id) {
-    if (g_state.has_msg_id && id.address == g_state.msg_id.address) {
+  if (!connected) {
+    connected = true;
+    dbc()->DBCFileChanged.connect([]() {
       g_state.ui.clear();
       g_state.sparklines.clear();
-    }
-  });
-  // mirrors SignalView::handleSignalAdded(): select (don't force-expand) the new row
-  dbc()->signalAdded.connect([](MessageId id, const cabana::Signal *sig) {
-    if (!g_state.has_msg_id || id.address != g_state.msg_id.address) return;
+      g_state.sparkline_dirty = true;
+      set_selected_signal(nullptr);
+      set_hovered_signal(nullptr);
+    });
+    // mirrors SignalModel::handleMsgChanged(): full refresh when the current message itself changes
+    dbc()->msgUpdated.connect([](MessageId id) {
+      if (g_state.has_msg_id && id.address == g_state.msg_id.address) {
+        g_state.ui.clear();
+        g_state.sparkline_dirty = true;
+      }
+    });
+    dbc()->msgRemoved.connect([](MessageId id) {
+      if (g_state.has_msg_id && id.address == g_state.msg_id.address) {
+        g_state.ui.clear();
+        g_state.sparklines.clear();
+      }
+    });
+    // mirrors SignalView::handleSignalAdded(): select (don't force-expand) the new row
+    dbc()->signalAdded.connect([](MessageId id, const cabana::Signal *sig) {
+      if (!g_state.has_msg_id || id.address != g_state.msg_id.address) return;
+      g_state.sparkline_dirty = true;
+      set_selected_signal(sig, /*from_binary_view=*/false);
+      g_state.pending_scroll_sig = sig;
+    });
+    dbc()->signalUpdated.connect([](const cabana::Signal * /*sig*/) { g_state.sparkline_dirty = true; });
+    dbc()->signalRemoved.connect([](const cabana::Signal *sig) {
+      forget_signal(sig);
+      g_state.sparkline_dirty = true;
+    });
+    UndoStack::instance()->indexChanged.connect([](int) { g_state.sparkline_dirty = true; });
+  }
+
+  // The stream: File > Open Stream can swap `can` to a brand-new
+  // AbstractStream at runtime (see stream_selector.cc's swap_stream()), so
+  // rebind to whichever instance is current rather than connecting once.
+  static AbstractStream *wired_stream = nullptr;
+  if (wired_stream != can) {
+    wired_stream = can;
+    // mirrors QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState)
+    can->msgsReceived.connect([](const std::set<MessageId> *msgs, bool /*has_new_ids*/) {
+      if (!g_state.has_msg_id) return;
+      if (msgs != nullptr && !msgs->count(g_state.msg_id)) return;
+      g_state.sparkline_dirty = true;
+    });
+    // g_state.sparklines holds copied doubles (not stream pointers), so it's
+    // stale-but-safe across a swap -- just flag it dirty so the next draw
+    // recomputes every entry from the new stream's events instead of showing
+    // frozen values from the old one.
     g_state.sparkline_dirty = true;
-    set_selected_signal(sig, /*from_binary_view=*/false);
-    g_state.pending_scroll_sig = sig;
-  });
-  dbc()->signalUpdated.connect([](const cabana::Signal * /*sig*/) { g_state.sparkline_dirty = true; });
-  dbc()->signalRemoved.connect([](const cabana::Signal *sig) {
-    forget_signal(sig);
-    g_state.sparkline_dirty = true;
-  });
-  UndoStack::instance()->indexChanged.connect([](int) { g_state.sparkline_dirty = true; });
+  }
 }
 
 // mirrors SignalModel::saveSignal(): duplicate-name check + start_bit flip

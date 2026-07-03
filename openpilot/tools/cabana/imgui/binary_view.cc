@@ -13,9 +13,11 @@
 #include <set>
 #include <vector>
 
+#include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/imgui/signal_state.h"
+#include "tools/cabana/settings.h"
 
 namespace {
 
@@ -90,6 +92,91 @@ const cabana::Signal *g_hovered_sig = nullptr;
 const cabana::Signal *g_selected_sig = nullptr;
 bool g_selection_from_binary_view = false;
 
+// -- drag-to-create / resize -- ports BinaryView::mousePressEvent() /
+// mouseMoveEvent() / mouseReleaseEvent() + BinaryView::getSelection() from
+// binaryview.cc. A drag spans multiple draw_binary_view() calls (press
+// frame, N move frames, release frame), so -- like the hover/selection
+// state above -- it has to live in a file static, not a per-frame local.
+struct DragState {
+  bool active = false;   // mouse went down inside the grid; drag in progress
+  bool dragged = false;  // moved to a different cell since press -- distinguishes an
+                          // actual drag (create/resize) from a plain click, which falls
+                          // through untouched to the existing per-cell IsItemClicked()
+                          // select-signal path below
+  MessageId msg_id{};
+  int press_row = -1, press_col = -1;    // raw press cell; used only for the `dragged` check
+  int anchor_row = -1, anchor_col = -1;  // BinaryView::anchor_index -- reassigned to the
+                                          // opposite edge when the press started a resize
+  int cur_row = -1, cur_col = -1;        // last known mouse cell (BinaryView::indexAt on move)
+  const cabana::Signal *resize_sig = nullptr;
+};
+DragState g_drag;
+
+int grid_lin(int row, int col) { return row * 8 + col; }
+int grid_bit_pos(int row, int col) { return flipBitPos(grid_lin(row, col)); }
+// QModelIndex::operator< for indices from the same row-major model: mirrors the
+// ordering BinaryView::getSelection() relies on via `index < anchor_index`.
+bool grid_less(int row_a, int col_a, int row_b, int col_b) {
+  return row_a < row_b || (row_a == row_b && col_a < col_b);
+}
+
+struct DragSelection {
+  int start_bit;
+  int size;
+  bool is_little_endian;
+};
+
+// Port of BinaryView::getSelection(): turns an anchor/current grid-cell pair
+// (+ optional resize target, which pins the endianness to the signal being
+// resized) into the (start_bit, size, is_little_endian) triple for the
+// new/resized signal, honoring settings.drag_direction exactly like Qt.
+DragSelection compute_drag_selection(int anchor_row, int anchor_col, int cur_row, int cur_col,
+                                      const cabana::Signal *resize_sig) {
+  if (cur_col == 8) cur_col = 7;  // hex column -> last bit column, mirrors getSelection()
+
+  bool is_lb;
+  if (resize_sig != nullptr) {
+    is_lb = resize_sig->is_little_endian;
+  } else {
+    const bool cur_before_anchor = grid_less(cur_row, cur_col, anchor_row, anchor_col);
+    switch (settings.drag_direction) {
+      case Settings::DragDirection::LsbFirst: is_lb = !cur_before_anchor; break;
+      case Settings::DragDirection::AlwaysLE: is_lb = true; break;
+      case Settings::DragDirection::AlwaysBE: is_lb = false; break;
+      case Settings::DragDirection::MsbFirst:
+      default: is_lb = cur_before_anchor; break;
+    }
+  }
+
+  const int cur_bit_pos = grid_bit_pos(cur_row, cur_col);
+  const int anchor_bit_pos = grid_bit_pos(anchor_row, anchor_col);
+  DragSelection sel;
+  sel.is_little_endian = is_lb;
+  if (is_lb) {
+    sel.start_bit = std::min(cur_bit_pos, anchor_bit_pos);
+    sel.size = std::abs(cur_bit_pos - anchor_bit_pos) + 1;
+  } else {
+    // std::min(index, anchor_index) using grid_less as the operator<.
+    const bool cur_is_min = !grid_less(anchor_row, anchor_col, cur_row, cur_col);
+    sel.start_bit = grid_bit_pos(cur_is_min ? cur_row : anchor_row, cur_is_min ? cur_col : anchor_col);
+    sel.size = std::abs(grid_lin(cur_row, cur_col) - grid_lin(anchor_row, anchor_col)) + 1;
+  }
+  return sel;
+}
+
+// Same start_bit/size/is_little_endian -> covered-bits walk used by
+// build_signal_coverage() above, factored out so the live drag preview
+// highlights exactly the cells the resulting signal would occupy.
+template <typename F>
+void for_each_selection_cell(int start_bit, int size, bool is_little_endian, int row_count, F &&fn) {
+  for (int j = 0; j < size; ++j) {
+    const int pos = is_little_endian ? flipBitPos(start_bit + j) : flipBitPos(start_bit) + j;
+    const int row = pos / 8, col = pos % 8;
+    if (row < 0 || row >= row_count || col < 0 || col > 7) continue;
+    fn(row, col);
+  }
+}
+
 }  // namespace
 
 const cabana::Signal *hovered_signal() { return g_hovered_sig; }
@@ -126,6 +213,11 @@ void draw_binary_view(AppState &app) {
   const MessageId id = *app.selected_msg_id;
   const CanData &last_msg = can->lastMessage(id);
   const cabana::Msg *dbc_msg = dbc()->msg(id);
+
+  // A drag started on a different message tab (e.g. via a stray click
+  // elsewhere while the button is somehow still held) is stale -- mirrors
+  // BinaryView::refresh() clearing anchor_index/resize_sig on setMessage().
+  if (g_drag.active && g_drag.msg_id != id) g_drag = DragState{};
 
   const int row_count = std::max(dbc_msg != nullptr ? static_cast<int>(dbc_msg->size) : static_cast<int>(last_msg.dat.size()), 0);
   if (row_count == 0) {
@@ -184,6 +276,64 @@ void draw_binary_view(AppState &app) {
   const ImU32 hatch_color = ImGui::GetColorU32(ImVec4(0.5f, 0.5f, 0.5f, 0.35f));
   const ImU32 hover_outline = ImGui::GetColorU32(ImGuiCol_Text, 0.5f);
 
+  // -- drag press / move -- mirrors BinaryView::mousePressEvent() and
+  // mouseMoveEvent()'s indexAt() tracking. This uses raw mouse-position math
+  // rather than the per-cell ImGui item hover used elsewhere in this file:
+  // once a cell's InvisibleButton is held active, ImGui suppresses
+  // IsItemHovered() on the *other* cells the drag passes over, so hit-testing
+  // has to be geometry-based (same GetPlotMousePos()-driven pattern as
+  // chart_view.cc's box-zoom drag).
+  const ImVec2 mouse_pos = ImGui::GetIO().MousePos;
+  const bool mouse_in_grid = mouse_pos.x >= origin.x + ROW_HEADER_WIDTH && mouse_pos.x < origin.x + total_w &&
+                             mouse_pos.y >= origin.y && mouse_pos.y < origin.y + total_h;
+  int hit_row = -1, hit_col = -1;
+  if (mouse_in_grid) {
+    hit_col = std::clamp(static_cast<int>((mouse_pos.x - origin.x - ROW_HEADER_WIDTH) / col_w), 0, COLUMN_COUNT - 1);
+    hit_row = std::clamp(static_cast<int>((mouse_pos.y - origin.y) / row_h), 0, row_count - 1);
+  }
+
+  if (!g_drag.active && mouse_in_grid && hit_col != 8 && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+    g_drag = DragState{};
+    g_drag.active = true;
+    g_drag.msg_id = id;
+    g_drag.press_row = g_drag.anchor_row = g_drag.cur_row = hit_row;
+    g_drag.press_col = g_drag.anchor_col = g_drag.cur_col = hit_col;
+    // Pressing on the msb/lsb edge bit of an existing signal starts a resize
+    // instead of a create: the anchor snaps to that signal's *opposite* edge
+    // so the drag extends/shrinks it from the fixed far end -- exactly like
+    // BinaryView::mousePressEvent().
+    const int bit_pos = grid_bit_pos(hit_row, hit_col);
+    for (const cabana::Signal *s : items[hit_row * COLUMN_COUNT + hit_col].sigs) {
+      if (bit_pos == s->lsb || bit_pos == s->msb) {
+        const int idx = flipBitPos(bit_pos == s->lsb ? s->msb : s->lsb);
+        g_drag.anchor_row = idx / 8;
+        g_drag.anchor_col = idx % 8;
+        g_drag.resize_sig = s;
+        break;
+      }
+    }
+  } else if (g_drag.active && g_drag.msg_id == id) {
+    if (mouse_in_grid) {
+      g_drag.cur_row = hit_row;
+      g_drag.cur_col = hit_col;
+    }
+    if (g_drag.cur_row != g_drag.press_row || g_drag.cur_col != g_drag.press_col) g_drag.dragged = true;
+  }
+
+  // Resize-cursor hint on edge-bit hover -- approximates a resize affordance;
+  // the frozen Qt source has no explicit setCursor() for this, so this is UX
+  // polish per the phase-3 spec rather than a literal Qt port.
+  if (mouse_in_grid && hit_col != 8 && hit_row >= 0) {
+    bool on_edge = g_drag.active && g_drag.resize_sig != nullptr;
+    if (!g_drag.active) {
+      const int bit_pos = grid_bit_pos(hit_row, hit_col);
+      for (const cabana::Signal *s : items[hit_row * COLUMN_COUNT + hit_col].sigs) {
+        if (bit_pos == s->lsb || bit_pos == s->msb) { on_edge = true; break; }
+      }
+    }
+    if (on_edge) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+  }
+
   char buf[16];
   for (int row = 0; row < row_count; ++row) {
     const float row_y = origin.y + row * row_h;
@@ -207,8 +357,10 @@ void draw_binary_view(AppState &app) {
       const bool clicked = ImGui::IsItemClicked();
       ImGui::PopID();
 
-      // background -- mirrors BinaryItemDelegate::paint()'s non-selected branch
-      // (drag-select/resize is Phase 3, so that branch is skipped entirely).
+      // background -- mirrors BinaryItemDelegate::paint()'s non-selected branch.
+      // The State_Selected branch (drag-select/resize preview) is handled by
+      // a separate overlay pass after this loop instead of branching here --
+      // see the "Live preview" block below.
       if (is_hex) {
         if (item.valid) draw_list->AddRectFilled(cell_min, cell_max, bv_color(item.hex_color));
       } else if (!item.sigs.empty()) {
@@ -282,6 +434,67 @@ void draw_binary_view(AppState &app) {
 
   if (!ImGui::IsMouseHoveringRect(origin, ImVec2(origin.x + total_w, origin.y + total_h))) {
     g_hovered_sig = nullptr;  // mirrors BinaryView::leaveEvent() -> highlight(nullptr)
+  }
+
+  // Live preview -- mirrors BinaryItemDelegate::paint()'s State_Selected
+  // branch. Drawn as one overlay pass after the grid so it layers on top;
+  // Qt achieves the same z-order within a single delegate paint() call by
+  // filling the selection then drawing the cell's digit on top of it, so the
+  // digit is redrawn here too rather than left hidden under the overlay.
+  if (g_drag.active && g_drag.dragged && g_drag.msg_id == id) {
+    const DragSelection sel = compute_drag_selection(g_drag.anchor_row, g_drag.anchor_col, g_drag.cur_row, g_drag.cur_col, g_drag.resize_sig);
+    const ImU32 preview_color =
+        g_drag.resize_sig != nullptr ? bv_color(g_drag.resize_sig->color) : ImGui::GetColorU32(ImGuiCol_HeaderActive);
+    for_each_selection_cell(sel.start_bit, sel.size, sel.is_little_endian, row_count, [&](int r, int c) {
+      const ImVec2 cell_min(origin.x + ROW_HEADER_WIDTH + c * col_w, origin.y + r * row_h);
+      const ImVec2 cell_max(cell_min.x + col_w, cell_min.y + row_h);
+      draw_list->AddRectFilled(cell_min, cell_max, preview_color);
+      const BvItem &it = items[r * COLUMN_COUNT + c];
+      if (it.valid) {
+        char text[2] = {static_cast<char>(it.val ? '1' : '0'), '\0'};
+        const ImVec2 text_size = ImGui::CalcTextSize(text);
+        draw_list->AddText(ImVec2(cell_min.x + (col_w - text_size.x) * 0.5f, cell_min.y + (row_h - text_size.y) * 0.5f), IM_COL32_WHITE, text);
+      }
+    });
+  }
+
+  // Release -- mirrors BinaryView::mouseReleaseEvent(). A plain click (no
+  // drag) is left untouched, handled entirely by the existing per-cell
+  // IsItemClicked() select-signal path in the loop above.
+  if (g_drag.active && g_drag.msg_id == id && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+    if (g_drag.dragged) {
+      const DragSelection sel = compute_drag_selection(g_drag.anchor_row, g_drag.anchor_col, g_drag.cur_row, g_drag.cur_col, g_drag.resize_sig);
+      if (g_drag.resize_sig != nullptr) {
+        // Guard against the signal having been removed from underneath the
+        // held pointer mid-drag (e.g. the 'x' delete shortcut).
+        bool sig_still_exists = false;
+        if (const cabana::Msg *m = dbc()->msg(id)) {
+          const auto &sigs = m->getSignals();
+          sig_still_exists = std::find(sigs.begin(), sigs.end(), g_drag.resize_sig) != sigs.end();
+        }
+        if (sig_still_exists) {
+          cabana::Signal new_sig = *g_drag.resize_sig;
+          new_sig.start_bit = sel.start_bit;
+          new_sig.size = sel.size;
+          new_sig.is_little_endian = sel.is_little_endian;
+          UndoStack::push(new EditSignalCommand(id, g_drag.resize_sig, new_sig));
+        }
+      } else {
+        cabana::Signal new_sig{};
+        new_sig.start_bit = sel.start_bit;
+        new_sig.size = sel.size;
+        new_sig.is_little_endian = sel.is_little_endian;
+        UndoStack::push(new AddSigCommand(id, new_sig, row_count));
+        // dbc()->signalAdded fired synchronously inside push() above and
+        // already set selected_signal() to the new signal (see
+        // signal_view.cc's ensure_connected() -> handleSignalAdded-style
+        // hookup); re-flag it as a binary-view selection so the editor
+        // force-expands it too, mirroring BinaryView::signalClicked ->
+        // SignalView::selectSignal(sig, /*expand=*/true).
+        set_selected_signal(selected_signal(), /*from_binary_view=*/true);
+      }
+    }
+    g_drag = DragState{};
   }
 
   ImGui::SetCursorScreenPos(origin);

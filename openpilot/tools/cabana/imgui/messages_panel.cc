@@ -247,32 +247,47 @@ void refresh_dbc_messages() {
 }
 
 void ensure_connected() {
+  // Global objects (dbc(), UndoStack::instance()): connect once, keep the
+  // once-guard -- reconnecting these on a stream swap would grow their
+  // observer lists and double-fire every callback.
   static bool connected = false;
-  if (connected) return;
-  connected = true;
-
-  // mirrors MessageListModel::msgsReceived(): full refilter on new ids, or
-  // throttled to settings.fps while a FREQ/COUNT/DATA filter is live (those
-  // columns' matches depend on live values, not just id/name/node).
-  can->msgsReceived.connect([](const std::set<MessageId> * /*new_msgs*/, bool has_new_ids) {
-    const bool slow_filter_active =
-        g_state.filters.count(COL_FREQ) || g_state.filters.count(COL_COUNT) || g_state.filters.count(COL_DATA);
-    if (has_new_ids || (slow_filter_active && ++g_state.sort_threshold >= std::max(1, settings.fps))) {
-      g_state.sort_threshold = 0;
+  if (!connected) {
+    connected = true;
+    dbc()->DBCFileChanged.connect([]() {
+      refresh_dbc_messages();
       g_state.dirty = true;
-    }
-  });
-  dbc()->DBCFileChanged.connect([]() {
-    refresh_dbc_messages();
-    g_state.dirty = true;
-  });
-  UndoStack::instance()->indexChanged.connect([](int) {
-    refresh_dbc_messages();
-    g_state.dirty = true;
-  });
+    });
+    UndoStack::instance()->indexChanged.connect([](int) {
+      refresh_dbc_messages();
+      g_state.dirty = true;
+    });
 
-  refresh_dbc_messages();
-  refilter_and_sort();
+    refresh_dbc_messages();
+    refilter_and_sort();
+  }
+
+  // The stream: File > Open Stream can swap `can` to a brand-new
+  // AbstractStream at runtime (see stream_selector.cc's swap_stream()), so
+  // rebind to whichever instance is current rather than connecting once.
+  static AbstractStream *wired_stream = nullptr;
+  if (wired_stream != can) {
+    wired_stream = can;
+    // mirrors MessageListModel::msgsReceived(): full refilter on new ids, or
+    // throttled to settings.fps while a FREQ/COUNT/DATA filter is live (those
+    // columns' matches depend on live values, not just id/name/node).
+    can->msgsReceived.connect([](const std::set<MessageId> * /*new_msgs*/, bool has_new_ids) {
+      const bool slow_filter_active =
+          g_state.filters.count(COL_FREQ) || g_state.filters.count(COL_COUNT) || g_state.filters.count(COL_DATA);
+      if (has_new_ids || (slow_filter_active && ++g_state.sort_threshold >= std::max(1, settings.fps))) {
+        g_state.sort_threshold = 0;
+        g_state.dirty = true;
+      }
+    });
+    // Force a refresh against the new stream's messages -- without this, the
+    // table stays stuck showing whatever the old stream last produced until
+    // the new stream happens to emit a msgsReceived with new ids.
+    g_state.dirty = true;
+  }
 }
 
 // -- toolbar: mirrors MessagesWidget::createToolBar() (placed above the

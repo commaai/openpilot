@@ -186,86 +186,107 @@ void request_new_chart() {
   sel.open_request = true;
 }
 
-// -- event wiring (once) -----------------------------------------------------
+// -- event wiring -------------------------------------------------------------
 
 void ensure_charts_wired() {
-  if (g_charts.wired) return;
-  g_charts.wired = true;
+  // Global objects (dbc()): connect once, keep the once-guard -- reconnecting
+  // these on a stream swap would grow their observer lists and double-fire.
+  if (!g_charts.wired) {
+    g_charts.wired = true;
 
-  g_charts.column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
-  g_charts.max_chart_range = std::clamp(settings.chart_range, 1, std::max(1, settings.max_cached_minutes * 60));
-  g_charts.display_range = {can->minSeconds(), can->minSeconds() + g_charts.max_chart_range};
+    g_charts.column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
+    g_charts.max_chart_range = std::clamp(settings.chart_range, 1, std::max(1, settings.max_cached_minutes * 60));
 
-  // mirrors QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
-  dbc()->DBCFileChanged.connect([]() {
-    g_charts.charts.clear();
-    g_charts.zoom_stack.clear();
-    can->setTimeRange(std::nullopt);
-  });
-  // mirrors ChartView::signalRemoved()
-  dbc()->signalRemoved.connect([](const cabana::Signal *sig) {
-    for (ChartState &c : g_charts.charts) {
-      remove_signals_if(c, [&](const SigItem &s) { return s.sig == sig; });
-    }
-    remove_empty_charts();
-  });
-  // mirrors ChartView::msgRemoved()
-  dbc()->msgRemoved.connect([](MessageId id) {
-    for (ChartState &c : g_charts.charts) {
-      remove_signals_if(c, [&](const SigItem &s) { return s.msg_id.address == id.address && dbc()->msg(id) == nullptr; });
-    }
-    remove_empty_charts();
-  });
-  // mirrors ChartView::signalUpdated(): recolor + full rebuild (factor/offset/etc may have changed)
-  dbc()->signalUpdated.connect([](const cabana::Signal *sig) {
-    const auto range = chart_effective_range();
-    for (ChartState &c : g_charts.charts) {
-      for (SigItem &s : c.sigs) {
-        if (s.sig == sig) {
-          s.display_color = pick_display_color(c, sig->color);
-          rebuild_signal(s, range);
-        }
+    // mirrors QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
+    dbc()->DBCFileChanged.connect([]() {
+      g_charts.charts.clear();
+      g_charts.zoom_stack.clear();
+      can->setTimeRange(std::nullopt);
+    });
+    // mirrors ChartView::signalRemoved()
+    dbc()->signalRemoved.connect([](const cabana::Signal *sig) {
+      for (ChartState &c : g_charts.charts) {
+        remove_signals_if(c, [&](const SigItem &s) { return s.sig == sig; });
       }
-    }
-  });
-  // mirrors ChartsWidget::eventsMerged(): incremental append, no rebuild
-  can->eventsMerged.connect([](const MessageEventsMap &new_events) {
-    for (ChartState &c : g_charts.charts) {
-      for (SigItem &s : c.sigs) {
-        auto it = new_events.find(s.msg_id);
-        if (it == new_events.end() || it->second.empty()) continue;
-        for (const CanEvent *e : it->second) {
-          double v = 0.0;
-          if (!s.sig->getValue(e->dat, e->size, &v)) continue;
-          const double t = can->toSeconds(e->mono_time);
-          if (s.xs.empty() || t >= s.xs.back()) {
-            s.xs.push_back(t);
-            s.ys.push_back(v);
-          } else {
-            auto pos = std::lower_bound(s.xs.begin(), s.xs.end(), t);
-            const size_t idx = static_cast<size_t>(pos - s.xs.begin());
-            s.xs.insert(pos, t);
-            s.ys.insert(s.ys.begin() + idx, v);
+      remove_empty_charts();
+    });
+    // mirrors ChartView::msgRemoved()
+    dbc()->msgRemoved.connect([](MessageId id) {
+      for (ChartState &c : g_charts.charts) {
+        remove_signals_if(c, [&](const SigItem &s) { return s.msg_id.address == id.address && dbc()->msg(id) == nullptr; });
+      }
+      remove_empty_charts();
+    });
+    // mirrors ChartView::signalUpdated(): recolor + full rebuild (factor/offset/etc may have changed)
+    dbc()->signalUpdated.connect([](const cabana::Signal *sig) {
+      const auto range = chart_effective_range();
+      for (ChartState &c : g_charts.charts) {
+        for (SigItem &s : c.sigs) {
+          if (s.sig == sig) {
+            s.display_color = pick_display_color(c, sig->color);
+            rebuild_signal(s, range);
           }
         }
       }
-    }
-  });
-  // mirrors ChartsWidget's seekedTo-driven refresh: full rebuild scoped to
-  // the (freshly recomputed) display range at the new position.
-  can->seekedTo.connect([](double) {
-    if (!g_charts.charts.empty()) {
-      const double cur_sec = can->currentSec();
-      double pos = (cur_sec - g_charts.display_range.first) / std::max<double>(1.0, g_charts.max_chart_range);
-      if (pos < 0 || pos > 0.8) {
-        g_charts.display_range.first = std::max(can->minSeconds(), cur_sec - g_charts.max_chart_range * 0.1);
+    });
+  }
+
+  // The stream: File > Open Stream can swap `can` to a brand-new
+  // AbstractStream at runtime (see stream_selector.cc's swap_stream()), so
+  // rebind eventsMerged/seekedTo to whichever instance is current instead of
+  // connecting once. Every SigItem's (xs, ys) was decoded from the OLD
+  // stream's events, so on a swap the whole panel resets exactly like the
+  // DBCFileChanged handler above -- mirroring Qt's MainWindow, which
+  // recreates every dock widget (incl. ChartsWidget) on a stream change, so
+  // nothing here is expected to survive across streams either.
+  static AbstractStream *wired_stream = nullptr;
+  if (wired_stream != can) {
+    wired_stream = can;
+
+    // mirrors ChartsWidget::eventsMerged(): incremental append, no rebuild
+    can->eventsMerged.connect([](const MessageEventsMap &new_events) {
+      for (ChartState &c : g_charts.charts) {
+        for (SigItem &s : c.sigs) {
+          auto it = new_events.find(s.msg_id);
+          if (it == new_events.end() || it->second.empty()) continue;
+          for (const CanEvent *e : it->second) {
+            double v = 0.0;
+            if (!s.sig->getValue(e->dat, e->size, &v)) continue;
+            const double t = can->toSeconds(e->mono_time);
+            if (s.xs.empty() || t >= s.xs.back()) {
+              s.xs.push_back(t);
+              s.ys.push_back(v);
+            } else {
+              auto pos = std::lower_bound(s.xs.begin(), s.xs.end(), t);
+              const size_t idx = static_cast<size_t>(pos - s.xs.begin());
+              s.xs.insert(pos, t);
+              s.ys.insert(s.ys.begin() + idx, v);
+            }
+          }
+        }
       }
-      double max_sec = std::min(g_charts.display_range.first + g_charts.max_chart_range, can->maxSeconds());
-      g_charts.display_range.first = std::max(can->minSeconds(), max_sec - g_charts.max_chart_range);
-      g_charts.display_range.second = g_charts.display_range.first + g_charts.max_chart_range;
-    }
-    rebuild_all(chart_effective_range());
-  });
+    });
+    // mirrors ChartsWidget's seekedTo-driven refresh: full rebuild scoped to
+    // the (freshly recomputed) display range at the new position.
+    can->seekedTo.connect([](double) {
+      if (!g_charts.charts.empty()) {
+        const double cur_sec = can->currentSec();
+        double pos = (cur_sec - g_charts.display_range.first) / std::max<double>(1.0, g_charts.max_chart_range);
+        if (pos < 0 || pos > 0.8) {
+          g_charts.display_range.first = std::max(can->minSeconds(), cur_sec - g_charts.max_chart_range * 0.1);
+        }
+        double max_sec = std::min(g_charts.display_range.first + g_charts.max_chart_range, can->maxSeconds());
+        g_charts.display_range.first = std::max(can->minSeconds(), max_sec - g_charts.max_chart_range);
+        g_charts.display_range.second = g_charts.display_range.first + g_charts.max_chart_range;
+      }
+      rebuild_all(chart_effective_range());
+    });
+
+    g_charts.charts.clear();
+    g_charts.zoom_stack.clear();
+    can->setTimeRange(std::nullopt);
+    g_charts.display_range = {can->minSeconds(), can->minSeconds() + g_charts.max_chart_range};
+  }
 }
 
 // -- CABANA_TEST_CHARTS debug hook (see report) ------------------------------

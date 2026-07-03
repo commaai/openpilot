@@ -8,6 +8,16 @@
 #include <string>
 
 #include "tools/cabana/settings.h"
+#include "tools/cabana/streams/replaystream.h"
+
+// route_info.cc -- owned by this workstream (not declared in app.h; see
+// app.h's "declare its open/draw fns at the top of video_panel.cc or
+// transport.cc" convention). Ports tools/cabana/tools/routeinfo.{h,cc}
+// (RouteInfoDlg) to an ImGui modal, opened from the "View route details"
+// button below (mirrors VideoWidget::showRouteInfo()'s call site: the
+// playback toolbar, which this file owns).
+void draw_route_info(AppState &app);
+void open_route_info();
 
 namespace {
 
@@ -16,6 +26,17 @@ constexpr double SPEEDS[] = {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1., 2., 3., 5
 
 bool g_seek_dragging = false;
 float g_seek_drag_value = 0.0f;
+
+// bootstrap-icons glyphs not shared via app.h's `icon` namespace (this
+// package owns video_panel.cc/transport.cc but not app.h) -- codepoints
+// found the same way icon::PLAY_FILL/PAUSE_FILL were (fontTools cmap dump of
+// bootstrap-icons.ttf, glyph name == icon name).
+constexpr const char ICON_REWIND[] = "\xef\xa0\x99";         // rewind, U+F819
+constexpr const char ICON_FAST_FORWARD[] = "\xef\x9f\xb4";   // fast-forward, U+F7F4
+constexpr const char ICON_SKIP_END_FILL[] = "\xef\x95\x97";  // skip-end-fill, U+F557
+constexpr const char ICON_REPEAT[] = "\xef\xa0\x93";         // repeat, U+F813
+constexpr const char ICON_REPEAT_1[] = "\xef\xa0\x92";       // repeat-1, U+F812
+constexpr const char ICON_INFO_CIRCLE[] = "\xef\x90\xb1";    // info-circle, U+F431
 
 // mirrors tools/cabana/utils/util.cc formatSeconds() for elapsed playback time
 std::string format_duration(double sec, bool include_ms) {
@@ -104,9 +125,49 @@ void draw_transport_bar(AppState &app) {
   ImGui::BeginDisabled(!live);
 
   const bool paused = stream.isPaused();
+  const bool is_live = stream.liveStreaming();
+  ReplayStream *replay_stream = dynamic_cast<ReplayStream *>(app.stream.get());
   const float button_w = ImGui::GetFrameHeight();
+
+  // Seek backward/forward -1s/+1s -- mirrors the "rewind"/"fast-forward"
+  // toolbar actions flanking play/pause in VideoWidget::createPlaybackController().
+  if (ImGui::Button(ICON_REWIND, ImVec2(button_w, 0.0f))) {
+    app.stream->seekTo(stream.currentSec() - 1);
+  }
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("Seek backward");
+
+  ImGui::SameLine();
   if (ImGui::Button(paused ? icon::PLAY_FILL : icon::PAUSE_FILL, ImVec2(button_w, 0.0f))) {
     app.stream->pause(!paused);
+  }
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", paused ? "Play" : "Pause");
+
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FAST_FORWARD, ImVec2(button_w, 0.0f))) {
+    app.stream->seekTo(stream.currentSec() + 1);
+  }
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("Seek forward");
+
+  // "Skip to the end" -- Qt only shows this for liveStreaming() sources (it
+  // means "catch up to the live edge", not "jump to route end", so it makes
+  // no sense for a finite replay and Qt doesn't add it there). No live
+  // stream type is wired up yet (see main.cc), so this is currently always
+  // hidden in practice, but implemented for when panda/socketcan/msgq/zmq
+  // land. Deliberately does *not* call setSpeed(1.0) even though it visually
+  // checks the "1x" entry in Qt's speed menu -- reading VideoWidget's lambda
+  // closely, it only calls QAction::setChecked() (a menu-checkmark cosmetic)
+  // and never actually calls can->setSpeed(1.0), so the real playback speed
+  // is left untouched there too. Our speed dropdown label always reflects
+  // stream.getSpeed() directly (no separate "checked" cosmetic to desync),
+  // so replicating that quirk would require *lying* about the speed instead
+  // of just omitting a call -- not done.
+  if (is_live) {
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_SKIP_END_FILL, ImVec2(button_w, 0.0f))) {
+      app.stream->pause(false);
+      app.stream->seekTo(stream.maxSeconds() + 1);
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Skip to the end");
   }
 
   ImGui::SameLine();
@@ -119,7 +180,13 @@ void draw_transport_bar(AppState &app) {
   }
 
   ImGui::SameLine();
-  const float trailing_w = 3.0f * spacing + total_w + speed_w + route_w;
+  // Loop toggle + route-info button live after the speed dropdown (matching
+  // VideoWidget::createPlaybackController()'s order: loop, speed dropdown,
+  // separator, route-info) and are replay-only, like Qt's
+  // `if (!can->liveStreaming())` branch -- reserve their width up front so
+  // the slider is sized correctly regardless of which branch runs below.
+  const float replay_only_w = is_live ? 0.0f : 2.0f * (spacing + button_w);
+  const float trailing_w = 3.0f * spacing + total_w + speed_w + route_w + replay_only_w;
   const float slider_w = std::max(20.0f, ImGui::GetContentRegionAvail().x - trailing_w);
   ImGui::SetNextItemWidth(slider_w);
   float slider_value = g_seek_dragging ? g_seek_drag_value : static_cast<float>(stream.currentSec());
@@ -153,11 +220,34 @@ void draw_transport_bar(AppState &app) {
     ImGui::EndCombo();
   }
 
+  // Loop playback + route info -- mirrors VideoWidget::createPlaybackController()'s
+  // `else` branch: both only exist for a route replay, not live streaming.
+  if (!is_live) {
+    ImGui::SameLine();
+    if (replay_stream != nullptr) {
+      const bool looping = replay_stream->getReplay()->loop();
+      if (ImGui::Button(looping ? ICON_REPEAT : ICON_REPEAT_1, ImVec2(button_w, 0.0f))) {
+        replay_stream->getReplay()->setLoop(!looping);
+      }
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Loop playback");
+    } else {
+      ImGui::Dummy(ImVec2(button_w, button_w));  // keep layout stable; unreachable in practice (see is_live above)
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_INFO_CIRCLE, ImVec2(button_w, 0.0f))) {
+      open_route_info();
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("View route details");
+  }
+
   ImGui::EndDisabled();
 
   ImGui::SameLine();
   ImGui::AlignTextToFramePadding();
   ImGui::TextDisabled("%s", route_label.c_str());
+
+  draw_route_info(app);
 
   ImGui::End();
   ImGui::PopStyleVar();

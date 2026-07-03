@@ -379,18 +379,34 @@ void on_events_merged(const MessageEventsMap & /*unused*/) {
 // -- per-frame wiring ---------------------------------------------------------
 
 void ensure_connected() {
+  // Global objects (dbc(), UndoStack::instance()): connect once, keep the
+  // once-guard.
   static bool connected = false;
-  if (connected) return;
-  connected = true;
+  if (!connected) {
+    connected = true;
+    dbc()->DBCFileChanged.connect([]() {
+      UndoStack::instance()->clear();
+      mark_title_dirty();
+    });
+    UndoStack::instance()->cleanChanged.connect([](bool) { mark_title_dirty(); });
 
-  dbc()->DBCFileChanged.connect([]() {
-    UndoStack::instance()->clear();
-    mark_title_dirty();
-  });
-  UndoStack::instance()->cleanChanged.connect([](bool) { mark_title_dirty(); });
-  can->eventsMerged.connect(on_events_merged);
+    load_fingerprints();
+  }
 
-  load_fingerprints();
+  // The stream: File > Open Stream can swap `can` to a brand-new
+  // AbstractStream at runtime (see stream_selector.cc's swap_stream()), so
+  // rebind eventsMerged to whichever instance is current -- staying
+  // connected to a torn-down stream is exactly why fingerprint auto-load
+  // stops firing after a swap.
+  static AbstractStream *wired_stream = nullptr;
+  if (wired_stream != can) {
+    wired_stream = can;
+    can->eventsMerged.connect(on_events_merged);
+    // The "already checked this fingerprint" latch is scoped to the
+    // previous stream's car -- clear it so auto-load can fire again for
+    // whatever route/car the new stream turns out to be.
+    g_last_car_fingerprint.clear();
+  }
 }
 
 // -- File menu: Manage DBC Files / Open Recent / Load from opendbc submenus

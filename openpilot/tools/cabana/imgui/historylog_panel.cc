@@ -393,6 +393,17 @@ void draw_history_log(AppState &app) {
   if (wired_stream != app.stream.get()) {
     wired_stream = app.stream.get();
     wired_stream->seekedTo.connect([](double) { g_state.msg_id = {}; g_state.has_msg_id = false; });
+
+    // g_state.rows holds raw CanEvent* allocated in the OLD stream's
+    // MonotonicBuffer, which is freed along with that stream -- drop them
+    // now instead of leaving dangling pointers around for the next draw.
+    // has_msg_id=false additionally forces a fresh full_reset() below even
+    // if the message selected on the new stream happens to share a
+    // MessageId with the one last shown on the old stream (msg_changed only
+    // looks at msg_id, so without this it would skip the reset).
+    g_state.rows.clear();
+    g_state.reached_end = false;
+    g_state.has_msg_id = false;
   }
   static bool wired_globals = false;
   if (!wired_globals) {

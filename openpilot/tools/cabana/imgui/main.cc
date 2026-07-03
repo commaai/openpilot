@@ -6,7 +6,12 @@
 #include "tools/cabana/imgui/app.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/imgui/dbc_menus.h"
+#include "tools/cabana/streams/devicestream.h"
+#include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
+#ifdef __linux__
+#include "tools/cabana/streams/socketcanstream.h"
+#endif
 
 namespace {
 
@@ -121,10 +126,6 @@ int main(int argc, char *argv[]) {
     std::cerr << "Width and height must be positive\n";
     return 2;
   }
-  if (options.msgq || options.panda || !options.panda_serial.empty() ||
-      !options.socketcan_device.empty() || !options.zmq_address.empty()) {
-    std::cerr << "cabana(imgui): live streams are not wired up yet (Phase 6 of MIGRATION.md); starting empty.\n";
-  }
   if (!options.dbc_path.empty()) {
     std::string error;
     if (!dbc()->open(SOURCE_ALL, options.dbc_path, &error)) {
@@ -136,9 +137,30 @@ int main(int argc, char *argv[]) {
     dbc_menus_note_recent_file(options.dbc_path);
   }
 
+  // Stream dispatch mirrors the old Qt tools/cabana/cabana.cc main() exactly,
+  // including which paths get a try/catch around construction and which
+  // don't: --msgq/--zmq (DeviceStream) never throw; --panda/--panda-serial
+  // (PandaStream) catches and exits cleanly; --socketcan (SocketCanStream) is
+  // NOT wrapped in try/catch in the frozen reference either, so a bad device
+  // propagates an uncaught exception there too -- kept as-is for parity, see
+  // report.
   std::unique_ptr<AbstractStream> stream;
-  if (!options.route.empty()) {
-    // flag mapping mirrors the old Qt tools/cabana/cabana.cc main()
+  if (options.msgq) {
+    stream = std::make_unique<DeviceStream>();
+  } else if (!options.zmq_address.empty()) {
+    stream = std::make_unique<DeviceStream>(options.zmq_address);
+  } else if (options.panda || !options.panda_serial.empty()) {
+    try {
+      stream = std::make_unique<PandaStream>(PandaStreamConfig{.serial = options.panda_serial});
+    } catch (const std::exception &e) {
+      std::cerr << e.what() << "\n";
+      return 0;
+    }
+#ifdef __linux__
+  } else if (SocketCanStream::available() && !options.socketcan_device.empty()) {
+    stream = std::make_unique<SocketCanStream>(SocketCanStreamConfig{.device = options.socketcan_device});
+#endif
+  } else if (!options.route.empty()) {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (options.ecam) replay_flags |= REPLAY_FLAG_ECAM;
     if (options.qcam) replay_flags |= REPLAY_FLAG_QCAMERA;
