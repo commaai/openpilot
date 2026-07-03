@@ -11,9 +11,11 @@
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 
-// binary_view.cc -- owned by this workstream, not declared in app.h (see MIGRATION.md conventions).
+// binary_view.cc / signal_view.cc -- owned by this workstream, not declared
+// in app.h (see MIGRATION.md conventions).
 void draw_binary_view(AppState &app);
 std::set<const cabana::Signal *> binary_view_overlapping_signals(const MessageId &id);
+void draw_signal_view(AppState &app);
 
 namespace {
 
@@ -199,8 +201,8 @@ void draw_header(const MessageId &id) {
 }
 
 // "Msg" inner-tab content: binary view on top (mirrors DetailWidget's
-// splitter top pane), a thin separator, then a placeholder for the Phase 3
-// signal tree (SignalView) that fills the rest of the pane.
+// splitter top pane), a thin separator, then the signal editor (SignalView)
+// filling the rest of the pane (mirrors the splitter's bottom pane).
 void draw_msg_tab(AppState &app) {
   const float avail_h = ImGui::GetContentRegionAvail().y;
   const float binary_h = std::clamp(avail_h * 0.5f, 140.0f, 420.0f);
@@ -209,10 +211,7 @@ void draw_msg_tab(AppState &app) {
   ImGui::EndChild();
 
   ImGui::Separator();
-  ImGui::BeginDisabled();
-  ImGui::TextUnformatted("Signal editor -- coming in Phase 3");
-  ImGui::EndDisabled();
-  ImGui::Dummy(ImGui::GetContentRegionAvail());
+  draw_signal_view(app);
 }
 
 // mirrors DetailWidget's inner QTabWidget: tab_widget->addTab(splitter, ...,

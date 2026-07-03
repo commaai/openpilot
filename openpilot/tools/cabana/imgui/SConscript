@@ -14,6 +14,7 @@ cabana_imgui_env["CXXFLAGS"] += [
   "-DGLFW_INCLUDE_NONE",
   '-DCABANA_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
   '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
+  '-DOPENDBC_FILE_PATH=\'"%s"\'' % cabana_imgui_env.Dir('#opendbc/dbc').abspath,
 ]
 
 # Qt-free core (DBC + streams), shared by the imgui UI and its Catch2 tests.
@@ -44,12 +45,20 @@ if arch == "Darwin":
 else:
   libs += ["GL", "dl", "va", "va-drm", "drm"]
 
-cabana_imgui_env.Program('_cabana_imgui', cabana_imgui_env.Glob('*.cc'), LIBS=libs)
+cabana_imgui_prog = cabana_imgui_env.Program('_cabana_imgui', cabana_imgui_env.Glob('*.cc'), LIBS=libs)
+
+# car_fingerprint_to_dbc.json: fingerprint -> opendbc filename map, used by
+# dbc_menus.cc's auto-load-on-stream-start. Moved here from the (now Qt-only,
+# frozen/disabled) tools/cabana/SConscript so it's built for the imgui app.
+output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
+generate_dbc = cabana_imgui_env.Command('#' + output_json_file,
+                                        ['../dbc/generate_dbc_json.py'],
+                                        "python3 openpilot/tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
+cabana_imgui_env.Depends(generate_dbc, ["#openpilot/common", '#opendbc_repo', "#openpilot/cereal", "#msgq_repo"])
+cabana_imgui_env.Depends(cabana_imgui_prog, generate_dbc)
 
 if GetOption('extras'):
   test_env = cabana_imgui_env.Clone()
-  opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % test_env.Dir('#opendbc/dbc').abspath
-  test_env['CXXFLAGS'] += [opendbc_path]
   test_env.Program('test_cabana_core', [
     '../tests/test_runner.cc',
     '../tests/test_cabana.cc',

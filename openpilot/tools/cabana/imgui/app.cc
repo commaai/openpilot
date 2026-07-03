@@ -12,6 +12,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "tools/cabana/imgui/dbc_menus.h"
 #include "tools/cabana/settings.h"
 
 namespace fs = std::filesystem;
@@ -30,25 +31,32 @@ fs::path config_dir() {
   return fs::path(home != nullptr ? home : "") / ".config" / "cabana";
 }
 
+// Single AppState instance for the process lifetime; used by the GLFW
+// window-close callback below, which (per GLFW's C API) can't capture state.
+AppState *g_app_for_close = nullptr;
+
+// Intercept the OS-level close button (title bar X / Alt+F4 / window manager
+// close) so it goes through the same DBC-aware "Unsaved Changes" flow as
+// Ctrl+Q instead of closing immediately -- mirrors MainWindow::closeEvent()
+// calling remindSaveChanges() before accepting a Qt close event.
+void on_glfw_window_close(GLFWwindow *window) {
+  glfwSetWindowShouldClose(window, GLFW_FALSE);
+  if (g_app_for_close != nullptr) g_app_for_close->request_close = true;
+}
+
 void draw_menu_bar(AppState &app) {
   if (!ImGui::BeginMainMenuBar()) return;
 
   if (ImGui::BeginMenu("File")) {
     ImGui::MenuItem("Open Stream...", nullptr, false, false);
     ImGui::Separator();
-    ImGui::MenuItem("New DBC File", "Ctrl+N", false, false);
-    ImGui::MenuItem("Open DBC File...", "Ctrl+O", false, false);
-    ImGui::MenuItem("Open Recent", nullptr, false, false);
-    ImGui::MenuItem("Load DBC from commaai/opendbc", nullptr, false, false);
-    ImGui::Separator();
-    ImGui::MenuItem("Save DBC...", "Ctrl+S", false, false);
+    draw_dbc_file_menu_items(app);
     ImGui::Separator();
     if (ImGui::MenuItem("Exit", "Ctrl+Q")) app.request_close = true;
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Edit")) {
-    ImGui::MenuItem("Undo", "Ctrl+Z", false, false);
-    ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, false);
+    draw_dbc_edit_menu_items();
     ImGui::Separator();
     ImGui::MenuItem("Settings...", "Ctrl+,", false, false);
     ImGui::EndMenu();
@@ -142,6 +150,8 @@ void draw_about_popup(AppState &app) {
 }
 
 void draw_ui(AppState &app) {
+  dbc_menus_update();
+
   const ImGuiIO &io = ImGui::GetIO();
   const bool ctrl = io.KeyCtrl || io.KeySuper;
   if (!io.WantTextInput && ctrl && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
@@ -149,6 +159,15 @@ void draw_ui(AppState &app) {
   }
   if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) {
     app.stream->pause(!app.stream->isPaused());
+  }
+
+  // DBC-aware close: consume the trigger edge here (both Ctrl+Q above and
+  // the GLFW window-close callback below set this) and route it through the
+  // "Unsaved Changes" reminder instead of closing immediately. dbc_menus.cc
+  // calls glfwSetWindowShouldClose() itself once the flow resolves.
+  if (app.request_close) {
+    app.request_close = false;
+    dbc_menus_begin_close();
   }
 
   draw_menu_bar(app);
@@ -160,6 +179,7 @@ void draw_ui(AppState &app) {
   draw_dockspace(app, work_pos, ImVec2(work_size.x, content_height));
   draw_transport_bar(app);
   draw_about_popup(app);
+  draw_dbc_modals();
 }
 
 void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_path) {
@@ -183,10 +203,6 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   draw_ui(app);
 
   ImGui::Render();
-  if (app.request_close) {
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
-    app.request_close = false;
-  }
 
   glViewport(0, 0, framebuffer_width, framebuffer_height);
   const ImVec4 clear_color = theme_clear_color();
@@ -223,7 +239,12 @@ int run(const Options &options, std::unique_ptr<AbstractStream> stream) {
   }
   apply_theme(app.theme);
 
+  dbc_menus_init(glfw_runtime.window());
+  g_app_for_close = &app;
+  glfwSetWindowCloseCallback(glfw_runtime.window(), on_glfw_window_close);
+
   app.stream->start();
+  dbc_menus_ensure_dbc_open();  // mirrors startStream()'s "don't leave zero DBCs loaded"
 
   if (!options.output_path.empty()) {
     const fs::path capture_path = options.output_path;

@@ -5,6 +5,7 @@
 
 #include "tools/cabana/imgui/app.h"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/imgui/dbc_menus.h"
 #include "tools/cabana/streams/replaystream.h"
 
 namespace {
@@ -130,6 +131,9 @@ int main(int argc, char *argv[]) {
       std::cerr << "Failed to load DBC file " << options.dbc_path << ": " << error << "\n";
       return 1;
     }
+    // mirrors MainWindow::loadFile(): every successful load, CLI included, is
+    // tracked in the recent-files list.
+    dbc_menus_note_recent_file(options.dbc_path);
   }
 
   std::unique_ptr<AbstractStream> stream;

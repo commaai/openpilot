@@ -15,6 +15,7 @@
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/imgui/signal_state.h"
 
 namespace {
 
@@ -82,14 +83,28 @@ bool item_has_signal(const std::vector<BvItem> &items, int row_count, int row, i
   return std::find(sigs.begin(), sigs.end(), sig) != sigs.end();
 }
 
-// Phase-3 hook: hover/selection state the signal editor and drag-create will
-// reuse. Kept as local static state (not in AppState, which this workstream
-// doesn't own) -- structured as plain signal pointers so wiring in the editor
-// is a matter of reading these two instead of re-deriving hit-testing.
+// Hover/selection state shared with signal_view.cc -- see signal_state.h.
+// Kept as local static state (not in AppState, which this workstream doesn't
+// own); storage lives here since this is where it originated pre-Phase-3.
 const cabana::Signal *g_hovered_sig = nullptr;
 const cabana::Signal *g_selected_sig = nullptr;
+bool g_selection_from_binary_view = false;
 
 }  // namespace
+
+const cabana::Signal *hovered_signal() { return g_hovered_sig; }
+void set_hovered_signal(const cabana::Signal *sig) { g_hovered_sig = sig; }
+
+const cabana::Signal *selected_signal() { return g_selected_sig; }
+void set_selected_signal(const cabana::Signal *sig, bool from_binary_view) {
+  g_selected_sig = sig;
+  if (from_binary_view) g_selection_from_binary_view = true;
+}
+bool consume_selection_from_binary_view() {
+  bool v = g_selection_from_binary_view;
+  g_selection_from_binary_view = false;
+  return v;
+}
 
 std::set<const cabana::Signal *> binary_view_overlapping_signals(const MessageId &id) {
   std::set<const cabana::Signal *> overlapping;
@@ -258,7 +273,9 @@ void draw_binary_view(AppState &app) {
                             top_sig->start_bit, top_sig->size, top_sig->msb, top_sig->lsb, top_sig->is_little_endian ? "Y" : "N",
                             top_sig->is_signed ? "Y" : "N");
         }
-        if (clicked && top_sig != nullptr) g_selected_sig = top_sig;
+        // mirrors BinaryView::mouseReleaseEvent()'s no-drag branch -> emit
+        // signalClicked(sig) -> SignalView::selectSignal(sig, /*expand=*/true)
+        if (clicked && top_sig != nullptr) set_selected_signal(top_sig, /*from_binary_view=*/true);
       }
     }
   }
