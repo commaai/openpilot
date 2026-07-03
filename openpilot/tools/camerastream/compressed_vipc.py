@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import av
+import av.video.format
 import os
 import sys
 import argparse

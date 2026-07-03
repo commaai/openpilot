@@ -5,7 +5,6 @@ from openpilot.system.hardware.fan_controller import FanController
 ALL_CONTROLLERS = [FanController]
 
 def patched_controller(mocker, controller_class):
-  mocker.patch("os.system", new=mocker.Mock())
   return controller_class(2)
 
 class TestFanController:
