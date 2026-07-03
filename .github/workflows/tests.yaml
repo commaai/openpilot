@@ -39,7 +39,7 @@ jobs:
       with:
         submodules: true
     - name: Getting LFS files
-      uses: nick-fields/retry@v4
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
         timeout_minutes: 2
         max_attempts: 3
@@ -176,7 +176,7 @@ jobs:
         git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}" || echo "No changes to commit"
     - name: Push refs
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
-      uses: nick-fields/retry@v4
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
         timeout_minutes: 2
         max_attempts: 3
