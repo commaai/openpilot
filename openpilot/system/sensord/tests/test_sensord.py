@@ -1,4 +1,5 @@
 import os
+import subprocess
 import pytest
 import time
 import numpy as np
@@ -61,7 +62,7 @@ class TestSensord:
     os.environ["LSM_SELF_TEST"] = "1"
 
     # read initial sensor values every test case can use
-    os.system("pkill -f \\\\./sensord")
+    subprocess.run("pkill -f \\\\./sensord", shell=True)
     try:
       managed_processes["sensord"].start()
       cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))
