@@ -1,0 +1,201 @@
+name: sim profile
+
+on:
+  push:
+    branches:
+      - metadrive-ci
+  workflow_dispatch:
+
+env:
+  CI: 1
+  PYTHONPATH: ${{ github.workspace }}
+
+jobs:
+  render_bench:
+    name: render bench
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+    - run: ./tools/op.sh setup
+    - name: Install MetaDrive
+      run: uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal" py-spy
+    - name: Render bench (all variants, same runner)
+      timeout-minutes: 35
+      env:
+        RENDER_BENCH_PYSPY: 1
+      run: |
+        source openpilot/selfdrive/test/setup_xvfb.sh
+        python3 openpilot/tools/sim/tests/render_bench.py
+    - name: Upload frames
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: render-bench-frames-${{ github.run_number }}
+        path: /tmp/render_bench
+
+  simulator_driving:
+    name: sim driving (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: flatcard-half
+            render_scale: "0.5"
+            no_msaa: "1"
+            simple_render: "1"
+            no_shadows: "1"
+            flat_terrain_card: "1"
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+    - name: System info
+      run: |
+        nproc
+        lscpu | head -20
+        free -h
+    - run: ./tools/op.sh setup
+    - name: Install MetaDrive
+      run: uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal"
+    - name: Build openpilot
+      run: scons
+    - name: Driving test with CPU profiling
+      timeout-minutes: 20
+      env:
+        # no audio device on CI runners (setup_vsound.sh was removed in #37305)
+        BLOCK: soundd
+        # capture qlog/rlog/camera files for the artifact requirement
+        CI_SIM_LOGS: 1
+        METADRIVE_RENDER_SCALE: ${{ matrix.render_scale }}
+        METADRIVE_NO_MSAA: ${{ matrix.no_msaa }}
+        METADRIVE_SIMPLE_RENDER: ${{ matrix.simple_render }}
+        METADRIVE_NO_SHADOWS: ${{ matrix.no_shadows }}
+        METADRIVE_NO_TERRAIN: ${{ matrix.no_terrain }}
+        METADRIVE_CHEAP_TERRAIN: ${{ matrix.cheap_terrain }}
+        METADRIVE_FLAT_TERRAIN_CARD: ${{ matrix.flat_terrain_card }}
+      run: |
+        sudo apt-get install -y sysstat > /dev/null
+        # self-diagnosing core dumps for any native crash (e.g. transient modeld death)
+        ulimit -c unlimited
+        sudo sysctl -w kernel.core_pattern='/tmp/sim_profile/core.%e.%p' > /dev/null
+        source openpilot/selfdrive/test/setup_xvfb.sh
+        # pre-download metadrive assets so the test's startup window isn't
+        # spent on a ~17s download
+        python3 -m metadrive.pull_asset || true
+        mkdir -p /tmp/sim_profile
+        pidstat -u -h -l 2 > /tmp/sim_profile/pidstat.log &
+        PIDSTAT=$!
+        # message-rate probe: which services actually flow, and how fast
+        python3 - > /tmp/sim_profile/rates.log 2>&1 <<'RATES' &
+        import glob
+        import os
+        import time
+        # pytest runs the daemons in an isolated msgq namespace — discover it
+        prefix_dir = None
+        for _ in range(600):
+          dirs = glob.glob("/dev/shm/msgq_*")
+          if dirs:
+            prefix_dir = dirs[0]
+            break
+          time.sleep(0.5)
+        if prefix_dir:
+          os.environ["OPENPILOT_PREFIX"] = os.path.basename(prefix_dir)[len("msgq_"):]
+        print("joined prefix:", os.environ.get("OPENPILOT_PREFIX"), flush=True)
+        from openpilot.cereal import messaging
+        SERVICES = ["modelV2", "cameraOdometry", "liveCalibration", "livePose", "liveDelay",
+                    "liveParameters", "liveTorqueParameters", "roadCameraState", "carState", "selfdriveState"]
+        while True:
+          # recreate sockets each window: publishers may not exist yet when
+          # the probe starts, and msgq segments are created by the publisher
+          socks = {s: messaging.sub_sock(s, conflate=False) for s in SERVICES}
+          time.sleep(0.2)
+          t0 = time.monotonic()
+          counts = dict.fromkeys(SERVICES, 0)
+          while time.monotonic() - t0 < 5:
+            for s, sock in socks.items():
+              counts[s] += len(messaging.drain_sock_raw(sock))
+            time.sleep(0.05)
+          print(time.strftime("%H:%M:%S"), {s: round(c / 5.0, 1) for s, c in counts.items()}, flush=True)
+          del socks
+        RATES
+        RATEPROBE=$!
+        # snapshot logs during the test: pytest's OpenpilotPrefix teardown
+        # deletes ~/.comma<prefix> before any post-step can collect it
+        mkdir -p /tmp/sim_profile/realdata
+        (
+          while true; do
+            rsync -a --exclude='fcamera.hevc*' --exclude='*.lock' "$HOME"/.comma*/media/0/realdata/ /tmp/sim_profile/realdata/ 2>/dev/null || true
+            sleep 5
+          done
+        ) &
+        LOGCOPIER=$!
+        # redirect to a file (not tee): orphaned daemons inheriting the step's
+        # stdout pipe would otherwise keep the step alive until timeout
+        pytest -n0 -s openpilot/tools/sim/tests/test_metadrive_bridge.py > /tmp/sim_profile/pytest.log 2>&1 || true
+        kill $PIDSTAT $RATEPROBE $LOGCOPIER || true
+        # one final sweep in case anything remains (full-res video excluded:
+        # ~1 GB for 80 s; qcamera.ts + qlog + rlog cover the artifact needs)
+        rsync -a --exclude='fcamera.hevc*' --exclude='*.lock' "$HOME"/.comma*/media/0/realdata/ /tmp/sim_profile/realdata/ 2>/dev/null || true
+        # kill anything the test teardown missed so later steps don't hang
+        pkill -9 -f 'system/manager/manager.py' || true
+        pkill -9 -f 'tools/sim' || true
+        sleep 2
+        sudo dmesg | grep -iE "killed process|out of memory|oom" > /tmp/sim_profile/oom.log || true
+        tail -30 /tmp/sim_profile/pytest.log
+        echo "=== render fps lines ==="; grep "render fps" /tmp/sim_profile/pytest.log || true
+        echo "=== OOM check ==="; cat /tmp/sim_profile/oom.log
+    - name: Summarize top CPU consumers
+      if: always()
+      run: |
+        python3 - <<'EOF'
+        from collections import defaultdict
+        cpu = defaultdict(float); n = defaultdict(int); peak = defaultdict(float); cmds = {}
+        samples = set()
+        for line in open('/tmp/sim_profile/pidstat.log'):
+            parts = line.split()
+            if len(parts) < 10 or parts[0] in ('#', 'Linux'): continue
+            try: pct = float(parts[7])
+            except ValueError: continue
+            pid = parts[2]
+            samples.add(parts[0]); cpu[pid] += pct; n[pid] += 1
+            peak[pid] = max(peak[pid], pct)
+            cmds[pid] = ' '.join(parts[9:])
+        total = max(len(samples), 1)
+        print(f'{total} samples @2s, 4 CPUs = 400% budget')
+        print(f"{'pid':>7} {'mean%':>7} {'peak%':>7} {'nsamp':>5}  command")
+        for pid, tot in sorted(cpu.items(), key=lambda kv: -kv[1]/total)[:25]:
+            cmd = cmds[pid].replace('/home/runner/work/openpilot/openpilot/', '')
+            print(f'{pid:>7} {tot/total:7.1f} {peak[pid]:7.1f} {n[pid]:5d}  {cmd[:150]}')
+        EOF
+    - name: Backtrace any core dumps
+      if: always()
+      run: |
+        shopt -s nullglob
+        cores=(/tmp/sim_profile/core.*)
+        if [ ${#cores[@]} -gt 0 ]; then
+          sudo apt-get install -y gdb > /dev/null
+          for c in "${cores[@]}"; do
+            echo "=== $c ==="
+            exe=$(file "$c" | grep -oP "execfn: '\K[^']+") || exe=python3
+            gdb -batch -ex "bt" -ex "thread apply all bt" "$exe" "$c" 2>/dev/null | head -150
+          done
+        else
+          echo "no core dumps"
+        fi
+    - name: Collect openpilot logs
+      if: always()
+      run: |
+        ls -laR /tmp/sim_profile/realdata | head -40
+        # cores are large; keep only backtraces in artifacts
+        rm -f /tmp/sim_profile/core.*
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: sim-profile-${{ github.run_number }}-${{ matrix.name }}
+        path: /tmp/sim_profile
