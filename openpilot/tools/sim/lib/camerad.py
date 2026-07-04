@@ -4,8 +4,14 @@ import numpy as np
 
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.cereal import messaging
+from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 from openpilot.tools.sim.lib.common import W, H
+
+# modeld's warp is compiled against the real camerad's buffer layout,
+# so publish the same one (aligned stride and uv offset, padded size)
+STRIDE, Y_HEIGHT, UV_HEIGHT, BUF_SIZE = get_nv12_info(W, H)
+UV_OFFSET = STRIDE * Y_HEIGHT
 
 
 def rgb_to_nv12(rgb):
@@ -33,7 +39,10 @@ def rgb_to_nv12(rgb):
   uv[:, 0::2] = u
   uv[:, 1::2] = v
 
-  return np.concatenate([y.ravel(), uv.ravel()]).tobytes()
+  buf = np.zeros(BUF_SIZE, dtype=np.uint8)
+  buf[:STRIDE * Y_HEIGHT].reshape(Y_HEIGHT, STRIDE)[:h, :w] = y
+  buf[UV_OFFSET:UV_OFFSET + UV_HEIGHT * STRIDE].reshape(UV_HEIGHT, STRIDE)[:h // 2, :w] = uv
+  return buf.tobytes()
 
 
 class Camerad:
@@ -45,9 +54,9 @@ class Camerad:
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, W, H)
+    self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_ROAD, 5, W, H, BUF_SIZE, STRIDE, UV_OFFSET)
     if dual_camera:
-      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, W, H)
+      self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, W, H, BUF_SIZE, STRIDE, UV_OFFSET)
 
     self.vipc_server.start_listener()
 
