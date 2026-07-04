@@ -88,5 +88,5 @@ build/
 .context/
 PLAN.md
 TASK.md
-openpilot/tools/cabana/imgui/_cabana_imgui
+openpilot/tools/cabana/imgui/_cabana
 openpilot/tools/cabana/imgui/test_cabana_core

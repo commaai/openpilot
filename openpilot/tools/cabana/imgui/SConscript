@@ -45,7 +45,7 @@ if arch == "Darwin":
 else:
   libs += ["GL", "dl", "va", "va-drm", "drm"]
 
-cabana_imgui_prog = cabana_imgui_env.Program('_cabana_imgui', cabana_imgui_env.Glob('*.cc'), LIBS=libs)
+cabana_imgui_prog = cabana_imgui_env.Program('_cabana', cabana_imgui_env.Glob('*.cc'), LIBS=libs)
 
 # car_fingerprint_to_dbc.json: fingerprint -> opendbc filename map, used by
 # dbc_menus.cc's auto-load-on-stream-start. Moved here from the (now Qt-only,

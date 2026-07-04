@@ -1,5 +1,14 @@
 # cabana: Qt → Dear ImGui migration
 
+**STATUS: COMPLETE.** The Qt implementation has been deleted; `tools/cabana/cabana`
+builds and runs the ImGui app (`imgui/_cabana`). Qt is no longer a dependency of
+openpilot. The frozen Qt sources referenced throughout imgui/*.cc comments live
+in git history before the flip commit. Remaining known small parity gaps are
+tracked in the phase-8 audit (this file's history): per-signal CSV export,
+Shift+wheel horizontal scroll in the messages table, chart y-axis alignment,
+multi-tab charts, chart drag-and-drop, "Close Other Tabs", draggable
+binary/signal splitter, OS window geometry restore.
+
 Replace cabana's Qt dependency with Dear ImGui, keeping 1:1 functionality and
 near-visual matching. cabana is the **last Qt user in this repo** — when this
 migration finishes, Qt (and its qmake detection, `rcc` assets, and Qt5Charts)

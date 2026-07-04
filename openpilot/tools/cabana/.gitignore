@@ -1,9 +1,4 @@
-moc_*
-*.moc
-*.generated.qrc
-
-assets.cc
-
-_cabana
+imgui/_cabana
+imgui/test_cabana_core
+imgui/generated_dbcs/
 dbc/car_fingerprint_to_dbc.json
-tests/test_cabana

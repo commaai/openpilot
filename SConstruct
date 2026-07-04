@@ -57,7 +57,6 @@ acados_include_dirs = [
 # vendored in commaai/dependencies.
 allowed_system_libs = {
   "EGL", "GLESv2", "GL",
-  "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
   "dl", "drm", "gbm", "m", "pthread",
 }
 
@@ -258,7 +257,6 @@ SConscript([
 if GetOption('extras') and arch != "larch64":
   SConscript([
     'openpilot/tools/replay/SConscript',
-    'openpilot/tools/cabana/SConscript',
     'openpilot/tools/cabana/imgui/SConscript',
     'openpilot/tools/jotpluggler/SConscript',
   ])
