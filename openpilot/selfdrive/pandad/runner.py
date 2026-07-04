@@ -2,9 +2,10 @@ import os
 import threading
 import time
 
-from cereal import car, log
-from cereal.messaging import SubMaster, PubMaster
-import cereal.messaging as messaging
+from opendbc.car.structs import car
+from openpilot.cereal import log
+from openpilot.cereal.messaging import SubMaster, PubMaster
+import openpilot.cereal.messaging as messaging
 from panda import Panda
 from panda.python import PANDA_CAN_CNT
 from openpilot.common.params import Params
