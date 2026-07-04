@@ -1,6 +1,7 @@
 #include "tools/cabana/imgui/app.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <optional>
@@ -160,6 +161,170 @@ void draw_tab_strip(AppState &app) {
   }
 }
 
+// -- EditMessageDialog -------------------------------------------------------
+// ImGui port of tools/cabana/detailwidget.{h,cc}'s EditMessageDialog, opened
+// from DetailWidget::editMsg() (the toolbar's pencil-icon "Edit Message"
+// action, added just before "Remove Message"). Also the path Qt uses to
+// *define* a brand-new message for an id with no DBC entry yet: editMsg()
+// doesn't check dbc()->msg(msg_id) != nullptr before opening, so a click on
+// an undefined message's row opens the dialog pre-filled with
+// msgName(msg_id) == UNTITLED ("untitled") and an empty node/comment; typing
+// a real name and clicking OK pushes an EditMsgCommand that, per its ctor
+// (commands.cc), records old_name empty and therefore has redo() define the
+// message and undo() call dbc()->removeMsg(id) to undo the definition.
+
+// NameValidator port: word chars only, space -> underscore (matches
+// util.cc's `input.replace(' ', '_')` before the ^(\w+) regex validate).
+// Duplicated from signal_view.cc's identical filter (anonymous-namespace,
+// not shared across translation units) rather than exporting it -- same
+// per-file duplication convention already used for the tab-button workaround
+// (see stream_selector.cc's draw_selector_tab_button comment).
+int edit_msg_name_char_filter(ImGuiInputTextCallbackData *data) {
+  if (data->EventChar == ' ') {
+    data->EventChar = '_';
+    return 0;
+  }
+  if (data->EventChar < 256 && (std::isalnum(static_cast<unsigned char>(data->EventChar)) || data->EventChar == '_')) return 0;
+  return 1;  // discard
+}
+
+bool equal_ignore_case(const std::string &a, const std::string &b) {
+  if (a.size() != b.size()) return false;
+  for (size_t i = 0; i < a.size(); ++i) {
+    if (std::tolower(static_cast<unsigned char>(a[i])) != std::tolower(static_cast<unsigned char>(b[i]))) return false;
+  }
+  return true;
+}
+
+std::string trim(const std::string &s) {
+  const size_t b = s.find_first_not_of(" \t\n\r");
+  if (b == std::string::npos) return "";
+  const size_t e = s.find_last_not_of(" \t\n\r");
+  return s.substr(b, e - b + 1);
+}
+
+struct EditMsgDialogState {
+  bool need_open = false;
+  bool active = false;
+  MessageId msg_id;
+  std::string original_name;  // mirrors EditMessageDialog::original_name (title at open time)
+  char name_buf[128] = {};
+  char node_buf[128] = {};
+  char comment_buf[1024] = {};  // fixed-size stand-in for QTextEdit's unbounded text; see report
+  int size_val = 1;
+  bool ok_enabled = true;
+  std::string error;
+};
+EditMsgDialogState g_edit_msg;
+
+// mirrors EditMessageDialog::validateName()
+void validate_edit_msg_name() {
+  const std::string name = g_edit_msg.name_buf;
+  bool valid = !equal_ignore_case(name, UNTITLED);
+  g_edit_msg.error.clear();
+  if (!name.empty() && valid && name != g_edit_msg.original_name) {
+    valid = dbc()->msg(g_edit_msg.msg_id.source, name) == nullptr;
+    if (!valid) g_edit_msg.error = "Name already exists";
+  }
+  g_edit_msg.ok_enabled = valid;
+}
+
+// mirrors DetailWidget::editMsg() constructing EditMessageDialog: size
+// defaults to the live message's byte count when there's no DBC definition
+// yet (dlg's `size` ctor arg), node/comment are left blank in that case
+// (Qt's `if (auto msg = dbc()->msg(msg_id))` guard around setting them).
+void open_edit_message_dialog(const MessageId &id) {
+  g_edit_msg = EditMsgDialogState{};
+  g_edit_msg.msg_id = id;
+  const cabana::Msg *msg = dbc()->msg(id);
+  const int size = msg != nullptr ? static_cast<int>(msg->size) : static_cast<int>(can->lastMessage(id).dat.size());
+  g_edit_msg.original_name = msgName(id);
+  std::snprintf(g_edit_msg.name_buf, sizeof(g_edit_msg.name_buf), "%s", g_edit_msg.original_name.c_str());
+  if (msg != nullptr) {
+    std::snprintf(g_edit_msg.node_buf, sizeof(g_edit_msg.node_buf), "%s", msg->transmitter.c_str());
+    std::snprintf(g_edit_msg.comment_buf, sizeof(g_edit_msg.comment_buf), "%s", msg->comment.c_str());
+  }
+  g_edit_msg.size_val = std::clamp(size, 1, CAN_MAX_DATA_BYTES);
+  validate_edit_msg_name();
+  g_edit_msg.need_open = true;
+  g_edit_msg.active = true;
+}
+
+// mirrors EditMessageDialog's QFormLayout body + DetailWidget::editMsg()'s
+// UndoStack::push(new EditMsgCommand(...)) on accept.
+void draw_edit_message_dialog() {
+  constexpr const char *kPopupId = "Edit Message##edit_msg_dialog";
+  if (g_edit_msg.need_open) {
+    ImGui::OpenPopup(kPopupId);
+    g_edit_msg.need_open = false;
+  }
+  if (!g_edit_msg.active) return;
+
+  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f), ImGuiCond_Appearing);
+  if (!ImGui::BeginPopupModal(kPopupId, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+
+  push_bold_font();
+  ImGui::TextUnformatted(("Edit message: " + g_edit_msg.msg_id.toString()).c_str());
+  pop_bold_font();
+  ImGui::Separator();
+
+  if (!g_edit_msg.error.empty()) {
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.85f, 0.2f, 0.2f, 1.0f));
+    ImGui::TextUnformatted(g_edit_msg.error.c_str());
+    ImGui::PopStyleColor();
+  }
+
+  constexpr float kLabelW = 90.0f;
+  constexpr float kFieldW = 320.0f;
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Name");
+  ImGui::SameLine(kLabelW);
+  ImGui::SetNextItemWidth(kFieldW);
+  if (ImGui::InputText("##edit_msg_name", g_edit_msg.name_buf, sizeof(g_edit_msg.name_buf),
+                        ImGuiInputTextFlags_CallbackCharFilter, edit_msg_name_char_filter)) {
+    validate_edit_msg_name();
+  }
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Size");
+  ImGui::SameLine(kLabelW);
+  ImGui::SetNextItemWidth(kFieldW);
+  ImGui::InputInt("##edit_msg_size", &g_edit_msg.size_val);
+  g_edit_msg.size_val = std::clamp(g_edit_msg.size_val, 1, CAN_MAX_DATA_BYTES);
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Node");
+  ImGui::SameLine(kLabelW);
+  ImGui::SetNextItemWidth(kFieldW);
+  ImGui::InputText("##edit_msg_node", g_edit_msg.node_buf, sizeof(g_edit_msg.node_buf),
+                    ImGuiInputTextFlags_CallbackCharFilter, edit_msg_name_char_filter);
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Comment");
+  ImGui::SameLine(kLabelW);
+  ImGui::InputTextMultiline("##edit_msg_comment", g_edit_msg.comment_buf, sizeof(g_edit_msg.comment_buf), ImVec2(kFieldW, 80.0f));
+
+  ImGui::Spacing();
+  ImGui::Separator();
+  ImGui::BeginDisabled(!g_edit_msg.ok_enabled);
+  if (ImGui::Button("OK", ImVec2(100.0f, 0.0f))) {
+    UndoStack::push(new EditMsgCommand(g_edit_msg.msg_id, trim(g_edit_msg.name_buf), static_cast<uint32_t>(g_edit_msg.size_val),
+                                       trim(g_edit_msg.node_buf), trim(g_edit_msg.comment_buf)));
+    g_edit_msg.active = false;
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::EndDisabled();
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel", ImVec2(100.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+    g_edit_msg.active = false;
+    ImGui::CloseCurrentPopup();
+  }
+
+  ImGui::EndPopup();
+}
+
 // mirrors DetailWidget::refresh(): name/id/freq/count line plus warnings
 // (undefined message, size mismatch, overlapping signal bits).
 void draw_header(const MessageId &id) {
@@ -179,23 +344,33 @@ void draw_header(const MessageId &id) {
     }
   }
 
-  // "Remove Message" -- mirrors DetailWidget::createToolBar()'s x-lg
-  // toolbar action (removeMsg() -> UndoStack::push(RemoveMsgCommand)),
-  // disabled exactly like action_remove_msg when the message has no DBC
-  // definition. ("Edit Message" / EditMessageDialog is NOT ported -- see
-  // report, missing-big.) Right-anchored on the name line since this port
-  // has no separate per-message toolbar row.
+  // "Edit Message" / "Remove Message" -- mirrors DetailWidget::createToolBar()'s
+  // pencil (editMsg() -> EditMessageDialog -> UndoStack::push(EditMsgCommand))
+  // and x-lg (removeMsg() -> UndoStack::push(RemoveMsgCommand)) toolbar
+  // actions, in the same order Qt adds them. Edit has no enabled/disabled
+  // wiring in the Qt reference (it's how an undefined message gets defined),
+  // Remove is disabled exactly like action_remove_msg when the message has
+  // no DBC definition. Right-anchored on the name line since this port has
+  // no separate per-message toolbar row.
   const float avail_w = ImGui::GetContentRegionAvail().x;
+  const float edit_btn_w = ImGui::CalcTextSize("Edit Msg").x + ImGui::GetStyle().FramePadding.x * 2.0f + 8.0f;
   const float remove_btn_w = ImGui::CalcTextSize("Remove Msg").x + ImGui::GetStyle().FramePadding.x * 2.0f + 8.0f;
+  const float buttons_w = edit_btn_w + remove_btn_w + ImGui::GetStyle().ItemSpacing.x;
 
   const std::string name_text = msg != nullptr ? (msg->name + " (" + msg->transmitter + ")") : msgName(id);
   push_bold_font();
-  const std::string elided = elide_text(name_text, std::max(10.0f, avail_w - remove_btn_w - ImGui::GetStyle().ItemSpacing.x));
+  const std::string elided = elide_text(name_text, std::max(10.0f, avail_w - buttons_w - ImGui::GetStyle().ItemSpacing.x));
   ImGui::TextUnformatted(elided.c_str());
   pop_bold_font();
   if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", name_text.c_str());
 
-  ImGui::SameLine(std::max(0.0f, avail_w - remove_btn_w));
+  ImGui::SameLine(std::max(0.0f, avail_w - buttons_w));
+  if (ImGui::SmallButton("Edit Msg")) {
+    open_edit_message_dialog(id);
+  }
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("Edit Message");
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.x);
   ImGui::BeginDisabled(msg == nullptr);
   if (ImGui::SmallButton("Remove Msg")) {
     UndoStack::push(new RemoveMsgCommand(id));
@@ -289,4 +464,11 @@ void draw_detail_panel(AppState &app) {
   }
   ImGui::End();
   ImGui::PopStyleColor();
+
+  // Modal: independent of the Detail window's Begin/End (BeginPopupModal
+  // opens its own top-level ImGui window and blocks input to everything
+  // else, mirroring the Qt QDialog::exec() the button above used to trigger
+  // via editMsg()), so draw it unconditionally every frame like the other
+  // app-level dialogs in app.cc's draw_ui().
+  draw_edit_message_dialog();
 }

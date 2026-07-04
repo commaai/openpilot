@@ -38,6 +38,59 @@ fs::path config_dir() {
 // window-close callback below, which (per GLFW's C API) can't capture state.
 AppState *g_app_for_close = nullptr;
 
+// -- F11 full screen ----------------------------------------------------------
+// Mirrors MainWindow::toggleFullScreen() (mainwin.cc:610), minus the
+// menuBar()/statusBar() hide/show: this port's menu bar is drawn fresh every
+// frame by draw_menu_bar() below rather than being a persistent widget to
+// hide, and there's no separate status-bar widget, so entering full screen
+// here is purely the GLFW-level window/monitor swap. The window pointer
+// lives here (set once in run(), alongside g_app_for_close above) rather
+// than being threaded through AppState/app.h, since app.cc already owns the
+// only GLFWwindow* in the process (run()/render_frame()'s local).
+GLFWwindow *g_window_for_fullscreen = nullptr;
+int g_windowed_x = 0, g_windowed_y = 0, g_windowed_w = 0, g_windowed_h = 0;
+
+// GLFW has no "monitor the window is currently on" query for a windowed
+// window, so pick the monitor whose desktop-space rect contains the
+// window's center point (falling back to the primary monitor, e.g. if the
+// window is currently off-screen).
+GLFWmonitor *monitor_for_window(GLFWwindow *window) {
+  int wx = 0, wy = 0, ww = 0, wh = 0;
+  glfwGetWindowPos(window, &wx, &wy);
+  glfwGetWindowSize(window, &ww, &wh);
+  const int center_x = wx + ww / 2;
+  const int center_y = wy + wh / 2;
+
+  int monitor_count = 0;
+  GLFWmonitor **monitors = glfwGetMonitors(&monitor_count);
+  for (int i = 0; i < monitor_count; ++i) {
+    int mx = 0, my = 0;
+    glfwGetMonitorPos(monitors[i], &mx, &my);
+    const GLFWvidmode *mode = glfwGetVideoMode(monitors[i]);
+    if (mode == nullptr) continue;
+    if (center_x >= mx && center_x < mx + mode->width && center_y >= my && center_y < my + mode->height) {
+      return monitors[i];
+    }
+  }
+  return glfwGetPrimaryMonitor();
+}
+
+void toggle_full_screen() {
+  if (g_window_for_fullscreen == nullptr) return;
+  if (glfwGetWindowMonitor(g_window_for_fullscreen) == nullptr) {
+    // Entering full screen: remember windowed geometry so it can be
+    // restored exactly, then hand the window to whichever monitor it's
+    // currently sitting on at that monitor's native resolution/refresh rate.
+    glfwGetWindowPos(g_window_for_fullscreen, &g_windowed_x, &g_windowed_y);
+    glfwGetWindowSize(g_window_for_fullscreen, &g_windowed_w, &g_windowed_h);
+    GLFWmonitor *monitor = monitor_for_window(g_window_for_fullscreen);
+    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    glfwSetWindowMonitor(g_window_for_fullscreen, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+  } else {
+    glfwSetWindowMonitor(g_window_for_fullscreen, nullptr, g_windowed_x, g_windowed_y, g_windowed_w, g_windowed_h, GLFW_DONT_CARE);
+  }
+}
+
 // Intercept the OS-level close button (title bar X / Alt+F4 / window manager
 // close) so it goes through the same DBC-aware "Unsaved Changes" flow as
 // Ctrl+Q instead of closing immediately -- mirrors MainWindow::closeEvent()
@@ -88,7 +141,8 @@ void draw_menu_bar(AppState &app) {
       settings.theme = dark ? LIGHT_THEME : DARK_THEME;
       settings.changed();
     }
-    ImGui::MenuItem("Full Screen", "F11", false, false);
+    const bool fullscreen = g_window_for_fullscreen != nullptr && glfwGetWindowMonitor(g_window_for_fullscreen) != nullptr;
+    if (ImGui::MenuItem("Full Screen", "F11", fullscreen)) toggle_full_screen();
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Tools")) {
@@ -197,6 +251,11 @@ void draw_ui(AppState &app) {
   // per-widget click-to-inspect mode.
   if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
     toggle_help_overlay();
+  }
+  // mirrors createActions()'s view_menu->addAction(..., QKeySequence::FullScreen)
+  // -- F11 on the platforms this port targets (X11/Wayland via GLFW).
+  if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F11, false)) {
+    toggle_full_screen();
   }
 
   // DBC-aware close: consume the trigger edge here (both Ctrl+Q above and
@@ -352,6 +411,7 @@ int run(const Options &options, std::unique_ptr<AbstractStream> stream) {
 
   dbc_menus_init(glfw_runtime.window());
   g_app_for_close = &app;
+  g_window_for_fullscreen = glfw_runtime.window();
   glfwSetWindowCloseCallback(glfw_runtime.window(), on_glfw_window_close);
   std::signal(SIGINT, handle_terminate_signal);
   std::signal(SIGTERM, handle_terminate_signal);
@@ -365,6 +425,23 @@ int run(const Options &options, std::unique_ptr<AbstractStream> stream) {
     restore_session_state(app);
   }
   dbc_menus_ensure_dbc_open();  // mirrors startStream()'s "don't leave zero DBCs loaded"
+
+  // Auto-open the stream selector on a bare launch with no stream -- mirrors
+  // MainWindow's ctor: `stream ? openStream(stream, dbc_file) : selectAndOpenStream();`
+  // (mainwin.cc:72, deferred one event-loop tick via QTimer::singleShot(0, ...)
+  // so it runs after show(), which this port's equivalent is: after the
+  // window/GL/ImGui runtime is up but before the first frame renders).
+  // Skipped in headless `--output` capture mode -- there's no user to answer
+  // the dialog, and it would otherwise block every screenshot on an unclosed
+  // popup. On Cancel, Qt's selectAndOpenStream() falls back to
+  // `!can ? openStream(new DummyStream(this)) : /* keep current stream */`;
+  // this port already starts on a DummyStream (main.cc's fallback when no
+  // CLI stream args are given), so Cancel here is a no-op that leaves the
+  // existing DummyStream (and therefore the welcome screen) in place, same
+  // end state.
+  if (!has_stream(app) && options.output_path.empty()) {
+    open_stream_selector();
+  }
 
   if (!options.output_path.empty()) {
     const fs::path capture_path = options.output_path;
