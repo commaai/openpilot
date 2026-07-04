@@ -196,7 +196,6 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v7
       with:
@@ -204,11 +203,20 @@ jobs:
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
+    - name: Install MetaDrive
+      run: uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal"
     - name: Driving test
-      timeout-minutes: 2
+      timeout-minutes: 10
       run: |
         source openpilot/selfdrive/test/setup_xvfb.sh
-        pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+        SIM_LOGS=1 SIM_LOGS_DIR="$GITHUB_WORKSPACE/sim_logs" pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: sim-driving-logs
+        path: sim_logs/
+        if-no-files-found: warn
 
   create_ui_report:
     name: Create UI Report

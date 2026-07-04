@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import time
 import pytest
@@ -88,5 +89,14 @@ class TestSimBridgeBase:
     for p in reversed(self.processes):
       p.terminate()
 
+    time.sleep(3)  # let loggerd flush its current segment
+
     for p in reversed(self.processes):
       p.kill()
+
+    # the test prefix (and its log_root) is deleted on teardown, so copy
+    # any recorded logs out first for CI artifact upload
+    if "SIM_LOGS_DIR" in os.environ:
+      from openpilot.common.hardware.hw import Paths
+      if os.path.isdir(Paths.log_root()):
+        shutil.copytree(Paths.log_root(), os.environ["SIM_LOGS_DIR"], dirs_exist_ok=True)
