@@ -57,6 +57,9 @@ echo -n "$GIT_HASH" > git_src_commit
 echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
 
 echo "[-] committing version $VERSION T=$SECONDS"
+# skip zlib on the ~2GB of model chunks; hashing them dominates this script's
+# runtime and object IDs don't depend on the compression level
+git config core.compression 0
 git add -f .
 git status
 git commit -a -m "openpilot v$VERSION release
