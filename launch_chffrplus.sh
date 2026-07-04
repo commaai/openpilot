@@ -7,6 +7,7 @@ source "$DIR/launch_env.sh"
 function agnos_init {
   # TODO: move this to agnos
   sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
+  rm -f /data/scons_cache/config.lock
 
   # set success flag for current boot slot
   sudo abctl --set_success
@@ -18,12 +19,12 @@ function agnos_init {
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
-    AGNOS_PY="$DIR/system/hardware/tici/agnos.py"
-    MANIFEST="$DIR/system/hardware/tici/agnos.json"
+    AGNOS_PY="$DIR/openpilot/common/hardware/tici/agnos.py"
+    MANIFEST="$DIR/openpilot/system/hardware/tici/agnos.json"
     if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
-    $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
+    $DIR/openpilot/common/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 
@@ -78,7 +79,7 @@ function launch {
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
-  cd system/manager
+  cd openpilot/system/manager
   if [ ! -f $DIR/prebuilt ]; then
     ./build.py
   fi

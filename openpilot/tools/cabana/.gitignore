@@ -1,0 +1,9 @@
+moc_*
+*.moc
+*.generated.qrc
+
+assets.cc
+
+_cabana
+dbc/car_fingerprint_to_dbc.json
+tests/test_cabana

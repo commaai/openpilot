@@ -11,7 +11,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: false
 
@@ -23,7 +23,7 @@ jobs:
 
     # Check PR target branch
     - name: check branch
-      uses: Vankka/pr-target-branch-action@def32ec9d93514138d6ac0132ee62e120a72aed5
+      uses: Vankka/pr-target-branch-action@5da68a42bcb7b43d39104295a876a6f3f8d7908b
       if: github.repository == 'commaai/openpilot'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,20 +33,3 @@ jobs:
         change-to: ${{ github.base_ref }}
         already-exists-action: close_this
         already-exists-comment: "Your PR should be made against the `master` branch"
-
-    # Welcome comment
-    - name: "First timers PR"
-      uses: actions/first-interaction@v3
-      if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        pr-message: |
-            <!-- _(run_id **${{ github.run_id }}**)_ -->
-            Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
-            * Convert your PR to a draft unless it's ready to review
-            * Read the [contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md)
-            * Before marking as "ready for review", ensure:
-              * the goal is clearly stated in the description
-              * all the tests are passing
-              * the change is [something we merge](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md#what-gets-merged)
-              * include a route or your device' dongle ID if relevant

@@ -2,7 +2,6 @@
 import argparse
 import sys
 import unittest # noqa: TID251
-
 from opendbc.car.tests.routes import CarTestRoute
 from openpilot.selfdrive.car.tests.test_models import TestCarModel
 from openpilot.tools.lib.route import SegmentRange
@@ -20,7 +19,7 @@ def create_test_models_suite(routes: list[CarTestRoute]) -> unittest.TestSuite:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Test any route against common issues with a new car port. " +
-                                               "Uses selfdrive/car/tests/test_models.py")
+                                               "Uses openpilot/selfdrive/car/tests/test_models.py")
   parser.add_argument("route_or_segment_name", help="Specify route to run tests on")
   parser.add_argument("--car", help="Specify car model for test route")
   args = parser.parse_args()

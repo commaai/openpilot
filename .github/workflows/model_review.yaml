@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
-      - 'selfdrive/modeld/models/*.onnx'
+      - 'openpilot/selfdrive/modeld/models/*.onnx'
   workflow_dispatch:
 
 jobs:
@@ -16,27 +16,27 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+        with:
+          submodules: true
       - name: Checkout master
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: master
           path: base
       - run: git lfs pull
       - run: cd base && git lfs pull
 
-      - run: pip install onnx
-
       - name: scripts/reporter.py
         id: report
         run: |
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "## Model Review" >> $GITHUB_OUTPUT
-          MASTER_PATH=${{ github.workspace }}/base python scripts/reporter.py >> $GITHUB_OUTPUT
+          PYTHONPATH=${{ github.workspace }} MASTER_PATH=${{ github.workspace }}/base python scripts/reporter.py >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Post model report comment
-        uses: marocchino/sticky-pull-request-comment@baa7203ed60924babbe5dcd0ac8eae3b66ec5e16
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0
         with:
           header: model-review
           message: ${{ steps.report.outputs.content }}

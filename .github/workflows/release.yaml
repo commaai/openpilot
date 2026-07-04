@@ -7,36 +7,25 @@ on:
 jobs:
   build_masterci:
     name: build master-ci
-    env:
-      ImageOS: ubuntu24
-    container:
-      image: ghcr.io/commaai/openpilot-base:latest
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     permissions:
       checks: read
       contents: write
     steps:
-    - name: Install wait-on-check-action dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libyaml-dev
     - name: Wait for green check mark
       if: ${{ github.event_name == 'schedule' }}
-      uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
+      uses: lewagon/wait-on-check-action@1d57e2c51a58d812d2765e036a028b6bdb5a6154
       with:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build master-ci'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        check-regexp: ^((?!.*(build prebuilt).*).)*$
-    - uses: actions/checkout@v6
+        check-regexp: ^((?!.*(build prebuilt|create badges).*).)*$
+    - uses: actions/checkout@v7
       with:
         submodules: true
         fetch-depth: 0
-    - name: Pull LFS
-      run: |
-        git config --global --add safe.directory '*'
-        git lfs pull
+    - run: ./tools/op.sh setup
     - name: Push master-ci
-      run: BRANCH=__nightly release/build_stripped.sh
+      run: BRANCH=__nightly tools/release/build_stripped.sh

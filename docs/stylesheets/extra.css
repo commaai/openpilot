@@ -1,0 +1,42 @@
+.md-logo img {
+  filter: invert(1);
+}
+
+.glossary-term {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+}
+
+.glossary-term__label {
+  border-bottom: 1px dotted currentColor;
+}
+
+.glossary-term__tooltip {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  width: max-content;
+  max-width: min(30rem, 80vw);
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.6rem;
+  background: rgb(26 26 26 / 96%);
+  color: white;
+  box-shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 22%);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-0.15rem);
+  transition: opacity 120ms ease, transform 120ms ease;
+  visibility: hidden;
+  z-index: 20;
+}
+
+.glossary-term:hover .glossary-term__tooltip,
+.glossary-term:focus-visible .glossary-term__tooltip,
+.glossary-term:focus-within .glossary-term__tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  visibility: visible;
+}
