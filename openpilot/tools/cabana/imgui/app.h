@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "imgui.h"
 
@@ -77,8 +78,15 @@ inline bool has_stream(const AppState &app) {
 
 constexpr float TRANSPORT_BAR_HEIGHT = 40.0f;
 
-// dock window titles -- mirror tools/cabana/mainwin.cc dock titles exactly
-constexpr const char *MESSAGES_WINDOW_TITLE = "MESSAGES";
+// dock window titles -- mirror tools/cabana/mainwin.cc dock titles exactly.
+// MESSAGES_WINDOW_TITLE is an ImGui "###" stable-ID suffix, not the literal
+// title: the visible label is reformatted every frame (mirrors
+// MessagesWidget::updateTitle()'s "%1 Messages (%2 DBC Messages, %3
+// Signals)"), but everything after "###" is what ImGui hashes for window
+// identity, so DockBuilder/FindWindowByName/docking-layout persistence all
+// keep working against this fixed constant regardless of the dynamic prefix
+// messages_panel.cc's ImGui::Begin() call prepends to it.
+constexpr const char *MESSAGES_WINDOW_TITLE = "###MESSAGES";
 constexpr const char *VIDEO_WINDOW_TITLE = "Video";
 constexpr const char *CHARTS_WINDOW_TITLE = "Charts";
 constexpr const char *CENTER_WINDOW_TITLE = "Detail";
@@ -114,8 +122,17 @@ void open_remote_route_browser(std::string *out_route);  // picked route written
 void open_export_csv();
 
 // charts API (defined in charts_panel.cc; panel state is file-local there)
-void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool show);
+// `merge`: mirrors SignalView/BinaryView's showChart(id, sig, show, merge) --
+// Shift+click on the signal editor's plot button merges the signal into the
+// last-created chart instead of opening a new one (Qt: ChartsWidget::showChart
+// picks currentCharts().front(), the most-recently-created chart since
+// createChart() inserts new charts at index 0; this port instead appends new
+// charts to the back of a flat list, so "front()" there is "back()" here).
+void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool show, bool merge = false);
 bool charts_is_showing(const MessageId &id, const cabana::Signal *sig);
+// session save/restore (mirrors ChartsWidget::serializeChartIds/restoreChartsFromIds)
+std::vector<std::string> charts_serialize_ids();
+void charts_restore_from_ids(const std::vector<std::string> &chart_ids);
 
 // shared widgets (defined in messages_panel.cc)
 ImU32 to_im_color(const ColorRGBA &c);

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 
@@ -66,14 +67,24 @@ std::string elide_text(const std::string &text, float max_width) {
 }
 
 // Hand-rolled tab button (Button + Tab/TabSelected theme colors) instead of
-// ImGui::BeginTabBar()/BeginTabItem(): in this build, native tab-item
-// caption text doesn't render on the frame a tab is (re)created -- repro'd
-// with a minimal BeginTabBar/BeginTabItem in a standalone floating window,
-// so it isn't specific to docking or to this file's own state handling.
-// Since headless `--output` captures exactly one frame after selecting a
-// message, every tab would be "just created" and silently blank. Buttons use
-// the same Header/Selectable primitives the messages panel's row-highlight
-// already renders correctly. See report for the full repro.
+// ImGui::BeginTabBar()/BeginTabItem(): confirmed root cause (item 6 audit,
+// timeboxed repro) is that ImGui's tab bar defers ImGuiTabItemFlags_SetSelected
+// by one frame for a tab item that is *itself* brand new that same frame --
+// the newly-created tab is appended to the tab bar's internal list only
+// after that frame's selection resolution pass runs, so "which tab is
+// current" (and therefore which one's content renders) lags one frame behind
+// "which tab was just requested selected". Repro: a minimal floating window
+// (temporarily added to app.cc, see report) with BeginTabBar/BeginTabItem
+// that pushes one new tab per frame and always requests the newest one
+// selected -- the pane drawn every frame is consistently the *previous*
+// frame's newest tab, never the current one. Our real flow does exactly this
+// (open_msg_tabs.push_back() + app.selected_msg_id both change on the same
+// frame a not-yet-open message is selected), and headless `--output` only
+// ever renders that one frame, so a native tab bar would capture the wrong
+// (or textbook-uninitialized) tab as current every time. Buttons use the
+// same Header/Selectable primitives the messages panel's row-highlight
+// already renders correctly, and read app.selected_msg_id directly with no
+// analogous "current tab" state of their own to desync.
 bool draw_tab_button(const char *label, bool is_selected, bool *hovered_out = nullptr) {
   ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(is_selected ? ImGuiCol_TabSelected : ImGuiCol_Tab));
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_TabHovered));
@@ -168,12 +179,29 @@ void draw_header(const MessageId &id) {
     }
   }
 
+  // "Remove Message" -- mirrors DetailWidget::createToolBar()'s x-lg
+  // toolbar action (removeMsg() -> UndoStack::push(RemoveMsgCommand)),
+  // disabled exactly like action_remove_msg when the message has no DBC
+  // definition. ("Edit Message" / EditMessageDialog is NOT ported -- see
+  // report, missing-big.) Right-anchored on the name line since this port
+  // has no separate per-message toolbar row.
+  const float avail_w = ImGui::GetContentRegionAvail().x;
+  const float remove_btn_w = ImGui::CalcTextSize("Remove Msg").x + ImGui::GetStyle().FramePadding.x * 2.0f + 8.0f;
+
   const std::string name_text = msg != nullptr ? (msg->name + " (" + msg->transmitter + ")") : msgName(id);
   push_bold_font();
-  const std::string elided = elide_text(name_text, ImGui::GetContentRegionAvail().x);
+  const std::string elided = elide_text(name_text, std::max(10.0f, avail_w - remove_btn_w - ImGui::GetStyle().ItemSpacing.x));
   ImGui::TextUnformatted(elided.c_str());
   pop_bold_font();
   if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", name_text.c_str());
+
+  ImGui::SameLine(std::max(0.0f, avail_w - remove_btn_w));
+  ImGui::BeginDisabled(msg == nullptr);
+  if (ImGui::SmallButton("Remove Msg")) {
+    UndoStack::push(new RemoveMsgCommand(id));
+  }
+  ImGui::EndDisabled();
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("Remove Message");
 
   std::string freq_label = "N/A";
   std::string count_label = "N/A";

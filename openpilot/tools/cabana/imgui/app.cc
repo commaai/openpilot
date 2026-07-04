@@ -1,7 +1,9 @@
 #include "tools/cabana/imgui/app.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
+#include <csignal>
 #include <cstdlib>
 #include <string>
 
@@ -12,6 +14,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/imgui/dbc_menus.h"
 #include "tools/cabana/settings.h"
 
@@ -42,6 +45,20 @@ AppState *g_app_for_close = nullptr;
 void on_glfw_window_close(GLFWwindow *window) {
   glfwSetWindowShouldClose(window, GLFW_FALSE);
   if (g_app_for_close != nullptr) g_app_for_close->request_close = true;
+}
+
+// mirrors util.cc's UnixSignalHandler + initApp()'s SIGINT/SIGTERM ->
+// qApp->quit() (which Qt routes through the same closeEvent()/
+// remindSaveChanges()/saveSessionState() path as any other close): without
+// this, Ctrl+C / a plain `kill` silently skips save_session_state() and
+// settings.save() (~Settings() never runs either), discarding whatever
+// session-restore state (item 1) and settings changes were made this run.
+// Only async-signal-safe work happens in the handler itself (a std::atomic
+// store); the actual close request is applied on the main thread at the top
+// of the next frame, same as the GLFW window-close callback above.
+std::atomic<bool> g_signal_close_requested{false};
+void handle_terminate_signal(int /*sig*/) {
+  g_signal_close_requested.store(true);
 }
 
 void draw_menu_bar(AppState &app) {
@@ -154,14 +171,30 @@ void draw_about_popup(AppState &app) {
 void draw_ui(AppState &app) {
   dbc_menus_update();
 
+  if (g_signal_close_requested.exchange(false)) {
+    app.request_close = true;
+  }
+
   const ImGuiIO &io = ImGui::GetIO();
   const bool ctrl = io.KeyCtrl || io.KeySuper;
   if (!io.WantTextInput && ctrl && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
     app.request_close = true;
   }
+  // mirrors createActions()'s file_menu->addAction(..., QKeySequence::Preferences)
+  // -- the "Ctrl+," shown on the Settings menu item is otherwise cosmetic
+  // text; ImGui::MenuItem() doesn't register the accelerator itself.
+  if (!io.WantTextInput && ctrl && ImGui::IsKeyPressed(ImGuiKey_Comma, false)) {
+    open_settings_dialog();
+  }
   if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) {
     app.stream->pause(!app.stream->isPaused());
   }
+  // F1 mirrors QKeySequence::HelpContents -> onlineHelp(). Qt's Shift+F1
+  // additionally enters "What's This?" click-to-inspect mode (built into
+  // QWidget/QApplication, no explicit code in mainwin.cc); this port's F1
+  // overlay already surfaces every whatsThis() callout at once, so Shift+F1
+  // is treated the same as plain F1 here rather than adding a separate
+  // per-widget click-to-inspect mode.
   if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
     toggle_help_overlay();
   }
@@ -226,6 +259,73 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   glfwSwapBuffers(window);
 }
 
+// -- session save/restore -- mirrors MainWindow::saveSessionState()/
+// restoreSessionState() (mainwin.cc:623-660). Unlike Qt (which re-attempts a
+// restore after every DBCFileChanged for the lifetime of the process, via
+// closeStream/loadFile chains ending in a QTimer::singleShot(0,
+// restoreSessionState)), this port only attempts it once, at startup, per the
+// task spec's "on start (when a stream is opened without an explicit --dbc)"
+// -- deliberately narrower than Qt's continuous re-check, see report.
+
+void save_session_state(const AppState &app) {
+  settings.recent_dbc_file.clear();
+  settings.active_msg_id.clear();
+  settings.selected_msg_ids.clear();
+  settings.active_charts.clear();
+
+  for (DBCFile *f : dbc()->allDBCFiles()) {
+    if (!f->isEmpty()) {
+      settings.recent_dbc_file = f->filename;
+      break;
+    }
+  }
+  if (app.selected_msg_id) settings.active_msg_id = app.selected_msg_id->toString();
+  for (const MessageId &id : app.open_msg_tabs) settings.selected_msg_ids.push_back(id.toString());
+  settings.active_charts = charts_serialize_ids();
+}
+
+// Called once at startup when no --dbc was passed on the CLI. Unlike Qt's
+// restoreSessionState() (which only ever *checks* whether the DBC that just
+// finished loading -- via fingerprint auto-load or a manual File > Open --
+// happens to match settings.recent_dbc_file), this actively reopens
+// recent_dbc_file itself first: the imgui shell has no equivalent moment
+// where "the DBC that's about to load" is known ahead of time to compare
+// against, so restoring the file directly is the closest equivalent that
+// still satisfies "reopen tabs, reselect the message, recreate charts" for a
+// plain relaunch with no route-fingerprint match.
+void restore_session_state(AppState &app) {
+  if (settings.recent_dbc_file.empty()) return;
+
+  if (dbc()->nonEmptyDBCCount() == 0) {
+    std::string error;
+    if (!dbc()->open(SOURCE_ALL, settings.recent_dbc_file, &error)) return;  // file gone/unreadable: skip restore silently
+    dbc_menus_note_recent_file(settings.recent_dbc_file);
+  }
+
+  std::string dbc_file;
+  for (DBCFile *f : dbc()->allDBCFiles()) {
+    if (!f->isEmpty()) {
+      dbc_file = f->filename;
+      break;
+    }
+  }
+  if (dbc_file != settings.recent_dbc_file) return;  // a different DBC is open; message/signal ids won't line up
+
+  if (!settings.selected_msg_ids.empty()) {
+    app.open_msg_tabs.clear();
+    for (const std::string &s : settings.selected_msg_ids) {
+      if (MessageId id = MessageId::fromString(s); dbc()->msg(id) != nullptr) app.open_msg_tabs.push_back(id);
+    }
+    if (MessageId active_id = MessageId::fromString(settings.active_msg_id); dbc()->msg(active_id) != nullptr) {
+      app.selected_msg_id = active_id;
+    } else if (!app.open_msg_tabs.empty()) {
+      app.selected_msg_id = app.open_msg_tabs.front();
+    }
+  }
+
+  if (!settings.active_charts.empty()) charts_restore_from_ids(settings.active_charts);
+}
+
 }  // namespace
 
 int run(const Options &options, std::unique_ptr<AbstractStream> stream) {
@@ -253,8 +353,17 @@ int run(const Options &options, std::unique_ptr<AbstractStream> stream) {
   dbc_menus_init(glfw_runtime.window());
   g_app_for_close = &app;
   glfwSetWindowCloseCallback(glfw_runtime.window(), on_glfw_window_close);
+  std::signal(SIGINT, handle_terminate_signal);
+  std::signal(SIGTERM, handle_terminate_signal);
 
   app.stream->start();
+  // Session restore (item 1): only when the CLI didn't already pin a DBC --
+  // an explicit --dbc always wins over whatever was open last session.
+  // Must run before dbc_menus_ensure_dbc_open() below so a restored DBC
+  // counts against its "at least one DBC open" check instead of racing it.
+  if (options.dbc_path.empty()) {
+    restore_session_state(app);
+  }
   dbc_menus_ensure_dbc_open();  // mirrors startStream()'s "don't leave zero DBCs loaded"
 
   if (!options.output_path.empty()) {
@@ -280,11 +389,15 @@ int run(const Options &options, std::unique_ptr<AbstractStream> stream) {
       }
     }
     render_frame(glfw_runtime.window(), app, &capture_path);
-    if (!options.show) return 0;
+    if (!options.show) {
+      save_session_state(app);
+      return 0;
+    }
   }
 
   while (!glfwWindowShouldClose(glfw_runtime.window())) {
     render_frame(glfw_runtime.window(), app, nullptr);
   }
+  save_session_state(app);
   return 0;
 }

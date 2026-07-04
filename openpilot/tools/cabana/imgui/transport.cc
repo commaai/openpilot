@@ -1,6 +1,7 @@
 #include "tools/cabana/imgui/app.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -9,6 +10,8 @@
 
 #include "tools/cabana/settings.h"
 #include "tools/cabana/streams/replaystream.h"
+#include "tools/replay/py_downloader.h"
+#include "tools/replay/util.h"
 
 // route_info.cc -- owned by this workstream (not declared in app.h; see
 // app.h's "declare its open/draw fns at the top of video_panel.cc or
@@ -91,6 +94,37 @@ std::string format_speed(double speed) {
   char buf[16];
   snprintf(buf, sizeof(buf), "%gx", speed);
   return buf;
+}
+
+// -- route download progress -- mirrors mainwin.cc's constructor
+// (installDownloadProgressHandler(...)) + MainWindow::updateDownloadProgress()
+// / the status-bar progress_bar it drives. This port has no separate Qt-style
+// status bar, so the readout replaces the route-name label at the right end
+// of the transport bar (the same place Qt's progress_bar sat, as a
+// permanent status-bar widget) while a download is active.
+//
+// installDownloadProgressHandler's callback fires from a background
+// download thread (tools/replay/py_downloader.cc), not the UI thread -- Qt
+// marshals cross-thread via a queued signal/slot (emit
+// updateProgressBar(...)); this port uses atomics instead since the UI
+// thread only ever reads these, never blocks on them.
+std::atomic<uint64_t> g_dl_cur{0};
+std::atomic<uint64_t> g_dl_total{0};
+std::atomic<bool> g_dl_active{false};
+
+void ensure_download_progress_wired() {
+  static bool wired = false;
+  if (wired) return;
+  wired = true;
+  installDownloadProgressHandler([](uint64_t cur, uint64_t total, bool success) {
+    if (success && cur < total) {
+      g_dl_cur = cur;
+      g_dl_total = total;
+      g_dl_active = true;
+    } else {
+      g_dl_active = false;
+    }
+  });
 }
 
 }  // namespace
@@ -243,9 +277,23 @@ void draw_transport_bar(AppState &app) {
 
   ImGui::EndDisabled();
 
+  ensure_download_progress_wired();
   ImGui::SameLine();
   ImGui::AlignTextToFramePadding();
-  ImGui::TextDisabled("%s", route_label.c_str());
+  if (g_dl_active.load()) {
+    // mirrors MainWindow::updateDownloadProgress()'s progress_bar format
+    // string ("Downloading %p% (%1)" where %1 = formattedDataSize(total));
+    // no separate Qt-style status bar here, so this takes the route-name
+    // label's place at the right end of the transport bar for as long as a
+    // download is in flight (Qt's progress_bar lived in that same
+    // permanent-status-bar slot).
+    const uint64_t cur = g_dl_cur.load();
+    const uint64_t total = g_dl_total.load();
+    const int pct = total > 0 ? static_cast<int>((cur * 100) / total) : 0;
+    ImGui::Text("Downloading %d%% (%s)", pct, formattedDataSize(total).c_str());
+  } else {
+    ImGui::TextDisabled("%s", route_label.c_str());
+  }
 
   draw_route_info(app);
 

@@ -504,24 +504,32 @@ void draw_table(AppState &app) {
   // can grow unbounded), so we don't set ScrollX here -- the Bytes column
   // just clips at the right edge for very wide (CAN FD) messages instead of
   // Qt's shift+wheel horizontal scroll. See report for detail.
+  // Reorderable mirrors MessageViewHeader's setSectionsMovable(true) --
+  // drag a column header to reorder (persisted to imgui.ini like width/
+  // visibility already are).
   constexpr ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_Sortable |
                                     ImGuiTableFlags_Resizable | ImGuiTableFlags_Hideable |
-                                    ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter;
+                                    ImGuiTableFlags_Reorderable | ImGuiTableFlags_BordersInnerV |
+                                    ImGuiTableFlags_BordersOuter;
   if (!ImGui::BeginTable("##messages_table", NUM_COLUMNS, flags, ImGui::GetContentRegionAvail())) return;
 
   ImGui::TableSetupScrollFreeze(0, 2);  // header row + filter row stay pinned while scrolling
   // Fixed default widths: the dock is narrow enough that stretch weights
   // starve the Name column below usability; all are user-resizable and
-  // persisted via imgui.ini.
+  // persisted via imgui.ini. Trimmed from the first-pass widths (Name 130,
+  // Bus 40, ID 60, Freq 52, Count 60) -- at the default 30%-of-1600 dock
+  // width, those left the Bytes column only ~120px, clipping most 8-byte
+  // messages to 3-4 bytes; this reclaims ~45px for it (visual polish pass,
+  // item 7) while keeping every value still comfortably legible.
   ImGui::TableSetupColumn(COLUMN_LABELS[COL_NAME],
                           ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort |
                               ImGuiTableColumnFlags_PreferSortAscending | ImGuiTableColumnFlags_NoHide,
-                          130.0f);
-  ImGui::TableSetupColumn(COLUMN_LABELS[COL_SOURCE], ImGuiTableColumnFlags_WidthFixed, 40.0f);
-  ImGui::TableSetupColumn(COLUMN_LABELS[COL_ADDRESS], ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                          110.0f);
+  ImGui::TableSetupColumn(COLUMN_LABELS[COL_SOURCE], ImGuiTableColumnFlags_WidthFixed, 36.0f);
+  ImGui::TableSetupColumn(COLUMN_LABELS[COL_ADDRESS], ImGuiTableColumnFlags_WidthFixed, 52.0f);
   ImGui::TableSetupColumn(COLUMN_LABELS[COL_NODE], ImGuiTableColumnFlags_WidthFixed, 56.0f);
-  ImGui::TableSetupColumn(COLUMN_LABELS[COL_FREQ], ImGuiTableColumnFlags_WidthFixed, 52.0f);
-  ImGui::TableSetupColumn(COLUMN_LABELS[COL_COUNT], ImGuiTableColumnFlags_WidthFixed, 60.0f);
+  ImGui::TableSetupColumn(COLUMN_LABELS[COL_FREQ], ImGuiTableColumnFlags_WidthFixed, 46.0f);
+  ImGui::TableSetupColumn(COLUMN_LABELS[COL_COUNT], ImGuiTableColumnFlags_WidthFixed, 52.0f);
   ImGui::TableSetupColumn(COLUMN_LABELS[COL_DATA], ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort,
                           data_col_w);
 
@@ -553,6 +561,27 @@ void draw_table(AppState &app) {
     }
   }
   ImGui::EndTable();
+}
+
+// mirrors MessagesWidget::updateTitle(): "%1 Messages (%2 DBC Messages, %3
+// Signals)" -- %1 is every currently-listed row (post filter/inactive-hide,
+// same set model->items_ held in Qt), %2/%3 are how many of those rows have
+// a DBC definition and the total signal count across them. The literal
+// window title constant is now just the "###MESSAGES" ID suffix (see app.h),
+// so the visible label is rebuilt here every frame and the suffix appended
+// for ImGui::Begin() to key docking/FindWindowByName off of.
+std::string format_messages_title() {
+  size_t dbc_message_count = 0, signal_count = 0;
+  for (const Row &row : g_state.rows) {
+    if (const cabana::Msg *m = dbc()->msg(row.id); m != nullptr) {
+      ++dbc_message_count;
+      signal_count += m->sigs.size();
+    }
+  }
+  char buf[192];
+  std::snprintf(buf, sizeof(buf), "%zu Messages (%zu DBC Messages, %zu Signals)%s", g_state.rows.size(), dbc_message_count,
+                signal_count, MESSAGES_WINDOW_TITLE);
+  return buf;
 }
 
 }  // namespace
@@ -608,7 +637,7 @@ void draw_messages_panel(AppState &app) {
     g_state.dirty = false;
   }
 
-  if (ImGui::Begin(MESSAGES_WINDOW_TITLE)) {
+  if (ImGui::Begin(format_messages_title().c_str())) {
     draw_toolbar(app);
     ImGui::Separator();
     draw_table(app);

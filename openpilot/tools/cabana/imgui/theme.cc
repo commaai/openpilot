@@ -80,8 +80,15 @@ constexpr ColorDef DARK_COLORS[] = {
   {ImGuiCol_TabSelected, 60, 63, 65},  {ImGuiCol_TabSelectedOverline, 47, 101, 202},
   {ImGuiCol_TabDimmed, 45, 47, 49},    {ImGuiCol_TabDimmedSelected, 55, 58, 60},
   {ImGuiCol_TabDimmedSelectedOverline, 47, 101, 202}, {ImGuiCol_DockingEmptyBg, 47, 47, 47},
-  {ImGuiCol_CheckMark, 187, 187, 187}, {ImGuiCol_SliderGrab, 130, 135, 140},
-  {ImGuiCol_SliderGrabActive, 150, 155, 160},
+  {ImGuiCol_CheckMark, 187, 187, 187},
+  // Accent blue (matches Header/HeaderHovered above and Qt's setTheme()
+  // QPalette::Highlight "#2f65ca") -- visual-polish fix: these previously
+  // fell back to a flat mid-grey that barely stood out from FrameBg/Button,
+  // making the transport-bar seek slider's handle much harder to spot than
+  // light theme's vivid blue (which inherits ImGui's own default accent,
+  // never overridden here).
+  {ImGuiCol_SliderGrab, 47, 101, 202},
+  {ImGuiCol_SliderGrabActive, 57, 111, 212},
 };
 
 }  // namespace

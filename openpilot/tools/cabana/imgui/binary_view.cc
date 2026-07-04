@@ -7,10 +7,14 @@
 #include "tools/cabana/imgui/app.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <map>
+#include <optional>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "tools/cabana/commands.h"
@@ -91,6 +95,86 @@ bool item_has_signal(const std::vector<BvItem> &items, int row_count, int row, i
 const cabana::Signal *g_hovered_sig = nullptr;
 const cabana::Signal *g_selected_sig = nullptr;
 bool g_selection_from_binary_view = false;
+
+// -- heatmap mode: Live vs All -- ports DetailWidget's "Heatmap: Live/All"
+// toolbar radio buttons + BinaryViewModel::heatmap_live_mode/
+// getBitFlipChanges(). Reproduced inline here (rather than in detail_panel.cc)
+// since it only ever affects this view. "Live" (default) reads
+// CanData::bit_flip_counts, a rolling counter the stream core already
+// maintains per message; "All" replays every event in the current time range
+// (the whole route, or a chart zoom's sub-range) and counts byte-to-byte bit
+// transitions, cached per-message until the range changes -- a map keyed by
+// MessageId stands in for Qt's one-tracker-reset-on-setMessage() (same
+// "starts fresh per message" effect, but a switch back to a previously-open
+// tab keeps its own cache instead of recomputing).
+bool g_heatmap_live_mode = true;
+
+struct BitFlipTracker {
+  std::optional<std::pair<double, double>> time_range;
+  std::vector<std::array<uint32_t, 8>> flip_counts;
+};
+std::map<MessageId, BitFlipTracker> g_bit_flip_trackers;
+
+const std::vector<std::array<uint32_t, 8>> &compute_bit_flip_changes(const MessageId &id, size_t msg_size) {
+  BitFlipTracker &tracker = g_bit_flip_trackers[id];
+  const auto time_range = can->timeRange();
+  if (tracker.time_range == time_range && !tracker.flip_counts.empty()) return tracker.flip_counts;
+
+  tracker.time_range = time_range;
+  tracker.flip_counts.assign(msg_size, std::array<uint32_t, 8>{});
+
+  auto [first, last] = can->eventsInRange(id, time_range);
+  if (std::distance(first, last) <= 1) return tracker.flip_counts;
+
+  std::vector<uint8_t> prev_values((*first)->dat, (*first)->dat + (*first)->size);
+  for (auto it = std::next(first); it != last; ++it) {
+    const CanEvent *event = *it;
+    const int size = std::min<int>(static_cast<int>(msg_size), static_cast<int>(event->size));
+    for (int i = 0; i < size; ++i) {
+      const uint8_t diff = event->dat[i] ^ prev_values[static_cast<size_t>(i)];
+      if (!diff) continue;
+
+      auto &bit_flips = tracker.flip_counts[static_cast<size_t>(i)];
+      for (int bit = 0; bit < 8; ++bit) {
+        if (diff & (1u << bit)) ++bit_flips[static_cast<size_t>(7 - bit)];
+      }
+      prev_values[static_cast<size_t>(i)] = event->dat[i];
+    }
+  }
+  return tracker.flip_counts;
+}
+
+// mirrors DetailWidget::createToolBar()'s heatmap_live/heatmap_all
+// QRadioButtons + the can->timeRangeChanged connection that auto-selects
+// "All" (labelled with the exact range) when a chart zoom sets a time range,
+// and back to "Live" when the zoom clears -- edge-detected here per frame
+// instead of an event subscription, same effect. The user can still click
+// either button afterward, same as the Qt radio buttons.
+void draw_heatmap_toggle() {
+  static std::optional<std::pair<double, double>> last_seen_range;
+  const auto time_range = can->timeRange();
+  if (time_range != last_seen_range) {
+    g_heatmap_live_mode = !time_range.has_value();
+    last_seen_range = time_range;
+  }
+
+  ImGui::TextDisabled("Heatmap:");
+  ImGui::SameLine();
+  if (g_heatmap_live_mode) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (ImGui::SmallButton("Live")) g_heatmap_live_mode = true;
+  if (g_heatmap_live_mode) ImGui::PopStyleColor();
+
+  ImGui::SameLine();
+  char all_label[64];
+  if (time_range) {
+    std::snprintf(all_label, sizeof(all_label), "%.3f - %.3f", time_range->first, time_range->second);
+  } else {
+    std::snprintf(all_label, sizeof(all_label), "All");
+  }
+  if (!g_heatmap_live_mode) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (ImGui::SmallButton(all_label)) g_heatmap_live_mode = false;
+  if (!g_heatmap_live_mode) ImGui::PopStyleColor();
+}
 
 // -- drag-to-create / resize -- ports BinaryView::mousePressEvent() /
 // mouseMoveEvent() / mouseReleaseEvent() + BinaryView::getSelection() from
@@ -226,11 +310,14 @@ void draw_binary_view(AppState &app) {
   }
   std::vector<BvItem> items = build_signal_coverage(dbc_msg, row_count);
 
-  // Bit-flip heatmap -- mirrors BinaryViewModel::updateState()'s live-mode
-  // branch (heatmap_live_mode == true, CanData::bit_flip_counts). The "All"
-  // time-range mode from DetailWidget's Live/All radio buttons isn't wired up
-  // here -- see report.
-  const auto &bit_flips = last_msg.bit_flip_counts;
+  draw_heatmap_toggle();
+
+  // Bit-flip heatmap -- mirrors BinaryViewModel::updateState()'s
+  // heatmap_live_mode branch: Live reads CanData::bit_flip_counts directly,
+  // All recomputes from every event in the current time range (see
+  // compute_bit_flip_changes() above).
+  const auto &bit_flips =
+      g_heatmap_live_mode ? last_msg.bit_flip_counts : compute_bit_flip_changes(id, last_msg.dat.size());
   uint32_t max_flip = 1;  // avoid div-by-zero, matches Qt's default
   for (const auto &row : bit_flips) {
     for (uint32_t c : row) max_flip = std::max(max_flip, c);
@@ -283,7 +370,8 @@ void draw_binary_view(AppState &app) {
   // IsItemHovered() on the *other* cells the drag passes over, so hit-testing
   // has to be geometry-based (same GetPlotMousePos()-driven pattern as
   // chart_view.cc's box-zoom drag).
-  const ImVec2 mouse_pos = ImGui::GetIO().MousePos;
+  const ImGuiIO &io = ImGui::GetIO();
+  const ImVec2 mouse_pos = io.MousePos;
   const bool mouse_in_grid = mouse_pos.x >= origin.x + ROW_HEADER_WIDTH && mouse_pos.x < origin.x + total_w &&
                              mouse_pos.y >= origin.y && mouse_pos.y < origin.y + total_h;
   int hit_row = -1, hit_col = -1;
@@ -434,6 +522,33 @@ void draw_binary_view(AppState &app) {
 
   if (!ImGui::IsMouseHoveringRect(origin, ImVec2(origin.x + total_w, origin.y + total_h))) {
     g_hovered_sig = nullptr;  // mirrors BinaryView::leaveEvent() -> highlight(nullptr)
+  }
+
+  // Keyboard shortcuts on the hovered signal -- mirrors binaryview.cc's
+  // createShortcuts(): x/Backspace/Delete removes it; e/s flip
+  // endianness/signedness (via the same start_bit-flip-on-endian-change
+  // SignalModel::saveSignal() applies before pushing EditSignalCommand);
+  // p/g/c open a chart for it, always merge=false -- Qt's binaryview.cc
+  // shortcut has no Shift/merge check, unlike the signal editor's plot
+  // button (see signal_view.cc).
+  if (!io.WantTextInput && g_hovered_sig != nullptr) {
+    if (ImGui::IsKeyPressed(ImGuiKey_X, false) || ImGui::IsKeyPressed(ImGuiKey_Backspace, false) ||
+        ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+      UndoStack::push(new RemoveSigCommand(id, g_hovered_sig));
+      g_hovered_sig = nullptr;
+    } else if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
+      cabana::Signal s = *g_hovered_sig;
+      s.is_little_endian = !s.is_little_endian;
+      s.start_bit = flipBitPos(s.start_bit);
+      UndoStack::push(new EditSignalCommand(id, g_hovered_sig, s));
+    } else if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+      cabana::Signal s = *g_hovered_sig;
+      s.is_signed = !s.is_signed;
+      UndoStack::push(new EditSignalCommand(id, g_hovered_sig, s));
+    } else if (ImGui::IsKeyPressed(ImGuiKey_P, false) || ImGui::IsKeyPressed(ImGuiKey_G, false) ||
+               ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+      charts_show_signal(id, g_hovered_sig, true);
+    }
   }
 
   // Live preview -- mirrors BinaryItemDelegate::paint()'s State_Selected

@@ -746,9 +746,12 @@ bool draw_row(const MessageId &msg_id, const cabana::Signal *sig, int row_index_
   const bool plotted = charts_is_showing(msg_id, sig);
   ImGui::SetCursorScreenPos(ImVec2(right_x - BTN_SIZE, origin.y + (ROW_HEIGHT - BTN_SIZE) * 0.5f));
   if (plotted) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (ImGui::SmallButton("~")) charts_show_signal(msg_id, sig, !plotted);
+  // Shift+click merges into the last-created chart instead of opening a new
+  // one -- mirrors signalview.cc's plot_btn clicked handler passing
+  // QGuiApplication::keyboardModifiers() & Qt::ShiftModifier as `merge`.
+  if (ImGui::SmallButton("~")) charts_show_signal(msg_id, sig, !plotted, ImGui::GetIO().KeyShift);
   if (plotted) ImGui::PopStyleColor();
-  if (ImGui::IsItemHovered()) ImGui::SetTooltip(plotted ? "Close Plot" : "Show Plot");
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip(plotted ? "Close Plot" : (ImGui::GetIO().KeyShift ? "Show Plot (merge into last chart)" : "Show Plot"));
   right_x -= BTN_SIZE + 6.0f;
 
   const CanData &last = can->lastMessage(msg_id);

@@ -48,10 +48,13 @@ namespace {
 constexpr const char *kStreamNames[3] = {"Road camera", "Driver camera", "Wide road camera"};
 
 // Hand-rolled tab button instead of ImGui::BeginTabBar()/BeginTabItem(): see
-// detail_panel.cc's draw_tab_button() comment -- native tab-item caption text
-// doesn't render on the frame a tab is (re)created in this ImGui build, which
-// would show blank camera tab labels in the mandatory single-shot --output
-// capture. Same Button + Tab/TabSelected/TabHovered theme colors as that helper.
+// detail_panel.cc's draw_tab_button() comment for the confirmed root cause
+// (SetSelected on a same-frame-created tab item lags one frame). A camera
+// switch here changes "which tab is current" the same way selecting a new
+// message does there, so it's exposed to the same desync; the mandatory
+// single-shot --output capture would show the wrong (or default) camera pane
+// selected on exactly the frame that matters. Same Button +
+// Tab/TabSelected/TabHovered theme colors as that helper.
 bool draw_camera_tab_button(const char *label, bool selected) {
   ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(selected ? ImGuiCol_TabSelected : ImGuiCol_Tab));
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_TabHovered));

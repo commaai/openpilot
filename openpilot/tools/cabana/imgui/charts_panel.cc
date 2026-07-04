@@ -14,6 +14,7 @@
 #include "tools/cabana/imgui/charts_internal.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -291,15 +292,33 @@ void ensure_charts_wired() {
 
 // -- CABANA_TEST_CHARTS debug hook (see report) ------------------------------
 // Format: "src:addr:signal[,src:addr:signal...]" e.g. "0:1D0:WHEEL_SPEED_FL".
-// Applied once, at the first draw, so headless/interactive verification can
-// populate the panel without needing the (separately owned) signal editor's
-// plot buttons to exist yet.
+// Applied once DBC data is actually available, so headless/interactive
+// verification can populate the panel without needing the (separately owned)
+// signal editor's plot buttons to exist yet. On a from-scratch run (no
+// session-restore DBC preloaded, see app.cc) the only DBC comes from
+// fingerprint auto-load, which needs actual route data to have been read off
+// disk/network and merged in before it fires. That's wall-clock-bound (I/O),
+// not frame-count-bound: headless capture's "pump real frames" loop can spin
+// through hundreds of frames in well under a second with vsync off, so a
+// frame-count cap gives up long before fingerprint auto-load ever gets a
+// chance to run. A wall-clock deadline instead gives it real time to land,
+// while still bailing out (so a bogus/no-op env var doesn't spin forever).
 void apply_test_hook_once() {
   static bool applied = false;
+  static bool deadline_set = false;
+  static std::chrono::steady_clock::time_point deadline;
   if (applied) return;
-  applied = true;
   const char *env = std::getenv("CABANA_TEST_CHARTS");
-  if (env == nullptr || *env == '\0') return;
+  if (env == nullptr || *env == '\0') {
+    applied = true;
+    return;
+  }
+  if (!deadline_set) {
+    deadline_set = true;
+    deadline = std::chrono::steady_clock::now() + std::chrono::seconds(60);
+  }
+  if (dbc()->nonEmptyDBCCount() == 0 && std::chrono::steady_clock::now() < deadline) return;
+  applied = true;
 
   std::string s(env);
   size_t pos = 0;
@@ -488,7 +507,7 @@ void draw_charts_panel(AppState &app) {
   draw_signal_selector_modal();
 }
 
-void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool show) {
+void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool show, bool merge) {
   ensure_charts_wired();
   ChartState *existing = nullptr;
   for (ChartState &c : g_charts.charts) {
@@ -503,9 +522,12 @@ void charts_show_signal(const MessageId &id, const cabana::Signal *sig, bool sho
 
   if (show) {
     if (existing != nullptr) return;
-    // showChart(): a plotted signal always lands in a NEW chart (merge=false).
-    ChartState &c = create_chart();
-    add_signal_to_chart(c, id, sig);
+    // showChart(): merge=false always lands in a NEW chart. merge=true (Qt's
+    // Shift+click) lands in the last-created chart instead -- see app.h's
+    // charts_show_signal doc comment for why that's charts.back() here
+    // rather than Qt's currentCharts().front().
+    ChartState *target = (merge && !g_charts.charts.empty()) ? &g_charts.charts.back() : &create_chart();
+    add_signal_to_chart(*target, id, sig);
   } else if (existing != nullptr) {
     remove_signals_if(*existing, [&](const SigItem &s) { return s.msg_id == id && s.sig == sig; });
     remove_empty_charts();
@@ -519,6 +541,53 @@ bool charts_is_showing(const MessageId &id, const cabana::Signal *sig) {
     }
   }
   return false;
+}
+
+// -- session save/restore (mirrors ChartsWidget::serializeChartIds/
+// restoreChartsFromIds) -----------------------------------------------------
+//
+// Format is deliberately similar to Qt's ("src:addr|signal[,src:addr|signal
+// ...]" per chart) but doesn't need Qt's std::reverse(): createChart(pos=0)
+// there inserts new charts at the FRONT, so serializing newest-first then
+// reversing restores left-to-right creation order; this port's create_chart()
+// appends to the BACK, so iterating charts in existing (creation) order
+// already serializes them left-to-right with no reversal needed, and
+// restoring by push_back in that same order reproduces it.
+std::vector<std::string> charts_serialize_ids() {
+  std::vector<std::string> chart_ids;
+  chart_ids.reserve(g_charts.charts.size());
+  for (const ChartState &c : g_charts.charts) {
+    std::string ids;
+    for (const SigItem &s : c.sigs) {
+      if (!ids.empty()) ids += ',';
+      ids += s.msg_id.toString() + "|" + s.sig->name;
+    }
+    chart_ids.push_back(std::move(ids));
+  }
+  return chart_ids;
+}
+
+void charts_restore_from_ids(const std::vector<std::string> &chart_ids) {
+  for (const std::string &chart_id : chart_ids) {
+    int index = 0;
+    size_t pos = 0;
+    while (pos <= chart_id.size()) {
+      const size_t comma = chart_id.find(',', pos);
+      const std::string part = chart_id.substr(pos, comma == std::string::npos ? std::string::npos : comma - pos);
+      const size_t bar = part.find('|');
+      if (bar != std::string::npos) {
+        const MessageId msg_id = MessageId::fromString(part.substr(0, bar));
+        const std::string sig_name = part.substr(bar + 1);
+        if (cabana::Msg *m = dbc()->msg(msg_id); m != nullptr) {
+          if (cabana::Signal *sig = m->sig(sig_name); sig != nullptr) {
+            charts_show_signal(msg_id, sig, true, index++ > 0);
+          }
+        }
+      }
+      if (comma == std::string::npos) break;
+      pos = comma + 1;
+    }
+  }
 }
 
 // Implemented vs tools/cabana/chart/chartswidget.cc (ChartsWidget), frozen
@@ -541,10 +610,13 @@ bool charts_is_showing(const MessageId &id, const cabana::Signal *sig) {
 //    normal playback; seekedTo/DBCFileChanged/signalUpdated/signalRemoved/
 //    msgRemoved trigger the appropriate rebuild/removal, wired once here.
 //  - charts_show_signal()/charts_is_showing(): showChart() semantics --
-//    every new signal lands in a brand-new chart (Qt's merge=true path is
-//    only reachable via Shift+click in signalview.cc, which app.h's
-//    charts_show_signal(id, sig, show) signature has no way to convey, so
-//    it's dropped; every call behaves like Qt's merge=false).
+//    merge=false lands in a brand-new chart, merge=true merges into the
+//    last-created chart (wired to Shift+click on the signal editor's plot
+//    button in signal_view.cc, matching signalview.cc's
+//    QGuiApplication::keyboardModifiers() & Qt::ShiftModifier check).
+//  - charts_serialize_ids()/charts_restore_from_ids(): session save/restore
+//    (app.cc), format-compatible with Qt's serializeChartIds() (no reversal
+//    needed here -- see the doc comment on charts_serialize_ids()).
 //
 // Deliberate scope cuts (see also chart_view.cc / signal_selector.cc):
 //  - No multi-tab charts (TabBar/newTab/removeTab) -- one flat chart list.
