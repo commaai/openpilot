@@ -122,7 +122,6 @@ env = Environment(
   LIBPATH=[
     "#openpilot/common",
     "#msgq_repo",
-    "#openpilot/selfdrive/pandad",
     "#rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
@@ -246,7 +245,6 @@ if arch == "larch64":
 
 # Build selfdrive
 SConscript([
-  'openpilot/selfdrive/pandad/SConscript',
   'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
   'openpilot/selfdrive/locationd/SConscript',
   'openpilot/selfdrive/modeld/SConscript',
