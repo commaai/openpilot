@@ -41,7 +41,10 @@ libs = [cabana_core, replay_lib, common, messaging, visionipc, cereal,
         "avformat", "avcodec", "swresample", "avutil", "x264", "yuv",
         "z", "bz2", "zstd", "zmq", "usb-1.0", "m", "pthread"]
 if arch == "Darwin":
-  cabana_imgui_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo"]
+  cabana_imgui_env["FRAMEWORKS"] = [
+    "OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo",
+    "CoreMedia", "VideoToolbox", "Security",
+  ]
 else:
   libs += ["GL", "dl", "va", "va-drm", "drm"]
 
