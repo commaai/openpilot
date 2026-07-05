@@ -210,7 +210,7 @@ jobs:
         SIM_FAKE_MODELD: 1
         METADRIVE_NO_MSAA: 1
         METADRIVE_NO_SHADOWS: 1
-        METADRIVE_FLAT_TERRAIN_CARD: 1
+        METADRIVE_NO_TERRAIN: 1
         METADRIVE_RENDER_SCALE: "0.5"
       run: |
         mkdir -p "$LOG_ROOT"
