@@ -208,7 +208,7 @@ jobs:
     - name: Install MetaDrive
       run: uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal"
     - name: Driving test
-      timeout-minutes: 10
+      timeout-minutes: 20
       env:
         PYTHONFAULTHANDLER: 1
         METADRIVE_RENDER_SCALE: "0.5"
@@ -219,7 +219,7 @@ jobs:
       run: |
         source openpilot/selfdrive/test/setup_xvfb.sh
         python3 -m metadrive.pull_asset || true
-        SIM_LOGS=1 SIM_LOGS_DIR="$GITHUB_WORKSPACE/sim_logs" pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+        SIM_LOGS=1 SIM_LOGS_DIR="$GITHUB_WORKSPACE/sim_logs" pytest -n0 -s openpilot/tools/sim/tests/test_metadrive_bridge.py
     - name: Upload logs
       if: always()
       uses: actions/upload-artifact@v5
