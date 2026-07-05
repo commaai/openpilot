@@ -225,7 +225,9 @@ jobs:
       uses: actions/upload-artifact@v5
       with:
         name: sim-driving-logs
-        path: sim_logs/
+        path: |
+          sim_logs/**
+          !sim_logs/**/fcamera.hevc
         if-no-files-found: warn
 
   create_ui_report:

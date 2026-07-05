@@ -33,7 +33,7 @@ class TestSimBridgeBase:
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    max_time_per_step = 180 if os.getenv("CI") else 60
+    max_time_per_step = 120 if os.getenv("CI") else 60
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
@@ -118,4 +118,5 @@ class TestSimBridgeBase:
     if "SIM_LOGS_DIR" in os.environ:
       from openpilot.common.hardware.hw import Paths
       if os.path.isdir(Paths.log_root()):
-        shutil.copytree(Paths.log_root(), os.environ["SIM_LOGS_DIR"], dirs_exist_ok=True)
+        shutil.copytree(Paths.log_root(), os.environ["SIM_LOGS_DIR"], dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("fcamera.hevc*"))

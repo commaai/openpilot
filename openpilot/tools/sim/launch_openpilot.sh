@@ -15,7 +15,8 @@ if [[ "$CI" ]]; then
   # TODO: offscreen UI should work
   # soundd needs an audio device, which CI runners don't have
   # journald needs systemd, which CI runners don't have
-  export BLOCK="${BLOCK},ui,soundd,journald"
+  # drop driver-monitoring and other non-essential processes to save CPU/RAM
+  export BLOCK="${BLOCK},ui,soundd,journald,dmonitoringmodeld,dmonitoringd,feedbackd,proclogd"
 fi
 
 python3 -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
