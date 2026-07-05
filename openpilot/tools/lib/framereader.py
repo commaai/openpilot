@@ -1,7 +1,9 @@
 import os
+import select
 import subprocess
 import json
 import logging
+import time
 from collections.abc import Iterator
 from collections import OrderedDict
 
@@ -65,6 +67,124 @@ def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc', hwaccel
   else:
     raise NotImplementedError(f"Unsupported pixel format: {pix_fmt}")
   return ret
+
+def frame_size(width: int, height: int, pix_fmt: str) -> int:
+  if pix_fmt == "rgb24":
+    return width * height * 3
+  elif pix_fmt in ("nv12", "yuv420p"):
+    return width * height * 3 // 2
+  else:
+    raise NotImplementedError(f"Unsupported pixel format: {pix_fmt}")
+
+class FfmpegStreamDecoder:
+  def __init__(self, w: int, h: int, pix_fmt: str = "nv12", vid_fmt: str = "hevc",
+               hwaccel: str = "auto", loglevel: str = "quiet", read_timeout: float = 0.05,
+               startup_timeout: float = 0.35):
+    self.w = w
+    self.h = h
+    self.pix_fmt = pix_fmt
+    self.frame_size = frame_size(w, h, pix_fmt)
+    self.read_timeout = read_timeout
+    self.startup_timeout = startup_timeout
+    self.started = False
+    self._stdout_buf = bytearray()
+    self._frames: list[np.ndarray] = []
+    self._stderr = bytearray()
+
+    threads = os.getenv("FFMPEG_STREAM_THREADS", "1")
+    args = ["ffmpeg", "-v", loglevel,
+            "-threads", threads,
+            "-hwaccel", hwaccel,
+            "-probesize", "32768",
+            "-analyzeduration", "0",
+            "-f", vid_fmt,
+            "-flags2", "showall",
+            "-i", "pipe:0",
+            "-f", "rawvideo",
+            "-pix_fmt", pix_fmt,
+            "pipe:1"]
+    self.proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
+    assert self.proc.stdout is not None
+    assert self.proc.stderr is not None
+    os.set_blocking(self.proc.stdout.fileno(), False)
+    os.set_blocking(self.proc.stderr.fileno(), False)
+
+  def __enter__(self):
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    self.close()
+
+  def close(self) -> None:
+    if self.proc.poll() is None:
+      if self.proc.stdin:
+        try:
+          self.proc.stdin.close()
+        except BrokenPipeError:
+          pass
+      self.proc.terminate()
+      try:
+        self.proc.wait(timeout=1)
+      except subprocess.TimeoutExpired:
+        self.proc.kill()
+        self.proc.wait()
+
+  def _drain_fd(self, pipe, dst: bytearray, timeout: float) -> None:
+    fd = pipe.fileno()
+    end_time = timeout + time.monotonic()
+    while True:
+      poll_timeout = max(0.0, min(0.005, end_time - time.monotonic()))
+      ready, _, _ = select.select([fd], [], [], poll_timeout)
+      if not ready:
+        return
+
+      try:
+        chunk = os.read(fd, 1024 * 1024)
+      except BlockingIOError:
+        continue
+      if len(chunk) == 0:
+        return
+      dst.extend(chunk)
+      if time.monotonic() >= end_time:
+        return
+
+  def _drain(self, timeout: float | None = None) -> None:
+    assert self.proc.stdout is not None
+    assert self.proc.stderr is not None
+    self._drain_fd(self.proc.stdout, self._stdout_buf, self.read_timeout if timeout is None else timeout)
+    self._drain_fd(self.proc.stderr, self._stderr, 0)
+
+    while len(self._stdout_buf) >= self.frame_size:
+      frame = bytes(self._stdout_buf[:self.frame_size])
+      del self._stdout_buf[:self.frame_size]
+      self._frames.append(np.frombuffer(frame, dtype=np.uint8))
+
+  def _check_proc(self) -> None:
+    return_code = self.proc.poll()
+    if return_code is None:
+      return
+    self._drain(0)
+    stderr = self._stderr.decode("utf-8", "replace").strip()
+    raise RuntimeError(f"ffmpeg stream decoder exited with code {return_code}: {stderr}")
+
+  def decode(self, packet: bytes | bytearray | memoryview) -> np.ndarray | None:
+    if self.proc.stdin is None:
+      raise RuntimeError("ffmpeg stream decoder stdin is closed")
+
+    self._check_proc()
+    try:
+      self.proc.stdin.write(packet)
+      self.proc.stdin.flush()
+    except BrokenPipeError as e:
+      self._check_proc()
+      raise RuntimeError("ffmpeg stream decoder pipe closed") from e
+    self._drain(self.read_timeout if self.started else self.startup_timeout)
+    self._check_proc()
+
+    if not self._frames:
+      return None
+    self.started = True
+    return self._frames.pop(0)
 
 def ffprobe(fn, fmt=None):
   fn = resolve_name(fn)
