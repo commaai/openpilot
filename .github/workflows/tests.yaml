@@ -211,8 +211,14 @@ jobs:
       timeout-minutes: 10
       env:
         PYTHONFAULTHANDLER: 1
+        METADRIVE_RENDER_SCALE: "0.5"
+        METADRIVE_NO_MSAA: "1"
+        METADRIVE_SIMPLE_RENDER: "1"
+        METADRIVE_NO_SHADOWS: "1"
+        METADRIVE_FLAT_TERRAIN_CARD: "1"
       run: |
         source openpilot/selfdrive/test/setup_xvfb.sh
+        python3 -m metadrive.pull_asset || true
         SIM_LOGS=1 SIM_LOGS_DIR="$GITHUB_WORKSPACE/sim_logs" pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
     - name: Upload logs
       if: always()

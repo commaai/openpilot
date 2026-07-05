@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import numpy as np
 
@@ -51,6 +52,9 @@ def apply_metadrive_patches(arrive_dest_done=True):
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
                       exit_event, op_engaged, test_duration, test_run):
+  from openpilot.tools.sim.bridge.metadrive.ci_render_patches import apply_ci_render_patches
+  apply_ci_render_patches()
+
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -91,9 +95,13 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     img = cam.perceive(to_float=False)
     if not isinstance(img, np.ndarray):
       img = img.get() # convert cupy array to numpy
+    if img.shape[0] != H or img.shape[1] != W:
+      # nearest-neighbor upscale; render size must divide the camera size evenly
+      img = img.repeat(H // img.shape[0], axis=0).repeat(W // img.shape[1], axis=1)
     return img
 
-  rk = Ratekeeper(100, None)
+  _ci = os.getenv("CI") is not None
+  rk = Ratekeeper(20 if _ci else 100, None)
 
   steer_ratio = 8
   vc = [0,0]
