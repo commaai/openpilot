@@ -56,6 +56,7 @@ openpilot/selfdrive/ui/translations/tmp
 openpilot/selfdrive/car/tests/cars_dump
 openpilot/system/camerad/camerad
 openpilot/system/camerad/test/ae_gray_test
+openpilot/tools/loggy/backend/generated_event_extractors.h
 
 .coverage*
 coverage.xml

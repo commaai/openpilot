@@ -1,0 +1,12 @@
+*.o
+_loggy
+backend/__pycache__/
+backend/generated_event_extractors.h
+tests/dbc_parser
+tests/extract_smoke
+tests/panes_smoke
+tests/route_ingest_smoke
+tests/store_scheduler
+tests/transport_smoke
+tests/workspace_smoke
+layouts/.autosave/

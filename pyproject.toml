@@ -106,6 +106,7 @@ dev = [
 ]
 
 tools = [
+  "rerun-sdk>=0.33",
   "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
 
   # this can be added back once it's stripped down some more

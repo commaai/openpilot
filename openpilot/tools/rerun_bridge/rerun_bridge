@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$DIR/../../.." && pwd)"
+exec "$ROOT/.venv/bin/python" "$DIR/main.py" "$@"

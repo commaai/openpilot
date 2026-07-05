@@ -1,0 +1,130 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
+
+#include "openpilot/cereal/gen/cpp/log.capnp.h"
+#include "tools/loggy/backend/store.h"
+
+class Event;
+
+namespace loggy {
+
+enum class CanServiceKind : uint8_t {
+  Can,
+  Sendcan,
+};
+
+struct RouteSeries {
+  std::string path;
+  std::vector<double> times;
+  std::vector<double> values;
+};
+
+struct SeriesValueDescription {
+  double value = 0.0;
+  std::string description;
+};
+
+struct SeriesMetadata {
+  std::vector<std::string> enum_names;
+  std::vector<SeriesValueDescription> value_descriptions;
+  bool deprecated = false;
+};
+
+struct SchemaIndex {
+  size_t fixed_series_count = 0;
+  std::vector<std::string> fixed_paths;
+};
+
+struct SegmentExtractOptions {
+  int segment = -1;
+  TimeRange coverage;
+  bool include_deprecated_fields = false;
+  bool include_raw_can_events = true;
+  bool include_can_scalar_fields = false;
+  bool include_decoded_can_series = false;
+  std::optional<double> time_offset;
+
+  double timeOffsetSeconds() const { return time_offset.value_or(0.0); }
+};
+
+struct SegmentExtractResult {
+  StoreBatch batch;
+  std::unordered_map<std::string, SeriesMetadata> metadata;
+  size_t events_seen = 0;
+  size_t events_appended = 0;
+  size_t deprecated_series_skipped = 0;
+};
+
+class SeriesAccumulator {
+public:
+  explicit SeriesAccumulator(int segment = -1, std::vector<std::string> fixed_paths = {});
+
+  RouteSeries *fixedSeries(size_t slot);
+  RouteSeries *ensureSeries(const std::string &path);
+  RouteSeries *ensureListScalarSeries(const std::string &base_path, size_t index);
+
+  void appendFixedScalar(size_t slot, double tm, double value);
+  void appendScalar(const std::string &path, double tm, double value);
+  void appendCanFrame(CanServiceKind service, uint8_t bus, uint32_t address,
+                      uint16_t bus_time, const uint8_t *data, size_t size, double tm);
+
+  void captureEnumInfo(const std::string &path, std::initializer_list<std::string_view> names);
+  void captureValueDescriptions(const std::string &path, std::initializer_list<SeriesValueDescription> descriptions);
+  void markDeprecated(const std::string &path);
+  void noteSkippedDeprecated() { ++deprecated_series_skipped_; }
+
+  size_t populatedSeriesCount() const;
+  size_t skippedDeprecatedCount() const { return deprecated_series_skipped_; }
+  const std::unordered_map<std::string, SeriesMetadata> &metadata() const { return metadata_; }
+
+  SegmentExtractResult finish(TimeRange coverage = {});
+
+  std::vector<RouteSeries> fixed_series;
+  std::vector<RouteSeries> dynamic_series;
+
+private:
+  size_t ensureDynamicSlot(const std::string &path);
+  MessageId canMessageId(CanServiceKind service, uint8_t bus, uint32_t address) const;
+
+  struct CanAccum {
+    MessageId id;
+    std::vector<CanEvent> events;
+  };
+
+  int segment_ = -1;
+  std::unordered_map<std::string, size_t> dynamic_slots_;
+  std::unordered_map<std::string, std::vector<size_t>> list_scalar_slots_;
+  std::unordered_map<MessageId, size_t> can_slots_;
+  std::vector<CanAccum> can_events_;
+  std::unordered_map<std::string, SeriesMetadata> metadata_;
+  size_t deprecated_series_skipped_ = 0;
+};
+
+const SchemaIndex &eventSchemaIndex();
+SeriesAccumulator makeSeriesAccumulator(const SchemaIndex &schema, int segment = -1);
+
+bool appendEventReader(cereal::Event::Which which,
+                       const cereal::Event::Reader &event,
+                       const SegmentExtractOptions &options,
+                       SeriesAccumulator *series);
+bool appendEventData(cereal::Event::Which which,
+                     int32_t eidx_segnum,
+                     kj::ArrayPtr<const capnp::word> data,
+                     const SegmentExtractOptions &options,
+                     SeriesAccumulator *series);
+void appendEventsFastRange(const std::vector<Event> &events,
+                           size_t begin,
+                           size_t end,
+                           const SegmentExtractOptions &options,
+                           SeriesAccumulator *series);
+SegmentExtractResult extractSegmentSeries(const std::vector<Event> &events,
+                                          SegmentExtractOptions options = {});
+
+}  // namespace loggy
