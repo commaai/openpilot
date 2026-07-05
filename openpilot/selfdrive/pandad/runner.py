@@ -242,16 +242,16 @@ class PandaSafetyManager:
     self.log_once = False
 
   def configure_safety_mode(self):
-    is_onroad = self.params.get_bool("IsOnroad")
+    is_offroad = self.params.get_bool("IsOffroad")
 
-    if is_onroad and not self.safety_configured:
+    if not is_offroad and not self.safety_configured:
       self.update_multiplexing_mode()
       car_params = self.fetch_car_params()
       if car_params:
         cloudlog.warning(f"got {len(car_params)} bytes CarParams")
         self.set_safety_mode(car_params)
         self.safety_configured = True
-    elif not is_onroad:
+    elif is_offroad:
       self.initialized = False
       self.safety_configured = False
       self.log_once = False
