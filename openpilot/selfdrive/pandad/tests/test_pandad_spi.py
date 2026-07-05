@@ -36,6 +36,7 @@ class TestBoarddSpi:
 
     st = time.monotonic()
     ts = {s: list() for s in socks.keys()}
+    last_panda_uptime = None
     for _ in range(int(os.getenv("TEST_TIME", "20"))):
       # send some CAN messages
       if not JUNGLE_SPAM:
@@ -71,7 +72,9 @@ class TestBoarddSpi:
           elif service == "pandaStates":
             assert len(m.pandaStates) == 1
             ps = m.pandaStates[0]
-            assert ps.uptime < 1000
+            if last_panda_uptime is not None:
+              assert last_panda_uptime <= ps.uptime <= last_panda_uptime + 5
+            last_panda_uptime = ps.uptime
             assert ps.pandaType == "tres"
             assert ps.ignitionLine
             assert not ps.ignitionCan
