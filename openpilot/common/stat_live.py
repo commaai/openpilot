@@ -1,5 +1,3 @@
-import numpy as np
-
 class RunningStat:
   # tracks realtime mean and standard deviation without storing any data
   def __init__(self, priors=None, max_trackable=-1):
@@ -45,9 +43,6 @@ class RunningStat:
     else:
       return 0
 
-  def std(self):
-    return np.sqrt(self.variance())
-
   def params_to_save(self):
     return [self.M, self.S, self.n]
 
@@ -61,10 +56,10 @@ class RunningStatFilter:
     self.filtered_stat.reset()
 
   def push_and_update(self, new_data):
-    _std_last = self.raw_stat.std()
+    _var_last = self.raw_stat.variance()
     self.raw_stat.push_data(new_data)
-    _delta_std = self.raw_stat.std() - _std_last
-    if _delta_std <= 0:
+    _delta_var = self.raw_stat.variance() - _var_last
+    if _delta_var <= 0:
       self.filtered_stat.push_data(new_data)
     else:
       pass
