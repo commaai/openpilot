@@ -24,6 +24,9 @@ class TestSimBridgeBase:
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
     self.processes.append(p_manager)
+    if os.environ.get("SIM_FAKE_MODELD"):
+      p_modeld = subprocess.Popen(["python3", "-m", "openpilot.tools.sim.tests.fake_modeld"], cwd=BASEDIR)
+      self.processes.append(p_modeld)
 
     sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState'])
     q = Queue()
@@ -31,7 +34,7 @@ class TestSimBridgeBase:
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    max_time_per_step = 60
+    max_time_per_step = max(60, self.test_duration + 30)
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
@@ -89,4 +92,12 @@ class TestSimBridgeBase:
       p.terminate()
 
     for p in reversed(self.processes):
-      p.kill()
+      if hasattr(p, "join"):
+        p.join(timeout=10)
+        if p.is_alive():
+          p.kill()
+      else:
+        try:
+          p.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+          p.kill()

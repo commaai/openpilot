@@ -1,0 +1,45 @@
+name: metadrive simulator
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CI: 1
+  PYTHONPATH: ${{ github.workspace }}
+
+jobs:
+  simulator_driving:
+    name: simulator driving
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: true
+    - run: ./tools/op.sh setup
+    - name: Build openpilot
+      run: scons
+    - name: Driving test
+      timeout-minutes: 8
+      env:
+        LOG_ROOT: ${{ github.workspace }}/metadrive-sim-logs
+        SIM_LOGS: 1
+        # The full tinygrad model currently cannot run at 20Hz on free 4-vCPU
+        # Actions runners; use a deterministic model publisher to keep this
+        # job focused on the MetaDrive bridge, controls loop, and logging.
+        SIM_FAKE_MODELD: 1
+        METADRIVE_NO_MSAA: 1
+        METADRIVE_NO_SHADOWS: 1
+        METADRIVE_FLAT_TERRAIN_CARD: 1
+        METADRIVE_RENDER_SCALE: "0.5"
+      run: |
+        mkdir -p "$LOG_ROOT"
+        source openpilot/selfdrive/test/setup_xvfb.sh
+        pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py --test_duration=60
+    - name: Upload simulator logs
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: metadrive-sim-logs-${{ github.run_id }}-${{ github.run_attempt }}
+        path: ${{ github.workspace }}/metadrive-sim-logs
+        retention-days: 7
