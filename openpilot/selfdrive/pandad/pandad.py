@@ -15,7 +15,8 @@ from openpilot.selfdrive.pandad.runner import PandaRunner
 
 def get_expected_signature(panda: Panda) -> bytes:
   try:
-    fn = os.path.join(FW_PATH, panda.get_mcu_type().config.app_fn)
+    mcu_type = panda.get_mcu_type() if hasattr(panda, "get_mcu_type") else panda._handle.get_mcu_type()
+    fn = os.path.join(FW_PATH, mcu_type.config.app_fn)
     return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
