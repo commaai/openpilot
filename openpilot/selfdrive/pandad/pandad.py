@@ -5,7 +5,7 @@ import usb1
 import time
 import threading
 
-from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
+from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH, McuType
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
@@ -15,7 +15,13 @@ from openpilot.selfdrive.pandad.runner import PandaRunner
 
 def get_expected_signature(panda: Panda) -> bytes:
   try:
-    mcu_type = panda.get_mcu_type() if hasattr(panda, "get_mcu_type") else panda._handle.get_mcu_type()
+    handle = getattr(panda, "_handle", None)
+    if hasattr(panda, "get_mcu_type"):
+      mcu_type = panda.get_mcu_type()
+    elif hasattr(handle, "get_mcu_type"):
+      mcu_type = handle.get_mcu_type()
+    else:
+      mcu_type = McuType.H7
     fn = os.path.join(FW_PATH, mcu_type.config.app_fn)
     return Panda.get_signature_from_firmware(fn)
   except Exception:
