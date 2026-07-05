@@ -55,6 +55,9 @@ class TestSimBridgeBase:
         no_car_events_issues_once = True
         break
 
+      if os.getenv("CI"):
+        time.sleep(0.01)  # yield CPU to modeld on slow CI runners
+
     assert no_car_events_issues_once, \
                     f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'"
 
@@ -77,8 +80,11 @@ class TestSimBridgeBase:
     assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
 
     failure_states = []
-    while bridge.started.value:
-      continue
+    end_wait = time.monotonic() + max_time_per_step
+    while bridge.started.value and time.monotonic() < end_wait:
+      time.sleep(0.1)
+
+    assert not bridge.started.value, "Simulator bridge did not finish within timeout"
 
     while not q.empty():
       state = q.get()
