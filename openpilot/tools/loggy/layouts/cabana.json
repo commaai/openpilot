@@ -1,5 +1,40 @@
 {
   "version": 1,
-  "preset": "cabana",
-  "tabs": []
+  "current_tab_index": 0,
+  "tabs": [
+    {
+      "name": "Cabana",
+      "root": {
+        "split": "horizontal",
+        "sizes": [0.58, 0.42],
+        "children": [
+          {
+            "split": "vertical",
+            "sizes": [0.45, 0.27, 0.28],
+            "children": [
+              {"type": "messages", "title": "Messages"},
+              {"type": "historylog", "title": "History"},
+              {"type": "signal", "title": "Signal"}
+            ]
+          },
+          {"type": "binary", "title": "Binary"}
+        ]
+      }
+    },
+    {
+      "name": "DBC",
+      "root": {"type": "dbc", "title": "DBC"}
+    },
+    {
+      "name": "Analysis",
+      "root": {
+        "split": "horizontal",
+        "sizes": [0.5, 0.5],
+        "children": [
+          {"type": "find_signal", "title": "Find Signal"},
+          {"type": "find_bits", "title": "Find Bits"}
+        ]
+      }
+    }
+  ]
 }

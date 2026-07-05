@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,11 @@ struct OpendbcBrowserCache {
   std::vector<OpendbcFileRow> rows;
 };
 
+struct DbcSourceAssignCache {
+  std::map<DBCFile *, std::string> edits;
+  std::map<DBCFile *, std::string> last_sources;
+};
+
 void save_state(PaneInstance *pane, const DbcPaneState &state) {
   pane->state_json = dbc_pane_state_json(state);
 }
@@ -32,10 +38,9 @@ std::string sources_for_recent(const LoggySettings &settings, const std::string 
   return std::string(fallback);
 }
 
-void remember_dbc_file(Session &session, const SourceSet &sources, const std::string &path, DbcPaneState *state) {
+void remember_loaded_dbc_assignments(Session &session, DbcPaneState *state) {
   if (state == nullptr) return;
-  remember_recent_dbc_file(&session.settings(), path);
-  set_dbc_assignment(&session.settings(), toString(sources), path);
+  sync_dbc_assignments_from_loaded_files(*dbc(), &session.settings());
   std::string error;
   if (!session.saveSettings(&error) && !error.empty()) {
     state->status += " (settings: " + error + ")";
@@ -62,7 +67,7 @@ void open_dbc_path_for_sources(Session &session, const SourceSet &sources, const
     state->path = path;
     state->status = "Opened " + path + " for " + toString(sources);
     if (state->save_as_path.empty()) state->save_as_path = path;
-    remember_dbc_file(session, sources, path, state);
+    remember_loaded_dbc_assignments(session, state);
   } else {
     state->status = "Open failed: " + error;
   }
@@ -179,7 +184,8 @@ void draw_opendbc_browser(Session &session, DbcPaneState *state, OpendbcBrowserC
   ImGui::EndTable();
 }
 
-void draw_dbc_rows(DBCManager &manager) {
+void draw_dbc_rows(Session &session, DbcPaneState *state, DbcSourceAssignCache *cache, bool *changed) {
+  DBCManager &manager = *dbc();
   const std::vector<DbcFileRow> rows = prepare_dbc_file_rows(manager);
   if (rows.empty()) {
     ImGui::TextDisabled("No DBC files loaded");
@@ -189,12 +195,13 @@ void draw_dbc_rows(DBCManager &manager) {
   constexpr ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
                                     ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingFixedFit |
                                     ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-  if (!ImGui::BeginTable("##loggy_dbc_files", 5, flags, ImGui::GetContentRegionAvail())) return;
+  if (!ImGui::BeginTable("##loggy_dbc_files", 6, flags, ImGui::GetContentRegionAvail())) return;
   ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 160.0f);
   ImGui::TableSetupColumn("Sources", ImGuiTableColumnFlags_WidthFixed, 110.0f);
   ImGui::TableSetupColumn("Msgs", ImGuiTableColumnFlags_WidthFixed, 54.0f);
   ImGui::TableSetupColumn("Signals", ImGuiTableColumnFlags_WidthFixed, 66.0f);
   ImGui::TableSetupColumn("File", ImGuiTableColumnFlags_WidthFixed, 360.0f);
+  ImGui::TableSetupColumn("Assign", ImGuiTableColumnFlags_WidthFixed, 188.0f);
   ImGui::TableHeadersRow();
   for (const DbcFileRow &row : rows) {
     ImGui::TableNextRow();
@@ -209,6 +216,39 @@ void draw_dbc_rows(DBCManager &manager) {
     ImGui::TableSetColumnIndex(4);
     if (row.filename.empty()) ImGui::TextDisabled("--");
     else ImGui::TextUnformatted(row.filename.c_str());
+    ImGui::TableSetColumnIndex(5);
+    if (cache != nullptr && row.file != nullptr) {
+      std::string &edit = cache->edits[row.file];
+      std::string &last_sources = cache->last_sources[row.file];
+      if (edit.empty() || last_sources != row.sources) edit = row.sources;
+      last_sources = row.sources;
+
+      std::array<char, 64> assign_buf{};
+      std::snprintf(assign_buf.data(), assign_buf.size(), "%s", edit.c_str());
+      ImGui::PushID(row.file);
+      ImGui::SetNextItemWidth(104.0f);
+      if (ImGui::InputTextWithHint("##sources", "all, 0, 1", assign_buf.data(), assign_buf.size())) {
+        edit = assign_buf.data();
+        if (changed != nullptr) *changed = true;
+      }
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Set")) {
+        SourceSet assigned_sources;
+        std::string error;
+        if (assign_dbc_file_sources(manager, row.file, edit, &assigned_sources, &error)) {
+          edit = toString(assigned_sources);
+          if (state != nullptr) {
+            state->sources = edit;
+            state->status = "Assigned " + row.name + " to " + edit;
+          }
+          remember_loaded_dbc_assignments(session, state);
+        } else if (state != nullptr) {
+          state->status = "Assign failed: " + error;
+        }
+        if (changed != nullptr) *changed = true;
+      }
+      ImGui::PopID();
+    }
   }
   ImGui::EndTable();
 }
@@ -217,6 +257,7 @@ void draw_dbc_rows(DBCManager &manager) {
 
 void draw_dbc_pane(Session &session, PaneInstance &pane) {
   static OpendbcBrowserCache opendbc_cache;
+  static DbcSourceAssignCache assign_cache;
   DbcPaneState state = parse_dbc_pane_state(pane.state_json);
   bool changed = false;
 
@@ -316,7 +357,7 @@ void draw_dbc_pane(Session &session, PaneInstance &pane) {
       } else {
         if (file->saveAs(state.save_as_path)) {
           state.status = "Saved " + state.save_as_path;
-          remember_dbc_file(session, sources, state.save_as_path, &state);
+          remember_loaded_dbc_assignments(session, &state);
         } else {
           state.status = "Save As failed: " + state.save_as_path;
         }
@@ -329,6 +370,8 @@ void draw_dbc_pane(Session &session, PaneInstance &pane) {
   if (ImGui::Button("Close")) {
     if (parse_sources_for_action(state, &sources, &state.status)) {
       dbc()->close(sources);
+      assign_cache.edits.clear();
+      assign_cache.last_sources.clear();
       state.status = "Closed " + toString(sources);
     }
     changed = true;
@@ -337,6 +380,8 @@ void draw_dbc_pane(Session &session, PaneInstance &pane) {
   if (ImGui::GetContentRegionAvail().x > 96.0f) ImGui::SameLine();
   if (ImGui::Button("Close All")) {
     dbc()->closeAll();
+    assign_cache.edits.clear();
+    assign_cache.last_sources.clear();
     state.status = "Closed all DBC files";
     changed = true;
   }
@@ -387,7 +432,8 @@ void draw_dbc_pane(Session &session, PaneInstance &pane) {
   push_bold_font();
   ImGui::TextUnformatted("Loaded DBCs");
   pop_bold_font();
-  draw_dbc_rows(*dbc());
+  draw_dbc_rows(session, &state, &assign_cache, &changed);
+  if (changed) save_state(&pane, state);
 }
 
 }  // namespace loggy

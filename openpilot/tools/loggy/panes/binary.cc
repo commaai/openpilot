@@ -1,6 +1,8 @@
 #include "tools/loggy/panes/binary.h"
 
 #include "tools/loggy/backend/session.h"
+#include "tools/loggy/backend/dbc/dbcmanager.h"
+#include "tools/loggy/backend/undo.h"
 #include "tools/loggy/shell/theme.h"
 #include "tools/loggy/shell/workspace.h"
 
@@ -13,6 +15,20 @@
 
 namespace loggy {
 namespace {
+
+struct BinaryDragState {
+  bool active = false;
+  bool dragged = false;
+  MessageId id;
+  int anchor_bit = -1;
+  int current_bit = -1;
+  std::string status;
+};
+
+BinaryDragState &binary_drag_state() {
+  static BinaryDragState state;
+  return state;
+}
 
 ImU32 heat_color(uint32_t flips, uint32_t max_flips) {
   if (flips == 0 || max_flips == 0) return ImGui::GetColorU32(color_rgb(68, 71, 73));
@@ -38,6 +54,11 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   const BinaryGrid &grid = *maybe_grid;
   ImGui::SameLine();
   ImGui::TextDisabled("| %zu events | latest %.3fs", grid.event_count, grid.last_time);
+  BinaryDragState &drag = binary_drag_state();
+  if (!drag.status.empty()) {
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", drag.status.c_str());
+  }
 
   constexpr int kBitColumns = 8;
   constexpr int kColumns = kBitColumns + 1;
@@ -74,9 +95,17 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
 
     for (int bit = 0; bit < kBitColumns; ++bit) {
       const BinaryBitCell &cell = grid.rows[row][static_cast<size_t>(bit)];
+      const int bit_index = static_cast<int>(row * 8 + static_cast<size_t>(7 - bit));
       const ImVec2 cell_min(origin.x + row_header_w + static_cast<float>(bit) * col_w, y);
       const ImVec2 cell_max(cell_min.x + col_w, cell_min.y + row_h);
       draw_list->AddRectFilled(cell_min, cell_max, heat_color(cell.flip_count, grid.max_flip_count));
+      if (drag.active && drag.id == id && drag.dragged) {
+        const int first = std::min(drag.anchor_bit, drag.current_bit);
+        const int last = std::max(drag.anchor_bit, drag.current_bit);
+        if (bit_index >= first && bit_index <= last) {
+          draw_list->AddRectFilled(cell_min, cell_max, ImGui::GetColorU32(color_rgb(82, 141, 255, 0.42f)));
+        }
+      }
       draw_list->AddRect(cell_min, cell_max, border);
 
       char value[2] = {static_cast<char>(cell.value ? '1' : '0'), '\0'};
@@ -86,8 +115,26 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
       ImGui::SetCursorScreenPos(cell_min);
       ImGui::PushID(static_cast<int>(row * 16 + static_cast<size_t>(bit)));
       ImGui::InvisibleButton("bit", ImVec2(col_w, row_h));
+      if (!drag.active && ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        drag.active = true;
+        drag.dragged = false;
+        drag.id = id;
+        drag.anchor_bit = bit_index;
+        drag.current_bit = bit_index;
+        drag.status.clear();
+      }
+      if (drag.active && drag.id == id && ImGui::IsItemHovered()) {
+        drag.current_bit = bit_index;
+        if (drag.current_bit != drag.anchor_bit) drag.dragged = true;
+      }
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u", row, 7 - bit, static_cast<unsigned>(cell.value), cell.flip_count);
+        if (drag.active && drag.id == id && drag.dragged) {
+          const int first = std::min(drag.anchor_bit, drag.current_bit);
+          const int last = std::max(drag.anchor_bit, drag.current_bit);
+          ImGui::SetTooltip("create signal bits %d-%d", first, last);
+        } else {
+          ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u", row, 7 - bit, static_cast<unsigned>(cell.value), cell.flip_count);
+        }
       }
       ImGui::PopID();
     }
@@ -100,6 +147,23 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
     std::snprintf(hex, sizeof(hex), "%02X", grid.latest_data[row]);
     const ImVec2 hex_text = ImGui::CalcTextSize(hex);
     draw_list->AddText(ImVec2(hex_cell_min.x + (col_w - hex_text.x) * 0.5f, hex_cell_min.y + (row_h - hex_text.y) * 0.5f), text, hex);
+  }
+
+  if (drag.active && drag.id == id && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+    if (drag.dragged) {
+      Signal draft;
+      std::string error;
+      if (binary_signal_from_bit_range(drag.anchor_bit, drag.current_bit, &draft, &error) &&
+          commit_signal_add(&session.dbc_undo(), dbc(), id, draft, static_cast<uint32_t>(grid.latest_data.size()), &error)) {
+        drag.status = "Created DBC signal";
+      } else {
+        drag.status = error.empty() ? "Signal create failed" : error;
+      }
+    }
+    drag.active = false;
+    drag.dragged = false;
+    drag.anchor_bit = -1;
+    drag.current_bit = -1;
   }
 
   ImGui::SetCursorScreenPos(origin);

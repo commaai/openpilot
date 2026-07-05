@@ -84,9 +84,22 @@
 - Logs panes render staged route log entries with filter, level threshold, follow mode, and compact route/log table columns.
 - Workspace registry now mounts the real browser/plot/map/messages/binary/signal/history/logs pane draw functions; placeholder pane rendering remains only for pane types that do not yet have implementations.
 
+## Phase 4A - Signal Editor
+
+- Status: initial command-backed existing-signal edit/remove/value-table, Binary drag-create, and Signal sparkline slices integrated; drag-resize in Binary, richer dirty/save UX, and full message/detail editing remain.
+- Added a session-owned DBC `UndoStack` plus `EditSignalCommand`, adapted from Cabana's command model without a global singleton.
+- Added validation and helper APIs for applying edits to existing DBC signals, including duplicate-name, missing-target, start-bit, and size checks.
+- Signal panes now select DBC-backed signal rows, render an inline editor for core fields (name, start bit, size, endian, signed, factor, offset, min/max, unit, receiver, comment, type, mux value), and apply changes through the DBC undo stack.
+- Signal panes expose command-backed Apply, Reset, Remove, Undo, and Redo controls for the selected DBC signal.
+- Signal panes now remove selected DBC signals through `RemoveSignalCommand`, with Undo/Redo; multiplexor removal also removes multiplexed children.
+- Signal panes now expose a compact `Value Table` editor using DBC `VAL_`-style `value "description"` pairs, with inline parsing, validation, filtering, and command-backed Apply/Undo/Redo.
+- Binary panes now support left-dragging across bit cells to create a DBC signal through `AddSignalCommand`; creation can also create the DBC message for the selected CAN id when a DBC file is loaded for the source.
+- Signal panes now compute and render inline DBC signal sparklines from CAN events, with a persisted 1-120 second Spark window control.
+- Command coverage verifies add/edit/remove/value-description/undo/redo behavior, validation failures, and multiplexor removal cascades; pane helper coverage verifies Binary bit-range signal drafting, value-table parsing/formatting, Signal-pane apply/remove/undo/redo integration, sparkline decoding, and Spark window state persistence.
+
 ## Phase 4B - DBC File Management + Settings
 
-- Status: path-based DBC management, New/Open/Save/Save As, clipboard DBC import/export, opendbc browser, recents, persisted source assignments/root, and settings-helper slices integrated; native file dialogs, settings dialog UI, and full per-bus reassignment UX remain.
+- Status: path-based DBC management, New/Open/Save/Save As, clipboard DBC import/export, opendbc browser, recents, persisted source assignments/root, loaded-file source reassignment, and settings-helper slices integrated; native file dialogs and settings dialog UI remain.
 - Added a DBC pane with path/source controls for New, Open, Save, Save As, Close, Close All, Copy, and Paste against the shared `DBCManager`.
 - Added helpers for persisted pane state, backend source-set parsing (`all`, `*`, and explicit bus lists), loaded-file summarization, and DBC lookup by source set.
 - Added a json11-backed settings helper for recent DBC files, DBC source assignments, and opendbc root path with normalization, missing-file defaults, malformed-file errors, and path round-trip helpers.
@@ -94,10 +107,12 @@
 - DBC pane successful Open/Save As actions remember the path, persist the current source assignment, and show a Recent DBC combo that restores matching source keys.
 - DBC pane New creates an untitled in-memory DBC for the selected sources; Copy exports the selected source set's DBC text to the clipboard; Paste parses clipboard DBC text into the selected source set.
 - DBC pane now includes an opendbc browser with configurable root, text filter, bounded directory scan, Use/Open row actions, default-root reset, and root persistence.
+- Loaded DBC rows now expose an Assign editor backed by `DBCManager::assignSources`, allowing an already loaded file to move between source sets while preserving the shared file object and persisting the new assignment.
+- Settings persistence now syncs assignments from the loaded DBC manager state, clearing stale keys for loaded paths and source conflicts so moving one file does not resurrect competing autoload mappings for another loaded DBC on restart.
 - Fixed DBC manager close behavior so closing a source removes that mapping and restores `SOURCE_ALL` fallback; fixed `DBCFile::saveAs` so failed writes do not mutate the stored filename.
 - Cabana preset now opens a second `DBC` tab containing the DBC management pane while the main Cabana tab keeps Messages/Binary/History/Signal together.
-- Pane helper coverage verifies source parsing failures, state JSON round-trip, loaded-file table summaries, `SOURCE_ALL` lookup fallback behavior, empty DBC creation, clipboard export, clipboard import, empty clipboard failure handling, opendbc root scanning, filtering, row limits, and missing-root errors.
-- Settings/session coverage verifies recent-file de-duplication/limits, assignment/root round-trip, missing-file defaults, malformed-file handling, malformed-field filtering, isolated settings paths, and startup DBC assignment loading.
+- Pane helper coverage verifies source parsing failures, state JSON round-trip, loaded-file table summaries, `SOURCE_ALL` lookup fallback behavior, loaded-file source reassignment, conflict-aware loaded assignment sync, empty DBC creation, clipboard export, clipboard import, empty clipboard failure handling, opendbc root scanning, filtering, row limits, and missing-root errors.
+- Settings/session coverage verifies recent-file de-duplication/limits, assignment/root round-trip, stale assignment clearing for reassigned paths, missing-file defaults, malformed-file handling, malformed-field filtering, isolated settings paths, and startup DBC assignment loading.
 
 ## Phase 4C - History Log + Exports
 
@@ -109,6 +124,63 @@
 - History panes expose a `Copy CSV` action for the selected CAN message in the current view range; GUI verification confirmed the clipboard payload contains CSV rows for selected message `0:47`.
 - History panes expose a path-based export row with `Save Msg`, `Save Stream`, and `Save Signal`; file-write tests verify directory creation, write success, and empty-path failure handling.
 - Cabana preset now opens Messages/Binary/History/Signal together so selected-message investigation has the expected table, bits, history, and signal views in one workspace.
+
+## Phase 4D - Chart Parity
+
+- Status: first plot display-control slice integrated; signal selector, zoom undo, cross-pane value tooltip, drag between plots, and broader chart parity remain.
+- Plot panes now persist a pane-level series style override (`Auto`, `Line`, `Step`, `Scatter`) while preserving old per-series `stairs` compatibility.
+- Plot panes expose a compact Y-axis limit popup with optional min/max values, persist `y_limits` in pane state, and apply explicit limits without changing default auto-fit behavior.
+- Plot panes now show hover tooltips with cursor time and sampled values for each visible series; legend values remain tied to the playback tracker.
+- Pane helper coverage verifies style/Y-limit JSON round-trip, old `stairs` compatibility, dropped-series state preservation, effective style selection, and Y-bound guard behavior.
+
+## Phase 4E - Analysis Tools
+
+- Status: first Find Signal and Find Bits pane slice integrated; richer iterative history UI, candidate naming/edit flow, and reference-level polish remain.
+- Added `Find Signal` and `Find Bits` pane types and a Cabana preset `Analysis` tab containing both panes.
+- Find Signal scans CAN messages over the current view range with bus/address, bit-size, endian/sign, factor/offset, and comparator controls; results can select the source message or create a DBC signal through the shared DBC undo stack.
+- Find Bits scans bits on a selected bus against a source message bit, ranks rows by mismatch percentage, preserves the Cabana strict `total > min_msgs` behavior, and can activate a matching message through the shared selection group.
+- Helper coverage verifies Find Signal candidate generation and comparator filtering, DBC signal creation with undo through the Analysis path, Find Bits mismatch ranking, strict min-count filtering, and selection activation.
+
+## Phase 5A - Browser Pane
+
+- Status: first live-value and sparkline slice integrated; schema tree, DEPRECATED toggle, keyboard search polish, and richer drag source UX remain.
+- Browser panes now show a tracker-sampled live value and compact inline sparkline for visible series rows, using the shared Store and a persisted 1-120 second Spark window.
+- Browser rendering enriches only ImGui-clipped visible rows so large route stores do not force all listed series to query every frame.
+- Helper coverage verifies Browser state persistence, tracker interpolation, sparkline windowing, and min/max capture for series rows.
+
+## Phase 5B - Logs Pane
+
+- Status: first source/origin/time-mode control slice integrated; expandable context rows, level masks beyond threshold semantics, and richer follow/search UX remain.
+- Logs panes now persist source filter, origin filter, and route/boot/wall time display mode alongside existing text, level, follow, and max-row state.
+- Logs filtering now supports source and origin constraints while retaining message/source/function/context text matching.
+- Logs table time cells can display route, boot, or wall time.
+- Helper coverage verifies state round-trip, source/origin filters, time-mode labels/formatting, and legacy text/level filtering.
+
+## Phase 5C - Map Pane
+
+- Status: first engagement-colored trace slice integrated; Overpass basemap/cache, follow/zoom/pan controls, Google Maps links, and cache management UI remain.
+- Map trace points now carry a timeline span classification from the shared `TimelineModel`.
+- Map panes render the GPS trace segment-by-segment using the same engaged/alert/disengaged color vocabulary as the timeline.
+- Helper coverage verifies route trace preparation plus `None`, `Engaged`, and `AlertWarning` point classification.
+
+## Phase 5E - Computed Series
+
+- Status: first plot-level derivative and scale/offset transform slice integrated; backend computed-series objects, custom Python execution, editor pane, export integration, and progressive recompute remain.
+- Plot series state now parses, preserves, and applies Jotpluggler-style `transform: derivative` with automatic or fixed `derivative_dt`.
+- Plot series state now parses, preserves, and applies Jotpluggler-style `transform: scale` with `scale` and `offset`.
+- Plot rendering now honors imported `#RRGGBB` curve colors and gives same-source transformed curves distinct ImPlot item IDs.
+- Helper coverage verifies transform parsing, display-option state round-trip preservation, scale output, automatic/fixed-`dt` derivative output, and tracker values.
+
+## Phase 5F - Presets and Layouts
+
+- Status: file-backed preset and bundled Jotpluggler layout slices integrated; autosave/runtime menu wiring, full custom-Python semantics, and real camera panes remain.
+- `layouts/cabana.json` and `layouts/jotpluggler.json` are now real non-empty Loggy workspace layouts instead of empty preset fallback markers.
+- Session startup now prefers `openpilot/tools/loggy/layouts/<preset>.json` for `--preset`/launcher startup and falls back to C++ defaults only if the file is missing.
+- All 17 current Jotpluggler layout JSON files are bundled under `openpilot/tools/loggy/layouts/` and load by `--layout <name>`.
+- Workspace loading now recognizes Jotpluggler layout leaves with `curves`, `kind`, and `camera_view`, converting them into Loggy plot, map, and camera panes.
+- Imported plot panes preserve Jotpluggler curve color, derivative/scale metadata, custom Python specs, Y limits, and original range metadata in pane state for later computed-series support.
+- Runtime split rendering now submits a trailing dummy item after split-node cursor extension, fixing ImGui assertion failures seen while capturing imported layouts.
+- Workspace smoke coverage loads the bundled preset JSONs plus all 17 bundled Jotpluggler layout files, verifies representative plot, map/camera, scale, and custom-Python metadata import, and verifies `jotpluggler` preset session startup comes from the JSON file.
 
 ## Evidence
 
@@ -132,9 +204,9 @@
     `DISPLAY=:87 openpilot/tools/loggy/loggy_jotpluggler --demo --width 1920 --height 1080 --output /tmp/loggy_jotpluggler_workspace.png`
   - Visual check: Cabana preset shows Messages/Binary/Signal panes; Jotpluggler preset shows Browser/Plot/Logs panes; no scroll/clipping; HUD p99 below 1 ms in both captures.
 - DBC parser smoke: `scons -j$(nproc) openpilot/tools/loggy/_loggy openpilot/tools/loggy/tests/workspace_smoke openpilot/tools/loggy/tests/dbc_parser && openpilot/tools/loggy/tests/workspace_smoke && openpilot/tools/loggy/tests/dbc_parser`.
-  Result: all DBC tests passed (`45 assertions in 5 test cases`).
-- Full current smoke: `scons --cache-disable -j$(nproc) openpilot/tools/loggy/_loggy openpilot/tools/loggy/tests/workspace_smoke openpilot/tools/loggy/tests/dbc_parser openpilot/tools/loggy/tests/transport_smoke openpilot/tools/loggy/tests/settings_smoke openpilot/tools/loggy/tests/store_scheduler openpilot/tools/loggy/tests/export_smoke openpilot/tools/loggy/tests/panes_smoke openpilot/tools/loggy/tests/extract_smoke openpilot/tools/loggy/tests/route_ingest_smoke`, followed by the non-network smoke binaries and one qlog route-ingest demo smoke.
-  Results: workspace passed silently; DBC passed (`45 assertions in 5 test cases`); transport printed `transport_smoke passed`; settings passed (`29 assertions in 3 test cases`); store/scheduler passed (`34 assertions in 4 test cases`); export passed (`19 assertions in 1 test case`); panes passed (`158 assertions in 10 test cases`); extraction passed (`30 assertions in 3 test cases`); route ingest loaded one demo qlog segment in `0.917s`, producing `10976` Store series, `189` CAN ids, `1` timeline span, and `13` log entries.
+  Result: all DBC tests passed (`51 assertions in 5 test cases`).
+- Full current smoke: `scons --cache-disable -j$(nproc) openpilot/tools/loggy/_loggy openpilot/tools/loggy/tests/workspace_smoke openpilot/tools/loggy/tests/dbc_parser openpilot/tools/loggy/tests/dbc_commands openpilot/tools/loggy/tests/transport_smoke openpilot/tools/loggy/tests/settings_smoke openpilot/tools/loggy/tests/store_scheduler openpilot/tools/loggy/tests/export_smoke openpilot/tools/loggy/tests/panes_smoke openpilot/tools/loggy/tests/extract_smoke openpilot/tools/loggy/tests/route_ingest_smoke`, followed by the non-network smoke binaries and one qlog route-ingest demo smoke.
+  Results: workspace passed silently; DBC passed (`51 assertions in 5 test cases`); DBC commands passed (`73 assertions in 5 test cases`); transport printed `transport_smoke passed`; settings passed (`31 assertions in 3 test cases`); store/scheduler passed (`34 assertions in 4 test cases`); export passed (`19 assertions in 1 test case`); panes passed (`338 assertions in 12 test cases`); extraction passed (`30 assertions in 3 test cases`); route ingest loaded one demo qlog segment in `1.22439s`, producing `12333` Store series, `446` CAN ids, `1` timeline span, and `956` log entries.
 - Transport UI evidence: `/tmp/loggy_transport_workspace.png` captured with
   `DISPLAY=:87 openpilot/tools/loggy/jotpluggler --demo --width 1920 --height 1080 --output /tmp/loggy_transport_workspace.png`.
   Visual check: Browser/Plot/Logs workspace plus bottom transport/timeline/status bar; no overlap; HUD p99 below 1 ms.
@@ -193,3 +265,39 @@
 - DBC settings persistence evidence:
   - `/tmp/loggy_dbc_settings_open.png` captured from `DISPLAY=:87 openpilot/tools/loggy/cabana --settings /tmp/loggy_dbc_settings.json --width 1920 --height 1080 --show` after opening `opendbc_repo/opendbc/dbc/ford_lincoln_base_pt.dbc`; visual check shows the Recent combo, `Saved settings`, and one loaded row with `331` messages and `2150` signals; `sed -n '1,120p' /tmp/loggy_dbc_settings.json` confirmed `recent_files` plus `assignments: {"all": "...ford_lincoln_base_pt.dbc"}`; HUD p99 is about `1.22 ms`.
   - `/tmp/loggy_dbc_settings_autoload.png` captured after restarting Cabana with the same `--settings` file and switching to the `DBC` tab without pressing Open; visual check shows the DBC row auto-loaded from the persisted `all` assignment with `331` messages and `2150` signals; HUD p99 is about `1.42 ms`.
+- DBC source reassignment evidence:
+  - `/tmp/loggy_dbc_assign_source.png` captured from `DISPLAY=:87 openpilot/tools/loggy/cabana --settings /tmp/loggy_assign_settings.json --width 1920 --height 1080 --show` after opening `opendbc_repo/opendbc/dbc/ford_lincoln_base_pt.dbc`, changing the loaded row Assign field from `all` to `1`, and clicking `Set`; visual check shows the loaded row `Sources` and `Assign` fields both at `1`, and `sed -n '1,200p' /tmp/loggy_assign_settings.json` confirmed `assignments: {"1": "opendbc_repo/opendbc/dbc/ford_lincoln_base_pt.dbc"}` with no stale `all` mapping.
+- DBC signal edit evidence:
+  - `/tmp/loggy_signal_edit_apply.png` captured from `DISPLAY=:87 openpilot/tools/loggy/cabana --settings /tmp/loggy_signal_edit_settings.json --width 1920 --height 1080 --show` after opening `/tmp/loggy_signal_edit.dbc`, switching to the Cabana tab, editing selected DBC signal `speed` to `vehicle_speed`, and clicking `Apply`; visual check shows the editor and table row renamed to `vehicle_speed` with Undo enabled.
+  - `/tmp/loggy_signal_edit_undo.png` captured after clicking `Undo` in the same session; visual check shows the editor and table row restored to `speed` with Redo enabled.
+- DBC signal remove evidence:
+  - `/tmp/loggy_signal_remove_after.png` captured from `DISPLAY=:87 openpilot/tools/loggy/cabana --settings /tmp/loggy_signal_remove_settings.json --width 1920 --height 1080 --show` after opening `/tmp/loggy_signal_remove.dbc`, switching to the Cabana tab, selecting DBC signal `speed`, and clicking `Remove`; visual check shows `speed` removed, `flag` still present, and Undo enabled.
+  - `/tmp/loggy_signal_remove_undo.png` captured after clicking `Undo` in the same session; visual check shows `speed` restored and Redo enabled.
+- DBC signal value-description evidence:
+  - `/tmp/loggy_signal_valdesc_apply.png` captured from `DISPLAY=:87 openpilot/tools/loggy/cabana --settings /tmp/loggy_signal_valdesc_settings.json --width 1920 --height 1080 --show` after autoloading `/tmp/loggy_signal_valdesc.dbc`, editing selected signal `speed` from `0 "stopped" 3 "cruise"` to `0 "stopped" 3 "cruise" 7 "fault"`, and clicking `Apply`; visual check shows the new Value Table text and Undo enabled.
+  - `/tmp/loggy_signal_valdesc_undo.png` captured after clicking `Undo` in the same session; visual check shows the Value Table restored to `0 "stopped" 3 "cruise"` with Redo enabled.
+- Binary drag-create signal evidence:
+  - `/tmp/loggy_binary_create_after.png` captured from `DISPLAY=:87 openpilot/tools/loggy/cabana --demo --settings /tmp/loggy_binary_create_settings.json --width 1920 --height 1080 --show` after autoloading `/tmp/loggy_binary_create.dbc` with an empty message definition, then dragging across Binary row-0 bits 7 through 4 for selected CAN id `0:47`; visual check shows `Created DBC signal`, History rows decoded as `NEW_SIGNAL_1=2`, and Signal switched from bit candidates to `1 DBC signals` with `NEW_SIGNAL_1` selected and Undo enabled.
+  - `/tmp/loggy_binary_create_undo.png` captured after clicking `Undo` in the same session; visual check shows History decoded values cleared and Signal returned to `64 bit candidates`.
+- Signal sparkline evidence:
+  - `/tmp/loggy_signal_sparkline.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --preset cabana --demo --settings /tmp/loggy_signal_sparkline_settings.json --width 1920 --height 1080 --show --no-hud` with `/tmp/loggy_signal_sparkline.dbc`; visual check shows the Spark window control at `30s`, the Signal table Spark column, decoded DBC row `byte0_value` with value `32`, and a visible inline sparkline.
+- Plot display-control evidence:
+  - `/tmp/loggy_plot_style_scatter.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --preset jotpluggler --demo --width 1920 --height 1080 --show --no-hud` after selecting `Scatter`; visual check shows the Style combo at `Scatter`, scatter markers in the Plot pane, and a hover tooltip with sampled `vEgo`/`aEgo` values.
+  - `/tmp/loggy_plot_y_limits.png` captured after setting Y max to `10`; visual check shows the persisted `[auto, 10]` indicator and the plot Y axis clamped at `10`.
+  - `/tmp/loggy_plot_hover_values.png` captured with the cursor over the plot; visual check shows tooltip rows for cursor time plus sampled `vEgo` and `aEgo` values while the legend remains present.
+- Analysis tools evidence:
+  - `/tmp/loggy_analysis_results.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --preset cabana --demo --width 1920 --height 1080 --show --no-hud` after switching to the new `Analysis` tab and running both scans; visual check shows `Find Signal` with `Found 512 candidates` and rows for selected CAN id `0:47`, plus `Find Bits` with `Found 512 bit matches` ranked for source `0:47`.
+- Browser live-value/sparkline evidence:
+  - `/tmp/loggy_browser_values_sparklines.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --preset jotpluggler --demo --width 1920 --height 1080 --show --no-hud`; visual check shows the Browser Spark window control at `30s`, `Value` and `Spark` columns, tracker-sampled values, and inline sparklines for visible route series.
+- Logs controls evidence:
+  - `/tmp/loggy_logs_controls.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --preset jotpluggler --demo --width 1920 --height 1080 --show --no-hud`; visual check shows the Logs pane with Source filter, Level/Origin/Time controls, Follow, row count, populated rows, and no toolbar overlap.
+- Map engagement-color evidence:
+  - `/tmp/loggy_map_engagement.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --preset jotpluggler --demo --width 1920 --height 1080 --show --no-hud`; visual check shows the Map pane route trace rendered through timeline-derived colors with the tracker marker intact and no overlap.
+- Plot transform evidence:
+  - `/tmp/loggy_plot_transforms.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --layout /tmp/loggy_transform_layout.json --stream --width 1280 --height 720 --output /tmp/loggy_plot_transforms.png`; visual check shows same-source scale and derivative curves rendered simultaneously with distinct legend rows, tracker values, imported colors, and no overlap.
+- Jotpluggler layout import evidence:
+  - `/tmp/loggy_layout_longitudinal.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --layout openpilot/tools/jotpluggler/layouts/longitudinal.json --demo --width 1280 --height 720 --output /tmp/loggy_layout_longitudinal.png`; visual check shows the imported four-plot longitudinal layout with carried Y-limit labels and no ImGui assertion.
+  - `/tmp/loggy_layout_cameras_map.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --layout openpilot/tools/jotpluggler/layouts/cameras-and-map.json --demo --width 1280 --height 720 --output /tmp/loggy_layout_cameras_map.png`; visual check shows the imported map plus Road/Wide Road/Driver Camera panes in the expected split layout.
+- File-backed preset/bundled layout evidence:
+  - `/tmp/loggy_file_preset_jotpluggler.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --preset jotpluggler --stream --width 1280 --height 720 --output /tmp/loggy_file_preset_jotpluggler.png`; visual check shows the file-backed `jotpluggler.json` Browser/Plot/Logs/Map preset with the explicit two-series plot state.
+  - `/tmp/loggy_bundled_layout_longitudinal.png` captured from `DISPLAY=:87 openpilot/tools/loggy/_loggy --layout longitudinal --stream --width 1280 --height 720 --output /tmp/loggy_bundled_layout_longitudinal.png`; visual check shows `--layout longitudinal` resolving from Loggy's bundled layouts directory and rendering the four-plot layout.

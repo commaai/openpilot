@@ -2,6 +2,8 @@
 
 #include "tools/loggy/panes/binary.h"
 #include "tools/loggy/panes/browser.h"
+#include "tools/loggy/panes/find_bits.h"
+#include "tools/loggy/panes/find_signal.h"
 #include "tools/loggy/panes/historylog.h"
 #include "tools/loggy/panes/logs.h"
 #include "tools/loggy/panes/map.h"
@@ -252,6 +254,70 @@ PaneInstance pane_from_json(const json11::Json &json) {
   return pane;
 }
 
+std::string json_string_or(const json11::Json &json, std::string_view key, std::string fallback = {}) {
+  const json11::Json &value = json[std::string(key)];
+  return value.is_string() ? value.string_value() : std::move(fallback);
+}
+
+json11::Json jotpluggler_y_limits_json(const json11::Json &leaf) {
+  const json11::Json &range = leaf["range"];
+  if (!range.is_object()) return nullptr;
+  json11::Json::object limits;
+  if (range["bottom"].is_number()) limits["min"] = range["bottom"];
+  if (range["top"].is_number()) limits["max"] = range["top"];
+  return limits.empty() ? json11::Json(nullptr) : json11::Json(limits);
+}
+
+json11::Json jotpluggler_series_json(const json11::Json &curve) {
+  json11::Json::object item;
+  const std::string name = json_string_or(curve, "name");
+  const json11::Json &custom_python = curve["custom_python"];
+  const std::string linked_source = custom_python.is_object() ? json_string_or(custom_python, "linked_source") : std::string();
+  item["path"] = !linked_source.empty() ? linked_source : name;
+  if (!name.empty() && name != item["path"].string_value()) item["label"] = name;
+  if (curve["color"].is_string()) item["color"] = curve["color"];
+
+  const std::string transform = json_string_or(curve, "transform");
+  if (!transform.empty()) {
+    item["transform"] = transform;
+    if (curve["derivative_dt"].is_number()) item["derivative_dt"] = curve["derivative_dt"];
+    if (curve["scale"].is_number()) item["scale"] = curve["scale"];
+    if (curve["offset"].is_number()) item["offset"] = curve["offset"];
+  }
+  if (custom_python.is_object()) item["custom_python"] = custom_python;
+  return item;
+}
+
+bool is_jotpluggler_leaf(const json11::Json &json) {
+  if (!json.is_object()) return false;
+  return json["curves"].is_array() || json["kind"].is_string() || json["camera_view"].is_string();
+}
+
+PaneInstance jotpluggler_pane_from_json(const json11::Json &json) {
+  const std::string kind = json_string_or(json, "kind");
+  const std::string title = json_string_or(json, "title", "...");
+  if (kind == "map") {
+    return make_pane("map", title.empty() || title == "..." ? "Map" : title, "{}");
+  }
+  if (kind == "camera") {
+    json11::Json::object state;
+    const std::string camera_view = json_string_or(json, "camera_view");
+    if (!camera_view.empty()) state["camera_view"] = camera_view;
+    return make_pane("camera", title.empty() || title == "..." ? "Camera" : title, json11::Json(state).dump());
+  }
+
+  json11::Json::array series;
+  for (const json11::Json &curve : json["curves"].array_items()) {
+    if (curve.is_object()) series.push_back(jotpluggler_series_json(curve));
+  }
+
+  json11::Json::object state{{"series", series}};
+  const json11::Json y_limits = jotpluggler_y_limits_json(json);
+  if (y_limits.is_object()) state["y_limits"] = y_limits;
+  if (json["range"].is_object()) state["jotpluggler_range"] = json["range"];
+  return make_pane("plot", title.empty() ? "..." : title, json11::Json(state).dump());
+}
+
 json11::Json pane_to_json(const PaneInstance &pane) {
   json11::Json::object out = {
     {"type", pane.type.empty() ? std::string(kDefaultPaneType) : pane.type},
@@ -278,6 +344,13 @@ WorkspaceNode node_from_json(const json11::Json &json, WorkspaceTab *tab) {
     node.is_pane = true;
     node.pane_index = static_cast<int>(tab->panes.size());
     tab->panes.push_back(pane_from_json(json));
+    return node;
+  }
+
+  if (is_jotpluggler_leaf(json)) {
+    node.is_pane = true;
+    node.pane_index = static_cast<int>(tab->panes.size());
+    tab->panes.push_back(jotpluggler_pane_from_json(json));
     return node;
   }
 
@@ -394,6 +467,8 @@ void register_dummy_pane_types(PaneRegistry &registry) {
   registry.registerType(PaneType{"dbc", "DBC", draw_dbc_pane});
   registry.registerType(PaneType{"signal", "Signal", draw_signal_pane});
   registry.registerType(PaneType{"historylog", "History", draw_history_log_pane});
+  registry.registerType(PaneType{"find_signal", "Find Signal", draw_find_signal_pane});
+  registry.registerType(PaneType{"find_bits", "Find Bits", draw_find_bits_pane});
   registry.registerType(PaneType{"browser", "Browser", draw_browser_pane});
   registry.registerType(PaneType{"logs", "Logs", draw_logs_pane});
   registry.registerType(PaneType{"map", "Map", draw_map_pane});
@@ -466,6 +541,9 @@ Workspace make_cabana_workspace() {
   add_default_split(&tab, PaneSplit::Bottom, make_pane("historylog", "History"));
   workspace.tabs.push_back(std::move(tab));
   workspace.tabs.push_back(make_tab("DBC", make_pane("dbc", "DBC")));
+  WorkspaceTab analysis = make_tab("Analysis", make_pane("find_signal", "Find Signal"));
+  add_default_split(&analysis, PaneSplit::Right, make_pane("find_bits", "Find Bits"));
+  workspace.tabs.push_back(std::move(analysis));
   return workspace;
 }
 

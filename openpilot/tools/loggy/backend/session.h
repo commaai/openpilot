@@ -4,6 +4,7 @@
 #include "tools/loggy/backend/ingest.h"
 #include "tools/loggy/backend/route.h"
 #include "tools/loggy/backend/store.h"
+#include "tools/loggy/backend/undo.h"
 #include "tools/loggy/shell/settings.h"
 #include "tools/loggy/shell/transport.h"
 #include "tools/loggy/shell/workspace.h"
@@ -45,6 +46,8 @@ public:
   const TimelineModel &timeline() const { return timeline_; }
   Store &store() { return store_; }
   const Store &store() const { return store_; }
+  UndoStack &dbc_undo() { return dbc_undo_; }
+  const UndoStack &dbc_undo() const { return dbc_undo_; }
   SegmentScheduler &scheduler() { return scheduler_; }
   const SegmentScheduler &scheduler() const { return scheduler_; }
   RouteIngestStatus ingestStatus() const { return route_ingest_.status(); }
@@ -65,6 +68,7 @@ private:
   SharedViewRange view_range_;
   TimelineModel timeline_;
   Store store_;
+  UndoStack dbc_undo_;
   SegmentScheduler scheduler_;
   RouteIngestor route_ingest_;
   LoggySettings settings_;

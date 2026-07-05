@@ -350,6 +350,7 @@ void draw_workspace_node(AppState &app, WorkspaceTab &tab, int tab_index, const 
     ImGui::PopID();
   }
   ImGui::SetCursorScreenPos(ImVec2(pos.x, pos.y + size.y));
+  ImGui::Dummy(ImVec2(0.0f, 0.0f));
 }
 
 void apply_pending_pane_action(AppState &app) {

@@ -1,5 +1,34 @@
 {
   "version": 1,
-  "preset": "jotpluggler",
-  "tabs": []
+  "current_tab_index": 0,
+  "tabs": [
+    {
+      "name": "Jotpluggler",
+      "root": {
+        "split": "horizontal",
+        "sizes": [0.34, 0.34, 0.32],
+        "children": [
+          {"type": "browser", "title": "Browser"},
+          {
+            "split": "vertical",
+            "sizes": [0.55, 0.45],
+            "children": [
+              {
+                "type": "plot",
+                "title": "Plot",
+                "state": {
+                  "series": [
+                    {"path": "/carState/vEgo", "label": "vEgo"},
+                    {"path": "/carState/aEgo", "label": "aEgo"}
+                  ]
+                }
+              },
+              {"type": "logs", "title": "Logs"}
+            ]
+          },
+          {"type": "map", "title": "Map"}
+        ]
+      }
+    }
+  ]
 }

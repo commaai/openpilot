@@ -85,13 +85,38 @@ void draw_car_marker(ImDrawList *draw_list, ImVec2 center, double bearing_deg, I
   draw_list->AddTriangle(p0, p1, p2, ImGui::GetColorU32(color_rgb(30, 32, 34)), 1.5f);
 }
 
+int map_kind_priority(TimelineSpanKind kind) {
+  switch (kind) {
+    case TimelineSpanKind::AlertCritical:
+      return 4;
+    case TimelineSpanKind::AlertWarning:
+      return 3;
+    case TimelineSpanKind::AlertInfo:
+      return 2;
+    case TimelineSpanKind::Engaged:
+      return 1;
+    case TimelineSpanKind::None:
+    default:
+      return 0;
+  }
+}
+
+TimelineSpanKind stronger_map_kind(TimelineSpanKind a, TimelineSpanKind b) {
+  return map_kind_priority(b) > map_kind_priority(a) ? b : a;
+}
+
+ImU32 map_timeline_color(TimelineSpanKind kind, uint8_t alpha) {
+  const TimelineColor color = timeline_span_color(kind, alpha);
+  return IM_COL32(color.r, color.g, color.b, color.a);
+}
+
 }  // namespace
 
 void draw_map_pane(Session &session, PaneInstance &pane) {
   const MapState state = parse_map_state(pane.state_json);
   TimeRange range = session.playback().route_range();
   if (!range.valid() || range.span() <= 0.0) range = session.view_range().range();
-  const MapTrace trace = prepare_map_trace(session.store(), range, state);
+  const MapTrace trace = prepare_map_trace(session.store(), range, state, &session.timeline());
 
   ImGui::TextDisabled("%zu GPS points", trace.points.size());
   if (trace.valid()) {
@@ -126,10 +151,16 @@ void draw_map_pane(Session &session, PaneInstance &pane) {
     points.push_back(map_to_screen(projection, point.lat, point.lon));
   }
   if (points.size() >= 2) {
-    draw_list->AddPolyline(points.data(), static_cast<int>(points.size()), ImGui::GetColorU32(color_rgb(66, 168, 120)), ImDrawFlags_None, 2.2f);
-    draw_list->AddPolyline(points.data(), static_cast<int>(points.size()), ImGui::GetColorU32(color_rgb(151, 218, 189, 0.36f)), ImDrawFlags_None, 5.5f);
+    for (size_t i = 1; i < points.size(); ++i) {
+      const TimelineSpanKind kind = stronger_map_kind(trace.points[i - 1].kind, trace.points[i].kind);
+      draw_list->AddLine(points[i - 1], points[i], map_timeline_color(kind, 88), 5.5f);
+    }
+    for (size_t i = 1; i < points.size(); ++i) {
+      const TimelineSpanKind kind = stronger_map_kind(trace.points[i - 1].kind, trace.points[i].kind);
+      draw_list->AddLine(points[i - 1], points[i], map_timeline_color(kind, 255), 2.2f);
+    }
   } else if (points.size() == 1) {
-    draw_list->AddCircleFilled(points.front(), 4.0f, ImGui::GetColorU32(color_rgb(66, 168, 120)));
+    draw_list->AddCircleFilled(points.front(), 4.0f, map_timeline_color(trace.points.front().kind, 255));
   }
 
   const std::optional<MapTracePoint> tracker = map_trace_point_at_time(trace, session.playback().tracker_time());

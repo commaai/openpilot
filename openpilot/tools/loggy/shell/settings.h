@@ -31,6 +31,7 @@ struct LoggySettingsLoadResult {
 
 void normalize_loggy_settings(LoggySettings *settings);
 void remember_recent_dbc_file(LoggySettings *settings, std::string path);
+void clear_dbc_assignments_for_path(LoggySettings *settings, std::string_view path);
 void set_dbc_assignment(LoggySettings *settings, std::string source, std::string path);
 
 std::filesystem::path default_loggy_settings_path();

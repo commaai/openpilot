@@ -22,6 +22,7 @@ public:
   ~DBCManager() = default;
   bool open(const SourceSet &sources, const std::string &dbc_file_name, std::string *error = nullptr);
   bool open(const SourceSet &sources, const std::string &name, const std::string &content, std::string *error = nullptr);
+  bool assignSources(DBCFile *dbc_file, const SourceSet &sources, std::string *error = nullptr);
   void close(const SourceSet &sources);
   void close(DBCFile *dbc_file);
   void closeAll();

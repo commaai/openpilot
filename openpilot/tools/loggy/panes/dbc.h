@@ -2,14 +2,17 @@
 
 #include "tools/loggy/backend/dbc/dbcmanager.h"
 #include "tools/loggy/shell/pane.h"
+#include "tools/loggy/shell/settings.h"
 
 #include "json11/json11.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace loggy {
@@ -24,6 +27,7 @@ struct DbcPaneState {
 };
 
 struct DbcFileRow {
+  DBCFile *file = nullptr;
   std::string name;
   std::string filename;
   std::string sources;
@@ -116,6 +120,63 @@ inline bool open_dbc_from_clipboard_text(DBCManager &manager, const SourceSet &s
   return manager.open(sources, name, content, error);
 }
 
+inline bool assign_dbc_file_sources(DBCManager &manager, DBCFile *file, std::string_view source_text,
+                                    SourceSet *assigned_sources = nullptr, std::string *error = nullptr) {
+  SourceSet sources;
+  if (!parse_dbc_source_set(source_text, &sources, error)) return false;
+  if (!manager.assignSources(file, sources, error)) return false;
+  if (assigned_sources != nullptr) *assigned_sources = sources;
+  return true;
+}
+
+inline bool dbc_source_sets_conflict(const SourceSet &a, const SourceSet &b) {
+  if (a.empty() || b.empty()) return false;
+  if (a == SOURCE_ALL || b == SOURCE_ALL) return a == b;
+  for (const int source : a) {
+    if (b.count(source) != 0) return true;
+  }
+  return false;
+}
+
+inline bool dbc_assignment_conflicts_loaded_sources(std::string_view source_key,
+                                                    const std::vector<SourceSet> &loaded_sources) {
+  SourceSet sources;
+  if (!parse_dbc_source_set(source_key, &sources, nullptr)) return false;
+  for (const SourceSet &loaded : loaded_sources) {
+    if (dbc_source_sets_conflict(sources, loaded)) return true;
+  }
+  return false;
+}
+
+inline void sync_dbc_assignments_from_loaded_files(DBCManager &manager, LoggySettings *settings) {
+  if (settings == nullptr) return;
+
+  std::vector<std::pair<SourceSet, std::string>> loaded_assignments;
+  std::vector<SourceSet> loaded_sources;
+  std::set<std::string> loaded_paths;
+  for (DBCFile *file : manager.allDBCFiles()) {
+    if (file == nullptr || file->filename.empty()) continue;
+    const SourceSet sources = manager.sources(file);
+    if (sources.empty()) continue;
+    loaded_assignments.push_back({sources, file->filename});
+    loaded_sources.push_back(sources);
+    loaded_paths.insert(file->filename);
+    remember_recent_dbc_file(settings, file->filename);
+  }
+
+  for (auto it = settings->dbc_assignments.begin(); it != settings->dbc_assignments.end();) {
+    if (loaded_paths.count(it->second) != 0 ||
+        dbc_assignment_conflicts_loaded_sources(it->first, loaded_sources)) {
+      it = settings->dbc_assignments.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  for (const auto &[sources, path] : loaded_assignments) {
+    set_dbc_assignment(settings, toString(sources), path);
+  }
+}
+
 inline std::string dbc_lower(std::string_view text) {
   std::string out(text);
   std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
@@ -176,6 +237,7 @@ inline std::vector<DbcFileRow> prepare_dbc_file_rows(DBCManager &manager) {
   for (DBCFile *file : manager.allDBCFiles()) {
     if (file == nullptr) continue;
     DbcFileRow row;
+    row.file = file;
     row.name = file->name();
     row.filename = file->filename;
     row.sources = toString(manager.sources(file));

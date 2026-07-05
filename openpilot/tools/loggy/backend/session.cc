@@ -26,6 +26,13 @@ fs::path resolve_layout_path(const std::string &layout) {
   throw std::runtime_error("Unknown layout: " + layout);
 }
 
+fs::path resolve_preset_layout_path(const std::string &preset) {
+  if (preset.empty()) return {};
+  fs::path candidate = layouts_dir() / preset;
+  if (candidate.extension().empty()) candidate.replace_extension(".json");
+  return fs::exists(candidate) ? candidate : fs::path{};
+}
+
 bool timeline_span_less(const TimelineSpan &a, const TimelineSpan &b) {
   if (std::abs(a.start_time - b.start_time) > 1.0e-9) return a.start_time < b.start_time;
   if (std::abs(a.end_time - b.end_time) > 1.0e-9) return a.end_time < b.end_time;
@@ -87,7 +94,8 @@ Session::Session(SessionConfig config) : config_(std::move(config)), scheduler_(
     }
   }
 
-  const fs::path layout_path = resolve_layout_path(config_.layout);
+  fs::path layout_path = resolve_layout_path(config_.layout);
+  if (layout_path.empty()) layout_path = resolve_preset_layout_path(config_.preset);
   workspace_ = layout_path.empty() ? make_default_workspace(config_.preset) : load_workspace_json(layout_path);
   normalize_workspace(&workspace_);
 

@@ -76,6 +76,17 @@ void remember_recent_dbc_file(LoggySettings *settings, std::string path) {
   normalize_loggy_settings(settings);
 }
 
+void clear_dbc_assignments_for_path(LoggySettings *settings, std::string_view path) {
+  if (settings == nullptr || path.empty()) return;
+  for (auto it = settings->dbc_assignments.begin(); it != settings->dbc_assignments.end();) {
+    if (it->second == path) {
+      it = settings->dbc_assignments.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
 void set_dbc_assignment(LoggySettings *settings, std::string source, std::string path) {
   if (settings == nullptr || !bounded_string(source, kMaxSettingsKeyBytes)) return;
   if (path.empty()) {

@@ -43,6 +43,9 @@ TEST_CASE("Loggy settings round-trip DBC recents and assignments") {
   }
   loggy::remember_recent_dbc_file(&settings, "/tmp/recent_10.dbc");
   loggy::set_dbc_assignment(&settings, "all", "/tmp/recent_10.dbc");
+  loggy::set_dbc_assignment(&settings, "0", "/tmp/recent_10.dbc");
+  loggy::clear_dbc_assignments_for_path(&settings, "/tmp/recent_10.dbc");
+  loggy::set_dbc_assignment(&settings, "1", "/tmp/recent_10.dbc");
   loggy::set_dbc_assignment(&settings, "source:1", "/tmp/camera.dbc");
 
   REQUIRE(settings.recent_dbc_files.size() == loggy::kMaxRecentDbcFiles);
@@ -61,7 +64,9 @@ TEST_CASE("Loggy settings round-trip DBC recents and assignments") {
   REQUIRE(loaded.settings.recent_dbc_files.size() == loggy::kMaxRecentDbcFiles);
   CHECK(loaded.settings.recent_dbc_files.front() == "/tmp/recent_10.dbc");
   CHECK(loaded.settings.recent_dbc_files.back() == "/tmp/recent_3.dbc");
-  CHECK(loaded.settings.dbc_assignments.at("all") == "/tmp/recent_10.dbc");
+  CHECK(loaded.settings.dbc_assignments.count("all") == 0);
+  CHECK(loaded.settings.dbc_assignments.count("0") == 0);
+  CHECK(loaded.settings.dbc_assignments.at("1") == "/tmp/recent_10.dbc");
   CHECK(loaded.settings.dbc_assignments.at("source:1") == "/tmp/camera.dbc");
 }
 

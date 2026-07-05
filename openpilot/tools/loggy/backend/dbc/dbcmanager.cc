@@ -43,6 +43,43 @@ bool DBCManager::open(const SourceSet &sources, const std::string &name, const s
   return true;
 }
 
+bool DBCManager::assignSources(DBCFile *dbc_file, const SourceSet &sources, std::string *error) {
+  if (dbc_file == nullptr) {
+    if (error != nullptr) *error = "no DBC file selected";
+    return false;
+  }
+  if (sources.empty()) {
+    if (error != nullptr) *error = "no sources parsed";
+    return false;
+  }
+
+  std::shared_ptr<DBCFile> file;
+  for (const auto &[_, candidate] : dbc_files) {
+    if (candidate.get() == dbc_file) {
+      file = candidate;
+      break;
+    }
+  }
+  if (!file) {
+    if (error != nullptr) *error = "DBC file is not loaded";
+    return false;
+  }
+
+  for (auto it = dbc_files.begin(); it != dbc_files.end();) {
+    if (it->second.get() == dbc_file) {
+      it = dbc_files.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  for (const int source : sources) {
+    dbc_files[source] = file;
+  }
+  if (error != nullptr) error->clear();
+  DBCFileChanged();
+  return true;
+}
+
 void DBCManager::close(const SourceSet &sources) {
   for (auto s : sources) {
     dbc_files.erase(s);

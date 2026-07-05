@@ -33,6 +33,7 @@ struct MapTracePoint {
   double lat = 0.0;
   double lon = 0.0;
   double bearing_deg = 0.0;
+  TimelineSpanKind kind = TimelineSpanKind::None;
 };
 
 struct MapTrace {
@@ -70,7 +71,8 @@ inline double map_value_at_index_or_default(const SeriesView &view, size_t index
   return index < view.points.size() ? view.points[index].value : fallback;
 }
 
-inline MapTrace prepare_map_trace(const Store &store, TimeRange range, const MapState &state) {
+inline MapTrace prepare_map_trace(const Store &store, TimeRange range, const MapState &state,
+                                  const TimelineModel *timeline = nullptr) {
   MapTrace trace;
   const SeriesView lat = store.series(state.latitude_path, range.start, range.end, state.max_points);
   const SeriesView lon = store.series(state.longitude_path, range.start, range.end, state.max_points);
@@ -91,6 +93,7 @@ inline MapTrace prepare_map_trace(const Store &store, TimeRange range, const Map
     point.lat = lat_value;
     point.lon = lon_value;
     point.bearing_deg = map_value_at_index_or_default(bearing, i, 0.0);
+    point.kind = timeline != nullptr ? timeline->kind_at_time(point.t) : TimelineSpanKind::None;
     trace.points.push_back(point);
   }
   if (trace.points.empty()) return trace;

@@ -132,6 +132,15 @@ BO_ 291 BUS0_MSG: 1 XXX
   REQUIRE(manager.findDBCFile(0) != nullptr);
   CHECK(manager.findDBCFile(0)->name() == "all");
   CHECK(manager.allDBCFiles().size() == 1);
+
+  loggy::DBCFile *all_file = manager.findDBCFile(0);
+  REQUIRE(manager.assignSources(all_file, loggy::SourceSet{1}, &error));
+  CHECK(error.empty());
+  CHECK(manager.findDBCFile(0) == nullptr);
+  REQUIRE(manager.findDBCFile(1) != nullptr);
+  CHECK(manager.findDBCFile(1)->name() == "all");
+  const loggy::SourceSet source_one{1};
+  CHECK(manager.sources(all_file) == source_one);
 }
 
 TEST_CASE("DBCFile saveAs preserves filename on write failure") {

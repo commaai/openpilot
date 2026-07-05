@@ -61,6 +61,7 @@ theme_obj = loggy_env.Object("shell/theme", "shell/theme.cc")
 transport_obj = loggy_env.Object("shell/transport", "shell/transport.cc")
 settings_obj = loggy_env.Object("shell/settings", "shell/settings.cc")
 session_obj = loggy_env.Object("backend/session", "backend/session.cc")
+undo_obj = loggy_env.Object("backend/undo", "backend/undo.cc")
 extract_obj = loggy_env.Object("backend/extract", "backend/extract.cc")
 loggy_env.Depends(extract_obj, event_extractors)
 route_obj = loggy_env.Object("backend/route", "backend/route.cc")
@@ -87,6 +88,8 @@ browser_obj = loggy_env.Object("panes/browser", "panes/browser.cc")
 dbc_pane_obj = loggy_env.Object("panes/dbc", "panes/dbc.cc")
 map_obj = loggy_env.Object("panes/map", "panes/map.cc")
 signal_obj = loggy_env.Object("panes/signal", "panes/signal.cc")
+find_signal_obj = loggy_env.Object("panes/find_signal", "panes/find_signal.cc")
+find_bits_obj = loggy_env.Object("panes/find_bits", "panes/find_bits.cc")
 pane_objs = [
   loggy_env.Object("panes/plot", "panes/plot.cc"),
   loggy_env.Object("panes/messages", "panes/messages.cc"),
@@ -95,6 +98,8 @@ pane_objs = [
   dbc_pane_obj,
   map_obj,
   signal_obj,
+  find_signal_obj,
+  find_bits_obj,
   historylog_obj,
   logs_obj,
 ]
@@ -108,7 +113,7 @@ loggy_env.Program("_loggy", [
   session_obj,
   route_obj,
   extract_obj,
-] + store_scheduler_objs + [settings_obj, export_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [settings_obj, export_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
 
 loggy_env.Program("tests/workspace_smoke", [
   "tests/workspace_smoke.cc",
@@ -118,11 +123,17 @@ loggy_env.Program("tests/workspace_smoke", [
   session_obj,
   route_obj,
   extract_obj,
-] + store_scheduler_objs + [settings_obj, export_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [settings_obj, export_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
 
 loggy_env.Program("tests/dbc_parser", [
   "tests/dbc_test_runner.cc",
   "tests/dbc_parser_test.cc",
+] + dbc_objs, LIBS=libs)
+
+loggy_env.Program("tests/dbc_commands", [
+  "tests/dbc_test_runner.cc",
+  "tests/dbc_commands_test.cc",
+  undo_obj,
 ] + dbc_objs, LIBS=libs)
 
 loggy_env.Program("tests/transport_smoke", [
@@ -152,12 +163,15 @@ loggy_env.Program("tests/export_smoke", [
 loggy_env.Program("tests/panes_smoke", [
   "tests/dbc_test_runner.cc",
   "tests/panes_smoke.cc",
-  browser_obj,
-  map_obj,
-  logs_obj,
+  workspace_obj,
+  session_obj,
+  route_obj,
+  extract_obj,
+  settings_obj,
+  export_obj,
   theme_obj,
   transport_obj,
-] + store_scheduler_objs + dbc_objs, LIBS=libs)
+] + store_scheduler_objs + [undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
 
 loggy_env.Program("tests/extract_smoke", [
   "tests/dbc_test_runner.cc",

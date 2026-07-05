@@ -1,10 +1,15 @@
 #pragma once
 
+#include "tools/loggy/backend/dbc/dbc.h"
 #include "tools/loggy/panes/messages.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cmath>
 #include <optional>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace loggy {
@@ -64,6 +69,33 @@ inline std::optional<BinaryGrid> build_binary_grid(const Store &store, const Mes
     }
   }
   return grid;
+}
+
+inline bool binary_signal_from_bit_range(int anchor_bit, int current_bit, Signal *signal,
+                                         std::string *error = nullptr) {
+  if (signal == nullptr) return false;
+  if (anchor_bit < 0 || current_bit < 0 ||
+      anchor_bit >= CAN_MAX_DATA_BYTES * 8 || current_bit >= CAN_MAX_DATA_BYTES * 8) {
+    if (error != nullptr) *error = "bit range must be 0-511";
+    return false;
+  }
+
+  const int start_bit = std::min(anchor_bit, current_bit);
+  const int size = std::abs(current_bit - anchor_bit) + 1;
+  Signal draft;
+  draft.start_bit = start_bit;
+  draft.size = size;
+  draft.is_little_endian = true;
+  draft.is_signed = false;
+  draft.factor = 1.0;
+  draft.offset = 0.0;
+  draft.min = 0.0;
+  draft.max = std::pow(2.0, static_cast<double>(size)) - 1.0;
+  draft.receiver_name = DEFAULT_NODE_NAME;
+  draft.update();
+  *signal = std::move(draft);
+  if (error != nullptr) error->clear();
+  return true;
 }
 
 void draw_binary_pane(Session &session, PaneInstance &pane);
