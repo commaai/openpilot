@@ -221,7 +221,7 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: metadrive-sim-logs-${{ github.run_id }}-${{ github.run_attempt }}
-        path: openpilot/metadrive-sim-logs
+        path: ${{ github.workspace }}/metadrive-sim-logs
         retention-days: 7
 
   create_ui_report:
