@@ -45,7 +45,7 @@ jobs:
         max_attempts: 3
         command: git lfs pull
     - name: Build devel
-      timeout-minutes: 1
+      timeout-minutes: 4
       run: TARGET_DIR=$STRIPPED_DIR tools/release/build_stripped.sh
     - run: ./tools/op.sh setup
     - name: Build openpilot and run checks

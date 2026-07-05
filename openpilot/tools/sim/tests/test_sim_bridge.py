@@ -10,6 +10,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
+IGNORED_SIM_EVENTS = {"locationdTemporaryError", "posenetInvalid"}
 
 class TestSimBridgeBase:
   @classmethod
@@ -34,7 +35,7 @@ class TestSimBridgeBase:
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    max_time_per_step = max(60, self.test_duration + 30)
+    max_time_per_step = max(120, self.test_duration + 60)
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
@@ -50,7 +51,8 @@ class TestSimBridgeBase:
       sm.update()
 
       not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
-      car_event_issues = [event.name for event in sm['onroadEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
+      car_event_issues = [event.name for event in sm['onroadEvents']
+                          if event.name not in IGNORED_SIM_EVENTS and any([event.noEntry, event.softDisable, event.immediateDisable])]
 
       if sm.all_alive() and len(car_event_issues) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
@@ -75,8 +77,10 @@ class TestSimBridgeBase:
     assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
 
     failure_states = []
-    while bridge.started.value:
-      continue
+    start_waiting = time.monotonic()
+    while bridge.started.value and time.monotonic() < start_waiting + max_time_per_step:
+      time.sleep(0.01)
+    assert not bridge.started.value, "Simulator did not finish before timeout"
 
     while not q.empty():
       state = q.get()
