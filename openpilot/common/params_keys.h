@@ -61,7 +61,6 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"IsLiveStreaming", {CLEAR_ON_MANAGER_START, BOOL}},
     {"IsMetric", {PERSISTENT, BOOL}},
     {"IsOffroad", {CLEAR_ON_MANAGER_START, BOOL}},
-    {"IsOnroad", {PERSISTENT, BOOL}},
     {"IsRhdDetected", {PERSISTENT, BOOL}},
     {"IsReleaseBranch", {CLEAR_ON_MANAGER_START, BOOL}},
     {"IsTakingSnapshot", {CLEAR_ON_MANAGER_START, BOOL}},

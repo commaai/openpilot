@@ -412,7 +412,7 @@ class PandaRunner:
       self.periph_mgr.cleanup()
 
       # Close relay on exit to prevent a fault
-      is_onroad = Params().get_bool("IsOnroad")
-      if is_onroad and not engaged:
+      is_offroad = Params().get_bool("IsOffroad")
+      if not is_offroad and not engaged:
         for p in self.pandas:
           p.set_safety_mode(car.CarParams.SafetyModel.noOutput)

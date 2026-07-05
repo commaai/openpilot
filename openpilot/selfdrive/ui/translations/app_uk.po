@@ -827,3 +827,4 @@ msgstr "✓ ПІДПИСАНО"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "🔥 Firehose Mode 🔥"
 msgstr "🌧️ Режим зливи 🌧️"
+

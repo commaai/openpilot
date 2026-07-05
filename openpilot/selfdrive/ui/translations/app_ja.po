@@ -817,3 +817,4 @@ msgstr "✓ 登録済み"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "🔥 Firehose Mode 🔥"
 msgstr "🔥 Firehoseモード 🔥"
+

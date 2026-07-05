@@ -820,3 +820,4 @@ msgstr ""
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py
 msgid "Reboot Device"
 msgstr ""
+
