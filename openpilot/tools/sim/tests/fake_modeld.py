@@ -13,6 +13,7 @@ import numpy as np
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
+from openpilot.common.mock.generators import generate_livePose
 from openpilot.common.realtime import DT_MDL, Ratekeeper
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.fill_model_msg import fill_driving_model_data, fill_xyzt, fill_xyvat
@@ -132,7 +133,7 @@ def fill_fake_camera_odometry(msg, frame_id: int, timestamp_eof: int, v_ego: flo
 
 
 def main() -> None:
-  pm = messaging.PubMaster(['modelV2', 'drivingModelData', 'cameraOdometry'])
+  pm = messaging.PubMaster(['modelV2', 'drivingModelData', 'cameraOdometry', 'livePose'])
   sm = messaging.SubMaster(['carState', 'roadCameraState'])
   rk = Ratekeeper(ModelConstants.MODEL_RUN_FREQ, print_delay_threshold=None)
   fallback_frame_id = 0
@@ -153,9 +154,13 @@ def main() -> None:
     odometry_msg = messaging.new_message('cameraOdometry')
     fill_fake_camera_odometry(odometry_msg, frame_id, timestamp_eof, v_ego)
 
+    live_pose_msg = generate_livePose()
+    live_pose_msg.valid = True
+
     pm.send('modelV2', model_msg)
     pm.send('drivingModelData', driving_msg)
     pm.send('cameraOdometry', odometry_msg)
+    pm.send('livePose', live_pose_msg)
     rk.keep_time()
 
 

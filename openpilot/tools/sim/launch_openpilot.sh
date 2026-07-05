@@ -13,7 +13,7 @@ if [[ -z "$SIM_LOGS" ]]; then
 fi
 
 if [[ "$SIM_FAKE_MODELD" ]]; then
-  block_list="$block_list,modeld"
+  block_list="$block_list,modeld,locationd"
 fi
 
 export BLOCK="${BLOCK},${block_list}"
