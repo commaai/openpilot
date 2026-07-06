@@ -103,15 +103,15 @@ void DBCManager::add_signal(const MessageId &id, const Signal &sig) {
   }
 }
 
-void DBCManager::updateSignal(const MessageId &id, const std::string &sig_name, const Signal &sig) {
+void DBCManager::update_signal(const MessageId &id, const std::string &sig_name, const Signal &sig) {
   if (auto m = msg(id)) {
-    m->updateSignal(sig_name, sig);
+    m->update_signal(sig_name, sig);
   }
 }
 
-void DBCManager::removeSignal(const MessageId &id, const std::string &sig_name) {
+void DBCManager::remove_signal(const MessageId &id, const std::string &sig_name) {
   if (auto m = msg(id)) {
-    m->removeSignal(sig_name);
+    m->remove_signal(sig_name);
   }
 }
 

@@ -9,6 +9,7 @@
 #include "tools/loggy/panes/historylog.h"
 #include "tools/loggy/panes/logs.h"
 #include "tools/loggy/panes/map.h"
+#include "tools/loggy/panes/messages.h"
 #include "tools/loggy/panes/plot.h"
 #include "tools/loggy/panes/signal.h"
 #include "tools/loggy/panes/dbc.h"

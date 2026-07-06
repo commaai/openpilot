@@ -66,7 +66,7 @@ class SeriesAccumulator {
 public:
   explicit SeriesAccumulator(int segment = -1, std::vector<std::string> fixed_paths = {});
 
-  RouteSeries *fixed_series(size_t slot);
+  RouteSeries *fixed_slot(size_t slot);
   RouteSeries *ensure_series(const std::string &path);
   RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index);
 

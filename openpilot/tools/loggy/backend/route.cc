@@ -611,7 +611,7 @@ std::string route_connect_url(const RouteSelection &selection) {
   return "https://connect.comma.ai/" + selection.dongle_id + "/" + selection.timestamp;
 }
 
-bool parseRouteSliceSpecImpl(std::string_view text, int &begin, int &end) {
+bool parse_route_slice_spec_impl(std::string_view text, int &begin, int &end) {
   const std::string trimmed = trim(std::string(text));
   if (trimmed.empty()) return false;
   const size_t colon = trimmed.find(':');
@@ -634,7 +634,7 @@ bool parseRouteSliceSpecImpl(std::string_view text, int &begin, int &end) {
 std::optional<RouteSliceSpec> parse_route_slice_spec(std::string_view text) {
   int parsed_begin = 0;
   int parsed_end = 0;
-  if (!parseRouteSliceSpecImpl(text, parsed_begin, parsed_end)) return std::nullopt;
+  if (!parse_route_slice_spec_impl(text, parsed_begin, parsed_end)) return std::nullopt;
   return RouteSliceSpec{parsed_begin, parsed_end};
 }
 

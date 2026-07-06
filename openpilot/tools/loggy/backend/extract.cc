@@ -130,7 +130,7 @@ SeriesAccumulator::SeriesAccumulator(int segment, std::vector<std::string> fixed
   }
 }
 
-RouteSeries *SeriesAccumulator::fixed_series(size_t slot) {
+RouteSeries *SeriesAccumulator::fixed_slot(size_t slot) {
   if (slot >= fixed_series.size()) {
     throw std::out_of_range("fixed series slot out of range");
   }
@@ -138,7 +138,7 @@ RouteSeries *SeriesAccumulator::fixed_series(size_t slot) {
 }
 
 RouteSeries *SeriesAccumulator::ensure_series(const std::string &path) {
-  return &dynamic_series[ensureDynamicSlot(path)];
+  return &dynamic_series[ensure_dynamic_slot(path)];
 }
 
 RouteSeries *SeriesAccumulator::ensure_list_scalar_series(const std::string &base_path, size_t index) {
@@ -148,13 +148,13 @@ RouteSeries *SeriesAccumulator::ensure_list_scalar_series(const std::string &bas
     slots.resize(index + 1, INVALID_DYNAMIC_SLOT);
   }
   if (slots[index] == INVALID_DYNAMIC_SLOT) {
-    slots[index] = ensureDynamicSlot(base_path + "/" + std::to_string(index));
+    slots[index] = ensure_dynamic_slot(base_path + "/" + std::to_string(index));
   }
   return &dynamic_series[slots[index]];
 }
 
 void SeriesAccumulator::append_fixed_scalar(size_t slot, double tm, double value) {
-  append_fixed_scalar_point(fixed_series(slot), tm, value);
+  append_fixed_scalar_point(fixed_slot(slot), tm, value);
 }
 
 void SeriesAccumulator::append_scalar(const std::string &path, double tm, double value) {
@@ -252,7 +252,7 @@ SegmentExtractResult SeriesAccumulator::finish(TimeRange coverage) {
   return result;
 }
 
-size_t SeriesAccumulator::ensureDynamicSlot(const std::string &path) {
+size_t SeriesAccumulator::ensure_dynamic_slot(const std::string &path) {
   auto [it, inserted] = dynamic_slots_.try_emplace(path, dynamic_series.size());
   if (inserted) {
     dynamic_series.push_back(RouteSeries{.path = it->first});

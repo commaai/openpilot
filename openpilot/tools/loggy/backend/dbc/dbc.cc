@@ -64,7 +64,7 @@ Signal *Msg::add_signal(const Signal &sig) {
   return s;
 }
 
-Signal *Msg::updateSignal(const std::string &sig_name, const Signal &new_sig) {
+Signal *Msg::update_signal(const std::string &sig_name, const Signal &new_sig) {
   auto s = sig(sig_name);
   if (s) {
     *s = new_sig;
@@ -73,7 +73,7 @@ Signal *Msg::updateSignal(const std::string &sig_name, const Signal &new_sig) {
   return s;
 }
 
-void Msg::removeSignal(const std::string &sig_name) {
+void Msg::remove_signal(const std::string &sig_name) {
   auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s->name == sig_name; });
   if (it != sigs.end()) {
     delete *it;

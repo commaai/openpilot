@@ -88,28 +88,28 @@ EditSignalCommand::EditSignalCommand(DBCManager &manager, MessageId id, const Si
       edits_.push_back({*signal, std::move(normal)});
     }
   }
-  setText("edit signal " + origin.name + " in " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
+  set_text("edit signal " + origin.name + " in " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
 }
 
 void EditSignalCommand::undo() {
   for (const auto &[old_signal, new_signal] : edits_) {
-    manager_.updateSignal(id_, new_signal.name, old_signal);
+    manager_.update_signal(id_, new_signal.name, old_signal);
   }
 }
 
 void EditSignalCommand::redo() {
   for (const auto &[old_signal, new_signal] : edits_) {
-    manager_.updateSignal(id_, old_signal.name, new_signal);
+    manager_.update_signal(id_, old_signal.name, new_signal);
   }
 }
 
 AddSignalCommand::AddSignalCommand(DBCManager &manager, MessageId id, Signal signal, uint32_t msg_size)
     : manager_(manager), id_(id), signal_(std::move(signal)), msg_size_(msg_size) {
-  setText("add signal to " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
+  set_text("add signal to " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
 }
 
 void AddSignalCommand::undo() {
-  manager_.removeSignal(id_, signal_.name);
+  manager_.remove_signal(id_, signal_.name);
   if (msg_created_) manager_.remove_msg(id_);
 }
 
@@ -120,7 +120,7 @@ void AddSignalCommand::redo() {
   }
   if (signal_.name.empty()) {
     signal_.name = manager_.new_signal_name(id_);
-    setText("add signal " + signal_.name + " to " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
+    set_text("add signal " + signal_.name + " to " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
   }
   signal_.max = std::pow(2.0, static_cast<double>(signal_.size)) - 1.0;
   signal_.update();
@@ -138,7 +138,7 @@ RemoveSignalCommand::RemoveSignalCommand(DBCManager &manager, MessageId id, cons
       removed_.push_back(*signal);
     }
   }
-  setText("remove signal " + origin.name + " from " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
+  set_text("remove signal " + origin.name + " from " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
 }
 
 void RemoveSignalCommand::undo() {
@@ -149,13 +149,13 @@ void RemoveSignalCommand::undo() {
 
 void RemoveSignalCommand::redo() {
   for (const Signal &signal : removed_) {
-    manager_.removeSignal(id_, signal.name);
+    manager_.remove_signal(id_, signal.name);
   }
 }
 
 EditMessageCommand::EditMessageCommand(DBCManager &manager, MessageId id, Msg origin, Msg edited)
     : manager_(manager), id_(id), origin_(std::move(origin)), edited_(std::move(edited)) {
-  setText("edit message " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
+  set_text("edit message " + command_message_label(manager_, id_) + ":" + std::to_string(id_.address));
 }
 
 void EditMessageCommand::undo() {
