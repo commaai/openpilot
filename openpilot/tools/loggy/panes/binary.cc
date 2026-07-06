@@ -324,7 +324,8 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   constexpr int kBitColumns = 8;
   constexpr int kColumns = kBitColumns + 1;
   const float row_header_w = 30.0f;
-  const float row_h = std::max(22.0f, ImGui::GetTextLineHeight() + 8.0f);
+  // Qt cabana's signature airy grid: CELL_HEIGHT=36 (binaryview.cc) — 22px read cramped.
+  const float row_h = 36.0f;
   const float avail_w = ImGui::GetContentRegionAvail().x;
   const float col_w = std::max(22.0f, (avail_w - row_header_w) / static_cast<float>(kColumns));
   const float total_w = row_header_w + col_w * static_cast<float>(kColumns);

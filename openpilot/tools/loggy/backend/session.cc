@@ -84,13 +84,18 @@ std::vector<TimelineSpan> merge_timeline_spans(std::vector<TimelineSpan> spans) 
 
 void append_and_sort_logs(std::vector<LogEntry> *dst, std::vector<LogEntry> incoming) {
   if (dst == nullptr || incoming.empty()) return;
+  const auto less = [](const LogEntry &a, const LogEntry &b) {
+    if (std::abs(a.mono_time - b.mono_time) > 1.0e-9) return a.mono_time < b.mono_time;
+    return a.message < b.message;
+  };
+  // Runs on the UI thread once per drained batch: sort only the incoming slice and merge —
+  // a full stable_sort of the whole log per batch was a repeating load-phase hitch.
+  std::stable_sort(incoming.begin(), incoming.end(), less);
+  const auto middle_index = static_cast<std::ptrdiff_t>(dst->size());
   dst->insert(dst->end(),
               std::make_move_iterator(incoming.begin()),
               std::make_move_iterator(incoming.end()));
-  std::stable_sort(dst->begin(), dst->end(), [](const LogEntry &a, const LogEntry &b) {
-    if (std::abs(a.mono_time - b.mono_time) > 1.0e-9) return a.mono_time < b.mono_time;
-    return a.message < b.message;
-  });
+  std::inplace_merge(dst->begin(), dst->begin() + middle_index, dst->end(), less);
 }
 
 void trim_logs_before(std::vector<LogEntry> *logs, double cutoff_time) {
@@ -626,8 +631,26 @@ void Session::update_car_fingerprint(std::string fingerprint) {
   if (fingerprint.empty() || fingerprint == car_fingerprint) return;
   car_fingerprint = std::move(fingerprint);
   auto_dbc_name = dbc_name_for_fingerprint(car_fingerprint);
-  std::string ignore;
-  apply_dbc_selection(ignore);
+  if (!manual_dbc_name.empty() || auto_dbc_name.empty()) {
+    std::string ignore;
+    apply_dbc_selection(ignore);
+    return;
+  }
+  // Parse off-thread; begin_frame adopts the result. A manual override still applies
+  // synchronously above — that is a user action, not the load path.
+  const std::optional<fs::path> path = resolve_dbc_reference(auto_dbc_name, settings);
+  if (!path.has_value()) {
+    dbc_status = "DBC not found: " + auto_dbc_name;
+    return;
+  }
+  dbc_status = "Loading " + auto_dbc_name + "...";
+  pending_dbc_load_ = std::async(std::launch::async, [name = auto_dbc_name, file = path->string()]() {
+    try {
+      return std::make_pair(name, std::make_shared<DBCFile>(file));
+    } catch (const std::exception &) {
+      return std::make_pair(name, std::shared_ptr<DBCFile>());
+    }
+  });
 }
 
 bool Session::apply_dbc_selection(std::string &error) {
@@ -717,11 +740,41 @@ SelectionContext &Session::selection(std::string_view group) {
 }
 
 DrainResult Session::begin_frame() {
+  // Stage attribution for LOGGY_FRAME_TRACE (runtime.cc logs the frame total; this names the
+  // eater when session is the slow stage).
+  static const bool trace = std::getenv("LOGGY_FRAME_TRACE") != nullptr;
+  const auto t0 = std::chrono::steady_clock::now();
+  auto stage_ms = [&](const char *name, auto &since) {
+    if (!trace) return;
+    const auto now = std::chrono::steady_clock::now();
+    const double ms = std::chrono::duration<double, std::milli>(now - since).count();
+    if (ms > 3.0) std::fprintf(stderr, "  session.%s %.2fms\n", name, ms);
+    since = now;
+  };
+  auto mark = t0;
+
   if (!pending_plot_series.empty() && ++pending_plot_series_age > 2) pending_plot_series.clear();
   scheduler.set_tracker_time(playback.tracker_time());
   scheduler.set_visible_ranges({view_range.range()});
+  stage_ms("scheduler", mark);
+
+  if (pending_dbc_load_.valid() &&
+      pending_dbc_load_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+    auto [name, file] = pending_dbc_load_.get();
+    // Manual override may have raced in while parsing; it wins.
+    if (manual_dbc_name.empty() && name == auto_dbc_name) {
+      if (file != nullptr) {
+        dbc.adopt(SOURCE_ALL, std::move(file));
+        active_dbc_name = name;
+        dbc_status = "DBC auto: " + name;
+      } else {
+        dbc_status = "DBC open failed: " + name;
+      }
+    }
+  }
 
   const RouteIngestStatus status = route_ingest_.status();
+  stage_ms("ingest_status", mark);
   if (!status.car_fingerprint.empty()) update_car_fingerprint(status.car_fingerprint);
   if (!route_range_applied_ && status.route_range.valid() && status.route_range.span() > 0.0) {
     route_range_applied_ = true;
@@ -761,7 +814,9 @@ DrainResult Session::begin_frame() {
     timeline.set_spans(route_timeline_spans_);
   }
 
+  stage_ms("ingest_meta", mark);
   append_and_sort_logs(&logs, route_ingest_.drain_log_entries());
+  stage_ms("logs", mark);
 
   TimeRange live_keep_range;
   if (config.stream) {
@@ -804,7 +859,9 @@ DrainResult Session::begin_frame() {
     }
   }
 
+  stage_ms("live", mark);
   DrainResult drain = store.begin_frame();
+  stage_ms("store_drain", mark);
   if (config.stream && live_keep_range.valid() && live_keep_range.start_ > 0.0) {
     const StoreTrimResult trim = store.trim_before(live_keep_range.start_);
     merge_trim_result(&drain, trim);
@@ -825,8 +882,11 @@ DrainResult Session::begin_frame() {
   if (camera_dependencies_touched(drain.touched_series_paths)) camera_indexes_stale_ = true;
   const bool ingest_settled = route_ingest_.status().state != RouteIngestState::Loading;
   const double now_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+  // Don't stack the rebuild on a frame that already spent its budget draining — the two
+  // together were the worst load-phase frames. The stale flag holds it for the next frame.
+  const bool drain_was_heavy = !ingest_settled && drain.batches > 0;
   if (camera_indexes_dirty_ ||
-      (camera_indexes_stale_ && (ingest_settled || now_seconds - camera_indexes_built_at_ > 0.5))) {
+      (camera_indexes_stale_ && !drain_was_heavy && (ingest_settled || now_seconds - camera_indexes_built_at_ > 0.5))) {
     camera_indexes_stale_ = false;
     camera_indexes_built_at_ = now_seconds;
     TimeRange range = playback.route_range();
@@ -847,6 +907,7 @@ DrainResult Session::begin_frame() {
     }
     camera_indexes_dirty_ = false;
   }
+  stage_ms("camera_index", mark);
 
   if (!computed_specs.empty() &&
       (computed_dirty_ || computed_dependencies_touched(computed_specs, drain.touched_series_paths))) {
@@ -860,6 +921,8 @@ DrainResult Session::begin_frame() {
       merge_drain_result(&drain, store.begin_frame());
     }
   }
+
+  stage_ms("computed", mark);
 
   return drain;
 }

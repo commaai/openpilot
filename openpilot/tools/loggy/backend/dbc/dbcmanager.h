@@ -20,6 +20,9 @@ public:
   ~DBCManager() = default;
   bool open(const SourceSet &sources, const std::string &dbc_file_name, std::string &error);
   bool open(const SourceSet &sources, const std::string &name, const std::string &content, std::string &error);
+  // Install a DBCFile parsed on another thread — parsing a big opendbc file on the UI thread
+  // was a measured ~20 ms load-phase frame drop (see Session::begin_frame's async auto-load).
+  void adopt(const SourceSet &sources, std::shared_ptr<DBCFile> file);
   bool assign_sources(DBCFile *dbc_file, const SourceSet &sources, std::string &error);
   void close(const SourceSet &sources);
   void close(DBCFile *dbc_file);

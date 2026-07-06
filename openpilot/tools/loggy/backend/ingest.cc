@@ -185,7 +185,9 @@ bool SegmentScheduler::publish(StoreBatch batch) {
   // Stage a segment as several small batches, not one monolith: Store::begin_frame drains on
   // the UI thread under a per-frame time budget, and it can only stop BETWEEN batches — a
   // whole-segment batch is an unsplittable hitch. Coverage rides on the first sub-batch.
-  constexpr size_t kChunksPerSubBatch = 256;
+  // 64 keeps the worst single sub-batch well inside Store::begin_frame's 3 ms budget — the
+  // budget can only stop BETWEEN batches, so batch size IS the frame-time floor during load.
+  constexpr size_t kChunksPerSubBatch = 64;
   while (batch.series.size() > kChunksPerSubBatch || batch.can_events.size() > kChunksPerSubBatch) {
     StoreBatch sub;
     sub.segment = batch.segment;

@@ -128,11 +128,14 @@ void draw_settings_popup(Session &session, bool close_requested, bool options_sh
   if (!session.dbc_status.empty()) ImGui::TextDisabled("%s", session.dbc_status.c_str());
   ImGui::Separator();
 
+  // Fixed widths only: stretch widths (-1 / negative offsets) inside an AlwaysAutoResize modal
+  // feed back into the auto-size and the window shrinks a little every frame.
+  constexpr float kSettingsFieldWidth = 460.0f;
   ImGui::TextUnformatted("opendbc root");
-  ImGui::SetNextItemWidth(-1.0f);
+  ImGui::SetNextItemWidth(kSettingsFieldWidth);
   input_text_with_hint("##settings_opendbc_root", "opendbc_repo/opendbc/dbc", &state.opendbc_root_text);
   ImGui::TextUnformatted("DBC override");
-  ImGui::SetNextItemWidth(-1.0f);
+  ImGui::SetNextItemWidth(kSettingsFieldWidth);
   input_text_with_hint("##settings_dbc_override", "dbc name or /path/to.dbc", &state.dbc_override_text);
   ImGui::Spacing();
   ImGui::SeparatorText("App");
@@ -156,7 +159,7 @@ void draw_settings_popup(Session &session, bool close_requested, bool options_sh
   ImGui::Checkbox("Frame-Time HUD", &state.show_frame_hud);
   ImGui::Checkbox("Natural map drag", &state.natural_map_drag);
   ImGui::TextUnformatted("Map cache root");
-  ImGui::SetNextItemWidth(-110.0f);
+  ImGui::SetNextItemWidth(kSettingsFieldWidth - 104.0f);
   input_text_with_hint("##settings_map_cache_root", "(default)", &state.map_cache_root_text);
   ImGui::SameLine();
   if (ImGui::Button("Default", ImVec2(96.0f, 0.0f))) {

@@ -80,22 +80,6 @@ std::vector<SeriesPoint> decimate(std::vector<SeriesPoint> points, size_t max_po
   return out;
 }
 
-void mergeEvents(std::vector<CanEvent> *dst, std::vector<CanEvent> incoming) {
-  if (incoming.empty()) return;
-  if (!std::is_sorted(incoming.begin(), incoming.end(), eventLess)) {
-    std::stable_sort(incoming.begin(), incoming.end(), eventLess);
-  }
-  if (dst->empty()) {
-    *dst = std::move(incoming);
-    return;
-  }
-
-  std::vector<CanEvent> merged;
-  merged.reserve(dst->size() + incoming.size());
-  std::merge(dst->begin(), dst->end(), incoming.begin(), incoming.end(), std::back_inserter(merged), eventLess);
-  *dst = std::move(merged);
-}
-
 std::pair<std::vector<TimeRange>, size_t> trimRangesBefore(std::vector<TimeRange> ranges, double cutoff_time) {
   std::vector<TimeRange> kept;
   kept.reserve(ranges.size());
@@ -164,9 +148,14 @@ void Store::stage(StoreBatch batch) {
 DrainResult Store::begin_frame() {
   std::vector<StoreBatch> batches;
   {
-    // Move batches under lock so each batch is drained exactly once.
+    // Move batches under lock so each batch is drained exactly once; leftovers from the
+    // previous frame's budget go first to keep FIFO order.
     std::lock_guard lock(staged_mutex_);
-    batches.swap(staged_batches_);
+    if (!carryover_batches_.empty()) {
+      batches.swap(carryover_batches_);
+    } else {
+      batches.swap(staged_batches_);
+    }
   }
 
   DrainResult result;
@@ -181,7 +170,9 @@ DrainResult Store::begin_frame() {
   const auto drain_start = std::chrono::steady_clock::now();
   size_t processed = 0;
 
+  static const bool trace_batches = std::getenv("LOGGY_FRAME_TRACE") != nullptr;
   for (auto &batch : batches) {
+    const auto batch_start = std::chrono::steady_clock::now();
     std::vector<TimeRange> batch_coverage = batch.coverage;
     for (const std::string &path : batch.replace_series_paths) {
       if (!canReplaceSeriesPath(path)) continue;
@@ -212,18 +203,35 @@ DrainResult Store::begin_frame() {
       touched_can.push_back(chunk.id);
       auto &state = can_events_[chunk.id];
       if (chunk.range.valid()) state.coverage.push_back(chunk.range);
-      mergeEvents(&state.events, std::move(chunk.events));
+      if (!std::is_sorted(chunk.events.begin(), chunk.events.end(), eventLess)) {
+        std::stable_sort(chunk.events.begin(), chunk.events.end(), eventLess);
+      }
+      const bool out_of_order = !state.chunks.empty() &&
+                                chunk.range.start_ < state.chunks.back().range.start_;
+      state.chunks.push_back(std::move(chunk));
+      if (out_of_order) {
+        std::stable_sort(state.chunks.begin(), state.chunks.end(), [](const auto &a, const auto &b) {
+          return a.range.start_ < b.range.start_;
+        });
+      }
     }
 
     coverage_.insert(coverage_.end(), batch_coverage.begin(), batch_coverage.end());
     ++processed;
+    if (trace_batches) {
+      const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - batch_start).count();
+      if (ms > 2.0) {
+        std::fprintf(stderr, "  batch %.2fms: series_chunks=%zu can_chunks=%zu points=%zu events=%zu\n",
+                     ms, batch.series.size(), batch.can_events.size(),
+                     result.series_points, result.can_events);
+      }
+    }
     if (std::chrono::steady_clock::now() - drain_start > kDrainBudget) break;
   }
   if (processed < batches.size()) {
     std::lock_guard lock(staged_mutex_);
-    staged_batches_.insert(staged_batches_.begin(),
-                           std::make_move_iterator(batches.begin() + static_cast<std::ptrdiff_t>(processed)),
-                           std::make_move_iterator(batches.end()));
+    carryover_batches_.assign(std::make_move_iterator(batches.begin() + static_cast<std::ptrdiff_t>(processed)),
+                              std::make_move_iterator(batches.end()));
   }
   result.batches = processed;
 
@@ -296,17 +304,30 @@ StoreTrimResult Store::trim_before(double cutoff_time) {
 
   std::vector<MessageId> empty_can_ids;
   for (auto &[id, state] : can_events_) {
-    const size_t events_before = state.events.size();
-    auto first_kept = std::lower_bound(state.events.begin(), state.events.end(), cutoff_time,
-                                       [](const CanEvent &event, double t) { return event.mono_time < t; });
-    result.can_events_removed += static_cast<size_t>(std::distance(state.events.begin(), first_kept));
-    state.events.erase(state.events.begin(), first_kept);
+    size_t removed = 0;
+    std::vector<CanEventChunk> kept_chunks;
+    kept_chunks.reserve(state.chunks.size());
+    for (CanEventChunk &chunk : state.chunks) {
+      if (chunk.range.valid() && chunk.range.end < cutoff_time) {
+        removed += chunk.events.size();
+        continue;
+      }
+      const auto first_kept = std::lower_bound(chunk.events.begin(), chunk.events.end(), cutoff_time,
+                                               [](const CanEvent &event, double t) { return event.mono_time < t; });
+      removed += static_cast<size_t>(std::distance(chunk.events.begin(), first_kept));
+      chunk.events.erase(chunk.events.begin(), first_kept);
+      if (chunk.events.empty()) continue;
+      if (chunk.range.valid() && chunk.range.start_ < cutoff_time) chunk.range.start_ = cutoff_time;
+      kept_chunks.push_back(std::move(chunk));
+    }
+    state.chunks = std::move(kept_chunks);
+    result.can_events_removed += removed;
     auto [coverage, removed_coverage_ranges] = trimRangesBefore(std::move(state.coverage), cutoff_time);
     state.coverage = std::move(coverage);
     result.coverage_ranges_removed += removed_coverage_ranges;
-    if (state.events.empty()) {
+    if (state.chunks.empty()) {
       empty_can_ids.push_back(id);
-    } else if (events_before != state.events.size()) {
+    } else if (removed > 0) {
       state.coverage = normalize_ranges(std::move(state.coverage));
     }
   }
@@ -387,11 +408,18 @@ CanEventView Store::can_events(const MessageId &id, TimeRange range) const {
   const auto it = can_events_.find(id);
   if (it == can_events_.end()) return view;
 
-  const auto &events = it->second.events;
-  auto first = std::lower_bound(events.begin(), events.end(), view.requested.start_,
-                                [](const CanEvent &event, double t) { return event.mono_time < t; });
-  for (auto e = first; e != events.end() && e->mono_time <= view.requested.end; ++e) {
-    view.events.push_back(*e);
+  for (const CanEventChunk &chunk : it->second.chunks) {
+    if (chunk.range.valid() && chunk.range.start_ > view.requested.end) break;
+    if (chunk.range.valid() && chunk.range.end < view.requested.start_) continue;
+    const auto first = std::lower_bound(chunk.events.begin(), chunk.events.end(), view.requested.start_,
+                                        [](const CanEvent &event, double t) { return event.mono_time < t; });
+    for (auto e = first; e != chunk.events.end() && e->mono_time <= view.requested.end; ++e) {
+      view.events.push_back(*e);
+    }
+  }
+  // Chunk ranges are disjoint per segment in practice; guard the rare overlap.
+  if (!std::is_sorted(view.events.begin(), view.events.end(), eventLess)) {
+    std::stable_sort(view.events.begin(), view.events.end(), eventLess);
   }
   view.coverage = coverageFor(view.requested, it->second.coverage);
   return view;
@@ -406,17 +434,23 @@ CanSummaryView Store::can_event_summary(const MessageId &id, TimeRange range, bo
   const auto it = can_events_.find(id);
   if (it == can_events_.end()) return view;
 
-  const auto &events = it->second.events;
-  auto first = std::lower_bound(events.begin(), events.end(), view.requested.start_,
-                                [](const CanEvent &event, double t) { return event.mono_time < t; });
-  auto last = std::upper_bound(first, events.end(), view.requested.end,
-                               [](double t, const CanEvent &event) { return t < event.mono_time; });
-  view.count = static_cast<size_t>(std::distance(first, last));
-  if (first != last) {
-    view.first_time = first->mono_time;
+  bool any = false;
+  for (const CanEventChunk &chunk : it->second.chunks) {
+    if (chunk.range.valid() && chunk.range.start_ > view.requested.end) break;
+    if (chunk.range.valid() && chunk.range.end < view.requested.start_) continue;
+    const auto first = std::lower_bound(chunk.events.begin(), chunk.events.end(), view.requested.start_,
+                                        [](const CanEvent &event, double t) { return event.mono_time < t; });
+    const auto last = std::upper_bound(first, chunk.events.end(), view.requested.end,
+                                       [](double t, const CanEvent &event) { return t < event.mono_time; });
+    if (first == last) continue;
+    view.count += static_cast<size_t>(std::distance(first, last));
+    if (!any || first->mono_time < view.first_time) view.first_time = first->mono_time;
     const auto latest = std::prev(last);
-    view.last_time = latest->mono_time;
-    if (with_data) view.latest_data = latest->data;
+    if (!any || latest->mono_time >= view.last_time) {
+      view.last_time = latest->mono_time;
+      if (with_data) view.latest_data = latest->data;
+    }
+    any = true;
   }
   view.coverage = coverageFor(view.requested, it->second.coverage);
   return view;
@@ -428,21 +462,34 @@ std::vector<double> Store::byte_change_times(const MessageId &id, TimeRange rang
   if (it == can_events_.end() || byte_count == 0) return last_change;
 
   const TimeRange wanted = orderedRange(range.start_, range.end);
-  const auto &events = it->second.events;
-  auto first = std::lower_bound(events.begin(), events.end(), wanted.start_,
-                                [](const CanEvent &event, double t) { return event.mono_time < t; });
-  auto last = std::upper_bound(first, events.end(), wanted.end,
-                               [](double t, const CanEvent &event) { return t < event.mono_time; });
+  // The window is a ~1 s tail, so gathering across chunks stays tiny (~1 chunk, <=~100 events).
+  std::vector<const CanEvent *> window;
+  for (const CanEventChunk &chunk : it->second.chunks) {
+    if (chunk.range.valid() && chunk.range.start_ > wanted.end) break;
+    if (chunk.range.valid() && chunk.range.end < wanted.start_) continue;
+    const auto lo = std::lower_bound(chunk.events.begin(), chunk.events.end(), wanted.start_,
+                                     [](const CanEvent &event, double t) { return event.mono_time < t; });
+    for (auto e = lo; e != chunk.events.end() && e->mono_time <= wanted.end; ++e) window.push_back(&*e);
+  }
+  if (!std::is_sorted(window.begin(), window.end(), [](const CanEvent *a, const CanEvent *b) {
+        return eventLess(*a, *b);
+      })) {
+    std::stable_sort(window.begin(), window.end(), [](const CanEvent *a, const CanEvent *b) {
+      return eventLess(*a, *b);
+    });
+  }
+  const auto first = window.begin();
+  const auto last = window.end();
   size_t resolved = 0;
   for (auto e = last; e != first && resolved < byte_count;) {
     --e;
     if (e == first) break;
-    const std::vector<uint8_t> &cur = e->data;
-    const std::vector<uint8_t> &prev = std::prev(e)->data;
+    const std::vector<uint8_t> &cur = (*e)->data;
+    const std::vector<uint8_t> &prev = (*std::prev(e))->data;
     const size_t n = std::min({cur.size(), prev.size(), byte_count});
     for (size_t b = 0; b < n; ++b) {
       if (!std::isfinite(last_change[b]) && cur[b] != prev[b]) {
-        last_change[b] = e->mono_time;
+        last_change[b] = (*e)->mono_time;
         ++resolved;
       }
     }
@@ -453,7 +500,7 @@ std::vector<double> Store::byte_change_times(const MessageId &id, TimeRange rang
 size_t Store::staged_batch_count() const {
   // Sample staged count under mutex because stage() can append concurrently.
   std::lock_guard lock(staged_mutex_);
-  return staged_batches_.size();
+  return staged_batches_.size() + carryover_batches_.size();
 }
 
 std::vector<std::string> Store::series_paths() const {

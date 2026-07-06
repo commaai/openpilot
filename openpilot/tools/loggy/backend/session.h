@@ -13,6 +13,7 @@
 #include "tools/loggy/shell/workspace.h"
 
 #include <filesystem>
+#include <future>
 #include <array>
 #include <string>
 #include <utility>
@@ -97,6 +98,9 @@ private:
   bool apply_dbc_selection(std::string &error);
 
   RouteIngestor route_ingest_;
+  // In-flight auto DBC parse (fingerprint arrival mid-load): parsed on a worker, adopted in
+  // begin_frame — parsing ~10k-line opendbc files on the UI thread dropped a frame.
+  std::future<std::pair<std::string, std::shared_ptr<DBCFile>>> pending_dbc_load_;
   LiveCerealPoller live_poller_;
   std::vector<TimelineSpan> route_timeline_spans_;
   TimeRange live_range_;

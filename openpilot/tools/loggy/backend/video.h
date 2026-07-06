@@ -39,7 +39,8 @@ struct CameraFrameIndexEntry {
   int segment = -1;
   int decode_index = -1;
   uint32_t frame_id = 0;
-  std::string path;
+  // The file path lives per SEGMENT in CameraFeedIndex::segment_files — a copy here made every
+  // index rebuild allocate ~19k strings per view, a measured 40+ ms UI-thread hitch during load.
 };
 
 struct CameraDecodeKey {

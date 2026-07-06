@@ -136,12 +136,19 @@ private:
   };
 
   struct CanState {
-    std::vector<CanEvent> events;
+    // Sorted-by-start chunk list, merged lazily at query time: the drain APPENDS a chunk
+    // instead of re-copying the id's whole history (mergeEvents was a measured 20 ms+ UI-thread
+    // hitch per drained sub-batch late in a route load). Chunks come one per (id, segment), so
+    // queries walk ~segment-count chunks with a binary search each.
+    std::vector<CanEventChunk> chunks;
     std::vector<TimeRange> coverage;
   };
 
   mutable std::mutex staged_mutex_;
   std::vector<StoreBatch> staged_batches_;
+  // Budget leftovers from the previous begin_frame, drained first (FIFO) — pushing them back
+  // onto the FRONT of staged_batches_ shifted thousands of queued batches per frame mid-load.
+  std::vector<StoreBatch> carryover_batches_;
 
   std::unordered_map<std::string, SeriesState> series_;
   std::unordered_map<MessageId, CanState> can_events_;

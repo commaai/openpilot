@@ -310,7 +310,6 @@ TEST_CASE("Video helpers build camera feed indexes from route segments and encod
   CHECK(road.entries[0].decode_index == 10);
   CHECK(road.entries[0].frame_id == 100);
   CHECK(road.entries[1].decode_index == 11);
-  CHECK(road.entries[1].path == "fcamera0.hevc");
 
   const auto frame = loggy::camera_frame_at_time(road, 0.09);
   REQUIRE(frame.has_value());
@@ -324,7 +323,7 @@ TEST_CASE("Video helpers build camera feed indexes from route segments and encod
   REQUIRE(wide.entries.size() == 1);
   CHECK(wide.entries[0].decode_index == 44);
   CHECK(wide.entries[0].frame_id == 44);
-  CHECK(wide.entries[0].path == "ecamera1.hevc");
+  CHECK(wide.segment_files[0].path == "ecamera1.hevc");
 
   CHECK(loggy::camera_view_from_layout_name("driver") == loggy::CameraViewKind::Driver);
   CHECK(loggy::camera_view_from_layout_name("wide_road") == loggy::CameraViewKind::WideRoad);
@@ -415,7 +414,6 @@ TEST_CASE("Camera frame decoder reports asynchronous load failures") {
     .segment = 0,
     .decode_index = 0,
     .frame_id = 0,
-    .path = "/tmp/loggy_missing_camera_file.hevc",
   });
 
   loggy::CameraFrameDecoder decoder;

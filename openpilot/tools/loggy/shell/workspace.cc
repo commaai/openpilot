@@ -445,7 +445,7 @@ void draw_empty_pane(Session &, PaneInstance &pane) {
 
 static const PaneType kPaneTypes[] = {
   {"empty", "Empty", draw_empty_pane},
-  {"plot", "Plot", draw_plot_pane},
+  {"plot", "Plot", draw_plot_pane, draw_plot_context_menu},
   {"messages", "Messages", draw_messages_pane},
   {"binary", "Binary", draw_binary_pane},
   {"dbc", "DBC", draw_dbc_pane},

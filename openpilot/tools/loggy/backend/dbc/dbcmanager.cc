@@ -29,6 +29,15 @@ bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name
   return true;
 }
 
+void DBCManager::adopt(const SourceSet &sources, std::shared_ptr<DBCFile> file) {
+  if (file == nullptr) return;
+  ++generation_;
+  for (auto s : sources) {
+    dbc_files[s] = file;
+  }
+  ++file_set_generation_;
+}
+
 bool DBCManager::open(const SourceSet &sources, const std::string &name, const std::string &content, std::string &error) {
   ++generation_;
   try {

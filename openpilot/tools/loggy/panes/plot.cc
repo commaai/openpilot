@@ -524,6 +524,10 @@ struct PlotTransientState {
   // cap and Undo Zoom could no longer reach the pre-gesture view.
   std::optional<TimeRange> zoom_gesture_origin;
   double zoom_last_change_at = 0.0;
+  // Set from the context menu (a menu item can't open a popup directly); consumed by
+  // draw_plot_pane at pane scope on the next frame.
+  bool open_series_selector = false;
+  bool open_y_limits = false;
 };
 
 PlotTransientState &plot_transient_state(PaneInstance &pane) {
@@ -586,9 +590,6 @@ std::string plot_coverage_summary(const std::vector<PreparedPlotSeries> &series)
 bool draw_plot_series_selector(const Store &store, PaneInstance *pane) {
   if (pane == nullptr) return false;
   bool changed = false;
-  if (ImGui::GetContentRegionAvail().x > 100.0f) ImGui::SameLine();
-  if (ImGui::Button("+ Series")) ImGui::OpenPopup("##plot_series_selector");
-
   if (ImGui::BeginPopup("##plot_series_selector")) {
     PlotTransientState &state = plot_transient_state(*pane);
     ImGui::SetNextItemWidth(340.0f);
@@ -627,31 +628,6 @@ bool draw_plot_series_selector(const Store &store, PaneInstance *pane) {
 }
 
 // Chip: drag source (cross-plot drop) plus an "x" close button to remove the series.
-bool draw_plot_series_drag_sources(PaneInstance *pane, const std::vector<PlotSeriesRequest> &requests) {
-  bool removed = false;
-  if (requests.empty() || pane == nullptr) return removed;
-  for (size_t i = 0; i < requests.size(); ++i) {
-    const PlotSeriesRequest &request = requests[i];
-    if (i > 0 && ImGui::GetContentRegionAvail().x > 150.0f) ImGui::SameLine();
-    ImGui::PushID(static_cast<int>(i));
-    const std::string label = request.label.empty() ? plot_label_from_path(request.path) : request.label;
-    const auto &palette = theme().plot_series_palette;
-    ImGui::TextColored(palette[i % palette.size()], "%s", label.c_str());
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-      ImGui::SetDragDropPayload(kLoggySeriesPathPayload, request.path.c_str(), request.path.size() + 1);
-      ImGui::TextUnformatted(request.path.c_str());
-      ImGui::EndDragDropSource();
-    }
-    ImGui::SameLine(0.0f, 4.0f);
-    if (ImGui::SmallButton("x")) {
-      pane->state_json = plot_state_without_series(pane->state_json, request.path);
-      removed = true;
-    }
-    ImGui::PopID();
-  }
-  return removed;
-}
-
 bool accept_series_drop(PaneInstance *pane) {
   bool changed = false;
   if (!ImGui::BeginDragDropTarget()) return false;
@@ -785,16 +761,10 @@ void push_zoom_history(std::vector<PlotZoomRange> *history, TimeRange range) {
 }  // namespace
 
 void draw_plot_pane(Session &session, PaneInstance &pane) {
-  // Compact toolbar: same controls (Style/Y/+Series/Undo Zoom), tighter padding so the chart
-  // gets the vertical space the coverage line used to take (that line is now a hover tooltip).
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 2.0f));
+  // jotpluggler look: no toolbar, no chip row — the chart fills the pane, and every control
+  // (add series, style, y limits, undo zoom) lives in the right-click menu.
   PlotSeriesStyle style = parse_plot_series_style(pane.state_json);
   PlotYLimits y_limits = parse_plot_y_limits(pane.state_json);
-  if (draw_plot_display_controls(&style, &y_limits)) {
-    pane.state_json = plot_state_with_display_options(pane.state_json, style, y_limits);
-  }
-  draw_plot_series_selector(session.store, &pane);
 
   // Browser double-click lands here: the first plot pane drawn claims the pending series.
   if (!session.pending_plot_series.empty()) {
@@ -803,18 +773,22 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   }
 
   PlotTransientState &state = plot_transient_state(pane);
-  std::vector<PlotZoomRange> zoom_history = parse_plot_zoom_history(pane.state_json);
-  if (ImGui::GetContentRegionAvail().x > 112.0f) ImGui::SameLine();
-  const bool undo_disabled = zoom_history.empty();
-  if (undo_disabled) ImGui::BeginDisabled();
-  if (ImGui::Button("Undo Zoom")) {
-    const PlotZoomRange previous = zoom_history.back();
-    zoom_history.pop_back();
-    session.view_range.set_range({previous.start_, previous.end});
-    pane.state_json = plot_state_with_zoom_history(pane.state_json, zoom_history);
+  if (state.open_series_selector) {
+    state.open_series_selector = false;
+    ImGui::OpenPopup("##plot_series_selector");
   }
-  if (undo_disabled) ImGui::EndDisabled();
-  ImGui::PopStyleVar(2);
+  draw_plot_series_selector(session.store, &pane);
+  if (state.open_y_limits) {
+    state.open_y_limits = false;
+    ImGui::OpenPopup("##plot_y_limits");
+  }
+  if (ImGui::BeginPopup("##plot_y_limits")) {
+    if (draw_plot_display_controls(&style, &y_limits)) {
+      pane.state_json = plot_state_with_display_options(pane.state_json, style, y_limits);
+    }
+    ImGui::EndPopup();
+  }
+  std::vector<PlotZoomRange> zoom_history = parse_plot_zoom_history(pane.state_json);
 
   const TimeRange range = session.view_range.range();
 
@@ -826,7 +800,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   const PlotYAxisBounds y_bounds = compute_plot_y_axis_bounds(series, y_limits);
 
   const std::string coverage_summary = plot_coverage_summary(series);
-  const bool series_removed = draw_plot_series_drag_sources(&pane, requests);
+  const bool series_removed = false;
 
   bool has_points = false;
   size_t label_width = 0;
@@ -856,6 +830,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
     ImPlot::SetupAxisFormat(ImAxis_X1, "%.1f");
     ImPlot::SetupAxisFormat(ImAxis_Y1, "%.6g");
     ImPlot::SetupAxisLinks(ImAxis_X1, &x_min, &x_max);
+    ImPlot::SetupMouseText(ImPlotLocation_SouthEast, ImPlotMouseTextFlags_NoAuxAxes);
     ImPlot::SetupAxisLimitsConstraints(ImAxis_X1, session.playback.route_range().start_,
                                        session.playback.route_range().end);
     if (y_bounds.active) ImPlot::SetupAxisLimits(ImAxis_Y1, y_bounds.min, y_bounds.max, ImPlotCond_Always);
@@ -868,7 +843,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
       const PlotSeriesStyle item_style = plot_effective_series_style(item, style);
       ImPlotSpec spec;
       spec.LineColor = plot_color_for_request(item.request, i);
-      spec.LineWeight = item_style == PlotSeriesStyle::Step ? 1.8f : 2.0f;
+      spec.LineWeight = item_style == PlotSeriesStyle::Step ? 1.8f : 2.25f;
       if (item_style == PlotSeriesStyle::Step) {
         spec.Flags = ImPlotStairsFlags_PreStep;
       } else if (item_style == PlotSeriesStyle::Scatter) {
@@ -897,20 +872,6 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
     tracker_spec.LineWeight = 1.0f;
     tracker_spec.Flags = ImPlotItemFlags_NoLegend;
     ImPlot::PlotInfLines("##tracker", &tracker, 1, tracker_spec);
-
-    if (ImPlot::IsPlotHovered()) {
-      const double hover_t = ImPlot::GetPlotMousePos().x;
-      ImGui::BeginTooltip();
-      ImGui::TextUnformatted(coverage_summary.c_str());
-      ImGui::Separator();
-      ImGui::Text("t %.3f", hover_t);
-      for (const PreparedPlotSeries &item : series) {
-        if (item.xs.empty() || item.xs.size() != item.ys.size()) continue;
-        const bool stairs = plot_effective_series_style(item, style) == PlotSeriesStyle::Step;
-        ImGui::Text("%s %.6g", item.request.label.c_str(), plot_sample_at_time(item.xs, item.ys, stairs, hover_t));
-      }
-      ImGui::EndTooltip();
-    }
 
     // Seek on RELEASE of a plain left click (press starts a pan, so press must not seek); a
     // plain RIGHT click opens the pane context menu runtime.cc owns — ImPlot holds the button
@@ -955,6 +916,52 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
     push_zoom_history(&zoom_history, *state.zoom_gesture_origin);
     pane.state_json = plot_state_with_zoom_history(pane.state_json, zoom_history);
     state.zoom_gesture_origin.reset();
+  }
+}
+
+void draw_plot_context_menu(Session &session, PaneInstance &pane) {
+  PlotTransientState &state = plot_transient_state(pane);
+  if (ImGui::MenuItem("Add Series...")) state.open_series_selector = true;
+
+  PlotSeriesStyle style = parse_plot_series_style(pane.state_json);
+  PlotYLimits y_limits = parse_plot_y_limits(pane.state_json);
+  if (ImGui::BeginMenu("Style")) {
+    const auto pick = [&](const char *label, PlotSeriesStyle value) {
+      if (ImGui::MenuItem(label, nullptr, style == value)) {
+        pane.state_json = plot_state_with_display_options(pane.state_json, value, y_limits);
+      }
+    };
+    pick("Auto", PlotSeriesStyle::Auto);
+    pick("Line", PlotSeriesStyle::Line);
+    pick("Step", PlotSeriesStyle::Step);
+    pick("Scatter", PlotSeriesStyle::Scatter);
+    ImGui::EndMenu();
+  }
+  if (ImGui::MenuItem("Edit Y Limits...")) state.open_y_limits = true;
+
+  const std::vector<PlotSeriesRequest> requests = parse_plot_series_requests(pane.state_json);
+  if (!requests.empty() && ImGui::BeginMenu("Remove Series")) {
+    for (const PlotSeriesRequest &request : requests) {
+      if (ImGui::MenuItem(request.label.c_str())) {
+        pane.state_json = plot_state_without_series(pane.state_json, request.path);
+      }
+    }
+    ImGui::EndMenu();
+  }
+  if (ImGui::MenuItem("Remove All Series", nullptr, false, !requests.empty())) {
+    pane.state_json = R"({"series": []})";
+  }
+  ImGui::Separator();
+
+  std::vector<PlotZoomRange> zoom_history = parse_plot_zoom_history(pane.state_json);
+  if (ImGui::MenuItem("Undo Zoom", nullptr, false, !zoom_history.empty())) {
+    const PlotZoomRange previous = zoom_history.back();
+    zoom_history.pop_back();
+    session.view_range.set_range({previous.start_, previous.end});
+    pane.state_json = plot_state_with_zoom_history(pane.state_json, zoom_history);
+  }
+  if (ImGui::MenuItem("Zoom Out")) {
+    session.view_range.set_range(session.playback.route_range());
   }
 }
 

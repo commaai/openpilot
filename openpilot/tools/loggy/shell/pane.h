@@ -17,6 +17,9 @@ struct PaneType {
   const char *id = "";
   const char *display_name = "";
   PaneDrawFn draw = nullptr;
+  // Optional extra items appended to the shared right-click pane menu ("pane_context") — the
+  // shell owns the generic entries (split/type/close); a pane adds its own here.
+  PaneDrawFn draw_context_menu = nullptr;
 };
 
 const PaneType *pane_type(std::string_view id);

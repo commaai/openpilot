@@ -95,16 +95,23 @@ int clamp_decode_index(uint64_t frame_id) {
   return static_cast<int>(std::min<uint64_t>(frame_id, static_cast<uint64_t>(std::numeric_limits<int>::max())));
 }
 
-DecodeRequest request_for_entry(CameraViewKind view,
+std::string segment_path_for(const CameraFeedIndex &index, int segment) {
+  for (const CameraSegmentFile &file : index.segment_files) {
+    if (file.segment == segment) return file.path;
+  }
+  return {};
+}
+
+DecodeRequest request_for_entry(const CameraFeedIndex &index,
                                 const CameraFrameIndexEntry &frame,
                                 uint64_t serial,
                                 uint64_t generation,
                                 bool display) {
   return DecodeRequest{
-    .key = CameraDecodeKey{.view = view, .segment = frame.segment, .decode_index = frame.decode_index},
+    .key = CameraDecodeKey{.view = index.view, .segment = frame.segment, .decode_index = frame.decode_index},
     .frame_id = frame.frame_id,
     .timestamp = frame.timestamp,
-    .path = frame.path,
+    .path = segment_path_for(index, frame.segment),
     .serial = serial,
     .generation = generation,
     .display = display,
@@ -196,8 +203,7 @@ CameraFeedIndex build_camera_feed_index(const std::vector<RouteSegment> &segment
   index.entries.reserve(count);
   for (size_t i = 0; i < count; ++i) {
     const int segment_number = rounded_int(segment_numbers.points[i].value);
-    const auto path_it = segment_paths.find(segment_number);
-    if (path_it == segment_paths.end()) continue;
+    if (segment_paths.find(segment_number) == segment_paths.end()) continue;
     const int decode_index = rounded_int(decode_indices.points[i].value);
     const uint32_t frame_id = !frame_ids.points.empty()
       ? rounded_frame_id(frame_ids.points[i].value)
@@ -207,7 +213,6 @@ CameraFeedIndex build_camera_feed_index(const std::vector<RouteSegment> &segment
       .segment = segment_number,
       .decode_index = decode_index,
       .frame_id = frame_id,
-      .path = path_it->second,
     });
   }
 
@@ -311,7 +316,7 @@ public:
       const uint64_t serial = ++latest_serial_;
       queued_requests_.clear();
       pending_result_.reset();
-      queued_requests_.push_back(request_for_entry(index_.view, frame, serial, generation_, true));
+      queued_requests_.push_back(request_for_entry(index_, frame, serial, generation_, true));
       queuePrefetchLocked(frame_index, serial);
       active_key_ = key;
       failed_key_.reset();
@@ -410,7 +415,7 @@ private:
         return request.key == key;
       });
       if (already_queued) continue;
-      queued_requests_.push_back(request_for_entry(index_.view, frame, serial, generation_, false));
+      queued_requests_.push_back(request_for_entry(index_, frame, serial, generation_, false));
     }
   }
 

@@ -48,9 +48,11 @@ check "std::function" \
 check "getter pairs" \
   "$(rg_count '\(\) (const )?\{ return [a-z_]+_; \}' backend/session.h)" \
   0
+# 14->15 (2026-07-06): draw_plot_context_menu — the pane context-menu hook (PaneType
+# draw_context_menu) is the seam that keeps plot menu items out of runtime.cc.
 check "pane header fns" \
   "$(awk_count '/^[A-Za-z].*\(/ {n++} END {print n+0}' panes/*.h)" \
-  14
+  15
 # 73->84 (2026-07-05): scan/history job+page types now cross the pane<->backend boundary;
 # the REVIEW 2.3 boundary rule outranks the raw count.
 # 84->85 (2026-07-06): owner-directed `struct Theme` (shell/theme.h) — every color token as one
@@ -88,11 +90,24 @@ check "named header structs" \
 # cabana, editor buffers keyed on DBC generation, wheel-zoom history coalescing, History tail
 # settle, abort raised under the lock; ->22108 plot input map matches jotpluggler (left-drag
 # pan, right-drag box zoom, right-click menu) with the pane popup opened from the pane scope;
-# ->22114 LOGGY_AUTOSAVE_DIR override so tests/parallel sessions isolate workspace drafts.
+# ->22114 LOGGY_AUTOSAVE_DIR override so tests/parallel sessions isolate workspace drafts;
+# ->22225 (2026-07-06) never-drop-frames round 2, measured via the new LOGGY_FRAME_TRACE:
+# CAN storage becomes lazy-merged chunk lists (mergeEvents re-copied an id's whole history per
+# drained sub-batch — 20 ms+ per frame late in load), camera index entries drop their per-entry
+# path string (~19k allocs x4 views per rebuild), logs use sort+inplace_merge of the incoming
+# slice, pane close X, split creates an empty plot, jotpluggler 10-color curve palette;
+# ->22266 opus behavior-diff round 1 — input map corrected to the references' actual layout
+# (left-drag box-zoom, right-drag pan; the earlier "jot pans with left" claim was a subagent
+# misread of jot's source), async auto-DBC parse (DBCManager::adopt), white plot canvas, amber
+# selection box, jot legend chrome + SE mouse readout (custom hover tooltip dropped), 2.25 line
+# weight, jot grid/tracker colors, cabana 36px binary cells, 64-chunk staging sub-batches;
+# ->22308 plot controls into the right-click menu via the PaneType draw_context_menu hook
+# (toolbar + chip rows gone, jot look), drain carryover buffer, camera rebuild staggered off
+# drain frames, settings modal fixed field widths (AlwaysAutoResize shrink loop).
 # Genuine defect-cluster capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  22114
+  22308
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.
@@ -101,9 +116,11 @@ check "product LOC" \
 # ->1041 (2026-07-06): tab close/rename/duplicate/context menu + full pane context menu (the
 # jotpluggler-parity round). If runtime.cc keeps growing, split the workspace chrome (tab bar,
 # pane menus, splitters) into shell/workspace_ui.cc — same seam as the earlier A8 split.
+# ->1074 (2026-07-06): pane close X + LOGGY_FRAME_TRACE stage attribution. The workspace_ui.cc
+# split threshold from the previous note stands.
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
-  1041
+  1074
 check "pane-local statics" \
   "$(rg_count '^\s+static ' panes -g'*.cc')" \
   0

@@ -84,13 +84,18 @@ const Theme kDarculaTheme = {
   .plot_tracker_line = rgb(220, 220, 220, 0.72f),
   .plot_drop_target_fill = rgb(47, 101, 202, 0.16f),
   .plot_drop_target_border = rgb(75, 135, 230, 0.90f),
-  .plot_selection = rgb(47, 101, 202, 0.25f),
+  .plot_selection = rgb(252, 211, 77, 0.28f),
   .plot_series_palette = {
-    rgb(89, 168, 250),
-    rgb(84, 199, 140),
-    rgb(250, 179, 77),
-    rgb(217, 122, 199),
-    rgb(240, 97, 97),
+    rgb(35, 107, 180),
+    rgb(220, 82, 52),
+    rgb(67, 160, 71),
+    rgb(243, 156, 18),
+    rgb(123, 97, 255),
+    rgb(0, 150, 136),
+    rgb(214, 48, 49),
+    rgb(52, 73, 94),
+    rgb(197, 90, 17),
+    rgb(96, 125, 139),
   },
 
   .binary_idle_cell = rgb(68, 71, 73),
@@ -180,21 +185,26 @@ const Theme kLightTheme = {
   .table_border_light = rgb(208, 212, 216),
   .table_row_bg_alt = rgb(0, 0, 0, 0.03f),
 
-  .plot_bg = rgb(248, 249, 250),
-  .plot_legend_bg = rgb(250, 250, 251, 0.55f),
-  .plot_legend_border = rgb(194, 198, 204, 0.85f),
-  .plot_grid = rgb(206, 211, 216, 0.55f),
+  .plot_bg = rgb(255, 255, 255),
+  .plot_legend_bg = rgb(248, 249, 251, 0.92f),
+  .plot_legend_border = rgb(168, 175, 184),
+  .plot_grid = rgb(188, 196, 206),
   .plot_crosshair = rgb(60, 64, 68, 0.45f),
-  .plot_tracker_line = rgb(60, 64, 68, 0.55f),
+  .plot_tracker_line = rgb(108, 118, 128, 0.70f),
   .plot_drop_target_fill = rgb(74, 132, 214, 0.14f),
   .plot_drop_target_border = rgb(58, 116, 196, 0.85f),
-  .plot_selection = rgb(74, 132, 214, 0.22f),
+  .plot_selection = rgb(252, 211, 77, 0.28f),
   .plot_series_palette = {
-    rgb(43, 105, 199),
-    rgb(41, 143, 97),
-    rgb(199, 128, 25),
-    rgb(163, 66, 148),
-    rgb(191, 59, 59),
+    rgb(35, 107, 180),
+    rgb(220, 82, 52),
+    rgb(67, 160, 71),
+    rgb(243, 156, 18),
+    rgb(123, 97, 255),
+    rgb(0, 150, 136),
+    rgb(214, 48, 49),
+    rgb(52, 73, 94),
+    rgb(197, 90, 17),
+    rgb(96, 125, 139),
   },
 
   .binary_idle_cell = rgb(234, 237, 240),
@@ -385,9 +395,9 @@ void apply_theme(ThemeKind kind) {
   ImPlotStyle &plot_style = ImPlot::GetStyle();
   plot_style.PlotBorderSize = 1.0f;
   plot_style.MinorAlpha = 0.65f;
-  plot_style.LegendPadding = ImVec2(4.0f, 3.0f);
-  plot_style.LegendInnerPadding = ImVec2(4.0f, 2.0f);
-  plot_style.LegendSpacing = ImVec2(5.0f, 1.0f);
+  plot_style.LegendPadding = ImVec2(56.0f, 10.0f);
+  plot_style.LegendInnerPadding = ImVec2(6.0f, 3.0f);
+  plot_style.LegendSpacing = ImVec2(7.0f, 2.0f);
   plot_style.PlotPadding = ImVec2(4.0f, 8.0f);
   plot_style.FitPadding = ImVec2(0.02f, 0.05f);
   plot_style.Colors[ImPlotCol_FrameBg] = t.frame_bg;
@@ -395,19 +405,21 @@ void apply_theme(ThemeKind kind) {
   plot_style.Colors[ImPlotCol_PlotBorder] = t.chrome_border;
   plot_style.Colors[ImPlotCol_LegendBg] = t.plot_legend_bg;
   plot_style.Colors[ImPlotCol_LegendBorder] = t.plot_legend_border;
+  plot_style.Colors[ImPlotCol_LegendText] = t.text;
   plot_style.Colors[ImPlotCol_AxisGrid] = t.plot_grid;
   plot_style.Colors[ImPlotCol_Crosshairs] = t.plot_crosshair;
   plot_style.Colors[ImPlotCol_Selection] = t.plot_selection;
 
-  // jotpluggler's plot input map: left-drag pans, wheel zooms, right-drag box-zooms — which
-  // leaves a plain right CLICK free to open the pane context menu (plot.cc opens it manually;
-  // ImPlot holds the button as active, so BeginPopupContextWindow alone never fires there).
+  // The references' actual plot input map (jotpluggler app.cc, Qt cabana charts): LEFT-drag is
+  // the box-zoom rubber band, RIGHT-drag pans, wheel zooms. A plain left click seeks and a
+  // plain right click opens the pane menu — plot.cc gates both on "no drag" and opens the menu
+  // manually (ImPlot holds the right button active for pan, suppressing the window popup).
   ImPlot::MapInputDefault();
   ImPlotInputMap &input_map = ImPlot::GetInputMap();
-  input_map.Pan = ImGuiMouseButton_Left;
+  input_map.Pan = ImGuiMouseButton_Right;
   input_map.PanMod = ImGuiMod_None;
-  input_map.Select = ImGuiMouseButton_Right;
-  input_map.SelectCancel = ImGuiMouseButton_Left;
+  input_map.Select = ImGuiMouseButton_Left;
+  input_map.SelectCancel = ImGuiMouseButton_Right;
   input_map.SelectMod = ImGuiMod_None;
 }
 

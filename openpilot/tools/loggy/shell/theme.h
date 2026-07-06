@@ -86,7 +86,7 @@ struct Theme {
   ImVec4 plot_drop_target_fill;
   ImVec4 plot_drop_target_border;
   ImVec4 plot_selection;
-  std::array<ImVec4, 5> plot_series_palette;
+  std::array<ImVec4, 10> plot_series_palette;  // jotpluggler's exact curve palette
 
   // Binary grid
   ImVec4 binary_idle_cell;

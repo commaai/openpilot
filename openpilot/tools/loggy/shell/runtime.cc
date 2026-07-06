@@ -473,6 +473,18 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
   ImGui::PushStyleColor(ImGuiCol_Text, theme().text_muted);
   ImGui::TextUnformatted(pane.title.empty() ? kDefaultPaneTitle : pane.title.c_str());
   ImGui::PopStyleColor();
+  // jotpluggler's close X in the pane's top-right corner (closing the last pane resets it).
+  ImGui::SameLine(std::max(0.0f, ImGui::GetWindowContentRegionMax().x - 22.0f));
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleColor(ImGuiCol_Text, theme().text_muted);
+  if (ImGui::SmallButton("×##close_pane")) {
+    app.pending_pane_action = AppState::PaneAction{
+      .type = AppState::PaneAction::Type::Close,
+      .tab_index = tab_index,
+      .pane_index = pane_index,
+    };
+  }
+  ImGui::PopStyleColor(2);
 
   if (ImGui::BeginPopupContextWindow("pane_context")) {
     if (ImGui::MenuItem("Split Left")) request_split(app, tab_index, pane_index, PaneSplit::Left);
@@ -495,16 +507,9 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
       }
       ImGui::EndMenu();
     }
-    if (pane.type == "plot") {
-      if (ImGui::MenuItem("Remove All Series")) {
-        pane.state_json = R"({"series": []})";
-        pane.transient_state.reset();
-        record_workspace_change(app.session.workspace, app.workspace_history,
-                               app.session.workspace_layout_path, app.workspace_status, "Cleared plot series");
-      }
-      if (ImGui::MenuItem("Reset Zoom")) {
-        app.session.view_range.set_range(app.session.playback.route_range());
-      }
+    if (const PaneType *type = pane_type(pane.type); type != nullptr && type->draw_context_menu != nullptr) {
+      ImGui::Separator();
+      type->draw_context_menu(app.session, pane);
     }
     ImGui::Separator();
     if (ImGui::MenuItem("Close Pane")) {
@@ -668,7 +673,10 @@ void apply_pending_pane_action(AppState &app) {
     return;
   }
 
-  PaneInstance pane = make_pane("empty", "...");
+  // jotpluggler semantics: a split yields an empty PLOT (drop hint showing), ready for a drag
+  // or browser double-click. Change Type covers everything else.
+  PaneInstance pane = make_pane("plot", "Plot");
+  pane.state_json = R"({"series": []})";
   if (split_pane(&tab, action.pane_index, action.split, std::move(pane))) {
     record_workspace_change(app.session.workspace, app.workspace_history, app.session.workspace_layout_path,
                            app.workspace_status, "Autosaved workspace draft");
@@ -977,11 +985,13 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   app.last_playback_update = playback_now;
   app.session.playback.advance(playback_dt);
   app.session.begin_frame();
+  const auto after_session = Clock::now();
   maybe_autostart_playback(app);
 
   draw_shell(app);
   g_escape_pressed = false;
   ImGui::Render();
+  const auto after_draw = Clock::now();
 
   const ImVec4 clear = clear_color();
   glViewport(0, 0, framebuffer_width, framebuffer_height);
@@ -990,6 +1000,22 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   const auto cpu_end = Clock::now();
   app.frame_stats.add(std::chrono::duration<double, std::milli>(cpu_end - cpu_start).count());
+
+  // LOGGY_FRAME_TRACE=<ms>: attribute any frame slower than the threshold to its stage. The
+  // frame-drop hunt lives and dies on this — the HUD says THAT a frame dropped, this says WHY.
+  static const double trace_threshold_ms = [] {
+    const char *env = std::getenv("LOGGY_FRAME_TRACE");
+    return env != nullptr ? std::atof(env) : 0.0;
+  }();
+  if (trace_threshold_ms > 0.0) {
+    const double total = std::chrono::duration<double, std::milli>(cpu_end - cpu_start).count();
+    if (total > trace_threshold_ms) {
+      std::fprintf(stderr, "frame %.2fms: session %.2f draw %.2f render %.2f\n", total,
+                   std::chrono::duration<double, std::milli>(after_session - cpu_start).count(),
+                   std::chrono::duration<double, std::milli>(after_draw - after_session).count(),
+                   std::chrono::duration<double, std::milli>(cpu_end - after_draw).count());
+    }
+  }
 
   if (capture_path != nullptr) {
     save_framebuffer_png(*capture_path, framebuffer_width, framebuffer_height);
