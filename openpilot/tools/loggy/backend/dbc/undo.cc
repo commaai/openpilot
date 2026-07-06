@@ -75,6 +75,15 @@ std::vector<UndoStackEntry> UndoStack::entries() const {
   return rows;
 }
 
+void scope_undo_to_dbc_generation(UndoStack &undo_stack, int current_generation, int &last_generation) {
+  if (last_generation < 0 || current_generation == last_generation) {
+    last_generation = current_generation;
+    return;
+  }
+  undo_stack.clear();
+  last_generation = current_generation;
+}
+
 EditSignalCommand::EditSignalCommand(DBCManager &manager, MessageId id, const Signal &origin, Signal edited)
     : manager_(manager), id_(id) {
   edits_.push_back({origin, std::move(edited)});

@@ -106,6 +106,21 @@ private:
   Msg edited_;
 };
 
+// Undo commands hold a MessageId/signal-name into whatever DBC file happened to be active when
+// they were pushed. When New/Paste/Open/Close All replace the active DBC file set wholesale
+// (DBCManager::file_set_generation() bumps), those commands no longer refer to anything meaningful, so the
+// stack must be dropped rather than carried over. Callers own a small int recording the last
+// generation they observed and pass it in by reference; this is a poll (like the pane state_json
+// cache pattern), not an observer callback, so it composes with any code path that can change the
+// active DBC set, including ones this file never sees.
+//
+// `last_generation` must start at a negative sentinel (e.g. -1). The first call just adopts the
+// current generation as the baseline instead of clearing: a freshly created pane instance (a new
+// tab, a new dock split) has never observed a generation before, and the undo stack may already
+// hold legitimate history for the DBC set that was active before that pane existed — it must not
+// be wiped just because this particular tracker is new.
+void scope_undo_to_dbc_generation(UndoStack &undo_stack, int current_generation, int &last_generation);
+
 bool commit_signal_add(UndoStack &undo_stack, DBCManager &manager, MessageId id,
                        Signal signal, uint32_t msg_size, std::string &error);
 bool commit_signal_edit(UndoStack &undo_stack, DBCManager &manager, MessageId id,

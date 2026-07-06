@@ -17,8 +17,10 @@
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <map>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace loggy {
@@ -101,6 +103,13 @@ struct SignalPaneTransientState {
   std::string loaded_json;
   SignalEditCache edit;
   MessageEditCache message;
+  // Draft edits for signals other than the one currently shown, keyed by (message, original
+  // signal name), so switching the table selection away and back doesn't discard unsaved work.
+  // Bounded by clearing whenever the active DBC file set changes (dbc_generation, below) — a
+  // stale message id or signal name can otherwise never be evicted since selection alone never
+  // shrinks the map.
+  std::map<std::pair<MessageId, std::string>, SignalEditModel> pending_signal_edits;
+  int dbc_generation = -1;
 };
 
 bool signal_color_equal(ColorRGBA a, ColorRGBA b) {
@@ -493,6 +502,41 @@ bool cache_matches_signal(const SignalEditCache &cache, const MessageId &id, con
   return cache.valid && cache.id == id && cache.edit.original_name == signal.name;
 }
 
+bool signal_edit_cache_dirty(const SignalEditCache &cache, const Signal &signal) {
+  return cache.valid && cache.val_desc_valid && signal_edit_model_changed(cache.edit, signal);
+}
+
+// Called before switching the selected signal away from whatever the cache currently holds. If
+// that signal still exists and the cache has unsaved changes for it, stash the edit model so
+// reselecting the same signal restores it instead of silently reloading from the DBC.
+void stash_pending_signal_edit(SignalPaneTransientState &transient, const MessageId &id, Msg *msg) {
+  const SignalEditCache &cache = transient.edit;
+  if (!cache.valid || msg == nullptr) return;
+  const Signal *origin = msg->sig(cache.edit.original_name);
+  if (origin == nullptr || !signal_edit_cache_dirty(cache, *origin)) return;
+  transient.pending_signal_edits[{id, cache.edit.original_name}] = cache.edit;
+}
+
+// Called after switching to a new signal. If a stash exists for it (keyed by its current name,
+// which is also its original_name for any signal not itself mid-rename), load it into the cache
+// and report success so the caller skips the normal fresh-from-DBC reload.
+bool restore_pending_signal_edit(SignalPaneTransientState &transient, const MessageId &id, const Signal &signal) {
+  const auto it = transient.pending_signal_edits.find({id, signal.name});
+  if (it == transient.pending_signal_edits.end()) return false;
+  SignalEditCache &cache = transient.edit;
+  cache.id = id;
+  cache.edit = it->second;
+  cache.val_desc_text = signal_value_descriptions_text(cache.edit.val_desc);
+  cache.val_desc_error.clear();
+  cache.val_desc_valid = true;
+  cache.valid = true;
+  return true;
+}
+
+void discard_pending_signal_edit(SignalPaneTransientState &transient, const MessageId &id, const std::string &original_name) {
+  transient.pending_signal_edits.erase({id, original_name});
+}
+
 void load_message_edit_cache(MessageEditCache *cache, const MessageId &id, const Msg &msg) {
   if (cache == nullptr) return;
   cache->id = id;
@@ -633,7 +677,7 @@ void draw_signal_sparkline(const SignalPaneRow &row) {
 }
 
 void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *state, SignalEditCache *cache,
-                       MessageEditCache *message_cache, bool *changed) {
+                       MessageEditCache *message_cache, SignalPaneTransientState *transient, bool *changed) {
   if (state == nullptr || cache == nullptr || changed == nullptr || state->selected_signal.empty()) return;
 
   Msg *msg = session.dbc.msg(id);
@@ -647,10 +691,15 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
   if (!cache_matches_signal(*cache, id, *signal)) load_signal_edit_cache(cache, id, *signal);
 
   SignalEditModel &edit = cache->edit;
+  const bool dirty = signal_edit_cache_dirty(*cache, *signal);
   ImGui::Separator();
   push_bold_font();
   ImGui::TextUnformatted("Signal");
   pop_bold_font();
+  if (dirty) {
+    ImGui::SameLine();
+    ImGui::TextDisabled("(unapplied edits)");
+  }
 
   ImGui::SetNextItemWidth(180.0f);
   if (input_text_with_hint("Name", "", &edit.name)) *changed = true;
@@ -770,11 +819,14 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
 
   const bool has_edit = cache->val_desc_valid && signal_edit_model_changed(edit, *signal);
   if (!has_edit) ImGui::BeginDisabled();
-  if (ImGui::Button("Apply")) {
+  if (ImGui::Button(has_edit ? "Apply *##signal_apply" : "Apply##signal_apply")) {
     std::string error;
     if (!cache->val_desc_valid) {
       state->edit_error = cache->val_desc_error;
     } else if (apply_signal_edit(session.dbc_undo, session.dbc, id, edit, error)) {
+      if (transient != nullptr) {
+        discard_pending_signal_edit(*transient, id, edit.original_name);
+      }
       state->selected_signal = edit.name;
       state->edit_error.clear();
       cache->valid = false;
@@ -787,6 +839,9 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
 
   if (ImGui::GetContentRegionAvail().x > 72.0f) ImGui::SameLine();
   if (ImGui::Button("Reset")) {
+    if (transient != nullptr) {
+      discard_pending_signal_edit(*transient, id, edit.original_name);
+    }
     load_signal_edit_cache(cache, id, *signal);
     state->edit_error.clear();
     *changed = true;
@@ -796,6 +851,9 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
   if (ImGui::Button("Remove")) {
     std::string error;
     if (remove_signal_edit(session.dbc_undo, session.dbc, id, state->selected_signal, error)) {
+      if (transient != nullptr) {
+        discard_pending_signal_edit(*transient, id, edit.original_name);
+      }
       state->selected_signal.clear();
       state->edit_error.clear();
       cache->valid = false;
@@ -878,6 +936,13 @@ bool draw_signal_row(const SignalPaneRow &row, bool selected) {
 void draw_signal_pane(Session &session, PaneInstance &pane) {
   SignalPaneTransientState &transient_state = signal_pane_transient_state(pane);
   SignalPaneState &state = signal_pane_state(pane, transient_state);
+  // New/Paste/Open/Close All replace the active DBC file set; any stashed per-signal drafts refer
+  // to files that no longer exist, so drop them rather than let them resurface under a coincidental
+  // (id, name) match in whatever gets loaded next.
+  if (transient_state.dbc_generation != session.dbc.file_set_generation()) {
+    transient_state.pending_signal_edits.clear();
+    transient_state.dbc_generation = session.dbc.file_set_generation();
+  }
   SelectionContext &selection = session.selection(pane.selection_group);
   const std::optional<MessageId> selected = selection.has_selected_msg ? std::optional<MessageId>(selection.selected_msg_id) : std::nullopt;
   MessageId id = initial_message_id_for_store(session.store, pane.state_json, selected);
@@ -923,8 +988,12 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
       return row.name == state.selected_signal;
     });
     if (selected_it == rows.end()) {
+      stash_pending_signal_edit(transient_state, id, msg);
       state.selected_signal = rows.front().name;
-      transient_state.edit.valid = false;
+      if (rows.front().signal == nullptr ||
+          !restore_pending_signal_edit(transient_state, id, *rows.front().signal)) {
+        transient_state.edit.valid = false;
+      }
       changed = true;
     }
   }
@@ -950,17 +1019,25 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
   while (clipper.Step()) {
     for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
       const SignalPaneRow &row = rows[static_cast<size_t>(row_idx)];
-      if (draw_signal_row(row, row.from_dbc && row.name == state.selected_signal)) {
-        state.selected_signal = row.from_dbc ? row.name : std::string();
+      const std::string new_selection = row.from_dbc ? row.name : std::string();
+      if (draw_signal_row(row, row.from_dbc && row.name == state.selected_signal) &&
+          new_selection != state.selected_signal) {
+        // Re-clicking the already-selected row is a no-op (ImGui::Selectable reports a click
+        // either way); only a genuine switch may touch the edit cache, and even then the
+        // previous signal's unapplied edits are stashed rather than dropped.
+        stash_pending_signal_edit(transient_state, id, msg);
+        state.selected_signal = new_selection;
         state.edit_error.clear();
-        transient_state.edit.valid = false;
+        if (row.signal == nullptr || !restore_pending_signal_edit(transient_state, id, *row.signal)) {
+          transient_state.edit.valid = false;
+        }
         changed = true;
       }
     }
   }
   ImGui::EndTable();
   if (from_dbc) {
-    draw_signal_editor(session, id, &state, &transient_state.edit, &transient_state.message, &changed);
+    draw_signal_editor(session, id, &state, &transient_state.edit, &transient_state.message, &transient_state, &changed);
   }
   if (changed) save_signal_pane_state(pane, transient_state);
 }

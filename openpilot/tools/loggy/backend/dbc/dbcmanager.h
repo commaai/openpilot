@@ -50,10 +50,17 @@ public:
   inline DBCFile *find_dbc_file(const MessageId &id) { return find_dbc_file(id.source); }
   std::set<DBCFile *> all_dbc_files();
 
+  // Bumped whenever the active DBC file set is replaced wholesale (Open, New/Paste via the
+  // content overload, Close All) rather than edited in place. Callers that cache state keyed to
+  // "the DBC files currently loaded" (undo history, pending edit models) poll this once per
+  // frame and reset when it changes, instead of every open/close call site remembering to do it.
+  int file_set_generation() const { return file_set_generation_; }
+
 private:
   uint64_t generation_ = 0;
   std::map<uint32_t, Msg> empty_msgs_;
   std::map<int, std::shared_ptr<DBCFile>> dbc_files;
+  int file_set_generation_ = 0;
 };
 
 bool parse_source_set(std::string_view text, SourceSet &out, std::string &error);

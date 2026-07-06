@@ -56,12 +56,12 @@ check "pane header fns" \
 check "named header structs" \
   "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
   84
-# 20605->20847 (2026-07-06): parity-fix wave — playhead-bound messages + heatmap + sorting,
-# camera seek-storm guard, find-bits stats fix, preset rebalance, series removal, keyboard
-# stepping, theme tokens. Real capability from the parity audit, not padding.
+# 20605->20950 (2026-07-06): parity-fix wave (all five batches) — live messages heatmap,
+# camera seek guard, find-bits stats, DBC editing protection incl. BE drag-resize, preset
+# rebalance + polish. Audit-driven capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  20847
+  21004
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
   850

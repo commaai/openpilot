@@ -272,6 +272,7 @@ struct DbcPaneTransientState {
   std::string loaded_json;
   OpendbcBrowserCache opendbc;
   DbcSourceAssignCache assign;
+  int dbc_generation = -1;
 };
 
 DbcPaneTransientState &dbc_pane_transient_state(PaneInstance &pane) {
@@ -649,6 +650,10 @@ void draw_dbc_pane(Session &session, PaneInstance &pane) {
   DbcPaneState &state = dbc_pane_state(pane, transient_state);
   bool changed = false;
 
+  // New/Paste/Open/Close All replace the active DBC file set; drop undo history left over from
+  // the previous set instead of letting it silently apply to files it no longer describes.
+  scope_undo_to_dbc_generation(session.dbc_undo, manager.file_set_generation(), transient_state.dbc_generation);
+
   ImGui::SetNextItemWidth(std::clamp(ImGui::GetContentRegionAvail().x * 0.42f, 180.0f, 420.0f));
   if (input_text_with_hint("DBC", "/path/to/file.dbc", &state.path)) {
     changed = true;
@@ -732,7 +737,10 @@ void draw_dbc_pane(Session &session, PaneInstance &pane) {
 
   if (ImGui::GetContentRegionAvail().x > 118.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(std::clamp(ImGui::GetContentRegionAvail().x * 0.38f, 160.0f, 360.0f));
-  if (input_text_with_hint("Save As", "/tmp/loggy.dbc", &state.save_as_path)) {
+  // "Save As" is also the neighboring button's visible label; without a distinct ID suffix (see
+  // the "Choose##dbc_save_as" pattern below) they hash to the same ImGui ID in this scope and the
+  // second widget silently swallows the first's clicks.
+  if (input_text_with_hint("Save As##dbc_save_as_path", "/tmp/loggy.dbc", &state.save_as_path)) {
     changed = true;
   }
   if (ImGui::GetContentRegionAvail().x > 92.0f) ImGui::SameLine();
@@ -749,7 +757,7 @@ void draw_dbc_pane(Session &session, PaneInstance &pane) {
   }
 
   if (ImGui::GetContentRegionAvail().x > 108.0f) ImGui::SameLine();
-  if (ImGui::Button("Save As")) {
+  if (ImGui::Button("Save As##dbc_save_as_button")) {
     if (state.save_as_path.empty()) {
       state.status = "Save As failed: empty path";
     } else if (parse_sources_for_action(state, sources, state.status)) {

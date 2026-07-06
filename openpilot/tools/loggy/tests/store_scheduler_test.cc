@@ -423,7 +423,9 @@ TEST_CASE("Camera frame decoder reports asynchronous load failures") {
   decoder.request_frame(0.0);
 
   std::optional<loggy::DecodedCameraFrame> result;
-  for (int i = 0; i < 100 && !result.has_value(); ++i) {
+  // Generous cap: finishes in milliseconds normally, but the decode worker can be starved for
+  // seconds on a loaded CI box and a tight window turns that into a flake.
+  for (int i = 0; i < 1000 && !result.has_value(); ++i) {
     result = decoder.take_frame();
     if (!result.has_value()) std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }

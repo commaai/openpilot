@@ -25,6 +25,7 @@ bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name
     return false;
   }
 
+  ++file_set_generation_;
   return true;
 }
 
@@ -40,6 +41,7 @@ bool DBCManager::open(const SourceSet &sources, const std::string &name, const s
     return false;
   }
 
+  ++file_set_generation_;
   return true;
 }
 
@@ -101,6 +103,7 @@ void DBCManager::close(DBCFile *dbc_file) {
 void DBCManager::close_all() {
   ++generation_;
   dbc_files.clear();
+  ++file_set_generation_;
 }
 
 void DBCManager::add_signal(const MessageId &id, const Signal &sig) {

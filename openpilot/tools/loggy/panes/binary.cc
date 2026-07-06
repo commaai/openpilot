@@ -105,15 +105,31 @@ std::optional<Signal> binary_signal_from_bit_range(int anchor_bit, int current_b
   return draft;
 }
 
+// Drag anchor/current bits come from the binary grid in "physical" bit-index order: byte i,
+// column c (0=leftmost/MSB..7=rightmost/LSB) is bit_index = i*8 + (7-c). That is exactly the
+// domain little-endian start_bit/lsb/msb already live in (update_msb_lsb: lsb=start_bit,
+// msb=start_bit+size-1 — a contiguous, increasing range).
+//
+// Big-endian (Motorola) start_bit is the *physical* bit index of the MSB, but the signal's
+// occupied bits are only contiguous/increasing in a different domain: flip_bit_pos (an
+// involution: flip_bit_pos(flip_bit_pos(x)) == x) maps a physical bit index to its mirrored
+// position within the same byte. update_msb_lsb defines, for BE: msb = start_bit, and
+// lsb = flip_bit_pos(flip_bit_pos(start_bit) + size - 1); applying flip_bit_pos to both sides
+// gives flip_bit_pos(lsb) = flip_bit_pos(start_bit) + size - 1 — i.e. in the flip_bit_pos'd
+// domain, [flip_bit_pos(start_bit), flip_bit_pos(lsb)] is contiguous and increasing, the same
+// shape as the little-endian case. So: transform physical bit indices with flip_bit_pos before
+// doing the resize's min/max edge math for BE, then transform the result back with the same
+// (self-inverse) function to get the new start_bit. For LE the transform is the identity, so one
+// code path serves both endians.
+int to_signal_bit_domain(bool is_little_endian, int physical_bit) {
+  return is_little_endian ? physical_bit : flip_bit_pos(physical_bit);
+}
+
 std::optional<Signal> binary_resized_signal_from_bit_range(const Msg *msg, const Signal &origin,
                                                            int anchor_bit, int current_bit,
                                                            std::string &error) {
   if (msg == nullptr) {
     error = "no DBC message selected";
-    return std::nullopt;
-  }
-  if (!origin.is_little_endian) {
-    error = "Binary resize currently supports little-endian signals";
     return std::nullopt;
   }
   if (!binary_signal_contains_bit(origin, anchor_bit)) {
@@ -125,19 +141,22 @@ std::optional<Signal> binary_resized_signal_from_bit_range(const Msg *msg, const
     return std::nullopt;
   }
 
-  const int origin_first = origin.start_bit;
-  const int origin_last = origin.start_bit + origin.size - 1;
-  const int keep_edge = std::abs(anchor_bit - origin_first) <= std::abs(anchor_bit - origin_last) ?
+  const bool le = origin.is_little_endian;
+  const int origin_first = to_signal_bit_domain(le, origin.start_bit);
+  const int origin_last = origin_first + origin.size - 1;
+  const int anchor = to_signal_bit_domain(le, anchor_bit);
+  const int current = to_signal_bit_domain(le, current_bit);
+  const int keep_edge = std::abs(anchor - origin_first) <= std::abs(anchor - origin_last) ?
       origin_last : origin_first;
-  const int new_first = std::min(keep_edge, current_bit);
-  const int new_last = std::max(keep_edge, current_bit);
+  const int new_first = std::min(keep_edge, current);
+  const int new_last = std::max(keep_edge, current);
   if (new_first < 0 || new_last >= static_cast<int>(msg->size * 8)) {
     error = "signal bit range must fit in the message";
     return std::nullopt;
   }
 
   Signal copy = origin;
-  copy.start_bit = new_first;
+  copy.start_bit = to_signal_bit_domain(le, new_first);
   copy.size = new_last - new_first + 1;
   copy.max = std::pow(2.0, static_cast<double>(copy.size)) - 1.0;
   copy.update();
@@ -157,17 +176,30 @@ bool binary_signal_overlaps_dbc_bits(const Msg *msg, int start_bit, int size, st
   return false;
 }
 
+// candidate must already have start_bit/size/is_little_endian set (msb/lsb are recomputed here).
+// [start_bit, start_bit+size) is only a valid physical bit range for little-endian signals; a
+// Motorola candidate's occupied bits follow the same msb-anchored, per-byte walk as
+// binary_signal_contains_bit, so this mirrors that walk instead of assuming linear layout.
 bool binary_signal_overlaps_other_dbc_bits(const Msg *msg, const std::string &signal_name,
-                                          int start_bit, int size, std::string &error) {
-  if (msg == nullptr || start_bit < 0 || size <= 0) return false;
-  for (const Signal *signal : msg->signals()) {
-    if (signal == nullptr || signal->name == signal_name) continue;
-    for (int bit = start_bit; bit < start_bit + size; ++bit) {
-      if (binary_signal_contains_bit(*signal, bit)) {
-        error = "selection overlaps signal " + signal->name + " at bit " + std::to_string(bit);
-        return true;
+                                          Signal candidate, std::string &error) {
+  if (msg == nullptr || candidate.size <= 0) return false;
+  candidate.update();
+  int byte_index = candidate.msb / 8;
+  int bits_left = candidate.size;
+  while (byte_index >= 0 && byte_index < CAN_MAX_DATA_BYTES && bits_left > 0) {
+    const int lsb = (candidate.lsb / 8) == byte_index ? candidate.lsb : byte_index * 8;
+    const int msb = (candidate.msb / 8) == byte_index ? candidate.msb : (byte_index + 1) * 8 - 1;
+    for (int bit = lsb; bit <= msb; ++bit) {
+      for (const Signal *signal : msg->signals()) {
+        if (signal == nullptr || signal->name == signal_name) continue;
+        if (binary_signal_contains_bit(*signal, bit)) {
+          error = "selection overlaps signal " + signal->name + " at bit " + std::to_string(bit);
+          return true;
+        }
       }
     }
+    bits_left -= msb - lsb + 1;
+    byte_index = candidate.is_little_endian ? byte_index - 1 : byte_index + 1;
   }
   error.clear();
   return false;
@@ -314,11 +346,17 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
         drag.signal_name = resize_signal != nullptr ? resize_signal->name : std::string();
         drag.status.clear();
       }
-      if (drag.active && drag.id == id && ImGui::IsItemHovered()) {
+      // Once the press on the anchor cell makes it ImGui's "active" item, IsItemHovered() on any
+      // *other* cell reports false by default (ImGui only lets the active item claim hover unless
+      // asked otherwise) -- so a per-cell IsItemHovered() loop can only ever see the drag land back
+      // on the exact cell it started from. IsMouseHoveringRect is a plain geometric hit test with
+      // no such exclusivity, so it tracks the true cursor position across every cell while the
+      // button is held.
+      if (drag.active && drag.id == id && ImGui::IsMouseHoveringRect(cell_min, cell_max)) {
         drag.current_bit = bit_index;
         if (drag.current_bit != drag.anchor_bit) drag.dragged = true;
       }
-      if (ImGui::IsItemHovered()) {
+      if (ImGui::IsItemHovered() || (drag.active && drag.id == id && ImGui::IsMouseHoveringRect(cell_min, cell_max))) {
         if (drag.active && drag.id == id && drag.dragged) {
           const int first = std::min(drag.anchor_bit, drag.current_bit);
           const int last = std::max(drag.anchor_bit, drag.current_bit);
@@ -369,7 +407,7 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
                 : std::nullopt;
         if (origin_signal != nullptr &&
             edited.has_value() &&
-            !binary_signal_overlaps_other_dbc_bits(dbc_msg, origin_signal->name, edited->start_bit, edited->size, error) &&
+            !binary_signal_overlaps_other_dbc_bits(dbc_msg, origin_signal->name, *edited, error) &&
             commit_signal_edit(session.dbc_undo, session.dbc, id, *origin_signal, *edited, error)) {
           drag.status = "Resized " + drag.signal_name;
         } else {
