@@ -224,7 +224,7 @@ bool commit_signal_edit(UndoStack &undo_stack, DBCManager &manager, MessageId id
     return false;
   }
   if (edited.start_bit < 0 || edited.start_bit >= CAN_MAX_DATA_BYTES * 8) {
-    error = "signal start_ bit must be 0-511";
+    error = "signal start bit must be 0-511";
     return false;
   }
   if (edited.name != origin.name && msg->sig(edited.name) != nullptr) {

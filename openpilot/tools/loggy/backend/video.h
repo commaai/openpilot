@@ -118,6 +118,9 @@ public:
   void set_camera_index(CameraFeedIndex index);
   void request_frame(double tracker_time);
   std::optional<DecodedCameraFrame> take_frame();
+  // The consumer lost its uploaded texture (pane recreated by workspace undo/layout reload):
+  // forget displayed_key_ so the next request_frame re-delivers instead of early-returning.
+  void invalidate_displayed();
   CameraDecodeStatus status() const;
 
 private:

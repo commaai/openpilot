@@ -147,9 +147,9 @@ fs::path create_computed_temp_dir() {
 
 std::string trim_process_output(std::string text) {
   while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back()))) text.pop_back();
-  size_t start_ = 0;
-  while (start_ < text.size() && std::isspace(static_cast<unsigned char>(text[start_]))) ++start_;
-  return start_ == 0 ? text : text.substr(start_);
+  size_t start = 0;
+  while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) ++start;
+  return start == 0 ? text : text.substr(start);
 }
 
 std::vector<SeriesPoint> make_points(std::vector<double> xs, std::vector<double> ys) {
@@ -234,7 +234,7 @@ SeriesChunk materialize_computed_transform(const SeriesView &source,
     return chunk;
   }
   if (spec.output_path.rfind("/computed/", 0) != 0) {
-    set_status(status, spec, false, "computed output path must start_ with /computed/", source.points.size(), 0);
+    set_status(status, spec, false, "computed output path must start with /computed/", source.points.size(), 0);
     return chunk;
   }
   if (source.points.empty()) {
@@ -279,7 +279,7 @@ SeriesChunk materialize_computed_python(const Store &store,
   chunk.segment = -1;
 
   if (spec.output_path.rfind("/computed/", 0) != 0) {
-    set_status(status, spec, false, "computed output path must start_ with /computed/", 0, 0);
+    set_status(status, spec, false, "computed output path must start with /computed/", 0, 0);
     return chunk;
   }
 

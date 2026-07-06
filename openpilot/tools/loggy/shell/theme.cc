@@ -71,6 +71,11 @@ const Theme kDarculaTheme = {
   .accent_soft_hovered = rgb(57, 111, 212),
   .accent_soft_active = rgb(42, 91, 182),
 
+  .table_header_bg = rgb(49, 52, 54),
+  .table_border_strong = rgb(85, 85, 85),
+  .table_border_light = rgb(70, 72, 74),
+  .table_row_bg_alt = rgb(255, 255, 255, 0.03f),
+
   .plot_bg = rgb(47, 49, 51),
   .plot_legend_bg = rgb(53, 53, 53, 0.55f),
   .plot_legend_border = rgb(92, 96, 98, 0.85f),
@@ -79,6 +84,7 @@ const Theme kDarculaTheme = {
   .plot_tracker_line = rgb(220, 220, 220, 0.72f),
   .plot_drop_target_fill = rgb(47, 101, 202, 0.16f),
   .plot_drop_target_border = rgb(75, 135, 230, 0.90f),
+  .plot_selection = rgb(47, 101, 202, 0.25f),
   .plot_series_palette = {
     rgb(89, 168, 250),
     rgb(84, 199, 140),
@@ -169,6 +175,11 @@ const Theme kLightTheme = {
   .accent_soft_hovered = rgb(208, 216, 225),
   .accent_soft_active = rgb(195, 206, 218),
 
+  .table_header_bg = rgb(224, 228, 232),
+  .table_border_strong = rgb(190, 195, 201),
+  .table_border_light = rgb(208, 212, 216),
+  .table_row_bg_alt = rgb(0, 0, 0, 0.03f),
+
   .plot_bg = rgb(248, 249, 250),
   .plot_legend_bg = rgb(250, 250, 251, 0.55f),
   .plot_legend_border = rgb(194, 198, 204, 0.85f),
@@ -177,6 +188,7 @@ const Theme kLightTheme = {
   .plot_tracker_line = rgb(60, 64, 68, 0.55f),
   .plot_drop_target_fill = rgb(74, 132, 214, 0.14f),
   .plot_drop_target_border = rgb(58, 116, 196, 0.85f),
+  .plot_selection = rgb(74, 132, 214, 0.22f),
   .plot_series_palette = {
     rgb(43, 105, 199),
     rgb(41, 143, 97),
@@ -365,6 +377,10 @@ void apply_theme(ThemeKind kind) {
   style.Colors[ImGuiCol_CheckMark] = t.check_mark;
   style.Colors[ImGuiCol_SliderGrab] = t.accent;
   style.Colors[ImGuiCol_SliderGrabActive] = t.accent_active;
+  style.Colors[ImGuiCol_TableHeaderBg] = t.table_header_bg;
+  style.Colors[ImGuiCol_TableBorderStrong] = t.table_border_strong;
+  style.Colors[ImGuiCol_TableBorderLight] = t.table_border_light;
+  style.Colors[ImGuiCol_TableRowBgAlt] = t.table_row_bg_alt;
 
   ImPlotStyle &plot_style = ImPlot::GetStyle();
   plot_style.PlotBorderSize = 1.0f;
@@ -381,6 +397,7 @@ void apply_theme(ThemeKind kind) {
   plot_style.Colors[ImPlotCol_LegendBorder] = t.plot_legend_border;
   plot_style.Colors[ImPlotCol_AxisGrid] = t.plot_grid;
   plot_style.Colors[ImPlotCol_Crosshairs] = t.plot_crosshair;
+  plot_style.Colors[ImPlotCol_Selection] = t.plot_selection;
 
   ImPlot::MapInputDefault();
   ImPlotInputMap &input_map = ImPlot::GetInputMap();

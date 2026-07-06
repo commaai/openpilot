@@ -14,6 +14,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <functional>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -28,7 +29,9 @@ constexpr double kBrowserMinValueLookbackSeconds = 60.0;
 
 struct BrowserState {
   std::string filter;
-  size_t max_rows = 1000;
+  // High enough that a full route's series namespace (~11k paths on the demo route) is never
+  // silently truncated; the skeleton cache below is what makes this affordable per frame.
+  size_t max_rows = 25000;
   int sparkline_seconds = 30;
   bool show_tree = true;
   bool show_deprecated = false;
@@ -67,7 +70,7 @@ BrowserState parse_browser_state(std::string_view state_json) {
   if (!err.empty() || !json.is_object()) return state;
   if (json["filter"].is_string()) state.filter = json["filter"].string_value();
   if (json["max_rows"].is_number()) {
-    state.max_rows = static_cast<size_t>(std::clamp(json["max_rows"].int_value(), 1, 10000));
+    state.max_rows = static_cast<size_t>(std::clamp(json["max_rows"].int_value(), 1, 50000));
   }
   if (json["sparkline_seconds"].is_number()) {
     state.sparkline_seconds = std::clamp(json["sparkline_seconds"].int_value(), 1, 120);
@@ -291,6 +294,15 @@ BrowserSeriesRow enrich_browser_series_row(const Store &store,
     row.has_value = true;
     row.value = browser_format_value(browser_sample_at_time(view.points, tracker_time));
     row.sparkline = browser_sparkline_from_view(view, 36, static_cast<double>(state.sparkline_seconds));
+  } else if (sample_range.start_ > 0.0) {
+    // Sparse series (carParams and friends publish once) fall outside the tracker-anchored
+    // window — sample-hold the newest value from route start instead of showing "--". Only the
+    // Value column: an empty sparkline is honest for a signal with nothing in the window.
+    const SeriesView held = store.series(row.path, 0.0, sample_range.end, 2);
+    if (!held.points.empty()) {
+      row.has_value = true;
+      row.value = browser_format_value(held.points.back().value);
+    }
   }
   return row;
 }
@@ -299,6 +311,13 @@ struct BrowserPaneTransientState {
   BrowserState state;
   std::string state_json;
   bool valid = false;
+  // Skeleton cache (paths/labels/tree shape only — values and sparklines are sampled per
+  // visible row every frame): rebuilding 11k rows plus the grouped tree each frame is what the
+  // old 1000-row truncation was hiding.
+  uint64_t skeleton_generation = std::numeric_limits<uint64_t>::max();
+  std::string skeleton_key;
+  BrowserTreeNode skeleton_tree;
+  std::vector<BrowserSeriesRow> skeleton_rows;
 };
 
 BrowserPaneTransientState &browser_pane_transient_state(PaneInstance &pane) {
@@ -458,9 +477,18 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
   }
 
   const size_t total = session.store.series_path_count();
-  const BrowserTreeNode tree = state.show_tree ? prepare_browser_tree(session.store, state) : BrowserTreeNode{};
-  const std::vector<BrowserSeriesRow> rows = state.show_tree ? std::vector<BrowserSeriesRow>{}
-                                                            : prepare_browser_series_rows(session.store, state);
+  char skeleton_key[128];
+  std::snprintf(skeleton_key, sizeof(skeleton_key), "%d|%d|%zu|%zu", state.show_tree ? 1 : 0,
+                state.show_deprecated ? 1 : 0, state.max_rows, std::hash<std::string>{}(state.filter));
+  if (transient.skeleton_generation != session.store.generation() || transient.skeleton_key != skeleton_key) {
+    transient.skeleton_tree = state.show_tree ? prepare_browser_tree(session.store, state) : BrowserTreeNode{};
+    transient.skeleton_rows = state.show_tree ? std::vector<BrowserSeriesRow>{}
+                                              : prepare_browser_series_rows(session.store, state);
+    transient.skeleton_generation = session.store.generation();
+    transient.skeleton_key = skeleton_key;
+  }
+  const BrowserTreeNode &tree = transient.skeleton_tree;
+  const std::vector<BrowserSeriesRow> &rows = transient.skeleton_rows;
   const size_t visible_count = state.show_tree ? tree.visible_leaf_count : rows.size();
   ImGui::TextDisabled("%zu/%zu series", visible_count, total);
 

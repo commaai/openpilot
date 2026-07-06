@@ -354,6 +354,11 @@ public:
     return frame;
   }
 
+  void invalidate_displayed() {
+    std::lock_guard lock(mutex_);
+    displayed_key_.reset();
+  }
+
   CameraDecodeStatus status() const {
     std::lock_guard lock(mutex_);
     return CameraDecodeStatus{
@@ -584,6 +589,10 @@ void CameraFrameDecoder::request_frame(double tracker_time) {
 
 std::optional<DecodedCameraFrame> CameraFrameDecoder::take_frame() {
   return impl_->take_frame();
+}
+
+void CameraFrameDecoder::invalidate_displayed() {
+  impl_->invalidate_displayed();
 }
 
 CameraDecodeStatus CameraFrameDecoder::status() const {

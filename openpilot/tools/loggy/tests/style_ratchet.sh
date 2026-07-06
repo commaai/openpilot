@@ -76,17 +76,23 @@ check "named header structs" \
 # History pager shares the export row (default preset showed headers and zero rows); ->21695
 # red-team round 2 — decode abort consumed once at dequeue (lost cross-segment aborts), UI-thread
 # stall in set_camera_index, stale-fill floor after cache-hit seeks, active_key preserved on
-# best-effort fills, timeline None barriers survive incremental re-merge.
+# best-effort fills, timeline None barriers survive incremental re-merge; ->21818 round-2
+# survivors — table/plot-selection theme tokens, zoom seek-on-release + one-undo-per-gesture,
+# browser uncapped via skeleton cache, camera invalidate_displayed after pane recreate, Ctrl+Z,
+# resize keeps min/max, autostart yields to user pause, sparse-series sample-hold, History key
+# quantized to 4 Hz while playing, map cold-cache is a miss not a failure, start_ string leaks.
 # Genuine defect-cluster capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21695
+  21818
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.
+# ->930 (2026-07-06): undo/redo_workspace helpers shared by menu + new Ctrl+Z/Ctrl+Shift+Z
+# hotkeys, and the autostart-yields-to-user-pause guard.
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
-  912
+  930
 check "pane-local statics" \
   "$(rg_count '^\s+static ' panes -g'*.cc')" \
   0

@@ -1004,6 +1004,13 @@ bool save_map_basemap_cache(const std::filesystem::path &path,
 std::optional<MapBasemap> load_map_basemap_cache(const std::filesystem::path &path,
                                                  std::string_view expected_key,
                                                  std::string &error) {
+  std::error_code ec;
+  if (!fs::exists(path, ec)) {
+    // A cold cache is a miss, not a failure — without this a fresh install shows the
+    // "basemap unavailable" banner before any fetch was even attempted.
+    error.clear();
+    return std::nullopt;
+  }
   const std::optional<std::string> raw = read_text_file(path, error);
   if (!raw.has_value()) return std::nullopt;
   return parse_map_basemap_cache_json(*raw, std::string(expected_key));

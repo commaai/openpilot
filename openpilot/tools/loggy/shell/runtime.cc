@@ -255,8 +255,10 @@ struct AppState {
   FrameStats frame_stats;
   Clock::time_point last_playback_update = Clock::now();
   // Edge-detects segments_loaded 0 -> >0 to autostart playback (maybe_autostart_playback); also
-  // 0 right after Restart Route, so a later route reload autostarts too.
+  // 0 right after Restart Route, so a later route reload autostarts too. Any manual play/pause
+  // disarms it — autostart must never override an explicit user pause during ingest.
   size_t last_ingest_segments_loaded = 0;
+  bool autostart_armed = true;
   bool show_frame_hud = false;
   int target_fps = kDefaultLoggyTargetFps;
   ThemeKind theme_kind = ThemeKind::Light;
@@ -387,6 +389,22 @@ void pace_frame(const AppState &app, Clock::time_point frame_start) {
   if (Clock::now() < wake_at) std::this_thread::sleep_until(wake_at);
 }
 
+void undo_workspace(AppState &app) {
+  if (!app.workspace_history.can_undo()) return;
+  const auto request = restore_workspace_snapshot(app.session.workspace, app.workspace_history.undo(),
+                                                  app.session.workspace_layout_path, app.workspace_status,
+                                                  "Undid workspace change");
+  if (request.has_value()) app.workspace_select_request = request.value();
+}
+
+void redo_workspace(AppState &app) {
+  if (!app.workspace_history.can_redo()) return;
+  const auto request = restore_workspace_snapshot(app.session.workspace, app.workspace_history.redo(),
+                                                  app.session.workspace_layout_path, app.workspace_status,
+                                                  "Redid workspace change");
+  if (request.has_value()) app.workspace_select_request = request.value();
+}
+
 void draw_main_menu(AppState &app) {
   if (!ImGui::BeginMainMenuBar()) return;
   if (ImGui::BeginMenu("File")) {
@@ -404,18 +422,8 @@ void draw_main_menu(AppState &app) {
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Workspace")) {
-    if (ImGui::MenuItem("Undo", nullptr, false, app.workspace_history.can_undo())) {
-      const auto request = restore_workspace_snapshot(app.session.workspace, app.workspace_history.undo(),
-                                                    app.session.workspace_layout_path, app.workspace_status,
-                                                    "Undid workspace change");
-      if (request.has_value()) app.workspace_select_request = request.value();
-    }
-    if (ImGui::MenuItem("Redo", nullptr, false, app.workspace_history.can_redo())) {
-      const auto request = restore_workspace_snapshot(app.session.workspace, app.workspace_history.redo(),
-                                                    app.session.workspace_layout_path, app.workspace_status,
-                                                    "Redid workspace change");
-      if (request.has_value()) app.workspace_select_request = request.value();
-    }
+    if (ImGui::MenuItem("Undo", "Ctrl+Z", false, app.workspace_history.can_undo())) undo_workspace(app);
+    if (ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, app.workspace_history.can_redo())) redo_workspace(app);
     ImGui::Separator();
     if (ImGui::MenuItem("Save Layout", nullptr, false, workspace_autosave_available(app.session.workspace_layout_path))) {
       save_workspace_now(app.session.workspace, app.workspace_history, app.session.workspace_layout_path, app.workspace_status);
@@ -523,7 +531,9 @@ void draw_split_handle(AppState &app, WorkspaceNode *node, size_t index, bool ho
                           kSplitterThickness * static_cast<float>(node->children.size() - 1);
     apply_splitter_delta(node, index, horizontal ? delta.x : delta.y, content);
   }
-  if (ImGui::IsItemDeactivated()) {
+  // MouseDragMaxDistanceSqr persists past release, so a plain click on the divider (no actual
+  // resize) doesn't record a no-op history entry — which would destroy the redo stack.
+  if (ImGui::IsItemDeactivated() && ImGui::GetIO().MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] > 4.0f) {
     record_workspace_change(app.session.workspace, app.workspace_history, app.session.workspace_layout_path,
                            app.workspace_status, "Resized panes");
   }
@@ -667,6 +677,7 @@ void draw_transport_bar(AppState &app) {
   PlaybackClock &playback = app.session.playback;
   if (ImGui::Button(playback.playing() ? "Pause" : "Play", ImVec2(64.0f, 0.0f))) {
     playback.toggle_playing();
+    app.autostart_armed = false;
   }
   ImGui::SameLine();
   if (ImGui::Button("-")) playback.step_backward();
@@ -811,7 +822,10 @@ void draw_shell(AppState &app) {
 void maybe_autostart_playback(AppState &app) {
   if (app.session.config.stream) return;
   const size_t segments_loaded = app.session.ingest_status().segments_loaded;
-  if (segments_loaded > 0 && app.last_ingest_segments_loaded == 0) {
+  // Re-arm when segments drop back to 0 (Restart Route); a user play/pause disarms until then.
+  if (segments_loaded == 0 && app.last_ingest_segments_loaded > 0) app.autostart_armed = true;
+  if (app.autostart_armed && segments_loaded > 0 && app.last_ingest_segments_loaded == 0) {
+    app.autostart_armed = false;
     app.session.playback.set_playing(true);
   }
   app.last_ingest_segments_loaded = segments_loaded;
@@ -835,6 +849,10 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   }
   if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) {
     app.session.playback.toggle_playing();
+    app.autostart_armed = false;
+  }
+  if (!ImGui::GetIO().WantTextInput && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+    ImGui::GetIO().KeyShift ? redo_workspace(app) : undo_workspace(app);
   }
   if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
     request_help_popup(app);

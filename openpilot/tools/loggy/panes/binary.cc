@@ -147,7 +147,7 @@ std::optional<Signal> binary_resized_signal_from_bit_range(const Msg *msg, const
     return std::nullopt;
   }
   if (!binary_signal_contains_bit(origin, anchor_bit)) {
-    error = "drag must start_ on the selected signal";
+    error = "drag must start on the selected signal";
     return std::nullopt;
   }
   if (current_bit < 0 || current_bit >= static_cast<int>(msg->size * 8)) {
@@ -172,7 +172,8 @@ std::optional<Signal> binary_resized_signal_from_bit_range(const Msg *msg, const
   Signal copy = origin;
   copy.start_bit = to_signal_bit_domain(le, new_first);
   copy.size = new_last - new_first + 1;
-  copy.max = std::pow(2.0, static_cast<double>(copy.size)) - 1.0;
+  // min/max are user-authored physical-domain values (factor/offset applied) — a resize keeps
+  // them, like Qt cabana; recomputing 2^size-1 here would clobber them with raw-domain nonsense.
   copy.update();
   error.clear();
   return copy;

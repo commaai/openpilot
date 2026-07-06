@@ -68,6 +68,13 @@ struct Theme {
   ImVec4 accent_soft_hovered;
   ImVec4 accent_soft_active;
 
+  // Tables (every data pane is one) — without these, table chrome falls through to ImGui's
+  // stock StyleColors* values, the one part of the UI the theme wouldn't own.
+  ImVec4 table_header_bg;
+  ImVec4 table_border_strong;
+  ImVec4 table_border_light;
+  ImVec4 table_row_bg_alt;
+
   // Plot pane (the theme-constant ImPlotCol_* below are assigned once in apply_theme(), not
   // pushed per frame)
   ImVec4 plot_bg;
@@ -78,6 +85,7 @@ struct Theme {
   ImVec4 plot_tracker_line;
   ImVec4 plot_drop_target_fill;
   ImVec4 plot_drop_target_border;
+  ImVec4 plot_selection;
   std::array<ImVec4, 5> plot_series_palette;
 
   // Binary grid

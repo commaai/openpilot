@@ -236,9 +236,15 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
     const ImVec2 badge_max(video_max.x - 12.0f, video_max.y - 12.0f);
     const ImVec2 badge_min(std::max(video_min.x + 12.0f, badge_max.x - label_size.x - pad_x * 2.0f),
                            std::max(video_min.y + 12.0f, badge_max.y - label_size.y - pad_y * 2.0f));
-    draw_list->AddRectFilled(badge_min, badge_max, camera_timeline_color(snapshot.overlay_kind, 210), 4.0f);
+    const ImU32 badge_fill = camera_timeline_color(snapshot.overlay_kind, 210);
+    draw_list->AddRectFilled(badge_min, badge_max, badge_fill, 4.0f);
     draw_list->AddRect(badge_min, badge_max, camera_timeline_color(snapshot.overlay_kind, 255), 4.0f, 0, 1.0f);
-    draw_list->AddText(ImVec2(badge_min.x + pad_x, badge_min.y + pad_y), IM_COL32(255, 255, 255, 255), label);
+    // Text color by badge luminance, not a fixed white — "alert info" is amber, where white
+    // text is unreadable.
+    const ImVec4 fill = ImGui::ColorConvertU32ToFloat4(badge_fill);
+    const float luminance = 0.299f * fill.x + 0.587f * fill.y + 0.114f * fill.z;
+    const ImU32 label_color = luminance > 0.6f ? IM_COL32(20, 22, 24, 255) : IM_COL32(255, 255, 255, 255);
+    draw_list->AddText(ImVec2(badge_min.x + pad_x, badge_min.y + pad_y), label_color, label);
   }
 }
 
@@ -345,6 +351,9 @@ void draw_camera_pane(Session &session, PaneInstance &pane) {
   }
 
   CameraFrameDecoder &decoder = session.camera_decoder(state.view);
+  // Pane recreated (workspace undo, layout reload) while the decoder still believes its frame
+  // is on screen — without this the pane stays blank until the next seek.
+  if (texture.texture == 0) decoder.invalidate_displayed();
   decoder.request_frame(session.playback.tracker_time());
   if (std::optional<DecodedCameraFrame> frame = decoder.take_frame()) {
     upload_camera_frame(&texture, std::move(*frame), false);

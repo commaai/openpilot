@@ -11,6 +11,7 @@
 #include "imgui.h"
 
 #include <algorithm>
+#include <cmath>
 #include <array>
 #include <filesystem>
 #include <cstdint>
@@ -285,15 +286,19 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   const TimeRange page_range{session.playback.route_range().start_, tracker_time};
   const TimeRange export_range = session.playback.route_range();
 
-  // Rebuilding the page copies every matching event, so it must not run every frame just because
-  // the tracker ticked forward. can_event_summary is O(log n); its count/last_time only change
-  // when an event actually crosses the tracker or a seek moves it, so they stand in for the raw
-  // tracker time in the cache key.
+  // The page depends only on the event set <= tracker, i.e. (count, last_time) — but during
+  // playback that set changes at the message's own rate (100 Hz for a fast id), and every
+  // rebuild copies each event from route start to the playhead. Quantize the key to 4 Hz while
+  // playing (invisible staleness in a newest-first table); the exact key returns on pause and
+  // on seeks, so the settled page is precise.
   const CanSummaryView playhead = session.store.can_event_summary(id, page_range, /*with_data=*/false);
+  const bool playing = session.playback.playing();
   const auto page_cache_key = [&]() {
     char buf[192];
     std::snprintf(buf, sizeof(buf), "%s|%zu|%.6f|%zu|%zu|%d|%.9g|%s|%s|%s", id.to_string().c_str(),
-                  playhead.count, playhead.last_time, state.page_size, state.page_index, state.compare_enabled ? 1 : 0,
+                  playing ? 0 : playhead.count,
+                  playing ? std::floor(playhead.last_time * 4.0) / 4.0 : playhead.last_time,
+                  state.page_size, state.page_index, state.compare_enabled ? 1 : 0,
                   state.compare_value, state.compare_signal.c_str(), state.compare_op.c_str(), state.filter.c_str());
     return std::string(buf);
   };

@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <any>
+#include <optional>
 #include <array>
 #include <cstdio>
 #include <cmath>
@@ -158,8 +159,8 @@ std::vector<PlotZoomRange> parse_plot_zoom_history_node(const json11::Json &stat
   std::vector<PlotZoomRange> history;
   if (!state.is_object() || !state["x_zoom_history"].is_array()) return history;
   for (const json11::Json &item : state["x_zoom_history"].array_items()) {
-    if (!item.is_object() || !item["start_"].is_number() || !item["end"].is_number()) continue;
-    PlotZoomRange range{.start_ = item["start_"].number_value(), .end = item["end"].number_value()};
+    if (!item.is_object() || !item["start"].is_number() || !item["end"].is_number()) continue;
+    PlotZoomRange range{.start_ = item["start"].number_value(), .end = item["end"].number_value()};
     if (plot_zoom_range_valid(range)) history.push_back(range);
   }
   return history;
@@ -177,7 +178,7 @@ json11::Json plot_zoom_history_json(const std::vector<PlotZoomRange> &history) {
   out.reserve(history.size());
   for (const PlotZoomRange &range : history) {
     if (!plot_zoom_range_valid(range)) continue;
-    out.push_back(json11::Json::object{{"start_", range.start_}, {"end", range.end}});
+    out.push_back(json11::Json::object{{"start", range.start_}, {"end", range.end}});
   }
   return out;
 }
@@ -490,7 +491,9 @@ std::vector<PreparedPlotSeries> prepare_plot_series(const Store &store,
       // read as "frozen"). Resample a small window anchored at the tracker instead of
       // re-querying the whole elapsed route.
       const TimeRange tracker_window{tracker_time - kPlotTrackerLookbackSeconds, tracker_time};
-      const SeriesView tracker_view = store.series(request.path, tracker_window.start_, tracker_window.end, 2);
+      // Enough points that a derivative/scale transform stays LOCAL at the tracker — with 2
+      // decimated points a derivative collapses to the average slope of the whole window.
+      const SeriesView tracker_view = store.series(request.path, tracker_window.start_, tracker_window.end, 64);
       std::vector<double> txs, tys;
       txs.reserve(tracker_view.points.size());
       tys.reserve(tracker_view.points.size());
@@ -516,6 +519,10 @@ struct PlotTransientState {
   uint64_t series_generation = std::numeric_limits<uint64_t>::max();
   std::string series_filter;
   std::vector<std::string> series_paths;
+  // Range at the start of an in-progress pan/zoom gesture: history records ONE entry per
+  // gesture on release — recording every drag frame flooded the 16-entry cap and Undo Zoom
+  // could no longer reach the pre-gesture view.
+  std::optional<TimeRange> zoom_gesture_origin;
 };
 
 PlotTransientState &plot_transient_state(PaneInstance &pane) {
@@ -788,6 +795,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   }
   draw_plot_series_selector(session.store, &pane);
 
+  PlotTransientState &state = plot_transient_state(pane);
   std::vector<PlotZoomRange> zoom_history = parse_plot_zoom_history(pane.state_json);
   if (ImGui::GetContentRegionAvail().x > 112.0f) ImGui::SameLine();
   const bool undo_disabled = zoom_history.empty();
@@ -896,7 +904,10 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
       ImGui::EndTooltip();
     }
 
-    if (ImPlot::IsPlotHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+    // Seek on RELEASE of a plain click: IsMouseClicked fires on press, which also seeked at the
+    // origin of every left-drag zoom-select (rebinding all detail panes mid-gesture).
+    if (ImPlot::IsPlotHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left) &&
+        ImGui::GetIO().MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] <= 4.0f) {
       session.playback.seek(ImPlot::GetPlotMousePos().x);
     }
     ImPlot::EndPlot();
@@ -917,9 +928,16 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   if (dropped_series || series_removed) return;
 
   if (std::abs(x_min - range.start_) > 1.0e-6 || std::abs(x_max - range.end) > 1.0e-6) {
-    push_zoom_history(&zoom_history, range);
-    pane.state_json = plot_state_with_zoom_history(pane.state_json, zoom_history);
+    if (!state.zoom_gesture_origin.has_value()) state.zoom_gesture_origin = range;
     session.view_range.set_range({x_min, x_max});
+  }
+  // One history entry per gesture: the pre-gesture range is pushed when the mouse settles, so a
+  // continuous pan/zoom drag is a single Undo step instead of one per frame.
+  const bool gesture_active = ImGui::IsMouseDown(ImGuiMouseButton_Left) || ImGui::IsMouseDown(ImGuiMouseButton_Right);
+  if (state.zoom_gesture_origin.has_value() && !gesture_active) {
+    push_zoom_history(&zoom_history, *state.zoom_gesture_origin);
+    pane.state_json = plot_state_with_zoom_history(pane.state_json, zoom_history);
+    state.zoom_gesture_origin.reset();
   }
 }
 
