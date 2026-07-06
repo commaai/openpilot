@@ -1,3 +1,18 @@
+# Style review — FINAL (v3, 2026-07-06)
+
+**Ship verdict.** The completion push (baseline `1976165e5` → ship, ~25 commits) closed every
+phase of the plan: style punch list, LOC settled at the measured floor, 7-slice parity audit
+with 21/24 defects fixed, perf gates green on a quiet box (steady playback 5.3 ms CPU, heavy
+6-plot workspace p99 8.2 ms, TTFU < 2 s), and an independent fresh-eyes review over the full
+diff concluded it "reads like system/ code" (its one should-fix — a regression test that
+didn't discriminate the two DBCManager generation counters — is fixed). Ratchet frozen at the
+shipped values; it runs in every smoke. Remaining backlog, deliberately deferred, is §3b:
+timeline hover thumbnails + route-info bar (the one capability gap vs Qt cabana), layout-save
+pretty-printing, and the unreproduced transient route-load modal. One item needs the owner:
+`tools/cabana/panda.cc` carries a +2/−1 libusb error-handling fix in the reference tree.
+
+Historical v2 content follows for the audit trail.
+
 # Style review v2 — post-cleanup verification (2026-07-05)
 
 Verification pass over the v1 review cleanup. Every claim below was re-measured against the
