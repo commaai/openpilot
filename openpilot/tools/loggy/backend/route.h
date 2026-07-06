@@ -67,16 +67,13 @@ struct LogEntry {
 
 // Canonical log/timeline extraction — shared by route.cc's batch ingest and live.cc's
 // streaming ingest, so it lives here rather than duplicated per call site.
-void append_timeline_point(std::vector<TimelineSpan> *spans, double mono_time, TimelineSpanKind kind);
+void append_timeline_point(std::vector<TimelineSpan> &spans, double mono_time, TimelineSpanKind kind);
 TimelineSpanKind timeline_kind_for_selfdrive(cereal::SelfdriveState::AlertStatus status, bool enabled);
-void append_log_event(cereal::Event::Which which,
-                     const cereal::Event::Reader &event,
-                     double time_offset,
-                     std::vector<LogEntry> *logs,
-                     std::string &last_alert_key);
+void append_log_event(cereal::Event::Which which, const cereal::Event::Reader &event,
+                     double time_offset, std::vector<LogEntry> &logs, std::string &last_alert_key);
 
 // Repo-root resolution shared by live/session/computed ingest paths.
-std::filesystem::path loggy_repo_root_path();
+std::filesystem::path repo_root_path();
 
 using RouteSliceSpec = std::pair<int, int>;
 

@@ -342,7 +342,7 @@ SeriesChunk materialize_computed_python(const Store &store,
     };
     write_text_file(manifest_path, manifest_json.dump());
 
-    const fs::path script = loggy_repo_root_path() / "openpilot" / "tools" / "loggy" / "backend" / "math_eval.py";
+    const fs::path script = repo_root_path() / "openpilot" / "tools" / "loggy" / "backend" / "math_eval.py";
     const CommandResult process = run_process_capture_output({
       "python3",
       script.string(),

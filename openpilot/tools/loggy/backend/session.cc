@@ -299,11 +299,11 @@ LiveSourceConfig live_source_config_from_session(const SessionConfig &config) {
 }
 
 fs::path default_opendbc_dbc_root() {
-  return loggy_repo_root_path() / "opendbc_repo" / "opendbc" / "dbc";
+  return repo_root_path() / "opendbc_repo" / "opendbc" / "dbc";
 }
 
 fs::path generated_dbc_root() {
-  return loggy_repo_root_path() / "openpilot" / "tools" / "loggy" / "generated_dbcs";
+  return repo_root_path() / "openpilot" / "tools" / "loggy" / "generated_dbcs";
 }
 
 std::string dbc_name_for_fingerprint(std::string_view fingerprint) {

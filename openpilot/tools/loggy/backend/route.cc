@@ -55,7 +55,7 @@ std::string trim(std::string value) {
   return value;
 }
 
-std::string formatEpochTime(double epoch_seconds, const char *format) {
+std::string format_epoch_time(double epoch_seconds, const char *format) {
   std::time_t epoch = static_cast<std::time_t>(epoch_seconds);
   std::tm tm {};
 #if defined(_WIN32)
@@ -68,7 +68,7 @@ std::string formatEpochTime(double epoch_seconds, const char *format) {
   return buffer;
 }
 
-double parseIso8601Epoch(const std::string &value) {
+double parse_iso8601_epoch(const std::string &value) {
   std::tm tm {};
   std::istringstream stream(value);
   stream >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
@@ -80,7 +80,7 @@ double parseIso8601Epoch(const std::string &value) {
 #endif
 }
 
-bool parseSegmentNumber(std::string_view value, int &out) {
+bool parse_segment_number(std::string_view value, int &out) {
   if (value.empty()) return false;
   char *end = nullptr;
   const long parsed = std::strtol(std::string(value).c_str(), &end, 10);
@@ -89,18 +89,18 @@ bool parseSegmentNumber(std::string_view value, int &out) {
   return true;
 }
 
-bool parseNonnegativeSegmentNumber(std::string_view value, int &out) {
+bool parse_nonnegative_segment_number(std::string_view value, int &out) {
   int parsed = 0;
-  if (!parseSegmentNumber(value, parsed) || parsed < 0) return false;
+  if (!parse_segment_number(value, parsed) || parsed < 0) return false;
   out = parsed;
   return true;
 }
 
-bool isLogSelectorChar(char c) {
+bool is_log_selector_char(char c) {
   return c == 'a' || c == 'r' || c == 'q';
 }
 
-LogSelector parseLogSelectorChar(char c) {
+LogSelector parse_log_selector_char(char c) {
   switch (c) {
     case 'r': return LogSelector::RLog;
     case 'q': return LogSelector::QLog;
@@ -109,7 +109,7 @@ LogSelector parseLogSelectorChar(char c) {
   }
 }
 
-std::string fileBaseName(const std::string &file) {
+std::string file_base_name(const std::string &file) {
   const size_t query_pos = file.find('?');
   const std::string path = query_pos == std::string::npos ? file : file.substr(0, query_pos);
   const size_t slash_pos = path.find_last_of("/\\");
@@ -119,8 +119,8 @@ std::string fileBaseName(const std::string &file) {
   return name;
 }
 
-void addLogFileToSegments(std::map<int, SegmentLogFiles> *segments, int segment_number, const std::string &file) {
-  const std::string name = fileBaseName(file);
+void add_log_file_to_segments(std::map<int, SegmentLogFiles> *segments, int segment_number, const std::string &file) {
+  const std::string name = file_base_name(file);
   SegmentLogFiles &segment = (*segments)[segment_number];
   if (name == "rlog.bz2" || name == "rlog.zst" || name == "rlog") {
     segment.rlog = file;
@@ -137,7 +137,7 @@ void addLogFileToSegments(std::map<int, SegmentLogFiles> *segments, int segment_
   }
 }
 
-std::map<int, SegmentLogFiles> trimSegments(std::map<int, SegmentLogFiles> segments, const RouteSelection &route) {
+std::map<int, SegmentLogFiles> trim_segments(std::map<int, SegmentLogFiles> segments, const RouteSelection &route) {
   if (route.begin_segment > 0) {
     segments.erase(segments.begin(), segments.lower_bound(route.begin_segment));
   }
@@ -147,7 +147,7 @@ std::map<int, SegmentLogFiles> trimSegments(std::map<int, SegmentLogFiles> segme
   return segments;
 }
 
-std::map<int, SegmentLogFiles> loadSegmentsFromJson(const json11::Json &json) {
+std::map<int, SegmentLogFiles> load_segments_from_json(const json11::Json &json) {
   std::map<int, SegmentLogFiles> segments;
   static const std::regex rx(R"(\/(\d+)\/)");
   for (const auto &value : json.object_items()) {
@@ -155,13 +155,13 @@ std::map<int, SegmentLogFiles> loadSegmentsFromJson(const json11::Json &json) {
       const std::string url_str = url.string_value();
       std::smatch match;
       if (!std::regex_search(url_str, match, rx)) continue;
-      addLogFileToSegments(&segments, std::stoi(match[1].str()), url_str);
+      add_log_file_to_segments(&segments, std::stoi(match[1].str()), url_str);
     }
   }
   return segments;
 }
 
-std::map<int, SegmentLogFiles> loadSegmentsFromServer(const RouteSelection &route) {
+std::map<int, SegmentLogFiles> load_segments_from_server(const RouteSelection &route) {
   const std::string result = PyDownloader::getRouteFiles(route.canonical_name);
   if (result.empty()) throw std::runtime_error("Failed to fetch route files for " + route.canonical_name);
 
@@ -171,10 +171,10 @@ std::map<int, SegmentLogFiles> loadSegmentsFromServer(const RouteSelection &rout
   if (json.is_object() && json["error"].is_string()) {
     throw std::runtime_error("Route API error for " + route.canonical_name + ": " + json["error"].string_value());
   }
-  return loadSegmentsFromJson(json);
+  return load_segments_from_json(json);
 }
 
-std::map<int, SegmentLogFiles> loadSegmentsFromLocal(const RouteSelection &route, const std::string &data_dir) {
+std::map<int, SegmentLogFiles> load_segments_from_local(const RouteSelection &route, const std::string &data_dir) {
   std::map<int, SegmentLogFiles> segments;
   const std::string pattern = route.timestamp + "--";
   for (const auto &entry : fs::directory_iterator(data_dir)) {
@@ -184,15 +184,15 @@ std::map<int, SegmentLogFiles> loadSegmentsFromLocal(const RouteSelection &route
     const size_t marker = dirname.rfind("--");
     if (marker == std::string::npos) continue;
     int segment_number = 0;
-    if (!parseSegmentNumber(dirname.substr(marker + 2), segment_number)) continue;
+    if (!parse_segment_number(dirname.substr(marker + 2), segment_number)) continue;
     for (const auto &file : fs::directory_iterator(entry.path())) {
-      if (file.is_regular_file()) addLogFileToSegments(&segments, segment_number, file.path().string());
+      if (file.is_regular_file()) add_log_file_to_segments(&segments, segment_number, file.path().string());
     }
   }
   return segments;
 }
 
-const std::string &selectedLogPath(const SegmentLogFiles &segment, LogSelector selector) {
+const std::string &selected_log_path(const SegmentLogFiles &segment, LogSelector selector) {
   switch (selector) {
     case LogSelector::RLog:
       return segment.rlog;
@@ -204,16 +204,16 @@ const std::string &selectedLogPath(const SegmentLogFiles &segment, LogSelector s
   }
 }
 
-TimeRange routeRangeForSegmentCount(size_t count) {
+TimeRange route_range_for_segment_count(size_t count) {
   if (count == 0) return {};
   return {0.0, static_cast<double>(count) * kNominalSegmentSeconds};
 }
 
-double secondsSince(Clock::time_point start_) {
+double seconds_since(Clock::time_point start_) {
   return std::chrono::duration<double>(Clock::now() - start_).count();
 }
 
-size_t boundedWorkerCount(size_t requested, size_t segment_count) {
+size_t bounded_worker_count(size_t requested, size_t segment_count) {
   if (segment_count == 0) return 0;
   if (requested == 0) requested = 1;
   return std::min(requested, segment_count);
@@ -227,7 +227,7 @@ void mark_failed(RouteIngestStatus *status) {
   ++status->segments_failed;
 }
 
-void markPublished(RouteIngestStatus *status) {
+void mark_published(RouteIngestStatus *status) {
   ++status->batches_published;
 }
 
@@ -292,12 +292,8 @@ LogEntry make_log_entry(const cereal::Event::Reader &event, double time_offset, 
 
 }  // namespace
 
-void append_log_event(cereal::Event::Which which,
-                     const cereal::Event::Reader &event,
-                     double time_offset,
-                     std::vector<LogEntry> *logs,
-                     std::string &last_alert_key) {
-  if (logs == nullptr) return;
+void append_log_event(cereal::Event::Which which, const cereal::Event::Reader &event,
+                     double time_offset, std::vector<LogEntry> &logs, std::string &last_alert_key) {
 
   switch (which) {
     case cereal::Event::Which::LOG_MESSAGE:
@@ -321,7 +317,7 @@ void append_log_event(cereal::Event::Which which,
         if (parsed["msg"].is_string()) entry.message = parsed["msg"].string_value();
         if (!parsed["ctx"].is_null()) entry.context = parsed["ctx"].dump();
       }
-      logs->push_back(std::move(entry));
+      logs.push_back(std::move(entry));
       break;
     }
     case cereal::Event::Which::OPERATING_SYSTEM_LOG: {
@@ -344,7 +340,7 @@ void append_log_event(cereal::Event::Which which,
           entry.level = operating_system_priority_to_level(static_cast<uint8_t>(parsed["PRIORITY"].int_value()));
         }
       }
-      logs->push_back(std::move(entry));
+      logs.push_back(std::move(entry));
       break;
     }
     case cereal::Event::Which::SELFDRIVE_STATE: {
@@ -360,7 +356,7 @@ void append_log_event(cereal::Event::Which which,
       entry.source = "alert";
       entry.func = alert_type;
       entry.message = alert_message_text(sd);
-      logs->push_back(std::move(entry));
+      logs.push_back(std::move(entry));
       break;
     }
     default:
@@ -381,14 +377,13 @@ TimelineSpanKind timeline_kind_for_selfdrive(cereal::SelfdriveState::AlertStatus
   return TimelineSpanKind::Engaged;
 }
 
-void append_timeline_point(std::vector<TimelineSpan> *spans, double mono_time, TimelineSpanKind kind) {
-  if (spans == nullptr) return;
+void append_timeline_point(std::vector<TimelineSpan> &spans, double mono_time, TimelineSpanKind kind) {
   if (kind == TimelineSpanKind::None) return;
-  if (!spans->empty() && spans->back().kind == kind) {
-    spans->back().end_time = std::max(spans->back().end_time, mono_time);
+  if (!spans.empty() && spans.back().kind == kind) {
+    spans.back().end_time = std::max(spans.back().end_time, mono_time);
     return;
   }
-  spans->push_back({mono_time, mono_time, kind});
+  spans.push_back({mono_time, mono_time, kind});
 }
 
 namespace {
@@ -403,7 +398,7 @@ std::vector<TimelineSpan> extract_timeline_spans(const std::vector<Event> &event
       const cereal::Event::Reader event = event_reader.getRoot<cereal::Event>();
       const auto selfdrive = event.getSelfdriveState();
       const double mono_time = static_cast<double>(event.getLogMonoTime()) / 1.0e9 - time_offset;
-      append_timeline_point(&spans, mono_time, timeline_kind_for_selfdrive(selfdrive.getAlertStatus(), selfdrive.getEnabled()));
+      append_timeline_point(spans, mono_time, timeline_kind_for_selfdrive(selfdrive.getAlertStatus(), selfdrive.getEnabled()));
     } catch (const kj::Exception &) {
       continue;
     }
@@ -420,7 +415,7 @@ std::vector<LogEntry> extract_log_entries(const std::vector<Event> &events, doub
     try {
       capnp::FlatArrayMessageReader event_reader(event_record.data);
       const cereal::Event::Reader event = event_reader.getRoot<cereal::Event>();
-      append_log_event(event_record.which, event, time_offset, &logs, last_alert_key);
+      append_log_event(event_record.which, event, time_offset, logs, last_alert_key);
     } catch (const kj::Exception &) {
       continue;
     }
@@ -453,8 +448,8 @@ RouteSelection parse_route_selection(std::string route_name) {
   RouteSelection route;
   route_name = trim(std::move(route_name));
   if (route_name.size() >= 2 && route_name[route_name.size() - 2] == '/'
-      && isLogSelectorChar(static_cast<char>(std::tolower(route_name.back())))) {
-    route.selector = parseLogSelectorChar(static_cast<char>(std::tolower(route_name.back())));
+      && is_log_selector_char(static_cast<char>(std::tolower(route_name.back())))) {
+    route.selector = parse_log_selector_char(static_cast<char>(std::tolower(route_name.back())));
     route.selector_explicit = true;
     route_name.resize(route_name.size() - 2);
   }
@@ -474,18 +469,18 @@ RouteSelection parse_route_selection(std::string route_name) {
     if (separator == "/") {
       const size_t pos = range_str.find(':');
       int begin_segment = 0;
-      if (!parseSegmentNumber(range_str.substr(0, pos), begin_segment)) return {};
+      if (!parse_segment_number(range_str.substr(0, pos), begin_segment)) return {};
       route.begin_segment = begin_segment;
       route.end_segment = begin_segment;
       if (pos != std::string::npos) {
         int end_segment = -1;
         const std::string end_str = range_str.substr(pos + 1);
-        if (!end_str.empty() && !parseSegmentNumber(end_str, end_segment)) return {};
+        if (!end_str.empty() && !parse_segment_number(end_str, end_segment)) return {};
         route.end_segment = end_str.empty() ? -1 : end_segment;
       }
     } else if (separator == "--") {
       int begin_segment = 0;
-      if (!parseSegmentNumber(range_str, begin_segment)) return {};
+      if (!parse_segment_number(range_str, begin_segment)) return {};
       route.begin_segment = begin_segment;
     }
   }
@@ -521,7 +516,7 @@ std::string route_browser_route_files_url(const std::string &route_name) {
 std::string route_browser_route_label(double from_epoch_sec, double to_epoch_sec) {
   if (from_epoch_sec <= 0.0 || to_epoch_sec <= 0.0) return {};
   const int minutes = std::max(0.0, to_epoch_sec - from_epoch_sec) / 60.0;
-  const std::string date = formatEpochTime(from_epoch_sec, "%a %b %e %H:%M:%S %Y");
+  const std::string date = format_epoch_time(from_epoch_sec, "%a %b %e %H:%M:%S %Y");
   char out[128];
   std::snprintf(out, sizeof(out), "%s    %dmin", date.c_str(), minutes);
   return out;
@@ -549,9 +544,9 @@ RouteBrowserParseResult parse_route_browser_routes(const std::string &json_text,
   for (const json11::Json &route : doc.array_items()) {
     const std::string fullname = route["fullname"].string_value();
     if (fullname.empty()) continue;
-    const double from = preserved ? parseIso8601Epoch(route["start_time"].string_value())
+    const double from = preserved ? parse_iso8601_epoch(route["start_time"].string_value())
                                  : route["start_time_utc_millis"].number_value() / 1000.0;
-    const double to = preserved ? parseIso8601Epoch(route["end_time"].string_value())
+    const double to = preserved ? parse_iso8601_epoch(route["end_time"].string_value())
                                : route["end_time_utc_millis"].number_value() / 1000.0;
     const std::string label = route_browser_route_label(from, to);
     result.first.push_back({label, fullname});
@@ -620,20 +615,20 @@ std::optional<RouteSliceSpec> parse_route_slice_spec(std::string_view text) {
   if (trimmed.empty()) return std::nullopt;
   const size_t colon = trimmed.find(':');
   int begin = 0;
-  if (!parseNonnegativeSegmentNumber(trimmed.substr(0, colon), begin)) return std::nullopt;
+  if (!parse_nonnegative_segment_number(trimmed.substr(0, colon), begin)) return std::nullopt;
   int end = begin;
   if (colon != std::string::npos) {
     const std::string end_text = trimmed.substr(colon + 1);
     if (end_text.empty()) {
       end = -1;
-    } else if (!parseNonnegativeSegmentNumber(end_text, end) || end < begin) {
+    } else if (!parse_nonnegative_segment_number(end_text, end) || end < begin) {
       return std::nullopt;
     }
   }
   return RouteSliceSpec{begin, end};
 }
 
-std::filesystem::path loggy_repo_root_path() {
+std::filesystem::path repo_root_path() {
 #ifdef LOGGY_REPO_ROOT
   return std::filesystem::path(LOGGY_REPO_ROOT);
 #else
@@ -663,9 +658,9 @@ RouteResolveResult resolve_route_segments(const RouteIngestConfig &config) {
   }
 
   std::map<int, SegmentLogFiles> logs = config.data_dir.empty()
-    ? loadSegmentsFromServer(selection)
-    : loadSegmentsFromLocal(selection, config.data_dir);
-  logs = trimSegments(std::move(logs), selection);
+    ? load_segments_from_server(selection)
+    : load_segments_from_local(selection, config.data_dir);
+  logs = trim_segments(std::move(logs), selection);
   if (logs.empty()) throw std::runtime_error("No log segments found for " + config.route_name);
 
   RouteResolveResult result;
@@ -675,7 +670,7 @@ RouteResolveResult resolve_route_segments(const RouteIngestConfig &config) {
   for (const auto &[segment_number, segment] : logs) {
     // Build synthetic timeline ranges from relative_index to keep ranges contiguous after trimming/slicing.
     if (config.max_segments >= 0 && static_cast<int>(result.segments.size()) >= config.max_segments) break;
-    const std::string &path = selectedLogPath(segment, selection.selector);
+    const std::string &path = selected_log_path(segment, selection.selector);
     if (path.empty()) continue;
     result.segments.push_back(RouteSegment{
       .segment = segment_number,
@@ -692,7 +687,7 @@ RouteResolveResult resolve_route_segments(const RouteIngestConfig &config) {
     ++relative_index;
   }
   if (result.segments.empty()) throw std::runtime_error("No selected log files found for " + config.route_name);
-  result.route_range = routeRangeForSegmentCount(result.segments.size());
+  result.route_range = route_range_for_segment_count(result.segments.size());
   return result;
 }
 
@@ -817,7 +812,7 @@ void RouteIngestor::run(RouteIngestConfig config) {
       update_status(next);
     }
 
-    const size_t worker_count = boundedWorkerCount(config.worker_count, resolved.segments.size());
+    const size_t worker_count = bounded_worker_count(config.worker_count, resolved.segments.size());
     // Spawn bounded workers so each owns a local thread and a shared abort/state contract.
     std::vector<std::thread> workers;
       workers.reserve(worker_count);
@@ -846,11 +841,11 @@ void RouteIngestor::run(RouteIngestConfig config) {
           stage_log_entries(std::move(loaded.logs));
           scheduler_->publish(std::move(loaded.batch));
           mutate_status(mark_loaded);
-          mutate_status(markPublished);
+          mutate_status(mark_published);
           bool expected = false;
           if (first_segment_seen.compare_exchange_strong(expected, true)) {
             RouteIngestStatus next = status();
-            next.first_segment_seconds = secondsSince(started_at);
+            next.first_segment_seconds = seconds_since(started_at);
             update_status(next);
           }
         } catch (const std::exception &err) {
@@ -868,7 +863,7 @@ void RouteIngestor::run(RouteIngestConfig config) {
     RouteIngestStatus next = status();
     next.state = abort_ ? RouteIngestState::Canceled
                         : (next.segments_failed > 0 && next.segments_loaded == 0 ? RouteIngestState::Failed : RouteIngestState::Completed);
-    next.total_seconds = secondsSince(started_at);
+    next.total_seconds = seconds_since(started_at);
     if (next.state == RouteIngestState::Failed && next.error.empty()) {
       next.error = "All route segments failed to load";
     }
@@ -877,7 +872,7 @@ void RouteIngestor::run(RouteIngestConfig config) {
     RouteIngestStatus next = status();
     next.state = abort_ ? RouteIngestState::Canceled : RouteIngestState::Failed;
     next.error = err.what();
-    next.total_seconds = secondsSince(started_at);
+    next.total_seconds = seconds_since(started_at);
     update_status(next);
   }
 }

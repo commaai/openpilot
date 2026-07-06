@@ -64,7 +64,7 @@ double steady_seconds() {
 }
 
 std::filesystem::path messaging_bridge_path() {
-  return loggy_repo_root_path() / "openpilot" / "cereal" / "messaging" / "bridge";
+  return repo_root_path() / "openpilot" / "cereal" / "messaging" / "bridge";
 }
 
 #ifdef __linux__
@@ -307,13 +307,13 @@ bool LiveCerealAccumulator::append_event(const cereal::Event::Reader &event) {
 
   if (which == cereal::Event::Which::SELFDRIVE_STATE) {
     const auto selfdrive = event.getSelfdriveState();
-    append_timeline_point(&timeline_spans_, boot_time - offset,
+    append_timeline_point(timeline_spans_, boot_time - offset,
                           timeline_kind_for_selfdrive(selfdrive.getAlertStatus(), selfdrive.getEnabled()));
   } else if (which == cereal::Event::Which::CAR_PARAMS) {
     const std::string fingerprint = event.getCarParams().getCarFingerprint().cStr();
     if (!fingerprint.empty()) car_fingerprint_ = fingerprint;
   }
-  append_log_event(which, event, offset, &logs_, last_alert_key_);
+  append_log_event(which, event, offset, logs_, last_alert_key_);
   return appended;
 }
 
