@@ -12,7 +12,9 @@ enum class LoggyThemeKind {
   Light,
 };
 
-void load_fonts();
+// density: window content scale (e.g. 2.0 on macOS retina) — the atlas rasterizes at device
+// pixels while layout metrics stay logical, so text is crisp instead of blurry. 1.0 is a no-op.
+void load_fonts(float density = 1.0f);
 LoggyThemeKind loggy_theme_from_name(std::string_view name);
 const char *loggy_theme_name(LoggyThemeKind theme);
 const char *loggy_theme_label(LoggyThemeKind theme);

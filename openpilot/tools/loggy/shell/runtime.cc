@@ -162,7 +162,10 @@ public:
       throw std::runtime_error("ImGui_ImplOpenGL3_Init failed");
     }
 
-    load_fonts();
+    float content_xscale = 1.0f;
+    float content_yscale = 1.0f;
+    glfwGetWindowContentScale(window, &content_xscale, &content_yscale);
+    load_fonts(std::max(content_xscale, content_yscale));
     apply_theme();
   }
 

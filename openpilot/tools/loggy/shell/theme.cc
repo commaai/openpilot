@@ -81,12 +81,13 @@ const std::filesystem::path &repo_root() {
   return root;
 }
 
-void icon_add_font(float size, bool merge = false, const ImFont *base_font = nullptr) {
+void icon_add_font(float size, float density, bool merge = false, const ImFont *base_font = nullptr) {
   const std::filesystem::path ttf = BOOTSTRAP_ICONS_TTF;
   ImGuiIO &io = ImGui::GetIO();
   ImFontConfig config;
   config.MergeMode = merge;
   config.GlyphMinAdvanceX = size;
+  config.RasterizerDensity = density;
   if (base_font != nullptr) {
     ImFontBaked *baked = const_cast<ImFont *>(base_font)->GetFontBaked(size);
     const float base_center = baked != nullptr ? (baked->Ascent + baked->Descent) * 0.5f : size * 0.5f;
@@ -102,19 +103,19 @@ ImVec4 color_rgb(int r, int g, int b, float alpha) {
   return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
 }
 
-void load_fonts() {
+void load_fonts(float density) {
   ImGuiIO &io = ImGui::GetIO();
   const std::filesystem::path fonts_dir = repo_root() / "openpilot" / "selfdrive" / "assets" / "fonts";
   ImFontConfig font_cfg;
   font_cfg.OversampleH = 2;
   font_cfg.OversampleV = 2;
-  font_cfg.RasterizerDensity = 1.0f;
+  font_cfg.RasterizerDensity = density;
 
-  icon_add_font(UI_FONT_SIZE);
+  icon_add_font(UI_FONT_SIZE, density);
   const auto add_font_with_icons = [&](const std::filesystem::path &path, float size) -> ImFont * {
     ImFont *font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, &font_cfg);
     if (font != nullptr) {
-      icon_add_font(size, true, font);
+      icon_add_font(size, density, true, font);
     }
     return font;
   };
