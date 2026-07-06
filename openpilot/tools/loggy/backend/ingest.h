@@ -21,6 +21,10 @@ struct RouteSegment {
   TimeRange range;
   std::string log_path;
   std::string cache_path;
+  std::string road_camera_path;
+  std::string driver_camera_path;
+  std::string wide_road_camera_path;
+  std::string qroad_camera_path;
   SegmentState state = SegmentState::Pending;
   std::string error;
 };
@@ -46,29 +50,30 @@ class SegmentScheduler {
 public:
   explicit SegmentScheduler(Store *store = nullptr);
 
-  void setStore(Store *store);
-  void setRouteSegments(std::vector<RouteSegment> segments);
+  void set_store(Store *store);
+  void set_route_segments(std::vector<RouteSegment> segments);
   std::vector<RouteSegment> segments() const;
 
-  void setTrackerTime(double seconds);
-  double trackerTime() const;
-  void setVisibleRanges(std::vector<TimeRange> ranges);
-  std::vector<TimeRange> visibleRanges() const;
+  void set_tracker_time(double seconds);
+  double tracker_time() const;
+  void set_visible_ranges(std::vector<TimeRange> ranges);
+  std::vector<TimeRange> visible_ranges() const;
 
-  std::vector<SegmentPriority> priorityOrder() const;
-  std::optional<SegmentWorkItem> takeNext();
+  std::vector<SegmentPriority> priority_order() const;
+  std::optional<SegmentWorkItem> take_next();
 
-  void markPending(int segment);
-  void markInFlight(int segment);
-  void markLoaded(int segment);
-  void markFailed(int segment, std::string error);
+  void mark_pending(int segment);
+  void mark_in_flight(int segment);
+  void mark_loaded(int segment);
+  void mark_failed(int segment, std::string error);
 
   bool publish(StoreBatch batch);
 
 private:
-  RouteSegment *findSegmentLocked(int segment);
-  const RouteSegment *findSegmentLocked(int segment) const;
+  RouteSegment *find_segment_locked(int segment);
+  const RouteSegment *find_segment_locked(int segment) const;
 
+  // Protects route segment state plus scheduler priorities; Store is only borrowed long enough to publish.
   mutable std::mutex mutex_;
   Store *store_ = nullptr;
   std::vector<RouteSegment> segments_;

@@ -3,8 +3,12 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <array>
+#include <optional>
+#include <string_view>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <thread>
 #include <vector>
 
@@ -19,6 +23,18 @@ enum class LogSelector : uint8_t {
   QLog,
 };
 
+struct RouteBrowserPeriod {
+  const char *label;
+  int days;
+};
+
+struct RouteBrowserEntry {
+  std::string label;
+  std::string fullname;
+};
+
+using RouteBrowserParseResult = std::pair<std::vector<RouteBrowserEntry>, std::string>;
+
 struct RouteSelection {
   std::string dongle_id;
   std::string timestamp;
@@ -28,15 +44,6 @@ struct RouteSelection {
   LogSelector selector = LogSelector::Auto;
   bool selector_explicit = false;
   std::string canonical_name;
-};
-
-struct SegmentLogs {
-  std::string rlog;
-  std::string qlog;
-  std::string road_cam;
-  std::string driver_cam;
-  std::string wide_road_cam;
-  std::string qcamera;
 };
 
 enum class LogOrigin : uint8_t {
@@ -70,6 +77,8 @@ struct RouteResolveResult {
   TimeRange route_range;
 };
 
+using RouteSliceSpec = std::pair<int, int>;
+
 struct SegmentLoadOptions {
   SegmentExtractOptions extract;
   bool local_cache = true;
@@ -79,6 +88,7 @@ struct SegmentLoadResult {
   StoreBatch batch;
   std::vector<TimelineSpan> timeline_spans;
   std::vector<LogEntry> logs;
+  std::string car_fingerprint;
   size_t event_count = 0;
   size_t appended_event_count = 0;
   size_t series_count = 0;
@@ -111,6 +121,8 @@ struct RouteIngestConfig {
 struct RouteIngestStatus {
   RouteIngestState state = RouteIngestState::Idle;
   std::string route_name;
+  RouteSelection selection;
+  std::string car_fingerprint;
   std::string error;
   TimeRange route_range;
   size_t segments_resolved = 0;
@@ -121,31 +133,50 @@ struct RouteIngestStatus {
   double total_seconds = 0.0;
 };
 
-RouteSelection parseRouteSelection(std::string route_name);
-RouteResolveResult resolveRouteSegments(const RouteResolveConfig &config);
-SegmentLoadResult loadRouteSegment(const SegmentWorkItem &work,
+const std::array<RouteBrowserPeriod, 5> &route_browser_periods();
+std::string route_browser_device_routes_url(const std::string &dongle_id,
+                                       int64_t start_ms = 0,
+                                       int64_t end_ms = 0,
+                                       bool preserved = false);
+std::string route_browser_route_files_url(const std::string &route_name);
+std::string route_browser_route_label(double from_epoch_sec, double to_epoch_sec);
+RouteBrowserParseResult parse_route_browser_routes(const std::string &json_text,
+                                               bool preserved);
+std::optional<RouteSelection> route_selection_from_text(std::string_view route_name);
+
+RouteSelection parse_route_selection(std::string route_name);
+const char *log_selector_name(LogSelector selector);
+const char *log_selector_description(LogSelector selector);
+char log_selector_char(LogSelector selector);
+std::string route_selection_display_slice(const RouteSelection &selection);
+std::string route_selection_full_spec(const RouteSelection &selection);
+std::string route_useradmin_url(const RouteSelection &selection);
+std::string route_connect_url(const RouteSelection &selection);
+std::optional<RouteSliceSpec> parse_route_slice_spec(std::string_view text);
+RouteResolveResult resolve_route_segments(const RouteResolveConfig &config);
+SegmentLoadResult load_route_segment(const SegmentWorkItem &work,
                                    const SegmentLoadOptions &options,
                                    std::atomic<bool> *abort = nullptr);
-const char *routeIngestStateLabel(RouteIngestState state);
+const char *route_ingest_state_label(RouteIngestState state);
 
 class RouteIngestor {
 public:
   explicit RouteIngestor(SegmentScheduler *scheduler = nullptr);
   ~RouteIngestor();
 
-  void setScheduler(SegmentScheduler *scheduler);
+  void set_scheduler(SegmentScheduler *scheduler);
   void start(RouteIngestConfig config);
   void stop();
   RouteIngestStatus status() const;
-  std::vector<TimelineSpan> drainTimelineSpans();
-  std::vector<LogEntry> drainLogEntries();
+  std::vector<TimelineSpan> drain_timeline_spans();
+  std::vector<LogEntry> drain_log_entries();
 
 private:
   void run(RouteIngestConfig config);
-  void updateStatus(const RouteIngestStatus &status);
-  void mutateStatus(void (*fn)(RouteIngestStatus *));
-  void stageTimelineSpans(std::vector<TimelineSpan> spans);
-  void stageLogEntries(std::vector<LogEntry> logs);
+  void update_status(const RouteIngestStatus &status);
+  void mutate_status(void (*fn)(RouteIngestStatus *));
+  void stage_timeline_spans(std::vector<TimelineSpan> spans);
+  void stage_log_entries(std::vector<LogEntry> logs);
 
   SegmentScheduler *scheduler_ = nullptr;
   std::thread thread_;

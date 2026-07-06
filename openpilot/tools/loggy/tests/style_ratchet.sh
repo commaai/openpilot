@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOGGY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+cd "$LOGGY_ROOT"
+
+rg_count() {
+  local pattern="$1"
+  shift
+  local matches
+  matches="$(rg -n "$pattern" "$@" 2>/dev/null || true)"
+  if [[ -z "$matches" ]]; then
+    echo 0
+  else
+    printf '%s\n' "$matches" | wc -l | tr -d ' '
+  fi
+}
+
+awk_count() {
+  local program="$1"
+  shift
+  awk "$program" "$@" | tail -1 | tr -d ' '
+}
+
+check() {
+  local name="$1"
+  local count="$2"
+  local max="$3"
+  if (( count > max )); then
+    echo "STYLE: $name grew: $count > $max" >&2
+    exit 1
+  fi
+  printf 'STYLE: %-22s %s <= %s\n' "$name" "$count" "$max"
+}
+
+check "error out-params" \
+  "$(rg_count 'std::string \*error|std::string\* error|std::string \*error_text|std::string\* error_text' backend panes shell -g'*.h' -g'*.cc')" \
+  0
+check "null-guard writes" \
+  "$(rg_count 'if \([^\n]+ != nullptr\).*\*|if \(error\) \*error' backend panes shell -g'*.h' -g'*.cc')" \
+  0
+check "std::function" \
+  "$(rg_count 'std::function' backend panes shell -g'*.h' -g'*.cc')" \
+  0
+check "getter pairs" \
+  "$(rg_count '\(\) (const )?\{ return [a-z_]+_; \}' backend/session.h)" \
+  0
+check "pane header fns" \
+  "$(awk_count '/^[A-Za-z].*\(/ {n++} END {print n+0}' panes/*.h)" \
+  22
+check "named header structs" \
+  "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
+  82
+check "product LOC" \
+  "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
+  21241
+check "runtime.cc size" \
+  "$(wc -l < shell/runtime.cc | tr -d ' ')" \
+  825
+check "pane-local statics" \
+  "$(rg_count '^\s+static ' panes -g'*.cc')" \
+  0

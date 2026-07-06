@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "tools/loggy/backend/dbc/dbc.h"
@@ -16,8 +17,8 @@ namespace loggy {
 bool intersects(TimeRange a, TimeRange b);
 TimeRange intersection(TimeRange a, TimeRange b);
 double distance(TimeRange a, TimeRange b);
-double distanceToPoint(TimeRange range, double point);
-std::vector<TimeRange> normalizeRanges(std::vector<TimeRange> ranges);
+double distance_to_point(TimeRange range, double point);
+std::vector<TimeRange> normalize_ranges(std::vector<TimeRange> ranges);
 
 struct CoverageInfo {
   TimeRange requested;
@@ -79,9 +80,12 @@ struct CanSummaryView {
 
 struct StoreBatch {
   int segment = -1;
+  std::vector<std::string> replace_series_paths;
   std::vector<TimeRange> coverage;
   std::vector<SeriesChunk> series;
   std::vector<CanEventChunk> can_events;
+  std::unordered_map<std::string, std::vector<std::string>> enum_names;
+  std::unordered_map<std::string, bool> deprecated_paths;
 };
 
 struct DrainResult {
@@ -90,25 +94,43 @@ struct DrainResult {
   size_t series_points = 0;
   size_t can_chunks = 0;
   size_t can_events = 0;
+  std::vector<std::string> touched_series_paths;
+};
+
+struct StoreTrimResult {
+  double cutoff_time = 0.0;
+  size_t series_paths_removed = 0;
+  size_t series_chunks_removed = 0;
+  size_t series_points_removed = 0;
+  size_t can_messages_removed = 0;
+  size_t can_events_removed = 0;
+  size_t coverage_ranges_removed = 0;
+  std::vector<std::string> touched_series_paths;
 };
 
 class Store {
 public:
   // Producers may call stage() from worker threads. The UI thread calls
-  // beginFrame() once per frame; only that drain makes data visible to panes.
+  // begin_frame() once per frame; only that drain makes data visible to panes.
   void stage(StoreBatch batch);
-  DrainResult beginFrame();
+  DrainResult begin_frame();
+  StoreTrimResult trim_before(double cutoff_time);
   void clear();
 
   SeriesView series(std::string_view path, double t0, double t1, size_t max_points) const;
-  CanEventView canEvents(const MessageId &id, TimeRange range) const;
-  CanSummaryView canEventSummary(const MessageId &id, TimeRange range) const;
+  SeriesView series_full(std::string_view path, TimeRange range) const;
+  CanEventView can_events(const MessageId &id, TimeRange range) const;
+  CanSummaryView can_event_summary(const MessageId &id, TimeRange range) const;
 
-  size_t stagedBatchCount() const;
-  size_t seriesPathCount() const { return series_.size(); }
-  size_t canMessageCount() const { return can_events_.size(); }
-  std::vector<std::string> seriesPaths() const;
-  std::vector<MessageId> canMessageIds() const;
+  size_t staged_batch_count() const;
+  uint64_t generation() const { return generation_; }
+  size_t series_path_count() const { return series_.size(); }
+  size_t can_message_count() const { return can_events_.size(); }
+  std::vector<std::string> series_paths() const;
+  std::vector<std::string> series_paths_matching(std::string_view filter, size_t limit) const;
+  std::vector<MessageId> can_message_ids() const;
+  const std::vector<std::string> *series_enum_names(std::string_view path) const;
+  bool series_is_deprecated(std::string_view path) const;
 
 private:
   struct SeriesState {
@@ -124,8 +146,11 @@ private:
   std::vector<StoreBatch> staged_batches_;
 
   std::unordered_map<std::string, SeriesState> series_;
+  std::unordered_map<std::string, std::vector<std::string>> series_enum_names_;
+  std::unordered_set<std::string> deprecated_series_paths_;
   std::unordered_map<MessageId, CanState> can_events_;
   std::vector<TimeRange> coverage_;
+  uint64_t generation_ = 0;
 };
 
 }  // namespace loggy

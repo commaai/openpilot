@@ -19,6 +19,14 @@ bool bounded_string(const std::string &value, size_t max_bytes) {
   return !value.empty() && value.size() <= max_bytes;
 }
 
+bool valid_theme_name(const std::string &theme) {
+  return theme == "darcula" || theme == "light";
+}
+
+int normalize_target_fps(int fps) {
+  return std::clamp(fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
+}
+
 json11::Json::array recent_files_json(const LoggySettings &settings) {
   json11::Json::array recent;
   for (const std::string &path : settings.recent_dbc_files) recent.push_back(path);
@@ -31,8 +39,8 @@ json11::Json::object assignments_json(const LoggySettings &settings) {
   return assignments;
 }
 
-void set_error(std::string *error, std::string message) {
-  if (error != nullptr) *error = std::move(message);
+void set_error(std::string &error, std::string message) {
+  error = std::move(message);
 }
 
 }  // namespace
@@ -42,6 +50,14 @@ void normalize_loggy_settings(LoggySettings *settings) {
   if (!settings->opendbc_root.empty() && !bounded_string(settings->opendbc_root, kMaxSettingsValueBytes)) {
     settings->opendbc_root.clear();
   }
+  if (!settings->dbc_override.empty() && !bounded_string(settings->dbc_override, kMaxSettingsValueBytes)) {
+    settings->dbc_override.clear();
+  }
+  if (!settings->map_cache_root.empty() && !bounded_string(settings->map_cache_root, kMaxSettingsValueBytes)) {
+    settings->map_cache_root.clear();
+  }
+  if (!valid_theme_name(settings->theme)) settings->theme = kDefaultLoggyTheme;
+  settings->target_fps = normalize_target_fps(settings->target_fps);
 
   std::vector<std::string> recent;
   std::set<std::string> seen;
@@ -114,8 +130,16 @@ std::string loggy_settings_to_json(const LoggySettings &settings) {
 
   const json11::Json root = json11::Json::object{
     {"version", kLoggySettingsVersion},
+    {"app", json11::Json::object{
+      {"target_fps", normalized.target_fps},
+      {"show_frame_hud", normalized.show_frame_hud},
+      {"map_cache_root", normalized.map_cache_root},
+      {"natural_map_drag", normalized.natural_map_drag},
+      {"theme", normalized.theme},
+    }},
     {"dbc", json11::Json::object{
       {"opendbc_root", normalized.opendbc_root},
+      {"override", normalized.dbc_override},
       {"recent_files", recent_files_json(normalized)},
       {"assignments", assignments_json(normalized)},
     }},
@@ -136,9 +160,28 @@ LoggySettingsLoadResult loggy_settings_from_json(std::string_view json_text) {
     return result;
   }
 
+  const json11::Json &app = root["app"].is_object() ? root["app"] : root;
+  if (app["target_fps"].is_number()) {
+    result.settings.target_fps = app["target_fps"].int_value();
+  }
+  if (app["show_frame_hud"].is_bool()) {
+    result.settings.show_frame_hud = app["show_frame_hud"].bool_value();
+  }
+  if (app["map_cache_root"].is_string()) {
+    result.settings.map_cache_root = app["map_cache_root"].string_value();
+  }
+  if (app["natural_map_drag"].is_bool()) {
+    result.settings.natural_map_drag = app["natural_map_drag"].bool_value();
+  }
+  if (app["theme"].is_string()) {
+    result.settings.theme = app["theme"].string_value();
+  }
+
   const json11::Json &dbc = root["dbc"].is_object() ? root["dbc"] : root;
   const json11::Json &opendbc_root = dbc["opendbc_root"].is_string() ? dbc["opendbc_root"] : root["opendbc_root"];
   if (opendbc_root.is_string()) result.settings.opendbc_root = opendbc_root.string_value();
+  const json11::Json &dbc_override = dbc["override"].is_string() ? dbc["override"] : root["dbc_override"];
+  if (dbc_override.is_string()) result.settings.dbc_override = dbc_override.string_value();
 
   const json11::Json &recent_files = dbc["recent_files"].is_array() ? dbc["recent_files"] : root["recent_dbc_files"];
   for (const json11::Json &path : recent_files.array_items()) {
@@ -169,6 +212,15 @@ LoggySettingsLoadResult load_loggy_settings(const fs::path &path) {
     return result;
   }
   if (!exists) return result;
+  const bool regular = fs::is_regular_file(path, ec);
+  if (ec) {
+    result.error = "failed to stat settings file: " + ec.message();
+    return result;
+  }
+  if (!regular) {
+    result.error = "settings path is not a regular file: " + path.string();
+    return result;
+  }
 
   std::ifstream stream(path, std::ios::binary);
   if (!stream.is_open()) {
@@ -186,7 +238,7 @@ LoggySettingsLoadResult load_loggy_settings(const fs::path &path) {
   return result;
 }
 
-bool save_loggy_settings(const LoggySettings &settings, const fs::path &path, std::string *error) {
+bool save_loggy_settings(const LoggySettings &settings, const fs::path &path, std::string &error) {
   if (path.empty()) {
     set_error(error, "settings path is empty");
     return false;

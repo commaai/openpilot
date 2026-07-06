@@ -71,24 +71,24 @@ int main(int argc, char **argv) {
 
     if (config.route_name.empty()) config.route_name = DEMO_ROUTE;
 
-    const auto start = std::chrono::steady_clock::now();
-    loggy::RouteResolveResult resolved = loggy::resolveRouteSegments(config);
+    const auto start_ = std::chrono::steady_clock::now();
+    loggy::RouteResolveResult resolved = loggy::resolve_route_segments(config);
     loggy::Store store;
     loggy::SegmentScheduler scheduler(&store);
-    scheduler.setRouteSegments(resolved.segments);
+    scheduler.set_route_segments(resolved.segments);
 
     size_t loaded_segments = 0;
     double first_segment_seconds = 0.0;
-    while (std::optional<loggy::SegmentWorkItem> work = scheduler.takeNext()) {
+    while (std::optional<loggy::SegmentWorkItem> work = scheduler.take_next()) {
       loggy::SegmentLoadOptions options;
       options.extract.segment = work->segment;
       options.extract.coverage = work->range;
-      loggy::SegmentLoadResult loaded = loggy::loadRouteSegment(*work, options);
+      loggy::SegmentLoadResult loaded = loggy::load_route_segment(*work, options);
       scheduler.publish(std::move(loaded.batch));
-      store.beginFrame();
+      store.begin_frame();
       ++loaded_segments;
       if (loaded_segments == 1) {
-        first_segment_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+        first_segment_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start_).count();
       }
       std::cout << "segment " << work->segment
                 << " events=" << loaded.event_count
@@ -111,16 +111,16 @@ int main(int argc, char **argv) {
       }
     }
 
-    const double total_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    const double total_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start_).count();
     std::cout << "resolved_segments=" << resolved.segments.size()
               << " loaded_segments=" << loaded_segments
               << " first_segment_seconds=" << first_segment_seconds
               << " total_seconds=" << total_seconds
-              << " store_series=" << store.seriesPathCount()
-              << " store_can_ids=" << store.canMessageCount()
+              << " store_series=" << store.series_path_count()
+              << " store_can_ids=" << store.can_message_count()
               << "\n";
 
-    if (loaded_segments == 0 || store.seriesPathCount() == 0) {
+    if (loaded_segments == 0 || store.series_path_count() == 0) {
       std::cerr << "route ingest smoke produced no usable series\n";
       return 1;
     }

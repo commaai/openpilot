@@ -76,7 +76,7 @@ BO_TX_BU_ 160 : EON;
 )";
 
   loggy::DBCFile dbc("", content);
-  const std::string generated = dbc.generateDBC();
+  const std::string generated = dbc.generate_dbc();
   CHECK(generated.find("BO_ 160 message_1") != std::string::npos);
   CHECK(generated.find("BA_ ") == std::string::npos);
   CHECK(generated.find("BO_TX_BU_") == std::string::npos);
@@ -88,7 +88,7 @@ TEST_CASE("DBCFile parses ford_lincoln_base_pt.dbc regression") {
   REQUIRE(fs::exists(ford_dbc));
 
   loggy::DBCFile dbc(ford_dbc.string());
-  REQUIRE(dbc.getMessages().size() > 100);
+  REQUIRE(dbc.messages().size() > 100);
 
   auto *dte = dbc.msg(823);
   REQUIRE(dte != nullptr);
@@ -100,15 +100,15 @@ TEST_CASE("DBCFile parses ford_lincoln_base_pt.dbc regression") {
 TEST_CASE("DBCManager source parsing and source-specific close fallback") {
   loggy::SourceSet sources;
   std::string error;
-  REQUIRE(loggy::parseSourceSet("all", &sources, &error));
+  REQUIRE(loggy::parse_source_set("all", sources, error));
   CHECK(sources == loggy::SOURCE_ALL);
   CHECK(error.empty());
-  REQUIRE(loggy::parseSourceSet("0, 2 3", &sources, &error));
+  REQUIRE(loggy::parse_source_set("0, 2 3", sources, error));
   const loggy::SourceSet expected_sources{0, 2, 3};
   CHECK(sources == expected_sources);
-  REQUIRE_FALSE(loggy::parseSourceSet("bad", &sources, &error));
+  REQUIRE_FALSE(loggy::parse_source_set("bad", sources, error));
   CHECK(error == "invalid source: bad");
-  REQUIRE_FALSE(loggy::parseSourceSet("999", &sources, &error));
+  REQUIRE_FALSE(loggy::parse_source_set("999", sources, error));
   CHECK(error == "invalid source: 999");
 
   loggy::DBCManager manager;
@@ -116,34 +116,34 @@ TEST_CASE("DBCManager source parsing and source-specific close fallback") {
 VERSION ""
 BO_ 291 ALL_MSG: 1 XXX
  SG_ all_sig : 0|8@1+ (1,0) [0|255] "" XXX
-)", &error));
+)", error));
   REQUIRE(manager.open(loggy::SourceSet{0}, "bus0", R"(
 VERSION ""
 BO_ 291 BUS0_MSG: 1 XXX
  SG_ bus0_sig : 0|8@1+ (1,0) [0|255] "" XXX
-)", &error));
+)", error));
 
-  REQUIRE(manager.findDBCFile(0) != nullptr);
-  CHECK(manager.findDBCFile(0)->name() == "bus0");
-  REQUIRE(manager.findDBCFile(1) != nullptr);
-  CHECK(manager.findDBCFile(1)->name() == "all");
+  REQUIRE(manager.find_dbc_file(0) != nullptr);
+  CHECK(manager.find_dbc_file(0)->name() == "bus0");
+  REQUIRE(manager.find_dbc_file(1) != nullptr);
+  CHECK(manager.find_dbc_file(1)->name() == "all");
 
   manager.close(loggy::SourceSet{0});
-  REQUIRE(manager.findDBCFile(0) != nullptr);
-  CHECK(manager.findDBCFile(0)->name() == "all");
-  CHECK(manager.allDBCFiles().size() == 1);
+  REQUIRE(manager.find_dbc_file(0) != nullptr);
+  CHECK(manager.find_dbc_file(0)->name() == "all");
+  CHECK(manager.all_dbc_files().size() == 1);
 
-  loggy::DBCFile *all_file = manager.findDBCFile(0);
-  REQUIRE(manager.assignSources(all_file, loggy::SourceSet{1}, &error));
+  loggy::DBCFile *all_file = manager.find_dbc_file(0);
+  REQUIRE(manager.assign_sources(all_file, loggy::SourceSet{1}, error));
   CHECK(error.empty());
-  CHECK(manager.findDBCFile(0) == nullptr);
-  REQUIRE(manager.findDBCFile(1) != nullptr);
-  CHECK(manager.findDBCFile(1)->name() == "all");
+  CHECK(manager.find_dbc_file(0) == nullptr);
+  REQUIRE(manager.find_dbc_file(1) != nullptr);
+  CHECK(manager.find_dbc_file(1)->name() == "all");
   const loggy::SourceSet source_one{1};
   CHECK(manager.sources(all_file) == source_one);
 }
 
-TEST_CASE("DBCFile saveAs preserves filename on write failure") {
+TEST_CASE("DBCFile save_as preserves filename on write failure") {
   loggy::DBCFile dbc("inline", R"(
 VERSION ""
 BO_ 291 TEST_MSG: 1 XXX
@@ -153,6 +153,6 @@ BO_ 291 TEST_MSG: 1 XXX
 
   const fs::path bad_path = fs::temp_directory_path() / "loggy_missing_dir" / "out.dbc";
   if (fs::exists(bad_path.parent_path())) fs::remove_all(bad_path.parent_path());
-  CHECK_FALSE(dbc.saveAs(bad_path.string()));
+  CHECK_FALSE(dbc.save_as(bad_path.string()));
   CHECK(dbc.filename == "/tmp/loggy-original.dbc");
 }

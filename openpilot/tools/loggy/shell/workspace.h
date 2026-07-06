@@ -2,6 +2,7 @@
 
 #include "tools/loggy/shell/pane.h"
 
+#include <any>
 #include <cstddef>
 #include <filesystem>
 #include <optional>
@@ -15,10 +16,29 @@ inline constexpr const char *kDefaultPaneType = "empty";
 inline constexpr const char *kDefaultPaneTitle = "...";
 
 struct PaneInstance {
+  PaneInstance() = default;
+  PaneInstance(const PaneInstance &other)
+    : type(other.type),
+      title(other.title),
+      state_json(other.state_json),
+      selection_group(other.selection_group) {}
+  PaneInstance &operator=(const PaneInstance &other) {
+    if (this == &other) return *this;
+    type = other.type;
+    title = other.title;
+    state_json = other.state_json;
+    selection_group = other.selection_group;
+    transient_state.reset();
+    return *this;
+  }
+  PaneInstance(PaneInstance &&) noexcept = default;
+  PaneInstance &operator=(PaneInstance &&) noexcept = default;
+
   std::string type = kDefaultPaneType;
   std::string title = kDefaultPaneTitle;
   std::string state_json = "{}";
   std::string selection_group = "default";
+  std::any transient_state;  // Per-pane draw caches; not serialized into workspace JSON.
 };
 
 enum class SplitOrientation {
@@ -57,14 +77,31 @@ struct WorkspaceHistory {
 
   void reset(const Workspace &workspace);
   void push(const Workspace &workspace);
-  bool canUndo() const;
-  bool canRedo() const;
+  bool can_undo() const;
+  bool can_redo() const;
   const Workspace *undo();
   const Workspace *redo();
 
   std::vector<Workspace> history;
   int position = -1;
 };
+
+struct WorkspaceLoadResult {
+  Workspace workspace;
+  bool loaded_draft = false;
+};
+
+bool workspace_autosave_available(const std::filesystem::path &layout_path);
+void autosave_workspace(const Workspace &workspace, const std::filesystem::path &layout_path,
+                       std::string &workspace_status, std::string_view status);
+void record_workspace_change(Workspace &workspace, WorkspaceHistory &history, const std::filesystem::path &layout_path,
+                            std::string &workspace_status, std::string_view status);
+std::optional<int> restore_workspace_snapshot(Workspace &workspace, const Workspace *snapshot,
+                                             const std::filesystem::path &layout_path, std::string &workspace_status,
+                                             std::string_view status);
+void save_workspace_now(Workspace &workspace, WorkspaceHistory &history, const std::filesystem::path &layout_path,
+                       std::string &workspace_status);
+void clear_workspace_draft_now(const std::filesystem::path &layout_path, std::string &workspace_status);
 
 PaneInstance make_pane(std::string type = kDefaultPaneType,
                        std::string title = kDefaultPaneTitle,
@@ -102,7 +139,7 @@ std::filesystem::path layouts_dir();
 std::filesystem::path autosave_dir();
 std::filesystem::path autosave_path_for_layout(const std::filesystem::path &layout_path);
 void save_workspace_draft(const Workspace &workspace, const std::filesystem::path &layout_path);
-Workspace load_workspace_or_draft(const std::filesystem::path &layout_path, bool *loaded_draft = nullptr);
+WorkspaceLoadResult load_workspace_or_draft(const std::filesystem::path &layout_path);
 void clear_workspace_draft(const std::filesystem::path &layout_path);
 
 }  // namespace loggy

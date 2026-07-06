@@ -2,12 +2,13 @@
 
 #include "tools/loggy/panes/binary.h"
 #include "tools/loggy/panes/browser.h"
+#include "tools/loggy/panes/camera.h"
+#include "tools/loggy/panes/computed.h"
 #include "tools/loggy/panes/find_bits.h"
 #include "tools/loggy/panes/find_signal.h"
 #include "tools/loggy/panes/historylog.h"
 #include "tools/loggy/panes/logs.h"
 #include "tools/loggy/panes/map.h"
-#include "tools/loggy/panes/messages.h"
 #include "tools/loggy/panes/plot.h"
 #include "tools/loggy/panes/signal.h"
 #include "tools/loggy/panes/dbc.h"
@@ -433,46 +434,36 @@ void draw_dummy_pane(Session &, PaneInstance &) {
 
 }  // namespace
 
-bool PaneRegistry::registerType(PaneType type) {
-  if (type.id.empty() || find(type.id) != nullptr) return false;
-  types_.push_back(std::move(type));
-  return true;
-}
+static const PaneType kPaneTypes[] = {
+  {"empty", "Empty", draw_dummy_pane},
+  {"plot", "Plot", draw_plot_pane},
+  {"messages", "Messages", draw_messages_pane},
+  {"binary", "Binary", draw_binary_pane},
+  {"dbc", "DBC", draw_dbc_pane},
+  {"signal", "Signal", draw_signal_pane},
+  {"historylog", "History", draw_history_log_pane},
+  {"find_signal", "Find Signal", draw_find_signal_pane},
+  {"find_bits", "Find Bits", draw_find_bits_pane},
+  {"browser", "Browser", draw_browser_pane},
+  {"logs", "Logs", draw_logs_pane},
+  {"map", "Map", draw_map_pane},
+  {"computed", "Computed", draw_computed_pane},
+  {"camera", "Camera", draw_camera_pane},
+};
 
-const PaneType *PaneRegistry::find(std::string_view id) const {
-  const auto it = std::find_if(types_.begin(), types_.end(), [&](const PaneType &type) {
-    return type.id == id;
+const PaneType *pane_type(std::string_view id) {
+  const auto it = std::find_if(kPaneTypes, kPaneTypes + pane_type_count(), [&](const PaneType &type) {
+    return id == type.id;
   });
-  return it == types_.end() ? nullptr : &*it;
+  return it == kPaneTypes + pane_type_count() ? nullptr : it;
 }
 
-std::vector<PaneType> PaneRegistry::types() const {
-  return types_;
+const PaneType *pane_types() {
+  return kPaneTypes;
 }
 
-void PaneRegistry::clear() {
-  types_.clear();
-}
-
-PaneRegistry &pane_registry() {
-  static PaneRegistry registry;
-  return registry;
-}
-
-void register_dummy_pane_types(PaneRegistry &registry) {
-  registry.registerType(PaneType{"empty", "Empty", draw_dummy_pane});
-  registry.registerType(PaneType{"plot", "Plot", draw_plot_pane});
-  registry.registerType(PaneType{"messages", "Messages", draw_messages_pane});
-  registry.registerType(PaneType{"binary", "Binary", draw_binary_pane});
-  registry.registerType(PaneType{"dbc", "DBC", draw_dbc_pane});
-  registry.registerType(PaneType{"signal", "Signal", draw_signal_pane});
-  registry.registerType(PaneType{"historylog", "History", draw_history_log_pane});
-  registry.registerType(PaneType{"find_signal", "Find Signal", draw_find_signal_pane});
-  registry.registerType(PaneType{"find_bits", "Find Bits", draw_find_bits_pane});
-  registry.registerType(PaneType{"browser", "Browser", draw_browser_pane});
-  registry.registerType(PaneType{"logs", "Logs", draw_logs_pane});
-  registry.registerType(PaneType{"map", "Map", draw_map_pane});
-  registry.registerType(PaneType{"camera", "Camera", draw_dummy_pane});
+size_t pane_type_count() {
+  return sizeof(kPaneTypes) / sizeof(kPaneTypes[0]);
 }
 
 void WorkspaceHistory::reset(const Workspace &workspace) {
@@ -494,20 +485,82 @@ void WorkspaceHistory::push(const Workspace &workspace) {
   position = static_cast<int>(history.size()) - 1;
 }
 
-bool WorkspaceHistory::canUndo() const {
+bool workspace_autosave_available(const fs::path &layout_path) {
+  return !layout_path.empty();
+}
+
+void autosave_workspace(const Workspace &workspace, const fs::path &layout_path, std::string &workspace_status,
+                       std::string_view status) {
+  if (!workspace_autosave_available(layout_path)) return;
+  try {
+    save_workspace_draft(workspace, layout_path);
+    workspace_status = std::string(status);
+  } catch (const std::exception &e) {
+    workspace_status = "Workspace autosave failed: " + std::string(e.what());
+  }
+}
+
+void record_workspace_change(Workspace &workspace, WorkspaceHistory &history, const fs::path &layout_path,
+                            std::string &workspace_status, std::string_view status) {
+  history.push(workspace);
+  autosave_workspace(workspace, layout_path, workspace_status, status);
+}
+
+std::optional<int> restore_workspace_snapshot(Workspace &workspace, const Workspace *snapshot, const fs::path &layout_path,
+                                             std::string &workspace_status, std::string_view status) {
+  if (snapshot == nullptr) return std::nullopt;
+  workspace = *snapshot;
+  normalize_workspace(&workspace);
+  autosave_workspace(workspace, layout_path, workspace_status, status);
+  if (!workspace_autosave_available(layout_path)) {
+    workspace_status = std::string(status);
+  }
+  return workspace.current_tab_index;
+}
+
+void save_workspace_now(Workspace &workspace, WorkspaceHistory &history, const fs::path &layout_path,
+                       std::string &workspace_status) {
+  if (!workspace_autosave_available(layout_path)) {
+    workspace_status = "No layout file to save";
+    return;
+  }
+  try {
+    save_workspace_json(workspace, layout_path);
+    clear_workspace_draft(layout_path);
+    history.reset(workspace);
+    workspace_status = "Saved workspace layout";
+  } catch (const std::exception &e) {
+    workspace_status = "Workspace save failed: " + std::string(e.what());
+  }
+}
+
+void clear_workspace_draft_now(const fs::path &layout_path, std::string &workspace_status) {
+  if (!workspace_autosave_available(layout_path)) {
+    workspace_status = "No layout draft to clear";
+    return;
+  }
+  try {
+    clear_workspace_draft(layout_path);
+    workspace_status = "Cleared workspace draft";
+  } catch (const std::exception &e) {
+    workspace_status = "Clear draft failed: " + std::string(e.what());
+  }
+}
+
+bool WorkspaceHistory::can_undo() const {
   return position > 0;
 }
 
-bool WorkspaceHistory::canRedo() const {
+bool WorkspaceHistory::can_redo() const {
   return position >= 0 && position + 1 < static_cast<int>(history.size());
 }
 
 const Workspace *WorkspaceHistory::undo() {
-  return canUndo() ? &history[static_cast<size_t>(--position)] : nullptr;
+  return can_undo() ? &history[static_cast<size_t>(--position)] : nullptr;
 }
 
 const Workspace *WorkspaceHistory::redo() {
-  return canRedo() ? &history[static_cast<size_t>(++position)] : nullptr;
+  return can_redo() ? &history[static_cast<size_t>(++position)] : nullptr;
 }
 
 PaneInstance make_pane(std::string type, std::string title, std::string state_json) {
@@ -554,6 +607,7 @@ Workspace make_jotpluggler_workspace() {
   add_default_split(&tab, PaneSplit::Right, make_pane("map", "Map"));
   add_default_split(&tab, PaneSplit::Bottom, make_pane("logs", "Logs"));
   workspace.tabs.push_back(std::move(tab));
+  workspace.tabs.push_back(make_tab("Computed", make_pane("computed", "Computed")));
   return workspace;
 }
 
@@ -764,11 +818,10 @@ void save_workspace_draft(const Workspace &workspace, const fs::path &layout_pat
   save_workspace_json(workspace, autosave_path_for_layout(layout_path));
 }
 
-Workspace load_workspace_or_draft(const fs::path &layout_path, bool *loaded_draft) {
+WorkspaceLoadResult load_workspace_or_draft(const fs::path &layout_path) {
   const fs::path draft = autosave_path_for_layout(layout_path);
   const bool use_draft = fs::exists(draft);
-  if (loaded_draft != nullptr) *loaded_draft = use_draft;
-  return load_workspace_json(use_draft ? draft : layout_path);
+  return {.workspace = load_workspace_json(use_draft ? draft : layout_path), .loaded_draft = use_draft};
 }
 
 void clear_workspace_draft(const fs::path &layout_path) {

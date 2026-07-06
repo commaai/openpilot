@@ -1,9 +1,15 @@
 #include "tools/loggy/shell/runtime.h"
 
 #include "tools/loggy/backend/session.h"
+#include "tools/loggy/panes/map.h"
+#include "tools/loggy/shell/live_source_controls.h"
+#include "tools/loggy/shell/settings_ui.h"
+#include "tools/loggy/shell/remote_routes.h"
+#include "tools/loggy/shell/route_controls.h"
 #include "tools/loggy/shell/theme.h"
 #include "tools/loggy/shell/workspace.h"
 
+#include "json11/json11.hpp"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
@@ -13,24 +19,61 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
+#include <cstdint>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
+#include <deque>
 #include <vector>
+
 
 namespace loggy {
 namespace {
 
 namespace fs = std::filesystem;
 using Clock = std::chrono::steady_clock;
+using SignalHandler = void (*)(int);
+
+volatile std::sig_atomic_t g_shutdown_signal = 0;
+
+void shutdown_signal_handler(int signal) {
+  g_shutdown_signal = signal;
+}
+
+bool shutdown_requested() {
+  return g_shutdown_signal != 0;
+}
+
+class ShutdownSignalHandlers {
+public:
+  ShutdownSignalHandlers() {
+    g_shutdown_signal = 0;
+    previous_sigint_ = std::signal(SIGINT, shutdown_signal_handler);
+    previous_sigterm_ = std::signal(SIGTERM, shutdown_signal_handler);
+  }
+
+  ~ShutdownSignalHandlers() {
+    if (previous_sigint_ != SIG_ERR) std::signal(SIGINT, previous_sigint_);
+    if (previous_sigterm_ != SIG_ERR) std::signal(SIGTERM, previous_sigterm_);
+  }
+
+private:
+  SignalHandler previous_sigint_ = SIG_DFL;
+  SignalHandler previous_sigterm_ = SIG_DFL;
+};
 
 std::string shell_quote(std::string_view value) {
   std::string quoted;
@@ -45,6 +88,19 @@ std::string shell_quote(std::string_view value) {
   }
   quoted.push_back('\'');
   return quoted;
+}
+
+bool g_escape_pressed = false;
+
+bool modal_escape_pressed() {
+  return g_escape_pressed;
+}
+
+void loggy_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    g_escape_pressed = true;
+  }
+  ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
 }
 
 void glfw_error_callback(int error, const char *description) {
@@ -113,6 +169,7 @@ public:
       ImGui::DestroyContext();
       throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
     }
+    glfwSetKeyCallback(window, loggy_key_callback);
     if (!ImGui_ImplOpenGL3_Init("#version 330")) {
       ImGui_ImplGlfw_Shutdown();
       ImPlot::DestroyContext();
@@ -133,29 +190,35 @@ public:
 };
 
 struct FrameStats {
-  static constexpr size_t kWindow = 240;
-  std::array<double, kWindow> samples{};
-  size_t cursor = 0;
-  size_t count = 0;
+  static constexpr std::chrono::duration<double> kWindow = std::chrono::duration<double>(5.0);
+  struct Sample {
+    Clock::time_point at;
+    double ms;
+  };
+  std::deque<Sample> samples;
   double latest_ms = 0.0;
 
   void add(double ms) {
+    const Clock::time_point now = Clock::now();
     latest_ms = ms;
-    samples[cursor] = ms;
-    cursor = (cursor + 1) % samples.size();
-    count = std::min(count + 1, samples.size());
+    samples.push_back({now, ms});
+    while (!samples.empty() && now - samples.front().at > kWindow) {
+      samples.pop_front();
+    }
   }
 
   void reset() {
-    cursor = 0;
-    count = 0;
+    samples.clear();
     latest_ms = 0.0;
-    samples.fill(0.0);
   }
 
   double p99_ms() const {
-    if (count == 0) return 0.0;
-    std::vector<double> values(samples.begin(), samples.begin() + static_cast<ptrdiff_t>(count));
+    if (samples.empty()) return 0.0;
+    std::vector<double> values;
+    values.reserve(samples.size());
+    for (const Sample &sample : samples) {
+      values.push_back(sample.ms);
+    }
     std::sort(values.begin(), values.end());
     const size_t idx = std::min(values.size() - 1, static_cast<size_t>(values.size() * 0.99));
     return values[idx];
@@ -172,17 +235,40 @@ struct AppState {
         .data_dir = opts.data_dir,
         .settings_path = opts.settings_path,
         .stream_address = opts.stream_address,
+        .stream_source_kind = opts.stream_source_kind,
+        .stream_panda_buses = opts.stream_panda_buses,
+        .stream_buffer_seconds = opts.stream_buffer_seconds,
         .stream = opts.stream,
       }),
-      show_frame_hud(opts.show_frame_hud) {}
+      show_frame_hud(opts.show_frame_hud && session.settings.show_frame_hud),
+      target_fps(std::clamp(session.settings.target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps)),
+      theme_kind(loggy_theme_from_name(session.settings.theme)) {
+    apply_theme(theme_kind);
+    sync_live_source_fields(session, live_source_ui);
+    sync_route_popup_fields(session, route_ui);
+    workspace_history.reset(session.workspace);
+    workspace_select_request = session.workspace.current_tab_index;
+    if (session.loaded_workspace_draft) {
+      workspace_status = "Loaded workspace draft";
+    }
+  }
 
   const Options &options;
   Session session;
   FrameStats frame_stats;
   Clock::time_point last_playback_update = Clock::now();
   bool show_frame_hud = true;
+  int target_fps = kDefaultLoggyTargetFps;
+  LoggyThemeKind theme_kind = LoggyThemeKind::Darcula;
   bool show_demo = false;
   bool request_close = false;
+  WorkspaceHistory workspace_history;
+  std::string workspace_status;
+  int workspace_select_request = -1;
+  bool open_help_popup = false;
+  LiveSourceUiState live_source_ui;
+  RouteUiState route_ui;
+  SettingsUiState settings_ui;
 
   struct PaneAction {
     enum class Type { Split, Close };
@@ -193,6 +279,49 @@ struct AppState {
   };
   std::optional<PaneAction> pending_pane_action;
 };
+
+void request_help_popup(AppState &app) {
+  app.open_help_popup = true;
+}
+
+void draw_help_popup(AppState &app) {
+  if (app.open_help_popup) {
+    ImGui::OpenPopup("Help");
+    app.open_help_popup = false;
+  }
+
+  if (!ImGui::BeginPopupModal("Help", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+  const bool close_requested = modal_escape_pressed();
+
+  ImGui::TextUnformatted("Loggy");
+  ImGui::TextDisabled("Route analysis shell for CAN + qlog and live streams.");
+  ImGui::Separator();
+
+  ImGui::TextUnformatted("Shortcuts");
+  ImGui::BulletText("F1: Open this Help/About overlay.");
+  ImGui::BulletText("Space: Play/Pause playback.");
+  ImGui::BulletText("F12: Toggle frame-time HUD.");
+  ImGui::BulletText("Mouse: Drag timeline to seek.");
+  ImGui::BulletText("Route mode: use the footer Route button to reopen a route.");
+
+  ImGui::Spacing();
+  ImGui::TextUnformatted("Routes");
+  ImGui::BulletText("Route popup: File → Open Route or Status footer Route button.");
+  ImGui::BulletText("Route format: <dongle>|<timestamp>[:<begin>[:<end>]] with optional auto/rlog/qlog selector.");
+  ImGui::BulletText("Live mode: File → Live Source or Route footer Open Live button.");
+  ImGui::BulletText("Live controls: Source, Pause Live, and Follow live in the status bar.");
+  ImGui::BulletText("Slice quickly with `N`, `N:`, or `N:M` (route popup).");
+
+  ImGui::Spacing();
+  ImGui::TextUnformatted("Workspace");
+  ImGui::BulletText("Preset `cabana` starts with Messages/Binary/Signal analysis panes.");
+  ImGui::BulletText("Preset `jotpluggler` starts with Browser/Plot/Logs workspace.");
+  ImGui::BulletText("Context-click pane for split and close actions; use `+` to add workspace tabs.");
+  ImGui::BulletText("Use File → Open Route / Live Source and route popup actions to change data sources.");
+  ImGui::Spacing();
+  if (ImGui::Button("Close") || close_requested) ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+}
 
 void save_framebuffer_png(const fs::path &output_path, int width, int height) {
   if (width <= 0 || height <= 0) throw std::runtime_error("Invalid framebuffer size");
@@ -249,12 +378,50 @@ void draw_frame_hud(const FrameStats &stats) {
                      ImGui::GetColorU32(color_rgb(220, 220, 220)), label.c_str(), nullptr);
 }
 
+void pace_frame(const AppState &app, Clock::time_point frame_start) {
+  const int fps = std::clamp(app.target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
+  const Clock::duration period =
+    std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(1.0 / static_cast<double>(fps)));
+  const Clock::time_point wake_at = frame_start + period;
+  if (Clock::now() < wake_at) std::this_thread::sleep_until(wake_at);
+}
+
 void draw_main_menu(AppState &app) {
   if (!ImGui::BeginMainMenuBar()) return;
   if (ImGui::BeginMenu("File")) {
-    ImGui::MenuItem("Open Route...", nullptr, false, false);
+    if (ImGui::MenuItem("Open Route...")) {
+      request_route_popup(app.session, app.route_ui);
+    }
+    if (ImGui::MenuItem("Live Source...")) {
+      request_live_source_popup(app.session, app.live_source_ui);
+    }
+    if (ImGui::MenuItem("Settings...")) {
+      request_settings_popup(app.session, app.target_fps, app.settings_ui);
+    }
     ImGui::Separator();
     if (ImGui::MenuItem("Quit")) app.request_close = true;
+    ImGui::EndMenu();
+  }
+  if (ImGui::BeginMenu("Workspace")) {
+    if (ImGui::MenuItem("Undo", nullptr, false, app.workspace_history.can_undo())) {
+      const auto request = restore_workspace_snapshot(app.session.workspace, app.workspace_history.undo(),
+                                                    app.session.workspace_layout_path, app.workspace_status,
+                                                    "Undid workspace change");
+      if (request.has_value()) app.workspace_select_request = request.value();
+    }
+    if (ImGui::MenuItem("Redo", nullptr, false, app.workspace_history.can_redo())) {
+      const auto request = restore_workspace_snapshot(app.session.workspace, app.workspace_history.redo(),
+                                                    app.session.workspace_layout_path, app.workspace_status,
+                                                    "Redid workspace change");
+      if (request.has_value()) app.workspace_select_request = request.value();
+    }
+    ImGui::Separator();
+    if (ImGui::MenuItem("Save Layout", nullptr, false, workspace_autosave_available(app.session.workspace_layout_path))) {
+      save_workspace_now(app.session.workspace, app.workspace_history, app.session.workspace_layout_path, app.workspace_status);
+    }
+    if (ImGui::MenuItem("Clear Draft", nullptr, false, workspace_autosave_available(app.session.workspace_layout_path))) {
+      clear_workspace_draft_now(app.session.workspace_layout_path, app.workspace_status);
+    }
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("View")) {
@@ -263,7 +430,9 @@ void draw_main_menu(AppState &app) {
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Help")) {
-    ImGui::MenuItem("About Loggy", nullptr, false, false);
+    if (ImGui::MenuItem("About Loggy")) {
+      request_help_popup(app);
+    }
     ImGui::EndMenu();
   }
   ImGui::EndMainMenuBar();
@@ -309,7 +478,7 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
   }
 
   ImGui::Separator();
-  if (const PaneType *type = pane_registry().find(pane.type); type != nullptr && type->draw) {
+  if (const PaneType *type = pane_type(pane.type); type != nullptr && type->draw != nullptr) {
     type->draw(app.session, pane);
   }
   ImGui::EndChild();
@@ -358,30 +527,30 @@ void apply_pending_pane_action(AppState &app) {
   const auto action = *app.pending_pane_action;
   app.pending_pane_action.reset();
 
-  Workspace &workspace = app.session.workspace();
+  Workspace &workspace = app.session.workspace;
   if (action.tab_index < 0 || action.tab_index >= static_cast<int>(workspace.tabs.size())) return;
   WorkspaceTab &tab = workspace.tabs[static_cast<size_t>(action.tab_index)];
   if (action.type == AppState::PaneAction::Type::Close) {
-    close_pane(&tab, action.pane_index);
+    if (close_pane(&tab, action.pane_index)) {
+      record_workspace_change(workspace, app.workspace_history, app.session.workspace_layout_path, app.workspace_status,
+                             "Autosaved workspace draft");
+    }
     return;
   }
 
   PaneInstance pane = make_pane("empty", "...");
-  split_pane(&tab, action.pane_index, action.split, std::move(pane));
+  if (split_pane(&tab, action.pane_index, action.split, std::move(pane))) {
+    record_workspace_change(app.session.workspace, app.workspace_history, app.session.workspace_layout_path,
+                           app.workspace_status, "Autosaved workspace draft");
+  }
 }
 
 void draw_workspace(AppState &app) {
-  Workspace &workspace = app.session.workspace();
+  Workspace &workspace = app.session.workspace;
   normalize_workspace(&workspace);
 
-  static Workspace *selection_workspace = nullptr;
-  static int select_request = -1;
-  if (selection_workspace != &workspace) {
-    selection_workspace = &workspace;
-    select_request = workspace.current_tab_index;
-  }
-  const int select_this_frame = select_request;
-  select_request = -1;
+  const int select_this_frame = app.workspace_select_request;
+  app.workspace_select_request = -1;
 
   if (!ImGui::BeginTabBar("##workspace_tabs")) return;
   for (size_t i = 0; i < workspace.tabs.size(); ++i) {
@@ -395,7 +564,9 @@ void draw_workspace(AppState &app) {
   }
   if (ImGui::TabItemButton("+", ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip)) {
     add_tab(&workspace);
-    select_request = workspace.current_tab_index;
+    app.workspace_select_request = workspace.current_tab_index;
+    record_workspace_change(workspace, app.workspace_history, app.session.workspace_layout_path,
+                           app.workspace_status, "Autosaved workspace draft");
   }
   ImGui::EndTabBar();
 
@@ -403,8 +574,8 @@ void draw_workspace(AppState &app) {
 }
 
 void draw_timeline_strip(AppState &app, const ImVec2 &size) {
-  PlaybackClock &playback = app.session.playback();
-  TimelineModel &timeline = app.session.timeline();
+  PlaybackClock &playback = app.session.playback;
+  TimelineModel &timeline = app.session.timeline;
   const ImVec2 pos = ImGui::GetCursorScreenPos();
   const ImVec2 rect_max(pos.x + size.x, pos.y + size.y);
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
@@ -431,7 +602,7 @@ void draw_timeline_strip(AppState &app, const ImVec2 &size) {
 }
 
 void draw_transport_bar(AppState &app) {
-  PlaybackClock &playback = app.session.playback();
+  PlaybackClock &playback = app.session.playback;
   if (ImGui::Button(playback.playing() ? "Pause" : "Play", ImVec2(64.0f, 0.0f))) {
     playback.toggle_playing();
   }
@@ -491,17 +662,81 @@ void draw_shell(AppState &app) {
                                       ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings);
   draw_transport_bar(app);
   ImGui::SameLine();
-  ImGui::Text("  %.2fs / %.2fs", app.session.playback().tracker_time(), app.session.playback().route_range().end);
+  ImGui::Text("  %.2fs / %.2fs", app.session.playback.tracker_time(), app.session.playback.route_range().end);
   draw_timeline_strip(app, ImVec2(ImGui::GetContentRegionAvail().x, 12.0f));
-  const RouteIngestStatus ingest = app.session.ingestStatus();
-  ImGui::Text("%s  |  %s preset  |  %s", routeIngestStateLabel(ingest.state), app.options.preset.c_str(),
-              app.options.stream ? app.options.stream_address.c_str()
-                                 : (app.options.route_name.empty() ? "no route" : app.options.route_name.c_str()));
+  const RouteIngestStatus ingest = app.session.ingest_status();
+  const LivePollSnapshot live = app.session.live_status();
+  const SessionConfig &session_config = app.session.config;
+  const bool stream = session_config.stream;
+  const RouteSelection route_selection = current_route_selection(app.session);
+  const std::string route_spec = route_selection_full_spec(route_selection);
+  ImGui::Text("%s  |  %s preset", route_ingest_state_label(ingest.state), app.options.preset.c_str());
   ImGui::SameLine();
-  ImGui::TextDisabled("  |  %zu/%zu segments  %zu series  %zu CAN ids",
-                      ingest.segments_loaded, ingest.segments_resolved,
-                      app.session.store().seriesPathCount(), app.session.store().canMessageCount());
+  if (stream) {
+    ImGui::TextDisabled(" | %s %s", live_source_kind_label(session_config.stream_source_kind),
+                        live.source_label.c_str());
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Source")) {
+      request_live_source_popup(app.session, app.live_source_ui);
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton(live.paused ? "Resume Live" : "Pause Live")) {
+      app.session.set_live_paused(!live.paused);
+    }
+    ImGui::SameLine();
+    bool live_follow = app.session.live_follow;
+    if (ImGui::Checkbox("Follow live", &live_follow)) {
+      app.session.set_live_follow(live_follow);
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("  |  live %s  %llu msgs  %llu batches  %.0fs buffer  %zu series  %zu CAN ids",
+                        live.paused ? "paused" : (live.connected ? "connected" : (live.active ? "listening" : "stopped")),
+                        static_cast<unsigned long long>(live.received_messages),
+                        static_cast<unsigned long long>(live.published_batches),
+                        live.buffer_seconds,
+                        app.session.store.series_path_count(), app.session.store.can_message_count());
+    if (!live.error.empty()) {
+      ImGui::SameLine();
+      ImGui::TextDisabled("  |  %s", live.error.c_str());
+    }
+  } else {
+    if (ImGui::SmallButton("Route")) {
+      request_route_popup(app.session, app.route_ui);
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("  |  %s  |  %s  |  %zu/%zu segments  %zu series  %zu CAN ids",
+                        route_spec.empty() ? (session_config.route_name.empty() ? "no route" : session_config.route_name.c_str()) : route_spec.c_str(),
+                        log_selector_description(route_selection.selector),
+                        ingest.segments_loaded, ingest.segments_resolved,
+                        app.session.store.series_path_count(), app.session.store.can_message_count());
+    if (session_config.route_name.empty()) {
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Open Live")) {
+        request_live_source_popup(app.session, app.live_source_ui);
+      }
+    }
+  }
+  if (!app.workspace_status.empty()) {
+    ImGui::SameLine();
+    ImGui::TextDisabled("  |  %s", app.workspace_status.c_str());
+  }
   ImGui::End();
+
+  draw_route_popup(app.session, app.route_ui, modal_escape_pressed());
+  RemoteRouteBrowserActions remote_route_browser_actions;
+  remote_route_browser_actions.ctx = &app;
+  remote_route_browser_actions.open_route = [](void *ctx, std::string_view route) {
+    AppState &target = *static_cast<AppState *>(ctx);
+    const std::string route_name(route);
+    std::snprintf(target.route_ui.route_name_buffer.data(), target.route_ui.route_name_buffer.size(), "%s",
+                  route_name.c_str());
+    restart_route_from_popup(target.session, target.route_ui, route_name, "Opened remote route");
+  };
+  draw_remote_route_browser(remote_route_browser_actions);
+  draw_live_source_popup(app.session, app.live_source_ui);
+  draw_settings_popup(app.session, modal_escape_pressed(), app.options.show_frame_hud, app.theme_kind, app.target_fps,
+                     app.show_frame_hud, app.settings_ui);
+  draw_help_popup(app);
 
   if (app.show_frame_hud) {
     draw_frame_hud(app.frame_stats);
@@ -509,6 +744,7 @@ void draw_shell(AppState &app) {
 }
 
 void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_path) {
+  const auto frame_start = Clock::now();
   glfwPollEvents();
 
   int framebuffer_width = 0;
@@ -524,16 +760,20 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
     app.show_frame_hud = !app.show_frame_hud;
   }
   if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) {
-    app.session.playback().toggle_playing();
+    app.session.playback.toggle_playing();
+  }
+  if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
+    request_help_popup(app);
   }
 
   const auto playback_now = Clock::now();
   const double playback_dt = std::chrono::duration<double>(playback_now - app.last_playback_update).count();
   app.last_playback_update = playback_now;
-  app.session.playback().advance(playback_dt);
-  app.session.beginFrame();
+  app.session.playback.advance(playback_dt);
+  app.session.begin_frame();
 
   draw_shell(app);
+  g_escape_pressed = false;
   ImGui::Render();
 
   const ImVec4 clear = clear_color();
@@ -548,6 +788,7 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
     save_framebuffer_png(*capture_path, framebuffer_width, framebuffer_height);
   }
   glfwSwapBuffers(window);
+  pace_frame(app, frame_start);
 
   if (app.request_close) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -559,22 +800,26 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
 
 int run(const Options &options) {
   try {
+    ShutdownSignalHandlers shutdown_handlers;
     GlfwRuntime glfw_runtime(options);
     ImGuiRuntime imgui_runtime(glfw_runtime.window());
     AppState app(options);
 
     if (!options.output_path.empty()) {
       for (int i = 0; i < 4; ++i) {
+        if (shutdown_requested()) return 0;
         render_frame(glfw_runtime.window(), app, nullptr);
       }
       app.frame_stats.reset();
+      if (shutdown_requested()) return 0;
       render_frame(glfw_runtime.window(), app, nullptr);
       const fs::path capture_path = options.output_path;
+      if (shutdown_requested()) return 0;
       render_frame(glfw_runtime.window(), app, &capture_path);
       return 0;
     }
 
-    while (!glfwWindowShouldClose(glfw_runtime.window())) {
+    while (!glfwWindowShouldClose(glfw_runtime.window()) && !shutdown_requested()) {
       render_frame(glfw_runtime.window(), app, nullptr);
     }
     return 0;

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iterator>
 #include <limits>
+#include <string_view>
 #include <utility>
 
 namespace loggy {
@@ -19,6 +20,10 @@ bool eventLess(const CanEvent &a, const CanEvent &b) {
 TimeRange orderedRange(double t0, double t1) {
   if (t1 < t0) std::swap(t0, t1);
   return {t0, t1};
+}
+
+bool canReplaceSeriesPath(std::string_view path) {
+  return path.rfind("/computed/", 0) == 0;
 }
 
 TimeRange pointRange(const std::vector<SeriesPoint> &points) {
@@ -51,7 +56,7 @@ CoverageInfo coverageFor(TimeRange requested, std::vector<TimeRange> ranges) {
     const TimeRange clipped_range = intersection(requested, range);
     if (clipped_range.valid()) clipped.push_back(clipped_range);
   }
-  info.ranges = normalizeRanges(std::move(clipped));
+  info.ranges = normalize_ranges(std::move(clipped));
   for (const auto &range : info.ranges) {
     info.covered_seconds += range.span();
   }
@@ -90,42 +95,57 @@ void mergeEvents(std::vector<CanEvent> *dst, std::vector<CanEvent> incoming) {
   *dst = std::move(merged);
 }
 
+std::pair<std::vector<TimeRange>, size_t> trimRangesBefore(std::vector<TimeRange> ranges, double cutoff_time) {
+  std::vector<TimeRange> kept;
+  kept.reserve(ranges.size());
+  size_t removed_ranges = 0;
+  for (TimeRange range : ranges) {
+    if (!range.valid() || range.end < cutoff_time) {
+      ++removed_ranges;
+      continue;
+    }
+    if (range.start_ < cutoff_time) range.start_ = cutoff_time;
+    kept.push_back(range);
+  }
+  return std::pair<std::vector<TimeRange>, size_t>(normalize_ranges(std::move(kept)), removed_ranges);
+}
+
 }  // namespace
 
 bool intersects(TimeRange a, TimeRange b) {
-  return a.valid() && b.valid() && a.start < b.end && b.start < a.end;
+  return a.valid() && b.valid() && a.start_ < b.end && b.start_ < a.end;
 }
 
 TimeRange intersection(TimeRange a, TimeRange b) {
   if (!intersects(a, b)) return {};
-  return {std::max(a.start, b.start), std::min(a.end, b.end)};
+  return {std::max(a.start_, b.start_), std::min(a.end, b.end)};
 }
 
 double distance(TimeRange a, TimeRange b) {
   if (!a.valid() || !b.valid()) return std::numeric_limits<double>::infinity();
   if (intersects(a, b)) return 0.0;
-  return a.end <= b.start ? b.start - a.end : a.start - b.end;
+  return a.end <= b.start_ ? b.start_ - a.end : a.start_ - b.end;
 }
 
-double distanceToPoint(TimeRange range, double point) {
+double distance_to_point(TimeRange range, double point) {
   if (!range.valid()) return std::numeric_limits<double>::infinity();
-  if (point >= range.start && point < range.end) return 0.0;
-  return point < range.start ? range.start - point : point - range.end;
+  if (point >= range.start_ && point < range.end) return 0.0;
+  return point < range.start_ ? range.start_ - point : point - range.end;
 }
 
-std::vector<TimeRange> normalizeRanges(std::vector<TimeRange> ranges) {
+std::vector<TimeRange> normalize_ranges(std::vector<TimeRange> ranges) {
   ranges.erase(std::remove_if(ranges.begin(), ranges.end(), [](const auto &range) {
     return !range.valid();
   }), ranges.end());
   std::sort(ranges.begin(), ranges.end(), [](const auto &a, const auto &b) {
-    if (std::abs(a.start - b.start) > EPS) return a.start < b.start;
+    if (std::abs(a.start_ - b.start_) > EPS) return a.start_ < b.start_;
     return a.end < b.end;
   });
 
   std::vector<TimeRange> out;
   out.reserve(ranges.size());
   for (const auto &range : ranges) {
-    if (out.empty() || range.start > out.back().end + EPS) {
+    if (out.empty() || range.start_ > out.back().end + EPS) {
       out.push_back(range);
     } else {
       out.back().end = std::max(out.back().end, range.end);
@@ -135,24 +155,52 @@ std::vector<TimeRange> normalizeRanges(std::vector<TimeRange> ranges) {
 }
 
 void Store::stage(StoreBatch batch) {
+  // Protects staged_batches_ so producers can enqueue while begin_frame drains a previous frame.
   std::lock_guard lock(staged_mutex_);
   staged_batches_.push_back(std::move(batch));
 }
 
-DrainResult Store::beginFrame() {
+DrainResult Store::begin_frame() {
   std::vector<StoreBatch> batches;
   {
+    // Move batches under lock so each batch is drained exactly once per frame.
     std::lock_guard lock(staged_mutex_);
     batches.swap(staged_batches_);
   }
 
   DrainResult result;
   result.batches = batches.size();
+  const bool touched_store = !batches.empty();
   std::vector<std::string> touched_series;
   std::vector<MessageId> touched_can;
 
   for (auto &batch : batches) {
     std::vector<TimeRange> batch_coverage = batch.coverage;
+    for (const std::string &path : batch.replace_series_paths) {
+      if (!canReplaceSeriesPath(path)) continue;
+      series_.erase(path);
+      series_enum_names_.erase(path);
+      deprecated_series_paths_.erase(path);
+      touched_series.push_back(path);
+    }
+
+    for (auto &[path, enum_names] : batch.enum_names) {
+      if (!enum_names.empty()) {
+        series_enum_names_[path] = std::move(enum_names);
+      } else {
+        series_enum_names_.erase(path);
+      }
+      touched_series.push_back(path);
+    }
+    for (const auto &[path, deprecated] : batch.deprecated_paths) {
+      if (deprecated) {
+        deprecated_series_paths_.insert(path);
+      } else {
+        deprecated_series_paths_.erase(path);
+      }
+      touched_series.push_back(path);
+    }
+
     for (auto &chunk : batch.series) {
       if (chunk.path.empty()) continue;
       if (!chunk.range.valid()) chunk.range = pointRange(chunk.points);
@@ -184,10 +232,12 @@ DrainResult Store::beginFrame() {
 
   std::sort(touched_series.begin(), touched_series.end());
   touched_series.erase(std::unique(touched_series.begin(), touched_series.end()), touched_series.end());
+  result.touched_series_paths = touched_series;
   for (const auto &path : touched_series) {
+    if (series_.find(path) == series_.end()) continue;
     auto &chunks = series_[path].chunks;
     std::stable_sort(chunks.begin(), chunks.end(), [](const auto &a, const auto &b) {
-      if (std::abs(a.range.start - b.range.start) > EPS) return a.range.start < b.range.start;
+      if (std::abs(a.range.start_ - b.range.start_) > EPS) return a.range.start_ < b.range.start_;
       return a.segment < b.segment;
     });
   }
@@ -196,21 +246,116 @@ DrainResult Store::beginFrame() {
   touched_can.erase(std::unique(touched_can.begin(), touched_can.end()), touched_can.end());
   for (const auto &id : touched_can) {
     auto &state = can_events_[id];
-    state.coverage = normalizeRanges(std::move(state.coverage));
+    state.coverage = normalize_ranges(std::move(state.coverage));
   }
-  coverage_ = normalizeRanges(std::move(coverage_));
+  coverage_ = normalize_ranges(std::move(coverage_));
+  // Bump generation once so readers that cache generation_ see a single coherent store mutation.
+  if (touched_store) ++generation_;
 
+  return result;
+}
+
+StoreTrimResult Store::trim_before(double cutoff_time) {
+  StoreTrimResult result;
+  result.cutoff_time = cutoff_time;
+  if (!std::isfinite(cutoff_time)) return result;
+
+  std::vector<std::string> empty_series_paths;
+  // Trim points and keep each series' point vectors/references internally consistent per iteration.
+  for (auto &[path, state] : series_) {
+    std::vector<SeriesChunk> kept_chunks;
+    kept_chunks.reserve(state.chunks.size());
+    bool touched = false;
+    for (auto &chunk : state.chunks) {
+      const size_t points_before = chunk.points.size();
+      chunk.points.erase(std::remove_if(chunk.points.begin(), chunk.points.end(), [&](const SeriesPoint &point) {
+        return point.t < cutoff_time;
+      }), chunk.points.end());
+      const size_t removed_points = points_before - chunk.points.size();
+      result.series_points_removed += removed_points;
+      touched = touched || removed_points > 0;
+
+      if (chunk.points.empty()) {
+        ++result.series_chunks_removed;
+        touched = true;
+        continue;
+      }
+      if (chunk.range.valid() && chunk.range.end >= cutoff_time) {
+        if (chunk.range.start_ < cutoff_time) chunk.range.start_ = cutoff_time;
+      } else {
+        chunk.range = pointRange(chunk.points);
+      }
+      kept_chunks.push_back(std::move(chunk));
+    }
+    if (touched) result.touched_series_paths.push_back(path);
+    state.chunks = std::move(kept_chunks);
+    if (state.chunks.empty()) empty_series_paths.push_back(path);
+  }
+
+  for (const std::string &path : empty_series_paths) {
+    series_.erase(path);
+    series_enum_names_.erase(path);
+    deprecated_series_paths_.erase(path);
+    ++result.series_paths_removed;
+  }
+
+  std::vector<MessageId> empty_can_ids;
+  for (auto &[id, state] : can_events_) {
+    const size_t events_before = state.events.size();
+    auto first_kept = std::lower_bound(state.events.begin(), state.events.end(), cutoff_time,
+                                       [](const CanEvent &event, double t) { return event.mono_time < t; });
+    result.can_events_removed += static_cast<size_t>(std::distance(state.events.begin(), first_kept));
+    state.events.erase(state.events.begin(), first_kept);
+    auto [coverage, removed_coverage_ranges] = trimRangesBefore(std::move(state.coverage), cutoff_time);
+    state.coverage = std::move(coverage);
+    result.coverage_ranges_removed += removed_coverage_ranges;
+    if (state.events.empty()) {
+      empty_can_ids.push_back(id);
+    } else if (events_before != state.events.size()) {
+      state.coverage = normalize_ranges(std::move(state.coverage));
+    }
+  }
+  for (const MessageId &id : empty_can_ids) {
+    can_events_.erase(id);
+    ++result.can_messages_removed;
+  }
+
+  auto [coverage, removed_coverage_ranges] = trimRangesBefore(std::move(coverage_), cutoff_time);
+  coverage_ = std::move(coverage);
+  result.coverage_ranges_removed += removed_coverage_ranges;
+
+  std::sort(result.touched_series_paths.begin(), result.touched_series_paths.end());
+  result.touched_series_paths.erase(std::unique(result.touched_series_paths.begin(), result.touched_series_paths.end()),
+                                    result.touched_series_paths.end());
+  if (result.series_paths_removed > 0 || result.series_chunks_removed > 0 || result.series_points_removed > 0 ||
+      result.can_messages_removed > 0 || result.can_events_removed > 0 || result.coverage_ranges_removed > 0) {
+    ++generation_;
+  }
   return result;
 }
 
 void Store::clear() {
   {
+    // Only staged batches are shared; clear ownership for the rest is synchronized by caller thread usage.
     std::lock_guard lock(staged_mutex_);
     staged_batches_.clear();
   }
   series_.clear();
+  series_enum_names_.clear();
+  deprecated_series_paths_.clear();
   can_events_.clear();
   coverage_.clear();
+  ++generation_;
+}
+
+const std::vector<std::string> *Store::series_enum_names(std::string_view path) const {
+  const auto it = series_enum_names_.find(std::string(path));
+  if (it == series_enum_names_.end()) return nullptr;
+  return &it->second;
+}
+
+bool Store::series_is_deprecated(std::string_view path) const {
+  return deprecated_series_paths_.count(std::string(path)) > 0;
 }
 
 SeriesView Store::series(std::string_view path, double t0, double t1, size_t max_points) const {
@@ -226,11 +371,16 @@ SeriesView Store::series(std::string_view path, double t0, double t1, size_t max
   std::vector<SeriesPoint> points;
   for (const auto &chunk : it->second.chunks) {
     if (chunk.range.valid()) {
-      if (!intersects(chunk.range, view.requested)) continue;
+      const bool zero_span = chunk.range.span() <= EPS;
+      if (zero_span) {
+        if (chunk.range.start_ < view.requested.start_ || chunk.range.start_ > view.requested.end) continue;
+      } else if (!intersects(chunk.range, view.requested)) {
+        continue;
+      }
       ranges.push_back(chunk.range);
     }
     for (const auto &point : chunk.points) {
-      if (point.t >= view.requested.start && point.t <= view.requested.end) points.push_back(point);
+      if (point.t >= view.requested.start_ && point.t <= view.requested.end) points.push_back(point);
     }
   }
 
@@ -241,17 +391,21 @@ SeriesView Store::series(std::string_view path, double t0, double t1, size_t max
   return view;
 }
 
-CanEventView Store::canEvents(const MessageId &id, TimeRange range) const {
+SeriesView Store::series_full(std::string_view path, TimeRange range) const {
+  return series(path, range.start_, range.end, std::numeric_limits<size_t>::max());
+}
+
+CanEventView Store::can_events(const MessageId &id, TimeRange range) const {
   CanEventView view;
   view.id = id;
-  view.requested = orderedRange(range.start, range.end);
+  view.requested = orderedRange(range.start_, range.end);
   view.coverage.requested = view.requested;
 
   const auto it = can_events_.find(id);
   if (it == can_events_.end()) return view;
 
   const auto &events = it->second.events;
-  auto first = std::lower_bound(events.begin(), events.end(), view.requested.start,
+  auto first = std::lower_bound(events.begin(), events.end(), view.requested.start_,
                                 [](const CanEvent &event, double t) { return event.mono_time < t; });
   for (auto e = first; e != events.end() && e->mono_time <= view.requested.end; ++e) {
     view.events.push_back(*e);
@@ -260,17 +414,17 @@ CanEventView Store::canEvents(const MessageId &id, TimeRange range) const {
   return view;
 }
 
-CanSummaryView Store::canEventSummary(const MessageId &id, TimeRange range) const {
+CanSummaryView Store::can_event_summary(const MessageId &id, TimeRange range) const {
   CanSummaryView view;
   view.id = id;
-  view.requested = orderedRange(range.start, range.end);
+  view.requested = orderedRange(range.start_, range.end);
   view.coverage.requested = view.requested;
 
   const auto it = can_events_.find(id);
   if (it == can_events_.end()) return view;
 
   const auto &events = it->second.events;
-  auto first = std::lower_bound(events.begin(), events.end(), view.requested.start,
+  auto first = std::lower_bound(events.begin(), events.end(), view.requested.start_,
                                 [](const CanEvent &event, double t) { return event.mono_time < t; });
   auto last = std::upper_bound(first, events.end(), view.requested.end,
                                [](double t, const CanEvent &event) { return t < event.mono_time; });
@@ -285,22 +439,65 @@ CanSummaryView Store::canEventSummary(const MessageId &id, TimeRange range) cons
   return view;
 }
 
-size_t Store::stagedBatchCount() const {
+size_t Store::staged_batch_count() const {
+  // Sample staged count under mutex because stage() can append concurrently.
   std::lock_guard lock(staged_mutex_);
   return staged_batches_.size();
 }
 
-std::vector<std::string> Store::seriesPaths() const {
+std::vector<std::string> Store::series_paths() const {
   std::vector<std::string> paths;
-  paths.reserve(series_.size());
+  paths.reserve(series_.size() + series_enum_names_.size() + deprecated_series_paths_.size());
   for (const auto &[path, _] : series_) {
     paths.push_back(path);
   }
+  for (const auto &[path, _] : series_enum_names_) {
+    paths.push_back(path);
+  }
+  for (const std::string &path : deprecated_series_paths_) {
+    paths.push_back(path);
+  }
   std::sort(paths.begin(), paths.end());
+  paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
   return paths;
 }
 
-std::vector<MessageId> Store::canMessageIds() const {
+std::vector<std::string> Store::series_paths_matching(std::string_view filter, size_t limit) const {
+  std::vector<std::string> paths;
+  if (limit == 0) return paths;
+  paths.reserve(std::min(limit, series_.size() + series_enum_names_.size() + deprecated_series_paths_.size()));
+
+  auto append_path = [&](const std::string &path) {
+    if (!filter.empty() && path.find(filter) == std::string::npos) return;
+    if (std::find(paths.begin(), paths.end(), path) != paths.end()) return;
+    if (paths.size() < limit) {
+      paths.push_back(path);
+      return;
+    }
+    auto largest = std::max_element(paths.begin(), paths.end());
+    if (largest != paths.end() && path < *largest) *largest = path;
+  };
+
+  auto append_matches = [&](const auto &container) {
+    for (const auto &[path, _] : container) {
+      append_path(path);
+    }
+  };
+  auto append_set_matches = [&](const auto &container) {
+    for (const std::string &path : container) {
+      append_path(path);
+    }
+  };
+
+  append_matches(series_);
+  append_matches(series_enum_names_);
+  append_set_matches(deprecated_series_paths_);
+  std::sort(paths.begin(), paths.end());
+  paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
+  return paths;
+}
+
+std::vector<MessageId> Store::can_message_ids() const {
   std::vector<MessageId> ids;
   ids.reserve(can_events_.size());
   for (const auto &[id, _] : can_events_) {

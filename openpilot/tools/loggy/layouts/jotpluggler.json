@@ -29,6 +29,13 @@
           {"type": "map", "title": "Map"}
         ]
       }
+    },
+    {
+      "name": "Computed",
+      "root": {
+        "type": "computed",
+        "title": "Computed"
+      }
     }
   ]
 }

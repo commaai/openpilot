@@ -265,8 +265,9 @@ void Panda::handle_usb_issue(int err, const char func[]) {
   LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
   if (err == LIBUSB_ERROR_NO_DEVICE) {
     LOGE("lost connection");
-    connected_flag = false;
   }
+  connected_flag = false;
+  comms_healthy_flag = false;
 }
 
 int Panda::control_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {

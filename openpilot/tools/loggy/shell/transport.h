@@ -12,7 +12,7 @@ inline constexpr double kMinViewSpanSeconds = 0.001;
 inline constexpr double kPlaybackRatePresets[] = {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1.0, 2.0, 3.0, 5.0};
 
 struct TimeRange {
-  double start = 0.0;
+  double start_ = 0.0;
   double end = 0.0;
 
   bool valid() const;
@@ -25,27 +25,10 @@ double clamp_time_to_range(double time, TimeRange range);
 double fraction_to_time(double fraction, TimeRange range);
 double time_to_fraction(double time, TimeRange range);
 
-struct PlaybackClockConfig {
-  TimeRange route_range = {0.0, 1.0};
-  double initial_time = 0.0;
-  double rate = 1.0;
-  double step_seconds = kDefaultPlaybackStepSeconds;
-  bool loop = false;
-};
-
-struct PlaybackAdvanceResult {
-  double previous_time = 0.0;
-  double current_time = 0.0;
-  bool advanced = false;
-  bool hit_boundary = false;
-  bool looped = false;
-};
-
 class PlaybackClock {
 public:
   PlaybackClock();
-  explicit PlaybackClock(TimeRange route_range);
-  explicit PlaybackClock(const PlaybackClockConfig &config);
+  void init(TimeRange route_range);
 
   const TimeRange &route_range() const { return route_range_; }
   void set_route_range(TimeRange route_range);
@@ -75,7 +58,7 @@ public:
   double step_backward();
   double step(int direction);
 
-  PlaybackAdvanceResult advance(double delta_seconds);
+  void advance(double delta_seconds);
 
 private:
   TimeRange route_range_ = {0.0, 1.0};

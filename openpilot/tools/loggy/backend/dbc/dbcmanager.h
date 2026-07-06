@@ -8,8 +8,6 @@
 #include <vector>
 
 #include "tools/loggy/backend/dbc/dbcfile.h"
-#include "tools/loggy/backend/dbc/event.h"
-
 namespace loggy {
 
 typedef std::set<int> SourceSet;
@@ -20,54 +18,45 @@ class DBCManager {
 public:
   DBCManager() = default;
   ~DBCManager() = default;
-  bool open(const SourceSet &sources, const std::string &dbc_file_name, std::string *error = nullptr);
-  bool open(const SourceSet &sources, const std::string &name, const std::string &content, std::string *error = nullptr);
-  bool assignSources(DBCFile *dbc_file, const SourceSet &sources, std::string *error = nullptr);
+  bool open(const SourceSet &sources, const std::string &dbc_file_name, std::string &error);
+  bool open(const SourceSet &sources, const std::string &name, const std::string &content, std::string &error);
+  bool assign_sources(DBCFile *dbc_file, const SourceSet &sources, std::string &error);
   void close(const SourceSet &sources);
   void close(DBCFile *dbc_file);
-  void closeAll();
+  void close_all();
 
-  void addSignal(const MessageId &id, const Signal &sig);
-  void updateSignal(const MessageId &id, const std::string &sig_name, const Signal &sig);
-  void removeSignal(const MessageId &id, const std::string &sig_name);
+  void add_signal(const MessageId &id, const Signal &sig);
+  void update_signal(const MessageId &id, const std::string &sig_name, const Signal &sig);
+  void remove_signal(const MessageId &id, const std::string &sig_name);
 
-  void updateMsg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment);
-  void removeMsg(const MessageId &id);
+  void update_msg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment);
+  void remove_msg(const MessageId &id);
 
-  std::string newMsgName(const MessageId &id);
-  std::string newSignalName(const MessageId &id);
+  std::string new_msg_name(const MessageId &id);
+  std::string new_signal_name(const MessageId &id);
 
-  const std::map<uint32_t, Msg> &getMessages(uint8_t source);
+  const std::map<uint32_t, Msg> &messages(uint8_t source);
   Msg *msg(const MessageId &id);
   Msg* msg(uint8_t source, const std::string &name);
 
-  std::vector<std::string> signalNames();
-  inline int dbcCount() { return allDBCFiles().size(); }
-  int nonEmptyDBCCount();
+  std::vector<std::string> signal_names();
+  inline int dbc_count() { return all_dbc_files().size(); }
+  int non_empty_dbc_count();
 
   const SourceSet sources(const DBCFile *dbc_file) const;
-  DBCFile *findDBCFile(const uint8_t source);
-  inline DBCFile *findDBCFile(const MessageId &id) { return findDBCFile(id.source); }
-  std::set<DBCFile *> allDBCFiles();
-
-  Event<MessageId, const Signal *> signalAdded;
-  Event<const Signal *> signalRemoved;
-  Event<const Signal *> signalUpdated;
-  Event<MessageId> msgUpdated;
-  Event<MessageId> msgRemoved;
-  Event<> DBCFileChanged;
-  Event<> maskUpdated;
+  DBCFile *find_dbc_file(const uint8_t source);
+  inline DBCFile *find_dbc_file(const MessageId &id) { return find_dbc_file(id.source); }
+  std::set<DBCFile *> all_dbc_files();
 
 private:
+  std::map<uint32_t, Msg> empty_msgs_;
   std::map<int, std::shared_ptr<DBCFile>> dbc_files;
 };
 
-DBCManager *dbc();
-
-bool parseSourceSet(std::string_view text, SourceSet *out, std::string *error = nullptr);
-std::string toString(const SourceSet &ss);
-inline std::string msgName(const MessageId &id) {
-  auto msg = dbc()->msg(id);
+bool parse_source_set(std::string_view text, SourceSet &out, std::string &error);
+std::string to_string(const SourceSet &ss);
+inline std::string msg_name(DBCManager &manager, const MessageId &id) {
+  auto msg = manager.msg(id);
   return msg ? msg->name : UNTITLED;
 }
 

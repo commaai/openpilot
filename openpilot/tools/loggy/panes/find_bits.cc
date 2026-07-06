@@ -1,17 +1,79 @@
 #include "tools/loggy/panes/find_bits.h"
 
+#include "tools/loggy/backend/session.h"
+#include "tools/loggy/backend/store.h"
 #include "tools/loggy/shell/workspace.h"
 
 #include "imgui.h"
+#include "json11/json11.hpp"
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <limits>
+#include <any>
+#include <string>
+#include <string_view>
 #include <optional>
+#include <vector>
 #include <unordered_map>
+#include <algorithm>
 
 namespace loggy {
 namespace {
+
+constexpr size_t kFindBitsHistoryLimit = 6;
+constexpr size_t kFindBitsMaxRows = 512;
+
+struct FindBitsParams {
+  TimeRange range;
+  uint8_t source_bus = 0;
+  uint32_t source_address = 0;
+  int byte_idx = 0;
+  int bit_idx = 0;
+  uint8_t find_bus = 0;
+  bool equal = true;
+  int min_msgs = 0;
+  size_t max_rows = 512;
+};
+
+struct FindBitsEvent {
+  double mono_time = 0.0;
+  uint8_t source_value = 0;
+  MessageId id;
+  std::vector<uint8_t> data;
+};
+
+struct FindBitsRow {
+  uint32_t address = 0;
+  uint32_t byte_idx = 0;
+  uint32_t bit_idx = 0;
+  uint32_t mismatches = 0;
+  uint32_t total = 0;
+  float percent = 0.0f;
+};
+
+struct FindBitsJob {
+  const Store *store = nullptr;
+  FindBitsParams params;
+  std::vector<MessageId> ids;
+  size_t id_index = 0;
+  bool done = true;
+  std::vector<FindBitsEvent> events;
+  std::vector<FindBitsRow> rows;
+};
+
+struct FindBitsPaneState {
+  std::string source = "0:47";
+  int byte_idx = 0;
+  int bit_idx = 0;
+  int find_bus = 0;
+  bool equal = true;
+  int min_msgs = 0;
+  std::string status;
+  int history_index = -1;
+  std::vector<FindBitsParams> history;
+};
 
 bool input_text_string(const char *label, std::string *value, size_t capacity) {
   if (value == nullptr) return false;
@@ -27,7 +89,84 @@ uint8_t bit_value_at(const std::vector<uint8_t> &data, int byte_idx, int bit_idx
   return static_cast<uint8_t>((data[static_cast<size_t>(byte_idx)] >> (7 - bit_idx)) & 1U);
 }
 
-}  // namespace
+struct FindBitsPaneTransientState {
+  FindBitsPaneState state;
+  std::string state_json;
+  bool valid = false;
+  FindBitsJob job;
+  std::vector<FindBitsRow> rows;
+};
+
+FindBitsPaneState parse_find_bits_pane_state(std::string_view state_json);
+std::string find_bits_pane_state_json(const FindBitsPaneState &state);
+FindBitsParams find_bits_params_from_state(const FindBitsPaneState &state, TimeRange range);
+std::vector<FindBitsEvent> collect_find_bits_events(const Store &store, const FindBitsParams &params);
+std::vector<FindBitsRow> scan_find_bits_events(const std::vector<FindBitsEvent> &events,
+                                               const FindBitsParams &params);
+FindBitsJob make_find_bits_job(const Store &store, const FindBitsParams &params);
+bool step_find_bits_job(FindBitsJob &job, size_t max_messages);
+
+FindBitsPaneTransientState &find_bits_transient_state(PaneInstance &pane) {
+  if (FindBitsPaneTransientState *state = std::any_cast<FindBitsPaneTransientState>(&pane.transient_state)) return *state;
+  pane.transient_state = FindBitsPaneTransientState{};
+  return std::any_cast<FindBitsPaneTransientState &>(pane.transient_state);
+}
+
+FindBitsPaneState &find_bits_pane_state(PaneInstance &pane) {
+  FindBitsPaneTransientState &transient = find_bits_transient_state(pane);
+  if (!transient.valid || transient.state_json != pane.state_json) {
+    transient.state = parse_find_bits_pane_state(pane.state_json);
+    transient.state_json = pane.state_json;
+    transient.valid = true;
+    transient.job = FindBitsJob{};
+    transient.rows.clear();
+  }
+  return transient.state;
+}
+
+std::string find_bits_history_entry_label(const FindBitsParams &params) {
+  const MessageId source{.source = params.source_bus, .address = params.source_address};
+  std::string out = source.to_string();
+  out += " byte ";
+  out += std::to_string(params.byte_idx);
+  out += " bit ";
+  out += std::to_string(params.bit_idx);
+  out += " find ";
+  out += std::to_string(params.find_bus);
+  out += params.equal ? " ==" : " !=";
+  out += " min ";
+  out += std::to_string(params.min_msgs);
+  return out;
+}
+
+void find_bits_apply_history_entry(FindBitsPaneState &state, const FindBitsParams &params) {
+  const MessageId source{.source = params.source_bus, .address = params.source_address};
+  state.source = source.to_string();
+  state.byte_idx = params.byte_idx;
+  state.bit_idx = params.bit_idx;
+  state.find_bus = params.find_bus;
+  state.equal = params.equal;
+  state.min_msgs = params.min_msgs;
+}
+
+void find_bits_record_history_entry(FindBitsPaneState &state, size_t max_history = 6) {
+  FindBitsParams params;
+  params.source_bus = MessageId::from_string(state.source).source;
+  params.source_address = MessageId::from_string(state.source).address;
+  params.byte_idx = state.byte_idx;
+  params.bit_idx = state.bit_idx;
+  params.find_bus = static_cast<uint8_t>(std::clamp(state.find_bus, 0, 255));
+  params.equal = state.equal;
+  params.min_msgs = state.min_msgs;
+  state.history.erase(std::remove_if(state.history.begin(), state.history.end(), [&](const FindBitsParams &entry) {
+    return entry.source_bus == params.source_bus && entry.source_address == params.source_address &&
+           entry.byte_idx == params.byte_idx && entry.bit_idx == params.bit_idx && entry.find_bus == params.find_bus &&
+           entry.equal == params.equal && entry.min_msgs == params.min_msgs;
+  }), state.history.end());
+  state.history.push_back(params);
+  while (state.history.size() > max_history) state.history.erase(state.history.begin());
+  state.history_index = static_cast<int>(state.history.size()) - 1;
+}
 
 FindBitsPaneState parse_find_bits_pane_state(std::string_view state_json) {
   FindBitsPaneState state;
@@ -41,6 +180,26 @@ FindBitsPaneState parse_find_bits_pane_state(std::string_view state_json) {
   if (json["equal"].is_bool()) state.equal = json["equal"].bool_value();
   if (json["min_msgs"].is_number()) state.min_msgs = std::max(0, json["min_msgs"].int_value());
   if (json["status"].is_string()) state.status = json["status"].string_value();
+  if (json["history_index"].is_number()) state.history_index = json["history_index"].int_value();
+  if (json["history"].is_array()) {
+    for (const json11::Json &item : json["history"].array_items()) {
+      if (!item.is_object()) continue;
+      FindBitsParams params;
+      if (item["source"].is_string()) {
+        const MessageId source = MessageId::from_string(item["source"].string_value());
+        params.source_bus = source.source;
+        params.source_address = source.address;
+      }
+      if (item["byte_idx"].is_number()) params.byte_idx = std::clamp(item["byte_idx"].int_value(), 0, CAN_MAX_DATA_BYTES - 1);
+      if (item["bit_idx"].is_number()) params.bit_idx = std::clamp(item["bit_idx"].int_value(), 0, 7);
+      if (item["find_bus"].is_number()) params.find_bus = static_cast<uint8_t>(std::clamp(item["find_bus"].int_value(), 0, 255));
+      if (item["equal"].is_bool()) params.equal = item["equal"].bool_value();
+      if (item["min_msgs"].is_number()) params.min_msgs = std::max(0, item["min_msgs"].int_value());
+      state.history.push_back(params);
+      while (state.history.size() > kFindBitsHistoryLimit) state.history.erase(state.history.begin());
+    }
+  }
+  state.history_index = std::clamp(state.history_index, -1, static_cast<int>(state.history.size()) - 1);
   return state;
 }
 
@@ -53,13 +212,31 @@ std::string find_bits_pane_state_json(const FindBitsPaneState &state) {
     {"equal", state.equal},
     {"min_msgs", state.min_msgs},
     {"status", state.status},
+    {"history_index", state.history_index},
+    {"history", [&]() {
+      json11::Json::array out;
+      out.reserve(state.history.size());
+      for (const FindBitsParams &params : state.history) {
+        const MessageId source{.source = params.source_bus, .address = params.source_address};
+        out.push_back(json11::Json::object{
+          {"source", source.to_string()},
+          {"byte_idx", params.byte_idx},
+          {"bit_idx", params.bit_idx},
+          {"find_bus", params.find_bus},
+          {"equal", params.equal},
+          {"min_msgs", params.min_msgs},
+        });
+      }
+      return json11::Json(out);
+    }()},
   }).dump();
 }
 
 FindBitsParams find_bits_params_from_state(const FindBitsPaneState &state, TimeRange range) {
   FindBitsParams params;
+  params.max_rows = kFindBitsMaxRows;
   params.range = range;
-  const MessageId source = MessageId::fromString(state.source);
+  const MessageId source = MessageId::from_string(state.source);
   params.source_bus = source.source;
   params.source_address = source.address;
   params.byte_idx = std::clamp(state.byte_idx, 0, CAN_MAX_DATA_BYTES - 1);
@@ -70,13 +247,13 @@ FindBitsParams find_bits_params_from_state(const FindBitsPaneState &state, TimeR
   return params;
 }
 
-std::vector<FindBitsEvent> collect_find_bits_events(const Store &store, const FindBitsParams &params) {
+[[maybe_unused]] std::vector<FindBitsEvent> collect_find_bits_events(const Store &store, const FindBitsParams &params) {
   std::vector<FindBitsEvent> out;
   const MessageId source_id{.source = params.source_bus, .address = params.source_address};
-  const CanEventView source = store.canEvents(source_id, params.range);
+  const CanEventView source = store.can_events(source_id, params.range);
   if (source.events.empty()) return out;
 
-  const std::vector<MessageId> ids = store.canMessageIds();
+  const std::vector<MessageId> ids = store.can_message_ids();
   std::vector<MessageId> targets;
   for (const MessageId &id : ids) {
     if (id.source == params.find_bus && id != source_id) targets.push_back(id);
@@ -86,7 +263,7 @@ std::vector<FindBitsEvent> collect_find_bits_events(const Store &store, const Fi
   for (const CanEvent &source_event : source.events) {
     const uint8_t source_value = bit_value_at(source_event.data, params.byte_idx, params.bit_idx);
     for (const MessageId &id : targets) {
-      const CanEventView target_view = store.canEvents(id, {params.range.start, source_event.mono_time});
+      const CanEventView target_view = store.can_events(id, {params.range.start_, source_event.mono_time});
       if (target_view.events.empty()) continue;
       const CanEvent &target_event = target_view.events.back();
       out.push_back({
@@ -148,7 +325,7 @@ FindBitsJob make_find_bits_job(const Store &store, const FindBitsParams &params)
   FindBitsJob job;
   job.store = &store;
   job.params = params;
-  job.ids = store.canMessageIds();
+  job.ids = store.can_message_ids();
   job.ids.erase(std::remove_if(job.ids.begin(), job.ids.end(), [&](const MessageId &id) {
     return id.source != params.find_bus ||
            (id.source == params.source_bus && id.address == params.source_address);
@@ -161,7 +338,7 @@ FindBitsJob make_find_bits_job(const Store &store, const FindBitsParams &params)
 bool step_find_bits_job(FindBitsJob &job, size_t max_messages) {
   if (job.done || job.store == nullptr) return true;
   const MessageId source_id{.source = job.params.source_bus, .address = job.params.source_address};
-  const CanEventView source = job.store->canEvents(source_id, job.params.range);
+  const CanEventView source = job.store->can_events(source_id, job.params.range);
   if (source.events.empty()) {
     job.done = true;
     return true;
@@ -171,7 +348,7 @@ bool step_find_bits_job(FindBitsJob &job, size_t max_messages) {
   while (visited < max_messages && job.id_index < job.ids.size()) {
     const MessageId id = job.ids[job.id_index++];
     ++visited;
-    const CanEventView target = job.store->canEvents(id, job.params.range);
+    const CanEventView target = job.store->can_events(id, job.params.range);
     if (target.events.empty()) continue;
 
     size_t target_idx = 0;
@@ -200,15 +377,18 @@ void activate_find_bits_row(Session &session, std::string_view selection_group,
   selection.has_selected_msg = true;
 }
 
-void draw_find_bits_pane(Session &session, PaneInstance &pane) {
-  static FindBitsJob job;
-  static std::vector<FindBitsRow> rows;
+}  // namespace
 
-  FindBitsPaneState state = parse_find_bits_pane_state(pane.state_json);
+void draw_find_bits_pane(Session &session, PaneInstance &pane) {
+  FindBitsPaneTransientState &transient = find_bits_transient_state(pane);
+  FindBitsJob &job = transient.job;
+  std::vector<FindBitsRow> &rows = transient.rows;
+  FindBitsPaneState &state = find_bits_pane_state(pane);
   bool changed = false;
+  state.history_index = std::clamp(state.history_index, -1, static_cast<int>(state.history.size()) - 1);
   SelectionContext &selection = session.selection(pane.selection_group);
   if (selection.has_selected_msg && state.source == "0:47") {
-    state.source = selection.selected_msg_id.toString();
+    state.source = selection.selected_msg_id.to_string();
     changed = true;
   }
 
@@ -229,13 +409,40 @@ void draw_find_bits_pane(Session &session, PaneInstance &pane) {
   ImGui::SetNextItemWidth(76.0f);
   changed |= ImGui::InputInt("Min", &state.min_msgs);
 
+  if (!state.history.empty()) {
+    const std::vector<std::string> history_labels = [&]() {
+      std::vector<std::string> labels;
+      labels.reserve(state.history.size());
+      for (const FindBitsParams &params : state.history) labels.push_back(find_bits_history_entry_label(params));
+      return labels;
+    }();
+    const std::vector<const char *> history_items = [&]() {
+      std::vector<const char *> items;
+      items.reserve(history_labels.size());
+      for (const std::string &label : history_labels) items.push_back(label.c_str());
+      return items;
+    }();
+    ImGui::SetNextItemWidth(220.0f);
+    int history_index = std::max(state.history_index, 0);
+    if (ImGui::Combo("History", &history_index, history_items.data(), static_cast<int>(history_items.size()))) {
+      state.history_index = history_index;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Apply")) {
+      find_bits_apply_history_entry(state, state.history[static_cast<size_t>(std::clamp(state.history_index, 0, static_cast<int>(state.history.size()) - 1))]);
+      changed = true;
+    }
+  }
+
   if (ImGui::Button(job.done ? "Scan" : "Restart")) {
-    job = make_find_bits_job(session.store(), find_bits_params_from_state(state, session.view_range().range()));
+    find_bits_record_history_entry(state);
+    job = make_find_bits_job(session.store, find_bits_params_from_state(state, session.view_range.range()));
     rows.clear();
     state.status = "Scanning";
     changed = true;
   }
-  if (!job.done && job.store == &session.store()) {
+  if (!job.done && job.store == &session.store) {
     if (step_find_bits_job(job, 64)) rows = job.rows;
     state.status = job.done ? ("Found " + std::to_string(rows.size()) + " bit matches") :
                               ("Scanning " + std::to_string(job.id_index) + "/" + std::to_string(job.ids.size()));
@@ -244,7 +451,10 @@ void draw_find_bits_pane(Session &session, PaneInstance &pane) {
   ImGui::SameLine();
   ImGui::TextDisabled("%s", state.status.c_str());
 
-  if (changed) pane.state_json = find_bits_pane_state_json(state);
+  if (changed) {
+    pane.state_json = find_bits_pane_state_json(state);
+    transient.state_json = pane.state_json;
+  }
 
   if (ImGui::BeginTable("##find_bits_results", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
                         ImGui::GetContentRegionAvail())) {

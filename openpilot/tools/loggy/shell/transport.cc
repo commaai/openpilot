@@ -22,7 +22,7 @@ double clamp_fraction(double fraction) {
 TimeRange intersect_ranges(TimeRange a, TimeRange b) {
   a = normalize_time_range(a);
   b = normalize_time_range(b);
-  return {std::max(a.start, b.start), std::min(a.end, b.end)};
+  return {std::max(a.start_, b.start_), std::min(a.end, b.end)};
 }
 
 int span_priority(TimelineSpanKind kind) {
@@ -50,22 +50,22 @@ bool span_less(const TimelineSpan &a, const TimelineSpan &b) {
 }  // namespace
 
 bool TimeRange::valid() const {
-  return finite(start) && finite(end) && end >= start;
+  return finite(start_) && finite(end) && end >= start_;
 }
 
 double TimeRange::span() const {
-  return valid() ? end - start : 0.0;
+  return valid() ? end - start_ : 0.0;
 }
 
 TimeRange normalize_time_range(TimeRange range, double fallback_span) {
   if (!finite(fallback_span) || fallback_span < 0.0) fallback_span = 1.0;
 
-  const bool start_ok = finite(range.start);
+  const bool start_ok = finite(range.start_);
   const bool end_ok = finite(range.end);
   if (!start_ok && !end_ok) return {0.0, fallback_span};
-  if (!start_ok) range.start = range.end;
-  if (!end_ok) range.end = range.start + fallback_span;
-  if (range.end < range.start) std::swap(range.start, range.end);
+  if (!start_ok) range.start_ = range.end;
+  if (!end_ok) range.end = range.start_ + fallback_span;
+  if (range.end < range.start_) std::swap(range.start_, range.end);
   return range;
 }
 
@@ -80,59 +80,58 @@ TimeRange clamp_time_range(TimeRange range, TimeRange bounds, double min_span) {
 
   double width = range.span();
   if (width < min_span) {
-    const double center = (range.start + range.end) * 0.5;
-    range.start = center - min_span * 0.5;
+    const double center = (range.start_ + range.end) * 0.5;
+    range.start_ = center - min_span * 0.5;
     range.end = center + min_span * 0.5;
     width = min_span;
   }
 
   if (width >= bound_span) return bounds;
-  if (range.start < bounds.start) {
-    range.end += bounds.start - range.start;
-    range.start = bounds.start;
+  if (range.start_ < bounds.start_) {
+    range.end += bounds.start_ - range.start_;
+    range.start_ = bounds.start_;
   }
   if (range.end > bounds.end) {
-    range.start -= range.end - bounds.end;
+    range.start_ -= range.end - bounds.end;
     range.end = bounds.end;
   }
-  if (range.start < bounds.start) range.start = bounds.start;
+  if (range.start_ < bounds.start_) range.start_ = bounds.start_;
   if (range.end > bounds.end) range.end = bounds.end;
-  if (range.end < range.start) range.end = range.start;
+  if (range.end < range.start_) range.end = range.start_;
   return range;
 }
 
 double clamp_time_to_range(double time, TimeRange range) {
   range = normalize_time_range(range);
-  if (!finite(time)) return range.start;
-  if (range.span() <= 0.0) return range.start;
-  return std::clamp(time, range.start, range.end);
+  if (!finite(time)) return range.start_;
+  if (range.span() <= 0.0) return range.start_;
+  return std::clamp(time, range.start_, range.end);
 }
 
 double fraction_to_time(double fraction, TimeRange range) {
   range = normalize_time_range(range);
-  return range.start + clamp_fraction(fraction) * range.span();
+  return range.start_ + clamp_fraction(fraction) * range.span();
 }
 
 double time_to_fraction(double time, TimeRange range) {
   range = normalize_time_range(range);
   const double span = range.span();
   if (span <= 0.0) return 0.0;
-  return (clamp_time_to_range(time, range) - range.start) / span;
+  return (clamp_time_to_range(time, range) - range.start_) / span;
 }
 
-PlaybackClock::PlaybackClock() : PlaybackClock(TimeRange{0.0, 1.0}) {}
-
-PlaybackClock::PlaybackClock(TimeRange route_range) {
-  set_route_range(route_range);
-  tracker_time_ = route_range_.start;
+PlaybackClock::PlaybackClock() {
+  init(TimeRange{0.0, 1.0});
 }
 
-PlaybackClock::PlaybackClock(const PlaybackClockConfig &config) {
-  set_route_range(config.route_range);
-  seek(config.initial_time);
-  set_rate(config.rate);
-  set_step_seconds(config.step_seconds);
-  set_loop(config.loop);
+void PlaybackClock::init(TimeRange route_range) {
+  route_range_ = normalize_time_range(route_range);
+  loop_range_.reset();
+  tracker_time_ = route_range_.start_;
+  rate_ = 1.0;
+  step_seconds_ = kDefaultPlaybackStepSeconds;
+  playing_ = false;
+  loop_ = false;
 }
 
 void PlaybackClock::set_route_range(TimeRange route_range) {
@@ -204,46 +203,34 @@ double PlaybackClock::step(int direction) {
   return tracker_time_;
 }
 
-PlaybackAdvanceResult PlaybackClock::advance(double delta_seconds) {
-  PlaybackAdvanceResult result;
-  result.previous_time = tracker_time_;
-  result.current_time = tracker_time_;
-
+void PlaybackClock::advance(double delta_seconds) {
   if (!playing_ || !finite(delta_seconds) || delta_seconds <= 0.0 || rate_ <= 0.0 || route_range_.span() <= 0.0) {
-    return result;
+    return;
   }
 
   const TimeRange playback_range = loop_ ? effective_loop_range() : route_range_;
   if (playback_range.span() <= 0.0) {
-    tracker_time_ = playback_range.start;
-    result.current_time = tracker_time_;
-    result.advanced = std::abs(result.current_time - result.previous_time) > kEpsilon;
-    return result;
+    tracker_time_ = playback_range.start_;
+    return;
   }
 
   double base_time = tracker_time_;
   if (loop_) {
-    base_time = std::clamp(base_time, playback_range.start, playback_range.end);
-    if (base_time >= playback_range.end) base_time = playback_range.start;
+    base_time = std::clamp(base_time, playback_range.start_, playback_range.end);
+    if (base_time >= playback_range.end) base_time = playback_range.start_;
   }
 
   double next_time = base_time + delta_seconds * rate_;
   if (loop_) {
     if (next_time >= playback_range.end) {
-      next_time = playback_range.start;
-      result.hit_boundary = true;
-      result.looped = true;
+      next_time = playback_range.start_;
     }
   } else if (next_time >= route_range_.end) {
     next_time = route_range_.end;
     playing_ = false;
-    result.hit_boundary = true;
   }
 
   tracker_time_ = clamp_time_to_range(next_time, route_range_);
-  result.current_time = tracker_time_;
-  result.advanced = std::abs(result.current_time - result.previous_time) > kEpsilon;
-  return result;
 }
 
 SharedViewRange::SharedViewRange() : SharedViewRange(TimeRange{0.0, 1.0}) {}
@@ -272,7 +259,7 @@ void SharedViewRange::reset_to_route() {
 }
 
 bool SharedViewRange::contains(double time) const {
-  return finite(time) && time >= range_.start && time <= range_.end;
+  return finite(time) && time >= range_.start_ && time <= range_.end;
 }
 
 TimelineSpanKind timeline_kind_for_alert(AlertLevel level) {
@@ -359,7 +346,7 @@ double TimelineModel::fraction_from_time(double time) const {
 }
 
 double TimelineModel::time_from_pixel(double pixel_x, double pixel_width) const {
-  if (!finite(pixel_width) || pixel_width <= 0.0) return route_range_.start;
+  if (!finite(pixel_width) || pixel_width <= 0.0) return route_range_.start_;
   return time_from_fraction(pixel_x / pixel_width);
 }
 
@@ -395,9 +382,9 @@ std::vector<TimelineRenderSpan> TimelineModel::render_spans(TimeRange display_ra
   rendered.reserve(spans_.size());
   for (const TimelineSpan &span : spans_) {
     const TimeRange visible = intersect_ranges({span.start_time, span.end_time}, display_range);
-    if (visible.end <= visible.start) continue;
+    if (visible.end <= visible.start_) continue;
     rendered.push_back({
-      time_to_fraction(visible.start, display_range),
+      time_to_fraction(visible.start_, display_range),
       time_to_fraction(visible.end, display_range),
       span.kind,
       timeline_span_color(span.kind),
@@ -413,8 +400,8 @@ void TimelineModel::clamp_stored_spans() {
     if (span.kind == TimelineSpanKind::None || !finite(span.start_time) || !finite(span.end_time)) continue;
     if (span.end_time < span.start_time) std::swap(span.start_time, span.end_time);
     TimeRange visible = intersect_ranges({span.start_time, span.end_time}, route_range_);
-    if (visible.end <= visible.start) continue;
-    clean.push_back({visible.start, visible.end, span.kind});
+    if (visible.end <= visible.start_) continue;
+    clean.push_back({visible.start_, visible.end, span.kind});
   }
 
   std::sort(clean.begin(), clean.end(), span_less);

@@ -15,15 +15,15 @@ const loggy::SeriesChunk *findChunk(const loggy::StoreBatch &batch, std::string_
 
 TEST_CASE("SeriesAccumulator emits ordered StoreBatch chunks") {
   loggy::SeriesAccumulator series(3, {"/carState/vEgo", "/carState/aEgo"});
-  series.appendFixedScalar(0, 2.0, 12.0);
-  series.appendFixedScalar(0, 1.0, 10.0);
-  series.appendFixedScalar(1, 1.5, -0.25);
-  series.appendScalar("/dynamic/value", 3.0, 7.0);
+  series.append_fixed_scalar(0, 2.0, 12.0);
+  series.append_fixed_scalar(0, 1.0, 10.0);
+  series.append_fixed_scalar(1, 1.5, -0.25);
+  series.append_scalar("/dynamic/value", 3.0, 7.0);
 
   loggy::SegmentExtractResult result = series.finish({1.0, 4.0});
   CHECK(result.batch.segment == 3);
   REQUIRE(result.batch.coverage.size() == 1);
-  CHECK(result.batch.coverage[0].start == 1.0);
+  CHECK(result.batch.coverage[0].start_ == 1.0);
   CHECK(result.batch.coverage[0].end == 4.0);
 
   const loggy::SeriesChunk *speed = findChunk(result.batch, "/carState/vEgo");
@@ -36,7 +36,7 @@ TEST_CASE("SeriesAccumulator emits ordered StoreBatch chunks") {
 
   loggy::Store store;
   store.stage(std::move(result.batch));
-  const loggy::DrainResult drain = store.beginFrame();
+  const loggy::DrainResult drain = store.begin_frame();
   CHECK(drain.series_chunks == 3);
 
   const loggy::SeriesView view = store.series("/carState/vEgo", 0.0, 5.0, 100);
@@ -47,11 +47,11 @@ TEST_CASE("SeriesAccumulator emits ordered StoreBatch chunks") {
 
 TEST_CASE("SeriesAccumulator captures enum, value description, and deprecated metadata") {
   loggy::SeriesAccumulator series(0, {"/carState/gearShifter"});
-  series.captureEnumInfo("/carState/gearShifter", {"unknown", "park", "drive"});
-  series.captureValueDescriptions("/carState/gearShifter", {{0.0, "unknown"}, {2.0, "drive"}});
-  series.markDeprecated("/carState/cruiseState/speedOffsetDEPRECATED");
-  series.noteSkippedDeprecated();
-  series.appendFixedScalar(0, 0.5, 2.0);
+  series.capture_enum_info("/carState/gearShifter", {"unknown", "park", "drive"});
+  series.capture_value_descriptions("/carState/gearShifter", {{0.0, "unknown"}, {2.0, "drive"}});
+  series.mark_deprecated("/carState/cruiseState/speedOffsetDEPRECATED");
+  series.note_skipped_deprecated();
+  series.append_fixed_scalar(0, 0.5, 2.0);
 
   loggy::SegmentExtractResult result = series.finish({0.0, 1.0});
   REQUIRE(result.metadata.count("/carState/gearShifter") == 1);
@@ -66,7 +66,7 @@ TEST_CASE("SeriesAccumulator captures enum, value description, and deprecated me
 TEST_CASE("SeriesAccumulator emits raw CAN event chunks") {
   loggy::SeriesAccumulator series(2, {});
   const uint8_t payload[] = {0x12, 0x34, 0x56};
-  series.appendCanFrame(loggy::CanServiceKind::Can, 1, 0x123, 44, payload, sizeof(payload), 10.0);
+  series.append_can_frame(loggy::CanServiceKind::Can, 1, 0x123, 44, payload, sizeof(payload), 10.0);
 
   loggy::SegmentExtractResult result = series.finish({});
   REQUIRE(result.batch.can_events.size() == 1);

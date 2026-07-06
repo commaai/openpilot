@@ -23,7 +23,7 @@ SegmentPriority makePriority(const RouteSegment &segment, double tracker_time, c
   priority.range = segment.range;
   priority.state = segment.state;
   priority.visible_distance = visibleDistance(segment.range, visible_ranges);
-  priority.tracker_distance = distanceToPoint(segment.range, tracker_time);
+  priority.tracker_distance = distance_to_point(segment.range, tracker_time);
   priority.intersects_visible = priority.visible_distance == 0.0;
   priority.contains_tracker = priority.tracker_distance == 0.0;
   return priority;
@@ -57,45 +57,52 @@ SegmentWorkItem workItem(const RouteSegment &segment) {
 
 SegmentScheduler::SegmentScheduler(Store *store) : store_(store) {}
 
-void SegmentScheduler::setStore(Store *store) {
+void SegmentScheduler::set_store(Store *store) {
+  // Guards scheduler+store pointer handoff so take_next()/publish see a consistent target.
   std::lock_guard lock(mutex_);
   store_ = store;
 }
 
-void SegmentScheduler::setRouteSegments(std::vector<RouteSegment> segments) {
+void SegmentScheduler::set_route_segments(std::vector<RouteSegment> segments) {
   std::sort(segments.begin(), segments.end(), [](const auto &a, const auto &b) {
     return a.segment < b.segment;
   });
+  // Sort first, then lock briefly for swap to keep publication of a new segment set atomic.
   std::lock_guard lock(mutex_);
   segments_ = std::move(segments);
 }
 
 std::vector<RouteSegment> SegmentScheduler::segments() const {
+  // Return copy so callers can iterate without holding the scheduler mutex.
   std::lock_guard lock(mutex_);
   return segments_;
 }
 
-void SegmentScheduler::setTrackerTime(double seconds) {
+void SegmentScheduler::set_tracker_time(double seconds) {
+  // tracker_time_ is only observed during scheduling; keep update synchronized with priority reads.
   std::lock_guard lock(mutex_);
   tracker_time_ = seconds;
 }
 
-double SegmentScheduler::trackerTime() const {
+double SegmentScheduler::tracker_time() const {
+  // Read copy under lock to prevent torn reads while scheduler threads update state.
   std::lock_guard lock(mutex_);
   return tracker_time_;
 }
 
-void SegmentScheduler::setVisibleRanges(std::vector<TimeRange> ranges) {
+void SegmentScheduler::set_visible_ranges(std::vector<TimeRange> ranges) {
+  // Normalize+store under lock so priority computation sees a complete range set.
   std::lock_guard lock(mutex_);
-  visible_ranges_ = normalizeRanges(std::move(ranges));
+  visible_ranges_ = normalize_ranges(std::move(ranges));
 }
 
-std::vector<TimeRange> SegmentScheduler::visibleRanges() const {
+std::vector<TimeRange> SegmentScheduler::visible_ranges() const {
+  // Copy visible ranges for caller so this mutex can stay short-lived.
   std::lock_guard lock(mutex_);
   return visible_ranges_;
 }
 
-std::vector<SegmentPriority> SegmentScheduler::priorityOrder() const {
+std::vector<SegmentPriority> SegmentScheduler::priority_order() const {
   std::lock_guard lock(mutex_);
   std::vector<SegmentPriority> order;
   order.reserve(segments_.size());
@@ -111,7 +118,8 @@ std::vector<SegmentPriority> SegmentScheduler::priorityOrder() const {
   return order;
 }
 
-std::optional<SegmentWorkItem> SegmentScheduler::takeNext() {
+std::optional<SegmentWorkItem> SegmentScheduler::take_next() {
+  // Entire selection-and-state-change is one critical section to prevent duplicate segment assignment.
   std::lock_guard lock(mutex_);
   std::vector<SegmentPriority> order;
   order.reserve(segments_.size());
@@ -125,50 +133,51 @@ std::optional<SegmentWorkItem> SegmentScheduler::takeNext() {
   });
   if (order.empty()) return std::nullopt;
 
-  RouteSegment *segment = findSegmentLocked(order.front().segment);
+  RouteSegment *segment = find_segment_locked(order.front().segment);
   if (segment == nullptr) return std::nullopt;
   segment->state = SegmentState::InFlight;
   segment->error.clear();
   return workItem(*segment);
 }
 
-void SegmentScheduler::markPending(int segment) {
+void SegmentScheduler::mark_pending(int segment) {
   std::lock_guard lock(mutex_);
-  if (auto *record = findSegmentLocked(segment)) {
+  if (auto *record = find_segment_locked(segment)) {
     record->state = SegmentState::Pending;
     record->error.clear();
   }
 }
 
-void SegmentScheduler::markInFlight(int segment) {
+void SegmentScheduler::mark_in_flight(int segment) {
   std::lock_guard lock(mutex_);
-  if (auto *record = findSegmentLocked(segment)) {
+  if (auto *record = find_segment_locked(segment)) {
     record->state = SegmentState::InFlight;
     record->error.clear();
   }
 }
 
-void SegmentScheduler::markLoaded(int segment) {
+void SegmentScheduler::mark_loaded(int segment) {
   std::lock_guard lock(mutex_);
-  if (auto *record = findSegmentLocked(segment)) {
+  if (auto *record = find_segment_locked(segment)) {
     record->state = SegmentState::Loaded;
     record->error.clear();
   }
 }
 
-void SegmentScheduler::markFailed(int segment, std::string error) {
+void SegmentScheduler::mark_failed(int segment, std::string error) {
   std::lock_guard lock(mutex_);
-  if (auto *record = findSegmentLocked(segment)) {
+  if (auto *record = find_segment_locked(segment)) {
     record->state = SegmentState::Failed;
     record->error = std::move(error);
   }
 }
 
 bool SegmentScheduler::publish(StoreBatch batch) {
+  // Resolve segment state while holding mutex, then publish outside it to avoid re-entrant lock nesting with store.
   Store *store = nullptr;
   {
     std::lock_guard lock(mutex_);
-    RouteSegment *segment = findSegmentLocked(batch.segment);
+    RouteSegment *segment = find_segment_locked(batch.segment);
     if (segment != nullptr) {
       if (batch.coverage.empty() && segment->range.valid()) batch.coverage.push_back(segment->range);
       segment->state = SegmentState::Loaded;
@@ -182,14 +191,16 @@ bool SegmentScheduler::publish(StoreBatch batch) {
   return true;
 }
 
-RouteSegment *SegmentScheduler::findSegmentLocked(int segment) {
+RouteSegment *SegmentScheduler::find_segment_locked(int segment) {
+  // Called with mutex_ held by caller.
   auto it = std::find_if(segments_.begin(), segments_.end(), [segment](const auto &record) {
     return record.segment == segment;
   });
   return it == segments_.end() ? nullptr : &*it;
 }
 
-const RouteSegment *SegmentScheduler::findSegmentLocked(int segment) const {
+const RouteSegment *SegmentScheduler::find_segment_locked(int segment) const {
+  // Called with mutex_ held by caller.
   auto it = std::find_if(segments_.begin(), segments_.end(), [segment](const auto &record) {
     return record.segment == segment;
   });

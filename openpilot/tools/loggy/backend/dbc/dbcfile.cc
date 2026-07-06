@@ -28,11 +28,11 @@ std::string unescapeQuotes(std::string s) {
 
 std::vector<std::string> splitOnChar(const std::string &s, char sep) {
   std::vector<std::string> parts;
-  size_t start = 0;
+  size_t start_ = 0;
   for (size_t i = 0; i <= s.size(); ++i) {
     if (i == s.size() || s[i] == sep) {
-      parts.push_back(s.substr(start, i - start));
-      start = i + 1;
+      parts.push_back(s.substr(start_, i - start_));
+      start_ = i + 1;
     }
   }
   return parts;
@@ -53,17 +53,17 @@ std::string strip(const std::string &str) {
     return std::isspace(ch) || ch == '\0';
   };
 
-  size_t start = 0;
-  while (start < str.size() && should_trim(static_cast<unsigned char>(str[start]))) {
-    ++start;
+  size_t start_ = 0;
+  while (start_ < str.size() && should_trim(static_cast<unsigned char>(str[start_]))) {
+    ++start_;
   }
-  if (start == str.size()) return "";
+  if (start_ == str.size()) return "";
 
   size_t end = str.size() - 1;
   while (end > 0 && should_trim(static_cast<unsigned char>(str[end]))) {
     --end;
   }
-  return str.substr(start, end - start + 1);
+  return str.substr(start_, end - start_ + 1);
 }
 
 // Finds the end of a quoted, possibly-escaped string. `pos` is the index of
@@ -140,30 +140,31 @@ DBCFile::DBCFile(const std::string &name, const std::string &content) : name_(na
 
 bool DBCFile::save() {
   assert(!filename.empty());
-  return writeContents(filename);
+  return write_contents(filename);
 }
 
-bool DBCFile::saveAs(const std::string &new_filename) {
-  if (!writeContents(new_filename)) return false;
+bool DBCFile::save_as(const std::string &new_filename) {
+  if (!write_contents(new_filename)) return false;
   filename = new_filename;
   return true;
 }
 
-bool DBCFile::writeContents(const std::string &fn) {
+bool DBCFile::write_contents(const std::string &fn) {
   std::ofstream file(fn, std::ios::binary);
   if (!file.is_open()) return false;
-  std::string content = generateDBC();
+  std::string content = generate_dbc();
   file.write(content.c_str(), content.size());
   return file.good();
 }
 
-void DBCFile::updateMsg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment) {
+void DBCFile::update_msg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
   m.transmitter = node.empty() ? DEFAULT_NODE_NAME : node;
   m.comment = comment;
+  m.update();
 }
 
 Msg *DBCFile::msg(uint32_t address) {
@@ -202,15 +203,15 @@ void DBCFile::parse(const std::string &content) {
     try {
       if (startsWith(line, "BO_ ")) {
         multiplexor_cnt = 0;
-        current_msg = parseBO(line);
+        current_msg = parse_bo(line);
       } else if (startsWith(line, "SG_ ")) {
-        parseSG(line, current_msg, multiplexor_cnt);
+        parse_sg(line, current_msg, multiplexor_cnt);
       } else if (startsWith(line, "VAL_ ")) {
-        parseVAL(line);
+        parse_val(line);
       } else if (startsWith(line, "CM_ BO_")) {
-        parseCM_BO(line, content, line_offset);
+        parse_cm_bo(line, content, line_offset);
       } else if (startsWith(line, "CM_ SG_ ")) {
-        parseCM_SG(line, content, line_offset);
+        parse_cm_sg(line, content, line_offset);
       } else {
         seen = false;
       }
@@ -230,7 +231,7 @@ void DBCFile::parse(const std::string &content) {
   }
 }
 
-Msg *DBCFile::parseBO(const std::string &line) {
+Msg *DBCFile::parse_bo(const std::string &line) {
   static const std::regex bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
 
   std::smatch match;
@@ -250,7 +251,7 @@ Msg *DBCFile::parseBO(const std::string &line) {
   return msg;
 }
 
-void DBCFile::parseCM_BO(const std::string &line, const std::string &content, size_t line_offset) {
+void DBCFile::parse_cm_bo(const std::string &line, const std::string &content, size_t line_offset) {
   // Only the short, fixed-shape prefix (up to and including the opening
   // quote of the comment text) is matched with a regex. The comment text
   // itself -- which can be arbitrarily long -- is scanned with
@@ -280,7 +281,7 @@ void DBCFile::parseCM_BO(const std::string &line, const std::string &content, si
     m->comment = unescapeQuotes(strip(text.substr(text_start, quote_end - text_start)));
 }
 
-void DBCFile::parseSG(const std::string &line, Msg *current_msg, int &multiplexor_cnt) {
+void DBCFile::parse_sg(const std::string &line, Msg *current_msg, int &multiplexor_cnt) {
   static const std::regex sg_regexp(R"(^SG_ (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static const std::regex sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
 
@@ -330,8 +331,8 @@ void DBCFile::parseSG(const std::string &line, Msg *current_msg, int &multiplexo
   current_msg->sigs.push_back(new Signal(s));
 }
 
-void DBCFile::parseCM_SG(const std::string &line, const std::string &content, size_t line_offset) {
-  // See parseCM_BO() for why the comment text is scanned by hand rather than
+void DBCFile::parse_cm_sg(const std::string &line, const std::string &content, size_t line_offset) {
+  // See parse_cm_bo() for why the comment text is scanned by hand rather than
   // matched with a regex.
   static const std::regex sg_comment_prefix_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\")");
 
@@ -358,7 +359,7 @@ void DBCFile::parseCM_SG(const std::string &line, const std::string &content, si
   }
 }
 
-void DBCFile::parseVAL(const std::string &line) {
+void DBCFile::parse_val(const std::string &line) {
   // Only the fixed-shape "VAL_ <addr> <name> " prefix is matched with a
   // regex. The entry list ("<value> \"<description>\" ..." repeated,
   // sometimes thousands of times in vendor/diagnostic DBCs) used to be
@@ -408,14 +409,14 @@ void DBCFile::parseVAL(const std::string &line) {
   }
 }
 
-std::string DBCFile::generateDBC() {
+std::string DBCFile::generate_dbc() {
   // Legacy Cabana writer behavior: BA_ attributes, BO_TX_BU_ declarations,
   // and signal-less BO_ messages are not re-emitted. Keep this behavior
   // byte-compatible for the first lift; fix it only in a separate patch with
   // explicit migration tests.
   std::string dbc_string, comment, val_desc;
   for (const auto &[address, m] : msgs) {
-    if (m.getSignals().empty()) continue;
+    if (m.signals().empty()) continue;
     const std::string &transmitter = m.transmitter.empty() ? DEFAULT_NODE_NAME : m.transmitter;
     dbc_string += "BO_ " + std::to_string(address) + " " + m.name + ": " + std::to_string(m.size) + " " + transmitter + "\n";
     if (!m.comment.empty()) {
@@ -425,7 +426,7 @@ std::string DBCFile::generateDBC() {
         escaped_comment.replace(pos, 1, "\\\"");
       comment += "CM_ BO_ " + std::to_string(address) + " \"" + escaped_comment + "\";\n";
     }
-    for (auto sig : m.getSignals()) {
+    for (auto sig : m.signals()) {
       std::string multiplexer_indicator;
       if (sig->type == Signal::Type::Multiplexor) {
         multiplexer_indicator = "M ";
@@ -437,8 +438,8 @@ std::string DBCFile::generateDBC() {
                     std::to_string(sig->start_bit) + "|" + std::to_string(sig->size) + "@" +
                     std::string(1, sig->is_little_endian ? '1' : '0') +
                     std::string(1, sig->is_signed ? '-' : '+') +
-                    " (" + doubleToString(sig->factor) + "," + doubleToString(sig->offset) + ")" +
-                    " [" + doubleToString(sig->min) + "|" + doubleToString(sig->max) + "]" +
+                    " (" + double_to_string(sig->factor) + "," + double_to_string(sig->offset) + ")" +
+                    " [" + double_to_string(sig->min) + "|" + double_to_string(sig->max) + "]" +
                     " \"" + sig->unit + "\" " + recv + "\n";
       if (!sig->comment.empty()) {
         std::string escaped_comment = sig->comment;

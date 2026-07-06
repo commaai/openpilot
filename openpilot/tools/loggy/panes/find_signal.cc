@@ -1,18 +1,112 @@
 #include "tools/loggy/panes/find_signal.h"
 
+#include "tools/loggy/backend/session.h"
+#include "tools/loggy/backend/store.h"
+#include "tools/loggy/backend/dbc/undo.h"
 #include "tools/loggy/shell/theme.h"
 #include "tools/loggy/shell/workspace.h"
 
 #include "imgui.h"
+#include "json11/json11.hpp"
 
+#include <cmath>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
+#include <any>
 #include <limits>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <algorithm>
+#include <utility>
 
 namespace loggy {
 namespace {
+
+enum class FindSignalCompare {
+  Any,
+  Equal,
+  NotEqual,
+  Greater,
+  GreaterEqual,
+  Less,
+  LessEqual,
+};
+
+struct FindSignalHistoryEntry {
+  int bus = -1;
+  std::string address_hex;
+  int min_size = 1;
+  int max_size = 12;
+  bool little_endian = true;
+  bool is_signed = false;
+  double factor = 1.0;
+  double offset = 0.0;
+  double target_value = 0.0;
+  FindSignalCompare compare = FindSignalCompare::Equal;
+};
+
+struct FindSignalParams {
+  TimeRange range;
+  std::vector<int> buses;
+  std::vector<uint32_t> addresses;
+  int min_size = 1;
+  int max_size = 16;
+  bool little_endian = true;
+  bool is_signed = false;
+  double factor = 1.0;
+  double offset = 0.0;
+  double target_value = 0.0;
+  FindSignalCompare compare = FindSignalCompare::Any;
+  size_t max_results = 512;
+};
+
+struct FindSignalResult {
+  MessageId id;
+  Signal sig;
+  uint32_t msg_size = 0;
+  double mono_time = 0.0;
+  std::vector<std::pair<double, double>> matches;
+};
+
+struct FindSignalJob {
+  const Store *store = nullptr;
+  FindSignalParams params;
+  std::vector<MessageId> ids;
+  size_t id_index = 0;
+  int start_bit = 0;
+  int size = 1;
+  bool done = true;
+  std::vector<FindSignalResult> results;
+};
+
+struct FindSignalPaneState {
+  int bus = -1;
+  std::string address_hex;
+  std::string signal_name;
+  int min_size = 1;
+  int max_size = 12;
+  bool little_endian = true;
+  bool is_signed = false;
+  double factor = 1.0;
+  double offset = 0.0;
+  double target_value = 0.0;
+  FindSignalCompare compare = FindSignalCompare::Equal;
+  std::string status;
+  int history_index = -1;
+  std::vector<FindSignalHistoryEntry> history;
+};
+
+constexpr size_t kFindSignalHistoryLimit = 6;
+constexpr size_t kFindSignalMaxRows = 512;
+
+FindSignalCompare find_signal_compare_from_token(std::string_view token);
+FindSignalHistoryEntry parse_find_signal_history_entry(const json11::Json &item);
+FindSignalPaneState parse_find_signal_pane_state(std::string_view state_json);
+FindSignalHistoryEntry find_signal_history_entry_from_state(const FindSignalPaneState &state);
 
 bool vector_contains_int(const std::vector<int> &values, int value) {
   return values.empty() || std::find(values.begin(), values.end(), value) != values.end();
@@ -20,6 +114,23 @@ bool vector_contains_int(const std::vector<int> &values, int value) {
 
 bool vector_contains_address(const std::vector<uint32_t> &values, uint32_t value) {
   return values.empty() || std::find(values.begin(), values.end(), value) != values.end();
+}
+
+FindSignalHistoryEntry parse_find_signal_history_entry(const json11::Json &item) {
+  FindSignalHistoryEntry entry;
+  if (!item.is_object()) return entry;
+  if (item["bus"].is_number()) entry.bus = std::clamp(item["bus"].int_value(), -1, 255);
+  if (item["address"].is_string()) entry.address_hex = item["address"].string_value();
+  if (item["min_size"].is_number()) entry.min_size = std::clamp(item["min_size"].int_value(), 1, 64);
+  if (item["max_size"].is_number()) entry.max_size = std::clamp(item["max_size"].int_value(), 1, 64);
+  if (item["little_endian"].is_bool()) entry.little_endian = item["little_endian"].bool_value();
+  if (item["signed"].is_bool()) entry.is_signed = item["signed"].bool_value();
+  if (item["factor"].is_number() && std::isfinite(item["factor"].number_value())) entry.factor = item["factor"].number_value();
+  if (item["offset"].is_number() && std::isfinite(item["offset"].number_value())) entry.offset = item["offset"].number_value();
+  if (item["target"].is_number() && std::isfinite(item["target"].number_value())) entry.target_value = item["target"].number_value();
+  if (item["compare"].is_string()) entry.compare = find_signal_compare_from_token(item["compare"].string_value());
+  if (entry.max_size < entry.min_size) entry.max_size = entry.min_size;
+  return entry;
 }
 
 std::optional<uint32_t> parse_hex_address(std::string_view text) {
@@ -32,6 +143,26 @@ std::optional<uint32_t> parse_hex_address(std::string_view text) {
   const unsigned long value = std::strtoul(cleaned.c_str(), &end, 16);
   if (end == cleaned.c_str() || *end != '\0' || value > std::numeric_limits<uint32_t>::max()) return std::nullopt;
   return static_cast<uint32_t>(value);
+}
+
+std::string trim_signal_name(std::string_view text) {
+  size_t begin = 0;
+  while (begin < text.size() && std::isspace(static_cast<unsigned char>(text[begin]))) ++begin;
+  size_t end = text.size();
+  while (end > begin && std::isspace(static_cast<unsigned char>(text[end - 1]))) --end;
+  return std::string(text.substr(begin, end - begin));
+}
+
+void push_history_entry(std::vector<FindSignalHistoryEntry> *history, const FindSignalHistoryEntry &entry) {
+  if (history == nullptr) return;
+  history->erase(std::remove_if(history->begin(), history->end(), [&](const FindSignalHistoryEntry &item) {
+    return item.bus == entry.bus && item.address_hex == entry.address_hex && item.min_size == entry.min_size &&
+           item.max_size == entry.max_size && item.little_endian == entry.little_endian &&
+           item.is_signed == entry.is_signed && item.factor == entry.factor && item.offset == entry.offset &&
+           item.target_value == entry.target_value && item.compare == entry.compare;
+  }), history->end());
+  history->push_back(entry);
+  while (history->size() > kFindSignalHistoryLimit) history->erase(history->begin());
 }
 
 bool input_text_string(const char *label, std::string *value, size_t capacity) {
@@ -75,7 +206,31 @@ void advance_find_signal_cursor(FindSignalJob &job, int msg_bits) {
   job.start_bit = 0;
 }
 
-}  // namespace
+struct FindSignalPaneTransientState {
+  FindSignalPaneState state;
+  std::string state_json;
+  bool valid = false;
+  FindSignalJob job;
+  std::vector<FindSignalResult> results;
+};
+
+FindSignalPaneTransientState &find_signal_transient_state(PaneInstance &pane) {
+  if (FindSignalPaneTransientState *state = std::any_cast<FindSignalPaneTransientState>(&pane.transient_state)) return *state;
+  pane.transient_state = FindSignalPaneTransientState{};
+  return std::any_cast<FindSignalPaneTransientState &>(pane.transient_state);
+}
+
+FindSignalPaneState &find_signal_pane_state(PaneInstance &pane) {
+  FindSignalPaneTransientState &transient = find_signal_transient_state(pane);
+  if (!transient.valid || transient.state_json != pane.state_json) {
+    transient.state = parse_find_signal_pane_state(pane.state_json);
+    transient.state_json = pane.state_json;
+    transient.valid = true;
+    transient.job = FindSignalJob{};
+    transient.results.clear();
+  }
+  return transient.state;
+}
 
 const char *find_signal_compare_token(FindSignalCompare compare) {
   switch (compare) {
@@ -113,6 +268,59 @@ FindSignalCompare find_signal_compare_from_token(std::string_view token) {
   return FindSignalCompare::Any;
 }
 
+FindSignalHistoryEntry find_signal_history_entry_from_state(const FindSignalPaneState &state) {
+  return {.bus = state.bus,
+          .address_hex = state.address_hex,
+          .min_size = state.min_size,
+          .max_size = state.max_size,
+          .little_endian = state.little_endian,
+          .is_signed = state.is_signed,
+          .factor = state.factor,
+          .offset = state.offset,
+          .target_value = state.target_value,
+          .compare = state.compare};
+}
+
+void find_signal_apply_history_entry(FindSignalPaneState &state, const FindSignalHistoryEntry &entry) {
+  state.bus = entry.bus;
+  state.address_hex = entry.address_hex;
+  state.min_size = entry.min_size;
+  state.max_size = entry.max_size;
+  state.little_endian = entry.little_endian;
+  state.is_signed = entry.is_signed;
+  state.factor = entry.factor;
+  state.offset = entry.offset;
+  state.target_value = entry.target_value;
+  state.compare = entry.compare;
+}
+
+void find_signal_record_history_entry(FindSignalPaneState &state, size_t max_history = 6) {
+  const FindSignalHistoryEntry entry = find_signal_history_entry_from_state(state);
+  state.history.erase(std::remove_if(state.history.begin(), state.history.end(), [&](const FindSignalHistoryEntry &item) {
+    return item.bus == entry.bus && item.address_hex == entry.address_hex && item.min_size == entry.min_size &&
+           item.max_size == entry.max_size && item.little_endian == entry.little_endian &&
+           item.is_signed == entry.is_signed && item.factor == entry.factor && item.offset == entry.offset &&
+           item.target_value == entry.target_value && item.compare == entry.compare;
+  }), state.history.end());
+  state.history.push_back(entry);
+  while (state.history.size() > max_history) state.history.erase(state.history.begin());
+  state.history_index = static_cast<int>(state.history.size()) - 1;
+}
+
+std::string find_signal_history_entry_label(const FindSignalHistoryEntry &entry) {
+  std::string label = (entry.bus >= 0 ? std::to_string(entry.bus) : std::string("any")) + ":";
+  label += entry.address_hex.empty() ? std::string("*") : entry.address_hex;
+  label += " ";
+  label += std::to_string(entry.min_size) + "-" + std::to_string(entry.max_size);
+  label += entry.little_endian ? " LE" : " BE";
+  label += entry.is_signed ? " signed" : " unsigned";
+  label += " ";
+  label += find_signal_compare_label(entry.compare);
+  label += " ";
+  label += double_to_string(entry.target_value);
+  return label;
+}
+
 bool find_signal_compare_value(double value, FindSignalCompare compare, double target) {
   if (!std::isfinite(value)) return false;
   switch (compare) {
@@ -134,6 +342,7 @@ FindSignalPaneState parse_find_signal_pane_state(std::string_view state_json) {
   if (!err.empty() || !json.is_object()) return state;
   if (json["bus"].is_number()) state.bus = std::clamp(json["bus"].int_value(), -1, 255);
   if (json["address"].is_string()) state.address_hex = json["address"].string_value();
+  if (json["signal_name"].is_string()) state.signal_name = json["signal_name"].string_value();
   if (json["min_size"].is_number()) state.min_size = std::clamp(json["min_size"].int_value(), 1, 64);
   if (json["max_size"].is_number()) state.max_size = std::clamp(json["max_size"].int_value(), 1, 64);
   if (json["little_endian"].is_bool()) state.little_endian = json["little_endian"].bool_value();
@@ -143,6 +352,14 @@ FindSignalPaneState parse_find_signal_pane_state(std::string_view state_json) {
   if (json["target"].is_number()) state.target_value = json["target"].number_value();
   if (json["compare"].is_string()) state.compare = find_signal_compare_from_token(json["compare"].string_value());
   if (json["status"].is_string()) state.status = json["status"].string_value();
+  if (json["history_index"].is_number()) state.history_index = json["history_index"].int_value();
+  if (json["history"].is_array()) {
+    for (const json11::Json &item : json["history"].array_items()) {
+      if (!item.is_object()) continue;
+      push_history_entry(&state.history, parse_find_signal_history_entry(item));
+    }
+  }
+  state.history_index = std::clamp(state.history_index, -1, static_cast<int>(state.history.size()) - 1);
   if (state.max_size < state.min_size) state.max_size = state.min_size;
   if (!std::isfinite(state.factor) || state.factor == 0.0) state.factor = 1.0;
   if (!std::isfinite(state.offset)) state.offset = 0.0;
@@ -154,6 +371,7 @@ std::string find_signal_pane_state_json(const FindSignalPaneState &state) {
   return json11::Json(json11::Json::object{
     {"bus", state.bus},
     {"address", state.address_hex},
+    {"signal_name", state.signal_name},
     {"min_size", state.min_size},
     {"max_size", state.max_size},
     {"little_endian", state.little_endian},
@@ -163,11 +381,32 @@ std::string find_signal_pane_state_json(const FindSignalPaneState &state) {
     {"target", state.target_value},
     {"compare", find_signal_compare_token(state.compare)},
     {"status", state.status},
+    {"history_index", state.history_index},
+    {"history", [&]() {
+      json11::Json::array out;
+      out.reserve(state.history.size());
+      for (const FindSignalHistoryEntry &entry : state.history) {
+        out.push_back(json11::Json::object{
+          {"bus", entry.bus},
+          {"address", entry.address_hex},
+          {"min_size", entry.min_size},
+          {"max_size", entry.max_size},
+          {"little_endian", entry.little_endian},
+          {"signed", entry.is_signed},
+          {"factor", entry.factor},
+          {"offset", entry.offset},
+          {"target", entry.target_value},
+          {"compare", find_signal_compare_token(entry.compare)},
+        });
+      }
+      return json11::Json(out);
+    }()},
   }).dump();
 }
 
 FindSignalParams find_signal_params_from_state(const FindSignalPaneState &state, TimeRange range) {
   FindSignalParams params;
+  params.max_results = kFindSignalMaxRows;
   params.range = range;
   if (state.bus >= 0) params.buses.push_back(state.bus);
   if (const std::optional<uint32_t> address = parse_hex_address(state.address_hex)) params.addresses.push_back(*address);
@@ -191,7 +430,7 @@ FindSignalJob make_find_signal_job(const Store &store, const FindSignalParams &p
                                    job.params.min_size, CAN_MAX_DATA_BYTES * 8);
   job.size = job.params.min_size;
   job.done = false;
-  job.ids = store.canMessageIds();
+  job.ids = store.can_message_ids();
   job.ids.erase(std::remove_if(job.ids.begin(), job.ids.end(), [&](const MessageId &id) {
     return !vector_contains_int(job.params.buses, id.source) ||
            !vector_contains_address(job.params.addresses, id.address);
@@ -206,7 +445,7 @@ bool step_find_signal_job(FindSignalJob &job, size_t max_candidates) {
   size_t visited = 0;
   while (visited < max_candidates && job.id_index < job.ids.size() && job.results.size() < job.params.max_results) {
     const MessageId id = job.ids[job.id_index];
-    const CanEventView view = job.store->canEvents(id, job.params.range);
+    const CanEventView view = job.store->can_events(id, job.params.range);
     const uint32_t msg_size = event_msg_size(view);
     const int msg_bits = static_cast<int>(msg_size * 8);
     if (view.events.empty() || msg_bits <= 0 || job.size > msg_bits) {
@@ -230,7 +469,7 @@ bool step_find_signal_job(FindSignalJob &job, size_t max_candidates) {
     for (const CanEvent &event : view.events) {
       if (event.data.size() < msg_size) continue;
       double value = 0.0;
-      if (!signal.getValue(event.data.data(), event.data.size(), &value)) continue;
+      if (!signal.get_value(event.data.data(), event.data.size(), &value)) continue;
       if (!find_signal_compare_value(value, job.params.compare, job.params.target_value)) continue;
       if (result.matches.empty()) result.mono_time = event.mono_time;
       result.matches.push_back({event.mono_time, value});
@@ -242,7 +481,7 @@ bool step_find_signal_job(FindSignalJob &job, size_t max_candidates) {
   return job.done;
 }
 
-std::vector<FindSignalResult> prepare_find_signal_candidates(const Store &store,
+[[maybe_unused]] std::vector<FindSignalResult> prepare_find_signal_candidates(const Store &store,
                                                              const FindSignalParams &params) {
   FindSignalJob job = make_find_signal_job(store, params);
   while (!step_find_signal_job(job, 2048)) {
@@ -250,15 +489,30 @@ std::vector<FindSignalResult> prepare_find_signal_candidates(const Store &store,
   return std::move(job.results);
 }
 
-bool commit_find_signal_result(Session &session, std::string_view selection_group,
-                               const FindSignalResult &result, std::string *error) {
+std::string find_signal_default_name(const FindSignalResult &result) {
+  char buf[96];
+  std::snprintf(buf, sizeof(buf), "SIG_%X_%02d_%02d", result.id.address, result.sig.start_bit, result.sig.size);
+  return buf;
+}
+
+}  // namespace
+
+[[maybe_unused]] bool commit_find_signal_result(Session &session, std::string_view selection_group,
+                               const FindSignalResult &result, std::string_view signal_name,
+                               std::string &error) {
   if (result.msg_size == 0) {
-    if (error != nullptr) *error = "candidate has no message size";
+    error = "candidate has no message size";
     return false;
   }
   Signal signal = result.sig;
-  signal.name.clear();
-  if (!commit_signal_add(&session.dbc_undo(), dbc(), result.id, std::move(signal), result.msg_size, error)) return false;
+  signal.name = trim_signal_name(signal_name);
+  if (signal.name.empty()) signal.name = find_signal_default_name(result);
+  std::string local_error;
+  if (!commit_signal_add(session.dbc_undo, session.dbc, result.id, std::move(signal), result.msg_size, local_error)) {
+    error = std::move(local_error);
+    return false;
+  }
+  error.clear();
   SelectionContext &selection = session.selection(selection_group);
   selection.selected_msg_id = result.id;
   selection.has_selected_msg = true;
@@ -266,17 +520,21 @@ bool commit_find_signal_result(Session &session, std::string_view selection_grou
 }
 
 void draw_find_signal_pane(Session &session, PaneInstance &pane) {
-  static FindSignalJob job;
-  static std::vector<FindSignalResult> results;
-
-  FindSignalPaneState state = parse_find_signal_pane_state(pane.state_json);
+  FindSignalPaneTransientState &transient = find_signal_transient_state(pane);
+  FindSignalJob &job = transient.job;
+  std::vector<FindSignalResult> &results = transient.results;
+  FindSignalPaneState &state = find_signal_pane_state(pane);
   bool changed = false;
+  state.history_index = std::clamp(state.history_index, -1, static_cast<int>(state.history.size()) - 1);
 
   ImGui::SetNextItemWidth(70.0f);
   changed |= ImGui::InputInt("Bus", &state.bus);
   if (ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(90.0f);
   changed |= input_text_string("Addr", &state.address_hex, 32);
+  if (ImGui::GetContentRegionAvail().x > 144.0f) ImGui::SameLine();
+  ImGui::SetNextItemWidth(128.0f);
+  changed |= input_text_string("Name", &state.signal_name, 96);
   if (ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(66.0f);
   changed |= ImGui::InputInt("Min", &state.min_size);
@@ -304,13 +562,40 @@ void draw_find_signal_pane(Session &session, PaneInstance &pane) {
   ImGui::SetNextItemWidth(96.0f);
   changed |= ImGui::InputDouble("Offset", &state.offset, 0.0, 0.0, "%.9g");
 
+  if (!state.history.empty()) {
+    const std::vector<std::string> history_labels = [&]() {
+      std::vector<std::string> labels;
+      labels.reserve(state.history.size());
+      for (const FindSignalHistoryEntry &entry : state.history) labels.push_back(find_signal_history_entry_label(entry));
+      return labels;
+    }();
+    const std::vector<const char *> history_items = [&]() {
+      std::vector<const char *> items;
+      items.reserve(history_labels.size());
+      for (const std::string &label : history_labels) items.push_back(label.c_str());
+      return items;
+    }();
+    ImGui::SetNextItemWidth(220.0f);
+    int history_index = std::max(state.history_index, 0);
+    if (ImGui::Combo("History", &history_index, history_items.data(), static_cast<int>(history_items.size()))) {
+      state.history_index = history_index;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Apply")) {
+      find_signal_apply_history_entry(state, state.history[static_cast<size_t>(std::clamp(state.history_index, 0, static_cast<int>(state.history.size()) - 1))]);
+      changed = true;
+    }
+  }
+
   if (ImGui::Button(job.done ? "Search" : "Restart")) {
-    job = make_find_signal_job(session.store(), find_signal_params_from_state(state, session.view_range().range()));
+    find_signal_record_history_entry(state);
+    job = make_find_signal_job(session.store, find_signal_params_from_state(state, session.view_range.range()));
     results.clear();
     state.status = "Scanning";
     changed = true;
   }
-  if (!job.done && job.store == &session.store()) {
+  if (!job.done && job.store == &session.store) {
     step_find_signal_job(job, 512);
     results = job.results;
     state.status = job.done ? ("Found " + std::to_string(results.size()) + " candidates") :
@@ -320,7 +605,10 @@ void draw_find_signal_pane(Session &session, PaneInstance &pane) {
   ImGui::SameLine();
   ImGui::TextDisabled("%s", state.status.c_str());
 
-  if (changed) pane.state_json = find_signal_pane_state_json(state);
+  if (changed) {
+    pane.state_json = find_signal_pane_state_json(state);
+    transient.state_json = pane.state_json;
+  }
 
   if (ImGui::BeginTable("##find_signal_results", 7, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
                         ImGui::GetContentRegionAvail())) {
@@ -340,7 +628,7 @@ void draw_find_signal_pane(Session &session, PaneInstance &pane) {
         ImGui::PushID(row_idx);
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        ImGui::TextUnformatted(result.id.toString().c_str());
+        ImGui::TextUnformatted(result.id.to_string().c_str());
         ImGui::TableSetColumnIndex(1);
         ImGui::Text("%d", result.sig.start_bit);
         ImGui::TableSetColumnIndex(2);
@@ -360,10 +648,11 @@ void draw_find_signal_pane(Session &session, PaneInstance &pane) {
         ImGui::SameLine();
         if (ImGui::SmallButton("Create")) {
           std::string error;
-          state.status = commit_find_signal_result(session, pane.selection_group, result, &error)
+          state.status = commit_find_signal_result(session, pane.selection_group, result, state.signal_name, error)
                            ? "Created DBC signal"
                            : error;
           pane.state_json = find_signal_pane_state_json(state);
+          transient.state_json = pane.state_json;
         }
         ImGui::PopID();
       }

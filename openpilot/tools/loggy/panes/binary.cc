@@ -1,33 +1,233 @@
 #include "tools/loggy/panes/binary.h"
 
-#include "tools/loggy/backend/session.h"
+#include "tools/loggy/backend/csv.h"
 #include "tools/loggy/backend/dbc/dbcmanager.h"
-#include "tools/loggy/backend/undo.h"
+#include "tools/loggy/backend/session.h"
 #include "tools/loggy/shell/theme.h"
 #include "tools/loggy/shell/workspace.h"
 
 #include "imgui.h"
+#include "json11/json11.hpp"
 
 #include <algorithm>
+#include <array>
+#include <any>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
+#include <limits>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace loggy {
 namespace {
 
-struct BinaryDragState {
-  bool active = false;
-  bool dragged = false;
-  MessageId id;
-  int anchor_bit = -1;
-  int current_bit = -1;
-  std::string status;
+struct BinaryBitCell {
+  bool valid = false;
+  uint8_t value = 0;
+  uint32_t flip_count = 0;
 };
 
-BinaryDragState &binary_drag_state() {
-  static BinaryDragState state;
+struct BinaryGrid {
+  MessageId id;
+  double first_time = 0.0;
+  double last_time = 0.0;
+  size_t event_count = 0;
+  std::vector<uint8_t> latest_data;
+  std::vector<std::array<BinaryBitCell, 8>> rows;
+  uint32_t max_flip_count = 0;
+};
+
+struct BinaryPaneState {
+  MessageId id = kDefaultLoggyMessageId;
+  bool highlight_defined_bits = true;
+  bool suppress_defined_bits = false;
+};
+
+BinaryPaneState parse_binary_pane_state(std::string_view state_json, std::optional<MessageId> selection = std::nullopt) {
+  BinaryPaneState state;
+  state.id = parse_message_id_state(state_json, selection);
+
+  std::string err;
+  const json11::Json json = json11::Json::parse(std::string(state_json), err);
+  if (!err.empty() || !json.is_object()) return state;
+  if (json["highlight_defined_bits"].is_bool()) state.highlight_defined_bits = json["highlight_defined_bits"].bool_value();
+  if (json["suppress_defined_bits"].is_bool()) state.suppress_defined_bits = json["suppress_defined_bits"].bool_value();
   return state;
+}
+
+std::string binary_pane_state_json(const BinaryPaneState &state) {
+  return json11::Json(json11::Json::object{
+    {"id", state.id.to_string()},
+    {"highlight_defined_bits", state.highlight_defined_bits},
+    {"suppress_defined_bits", state.suppress_defined_bits},
+  }).dump();
+}
+
+std::optional<BinaryGrid> build_binary_grid(const Store &store, const MessageId &id, TimeRange range) {
+  const CanEventView view = store.can_events(id, range);
+  if (view.events.empty()) return std::nullopt;
+
+  BinaryGrid grid;
+  grid.id = id;
+  grid.event_count = view.events.size();
+  grid.first_time = view.events.front().mono_time;
+  grid.last_time = view.events.back().mono_time;
+  grid.latest_data = view.events.back().data;
+  grid.rows.resize(grid.latest_data.size());
+
+  for (size_t byte_index = 0; byte_index < grid.latest_data.size(); ++byte_index) {
+    const uint8_t byte = grid.latest_data[byte_index];
+    for (int bit = 0; bit < 8; ++bit) {
+      BinaryBitCell &cell = grid.rows[byte_index][static_cast<size_t>(bit)];
+      cell.valid = true;
+      cell.value = static_cast<uint8_t>((byte >> (7 - bit)) & 1U);
+    }
+  }
+
+  if (view.events.size() > 1) {
+    std::vector<uint8_t> previous = view.events.front().data;
+    for (size_t event_index = 1; event_index < view.events.size(); ++event_index) {
+      const std::vector<uint8_t> &current = view.events[event_index].data;
+      const size_t byte_count = std::min(previous.size(), current.size());
+      for (size_t byte_index = 0; byte_index < byte_count && byte_index < grid.rows.size(); ++byte_index) {
+        const uint8_t diff = static_cast<uint8_t>(previous[byte_index] ^ current[byte_index]);
+        for (int bit = 0; bit < 8; ++bit) {
+          if ((diff & (1U << (7 - bit))) == 0) continue;
+          BinaryBitCell &cell = grid.rows[byte_index][static_cast<size_t>(bit)];
+          ++cell.flip_count;
+          grid.max_flip_count = std::max(grid.max_flip_count, cell.flip_count);
+        }
+      }
+      previous = current;
+    }
+  }
+  return grid;
+}
+
+bool binary_bit_is_dbc_defined(const Msg *msg, int bit_index) {
+  if (msg == nullptr || bit_index < 0) return false;
+  const size_t byte_index = static_cast<size_t>(bit_index / 8);
+  const int bit = bit_index % 8;
+  if (byte_index >= msg->mask.size()) return false;
+  return (msg->mask[byte_index] & (1U << bit)) != 0;
+}
+
+bool binary_signal_contains_bit(const Signal &signal, int bit_index) {
+  if (bit_index < 0) return false;
+  Signal copy = signal;
+  copy.update();
+  int byte_index = copy.msb / 8;
+  int bits_left = copy.size;
+  while (byte_index >= 0 && byte_index < CAN_MAX_DATA_BYTES && bits_left > 0) {
+    const int lsb = static_cast<int>(copy.lsb / 8) == byte_index ? copy.lsb : byte_index * 8;
+    const int msb = static_cast<int>(copy.msb / 8) == byte_index ? copy.msb : (byte_index + 1) * 8 - 1;
+    if (bit_index >= lsb && bit_index <= msb) return true;
+    bits_left -= msb - lsb + 1;
+    byte_index = copy.is_little_endian ? byte_index - 1 : byte_index + 1;
+  }
+  return false;
+}
+
+const Signal *binary_signal_at_bit(const Msg *msg, int bit_index) {
+  if (msg == nullptr || bit_index < 0) return nullptr;
+  for (const Signal *signal : msg->signals()) {
+    if (signal != nullptr && binary_signal_contains_bit(*signal, bit_index)) return signal;
+  }
+  return nullptr;
+}
+
+std::optional<Signal> binary_signal_from_bit_range(int anchor_bit, int current_bit, std::string &error) {
+  if (anchor_bit < 0 || current_bit < 0 ||
+      anchor_bit >= CAN_MAX_DATA_BYTES * 8 || current_bit >= CAN_MAX_DATA_BYTES * 8) {
+    error = "bit range must be 0-511";
+    return std::nullopt;
+  }
+
+  const int start_bit = std::min(anchor_bit, current_bit);
+  const int size = std::abs(current_bit - anchor_bit) + 1;
+  Signal draft;
+  draft.start_bit = start_bit;
+  draft.size = size;
+  draft.is_little_endian = true;
+  draft.is_signed = false;
+  draft.factor = 1.0;
+  draft.offset = 0.0;
+  draft.min = 0.0;
+  draft.max = std::pow(2.0, static_cast<double>(size)) - 1.0;
+  draft.receiver_name = DEFAULT_NODE_NAME;
+  draft.update();
+  error.clear();
+  return draft;
+}
+
+std::optional<Signal> binary_resized_signal_from_bit_range(const Msg *msg, const Signal &origin,
+                                                           int anchor_bit, int current_bit,
+                                                           std::string &error) {
+  if (msg == nullptr) {
+    error = "no DBC message selected";
+    return std::nullopt;
+  }
+  if (!origin.is_little_endian) {
+    error = "Binary resize currently supports little-endian signals";
+    return std::nullopt;
+  }
+  if (!binary_signal_contains_bit(origin, anchor_bit)) {
+    error = "drag must start_ on the selected signal";
+    return std::nullopt;
+  }
+  if (current_bit < 0 || current_bit >= static_cast<int>(msg->size * 8)) {
+    error = "signal bit range must fit in the message";
+    return std::nullopt;
+  }
+
+  const int origin_first = origin.start_bit;
+  const int origin_last = origin.start_bit + origin.size - 1;
+  const int keep_edge = std::abs(anchor_bit - origin_first) <= std::abs(anchor_bit - origin_last) ?
+      origin_last : origin_first;
+  const int new_first = std::min(keep_edge, current_bit);
+  const int new_last = std::max(keep_edge, current_bit);
+  if (new_first < 0 || new_last >= static_cast<int>(msg->size * 8)) {
+    error = "signal bit range must fit in the message";
+    return std::nullopt;
+  }
+
+  Signal copy = origin;
+  copy.start_bit = new_first;
+  copy.size = new_last - new_first + 1;
+  copy.max = std::pow(2.0, static_cast<double>(copy.size)) - 1.0;
+  copy.update();
+  error.clear();
+  return copy;
+}
+
+bool binary_signal_overlaps_dbc_bits(const Msg *msg, int start_bit, int size, std::string &error) {
+  if (msg == nullptr || start_bit < 0 || size <= 0) return false;
+  for (int bit = start_bit; bit < start_bit + size; ++bit) {
+    if (binary_bit_is_dbc_defined(msg, bit)) {
+      error = "selection overlaps existing DBC bits at " + std::to_string(bit);
+      return true;
+    }
+  }
+  error.clear();
+  return false;
+}
+
+bool binary_signal_overlaps_other_dbc_bits(const Msg *msg, const std::string &signal_name,
+                                          int start_bit, int size, std::string &error) {
+  if (msg == nullptr || start_bit < 0 || size <= 0) return false;
+  for (const Signal *signal : msg->signals()) {
+    if (signal == nullptr || signal->name == signal_name) continue;
+    for (int bit = start_bit; bit < start_bit + size; ++bit) {
+      if (binary_signal_contains_bit(*signal, bit)) {
+        error = "selection overlaps signal " + signal->name + " at bit " + std::to_string(bit);
+        return true;
+      }
+    }
+  }
+  error.clear();
+  return false;
 }
 
 ImU32 heat_color(uint32_t flips, uint32_t max_flips) {
@@ -37,15 +237,34 @@ ImU32 heat_color(uint32_t flips, uint32_t max_flips) {
   return ImGui::GetColorU32(color_rgb(47, 101, 202, alpha));
 }
 
+struct BinaryDragState {
+  bool active = false;
+  bool dragged = false;
+  MessageId id;
+  int anchor_bit = -1;
+  int current_bit = -1;
+  bool resizing = false;
+  std::string signal_name;
+  std::string status;
+};
+
+BinaryDragState &binary_drag_state(PaneInstance &pane) {
+  if (BinaryDragState *state = std::any_cast<BinaryDragState>(&pane.transient_state)) return *state;
+  pane.transient_state = BinaryDragState{};
+  return std::any_cast<BinaryDragState &>(pane.transient_state);
+}
+
 }  // namespace
 
 void draw_binary_pane(Session &session, PaneInstance &pane) {
   SelectionContext &selection = session.selection(pane.selection_group);
   const std::optional<MessageId> selected = selection.has_selected_msg ? std::optional<MessageId>(selection.selected_msg_id) : std::nullopt;
-  const MessageId id = parse_message_id_state(pane.state_json, selected);
-  const std::optional<BinaryGrid> maybe_grid = build_binary_grid(session.store(), id, session.view_range().range());
+  BinaryPaneState state = parse_binary_pane_state(pane.state_json, selected);
+  const MessageId id = state.id;
+  const std::optional<BinaryGrid> maybe_grid = build_binary_grid(session.store, id, session.view_range.range());
+  Msg *dbc_msg = session.dbc.msg(id);
 
-  ImGui::TextDisabled("ID %s", id.toString().c_str());
+  ImGui::TextDisabled("ID %s", id.to_string().c_str());
   if (!maybe_grid.has_value()) {
     ImGui::TextDisabled("No CAN events in view");
     return;
@@ -54,10 +273,20 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   const BinaryGrid &grid = *maybe_grid;
   ImGui::SameLine();
   ImGui::TextDisabled("| %zu events | latest %.3fs", grid.event_count, grid.last_time);
-  BinaryDragState &drag = binary_drag_state();
+  BinaryDragState &drag = binary_drag_state(pane);
   if (!drag.status.empty()) {
     ImGui::SameLine();
     ImGui::TextDisabled("%s", drag.status.c_str());
+  }
+  if (dbc_msg != nullptr && !dbc_msg->mask.empty()) {
+    bool changed = false;
+    if (ImGui::GetContentRegionAvail().x > 126.0f) ImGui::SameLine();
+    changed |= ImGui::Checkbox("Defined", &state.highlight_defined_bits);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Highlight bits covered by loaded DBC signals");
+    if (ImGui::GetContentRegionAvail().x > 132.0f) ImGui::SameLine();
+    changed |= ImGui::Checkbox("Suppress", &state.suppress_defined_bits);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mute DBC-defined bits while inspecting unknown bits");
+    if (changed) pane.state_json = binary_pane_state_json(state);
   }
 
   constexpr int kBitColumns = 8;
@@ -83,7 +312,8 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   }
   const ImVec2 hex_min(origin.x + row_header_w + static_cast<float>(kBitColumns) * col_w, origin.y);
   const ImVec2 hex_size = ImGui::CalcTextSize("HEX");
-  draw_list->AddText(ImVec2(hex_min.x + (col_w - hex_size.x) * 0.5f, hex_min.y + (row_h - hex_size.y) * 0.5f), disabled, "HEX");
+  draw_list->AddText(ImVec2(hex_min.x + (col_w - hex_size.x) * 0.5f, hex_min.y + (row_h - hex_size.y) * 0.5f),
+                    disabled, "HEX");
 
   for (size_t row = 0; row < grid.rows.size(); ++row) {
     const float y = origin.y + row_h * static_cast<float>(row + 1);
@@ -96,9 +326,16 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
     for (int bit = 0; bit < kBitColumns; ++bit) {
       const BinaryBitCell &cell = grid.rows[row][static_cast<size_t>(bit)];
       const int bit_index = static_cast<int>(row * 8 + static_cast<size_t>(7 - bit));
+      const bool defined_bit = binary_bit_is_dbc_defined(dbc_msg, bit_index);
+      const bool suppressed_bit = state.suppress_defined_bits && defined_bit;
       const ImVec2 cell_min(origin.x + row_header_w + static_cast<float>(bit) * col_w, y);
       const ImVec2 cell_max(cell_min.x + col_w, cell_min.y + row_h);
-      draw_list->AddRectFilled(cell_min, cell_max, heat_color(cell.flip_count, grid.max_flip_count));
+      draw_list->AddRectFilled(cell_min, cell_max,
+                               suppressed_bit ? ImGui::GetColorU32(color_rgb(45, 48, 50))
+                                              : heat_color(cell.flip_count, grid.max_flip_count));
+      if (state.highlight_defined_bits && defined_bit && !suppressed_bit) {
+        draw_list->AddRectFilled(cell_min, cell_max, ImGui::GetColorU32(color_rgb(69, 126, 86, 0.32f)));
+      }
       if (drag.active && drag.id == id && drag.dragged) {
         const int first = std::min(drag.anchor_bit, drag.current_bit);
         const int last = std::max(drag.anchor_bit, drag.current_bit);
@@ -107,20 +344,31 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
         }
       }
       draw_list->AddRect(cell_min, cell_max, border);
+      if (state.highlight_defined_bits && defined_bit) {
+        draw_list->AddRect(ImVec2(cell_min.x + 1.0f, cell_min.y + 1.0f),
+                           ImVec2(cell_max.x - 1.0f, cell_max.y - 1.0f),
+                           ImGui::GetColorU32(color_rgb(114, 175, 124)));
+      }
 
       char value[2] = {static_cast<char>(cell.value ? '1' : '0'), '\0'};
-      const ImVec2 value_size = ImGui::CalcTextSize(value);
-      draw_list->AddText(ImVec2(cell_min.x + (col_w - value_size.x) * 0.5f, cell_min.y + (row_h - value_size.y) * 0.5f), text, value);
+      if (!suppressed_bit) {
+        const ImVec2 value_size = ImGui::CalcTextSize(value);
+        draw_list->AddText(ImVec2(cell_min.x + (col_w - value_size.x) * 0.5f, cell_min.y + (row_h - value_size.y) * 0.5f),
+                          text, value);
+      }
 
       ImGui::SetCursorScreenPos(cell_min);
       ImGui::PushID(static_cast<int>(row * 16 + static_cast<size_t>(bit)));
       ImGui::InvisibleButton("bit", ImVec2(col_w, row_h));
-      if (!drag.active && ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+      if (!drag.active && !suppressed_bit && ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        const Signal *resize_signal = binary_signal_at_bit(dbc_msg, bit_index);
         drag.active = true;
         drag.dragged = false;
         drag.id = id;
         drag.anchor_bit = bit_index;
         drag.current_bit = bit_index;
+        drag.resizing = resize_signal != nullptr;
+        drag.signal_name = resize_signal != nullptr ? resize_signal->name : std::string();
         drag.status.clear();
       }
       if (drag.active && drag.id == id && ImGui::IsItemHovered()) {
@@ -131,7 +379,23 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
         if (drag.active && drag.id == id && drag.dragged) {
           const int first = std::min(drag.anchor_bit, drag.current_bit);
           const int last = std::max(drag.anchor_bit, drag.current_bit);
-          ImGui::SetTooltip("create signal bits %d-%d", first, last);
+          if (drag.resizing) {
+            ImGui::SetTooltip("resize %s with bits %d-%d", drag.signal_name.c_str(), first, last);
+          } else {
+            ImGui::SetTooltip("create signal bits %d-%d", first, last);
+          }
+        } else if (suppressed_bit) {
+          ImGui::SetTooltip("byte %zu bit %d\nDBC-defined bit suppressed", row, 7 - bit);
+        } else if (defined_bit) {
+          const Signal *hover_signal = binary_signal_at_bit(dbc_msg, bit_index);
+          if (hover_signal != nullptr) {
+            ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u\nDBC-defined bit\n%s",
+                              row, 7 - bit, static_cast<unsigned>(cell.value), cell.flip_count,
+                              hover_signal->name.c_str());
+          } else {
+            ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u\nDBC-defined bit", row, 7 - bit,
+                              static_cast<unsigned>(cell.value), cell.flip_count);
+          }
         } else {
           ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u", row, 7 - bit, static_cast<unsigned>(cell.value), cell.flip_count);
         }
@@ -146,24 +410,45 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
     char hex[3];
     std::snprintf(hex, sizeof(hex), "%02X", grid.latest_data[row]);
     const ImVec2 hex_text = ImGui::CalcTextSize(hex);
-    draw_list->AddText(ImVec2(hex_cell_min.x + (col_w - hex_text.x) * 0.5f, hex_cell_min.y + (row_h - hex_text.y) * 0.5f), text, hex);
+    draw_list->AddText(ImVec2(hex_cell_min.x + (col_w - hex_text.x) * 0.5f, hex_cell_min.y + (row_h - hex_text.y) * 0.5f),
+                      text, hex);
   }
 
   if (drag.active && drag.id == id && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
     if (drag.dragged) {
-      Signal draft;
       std::string error;
-      if (binary_signal_from_bit_range(drag.anchor_bit, drag.current_bit, &draft, &error) &&
-          commit_signal_add(&session.dbc_undo(), dbc(), id, draft, static_cast<uint32_t>(grid.latest_data.size()), &error)) {
-        drag.status = "Created DBC signal";
+      if (drag.resizing) {
+        const Signal *origin_signal = dbc_msg != nullptr ? dbc_msg->sig(drag.signal_name) : nullptr;
+        std::optional<Signal> edited =
+            origin_signal != nullptr
+                ? binary_resized_signal_from_bit_range(dbc_msg, *origin_signal, drag.anchor_bit,
+                                                       drag.current_bit, error)
+                : std::nullopt;
+        if (origin_signal != nullptr &&
+            edited.has_value() &&
+            !binary_signal_overlaps_other_dbc_bits(dbc_msg, origin_signal->name, edited->start_bit, edited->size, error) &&
+            commit_signal_edit(session.dbc_undo, session.dbc, id, *origin_signal, *edited, error)) {
+          drag.status = "Resized " + drag.signal_name;
+        } else {
+          drag.status = error.empty() ? "Signal resize failed" : error;
+        }
       } else {
-        drag.status = error.empty() ? "Signal create failed" : error;
+        std::optional<Signal> draft = binary_signal_from_bit_range(drag.anchor_bit, drag.current_bit, error);
+        if (draft.has_value() &&
+            !binary_signal_overlaps_dbc_bits(dbc_msg, draft->start_bit, draft->size, error) &&
+            commit_signal_add(session.dbc_undo, session.dbc, id, *draft, static_cast<uint32_t>(grid.latest_data.size()), error)) {
+          drag.status = "Created DBC signal";
+        } else {
+          drag.status = error.empty() ? "Signal create failed" : error;
+        }
       }
     }
     drag.active = false;
     drag.dragged = false;
     drag.anchor_bit = -1;
     drag.current_bit = -1;
+    drag.resizing = false;
+    drag.signal_name.clear();
   }
 
   ImGui::SetCursorScreenPos(origin);

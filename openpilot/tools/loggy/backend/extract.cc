@@ -75,27 +75,27 @@ void append_fixed_scalar_point(RouteSeries *series, double tm, double value) {
 }
 
 void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series) {
-  series->appendScalar(path, tm, value);
+  series->append_scalar(path, tm, value);
 }
 
 RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series) {
-  return series->ensureListScalarSeries(base_path, index);
+  return series->ensure_list_scalar_series(base_path, index);
 }
 
 void capture_static_enum_info(const std::string &path,
                               std::initializer_list<std::string_view> names,
                               SeriesAccumulator *series) {
-  series->captureEnumInfo(path, names);
+  series->capture_enum_info(path, names);
 }
 
 [[maybe_unused]] void capture_value_descriptions(const std::string &path,
                                                  std::initializer_list<SeriesValueDescription> descriptions,
                                                  SeriesAccumulator *series) {
-  series->captureValueDescriptions(path, descriptions);
+  series->capture_value_descriptions(path, descriptions);
 }
 
 void capture_deprecated_series(const std::string &path, SeriesAccumulator *series) {
-  series->markDeprecated(path);
+  series->mark_deprecated(path);
 }
 
 void append_can_frame(CanServiceKind service,
@@ -105,7 +105,7 @@ void append_can_frame(CanServiceKind service,
                       capnp::Data::Reader dat,
                       double tm,
                       SeriesAccumulator *series) {
-  series->appendCanFrame(service, bus, address, bus_time, dat.begin(), dat.size(), tm);
+  series->append_can_frame(service, bus, address, bus_time, dat.begin(), dat.size(), tm);
 }
 
 template <typename Fn>
@@ -130,18 +130,18 @@ SeriesAccumulator::SeriesAccumulator(int segment, std::vector<std::string> fixed
   }
 }
 
-RouteSeries *SeriesAccumulator::fixedSeries(size_t slot) {
+RouteSeries *SeriesAccumulator::fixed_series(size_t slot) {
   if (slot >= fixed_series.size()) {
     throw std::out_of_range("fixed series slot out of range");
   }
   return &fixed_series[slot];
 }
 
-RouteSeries *SeriesAccumulator::ensureSeries(const std::string &path) {
+RouteSeries *SeriesAccumulator::ensure_series(const std::string &path) {
   return &dynamic_series[ensureDynamicSlot(path)];
 }
 
-RouteSeries *SeriesAccumulator::ensureListScalarSeries(const std::string &base_path, size_t index) {
+RouteSeries *SeriesAccumulator::ensure_list_scalar_series(const std::string &base_path, size_t index) {
   auto [it, _] = list_scalar_slots_.try_emplace(base_path);
   std::vector<size_t> &slots = it->second;
   if (slots.size() <= index) {
@@ -153,19 +153,19 @@ RouteSeries *SeriesAccumulator::ensureListScalarSeries(const std::string &base_p
   return &dynamic_series[slots[index]];
 }
 
-void SeriesAccumulator::appendFixedScalar(size_t slot, double tm, double value) {
-  append_fixed_scalar_point(fixedSeries(slot), tm, value);
+void SeriesAccumulator::append_fixed_scalar(size_t slot, double tm, double value) {
+  append_fixed_scalar_point(fixed_series(slot), tm, value);
 }
 
-void SeriesAccumulator::appendScalar(const std::string &path, double tm, double value) {
-  RouteSeries *series = ensureSeries(path);
+void SeriesAccumulator::append_scalar(const std::string &path, double tm, double value) {
+  RouteSeries *series = ensure_series(path);
   if (series->path.empty()) series->path = path;
   append_fixed_scalar_point(series, tm, value);
 }
 
-void SeriesAccumulator::appendCanFrame(CanServiceKind service, uint8_t bus, uint32_t address,
+void SeriesAccumulator::append_can_frame(CanServiceKind service, uint8_t bus, uint32_t address,
                                        uint16_t bus_time, const uint8_t *data, size_t size, double tm) {
-  const MessageId id = canMessageId(service, bus, address);
+  const MessageId id = can_message_id(service, bus, address);
   auto [it, inserted] = can_slots_.try_emplace(id, can_events_.size());
   if (inserted) {
     can_events_.push_back(CanAccum{.id = id});
@@ -180,7 +180,7 @@ void SeriesAccumulator::appendCanFrame(CanServiceKind service, uint8_t bus, uint
   can_events_[it->second].events.push_back(std::move(event));
 }
 
-void SeriesAccumulator::captureEnumInfo(const std::string &path, std::initializer_list<std::string_view> names) {
+void SeriesAccumulator::capture_enum_info(const std::string &path, std::initializer_list<std::string_view> names) {
   if (names.size() == 0) return;
   SeriesMetadata &metadata = metadata_[path];
   if (!metadata.enum_names.empty()) return;
@@ -190,7 +190,7 @@ void SeriesAccumulator::captureEnumInfo(const std::string &path, std::initialize
   }
 }
 
-void SeriesAccumulator::captureValueDescriptions(const std::string &path,
+void SeriesAccumulator::capture_value_descriptions(const std::string &path,
                                                  std::initializer_list<SeriesValueDescription> descriptions) {
   if (descriptions.size() == 0) return;
   SeriesMetadata &metadata = metadata_[path];
@@ -198,11 +198,11 @@ void SeriesAccumulator::captureValueDescriptions(const std::string &path,
   metadata.value_descriptions.assign(descriptions.begin(), descriptions.end());
 }
 
-void SeriesAccumulator::markDeprecated(const std::string &path) {
+void SeriesAccumulator::mark_deprecated(const std::string &path) {
   metadata_[path].deprecated = true;
 }
 
-size_t SeriesAccumulator::populatedSeriesCount() const {
+size_t SeriesAccumulator::populated_series_count() const {
   size_t count = 0;
   for (const RouteSeries &fixed : fixed_series) {
     count += !fixed.times.empty();
@@ -248,7 +248,7 @@ SegmentExtractResult SeriesAccumulator::finish(TimeRange coverage) {
     result.batch.can_events.push_back(std::move(chunk));
   }
 
-  result.batch.coverage = normalizeRanges(std::move(result.batch.coverage));
+  result.batch.coverage = normalize_ranges(std::move(result.batch.coverage));
   return result;
 }
 
@@ -260,7 +260,7 @@ size_t SeriesAccumulator::ensureDynamicSlot(const std::string &path) {
   return it->second;
 }
 
-MessageId SeriesAccumulator::canMessageId(CanServiceKind service, uint8_t bus, uint32_t address) const {
+MessageId SeriesAccumulator::can_message_id(CanServiceKind service, uint8_t bus, uint32_t address) const {
   uint8_t source = bus;
   if (service == CanServiceKind::Sendcan) {
     source = static_cast<uint8_t>(bus | 0x80);
@@ -268,7 +268,7 @@ MessageId SeriesAccumulator::canMessageId(CanServiceKind service, uint8_t bus, u
   return {.source = source, .address = address};
 }
 
-const SchemaIndex &eventSchemaIndex() {
+const SchemaIndex &event_schema_index() {
   static const SchemaIndex index = [] {
     SchemaIndex out;
     out.fixed_paths = static_event_fixed_paths();
@@ -278,18 +278,18 @@ const SchemaIndex &eventSchemaIndex() {
   return index;
 }
 
-SeriesAccumulator makeSeriesAccumulator(const SchemaIndex &schema, int segment) {
+SeriesAccumulator make_series_accumulator(const SchemaIndex &schema, int segment) {
   return SeriesAccumulator(segment, schema.fixed_paths);
 }
 
-bool appendEventReader(cereal::Event::Which which,
+bool append_event_reader(cereal::Event::Which which,
                        const cereal::Event::Reader &event,
                        const SegmentExtractOptions &options,
                        SeriesAccumulator *series) {
   return append_event_static_reader(which, event, options, series);
 }
 
-bool appendEventData(cereal::Event::Which which,
+bool append_event_data(cereal::Event::Which which,
                      int32_t eidx_segnum,
                      kj::ArrayPtr<const capnp::word> data,
                      const SegmentExtractOptions &options,
@@ -297,28 +297,28 @@ bool appendEventData(cereal::Event::Which which,
   if (eidx_segnum != -1) return false;
   bool appended = false;
   with_parseable_event(data, [&](const cereal::Event::Reader &event) {
-    appended = appendEventReader(which, event, options, series);
+    appended = append_event_reader(which, event, options, series);
   });
   return appended;
 }
 
-void appendEventsFastRange(const std::vector<Event> &events,
+void append_events_fast_range(const std::vector<::Event> &events,
                            size_t begin,
                            size_t end,
                            const SegmentExtractOptions &options,
                            SeriesAccumulator *series) {
   const size_t bounded_end = std::min(end, events.size());
   for (size_t i = begin; i < bounded_end; ++i) {
-    const Event &event_record = events[i];
-    appendEventData(event_record.which, event_record.eidx_segnum, event_record.data, options, series);
+    const ::Event &event_record = events[i];
+    append_event_data(event_record.which, event_record.eidx_segnum, event_record.data, options, series);
   }
 }
 
-SegmentExtractResult extractSegmentSeries(const std::vector<Event> &events, SegmentExtractOptions options) {
-  SeriesAccumulator series = makeSeriesAccumulator(eventSchemaIndex(), options.segment);
+SegmentExtractResult extract_segment_series(const std::vector<::Event> &events, SegmentExtractOptions options) {
+  SeriesAccumulator series = make_series_accumulator(event_schema_index(), options.segment);
   size_t appended = 0;
-  for (const Event &event_record : events) {
-    if (appendEventData(event_record.which, event_record.eidx_segnum, event_record.data, options, &series)) {
+  for (const ::Event &event_record : events) {
+    if (append_event_data(event_record.which, event_record.eidx_segnum, event_record.data, options, &series)) {
       ++appended;
     }
   }

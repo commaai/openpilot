@@ -11,7 +11,7 @@
 
 namespace loggy {
 
-bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name, std::string *error) {
+bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name, std::string &error) {
   try {
     auto it = std::find_if(dbc_files.begin(), dbc_files.end(),
                            [&](auto &f) { return f.second && f.second->filename == dbc_file_name; });
@@ -20,36 +20,34 @@ bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name
       dbc_files[s] = file;
     }
   } catch (std::exception &e) {
-    if (error) *error = e.what();
+    error = e.what();
     return false;
   }
 
-  DBCFileChanged();
   return true;
 }
 
-bool DBCManager::open(const SourceSet &sources, const std::string &name, const std::string &content, std::string *error) {
+bool DBCManager::open(const SourceSet &sources, const std::string &name, const std::string &content, std::string &error) {
   try {
     auto file = std::make_shared<DBCFile>(name, content);
     for (auto s : sources) {
       dbc_files[s] = file;
     }
   } catch (std::exception &e) {
-    if (error) *error = e.what();
+    error = e.what();
     return false;
   }
 
-  DBCFileChanged();
   return true;
 }
 
-bool DBCManager::assignSources(DBCFile *dbc_file, const SourceSet &sources, std::string *error) {
+bool DBCManager::assign_sources(DBCFile *dbc_file, const SourceSet &sources, std::string &error) {
   if (dbc_file == nullptr) {
-    if (error != nullptr) *error = "no DBC file selected";
+    error = "no DBC file selected";
     return false;
   }
   if (sources.empty()) {
-    if (error != nullptr) *error = "no sources parsed";
+    error = "no sources parsed";
     return false;
   }
 
@@ -61,7 +59,7 @@ bool DBCManager::assignSources(DBCFile *dbc_file, const SourceSet &sources, std:
     }
   }
   if (!file) {
-    if (error != nullptr) *error = "DBC file is not loaded";
+    error = "DBC file is not loaded";
     return false;
   }
 
@@ -75,8 +73,7 @@ bool DBCManager::assignSources(DBCFile *dbc_file, const SourceSet &sources, std:
   for (const int source : sources) {
     dbc_files[source] = file;
   }
-  if (error != nullptr) error->clear();
-  DBCFileChanged();
+  error.clear();
   return true;
 }
 
@@ -84,7 +81,6 @@ void DBCManager::close(const SourceSet &sources) {
   for (auto s : sources) {
     dbc_files.erase(s);
   }
-  DBCFileChanged();
 }
 
 void DBCManager::close(DBCFile *dbc_file) {
@@ -95,90 +91,74 @@ void DBCManager::close(DBCFile *dbc_file) {
       ++it;
     }
   }
-  DBCFileChanged();
 }
 
-void DBCManager::closeAll() {
+void DBCManager::close_all() {
   dbc_files.clear();
-  DBCFileChanged();
 }
 
-void DBCManager::addSignal(const MessageId &id, const Signal &sig) {
+void DBCManager::add_signal(const MessageId &id, const Signal &sig) {
   if (auto m = msg(id)) {
-    if (auto s = m->addSignal(sig)) {
-      signalAdded(id, s);
-      maskUpdated();
-    }
+    m->add_signal(sig);
   }
 }
 
 void DBCManager::updateSignal(const MessageId &id, const std::string &sig_name, const Signal &sig) {
   if (auto m = msg(id)) {
-    if (auto s = m->updateSignal(sig_name, sig)) {
-      signalUpdated(s);
-      maskUpdated();
-    }
+    m->updateSignal(sig_name, sig);
   }
 }
 
 void DBCManager::removeSignal(const MessageId &id, const std::string &sig_name) {
   if (auto m = msg(id)) {
-    if (auto s = m->sig(sig_name)) {
-      signalRemoved(s);
-      m->removeSignal(sig_name);
-      maskUpdated();
-    }
+    m->removeSignal(sig_name);
   }
 }
 
-void DBCManager::updateMsg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment) {
-  auto dbc_file = findDBCFile(id);
+void DBCManager::update_msg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment) {
+  auto dbc_file = find_dbc_file(id);
   assert(dbc_file);  // This should be impossible
-  dbc_file->updateMsg(id, name, size, node, comment);
-  msgUpdated(id);
+  dbc_file->update_msg(id, name, size, node, comment);
 }
 
-void DBCManager::removeMsg(const MessageId &id) {
-  auto dbc_file = findDBCFile(id);
+void DBCManager::remove_msg(const MessageId &id) {
+  auto dbc_file = find_dbc_file(id);
   assert(dbc_file);  // This should be impossible
-  dbc_file->removeMsg(id);
-  msgRemoved(id);
-  maskUpdated();
+  dbc_file->remove_msg(id);
 }
 
-std::string DBCManager::newMsgName(const MessageId &id) {
+std::string DBCManager::new_msg_name(const MessageId &id) {
   char buf[64];
   snprintf(buf, sizeof(buf), "NEW_MSG_%X", id.address);
   return buf;
 }
 
-std::string DBCManager::newSignalName(const MessageId &id) {
+std::string DBCManager::new_signal_name(const MessageId &id) {
   auto m = msg(id);
-  return m ? m->newSignalName() : "";
+  return m ? m->new_signal_name() : "";
 }
 
-const std::map<uint32_t, Msg> &DBCManager::getMessages(uint8_t source) {
-  static std::map<uint32_t, Msg> empty_msgs;
-  auto dbc_file = findDBCFile(source);
-  return dbc_file ? dbc_file->getMessages() : empty_msgs;
+const std::map<uint32_t, Msg> &DBCManager::messages(uint8_t source) {
+  auto dbc_file = find_dbc_file(source);
+  return dbc_file ? dbc_file->messages() : empty_msgs_;
 }
 
 Msg *DBCManager::msg(const MessageId &id) {
-  auto dbc_file = findDBCFile(id);
+  auto dbc_file = find_dbc_file(id);
   return dbc_file ? dbc_file->msg(id) : nullptr;
 }
 
 Msg *DBCManager::msg(uint8_t source, const std::string &name) {
-  auto dbc_file = findDBCFile(source);
+  auto dbc_file = find_dbc_file(source);
   return dbc_file ? dbc_file->msg(name) : nullptr;
 }
 
-std::vector<std::string> DBCManager::signalNames() {
+std::vector<std::string> DBCManager::signal_names() {
   // Used for autocompletion
   std::set<std::string> names;
-  for (auto &f : allDBCFiles()) {
-    for (auto &[_, m] : f->getMessages()) {
-      for (auto sig : m.getSignals()) {
+  for (auto &f : all_dbc_files()) {
+    for (auto &[_, m] : f->messages()) {
+      for (auto sig : m.signals()) {
         names.insert(sig->name);
       }
     }
@@ -188,18 +168,18 @@ std::vector<std::string> DBCManager::signalNames() {
   return ret;
 }
 
-int DBCManager::nonEmptyDBCCount() {
-  auto files = allDBCFiles();
-  return std::count_if(files.cbegin(), files.cend(), [](auto &f) { return !f->isEmpty(); });
+int DBCManager::non_empty_dbc_count() {
+  auto files = all_dbc_files();
+  return std::count_if(files.cbegin(), files.cend(), [](auto &f) { return !f->is_empty(); });
 }
 
-DBCFile *DBCManager::findDBCFile(const uint8_t source) {
+DBCFile *DBCManager::find_dbc_file(const uint8_t source) {
   // Find DBC file that matches id.source, fall back to SOURCE_ALL if no specific DBC is found
   auto it = dbc_files.count(source) ? dbc_files.find(source) : dbc_files.find(-1);
   return it != dbc_files.end() ? it->second.get() : nullptr;
 }
 
-std::set<DBCFile *> DBCManager::allDBCFiles() {
+std::set<DBCFile *> DBCManager::all_dbc_files() {
   std::set<DBCFile *> files;
   for (const auto &[_, f] : dbc_files) {
     if (f) files.insert(f.get());
@@ -215,7 +195,7 @@ const SourceSet DBCManager::sources(const DBCFile *dbc_file) const {
   return sources;
 }
 
-std::string toString(const SourceSet &ss) {
+std::string to_string(const SourceSet &ss) {
   std::string result;
   for (int source : ss) {
     if (!result.empty()) result += ", ";
@@ -224,33 +204,27 @@ std::string toString(const SourceSet &ss) {
   return result;
 }
 
-DBCManager *dbc() {
-  static DBCManager dbc_manager;
-  return &dbc_manager;
-}
-
 namespace {
 
 std::string trimSourceSetText(std::string_view text) {
-  size_t start = 0;
-  while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) ++start;
+  size_t start_ = 0;
+  while (start_ < text.size() && std::isspace(static_cast<unsigned char>(text[start_]))) ++start_;
   size_t end = text.size();
-  while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1]))) --end;
-  return std::string(text.substr(start, end - start));
+  while (end > start_ && std::isspace(static_cast<unsigned char>(text[end - 1]))) --end;
+  return std::string(text.substr(start_, end - start_));
 }
 
 }  // namespace
 
-bool parseSourceSet(std::string_view text, SourceSet *out, std::string *error) {
-  if (out == nullptr) return false;
+bool parse_source_set(std::string_view text, SourceSet &out, std::string &error) {
   SourceSet parsed;
   std::string normalized = trimSourceSetText(text);
   std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char c) {
     return static_cast<char>(std::tolower(c));
   });
   if (normalized.empty() || normalized == "all" || normalized == "*") {
-    *out = SOURCE_ALL;
-    if (error != nullptr) error->clear();
+    out = SOURCE_ALL;
+    error.clear();
     return true;
   }
 
@@ -263,7 +237,7 @@ bool parseSourceSet(std::string_view text, SourceSet *out, std::string *error) {
       char *end = nullptr;
       const long source = std::strtol(part.c_str(), &end, 10);
       if (end == part.c_str() || *end != '\0' || source < 0 || source > 255) {
-        if (error != nullptr) *error = "invalid source: " + part;
+        error = "invalid source: " + part;
         return false;
       }
       parsed.insert(static_cast<int>(source));
@@ -271,11 +245,11 @@ bool parseSourceSet(std::string_view text, SourceSet *out, std::string *error) {
   }
 
   if (parsed.empty()) {
-    if (error != nullptr) *error = "no sources parsed";
+    error = "no sources parsed";
     return false;
   }
-  *out = std::move(parsed);
-  if (error != nullptr) error->clear();
+  out = std::move(parsed);
+  error.clear();
   return true;
 }
 

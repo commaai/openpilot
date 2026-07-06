@@ -58,7 +58,7 @@ Msg::~Msg() {
   }
 }
 
-Signal *Msg::addSignal(const Signal &sig) {
+Signal *Msg::add_signal(const Signal &sig) {
   auto s = sigs.emplace_back(new Signal(sig));
   update();
   return s;
@@ -104,14 +104,14 @@ Signal *Msg::sig(const std::string &sig_name) const {
   return it != sigs.end() ? *it : nullptr;
 }
 
-int Msg::indexOf(const Signal *sig) const {
+int Msg::index_of(const Signal *sig) const {
   for (int i = 0; i < sigs.size(); ++i) {
     if (sigs[i] == sig) return i;
   }
   return -1;
 }
 
-std::string Msg::newSignalName() {
+std::string Msg::new_signal_name() {
   std::string new_name;
   for (int i = 1; /**/; ++i) {
     new_name = "NEW_SIGNAL_" + std::to_string(i);
@@ -170,7 +170,7 @@ void Msg::update() {
 // Signal
 
 void Signal::update() {
-  updateMsbLsb(*this);
+  update_msb_lsb(*this);
   if (receiver_name.empty()) {
     receiver_name = DEFAULT_NODE_NAME;
   }
@@ -181,11 +181,15 @@ void Signal::update() {
   float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
   float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
 
-  color = hsvToRgb(h, s, v);
-  precision = std::max(num_decimals(factor), num_decimals(offset));
+  if (!color_override) {
+    color = hsvToRgb(h, s, v);
+  }
+  if (!precision_override) {
+    precision = std::max(num_decimals(factor), num_decimals(offset));
+  }
 }
 
-std::string Signal::formatValue(double value, bool with_unit) const {
+std::string Signal::format_value(double value, bool with_unit) const {
   // Show enum string
   int64_t raw_value = round((value - offset) / factor);
   for (const auto &[val, desc] : val_desc) {
@@ -203,7 +207,7 @@ std::string Signal::formatValue(double value, bool with_unit) const {
   return val_str;
 }
 
-bool Signal::getValue(const uint8_t *data, size_t data_size, double *val) const {
+bool Signal::get_value(const uint8_t *data, size_t data_size, double *val) const {
   if (multiplexor && get_raw_value(data, data_size, *multiplexor) != multiplex_value) {
     return false;
   }
@@ -218,6 +222,9 @@ bool Signal::operator==(const Signal &other) const {
          is_signed == other.is_signed && is_little_endian == other.is_little_endian &&
          factor == other.factor && offset == other.offset &&
          min == other.min && max == other.max && comment == other.comment && unit == other.unit && val_desc == other.val_desc &&
+         precision == other.precision &&
+         color.r == other.color.r && color.g == other.color.g && color.b == other.color.b && color.a == other.color.a &&
+         precision_override == other.precision_override && color_override == other.color_override &&
          multiplex_value == other.multiplex_value && type == other.type && receiver_name == other.receiver_name;
 }
 
@@ -256,12 +263,12 @@ double get_raw_value(const uint8_t *data, size_t data_size, const Signal &sig) {
   return static_cast<int64_t>(val) * sig.factor + sig.offset;
 }
 
-void updateMsbLsb(Signal &s) {
+void update_msb_lsb(Signal &s) {
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
     s.msb = s.start_bit + s.size - 1;
   } else {
-    s.lsb = flipBitPos(flipBitPos(s.start_bit) + s.size - 1);
+    s.lsb = flip_bit_pos(flip_bit_pos(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
 }

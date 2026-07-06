@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <functional>
 #include <limits>
 #include <string>
 #include <utility>
@@ -23,13 +22,13 @@ struct MessageId {
   uint8_t source = 0;
   uint32_t address = 0;
 
-  std::string toString() const {
+  std::string to_string() const {
     char buf[64];
     snprintf(buf, sizeof(buf), "%u:%X", source, address);
     return buf;
   }
 
-  inline static MessageId fromString(const std::string &str) {
+  inline static MessageId from_string(const std::string &str) {
     auto pos = str.find(':');
     if (pos == std::string::npos) return {};
     return MessageId{.source = uint8_t(std::stoul(str.substr(0, pos))),
@@ -71,8 +70,8 @@ public:
   Signal() = default;
   Signal(const Signal &other) = default;
   void update();
-  bool getValue(const uint8_t *data, size_t data_size, double *val) const;
-  std::string formatValue(double value, bool with_unit = true) const;
+  bool get_value(const uint8_t *data, size_t data_size, double *val) const;
+  std::string format_value(double value, bool with_unit = true) const;
   bool operator==(const Signal &other) const;
   inline bool operator!=(const Signal &other) const { return !(*this == other); }
 
@@ -96,6 +95,8 @@ public:
   ValueDescription val_desc;
   int precision = 0;
   ColorRGBA color;
+  bool precision_override = false;
+  bool color_override = false;
 
   // Multiplexed
   int multiplex_value = 0;
@@ -107,15 +108,15 @@ public:
   Msg() = default;
   Msg(const Msg &other) { *this = other; }
   ~Msg();
-  Signal *addSignal(const Signal &sig);
-  Signal *updateSignal(const std::string &sig_name, const Signal &sig);
-  void removeSignal(const std::string &sig_name);
+  Signal *add_signal(const Signal &sig);
+  Signal *update_signal(const std::string &sig_name, const Signal &sig);
+  void remove_signal(const std::string &sig_name);
   Msg &operator=(const Msg &other);
-  int indexOf(const Signal *sig) const;
+  int index_of(const Signal *sig) const;
   Signal *sig(const std::string &sig_name) const;
-  std::string newSignalName();
+  std::string new_signal_name();
   void update();
-  inline const std::vector<Signal *> &getSignals() const { return sigs; }
+  inline const std::vector<Signal *> &signals() const { return sigs; }
 
   uint32_t address;
   std::string name;
@@ -130,9 +131,9 @@ public:
 
 // Helper functions
 double get_raw_value(const uint8_t *data, size_t data_size, const Signal &sig);
-void updateMsbLsb(Signal &s);
-inline int flipBitPos(int start_bit) { return 8 * (start_bit / 8) + 7 - start_bit % 8; }
-inline std::string doubleToString(double value) {
+void update_msb_lsb(Signal &s);
+inline int flip_bit_pos(int start_bit) { return 8 * (start_bit / 8) + 7 - start_bit % 8; }
+inline std::string double_to_string(double value) {
   char buf[64];
   snprintf(buf, sizeof(buf), "%.*g", std::numeric_limits<double>::digits10, value);
   return buf;

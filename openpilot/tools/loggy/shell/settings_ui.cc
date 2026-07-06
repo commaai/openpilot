@@ -1,0 +1,211 @@
+#include "tools/loggy/shell/settings_ui.h"
+
+#include "tools/loggy/panes/map.h"
+#include "tools/loggy/shell/theme.h"
+
+#include "imgui.h"
+
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <string>
+#include <string_view>
+
+namespace loggy {
+namespace {
+
+namespace fs = std::filesystem;
+
+constexpr std::array<LoggyThemeKind, 2> kLoggyThemeOptions = {
+  LoggyThemeKind::Darcula,
+  LoggyThemeKind::Light,
+};
+
+int theme_kind_to_index(LoggyThemeKind theme) {
+  for (size_t i = 0; i < kLoggyThemeOptions.size(); ++i) {
+    if (kLoggyThemeOptions[i] == theme) return static_cast<int>(i);
+  }
+  return 0;
+}
+
+template <size_t Size>
+void copy_to_buffer(std::array<char, Size> *buffer, std::string_view value) {
+  static_assert(Size > 0);
+  if (buffer == nullptr) return;
+  const size_t count = std::min(Size - 1, value.size());
+  std::memcpy(buffer->data(), value.data(), count);
+  (*buffer)[count] = '\0';
+  std::fill(buffer->begin() + static_cast<ptrdiff_t>(count + 1), buffer->end(), '\0');
+}
+
+template <size_t Size>
+std::string buffer_text(const std::array<char, Size> &buffer) {
+  return std::string(buffer.data());
+}
+
+}  // namespace
+
+void sync_settings_popup_fields(const Session &session, int target_fps, SettingsUiState *state) {
+  if (state == nullptr) return;
+  const LoggySettings &settings = session.settings;
+  copy_to_buffer(&state->opendbc_root_buffer, settings.opendbc_root);
+  copy_to_buffer(&state->dbc_override_buffer, settings.dbc_override);
+  copy_to_buffer(&state->map_cache_root_buffer, settings.map_cache_root);
+  state->target_fps = std::clamp(target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
+  state->theme_index = theme_kind_to_index(loggy_theme_from_name(settings.theme));
+  state->show_frame_hud = settings.show_frame_hud;
+  state->natural_map_drag = settings.natural_map_drag;
+  state->popup_status = session.settings_status;
+}
+
+void request_settings_popup(const Session &session, int target_fps, SettingsUiState &state) {
+  sync_settings_popup_fields(session, target_fps, &state);
+  state.open_popup = true;
+}
+
+bool apply_settings_popup(Session &session, bool options_show_frame_hud, LoggyThemeKind &theme_kind,
+                         int &target_fps, bool &show_frame_hud, SettingsUiState &state) {
+  LoggySettings &settings = session.settings;
+  const LoggySettings previous_settings = settings;
+
+  const std::string opendbc_root = buffer_text(state.opendbc_root_buffer);
+  const std::string dbc_override = buffer_text(state.dbc_override_buffer);
+  const std::string map_cache_root = buffer_text(state.map_cache_root_buffer);
+  state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kLoggyThemeOptions.size()) - 1);
+  const LoggyThemeKind next_theme = kLoggyThemeOptions[static_cast<size_t>(state.theme_index)];
+  const std::string next_theme_name = loggy_theme_name(next_theme);
+  const int next_target_fps = std::clamp(state.target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
+  const bool next_show_frame_hud = state.show_frame_hud;
+  const bool next_natural_map_drag = state.natural_map_drag;
+
+  const bool root_changed = settings.opendbc_root != opendbc_root;
+  const bool override_changed = settings.dbc_override != dbc_override;
+  const bool app_changed = settings.target_fps != next_target_fps || settings.show_frame_hud != next_show_frame_hud ||
+                           settings.map_cache_root != map_cache_root || settings.natural_map_drag != next_natural_map_drag ||
+                           settings.theme != next_theme_name;
+
+  settings.opendbc_root = opendbc_root;
+  settings.map_cache_root = map_cache_root;
+  settings.theme = next_theme_name;
+  settings.target_fps = next_target_fps;
+  settings.show_frame_hud = next_show_frame_hud;
+  settings.natural_map_drag = next_natural_map_drag;
+  normalize_loggy_settings(&settings);
+
+  if (override_changed) {
+    std::string error;
+    if (!session.set_manual_dbc_name(dbc_override, error)) {
+      const std::string message = error.empty() ? "DBC override rejected" : error;
+      settings = previous_settings;
+      sync_settings_popup_fields(session, target_fps, &state);
+      state.popup_status = message;
+      return false;
+    }
+    target_fps = settings.target_fps;
+    theme_kind = loggy_theme_from_name(settings.theme);
+    apply_theme(theme_kind);
+    show_frame_hud = options_show_frame_hud && settings.show_frame_hud;
+    state.popup_status = session.settings_status;
+    return true;
+  }
+
+  if (root_changed || app_changed) {
+    std::string error;
+    if (!session.save_settings(error)) {
+      settings = previous_settings;
+      state.popup_status = error.empty() ? "Settings save failed" : error;
+      return false;
+    }
+  }
+  target_fps = settings.target_fps;
+  theme_kind = loggy_theme_from_name(settings.theme);
+  apply_theme(theme_kind);
+  show_frame_hud = options_show_frame_hud && settings.show_frame_hud;
+  state.popup_status = session.settings_status;
+  return true;
+}
+
+void draw_settings_popup(Session &session, bool close_requested, bool options_show_frame_hud, LoggyThemeKind &theme_kind,
+                        int &target_fps, bool &show_frame_hud, SettingsUiState &state) {
+  if (state.open_popup) {
+    ImGui::OpenPopup("Settings");
+    state.open_popup = false;
+  }
+
+  ImGui::SetNextWindowSize(ImVec2(560.0f, 0.0f), ImGuiCond_Appearing);
+  if (!ImGui::BeginPopupModal("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+
+  ImGui::TextDisabled("Config: %s", session.settings_path.string().c_str());
+  if (!session.active_dbc_name.empty() || !session.auto_dbc_name.empty()) {
+    const std::string active = session.active_dbc_name.empty() ? "--" : session.active_dbc_name;
+    ImGui::TextDisabled("Active DBC: %s", active.c_str());
+  }
+  if (!session.dbc_status.empty()) ImGui::TextDisabled("%s", session.dbc_status.c_str());
+  ImGui::Separator();
+
+  ImGui::TextUnformatted("opendbc root");
+  ImGui::SetNextItemWidth(-1.0f);
+  ImGui::InputText("##settings_opendbc_root", state.opendbc_root_buffer.data(), state.opendbc_root_buffer.size());
+  ImGui::TextUnformatted("DBC override");
+  ImGui::SetNextItemWidth(-1.0f);
+  ImGui::InputText("##settings_dbc_override", state.dbc_override_buffer.data(), state.dbc_override_buffer.size());
+  ImGui::Spacing();
+  ImGui::SeparatorText("App");
+  state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kLoggyThemeOptions.size()) - 1);
+  const LoggyThemeKind selected_theme = kLoggyThemeOptions[static_cast<size_t>(state.theme_index)];
+  ImGui::SetNextItemWidth(180.0f);
+  if (ImGui::BeginCombo("Theme", loggy_theme_label(selected_theme))) {
+    for (int i = 0; i < static_cast<int>(kLoggyThemeOptions.size()); ++i) {
+      const LoggyThemeKind option = kLoggyThemeOptions[static_cast<size_t>(i)];
+      const bool selected = i == state.theme_index;
+      if (ImGui::Selectable(loggy_theme_label(option), selected)) state.theme_index = i;
+      if (selected) ImGui::SetItemDefaultFocus();
+    }
+    ImGui::EndCombo();
+  }
+  ImGui::SetNextItemWidth(120.0f);
+  ImGui::InputInt("Target FPS", &state.target_fps, 5, 15);
+  state.target_fps = std::clamp(state.target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
+  ImGui::SameLine();
+  ImGui::TextDisabled("%d-%d", kMinLoggyTargetFps, kMaxLoggyTargetFps);
+  ImGui::Checkbox("Frame-Time HUD", &state.show_frame_hud);
+  ImGui::Checkbox("Natural map drag", &state.natural_map_drag);
+  ImGui::TextUnformatted("Map cache root");
+  ImGui::SetNextItemWidth(-110.0f);
+  ImGui::InputText("##settings_map_cache_root", state.map_cache_root_buffer.data(), state.map_cache_root_buffer.size());
+  ImGui::SameLine();
+  if (ImGui::Button("Default", ImVec2(96.0f, 0.0f))) {
+    copy_to_buffer(&state.map_cache_root_buffer, "");
+  }
+  const fs::path effective_cache_root = map_basemap_effective_cache_root(buffer_text(state.map_cache_root_buffer));
+  ImGui::TextDisabled("Effective: %s", effective_cache_root.string().c_str());
+
+  ImGui::Spacing();
+  if (ImGui::Button("Save", ImVec2(100.0f, 0.0f))) {
+    if (apply_settings_popup(session, options_show_frame_hud, theme_kind, target_fps, show_frame_hud, state)) ImGui::CloseCurrentPopup();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Reload", ImVec2(100.0f, 0.0f))) {
+    sync_settings_popup_fields(session, target_fps, &state);
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Clear Override", ImVec2(124.0f, 0.0f))) {
+    copy_to_buffer(&state.dbc_override_buffer, "");
+    apply_settings_popup(session, options_show_frame_hud, theme_kind, target_fps, show_frame_hud, state);
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel", ImVec2(100.0f, 0.0f)) || close_requested) {
+    ImGui::CloseCurrentPopup();
+  }
+
+  if (!state.popup_status.empty()) {
+    ImGui::TextDisabled("%s", state.popup_status.c_str());
+  }
+
+  ImGui::EndPopup();
+}
+
+}  // namespace loggy

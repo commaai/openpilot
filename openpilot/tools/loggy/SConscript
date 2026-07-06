@@ -3,13 +3,18 @@ import subprocess
 
 import bootstrap_icons
 import imgui
+import libusb
+from opendbc import get_generated_dbcs
+from opendbc.car import Bus
+from opendbc.car.fingerprints import MIGRATION
+from opendbc.car.values import PLATFORMS
 from openpilot.common.basedir import BASEDIR
 
-Import('env', 'arch', 'common', 'messaging', 'cereal')
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
 
 loggy_env = env.Clone()
-loggy_env["LIBPATH"] += [imgui.MESA_DIR]
-loggy_env["CPPPATH"] += [imgui.INCLUDE_DIR]
+loggy_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
+loggy_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 loggy_env["CXXFLAGS"] += [
   "-DGLFW_INCLUDE_NONE",
   '-DLOGGY_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
@@ -17,7 +22,9 @@ loggy_env["CXXFLAGS"] += [
 ]
 
 libs = [
+  replay_lib,
   common,
+  visionipc,
   messaging,
   cereal,
   "capnp",
@@ -25,17 +32,23 @@ libs = [
   File(f"{imgui.LIB_DIR}/libimgui.a"),
   File(f"{imgui.LIB_DIR}/libglfw3.a"),
   "json11",
+  "avformat",
+  "avcodec",
+  "avutil",
+  "x264",
+  "yuv",
   "m",
   "pthread",
+  "usb-1.0",
   "z",
   "bz2",
   "zstd",
 ]
 
 if arch == "Darwin":
-  loggy_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo"]
+  loggy_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
 else:
-  libs += ["GL", "dl"]
+  libs += ["GL", "dl", "va", "va-drm", "drm"]
 
 def generate_event_extractors(target, source, env):
   subprocess.check_call([
@@ -44,6 +57,66 @@ def generate_event_extractors(target, source, env):
     os.path.realpath(BASEDIR),
     str(target[0]),
   ])
+  return None
+
+def materialize_generated_dbcs(target, source, env):
+  out_dir = os.path.dirname(str(target[0]))
+  os.makedirs(out_dir, exist_ok=True)
+
+  for name in os.listdir(out_dir):
+    if name.endswith('.dbc'):
+      os.unlink(os.path.join(out_dir, name))
+
+  for name, content in sorted(get_generated_dbcs().items()):
+    with open(os.path.join(out_dir, f"{name}.dbc"), "w") as f:
+      f.write(content)
+
+  with open(str(target[0]), "w") as f:
+    f.write("ok\n")
+
+  return None
+
+def write_car_fingerprint_to_dbc_header(target, source, env):
+  pairs = {}
+
+  for name, platform in sorted(PLATFORMS.items()):
+    dbc = platform.config.dbc_dict.get(Bus.pt, "")
+    if not dbc and name.startswith("TESLA_"):
+      dbc = platform.config.dbc_dict.get(Bus.party, "")
+    if not dbc and name == "COMMA_BODY":
+      dbc = "comma_body"
+    if dbc and name != "MOCK":
+      pairs[name] = dbc
+
+  for fingerprint, car in sorted(MIGRATION.items()):
+    dbc = pairs.get(str(car), "")
+    if dbc:
+      pairs[fingerprint] = dbc
+
+  lines = [
+    "#pragma once",
+    "",
+    "#include <string_view>",
+    "#include <utility>",
+    "",
+    "inline constexpr std::pair<std::string_view, std::string_view> kCarFingerprintToDbc[] = {",
+  ]
+  lines.extend(f'  {{"{fingerprint}", "{dbc}"}},' for fingerprint, dbc in sorted(pairs.items()))
+  lines.extend([
+    "};",
+    "",
+    "inline std::string_view dbc_for_car_fingerprint(std::string_view fingerprint) {",
+    "  for (const auto &[car_fingerprint, dbc] : kCarFingerprintToDbc) {",
+    "    if (car_fingerprint == fingerprint) return dbc;",
+    "  }",
+    "  return {};",
+    "}",
+    "",
+  ])
+
+  with open(str(target[0]), "w") as f:
+    f.write("\n".join(lines))
+
   return None
 
 event_extractors = loggy_env.Command("backend/generated_event_extractors.h", [
@@ -55,24 +128,32 @@ event_extractors = loggy_env.Command("backend/generated_event_extractors.h", [
   ],
   generate_event_extractors,
 )
+generated_dbc_stamp = loggy_env.Command("generated_dbcs/.stamp", [], materialize_generated_dbcs)
+car_fingerprint_to_dbc = loggy_env.Command("car_fingerprint_to_dbc.h", [], write_car_fingerprint_to_dbc_header)
 
 workspace_obj = loggy_env.Object("shell/workspace", "shell/workspace.cc")
 theme_obj = loggy_env.Object("shell/theme", "shell/theme.cc")
 transport_obj = loggy_env.Object("shell/transport", "shell/transport.cc")
 settings_obj = loggy_env.Object("shell/settings", "shell/settings.cc")
+native_dialog_obj = loggy_env.Object("shell/native_dialog", "shell/native_dialog.cc")
+remote_routes_obj = loggy_env.Object("shell/remote_routes", "shell/remote_routes.cc")
+settings_ui_obj = loggy_env.Object("shell/settings_ui", "shell/settings_ui.cc")
+route_controls_obj = loggy_env.Object("shell/route_controls", "shell/route_controls.cc")
 session_obj = loggy_env.Object("backend/session", "backend/session.cc")
-undo_obj = loggy_env.Object("backend/undo", "backend/undo.cc")
+loggy_env.Depends(session_obj, car_fingerprint_to_dbc)
+undo_obj = loggy_env.Object("backend/dbc/undo", "backend/dbc/undo.cc")
 extract_obj = loggy_env.Object("backend/extract", "backend/extract.cc")
 loggy_env.Depends(extract_obj, event_extractors)
 route_obj = loggy_env.Object("backend/route", "backend/route.cc")
 loggy_env.Depends(route_obj, event_extractors)
-export_obj = loggy_env.Object("backend/export", "backend/export.cc")
-replay_support_objs = [
-  loggy_env.Object("backend/replay_logreader", "#openpilot/tools/replay/logreader.cc"),
-  loggy_env.Object("backend/replay_filereader", "#openpilot/tools/replay/filereader.cc"),
-  loggy_env.Object("backend/replay_py_downloader", "#openpilot/tools/replay/py_downloader.cc"),
-  loggy_env.Object("backend/replay_util", "#openpilot/tools/replay/util.cc"),
-]
+live_obj = loggy_env.Object("backend/live", "backend/live.cc")
+panda_live_obj = loggy_env.Object("backend/panda_live", "backend/panda_live.cc")
+panda_obj = loggy_env.Object("backend/cabana_panda", "#openpilot/tools/cabana/panda.cc")
+bridge_zmq_obj = loggy_env.Object("backend/bridge_zmq", "#openpilot/cereal/messaging/bridge_zmq.cc")
+csv_obj = loggy_env.Object("backend/csv", "backend/csv.cc")
+computed_obj = loggy_env.Object("backend/computed", "backend/computed.cc")
+video_obj = loggy_env.Object("backend/video", "backend/video.cc")
+replay_support_objs = []
 dbc_objs = [
   loggy_env.Object("backend/dbc/dbc", "backend/dbc/dbc.cc"),
   loggy_env.Object("backend/dbc/dbcfile", "backend/dbc/dbcfile.cc"),
@@ -87,6 +168,8 @@ historylog_obj = loggy_env.Object("panes/historylog", "panes/historylog.cc")
 browser_obj = loggy_env.Object("panes/browser", "panes/browser.cc")
 dbc_pane_obj = loggy_env.Object("panes/dbc", "panes/dbc.cc")
 map_obj = loggy_env.Object("panes/map", "panes/map.cc")
+camera_obj = loggy_env.Object("panes/camera", "panes/camera.cc")
+computed_pane_obj = loggy_env.Object("panes/computed", "panes/computed.cc")
 signal_obj = loggy_env.Object("panes/signal", "panes/signal.cc")
 find_signal_obj = loggy_env.Object("panes/find_signal", "panes/find_signal.cc")
 find_bits_obj = loggy_env.Object("panes/find_bits", "panes/find_bits.cc")
@@ -97,6 +180,8 @@ pane_objs = [
   browser_obj,
   dbc_pane_obj,
   map_obj,
+  camera_obj,
+  computed_pane_obj,
   signal_obj,
   find_signal_obj,
   find_bits_obj,
@@ -107,13 +192,19 @@ pane_objs = [
 loggy_env.Program("_loggy", [
   "main.cc",
   "shell/runtime.cc",
+  "shell/live_source_controls.cc",
+  route_controls_obj,
+  settings_ui_obj,
   theme_obj,
   workspace_obj,
   transport_obj,
   session_obj,
   route_obj,
   extract_obj,
-] + store_scheduler_objs + [settings_obj, export_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [settings_obj, native_dialog_obj, remote_routes_obj, live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, computed_obj, video_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+loggy_env.Depends("_loggy", generated_dbc_stamp)
+loggy_env.Depends("_loggy", car_fingerprint_to_dbc)
+loggy_env.Depends("_loggy", "#openpilot/cereal/messaging/bridge")
 
 loggy_env.Program("tests/workspace_smoke", [
   "tests/workspace_smoke.cc",
@@ -123,18 +214,24 @@ loggy_env.Program("tests/workspace_smoke", [
   session_obj,
   route_obj,
   extract_obj,
-] + store_scheduler_objs + [settings_obj, export_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [settings_obj, native_dialog_obj, live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, computed_obj, video_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+loggy_env.Depends("tests/workspace_smoke", generated_dbc_stamp)
+loggy_env.Depends("tests/workspace_smoke", car_fingerprint_to_dbc)
 
 loggy_env.Program("tests/dbc_parser", [
   "tests/dbc_test_runner.cc",
   "tests/dbc_parser_test.cc",
 ] + dbc_objs, LIBS=libs)
+loggy_env.Depends("tests/dbc_parser", generated_dbc_stamp)
+loggy_env.Depends("tests/dbc_parser", car_fingerprint_to_dbc)
 
 loggy_env.Program("tests/dbc_commands", [
   "tests/dbc_test_runner.cc",
   "tests/dbc_commands_test.cc",
   undo_obj,
 ] + dbc_objs, LIBS=libs)
+loggy_env.Depends("tests/dbc_commands", generated_dbc_stamp)
+loggy_env.Depends("tests/dbc_commands", car_fingerprint_to_dbc)
 
 loggy_env.Program("tests/transport_smoke", [
   "tests/transport_smoke.cc",
@@ -151,14 +248,27 @@ loggy_env.Program("tests/store_scheduler", [
   "tests/dbc_test_runner.cc",
   "tests/store_scheduler_test.cc",
   transport_obj,
+] + store_scheduler_objs + [video_obj], LIBS=libs)
+
+loggy_env.Program("tests/live_smoke", [
+  "tests/dbc_test_runner.cc",
+  "tests/live_smoke.cc",
+  live_obj,
+  panda_live_obj,
+  panda_obj,
+  bridge_zmq_obj,
+  extract_obj,
+  transport_obj,
 ] + store_scheduler_objs, LIBS=libs)
 
-loggy_env.Program("tests/export_smoke", [
+loggy_env.Program("tests/computed_smoke", [
   "tests/dbc_test_runner.cc",
-  "tests/export_smoke.cc",
-  export_obj,
+  "tests/computed_smoke.cc",
   transport_obj,
-] + store_scheduler_objs + dbc_objs, LIBS=libs)
+  computed_obj,
+] + store_scheduler_objs, LIBS=libs)
+loggy_env.Depends("tests/computed_smoke", generated_dbc_stamp)
+loggy_env.Depends("tests/computed_smoke", car_fingerprint_to_dbc)
 
 loggy_env.Program("tests/panes_smoke", [
   "tests/dbc_test_runner.cc",
@@ -168,10 +278,11 @@ loggy_env.Program("tests/panes_smoke", [
   route_obj,
   extract_obj,
   settings_obj,
-  export_obj,
   theme_obj,
   transport_obj,
-] + store_scheduler_objs + [undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, computed_obj, video_obj, undo_obj, native_dialog_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+loggy_env.Depends("tests/panes_smoke", generated_dbc_stamp)
+loggy_env.Depends("tests/panes_smoke", car_fingerprint_to_dbc)
 
 loggy_env.Program("tests/extract_smoke", [
   "tests/dbc_test_runner.cc",
@@ -179,6 +290,8 @@ loggy_env.Program("tests/extract_smoke", [
   extract_obj,
   transport_obj,
 ] + store_scheduler_objs, LIBS=libs)
+loggy_env.Depends("tests/extract_smoke", generated_dbc_stamp)
+loggy_env.Depends("tests/extract_smoke", car_fingerprint_to_dbc)
 
 loggy_env.Program("tests/route_ingest_smoke", [
   "tests/route_ingest_smoke.cc",
@@ -186,3 +299,22 @@ loggy_env.Program("tests/route_ingest_smoke", [
   extract_obj,
   transport_obj,
 ] + store_scheduler_objs + replay_support_objs, LIBS=libs)
+loggy_env.Depends("tests/route_ingest_smoke", generated_dbc_stamp)
+loggy_env.Depends("tests/route_ingest_smoke", car_fingerprint_to_dbc)
+
+loggy_smoke_build_targets = [
+  "#openpilot/tools/loggy/_loggy",
+  "#openpilot/tools/loggy/tests/workspace_smoke",
+  "#openpilot/tools/loggy/tests/transport_smoke",
+  "#openpilot/tools/loggy/tests/dbc_parser",
+  "#openpilot/tools/loggy/tests/dbc_commands",
+  "#openpilot/tools/loggy/tests/settings_smoke",
+  "#openpilot/tools/loggy/tests/store_scheduler",
+  "#openpilot/tools/loggy/tests/live_smoke",
+  "#openpilot/tools/loggy/tests/computed_smoke",
+  "#openpilot/tools/loggy/tests/panes_smoke",
+  "#openpilot/tools/loggy/tests/extract_smoke",
+  "#openpilot/tools/loggy/tests/route_ingest_smoke",
+]
+
+loggy_env.Alias("loggy_smoke_build", loggy_smoke_build_targets)

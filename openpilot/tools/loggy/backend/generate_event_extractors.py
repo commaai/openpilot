@@ -104,7 +104,7 @@ class Generator:
 
   def emit_deprecated_guard_close(self, indent):
     self.emit(indent, "} else {")
-    self.emit(indent + 2, "series->noteSkippedDeprecated();")
+    self.emit(indent + 2, "series->note_skipped_deprecated();")
     self.emit(indent, "}")
 
   def emit_node(self, indent, type_kind, type_proto, schema, expr, path, path_expr, dynamic_path):
@@ -310,7 +310,7 @@ class Generator:
     self.emit(0, "}")
     self.emit(0, "")
     self.emit(0, "bool append_event_static_reader(cereal::Event::Which which, const cereal::Event::Reader &event, const SegmentExtractOptions &options, SeriesAccumulator *series) {")
-    self.emit(2, "const double tm = static_cast<double>(event.getLogMonoTime()) / 1.0e9 - options.timeOffsetSeconds();")
+    self.emit(2, "const double tm = static_cast<double>(event.getLogMonoTime()) / 1.0e9 - options.time_offset_seconds();")
     self.emit(2, "switch (which) {")
     for field_name in self.event_schema.union_fields:
       self.emit_event_case(field_name)

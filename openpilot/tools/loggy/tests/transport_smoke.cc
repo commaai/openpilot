@@ -16,24 +16,23 @@ void assert_near(double a, double b) {
 }
 
 void test_play_advance_and_pause() {
-  loggy::PlaybackClock clock(loggy::TimeRange{0.0, 10.0});
+  loggy::PlaybackClock clock;
+  clock.init(loggy::TimeRange{0.0, 10.0});
   clock.seek(2.0);
   clock.play();
 
-  const loggy::PlaybackAdvanceResult advanced = clock.advance(1.5);
-  assert(advanced.advanced);
-  assert(!advanced.hit_boundary);
+  clock.advance(1.5);
   assert_near(clock.tracker_time(), 3.5);
   assert(clock.playing());
 
   clock.pause();
-  const loggy::PlaybackAdvanceResult paused = clock.advance(5.0);
-  assert(!paused.advanced);
+  clock.advance(5.0);
   assert_near(clock.tracker_time(), 3.5);
 }
 
 void test_step_and_clamp() {
-  loggy::PlaybackClock clock(loggy::TimeRange{0.0, 2.0});
+  loggy::PlaybackClock clock;
+  clock.init(loggy::TimeRange{0.0, 2.0});
   clock.set_step_seconds(0.5);
   clock.seek(1.0);
 
@@ -48,31 +47,30 @@ void test_step_and_clamp() {
 }
 
 void test_boundary_and_looping() {
-  loggy::PlaybackClock clock(loggy::TimeRange{0.0, 10.0});
+  loggy::PlaybackClock clock;
+  clock.init(loggy::TimeRange{0.0, 10.0});
   clock.seek(9.5);
   clock.play();
 
-  const loggy::PlaybackAdvanceResult stopped = clock.advance(1.0);
-  assert(stopped.hit_boundary);
-  assert(!stopped.looped);
+  clock.advance(1.0);
   assert_near(clock.tracker_time(), 10.0);
   assert(!clock.playing());
 
-  loggy::PlaybackClock loop(loggy::TimeRange{0.0, 10.0});
+  loggy::PlaybackClock loop;
+  loop.init(loggy::TimeRange{0.0, 10.0});
   loop.set_loop(true);
   loop.set_loop_range(loggy::TimeRange{2.0, 4.0});
   loop.seek(3.75);
   loop.play();
 
-  const loggy::PlaybackAdvanceResult wrapped = loop.advance(0.5);
-  assert(wrapped.hit_boundary);
-  assert(wrapped.looped);
+  loop.advance(0.5);
   assert(loop.playing());
   assert_near(loop.tracker_time(), 2.0);
 }
 
 void test_view_range_independence() {
-  loggy::PlaybackClock clock(loggy::TimeRange{0.0, 20.0});
+  loggy::PlaybackClock clock;
+  clock.init(loggy::TimeRange{0.0, 20.0});
   loggy::SharedViewRange view(loggy::TimeRange{0.0, 20.0});
   view.set_range(loggy::TimeRange{5.0, 10.0});
 
@@ -81,7 +79,7 @@ void test_view_range_independence() {
   clock.advance(3.0);
 
   assert_near(clock.tracker_time(), 9.0);
-  assert_near(view.range().start, 5.0);
+  assert_near(view.range().start_, 5.0);
   assert_near(view.range().end, 10.0);
 }
 
