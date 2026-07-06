@@ -362,6 +362,9 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
     ImGui::TextDisabled("%s", state.export_status.c_str());
   }
 
+  // Pager shares the export row when it fits: History's default pane slice is short, and every
+  // chrome row here is one data row fewer (the default preset showed headers and zero rows).
+  if (ImGui::GetContentRegionAvail().x > 210.0f) ImGui::SameLine();
   int page_size = static_cast<int>(page.page_size);
   ImGui::SetNextItemWidth(74.0f);
   if (ImGui::InputInt("Rows", &page_size, 0, 0)) {
