@@ -258,6 +258,7 @@ loggy_env.Program("tests/live_smoke", [
   panda_obj,
   bridge_zmq_obj,
   extract_obj,
+  route_obj,
   transport_obj,
 ] + store_scheduler_objs, LIBS=libs)
 
@@ -266,6 +267,8 @@ loggy_env.Program("tests/computed_smoke", [
   "tests/computed_smoke.cc",
   transport_obj,
   computed_obj,
+  route_obj,
+  extract_obj,
 ] + store_scheduler_objs, LIBS=libs)
 loggy_env.Depends("tests/computed_smoke", generated_dbc_stamp)
 loggy_env.Depends("tests/computed_smoke", car_fingerprint_to_dbc)

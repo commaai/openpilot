@@ -179,25 +179,6 @@ DrainResult Store::begin_frame() {
     for (const std::string &path : batch.replace_series_paths) {
       if (!canReplaceSeriesPath(path)) continue;
       series_.erase(path);
-      series_enum_names_.erase(path);
-      deprecated_series_paths_.erase(path);
-      touched_series.push_back(path);
-    }
-
-    for (auto &[path, enum_names] : batch.enum_names) {
-      if (!enum_names.empty()) {
-        series_enum_names_[path] = std::move(enum_names);
-      } else {
-        series_enum_names_.erase(path);
-      }
-      touched_series.push_back(path);
-    }
-    for (const auto &[path, deprecated] : batch.deprecated_paths) {
-      if (deprecated) {
-        deprecated_series_paths_.insert(path);
-      } else {
-        deprecated_series_paths_.erase(path);
-      }
       touched_series.push_back(path);
     }
 
@@ -294,8 +275,6 @@ StoreTrimResult Store::trim_before(double cutoff_time) {
 
   for (const std::string &path : empty_series_paths) {
     series_.erase(path);
-    series_enum_names_.erase(path);
-    deprecated_series_paths_.erase(path);
     ++result.series_paths_removed;
   }
 
@@ -341,21 +320,9 @@ void Store::clear() {
     staged_batches_.clear();
   }
   series_.clear();
-  series_enum_names_.clear();
-  deprecated_series_paths_.clear();
   can_events_.clear();
   coverage_.clear();
   ++generation_;
-}
-
-const std::vector<std::string> *Store::series_enum_names(std::string_view path) const {
-  const auto it = series_enum_names_.find(std::string(path));
-  if (it == series_enum_names_.end()) return nullptr;
-  return &it->second;
-}
-
-bool Store::series_is_deprecated(std::string_view path) const {
-  return deprecated_series_paths_.count(std::string(path)) > 0;
 }
 
 SeriesView Store::series(std::string_view path, double t0, double t1, size_t max_points) const {
@@ -447,29 +414,21 @@ size_t Store::staged_batch_count() const {
 
 std::vector<std::string> Store::series_paths() const {
   std::vector<std::string> paths;
-  paths.reserve(series_.size() + series_enum_names_.size() + deprecated_series_paths_.size());
+  paths.reserve(series_.size());
   for (const auto &[path, _] : series_) {
     paths.push_back(path);
   }
-  for (const auto &[path, _] : series_enum_names_) {
-    paths.push_back(path);
-  }
-  for (const std::string &path : deprecated_series_paths_) {
-    paths.push_back(path);
-  }
   std::sort(paths.begin(), paths.end());
-  paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
   return paths;
 }
 
 std::vector<std::string> Store::series_paths_matching(std::string_view filter, size_t limit) const {
   std::vector<std::string> paths;
   if (limit == 0) return paths;
-  paths.reserve(std::min(limit, series_.size() + series_enum_names_.size() + deprecated_series_paths_.size()));
+  paths.reserve(std::min(limit, series_.size()));
 
   auto append_path = [&](const std::string &path) {
     if (!filter.empty() && path.find(filter) == std::string::npos) return;
-    if (std::find(paths.begin(), paths.end(), path) != paths.end()) return;
     if (paths.size() < limit) {
       paths.push_back(path);
       return;
@@ -478,22 +437,10 @@ std::vector<std::string> Store::series_paths_matching(std::string_view filter, s
     if (largest != paths.end() && path < *largest) *largest = path;
   };
 
-  auto append_matches = [&](const auto &container) {
-    for (const auto &[path, _] : container) {
-      append_path(path);
-    }
-  };
-  auto append_set_matches = [&](const auto &container) {
-    for (const std::string &path : container) {
-      append_path(path);
-    }
-  };
-
-  append_matches(series_);
-  append_matches(series_enum_names_);
-  append_set_matches(deprecated_series_paths_);
+  for (const auto &[path, _] : series_) {
+    append_path(path);
+  }
   std::sort(paths.begin(), paths.end());
-  paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
   return paths;
 }
 

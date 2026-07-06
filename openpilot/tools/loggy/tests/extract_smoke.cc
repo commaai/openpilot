@@ -45,10 +45,9 @@ TEST_CASE("SeriesAccumulator emits ordered StoreBatch chunks") {
   CHECK(view.coverage.ranges.size() == 1);
 }
 
-TEST_CASE("SeriesAccumulator captures enum, value description, and deprecated metadata") {
+TEST_CASE("SeriesAccumulator captures enum and deprecated metadata") {
   loggy::SeriesAccumulator series(0, {"/carState/gearShifter"});
   series.capture_enum_info("/carState/gearShifter", {"unknown", "park", "drive"});
-  series.capture_value_descriptions("/carState/gearShifter", {{0.0, "unknown"}, {2.0, "drive"}});
   series.mark_deprecated("/carState/cruiseState/speedOffsetDEPRECATED");
   series.note_skipped_deprecated();
   series.append_fixed_scalar(0, 0.5, 2.0);
@@ -56,8 +55,6 @@ TEST_CASE("SeriesAccumulator captures enum, value description, and deprecated me
   loggy::SegmentExtractResult result = series.finish({0.0, 1.0});
   REQUIRE(result.metadata.count("/carState/gearShifter") == 1);
   CHECK(result.metadata["/carState/gearShifter"].enum_names[2] == "drive");
-  REQUIRE(result.metadata["/carState/gearShifter"].value_descriptions.size() == 2);
-  CHECK(result.metadata["/carState/gearShifter"].value_descriptions[1].description == "drive");
   REQUIRE(result.metadata.count("/carState/cruiseState/speedOffsetDEPRECATED") == 1);
   CHECK(result.metadata["/carState/cruiseState/speedOffsetDEPRECATED"].deprecated);
   CHECK(result.deprecated_series_skipped == 1);

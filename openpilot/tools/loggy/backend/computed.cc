@@ -1,5 +1,7 @@
 #include "tools/loggy/backend/computed.h"
 
+#include "tools/loggy/backend/route.h"
+
 #include "json11/json11.hpp"
 
 #include <algorithm>
@@ -106,14 +108,6 @@ CommandResult run_process_capture_output(const std::vector<std::string> &args) {
   const int status = pclose(pipe);
   result.exit_code = WIFEXITED(status) ? WEXITSTATUS(status) : 1;
   return result;
-}
-
-fs::path loggy_repo_root() {
-#ifdef LOGGY_REPO_ROOT
-  return fs::path(LOGGY_REPO_ROOT);
-#else
-  return fs::current_path();
-#endif
 }
 
 void write_binary_vector(const fs::path &path, const std::vector<double> &values) {
@@ -348,7 +342,7 @@ SeriesChunk materialize_computed_python(const Store &store,
     };
     write_text_file(manifest_path, manifest_json.dump());
 
-    const fs::path script = loggy_repo_root() / "openpilot" / "tools" / "loggy" / "backend" / "math_eval.py";
+    const fs::path script = loggy_repo_root_path() / "openpilot" / "tools" / "loggy" / "backend" / "math_eval.py";
     const CommandResult process = run_process_capture_output({
       "python3",
       script.string(),

@@ -98,10 +98,6 @@ public:
   bool append_event(const cereal::Event::Reader &event);
   LiveExtractBatch take_batch();
 
-  std::optional<double> time_offset() const { return time_offset_; }
-  size_t events_seen() const { return events_seen_; }
-  size_t events_appended() const { return events_appended_; }
-
 private:
   void reset_series();
 

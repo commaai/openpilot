@@ -231,7 +231,7 @@ void markPublished(RouteIngestStatus *status) {
   ++status->batches_published;
 }
 
-uint8_t operatingSystemPriorityToLevel(uint8_t priority) {
+uint8_t operating_system_priority_to_level(uint8_t priority) {
   switch (priority) {
     case 0:
     case 1:
@@ -251,7 +251,7 @@ uint8_t operatingSystemPriorityToLevel(uint8_t priority) {
   }
 }
 
-uint8_t alertStatusToLevel(cereal::SelfdriveState::AlertStatus status) {
+uint8_t alert_status_to_level(cereal::SelfdriveState::AlertStatus status) {
   switch (status) {
     case cereal::SelfdriveState::AlertStatus::NORMAL:
       return 20;
@@ -263,14 +263,14 @@ uint8_t alertStatusToLevel(cereal::SelfdriveState::AlertStatus status) {
   return 20;
 }
 
-double operatingSystemWallTimeSeconds(uint64_t timestamp) {
+double operating_system_wall_time_seconds(uint64_t timestamp) {
   if (timestamp == 0) return 0.0;
   if (timestamp > 1000000000000ULL) return static_cast<double>(timestamp) / 1.0e9;
   if (timestamp > 1000000000ULL) return static_cast<double>(timestamp) / 1.0e6;
   return static_cast<double>(timestamp);
 }
 
-std::string alertMessageText(const cereal::SelfdriveState::Reader &state) {
+std::string alert_message_text(const cereal::SelfdriveState::Reader &state) {
   std::string text = state.getAlertText1().cStr();
   const std::string text2 = state.getAlertText2().cStr();
   if (!text2.empty()) {
@@ -280,7 +280,7 @@ std::string alertMessageText(const cereal::SelfdriveState::Reader &state) {
   return text;
 }
 
-LogEntry makeLogEntry(const cereal::Event::Reader &event, double time_offset, LogOrigin origin, uint8_t level = 20) {
+LogEntry make_log_entry(const cereal::Event::Reader &event, double time_offset, LogOrigin origin, uint8_t level = 20) {
   const double boot_time = static_cast<double>(event.getLogMonoTime()) / 1.0e9;
   LogEntry entry;
   entry.mono_time = boot_time - time_offset;
@@ -290,11 +290,13 @@ LogEntry makeLogEntry(const cereal::Event::Reader &event, double time_offset, Lo
   return entry;
 }
 
-void appendLogEvent(cereal::Event::Which which,
-                    const cereal::Event::Reader &event,
-                    double time_offset,
-                    std::vector<LogEntry> *logs,
-                    std::string &last_alert_key) {
+}  // namespace
+
+void append_log_event(cereal::Event::Which which,
+                     const cereal::Event::Reader &event,
+                     double time_offset,
+                     std::vector<LogEntry> *logs,
+                     std::string &last_alert_key) {
   if (logs == nullptr) return;
 
   switch (which) {
@@ -303,7 +305,7 @@ void appendLogEvent(cereal::Event::Which which,
       const std::string raw = which == cereal::Event::Which::LOG_MESSAGE
         ? event.getLogMessage().cStr()
         : event.getErrorLogMessage().cStr();
-      LogEntry entry = makeLogEntry(event, time_offset, LogOrigin::Log,
+      LogEntry entry = make_log_entry(event, time_offset, LogOrigin::Log,
                                     which == cereal::Event::Which::ERROR_LOG_MESSAGE ? 40 : 20);
       entry.source = "log";
       entry.message = raw;
@@ -324,9 +326,9 @@ void appendLogEvent(cereal::Event::Which which,
     }
     case cereal::Event::Which::OPERATING_SYSTEM_LOG: {
       const auto os_log = event.getOperatingSystemLog();
-      LogEntry entry = makeLogEntry(event, time_offset, LogOrigin::OperatingSystem,
-                                    operatingSystemPriorityToLevel(os_log.getPriority()));
-      entry.wall_time = operatingSystemWallTimeSeconds(os_log.getTs());
+      LogEntry entry = make_log_entry(event, time_offset, LogOrigin::OperatingSystem,
+                                    operating_system_priority_to_level(os_log.getPriority()));
+      entry.wall_time = operating_system_wall_time_seconds(os_log.getTs());
       entry.source = os_log.hasTag() ? os_log.getTag().cStr() : "operating_system";
       entry.message = os_log.hasMessage() ? os_log.getMessage().cStr() : std::string();
       entry.context = "pid=" + std::to_string(os_log.getPid()) + ", tid=" + std::to_string(os_log.getTid());
@@ -339,7 +341,7 @@ void appendLogEvent(cereal::Event::Which which,
           entry.source = parsed["SYSLOG_IDENTIFIER"].string_value();
         }
         if (parsed["PRIORITY"].is_number()) {
-          entry.level = operatingSystemPriorityToLevel(static_cast<uint8_t>(parsed["PRIORITY"].int_value()));
+          entry.level = operating_system_priority_to_level(static_cast<uint8_t>(parsed["PRIORITY"].int_value()));
         }
       }
       logs->push_back(std::move(entry));
@@ -354,10 +356,10 @@ void appendLogEvent(cereal::Event::Which which,
       const std::string key = alert_type + "\n" + alert_text1 + "\n" + alert_text2;
       if (key == last_alert_key) break;
       last_alert_key = key;
-      LogEntry entry = makeLogEntry(event, time_offset, LogOrigin::Alert, alertStatusToLevel(sd.getAlertStatus()));
+      LogEntry entry = make_log_entry(event, time_offset, LogOrigin::Alert, alert_status_to_level(sd.getAlertStatus()));
       entry.source = "alert";
       entry.func = alert_type;
-      entry.message = alertMessageText(sd);
+      entry.message = alert_message_text(sd);
       logs->push_back(std::move(entry));
       break;
     }
@@ -366,7 +368,7 @@ void appendLogEvent(cereal::Event::Which which,
   }
 }
 
-TimelineSpanKind timelineKindForSelfdrive(cereal::SelfdriveState::AlertStatus status, bool enabled) {
+TimelineSpanKind timeline_kind_for_selfdrive(cereal::SelfdriveState::AlertStatus status, bool enabled) {
   if (!enabled) return TimelineSpanKind::None;
   switch (status) {
     case cereal::SelfdriveState::AlertStatus::NORMAL:
@@ -379,7 +381,7 @@ TimelineSpanKind timelineKindForSelfdrive(cereal::SelfdriveState::AlertStatus st
   return TimelineSpanKind::Engaged;
 }
 
-void appendTimelinePoint(std::vector<TimelineSpan> *spans, double mono_time, TimelineSpanKind kind) {
+void append_timeline_point(std::vector<TimelineSpan> *spans, double mono_time, TimelineSpanKind kind) {
   if (spans == nullptr) return;
   if (kind == TimelineSpanKind::None) return;
   if (!spans->empty() && spans->back().kind == kind) {
@@ -389,7 +391,9 @@ void appendTimelinePoint(std::vector<TimelineSpan> *spans, double mono_time, Tim
   spans->push_back({mono_time, mono_time, kind});
 }
 
-std::vector<TimelineSpan> extractTimelineSpans(const std::vector<Event> &events, double time_offset) {
+namespace {
+
+std::vector<TimelineSpan> extract_timeline_spans(const std::vector<Event> &events, double time_offset) {
   std::vector<TimelineSpan> spans;
   spans.reserve(events.size() / 32);
   for (const Event &event_record : events) {
@@ -399,7 +403,7 @@ std::vector<TimelineSpan> extractTimelineSpans(const std::vector<Event> &events,
       const cereal::Event::Reader event = event_reader.getRoot<cereal::Event>();
       const auto selfdrive = event.getSelfdriveState();
       const double mono_time = static_cast<double>(event.getLogMonoTime()) / 1.0e9 - time_offset;
-      appendTimelinePoint(&spans, mono_time, timelineKindForSelfdrive(selfdrive.getAlertStatus(), selfdrive.getEnabled()));
+      append_timeline_point(&spans, mono_time, timeline_kind_for_selfdrive(selfdrive.getAlertStatus(), selfdrive.getEnabled()));
     } catch (const kj::Exception &) {
       continue;
     }
@@ -407,7 +411,7 @@ std::vector<TimelineSpan> extractTimelineSpans(const std::vector<Event> &events,
   return spans;
 }
 
-std::vector<LogEntry> extractLogEntries(const std::vector<Event> &events, double time_offset) {
+std::vector<LogEntry> extract_log_entries(const std::vector<Event> &events, double time_offset) {
   std::vector<LogEntry> logs;
   logs.reserve(events.size() / 16);
   std::string last_alert_key;
@@ -416,7 +420,7 @@ std::vector<LogEntry> extractLogEntries(const std::vector<Event> &events, double
     try {
       capnp::FlatArrayMessageReader event_reader(event_record.data);
       const cereal::Event::Reader event = event_reader.getRoot<cereal::Event>();
-      appendLogEvent(event_record.which, event, time_offset, &logs, last_alert_key);
+      append_log_event(event_record.which, event, time_offset, &logs, last_alert_key);
     } catch (const kj::Exception &) {
       continue;
     }
@@ -428,7 +432,7 @@ std::vector<LogEntry> extractLogEntries(const std::vector<Event> &events, double
   return logs;
 }
 
-std::string extractCarFingerprint(const std::vector<::Event> &events) {
+std::string extract_car_fingerprint(const std::vector<::Event> &events) {
   for (const ::Event &event_record : events) {
     if (event_record.which != cereal::Event::Which::CAR_PARAMS || event_record.eidx_segnum != -1) continue;
     try {
@@ -611,31 +615,30 @@ std::string route_connect_url(const RouteSelection &selection) {
   return "https://connect.comma.ai/" + selection.dongle_id + "/" + selection.timestamp;
 }
 
-bool parse_route_slice_spec_impl(std::string_view text, int &begin, int &end) {
+std::optional<RouteSliceSpec> parse_route_slice_spec(std::string_view text) {
   const std::string trimmed = trim(std::string(text));
-  if (trimmed.empty()) return false;
+  if (trimmed.empty()) return std::nullopt;
   const size_t colon = trimmed.find(':');
-  int parsed_begin = 0;
-  if (!parseNonnegativeSegmentNumber(trimmed.substr(0, colon), parsed_begin)) return false;
-  int parsed_end = parsed_begin;
+  int begin = 0;
+  if (!parseNonnegativeSegmentNumber(trimmed.substr(0, colon), begin)) return std::nullopt;
+  int end = begin;
   if (colon != std::string::npos) {
     const std::string end_text = trimmed.substr(colon + 1);
     if (end_text.empty()) {
-      parsed_end = -1;
-    } else if (!parseNonnegativeSegmentNumber(end_text, parsed_end) || parsed_end < parsed_begin) {
-      return false;
+      end = -1;
+    } else if (!parseNonnegativeSegmentNumber(end_text, end) || end < begin) {
+      return std::nullopt;
     }
   }
-  begin = parsed_begin;
-  end = parsed_end;
-  return true;
+  return RouteSliceSpec{begin, end};
 }
 
-std::optional<RouteSliceSpec> parse_route_slice_spec(std::string_view text) {
-  int parsed_begin = 0;
-  int parsed_end = 0;
-  if (!parse_route_slice_spec_impl(text, parsed_begin, parsed_end)) return std::nullopt;
-  return RouteSliceSpec{parsed_begin, parsed_end};
+std::filesystem::path loggy_repo_root_path() {
+#ifdef LOGGY_REPO_ROOT
+  return std::filesystem::path(LOGGY_REPO_ROOT);
+#else
+  return std::filesystem::current_path();
+#endif
 }
 
 namespace {
@@ -725,9 +728,9 @@ SegmentLoadResult load_route_segment(const SegmentWorkItem &work, bool local_cac
 
   SegmentLoadResult result;
   result.batch = std::move(extracted.batch);
-  result.timeline_spans = extractTimelineSpans(reader.events, extract.time_offset_seconds());
-  result.logs = extractLogEntries(reader.events, extract.time_offset_seconds());
-  result.car_fingerprint = extractCarFingerprint(reader.events);
+  result.timeline_spans = extract_timeline_spans(reader.events, extract.time_offset_seconds());
+  result.logs = extract_log_entries(reader.events, extract.time_offset_seconds());
+  result.car_fingerprint = extract_car_fingerprint(reader.events);
   return result;
 }
 

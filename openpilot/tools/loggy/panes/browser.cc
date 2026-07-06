@@ -110,28 +110,8 @@ bool browser_path_is_deprecated(std::string_view path) {
          path.find("/deprecated/") != std::string_view::npos;
 }
 
-std::string browser_metadata_annotation(const Store &store, std::string_view path, bool fallback_deprecated) {
-  const std::vector<std::string> *enum_names = store.series_enum_names(path);
-  const bool deprecated = fallback_deprecated || store.series_is_deprecated(path);
-  if (!enum_names && !deprecated) return {};
-
-  std::string annotation;
-  if (deprecated) annotation = "DEPRECATED";
-  if (enum_names == nullptr || enum_names->empty()) return annotation;
-
-  if (!annotation.empty()) annotation += " ";
-  if (enum_names->size() == 1) {
-    annotation += "enum:";
-    annotation += (*enum_names)[0];
-  } else {
-    annotation += "enum:[";
-    annotation += (*enum_names)[0];
-    annotation += ", ";
-    annotation += (*enum_names)[1];
-    if (enum_names->size() > 2) annotation += ", ...";
-    annotation += "]";
-  }
-  return annotation;
+std::string browser_metadata_annotation(bool deprecated) {
+  return deprecated ? "DEPRECATED" : std::string();
 }
 
 std::vector<BrowserSeriesRow> prepare_browser_series_rows(const Store &store, const BrowserState &state) {
@@ -139,14 +119,14 @@ std::vector<BrowserSeriesRow> prepare_browser_series_rows(const Store &store, co
   std::vector<BrowserSeriesRow> rows;
   rows.reserve(std::min(paths.size(), state.max_rows));
   for (const std::string &path : paths) {
-    const bool deprecated = store.series_is_deprecated(path) || browser_path_is_deprecated(path);
+    const bool deprecated = browser_path_is_deprecated(path);
     if (deprecated && !state.show_deprecated) continue;
     if (!browser_path_matches_filter(path, state.filter)) continue;
     rows.push_back({
       .path = path,
       .label = browser_leaf_label(path),
       .deprecated = deprecated,
-      .annotation = browser_metadata_annotation(store, path, deprecated),
+      .annotation = browser_metadata_annotation(deprecated),
     });
     if (rows.size() >= state.max_rows) break;
   }

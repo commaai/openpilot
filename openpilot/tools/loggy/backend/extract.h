@@ -26,14 +26,8 @@ struct RouteSeries {
   std::vector<double> values;
 };
 
-struct SeriesValueDescription {
-  double value = 0.0;
-  std::string description;
-};
-
 struct SeriesMetadata {
   std::vector<std::string> enum_names;
-  std::vector<SeriesValueDescription> value_descriptions;
   bool deprecated = false;
 };
 
@@ -76,11 +70,11 @@ public:
                       uint16_t bus_time, const uint8_t *data, size_t size, double tm);
 
   void capture_enum_info(const std::string &path, std::initializer_list<std::string_view> names);
-  void capture_value_descriptions(const std::string &path, std::initializer_list<SeriesValueDescription> descriptions);
   void mark_deprecated(const std::string &path);
+  // Called from ~1443 generated deprecated-field guards (generate_event_extractors.py);
+  // not merely accounting ceremony.
   void note_skipped_deprecated() { ++deprecated_series_skipped_; }
 
-  size_t populated_series_count() const;
   size_t skipped_deprecated_count() const { return deprecated_series_skipped_; }
   const std::unordered_map<std::string, SeriesMetadata> &metadata() const { return metadata_; }
 

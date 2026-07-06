@@ -40,7 +40,6 @@ public:
   Msg* msg(uint8_t source, const std::string &name);
 
   std::vector<std::string> signal_names();
-  inline int dbc_count() { return all_dbc_files().size(); }
   int non_empty_dbc_count();
 
   const SourceSet sources(const DBCFile *dbc_file) const;
@@ -55,9 +54,5 @@ private:
 
 bool parse_source_set(std::string_view text, SourceSet &out, std::string &error);
 std::string to_string(const SourceSet &ss);
-inline std::string msg_name(DBCManager &manager, const MessageId &id) {
-  auto msg = manager.msg(id);
-  return msg ? msg->name : UNTITLED;
-}
 
 }  // namespace loggy

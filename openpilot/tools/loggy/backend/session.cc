@@ -298,20 +298,12 @@ LiveSourceConfig live_source_config_from_session(const SessionConfig &config) {
   return source;
 }
 
-fs::path repo_root_path() {
-#ifdef LOGGY_REPO_ROOT
-  return fs::path(LOGGY_REPO_ROOT);
-#else
-  return fs::current_path();
-#endif
-}
-
 fs::path default_opendbc_dbc_root() {
-  return repo_root_path() / "opendbc_repo" / "opendbc" / "dbc";
+  return loggy_repo_root_path() / "opendbc_repo" / "opendbc" / "dbc";
 }
 
 fs::path generated_dbc_root() {
-  return repo_root_path() / "openpilot" / "tools" / "loggy" / "generated_dbcs";
+  return loggy_repo_root_path() / "openpilot" / "tools" / "loggy" / "generated_dbcs";
 }
 
 std::string dbc_name_for_fingerprint(std::string_view fingerprint) {

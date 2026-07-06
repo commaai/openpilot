@@ -88,12 +88,6 @@ void capture_static_enum_info(const std::string &path,
   series->capture_enum_info(path, names);
 }
 
-[[maybe_unused]] void capture_value_descriptions(const std::string &path,
-                                                 std::initializer_list<SeriesValueDescription> descriptions,
-                                                 SeriesAccumulator *series) {
-  series->capture_value_descriptions(path, descriptions);
-}
-
 void capture_deprecated_series(const std::string &path, SeriesAccumulator *series) {
   series->mark_deprecated(path);
 }
@@ -190,27 +184,8 @@ void SeriesAccumulator::capture_enum_info(const std::string &path, std::initiali
   }
 }
 
-void SeriesAccumulator::capture_value_descriptions(const std::string &path,
-                                                 std::initializer_list<SeriesValueDescription> descriptions) {
-  if (descriptions.size() == 0) return;
-  SeriesMetadata &metadata = metadata_[path];
-  if (!metadata.value_descriptions.empty()) return;
-  metadata.value_descriptions.assign(descriptions.begin(), descriptions.end());
-}
-
 void SeriesAccumulator::mark_deprecated(const std::string &path) {
   metadata_[path].deprecated = true;
-}
-
-size_t SeriesAccumulator::populated_series_count() const {
-  size_t count = 0;
-  for (const RouteSeries &fixed : fixed_series) {
-    count += !fixed.times.empty();
-  }
-  for (const RouteSeries &dynamic : dynamic_series) {
-    count += !dynamic.times.empty();
-  }
-  return count;
 }
 
 SegmentExtractResult SeriesAccumulator::finish(TimeRange coverage) {

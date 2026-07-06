@@ -6,7 +6,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "tools/loggy/backend/dbc/dbc.h"
@@ -84,8 +83,6 @@ struct StoreBatch {
   std::vector<TimeRange> coverage;
   std::vector<SeriesChunk> series;
   std::vector<CanEventChunk> can_events;
-  std::unordered_map<std::string, std::vector<std::string>> enum_names;
-  std::unordered_map<std::string, bool> deprecated_paths;
 };
 
 struct DrainResult {
@@ -129,8 +126,6 @@ public:
   std::vector<std::string> series_paths() const;
   std::vector<std::string> series_paths_matching(std::string_view filter, size_t limit) const;
   std::vector<MessageId> can_message_ids() const;
-  const std::vector<std::string> *series_enum_names(std::string_view path) const;
-  bool series_is_deprecated(std::string_view path) const;
 
 private:
   struct SeriesState {
@@ -146,8 +141,6 @@ private:
   std::vector<StoreBatch> staged_batches_;
 
   std::unordered_map<std::string, SeriesState> series_;
-  std::unordered_map<std::string, std::vector<std::string>> series_enum_names_;
-  std::unordered_set<std::string> deprecated_series_paths_;
   std::unordered_map<MessageId, CanState> can_events_;
   std::vector<TimeRange> coverage_;
   uint64_t generation_ = 0;
