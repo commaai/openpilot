@@ -36,25 +36,23 @@ list (§2) plus two functional items that were claimed-adjacent but not actually
 
 ## 2. Remaining punch list (style)
 
-### 2.1 The naming rename never happened (v1 B5)
+### 2.1 Naming rename — DONE (correction 2026-07-05, second look)
 
-Backend headers are still cabana camelCase (`canEvents`, `canEventSummary`, `assignSources`,
-`addSignal`, `beginFrame`…) while shell/panes are snake_case. This is the one v1 item that was
-skipped rather than done. It's ~30 method names, purely mechanical, and it's the last thing
-making the backend read as "ported" rather than "native". Do it in one sweep commit.
+The v2 claim that this was skipped was a measurement error: the grep glob matched
+`generated_event_extractors.h` (capnp calls), polluting the count. The backend rename to
+snake_case (`assign_sources`, `add_signal`, `close_all`, reference error params) landed in the
+final implementer batch. One fallout bug was found and fixed during baseline verification: the
+sweep had renamed **cereal capnp API calls** in `tests/live_smoke.cc` (`setEnabled` →
+`set_enabled`) and typo'd `poller.start_(` — the build was red until repaired. Remaining check
+for the style pass: confirm no other capnp/ImGui/external API call got swept (grep for
+`set_[a-z_]+\(` / `init_[a-z_]+\(` against capnp builder objects), and that the ratchet's
+camel check stays 0.
 
-### 2.2 Layering inversion around `panes/messages.h`
+### 2.2 Layering inversion — DONE (verified at Phase-1 baseline)
 
-`panes/messages.h` is the one pane header that still exports an API: `MessageSummary`,
-`parse_message_id_state`, `initial_message_id_for_store`, and all four CSV builders — and it is
-included by `panes/binary.cc`, `panes/signal.cc`, `panes/historylog.cc`, `panes/computed.cc`,
-and **`shell/workspace.cc`**. The shell including a pane header is upside down, and
-`backend/export.h` survives as a 3-line shim pointing at it.
-
-Fix: these are backend utilities — move `MessageSummary` + message-id state helpers into the
-store or a small `backend/csv.{h,cc}` alongside the CSV builders; delete the `export.h` shim;
-messages.h becomes a one-liner like the other twelve. (`kLoggySeriesPathPayload` in browser.h
-and `map_basemap_effective_cache_root` in map.h are single small exceptions — fine.)
+`panes/messages.h` is now 9 lines; the message-id/CSV utilities live in `backend/csv.{h,cc}`;
+the `export.h` shim is deleted. (`kLoggySeriesPathPayload` in browser.h and
+`map_basemap_effective_cache_root` in map.h remain as the two accepted small exceptions.)
 
 ### 2.3 Header structs grew: 50 → 82 (v1 A7 relocated instead of shrinking)
 
@@ -83,34 +81,38 @@ inlining, per-pane boilerplate dedup in the worst lines-per-feature panes, and t
 readability or features — that violates "don't overcorrect". Ratchet accordingly: product LOC
 baseline steps down with each punch-list commit and freezes at 18,000.
 
-### 2.6 HUD p99 is a lifetime max, not a window
+### 2.6 HUD p99 — DONE (Phase 1)
 
-Settled camera CPU is 5.69 ms but the HUD still shows p99 28.9 ms from the startup decode
-storm forever. Make p99 a rolling window (~5 s) so the gate number is readable at a glance —
-and so regressions aren't hidden inside a stale startup spike (nor good steady-state hidden
-behind one).
+Now a fixed-size ring buffer aged by wall clock (5 s window, no per-frame allocation). QA
+verified: spike to 8.0 ms on a triple-seek storm decays back to ~5.2 ms within 10 s.
 
 ---
 
-## 3. Functional items NOT fixed (retested this pass)
+## 3. Functional items — status after Phase 1 (2026-07-05 evening)
 
-1. **Message-row selection still needs two clicks** to drive Binary/History/Signal (retested:
-   single click on a row leaves Binary pinned to the old ID). Qt cabana follows on single
-   click. This was in the v1 appendix and did not get a slice. It's a one-line-ish selection
-   condition, and it breaks 8 years of cabana muscle memory.
+1. ~~Two-click selection~~ **DONE** — fixed in the final implementer batch; verified by
+   adversarial QA across 6+ single-click transitions incl. during playback and with filters.
 2. **`tools/cabana/panda.cc` is still modified** (reference tree, +2/−1). The fix itself is
-   fine; it needs Adeeb's explicit sign-off or a revert + loggy-side workaround, per the plan's
-   "old tools stay untouched" rule. Flag it in the next summary to the owner.
-3. **Default presets are missing the panes that define each tool's feel** (owner feedback
-   2026-07-05, after driving both launchers). The camera panes work — they're just absent from
-   the preset JSONs:
-   - `layouts/cabana.json`, Cabana tab: currently messages/historylog/signal/binary only. Real
-     cabana leads with **video top-right and charts bottom-right** — add a camera pane and a
-     plot pane to the tab (video over plot on the right column matches the original).
-   - `layouts/jotpluggler.json`, Jotpluggler tab: currently browser/plot/logs/map — add a
-     camera pane (real jotpluggler always shows the road camera preview).
-   Verify by launching both launchers with `--demo` and comparing against the reference
-   binaries side by side; this plus item 1 closes most of the remaining "feels like" gap.
+   fine; it needs Adeeb's explicit sign-off or a revert + loggy-side workaround. STILL OPEN.
+3. ~~Preset pane composition~~ **DONE** — cabana preset: road camera top-right over
+   binary+plot; jotpluggler preset: camera preview under browser, and after QA feedback the
+   plot is now the hero (~70% of window, fractions 0.22/0.78 root split).
+4. **Fixed from QA findings (Phase 1):** wheel-scroll false row highlight in Messages
+   (ImGui stale Selectable fill; now re-asserted from owned state per frame); clipped Message
+   editor at 1280×720 (bounded scrollable child).
+5. **OPEN — silent idle crash (unconfirmed):** one QA instance died silently after ~10–15 min
+   paused idle. Soak reproduction with core dumps + RSS monitoring is running; treat as a
+   ship blocker until explained or 2×35-min soaks pass clean.
+6. **Coverage note:** `tests/panes_smoke.cc` is now an 81-line boundary stub (by design after
+   v1-A4), but PROGRESS.md still describes the old 668-assertion suite — update PROGRESS and
+   confirm the moved-to-backend logic (find tools, history comparators) kept its tests.
+
+### Harness lesson (bake into every QA brief)
+`xdotool mousemove X Y click 1` as ONE command is silently dropped by headless GLFW (~always):
+motion+press+release arrive within one frame, before the app polls the new cursor position —
+this produced a false "tab switching broken" blocker. Always two-step:
+`xdotool mousemove X Y; sleep 0.3; xdotool click 1`. Hover styling can look identical to
+selected styling in screenshots — verify by content change, not highlight.
 
 ---
 

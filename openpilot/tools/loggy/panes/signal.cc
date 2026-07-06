@@ -590,6 +590,11 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
   ImGui::TextUnformatted("Message");
   pop_bold_font();
 
+  // Fixed-height scrolling child: at short window heights (e.g. 1280x720) the Apply/Reset/Undo/Redo
+  // row would otherwise be pushed past the pane's own bottom edge and clipped. A bounded child with
+  // its own scrollbar keeps every control reachable without redesigning the section.
+  ImGui::BeginChild("##message_editor_body", ImVec2(0.0f, 148.0f), true);
+
   ImGui::SetNextItemWidth(180.0f);
   if (input_text_string("Name##message", &edit.name, 96)) *changed = true;
   if (ImGui::GetContentRegionAvail().x > 108.0f) ImGui::SameLine();
@@ -655,6 +660,7 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
     ImGui::SameLine();
     ImGui::TextDisabled("%s", state->edit_error.c_str());
   }
+  ImGui::EndChild();
 }
 
 void draw_signal_sparkline(const SignalPaneRow &row) {

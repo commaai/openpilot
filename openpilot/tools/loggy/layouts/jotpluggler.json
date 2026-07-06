@@ -6,12 +6,19 @@
       "name": "Jotpluggler",
       "root": {
         "split": "horizontal",
-        "sizes": [0.34, 0.34, 0.32],
+        "sizes": [0.22, 0.78],
         "children": [
-          {"type": "browser", "title": "Browser"},
           {
             "split": "vertical",
-            "sizes": [0.55, 0.45],
+            "sizes": [0.75, 0.25],
+            "children": [
+              {"type": "browser", "title": "Browser"},
+              {"type": "camera", "title": "Road Camera", "state": {"camera_view": "road"}}
+            ]
+          },
+          {
+            "split": "vertical",
+            "sizes": [0.9, 0.1],
             "children": [
               {
                 "type": "plot",
@@ -23,10 +30,16 @@
                   ]
                 }
               },
-              {"type": "logs", "title": "Logs"}
+              {
+                "split": "horizontal",
+                "sizes": [0.6, 0.4],
+                "children": [
+                  {"type": "logs", "title": "Logs"},
+                  {"type": "map", "title": "Map"}
+                ]
+              }
             ]
-          },
-          {"type": "map", "title": "Map"}
+          }
         ]
       }
     },

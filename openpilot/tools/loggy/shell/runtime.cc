@@ -36,7 +36,6 @@
 #include <string>
 #include <string_view>
 #include <thread>
-#include <deque>
 #include <vector>
 
 
@@ -190,37 +189,45 @@ public:
 };
 
 struct FrameStats {
+  // Fixed-size ring buffer holding the last kWindow seconds (capped at kCapacity
+  // samples so slow frames can't grow it): no per-frame heap allocation, and aging
+  // by wall time (not sample count) keeps the window correct at any actual fps.
   static constexpr std::chrono::duration<double> kWindow = std::chrono::duration<double>(5.0);
+  static constexpr size_t kCapacity = 2048;
   struct Sample {
     Clock::time_point at;
     double ms;
   };
-  std::deque<Sample> samples;
+  std::array<Sample, kCapacity> samples{};
+  size_t head = 0;
+  size_t count = 0;
   double latest_ms = 0.0;
 
   void add(double ms) {
     const Clock::time_point now = Clock::now();
     latest_ms = ms;
-    samples.push_back({now, ms});
-    while (!samples.empty() && now - samples.front().at > kWindow) {
-      samples.pop_front();
+    samples[head] = {now, ms};
+    head = (head + 1) % kCapacity;
+    count = std::min(count + 1, kCapacity);
+    while (count > 0 && now - samples[(head + kCapacity - count) % kCapacity].at > kWindow) {
+      --count;
     }
   }
 
   void reset() {
-    samples.clear();
+    count = 0;
+    head = 0;
     latest_ms = 0.0;
   }
 
   double p99_ms() const {
-    if (samples.empty()) return 0.0;
-    std::vector<double> values;
-    values.reserve(samples.size());
-    for (const Sample &sample : samples) {
-      values.push_back(sample.ms);
+    if (count == 0) return 0.0;
+    std::array<double, kCapacity> values{};
+    for (size_t i = 0; i < count; ++i) {
+      values[i] = samples[(head + kCapacity - count + i) % kCapacity].ms;
     }
-    std::sort(values.begin(), values.end());
-    const size_t idx = std::min(values.size() - 1, static_cast<size_t>(values.size() * 0.99));
+    std::sort(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(count));
+    const size_t idx = std::min(count - 1, static_cast<size_t>(count * 0.99));
     return values[idx];
   }
 };

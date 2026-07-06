@@ -90,15 +90,18 @@ int main() {
   const std::filesystem::path layout_dir = loggy::layouts_dir();
   const loggy::Workspace cabana_file = loggy::load_workspace_json(layout_dir / "cabana.json");
   assert(cabana_file.tabs.size() == 3);
-  assert(cabana_file.tabs[0].panes.size() == 4);
+  assert(cabana_file.tabs[0].panes.size() == 6);
   assert(count_panes_of_type(cabana_file, "messages") == 1);
   assert(count_panes_of_type(cabana_file, "binary") == 1);
+  assert(count_panes_of_type(cabana_file, "camera") == 1);
+  assert(count_panes_of_type(cabana_file, "plot") == 1);
   assert(count_panes_of_type(cabana_file, "dbc") == 1);
   assert(count_panes_of_type(cabana_file, "find_signal") == 1);
 
   const loggy::Workspace jot_file = loggy::load_workspace_json(layout_dir / "jotpluggler.json");
   assert(jot_file.tabs.size() == 2);
   assert(count_panes_of_type(jot_file, "browser") == 1);
+  assert(count_panes_of_type(jot_file, "camera") == 1);
   assert(count_panes_of_type(jot_file, "plot") == 1);
   assert(count_panes_of_type(jot_file, "logs") == 1);
   assert(count_panes_of_type(jot_file, "map") == 1);
