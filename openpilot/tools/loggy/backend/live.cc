@@ -58,6 +58,9 @@ TimeRange live_batch_range(const LiveExtractBatch &batch) {
   return range;
 }
 
+// Only the Linux-only panda/socketcan/bridge pollers below use these; keep them inside the
+// guard or clang's -Wunused-function breaks the macOS build.
+#ifdef __linux__
 double steady_seconds() {
   using Clock = std::chrono::steady_clock;
   return std::chrono::duration<double>(Clock::now().time_since_epoch()).count();
@@ -67,7 +70,6 @@ std::filesystem::path messaging_bridge_path() {
   return repo_root_path() / "openpilot" / "cereal" / "messaging" / "bridge";
 }
 
-#ifdef __linux__
 class DeviceBridgeProcess {
 public:
   DeviceBridgeProcess() = default;
