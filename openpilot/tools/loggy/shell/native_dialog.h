@@ -2,8 +2,12 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace loggy {
+
+// Single-quotes value for safe inclusion in a shell command line, escaping embedded quotes.
+std::string shell_quote(std::string_view value);
 
 enum class NativeDialogType {
   OpenFile,

@@ -126,10 +126,8 @@ PlaybackClock::PlaybackClock() {
 
 void PlaybackClock::init(TimeRange route_range) {
   route_range_ = normalize_time_range(route_range);
-  loop_range_.reset();
   tracker_time_ = route_range_.start_;
   rate_ = 1.0;
-  step_seconds_ = kDefaultPlaybackStepSeconds;
   playing_ = false;
   loop_ = false;
 }
@@ -137,21 +135,10 @@ void PlaybackClock::init(TimeRange route_range) {
 void PlaybackClock::set_route_range(TimeRange route_range) {
   route_range_ = normalize_time_range(route_range);
   tracker_time_ = clamp_time_to_range(tracker_time_, route_range_);
-  if (loop_range_.has_value()) {
-    loop_range_ = clamp_time_range(*loop_range_, route_range_, 0.0);
-  }
 }
 
 void PlaybackClock::seek(double time) {
   tracker_time_ = clamp_time_to_range(time, route_range_);
-}
-
-void PlaybackClock::play() {
-  playing_ = true;
-}
-
-void PlaybackClock::pause() {
-  playing_ = false;
 }
 
 bool PlaybackClock::toggle_playing() {
@@ -171,23 +158,6 @@ void PlaybackClock::set_loop(bool loop) {
   loop_ = loop;
 }
 
-TimeRange PlaybackClock::effective_loop_range() const {
-  if (!loop_range_.has_value()) return route_range_;
-  return clamp_time_range(*loop_range_, route_range_, 0.0);
-}
-
-void PlaybackClock::set_loop_range(TimeRange loop_range) {
-  loop_range_ = clamp_time_range(loop_range, route_range_, 0.0);
-}
-
-void PlaybackClock::clear_loop_range() {
-  loop_range_.reset();
-}
-
-void PlaybackClock::set_step_seconds(double seconds) {
-  step_seconds_ = finite(seconds) ? std::max(kMinPlaybackStepSeconds, seconds) : kDefaultPlaybackStepSeconds;
-}
-
 double PlaybackClock::step_forward() {
   return step(1);
 }
@@ -199,7 +169,7 @@ double PlaybackClock::step_backward() {
 double PlaybackClock::step(int direction) {
   if (direction == 0) return tracker_time_;
   const double sign = direction < 0 ? -1.0 : 1.0;
-  seek(tracker_time_ + sign * step_seconds_);
+  seek(tracker_time_ + sign * kDefaultPlaybackStepSeconds);
   return tracker_time_;
 }
 
@@ -208,7 +178,7 @@ void PlaybackClock::advance(double delta_seconds) {
     return;
   }
 
-  const TimeRange playback_range = loop_ ? effective_loop_range() : route_range_;
+  const TimeRange playback_range = route_range_;
   if (playback_range.span() <= 0.0) {
     tracker_time_ = playback_range.start_;
     return;
@@ -240,26 +210,17 @@ SharedViewRange::SharedViewRange(TimeRange route_range) {
   reset_to_route();
 }
 
-void SharedViewRange::set_min_span(double min_span) {
-  min_span_ = finite(min_span) ? std::max(0.0, min_span) : kMinViewSpanSeconds;
-  set_range(range_);
-}
-
 void SharedViewRange::set_route_range(TimeRange route_range) {
   route_range_ = normalize_time_range(route_range);
-  range_ = clamp_time_range(range_, route_range_, min_span_);
+  range_ = clamp_time_range(range_, route_range_);
 }
 
 void SharedViewRange::set_range(TimeRange range) {
-  range_ = clamp_time_range(range, route_range_, min_span_);
+  range_ = clamp_time_range(range, route_range_);
 }
 
 void SharedViewRange::reset_to_route() {
   range_ = route_range_;
-}
-
-bool SharedViewRange::contains(double time) const {
-  return finite(time) && time >= range_.start_ && time <= range_.end;
 }
 
 TimelineSpanKind timeline_kind_for_alert(AlertLevel level) {

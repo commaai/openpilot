@@ -39,10 +39,6 @@ json11::Json::object assignments_json(const LoggySettings &settings) {
   return assignments;
 }
 
-void set_error(std::string &error, std::string message) {
-  error = std::move(message);
-}
-
 }  // namespace
 
 void normalize_loggy_settings(LoggySettings *settings) {
@@ -240,7 +236,7 @@ LoggySettingsLoadResult load_loggy_settings(const fs::path &path) {
 
 bool save_loggy_settings(const LoggySettings &settings, const fs::path &path, std::string &error) {
   if (path.empty()) {
-    set_error(error, "settings path is empty");
+    error = "settings path is empty";
     return false;
   }
 
@@ -249,7 +245,7 @@ bool save_loggy_settings(const LoggySettings &settings, const fs::path &path, st
   if (!parent.empty()) {
     fs::create_directories(parent, ec);
     if (ec) {
-      set_error(error, "failed to create settings directory: " + ec.message());
+      error = "failed to create settings directory: " + ec.message();
       return false;
     }
   }
@@ -257,16 +253,16 @@ bool save_loggy_settings(const LoggySettings &settings, const fs::path &path, st
   const std::string json_text = loggy_settings_to_json(settings);
   std::ofstream stream(path, std::ios::binary | std::ios::trunc);
   if (!stream.is_open()) {
-    set_error(error, "failed to open settings file for writing: " + path.string());
+    error = "failed to open settings file for writing: " + path.string();
     return false;
   }
   stream.write(json_text.data(), static_cast<std::streamsize>(json_text.size()));
   if (!stream) {
-    set_error(error, "failed to write settings file: " + path.string());
+    error = "failed to write settings file: " + path.string();
     return false;
   }
 
-  set_error(error, "");
+  error.clear();
   return true;
 }
 

@@ -9,7 +9,6 @@
 #include <string_view>
 
 namespace loggy {
-namespace {
 
 std::string shell_quote(std::string_view value) {
   std::string quoted;
@@ -22,6 +21,8 @@ std::string shell_quote(std::string_view value) {
   quoted.push_back('\'');
   return quoted;
 }
+
+namespace {
 
 void append_arg(std::string &command, std::string_view arg) {
   if (!command.empty()) command.push_back(' ');

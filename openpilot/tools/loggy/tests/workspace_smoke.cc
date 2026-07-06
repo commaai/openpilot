@@ -73,11 +73,14 @@ int main() {
   assert(tab != nullptr);
   assert(tab->panes.size() == 4);
 
-  const int camera_index = loggy::add_pane(tab, loggy::make_pane("camera", "Camera"), 0, loggy::PaneSplit::Right);
+  assert(loggy::split_pane(tab, 0, loggy::PaneSplit::Right, loggy::make_pane("camera", "Camera")));
+  const int camera_index = static_cast<int>(tab->panes.size()) - 1;
   assert(camera_index == 4);
   assert(tab->panes.size() == 5);
 
-  assert(loggy::move_pane(tab, camera_index, 1, loggy::PaneSplit::Bottom));
+  assert(loggy::split_pane(tab, 1, loggy::PaneSplit::Bottom, loggy::make_pane("camera", "Camera")));
+  assert(tab->panes.size() == 6);
+  assert(loggy::close_pane(tab, camera_index));
   assert(tab->panes.size() == 5);
   assert(loggy::close_pane(tab, 2));
   assert(tab->panes.size() == 4);

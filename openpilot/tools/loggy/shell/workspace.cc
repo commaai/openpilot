@@ -129,16 +129,6 @@ bool contains_pane_node(const WorkspaceNode &node, int pane_index) {
   });
 }
 
-void remap_pane_indices(WorkspaceNode *node, const std::vector<int> &mapping) {
-  if (node->is_pane) {
-    if (node->pane_index >= 0 && node->pane_index < static_cast<int>(mapping.size())) {
-      node->pane_index = mapping[static_cast<size_t>(node->pane_index)];
-    }
-    return;
-  }
-  for (WorkspaceNode &child : node->children) remap_pane_indices(&child, mapping);
-}
-
 bool remove_pane_node(WorkspaceNode *node, int pane_index) {
   if (node->is_pane) return node->pane_index == pane_index;
   for (size_t i = 0; i < node->children.size();) {
@@ -652,48 +642,6 @@ int add_tab(Workspace *workspace, std::string name) {
   return workspace->current_tab_index;
 }
 
-bool duplicate_tab(Workspace *workspace, int tab_index) {
-  if (workspace == nullptr || tab_index < 0 || tab_index >= static_cast<int>(workspace->tabs.size())) return false;
-  WorkspaceTab tab = workspace->tabs[static_cast<size_t>(tab_index)];
-  tab.name = next_tab_name(*workspace, tab.name + " copy");
-  workspace->tabs.push_back(std::move(tab));
-  workspace->current_tab_index = static_cast<int>(workspace->tabs.size()) - 1;
-  return true;
-}
-
-bool close_tab(Workspace *workspace, int tab_index) {
-  if (workspace == nullptr || tab_index < 0 || tab_index >= static_cast<int>(workspace->tabs.size())) return false;
-  if (workspace->tabs.size() == 1) {
-    workspace->tabs[0] = make_tab(workspace->tabs[0].name.empty() ? "tab1" : workspace->tabs[0].name);
-    workspace->current_tab_index = 0;
-    return true;
-  }
-  workspace->tabs.erase(workspace->tabs.begin() + static_cast<std::ptrdiff_t>(tab_index));
-  workspace->current_tab_index = std::clamp(workspace->current_tab_index, 0, static_cast<int>(workspace->tabs.size()) - 1);
-  return true;
-}
-
-bool rename_tab(Workspace *workspace, int tab_index, std::string name) {
-  if (workspace == nullptr || tab_index < 0 || tab_index >= static_cast<int>(workspace->tabs.size()) || name.empty()) return false;
-  workspace->tabs[static_cast<size_t>(tab_index)].name = std::move(name);
-  return true;
-}
-
-int add_pane(WorkspaceTab *tab, PaneInstance pane, std::optional<int> split_target, PaneSplit split) {
-  if (tab == nullptr) return -1;
-  ensure_nonempty_tab(tab);
-  const int target = split_target.value_or(0);
-  if (!valid_pane_index(*tab, target)) return -1;
-  if (!split_pane(tab, target, split, std::move(pane))) return -1;
-  return static_cast<int>(tab->panes.size()) - 1;
-}
-
-bool replace_pane(WorkspaceTab *tab, int pane_index, PaneInstance pane) {
-  if (tab == nullptr || !valid_pane_index(*tab, pane_index)) return false;
-  tab->panes[static_cast<size_t>(pane_index)] = std::move(pane);
-  return true;
-}
-
 bool split_pane(WorkspaceTab *tab, int pane_index, PaneSplit split, PaneInstance pane) {
   if (tab == nullptr || !valid_pane_index(*tab, pane_index)) return false;
   const int new_pane_index = static_cast<int>(tab->panes.size());
@@ -703,32 +651,6 @@ bool split_pane(WorkspaceTab *tab, int pane_index, PaneSplit split, PaneInstance
     return true;
   }
   tab->panes.pop_back();
-  return false;
-}
-
-bool move_pane(WorkspaceTab *tab, int pane_index, int target_pane_index, PaneSplit split) {
-  if (tab == nullptr || !valid_pane_index(*tab, pane_index) || !valid_pane_index(*tab, target_pane_index)) return false;
-  if (pane_index == target_pane_index) return false;
-
-  const WorkspaceTab before = *tab;
-  PaneInstance moving = tab->panes[static_cast<size_t>(pane_index)];
-  if (!remove_pane_from_tree(&tab->root, pane_index)) return false;
-
-  std::vector<PaneInstance> remaining;
-  remaining.reserve(tab->panes.size() - 1);
-  std::vector<int> mapping(tab->panes.size(), -1);
-  for (size_t old_index = 0; old_index < tab->panes.size(); ++old_index) {
-    if (static_cast<int>(old_index) == pane_index) continue;
-    mapping[old_index] = static_cast<int>(remaining.size());
-    remaining.push_back(std::move(tab->panes[old_index]));
-  }
-  remap_pane_indices(&tab->root, mapping);
-  tab->panes = std::move(remaining);
-  normalize_split_node(&tab->root);
-
-  const int remapped_target = target_pane_index > pane_index ? target_pane_index - 1 : target_pane_index;
-  if (split_pane(tab, remapped_target, split, std::move(moving))) return true;
-  *tab = before;
   return false;
 }
 

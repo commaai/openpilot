@@ -3,6 +3,7 @@
 #include "tools/loggy/backend/session.h"
 #include "tools/loggy/panes/map.h"
 #include "tools/loggy/shell/live_source_controls.h"
+#include "tools/loggy/shell/native_dialog.h"
 #include "tools/loggy/shell/settings_ui.h"
 #include "tools/loggy/shell/remote_routes.h"
 #include "tools/loggy/shell/route_controls.h"
@@ -73,21 +74,6 @@ private:
   SignalHandler previous_sigint_ = SIG_DFL;
   SignalHandler previous_sigterm_ = SIG_DFL;
 };
-
-std::string shell_quote(std::string_view value) {
-  std::string quoted;
-  quoted.reserve(value.size() + 8);
-  quoted.push_back('\'');
-  for (char c : value) {
-    if (c == '\'') {
-      quoted += "'\\''";
-    } else {
-      quoted.push_back(c);
-    }
-  }
-  quoted.push_back('\'');
-  return quoted;
-}
 
 bool g_escape_pressed = false;
 

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include <filesystem>
 
 #include "implot.h"
 
@@ -72,6 +73,11 @@ constexpr ColorDef LIGHT_COLORS[] = {
   {ImGuiCol_SliderGrab, 74, 132, 214},   {ImGuiCol_SliderGrabActive, 58, 116, 196},
 };
 
+const std::filesystem::path &repo_root() {
+  static const std::filesystem::path root = LOGGY_REPO_ROOT;
+  return root;
+}
+
 void icon_add_font(float size, bool merge = false, const ImFont *base_font = nullptr) {
   const std::filesystem::path ttf = BOOTSTRAP_ICONS_TTF;
   ImGuiIO &io = ImGui::GetIO();
@@ -88,11 +94,6 @@ void icon_add_font(float size, bool merge = false, const ImFont *base_font = nul
 }
 
 }  // namespace
-
-const std::filesystem::path &repo_root() {
-  static const std::filesystem::path root = LOGGY_REPO_ROOT;
-  return root;
-}
 
 ImVec4 color_rgb(int r, int g, int b, float alpha) {
   return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);

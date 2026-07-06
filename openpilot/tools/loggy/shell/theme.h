@@ -1,6 +1,5 @@
 #pragma once
 
-#include <filesystem>
 #include <string>
 #include <string_view>
 
@@ -13,7 +12,6 @@ enum class LoggyThemeKind {
   Light,
 };
 
-const std::filesystem::path &repo_root();
 void load_fonts();
 LoggyThemeKind loggy_theme_from_name(std::string_view name);
 const char *loggy_theme_name(LoggyThemeKind theme);

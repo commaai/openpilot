@@ -15,17 +15,17 @@ void assert_near(double a, double b) {
   assert(near(a, b));
 }
 
-void test_play_advance_and_pause() {
+void test_set_playing_advance_and_pause() {
   loggy::PlaybackClock clock;
   clock.init(loggy::TimeRange{0.0, 10.0});
   clock.seek(2.0);
-  clock.play();
+  clock.set_playing(true);
 
   clock.advance(1.5);
   assert_near(clock.tracker_time(), 3.5);
   assert(clock.playing());
 
-  clock.pause();
+  clock.set_playing(false);
   clock.advance(5.0);
   assert_near(clock.tracker_time(), 3.5);
 }
@@ -33,10 +33,9 @@ void test_play_advance_and_pause() {
 void test_step_and_clamp() {
   loggy::PlaybackClock clock;
   clock.init(loggy::TimeRange{0.0, 2.0});
-  clock.set_step_seconds(0.5);
   clock.seek(1.0);
 
-  assert_near(clock.step_forward(), 1.5);
+  assert_near(clock.step_forward(), 1.0 + loggy::kDefaultPlaybackStepSeconds);
   assert_near(clock.step_backward(), 1.0);
   clock.seek(-10.0);
   assert_near(clock.tracker_time(), 0.0);
@@ -47,25 +46,27 @@ void test_step_and_clamp() {
 }
 
 void test_boundary_and_looping() {
+  // Loop off: playback clamps at the route end and stops.
   loggy::PlaybackClock clock;
   clock.init(loggy::TimeRange{0.0, 10.0});
   clock.seek(9.5);
-  clock.play();
+  clock.set_playing(true);
 
   clock.advance(1.0);
   assert_near(clock.tracker_time(), 10.0);
   assert(!clock.playing());
 
+  // Loop on: playback wraps to the route start and keeps playing. The Loop checkbox only
+  // ever loops the full route -- there is no sub-range loop in the product.
   loggy::PlaybackClock loop;
   loop.init(loggy::TimeRange{0.0, 10.0});
   loop.set_loop(true);
-  loop.set_loop_range(loggy::TimeRange{2.0, 4.0});
-  loop.seek(3.75);
-  loop.play();
+  loop.seek(9.5);
+  loop.set_playing(true);
 
-  loop.advance(0.5);
+  loop.advance(1.0);
   assert(loop.playing());
-  assert_near(loop.tracker_time(), 2.0);
+  assert_near(loop.tracker_time(), 0.0);
 }
 
 void test_view_range_independence() {
@@ -75,7 +76,7 @@ void test_view_range_independence() {
   view.set_range(loggy::TimeRange{5.0, 10.0});
 
   clock.seek(6.0);
-  clock.play();
+  clock.set_playing(true);
   clock.advance(3.0);
 
   assert_near(clock.tracker_time(), 9.0);
@@ -125,7 +126,7 @@ void test_seek_mapping_and_timeline_spans() {
 }  // namespace
 
 int main() {
-  test_play_advance_and_pause();
+  test_set_playing_advance_and_pause();
   test_step_and_clamp();
   test_boundary_and_looping();
   test_view_range_independence();

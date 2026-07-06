@@ -34,14 +34,10 @@ const char *live_source_field_text(const SessionConfig &config) {
   return config.stream_address.c_str();
 }
 
-int speed_index(const std::array<uint16_t, 8> &speeds, uint16_t speed) {
+template <size_t N>
+int speed_index(const std::array<uint16_t, N> &speeds, uint16_t speed) {
   const auto it = std::find(speeds.begin(), speeds.end(), speed);
   return it == speeds.end() ? 0 : static_cast<int>(std::distance(speeds.begin(), it));
-}
-
-int data_speed_index(uint16_t speed) {
-  const auto it = std::find(kPandaDataSpeedsKbps.begin(), kPandaDataSpeedsKbps.end(), speed);
-  return it == kPandaDataSpeedsKbps.end() ? 0 : static_cast<int>(std::distance(kPandaDataSpeedsKbps.begin(), it));
 }
 
 void sync_panda_source_fields(std::array<int, kPandaBusCount> &panda_can_speed_index,
@@ -51,7 +47,7 @@ void sync_panda_source_fields(std::array<int, kPandaBusCount> &panda_can_speed_i
   for (size_t bus = 0; bus < buses.size(); ++bus) {
     const PandaBusConfig config = normalize_live_panda_bus_config(buses[bus]);
     panda_can_speed_index[bus] = speed_index(kPandaCanSpeedsKbps, config.can_speed_kbps);
-    panda_data_speed_index[bus] = data_speed_index(config.data_speed_kbps);
+    panda_data_speed_index[bus] = speed_index(kPandaDataSpeedsKbps, config.data_speed_kbps);
     panda_can_fd[bus] = config.can_fd;
   }
 }

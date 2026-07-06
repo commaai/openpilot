@@ -1,13 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 namespace loggy {
 
 inline constexpr double kDefaultPlaybackStepSeconds = 0.1;
-inline constexpr double kMinPlaybackStepSeconds = 0.001;
 inline constexpr double kMinViewSpanSeconds = 0.001;
 inline constexpr double kPlaybackRatePresets[] = {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1.0, 2.0, 3.0, 5.0};
 
@@ -37,23 +35,16 @@ public:
   void seek(double time);
 
   bool playing() const { return playing_; }
-  void play();
-  void pause();
   bool toggle_playing();
   void set_playing(bool playing);
 
   double rate() const { return rate_; }
   void set_rate(double rate);
 
+  // The Loop checkbox always loops the full route; there is no product path for a sub-range.
   bool loop() const { return loop_; }
   void set_loop(bool loop);
-  bool has_loop_range() const { return loop_range_.has_value(); }
-  TimeRange effective_loop_range() const;
-  void set_loop_range(TimeRange loop_range);
-  void clear_loop_range();
 
-  double step_seconds() const { return step_seconds_; }
-  void set_step_seconds(double seconds);
   double step_forward();
   double step_backward();
   double step(int direction);
@@ -62,10 +53,8 @@ public:
 
 private:
   TimeRange route_range_ = {0.0, 1.0};
-  std::optional<TimeRange> loop_range_;
   double tracker_time_ = 0.0;
   double rate_ = 1.0;
-  double step_seconds_ = kDefaultPlaybackStepSeconds;
   bool playing_ = false;
   bool loop_ = false;
 };
@@ -78,17 +67,13 @@ public:
   const TimeRange &route_range() const { return route_range_; }
   const TimeRange &range() const { return range_; }
 
-  double min_span() const { return min_span_; }
-  void set_min_span(double min_span);
   void set_route_range(TimeRange route_range);
   void set_range(TimeRange range);
   void reset_to_route();
-  bool contains(double time) const;
 
 private:
   TimeRange route_range_ = {0.0, 1.0};
   TimeRange range_ = {0.0, 1.0};
-  double min_span_ = kMinViewSpanSeconds;
 };
 
 enum class AlertLevel : uint8_t {

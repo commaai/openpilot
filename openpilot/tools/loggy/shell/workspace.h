@@ -117,15 +117,8 @@ const WorkspaceTab *active_tab(const Workspace &workspace);
 
 std::string next_tab_name(const Workspace &workspace, std::string_view base_name = "tab1");
 int add_tab(Workspace *workspace, std::string name = {});
-bool duplicate_tab(Workspace *workspace, int tab_index);
-bool close_tab(Workspace *workspace, int tab_index);
-bool rename_tab(Workspace *workspace, int tab_index, std::string name);
 
-int add_pane(WorkspaceTab *tab, PaneInstance pane, std::optional<int> split_target = std::nullopt,
-             PaneSplit split = PaneSplit::Right);
-bool replace_pane(WorkspaceTab *tab, int pane_index, PaneInstance pane);
 bool split_pane(WorkspaceTab *tab, int pane_index, PaneSplit split, PaneInstance pane = make_pane());
-bool move_pane(WorkspaceTab *tab, int pane_index, int target_pane_index, PaneSplit split);
 bool close_pane(WorkspaceTab *tab, int pane_index);
 
 void normalize_workspace(Workspace *workspace);

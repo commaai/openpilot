@@ -1,6 +1,7 @@
 #include "tools/loggy/panes/map.h"
 
 #include "tools/loggy/backend/session.h"
+#include "tools/loggy/shell/native_dialog.h"
 #include "tools/loggy/shell/theme.h"
 #include "tools/loggy/shell/workspace.h"
 
@@ -487,19 +488,6 @@ uint64_t fnv1a64(std::string_view text) {
     value *= 1099511628211ULL;
   }
   return value;
-}
-
-std::string shell_quote(std::string_view value) {
-  std::string out = "'";
-  for (char c : value) {
-    if (c == '\'') {
-      out += "'\\''";
-    } else {
-      out.push_back(c);
-    }
-  }
-  out.push_back('\'');
-  return out;
 }
 
 std::string percent_encode(std::string_view text) {
