@@ -67,15 +67,20 @@ check "named header structs" \
 # O(log n)), History page keyed off a quantized summary count with CSV export split to full
 # route (cabana semantics), Browser/Plot legend sampling decoupled from chart zoom, playback
 # autostart on route load; ->21481 camera decode keeps publishing when playback outpaces it
-# (segment-scoped abort + best-effort stale publish in video.cc). Genuine defect-cluster
-# capability, not padding.
+# (segment-scoped abort + best-effort stale publish in video.cc); ->21619 interaction
+# defect batch — binary edge-vs-create drag semantics, plot empty-series persistence + drop
+# hint, workspace splitter drag (previously absent entirely), resize-status undo staleness,
+# map failure banner, signal pane sizing that could drop BeginTable and the editor below it.
+# Genuine defect-cluster capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21481
+  21619
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
+# 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
+# tree had no interactive divider between siblings at all; the whole feature, not padding.
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
-  852
+  912
 check "pane-local statics" \
   "$(rg_count '^\s+static ' panes -g'*.cc')" \
   0

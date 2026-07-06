@@ -1059,6 +1059,17 @@ std::string map_basemap_status_text(const MapBasemapStatus &status, const fs::pa
   return message + suffix + " | root " + cache_root + " | cache " + cache_summary;
 }
 
+// Condenses a basemap failure message into a short, user-facing reason -- status.message can
+// carry a raw filesystem path or curl detail (see MapBasemapManager::run), so the failure banner
+// must never show it directly.
+std::string map_basemap_short_reason(const std::string &message) {
+  if (message.rfind("Basemap fetch failed", 0) == 0) return "network unreachable";
+  if (message.rfind("Basemap parse failed", 0) == 0) return "invalid response";
+  if (message.find("cache write failed") != std::string::npos) return "cache write failed";
+  if (message.rfind("Basemap cache failed", 0) == 0) return "cache unavailable";
+  return "unknown error";
+}
+
 std::optional<MapBasemapPoint> map_coordinate_for_canvas_point(
   const MapTrace &trace, const MapState &state, double width, double height,
   double x, double y, const std::optional<MapTracePoint> &tracker) {
@@ -1473,13 +1484,24 @@ void draw_map_pane(Session &session, PaneInstance &pane) {
       }
       ImGui::EndPopup();
     }
-    const char *status_message = basemap_status.message.empty() ? "idle" : basemap_status.message.c_str();
-    const char *match_note = loaded_basemap != nullptr && !loaded_basemap_matches ? " | refreshing" : "";
-    ImGui::TextDisabled("%s%s | %zu feat | %s",
-                        status_message,
-                        basemap_status.loading ? "..." : match_note,
-                        basemap != nullptr ? basemap->features.size() : 0,
-                        map_basemap_cache_summary(basemap_status.cache).c_str());
+    // A genuine failure (no basemap loaded, not mid-fetch, message says so) gets a quiet one-line
+    // banner with a short reason and a Retry. "Fetched basemap (cache write failed: ...)" is
+    // excluded: that basemap did load, so `basemap` is non-null and this branch is skipped.
+    const bool basemap_failed = basemap == nullptr && !basemap_status.loading &&
+                                basemap_status.message.find("failed") != std::string::npos;
+    if (basemap_failed) {
+      ImGui::TextDisabled("basemap unavailable — %s", map_basemap_short_reason(basemap_status.message).c_str());
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Retry")) basemap_manager.ensureTrace(trace, true);
+    } else {
+      const char *status_message = basemap_status.message.empty() ? "idle" : basemap_status.message.c_str();
+      const char *match_note = loaded_basemap != nullptr && !loaded_basemap_matches ? " | refreshing" : "";
+      ImGui::TextDisabled("%s%s | %zu feat | %s",
+                          status_message,
+                          basemap_status.loading ? "..." : match_note,
+                          basemap != nullptr ? basemap->features.size() : 0,
+                          map_basemap_cache_summary(basemap_status.cache).c_str());
+    }
   }
 
   const ImVec2 avail = ImGui::GetContentRegionAvail();

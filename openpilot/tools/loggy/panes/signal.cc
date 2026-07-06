@@ -576,10 +576,11 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
   ImGui::TextUnformatted("Message");
   pop_bold_font();
 
-  // Fixed-height scrolling child: at short window heights (e.g. 1280x720) the Apply/Reset/Undo/Redo
-  // row would otherwise be pushed past the pane's own bottom edge and clipped. A bounded child with
-  // its own scrollbar keeps every control reachable without redesigning the section.
-  ImGui::BeginChild("##message_editor_body", ImVec2(0.0f, 148.0f), true);
+  // Bounded scrolling child so the Apply/Reset/Undo/Redo row stays reachable at short window
+  // heights. A flat 148px was itself part of #25 -- comfortably more than these 3 rows need, it
+  // could alone exhaust a short Signal pane's budget and leave the table below at zero room.
+  const float editor_height = std::min(108.0f, std::max(1.0f, ImGui::GetContentRegionAvail().y));
+  ImGui::BeginChild("##message_editor_body", ImVec2(0.0f, editor_height), true);
 
   ImGui::SetNextItemWidth(180.0f);
   if (input_text_with_hint("Name##message", "", &edit.name)) *changed = true;
@@ -1015,43 +1016,55 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
   constexpr ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
                                     ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingFixedFit |
                                     ImGuiTableFlags_ScrollY;
+  // Never ask BeginTable for more height than the pane has left. A short pane can leave avail.y
+  // at zero or negative once the message editor above took its share; a positive *minimum* (the
+  // old bug) then placed the table's child past the pane's own clip rect, and BeginTable silently
+  // returns false for a region that starts off-window (#25). Capping to real avail keeps it
+  // on-window (if only a sliver); if there's truly no room, fall through to the signal editor
+  // below instead of returning early -- a table render failure must never take it down too.
   ImVec2 table_size = ImGui::GetContentRegionAvail();
   // Bound the table so the editors below stay reachable, but let it grow with the pane —
   // a hard 170px cap forced presets to starve other panes just to show a few signal rows.
-  if (from_dbc) table_size.y = std::clamp(table_size.y * 0.45f, 96.0f, 320.0f);
-  if (!ImGui::BeginTable("##loggy_signal_table", 8, flags, table_size)) return;
-  ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 138.0f);
-  ImGui::TableSetupColumn("Kind", ImGuiTableColumnFlags_WidthFixed, 58.0f);
-  ImGui::TableSetupColumn("Start", ImGuiTableColumnFlags_WidthFixed, 48.0f);
-  ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 42.0f);
-  ImGui::TableSetupColumn("Endian", ImGuiTableColumnFlags_WidthFixed, 54.0f);
-  ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-  ImGui::TableSetupColumn("Spark", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-  ImGui::TableSetupColumn("Changed", ImGuiTableColumnFlags_WidthFixed, 58.0f);
-  ImGui::TableHeadersRow();
+  if (from_dbc) {
+    const float wanted = std::clamp(table_size.y * 0.45f, 96.0f, 320.0f);
+    table_size.y = std::min(wanted, std::max(0.0f, table_size.y));
+  }
+  if (table_size.y > 0.0f && ImGui::BeginTable("##loggy_signal_table", 8, flags, table_size)) {
+    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 138.0f);
+    ImGui::TableSetupColumn("Kind", ImGuiTableColumnFlags_WidthFixed, 58.0f);
+    ImGui::TableSetupColumn("Start", ImGuiTableColumnFlags_WidthFixed, 48.0f);
+    ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 42.0f);
+    ImGui::TableSetupColumn("Endian", ImGuiTableColumnFlags_WidthFixed, 54.0f);
+    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+    ImGui::TableSetupColumn("Spark", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+    ImGui::TableSetupColumn("Changed", ImGuiTableColumnFlags_WidthFixed, 58.0f);
+    ImGui::TableHeadersRow();
 
-  ImGuiListClipper clipper;
-  clipper.Begin(static_cast<int>(rows.size()), std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
-  while (clipper.Step()) {
-    for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
-      const SignalPaneRow &row = rows[static_cast<size_t>(row_idx)];
-      const std::string new_selection = row.from_dbc ? row.name : std::string();
-      if (draw_signal_row(row, row.from_dbc && row.name == state.selected_signal) &&
-          new_selection != state.selected_signal) {
-        // Re-clicking the already-selected row is a no-op (ImGui::Selectable reports a click
-        // either way); only a genuine switch may touch the edit cache, and even then the
-        // previous signal's unapplied edits are stashed rather than dropped.
-        stash_pending_signal_edit(transient_state, id, msg);
-        state.selected_signal = new_selection;
-        state.edit_error.clear();
-        if (row.signal == nullptr || !restore_pending_signal_edit(transient_state, id, *row.signal)) {
-          transient_state.edit.valid = false;
+    ImGuiListClipper clipper;
+    clipper.Begin(static_cast<int>(rows.size()), std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
+    while (clipper.Step()) {
+      for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
+        const SignalPaneRow &row = rows[static_cast<size_t>(row_idx)];
+        const std::string new_selection = row.from_dbc ? row.name : std::string();
+        if (draw_signal_row(row, row.from_dbc && row.name == state.selected_signal) &&
+            new_selection != state.selected_signal) {
+          // Re-clicking the already-selected row is a no-op (ImGui::Selectable reports a click
+          // either way); only a genuine switch may touch the edit cache, and even then the
+          // previous signal's unapplied edits are stashed rather than dropped.
+          stash_pending_signal_edit(transient_state, id, msg);
+          state.selected_signal = new_selection;
+          state.edit_error.clear();
+          if (row.signal == nullptr || !restore_pending_signal_edit(transient_state, id, *row.signal)) {
+            transient_state.edit.valid = false;
+          }
+          changed = true;
         }
-        changed = true;
       }
     }
+    ImGui::EndTable();
+  } else {
+    ImGui::Dummy(ImVec2(1.0f, std::max(1.0f, table_size.y)));
   }
-  ImGui::EndTable();
   if (from_dbc) {
     draw_signal_editor(session, id, &state, &transient_state.edit, &transient_state.message, &transient_state, &changed);
   }

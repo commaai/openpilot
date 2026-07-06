@@ -296,6 +296,11 @@ std::vector<PlotSeriesRequest> parse_plot_series_requests(std::string_view state
     }
   };
 
+  // A brand-new pane ("{}", no series/paths key) falls back to the preset defaults below; a pane
+  // explicitly emptied by the user serializes "series": [] and must stay empty -- re-seeding on
+  // every parse of that exact json was the bug (#36).
+  bool had_explicit_series_key = false;
+
   if (!err.empty()) {
     add_path(std::string(state_json));
   } else if (state.is_string()) {
@@ -303,12 +308,14 @@ std::vector<PlotSeriesRequest> parse_plot_series_requests(std::string_view state
   } else if (state.is_object()) {
     if (state["path"].is_string()) add_path(state["path"].string_value(), state["label"].string_value(), state["stairs"].bool_value());
     const json11::Json &series = state["series"].is_array() ? state["series"] : state["paths"];
+    had_explicit_series_key = series.is_array();
     for (const json11::Json &item : series.array_items()) add_json(item);
   } else if (state.is_array()) {
+    had_explicit_series_key = true;
     for (const json11::Json &item : state.array_items()) add_json(item);
   }
 
-  if (out.empty()) {
+  if (out.empty() && !had_explicit_series_key) {
     add_path("/carState/vEgo", "vEgo");
     add_path("/carState/aEgo", "aEgo");
   }
@@ -824,6 +831,8 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   bool dropped_series = false;
   ImGui::BeginChild("##loggy_plot_child", ImGui::GetContentRegionAvail(), false,
                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+  const ImVec2 plot_child_origin = ImGui::GetCursorScreenPos();
+  const ImVec2 plot_child_size = ImGui::GetContentRegionAvail();
   if (ImPlot::BeginPlot("##loggy_plot", ImGui::GetContentRegionAvail(), plot_flags)) {
     ImPlot::SetupAxes(nullptr, nullptr,
                       ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight,
@@ -891,6 +900,15 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
       session.playback.seek(ImPlot::GetPlotMousePos().x);
     }
     ImPlot::EndPlot();
+  }
+  if (requests.empty()) {
+    // Empty stays empty (#36) — the pane must still say so instead of showing a bare axes grid.
+    const char *hint = "Drop a series here, or use + Series";
+    const ImVec2 text_size = ImGui::CalcTextSize(hint);
+    ImGui::GetWindowDrawList()->AddText(
+        ImVec2(plot_child_origin.x + (plot_child_size.x - text_size.x) * 0.5f,
+              plot_child_origin.y + (plot_child_size.y - text_size.y) * 0.5f),
+        ImGui::GetColorU32(ImGuiCol_TextDisabled), hint);
   }
   ImGui::EndChild();
   dropped_series = accept_series_drop(&pane);

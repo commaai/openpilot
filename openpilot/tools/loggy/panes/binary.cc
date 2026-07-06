@@ -81,6 +81,20 @@ const Signal *binary_signal_at_bit(const Msg *msg, int bit_index) {
   return nullptr;
 }
 
+// Resize only starts when the press lands on a signal's edge cell (its physical lsb or msb bit);
+// grabbing anywhere else over a defined signal starts a new-signal drag instead, same split as
+// Qt cabana's BinaryView::mousePressEvent (only bit_pos == s->lsb || s->msb sets resize_sig).
+const Signal *binary_signal_edge_at_bit(const Msg *msg, int bit_index) {
+  if (msg == nullptr || bit_index < 0) return nullptr;
+  for (const Signal *signal : msg->signals()) {
+    if (signal == nullptr) continue;
+    Signal copy = *signal;
+    copy.update();
+    if (bit_index == copy.lsb || bit_index == copy.msb) return signal;
+  }
+  return nullptr;
+}
+
 std::optional<Signal> binary_signal_from_bit_range(int anchor_bit, int current_bit, std::string &error) {
   if (anchor_bit < 0 || current_bit < 0 ||
       anchor_bit >= CAN_MAX_DATA_BYTES * 8 || current_bit >= CAN_MAX_DATA_BYTES * 8) {
@@ -255,6 +269,9 @@ struct BinaryDragState {
   bool resizing = false;
   std::string signal_name;
   std::string status;
+  // DBC generation at the moment `status` was set; a later mismatch (an Undo/Redo, or any other
+  // edit) means the banner refers to a state that no longer holds, so it gets cleared (#28).
+  uint64_t status_generation = 0;
 };
 
 BinaryDragState &binary_drag_state(PaneInstance &pane) {
@@ -287,6 +304,7 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   ImGui::SameLine();
   ImGui::TextDisabled("| %zu events | latest %.3fs", grid.event_count, grid.last_time);
   BinaryDragState &drag = binary_drag_state(pane);
+  if (!drag.status.empty() && session.dbc.generation() != drag.status_generation) drag.status.clear();
   if (!drag.status.empty()) {
     ImGui::SameLine();
     ImGui::TextDisabled("%s", drag.status.c_str());
@@ -413,7 +431,7 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
       ImGui::PushID(static_cast<int>(row * 16 + static_cast<size_t>(bit)));
       ImGui::InvisibleButton("bit", ImVec2(col_w, row_h));
       if (!drag.active && !suppressed_bit && ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-        const Signal *resize_signal = binary_signal_at_bit(dbc_msg, bit_index);
+        const Signal *resize_signal = binary_signal_edge_at_bit(dbc_msg, bit_index);
         drag.active = true;
         drag.dragged = false;
         drag.id = id;
@@ -434,6 +452,12 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
         if (drag.current_bit != drag.anchor_bit) drag.dragged = true;
       }
       if (ImGui::IsItemHovered() || (drag.active && drag.id == id && ImGui::IsMouseHoveringRect(cell_min, cell_max))) {
+        // Resize cursor for a resize-eligible edge cell (or an in-progress resize drag) only,
+        // mirroring the split above -- a mid-signal drag shouldn't look like it will resize.
+        if (drag.active && drag.id == id ? drag.resizing
+                                         : (!suppressed_bit && binary_signal_edge_at_bit(dbc_msg, bit_index) != nullptr)) {
+          ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        }
         if (drag.active && drag.id == id && drag.dragged) {
           const int first = std::min(drag.anchor_bit, drag.current_bit);
           const int last = std::max(drag.anchor_bit, drag.current_bit);
@@ -503,6 +527,7 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
           drag.status = error.empty() ? "Signal create failed" : error;
         }
       }
+      drag.status_generation = session.dbc.generation();
     }
     drag.active = false;
     drag.dragged = false;

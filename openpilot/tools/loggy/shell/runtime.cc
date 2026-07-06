@@ -485,7 +485,62 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
   ImGui::EndChild();
 }
 
-void draw_workspace_node(AppState &app, WorkspaceTab &tab, int tab_index, const WorkspaceNode &node, ImVec2 pos, ImVec2 size) {
+// Siblings previously had only ItemSpacing dead space between them -- no widget there at all, so
+// drags never did anything (#37). A fixed (not theme ItemSpacing, which can be under 4px) 8px gap
+// with a real InvisibleButton in it gives a comfortable, theme-independent grab band.
+constexpr float kSplitterThickness = 8.0f;
+
+// Shifts the boundary between node->children[index] and [index+1] by a pixel delta, keeping both
+// sides at least a sliver wide so a fast drag can't collapse a pane out from under the user.
+void apply_splitter_delta(WorkspaceNode *node, size_t index, float delta_px, float content_px) {
+  if (node == nullptr || content_px <= 0.0f || index + 1 >= node->sizes.size()) return;
+  constexpr float kMinRatio = 0.05f;
+  float &a = node->sizes[index];
+  float &b = node->sizes[index + 1];
+  const float pair = a + b;
+  if (pair <= 0.0f) return;
+  a = std::clamp(a + delta_px / content_px, kMinRatio * pair, pair - kMinRatio * pair);
+  b = pair - a;
+}
+
+// Draggable divider between node->children[index] and [index+1]; committed to workspace history
+// once on release rather than every frame of the drag.
+void draw_split_handle(AppState &app, WorkspaceNode *node, size_t index, bool horizontal,
+                       ImVec2 parent_pos, ImVec2 parent_size, float offset) {
+  const ImVec2 handle_min = horizontal ? ImVec2(parent_pos.x + offset, parent_pos.y)
+                                       : ImVec2(parent_pos.x, parent_pos.y + offset);
+  const ImVec2 handle_size = horizontal ? ImVec2(kSplitterThickness, parent_size.y)
+                                        : ImVec2(parent_size.x, kSplitterThickness);
+  ImGui::SetCursorScreenPos(handle_min);
+  ImGui::PushID(static_cast<int>(index));
+  ImGui::InvisibleButton("##splitter", handle_size);
+  const bool hovered = ImGui::IsItemHovered();
+  const bool active = ImGui::IsItemActive();
+  if (hovered || active) ImGui::SetMouseCursor(horizontal ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS);
+  if (active) {
+    const ImVec2 delta = ImGui::GetIO().MouseDelta;
+    const float content = (horizontal ? parent_size.x : parent_size.y) -
+                          kSplitterThickness * static_cast<float>(node->children.size() - 1);
+    apply_splitter_delta(node, index, horizontal ? delta.x : delta.y, content);
+  }
+  if (ImGui::IsItemDeactivated()) {
+    record_workspace_change(app.session.workspace, app.workspace_history, app.session.workspace_layout_path,
+                           app.workspace_status, "Resized panes");
+  }
+  ImGui::PopID();
+
+  ImDrawList *draw_list = ImGui::GetWindowDrawList();
+  const Theme &t = theme();
+  const ImU32 color = ImGui::GetColorU32(active ? t.accent : hovered ? t.scrollbar_grab_hovered : t.separator);
+  const ImVec2 c(handle_min.x + handle_size.x * 0.5f, handle_min.y + handle_size.y * 0.5f);
+  if (horizontal) {
+    draw_list->AddRectFilled(ImVec2(c.x - 1.0f, handle_min.y), ImVec2(c.x + 1.0f, handle_min.y + handle_size.y), color);
+  } else {
+    draw_list->AddRectFilled(ImVec2(handle_min.x, c.y - 1.0f), ImVec2(handle_min.x + handle_size.x, c.y + 1.0f), color);
+  }
+}
+
+void draw_workspace_node(AppState &app, WorkspaceTab &tab, int tab_index, WorkspaceNode &node, ImVec2 pos, ImVec2 size) {
   size.x = std::max(1.0f, size.x);
   size.y = std::max(1.0f, size.y);
   if (node.is_pane) {
@@ -496,7 +551,7 @@ void draw_workspace_node(AppState &app, WorkspaceTab &tab, int tab_index, const 
   if (node.children.empty()) return;
 
   const bool horizontal = node.orientation == SplitOrientation::Horizontal;
-  const float gap = horizontal ? ImGui::GetStyle().ItemSpacing.x : ImGui::GetStyle().ItemSpacing.y;
+  const float gap = kSplitterThickness;
   const float available = horizontal ? size.x : size.y;
   const float total_gap = gap * static_cast<float>(node.children.size() - 1);
   const float content = std::max(1.0f, available - total_gap);
@@ -509,15 +564,20 @@ void draw_workspace_node(AppState &app, WorkspaceTab &tab, int tab_index, const 
     if (horizontal) {
       child_size.x = std::max(1.0f, content * ratio);
       child_pos.x += offset;
-      offset += child_size.x + gap;
+      offset += child_size.x;
     } else {
       child_size.y = std::max(1.0f, content * ratio);
       child_pos.y += offset;
-      offset += child_size.y + gap;
+      offset += child_size.y;
     }
     ImGui::PushID(static_cast<int>(i));
     draw_workspace_node(app, tab, tab_index, node.children[i], child_pos, child_size);
     ImGui::PopID();
+
+    if (i + 1 < node.children.size()) {
+      draw_split_handle(app, &node, i, horizontal, pos, size, offset);
+      offset += gap;
+    }
   }
   ImGui::SetCursorScreenPos(ImVec2(pos.x, pos.y + size.y));
   ImGui::Dummy(ImVec2(0.0f, 0.0f));
