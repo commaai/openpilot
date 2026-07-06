@@ -505,8 +505,8 @@ const std::array<RouteBrowserPeriod, 5> &route_browser_periods() {
 std::string route_browser_device_routes_url(const std::string &dongle_id, int64_t start_ms, int64_t end_ms, bool preserved) {
   if (dongle_id.empty()) return {};
   const std::string base = std::string(kCommaApiHost) + "/v1/devices/" + dongle_id;
-  if (preserved) return base + "/routes_/preserved";
-  return base + "/routes_segments?start_=" + std::to_string(start_ms) + "&end=" + std::to_string(end_ms);
+  if (preserved) return base + "/routes/preserved";
+  return base + "/routes_segments?start=" + std::to_string(start_ms) + "&end=" + std::to_string(end_ms);
 }
 
 std::string route_browser_route_files_url(const std::string &route_name) {

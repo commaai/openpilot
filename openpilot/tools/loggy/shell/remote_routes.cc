@@ -76,14 +76,14 @@ struct RemoteRouteBrowserState {
 RemoteRouteBrowserState g_route_browser;
 
 std::string route_api_error(const std::string &result, bool device_list) {
-  if (result.empty()) return device_list ? "Failed to fetch devices." : "Failed to fetch routes_.";
+  if (result.empty()) return device_list ? "Failed to fetch devices." : "Failed to fetch routes.";
   std::string err;
   const json11::Json doc = json11::Json::parse(result, err);
-  if (!err.empty()) return device_list ? "Failed to parse devices." : "Failed to parse routes_.";
+  if (!err.empty()) return device_list ? "Failed to parse devices." : "Failed to parse routes.";
   if (doc.is_object() && doc["error"].is_string()) {
     const std::string code = doc["error"].string_value();
     if (code == "unauthorized") return "Unauthorized. Authenticate with openpilot/tools/lib/auth.py.";
-    return device_list ? "Failed to fetch devices." : "Failed to fetch routes_.";
+    return device_list ? "Failed to fetch devices." : "Failed to fetch routes.";
   }
   return {};
 }
@@ -264,7 +264,7 @@ void draw_remote_route_browser(const RemoteRouteBrowserActions &actions) {
     } else if (g_route_browser.route_state == FetchState::Error) {
       ImGui::TextDisabled("%s", g_route_browser.route_error.c_str());
     } else if (g_route_browser.routes_.empty()) {
-      ImGui::TextDisabled("No routes_");
+      ImGui::TextDisabled("No routes");
     } else {
       for (int i = 0; i < static_cast<int>(g_route_browser.routes_.size()); ++i) {
         const RouteBrowserEntry &route = g_route_browser.routes_[static_cast<size_t>(i)];

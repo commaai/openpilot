@@ -100,7 +100,7 @@ def main() -> int:
     env["time"] = reference_time
     env["value"] = series_v[linked_source]
 
-  for i, path in enumerate(additional_sources, start_=1):
+  for i, path in enumerate(additional_sources, start=1):
     if reference_time is None:
       env[f"t{i}"] = series_t[path]
       env[f"v{i}"] = series_v[path]

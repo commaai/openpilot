@@ -154,9 +154,9 @@ int main() {
   assert(periods[0].days == 7);
   assert(periods[4].days == -1);
   assert(loggy::route_browser_device_routes_url("5beb9b58bd12b691", 1700000000000ULL, 1700003600000ULL, false) ==
-         "https://api.commadotai.com/v1/devices/5beb9b58bd12b691/routes_segments?start_=1700000000000&end=1700003600000");
+         "https://api.commadotai.com/v1/devices/5beb9b58bd12b691/routes_segments?start=1700000000000&end=1700003600000");
   assert(loggy::route_browser_device_routes_url("5beb9b58bd12b691", 0, 0, true) ==
-         "https://api.commadotai.com/v1/devices/5beb9b58bd12b691/routes_/preserved");
+         "https://api.commadotai.com/v1/devices/5beb9b58bd12b691/routes/preserved");
   assert(loggy::route_browser_route_files_url("5beb9b58bd12b691/0000010a--a51155e496") ==
          "https://api.commadotai.com/v1/route/5beb9b58bd12b691/0000010a--a51155e496/files");
   assert(loggy::route_browser_route_label(1735689600.0, 1735706400.0) == "Wed Jan  1 00:00:00 2025    280min");

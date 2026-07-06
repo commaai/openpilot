@@ -88,7 +88,7 @@ TEST_CASE("live cereal accumulator emits store, timeline, and logs") {
   REQUIRE(append_built_event(&accumulator, [](cereal::Event::Builder event) {
     event.setLogMonoTime(10500000000ULL);
     cereal::SelfdriveState::Builder state = event.initSelfdriveState();
-    state.set_enabled(true);
+    state.setEnabled(true);
     state.setAlertStatus(cereal::SelfdriveState::AlertStatus::NORMAL);
     state.setAlertType("testAlert");
     state.setAlertText1("live alert");
@@ -139,7 +139,7 @@ TEST_CASE("remote ZMQ live poller receives bridge messages") {
   source.buffer_seconds = 5.0;
 
   loggy::LiveCerealPoller poller;
-  poller.start_(source);
+  poller.start(source);
   for (int i = 0; i < 100 && !poller.snapshot().connected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
