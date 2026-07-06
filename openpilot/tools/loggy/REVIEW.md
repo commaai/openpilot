@@ -137,6 +137,32 @@ selected styling in screenshots — verify by content change, not highlight.
 
 ---
 
+## 3b. Parity audit outcome (Phase 4, 2026-07-06)
+
+Seven-slice GUI audit vs both reference tools found 24 defects (5 blockers). Ledger:
+- **21 fixed and verified** across five fix batches + integrator work, notably: playhead-bound
+  Messages table with byte-change heatmap, sorting, and suppress toggles (the core cabana feel
+  was simply missing); camera seek-storm stale-frame guard + honest overlay time; Find Bits
+  statistics corrected (pairing walked the wrong timeline — totals could exceed the candidate's
+  own event count); DBC Save As ImGui ID collision; big-endian drag-resize (three compounding
+  bugs incl. a pre-existing hover-exclusivity failure affecting ALL leftward drags); dirty-edit
+  protection with per-signal pending state; undo scoped to a new `file_set_generation()`
+  (distinct from the mutation `generation()` caches key on); preset rebalances; series removal;
+  arrow-key stepping; Light-theme tokens for hand-drawn fills.
+- **Deferred (feature backlog):** timeline hover thumbnails + route-info bar (the one true
+  capability gap vs Qt cabana). Layout save pretty-printing (saves currently write a one-line
+  float-noise dump). Signal pane's fixed-height internal table should flex with the pane.
+- **Unreproducible, watching:** one transient "Failed to load route" modal over a loaded route
+  (no spontaneous-modal code path exists; suspected genuine transient segment failure).
+- **Perf note:** integrator killed three per-frame O(dataset) patterns the fixes introduced or
+  exposed (heatmap event copies → in-place store query; per-frame row rebuild → generation-keyed
+  skeletons; history page rebuild → input-keyed cache). Authoritative frame numbers pending the
+  quiet-box Phase-5 audit — all measurements during the fix wave were on a load-30+ box.
+- **Process:** `workspace_smoke` fails on fresh worktrees when the scons cache restores
+  `generated_dbcs/.stamp` without its side-effect files — fix the SConscript side-effect
+  declaration at ship. Agent GUI sessions must use `--settings` isolation (shared user settings
+  got polluted with test DBCs and a theme flip).
+
 ## 4. Ratchet — new baselines (lock in the wins)
 
 Update `tests/style_ratchet.sh` to these values in the same commit as this file; numbers only
