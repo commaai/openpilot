@@ -16,6 +16,22 @@ root, hand-merged where waves collided (binary.cc three-way: signal spans × rec
 GUI-verified under Xvfb in both themes. Ratchet current: LOC 21,669 · structs 85 · runtime.cc
 912 · color literals 0 — all with dated justifications in tests/style_ratchet.sh.
 
+**Red-team round 2 (2026-07-06, pre-owner-review).** 8-finder adversarial fan-out + root GUI
+pass: 29 raw findings, 23 survived per-finding refutation, all triaged at the root. Fixed in
+four commits (`6a2abf2db`…`b2454df9c`): History visible at the default preset, decode-lifecycle
+races (single-point abort consumption, UI-thread stall in set_camera_index, stale-fill floor,
+active-key preservation), timeline None barriers persisted across incremental re-merges, chart
+click-seek moved to release (zoom-drag no longer yanks the playhead), one zoom-history entry
+per gesture, browser uncapped via a skeleton cache (11k series browsable), camera recovery
+after workspace undo, Ctrl+Z/Ctrl+Shift+Z, table + plot-selection theme tokens, luminance-aware
+badge text, resize preserves min/max, History rebuild quantized to 4 Hz during playback,
+sparse-series sample-hold, autostart yields to user pause, cold basemap cache is a miss, and
+the mangled `start_` rename scrubbed from user-visible strings. Accepted deviations (documented,
+not fixed): binary heat is per-BYTE recency (Qt cabana is per-bit; per-bit needs a bit-level
+store query — owner call whether it's worth it), splitter clamp drift on over-drag (standard
+imgui behavior), and History's full-event-copy page rebuild is rate-limited rather than
+replaced with a bounded backend tail query (follow-up if it shows up on real rlogs).
+
 Remaining backlog, deliberately deferred, is §3b: timeline hover thumbnails + route-info bar,
 layout-save pretty-printing, plan decision #3 (DBC-decoded signals as plottable series paths —
 red-team #32), and a cosmetic rename of backend/csv.{h,cc} (it outgrew its name; it houses the
