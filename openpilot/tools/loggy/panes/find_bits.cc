@@ -214,7 +214,7 @@ void draw_find_bits_pane(Session &session, PaneInstance &pane) {
   }
 
   ImGui::SetNextItemWidth(92.0f);
-  changed |= input_text_string("Source", &state.source, 32);
+  changed |= input_text_with_hint("Source", "", &state.source);
   if (ImGui::GetContentRegionAvail().x > 112.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(64.0f);
   changed |= ImGui::InputInt("Byte", &state.byte_idx);

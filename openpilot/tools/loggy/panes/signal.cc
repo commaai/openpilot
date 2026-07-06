@@ -530,16 +530,16 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
   ImGui::BeginChild("##message_editor_body", ImVec2(0.0f, 148.0f), true);
 
   ImGui::SetNextItemWidth(180.0f);
-  if (input_text_string("Name##message", &edit.name, 96)) *changed = true;
+  if (input_text_with_hint("Name##message", "", &edit.name)) *changed = true;
   if (ImGui::GetContentRegionAvail().x > 108.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(78.0f);
   if (ImGui::InputInt("Bytes", &edit.size)) *changed = true;
   if (ImGui::GetContentRegionAvail().x > 156.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(136.0f);
-  if (input_text_string("Transmitter", &edit.transmitter, 96)) *changed = true;
+  if (input_text_with_hint("Transmitter", "", &edit.transmitter)) *changed = true;
 
   ImGui::SetNextItemWidth(std::clamp(ImGui::GetContentRegionAvail().x * 0.55f, 220.0f, 520.0f));
-  if (input_text_string("Comment##message", &edit.comment, 256)) *changed = true;
+  if (input_text_with_hint("Comment##message", "", &edit.comment)) *changed = true;
 
   const bool has_edit = message_edit_model_changed(edit, *msg);
   if (!has_edit) ImGui::BeginDisabled();
@@ -653,7 +653,7 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
   pop_bold_font();
 
   ImGui::SetNextItemWidth(180.0f);
-  if (input_text_string("Name", &edit.name, 96)) *changed = true;
+  if (input_text_with_hint("Name", "", &edit.name)) *changed = true;
   if (ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(86.0f);
   if (ImGui::InputInt("Start", &edit.start_bit)) *changed = true;
@@ -690,15 +690,15 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
   if (ImGui::InputDouble("Max", &edit.max, 0.0, 0.0, "%.9g")) *changed = true;
 
   ImGui::SetNextItemWidth(120.0f);
-  if (input_text_string("Unit", &edit.unit, 64)) *changed = true;
+  if (input_text_with_hint("Unit", "", &edit.unit)) *changed = true;
   if (ImGui::GetContentRegionAvail().x > 164.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(160.0f);
-  if (input_text_string("Receiver", &edit.receiver, 96)) *changed = true;
+  if (input_text_with_hint("Receiver", "", &edit.receiver)) *changed = true;
   ImGui::SetNextItemWidth(std::clamp(ImGui::GetContentRegionAvail().x * 0.55f, 220.0f, 520.0f));
-  if (input_text_string("Comment", &edit.comment, 256)) *changed = true;
+  if (input_text_with_hint("Comment", "", &edit.comment)) *changed = true;
 
   ImGui::SetNextItemWidth(std::clamp(ImGui::GetContentRegionAvail().x * 0.55f, 220.0f, 620.0f));
-  if (input_text_string("Value Table", &cache->val_desc_text, 1024)) {
+  if (input_text_with_hint("Value Table", "", &cache->val_desc_text)) {
     std::string parse_error;
     std::optional<ValueDescription> parsed = parse_signal_value_descriptions(cache->val_desc_text, parse_error);
     if (parsed.has_value()) {

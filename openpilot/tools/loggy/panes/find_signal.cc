@@ -357,10 +357,10 @@ void draw_find_signal_pane(Session &session, PaneInstance &pane) {
   changed |= ImGui::InputInt("Bus", &state.bus);
   if (ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(90.0f);
-  changed |= input_text_string("Addr", &state.address_hex, 32);
+  changed |= input_text_with_hint("Addr", "", &state.address_hex);
   if (ImGui::GetContentRegionAvail().x > 144.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(128.0f);
-  changed |= input_text_string("Name", &state.signal_name, 96);
+  changed |= input_text_with_hint("Name", "", &state.signal_name);
   if (ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(66.0f);
   changed |= ImGui::InputInt("Min", &state.min_size);

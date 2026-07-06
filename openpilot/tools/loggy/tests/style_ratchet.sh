@@ -51,12 +51,14 @@ check "getter pairs" \
 check "pane header fns" \
   "$(awk_count '/^[A-Za-z].*\(/ {n++} END {print n+0}' panes/*.h)" \
   14
+# 73->84 (2026-07-05): scan/history job+page types now cross the pane<->backend boundary;
+# the REVIEW 2.3 boundary rule outranks the raw count.
 check "named header structs" \
   "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
-  73
+  84
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21220
+  20605
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
   850
