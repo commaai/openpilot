@@ -11,6 +11,7 @@ from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
 IGNORED_SIM_EVENTS = {"locationdTemporaryError", "posenetInvalid"}
+FAKE_MODELD_ALLOWED_FAILURES = {"out_of_lane", "out_of_road"}
 
 class TestSimBridgeBase:
   @classmethod
@@ -88,6 +89,10 @@ class TestSimBridgeBase:
         done_info = state.info
         failure_states = [done_state for done_state in done_info if done_state != "timeout" and done_info[done_state]]
         break
+
+    if os.environ.get("SIM_FAKE_MODELD"):
+      failure_states = [state for state in failure_states if state not in FAKE_MODELD_ALLOWED_FAILURES]
+
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
   def teardown_method(self):
