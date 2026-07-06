@@ -230,12 +230,9 @@ void draw_message_row(const MessageTableRow &row, const MessageTableState &state
   ImGui::PushID(static_cast<int>(row.id.address));
 
   ImGui::TableSetColumnIndex(0);
+  // No AllowOverlap: with it, a wheel-scroll leaves a stale hover fill on whatever row lands
+  // under the cursor, which reads as a false selection.
   const bool selected = ImGui::Selectable(name.c_str(), selected_row, ImGuiSelectableFlags_SpanAllColumns);
-  // Force the row background from our own selection truth every frame: a wheel-scroll can leave
-  // Selectable()'s internal hover/selected fill stuck on a clipped row after the mouse moves away
-  // (its rect never redraws with hovered=false once scrolled outside the clipper's visible range
-  // mid-drag); redeclaring it here overrides any stale fill so only the real selection renders blue.
-  ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, selected_row ? ImGui::GetColorU32(ImGuiCol_Header) : 0);
   if (selected || ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
     activate_message_row(row, state, selection, pane);
   }

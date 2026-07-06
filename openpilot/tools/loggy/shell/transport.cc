@@ -178,28 +178,18 @@ void PlaybackClock::advance(double delta_seconds) {
     return;
   }
 
-  const TimeRange playback_range = route_range_;
-  if (playback_range.span() <= 0.0) {
-    tracker_time_ = playback_range.start_;
-    return;
-  }
-
   double base_time = tracker_time_;
-  if (loop_) {
-    base_time = std::clamp(base_time, playback_range.start_, playback_range.end);
-    if (base_time >= playback_range.end) base_time = playback_range.start_;
-  }
+  if (loop_ && base_time >= route_range_.end) base_time = route_range_.start_;
 
   double next_time = base_time + delta_seconds * rate_;
-  if (loop_) {
-    if (next_time >= playback_range.end) {
-      next_time = playback_range.start_;
+  if (next_time >= route_range_.end) {
+    if (loop_) {
+      next_time = route_range_.start_;
+    } else {
+      next_time = route_range_.end;
+      playing_ = false;
     }
-  } else if (next_time >= route_range_.end) {
-    next_time = route_range_.end;
-    playing_ = false;
   }
-
   tracker_time_ = clamp_time_to_range(next_time, route_range_);
 }
 

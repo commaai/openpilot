@@ -10,9 +10,9 @@ namespace loggy {
 
 struct SettingsUiState {
   bool open_popup = false;
-  std::string opendbc_root_buffer;
-  std::string dbc_override_buffer;
-  std::string map_cache_root_buffer;
+  std::string opendbc_root_text;
+  std::string dbc_override_text;
+  std::string map_cache_root_text;
   int target_fps = kDefaultLoggyTargetFps;
   int theme_index = 0;
   bool show_frame_hud = true;

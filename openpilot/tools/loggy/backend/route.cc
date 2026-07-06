@@ -703,8 +703,7 @@ struct SegmentLoadResult {
   std::string car_fingerprint;
 };
 
-SegmentLoadResult load_route_segment(const SegmentWorkItem &work, SegmentExtractOptions extract,
-                                   bool local_cache, std::atomic<bool> *abort = nullptr) {
+SegmentLoadResult load_route_segment(const SegmentWorkItem &work, bool local_cache, std::atomic<bool> *abort) {
   if (work.log_path.empty()) {
     throw std::runtime_error("Missing log path for segment " + std::to_string(work.segment));
   }
@@ -715,6 +714,7 @@ SegmentLoadResult load_route_segment(const SegmentWorkItem &work, SegmentExtract
     throw std::runtime_error("Failed to load log segment: " + work.log_path);
   }
 
+  SegmentExtractOptions extract;
   extract.segment = work.segment;
   extract.coverage = work.range;
   if (!extract.time_offset.has_value() && !reader.events.empty()) {
@@ -827,10 +827,7 @@ void RouteIngestor::run(RouteIngestConfig config) {
         std::optional<SegmentWorkItem> work = scheduler_->take_next();
         if (!work.has_value()) return;
         try {
-          SegmentExtractOptions extract;
-          extract.segment = work->segment;
-          extract.coverage = work->range;
-          SegmentLoadResult loaded = load_route_segment(*work, extract, config.local_cache, &abort_);
+          SegmentLoadResult loaded = load_route_segment(*work, config.local_cache, &abort_);
           if (abort_) {
             scheduler_->mark_pending(work->segment);
             return;

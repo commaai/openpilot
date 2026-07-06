@@ -33,9 +33,9 @@ int theme_kind_to_index(LoggyThemeKind theme) {
 void sync_settings_popup_fields(const Session &session, int target_fps, SettingsUiState *state) {
   if (state == nullptr) return;
   const LoggySettings &settings = session.settings;
-  state->opendbc_root_buffer = settings.opendbc_root;
-  state->dbc_override_buffer = settings.dbc_override;
-  state->map_cache_root_buffer = settings.map_cache_root;
+  state->opendbc_root_text = settings.opendbc_root;
+  state->dbc_override_text = settings.dbc_override;
+  state->map_cache_root_text = settings.map_cache_root;
   state->target_fps = std::clamp(target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
   state->theme_index = theme_kind_to_index(loggy_theme_from_name(settings.theme));
   state->show_frame_hud = settings.show_frame_hud;
@@ -53,9 +53,9 @@ bool apply_settings_popup(Session &session, bool options_show_frame_hud, LoggyTh
   LoggySettings &settings = session.settings;
   const LoggySettings previous_settings = settings;
 
-  const std::string opendbc_root = state.opendbc_root_buffer;
-  const std::string dbc_override = state.dbc_override_buffer;
-  const std::string map_cache_root = state.map_cache_root_buffer;
+  const std::string opendbc_root = state.opendbc_root_text;
+  const std::string dbc_override = state.dbc_override_text;
+  const std::string map_cache_root = state.map_cache_root_text;
   state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kLoggyThemeOptions.size()) - 1);
   const LoggyThemeKind next_theme = kLoggyThemeOptions[static_cast<size_t>(state.theme_index)];
   const std::string next_theme_name = loggy_theme_name(next_theme);
@@ -130,10 +130,10 @@ void draw_settings_popup(Session &session, bool close_requested, bool options_sh
 
   ImGui::TextUnformatted("opendbc root");
   ImGui::SetNextItemWidth(-1.0f);
-  input_text_with_hint("##settings_opendbc_root", "opendbc_repo/opendbc/dbc", &state.opendbc_root_buffer);
+  input_text_with_hint("##settings_opendbc_root", "opendbc_repo/opendbc/dbc", &state.opendbc_root_text);
   ImGui::TextUnformatted("DBC override");
   ImGui::SetNextItemWidth(-1.0f);
-  input_text_with_hint("##settings_dbc_override", "dbc name or /path/to.dbc", &state.dbc_override_buffer);
+  input_text_with_hint("##settings_dbc_override", "dbc name or /path/to.dbc", &state.dbc_override_text);
   ImGui::Spacing();
   ImGui::SeparatorText("App");
   state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kLoggyThemeOptions.size()) - 1);
@@ -157,12 +157,12 @@ void draw_settings_popup(Session &session, bool close_requested, bool options_sh
   ImGui::Checkbox("Natural map drag", &state.natural_map_drag);
   ImGui::TextUnformatted("Map cache root");
   ImGui::SetNextItemWidth(-110.0f);
-  input_text_with_hint("##settings_map_cache_root", "(default)", &state.map_cache_root_buffer);
+  input_text_with_hint("##settings_map_cache_root", "(default)", &state.map_cache_root_text);
   ImGui::SameLine();
   if (ImGui::Button("Default", ImVec2(96.0f, 0.0f))) {
-    state.map_cache_root_buffer.clear();
+    state.map_cache_root_text.clear();
   }
-  const fs::path effective_cache_root = map_basemap_effective_cache_root(state.map_cache_root_buffer);
+  const fs::path effective_cache_root = map_basemap_effective_cache_root(state.map_cache_root_text);
   ImGui::TextDisabled("Effective: %s", effective_cache_root.string().c_str());
 
   ImGui::Spacing();
@@ -175,7 +175,7 @@ void draw_settings_popup(Session &session, bool close_requested, bool options_sh
   }
   ImGui::SameLine();
   if (ImGui::Button("Clear Override", ImVec2(124.0f, 0.0f))) {
-    state.dbc_override_buffer.clear();
+    state.dbc_override_text.clear();
     apply_settings_popup(session, options_show_frame_hud, theme_kind, target_fps, show_frame_hud, state);
   }
   ImGui::SameLine();

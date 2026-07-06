@@ -208,12 +208,13 @@ struct FrameStats {
 
   double p99_ms() const {
     if (count == 0) return 0.0;
-    std::array<double, kCapacity> values{};
+    std::array<double, kCapacity> values;
     for (size_t i = 0; i < count; ++i) {
       values[i] = samples[(head + kCapacity - count + i) % kCapacity].ms;
     }
-    std::sort(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(count));
     const size_t idx = std::min(count - 1, static_cast<size_t>(count * 0.99));
+    std::nth_element(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(idx),
+                     values.begin() + static_cast<std::ptrdiff_t>(count));
     return values[idx];
   }
 };
@@ -815,6 +816,8 @@ int run(const Options &options) {
     while (!glfwWindowShouldClose(glfw_runtime.window()) && !shutdown_requested()) {
       render_frame(glfw_runtime.window(), app, nullptr);
     }
+    // Say why we exited: a silent 0 on a stray SIGTERM is indistinguishable from a crash.
+    if (shutdown_requested()) std::cerr << "loggy: exiting on signal " << g_shutdown_signal << "\n";
     return 0;
   } catch (const std::exception &err) {
     std::cerr << "loggy: " << err.what() << "\n";
