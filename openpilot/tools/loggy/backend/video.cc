@@ -285,7 +285,9 @@ public:
         return;
       }
 
+      // Bump the serial even on a cache hit so publishResult can't land a stale decode on top.
       if (std::optional<DecodedCameraFrame> cached = cachedFrameLocked(key)) {
+        ++latest_serial_;
         pending_result_ = std::move(cached);
         active_key_.reset();
         failed_key_.reset();
@@ -387,7 +389,9 @@ private:
   void cacheFrame(const DecodeRequest &request, const DecodedCameraFrame &frame) {
     if (!frame.ok) return;
     std::lock_guard lock(mutex_);
-    if (request.generation != generation_ || request.serial != latest_serial_) return;
+    // Generation (not serial) gates caching: a decoded frame is valid LRU content even after its
+    // target's serial is stale, which is what keeps lookahead prefetch durable across seeks.
+    if (request.generation != generation_) return;
     cache_.erase(std::remove_if(cache_.begin(), cache_.end(), [&](const DecodedCameraFrame &cached) {
       return cached.key == frame.key;
     }), cache_.end());
@@ -433,6 +437,7 @@ private:
   void publishResult(const DecodeRequest &request, DecodedCameraFrame result) {
     if (!request.display) return;
     std::lock_guard lock(mutex_);
+    // Generation guard: publish only if this decode is still for the current target.
     if (request.serial != latest_serial_ || request.generation != generation_) {
       return;
     }

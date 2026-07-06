@@ -28,7 +28,7 @@ struct CameraPaneSnapshot {
   size_t frame_count = 0;
   TimelineSpanKind overlay_kind = TimelineSpanKind::None;
   bool has_frame = false;
-  CameraFrameIndexEntry frame;
+  bool ingest_failed = false;
 };
 
 struct CameraRouteInfoLines {
@@ -37,15 +37,26 @@ struct CameraRouteInfoLines {
   std::string line3;
 };
 
+struct CameraTextureState {
+  GLuint texture = 0;
+  int width = 0;
+  int height = 0;
+  bool live = false;
+  std::optional<CameraDecodeKey> key;
+  // Frame actually on the GPU, not the seek target (REVIEW defect B).
+  uint32_t frame_id = 0;
+  double timestamp = 0.0;
+  std::string error;
+};
+
 CameraPaneState parse_camera_pane_state(std::string_view state_json);
 std::string camera_pane_state_json(const CameraPaneState &state);
 CameraPaneSnapshot prepare_camera_pane_snapshot(const Session &session, const CameraPaneState &state);
 CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &snapshot,
                                                    const CameraDecodeStatus &decode_status,
                                                    const LiveCameraFrameStatus *live_status,
+                                                   const CameraTextureState &texture,
                                                    bool has_texture,
-                                                   int texture_width,
-                                                   int texture_height,
                                                    float text_area_width);
 
 std::string trim_overlay_text(const std::string &text, float max_width) {
@@ -67,15 +78,6 @@ CameraViewKind camera_from_combo_index(int index) {
   if (index < 0 || index >= static_cast<int>(specs.size())) return CameraViewKind::Road;
   return specs[static_cast<size_t>(index)].view;
 }
-
-struct CameraTextureState {
-  GLuint texture = 0;
-  int width = 0;
-  int height = 0;
-  bool live = false;
-  std::optional<CameraDecodeKey> key;
-  std::string error;
-};
 
 struct CameraPaneTransientState {
   CameraPaneState state;
@@ -138,6 +140,8 @@ void upload_camera_frame(CameraTextureState *texture, DecodedCameraFrame frame, 
   texture->width = frame.width;
   texture->height = frame.height;
   texture->key = frame.key;
+  texture->frame_id = frame.frame_id;
+  texture->timestamp = frame.timestamp;
   texture->error.clear();
 }
 
@@ -207,7 +211,7 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
   const float info_width = std::max(0.0f, std::min(video_max.x - video_min.x - 22.0f,
                                                   (video_max.x - video_min.x) * 0.62f));
   const CameraRouteInfoLines info = build_camera_route_info_lines(
-    snapshot, decode_status, live_status, has_texture, texture.width, texture.height, info_width);
+    snapshot, decode_status, live_status, texture, has_texture, info_width);
 
   const ImU32 text = ImGui::GetColorU32(ImGuiCol_Text);
   const ImU32 muted = ImGui::GetColorU32(ImGuiCol_TextDisabled);
@@ -245,9 +249,8 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
 CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &snapshot,
                                                   const CameraDecodeStatus &decode_status,
                                                   const LiveCameraFrameStatus *live_status,
+                                                  const CameraTextureState &texture,
                                                   bool has_texture,
-                                                  int texture_width,
-                                                  int texture_height,
                                                   float text_area_width) {
   const CameraViewSpec &spec = camera_view_spec(snapshot.view);
   CameraRouteInfoLines lines;
@@ -275,8 +278,8 @@ CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &sna
 
     if (!live_status->supported || !live_status->error.empty()) {
       lines.line3 = trim_overlay_text(live_status->error, info_width);
-    } else if (has_texture && texture_width > 0 && texture_height > 0) {
-      std::snprintf(buffer, sizeof(buffer), "live %dx%d", texture_width, texture_height);
+    } else if (has_texture && texture.width > 0 && texture.height > 0) {
+      std::snprintf(buffer, sizeof(buffer), "live %dx%d", texture.width, texture.height);
       lines.line3 = trim_overlay_text(buffer, info_width);
     } else if (!live_status->connected) {
       lines.line3 = "route video unavailable";
@@ -288,10 +291,15 @@ CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &sna
     return lines;
   }
 
-  if (snapshot.has_frame) {
-    std::snprintf(buffer, sizeof(buffer), "%s  seg %d  frame %u  t %.2f",
-                  spec.label, snapshot.frame.segment, snapshot.frame.frame_id,
-                  snapshot.frame.timestamp);
+  // seg/frame/t always come from the displayed texture, never the seek target (REVIEW defect B).
+  const bool have_frame_info = has_texture && texture.key.has_value();
+  if (have_frame_info || snapshot.has_frame) {
+    if (have_frame_info) {
+      std::snprintf(buffer, sizeof(buffer), "%s  seg %d  frame %u  t %.2f",
+                    spec.label, texture.key->segment, texture.frame_id, texture.timestamp);
+    } else {
+      std::snprintf(buffer, sizeof(buffer), "%s  loading...", spec.label);
+    }
     lines.line1 = trim_overlay_text(buffer, info_width);
     std::snprintf(buffer, sizeof(buffer), "%zu files  %zu frames",
                   snapshot.segment_file_count, snapshot.frame_count);
@@ -313,12 +321,12 @@ CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &sna
                   decode_status.cached_frames, decode_status.queued_frames);
   } else if (!decode_status.error.empty()) {
     std::snprintf(buffer, sizeof(buffer), "%s", decode_status.error.c_str());
+  } else if (have_frame_info) {
+    std::snprintf(buffer, sizeof(buffer), "decoded %dx%d", texture.width, texture.height);
   } else if (has_texture) {
-    if (snapshot.has_frame) {
-      std::snprintf(buffer, sizeof(buffer), "decoded %dx%d", texture_width, texture_height);
-    } else {
-      std::snprintf(buffer, sizeof(buffer), "cache %zu", decode_status.cached_frames);
-    }
+    std::snprintf(buffer, sizeof(buffer), "cache %zu", decode_status.cached_frames);
+  } else if (snapshot.ingest_failed) {
+    std::snprintf(buffer, sizeof(buffer), "no camera data");  // terminal (REVIEW defect C)
   } else {
     std::snprintf(buffer, sizeof(buffer), "waiting for frame index");
   }
@@ -353,11 +361,8 @@ CameraPaneSnapshot prepare_camera_pane_snapshot(const Session &session, const Ca
   const CameraFeedIndex &index = session.camera_index(state.view);
   snapshot.segment_file_count = index.segment_files.size();
   snapshot.frame_count = index.entries.size();
-  const std::optional<CameraFrameIndexEntry> frame = camera_frame_at_time(index, session.playback.tracker_time());
-  if (frame.has_value()) {
-    snapshot.has_frame = true;
-    snapshot.frame = *frame;
-  }
+  snapshot.has_frame = camera_frame_at_time(index, session.playback.tracker_time()).has_value();
+  snapshot.ingest_failed = session.ingest_status().state == RouteIngestState::Failed;
   return snapshot;
 }
 
