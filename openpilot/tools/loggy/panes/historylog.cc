@@ -94,6 +94,12 @@ struct HistoryLogPaneTransientState {
   std::string state_json;
   HistoryLogState state;
   MessageId active_id = kDefaultLoggyMessageId;
+  // Building a page copies every event in range (24k+ on an rlog message); cache it and rebuild
+  // only when the inputs actually change, not per frame.
+  HistoryLogPage page;
+  std::string page_key;
+  uint64_t page_store_gen = UINT64_MAX;
+  uint64_t page_dbc_gen = UINT64_MAX;
 };
 
 constexpr std::array<const char *, 6> kHistoryCompareOps = {">", "=", "!=", "<", ">=", "<="};
@@ -273,7 +279,24 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   if (filter_changed) state.page_index = 0;
 
   const TimeRange range = session.view_range.range();
-  HistoryLogPage page = prepare_history_log_page(session.store, id, range, state, msg);
+  const auto page_cache_key = [&]() {
+    char buf[192];
+    std::snprintf(buf, sizeof(buf), "%s|%.6f|%.6f|%zu|%zu|%d|%.9g|%s|%s|%s", id.to_string().c_str(),
+                  range.start_, range.end, state.page_size, state.page_index, state.compare_enabled ? 1 : 0,
+                  state.compare_value, state.compare_signal.c_str(), state.compare_op.c_str(), state.filter.c_str());
+    return std::string(buf);
+  };
+  const auto refresh_page = [&]() {
+    transient.page = prepare_history_log_page(session.store, id, range, state, msg);
+    transient.page_key = page_cache_key();
+    transient.page_store_gen = session.store.generation();
+    transient.page_dbc_gen = session.dbc.generation();
+  };
+  if (transient.page_key != page_cache_key() || transient.page_store_gen != session.store.generation() ||
+      transient.page_dbc_gen != session.dbc.generation()) {
+    refresh_page();
+  }
+  HistoryLogPage &page = transient.page;
   if (page.page_index != state.page_index) {
     state.page_index = page.page_index;
     changed = true;
@@ -322,7 +345,7 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
     state.page_size = static_cast<size_t>(std::clamp(page_size, 1, 5000));
     state.page_index = 0;
     changed = true;
-    page = prepare_history_log_page(session.store, id, range, state, msg);
+    refresh_page();
   }
   if (ImGui::GetContentRegionAvail().x > 188.0f) ImGui::SameLine();
   const bool can_prev = page.page_index > 0;
@@ -331,7 +354,7 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   if (ImGui::Button("<")) {
     --state.page_index;
     changed = true;
-    page = prepare_history_log_page(session.store, id, range, state, msg);
+    refresh_page();
   }
   ImGui::EndDisabled();
   ImGui::SameLine();
@@ -341,7 +364,7 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   if (ImGui::Button(">")) {
     ++state.page_index;
     changed = true;
-    page = prepare_history_log_page(session.store, id, range, state, msg);
+    refresh_page();
   }
   ImGui::EndDisabled();
 

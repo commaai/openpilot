@@ -75,7 +75,7 @@ MessageId parse_message_id_state(std::string_view state_json,
                                 MessageId fallback = kDefaultLoggyMessageId);
 MessageId initial_message_id_for_store(const Store &store, std::string_view state_json,
                                       std::optional<MessageId> selection = std::nullopt);
-MessageSummary summarize_message_events(const Store &store, const MessageId &id, TimeRange range);
+MessageSummary summarize_message_events(const Store &store, const MessageId &id, TimeRange range, bool with_data = true);
 std::optional<BinaryGrid> build_binary_grid(const Store &store, const MessageId &id, TimeRange range);
 bool history_valid_compare_op(std::string_view op);
 HistoryLogPage prepare_history_log_page(const Store &store, const MessageId &id, TimeRange range,

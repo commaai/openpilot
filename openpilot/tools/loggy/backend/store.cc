@@ -381,7 +381,7 @@ CanEventView Store::can_events(const MessageId &id, TimeRange range) const {
   return view;
 }
 
-CanSummaryView Store::can_event_summary(const MessageId &id, TimeRange range) const {
+CanSummaryView Store::can_event_summary(const MessageId &id, TimeRange range, bool with_data) const {
   CanSummaryView view;
   view.id = id;
   view.requested = orderedRange(range.start_, range.end);
@@ -400,10 +400,38 @@ CanSummaryView Store::can_event_summary(const MessageId &id, TimeRange range) co
     view.first_time = first->mono_time;
     const auto latest = std::prev(last);
     view.last_time = latest->mono_time;
-    view.latest_data = latest->data;
+    if (with_data) view.latest_data = latest->data;
   }
   view.coverage = coverageFor(view.requested, it->second.coverage);
   return view;
+}
+
+std::vector<double> Store::byte_change_times(const MessageId &id, TimeRange range, size_t byte_count) const {
+  std::vector<double> last_change(byte_count, -std::numeric_limits<double>::infinity());
+  const auto it = can_events_.find(id);
+  if (it == can_events_.end() || byte_count == 0) return last_change;
+
+  const TimeRange wanted = orderedRange(range.start_, range.end);
+  const auto &events = it->second.events;
+  auto first = std::lower_bound(events.begin(), events.end(), wanted.start_,
+                                [](const CanEvent &event, double t) { return event.mono_time < t; });
+  auto last = std::upper_bound(first, events.end(), wanted.end,
+                               [](double t, const CanEvent &event) { return t < event.mono_time; });
+  size_t resolved = 0;
+  for (auto e = last; e != first && resolved < byte_count;) {
+    --e;
+    if (e == first) break;
+    const std::vector<uint8_t> &cur = e->data;
+    const std::vector<uint8_t> &prev = std::prev(e)->data;
+    const size_t n = std::min({cur.size(), prev.size(), byte_count});
+    for (size_t b = 0; b < n; ++b) {
+      if (!std::isfinite(last_change[b]) && cur[b] != prev[b]) {
+        last_change[b] = e->mono_time;
+        ++resolved;
+      }
+    }
+  }
+  return last_change;
 }
 
 size_t Store::staged_batch_count() const {

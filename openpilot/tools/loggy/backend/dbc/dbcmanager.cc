@@ -12,6 +12,7 @@
 namespace loggy {
 
 bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name, std::string &error) {
+  ++generation_;
   try {
     auto it = std::find_if(dbc_files.begin(), dbc_files.end(),
                            [&](auto &f) { return f.second && f.second->filename == dbc_file_name; });
@@ -28,6 +29,7 @@ bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name
 }
 
 bool DBCManager::open(const SourceSet &sources, const std::string &name, const std::string &content, std::string &error) {
+  ++generation_;
   try {
     auto file = std::make_shared<DBCFile>(name, content);
     for (auto s : sources) {
@@ -42,6 +44,7 @@ bool DBCManager::open(const SourceSet &sources, const std::string &name, const s
 }
 
 bool DBCManager::assign_sources(DBCFile *dbc_file, const SourceSet &sources, std::string &error) {
+  ++generation_;
   if (dbc_file == nullptr) {
     error = "no DBC file selected";
     return false;
@@ -78,12 +81,14 @@ bool DBCManager::assign_sources(DBCFile *dbc_file, const SourceSet &sources, std
 }
 
 void DBCManager::close(const SourceSet &sources) {
+  ++generation_;
   for (auto s : sources) {
     dbc_files.erase(s);
   }
 }
 
 void DBCManager::close(DBCFile *dbc_file) {
+  ++generation_;
   for (auto it = dbc_files.begin(); it != dbc_files.end();) {
     if (it->second.get() == dbc_file) {
       it = dbc_files.erase(it);
@@ -94,34 +99,40 @@ void DBCManager::close(DBCFile *dbc_file) {
 }
 
 void DBCManager::close_all() {
+  ++generation_;
   dbc_files.clear();
 }
 
 void DBCManager::add_signal(const MessageId &id, const Signal &sig) {
+  ++generation_;
   if (auto m = msg(id)) {
     m->add_signal(sig);
   }
 }
 
 void DBCManager::update_signal(const MessageId &id, const std::string &sig_name, const Signal &sig) {
+  ++generation_;
   if (auto m = msg(id)) {
     m->update_signal(sig_name, sig);
   }
 }
 
 void DBCManager::remove_signal(const MessageId &id, const std::string &sig_name) {
+  ++generation_;
   if (auto m = msg(id)) {
     m->remove_signal(sig_name);
   }
 }
 
 void DBCManager::update_msg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment) {
+  ++generation_;
   auto dbc_file = find_dbc_file(id);
   assert(dbc_file);  // This should be impossible
   dbc_file->update_msg(id, name, size, node, comment);
 }
 
 void DBCManager::remove_msg(const MessageId &id) {
+  ++generation_;
   auto dbc_file = find_dbc_file(id);
   assert(dbc_file);  // This should be impossible
   dbc_file->remove_msg(id);

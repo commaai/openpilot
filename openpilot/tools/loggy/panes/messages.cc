@@ -106,13 +106,12 @@ bool message_metadata_matches_filter(std::string_view text, std::string_view fil
   return lower_message_text(text).find(lower_message_text(filter)) != std::string::npos;
 }
 
-std::vector<MessageTableRow> prepare_message_table_rows(DBCManager &manager,
-                                                       const Store &store,
-                                                       TimeRange range,
-                                                       const MessageTableState &state) {
+std::vector<MessageTableRow> prepare_message_table_skeletons(DBCManager &manager,
+                                                            const Store &store,
+                                                            const MessageTableState &state) {
   const std::vector<MessageId> ids = store.can_message_ids();
   std::vector<MessageTableRow> rows;
-  rows.reserve(std::min(ids.size(), state.max_rows));
+  rows.reserve(ids.size());
   for (const MessageId &id : ids) {
     if (state.bus_filter >= 0 && id.source != static_cast<uint8_t>(state.bus_filter)) continue;
     if (!message_id_matches_filter(id, state.filter)) continue;
@@ -123,13 +122,10 @@ std::vector<MessageTableRow> prepare_message_table_rows(DBCManager &manager,
     if (!message_metadata_matches_filter(node, state.node_filter)) continue;
     MessageTableRow row;
     row.id = id;
-    row.summary = summarize_message_events(store, id, range);
     row.name = name;
     row.node = node;
     row.msg = msg;
-    if (!state.show_inactive && row.summary.count == 0) continue;
     rows.push_back(row);
-    if (rows.size() >= state.max_rows) break;
   }
   return rows;
 }
@@ -138,31 +134,14 @@ struct MessagesPaneTransientState {
   std::string state_json;
   MessageTableState state;
   MessageId active_id = kDefaultLoggyMessageId;
+  // Row skeletons (id/name/node/msg) survive across frames; rebuilt only when the store gains
+  // ids, the DBC mutates, or the filters change. Summaries refresh per frame (binary search).
+  std::vector<MessageTableRow> skeletons;
+  uint64_t store_gen = UINT64_MAX;
+  uint64_t dbc_gen = UINT64_MAX;
+  std::string skel_key;
 };
 
-// For each byte (bounded to byte_count), the tracker time of its most recent value change at or
-// before `tracker`, or -inf if no change was observed within the fade window. Only ever called
-// for visible rows (see draw_message_row), so this is a bounded store query, not a route scan.
-std::vector<double> recent_byte_change_times(const Store &store, const MessageId &id,
-                                            double tracker, size_t byte_count) {
-  std::vector<double> last_change(byte_count, -std::numeric_limits<double>::infinity());
-  if (byte_count == 0) return last_change;
-  const CanEventView view = store.can_events(id, TimeRange{tracker - kByteChangeFadeSeconds, tracker});
-  size_t resolved = 0;
-  for (size_t i = view.events.size(); i-- > 1 && resolved < byte_count;) {
-    const std::vector<uint8_t> &cur = view.events[i].data;
-    const std::vector<uint8_t> &prev = view.events[i - 1].data;
-    const size_t n = std::min({cur.size(), prev.size(), byte_count});
-    for (size_t b = 0; b < n; ++b) {
-      if (std::isfinite(last_change[b])) continue;
-      if (cur[b] != prev[b]) {
-        last_change[b] = view.events[i].mono_time;
-        ++resolved;
-      }
-    }
-  }
-  return last_change;
-}
 
 float byte_change_alpha(double last_change, double tracker) {
   if (!std::isfinite(last_change)) return 0.0f;
@@ -285,17 +264,24 @@ int message_row_compare(const MessageTableRow &a, const MessageTableRow &b, int 
   }
 }
 
-void sort_message_table_rows(std::vector<MessageTableRow> *rows, const ImGuiTableSortSpecs &specs) {
+void sort_message_table_rows(std::vector<MessageTableRow *> *rows, const ImGuiTableSortSpecs &specs) {
   if (specs.SpecsCount == 0) return;
   const ImGuiTableColumnSortSpecs &spec = specs.Specs[0];
-  std::stable_sort(rows->begin(), rows->end(), [&](const MessageTableRow &a, const MessageTableRow &b) {
+  std::stable_sort(rows->begin(), rows->end(), [&](const MessageTableRow *pa, const MessageTableRow *pb) {
+    const MessageTableRow &a = *pa;
+    const MessageTableRow &b = *pb;
     const int cmp = message_row_compare(a, b, spec.ColumnIndex);
     return spec.SortDirection == ImGuiSortDirection_Descending ? cmp > 0 : cmp < 0;
   });
 }
 
-void draw_message_row(const Store &store, const MessageTableRow &row, const MessageTableState &state,
-                      SelectionContext *selection, PaneInstance *pane, double tracker_time) {
+void draw_message_row(const Store &store, MessageTableRow &row, const MessageTableState &state,
+                      SelectionContext *selection, PaneInstance *pane, TimeRange summary_range) {
+  const double tracker_time = summary_range.end;
+  // The count-only pass skipped payload bytes; fetch them here, for visible rows only.
+  if (row.summary.count > 0 && row.summary.latest_data.empty()) {
+    row.summary.latest_data = store.can_event_summary(row.id, summary_range).latest_data;
+  }
   const MessageSummary &summary = row.summary;
   const bool selected_row = selection->has_selected_msg && selection->selected_msg_id == row.id;
   const std::string name = row.name.empty() ? ("CAN " + row.id.to_string()) : row.name;
@@ -339,7 +325,7 @@ void draw_message_row(const Store &store, const MessageTableRow &row, const Mess
     std::vector<float> alphas;
     if (!state.suppress_highlighted) {
       const std::vector<double> last_change =
-          recent_byte_change_times(store, row.id, tracker_time, summary.latest_data.size());
+          store.byte_change_times(row.id, TimeRange{tracker_time - kByteChangeFadeSeconds, tracker_time}, summary.latest_data.size());
       alphas.resize(last_change.size());
       for (size_t b = 0; b < last_change.size(); ++b) {
         alphas[b] = (state.suppress_signals && byte_covered_by_signal(row.msg, b))
@@ -407,15 +393,35 @@ void draw_messages_pane(Session &session, PaneInstance &pane) {
   }
   if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mute the byte-change tint on bytes covered by loaded DBC signals");
 
-  // Playhead-bound: Bytes/Count reflect events up to the tracker, like cabana, not the full route.
-  const TimeRange summary_range{session.playback.route_range().start_, session.playback.tracker_time()};
-  std::vector<MessageTableRow> rows = prepare_message_table_rows(session.dbc, session.store, summary_range, state);
+  const std::string skel_key = state.filter + '\x1f' + state.name_filter + '\x1f'
+                             + state.node_filter + '\x1f' + std::to_string(state.bus_filter);
+  if (transient.store_gen != session.store.generation() || transient.dbc_gen != session.dbc.generation() ||
+      transient.skel_key != skel_key) {
+    transient.skeletons = prepare_message_table_skeletons(session.dbc, session.store, state);
+    transient.store_gen = session.store.generation();
+    transient.dbc_gen = session.dbc.generation();
+    transient.skel_key = skel_key;
+  }
 
-  const auto active_row = std::find_if(rows.begin(), rows.end(), [&](const MessageTableRow &row) {
-    return row.id == active_id;
+  // Playhead-bound: Bytes/Count reflect events up to the tracker, like cabana, not the full route.
+  // Payload bytes are fetched only for visible rows (draw_message_row); this pass is count-only.
+  const TimeRange summary_range{session.playback.route_range().start_, session.playback.tracker_time()};
+  for (MessageTableRow &row : transient.skeletons) {
+    row.summary = summarize_message_events(session.store, row.id, summary_range, false);
+  }
+  std::vector<MessageTableRow *> rows;
+  rows.reserve(transient.skeletons.size());
+  for (MessageTableRow &row : transient.skeletons) {
+    if (!state.show_inactive && row.summary.count == 0) continue;
+    rows.push_back(&row);
+    if (rows.size() >= state.max_rows) break;
+  }
+
+  const auto active_row = std::find_if(rows.begin(), rows.end(), [&](const MessageTableRow *row) {
+    return row->id == active_id;
   });
   if (!rows.empty() && (!selection.has_selected_msg || active_row == rows.end())) {
-    active_id = rows.front().id;
+    active_id = rows.front()->id;
     selection.selected_msg_id = active_id;
     selection.has_selected_msg = true;
     pane.state_json = message_table_state_json(active_id, state);
@@ -441,9 +447,9 @@ void draw_messages_pane(Session &session, PaneInstance &pane) {
     return;
   }
 
-  size_t max_bytes = 0;
-  for (const MessageTableRow &row : rows) {
-    max_bytes = std::max(max_bytes, row.summary.latest_data.size());
+  size_t max_bytes = 8;
+  for (const MessageTableRow *row : rows) {
+    if (row->msg != nullptr) max_bytes = std::max(max_bytes, static_cast<size_t>(row->msg->size));
   }
   if (!ImGui::BeginTable("##loggy_messages", 7, flags, ImGui::GetContentRegionAvail())) return;
   ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort, 126.0f);
@@ -463,12 +469,11 @@ void draw_messages_pane(Session &session, PaneInstance &pane) {
     sort_specs->SpecsDirty = false;
   }
 
-  const double tracker_time = session.playback.tracker_time();
   ImGuiListClipper clipper;
   clipper.Begin(static_cast<int>(rows.size()), std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
   while (clipper.Step()) {
     for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
-      draw_message_row(session.store, rows[static_cast<size_t>(row_idx)], state, &selection, &pane, tracker_time);
+      draw_message_row(session.store, *rows[static_cast<size_t>(row_idx)], state, &selection, &pane, summary_range);
     }
   }
   ImGui::EndTable();

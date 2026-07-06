@@ -234,10 +234,10 @@ MessageId initial_message_id_for_store(const Store &store, std::string_view stat
   return parse_message_id_state(state_json, std::nullopt, fallback);
 }
 
-MessageSummary summarize_message_events(const Store &store, const MessageId &id, TimeRange range) {
+MessageSummary summarize_message_events(const Store &store, const MessageId &id, TimeRange range, bool with_data) {
   MessageSummary summary;
   summary.id = id;
-  const CanSummaryView view = store.can_event_summary(id, range);
+  const CanSummaryView view = store.can_event_summary(id, range, with_data);
   summary.coverage = view.coverage;
   summary.count = view.count;
   if (view.count == 0) return summary;

@@ -117,7 +117,10 @@ public:
   SeriesView series(std::string_view path, double t0, double t1, size_t max_points) const;
   SeriesView series_full(std::string_view path, TimeRange range) const;
   CanEventView can_events(const MessageId &id, TimeRange range) const;
-  CanSummaryView can_event_summary(const MessageId &id, TimeRange range) const;
+  CanSummaryView can_event_summary(const MessageId &id, TimeRange range, bool with_data = true) const;
+  // Per-byte time of the most recent value change within `range` (-inf where none), computed
+  // in place — can_events() copies every event and is too slow to call per row per frame.
+  std::vector<double> byte_change_times(const MessageId &id, TimeRange range, size_t byte_count) const;
 
   size_t staged_batch_count() const;
   uint64_t generation() const { return generation_; }
