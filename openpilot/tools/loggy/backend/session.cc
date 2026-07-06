@@ -47,8 +47,10 @@ bool timeline_span_less(const TimelineSpan &a, const TimelineSpan &b) {
 
 // selfdriveState samples arrive at 2 Hz (0.5 Hz in qlogs) and each segment's spans end at its
 // last sample, so adjacent same-kind spans legitimately sit seconds apart. Bridge those sampling
-// gaps; zero-length None spans (emitted on disengaged samples) are barriers so a real
-// disengagement is never painted over, and are stripped from the output.
+// gaps. Zero-length None spans (emitted on disengaged samples) are barriers so a real
+// disengagement is never painted over — and they STAY in the output (they render as nothing):
+// this function re-runs over its own previous output as segments stream in, so a stripped
+// barrier would let the next pass bridge straight across a segment-boundary disengagement.
 constexpr double kTimelineBridgeSeconds = 4.0;
 
 std::vector<TimelineSpan> merge_timeline_spans(std::vector<TimelineSpan> spans) {
@@ -62,18 +64,18 @@ std::vector<TimelineSpan> merge_timeline_spans(std::vector<TimelineSpan> spans) 
 
   std::vector<TimelineSpan> merged;
   merged.reserve(spans.size());
-  bool barrier = false;
   for (const TimelineSpan &span : spans) {
-    if (span.kind == TimelineSpanKind::None) {
-      barrier = true;
-      continue;
+    if (!merged.empty() && merged.back().kind == span.kind) {
+      // Same-kind spans bridge across sampling gaps; identical barriers dedup. A None between
+      // two same-kind spans changes merged.back() and so blocks their bridging by itself.
+      const bool bridges = span.kind != TimelineSpanKind::None
+                               ? span.start_time <= merged.back().end_time + kTimelineBridgeSeconds
+                               : std::abs(span.start_time - merged.back().start_time) <= 1.0e-9;
+      if (bridges) {
+        merged.back().end_time = std::max(merged.back().end_time, span.end_time);
+        continue;
+      }
     }
-    if (!barrier && !merged.empty() && merged.back().kind == span.kind &&
-        span.start_time <= merged.back().end_time + kTimelineBridgeSeconds) {
-      merged.back().end_time = std::max(merged.back().end_time, span.end_time);
-      continue;
-    }
-    barrier = false;
     merged.push_back(span);
   }
   return merged;

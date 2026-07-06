@@ -260,14 +260,17 @@ public:
       error_.clear();
       loading_ = false;
     }
+    // Abort BEFORE touching reader_mutex_: an in-flight FrameReader::load holds that lock for
+    // the whole segment fetch (seconds for a remote file), and load polls abort_ — raising it
+    // first is what makes the acquire below return promptly instead of stalling the UI thread.
+    abort_.store(true);
+    cv_.notify_all();
     {
       std::lock_guard reader_lock(reader_mutex_);
       reader_.reset();
       reader_segment_ = -1;
       reader_generation_ = generation;
     }
-    abort_.store(true);
-    cv_.notify_all();
   }
 
   void request_frame(double tracker_time) {
@@ -286,9 +289,13 @@ public:
         return;
       }
 
-      // Bump the serial even on a cache hit so publishResult can't land a stale decode on top.
+      // Bump the serial even on a cache hit so publishResult can't land a stale decode on top,
+      // and raise the stale-fill floor: the cached frame IS the playhead now, so an abandoned
+      // in-flight decode must not overwrite it one frame later (best-effort fills are for
+      // starved playback, not for stepping the display backwards after a seek hit the cache).
       if (std::optional<DecodedCameraFrame> cached = cachedFrameLocked(key)) {
-        ++latest_serial_;
+        stale_fill_min_serial_ = ++latest_serial_;
+        queued_requests_.clear();
         pending_result_ = std::move(cached);
         active_key_.reset();
         failed_key_.reset();
@@ -328,8 +335,13 @@ public:
       if (!pending_result_.has_value()) return std::nullopt;
       frame = std::move(pending_result_);
       pending_result_.reset();
-      active_key_.reset();
-      loading_ = false;
+      // A best-effort stale fill is NOT the active target: the real target's decode is still
+      // queued/in-flight, so active_key_/loading_ must survive — clearing them re-queued the
+      // same target from the keyframe on the next request_frame, doubling every decode.
+      if (same_key(active_key_, frame->key)) {
+        active_key_.reset();
+        loading_ = false;
+      }
       if (frame->ok) {
         displayed_key_ = frame->key;
         failed_key_.reset();
@@ -414,7 +426,6 @@ private:
     }
 
     auto reader = std::make_shared<FrameReader>();
-    abort_.store(false);
     if (!reader->load(decoder_camera_type(request.key.view), request.path, true, &abort_, true)) {
       return nullptr;
     }
@@ -453,7 +464,8 @@ private:
     // on) may still fill an EMPTY slot when it decoded ok: on a machine where every decode loses
     // the race against playback, dropping stale results means the canvas stays blank for the
     // whole run — a slightly-behind frame beats no frame, and the next fresh decode replaces it.
-    if (request.serial != latest_serial_ && (!result.ok || pending_result_.has_value())) {
+    if (request.serial != latest_serial_ &&
+        (!result.ok || pending_result_.has_value() || request.serial < stale_fill_min_serial_)) {
       return;
     }
     pending_result_ = std::move(result);
@@ -477,6 +489,13 @@ private:
         request = queued_requests_.front();
         queued_requests_.pop_front();
         inflight_segment_ = request.key.segment;
+        // Sole point where abort_ is consumed, under the same lock request_frame and
+        // set_camera_index hold when they raise it — any abort raised after this dequeue is
+        // meant for THIS request and stays visible to both reader->load and reader->get. The
+        // old per-stage resets (readerForRequest, pre-get) silently swallowed a cross-segment
+        // abort that landed between dequeue and reset, leaving a seek stuck behind a full
+        // stale-segment decode.
+        abort_.store(false);
       }
 
       DecodedCameraFrame result;
@@ -491,7 +510,6 @@ private:
         continue;
       }
 
-      abort_.store(false);
       if (!ensureDecodeBuffer(reader.get(), &decode_buffer, &buffer_allocated, &buffer_width, &buffer_height) ||
           !reader->get(request.key.decode_index, &decode_buffer)) {
         result.error = "failed to decode camera frame";
@@ -528,6 +546,9 @@ private:
   CameraFeedIndex index_;
   uint64_t generation_ = 1;
   uint64_t latest_serial_ = 0;
+  // Serial floor for publishResult's best-effort stale fill; bumped when a cache hit lands the
+  // playhead frame so an older abandoned decode can't overwrite it a frame later.
+  uint64_t stale_fill_min_serial_ = 0;
   bool loading_ = false;
   std::deque<DecodeRequest> queued_requests_;
   // Segment the worker is currently decoding; request_frame only aborts when this can't serve

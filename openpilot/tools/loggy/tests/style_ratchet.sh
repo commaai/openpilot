@@ -73,11 +73,14 @@ check "named header structs" \
 # map failure banner, signal pane sizing that could drop BeginTable and the editor below it;
 # ->21669 theme-token completion — map carto palette gets Theme tokens with real light values
 # (map was staying dark in the light theme), color_rgb() deleted from the public API; ->21672
-# History pager shares the export row (default preset showed headers and zero rows).
+# History pager shares the export row (default preset showed headers and zero rows); ->21695
+# red-team round 2 — decode abort consumed once at dequeue (lost cross-segment aborts), UI-thread
+# stall in set_camera_index, stale-fill floor after cache-hit seeks, active_key preserved on
+# best-effort fills, timeline None barriers survive incremental re-merge.
 # Genuine defect-cluster capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21672
+  21695
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.
