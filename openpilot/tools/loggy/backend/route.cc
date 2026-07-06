@@ -378,7 +378,15 @@ TimelineSpanKind timeline_kind_for_selfdrive(cereal::SelfdriveState::AlertStatus
 }
 
 void append_timeline_point(std::vector<TimelineSpan> &spans, double mono_time, TimelineSpanKind kind) {
-  if (kind == TimelineSpanKind::None) return;
+  if (kind == TimelineSpanKind::None) {
+    // A disengaged sample must CLOSE the running span, not be skipped — otherwise the next
+    // engaged sample extends across the disengagement. Zero-length None spans act as breakers
+    // and are stripped by merge_timeline_spans.
+    if (!spans.empty() && spans.back().kind != TimelineSpanKind::None) {
+      spans.push_back({mono_time, mono_time, TimelineSpanKind::None});
+    }
+    return;
+  }
   if (!spans.empty() && spans.back().kind == kind) {
     spans.back().end_time = std::max(spans.back().end_time, mono_time);
     return;
@@ -716,7 +724,12 @@ SegmentLoadResult load_route_segment(const SegmentWorkItem &work, bool local_cac
   extract.segment = work.segment;
   extract.coverage = work.range;
   if (!extract.time_offset.has_value() && !reader.events.empty()) {
-    extract.time_offset = static_cast<double>(reader.events.front().mono_time) / 1.0e9 - work.range.start_;
+    // Every segment's log BEGINS with the route-start initData event (loggerd writes it into
+    // each segment), so front() anchors to ROUTE start, not segment start. Anchoring against
+    // 60*segment keeps sliced selections contiguous from zero; the old "front - range.start"
+    // form double-counted the segment offset and pushed segment N's data to 120N.
+    extract.time_offset = static_cast<double>(reader.events.front().mono_time) / 1.0e9
+                          + kNominalSegmentSeconds * work.segment - work.range.start_;
   }
 
   SegmentExtractResult extracted = extract_segment_series(reader.events, extract);

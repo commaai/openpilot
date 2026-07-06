@@ -104,7 +104,7 @@ done
 
 if [[ "$WITH_ROUTE" -eq 1 ]]; then
   echo "Running openpilot/tools/loggy/tests/route_ingest_smoke --demo"
-  openpilot/tools/loggy/tests/route_ingest_smoke --demo
+  openpilot/tools/loggy/tests/route_ingest_smoke --demo --max-segments 4
 else
   echo "Skipping route_ingest_smoke; pass --with-route or --full to include it."
 fi

@@ -121,6 +121,24 @@ int main(int argc, char **argv) {
       std::cerr << "route ingest smoke produced no usable series\n";
       return 1;
     }
+    // Regression for the initData offset bug: every segment's log begins with the ROUTE-start
+    // initData event, and anchoring per-segment offsets to it doubled every segment's times —
+    // half of all data landed beyond the route range and the timeline showed periodic gaps.
+    // Real driving data must cover most of the nominal route range, inside it.
+    const loggy::SeriesView v_ego = store.series("/carState/vEgo", 0.0, 1.0e9, 1u << 20);
+    if (!v_ego.points.empty()) {
+      const double last_t = v_ego.points.back().t;
+      if (last_t > 60.0 * 17.0) {
+        std::cerr << "route ingest smoke: series extend beyond route range (last vEgo t=" << last_t
+                  << ") — per-segment time offset is broken again\n";
+        return 1;
+      }
+      if (v_ego.coverage.covered_seconds < 0.8 * (last_t - v_ego.points.front().t)) {
+        std::cerr << "route ingest smoke: sparse coverage " << v_ego.coverage.covered_seconds
+                  << "s over " << (last_t - v_ego.points.front().t) << "s span — segment offsets misaligned\n";
+        return 1;
+      }
+    }
     if (timeline_span_count == 0) {
       std::cerr << "route ingest smoke produced no timeline spans\n";
       return 1;
