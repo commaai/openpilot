@@ -278,7 +278,9 @@ std::string can_signal_csv(const Store &store, const MessageId &id, TimeRange ra
     append_cell(&out, std::to_string(id.source));
     append_cell(&out, address_hex(id.address));
     append_cell(&out, signal.name);
-    append_cell(&out, double_to_string(value));
+    // Same decode path as decoded_values()/history_decoded_values(): a value matching a
+    // val_desc entry (e.g. an out-of-range sentinel) shows its label, not the raw number.
+    append_cell(&out, signal.format_value(value, /*with_unit=*/false));
     append_cell(&out, signal.unit);
     append_cell(&out, hex_bytes(event.data), true);
   }

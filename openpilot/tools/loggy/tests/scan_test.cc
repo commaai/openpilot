@@ -186,6 +186,110 @@ TEST_CASE("step_find_bits_job chunked by one message matches a single unbounded 
   CHECK(chunked_job.ids.size() == 3);
 }
 
+// -- (a2) Find Bits parity audit regression: a row's total must be bounded by the candidate
+// message's own event count (what a human counts scrubbing the Binary view for that id), not
+// by how many times the source bit happened to sample it. Pairing source-event-driven (as the
+// code used to) resamples "the last known target frame" once per source tick, so a slow
+// candidate message racks up a total larger than its real event count -- a statistic nobody can
+// reproduce by hand-checking the binary view. Pairing target-event-driven (each candidate frame
+// against the source sample in effect at that time) bounds total by the candidate's own M
+// events, however many K source transitions happened in between. --
+
+TEST_CASE("step_find_bits_job bounds a row's total by the candidate's own event count, not the source's") {
+  using loggy::FindBitsParams;
+  using loggy::FindBitsRow;
+
+  const MessageId source_id{.source = 0, .address = 0x47};
+  const MessageId target_id{.source = 0, .address = 0x100};
+  const TimeRange range{0.0, 10.0};
+
+  // Source bit: K = 5 transitions (byte0 bit7: 1,0,1,0,1).
+  std::vector<std::pair<MessageId, std::vector<CanEvent>>> per_id;
+  per_id.push_back({source_id, {
+    {.mono_time = 1.0, .data = {0x01}},
+    {.mono_time = 2.0, .data = {0x00}},
+    {.mono_time = 3.0, .data = {0x01}},
+    {.mono_time = 4.0, .data = {0x00}},
+    {.mono_time = 5.0, .data = {0x01}},
+  }});
+  // Candidate message: M = 2 events only, both 0xFF (every bit set).
+  per_id.push_back({target_id, {
+    {.mono_time = 1.2, .data = {0xFF}},  // preceded by source@1.0 (bit=1): every bit matches.
+    {.mono_time = 4.8, .data = {0xFF}},  // preceded by source@4.0 (bit=0): every bit mismatches.
+  }});
+
+  Store store;
+  stageEvents(&store, per_id, range);
+
+  FindBitsParams params;
+  params.range = range;
+  params.source_bus = source_id.source;
+  params.source_address = source_id.address;
+  params.byte_idx = 0;
+  params.bit_idx = 7;
+  params.find_bus = 0;
+  params.equal = true;
+  params.min_msgs = 0;
+  params.max_rows = 512;
+
+  loggy::FindBitsJob job = loggy::make_find_bits_job(store, params);
+  REQUIRE(loggy::step_find_bits_job(job, std::numeric_limits<size_t>::max()));
+  REQUIRE(job.done);
+
+  // Every (byte, bit) row for 0x100 is identical: both candidate frames are uniformly 0xFF.
+  REQUIRE(job.rows.size() == 8);
+  for (const FindBitsRow &row : job.rows) {
+    CHECK(row.address == target_id.address);
+    CHECK(row.byte_idx == 0);
+    // Hand-computable: total == the candidate's own 2 events, never the source's 5 samples.
+    CHECK(row.total == 2);
+    CHECK(row.total <= 2);  // <= relevant event pairs (candidate's own event count), not K=5.
+    CHECK(row.mismatches == 1);
+    CHECK(row.percent == Approx(100.0f * 1.0f / 2.0f));
+  }
+
+  // Chunked-by-one must still agree with the unbounded run (chunking invariance untouched
+  // by the pairing-direction fix).
+  loggy::FindBitsJob chunked = loggy::make_find_bits_job(store, params);
+  int guard = 0;
+  while (!loggy::step_find_bits_job(chunked, 1)) REQUIRE(++guard < 1000);
+  REQUIRE(chunked.rows.size() == job.rows.size());
+  for (size_t i = 0; i < job.rows.size(); ++i) {
+    CHECK(chunked.rows[i].total == job.rows[i].total);
+    CHECK(chunked.rows[i].mismatches == job.rows[i].mismatches);
+    CHECK(chunked.rows[i].percent == job.rows[i].percent);
+  }
+}
+
+TEST_CASE("scan_find_bits_events: percent equals 100*mismatches/total, hand-computed on a 3-event set") {
+  using loggy::FindBitsEvent;
+  using loggy::FindBitsParams;
+  using loggy::FindBitsRow;
+
+  const MessageId target{.source = 0, .address = 0x50};
+  // 3 events, same id: event 2 mismatches (source=1 vs data bit=0), events 1 and 3 match.
+  std::vector<FindBitsEvent> events = {
+    {.mono_time = 1.0, .source_value = 1, .id = target, .data = {0xFF}},  // match
+    {.mono_time = 2.0, .source_value = 1, .id = target, .data = {0x00}},  // mismatch
+    {.mono_time = 3.0, .source_value = 0, .id = target, .data = {0x00}},  // match
+  };
+
+  FindBitsParams params;
+  params.equal = true;
+  params.min_msgs = 0;
+  params.max_rows = 512;
+
+  const std::vector<FindBitsRow> rows = loggy::scan_find_bits_events(events, params);
+  REQUIRE(rows.size() == 8);  // one row per bit of the single byte, all identical here
+  for (const FindBitsRow &row : rows) {
+    CHECK(row.total == 3);
+    CHECK(row.mismatches == 1);
+    CHECK(row.percent == Approx(100.0f / 3.0f));
+    // The denominator behind percent must be the same total displayed in the row.
+    CHECK(row.percent == Approx(100.0f * static_cast<float>(row.mismatches) / static_cast<float>(row.total)));
+  }
+}
+
 // -- (c) find_signal_compare_value: table test for every comparator, incl. NaN -> false. --
 
 TEST_CASE("find_signal_compare_value table for every comparator") {

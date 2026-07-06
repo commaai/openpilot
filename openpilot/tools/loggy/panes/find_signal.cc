@@ -361,7 +361,9 @@ void draw_find_signal_pane(Session &session, PaneInstance &pane) {
   if (ImGui::GetContentRegionAvail().x > 144.0f) ImGui::SameLine();
   ImGui::SetNextItemWidth(128.0f);
   changed |= input_text_with_hint("Name", "", &state.signal_name);
-  if (ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();
+
+  // Min/Max always start a fresh row: Bus/Addr/Name alone can already fill a narrow pane,
+  // and gambling their combined width against one more SameLine leaves Max unreachable.
   ImGui::SetNextItemWidth(66.0f);
   changed |= ImGui::InputInt("Min", &state.min_size);
   if (ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();

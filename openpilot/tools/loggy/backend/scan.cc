@@ -86,17 +86,23 @@ bool step_find_bits_job(FindBitsJob &job, size_t max_messages) {
     const CanEventView target = job.store->can_events(id, job.params.range);
     if (target.events.empty()) continue;
 
-    size_t target_idx = 0;
-    for (const CanEvent &source_event : source.events) {
-      while (target_idx + 1 < target.events.size() && target.events[target_idx + 1].mono_time <= source_event.mono_time) {
-        ++target_idx;
+    // One comparison per candidate event, paired with the source sample in effect at that
+    // time (nearest source sample <= event time). Pairing the other way — walking source
+    // samples and snapshotting "the last known target data" — replays the same target frame
+    // for every intervening source sample, so a row's total can exceed the candidate's own
+    // event count (what the binary view shows for that message): a stat nobody can reproduce
+    // by hand-counting frames.
+    size_t source_idx = 0;
+    for (const CanEvent &target_event : target.events) {
+      while (source_idx + 1 < source.events.size() && source.events[source_idx + 1].mono_time <= target_event.mono_time) {
+        ++source_idx;
       }
-      if (target.events[target_idx].mono_time > source_event.mono_time) continue;
+      if (source.events[source_idx].mono_time > target_event.mono_time) continue;
       job.events.push_back({
-        .mono_time = source_event.mono_time,
-        .source_value = bit_value_at(source_event.data, job.params.byte_idx, job.params.bit_idx),
+        .mono_time = target_event.mono_time,
+        .source_value = bit_value_at(source.events[source_idx].data, job.params.byte_idx, job.params.bit_idx),
         .id = id,
-        .data = target.events[target_idx].data,
+        .data = target_event.data,
       });
     }
   }
