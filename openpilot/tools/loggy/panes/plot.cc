@@ -431,6 +431,16 @@ std::string plot_state_with_added_series(std::string_view state_json, std::strin
   return plot_state_for_series(requests, err.empty() ? old_state : json11::Json());
 }
 
+std::string plot_state_without_series(std::string_view state_json, std::string_view path) {
+  if (path.empty()) return std::string(state_json);
+  std::string err;
+  const json11::Json old_state = json11::Json::parse(std::string(state_json), err);
+  std::vector<PlotSeriesRequest> requests = parse_plot_series_requests(state_json);
+  requests.erase(std::remove_if(requests.begin(), requests.end(),
+                                [&](const PlotSeriesRequest &r) { return r.path == path; }), requests.end());
+  return plot_state_for_series(requests, err.empty() ? old_state : json11::Json());
+}
+
 size_t parse_plot_max_points(std::string_view state_json, size_t fallback) {
   std::string err;
   const json11::Json state = json11::Json::parse(std::string(state_json), err);
@@ -582,11 +592,13 @@ bool draw_plot_series_selector(const Store &store, PaneInstance *pane) {
   return changed;
 }
 
-void draw_plot_series_drag_sources(const std::vector<PlotSeriesRequest> &requests) {
-  if (requests.empty()) return;
+// Chip: drag source (cross-plot drop) plus an "x" close button to remove the series.
+bool draw_plot_series_drag_sources(PaneInstance *pane, const std::vector<PlotSeriesRequest> &requests) {
+  bool removed = false;
+  if (requests.empty() || pane == nullptr) return removed;
   for (size_t i = 0; i < requests.size(); ++i) {
     const PlotSeriesRequest &request = requests[i];
-    if (i > 0 && ImGui::GetContentRegionAvail().x > 120.0f) ImGui::SameLine();
+    if (i > 0 && ImGui::GetContentRegionAvail().x > 150.0f) ImGui::SameLine();
     ImGui::PushID(static_cast<int>(i));
     const std::string label = request.label.empty() ? plot_label_from_path(request.path) : request.label;
     ImGui::TextColored(kPlotColors[i % std::size(kPlotColors)], "%s", label.c_str());
@@ -595,8 +607,14 @@ void draw_plot_series_drag_sources(const std::vector<PlotSeriesRequest> &request
       ImGui::TextUnformatted(request.path.c_str());
       ImGui::EndDragDropSource();
     }
+    ImGui::SameLine(0.0f, 4.0f);
+    if (ImGui::SmallButton("x")) {
+      pane->state_json = plot_state_without_series(pane->state_json, request.path);
+      removed = true;
+    }
     ImGui::PopID();
   }
+  return removed;
 }
 
 bool accept_series_drop(PaneInstance *pane) {
@@ -761,7 +779,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   const PlotYAxisBounds y_bounds = compute_plot_y_axis_bounds(series, y_limits);
 
   draw_plot_coverage(series);
-  draw_plot_series_drag_sources(requests);
+  const bool series_removed = draw_plot_series_drag_sources(&pane, requests);
 
   bool has_points = false;
   size_t label_width = 0;
@@ -775,7 +793,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   ImPlotFlags plot_flags = ImPlotFlags_NoTitle | ImPlotFlags_NoMenus;
   if (!has_points) plot_flags |= ImPlotFlags_NoLegend;
 
-  ImPlot::PushStyleColor(ImPlotCol_PlotBg, color_rgb(47, 49, 51));
+  ImPlot::PushStyleColor(ImPlotCol_PlotBg, plot_area_background_color());
   ImPlot::PushStyleColor(ImPlotCol_PlotBorder, color_rgb(92, 96, 98));
   ImPlot::PushStyleColor(ImPlotCol_LegendBg, color_rgb(53, 53, 53, 0.92f));
   ImPlot::PushStyleColor(ImPlotCol_LegendBorder, color_rgb(92, 96, 98));
@@ -857,7 +875,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   pop_mono_font();
   ImPlot::PopStyleColor(6);
 
-  if (dropped_series) return;
+  if (dropped_series || series_removed) return;
 
   if (std::abs(x_min - range.start_) > 1.0e-6 || std::abs(x_max - range.end) > 1.0e-6) {
     push_zoom_history(&zoom_history, range);

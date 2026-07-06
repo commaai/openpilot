@@ -1,1 +1,54 @@
-{"current_tab_index": 0, "tabs": [{"name": "Cabana", "panes": [{"state": {"address": 119, "bus_filter": -1, "filter": "", "id": "0:77", "max_rows": 500, "name_filter": "", "node_filter": "", "show_inactive": false, "source": 0}, "title": "Messages", "type": "messages"}, {"state": {}, "title": "History", "type": "historylog"}, {"state": {}, "title": "Signal", "type": "signal"}, {"state": {"camera_view": "road"}, "title": "Road Camera", "type": "camera"}, {"state": {}, "title": "Binary", "type": "binary"}, {"state": {"series": [{"label": "vEgo", "path": "/carState/vEgo"}, {"label": "aEgo", "path": "/carState/aEgo"}, {"label": "steeringAngleDeg", "path": "/carState/steeringAngleDeg"}], "y_limits": {"max": 50, "min": -50}}, "title": "Plot", "type": "plot"}], "root": {"children": [{"children": [{"pane": 0, "state": {"address": 119, "bus_filter": -1, "filter": "", "id": "0:77", "max_rows": 500, "name_filter": "", "node_filter": "", "show_inactive": false, "source": 0}, "title": "Messages", "type": "messages"}, {"pane": 1, "state": {}, "title": "History", "type": "historylog"}, {"pane": 2, "state": {}, "title": "Signal", "type": "signal"}], "sizes": [0.44999998807907104, 0.27000001072883606, 0.2800000011920929], "split": "vertical"}, {"children": [{"pane": 3, "state": {"camera_view": "road"}, "title": "Road Camera", "type": "camera"}, {"children": [{"pane": 4, "state": {}, "title": "Binary", "type": "binary"}, {"pane": 5, "state": {"series": [{"label": "vEgo", "path": "/carState/vEgo"}, {"label": "aEgo", "path": "/carState/aEgo"}, {"label": "steeringAngleDeg", "path": "/carState/steeringAngleDeg"}], "y_limits": {"max": 50, "min": -50}}, "title": "Plot", "type": "plot"}], "sizes": [0.5, 0.5], "split": "horizontal"}], "sizes": [0.40000000596046448, 0.60000002384185791], "split": "vertical"}], "sizes": [0.57999998331069946, 0.41999998688697815], "split": "horizontal"}}, {"name": "DBC", "panes": [{"state": {}, "title": "DBC", "type": "dbc"}], "root": {"pane": 0, "state": {}, "title": "DBC", "type": "dbc"}}, {"name": "Analysis", "panes": [{"state": {}, "title": "Find Signal", "type": "find_signal"}, {"state": {}, "title": "Find Bits", "type": "find_bits"}], "root": {"children": [{"pane": 0, "state": {}, "title": "Find Signal", "type": "find_signal"}, {"pane": 1, "state": {}, "title": "Find Bits", "type": "find_bits"}], "sizes": [0.5, 0.5], "split": "horizontal"}}], "version": 1}
+{
+  "version": 1,
+  "current_tab_index": 0,
+  "tabs": [
+    {
+      "name": "Cabana",
+      "root": {
+        "split": "horizontal",
+        "sizes": [0.58, 0.42],
+        "children": [
+          {
+            "split": "vertical",
+            "sizes": [0.15, 0.2, 0.65],
+            "children": [
+              {"type": "messages", "title": "Messages"},
+              {"type": "historylog", "title": "History"},
+              {"type": "signal", "title": "Signal"}
+            ]
+          },
+          {
+            "split": "vertical",
+            "sizes": [0.4, 0.6],
+            "children": [
+              {"type": "camera", "title": "Road Camera", "state": {"camera_view": "road"}},
+              {
+                "split": "horizontal",
+                "sizes": [0.5, 0.5],
+                "children": [
+                  {"type": "binary", "title": "Binary"},
+                  {"type": "plot", "title": "Plot"}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "DBC",
+      "root": {"type": "dbc", "title": "DBC"}
+    },
+    {
+      "name": "Analysis",
+      "root": {
+        "split": "horizontal",
+        "sizes": [0.5, 0.5],
+        "children": [
+          {"type": "find_signal", "title": "Find Signal"},
+          {"type": "find_bits", "title": "Find Bits"}
+        ]
+      }
+    }
+  ]
+}

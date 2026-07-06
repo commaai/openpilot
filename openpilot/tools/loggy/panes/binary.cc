@@ -174,7 +174,7 @@ bool binary_signal_overlaps_other_dbc_bits(const Msg *msg, const std::string &si
 }
 
 ImU32 heat_color(uint32_t flips, uint32_t max_flips) {
-  if (flips == 0 || max_flips == 0) return ImGui::GetColorU32(color_rgb(68, 71, 73));
+  if (flips == 0 || max_flips == 0) return ImGui::GetColorU32(binary_grid_background_color());
   const float alpha = 0.18f + 0.58f * (std::log2(1.0f + static_cast<float>(flips)) /
                                        std::log2(1.0f + static_cast<float>(max_flips)));
   return ImGui::GetColorU32(color_rgb(47, 101, 202, alpha));
@@ -348,7 +348,7 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
 
     const ImVec2 hex_cell_min(origin.x + row_header_w + static_cast<float>(kBitColumns) * col_w, y);
     const ImVec2 hex_cell_max(hex_cell_min.x + col_w, hex_cell_min.y + row_h);
-    draw_list->AddRectFilled(hex_cell_min, hex_cell_max, ImGui::GetColorU32(color_rgb(76, 80, 82)));
+    draw_list->AddRectFilled(hex_cell_min, hex_cell_max, ImGui::GetColorU32(binary_grid_background_color()));
     draw_list->AddRect(hex_cell_min, hex_cell_max, border);
     char hex[3];
     std::snprintf(hex, sizeof(hex), "%02X", grid.latest_data[row]);

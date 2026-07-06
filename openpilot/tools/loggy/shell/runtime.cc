@@ -759,6 +759,9 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
     request_help_popup(app);
   }
+  // Cabana-style frame stepping; repeat stays on since steps are cheap.
+  if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) app.session.playback.step_backward();
+  if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) app.session.playback.step_forward();
 
   const auto playback_now = Clock::now();
   const double playback_dt = std::chrono::duration<double>(playback_now - app.last_playback_update).count();

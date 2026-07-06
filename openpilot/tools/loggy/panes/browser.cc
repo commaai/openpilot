@@ -432,16 +432,18 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
     state.filter = filter_buf.data();
     changed = true;
   }
-  if (ImGui::GetContentRegionAvail().x > 170.0f) ImGui::SameLine();
+  // Cumulative thresholds: once one guard fails, every later one fails too and wraps its own row.
+  constexpr float kSparkWidth = 150.0f, kTreeWidth = 80.0f, kDeprecatedWidth = 120.0f;
+  if (ImGui::GetContentRegionAvail().x > filter_width + kSparkWidth) ImGui::SameLine();
   int sparkline_seconds = state.sparkline_seconds;
   ImGui::SetNextItemWidth(96.0f);
   if (ImGui::SliderInt("Spark", &sparkline_seconds, 1, 120, "%ds", ImGuiSliderFlags_AlwaysClamp)) {
     state.sparkline_seconds = sparkline_seconds;
     changed = true;
   }
-  if (ImGui::GetContentRegionAvail().x > 86.0f) ImGui::SameLine();
+  if (ImGui::GetContentRegionAvail().x > filter_width + kSparkWidth + kTreeWidth) ImGui::SameLine();
   changed = ImGui::Checkbox("Tree", &state.show_tree) || changed;
-  if (ImGui::GetContentRegionAvail().x > 132.0f) ImGui::SameLine();
+  if (ImGui::GetContentRegionAvail().x > filter_width + kSparkWidth + kTreeWidth + kDeprecatedWidth) ImGui::SameLine();
   changed = ImGui::Checkbox("Deprecated", &state.show_deprecated) || changed;
   if (changed) {
     pane.state_json = browser_state_json(state);

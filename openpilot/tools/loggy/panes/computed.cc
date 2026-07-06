@@ -407,12 +407,16 @@ void draw_computed_pane(Session &session, PaneInstance &pane) {
 
   const float full_width = ImGui::GetContentRegionAvail().x;
   const float item_width = std::clamp(full_width * 0.58f, 180.0f, 520.0f);
-  changed = input_string("Name", &state.name, item_width) || changed;
-  changed = input_string("Source", &state.linked_source, item_width) || changed;
+  // Label above, not the widget's trailing label: that clipped to a single letter at default size.
+  ImGui::TextUnformatted("Name");
+  changed = input_string("##computed_name", &state.name, item_width) || changed;
+  ImGui::TextUnformatted("Source");
+  changed = input_string("##computed_source", &state.linked_source, item_width) || changed;
 
   std::string additional_sources = computed_sources_text(state.additional_sources);
   const float multiline_width = std::max(220.0f, full_width - 8.0f);
-  if (input_multiline("Additional", &additional_sources, ImVec2(multiline_width, 58.0f))) {
+  ImGui::TextUnformatted("Additional");
+  if (input_multiline("##computed_additional", &additional_sources, ImVec2(multiline_width, 58.0f))) {
     state.additional_sources = computed_sources_from_text(additional_sources);
     changed = true;
   }

@@ -413,10 +413,14 @@ void draw_logs_pane(Session &session, PaneInstance &pane) {
   int scroll_to_log_index = -1;
   ImGui::SameLine();
   ImGui::BeginDisabled(rows.empty());
+  // Next/Prev also seeks playback to the entry's time (jotpluggler click-to-seek feel).
   if (ImGui::SmallButton("Prev")) {
     state.selected_log_index = log_navigate_selected_row(rows, state.selected_log_index, -1);
     state.follow = false;
     scroll_to_log_index = state.selected_log_index;
+    if (state.selected_log_index >= 0 && static_cast<size_t>(state.selected_log_index) < logs.size()) {
+      session.playback.seek(logs[static_cast<size_t>(state.selected_log_index)].mono_time);
+    }
     changed = true;
   }
   ImGui::SameLine();
@@ -424,6 +428,9 @@ void draw_logs_pane(Session &session, PaneInstance &pane) {
     state.selected_log_index = log_navigate_selected_row(rows, state.selected_log_index, 1);
     state.follow = false;
     scroll_to_log_index = state.selected_log_index;
+    if (state.selected_log_index >= 0 && static_cast<size_t>(state.selected_log_index) < logs.size()) {
+      session.playback.seek(logs[static_cast<size_t>(state.selected_log_index)].mono_time);
+    }
     changed = true;
   }
   ImGui::EndDisabled();

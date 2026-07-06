@@ -34,6 +34,9 @@ const char *live_source_field_text(const SessionConfig &config) {
   return config.stream_address.c_str();
 }
 
+// Per-kind field default; only SocketCAN has a real one (others stay blank).
+const char *live_source_kind_default_field(LiveSourceKind kind) { return kind == LiveSourceKind::SocketCan ? "can0" : ""; }
+
 template <size_t N>
 int speed_index(const std::array<uint16_t, N> &speeds, uint16_t speed) {
   const auto it = std::find(speeds.begin(), speeds.end(), speed);
@@ -152,9 +155,13 @@ void draw_live_source_popup(Session &session, LiveSourceUiState &state) {
   const bool close_requested = ImGui::IsKeyPressed(ImGuiKey_Escape);
 
   const char *source_labels[] = {"Local MSGQ", "Remote ZMQ", "Device Bridge", "Panda USB", "SocketCAN"};
+  const LiveSourceKind previous_kind = live_source_kind_from_index(state.source_kind_index);
   ImGui::SetNextItemWidth(160.0f);
   ImGui::Combo("Source", &state.source_kind_index, source_labels, 5);
   const LiveSourceKind source_kind = live_source_kind_from_index(state.source_kind_index);
+  if (source_kind != previous_kind) {
+    std::snprintf(state.address_buffer.data(), state.address_buffer.size(), "%s", live_source_kind_default_field(source_kind));
+  }
 
   if (source_kind == LiveSourceKind::CerealLocal) ImGui::BeginDisabled();
   ImGui::SetNextItemWidth(260.0f);

@@ -217,6 +217,13 @@ ImVec4 clear_color() {
   return g_current_theme == LoggyThemeKind::Light ? color_rgb(238, 240, 242) : color_rgb(43, 43, 43);
 }
 
+ImVec4 plot_area_background_color() {
+  return g_current_theme == LoggyThemeKind::Light ? color_rgb(248, 249, 250) : color_rgb(47, 49, 51);
+}
+ImVec4 binary_grid_background_color() {
+  return g_current_theme == LoggyThemeKind::Light ? color_rgb(234, 237, 240) : color_rgb(68, 71, 73);
+}
+
 void push_bold_font() {
   if (g_ui_bold_font != nullptr) ImGui::PushFont(g_ui_bold_font);
 }
