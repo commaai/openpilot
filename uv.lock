@@ -932,7 +932,6 @@ dependencies = [
     { name = "tqdm" },
     { name = "websocket-client" },
     { name = "xattr" },
-    { name = "xvfb" },
     { name = "zeromq" },
     { name = "zstandard" },
     { name = "zstd" },
@@ -1030,7 +1029,6 @@ requires-dist = [
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
     { name = "xattr" },
-    { name = "xvfb", git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb" },
     { name = "zensical", marker = "extra == 'docs'" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=release-zeromq" },
     { name = "zstandard" },
@@ -1065,7 +1063,6 @@ dependencies = [
     { name = "libusb-package" },
     { name = "libusb1" },
     { name = "opendbc" },
-    { name = "spidev", marker = "sys_platform == 'linux'" },
 ]
 
 [package.metadata]
@@ -1085,7 +1082,6 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "scons", marker = "extra == 'dev'" },
     { name = "setuptools", marker = "extra == 'dev'" },
-    { name = "spidev", marker = "sys_platform == 'linux'" },
 ]
 provides-extras = ["dev"]
 
@@ -1607,12 +1603,6 @@ wheels = [
 ]
 
 [[package]]
-name = "spidev"
-version = "3.8"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/67/87/039b6eeea781598015b538691bc174cc0bf77df9d4d2d3b8bf9245c0de8c/spidev-3.8.tar.gz", hash = "sha256:2bc02fb8c6312d519ebf1f4331067427c0921d3f77b8bcaf05189a2e8b8382c0", size = 13893, upload-time = "2025-09-15T18:56:20.672Z" }
-
-[[package]]
 name = "sympy"
 version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1807,11 +1797,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/b2/9416317ac89e2ed759a861857cda0d5e284c3691e6f460d36cc2bd5ce4d1/xattr-1.3.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:6c42ef5bdac3febbe28d3db14d3a8a159d84ba5daca2b13deae6f9f1fc0d4092", size = 38214, upload-time = "2025-10-13T22:16:14.389Z" },
     { url = "https://files.pythonhosted.org/packages/38/63/188f7cb41ab35d795558325d5cc8ab552171d5498cfb178fd14409651e18/xattr-1.3.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:2aaa5d66af6523332189108f34e966ca120ff816dfa077ca34b31e6263f8a236", size = 37754, upload-time = "2025-10-13T22:16:15.306Z" },
 ]
-
-[[package]]
-name = "xvfb"
-version = "1.20.11.post1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=xvfb&rev=release-xvfb#bd5a45c85c86d1cc6fe2bd36381b4ff8d7f728c4" }
 
 [[package]]
 name = "yarl"
