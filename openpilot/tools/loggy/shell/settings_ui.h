@@ -22,9 +22,9 @@ struct SettingsUiState {
 
 void sync_settings_popup_fields(const Session &session, int target_fps, SettingsUiState *state);
 void request_settings_popup(const Session &session, int target_fps, SettingsUiState &state);
-bool apply_settings_popup(Session &session, bool options_show_frame_hud, LoggyThemeKind &theme_kind,
+bool apply_settings_popup(Session &session, bool options_show_frame_hud, ThemeKind &theme_kind,
                          int &target_fps, bool &show_frame_hud, SettingsUiState &state);
-void draw_settings_popup(Session &session, bool close_requested, bool options_show_frame_hud, LoggyThemeKind &theme_kind,
+void draw_settings_popup(Session &session, bool close_requested, bool options_show_frame_hud, ThemeKind &theme_kind,
                         int &target_fps, bool &show_frame_hud, SettingsUiState &state);
 
 }  // namespace loggy

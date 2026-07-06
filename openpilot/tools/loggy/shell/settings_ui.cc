@@ -16,14 +16,14 @@ namespace {
 
 namespace fs = std::filesystem;
 
-constexpr std::array<LoggyThemeKind, 2> kLoggyThemeOptions = {
-  LoggyThemeKind::Darcula,
-  LoggyThemeKind::Light,
+constexpr std::array<ThemeKind, 2> kThemeOptions = {
+  ThemeKind::Darcula,
+  ThemeKind::Light,
 };
 
-int theme_kind_to_index(LoggyThemeKind theme) {
-  for (size_t i = 0; i < kLoggyThemeOptions.size(); ++i) {
-    if (kLoggyThemeOptions[i] == theme) return static_cast<int>(i);
+int theme_kind_to_index(ThemeKind theme) {
+  for (size_t i = 0; i < kThemeOptions.size(); ++i) {
+    if (kThemeOptions[i] == theme) return static_cast<int>(i);
   }
   return 0;
 }
@@ -37,7 +37,7 @@ void sync_settings_popup_fields(const Session &session, int target_fps, Settings
   state->dbc_override_text = settings.dbc_override;
   state->map_cache_root_text = settings.map_cache_root;
   state->target_fps = std::clamp(target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
-  state->theme_index = theme_kind_to_index(loggy_theme_from_name(settings.theme));
+  state->theme_index = theme_kind_to_index(theme_from_name(settings.theme));
   state->show_frame_hud = settings.show_frame_hud;
   state->natural_map_drag = settings.natural_map_drag;
   state->popup_status = session.settings_status;
@@ -48,7 +48,7 @@ void request_settings_popup(const Session &session, int target_fps, SettingsUiSt
   state.open_popup = true;
 }
 
-bool apply_settings_popup(Session &session, bool options_show_frame_hud, LoggyThemeKind &theme_kind,
+bool apply_settings_popup(Session &session, bool options_show_frame_hud, ThemeKind &theme_kind,
                          int &target_fps, bool &show_frame_hud, SettingsUiState &state) {
   LoggySettings &settings = session.settings;
   const LoggySettings previous_settings = settings;
@@ -56,9 +56,9 @@ bool apply_settings_popup(Session &session, bool options_show_frame_hud, LoggyTh
   const std::string opendbc_root = state.opendbc_root_text;
   const std::string dbc_override = state.dbc_override_text;
   const std::string map_cache_root = state.map_cache_root_text;
-  state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kLoggyThemeOptions.size()) - 1);
-  const LoggyThemeKind next_theme = kLoggyThemeOptions[static_cast<size_t>(state.theme_index)];
-  const std::string next_theme_name = loggy_theme_name(next_theme);
+  state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kThemeOptions.size()) - 1);
+  const ThemeKind next_theme = kThemeOptions[static_cast<size_t>(state.theme_index)];
+  const std::string next_theme_name = theme_name(next_theme);
   const int next_target_fps = std::clamp(state.target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps);
   const bool next_show_frame_hud = state.show_frame_hud;
   const bool next_natural_map_drag = state.natural_map_drag;
@@ -87,7 +87,7 @@ bool apply_settings_popup(Session &session, bool options_show_frame_hud, LoggyTh
       return false;
     }
     target_fps = settings.target_fps;
-    theme_kind = loggy_theme_from_name(settings.theme);
+    theme_kind = theme_from_name(settings.theme);
     apply_theme(theme_kind);
     show_frame_hud = options_show_frame_hud && settings.show_frame_hud;
     state.popup_status = session.settings_status;
@@ -103,14 +103,14 @@ bool apply_settings_popup(Session &session, bool options_show_frame_hud, LoggyTh
     }
   }
   target_fps = settings.target_fps;
-  theme_kind = loggy_theme_from_name(settings.theme);
+  theme_kind = theme_from_name(settings.theme);
   apply_theme(theme_kind);
   show_frame_hud = options_show_frame_hud && settings.show_frame_hud;
   state.popup_status = session.settings_status;
   return true;
 }
 
-void draw_settings_popup(Session &session, bool close_requested, bool options_show_frame_hud, LoggyThemeKind &theme_kind,
+void draw_settings_popup(Session &session, bool close_requested, bool options_show_frame_hud, ThemeKind &theme_kind,
                         int &target_fps, bool &show_frame_hud, SettingsUiState &state) {
   if (state.open_popup) {
     ImGui::OpenPopup("Settings");
@@ -136,14 +136,14 @@ void draw_settings_popup(Session &session, bool close_requested, bool options_sh
   input_text_with_hint("##settings_dbc_override", "dbc name or /path/to.dbc", &state.dbc_override_text);
   ImGui::Spacing();
   ImGui::SeparatorText("App");
-  state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kLoggyThemeOptions.size()) - 1);
-  const LoggyThemeKind selected_theme = kLoggyThemeOptions[static_cast<size_t>(state.theme_index)];
+  state.theme_index = std::clamp(state.theme_index, 0, static_cast<int>(kThemeOptions.size()) - 1);
+  const ThemeKind selected_theme = kThemeOptions[static_cast<size_t>(state.theme_index)];
   ImGui::SetNextItemWidth(180.0f);
-  if (ImGui::BeginCombo("Theme", loggy_theme_label(selected_theme))) {
-    for (int i = 0; i < static_cast<int>(kLoggyThemeOptions.size()); ++i) {
-      const LoggyThemeKind option = kLoggyThemeOptions[static_cast<size_t>(i)];
+  if (ImGui::BeginCombo("Theme", theme_label(selected_theme))) {
+    for (int i = 0; i < static_cast<int>(kThemeOptions.size()); ++i) {
+      const ThemeKind option = kThemeOptions[static_cast<size_t>(i)];
       const bool selected = i == state.theme_index;
-      if (ImGui::Selectable(loggy_theme_label(option), selected)) state.theme_index = i;
+      if (ImGui::Selectable(theme_label(option), selected)) state.theme_index = i;
       if (selected) ImGui::SetItemDefaultFocus();
     }
     ImGui::EndCombo();

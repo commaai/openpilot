@@ -8,7 +8,7 @@
 
 namespace loggy {
 
-enum class LoggyThemeKind {
+enum class ThemeKind {
   Darcula,
   Light,
 };
@@ -68,9 +68,9 @@ struct Theme {
   ImVec4 accent_soft_hovered;
   ImVec4 accent_soft_active;
 
-  // Plot pane
+  // Plot pane (the theme-constant ImPlotCol_* below are assigned once in apply_theme(), not
+  // pushed per frame)
   ImVec4 plot_bg;
-  ImVec4 plot_border;
   ImVec4 plot_legend_bg;
   ImVec4 plot_legend_border;
   ImVec4 plot_grid;
@@ -112,10 +112,10 @@ const Theme &theme();
 // density: window content scale (e.g. 2.0 on macOS retina) — the atlas rasterizes at device
 // pixels while layout metrics stay logical, so text is crisp instead of blurry. 1.0 is a no-op.
 void load_fonts(float density = 1.0f);
-LoggyThemeKind loggy_theme_from_name(std::string_view name);
-const char *loggy_theme_name(LoggyThemeKind theme);
-const char *loggy_theme_label(LoggyThemeKind theme);
-void apply_theme(LoggyThemeKind theme = LoggyThemeKind::Light);
+ThemeKind theme_from_name(std::string_view name);
+const char *theme_name(ThemeKind kind);
+const char *theme_label(ThemeKind kind);
+void apply_theme(ThemeKind kind = ThemeKind::Light);
 ImVec4 clear_color();
 ImVec4 color_rgb(int r, int g, int b, float alpha = 1.0f);
 void push_bold_font();

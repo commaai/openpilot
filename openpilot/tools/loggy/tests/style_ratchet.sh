@@ -61,13 +61,15 @@ check "named header structs" \
   85
 # LOC history (prior in git): 20605->20950 parity-fix wave; ->21020 ship fixes; ->21124
 # red-team data-honesty wave (honest route duration, deprecated series, export isolation);
-# ->21370 (2026-07-06) visual-identity pass — the owner-directed `struct Theme` (every color
+# ->21368 (2026-07-06) visual-identity pass — the owner-directed `struct Theme` (every color
 # token, grouped, two full const instances kLightTheme/kDarculaTheme) plus binary.cc's
 # per-signal colored spans + MSB/LSB markers (cabana's signature look) and camera/plot chrome
-# cleanups. Capability and a real style fix (single source of truth for every color), not padding.
+# cleanups, minus root cleanup (dead plot_border token, ImPlot colors set once in apply_theme
+# instead of pushed per frame, LoggyThemeKind->ThemeKind stutter fix). Capability and a real
+# style fix (single source of truth for every color), not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21370
+  21368
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
   850

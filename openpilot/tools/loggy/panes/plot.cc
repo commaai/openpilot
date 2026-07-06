@@ -792,16 +792,8 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   ImPlotFlags plot_flags = ImPlotFlags_NoTitle | ImPlotFlags_NoMenus;
   if (!has_points) plot_flags |= ImPlotFlags_NoLegend;
 
+  // All theme-constant ImPlot colors and legend padding/spacing are set once in apply_theme().
   const Theme &t = theme();
-  ImPlot::PushStyleColor(ImPlotCol_PlotBg, t.plot_bg);
-  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, t.chrome_border);
-  ImPlot::PushStyleColor(ImPlotCol_LegendBg, t.plot_legend_bg);
-  ImPlot::PushStyleColor(ImPlotCol_LegendBorder, t.plot_legend_border);
-  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, t.plot_grid);
-  ImPlot::PushStyleColor(ImPlotCol_Crosshairs, t.plot_crosshair);
-  // Legend padding/spacing is tightened once, globally, in apply_theme() (single source of
-  // truth) — semi-transparent + tight legend so it stops hiding a third of the plot.
-
   push_mono_font();
   bool dropped_series = false;
   ImGui::BeginChild("##loggy_plot_child", ImGui::GetContentRegionAvail(), false,
@@ -877,7 +869,6 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   ImGui::EndChild();
   dropped_series = accept_series_drop(&pane);
   pop_mono_font();
-  ImPlot::PopStyleColor(6);
 
   if (dropped_series || series_removed) return;
 

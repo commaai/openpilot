@@ -89,7 +89,7 @@ TEST_CASE("Loggy settings default on missing and malformed files") {
   CHECK_FALSE(missing.loaded);
   CHECK(missing.error.empty());
   CHECK(missing.settings.target_fps == loggy::kDefaultLoggyTargetFps);
-  CHECK(missing.settings.theme == loggy::kDefaultLoggyTheme);
+  CHECK(missing.settings.theme == loggy::kDefaultTheme);
   CHECK_FALSE(missing.settings.show_frame_hud);
   CHECK(missing.settings.recent_dbc_files.empty());
   CHECK(missing.settings.dbc_assignments.empty());
@@ -155,7 +155,7 @@ TEST_CASE("Loggy settings ignore malformed fields while keeping valid values") {
   CHECK(overlong.opendbc_root.empty());
   CHECK(overlong.dbc_override.empty());
   CHECK(overlong.map_cache_root.empty());
-  CHECK(overlong.theme == loggy::kDefaultLoggyTheme);
+  CHECK(overlong.theme == loggy::kDefaultTheme);
   CHECK(overlong.target_fps == loggy::kMinLoggyTargetFps);
 
   const loggy::LoggySettingsLoadResult legacy = loggy::loggy_settings_from_json(R"({

@@ -19,7 +19,7 @@ namespace {
 ImFont *g_ui_font = nullptr;
 ImFont *g_ui_bold_font = nullptr;
 ImFont *g_mono_font = nullptr;
-LoggyThemeKind g_current_theme = LoggyThemeKind::Light;
+ThemeKind g_current_theme = ThemeKind::Light;
 
 constexpr float UI_FONT_SIZE = 15.0f;
 constexpr float BOLD_FONT_SIZE = 15.5f;
@@ -215,7 +215,7 @@ void icon_add_font(float size, float density, bool merge = false, const ImFont *
 }  // namespace
 
 const Theme &theme() {
-  return g_current_theme == LoggyThemeKind::Light ? kLightTheme : kDarculaTheme;
+  return g_current_theme == ThemeKind::Light ? kLightTheme : kDarculaTheme;
 }
 
 ImVec4 color_rgb(int r, int g, int b, float alpha) {
@@ -249,30 +249,30 @@ void load_fonts(float density) {
   if (g_mono_font == nullptr) g_mono_font = g_ui_font;
 }
 
-LoggyThemeKind loggy_theme_from_name(std::string_view name) {
-  if (name == "darcula") return LoggyThemeKind::Darcula;
-  return LoggyThemeKind::Light;
+ThemeKind theme_from_name(std::string_view name) {
+  if (name == "darcula") return ThemeKind::Darcula;
+  return ThemeKind::Light;
 }
 
-const char *loggy_theme_name(LoggyThemeKind theme) {
-  switch (theme) {
-    case LoggyThemeKind::Darcula: return "darcula";
-    case LoggyThemeKind::Light:
+const char *theme_name(ThemeKind kind) {
+  switch (kind) {
+    case ThemeKind::Darcula: return "darcula";
+    case ThemeKind::Light:
     default: return "light";
   }
 }
 
-const char *loggy_theme_label(LoggyThemeKind theme) {
-  switch (theme) {
-    case LoggyThemeKind::Darcula: return "Darcula";
-    case LoggyThemeKind::Light:
+const char *theme_label(ThemeKind kind) {
+  switch (kind) {
+    case ThemeKind::Darcula: return "Darcula";
+    case ThemeKind::Light:
     default: return "Light";
   }
 }
 
-void apply_theme(LoggyThemeKind kind) {
+void apply_theme(ThemeKind kind) {
   g_current_theme = kind;
-  if (kind == LoggyThemeKind::Light) {
+  if (kind == ThemeKind::Light) {
     ImGui::StyleColorsLight();
     ImPlot::StyleColorsLight();
   } else {
@@ -345,7 +345,12 @@ void apply_theme(LoggyThemeKind kind) {
   plot_style.PlotPadding = ImVec2(4.0f, 8.0f);
   plot_style.FitPadding = ImVec2(0.02f, 0.05f);
   plot_style.Colors[ImPlotCol_FrameBg] = t.frame_bg;
-  plot_style.Colors[ImPlotCol_PlotBg] = t.frame_bg;
+  plot_style.Colors[ImPlotCol_PlotBg] = t.plot_bg;
+  plot_style.Colors[ImPlotCol_PlotBorder] = t.chrome_border;
+  plot_style.Colors[ImPlotCol_LegendBg] = t.plot_legend_bg;
+  plot_style.Colors[ImPlotCol_LegendBorder] = t.plot_legend_border;
+  plot_style.Colors[ImPlotCol_AxisGrid] = t.plot_grid;
+  plot_style.Colors[ImPlotCol_Crosshairs] = t.plot_crosshair;
 
   ImPlot::MapInputDefault();
   ImPlotInputMap &input_map = ImPlot::GetInputMap();

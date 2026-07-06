@@ -239,7 +239,7 @@ struct AppState {
       }),
       show_frame_hud(opts.show_frame_hud && session.settings.show_frame_hud),
       target_fps(std::clamp(session.settings.target_fps, kMinLoggyTargetFps, kMaxLoggyTargetFps)),
-      theme_kind(loggy_theme_from_name(session.settings.theme)) {
+      theme_kind(theme_from_name(session.settings.theme)) {
     apply_theme(theme_kind);
     sync_live_source_fields(session, live_source_ui);
     sync_route_popup_fields(session, route_ui);
@@ -256,7 +256,7 @@ struct AppState {
   Clock::time_point last_playback_update = Clock::now();
   bool show_frame_hud = false;
   int target_fps = kDefaultLoggyTargetFps;
-  LoggyThemeKind theme_kind = LoggyThemeKind::Light;
+  ThemeKind theme_kind = ThemeKind::Light;
   bool show_demo = false;
   bool request_close = false;
   WorkspaceHistory workspace_history;

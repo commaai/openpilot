@@ -19,6 +19,8 @@ bool bounded_string(const std::string &value, size_t max_bytes) {
   return !value.empty() && value.size() <= max_bytes;
 }
 
+// Must accept exactly the names theme_name() (shell/theme.cc) produces; duplicated here rather
+// than calling it because settings stays free of theme.cc's ImGui link dependency.
 bool valid_theme_name(const std::string &theme) {
   return theme == "darcula" || theme == "light";
 }
@@ -52,7 +54,7 @@ void normalize_loggy_settings(LoggySettings *settings) {
   if (!settings->map_cache_root.empty() && !bounded_string(settings->map_cache_root, kMaxSettingsValueBytes)) {
     settings->map_cache_root.clear();
   }
-  if (!valid_theme_name(settings->theme)) settings->theme = kDefaultLoggyTheme;
+  if (!valid_theme_name(settings->theme)) settings->theme = kDefaultTheme;
   settings->target_fps = normalize_target_fps(settings->target_fps);
 
   std::vector<std::string> recent;
