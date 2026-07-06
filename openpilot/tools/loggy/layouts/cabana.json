@@ -6,28 +6,62 @@
       "name": "Cabana",
       "root": {
         "split": "horizontal",
-        "sizes": [0.58, 0.42],
+        "sizes": [
+          0.58,
+          0.42
+        ],
         "children": [
           {
             "split": "vertical",
-            "sizes": [0.15, 0.2, 0.65],
+            "sizes": [
+              0.42,
+              0.22,
+              0.36
+            ],
             "children": [
-              {"type": "messages", "title": "Messages"},
-              {"type": "historylog", "title": "History"},
-              {"type": "signal", "title": "Signal"}
+              {
+                "type": "messages",
+                "title": "Messages"
+              },
+              {
+                "type": "historylog",
+                "title": "History"
+              },
+              {
+                "type": "signal",
+                "title": "Signal"
+              }
             ]
           },
           {
             "split": "vertical",
-            "sizes": [0.4, 0.6],
+            "sizes": [
+              0.4,
+              0.6
+            ],
             "children": [
-              {"type": "camera", "title": "Road Camera", "state": {"camera_view": "road"}},
+              {
+                "type": "camera",
+                "title": "Road Camera",
+                "state": {
+                  "camera_view": "road"
+                }
+              },
               {
                 "split": "horizontal",
-                "sizes": [0.5, 0.5],
+                "sizes": [
+                  0.5,
+                  0.5
+                ],
                 "children": [
-                  {"type": "binary", "title": "Binary"},
-                  {"type": "plot", "title": "Plot"}
+                  {
+                    "type": "binary",
+                    "title": "Binary"
+                  },
+                  {
+                    "type": "plot",
+                    "title": "Plot"
+                  }
                 ]
               }
             ]
@@ -37,16 +71,28 @@
     },
     {
       "name": "DBC",
-      "root": {"type": "dbc", "title": "DBC"}
+      "root": {
+        "type": "dbc",
+        "title": "DBC"
+      }
     },
     {
       "name": "Analysis",
       "root": {
         "split": "horizontal",
-        "sizes": [0.5, 0.5],
+        "sizes": [
+          0.5,
+          0.5
+        ],
         "children": [
-          {"type": "find_signal", "title": "Find Signal"},
-          {"type": "find_bits", "title": "Find Bits"}
+          {
+            "type": "find_signal",
+            "title": "Find Signal"
+          },
+          {
+            "type": "find_bits",
+            "title": "Find Bits"
+          }
         ]
       }
     }

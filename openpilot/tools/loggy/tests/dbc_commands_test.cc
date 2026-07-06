@@ -321,15 +321,24 @@ BO_ 291 TEST_MSG: 2 XXX
   // predates the pane (e.g. history built via the Signal pane before the DBC tab was ever
   // visited). Regression for a bug caught during manual GUI verification of this fix.
   int fresh_pane_generation = -1;
-  loggy::scope_undo_to_dbc_generation(undo, manager.generation(), fresh_pane_generation);
+  loggy::scope_undo_to_dbc_generation(undo, manager.file_set_generation(), fresh_pane_generation);
   CHECK(undo.count() == 1);
-  CHECK(fresh_pane_generation == manager.generation());
+  CHECK(fresh_pane_generation == manager.file_set_generation());
 
   // A pane observes the manager's generation once (mirrors what draw_dbc_pane/draw_signal_pane do
   // every frame) so a no-op poll before any file-set change leaves the stack untouched.
-  int last_generation = manager.generation();
-  loggy::scope_undo_to_dbc_generation(undo, manager.generation(), last_generation);
+  int last_generation = manager.file_set_generation();
+  loggy::scope_undo_to_dbc_generation(undo, manager.file_set_generation(), last_generation);
   CHECK(undo.count() == 1);
+
+  // The counter contract this feature depends on: an ordinary in-place edit bumps the mutation
+  // generation() but NOT file_set_generation(), so undo history must survive it. A caller wired
+  // to generation() by mistake would wipe the stack on every edit — this is the discriminator.
+  edited.name = "renamed_again";
+  REQUIRE(loggy::commit_signal_edit(undo, manager, id, *manager.msg(id)->sig("renamed"), edited, error));
+  CHECK(undo.count() == 2);
+  loggy::scope_undo_to_dbc_generation(undo, manager.file_set_generation(), last_generation);
+  CHECK(undo.count() == 2);
 
   // "New" replaces the active DBC file set for these sources with an empty file.
   REQUIRE(manager.open(loggy::SourceSet{0}, "untitled", R"(
@@ -338,7 +347,7 @@ NS_ :
 BS_:
 BU_: XXX
 )", error));
-  loggy::scope_undo_to_dbc_generation(undo, manager.generation(), last_generation);
+  loggy::scope_undo_to_dbc_generation(undo, manager.file_set_generation(), last_generation);
   CHECK(undo.count() == 0);
   CHECK_FALSE(undo.can_undo());
   CHECK_FALSE(undo.can_redo());

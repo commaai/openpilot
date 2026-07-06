@@ -261,10 +261,22 @@ bool input_text_with_hint(const char *label, const char *hint, std::string *text
   return ImGui::InputTextWithHint(label, hint, text->data(), text->capacity() + 1,
                                   edit_flags, StringResizeCallback, &callback);
 }
+
+bool input_text_multiline(const char *label, std::string *text, ImVec2 size) {
+  if (text == nullptr) return false;
+  InputTextCallbackData callback{.text = text};
+  return ImGui::InputTextMultiline(label, text->data(), text->capacity() + 1, size,
+                                   ImGuiInputTextFlags_CallbackResize, StringResizeCallback, &callback);
+}
 #else
 bool input_text_with_hint(const char *label, const char *hint, std::string *text, ImGuiInputTextFlags flags) {
   if (text == nullptr) return false;
   return ImGui::InputTextWithHint(label, hint, text, flags);
+}
+
+bool input_text_multiline(const char *label, std::string *text, ImVec2 size) {
+  if (text == nullptr) return false;
+  return ImGui::InputTextMultiline(label, text, size);
 }
 #endif
 

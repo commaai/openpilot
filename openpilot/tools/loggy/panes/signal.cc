@@ -1002,7 +1002,9 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
                                     ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingFixedFit |
                                     ImGuiTableFlags_ScrollY;
   ImVec2 table_size = ImGui::GetContentRegionAvail();
-  if (from_dbc) table_size.y = std::clamp(table_size.y * 0.34f, 96.0f, 170.0f);
+  // Bound the table so the editors below stay reachable, but let it grow with the pane —
+  // a hard 170px cap forced presets to starve other panes just to show a few signal rows.
+  if (from_dbc) table_size.y = std::clamp(table_size.y * 0.45f, 96.0f, 320.0f);
   if (!ImGui::BeginTable("##loggy_signal_table", 8, flags, table_size)) return;
   ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 138.0f);
   ImGui::TableSetupColumn("Kind", ImGuiTableColumnFlags_WidthFixed, 58.0f);

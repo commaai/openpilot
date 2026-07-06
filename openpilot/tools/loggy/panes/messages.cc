@@ -405,6 +405,8 @@ void draw_messages_pane(Session &session, PaneInstance &pane) {
 
   // Playhead-bound: Bytes/Count reflect events up to the tracker, like cabana, not the full route.
   // Payload bytes are fetched only for visible rows (draw_message_row); this pass is count-only.
+  // It runs over ALL matching ids, not just visible rows, because sorting/visibility need every
+  // row's count — each entry is one binary search, so this stays cheap at CAN-id scale.
   const TimeRange summary_range{session.playback.route_range().start_, session.playback.tracker_time()};
   for (MessageTableRow &row : transient.skeletons) {
     row.summary = summarize_message_events(session.store, row.id, summary_range, false);

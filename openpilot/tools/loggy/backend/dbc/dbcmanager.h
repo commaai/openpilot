@@ -45,6 +45,7 @@ public:
   const SourceSet sources(const DBCFile *dbc_file) const;
   // Bumped on every mutation; panes cache DBC-derived state keyed on this (REVIEW A1's
   // replacement for the deleted observer system).
+  // Plain counter reads, same accepted exception as Store::generation().
   uint64_t generation() const { return generation_; }
   DBCFile *find_dbc_file(const uint8_t source);
   inline DBCFile *find_dbc_file(const MessageId &id) { return find_dbc_file(id.source); }

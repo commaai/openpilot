@@ -94,12 +94,6 @@ std::vector<ComputedPreviewRow> computed_preview_rows(const Store &store,
                                                       TimeRange range,
                                                       size_t max_rows);
 
-template <size_t N>
-void copy_to_buffer(std::array<char, N> *buffer, const std::string &text) {
-  static_assert(N > 0);
-  std::snprintf(buffer->data(), buffer->size(), "%s", text.c_str());
-}
-
 std::string trim(std::string_view text) {
   size_t begin = 0;
   while (begin < text.size() && std::isspace(static_cast<unsigned char>(text[begin])) != 0) ++begin;
@@ -109,19 +103,9 @@ std::string trim(std::string_view text) {
 }
 
 bool input_string(const char *label, std::string *value, float width) {
-  std::array<char, 512> buffer{};
-  copy_to_buffer(&buffer, *value);
   ImGui::SetNextItemWidth(width);
-  if (!ImGui::InputText(label, buffer.data(), buffer.size())) return false;
-  *value = trim(buffer.data());
-  return true;
-}
-
-bool input_multiline(const char *label, std::string *value, ImVec2 size) {
-  std::array<char, 8192> buffer{};
-  copy_to_buffer(&buffer, *value);
-  if (!ImGui::InputTextMultiline(label, buffer.data(), buffer.size(), size)) return false;
-  *value = buffer.data();
+  if (!input_text_with_hint(label, "", value)) return false;
+  *value = trim(*value);
   return true;
 }
 
@@ -189,11 +173,9 @@ void draw_export_controls(const Store &store, ComputedEditorState *state, TimeRa
   if (state->output_path.empty()) return;
   if (state->export_path.empty()) state->export_path = computed_default_export_path(state->output_path);
 
-  std::array<char, 256> export_buf{};
-  copy_to_buffer(&export_buf, state->export_path);
   ImGui::SetNextItemWidth(std::clamp(ImGui::GetContentRegionAvail().x * 0.58f, 220.0f, 520.0f));
-  if (ImGui::InputTextWithHint("Export CSV", "/tmp/loggy_computed.csv", export_buf.data(), export_buf.size())) {
-    state->export_path = trim(export_buf.data());
+  if (input_text_with_hint("Export CSV", "/tmp/loggy_computed.csv", &state->export_path)) {
+    state->export_path = trim(state->export_path);
     state->export_status.clear();
     *changed = true;
   }
@@ -416,7 +398,7 @@ void draw_computed_pane(Session &session, PaneInstance &pane) {
   std::string additional_sources = computed_sources_text(state.additional_sources);
   const float multiline_width = std::max(220.0f, full_width - 8.0f);
   ImGui::TextUnformatted("Additional");
-  if (input_multiline("##computed_additional", &additional_sources, ImVec2(multiline_width, 58.0f))) {
+  if (input_text_multiline("##computed_additional", &additional_sources, ImVec2(multiline_width, 58.0f))) {
     state.additional_sources = computed_sources_from_text(additional_sources);
     changed = true;
   }
@@ -438,8 +420,10 @@ void draw_computed_pane(Session &session, PaneInstance &pane) {
   ImGui::SameLine();
   if (ImGui::Button("Apply")) changed = apply_computed_template(&state, state.template_index) || changed;
 
-  changed = input_multiline("Globals", &state.globals_code, ImVec2(multiline_width, 82.0f)) || changed;
-  changed = input_multiline("Function", &state.function_code, ImVec2(multiline_width, 118.0f)) || changed;
+  ImGui::TextUnformatted("Globals");
+  changed = input_text_multiline("##computed_globals", &state.globals_code, ImVec2(multiline_width, 82.0f)) || changed;
+  ImGui::TextUnformatted("Function");
+  changed = input_text_multiline("##computed_function", &state.function_code, ImVec2(multiline_width, 118.0f)) || changed;
 
   if (ImGui::Button("Run")) {
     state.additional_sources = computed_sources_from_text(computed_sources_text(state.additional_sources));

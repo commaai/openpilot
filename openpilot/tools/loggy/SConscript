@@ -129,6 +129,9 @@ event_extractors = loggy_env.Command("backend/generated_event_extractors.h", [
   generate_event_extractors,
 )
 generated_dbc_stamp = loggy_env.Command("generated_dbcs/.stamp", [], materialize_generated_dbcs)
+# The .dbc files are side effects of the stamp; a cache-restored stamp arrives without them,
+# so never serve the stamp from cache.
+loggy_env.NoCache(generated_dbc_stamp)
 car_fingerprint_to_dbc = loggy_env.Command("car_fingerprint_to_dbc.h", [], write_car_fingerprint_to_dbc_header)
 
 workspace_obj = loggy_env.Object("shell/workspace", "shell/workspace.cc")

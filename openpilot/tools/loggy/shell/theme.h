@@ -26,5 +26,6 @@ void pop_bold_font();
 void push_mono_font();
 void pop_mono_font();
 bool input_text_with_hint(const char *label, const char *hint, std::string *text, ImGuiInputTextFlags flags = 0);
+bool input_text_multiline(const char *label, std::string *text, ImVec2 size);
 
 }  // namespace loggy
