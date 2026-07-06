@@ -618,3 +618,25 @@
   is registered/present in layouts, which is workspace-wiring coverage, not logic coverage. **This
   is a real gap**, not just a stale doc: Find Signal candidate scoring/ranking and the
   history-log page/CSV-export helpers are currently unverified by any automated test.
+
+## Completion push — phases 2-4 (2026-07-05/06)
+
+- Phase 2 (style): struct audit to the honest floor (73 header structs, later 84 when scan/
+  history types legitimately crossed the pane<->backend boundary), pimpl kept only for the
+  FFmpeg/libusb pair with justification comments, rename-fallout sweep (found and fixed
+  DeviceBridgeProcess::start_), repo debris cleared.
+- Phase 3 (LOC): three independent read-only analyses converged on ~680 lines of real cuts
+  (not the hoped 3.2k); all executed — live/route extraction dedup, dead store metadata
+  pipeline, dead workspace/transport exports, shell_quote/settings-buffer consolidation, plot
+  serializer collapse — plus integrator fixes. 21,269 -> 20,595. Owner accepted the measured
+  floor over the aspirational 18k.
+- Phase 4 (parity): 7-slice GUI audit vs both reference tools; 24 defects, 21 fixed (see
+  REVIEW.md §3b ledger). Headliners: playhead-bound Messages table with byte-change heatmap
+  (the core cabana feel was missing entirely), camera seek-storm guard, Find Bits statistics
+  correctness (test-first), BE drag-resize (three compounding bugs), scoped DBC undo via a new
+  file_set_generation, preset rebalances. Integrator killed three per-frame O(dataset)
+  patterns; DBCManager gained the generation counter REVIEW A1 prescribed.
+- The historical "silent idle crash" was explained: clean exit 0 on stray external SIGTERM
+  from concurrent agent cleanup; runtime now logs signal-initiated exits.
+- LOC after parity fixes: 21,004 (audit-driven capability). Tests: scan_test added (325+
+  assertions incl. failing-first stats regression), dbc_commands at 148.
