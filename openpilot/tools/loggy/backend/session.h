@@ -102,6 +102,9 @@ private:
   size_t camera_index_segment_count_ = 0;
   bool computed_dirty_ = false;
   bool route_range_applied_ = false;
+  // Latches once ingest completes and route_range has been snapped from the nominal
+  // 60s/segment span down to the real content end (REVIEW.md defect #34).
+  bool real_range_applied_ = false;
   bool demo_seeded_ = false;
   std::vector<std::pair<std::string, SelectionContext>> selections_;
 };

@@ -39,7 +39,6 @@ struct SchemaIndex {
 struct SegmentExtractOptions {
   int segment = -1;
   TimeRange coverage;
-  bool include_deprecated_fields = false;
   bool include_raw_can_events = true;
   bool include_can_scalar_fields = false;
   bool include_decoded_can_series = false;
@@ -53,7 +52,6 @@ struct SegmentExtractResult {
   std::unordered_map<std::string, SeriesMetadata> metadata;
   size_t events_seen = 0;
   size_t events_appended = 0;
-  size_t deprecated_series_skipped = 0;
 };
 
 class SeriesAccumulator {
@@ -70,12 +68,10 @@ public:
                       uint16_t bus_time, const uint8_t *data, size_t size, double tm);
 
   void capture_enum_info(const std::string &path, std::initializer_list<std::string_view> names);
+  // Marks a path as deprecated in metadata; the field is still extracted like any other (the
+  // browser's Deprecated toggle filters display, not extraction — see generate_event_extractors.py).
   void mark_deprecated(const std::string &path);
-  // Called from ~1443 generated deprecated-field guards (generate_event_extractors.py);
-  // not merely accounting ceremony.
-  void note_skipped_deprecated() { ++deprecated_series_skipped_; }
 
-  size_t skipped_deprecated_count() const { return deprecated_series_skipped_; }
   const std::unordered_map<std::string, SeriesMetadata> &metadata() const { return metadata_; }
 
   SegmentExtractResult finish(TimeRange coverage = {});
@@ -98,7 +94,6 @@ private:
   std::unordered_map<MessageId, size_t> can_slots_;
   std::vector<CanAccum> can_events_;
   std::unordered_map<std::string, SeriesMetadata> metadata_;
-  size_t deprecated_series_skipped_ = 0;
 };
 
 const SchemaIndex &event_schema_index();

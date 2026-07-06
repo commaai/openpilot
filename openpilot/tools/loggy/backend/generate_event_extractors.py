@@ -97,15 +97,11 @@ class Generator:
     names_expr = "{" + ", ".join(cxx_string(name) for name in names) + "}"
     self.emit(indent, f"capture_static_enum_info({path_expr}, {names_expr}, series);")
 
-  def emit_deprecated_guard_open(self, indent, path_expr):
+  def emit_deprecated_marker(self, indent, path_expr):
+    # Reference tool (jotpluggler) has no skip guard here — deprecated fields are extracted
+    # like any other field; only the browser's Deprecated toggle hides them from view. Loggy
+    # used to gate extraction on this marker too, which silently dropped ~3k series paths.
     self.emit(indent, f"capture_deprecated_series({path_expr}, series);")
-    self.emit(indent, "if (options.include_deprecated_fields) {")
-    return indent + 2
-
-  def emit_deprecated_guard_close(self, indent):
-    self.emit(indent, "} else {")
-    self.emit(indent + 2, "series->note_skipped_deprecated();")
-    self.emit(indent, "}")
 
   def emit_node(self, indent, type_kind, type_proto, schema, expr, path, path_expr, dynamic_path):
     if not self.node_emits(type_kind, type_proto, schema):
@@ -163,17 +159,12 @@ class Generator:
       self.emit(indent, f"if ({' && '.join(conditions)}) {{")
       indent += 2
 
-    guarded = deprecated_path(field_path)
-    if guarded:
-      indent = self.emit_deprecated_guard_open(indent, field_path_expr)
+    if deprecated_path(field_path):
+      self.emit_deprecated_marker(indent, field_path_expr)
 
     value_var = self.tmp("value")
     self.emit(indent, f"const auto {value_var} = {get_call};")
     self.emit_node(indent, type_kind, type_proto, value_schema, value_var, field_path, field_path_expr, dynamic_path)
-
-    if guarded:
-      indent -= 2
-      self.emit_deprecated_guard_close(indent)
 
     if conditions:
       indent -= 2

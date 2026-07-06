@@ -302,8 +302,20 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
     changed = true;
   }
 
+  // page.total_rows is the match count, capped at max_rows; report it against the id's TRUE
+  // event count in view (can_event_summary, unfiltered) rather than let the cap silently pass
+  // for the whole truth (REVIEW.md defect #31 — "N events" used to cap at max_rows silently).
+  const size_t true_total = summarize_message_events(session.store, id, range, false).count;
+  char events_label[96];
+  if (page.truncated) {
+    std::snprintf(events_label, sizeof(events_label), "showing first %zu of %zu events", page.total_rows, true_total);
+  } else if (page.total_rows != true_total) {
+    std::snprintf(events_label, sizeof(events_label), "%zu matching of %zu events", page.total_rows, true_total);
+  } else {
+    std::snprintf(events_label, sizeof(events_label), "%zu events", page.total_rows);
+  }
   if (ImGui::GetContentRegionAvail().x > 160.0f) ImGui::SameLine();
-  ImGui::TextDisabled("ID %s | %zu events%s", id.to_string().c_str(), page.total_rows, page.truncated ? "+" : "");
+  ImGui::TextDisabled("ID %s | %s", id.to_string().c_str(), events_label);
   if (ImGui::GetContentRegionAvail().x > 92.0f) ImGui::SameLine();
   if (ImGui::Button("Copy CSV")) {
     const std::string csv = can_message_csv(session.store, id, range, msg);

@@ -419,10 +419,16 @@ void draw_messages_pane(Session &session, PaneInstance &pane) {
     if (rows.size() >= state.max_rows) break;
   }
 
-  const auto active_row = std::find_if(rows.begin(), rows.end(), [&](const MessageTableRow *row) {
-    return row->id == active_id;
-  });
-  if (!rows.empty() && (!selection.has_selected_msg || active_row == rows.end())) {
+  // selected_msg_id is shared across every pane in this selection_group (History, Find Bits,
+  // Find Signal, Signal, ...), not owned by this table. Only replace it when there is truly no
+  // selection yet or the id no longer exists in the store at all — never merely because this
+  // pane's OWN text/bus/show-inactive filter currently hides it, or the row hasn't produced a
+  // count yet in the playhead-bound summary window. Otherwise a Find-tool selection that this
+  // table's filter doesn't happen to show gets silently stomped back to this table's front row
+  // on the very next frame, and every other pane (History's Save Msg included) follows it.
+  const bool selection_exists_in_store = selection.has_selected_msg &&
+      std::find(all_ids.begin(), all_ids.end(), selection.selected_msg_id) != all_ids.end();
+  if (!rows.empty() && (!selection.has_selected_msg || !selection_exists_in_store)) {
     active_id = rows.front()->id;
     selection.selected_msg_id = active_id;
     selection.has_selected_msg = true;

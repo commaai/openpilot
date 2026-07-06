@@ -191,7 +191,6 @@ void SeriesAccumulator::mark_deprecated(const std::string &path) {
 SegmentExtractResult SeriesAccumulator::finish(TimeRange coverage) {
   SegmentExtractResult result;
   result.metadata = std::move(metadata_);
-  result.deprecated_series_skipped = deprecated_series_skipped_;
   result.batch.segment = segment_;
   if (coverage.valid()) {
     result.batch.coverage.push_back(coverage);

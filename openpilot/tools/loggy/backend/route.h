@@ -108,6 +108,11 @@ struct RouteIngestStatus {
   size_t batches_published = 0;
   double first_segment_seconds = 0.0;
   double total_seconds = 0.0;
+  // Running max of real per-event timestamps seen across loaded segments (series/CAN chunk
+  // ranges, timeline spans, logs) — segments are nominal 60s slots, so the last one is almost
+  // always partial. route_range stays nominal until Completed; the session then snaps its end
+  // to this honest value (REVIEW.md defect #34).
+  double content_end_seconds = 0.0;
 };
 
 const std::array<RouteBrowserPeriod, 5> &route_browser_periods();
@@ -150,6 +155,9 @@ private:
   void mutate_status(void (*fn)(RouteIngestStatus *));
   void stage_timeline_spans(std::vector<TimelineSpan> spans);
   void stage_log_entries(std::vector<LogEntry> logs);
+  // Workers call this once per loaded segment with that segment's real content end; it only
+  // ever grows, so concurrent out-of-order segment completions still converge on the honest max.
+  void extend_content_end(double end);
 
   SegmentScheduler *scheduler_ = nullptr;
   std::thread thread_;

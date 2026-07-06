@@ -707,7 +707,32 @@ struct SegmentLoadResult {
   std::vector<TimelineSpan> timeline_spans;
   std::vector<LogEntry> logs;
   std::string car_fingerprint;
+  // Real (not nominal-segment-slot) end of this segment's content — see extend_content_end().
+  double content_end = 0.0;
 };
+
+// batch.coverage always reports the nominal 60s segment window (extract.cc's finish() is
+// handed that as the requested coverage, so it wins over the real per-chunk ranges) — that is
+// correct for gap-detection queries, but it means coverage can't tell a full segment from a
+// partial last one. SeriesChunk/CanEventChunk.range is the real per-point extent regardless, so
+// use those directly for the honest route-duration fix (REVIEW.md defect #34).
+double batch_content_end(const StoreBatch &batch) {
+  double end = 0.0;
+  for (const SeriesChunk &chunk : batch.series) {
+    if (chunk.range.valid()) end = std::max(end, chunk.range.end);
+  }
+  for (const CanEventChunk &chunk : batch.can_events) {
+    if (chunk.range.valid()) end = std::max(end, chunk.range.end);
+  }
+  return end;
+}
+
+double segment_content_end(const SegmentLoadResult &loaded) {
+  double end = batch_content_end(loaded.batch);
+  for (const TimelineSpan &span : loaded.timeline_spans) end = std::max(end, span.end_time);
+  for (const LogEntry &log : loaded.logs) end = std::max(end, log.mono_time);
+  return end;
+}
 
 SegmentLoadResult load_route_segment(const SegmentWorkItem &work, bool local_cache, std::atomic<bool> *abort) {
   if (work.log_path.empty()) {
@@ -739,6 +764,7 @@ SegmentLoadResult load_route_segment(const SegmentWorkItem &work, bool local_cac
   result.timeline_spans = extract_timeline_spans(reader.events, extract.time_offset_seconds());
   result.logs = extract_log_entries(reader.events, extract.time_offset_seconds());
   result.car_fingerprint = extract_car_fingerprint(reader.events);
+  result.content_end = segment_content_end(result);
   return result;
 }
 
@@ -850,6 +876,7 @@ void RouteIngestor::run(RouteIngestConfig config) {
               update_status(next);
             }
           }
+          if (loaded.content_end > 0.0) extend_content_end(loaded.content_end);
           stage_timeline_spans(std::move(loaded.timeline_spans));
           stage_log_entries(std::move(loaded.logs));
           scheduler_->publish(std::move(loaded.batch));
@@ -900,6 +927,13 @@ void RouteIngestor::mutate_status(void (*fn)(RouteIngestStatus *)) {
   // Serialize compound counter transitions so multiple workers don't clobber increments.
   std::lock_guard lock(status_mutex_);
   fn(&status_);
+}
+
+void RouteIngestor::extend_content_end(double end) {
+  // A dedicated max, not a mutate_status(fn) read-modify-write: workers finish segments out of
+  // order, and this must never regress once observed.
+  std::lock_guard lock(status_mutex_);
+  status_.content_end_seconds = std::max(status_.content_end_seconds, end);
 }
 
 void RouteIngestor::stage_timeline_spans(std::vector<TimelineSpan> spans) {

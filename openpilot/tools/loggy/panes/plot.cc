@@ -539,6 +539,12 @@ void draw_plot_coverage(const std::vector<PreparedPlotSeries> &series) {
   ImGui::TextDisabled("%zu series", visible);
   ImGui::SameLine();
   ImGui::TextDisabled("| %.2fs covered", covered);
+  if (ImGui::IsItemHovered()) {
+    // REVIEW.md defect #7/#18: this number reads as a bug report ("why doesn't it cover the
+    // whole route?") without context — a route's last segment is almost always partial.
+    ImGui::SetTooltip("Data present for %.2fs of the route.\nShort final segments are normal — "
+                      "every route ends mid-segment.", covered);
+  }
   if (missing > 0) {
     ImGui::SameLine();
     ImGui::TextDisabled("| %zu missing", missing);

@@ -45,11 +45,13 @@ TEST_CASE("SeriesAccumulator emits ordered StoreBatch chunks") {
   CHECK(view.coverage.ranges.size() == 1);
 }
 
-TEST_CASE("SeriesAccumulator captures enum and deprecated metadata") {
+TEST_CASE("SeriesAccumulator captures enum and deprecated metadata, still extracts the field") {
   loggy::SeriesAccumulator series(0, {"/carState/gearShifter"});
   series.capture_enum_info("/carState/gearShifter", {"unknown", "park", "drive"});
   series.mark_deprecated("/carState/cruiseState/speedOffsetDEPRECATED");
-  series.note_skipped_deprecated();
+  // Deprecated is a display-only marker (browser toggle); extraction still happens, matching
+  // the reference tool which has no skip guard at all.
+  series.append_scalar("/carState/cruiseState/speedOffsetDEPRECATED", 0.5, 3.0);
   series.append_fixed_scalar(0, 0.5, 2.0);
 
   loggy::SegmentExtractResult result = series.finish({0.0, 1.0});
@@ -57,7 +59,11 @@ TEST_CASE("SeriesAccumulator captures enum and deprecated metadata") {
   CHECK(result.metadata["/carState/gearShifter"].enum_names[2] == "drive");
   REQUIRE(result.metadata.count("/carState/cruiseState/speedOffsetDEPRECATED") == 1);
   CHECK(result.metadata["/carState/cruiseState/speedOffsetDEPRECATED"].deprecated);
-  CHECK(result.deprecated_series_skipped == 1);
+
+  const loggy::SeriesChunk *deprecated_chunk = findChunk(result.batch, "/carState/cruiseState/speedOffsetDEPRECATED");
+  REQUIRE(deprecated_chunk != nullptr);
+  REQUIRE(deprecated_chunk->points.size() == 1);
+  CHECK(deprecated_chunk->points[0].value == 3.0);
 }
 
 TEST_CASE("SeriesAccumulator emits raw CAN event chunks") {

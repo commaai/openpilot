@@ -580,6 +580,7 @@ bool Session::restart_route(std::string route_name, std::string &error) {
   store.clear();
   scheduler.set_route_segments({});
   route_range_applied_ = false;
+  real_range_applied_ = false;
   camera_indexes_dirty_ = true;
   camera_index_segment_count_ = 0;
   computed_dirty_ = !computed_specs.empty();
@@ -710,6 +711,26 @@ DrainResult Session::begin_frame() {
     view_range.set_route_range(status.route_range);
     view_range.reset_to_route();
     timeline.set_route_range(status.route_range);
+  }
+  // Segments are nominal 60s slots and the route's last one is almost always partial, so the
+  // range applied above overstates the route by up to a segment (REVIEW.md defect #34: duration
+  // showed 960.00s with a ~35s dead zone for content that really ends at ~925s). Once ingest has
+  // seen every segment, snap the end down to the real observed content end. This only ever
+  // shrinks the range and reuses the same set_route_range() clamp every other range update goes
+  // through — a tracker/view already inside the honest end doesn't move; one already past it
+  // (e.g. the user scrubbed near the nominal end while still loading) is clamped in, not yanked
+  // back to route start.
+  if (!real_range_applied_ && status.state == RouteIngestState::Completed) {
+    real_range_applied_ = true;
+    if (status.content_end_seconds > 0.0 && status.route_range.valid()) {
+      const TimeRange honest_range{status.route_range.start_,
+                                  std::min(status.content_end_seconds, status.route_range.end)};
+      if (honest_range.span() > 0.0) {
+        playback.set_route_range(honest_range);
+        view_range.set_route_range(honest_range);
+        timeline.set_route_range(honest_range);
+      }
+    }
   }
 
   std::vector<TimelineSpan> new_spans = route_ingest_.drain_timeline_spans();

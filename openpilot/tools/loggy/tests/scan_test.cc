@@ -502,3 +502,84 @@ TEST_CASE("summarize_message_events paused at route start shows no events yet") 
   CHECK(summary.count == 0);
   CHECK(summary.latest_data.empty());
 }
+
+// -- (g) can_message_csv: exported rows must belong to the requested id only (REVIEW.md
+// defect #24 — History's "Save Msg" once exported 92k rows with zero rows of the selected
+// message because a sibling pane silently reassigned the shared selection; see
+// panes/messages.cc's selection-repair guard). Every row's bus/address column must match the
+// requested id, regardless of how many other ids share the store.
+
+namespace {
+
+// One column per comma; none of the payloads below produce a hex/decoded field with a comma,
+// so a plain split is exact (can_message_csv would otherwise quote such a field).
+std::vector<std::vector<std::string>> parseCsvDataRows(const std::string &csv) {
+  std::vector<std::vector<std::string>> rows;
+  size_t line_start = csv.find('\n');
+  if (line_start == std::string::npos) return rows;
+  ++line_start;
+  while (line_start < csv.size()) {
+    size_t line_end = csv.find('\n', line_start);
+    if (line_end == std::string::npos) line_end = csv.size();
+    std::string line = csv.substr(line_start, line_end - line_start);
+    if (!line.empty()) {
+      std::vector<std::string> cells;
+      size_t cell_start = 0;
+      while (cell_start <= line.size()) {
+        size_t comma = line.find(',', cell_start);
+        if (comma == std::string::npos) comma = line.size();
+        cells.push_back(line.substr(cell_start, comma - cell_start));
+        cell_start = comma + 1;
+      }
+      rows.push_back(std::move(cells));
+    }
+    line_start = line_end + 1;
+  }
+  return rows;
+}
+
+}  // namespace
+
+TEST_CASE("can_message_csv exports only the requested id's rows, even with other ids in the store") {
+  const MessageId target{.source = 0, .address = 0x7E};
+  const MessageId other_a{.source = 0, .address = 0x123};
+  const MessageId other_b{.source = 1, .address = 0x7E};  // same address, different bus — must not leak in either.
+  const TimeRange route_range{0.0, 100.0};
+
+  const std::vector<CanEvent> target_events = {
+    {.mono_time = 1.0, .bus_time = 5, .data = {0x01}},
+    {.mono_time = 2.0, .bus_time = 6, .data = {0x02}},
+  };
+  const std::vector<CanEvent> other_a_events = {
+    {.mono_time = 1.5, .bus_time = 7, .data = {0xAA}},
+    {.mono_time = 2.5, .bus_time = 8, .data = {0xBB}},
+    {.mono_time = 3.5, .bus_time = 9, .data = {0xCC}},
+  };
+  const std::vector<CanEvent> other_b_events = {
+    {.mono_time = 1.2, .bus_time = 10, .data = {0xDD}},
+  };
+
+  Store store;
+  stageEvents(&store, {{target, target_events}, {other_a, other_a_events}, {other_b, other_b_events}}, route_range);
+
+  const std::string csv = loggy::can_message_csv(store, target, route_range);
+  const std::vector<std::vector<std::string>> rows = parseCsvDataRows(csv);
+  REQUIRE(rows.size() == target_events.size());
+  for (const std::vector<std::string> &row : rows) {
+    REQUIRE(row.size() == 7);
+    CHECK(row[2] == "0");     // bus column
+    CHECK(row[3] == "0x7E");  // address column
+  }
+
+  // Sibling ids (including the same address on a different bus) must not appear at all.
+  const std::string other_a_csv = loggy::can_message_csv(store, other_a, route_range);
+  for (const std::vector<std::string> &row : parseCsvDataRows(other_a_csv)) {
+    CHECK(row[3] == "0x123");
+  }
+  const std::string other_b_csv = loggy::can_message_csv(store, other_b, route_range);
+  REQUIRE(parseCsvDataRows(other_b_csv).size() == other_b_events.size());
+  for (const std::vector<std::string> &row : parseCsvDataRows(other_b_csv)) {
+    CHECK(row[2] == "1");
+    CHECK(row[3] == "0x7E");
+  }
+}
