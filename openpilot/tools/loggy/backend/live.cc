@@ -234,7 +234,7 @@ public:
   DeviceBridgeProcess &operator=(const DeviceBridgeProcess &) = delete;
   ~DeviceBridgeProcess() { stop(); }
 
-  void start_(const std::string &address) {
+  void start(const std::string &address) {
     const std::filesystem::path bridge = messaging_bridge_path();
     if (!std::filesystem::exists(bridge)) {
       throw std::runtime_error("messaging bridge binary not found: " + bridge.string());
@@ -250,7 +250,7 @@ public:
     }
     if (pid_ < 0) {
       pid_ = -1;
-      throw std::runtime_error("Failed to start_ messaging bridge");
+      throw std::runtime_error("Failed to start messaging bridge");
     }
   }
 
@@ -622,7 +622,7 @@ void LiveCerealPoller::run_cereal_source(const LiveSourceConfig &source, LiveCer
 void LiveCerealPoller::run_device_bridge_source(const LiveSourceConfig &source, LiveCerealAccumulator *accumulator) {
 #ifdef __linux__
     DeviceBridgeProcess bridge;
-    bridge.start_(source.address.empty() ? "127.0.0.1" : source.address);
+    bridge.start(source.address.empty() ? "127.0.0.1" : source.address);
     LiveSourceConfig local = source;
     local.kind = LiveSourceKind::CerealLocal;
     local.address = "127.0.0.1";
