@@ -45,9 +45,15 @@ bool timeline_span_less(const TimelineSpan &a, const TimelineSpan &b) {
   return static_cast<int>(a.kind) < static_cast<int>(b.kind);
 }
 
+// selfdriveState samples arrive at 2 Hz (0.5 Hz in qlogs) and each segment's spans end at its
+// last sample, so adjacent same-kind spans legitimately sit seconds apart. Bridge those sampling
+// gaps; zero-length None spans (emitted on disengaged samples) are barriers so a real
+// disengagement is never painted over, and are stripped from the output.
+constexpr double kTimelineBridgeSeconds = 4.0;
+
 std::vector<TimelineSpan> merge_timeline_spans(std::vector<TimelineSpan> spans) {
   spans.erase(std::remove_if(spans.begin(), spans.end(), [](const TimelineSpan &span) {
-    return span.kind == TimelineSpanKind::None || !std::isfinite(span.start_time) || !std::isfinite(span.end_time);
+    return !std::isfinite(span.start_time) || !std::isfinite(span.end_time);
   }), spans.end());
   for (TimelineSpan &span : spans) {
     if (span.end_time < span.start_time) std::swap(span.start_time, span.end_time);
@@ -56,11 +62,18 @@ std::vector<TimelineSpan> merge_timeline_spans(std::vector<TimelineSpan> spans) 
 
   std::vector<TimelineSpan> merged;
   merged.reserve(spans.size());
+  bool barrier = false;
   for (const TimelineSpan &span : spans) {
-    if (!merged.empty() && merged.back().kind == span.kind && span.start_time <= merged.back().end_time + 1.0e-9) {
+    if (span.kind == TimelineSpanKind::None) {
+      barrier = true;
+      continue;
+    }
+    if (!barrier && !merged.empty() && merged.back().kind == span.kind &&
+        span.start_time <= merged.back().end_time + kTimelineBridgeSeconds) {
       merged.back().end_time = std::max(merged.back().end_time, span.end_time);
       continue;
     }
+    barrier = false;
     merged.push_back(span);
   }
   return merged;

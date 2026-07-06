@@ -7,8 +7,9 @@
       "root": {
         "split": "horizontal",
         "sizes": [
-          0.38,
-          0.62
+          0.4,
+          0.33,
+          0.27
         ],
         "children": [
           {
@@ -19,50 +20,41 @@
             "split": "vertical",
             "sizes": [
               0.42,
-              0.33,
-              0.25
+              0.36,
+              0.22
             ],
             "children": [
               {
-                "split": "horizontal",
-                "sizes": [
-                  0.62,
-                  0.38
-                ],
-                "children": [
-                  {
-                    "type": "binary",
-                    "title": "Binary"
-                  },
-                  {
-                    "type": "camera",
-                    "title": "Road Camera",
-                    "state": {
-                      "camera_view": "road"
-                    }
-                  }
-                ]
+                "type": "binary",
+                "title": "Binary"
               },
               {
                 "type": "signal",
                 "title": "Signal"
               },
               {
-                "split": "horizontal",
-                "sizes": [
-                  0.5,
-                  0.5
-                ],
-                "children": [
-                  {
-                    "type": "historylog",
-                    "title": "History"
-                  },
-                  {
-                    "type": "plot",
-                    "title": "Chart"
-                  }
-                ]
+                "type": "historylog",
+                "title": "History"
+              }
+            ]
+          },
+          {
+            "split": "vertical",
+            "sizes": [
+              0.36,
+              0.64
+            ],
+            "children": [
+              {
+                "type": "camera",
+                "title": "Road Camera",
+                "state": {
+                  "camera_view": "road"
+                }
+              },
+              {
+                "type": "plot",
+                "title": "Chart"
               }
             ]
           }

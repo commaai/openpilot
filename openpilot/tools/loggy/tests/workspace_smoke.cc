@@ -103,11 +103,13 @@ int main() {
 
   const loggy::Workspace jot_file = loggy::load_workspace_json(layout_dir / "jotpluggler.json");
   assert(jot_file.tabs.size() == 2);
+  // Owner-approved canvas shape: sidebar (camera + browser) and one hero plot; logs/map stay
+  // available as pane types and bundled layouts, not in the default preset.
   assert(count_panes_of_type(jot_file, "browser") == 1);
   assert(count_panes_of_type(jot_file, "camera") == 1);
   assert(count_panes_of_type(jot_file, "plot") == 1);
-  assert(count_panes_of_type(jot_file, "logs") == 1);
-  assert(count_panes_of_type(jot_file, "map") == 1);
+  assert(count_panes_of_type(jot_file, "logs") == 0);
+  assert(count_panes_of_type(jot_file, "map") == 0);
   assert(count_panes_of_type(jot_file, "computed") == 1);
   for (const loggy::PaneInstance &pane : jot_file.tabs[0].panes) {
     if (pane.type != "plot") continue;
