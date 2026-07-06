@@ -29,6 +29,17 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
+  if os.environ.get("SIM_FAKE_MODELD") or os.environ.get("METADRIVE_STRAIGHT_ROAD"):
+    return dict(
+      type=MapGenerateMethod.PG_MAP_FILE,
+      lane_num=2,
+      lane_width=4.5,
+      config=[
+        None,
+        straight_block(2000),
+      ]
+    )
+
   curve_len = track_size * 2
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
