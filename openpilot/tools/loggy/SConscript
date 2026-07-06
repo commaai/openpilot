@@ -13,7 +13,9 @@ from openpilot.common.basedir import BASEDIR
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
 
 loggy_env = env.Clone()
-loggy_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
+loggy_env["LIBPATH"] += [libusb.LIB_DIR]
+if arch != "Darwin":
+  loggy_env["LIBPATH"] += [imgui.MESA_DIR]  # software-GL fallback for headless Linux only
 loggy_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 loggy_env["CXXFLAGS"] += [
   "-DGLFW_INCLUDE_NONE",
@@ -46,7 +48,7 @@ libs = [
 ]
 
 if arch == "Darwin":
-  loggy_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
+  loggy_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox", "Security"]  # Security: libusb darwin_detach_kernel_driver
 else:
   libs += ["GL", "dl", "va", "va-drm", "drm"]
 
