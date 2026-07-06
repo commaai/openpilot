@@ -54,12 +54,16 @@ camel check stays 0.
 the `export.h` shim is deleted. (`kLoggySeriesPathPayload` in browser.h and
 `map_basemap_effective_cache_root` in map.h remain as the two accepted small exceptions.)
 
-### 2.3 Header structs grew: 50 → 82 (v1 A7 relocated instead of shrinking)
+### 2.3 Header structs — AUDITED, floor is 73 (done 2026-07-05 evening)
 
-Moving pane helpers to the backend moved their structs into backend headers. Some are now
-legitimate boundary types; `backend/route.h` (13 structs) and `backend/video.h` (8) deserve an
-audit against the rule: *a struct earns a header name by crossing a thread, serialization, or
-subsystem boundary*. Everything with one caller goes file-local. Target: ≤ 40.
+Full audit executed against the boundary rule. Result: 79 → **73**, with a per-struct
+disposition table in the audit commits. The earlier ≤40 target was wrong: the survivors
+genuinely cross boundaries (Store's 11 are its concurrency/query API; transport/workspace
+types are backend↔shell↔panes seams; every video/panda struct has ≥2 real callers in the
+camera pane). Also removed: 10 dead perf-metric fields, a zero-caller accessor
+(`priority_order()`, test rewritten to the real boundary), `RouteResolveConfig` merged away,
+`ComputedPythonSpec` flattened. Ratchet baseline now 73; may drift a little lower if Phase-3
+moves pane logic to the backend, but do not force it below the boundary rule's honest floor.
 
 ### 2.4 Pimpl came back (v1 A3): 3 instances
 
