@@ -149,7 +149,7 @@ void draw_bytes(const std::vector<uint8_t> &bytes, const std::vector<float> *cha
   const ImVec2 origin = ImGui::GetCursorScreenPos();
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
   const ImU32 text = ImGui::GetColorU32(ImGuiCol_Text);
-  const ImU32 fill = ImGui::GetColorU32(color_rgb(76, 80, 82));
+  const ImU32 fill = ImGui::GetColorU32(theme().binary_idle_cell);
   for (size_t i = 0; i < bytes.size(); ++i) {
     const ImVec2 p0(origin.x + static_cast<float>(i) * cell.x, origin.y);
     const ImVec2 p1(p0.x + cell.x, p0.y + cell.y);
@@ -157,7 +157,9 @@ void draw_bytes(const std::vector<uint8_t> &bytes, const std::vector<float> *cha
     const float alpha = (change_alpha != nullptr && i < change_alpha->size()) ? (*change_alpha)[i] : 0.0f;
     if (alpha > 0.0f) {
       // Same overlay-tint style as binary.cc's heat_color: translucent accent over the base fill.
-      draw_list->AddRectFilled(p0, p1, ImGui::GetColorU32(color_rgb(47, 101, 202, 0.18f + 0.58f * alpha)));
+      ImVec4 heat = theme().binary_heat_accent;
+      heat.w = 0.18f + 0.58f * alpha;
+      draw_list->AddRectFilled(p0, p1, ImGui::GetColorU32(heat));
     }
     char buf[3];
     std::snprintf(buf, sizeof(buf), "%02X", bytes[i]);

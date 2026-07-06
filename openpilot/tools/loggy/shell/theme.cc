@@ -107,6 +107,22 @@ const Theme kDarculaTheme = {
   .camera_video_border = rgb(116, 178, 255, 0.75f),
   .camera_overlay_bg = rgb(20, 22, 24, 0.60f),
   .camera_overlay_border = rgb(84, 87, 89, 0.85f),
+
+  .map_bg = rgb(43, 45, 47),
+  .map_grid = rgb(72, 77, 80, 0.76f),
+  .map_water_fill = rgb(54, 93, 117, 0.42f),
+  .map_water_outline = rgb(88, 139, 168, 0.70f),
+  .map_water_line = rgb(96, 151, 181, 0.74f),
+  .map_marker = rgb(238, 188, 82),
+  .map_marker_outline = rgb(30, 32, 34),
+  .map_road_motorway_casing = rgb(92, 91, 86, 0.78f),
+  .map_road_motorway_fill = rgb(213, 199, 158, 0.92f),
+  .map_road_primary_casing = rgb(80, 84, 86, 0.74f),
+  .map_road_primary_fill = rgb(202, 207, 202, 0.88f),
+  .map_road_secondary_casing = rgb(74, 80, 82, 0.68f),
+  .map_road_secondary_fill = rgb(184, 193, 190, 0.82f),
+  .map_road_local_casing = rgb(68, 74, 77, 0.62f),
+  .map_road_local_fill = rgb(151, 162, 163, 0.72f),
 };
 
 // Light is the default theme now (item 9a) and is sampled directly from the jotpluggler
@@ -189,6 +205,24 @@ const Theme kLightTheme = {
   .camera_video_border = rgb(58, 116, 196, 0.65f),
   .camera_overlay_bg = rgb(255, 255, 255, 0.75f),
   .camera_overlay_border = rgb(181, 188, 196, 0.90f),
+
+  // Carto-light: near-white canvas, warm motorways, white minor roads — the usual light map
+  // conventions, kept muted so the GPS trace and car marker stay the loudest things on it.
+  .map_bg = rgb(240, 243, 245),
+  .map_grid = rgb(207, 212, 216, 0.76f),
+  .map_water_fill = rgb(168, 206, 229, 0.55f),
+  .map_water_outline = rgb(122, 170, 203, 0.75f),
+  .map_water_line = rgb(112, 163, 198, 0.78f),
+  .map_marker = rgb(238, 188, 82),
+  .map_marker_outline = rgb(30, 32, 34),
+  .map_road_motorway_casing = rgb(224, 167, 90, 0.88f),
+  .map_road_motorway_fill = rgb(252, 214, 164, 0.95f),
+  .map_road_primary_casing = rgb(196, 172, 118, 0.82f),
+  .map_road_primary_fill = rgb(252, 239, 197, 0.92f),
+  .map_road_secondary_casing = rgb(172, 178, 184, 0.80f),
+  .map_road_secondary_fill = rgb(255, 255, 255, 0.95f),
+  .map_road_local_casing = rgb(191, 196, 201, 0.70f),
+  .map_road_local_fill = rgb(255, 255, 255, 0.85f),
 };
 
 const std::filesystem::path &repo_root() {
@@ -216,10 +250,6 @@ void icon_add_font(float size, float density, bool merge = false, const ImFont *
 
 const Theme &theme() {
   return g_current_theme == ThemeKind::Light ? kLightTheme : kDarculaTheme;
-}
-
-ImVec4 color_rgb(int r, int g, int b, float alpha) {
-  return rgb(r, g, b, alpha);
 }
 
 void load_fonts(float density) {

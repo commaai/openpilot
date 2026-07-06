@@ -658,8 +658,8 @@ void draw_signal_sparkline(const SignalPaneRow &row) {
 
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
   const ImVec2 max(pos.x + width, pos.y + height);
-  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(color_rgb(48, 51, 53)), 2.0f);
-  draw_list->AddRect(pos, max, ImGui::GetColorU32(color_rgb(82, 86, 88)), 2.0f);
+  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(theme().sparkline_bg), 2.0f);
+  draw_list->AddRect(pos, max, ImGui::GetColorU32(theme().sparkline_border), 2.0f);
 
   if (row.sparkline.values.empty()) {
     draw_list->AddText(ImVec2(pos.x + 4.0f, pos.y + 2.0f), ImGui::GetColorU32(ImGuiCol_TextDisabled), "--");

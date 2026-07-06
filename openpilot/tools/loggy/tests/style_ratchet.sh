@@ -70,11 +70,13 @@ check "named header structs" \
 # (segment-scoped abort + best-effort stale publish in video.cc); ->21619 interaction
 # defect batch — binary edge-vs-create drag semantics, plot empty-series persistence + drop
 # hint, workspace splitter drag (previously absent entirely), resize-status undo staleness,
-# map failure banner, signal pane sizing that could drop BeginTable and the editor below it.
+# map failure banner, signal pane sizing that could drop BeginTable and the editor below it;
+# ->21669 theme-token completion — map carto palette gets Theme tokens with real light values
+# (map was staying dark in the light theme), color_rgb() deleted from the public API.
 # Genuine defect-cluster capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21619
+  21669
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.
@@ -87,11 +89,10 @@ check "pane-local statics" \
 check "backend header camel" \
   "$(rg_count '\b[a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*\s*\(' backend -g'*.h' -g'!generated_*')" \
   0
-# Theme sweep (2026-07-06, visual-identity pass): shell/theme.{h,cc}, shell/runtime.cc,
-# shell/workspace.cc, panes/{binary,camera,plot,browser}.cc are fully on Theme tokens (0
-# literals). Outstanding, different owners' files this pass didn't touch: panes/map.cc (16, its
-# own hand-drawn map palette), panes/signal.cc (2), panes/messages.cc (2) — baseline reflects
-# that honestly rather than claiming 0. Target 0 once those sweeps land.
+# Theme sweep complete (2026-07-06): every pane/shell color reads a Theme token; the map's carto
+# palette (roads/water/marker) got its own token group with real light values, so the map no
+# longer stays dark in the light theme. color_rgb() is deleted from theme.h — this check now
+# trips on any attempt to reintroduce a literal-color helper in a pane.
 check "color_rgb literals outside theme.cc" \
   "$(rg_count 'color_rgb\(' panes shell -g'*.cc' -g'!theme.cc')" \
-  20
+  0

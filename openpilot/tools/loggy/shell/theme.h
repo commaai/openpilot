@@ -105,6 +105,24 @@ struct Theme {
   ImVec4 camera_video_border;
   ImVec4 camera_overlay_bg;
   ImVec4 camera_overlay_border;
+
+  // Map pane carto palette (canvas border reuses chrome_border). Road pairs follow the usual
+  // carto convention: a darker casing stroke under a lighter fill.
+  ImVec4 map_bg;
+  ImVec4 map_grid;
+  ImVec4 map_water_fill;
+  ImVec4 map_water_outline;
+  ImVec4 map_water_line;
+  ImVec4 map_marker;
+  ImVec4 map_marker_outline;
+  ImVec4 map_road_motorway_casing;
+  ImVec4 map_road_motorway_fill;
+  ImVec4 map_road_primary_casing;
+  ImVec4 map_road_primary_fill;
+  ImVec4 map_road_secondary_casing;
+  ImVec4 map_road_secondary_fill;
+  ImVec4 map_road_local_casing;
+  ImVec4 map_road_local_fill;
 };
 
 const Theme &theme();
@@ -117,7 +135,6 @@ const char *theme_name(ThemeKind kind);
 const char *theme_label(ThemeKind kind);
 void apply_theme(ThemeKind kind = ThemeKind::Light);
 ImVec4 clear_color();
-ImVec4 color_rgb(int r, int g, int b, float alpha = 1.0f);
 void push_bold_font();
 void pop_bold_font();
 void push_mono_font();

@@ -622,9 +622,9 @@ void set_map_center_from_projection(MapState *state, const MapProjection &projec
 }
 
 void draw_map_grid(ImDrawList *draw_list, ImVec2 origin, ImVec2 size) {
-  const ImU32 bg = ImGui::GetColorU32(color_rgb(43, 45, 47));
-  const ImU32 border = ImGui::GetColorU32(color_rgb(92, 96, 98));
-  const ImU32 major = ImGui::GetColorU32(color_rgb(72, 77, 80, 0.76f));
+  const ImU32 bg = ImGui::GetColorU32(theme().map_bg);
+  const ImU32 border = ImGui::GetColorU32(theme().chrome_border);
+  const ImU32 major = ImGui::GetColorU32(theme().map_grid);
   draw_list->AddRectFilled(origin, ImVec2(origin.x + size.x, origin.y + size.y), bg);
   for (int i = 1; i < 6; ++i) {
     const float x = origin.x + size.x * static_cast<float>(i) / 6.0f;
@@ -644,7 +644,7 @@ void draw_car_marker(ImDrawList *draw_list, ImVec2 center, double bearing_deg, I
   const ImVec2 p1(center.x - forward.x * size + right.x * size, center.y - forward.y * size + right.y * size);
   const ImVec2 p2(center.x - forward.x * size - right.x * size, center.y - forward.y * size - right.y * size);
   draw_list->AddTriangleFilled(p0, p1, p2, color);
-  draw_list->AddTriangle(p0, p1, p2, ImGui::GetColorU32(color_rgb(30, 32, 34)), 1.5f);
+  draw_list->AddTriangle(p0, p1, p2, ImGui::GetColorU32(theme().map_marker_outline), 1.5f);
 }
 
 int map_kind_priority(TimelineSpanKind kind) {
@@ -680,33 +680,34 @@ struct BasemapRoadPaint {
 };
 
 BasemapRoadPaint basemap_road_paint(MapBasemapFeatureKind kind) {
+  const Theme &t = theme();
   switch (kind) {
     case MapBasemapFeatureKind::RoadMotorway:
       return {
-        .casing = ImGui::GetColorU32(color_rgb(92, 91, 86, 0.78f)),
-        .fill = ImGui::GetColorU32(color_rgb(213, 199, 158, 0.92f)),
+        .casing = ImGui::GetColorU32(t.map_road_motorway_casing),
+        .fill = ImGui::GetColorU32(t.map_road_motorway_fill),
         .casing_width = 5.2f,
         .fill_width = 3.3f,
       };
     case MapBasemapFeatureKind::RoadPrimary:
       return {
-        .casing = ImGui::GetColorU32(color_rgb(80, 84, 86, 0.74f)),
-        .fill = ImGui::GetColorU32(color_rgb(202, 207, 202, 0.88f)),
+        .casing = ImGui::GetColorU32(t.map_road_primary_casing),
+        .fill = ImGui::GetColorU32(t.map_road_primary_fill),
         .casing_width = 4.2f,
         .fill_width = 2.6f,
       };
     case MapBasemapFeatureKind::RoadSecondary:
       return {
-        .casing = ImGui::GetColorU32(color_rgb(74, 80, 82, 0.68f)),
-        .fill = ImGui::GetColorU32(color_rgb(184, 193, 190, 0.82f)),
+        .casing = ImGui::GetColorU32(t.map_road_secondary_casing),
+        .fill = ImGui::GetColorU32(t.map_road_secondary_fill),
         .casing_width = 3.2f,
         .fill_width = 2.0f,
       };
     case MapBasemapFeatureKind::RoadLocal:
     default:
       return {
-        .casing = ImGui::GetColorU32(color_rgb(68, 74, 77, 0.62f)),
-        .fill = ImGui::GetColorU32(color_rgb(151, 162, 163, 0.72f)),
+        .casing = ImGui::GetColorU32(t.map_road_local_casing),
+        .fill = ImGui::GetColorU32(t.map_road_local_fill),
         .casing_width = 2.2f,
         .fill_width = 1.35f,
       };
@@ -766,9 +767,9 @@ void draw_basemap_polyline(ImDrawList *draw_list,
 }
 
 void draw_basemap_features(ImDrawList *draw_list, const MapBasemap &basemap, const MapProjection &projection) {
-  const ImU32 water_fill = ImGui::GetColorU32(color_rgb(54, 93, 117, 0.42f));
-  const ImU32 water_outline = ImGui::GetColorU32(color_rgb(88, 139, 168, 0.70f));
-  const ImU32 water_line = ImGui::GetColorU32(color_rgb(96, 151, 181, 0.74f));
+  const ImU32 water_fill = ImGui::GetColorU32(theme().map_water_fill);
+  const ImU32 water_outline = ImGui::GetColorU32(theme().map_water_outline);
+  const ImU32 water_line = ImGui::GetColorU32(theme().map_water_line);
 
   for (const MapBasemapFeature &feature : basemap.features) {
     if (feature.kind != MapBasemapFeatureKind::WaterPolygon || !basemap_feature_intersects_projection(feature, projection)) continue;
@@ -1568,7 +1569,7 @@ void draw_map_pane(Session &session, PaneInstance &pane) {
 
   if (tracker.has_value()) {
     const ImVec2 marker = map_to_screen(projection, tracker->lat, tracker->lon);
-    draw_car_marker(draw_list, marker, tracker->bearing_deg, ImGui::GetColorU32(color_rgb(238, 188, 82)));
+    draw_car_marker(draw_list, marker, tracker->bearing_deg, ImGui::GetColorU32(theme().map_marker));
   }
 
   if (changed) save_map_pane_state(pane, state);
