@@ -61,18 +61,19 @@ check "named header structs" \
   85
 # LOC history (prior in git): 20605->20950 parity-fix wave; ->21020 ship fixes; ->21124
 # red-team data-honesty wave (honest route duration, deprecated series, export isolation);
-# ->21368 (2026-07-06) visual-identity pass — the owner-directed `struct Theme` (every color
-# token, grouped, two full const instances kLightTheme/kDarculaTheme) plus binary.cc's
-# per-signal colored spans + MSB/LSB markers (cabana's signature look) and camera/plot chrome
-# cleanups, minus root cleanup (dead plot_border token, ImPlot colors set once in apply_theme
-# instead of pushed per frame, LoggyThemeKind->ThemeKind stutter fix). Capability and a real
-# style fix (single source of truth for every color), not padding.
+# ->21368 visual-identity pass (struct Theme, binary per-signal spans + M/L markers, camera/plot
+# chrome) + root cleanup; ->21462 (2026-07-06) playhead-semantics wave — Binary/Signal grids
+# moved off can_events() copies onto can_event_summary + byte_change_times (tracker-bound,
+# O(log n)), History page keyed off a quantized summary count with CSV export split to full
+# route (cabana semantics), Browser/Plot legend sampling decoupled from chart zoom, playback
+# autostart on route load. Genuine defect-cluster capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21368
+  21462
+# 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
-  850
+  852
 check "pane-local statics" \
   "$(rg_count '^\s+static ' panes -g'*.cc')" \
   0

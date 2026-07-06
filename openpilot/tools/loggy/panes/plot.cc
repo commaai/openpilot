@@ -448,6 +448,10 @@ size_t parse_plot_max_points(std::string_view state_json, size_t fallback) {
   return std::max<size_t>(64, static_cast<size_t>(state["max_points"].int_value()));
 }
 
+// Bounds the fallback tracker-value resample below (kept generous vs. typical plotted signal
+// rates so a legitimate value isn't lost, but bounded so it never scans the whole route).
+constexpr double kPlotTrackerLookbackSeconds = 60.0;
+
 std::vector<PreparedPlotSeries> prepare_plot_series(const Store &store,
                                                    const std::vector<PlotSeriesRequest> &requests,
                                                    TimeRange range,
@@ -467,9 +471,31 @@ std::vector<PreparedPlotSeries> prepare_plot_series(const Store &store,
     }
     apply_plot_series_transform(request, &item.xs, &item.ys);
     item.stairs = request.force_stairs || plot_integer_like(item.ys);
-    if (!item.xs.empty() && item.xs.size() == item.ys.size()) {
+    if (!item.xs.empty() && item.xs.size() == item.ys.size() &&
+        tracker_time >= item.xs.front() && tracker_time <= item.xs.back()) {
+      // Common case: the tracker is inside the already-fetched (possibly zoomed) window, so the
+      // decimated series already brackets it -- no extra query needed.
       item.has_tracker_value = true;
       item.tracker_value = plot_sample_at_time(item.xs, item.ys, item.stairs, tracker_time);
+    } else {
+      // The tracker has scrolled outside the chart's current zoom/view. The legend must still
+      // show the value AT the tracker, not clamp to whatever edge `item.xs` ends at (that clamp
+      // read as "frozen"). Resample a small window anchored at the tracker instead of
+      // re-querying the whole elapsed route.
+      const TimeRange tracker_window{tracker_time - kPlotTrackerLookbackSeconds, tracker_time};
+      const SeriesView tracker_view = store.series(request.path, tracker_window.start_, tracker_window.end, 2);
+      std::vector<double> txs, tys;
+      txs.reserve(tracker_view.points.size());
+      tys.reserve(tracker_view.points.size());
+      for (const SeriesPoint &point : tracker_view.points) {
+        txs.push_back(point.t);
+        tys.push_back(point.value);
+      }
+      apply_plot_series_transform(request, &txs, &tys);
+      if (!txs.empty() && txs.size() == tys.size()) {
+        item.has_tracker_value = true;
+        item.tracker_value = plot_sample_at_time(txs, tys, item.stairs, tracker_time);
+      }
     }
     prepared.push_back(std::move(item));
   }

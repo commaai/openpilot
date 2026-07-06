@@ -583,3 +583,86 @@ TEST_CASE("can_message_csv exports only the requested id's rows, even with other
     CHECK(row[3] == "0x7E");
   }
 }
+
+// -- (h) build_binary_grid: bits/hex/latest bound to the playhead, heat as byte recency. --
+// Same playhead-semantics fix as (f), for the Binary/Signal panes (REVIEW.md defect cluster).
+
+TEST_CASE("build_binary_grid bounded at an early tracker time shows the first event only") {
+  const MessageId id{.source = 0, .address = 0x400};
+  const TimeRange route_range{0.0, 100.0};
+  const std::vector<CanEvent> events = {
+    {.mono_time = 10.0, .data = {0xAA, 0x01}},
+    {.mono_time = 50.0, .data = {0xBB, 0x02}},
+  };
+  Store store;
+  stageEvents(&store, {{id, events}}, route_range);
+
+  const TimeRange up_to_tracker{route_range.start_, 30.0};
+  const std::optional<loggy::BinaryGrid> grid = loggy::build_binary_grid(store, id, up_to_tracker);
+  REQUIRE(grid.has_value());
+  CHECK(grid->event_count == 1);
+  CHECK(grid->last_time == Approx(10.0));
+  REQUIRE(grid->latest_data.size() == 2);
+  CHECK(grid->latest_data[0] == 0xAA);
+  CHECK(grid->latest_data[1] == 0x01);
+}
+
+TEST_CASE("build_binary_grid bounded past both events shows the latest one, not route-final") {
+  const MessageId id{.source = 0, .address = 0x401};
+  const TimeRange route_range{0.0, 100.0};
+  const std::vector<CanEvent> events = {
+    {.mono_time = 10.0, .data = {0xAA, 0x01}},
+    {.mono_time = 50.0, .data = {0xBB, 0x02}},
+  };
+  Store store;
+  stageEvents(&store, {{id, events}}, route_range);
+
+  const TimeRange up_to_tracker{route_range.start_, 60.0};
+  const std::optional<loggy::BinaryGrid> grid = loggy::build_binary_grid(store, id, up_to_tracker);
+  REQUIRE(grid.has_value());
+  CHECK(grid->event_count == 2);
+  CHECK(grid->last_time == Approx(50.0));
+  REQUIRE(grid->latest_data.size() == 2);
+  CHECK(grid->latest_data[0] == 0xBB);
+  CHECK(grid->latest_data[1] == 0x02);
+}
+
+TEST_CASE("build_binary_grid paused at route start returns no grid yet") {
+  const MessageId id{.source = 0, .address = 0x402};
+  const TimeRange route_range{0.0, 100.0};
+  const std::vector<CanEvent> events = {
+    {.mono_time = 10.0, .data = {0xAA}},
+    {.mono_time = 50.0, .data = {0xBB}},
+  };
+  Store store;
+  stageEvents(&store, {{id, events}}, route_range);
+
+  const TimeRange up_to_tracker{route_range.start_, route_range.start_};
+  CHECK_FALSE(loggy::build_binary_grid(store, id, up_to_tracker).has_value());
+}
+
+TEST_CASE("build_binary_grid heat is byte recency within the fade window ending at the tracker") {
+  const MessageId id{.source = 0, .address = 0x403};
+  const TimeRange route_range{0.0, 100.0};
+  const std::vector<CanEvent> events = {
+    {.mono_time = 0.0, .data = {0x00, 0x00}},
+    // Byte 1 changes well before the fade window that ends at the tracker below, so it must
+    // not show as "recently changed" no matter how far back build_binary_grid looked.
+    {.mono_time = 5.0, .data = {0x00, 0x01}},
+    // Byte 0 flips inside the fade window ([tracker - kByteChangeFadeSeconds, tracker]).
+    {.mono_time = 9.2, .data = {0x00, 0x01}},
+    {.mono_time = 9.6, .data = {0x01, 0x01}},
+  };
+  Store store;
+  stageEvents(&store, {{id, events}}, route_range);
+
+  const double tracker = 10.0;
+  const std::optional<loggy::BinaryGrid> grid = loggy::build_binary_grid(store, id, {route_range.start_, tracker});
+  REQUIRE(grid.has_value());
+  REQUIRE(grid->byte_last_change.size() == 2);
+  CHECK(grid->byte_last_change[0] == Approx(9.6));
+  CHECK_FALSE(std::isfinite(grid->byte_last_change[1]));
+
+  CHECK(loggy::byte_change_alpha(grid->byte_last_change[0], tracker) > 0.0f);
+  CHECK(loggy::byte_change_alpha(grid->byte_last_change[1], tracker) == 0.0f);
+}

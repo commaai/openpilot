@@ -22,10 +22,6 @@
 namespace loggy {
 namespace {
 
-// Byte-change tint fades over this much ROUTE time, so it reads the same whether playing or
-// paused-and-scrubbing (see REVIEW.md defect B).
-constexpr double kByteChangeFadeSeconds = 1.0;
-
 struct MessageTableState {
   std::string filter;
   std::string name_filter;
@@ -142,12 +138,6 @@ struct MessagesPaneTransientState {
   std::string skel_key;
 };
 
-
-float byte_change_alpha(double last_change, double tracker) {
-  if (!std::isfinite(last_change)) return 0.0f;
-  const double age = std::max(0.0, tracker - last_change);
-  return static_cast<float>(std::clamp(1.0 - age / kByteChangeFadeSeconds, 0.0, 1.0));
-}
 
 bool byte_covered_by_signal(const Msg *msg, size_t byte_index) {
   return msg != nullptr && byte_index < msg->mask.size() && msg->mask[byte_index] != 0;

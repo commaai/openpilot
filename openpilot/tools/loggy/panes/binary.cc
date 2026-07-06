@@ -205,13 +205,21 @@ bool binary_signal_overlaps_other_dbc_bits(const Msg *msg, const std::string &si
   return false;
 }
 
-ImU32 heat_color(uint32_t flips, uint32_t max_flips) {
-  if (flips == 0 || max_flips == 0) return ImGui::GetColorU32(theme().binary_idle_cell);
-  const float alpha = 0.18f + 0.58f * (std::log2(1.0f + static_cast<float>(flips)) /
-                                       std::log2(1.0f + static_cast<float>(max_flips)));
+// Same overlay-tint style as messages.cc's draw_bytes: translucent accent over the base fill,
+// scaled by recency of the covering byte's last change (byte_change_alpha), not a historical
+// flip count -- see BinaryGrid's header comment.
+ImU32 heat_color(float change_alpha) {
+  if (change_alpha <= 0.0f) return ImGui::GetColorU32(theme().binary_idle_cell);
   ImVec4 c = theme().binary_heat_accent;
-  c.w = alpha;
+  c.w = 0.18f + 0.58f * change_alpha;
   return ImGui::GetColorU32(c);
+}
+
+std::string binary_byte_change_text(double last_change, double tracker) {
+  if (!std::isfinite(last_change)) return "no recent change";
+  char buf[48];
+  std::snprintf(buf, sizeof(buf), "changed %.2fs ago", std::max(0.0, tracker - last_change));
+  return buf;
 }
 
 // cabana's soul: every DBC signal covering this bit gets its own color as the cell background,
@@ -262,7 +270,11 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   const std::optional<MessageId> selected = selection.has_selected_msg ? std::optional<MessageId>(selection.selected_msg_id) : std::nullopt;
   BinaryPaneState state = parse_binary_pane_state(pane.state_json, selected);
   const MessageId id = state.id;
-  const std::optional<BinaryGrid> maybe_grid = build_binary_grid(session.store, id, session.view_range.range());
+  // Bits/hex/latest track the tracker, not the chart's zoom/view range: zooming must not affect
+  // this pane, and seeking must work in both directions.
+  const double tracker_time = session.playback.tracker_time();
+  const TimeRange tracker_range{session.playback.route_range().start_, tracker_time};
+  const std::optional<BinaryGrid> maybe_grid = build_binary_grid(session.store, id, tracker_range);
   Msg *dbc_msg = session.dbc.msg(id);
 
   ImGui::TextDisabled("ID %s", id.to_string().c_str());
@@ -324,6 +336,10 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
     draw_list->AddText(ImVec2(origin.x + (row_header_w - row_label_size.x) * 0.5f, y + (row_h - row_label_size.y) * 0.5f),
                        disabled, row_label);
 
+    const double byte_last_change = row < grid.byte_last_change.size()
+                                       ? grid.byte_last_change[row]
+                                       : -std::numeric_limits<double>::infinity();
+    const float byte_alpha = byte_change_alpha(byte_last_change, tracker_time);
     for (int bit = 0; bit < kBitColumns; ++bit) {
       const BinaryBitCell &cell = grid.rows[row][static_cast<size_t>(bit)];
       const int bit_index = static_cast<int>(row * 8 + static_cast<size_t>(7 - bit));
@@ -331,10 +347,9 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
       const bool suppressed_bit = state.suppress_defined_bits && defined_bit;
       const ImVec2 cell_min(origin.x + row_header_w + static_cast<float>(bit) * col_w, y);
       const ImVec2 cell_max(cell_min.x + col_w, cell_min.y + row_h);
-
       // Signal-colored span is the background; the live change-heat tint is drawn after (on
-      // top) so flip activity always stays visible, matching cabana's per-signal cell coloring
-      // without losing loggy's heat overlay.
+      // top) so recent byte activity always stays visible, matching cabana's per-signal cell
+      // coloring without losing loggy's heat overlay.
       std::vector<const Signal *> cell_signals;
       if (suppressed_bit) {
         draw_list->AddRectFilled(cell_min, cell_max, ImGui::GetColorU32(theme().binary_suppressed_cell));
@@ -343,11 +358,11 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
         for (const Signal *cell_signal : cell_signals) {
           draw_list->AddRectFilled(cell_min, cell_max, signal_fill_color(*cell_signal, 0.62f));
         }
-        if (cell.flip_count > 0) {
-          draw_list->AddRectFilled(cell_min, cell_max, heat_color(cell.flip_count, grid.max_flip_count));
+        if (byte_alpha > 0.0f) {
+          draw_list->AddRectFilled(cell_min, cell_max, heat_color(byte_alpha));
         }
       } else {
-        draw_list->AddRectFilled(cell_min, cell_max, heat_color(cell.flip_count, grid.max_flip_count));
+        draw_list->AddRectFilled(cell_min, cell_max, heat_color(byte_alpha));
       }
 
       if (drag.active && drag.id == id && drag.dragged) {
@@ -432,15 +447,18 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
         } else if (defined_bit) {
           const Signal *hover_signal = binary_signal_at_bit(dbc_msg, bit_index);
           if (hover_signal != nullptr) {
-            ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u\nDBC-defined bit\n%s",
-                              row, 7 - bit, static_cast<unsigned>(cell.value), cell.flip_count,
+            ImGui::SetTooltip("byte %zu bit %d\nvalue %u\n%s\nDBC-defined bit\n%s",
+                              row, 7 - bit, static_cast<unsigned>(cell.value),
+                              binary_byte_change_text(byte_last_change, tracker_time).c_str(),
                               hover_signal->name.c_str());
           } else {
-            ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u\nDBC-defined bit", row, 7 - bit,
-                              static_cast<unsigned>(cell.value), cell.flip_count);
+            ImGui::SetTooltip("byte %zu bit %d\nvalue %u\n%s\nDBC-defined bit", row, 7 - bit,
+                              static_cast<unsigned>(cell.value),
+                              binary_byte_change_text(byte_last_change, tracker_time).c_str());
           }
         } else {
-          ImGui::SetTooltip("byte %zu bit %d\nvalue %u\nflips %u", row, 7 - bit, static_cast<unsigned>(cell.value), cell.flip_count);
+          ImGui::SetTooltip("byte %zu bit %d\nvalue %u\n%s", row, 7 - bit, static_cast<unsigned>(cell.value),
+                            binary_byte_change_text(byte_last_change, tracker_time).c_str());
         }
       }
       ImGui::PopID();

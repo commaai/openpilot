@@ -278,16 +278,27 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   }
   if (filter_changed) state.page_index = 0;
 
-  const TimeRange range = session.view_range.range();
+  // Rows show events up to the tracker, newest-first from the playhead (cabana semantics); a
+  // chart zoom must not affect this pane. Copy/Save CSV export the FULL route instead -- that
+  // matches Qt cabana's exports, and the difference from the on-screen page is intentional.
+  const double tracker_time = session.playback.tracker_time();
+  const TimeRange page_range{session.playback.route_range().start_, tracker_time};
+  const TimeRange export_range = session.playback.route_range();
+
+  // Rebuilding the page copies every matching event, so it must not run every frame just because
+  // the tracker ticked forward. can_event_summary is O(log n); its count/last_time only change
+  // when an event actually crosses the tracker or a seek moves it, so they stand in for the raw
+  // tracker time in the cache key.
+  const CanSummaryView playhead = session.store.can_event_summary(id, page_range, /*with_data=*/false);
   const auto page_cache_key = [&]() {
     char buf[192];
-    std::snprintf(buf, sizeof(buf), "%s|%.6f|%.6f|%zu|%zu|%d|%.9g|%s|%s|%s", id.to_string().c_str(),
-                  range.start_, range.end, state.page_size, state.page_index, state.compare_enabled ? 1 : 0,
+    std::snprintf(buf, sizeof(buf), "%s|%zu|%.6f|%zu|%zu|%d|%.9g|%s|%s|%s", id.to_string().c_str(),
+                  playhead.count, playhead.last_time, state.page_size, state.page_index, state.compare_enabled ? 1 : 0,
                   state.compare_value, state.compare_signal.c_str(), state.compare_op.c_str(), state.filter.c_str());
     return std::string(buf);
   };
   const auto refresh_page = [&]() {
-    transient.page = prepare_history_log_page(session.store, id, range, state, msg);
+    transient.page = prepare_history_log_page(session.store, id, page_range, state, msg);
     transient.page_key = page_cache_key();
     transient.page_store_gen = session.store.generation();
     transient.page_dbc_gen = session.dbc.generation();
@@ -303,9 +314,9 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   }
 
   // page.total_rows is the match count, capped at max_rows; report it against the id's TRUE
-  // event count in view (can_event_summary, unfiltered) rather than let the cap silently pass
-  // for the whole truth (REVIEW.md defect #31 — "N events" used to cap at max_rows silently).
-  const size_t true_total = summarize_message_events(session.store, id, range, false).count;
+  // event count up to the tracker (`playhead`, unfiltered) rather than let the cap silently
+  // pass for the whole truth (REVIEW.md defect #31 — "N events" used to cap at max_rows).
+  const size_t true_total = playhead.count;
   char events_label[96];
   if (page.truncated) {
     std::snprintf(events_label, sizeof(events_label), "showing first %zu of %zu events", page.total_rows, true_total);
@@ -318,7 +329,7 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   ImGui::TextDisabled("ID %s | %s", id.to_string().c_str(), events_label);
   if (ImGui::GetContentRegionAvail().x > 92.0f) ImGui::SameLine();
   if (ImGui::Button("Copy CSV")) {
-    const std::string csv = can_message_csv(session.store, id, range, msg);
+    const std::string csv = can_message_csv(session.store, id, export_range, msg);
     ImGui::SetClipboardText(csv.c_str());
   }
 
@@ -333,17 +344,17 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   }
   if (ImGui::GetContentRegionAvail().x > 108.0f) ImGui::SameLine();
   if (ImGui::Button("Save Msg")) {
-    changed = save_history_csv(&state, can_message_csv(session.store, id, range, msg), "");
+    changed = save_history_csv(&state, can_message_csv(session.store, id, export_range, msg), "");
   }
   if (ImGui::GetContentRegionAvail().x > 126.0f) ImGui::SameLine();
   if (ImGui::Button("Save Stream")) {
-    changed = save_history_csv(&state, can_stream_csv(session.store, range), "_stream");
+    changed = save_history_csv(&state, can_stream_csv(session.store, export_range), "_stream");
   }
   const Signal *export_sig = history_export_signal(state, msg);
   if (ImGui::GetContentRegionAvail().x > 118.0f) ImGui::SameLine();
   ImGui::BeginDisabled(export_sig == nullptr);
   if (ImGui::Button("Save Signal") && export_sig != nullptr) {
-    changed = save_history_csv(&state, can_signal_csv(session.store, id, range, *export_sig), "_" + export_sig->name);
+    changed = save_history_csv(&state, can_signal_csv(session.store, id, export_range, *export_sig), "_" + export_sig->name);
   }
   ImGui::EndDisabled();
   if (!state.export_status.empty()) {

@@ -47,7 +47,9 @@ struct SignalPaneRow {
   int size = 1;
   std::string endian;
   std::string value;
-  uint32_t flip_count = 0;
+  // Seconds since the covering byte last changed (within the fade window ending at the
+  // tracker); < 0 means no recent change. Bit-candidate rows only -- DBC rows show "--".
+  double byte_change_age = -1.0;
   bool from_dbc = false;
   const Signal *signal = nullptr;
   SignalSparkline sparkline;
@@ -223,23 +225,21 @@ std::optional<ValueDescription> parse_signal_value_descriptions(std::string_view
   return parsed;
 }
 
-SignalSparkline prepare_signal_sparkline(const Store &store, const MessageId &id, TimeRange range,
-                                        const Signal &signal, size_t max_points = 48,
-                                        double window_seconds = 0.0) {
+// `window` anchors the sparkline at the tracker -- [tracker - sparkline_seconds, tracker] -- not
+// at the chart's zoom/view range, so it neither freezes when the tracker scrolls off a zoomed
+// view nor jumps when the user zooms (REVIEW.md's playhead-semantics cluster).
+SignalSparkline prepare_signal_sparkline(const Store &store, const MessageId &id, TimeRange window,
+                                        const Signal &signal, size_t max_points = 48) {
   SignalSparkline sparkline;
   if (max_points == 0) return sparkline;
 
-  const CanEventView view = store.can_events(id, range);
-  const double min_time = (window_seconds > 0.0 && !view.events.empty())
-                            ? view.events.back().mono_time - window_seconds
-                            : -std::numeric_limits<double>::infinity();
+  const CanEventView view = store.can_events(id, window);
   sparkline.values.reserve(std::min(view.events.size(), max_points));
   const size_t step = view.events.size() <= max_points ? 1 : (view.events.size() + max_points - 1) / max_points;
   double min_value = std::numeric_limits<double>::infinity();
   double max_value = -std::numeric_limits<double>::infinity();
   for (size_t i = 0; i < view.events.size(); i += step) {
     const CanEvent &event = view.events[i];
-    if (event.mono_time < min_time) continue;
     double value = 0.0;
     if (!signal.get_value(event.data.data(), event.data.size(), &value)) continue;
     sparkline.values.push_back(value);
@@ -253,9 +253,13 @@ SignalSparkline prepare_signal_sparkline(const Store &store, const MessageId &id
   return sparkline;
 }
 
-std::vector<SignalPaneRow> prepare_signal_pane_rows(const Store &store, const MessageId &id, TimeRange range,
-                                                   const SignalPaneState &state, Msg *msg = nullptr) {
-  const MessageSummary summary = summarize_message_events(store, id, range);
+// `state_range` is {route_start, tracker}: Value/bit-candidates reflect the newest event <=
+// tracker, like Binary/Messages. `sparkline_range` is [tracker - sparkline_seconds, tracker],
+// independent of both `state_range` and any chart zoom.
+std::vector<SignalPaneRow> prepare_signal_pane_rows(const Store &store, const MessageId &id, TimeRange state_range,
+                                                   TimeRange sparkline_range, const SignalPaneState &state,
+                                                   Msg *msg = nullptr) {
+  const MessageSummary summary = summarize_message_events(store, id, state_range);
   std::vector<SignalPaneRow> rows;
 
   if (msg != nullptr && !msg->signals().empty()) {
@@ -280,20 +284,24 @@ std::vector<SignalPaneRow> prepare_signal_pane_rows(const Store &store, const Me
         .size = sig->size,
         .endian = sig->is_little_endian ? "LE" : "BE",
         .value = std::move(value),
-        .flip_count = 0,
+        .byte_change_age = -1.0,
         .from_dbc = true,
         .signal = sig,
-        .sparkline = prepare_signal_sparkline(store, id, range, *sig, 48, static_cast<double>(state.sparkline_seconds)),
+        .sparkline = prepare_signal_sparkline(store, id, sparkline_range, *sig, 48),
       });
       if (rows.size() >= state.max_rows) break;
     }
     return rows;
   }
 
-  const std::optional<BinaryGrid> grid = build_binary_grid(store, id, range);
+  const std::optional<BinaryGrid> grid = build_binary_grid(store, id, state_range);
   if (!grid.has_value()) return rows;
   rows.reserve(std::min(grid->rows.size() * 8, state.max_rows));
   for (size_t byte_index = 0; byte_index < grid->rows.size(); ++byte_index) {
+    const double last_change = byte_index < grid->byte_last_change.size()
+                                  ? grid->byte_last_change[byte_index]
+                                  : -std::numeric_limits<double>::infinity();
+    const double byte_change_age = std::isfinite(last_change) ? (state_range.end - last_change) : -1.0;
     for (int bit_column = 0; bit_column < 8; ++bit_column) {
       const int bit = 7 - bit_column;
       const int start_bit = static_cast<int>(byte_index * 8 + static_cast<size_t>(bit));
@@ -307,7 +315,7 @@ std::vector<SignalPaneRow> prepare_signal_pane_rows(const Store &store, const Me
         .size = 1,
         .endian = "-",
         .value = cell.value ? "1" : "0",
-        .flip_count = cell.flip_count,
+        .byte_change_age = byte_change_age,
         .from_dbc = false,
         .signal = nullptr,
         .sparkline = {},
@@ -925,8 +933,8 @@ bool draw_signal_row(const SignalPaneRow &row, bool selected) {
   draw_signal_sparkline(row);
 
   ImGui::TableSetColumnIndex(7);
-  if (row.from_dbc) ImGui::TextUnformatted("--");
-  else ImGui::Text("%u", row.flip_count);
+  if (row.from_dbc || row.byte_change_age < 0.0) ImGui::TextDisabled("--");
+  else ImGui::Text("%.2fs", row.byte_change_age);
 
   return clicked;
 }
@@ -966,7 +974,13 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
   if (changed) save_signal_pane_state(pane, transient_state);
 
   Msg *msg = session.dbc.msg(id);
-  const std::vector<SignalPaneRow> rows = prepare_signal_pane_rows(session.store, id, session.view_range.range(), state, msg);
+  // Value/bit-candidates follow the tracker, not the chart's zoom/view range; the sparkline is
+  // a separate tracker-anchored window.
+  const double tracker_time = session.playback.tracker_time();
+  const TimeRange state_range{session.playback.route_range().start_, tracker_time};
+  const TimeRange sparkline_range{tracker_time - static_cast<double>(state.sparkline_seconds), tracker_time};
+  const std::vector<SignalPaneRow> rows =
+      prepare_signal_pane_rows(session.store, id, state_range, sparkline_range, state, msg);
   const bool from_dbc = !rows.empty() && rows.front().from_dbc;
   if (ImGui::GetContentRegionAvail().x > 160.0f) ImGui::SameLine();
   ImGui::TextDisabled("ID %s | %zu %s", id.to_string().c_str(), rows.size(), from_dbc ? "DBC signals" : "bit candidates");
@@ -1013,7 +1027,7 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
   ImGui::TableSetupColumn("Endian", ImGuiTableColumnFlags_WidthFixed, 54.0f);
   ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
   ImGui::TableSetupColumn("Spark", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-  ImGui::TableSetupColumn("Flips", ImGuiTableColumnFlags_WidthFixed, 52.0f);
+  ImGui::TableSetupColumn("Changed", ImGuiTableColumnFlags_WidthFixed, 58.0f);
   ImGui::TableHeadersRow();
 
   ImGuiListClipper clipper;

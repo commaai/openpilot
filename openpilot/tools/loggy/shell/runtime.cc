@@ -254,6 +254,9 @@ struct AppState {
   Session session;
   FrameStats frame_stats;
   Clock::time_point last_playback_update = Clock::now();
+  // Edge-detects segments_loaded 0 -> >0 to autostart playback (maybe_autostart_playback); also
+  // 0 right after Restart Route, so a later route reload autostarts too.
+  size_t last_ingest_segments_loaded = 0;
   bool show_frame_hud = false;
   int target_fps = kDefaultLoggyTargetFps;
   ThemeKind theme_kind = ThemeKind::Light;
@@ -742,6 +745,18 @@ void draw_shell(AppState &app) {
   }
 }
 
+// Cabana/jotpluggler parity: once the first segment of a route lands, start playing
+// automatically instead of leaving the panes sitting dead until the user presses Play. Live
+// streams already autoplay via live_follow, so this only applies to file routes.
+void maybe_autostart_playback(AppState &app) {
+  if (app.session.config.stream) return;
+  const size_t segments_loaded = app.session.ingest_status().segments_loaded;
+  if (segments_loaded > 0 && app.last_ingest_segments_loaded == 0) {
+    app.session.playback.set_playing(true);
+  }
+  app.last_ingest_segments_loaded = segments_loaded;
+}
+
 void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_path) {
   const auto frame_start = Clock::now();
   glfwPollEvents();
@@ -773,6 +788,7 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   app.last_playback_update = playback_now;
   app.session.playback.advance(playback_dt);
   app.session.begin_frame();
+  maybe_autostart_playback(app);
 
   draw_shell(app);
   g_escape_pressed = false;

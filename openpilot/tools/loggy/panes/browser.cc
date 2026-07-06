@@ -22,6 +22,10 @@
 namespace loggy {
 namespace {
 
+// Floor for the value/sparkline sample window anchored at the tracker (see
+// enrich_browser_series_row); the user's sparkline_seconds slider can widen it further.
+constexpr double kBrowserMinValueLookbackSeconds = 60.0;
+
 struct BrowserState {
   std::string filter;
   size_t max_rows = 1000;
@@ -273,13 +277,16 @@ BrowserSparkline browser_sparkline_from_view(const SeriesView &view,
   return sparkline;
 }
 
+// A row's value/sparkline must resample at the current tracker every frame, not freeze at
+// whatever the chart's zoom/view range last covered. `sample_range` is anchored at the tracker
+// ([tracker - lookback, tracker]), independent of session.view_range.
 BrowserSeriesRow enrich_browser_series_row(const Store &store,
                                           BrowserSeriesRow row,
-                                          TimeRange range,
+                                          TimeRange sample_range,
                                           double tracker_time,
                                           const BrowserState &state,
                                           size_t max_points = 96) {
-  const SeriesView view = store.series(row.path, range.start_, range.end, max_points);
+  const SeriesView view = store.series(row.path, sample_range.start_, sample_range.end, max_points);
   if (!view.points.empty()) {
     row.has_value = true;
     row.value = browser_format_value(browser_sample_at_time(view.points, tracker_time));
@@ -379,11 +386,11 @@ void draw_browser_row(const BrowserSeriesRow &row) {
 
 void draw_browser_tree_node(const BrowserTreeNode &node,
                             const Store &store,
-                            TimeRange range,
+                            TimeRange sample_range,
                             double tracker_time,
                             const BrowserState &state) {
   if (node.leaf) {
-    draw_browser_row(enrich_browser_series_row(store, node.series, range, tracker_time, state));
+    draw_browser_row(enrich_browser_series_row(store, node.series, sample_range, tracker_time, state));
     return;
   }
 
@@ -400,7 +407,7 @@ void draw_browser_tree_node(const BrowserTreeNode &node,
     pop_mono_font();
     if (open) {
       for (const BrowserTreeNode &child : node.children) {
-        draw_browser_tree_node(child, store, range, tracker_time, state);
+        draw_browser_tree_node(child, store, sample_range, tracker_time, state);
       }
       ImGui::TreePop();
     }
@@ -409,7 +416,7 @@ void draw_browser_tree_node(const BrowserTreeNode &node,
   }
 
   for (const BrowserTreeNode &child : node.children) {
-    draw_browser_tree_node(child, store, range, tracker_time, state);
+    draw_browser_tree_node(child, store, sample_range, tracker_time, state);
   }
 }
 
@@ -472,10 +479,15 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
   ImGui::TableSetupColumn("Path", ImGuiTableColumnFlags_WidthStretch);
   ImGui::TableHeadersRow();
 
-  const TimeRange range = session.view_range.range();
+  // Sample anchored at the tracker, not session.view_range (the chart's zoom window) -- rows
+  // must keep ticking during playback/seeks regardless of what any plot pane has zoomed to. The
+  // lookback is generous versus the sparkline window so a value doesn't drop to "--" just
+  // because a slow-updating signal is older than the visible spark.
   const double tracker_time = session.playback.tracker_time();
+  const double lookback = std::max(kBrowserMinValueLookbackSeconds, static_cast<double>(state.sparkline_seconds));
+  const TimeRange sample_range{tracker_time - lookback, tracker_time};
   if (state.show_tree) {
-    draw_browser_tree_node(tree, session.store, range, tracker_time, state);
+    draw_browser_tree_node(tree, session.store, sample_range, tracker_time, state);
     ImGui::EndTable();
     return;
   }
@@ -485,7 +497,7 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
   while (clipper.Step()) {
     for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
       draw_browser_row(enrich_browser_series_row(session.store, rows[static_cast<size_t>(row_idx)],
-                                                 range, tracker_time, state));
+                                                 sample_range, tracker_time, state));
     }
   }
   ImGui::EndTable();

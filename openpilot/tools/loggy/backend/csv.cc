@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -299,16 +300,24 @@ std::string series_csv(const Store &store, std::string_view path, TimeRange rang
   return out.str();
 }
 
+float byte_change_alpha(double last_change, double tracker) {
+  if (!std::isfinite(last_change)) return 0.0f;
+  const double age = std::max(0.0, tracker - last_change);
+  return static_cast<float>(std::clamp(1.0 - age / kByteChangeFadeSeconds, 0.0, 1.0));
+}
+
 std::optional<BinaryGrid> build_binary_grid(const Store &store, const MessageId &id, TimeRange range) {
-  const CanEventView view = store.can_events(id, range);
-  if (view.events.empty()) return std::nullopt;
+  // O(log n): `range` is {route_start, tracker}, which grows for the life of the route, so this
+  // must not copy every matching event the way can_events() would.
+  const CanSummaryView view = store.can_event_summary(id, range, /*with_data=*/true);
+  if (view.count == 0) return std::nullopt;
 
   BinaryGrid grid;
   grid.id = id;
-  grid.event_count = view.events.size();
-  grid.first_time = view.events.front().mono_time;
-  grid.last_time = view.events.back().mono_time;
-  grid.latest_data = view.events.back().data;
+  grid.event_count = view.count;
+  grid.first_time = view.first_time;
+  grid.last_time = view.last_time;
+  grid.latest_data = view.latest_data;
   grid.rows.resize(grid.latest_data.size());
 
   for (size_t byte_index = 0; byte_index < grid.latest_data.size(); ++byte_index) {
@@ -320,23 +329,8 @@ std::optional<BinaryGrid> build_binary_grid(const Store &store, const MessageId 
     }
   }
 
-  if (view.events.size() > 1) {
-    std::vector<uint8_t> previous = view.events.front().data;
-    for (size_t event_index = 1; event_index < view.events.size(); ++event_index) {
-      const std::vector<uint8_t> &current = view.events[event_index].data;
-      const size_t byte_count = std::min(previous.size(), current.size());
-      for (size_t byte_index = 0; byte_index < byte_count && byte_index < grid.rows.size(); ++byte_index) {
-        const uint8_t diff = static_cast<uint8_t>(previous[byte_index] ^ current[byte_index]);
-        for (int bit = 0; bit < 8; ++bit) {
-          if ((diff & (1U << (7 - bit))) == 0) continue;
-          BinaryBitCell &cell = grid.rows[byte_index][static_cast<size_t>(bit)];
-          ++cell.flip_count;
-          grid.max_flip_count = std::max(grid.max_flip_count, cell.flip_count);
-        }
-      }
-      previous = current;
-    }
-  }
+  grid.byte_last_change = store.byte_change_times(
+      id, TimeRange{range.end - kByteChangeFadeSeconds, range.end}, grid.latest_data.size());
   return grid;
 }
 
