@@ -6,39 +6,46 @@
       "name": "Jotpluggler",
       "root": {
         "split": "horizontal",
-        "sizes": [0.22, 0.78],
+        "sizes": [
+          0.19,
+          0.81
+        ],
         "children": [
           {
             "split": "vertical",
-            "sizes": [0.75, 0.25],
-            "children": [
-              {"type": "browser", "title": "Browser"},
-              {"type": "camera", "title": "Road Camera", "state": {"camera_view": "road"}}
-            ]
-          },
-          {
-            "split": "vertical",
-            "sizes": [0.6, 0.4],
+            "sizes": [
+              0.26,
+              0.74
+            ],
             "children": [
               {
-                "type": "plot",
-                "title": "Plot",
+                "type": "camera",
+                "title": "Road Camera",
                 "state": {
-                  "series": [
-                    {"path": "/carState/vEgo", "label": "vEgo"},
-                    {"path": "/carState/aEgo", "label": "aEgo"}
-                  ]
+                  "camera_view": "road"
                 }
               },
               {
-                "split": "horizontal",
-                "sizes": [0.6, 0.4],
-                "children": [
-                  {"type": "logs", "title": "Logs"},
-                  {"type": "map", "title": "Map"}
-                ]
+                "type": "browser",
+                "title": "Browser"
               }
             ]
+          },
+          {
+            "type": "plot",
+            "title": "Plot",
+            "state": {
+              "series": [
+                {
+                  "label": "vEgo",
+                  "path": "/carState/vEgo"
+                },
+                {
+                  "label": "aEgo",
+                  "path": "/carState/aEgo"
+                }
+              ]
+            }
           }
         ]
       }

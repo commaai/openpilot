@@ -7,45 +7,45 @@
       "root": {
         "split": "horizontal",
         "sizes": [
-          0.58,
-          0.42
+          0.38,
+          0.62
         ],
         "children": [
           {
-            "split": "vertical",
-            "sizes": [
-              0.42,
-              0.22,
-              0.36
-            ],
-            "children": [
-              {
-                "type": "messages",
-                "title": "Messages"
-              },
-              {
-                "type": "historylog",
-                "title": "History"
-              },
-              {
-                "type": "signal",
-                "title": "Signal"
-              }
-            ]
+            "type": "messages",
+            "title": "Messages"
           },
           {
             "split": "vertical",
             "sizes": [
-              0.4,
-              0.6
+              0.42,
+              0.33,
+              0.25
             ],
             "children": [
               {
-                "type": "camera",
-                "title": "Road Camera",
-                "state": {
-                  "camera_view": "road"
-                }
+                "split": "horizontal",
+                "sizes": [
+                  0.62,
+                  0.38
+                ],
+                "children": [
+                  {
+                    "type": "binary",
+                    "title": "Binary"
+                  },
+                  {
+                    "type": "camera",
+                    "title": "Road Camera",
+                    "state": {
+                      "camera_view": "road"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "signal",
+                "title": "Signal"
               },
               {
                 "split": "horizontal",
@@ -55,12 +55,12 @@
                 ],
                 "children": [
                   {
-                    "type": "binary",
-                    "title": "Binary"
+                    "type": "historylog",
+                    "title": "History"
                   },
                   {
                     "type": "plot",
-                    "title": "Plot"
+                    "title": "Chart"
                   }
                 ]
               }
