@@ -89,6 +89,7 @@ LOCAL_SMOKES=(
   openpilot/tools/loggy/tests/computed_smoke
   openpilot/tools/loggy/tests/panes_smoke
   openpilot/tools/loggy/tests/extract_smoke
+  openpilot/tools/loggy/tests/scan_test
 )
 
 if [[ "$SKIP_BUILD" -eq 0 ]]; then

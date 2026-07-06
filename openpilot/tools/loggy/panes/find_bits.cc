@@ -1,7 +1,9 @@
 #include "tools/loggy/panes/find_bits.h"
 
+#include "tools/loggy/backend/scan.h"
 #include "tools/loggy/backend/session.h"
 #include "tools/loggy/backend/store.h"
+#include "tools/loggy/shell/theme.h"
 #include "tools/loggy/shell/workspace.h"
 
 #include "imgui.h"
@@ -16,7 +18,6 @@
 #include <string_view>
 #include <optional>
 #include <vector>
-#include <unordered_map>
 #include <algorithm>
 
 namespace loggy {
@@ -24,44 +25,6 @@ namespace {
 
 constexpr size_t kFindBitsHistoryLimit = 6;
 constexpr size_t kFindBitsMaxRows = 512;
-
-struct FindBitsParams {
-  TimeRange range;
-  uint8_t source_bus = 0;
-  uint32_t source_address = 0;
-  int byte_idx = 0;
-  int bit_idx = 0;
-  uint8_t find_bus = 0;
-  bool equal = true;
-  int min_msgs = 0;
-  size_t max_rows = 512;
-};
-
-struct FindBitsEvent {
-  double mono_time = 0.0;
-  uint8_t source_value = 0;
-  MessageId id;
-  std::vector<uint8_t> data;
-};
-
-struct FindBitsRow {
-  uint32_t address = 0;
-  uint32_t byte_idx = 0;
-  uint32_t bit_idx = 0;
-  uint32_t mismatches = 0;
-  uint32_t total = 0;
-  float percent = 0.0f;
-};
-
-struct FindBitsJob {
-  const Store *store = nullptr;
-  FindBitsParams params;
-  std::vector<MessageId> ids;
-  size_t id_index = 0;
-  bool done = true;
-  std::vector<FindBitsEvent> events;
-  std::vector<FindBitsRow> rows;
-};
 
 struct FindBitsPaneState {
   std::string source = "0:47";
@@ -75,20 +38,6 @@ struct FindBitsPaneState {
   std::vector<FindBitsParams> history;
 };
 
-bool input_text_string(const char *label, std::string *value, size_t capacity) {
-  if (value == nullptr) return false;
-  std::vector<char> buffer(std::max(capacity, value->size() + 1), '\0');
-  std::snprintf(buffer.data(), buffer.size(), "%s", value->c_str());
-  if (!ImGui::InputText(label, buffer.data(), buffer.size())) return false;
-  *value = buffer.data();
-  return true;
-}
-
-uint8_t bit_value_at(const std::vector<uint8_t> &data, int byte_idx, int bit_idx) {
-  if (byte_idx < 0 || bit_idx < 0 || bit_idx > 7 || byte_idx >= static_cast<int>(data.size())) return 0;
-  return static_cast<uint8_t>((data[static_cast<size_t>(byte_idx)] >> (7 - bit_idx)) & 1U);
-}
-
 struct FindBitsPaneTransientState {
   FindBitsPaneState state;
   std::string state_json;
@@ -100,11 +49,6 @@ struct FindBitsPaneTransientState {
 FindBitsPaneState parse_find_bits_pane_state(std::string_view state_json);
 std::string find_bits_pane_state_json(const FindBitsPaneState &state);
 FindBitsParams find_bits_params_from_state(const FindBitsPaneState &state, TimeRange range);
-std::vector<FindBitsEvent> collect_find_bits_events(const Store &store, const FindBitsParams &params);
-std::vector<FindBitsRow> scan_find_bits_events(const std::vector<FindBitsEvent> &events,
-                                               const FindBitsParams &params);
-FindBitsJob make_find_bits_job(const Store &store, const FindBitsParams &params);
-bool step_find_bits_job(FindBitsJob &job, size_t max_messages);
 
 FindBitsPaneTransientState &find_bits_transient_state(PaneInstance &pane) {
   if (FindBitsPaneTransientState *state = std::any_cast<FindBitsPaneTransientState>(&pane.transient_state)) return *state;
@@ -245,129 +189,6 @@ FindBitsParams find_bits_params_from_state(const FindBitsPaneState &state, TimeR
   params.equal = state.equal;
   params.min_msgs = std::max(0, state.min_msgs);
   return params;
-}
-
-[[maybe_unused]] std::vector<FindBitsEvent> collect_find_bits_events(const Store &store, const FindBitsParams &params) {
-  std::vector<FindBitsEvent> out;
-  const MessageId source_id{.source = params.source_bus, .address = params.source_address};
-  const CanEventView source = store.can_events(source_id, params.range);
-  if (source.events.empty()) return out;
-
-  const std::vector<MessageId> ids = store.can_message_ids();
-  std::vector<MessageId> targets;
-  for (const MessageId &id : ids) {
-    if (id.source == params.find_bus && id != source_id) targets.push_back(id);
-  }
-  std::sort(targets.begin(), targets.end());
-
-  for (const CanEvent &source_event : source.events) {
-    const uint8_t source_value = bit_value_at(source_event.data, params.byte_idx, params.bit_idx);
-    for (const MessageId &id : targets) {
-      const CanEventView target_view = store.can_events(id, {params.range.start_, source_event.mono_time});
-      if (target_view.events.empty()) continue;
-      const CanEvent &target_event = target_view.events.back();
-      out.push_back({
-        .mono_time = source_event.mono_time,
-        .source_value = source_value,
-        .id = id,
-        .data = target_event.data,
-      });
-    }
-  }
-  return out;
-}
-
-std::vector<FindBitsRow> scan_find_bits_events(const std::vector<FindBitsEvent> &events,
-                                               const FindBitsParams &params) {
-  struct Accum {
-    uint32_t total = 0;
-    uint32_t mismatches = 0;
-  };
-  std::unordered_map<uint64_t, Accum> accum;
-  auto key_for = [](uint32_t address, uint32_t byte_idx, uint32_t bit_idx) {
-    return (static_cast<uint64_t>(address) << 16) | (static_cast<uint64_t>(byte_idx) << 8) | bit_idx;
-  };
-
-  for (const FindBitsEvent &event : events) {
-    for (size_t byte_idx = 0; byte_idx < event.data.size(); ++byte_idx) {
-      for (int bit_idx = 0; bit_idx < 8; ++bit_idx) {
-        const uint8_t target_value = bit_value_at(event.data, static_cast<int>(byte_idx), bit_idx);
-        const bool matched = params.equal ? target_value == event.source_value : target_value != event.source_value;
-        Accum &row = accum[key_for(event.id.address, static_cast<uint32_t>(byte_idx), static_cast<uint32_t>(bit_idx))];
-        ++row.total;
-        if (!matched) ++row.mismatches;
-      }
-    }
-  }
-
-  std::vector<FindBitsRow> rows;
-  rows.reserve(accum.size());
-  for (const auto &[key, value] : accum) {
-    if (static_cast<int>(value.total) <= params.min_msgs) continue;
-    FindBitsRow row;
-    row.address = static_cast<uint32_t>(key >> 16);
-    row.byte_idx = static_cast<uint32_t>((key >> 8) & 0xFF);
-    row.bit_idx = static_cast<uint32_t>(key & 0xFF);
-    row.total = value.total;
-    row.mismatches = value.mismatches;
-    row.percent = value.total == 0 ? 0.0f : 100.0f * static_cast<float>(value.mismatches) / static_cast<float>(value.total);
-    rows.push_back(row);
-  }
-  std::sort(rows.begin(), rows.end(), [](const FindBitsRow &a, const FindBitsRow &b) {
-    return std::tie(a.percent, a.mismatches, a.address, a.byte_idx, a.bit_idx) <
-           std::tie(b.percent, b.mismatches, b.address, b.byte_idx, b.bit_idx);
-  });
-  if (rows.size() > params.max_rows) rows.resize(params.max_rows);
-  return rows;
-}
-
-FindBitsJob make_find_bits_job(const Store &store, const FindBitsParams &params) {
-  FindBitsJob job;
-  job.store = &store;
-  job.params = params;
-  job.ids = store.can_message_ids();
-  job.ids.erase(std::remove_if(job.ids.begin(), job.ids.end(), [&](const MessageId &id) {
-    return id.source != params.find_bus ||
-           (id.source == params.source_bus && id.address == params.source_address);
-  }), job.ids.end());
-  std::sort(job.ids.begin(), job.ids.end());
-  job.done = false;
-  return job;
-}
-
-bool step_find_bits_job(FindBitsJob &job, size_t max_messages) {
-  if (job.done || job.store == nullptr) return true;
-  const MessageId source_id{.source = job.params.source_bus, .address = job.params.source_address};
-  const CanEventView source = job.store->can_events(source_id, job.params.range);
-  if (source.events.empty()) {
-    job.done = true;
-    return true;
-  }
-
-  size_t visited = 0;
-  while (visited < max_messages && job.id_index < job.ids.size()) {
-    const MessageId id = job.ids[job.id_index++];
-    ++visited;
-    const CanEventView target = job.store->can_events(id, job.params.range);
-    if (target.events.empty()) continue;
-
-    size_t target_idx = 0;
-    for (const CanEvent &source_event : source.events) {
-      while (target_idx + 1 < target.events.size() && target.events[target_idx + 1].mono_time <= source_event.mono_time) {
-        ++target_idx;
-      }
-      if (target.events[target_idx].mono_time > source_event.mono_time) continue;
-      job.events.push_back({
-        .mono_time = source_event.mono_time,
-        .source_value = bit_value_at(source_event.data, job.params.byte_idx, job.params.bit_idx),
-        .id = id,
-        .data = target.events[target_idx].data,
-      });
-    }
-  }
-  job.done = job.id_index >= job.ids.size();
-  if (job.done) job.rows = scan_find_bits_events(job.events, job.params);
-  return job.done;
 }
 
 void activate_find_bits_row(Session &session, std::string_view selection_group,

@@ -14,6 +14,7 @@ tests/live_smoke
 tests/native_dialog_smoke
 tests/panes_smoke
 tests/route_ingest_smoke
+tests/scan_test
 tests/settings_smoke
 tests/store_scheduler
 tests/transport_smoke

@@ -1,8 +1,11 @@
 #include "tools/loggy/shell/theme.h"
 
+#include <algorithm>
 #include <cstddef>
+#include <cstdio>
 #include <cmath>
 #include <filesystem>
+#include <vector>
 
 #include "implot.h"
 
@@ -258,5 +261,13 @@ bool input_text_with_hint(const char *label, const char *hint, std::string *text
 }
 #endif
 
+bool input_text_string(const char *label, std::string *value, size_t capacity) {
+  if (value == nullptr) return false;
+  std::vector<char> buffer(std::max<size_t>(capacity, value->size() + 1), '\0');
+  std::snprintf(buffer.data(), buffer.size(), "%s", value->c_str());
+  if (!ImGui::InputText(label, buffer.data(), buffer.size())) return false;
+  *value = buffer.data();
+  return true;
+}
 
 }  // namespace loggy

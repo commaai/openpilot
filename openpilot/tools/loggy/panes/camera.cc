@@ -17,21 +17,6 @@
 namespace loggy {
 namespace {
 
-struct CameraPaneState;
-struct CameraPaneSnapshot;
-struct CameraRouteInfoLines;
-
-CameraPaneState parse_camera_pane_state(std::string_view state_json);
-std::string camera_pane_state_json(const CameraPaneState &state);
-CameraPaneSnapshot prepare_camera_pane_snapshot(const Session &session, const CameraPaneState &state);
-CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &snapshot,
-                                                 const CameraDecodeStatus &decode_status,
-                                                 const LiveCameraFrameStatus *live_status,
-                                                 bool has_texture,
-                                                 int texture_width,
-                                                 int texture_height,
-                                                 float text_area_width);
-
 struct CameraPaneState {
   CameraViewKind view = CameraViewKind::Road;
   bool fit_to_pane = true;

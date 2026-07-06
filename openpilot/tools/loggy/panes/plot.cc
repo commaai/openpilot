@@ -372,7 +372,12 @@ void apply_plot_series_transform(const PlotSeriesRequest &request, std::vector<d
   }
 }
 
-std::string plot_state_for_series(const std::vector<PlotSeriesRequest> &requests, const json11::Json &old_state) {
+// Common serializer for all pane-state mutations below: series list is always rebuilt from
+// `requests`; the remaining fields (max_points, style, y_limits, zoom history) are each taken
+// from whichever of `old_state`/override the specific caller wants (see wrappers).
+std::string plot_state_json(const std::vector<PlotSeriesRequest> &requests, const json11::Json &old_state,
+                            PlotSeriesStyle style, const PlotYLimits &limits,
+                            const std::vector<PlotZoomRange> &zoom_history) {
   json11::Json::array series;
   series.reserve(requests.size());
   for (const PlotSeriesRequest &request : requests) {
@@ -383,61 +388,32 @@ std::string plot_state_for_series(const std::vector<PlotSeriesRequest> &requests
   if (old_state.is_object() && old_state["max_points"].is_number()) {
     out["max_points"] = old_state["max_points"];
   }
-  const PlotSeriesStyle style = plot_series_style_node(old_state);
   if (style != PlotSeriesStyle::Auto) out["style"] = plot_series_style_token(style);
-  const PlotYLimits limits = parse_plot_y_limits_node(old_state);
   const json11::Json limits_json = plot_y_limits_json(limits);
   if (limits_json.is_object() && !limits_json.object_items().empty()) out["y_limits"] = limits_json;
-  const json11::Json zoom_history = plot_zoom_history_json(parse_plot_zoom_history_node(old_state));
-  if (zoom_history.is_array() && !zoom_history.array_items().empty()) out["x_zoom_history"] = zoom_history;
+  const json11::Json zoom_history_json = plot_zoom_history_json(zoom_history);
+  if (zoom_history_json.is_array() && !zoom_history_json.array_items().empty()) out["x_zoom_history"] = zoom_history_json;
   return json11::Json(out).dump();
+}
+
+std::string plot_state_for_series(const std::vector<PlotSeriesRequest> &requests, const json11::Json &old_state) {
+  return plot_state_json(requests, old_state, plot_series_style_node(old_state),
+                        parse_plot_y_limits_node(old_state), parse_plot_zoom_history_node(old_state));
 }
 
 std::string plot_state_with_display_options(std::string_view state_json, PlotSeriesStyle style, const PlotYLimits &limits) {
   std::string err;
   const json11::Json old_state = json11::Json::parse(std::string(state_json), err);
   const std::vector<PlotSeriesRequest> requests = parse_plot_series_requests(state_json);
-
-  json11::Json::array series;
-  series.reserve(requests.size());
-  for (const PlotSeriesRequest &request : requests) {
-    series.push_back(plot_series_request_json(request));
-  }
-
-  json11::Json::object out{{"series", series}};
-  if (err.empty() && old_state.is_object() && old_state["max_points"].is_number()) {
-    out["max_points"] = old_state["max_points"];
-  }
-  if (style != PlotSeriesStyle::Auto) out["style"] = plot_series_style_token(style);
-  const json11::Json limits_json = plot_y_limits_json(limits);
-  if (limits_json.is_object() && !limits_json.object_items().empty()) out["y_limits"] = limits_json;
-  const json11::Json zoom_history = plot_zoom_history_json(parse_plot_zoom_history_node(old_state));
-  if (zoom_history.is_array() && !zoom_history.array_items().empty()) out["x_zoom_history"] = zoom_history;
-  return json11::Json(out).dump();
+  return plot_state_json(requests, old_state, style, limits, parse_plot_zoom_history_node(old_state));
 }
 
 std::string plot_state_with_zoom_history(std::string_view state_json, const std::vector<PlotZoomRange> &history) {
   std::string err;
   const json11::Json old_state = json11::Json::parse(std::string(state_json), err);
   const std::vector<PlotSeriesRequest> requests = parse_plot_series_requests(state_json);
-
-  json11::Json::array series;
-  series.reserve(requests.size());
-  for (const PlotSeriesRequest &request : requests) {
-    series.push_back(plot_series_request_json(request));
-  }
-
-  json11::Json::object out{{"series", series}};
-  if (err.empty() && old_state.is_object() && old_state["max_points"].is_number()) {
-    out["max_points"] = old_state["max_points"];
-  }
-  const PlotSeriesStyle style = plot_series_style_node(old_state);
-  if (style != PlotSeriesStyle::Auto) out["style"] = plot_series_style_token(style);
-  const json11::Json limits_json = plot_y_limits_json(parse_plot_y_limits_node(old_state));
-  if (limits_json.is_object() && !limits_json.object_items().empty()) out["y_limits"] = limits_json;
-  const json11::Json zoom_history = plot_zoom_history_json(history);
-  if (zoom_history.is_array() && !zoom_history.array_items().empty()) out["x_zoom_history"] = zoom_history;
-  return json11::Json(out).dump();
+  return plot_state_json(requests, old_state, plot_series_style_node(old_state),
+                        parse_plot_y_limits_node(old_state), history);
 }
 
 std::string plot_state_with_added_series(std::string_view state_json, std::string_view path) {

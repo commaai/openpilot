@@ -20,22 +20,6 @@
 namespace loggy {
 namespace {
 
-struct ComputedTemplate;
-struct ComputedEditorState;
-struct ComputedPreviewRow;
-
-std::vector<std::string> computed_sources_from_text(std::string_view text);
-std::string computed_sources_text(const std::vector<std::string> &sources);
-ComputedEditorState parse_computed_editor_state(std::string_view state_json);
-std::string computed_editor_state_json(const ComputedEditorState &state);
-bool apply_computed_template(ComputedEditorState *state, int template_index);
-ComputedSeriesSpec computed_spec_from_editor_state(const ComputedEditorState &state);
-std::string computed_default_export_path(std::string_view output_path);
-std::vector<ComputedPreviewRow> computed_preview_rows(const Store &store,
-                                                      std::string_view path,
-                                                      TimeRange range,
-                                                      size_t max_rows);
-
 struct ComputedTemplate {
   const char *name = "";
   const char *globals_code = "";

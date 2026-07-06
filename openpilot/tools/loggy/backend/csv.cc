@@ -3,7 +3,9 @@
 #include "json11/json11.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cerrno>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -130,6 +132,65 @@ std::vector<StreamCsvRow> collect_stream_rows(const Store &store, TimeRange rang
   return rows;
 }
 
+std::string history_lower_text(std::string_view text) {
+  std::string out(text);
+  std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
+  return out;
+}
+
+bool history_text_matches_filter(std::string_view text, std::string_view filter) {
+  return filter.empty() || history_lower_text(text).find(history_lower_text(filter)) != std::string::npos;
+}
+
+bool history_compare_values(double lhs, std::string_view op, double rhs) {
+  if (op == ">") return lhs > rhs;
+  if (op == "=") return lhs == rhs;
+  if (op == "!=") return lhs != rhs;
+  if (op == "<") return lhs < rhs;
+  if (op == ">=") return lhs >= rhs;
+  if (op == "<=") return lhs <= rhs;
+  return true;
+}
+
+std::string history_hex_bytes(const std::vector<uint8_t> &bytes) {
+  std::string out;
+  out.reserve(bytes.size() * 3);
+  for (size_t i = 0; i < bytes.size(); ++i) {
+    char buf[4];
+    std::snprintf(buf, sizeof(buf), "%02X", bytes[i]);
+    if (!out.empty()) out.push_back(' ');
+    out += buf;
+  }
+  return out;
+}
+
+std::string history_decoded_values(const Msg *msg, const std::vector<uint8_t> &data, size_t max_values = 4) {
+  if (msg == nullptr || data.empty()) return {};
+  std::string out;
+  size_t count = 0;
+  for (const Signal *sig : msg->signals()) {
+    if (sig == nullptr) continue;
+    double value = 0.0;
+    if (!sig->get_value(data.data(), data.size(), &value)) continue;
+    if (!out.empty()) out += ", ";
+    out += sig->name + "=" + sig->format_value(value);
+    if (++count >= max_values) break;
+  }
+  return out;
+}
+
+bool history_matches_compare(const Msg *msg, const HistoryLogParams &params, const std::vector<uint8_t> &data) {
+  if (!params.compare_enabled || params.compare_signal.empty()) return true;
+  if (msg == nullptr || data.empty()) return false;
+  const Signal *sig = msg->sig(params.compare_signal);
+  if (sig == nullptr) return false;
+  double value = 0.0;
+  if (!sig->get_value(data.data(), data.size(), &value)) return false;
+  return history_compare_values(value, params.compare_op, params.compare_value);
+}
+
 }  // namespace
 
 MessageId parse_message_id_state(std::string_view state_json, std::optional<MessageId> selection, MessageId fallback) {
@@ -234,6 +295,91 @@ std::string series_csv(const Store &store, std::string_view path, TimeRange rang
     append_cell(&out, double_to_string(point.value), true);
   }
   return out.str();
+}
+
+std::optional<BinaryGrid> build_binary_grid(const Store &store, const MessageId &id, TimeRange range) {
+  const CanEventView view = store.can_events(id, range);
+  if (view.events.empty()) return std::nullopt;
+
+  BinaryGrid grid;
+  grid.id = id;
+  grid.event_count = view.events.size();
+  grid.first_time = view.events.front().mono_time;
+  grid.last_time = view.events.back().mono_time;
+  grid.latest_data = view.events.back().data;
+  grid.rows.resize(grid.latest_data.size());
+
+  for (size_t byte_index = 0; byte_index < grid.latest_data.size(); ++byte_index) {
+    const uint8_t byte = grid.latest_data[byte_index];
+    for (int bit = 0; bit < 8; ++bit) {
+      BinaryBitCell &cell = grid.rows[byte_index][static_cast<size_t>(bit)];
+      cell.valid = true;
+      cell.value = static_cast<uint8_t>((byte >> (7 - bit)) & 1U);
+    }
+  }
+
+  if (view.events.size() > 1) {
+    std::vector<uint8_t> previous = view.events.front().data;
+    for (size_t event_index = 1; event_index < view.events.size(); ++event_index) {
+      const std::vector<uint8_t> &current = view.events[event_index].data;
+      const size_t byte_count = std::min(previous.size(), current.size());
+      for (size_t byte_index = 0; byte_index < byte_count && byte_index < grid.rows.size(); ++byte_index) {
+        const uint8_t diff = static_cast<uint8_t>(previous[byte_index] ^ current[byte_index]);
+        for (int bit = 0; bit < 8; ++bit) {
+          if ((diff & (1U << (7 - bit))) == 0) continue;
+          BinaryBitCell &cell = grid.rows[byte_index][static_cast<size_t>(bit)];
+          ++cell.flip_count;
+          grid.max_flip_count = std::max(grid.max_flip_count, cell.flip_count);
+        }
+      }
+      previous = current;
+    }
+  }
+  return grid;
+}
+
+bool history_valid_compare_op(std::string_view op) {
+  return op == ">" || op == "=" || op == "!=" || op == "<" || op == ">=" || op == "<=";
+}
+
+HistoryLogPage prepare_history_log_page(const Store &store, const MessageId &id, TimeRange range,
+                                       const HistoryLogParams &params, const Msg *msg) {
+  const CanEventView view = store.can_events(id, range);
+  std::vector<HistoryLogRow> matches;
+  matches.reserve(std::min(view.events.size(), params.max_rows));
+  bool truncated = false;
+  size_t event_index = 0;
+  for (auto it = view.events.rbegin(); it != view.events.rend(); ++it) {
+    const CanEvent &event = *it;
+    ++event_index;
+    if (!history_matches_compare(msg, params, event.data)) continue;
+
+    HistoryLogRow row;
+    row.mono_time = event.mono_time;
+    row.bus_time = event.bus_time;
+    row.byte_count = event.data.size();
+    row.data_hex = history_hex_bytes(event.data);
+    row.decoded = history_decoded_values(msg, event.data);
+    const std::string searchable = row.data_hex + " " + row.decoded;
+    if (!history_text_matches_filter(searchable, params.filter)) continue;
+    matches.push_back(std::move(row));
+    if (matches.size() >= params.max_rows) {
+      truncated = event_index < view.events.size();
+      break;
+    }
+  }
+
+  HistoryLogPage page;
+  page.total_rows = matches.size();
+  page.page_size = std::clamp(params.page_size, static_cast<size_t>(1), static_cast<size_t>(5000));
+  page.page_count = std::max(static_cast<size_t>(1), (matches.size() + page.page_size - 1) / page.page_size);
+  page.page_index = std::min(params.page_index, page.page_count - 1);
+  page.truncated = truncated;
+
+  const size_t start_ = std::min(matches.size(), page.page_index * page.page_size);
+  const size_t end = std::min(matches.size(), start_ + page.page_size);
+  page.rows.assign(matches.begin() + static_cast<std::ptrdiff_t>(start_), matches.begin() + static_cast<std::ptrdiff_t>(end));
+  return page;
 }
 
 bool write_csv_file(const std::filesystem::path &path, std::string_view csv, std::string &error) {

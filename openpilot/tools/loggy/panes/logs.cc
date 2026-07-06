@@ -19,24 +19,6 @@
 namespace loggy {
 namespace {
 
-struct LogPaneState;
-struct LogFilterParams;
-
-LogPaneState parse_logs_pane_state(std::string_view state_json);
-std::string logs_pane_state_json(const LogPaneState &state);
-const char *log_origin_label(LogOrigin origin);
-const char *log_level_label(uint8_t level);
-uint32_t log_level_mask_bit(uint8_t level);
-uint32_t log_level_mask_from_min_level(uint8_t min_level);
-std::string log_level_mask_label(uint32_t mask);
-const char *log_time_mode_label(int mode);
-std::string log_time_text(const LogEntry &entry, int mode);
-std::string log_detail_text(const LogEntry &entry);
-int log_selected_row_position(const std::vector<size_t> &rows, int selected_log_index);
-int log_navigate_selected_row(const std::vector<size_t> &rows, int selected_log_index, int direction);
-std::vector<size_t> filter_log_entries(const std::vector<LogEntry> &logs,
-                                       const LogFilterParams &params);
-
 inline constexpr uint32_t kLogLevelTraceMask = 1u << 0;
 inline constexpr uint32_t kLogLevelInfoMask = 1u << 1;
 inline constexpr uint32_t kLogLevelWarnMask = 1u << 2;

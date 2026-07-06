@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
-#include <cctype>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -34,27 +33,6 @@ struct HistoryLogState {
   std::string export_path = "/tmp/loggy_history.csv";
   std::string export_status;
 };
-
-struct HistoryLogRow {
-  double mono_time = 0.0;
-  uint16_t bus_time = 0;
-  size_t byte_count = 0;
-  std::string data_hex;
-  std::string decoded;
-};
-
-struct HistoryLogPage {
-  std::vector<HistoryLogRow> rows;
-  size_t total_rows = 0;
-  size_t page_index = 0;
-  size_t page_size = 250;
-  size_t page_count = 1;
-  bool truncated = false;
-};
-
-bool history_valid_compare_op(std::string_view op) {
-  return op == ">" || op == "=" || op == "!=" || op == "<" || op == ">=" || op == "<=";
-}
 
 HistoryLogState parse_history_log_state(std::string_view state_json) {
   HistoryLogState state;
@@ -94,106 +72,22 @@ std::string history_log_state_json(const MessageId &id, const HistoryLogState &s
   }).dump();
 }
 
-std::string history_lower_text(std::string_view text) {
-  std::string out(text);
-  std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
-    return static_cast<char>(std::tolower(c));
-  });
-  return out;
+HistoryLogParams history_log_params_from_state(const HistoryLogState &state) {
+  return {
+    .filter = state.filter,
+    .compare_signal = state.compare_signal,
+    .compare_op = state.compare_op,
+    .compare_value = state.compare_value,
+    .compare_enabled = state.compare_enabled,
+    .max_rows = state.max_rows,
+    .page_size = state.page_size,
+    .page_index = state.page_index,
+  };
 }
 
-bool history_text_matches_filter(std::string_view text, std::string_view filter) {
-  return filter.empty() || history_lower_text(text).find(history_lower_text(filter)) != std::string::npos;
-}
-
-bool history_compare_values(double lhs, std::string_view op, double rhs) {
-  if (op == ">") return lhs > rhs;
-  if (op == "=") return lhs == rhs;
-  if (op == "!=") return lhs != rhs;
-  if (op == "<") return lhs < rhs;
-  if (op == ">=") return lhs >= rhs;
-  if (op == "<=") return lhs <= rhs;
-  return true;
-}
-
-std::string history_hex_bytes(const std::vector<uint8_t> &bytes) {
-  std::string out;
-  out.reserve(bytes.size() * 3);
-  for (size_t i = 0; i < bytes.size(); ++i) {
-    char buf[4];
-    std::snprintf(buf, sizeof(buf), "%02X", bytes[i]);
-    if (!out.empty()) out.push_back(' ');
-    out += buf;
-  }
-  return out;
-}
-
-std::string history_decoded_values(const Msg *msg, const std::vector<uint8_t> &data, size_t max_values = 4) {
-  if (msg == nullptr || data.empty()) return {};
-  std::string out;
-  size_t count = 0;
-  for (const Signal *sig : msg->signals()) {
-    if (sig == nullptr) continue;
-    double value = 0.0;
-    if (!sig->get_value(data.data(), data.size(), &value)) continue;
-    if (!out.empty()) out += ", ";
-    out += sig->name + "=" + sig->format_value(value);
-    if (++count >= max_values) break;
-  }
-  return out;
-}
-
-bool history_matches_compare(const Msg *msg, const HistoryLogState &state, const std::vector<uint8_t> &data) {
-  if (!state.compare_enabled || state.compare_signal.empty()) return true;
-  if (msg == nullptr || data.empty()) return false;
-  const Signal *sig = msg->sig(state.compare_signal);
-  if (sig == nullptr) return false;
-  double value = 0.0;
-  if (!sig->get_value(data.data(), data.size(), &value)) return false;
-  return history_compare_values(value, state.compare_op, state.compare_value);
-}
-
-HistoryLogPage prepare_history_log_page(const Store &store,
-                                       const MessageId &id,
-                                       TimeRange range,
-                                       const HistoryLogState &state,
-                                       const Msg *msg = nullptr) {
-  const CanEventView view = store.can_events(id, range);
-  std::vector<HistoryLogRow> matches;
-  matches.reserve(std::min(view.events.size(), state.max_rows));
-  bool truncated = false;
-  size_t event_index = 0;
-  for (auto it = view.events.rbegin(); it != view.events.rend(); ++it) {
-    const CanEvent &event = *it;
-    ++event_index;
-    if (!history_matches_compare(msg, state, event.data)) continue;
-
-    HistoryLogRow row;
-    row.mono_time = event.mono_time;
-    row.bus_time = event.bus_time;
-    row.byte_count = event.data.size();
-    row.data_hex = history_hex_bytes(event.data);
-    row.decoded = history_decoded_values(msg, event.data);
-    const std::string searchable = row.data_hex + " " + row.decoded;
-    if (!history_text_matches_filter(searchable, state.filter)) continue;
-    matches.push_back(std::move(row));
-    if (matches.size() >= state.max_rows) {
-      truncated = event_index < view.events.size();
-      break;
-    }
-  }
-
-  HistoryLogPage page;
-  page.total_rows = matches.size();
-  page.page_size = std::clamp(state.page_size, static_cast<size_t>(1), static_cast<size_t>(5000));
-  page.page_count = std::max(static_cast<size_t>(1), (matches.size() + page.page_size - 1) / page.page_size);
-  page.page_index = std::min(state.page_index, page.page_count - 1);
-  page.truncated = truncated;
-
-  const size_t start_ = std::min(matches.size(), page.page_index * page.page_size);
-  const size_t end = std::min(matches.size(), start_ + page.page_size);
-  page.rows.assign(matches.begin() + static_cast<std::ptrdiff_t>(start_), matches.begin() + static_cast<std::ptrdiff_t>(end));
-  return page;
+HistoryLogPage prepare_history_log_page(const Store &store, const MessageId &id, TimeRange range,
+                                       const HistoryLogState &state, const Msg *msg = nullptr) {
+  return prepare_history_log_page(store, id, range, history_log_params_from_state(state), msg);
 }
 
 struct HistoryLogPaneTransientState {

@@ -151,6 +151,7 @@ panda_live_obj = loggy_env.Object("backend/panda_live", "backend/panda_live.cc")
 panda_obj = loggy_env.Object("backend/cabana_panda", "#openpilot/tools/cabana/panda.cc")
 bridge_zmq_obj = loggy_env.Object("backend/bridge_zmq", "#openpilot/cereal/messaging/bridge_zmq.cc")
 csv_obj = loggy_env.Object("backend/csv", "backend/csv.cc")
+scan_obj = loggy_env.Object("backend/scan", "backend/scan.cc")
 computed_obj = loggy_env.Object("backend/computed", "backend/computed.cc")
 video_obj = loggy_env.Object("backend/video", "backend/video.cc")
 replay_support_objs = []
@@ -201,7 +202,7 @@ loggy_env.Program("_loggy", [
   session_obj,
   route_obj,
   extract_obj,
-] + store_scheduler_objs + [settings_obj, native_dialog_obj, remote_routes_obj, live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, computed_obj, video_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [settings_obj, native_dialog_obj, remote_routes_obj, live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, scan_obj, computed_obj, video_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
 loggy_env.Depends("_loggy", generated_dbc_stamp)
 loggy_env.Depends("_loggy", car_fingerprint_to_dbc)
 loggy_env.Depends("_loggy", "#openpilot/cereal/messaging/bridge")
@@ -214,7 +215,7 @@ loggy_env.Program("tests/workspace_smoke", [
   session_obj,
   route_obj,
   extract_obj,
-] + store_scheduler_objs + [settings_obj, native_dialog_obj, live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, computed_obj, video_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [settings_obj, native_dialog_obj, live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, scan_obj, computed_obj, video_obj, undo_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
 loggy_env.Depends("tests/workspace_smoke", generated_dbc_stamp)
 loggy_env.Depends("tests/workspace_smoke", car_fingerprint_to_dbc)
 
@@ -283,7 +284,7 @@ loggy_env.Program("tests/panes_smoke", [
   settings_obj,
   theme_obj,
   transport_obj,
-] + store_scheduler_objs + [live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, computed_obj, video_obj, undo_obj, native_dialog_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
+] + store_scheduler_objs + [live_obj, panda_live_obj, panda_obj, bridge_zmq_obj, csv_obj, scan_obj, computed_obj, video_obj, undo_obj, native_dialog_obj] + pane_objs + dbc_objs + replay_support_objs, LIBS=libs)
 loggy_env.Depends("tests/panes_smoke", generated_dbc_stamp)
 loggy_env.Depends("tests/panes_smoke", car_fingerprint_to_dbc)
 
@@ -305,6 +306,16 @@ loggy_env.Program("tests/route_ingest_smoke", [
 loggy_env.Depends("tests/route_ingest_smoke", generated_dbc_stamp)
 loggy_env.Depends("tests/route_ingest_smoke", car_fingerprint_to_dbc)
 
+loggy_env.Program("tests/scan_test", [
+  "tests/dbc_test_runner.cc",
+  "tests/scan_test.cc",
+  scan_obj,
+  csv_obj,
+  transport_obj,
+] + store_scheduler_objs + [video_obj] + dbc_objs, LIBS=libs)
+loggy_env.Depends("tests/scan_test", generated_dbc_stamp)
+loggy_env.Depends("tests/scan_test", car_fingerprint_to_dbc)
+
 loggy_smoke_build_targets = [
   "#openpilot/tools/loggy/_loggy",
   "#openpilot/tools/loggy/tests/workspace_smoke",
@@ -318,6 +329,7 @@ loggy_smoke_build_targets = [
   "#openpilot/tools/loggy/tests/panes_smoke",
   "#openpilot/tools/loggy/tests/extract_smoke",
   "#openpilot/tools/loggy/tests/route_ingest_smoke",
+  "#openpilot/tools/loggy/tests/scan_test",
 ]
 
 loggy_env.Alias("loggy_smoke_build", loggy_smoke_build_targets)
