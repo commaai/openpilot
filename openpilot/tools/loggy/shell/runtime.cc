@@ -280,6 +280,8 @@ struct AppState {
     PaneSplit split = PaneSplit::Right;
   };
   std::optional<PaneAction> pending_pane_action;
+  int rename_tab_index = -1;
+  std::array<char, 128> rename_tab_buffer{};
 };
 
 void request_help_popup(AppState &app) {
@@ -422,8 +424,8 @@ void draw_main_menu(AppState &app) {
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Workspace")) {
-    if (ImGui::MenuItem("Undo", "Ctrl+Z", false, app.workspace_history.can_undo())) undo_workspace(app);
-    if (ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, app.workspace_history.can_redo())) redo_workspace(app);
+    if (ImGui::MenuItem("Undo", nullptr, false, app.workspace_history.can_undo())) undo_workspace(app);
+    if (ImGui::MenuItem("Redo", nullptr, false, app.workspace_history.can_redo())) redo_workspace(app);
     ImGui::Separator();
     if (ImGui::MenuItem("Save Layout", nullptr, false, workspace_autosave_available(app.session.workspace_layout_path))) {
       save_workspace_now(app.session.workspace, app.workspace_history, app.session.workspace_layout_path, app.workspace_status);
@@ -472,11 +474,40 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
   ImGui::TextUnformatted(pane.title.empty() ? kDefaultPaneTitle : pane.title.c_str());
   ImGui::PopStyleColor();
 
-  if (ImGui::BeginPopupContextWindow()) {
+  if (ImGui::BeginPopupContextWindow("pane_context")) {
+    if (ImGui::MenuItem("Split Left")) request_split(app, tab_index, pane_index, PaneSplit::Left);
     if (ImGui::MenuItem("Split Right")) request_split(app, tab_index, pane_index, PaneSplit::Right);
+    if (ImGui::MenuItem("Split Top")) request_split(app, tab_index, pane_index, PaneSplit::Top);
     if (ImGui::MenuItem("Split Bottom")) request_split(app, tab_index, pane_index, PaneSplit::Bottom);
     ImGui::Separator();
-    if (ImGui::MenuItem("Close")) {
+    if (ImGui::BeginMenu("Change Type")) {
+      for (size_t i = 0; i < pane_type_count(); ++i) {
+        const PaneType &type = pane_types()[i];
+        if (std::string_view(type.id) == "empty" || pane.type == type.id) continue;
+        if (ImGui::MenuItem(type.display_name)) {
+          pane.type = type.id;
+          pane.title = type.display_name;
+          pane.state_json = "{}";
+          pane.transient_state.reset();
+          record_workspace_change(app.session.workspace, app.workspace_history,
+                                 app.session.workspace_layout_path, app.workspace_status, "Changed pane type");
+        }
+      }
+      ImGui::EndMenu();
+    }
+    if (pane.type == "plot") {
+      if (ImGui::MenuItem("Remove All Series")) {
+        pane.state_json = R"({"series": []})";
+        pane.transient_state.reset();
+        record_workspace_change(app.session.workspace, app.workspace_history,
+                               app.session.workspace_layout_path, app.workspace_status, "Cleared plot series");
+      }
+      if (ImGui::MenuItem("Reset Zoom")) {
+        app.session.view_range.set_range(app.session.playback.route_range());
+      }
+    }
+    ImGui::Separator();
+    if (ImGui::MenuItem("Close Pane")) {
       app.pending_pane_action = AppState::PaneAction{
         .type = AppState::PaneAction::Type::Close,
         .tab_index = tab_index,
@@ -593,6 +624,34 @@ void draw_workspace_node(AppState &app, WorkspaceTab &tab, int tab_index, Worksp
   ImGui::Dummy(ImVec2(0.0f, 0.0f));
 }
 
+void draw_rename_tab_popup(AppState &app) {
+  Workspace &workspace = app.session.workspace;
+  if (app.rename_tab_index < 0) return;
+  if (app.rename_tab_index >= static_cast<int>(workspace.tabs.size())) {
+    app.rename_tab_index = -1;
+    return;
+  }
+  ImGui::OpenPopup("Rename Tab");
+  if (!ImGui::BeginPopupModal("Rename Tab", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+  ImGui::SetNextItemWidth(260.0f);
+  if (!ImGui::IsAnyItemActive()) ImGui::SetKeyboardFocusHere();
+  const bool committed = ImGui::InputText("##rename_tab", app.rename_tab_buffer.data(), app.rename_tab_buffer.size(),
+                                          ImGuiInputTextFlags_EnterReturnsTrue);
+  const bool ok = ImGui::Button("Rename", ImVec2(120.0f, 0.0f)) || committed;
+  ImGui::SameLine();
+  const bool cancel = ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)) || modal_escape_pressed();
+  if (ok && app.rename_tab_buffer[0] != '\0') {
+    workspace.tabs[static_cast<size_t>(app.rename_tab_index)].name = app.rename_tab_buffer.data();
+    record_workspace_change(workspace, app.workspace_history, app.session.workspace_layout_path,
+                           app.workspace_status, "Renamed tab");
+  }
+  if (ok || cancel) {
+    app.rename_tab_index = -1;
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::EndPopup();
+}
+
 void apply_pending_pane_action(AppState &app) {
   if (!app.pending_pane_action.has_value()) return;
   const auto action = *app.pending_pane_action;
@@ -623,15 +682,50 @@ void draw_workspace(AppState &app) {
   const int select_this_frame = app.workspace_select_request;
   app.workspace_select_request = -1;
 
-  if (!ImGui::BeginTabBar("##workspace_tabs")) return;
+  if (!ImGui::BeginTabBar("##workspace_tabs", ImGuiTabBarFlags_AutoSelectNewTabs)) return;
+  int close_tab_request = -1;
   for (size_t i = 0; i < workspace.tabs.size(); ++i) {
     WorkspaceTab &tab = workspace.tabs[i];
     ImGuiTabItemFlags flags = select_this_frame == static_cast<int>(i) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
-    if (ImGui::BeginTabItem(tab.name.c_str(), nullptr, flags)) {
+    // Stable ID: renaming must not recreate the tab (and drop its selected state) mid-frame.
+    const std::string label = tab.name + "###tab_" + std::to_string(i);
+    bool open = true;
+    const bool visible = ImGui::BeginTabItem(label.c_str(), &open, flags);
+    // jotpluggler tab affordances: right-click menu on the tab, double-click to rename.
+    if (ImGui::BeginPopupContextItem()) {
+      if (ImGui::MenuItem("New Tab")) {
+        add_tab(&workspace);
+        app.workspace_select_request = workspace.current_tab_index;
+        record_workspace_change(workspace, app.workspace_history, app.session.workspace_layout_path,
+                               app.workspace_status, "Added tab");
+      }
+      if (ImGui::MenuItem("Rename Tab...")) {
+        app.rename_tab_index = static_cast<int>(i);
+        std::snprintf(app.rename_tab_buffer.data(), app.rename_tab_buffer.size(), "%s", tab.name.c_str());
+      }
+      if (ImGui::MenuItem("Duplicate Tab")) {
+        WorkspaceTab copy = tab;
+        copy.name = tab.name + " copy";
+        for (PaneInstance &pane : copy.panes) pane.transient_state.reset();
+        workspace.tabs.insert(workspace.tabs.begin() + static_cast<std::ptrdiff_t>(i) + 1, std::move(copy));
+        app.workspace_select_request = static_cast<int>(i) + 1;
+        record_workspace_change(workspace, app.workspace_history, app.session.workspace_layout_path,
+                               app.workspace_status, "Duplicated tab");
+      }
+      ImGui::Separator();
+      if (ImGui::MenuItem("Close Tab")) close_tab_request = static_cast<int>(i);
+      ImGui::EndPopup();
+    }
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+      app.rename_tab_index = static_cast<int>(i);
+      std::snprintf(app.rename_tab_buffer.data(), app.rename_tab_buffer.size(), "%s", tab.name.c_str());
+    }
+    if (visible) {
       workspace.current_tab_index = static_cast<int>(i);
       draw_workspace_node(app, tab, static_cast<int>(i), tab.root, ImGui::GetCursorScreenPos(), ImGui::GetContentRegionAvail());
       ImGui::EndTabItem();
     }
+    if (!open) close_tab_request = static_cast<int>(i);
   }
   if (ImGui::TabItemButton("+", ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip)) {
     add_tab(&workspace);
@@ -641,6 +735,16 @@ void draw_workspace(AppState &app) {
   }
   ImGui::EndTabBar();
 
+  if (close_tab_request >= 0 && close_tab_request < static_cast<int>(workspace.tabs.size())) {
+    workspace.tabs.erase(workspace.tabs.begin() + close_tab_request);
+    // Closing the last tab resets to one fresh tab, jotpluggler-style — never zero tabs.
+    if (workspace.tabs.empty()) add_tab(&workspace);
+    workspace.current_tab_index = std::clamp(workspace.current_tab_index, 0,
+                                             static_cast<int>(workspace.tabs.size()) - 1);
+    record_workspace_change(workspace, app.workspace_history, app.session.workspace_layout_path,
+                           app.workspace_status, "Closed tab");
+  }
+  draw_rename_tab_popup(app);
   apply_pending_pane_action(app);
 }
 
@@ -851,8 +955,15 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
     app.session.playback.toggle_playing();
     app.autostart_armed = false;
   }
+  // Ctrl+Z is DBC-edit undo, like Qt cabana — that's the muscle memory this tool inherits.
+  // Workspace undo stays a menu action so a stray Ctrl+Z can't silently rearrange panes.
   if (!ImGui::GetIO().WantTextInput && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
-    ImGui::GetIO().KeyShift ? redo_workspace(app) : undo_workspace(app);
+    UndoStack &dbc_undo = app.session.dbc_undo;
+    if (ImGui::GetIO().KeyShift) {
+      if (dbc_undo.can_redo()) dbc_undo.redo();
+    } else if (dbc_undo.can_undo()) {
+      dbc_undo.undo();
+    }
   }
   if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
     request_help_popup(app);

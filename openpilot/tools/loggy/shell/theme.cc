@@ -399,12 +399,15 @@ void apply_theme(ThemeKind kind) {
   plot_style.Colors[ImPlotCol_Crosshairs] = t.plot_crosshair;
   plot_style.Colors[ImPlotCol_Selection] = t.plot_selection;
 
+  // jotpluggler's plot input map: left-drag pans, wheel zooms, right-drag box-zooms — which
+  // leaves a plain right CLICK free to open the pane context menu (plot.cc opens it manually;
+  // ImPlot holds the button as active, so BeginPopupContextWindow alone never fires there).
   ImPlot::MapInputDefault();
   ImPlotInputMap &input_map = ImPlot::GetInputMap();
-  input_map.Pan = ImGuiMouseButton_Right;
+  input_map.Pan = ImGuiMouseButton_Left;
   input_map.PanMod = ImGuiMod_None;
-  input_map.Select = ImGuiMouseButton_Left;
-  input_map.SelectCancel = ImGuiMouseButton_Right;
+  input_map.Select = ImGuiMouseButton_Right;
+  input_map.SelectCancel = ImGuiMouseButton_Left;
   input_map.SelectMod = ImGuiMod_None;
 }
 

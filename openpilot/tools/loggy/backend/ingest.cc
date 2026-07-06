@@ -182,6 +182,27 @@ bool SegmentScheduler::publish(StoreBatch batch) {
   }
 
   if (store == nullptr) return false;
+  // Stage a segment as several small batches, not one monolith: Store::begin_frame drains on
+  // the UI thread under a per-frame time budget, and it can only stop BETWEEN batches — a
+  // whole-segment batch is an unsplittable hitch. Coverage rides on the first sub-batch.
+  constexpr size_t kChunksPerSubBatch = 256;
+  while (batch.series.size() > kChunksPerSubBatch || batch.can_events.size() > kChunksPerSubBatch) {
+    StoreBatch sub;
+    sub.segment = batch.segment;
+    sub.replace_series_paths = std::move(batch.replace_series_paths);
+    batch.replace_series_paths.clear();
+    sub.coverage = std::move(batch.coverage);
+    batch.coverage.clear();
+    const size_t series_take = std::min(batch.series.size(), kChunksPerSubBatch);
+    sub.series.assign(std::make_move_iterator(batch.series.end() - static_cast<std::ptrdiff_t>(series_take)),
+                      std::make_move_iterator(batch.series.end()));
+    batch.series.resize(batch.series.size() - series_take);
+    const size_t can_take = std::min(batch.can_events.size(), kChunksPerSubBatch);
+    sub.can_events.assign(std::make_move_iterator(batch.can_events.end() - static_cast<std::ptrdiff_t>(can_take)),
+                          std::make_move_iterator(batch.can_events.end()));
+    batch.can_events.resize(batch.can_events.size() - can_take);
+    store->stage(std::move(sub));
+  }
   store->stage(std::move(batch));
   return true;
 }

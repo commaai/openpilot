@@ -14,9 +14,11 @@
 #include "tools/loggy/panes/signal.h"
 #include "tools/loggy/panes/dbc.h"
 
+#include "imgui.h"
 #include "json11/json11.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cctype>
 #include <fstream>
 #include <iterator>
@@ -420,13 +422,29 @@ void add_default_split(WorkspaceTab *tab, PaneSplit split, PaneInstance pane) {
   tab->panes.push_back(std::move(pane));
 }
 
-void draw_dummy_pane(Session &, PaneInstance &) {
+// A freshly-split pane: a picker, not a dead box — clicking a type converts this pane in place.
+void draw_empty_pane(Session &, PaneInstance &pane) {
+  const float x = std::max(0.0f, (ImGui::GetContentRegionAvail().x - 220.0f) * 0.5f);
+  ImGui::Dummy(ImVec2(0.0f, 8.0f));
+  ImGui::SetCursorPosX(x);
+  ImGui::TextDisabled("Choose a pane type");
+  for (size_t i = 0; i < pane_type_count(); ++i) {
+    const PaneType &type = pane_types()[i];
+    if (std::string_view(type.id) == "empty") continue;
+    ImGui::SetCursorPosX(x);
+    if (ImGui::Button(type.display_name, ImVec2(220.0f, 0.0f))) {
+      pane.type = type.id;
+      pane.title = type.display_name;
+      pane.state_json = "{}";
+      pane.transient_state.reset();
+    }
+  }
 }
 
 }  // namespace
 
 static const PaneType kPaneTypes[] = {
-  {"empty", "Empty", draw_dummy_pane},
+  {"empty", "Empty", draw_empty_pane},
   {"plot", "Plot", draw_plot_pane},
   {"messages", "Messages", draw_messages_pane},
   {"binary", "Binary", draw_binary_pane},
@@ -729,6 +747,11 @@ fs::path layouts_dir() {
 }
 
 fs::path autosave_dir() {
+  // Override so tests and parallel sessions can isolate their drafts — a stray draft from one
+  // session silently replaces every other session's preset load (drafts win over presets).
+  if (const char *dir = std::getenv("LOGGY_AUTOSAVE_DIR"); dir != nullptr && dir[0] != '\0') {
+    return fs::path(dir);
+  }
   return layouts_dir() / ".autosave";
 }
 

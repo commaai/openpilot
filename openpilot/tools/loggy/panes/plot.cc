@@ -520,9 +520,10 @@ struct PlotTransientState {
   std::string series_filter;
   std::vector<std::string> series_paths;
   // Range at the start of an in-progress pan/zoom gesture: history records ONE entry per
-  // gesture on release — recording every drag frame flooded the 16-entry cap and Undo Zoom
-  // could no longer reach the pre-gesture view.
+  // gesture when it settles — recording every drag frame (or wheel tick) flooded the 16-entry
+  // cap and Undo Zoom could no longer reach the pre-gesture view.
   std::optional<TimeRange> zoom_gesture_origin;
+  double zoom_last_change_at = 0.0;
 };
 
 PlotTransientState &plot_transient_state(PaneInstance &pane) {
@@ -795,6 +796,12 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   }
   draw_plot_series_selector(session.store, &pane);
 
+  // Browser double-click lands here: the first plot pane drawn claims the pending series.
+  if (!session.pending_plot_series.empty()) {
+    pane.state_json = plot_state_with_added_series(pane.state_json, session.pending_plot_series);
+    session.pending_plot_series.clear();
+  }
+
   PlotTransientState &state = plot_transient_state(pane);
   std::vector<PlotZoomRange> zoom_history = parse_plot_zoom_history(pane.state_json);
   if (ImGui::GetContentRegionAvail().x > 112.0f) ImGui::SameLine();
@@ -837,6 +844,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   const Theme &t = theme();
   push_mono_font();
   bool dropped_series = false;
+  bool plot_context_click = false;
   ImGui::BeginChild("##loggy_plot_child", ImGui::GetContentRegionAvail(), false,
                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
   const ImVec2 plot_child_origin = ImGui::GetCursorScreenPos();
@@ -904,12 +912,15 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
       ImGui::EndTooltip();
     }
 
-    // Seek on RELEASE of a plain click: IsMouseClicked fires on press, which also seeked at the
-    // origin of every left-drag zoom-select (rebinding all detail panes mid-gesture).
+    // Seek on RELEASE of a plain left click (press starts a pan, so press must not seek); a
+    // plain RIGHT click opens the pane context menu runtime.cc owns — ImPlot holds the button
+    // active for box-select, so the window-level context popup can't trigger itself here.
     if (ImPlot::IsPlotHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left) &&
         ImGui::GetIO().MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] <= 4.0f) {
       session.playback.seek(ImPlot::GetPlotMousePos().x);
     }
+    plot_context_click = ImPlot::IsPlotHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
+                         ImGui::GetIO().MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] <= 4.0f;
     ImPlot::EndPlot();
   }
   if (requests.empty()) {
@@ -922,6 +933,9 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
         ImGui::GetColorU32(ImGuiCol_TextDisabled), hint);
   }
   ImGui::EndChild();
+  // Opened HERE, in the pane window's ID scope — runtime.cc's BeginPopupContextWindow
+  // ("pane_context") lives there, not inside the plot child.
+  if (plot_context_click) ImGui::OpenPopup("pane_context");
   dropped_series = accept_series_drop(&pane);
   pop_mono_font();
 
@@ -929,11 +943,14 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
 
   if (std::abs(x_min - range.start_) > 1.0e-6 || std::abs(x_max - range.end) > 1.0e-6) {
     if (!state.zoom_gesture_origin.has_value()) state.zoom_gesture_origin = range;
+    state.zoom_last_change_at = ImGui::GetTime();
     session.view_range.set_range({x_min, x_max});
   }
-  // One history entry per gesture: the pre-gesture range is pushed when the mouse settles, so a
-  // continuous pan/zoom drag is a single Undo step instead of one per frame.
-  const bool gesture_active = ImGui::IsMouseDown(ImGuiMouseButton_Left) || ImGui::IsMouseDown(ImGuiMouseButton_Right);
+  // One history entry per gesture, pushed when it SETTLES: no button held AND the range has
+  // been still for a beat — the quiet window is what folds a burst of wheel ticks (no button
+  // involved) into one Undo step instead of one per tick.
+  const bool gesture_active = ImGui::IsMouseDown(ImGuiMouseButton_Left) || ImGui::IsMouseDown(ImGuiMouseButton_Right) ||
+                              ImGui::GetTime() - state.zoom_last_change_at < 0.4;
   if (state.zoom_gesture_origin.has_value() && !gesture_active) {
     push_zoom_history(&zoom_history, *state.zoom_gesture_origin);
     pane.state_json = plot_state_with_zoom_history(pane.state_json, zoom_history);

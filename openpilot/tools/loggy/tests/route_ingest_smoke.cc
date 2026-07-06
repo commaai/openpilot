@@ -90,6 +90,8 @@ int main(int argc, char **argv) {
       if (status.state == loggy::RouteIngestState::Completed ||
           status.state == loggy::RouteIngestState::Failed ||
           status.state == loggy::RouteIngestState::Canceled) {
+        // The drain is frame-budgeted; flush the tail so assertions below see the full route.
+        while (store.begin_frame().batches > 0) {}
         break;
       }
       if (std::chrono::duration<double>(std::chrono::steady_clock::now() - start_).count() > 120.0) {

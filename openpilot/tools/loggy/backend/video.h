@@ -116,6 +116,10 @@ public:
   CameraFrameDecoder &operator=(const CameraFrameDecoder &) = delete;
 
   void set_camera_index(CameraFeedIndex index);
+  // Same feed, more of it (ingest landed another segment): swap the index without discarding
+  // the frame cache, warm FrameReader, or the displayed frame — set_camera_index resets all of
+  // those, which restarted decode from scratch on every segment landing during route load.
+  void update_camera_index(CameraFeedIndex index);
   void request_frame(double tracker_time);
   std::optional<DecodedCameraFrame> take_frame();
   // The consumer lost its uploaded texture (pane recreated by workspace undo/layout reload):

@@ -80,19 +80,30 @@ check "named header structs" \
 # survivors — table/plot-selection theme tokens, zoom seek-on-release + one-undo-per-gesture,
 # browser uncapped via skeleton cache, camera invalidate_displayed after pane recreate, Ctrl+Z,
 # resize keeps min/max, autostart yields to user pause, sparse-series sample-hold, History key
-# quantized to 4 Hz while playing, map cold-cache is a miss not a failure, start_ string leaks.
+# quantized to 4 Hz while playing, map cold-cache is a miss not a failure, start_ string leaks;
+# ->22098 (2026-07-06) owner UX round — load-phase frame pacing (budgeted store drain, sub-batch
+# staging, camera index cadence + incremental decoder update), camera cover-crop when Fit off,
+# jotpluggler parity (empty-pane type picker, full split/change-type/close context menu, tab
+# close/rename/duplicate/context menu, browser double-click-to-plot), Ctrl+Z = DBC undo like Qt
+# cabana, editor buffers keyed on DBC generation, wheel-zoom history coalescing, History tail
+# settle, abort raised under the lock; ->22108 plot input map matches jotpluggler (left-drag
+# pan, right-drag box zoom, right-click menu) with the pane popup opened from the pane scope;
+# ->22114 LOGGY_AUTOSAVE_DIR override so tests/parallel sessions isolate workspace drafts.
 # Genuine defect-cluster capability, not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21818
+  22114
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.
 # ->930 (2026-07-06): undo/redo_workspace helpers shared by menu + new Ctrl+Z/Ctrl+Shift+Z
 # hotkeys, and the autostart-yields-to-user-pause guard.
+# ->1041 (2026-07-06): tab close/rename/duplicate/context menu + full pane context menu (the
+# jotpluggler-parity round). If runtime.cc keeps growing, split the workspace chrome (tab bar,
+# pane menus, splitters) into shell/workspace_ui.cc — same seam as the earlier A8 split.
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
-  930
+  1041
 check "pane-local statics" \
   "$(rg_count '^\s+static ' panes -g'*.cc')" \
   0

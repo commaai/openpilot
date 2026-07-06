@@ -273,9 +273,13 @@ public:
     }
   }
 
+  void update_camera_index(CameraFeedIndex index) {
+    std::lock_guard lock(mutex_);
+    index_ = std::move(index);
+  }
+
   void request_frame(double tracker_time) {
     bool queued = false;
-    bool abort_inflight = false;
     {
       std::lock_guard lock(mutex_);
       if (index_.entries.empty()) return;
@@ -320,12 +324,11 @@ public:
       // completes on a machine where a decode takes longer than one frame period — the canvas
       // just stays blank. The finished frame still reaches the screen via publishResult's
       // stale-serial path, then the fresher target decodes next.
-      abort_inflight = inflight_segment_.has_value() && *inflight_segment_ != frame.segment;
+      // Raised under mutex_: the worker consumes abort_ at dequeue under this same lock, so a
+      // store after unlock could race past that reset and kill the NEW target's own decode.
+      if (inflight_segment_.has_value() && *inflight_segment_ != frame.segment) abort_.store(true);
     }
-    if (queued) {
-      if (abort_inflight) abort_.store(true);
-      cv_.notify_all();
-    }
+    if (queued) cv_.notify_all();
   }
 
   std::optional<DecodedCameraFrame> take_frame() {
@@ -581,6 +584,10 @@ CameraFrameDecoder::~CameraFrameDecoder() = default;
 
 void CameraFrameDecoder::set_camera_index(CameraFeedIndex index) {
   impl_->set_camera_index(std::move(index));
+}
+
+void CameraFrameDecoder::update_camera_index(CameraFeedIndex index) {
+  impl_->update_camera_index(std::move(index));
 }
 
 void CameraFrameDecoder::request_frame(double tracker_time) {

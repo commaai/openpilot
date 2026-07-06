@@ -52,6 +52,11 @@ public:
   Store store;
   DBCManager dbc;
   UndoStack dbc_undo;
+  // One-shot request from the Browser (double-click a series): the first plot pane drawn after
+  // it is set appends the path. Aged out after two frames so it can't fire on a later tab
+  // switch if the current tab happens to have no plot pane.
+  std::string pending_plot_series;
+  int pending_plot_series_age = 0;
   SegmentScheduler scheduler;
   LoggySettings settings;
   std::filesystem::path settings_path;
@@ -99,6 +104,9 @@ private:
   std::array<CameraFeedIndex, 4> camera_indexes_;
   std::array<CameraFrameDecoder, 4> camera_decoders_;
   bool camera_indexes_dirty_ = true;
+  // Coarse-cadence rebuild state for the camera frame indexes (see begin_frame).
+  bool camera_indexes_stale_ = false;
+  double camera_indexes_built_at_ = -1.0e9;
   size_t camera_index_segment_count_ = 0;
   bool computed_dirty_ = false;
   bool route_range_applied_ = false;

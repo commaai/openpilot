@@ -292,7 +292,13 @@ void draw_history_log_pane(Session &session, PaneInstance &pane) {
   // playing (invisible staleness in a newest-first table); the exact key returns on pause and
   // on seeks, so the settled page is precise.
   const CanSummaryView playhead = session.store.can_event_summary(id, page_range, /*with_data=*/false);
-  const bool playing = session.playback.playing();
+  // Quantization must not strand the tail: once the id's newest event stops advancing (message
+  // went quiet, or the playhead passed its last event) the bucketed key freezes and events that
+  // landed after the last rebuild inside that final bucket would never show. Use the exact key
+  // whenever the bucket is older than one bucket period — steady state settles precisely.
+  const bool tail_settled = playhead.count > 0 &&
+      session.playback.tracker_time() - playhead.last_time > 0.25;
+  const bool playing = session.playback.playing() && !tail_settled;
   const auto page_cache_key = [&]() {
     char buf[192];
     std::snprintf(buf, sizeof(buf), "%s|%zu|%.6f|%zu|%zu|%d|%.9g|%s|%s|%s", id.to_string().c_str(),

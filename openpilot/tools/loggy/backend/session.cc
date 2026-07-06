@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <iterator>
 #include <optional>
@@ -277,6 +278,21 @@ void refresh_camera_indexes(const std::vector<RouteSegment> &segments,
   for (const CameraViewSpec &spec : camera_view_specs()) {
     (*indexes)[camera_view_index(spec.view)] = build_camera_feed_index(segments, store, spec.view, range);
   }
+}
+
+// True when `next` is the same camera feed as `prev` with possibly more of it: identical
+// segment files (path identity) as a prefix, and at least as many frame entries.
+bool camera_index_extends(const CameraFeedIndex &prev, const CameraFeedIndex &next) {
+  if (prev.view != next.view) return false;
+  if (next.segment_files.size() < prev.segment_files.size()) return false;
+  if (next.entries.size() < prev.entries.size()) return false;
+  for (size_t i = 0; i < prev.segment_files.size(); ++i) {
+    if (next.segment_files[i].segment != prev.segment_files[i].segment ||
+        next.segment_files[i].path != prev.segment_files[i].path) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void extend_range(TimeRange *range, TimeRange incoming) {
@@ -701,6 +717,7 @@ SelectionContext &Session::selection(std::string_view group) {
 }
 
 DrainResult Session::begin_frame() {
+  if (!pending_plot_series.empty() && ++pending_plot_series_age > 2) pending_plot_series.clear();
   scheduler.set_tracker_time(playback.tracker_time());
   scheduler.set_visible_ranges({view_range.range()});
 
@@ -801,13 +818,32 @@ DrainResult Session::begin_frame() {
     camera_index_segment_count_ = route_segments.size();
     camera_indexes_dirty_ = true;
   }
-  if (camera_indexes_dirty_ || camera_dependencies_touched(drain.touched_series_paths)) {
+  // Encode-index series are touched by nearly every drained batch while a route loads, and a
+  // rebuild walks/copies every frame entry for all four views — per-frame rebuilds were a large
+  // share of the load-phase jank. New frames only need to become seekable at a coarse cadence;
+  // dirty (segment count changed / restart) and ingest completion rebuild immediately.
+  if (camera_dependencies_touched(drain.touched_series_paths)) camera_indexes_stale_ = true;
+  const bool ingest_settled = route_ingest_.status().state != RouteIngestState::Loading;
+  const double now_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+  if (camera_indexes_dirty_ ||
+      (camera_indexes_stale_ && (ingest_settled || now_seconds - camera_indexes_built_at_ > 0.5))) {
+    camera_indexes_stale_ = false;
+    camera_indexes_built_at_ = now_seconds;
     TimeRange range = playback.route_range();
     if (!range.valid() || range.span() <= 0.0) range = view_range.range();
+    std::array<CameraFeedIndex, 4> previous = std::move(camera_indexes_);
     refresh_camera_indexes(route_segments, store, range, &camera_indexes_);
     for (const CameraViewSpec &spec : camera_view_specs()) {
       const size_t index = camera_view_index(spec.view);
-      camera_decoders_[index].set_camera_index(camera_indexes_[index]);
+      // During route load the index GROWS as segments land; a full set_camera_index would throw
+      // away the decode cache, warm reader, and displayed frame each time — the video restarted
+      // from scratch per segment and the load phase janked. Only reset when the feed actually
+      // changed identity (restart / different route): same files in the same order, extended.
+      if (camera_index_extends(previous[index], camera_indexes_[index])) {
+        camera_decoders_[index].update_camera_index(camera_indexes_[index]);
+      } else {
+        camera_decoders_[index].set_camera_index(camera_indexes_[index]);
+      }
     }
     camera_indexes_dirty_ = false;
   }

@@ -190,7 +190,10 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
                                    : 16.0f / 9.0f;
   ImVec2 video_min = pos;
   ImVec2 video_max = max;
+  ImVec2 uv0(0.0f, 0.0f);
+  ImVec2 uv1(1.0f, 1.0f);
   if (fit_to_pane) {
+    // Contain: letterbox inside the pane.
     float video_w = width;
     float video_h = video_w / aspect;
     if (video_h > height) {
@@ -199,9 +202,21 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
     }
     video_min = ImVec2(pos.x + (width - video_w) * 0.5f, pos.y + (height - video_h) * 0.5f);
     video_max = ImVec2(video_min.x + video_w, video_min.y + video_h);
+  } else {
+    // Cover: fill the pane at the video's aspect and crop the overflow via UVs — never stretch.
+    const float pane_aspect = width / height;
+    if (pane_aspect > aspect) {
+      const float visible = aspect / pane_aspect;  // vertical crop
+      uv0.y = (1.0f - visible) * 0.5f;
+      uv1.y = 1.0f - uv0.y;
+    } else {
+      const float visible = pane_aspect / aspect;  // horizontal crop
+      uv0.x = (1.0f - visible) * 0.5f;
+      uv1.x = 1.0f - uv0.x;
+    }
   }
   if (has_texture) {
-    draw_list->AddImage(static_cast<ImTextureID>(texture.texture), video_min, video_max);
+    draw_list->AddImage(static_cast<ImTextureID>(texture.texture), video_min, video_max, uv0, uv1);
   } else {
     draw_list->AddRectFilled(video_min, video_max, canvas_bg, 0.0f);
   }

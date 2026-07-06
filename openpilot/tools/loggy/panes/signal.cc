@@ -92,12 +92,17 @@ struct SignalEditCache {
   std::string val_desc_error;
   bool val_desc_valid = true;
   bool valid = false;
+  // DBC mutation generation the buffer was loaded at: an undo/redo/apply from ANYWHERE (global
+  // Ctrl+Z, the DBC tab) must reload the staged text, or the editor shows the pre-undo values
+  // with Apply armed to silently re-apply them.
+  uint64_t dbc_generation = 0;
 };
 
 struct MessageEditCache {
   MessageId id;
   MessageEditModel edit;
   bool valid = false;
+  uint64_t dbc_generation = 0;  // same contract as SignalEditCache
 };
 
 struct SignalPaneTransientState {
@@ -496,8 +501,10 @@ Signal::Type signal_type_from_combo_index(int index) {
   }
 }
 
-void load_signal_edit_cache(SignalEditCache *cache, const MessageId &id, const Signal &signal) {
+void load_signal_edit_cache(SignalEditCache *cache, const MessageId &id, const Signal &signal,
+                            uint64_t dbc_generation) {
   if (cache == nullptr) return;
+  cache->dbc_generation = dbc_generation;
   cache->id = id;
   cache->edit = signal_edit_model_from_signal(signal);
   cache->val_desc_text = signal_value_descriptions_text(signal.val_desc);
@@ -506,8 +513,10 @@ void load_signal_edit_cache(SignalEditCache *cache, const MessageId &id, const S
   cache->valid = true;
 }
 
-bool cache_matches_signal(const SignalEditCache &cache, const MessageId &id, const Signal &signal) {
-  return cache.valid && cache.id == id && cache.edit.original_name == signal.name;
+bool cache_matches_signal(const SignalEditCache &cache, const MessageId &id, const Signal &signal,
+                          uint64_t dbc_generation) {
+  return cache.valid && cache.dbc_generation == dbc_generation && cache.id == id &&
+         cache.edit.original_name == signal.name;
 }
 
 bool signal_edit_cache_dirty(const SignalEditCache &cache, const Signal &signal) {
@@ -528,10 +537,12 @@ void stash_pending_signal_edit(SignalPaneTransientState &transient, const Messag
 // Called after switching to a new signal. If a stash exists for it (keyed by its current name,
 // which is also its original_name for any signal not itself mid-rename), load it into the cache
 // and report success so the caller skips the normal fresh-from-DBC reload.
-bool restore_pending_signal_edit(SignalPaneTransientState &transient, const MessageId &id, const Signal &signal) {
+bool restore_pending_signal_edit(SignalPaneTransientState &transient, const MessageId &id, const Signal &signal,
+                                 uint64_t dbc_generation) {
   const auto it = transient.pending_signal_edits.find({id, signal.name});
   if (it == transient.pending_signal_edits.end()) return false;
   SignalEditCache &cache = transient.edit;
+  cache.dbc_generation = dbc_generation;
   cache.id = id;
   cache.edit = it->second;
   cache.val_desc_text = signal_value_descriptions_text(cache.edit.val_desc);
@@ -545,15 +556,17 @@ void discard_pending_signal_edit(SignalPaneTransientState &transient, const Mess
   transient.pending_signal_edits.erase({id, original_name});
 }
 
-void load_message_edit_cache(MessageEditCache *cache, const MessageId &id, const Msg &msg) {
+void load_message_edit_cache(MessageEditCache *cache, const MessageId &id, const Msg &msg,
+                             uint64_t dbc_generation) {
   if (cache == nullptr) return;
+  cache->dbc_generation = dbc_generation;
   cache->id = id;
   cache->edit = message_edit_model_from_msg(msg);
   cache->valid = true;
 }
 
-bool cache_matches_message(const MessageEditCache &cache, const MessageId &id) {
-  return cache.valid && cache.id == id;
+bool cache_matches_message(const MessageEditCache &cache, const MessageId &id, uint64_t dbc_generation) {
+  return cache.valid && cache.dbc_generation == dbc_generation && cache.id == id;
 }
 
 uint8_t color_channel_from_float(float value) {
@@ -568,7 +581,9 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
     cache->valid = false;
     return;
   }
-  if (!cache_matches_message(*cache, id)) load_message_edit_cache(cache, id, *msg);
+  if (!cache_matches_message(*cache, id, session.dbc.generation())) {
+    load_message_edit_cache(cache, id, *msg, session.dbc.generation());
+  }
 
   MessageEditModel &edit = cache->edit;
   ImGui::Separator();
@@ -611,7 +626,7 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
 
   if (ImGui::GetContentRegionAvail().x > 72.0f) ImGui::SameLine();
   if (ImGui::Button("Reset##message")) {
-    load_message_edit_cache(cache, id, *msg);
+    load_message_edit_cache(cache, id, *msg, session.dbc.generation());
     state->edit_error.clear();
     *changed = true;
   }
@@ -697,7 +712,9 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
     *changed = true;
     return;
   }
-  if (!cache_matches_signal(*cache, id, *signal)) load_signal_edit_cache(cache, id, *signal);
+  if (!cache_matches_signal(*cache, id, *signal, session.dbc.generation())) {
+    load_signal_edit_cache(cache, id, *signal, session.dbc.generation());
+  }
 
   SignalEditModel &edit = cache->edit;
   const bool dirty = signal_edit_cache_dirty(*cache, *signal);
@@ -851,7 +868,7 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
     if (transient != nullptr) {
       discard_pending_signal_edit(*transient, id, edit.original_name);
     }
-    load_signal_edit_cache(cache, id, *signal);
+    load_signal_edit_cache(cache, id, *signal, session.dbc.generation());
     state->edit_error.clear();
     *changed = true;
   }
@@ -1006,7 +1023,7 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
       stash_pending_signal_edit(transient_state, id, msg);
       state.selected_signal = rows.front().name;
       if (rows.front().signal == nullptr ||
-          !restore_pending_signal_edit(transient_state, id, *rows.front().signal)) {
+          !restore_pending_signal_edit(transient_state, id, *rows.front().signal, session.dbc.generation())) {
         transient_state.edit.valid = false;
       }
       changed = true;
@@ -1054,7 +1071,7 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
           stash_pending_signal_edit(transient_state, id, msg);
           state.selected_signal = new_selection;
           state.edit_error.clear();
-          if (row.signal == nullptr || !restore_pending_signal_edit(transient_state, id, *row.signal)) {
+          if (row.signal == nullptr || !restore_pending_signal_edit(transient_state, id, *row.signal, session.dbc.generation())) {
             transient_state.edit.valid = false;
           }
           changed = true;

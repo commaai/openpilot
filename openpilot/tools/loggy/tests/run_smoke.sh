@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+# Isolate workspace drafts: a leftover draft from a GUI session silently overrides preset
+# layouts inside workspace_smoke.
+export LOGGY_AUTOSAVE_DIR="$(mktemp -d /tmp/loggy_smoke_autosave.XXXXXX)"
+trap 'rm -rf "$LOGGY_AUTOSAVE_DIR"' EXIT
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 

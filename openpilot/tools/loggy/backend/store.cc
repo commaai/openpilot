@@ -1,6 +1,7 @@
 #include "tools/loggy/backend/store.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iterator>
 #include <limits>
@@ -163,16 +164,22 @@ void Store::stage(StoreBatch batch) {
 DrainResult Store::begin_frame() {
   std::vector<StoreBatch> batches;
   {
-    // Move batches under lock so each batch is drained exactly once per frame.
+    // Move batches under lock so each batch is drained exactly once.
     std::lock_guard lock(staged_mutex_);
     batches.swap(staged_batches_);
   }
 
   DrainResult result;
-  result.batches = batches.size();
-  const bool touched_store = !batches.empty();
   std::vector<std::string> touched_series;
   std::vector<MessageId> touched_can;
+
+  // This runs on the UI thread: draining a freshly-ingested segment in one frame (sort checks
+  // touch every staged point) is a visible hitch, and route load lands segments back-to-back.
+  // Process whole batches (at least one) until the budget runs out, then push the rest back for
+  // the next frame — ingest completes a few frames later instead of stuttering the whole load.
+  constexpr auto kDrainBudget = std::chrono::milliseconds(3);
+  const auto drain_start = std::chrono::steady_clock::now();
+  size_t processed = 0;
 
   for (auto &batch : batches) {
     std::vector<TimeRange> batch_coverage = batch.coverage;
@@ -209,7 +216,16 @@ DrainResult Store::begin_frame() {
     }
 
     coverage_.insert(coverage_.end(), batch_coverage.begin(), batch_coverage.end());
+    ++processed;
+    if (std::chrono::steady_clock::now() - drain_start > kDrainBudget) break;
   }
+  if (processed < batches.size()) {
+    std::lock_guard lock(staged_mutex_);
+    staged_batches_.insert(staged_batches_.begin(),
+                           std::make_move_iterator(batches.begin() + static_cast<std::ptrdiff_t>(processed)),
+                           std::make_move_iterator(batches.end()));
+  }
+  result.batches = processed;
 
   std::sort(touched_series.begin(), touched_series.end());
   touched_series.erase(std::unique(touched_series.begin(), touched_series.end()), touched_series.end());
@@ -231,7 +247,7 @@ DrainResult Store::begin_frame() {
   }
   coverage_ = normalize_ranges(std::move(coverage_));
   // Bump generation once so readers that cache generation_ see a single coherent store mutation.
-  if (touched_store) ++generation_;
+  if (processed > 0) ++generation_;
 
   return result;
 }

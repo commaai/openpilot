@@ -316,6 +316,7 @@ struct BrowserPaneTransientState {
   // old 1000-row truncation was hiding.
   uint64_t skeleton_generation = std::numeric_limits<uint64_t>::max();
   std::string skeleton_key;
+  double skeleton_built_at = -1.0e9;
   BrowserTreeNode skeleton_tree;
   std::vector<BrowserSeriesRow> skeleton_rows;
 };
@@ -370,7 +371,7 @@ void draw_browser_sparkline(const BrowserSparkline &sparkline) {
   }
 }
 
-void draw_browser_row(const BrowserSeriesRow &row) {
+void draw_browser_row(Session &session, const BrowserSeriesRow &row) {
   ImGui::TableNextRow(ImGuiTableRowFlags_None, std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
   ImGui::PushID(row.path.c_str());
 
@@ -381,6 +382,11 @@ void draw_browser_row(const BrowserSeriesRow &row) {
     label += "  [" + row.annotation + "]";
   }
   ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+  // Double-click adds the series to the tab's plot — jotpluggler's fastest add path.
+  if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+    session.pending_plot_series = row.path;
+    session.pending_plot_series_age = 0;
+  }
   if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
     ImGui::SetDragDropPayload(kLoggySeriesPathPayload, row.path.c_str(), row.path.size() + 1);
     ImGui::TextUnformatted(row.path.c_str());
@@ -403,13 +409,13 @@ void draw_browser_row(const BrowserSeriesRow &row) {
   ImGui::PopID();
 }
 
-void draw_browser_tree_node(const BrowserTreeNode &node,
+void draw_browser_tree_node(Session &session, const BrowserTreeNode &node,
                             const Store &store,
                             TimeRange sample_range,
                             double tracker_time,
                             const BrowserState &state) {
   if (node.leaf) {
-    draw_browser_row(enrich_browser_series_row(store, node.series, sample_range, tracker_time, state));
+    draw_browser_row(session, enrich_browser_series_row(store, node.series, sample_range, tracker_time, state));
     return;
   }
 
@@ -426,7 +432,7 @@ void draw_browser_tree_node(const BrowserTreeNode &node,
     pop_mono_font();
     if (open) {
       for (const BrowserTreeNode &child : node.children) {
-        draw_browser_tree_node(child, store, sample_range, tracker_time, state);
+        draw_browser_tree_node(session, child, store, sample_range, tracker_time, state);
       }
       ImGui::TreePop();
     }
@@ -435,7 +441,7 @@ void draw_browser_tree_node(const BrowserTreeNode &node,
   }
 
   for (const BrowserTreeNode &child : node.children) {
-    draw_browser_tree_node(child, store, sample_range, tracker_time, state);
+    draw_browser_tree_node(session, child, store, sample_range, tracker_time, state);
   }
 }
 
@@ -480,12 +486,18 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
   char skeleton_key[128];
   std::snprintf(skeleton_key, sizeof(skeleton_key), "%d|%d|%zu|%zu", state.show_tree ? 1 : 0,
                 state.show_deprecated ? 1 : 0, state.max_rows, std::hash<std::string>{}(state.filter));
-  if (transient.skeleton_generation != session.store.generation() || transient.skeleton_key != skeleton_key) {
+  // During route load the store generation bumps every frame (frame-budgeted drain), which
+  // would rebuild this 11k-row skeleton per frame; new DATA only needs a 4 Hz refresh. A KEY
+  // change (filter/toggles) rebuilds immediately — that's direct user input.
+  const bool key_changed = transient.skeleton_key != skeleton_key;
+  const bool data_changed = transient.skeleton_generation != session.store.generation();
+  if (key_changed || (data_changed && ImGui::GetTime() - transient.skeleton_built_at > 0.25)) {
     transient.skeleton_tree = state.show_tree ? prepare_browser_tree(session.store, state) : BrowserTreeNode{};
     transient.skeleton_rows = state.show_tree ? std::vector<BrowserSeriesRow>{}
                                               : prepare_browser_series_rows(session.store, state);
     transient.skeleton_generation = session.store.generation();
     transient.skeleton_key = skeleton_key;
+    transient.skeleton_built_at = ImGui::GetTime();
   }
   const BrowserTreeNode &tree = transient.skeleton_tree;
   const std::vector<BrowserSeriesRow> &rows = transient.skeleton_rows;
@@ -515,7 +527,7 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
   const double lookback = std::max(kBrowserMinValueLookbackSeconds, static_cast<double>(state.sparkline_seconds));
   const TimeRange sample_range{tracker_time - lookback, tracker_time};
   if (state.show_tree) {
-    draw_browser_tree_node(tree, session.store, sample_range, tracker_time, state);
+    draw_browser_tree_node(session, tree, session.store, sample_range, tracker_time, state);
     ImGui::EndTable();
     return;
   }
@@ -524,8 +536,8 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
   clipper.Begin(static_cast<int>(rows.size()), std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
   while (clipper.Step()) {
     for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
-      draw_browser_row(enrich_browser_series_row(session.store, rows[static_cast<size_t>(row_idx)],
-                                                 sample_range, tracker_time, state));
+      draw_browser_row(session, enrich_browser_series_row(session.store, rows[static_cast<size_t>(row_idx)],
+                                                          sample_range, tracker_time, state));
     }
   }
   ImGui::EndTable();
