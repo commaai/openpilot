@@ -31,7 +31,7 @@ public:
   void send_heartbeat(bool engaged);
 
 private:
-  // Pimpl keeps libusb/Panda USB deps out of panda_live.h.
+  // pimpl: keeps libusb/Panda USB headers out of every pane include; allowed only here and video (REVIEW §2.4)
   class Impl;
   std::unique_ptr<Impl> impl_;
 };

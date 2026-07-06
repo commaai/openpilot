@@ -121,7 +121,7 @@ public:
   CameraDecodeStatus status() const;
 
 private:
-  // Pimpl keeps FFmpeg/VisionIPC deps out of video.h.
+  // pimpl: keeps FFmpeg/VisionIPC headers out of every pane include; allowed only here and panda_live (REVIEW §2.4)
   class Impl;
   std::unique_ptr<Impl> impl_;
 };
@@ -140,7 +140,7 @@ public:
   LiveCameraFrameStatus status(CameraViewKind view) const;
 
 private:
-  // Pimpl keeps FFmpeg/VisionIPC deps out of video.h.
+  // pimpl: keeps FFmpeg/VisionIPC headers out of every pane include; allowed only here and panda_live (REVIEW §2.4)
   class Impl;
   std::unique_ptr<Impl> impl_;
 };
