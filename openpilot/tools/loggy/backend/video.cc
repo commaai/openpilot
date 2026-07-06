@@ -272,6 +272,7 @@ public:
 
   void request_frame(double tracker_time) {
     bool queued = false;
+    bool abort_inflight = false;
     {
       std::lock_guard lock(mutex_);
       if (index_.entries.empty()) return;
@@ -306,9 +307,16 @@ public:
       error_.clear();
       loading_ = true;
       queued = true;
+      // Abort the in-flight decode only when it can't serve this target's segment (its reader is
+      // obsolete). A same-segment decode is bounded work and gets to finish: during playback the
+      // target advances every few frames, and killing the decode each time means no frame EVER
+      // completes on a machine where a decode takes longer than one frame period — the canvas
+      // just stays blank. The finished frame still reaches the screen via publishResult's
+      // stale-serial path, then the fresher target decodes next.
+      abort_inflight = inflight_segment_.has_value() && *inflight_segment_ != frame.segment;
     }
     if (queued) {
-      abort_.store(true);
+      if (abort_inflight) abort_.store(true);
       cv_.notify_all();
     }
   }
@@ -434,11 +442,18 @@ private:
     return true;
   }
 
+  // Every worker path ends here exactly once per request (display or prefetch, ok or error), so
+  // this is also where the in-flight marker read by request_frame's abort decision clears.
   void publishResult(const DecodeRequest &request, DecodedCameraFrame result) {
-    if (!request.display) return;
     std::lock_guard lock(mutex_);
-    // Generation guard: publish only if this decode is still for the current target.
-    if (request.serial != latest_serial_ || request.generation != generation_) {
+    inflight_segment_.reset();
+    if (!request.display) return;
+    if (request.generation != generation_) return;
+    // A fresh-serial result always wins the pending slot. A stale one (the tracker already moved
+    // on) may still fill an EMPTY slot when it decoded ok: on a machine where every decode loses
+    // the race against playback, dropping stale results means the canvas stays blank for the
+    // whole run — a slightly-behind frame beats no frame, and the next fresh decode replaces it.
+    if (request.serial != latest_serial_ && (!result.ok || pending_result_.has_value())) {
       return;
     }
     pending_result_ = std::move(result);
@@ -461,6 +476,7 @@ private:
         if (stop_.load()) break;
         request = queued_requests_.front();
         queued_requests_.pop_front();
+        inflight_segment_ = request.key.segment;
       }
 
       DecodedCameraFrame result;
@@ -514,6 +530,9 @@ private:
   uint64_t latest_serial_ = 0;
   bool loading_ = false;
   std::deque<DecodeRequest> queued_requests_;
+  // Segment the worker is currently decoding; request_frame only aborts when this can't serve
+  // the new target (see the comment there).
+  std::optional<int> inflight_segment_;
   std::optional<DecodedCameraFrame> pending_result_;
   std::deque<DecodedCameraFrame> cache_;
   std::optional<CameraDecodeKey> active_key_;
