@@ -640,3 +640,18 @@
   from concurrent agent cleanup; runtime now logs signal-initiated exits.
 - LOC after parity fixes: 21,004 (audit-driven capability). Tests: scan_test added (325+
   assertions incl. failing-first stats regression), dbc_commands at 148.
+
+## Completion push — phase 5 perf audit (2026-07-06, quiet box, load < 5)
+
+rlog route 5beb9b58bd12b691/0000010a--a51155e496, HUD CPU frame time (llvmpipe software GL):
+- Time-to-first-use: plot rendering real data with 2/16 segments at t=2s. PASS.
+- Steady playback, cabana preset with live byte heatmap: 5.32 ms. PASS (< 8 ms gate).
+- Three-camera playback (cameras-and-map): 4.1-6.2 ms. PASS.
+- Seek storm (5 rapid seeks): 76 ms transient, recovered to 5.9 ms within 12 s. PASS.
+- Heavy workspace (6 plots + camera + binary): 5.18 ms, p99 8.20 ms. PASS.
+- Control without camera panes: 4.13 ms, p99 8.10 ms.
+- Caveat: p99 ~30 ms during multi-camera video playback is llvmpipe's CPU texture-copy cost;
+  upload path verified optimal (glTexSubImage2D reuse), single-camera p99 8.2 ms. Real-GPU DMA
+  makes this a harness artifact, not a product regression.
+- Prerequisite fixes measured here: in-place byte_change_times store query, generation-keyed
+  message row skeletons, input-keyed history page cache (each removed per-frame O(dataset) work).
