@@ -339,3 +339,62 @@ TEST_CASE("prepare_history_log_page with an unresolved compare signal filters ev
   CHECK(page.page_count == 1);
   CHECK(page.page_index == 0);
 }
+
+// -- (f) summarize_message_events: bounding the range to the playhead, not the full route. --
+// This is the Messages pane's live-table fix (REVIEW.md defect A): the caller passes
+// {route_start, tracker_time}, not the route's full span, so the summary reflects only events
+// seen up to the playhead.
+
+TEST_CASE("summarize_message_events bounded at an early tracker time shows the first event only") {
+  const MessageId id{.source = 0, .address = 0x300};
+  const TimeRange route_range{0.0, 100.0};
+  const std::vector<CanEvent> events = {
+    {.mono_time = 10.0, .data = {0xAA, 0x01}},
+    {.mono_time = 50.0, .data = {0xBB, 0x02}},
+  };
+  Store store;
+  stageEvents(&store, {{id, events}}, route_range);
+
+  const TimeRange up_to_tracker{route_range.start_, 30.0};
+  const loggy::MessageSummary summary = loggy::summarize_message_events(store, id, up_to_tracker);
+  CHECK(summary.count == 1);
+  CHECK(summary.last_time == Approx(10.0));
+  REQUIRE(summary.latest_data.size() == 2);
+  CHECK(summary.latest_data[0] == 0xAA);
+  CHECK(summary.latest_data[1] == 0x01);
+}
+
+TEST_CASE("summarize_message_events bounded past both events shows the latest one, not route-final") {
+  const MessageId id{.source = 0, .address = 0x301};
+  const TimeRange route_range{0.0, 100.0};
+  const std::vector<CanEvent> events = {
+    {.mono_time = 10.0, .data = {0xAA, 0x01}},
+    {.mono_time = 50.0, .data = {0xBB, 0x02}},
+  };
+  Store store;
+  stageEvents(&store, {{id, events}}, route_range);
+
+  const TimeRange up_to_tracker{route_range.start_, 60.0};
+  const loggy::MessageSummary summary = loggy::summarize_message_events(store, id, up_to_tracker);
+  CHECK(summary.count == 2);
+  CHECK(summary.last_time == Approx(50.0));
+  REQUIRE(summary.latest_data.size() == 2);
+  CHECK(summary.latest_data[0] == 0xBB);
+  CHECK(summary.latest_data[1] == 0x02);
+}
+
+TEST_CASE("summarize_message_events paused at route start shows no events yet") {
+  const MessageId id{.source = 0, .address = 0x302};
+  const TimeRange route_range{0.0, 100.0};
+  const std::vector<CanEvent> events = {
+    {.mono_time = 10.0, .data = {0xAA}},
+    {.mono_time = 50.0, .data = {0xBB}},
+  };
+  Store store;
+  stageEvents(&store, {{id, events}}, route_range);
+
+  const TimeRange up_to_tracker{route_range.start_, route_range.start_};
+  const loggy::MessageSummary summary = loggy::summarize_message_events(store, id, up_to_tracker);
+  CHECK(summary.count == 0);
+  CHECK(summary.latest_data.empty());
+}

@@ -56,9 +56,12 @@ check "pane header fns" \
 check "named header structs" \
   "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
   84
+# 20605->20703 (2026-07-05): Messages pane parity fix — playhead-bound summaries, byte-change
+# heatmap, sortable columns, suppress toggles (REVIEW.md defects A/B/C/D). Real capability, not
+# bloat; see the same commit's diff.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  20605
+  20703
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
   850
