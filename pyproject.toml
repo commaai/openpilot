@@ -32,15 +32,15 @@ dependencies = [
   "comma-deps-catch2",
   "comma-deps-acados",
   "comma-deps-eigen",
-  "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
+  "comma-deps-ffmpeg",
   "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
   "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
   "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
   "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
   "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
   "json11 @ git+https://github.com/commaai/dependencies.git@release-json11#subdirectory=json11",
-  "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
+  "comma-deps-git-lfs",
+  "comma-deps-gcc-arm-none-eabi",
 
   # body / webrtcd
   "av",
@@ -99,7 +99,7 @@ dev = [
 ]
 
 tools = [
-  "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "comma-deps-imgui",
 
   # this can be added back once it's stripped down some more
   #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
