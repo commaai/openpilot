@@ -1,4 +1,30 @@
-# Style review — FINAL (v3, 2026-07-06)
+# Style review — FINAL (v4, 2026-07-06 late)
+
+**Ship verdict (v4).** The red-team recovery push landed as six root-reviewed commits on top of
+the v3 state (`4cafc47fc`…`6a18736b3`): data honesty (route duration snaps to real content end,
+925.10s not 960.00s; deprecated series extracted; CSV export isolated from sibling-pane
+selection), visual identity (owner-directed `struct Theme` in shell/theme.h with
+kLightTheme/kDarculaTheme, Light default; binary per-signal colored spans + M/L markers;
+camera/plot chrome cleanup), playhead semantics (Binary/Signal/History/Browser/Plot-legend all
+bound to the tracker via O(log n) summaries, never the chart zoom; playback autostarts on
+load), interaction polish (real splitter drags with undo, binary edge-resize semantics matching
+Qt cabana, plot empty-series persistence, quiet map failure banner), a camera-decode fix
+(frames keep publishing when playback outpaces decode; blank-canvas starvation eliminated), and
+theme-token completion (map carto palette themed — it used to stay dark in light mode; zero
+color literals outside theme.cc, color_rgb() deleted). Every batch was line-reviewed at the
+root, hand-merged where waves collided (binary.cc three-way: signal spans × recency heat), and
+GUI-verified under Xvfb in both themes. Ratchet current: LOC 21,669 · structs 85 · runtime.cc
+912 · color literals 0 — all with dated justifications in tests/style_ratchet.sh.
+
+Remaining backlog, deliberately deferred, is §3b: timeline hover thumbnails + route-info bar,
+layout-save pretty-printing, plan decision #3 (DBC-decoded signals as plottable series paths —
+red-team #32), and a cosmetic rename of backend/csv.{h,cc} (it outgrew its name; it houses the
+CAN summary/grid queries too). One item still needs the owner: `tools/cabana/panda.cc` carries
+a +2/−1 libusb error-handling fix in the reference tree.
+
+Historical v3/v2 content follows for the audit trail.
+
+# Style review — v3 (2026-07-06)
 
 **Ship verdict.** The completion push (baseline `1976165e5` → ship, ~25 commits) closed every
 phase of the plan: style punch list, LOC settled at the measured floor, 7-slice parity audit
