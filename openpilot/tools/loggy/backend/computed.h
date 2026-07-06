@@ -18,13 +18,6 @@ enum class ComputedTransformKind {
   Derivative,
 };
 
-struct ComputedPythonSpec {
-  std::string linked_source;
-  std::vector<std::string> additional_sources;
-  std::string globals_code;
-  std::string function_code;
-};
-
 struct ComputedSeriesSpec {
   std::string output_path;
   std::string label;
@@ -34,7 +27,11 @@ struct ComputedSeriesSpec {
   double derivative_dt = 0.0;
   double scale = 1.0;
   double offset = 0.0;
-  ComputedPythonSpec python;
+  // CustomPython fields; only meaningful when kind == CustomPython.
+  std::string python_linked_source;
+  std::vector<std::string> python_additional_sources;
+  std::string python_globals_code;
+  std::string python_function_code;
 };
 
 struct ComputedSeriesStatus {

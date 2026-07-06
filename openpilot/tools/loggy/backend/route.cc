@@ -638,7 +638,17 @@ std::optional<RouteSliceSpec> parse_route_slice_spec(std::string_view text) {
   return RouteSliceSpec{parsed_begin, parsed_end};
 }
 
-RouteResolveResult resolve_route_segments(const RouteResolveConfig &config) {
+namespace {
+
+// Resolved segment set plus routing metadata; only RouteIngestor::run() assembles ingest
+// config into this, so it stays file-local rather than a header export.
+struct RouteResolveResult {
+  RouteSelection selection;
+  std::vector<RouteSegment> segments;
+  TimeRange route_range;
+};
+
+RouteResolveResult resolve_route_segments(const RouteIngestConfig &config) {
   if (config.route_name.empty()) throw std::runtime_error("No route name provided");
 
   RouteSelection selection = parse_route_selection(config.route_name);
@@ -683,27 +693,34 @@ RouteResolveResult resolve_route_segments(const RouteResolveConfig &config) {
   return result;
 }
 
-SegmentLoadResult load_route_segment(const SegmentWorkItem &work,
-                                   const SegmentLoadOptions &options,
-                                   std::atomic<bool> *abort) {
+// One segment's decoded output; only the ingest worker loop below consumes it, so the
+// per-segment timing/byte-count fields the loader used to report (nobody read them past a
+// removed test print) are gone rather than carried as header plumbing.
+struct SegmentLoadResult {
+  StoreBatch batch;
+  std::vector<TimelineSpan> timeline_spans;
+  std::vector<LogEntry> logs;
+  std::string car_fingerprint;
+};
+
+SegmentLoadResult load_route_segment(const SegmentWorkItem &work, SegmentExtractOptions extract,
+                                   bool local_cache, std::atomic<bool> *abort = nullptr) {
   if (work.log_path.empty()) {
     throw std::runtime_error("Missing log path for segment " + std::to_string(work.segment));
   }
 
   LogReader reader;
   // Pass abort flag into reader so expensive IO can stop promptly when the ingest is canceled.
-  if (!reader.load(work.log_path, abort, options.local_cache)) {
+  if (!reader.load(work.log_path, abort, local_cache)) {
     throw std::runtime_error("Failed to load log segment: " + work.log_path);
   }
 
-  SegmentExtractOptions extract = options.extract;
   extract.segment = work.segment;
   extract.coverage = work.range;
   if (!extract.time_offset.has_value() && !reader.events.empty()) {
     extract.time_offset = static_cast<double>(reader.events.front().mono_time) / 1.0e9 - work.range.start_;
   }
 
-  const auto extract_start = Clock::now();
   SegmentExtractResult extracted = extract_segment_series(reader.events, extract);
 
   SegmentLoadResult result;
@@ -711,20 +728,10 @@ SegmentLoadResult load_route_segment(const SegmentWorkItem &work,
   result.timeline_spans = extractTimelineSpans(reader.events, extract.time_offset_seconds());
   result.logs = extractLogEntries(reader.events, extract.time_offset_seconds());
   result.car_fingerprint = extractCarFingerprint(reader.events);
-  result.event_count = extracted.events_seen;
-  result.appended_event_count = extracted.events_appended;
-  result.series_count = result.batch.series.size();
-  result.can_message_count = result.batch.can_events.size();
-  result.timeline_span_count = result.timeline_spans.size();
-  result.log_count = result.logs.size();
-  result.compressed_bytes = reader.compressed_size();
-  result.decompressed_bytes = reader.decompressed_size();
-  result.download_seconds = reader.download_seconds();
-  result.decompress_seconds = reader.decompress_seconds();
-  result.parse_seconds = reader.parse_seconds();
-  result.extract_seconds = secondsSince(extract_start);
   return result;
 }
+
+}  // namespace
 
 const char *route_ingest_state_label(RouteIngestState state) {
   switch (state) {
@@ -754,10 +761,10 @@ void RouteIngestor::start(RouteIngestConfig config) {
   abort_ = false;
   RouteIngestStatus next;
   next.state = RouteIngestState::Resolving;
-  next.route_name = config.resolve.route_name;
-  next.selection = parse_route_selection(config.resolve.route_name);
-  if (config.resolve.selector != LogSelector::Auto && !next.selection.selector_explicit) {
-    next.selection.selector = config.resolve.selector;
+  next.route_name = config.route_name;
+  next.selection = parse_route_selection(config.route_name);
+  if (config.selector != LogSelector::Auto && !next.selection.selector_explicit) {
+    next.selection.selector = config.selector;
   }
   update_status(next);
   thread_ = std::thread(&RouteIngestor::run, this, std::move(config));
@@ -795,7 +802,7 @@ void RouteIngestor::run(RouteIngestConfig config) {
   const auto started_at = Clock::now();
   try {
     if (scheduler_ == nullptr) throw std::runtime_error("Route ingestor has no scheduler");
-    RouteResolveResult resolved = resolve_route_segments(config.resolve);
+    RouteResolveResult resolved = resolve_route_segments(config);
     scheduler_->set_route_segments(resolved.segments);
 
     {
@@ -820,11 +827,10 @@ void RouteIngestor::run(RouteIngestConfig config) {
         std::optional<SegmentWorkItem> work = scheduler_->take_next();
         if (!work.has_value()) return;
         try {
-          SegmentLoadOptions options;
-          options.extract.segment = work->segment;
-          options.extract.coverage = work->range;
-          options.local_cache = config.local_cache;
-          SegmentLoadResult loaded = load_route_segment(*work, options, &abort_);
+          SegmentExtractOptions extract;
+          extract.segment = work->segment;
+          extract.coverage = work->range;
+          SegmentLoadResult loaded = load_route_segment(*work, extract, config.local_cache, &abort_);
           if (abort_) {
             scheduler_->mark_pending(work->segment);
             return;

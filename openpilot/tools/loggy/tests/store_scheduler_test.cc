@@ -223,10 +223,22 @@ TEST_CASE("SegmentScheduler reprioritizes and publishes staged batches") {
   });
 
   scheduler.set_tracker_time(25.0);
-  REQUIRE(scheduler.priority_order().front().segment == 2);
+  {
+    // take_next() is the real selection boundary; mark_pending() undoes the pick so later
+    // checks in this test still see all four segments as schedulable.
+    auto picked = scheduler.take_next();
+    REQUIRE(picked.has_value());
+    CHECK(picked->segment == 2);
+    scheduler.mark_pending(picked->segment);
+  }
 
   scheduler.set_visible_ranges({{0.0, 5.0}});
-  REQUIRE(scheduler.priority_order().front().segment == 0);
+  {
+    auto picked = scheduler.take_next();
+    REQUIRE(picked.has_value());
+    CHECK(picked->segment == 0);
+    scheduler.mark_pending(picked->segment);
+  }
 
   scheduler.set_visible_ranges({{35.0, 39.0}});
   auto work = scheduler.take_next();

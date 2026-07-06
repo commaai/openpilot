@@ -29,16 +29,6 @@ struct RouteSegment {
   std::string error;
 };
 
-struct SegmentPriority {
-  int segment = -1;
-  TimeRange range;
-  SegmentState state = SegmentState::Pending;
-  bool intersects_visible = false;
-  bool contains_tracker = false;
-  double visible_distance = 0.0;
-  double tracker_distance = 0.0;
-};
-
 struct SegmentWorkItem {
   int segment = -1;
   TimeRange range;
@@ -59,7 +49,6 @@ public:
   void set_visible_ranges(std::vector<TimeRange> ranges);
   std::vector<TimeRange> visible_ranges() const;
 
-  std::vector<SegmentPriority> priority_order() const;
   std::optional<SegmentWorkItem> take_next();
 
   void mark_pending(int segment);

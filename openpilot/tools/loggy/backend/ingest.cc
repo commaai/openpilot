@@ -8,6 +8,17 @@
 namespace loggy {
 namespace {
 
+// Ranking used only inside take_next()'s selection below; not returned across any boundary.
+struct SegmentPriority {
+  int segment = -1;
+  TimeRange range;
+  SegmentState state = SegmentState::Pending;
+  bool intersects_visible = false;
+  bool contains_tracker = false;
+  double visible_distance = 0.0;
+  double tracker_distance = 0.0;
+};
+
 double visibleDistance(TimeRange segment, const std::vector<TimeRange> &visible_ranges) {
   if (visible_ranges.empty()) return std::numeric_limits<double>::infinity();
   double best = std::numeric_limits<double>::infinity();
@@ -100,22 +111,6 @@ std::vector<TimeRange> SegmentScheduler::visible_ranges() const {
   // Copy visible ranges for caller so this mutex can stay short-lived.
   std::lock_guard lock(mutex_);
   return visible_ranges_;
-}
-
-std::vector<SegmentPriority> SegmentScheduler::priority_order() const {
-  std::lock_guard lock(mutex_);
-  std::vector<SegmentPriority> order;
-  order.reserve(segments_.size());
-  for (const auto &segment : segments_) {
-    if (segment.state != SegmentState::Pending) continue;
-    order.push_back(makePriority(segment, tracker_time_, visible_ranges_));
-  }
-
-  const bool has_visible_ranges = !visible_ranges_.empty();
-  std::sort(order.begin(), order.end(), [has_visible_ranges](const auto &a, const auto &b) {
-    return priorityLess(a, b, has_visible_ranges);
-  });
-  return order;
 }
 
 std::optional<SegmentWorkItem> SegmentScheduler::take_next() {

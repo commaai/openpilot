@@ -97,9 +97,9 @@ TEST_CASE("computed custom Python specs materialize through math_eval") {
   loggy::ComputedSeriesSpec spec;
   spec.output_path = "/computed/custom";
   spec.kind = loggy::ComputedSeriesKind::CustomPython;
-  spec.python.linked_source = "/carState/vEgo";
-  spec.python.additional_sources = {"/carState/aEgo", "/carState/vEgo"};
-  spec.python.function_code = "return value * 2";
+  spec.python_linked_source = "/carState/vEgo";
+  spec.python_additional_sources = {"/carState/aEgo", "/carState/vEgo"};
+  spec.python_function_code = "return value * 2";
 
   const std::vector<std::string> deps = loggy::computed_dependencies(spec);
   REQUIRE(deps.size() == 2);
@@ -124,8 +124,8 @@ TEST_CASE("computed custom Python specs materialize through math_eval") {
   CHECK(batch.series[0].points[2].value == 20.0);
 
   spec.output_path = "/computed/custom_tuple";
-  spec.python.additional_sources.clear();
-  spec.python.function_code = "return (time + 1, value + 5)";
+  spec.python_additional_sources.clear();
+  spec.python_function_code = "return (time + 1, value + 5)";
   statuses.clear();
   batch = loggy::materialize_computed_series_batch(store, {spec}, {0.0, 4.0}, &statuses);
   REQUIRE(statuses.size() == 1);
@@ -138,8 +138,8 @@ TEST_CASE("computed custom Python specs materialize through math_eval") {
   CHECK(batch.series[0].points[2].value == 15.0);
 
   spec.output_path = "/computed/custom_additional";
-  spec.python.additional_sources = {"/carState/aEgo"};
-  spec.python.function_code = "return value + v1";
+  spec.python_additional_sources = {"/carState/aEgo"};
+  spec.python_function_code = "return value + v1";
   statuses.clear();
   batch = loggy::materialize_computed_series_batch(store, {spec}, {0.0, 4.0}, &statuses);
   REQUIRE(statuses.size() == 1);
@@ -151,9 +151,9 @@ TEST_CASE("computed custom Python specs materialize through math_eval") {
   CHECK(batch.series[0].points[2].value == 210.0);
 
   spec.output_path = "/computed/custom_referenced";
-  spec.python.linked_source.clear();
-  spec.python.additional_sources.clear();
-  spec.python.function_code = "return (t(\"/carState/aEgo\"), v(\"/carState/aEgo\") - 1)";
+  spec.python_linked_source.clear();
+  spec.python_additional_sources.clear();
+  spec.python_function_code = "return (t(\"/carState/aEgo\"), v(\"/carState/aEgo\") - 1)";
   const std::vector<std::string> referenced_deps = loggy::computed_dependencies(spec);
   REQUIRE(referenced_deps.size() == 1);
   CHECK(referenced_deps[0] == "/carState/aEgo");
@@ -171,8 +171,8 @@ TEST_CASE("computed custom Python specs materialize through math_eval") {
   loggy::ComputedSeriesSpec missing;
   missing.output_path = "/computed/missing";
   missing.kind = loggy::ComputedSeriesKind::CustomPython;
-  missing.python.linked_source = "/missing/source";
-  missing.python.function_code = "return value";
+  missing.python_linked_source = "/missing/source";
+  missing.python_function_code = "return value";
   statuses.clear();
   loggy::materialize_computed_series_batch(store, {missing}, {0.0, 4.0}, &statuses);
   REQUIRE(statuses.size() == 1);
@@ -182,8 +182,8 @@ TEST_CASE("computed custom Python specs materialize through math_eval") {
   loggy::ComputedSeriesSpec bad_output;
   bad_output.output_path = "/not-computed/vEgo";
   bad_output.kind = loggy::ComputedSeriesKind::CustomPython;
-  bad_output.python.linked_source = "/carState/vEgo";
-  bad_output.python.function_code = "return value";
+  bad_output.python_linked_source = "/carState/vEgo";
+  bad_output.python_function_code = "return value";
   statuses.clear();
   loggy::materialize_computed_series_batch(store, {bad_output}, {0.0, 4.0}, &statuses);
   REQUIRE(statuses.size() == 1);

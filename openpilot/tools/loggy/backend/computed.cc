@@ -203,10 +203,10 @@ std::vector<std::string> computed_dependencies(const ComputedSeriesSpec &spec) {
     if (!path.empty() && std::find(out.begin(), out.end(), path) == out.end()) out.push_back(path);
   };
   if (spec.kind == ComputedSeriesKind::CustomPython) {
-    add(spec.python.linked_source);
-    for (const std::string &path : spec.python.additional_sources) add(path);
-    append_paths_from_code(spec.python.globals_code, &out);
-    append_paths_from_code(spec.python.function_code, &out);
+    add(spec.python_linked_source);
+    for (const std::string &path : spec.python_additional_sources) add(path);
+    append_paths_from_code(spec.python_globals_code, &out);
+    append_paths_from_code(spec.python_function_code, &out);
   } else {
     add(spec.source_path);
   }
@@ -304,13 +304,13 @@ SeriesChunk materialize_computed_python(const Store &store,
     const fs::path out_t_path = temp_dir / "result.t.bin";
     const fs::path out_v_path = temp_dir / "result.v.bin";
 
-    write_text_file(globals_path, spec.python.globals_code);
-    write_text_file(code_path, spec.python.function_code.empty() ? "return value" : spec.python.function_code);
+    write_text_file(globals_path, spec.python_globals_code);
+    write_text_file(code_path, spec.python_function_code.empty() ? "return value" : spec.python_function_code);
 
     json11::Json::array paths_json;
     for (const std::string &path : store.series_paths()) paths_json.push_back(path);
     json11::Json::array additional_json;
-    for (const std::string &path : spec.python.additional_sources) additional_json.push_back(path);
+    for (const std::string &path : spec.python_additional_sources) additional_json.push_back(path);
 
     json11::Json::array series_json;
     size_t series_index = 0;
@@ -342,7 +342,7 @@ SeriesChunk materialize_computed_python(const Store &store,
 
     const json11::Json manifest_json = json11::Json::object{
       {"paths", std::move(paths_json)},
-      {"linked_source", spec.python.linked_source},
+      {"linked_source", spec.python_linked_source},
       {"additional_sources", std::move(additional_json)},
       {"series", std::move(series_json)},
     };

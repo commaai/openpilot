@@ -383,12 +383,12 @@ ComputedSeriesSpec computed_spec_from_editor_state(const ComputedEditorState &st
   ComputedSeriesSpec spec;
   spec.kind = ComputedSeriesKind::CustomPython;
   spec.label = trim(state.name).empty() ? "custom" : trim(state.name);
-  spec.python.linked_source = trim(state.linked_source);
-  spec.python.additional_sources = computed_sources_from_text(computed_sources_text(state.additional_sources));
-  spec.python.globals_code = state.globals_code;
-  spec.python.function_code = state.function_code.empty() ? "return value" : state.function_code;
+  spec.python_linked_source = trim(state.linked_source);
+  spec.python_additional_sources = computed_sources_from_text(computed_sources_text(state.additional_sources));
+  spec.python_globals_code = state.globals_code;
+  spec.python_function_code = state.function_code.empty() ? "return value" : state.function_code;
   const std::string operation = computed_operation_token(state);
-  spec.output_path = computed_output_path(spec.python.linked_source, spec.label, operation);
+  spec.output_path = computed_output_path(spec.python_linked_source, spec.label, operation);
   return spec;
 }
 

@@ -167,13 +167,13 @@ bool normalize_plot_computed_series(PaneInstance *pane, std::vector<ComputedSeri
       ComputedSeriesSpec spec;
       spec.label = label;
       spec.kind = ComputedSeriesKind::CustomPython;
-      spec.python.linked_source = linked_source;
-      spec.python.globals_code = custom_python["globals_code"].string_value();
-      spec.python.function_code = custom_python["function_code"].is_string()
+      spec.python_linked_source = linked_source;
+      spec.python_globals_code = custom_python["globals_code"].string_value();
+      spec.python_function_code = custom_python["function_code"].is_string()
                                 ? custom_python["function_code"].string_value()
                                 : "return value";
       for (const json11::Json &source : custom_python["additional_sources"].array_items()) {
-        if (source.is_string()) spec.python.additional_sources.push_back(source.string_value());
+        if (source.is_string()) spec.python_additional_sources.push_back(source.string_value());
       }
       spec.output_path = computed_output_path(linked_source.empty() ? source_path : linked_source, label, operation);
       append_unique_computed_spec(specs, spec);
@@ -434,8 +434,8 @@ Session::Session(SessionConfig cfg) : config(std::move(cfg)), scheduler(&store),
   timeline.set_route_range(initial_range);
   if (!config.route_name.empty() && !config.stream) {
     RouteIngestConfig ingest;
-    ingest.resolve.route_name = config.route_name;
-    ingest.resolve.data_dir = config.data_dir;
+    ingest.route_name = config.route_name;
+    ingest.data_dir = config.data_dir;
     ingest.worker_count = 2;
     route_ingest_.start(std::move(ingest));
   } else if (config.stream) {
@@ -589,10 +589,10 @@ bool Session::restart_route(std::string route_name, std::string &error) {
   timeline.clear_spans();
 
   RouteIngestConfig ingest;
-  ingest.resolve.route_name = config.route_name;
-  ingest.resolve.data_dir = config.data_dir;
+  ingest.route_name = config.route_name;
+  ingest.data_dir = config.data_dir;
   ingest.worker_count = 2;
-    route_ingest_.start(std::move(ingest));
+  route_ingest_.start(std::move(ingest));
   error.clear();
   return true;
 }

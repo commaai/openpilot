@@ -64,44 +64,7 @@ struct LogEntry {
   LogOrigin origin = LogOrigin::Log;
 };
 
-struct RouteResolveConfig {
-  std::string route_name;
-  std::string data_dir;
-  LogSelector selector = LogSelector::Auto;
-  int max_segments = -1;
-};
-
-struct RouteResolveResult {
-  RouteSelection selection;
-  std::vector<RouteSegment> segments;
-  TimeRange route_range;
-};
-
 using RouteSliceSpec = std::pair<int, int>;
-
-struct SegmentLoadOptions {
-  SegmentExtractOptions extract;
-  bool local_cache = true;
-};
-
-struct SegmentLoadResult {
-  StoreBatch batch;
-  std::vector<TimelineSpan> timeline_spans;
-  std::vector<LogEntry> logs;
-  std::string car_fingerprint;
-  size_t event_count = 0;
-  size_t appended_event_count = 0;
-  size_t series_count = 0;
-  size_t can_message_count = 0;
-  size_t timeline_span_count = 0;
-  size_t log_count = 0;
-  uint64_t compressed_bytes = 0;
-  uint64_t decompressed_bytes = 0;
-  double download_seconds = 0.0;
-  double decompress_seconds = 0.0;
-  double parse_seconds = 0.0;
-  double extract_seconds = 0.0;
-};
 
 enum class RouteIngestState : uint8_t {
   Idle,
@@ -113,7 +76,10 @@ enum class RouteIngestState : uint8_t {
 };
 
 struct RouteIngestConfig {
-  RouteResolveConfig resolve;
+  std::string route_name;
+  std::string data_dir;
+  LogSelector selector = LogSelector::Auto;
+  int max_segments = -1;
   size_t worker_count = 2;
   bool local_cache = true;
 };
@@ -153,10 +119,6 @@ std::string route_selection_full_spec(const RouteSelection &selection);
 std::string route_useradmin_url(const RouteSelection &selection);
 std::string route_connect_url(const RouteSelection &selection);
 std::optional<RouteSliceSpec> parse_route_slice_spec(std::string_view text);
-RouteResolveResult resolve_route_segments(const RouteResolveConfig &config);
-SegmentLoadResult load_route_segment(const SegmentWorkItem &work,
-                                   const SegmentLoadOptions &options,
-                                   std::atomic<bool> *abort = nullptr);
 const char *route_ingest_state_label(RouteIngestState state);
 
 class RouteIngestor {

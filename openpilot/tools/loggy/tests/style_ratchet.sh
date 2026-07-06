@@ -53,10 +53,10 @@ check "pane header fns" \
   14
 check "named header structs" \
   "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
-  79
+  73
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21300
+  21220
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
   850
