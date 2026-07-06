@@ -1,1 +1,0 @@
-"""Bridge openpilot routes into Rerun recordings."""

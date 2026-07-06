@@ -1,8 +1,10 @@
 # Loggy Master Plan — from nothing to 100% done
 
 You are the **root agent** for building `loggy`. You have zero prior context; this document is
-your complete brief. Read it fully before writing any code. The design background (a Q&A with
-Adeeb, the owner) is in `loggy.md` at the repo root — read that second.
+your complete brief. Read it fully before writing any code. Then read
+`openpilot/tools/loggy/REVIEW.md`; it is the authoritative style review for this tree and wins
+over any older architecture wording in this plan. The design background (a Q&A with Adeeb, the
+owner) is in `loggy.md` at the repo root — read that after the style review.
 
 ## 0. Mission
 
@@ -24,9 +26,11 @@ product forks; otherwise decide and move.
 - This branch: `jot_cabana` (master-based, has Qt cabana + C++ jotpluggler).
 - Branch `imgui_cabana_fable`: complete Qt→ImGui port of cabana. Contains **`cabana_core`**
   (`openpilot/tools/cabana/{dbc,streams,utils}/ + commands.cc + settings.cc`, ~6.9k lines,
-  Qt-free) — the primary copy source. If `/tmp/worktrees/tmp.8N4A5FfOCP/imgui_cabana_fable/`
-  exists use it, else `git worktree add /tmp/loggy_ref imgui_cabana_fable`. Read its
-  `openpilot/tools/cabana/MIGRATION.md`.
+  Qt-free) — the primary copy source for behavior. If
+  `/tmp/worktrees/tmp.8N4A5FfOCP/imgui_cabana_fable/` exists use it, else
+  `git worktree add /tmp/loggy_ref imgui_cabana_fable`. Read its
+  `openpilot/tools/cabana/MIGRATION.md`, then translate the code into the `REVIEW.md` style
+  instead of preserving Qt-era signals, registries, globals, or camelCase.
 - Reference binaries (prebuilt): Qt cabana `/home/batman/openpilot/openpilot/tools/cabana/_cabana`,
   jotpluggler `<imgui_cabana_fable worktree>/openpilot/tools/jotpluggler/jotpluggler`.
 - Source trees to mine: `openpilot/tools/jotpluggler/` (this branch, ~13.8k lines) and the two
@@ -67,19 +71,26 @@ product forks; otherwise decide and move.
 13. Loading prioritizes **time-to-first-use**: metadata, timeline, and the first/visible segment
     interactive ASAP; rest fills in background; seeks reprioritize immediately.
 14. LOC discipline: final tree must land well under the ~25k sum of the two old tools. Target
-    ≤ ~15k. Prefer deleting to abstracting; abstract only when the second caller exists.
+    **≤ 18k product LOC** (owner-approved 2026-07-05; see REVIEW.md §2.5 — supersedes the
+    earlier 15k number). Prefer deleting to abstracting; abstract only when the second caller
+    exists. Never squeeze past the target at the cost of readability or features.
 
 ## 3. Non-negotiables (your quality gates)
 
 - **60 fps, always.** The render thread never touches disk, network, capnp parsing, HEVC decode,
   or a contended lock. Producers stage under a mutex; the UI drains once per frame
-  (`store.beginFrame()`); observer events fire on the UI thread only. This is the cabana_core
-  `AbstractStream::update()` contract — copy its header comment and keep the discipline.
+  (`store.beginFrame()`). There are no in-process observer events; immediate-mode panes read the
+  current state each frame. This keeps the cabana_core `AbstractStream::update()` discipline
+  without importing Qt callback machinery.
 - **Responsiveness is the product.** First interactive view of the demo route in ~2s; a seek to
   an unloaded region shows *something* immediately and reprioritizes ingestion.
-- **Beauty.** Consistent theme, one idiom for panels (pane registry), no globals-of-convenience
-  beyond an explicit `Session&` handed to panes, no dead code, no copied-but-unused features.
-  You review every subagent diff for this before merging; send work back rather than patching it.
+- **Beauty.** Consistent theme, a closed static pane table, no registries/observers/pimpl,
+  no globals-of-convenience beyond explicit owner state, no dead code, and no copied-but-unused
+  features. You review every subagent diff for this before merging; send work back rather than
+  patching around a bad shape.
+- **Small surface area.** Pane headers export only `draw_*_pane(Session &, PaneInstance &)`;
+  pane helpers and helper structs are born in the `.cc` anonymous namespace. Tests exercise
+  backend/process/file/layout boundaries, not pane internals exposed for test convenience.
 - **Proof over claims.** A task is done when YOU have built it, driven it in the GUI harness,
   and seen the screenshot. Keep a `PROGRESS.md` in `tools/loggy/` with phase status and evidence
   paths; update it after every merge.
@@ -89,23 +100,28 @@ product forks; otherwise decide and move.
 ```
 openpilot/tools/loggy/
   SConscript  main.cc  loggy (launcher)  cabana (launcher)  jotpluggler (launcher)
-  shell/      runtime.cc theme.cc workspace.cc pane.h (registry) transport.cc dialogs.cc settings.cc
+  shell/      runtime.cc theme.cc workspace.cc pane.h (static table) transport.cc settings.cc
+              route_controls.cc live_source_controls.cc settings_ui.cc remote_routes.cc native_dialog.cc
   backend/    session.h/cc  ingest.cc (scheduler)  store.h/cc (events+series)
-              extract.cc (+ generate_event_extractors.py)  dbc/ (lifted cabana_core)
-              streams_live.cc  video.cc (FrameReader cache)  computed.cc  export.cc  undo.h
+              extract.cc (+ generate_event_extractors.py)  dbc/ (ported cabana_core)
+              live.cc  panda_live.cc  video.cc (FrameReader cache)  computed.cc
   panes/      plot.cc messages.cc binary.cc signal.cc historylog.cc logs.cc map.cc camera.cc
-              video.cc browser.cc find_signal.cc find_bits.cc dbc_editor.cc
+              browser.cc find_signal.cc find_bits.cc dbc.cc computed.cc
   layouts/    cabana.json jotpluggler.json + ported presets
   tests/      Catch2: dbc round-trip, store, scheduler, extraction golden values
 ```
 
 Key contracts (keep this thin — these five lines, not a framework):
-- `Session` owns store, scheduler, dbc, playback clock, selection context, undo stacks.
-- Panes are free functions registered with `(name, draw_fn, serialize hooks)`; they receive
-  `Session&` + their pane state; they may hold store views only until frame end.
+- `Session` owns store, scheduler, dbc, DBC undo stack, playback clock, selection context,
+  route/live state, settings, computed-series state, and camera decoders.
+- The pane set is closed and described by one static `PaneType` table. Panes are free functions
+  taking `Session&` + `PaneInstance&`; pane-specific state lives on the pane instance, and
+  serialization happens at workspace load/save boundaries.
 - `store.series(path, t0, t1, max_points)` → decimated borrowed view; `store.canEvents(id, range)`
   likewise. Missing data returns what exists + coverage info; never blocks.
 - Selection context: panes in a group share `selected_msg_id`/hover; groups are per-workspace.
+- `runtime.cc` orchestrates the frame loop, menu/status bars, HUD, and subsystem calls. New
+  modals, async fetches, persistence, and file/dialog logic live in their owning files.
 
 ## 5. GUI testing harness (verified working — use it constantly)
 
@@ -148,10 +164,13 @@ actions on both, screenshot both, compare behavior (not pixels).
 
 Run subagents with these briefs (augment each with exact file pointers you gather first — give
 them the copy-source paths, not "go find it"). Independent tasks in the same phase run in
-parallel. Every implementation brief ends with the same three demands: (a) builds via scons,
-(b) subagent ran it headless (or unit tests) itself, (c) reports LOC added and what it copied
-vs wrote. You then verify in the GUI harness before marking done. Keep briefs scoped so no
-subagent lands more than ~1.5k lines in one task; split otherwise.
+parallel. Every implementation brief also tells the worker to read `openpilot/tools/loggy/REVIEW.md`
+first, keep helpers file-local unless they cross a real product boundary, and avoid registries,
+observers, pimpl, `std::function`, nullable out-params, and test-shaped product APIs. Every
+brief ends with the same three demands: (a) builds via scons, (b) subagent ran it headless
+(or unit tests) itself, (c) reports LOC added/deleted and what it copied vs wrote. You then
+verify in the GUI harness before marking done. Keep briefs scoped so no subagent lands more
+than ~1.5k lines in one task; split otherwise.
 
 ### Phase 0 — Orientation (you, no subagents)
 Read `loggy.md`, this file, MIGRATION.md. Launch both reference tools in the harness, drive
@@ -166,9 +185,10 @@ JetBrainsMono, bootstrap icons), and Darcula theme from jotpluggler `runtime.cc`
 Acceptance: empty themed window, HUD, headless screenshot, clean build.
 **ST-1B workspace engine.** Port jotpluggler's `SketchLayout` (workspace tabs, recursive split
 tree, pane drag-to-split/move, layout JSON read/write, autosave drafts, snapshot undo) from
-`app.h`/`layout.cc`/`layout_io.cc`/`sketch_layout.cc` into `shell/workspace.cc` + `pane.h`
-registry. Strip route/stream coupling — panes are opaque registered types. Acceptance: two dummy
-pane types; create/split/drag/save/reload driven by xdotool on a test display.
+`app.h`/`layout.cc`/`layout_io.cc`/`sketch_layout.cc` into `shell/workspace.cc` + a tiny
+`pane.h`/`pane.cc` static pane table. Strip route/stream coupling — panes are a compile-time
+closed set of draw-function pointers, not registered plugins. Acceptance: real or minimal pane
+types; create/split/drag/save/reload driven by xdotool on a test display.
 
 ### Phase 2 — Backend engine (3 subagents, parallel)
 **ST-2A store + segment scheduler.** `backend/store` + `backend/ingest`. Route resolution + file
@@ -178,11 +198,12 @@ sorted merge (copy cabana `MonotonicBuffer`/`mergeEvents` model); series chunk s
 batches drained by `beginFrame()`. CLI harness binary that loads the demo route and prints
 time-to-first-segment and total-load timings. Acceptance: harness output + Catch2 tests for
 merge/priority/drain; first segment usable while later ones still load.
-**ST-2B DBC subsystem.** Lift `dbc/` + `commands.cc` UndoStack + tests from cabana_core
-verbatim into `backend/dbc`, de-cabana the includes, keep Catch2 tests green. Wire
-fingerprint→DBC auto-load (`car_fingerprint_to_dbc.json` codegen). **Investigate & fix:** master
-Qt cabana fails to parse `opendbc/dbc/ford_lincoln_base_pt.dbc` (jotpluggler parses it fine) —
-loggy's parser must load it; add a regression test.
+**ST-2B DBC subsystem.** Port the `dbc/` algorithms + `commands.cc` UndoStack + tests from
+cabana_core into `backend/dbc`, but translate the shape: no observer events, no global `dbc()`
+singleton, no test-only public helper surface, and snake_case where new APIs touch loggy code.
+Wire fingerprint→DBC auto-load (`car_fingerprint_to_dbc.json` codegen). **Investigate & fix:**
+master Qt cabana fails to parse `opendbc/dbc/ford_lincoln_base_pt.dbc` (jotpluggler parses it
+fine) — loggy's parser must load it; add a regression test.
 **ST-2C cereal extraction.** Port `generate_event_extractors.py` codegen + `SeriesAccumulator`/
 `StreamAccumulator` from jotpluggler `sketch_layout.cc` into `backend/extract`, feeding ST-2A's
 series store per segment (eager v1), incl. enums/value-descriptions and DEPRECATED handling.
@@ -217,7 +238,8 @@ replace chart tabs).
 **ST-4E analysis tools.** Find Signal (iterative bit-range filtering w/ history) and Find
 Similar Bits panes, ported from imgui cabana.
 **ST-4F video pane.** Route video via `FrameReader` (copy jotpluggler's decode/prefetch/LRU
-stack in `runtime.cc`/`camera.cc`), camera tabs, qlog thumbnails on the timeline, alert overlay.
+ideas into `backend/video.cc` and `panes/camera.cc`, not into `runtime.cc`), camera tabs,
+qlog thumbnails on the timeline, alert overlay.
 
 ### Phase 5 — Jotpluggler parity (subagents; parallel)
 **ST-5A browser pane** (tree from schema + live values, search, sparklines, drag source,
@@ -244,7 +266,9 @@ dispatch fixes until the list is empty.
 playback with 6 plots + video + binary view, live stream. Time-to-first-use ≤ ~2s demo route.
 Record before/after mp4s.
 **ST-7C beauty & LOC pass:** dead code, duplicated helpers, needless abstractions, comment
-hygiene; report final LOC (target ≤ ~15k).
+hygiene; run the `REVIEW.md` ratchet metrics (error out-params, null-guard writes,
+`std::function`, pane-header functions, named header structs, runtime size, product LOC), lower
+any baselines that improved, and report final LOC (target ≤ ~15k).
 **ST-7D ship:** README, CI wiring (Catch2 tests + headless `--output` PNG captures of both
 presets like jotpluggler's), PROGRESS.md finalized with the evidence trail.
 

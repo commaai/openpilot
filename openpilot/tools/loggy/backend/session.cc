@@ -437,11 +437,11 @@ Session::Session(SessionConfig cfg) : config(std::move(cfg)), scheduler(&store),
     ingest.resolve.route_name = config.route_name;
     ingest.resolve.data_dir = config.data_dir;
     ingest.worker_count = 2;
-    route_ingest_.start_(std::move(ingest));
+    route_ingest_.start(std::move(ingest));
   } else if (config.stream) {
     seed_demo_data();
     live_camera_source.set_enabled(true);
-    live_poller_.start_(live_source_config_from_session(config));
+    live_poller_.start(live_source_config_from_session(config));
   }
 }
 
@@ -533,7 +533,7 @@ bool Session::restart_live(LiveSourceConfig source, std::string &error) {
   seed_demo_data();
   live_camera_source.set_enabled(false);
   live_camera_source.set_enabled(true);
-  live_poller_.start_(live_source_config_from_session(config));
+  live_poller_.start(live_source_config_from_session(config));
   error.clear();
   return true;
 }
@@ -592,7 +592,7 @@ bool Session::restart_route(std::string route_name, std::string &error) {
   ingest.resolve.route_name = config.route_name;
   ingest.resolve.data_dir = config.data_dir;
   ingest.worker_count = 2;
-  route_ingest_.start_(std::move(ingest));
+    route_ingest_.start(std::move(ingest));
   error.clear();
   return true;
 }
