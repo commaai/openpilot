@@ -26,12 +26,12 @@ dependencies = [
   "numpy >=2.0",
 
   # vendored native dependencies
-  "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
-  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@release-bootstrap-icons#subdirectory=bootstrap-icons",
-  "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
-  "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
-  "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
-  "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
+  "comma-deps-bzip2",
+  "comma-deps-bootstrap-icons",
+  "comma-deps-capnproto",
+  "comma-deps-catch2",
+  "comma-deps-acados",
+  "comma-deps-eigen",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
   "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
   "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
