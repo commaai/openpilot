@@ -72,7 +72,19 @@ of every include), but note `loggerd/video_writer.h` includes FFmpeg directly �
 answer. Either inline the members, or keep pimpl **only** for the ffmpeg/libusb pair and say so
 in a one-line comment. Don't let it spread past these two.
 
-### 2.5 LOC: 21,241 product lines — **revised target: ≤ 18,000** (owner-approved 2026-07-05)
+### 2.5 LOC — SETTLED at the measured floor: 20,595 (ceiling frozen 20,605)
+
+Phase-3 outcome (2026-07-05 late): three independent read-only analyses converged on ~680
+lines of genuine zero-capability-loss cuts — not the hoped-for 3,200 — because the earlier
+de-abstraction passes already took the real fat and the standing rules protect the repetition
+that remains. All ~680 were executed (live/route extraction dedup, dead metadata pipeline,
+dead exports, shell_quote/settings consolidation, plot serializer collapse, forward-decl
+ceremony) plus integrator review fixes. 21,269 → **20,595**. Owner accepted the measured
+floor over the aspirational 18k ("let's do that cleanup and move on"); do not squeeze
+further — every remaining line either delivers capability or is protected house style.
+Historical target notes below kept for context:
+
+### (superseded) LOC: 21,241 product lines — revised target: ≤ 18,000 (owner-approved 2026-07-05)
 
 The original ≤15k target predates the full feature surface (workspace engine, live-source
 matrix, computed-series editor). Adeeb has signed off on **18k** as the final product-LOC
@@ -104,9 +116,14 @@ verified: spike to 8.0 ms on a triple-seek storm decays back to ~5.2 ms within 1
 4. **Fixed from QA findings (Phase 1):** wheel-scroll false row highlight in Messages
    (ImGui stale Selectable fill; now re-asserted from owned state per frame); clipped Message
    editor at 1280×720 (bounded scrollable child).
-5. **OPEN — silent idle crash (unconfirmed):** one QA instance died silently after ~10–15 min
-   paused idle. Soak reproduction with core dumps + RSS monitoring is running; treat as a
-   ship blocker until explained or 2×35-min soaks pass clean.
+5. ~~Silent idle crash~~ **EXPLAINED — not a product bug** (2026-07-05 late). Reproduced under
+   controlled soak: process exits with **status 0** (clean), empty log, healthy RSS — i.e. the
+   7D signal handler doing its job on a stray external SIGTERM. This box runs many concurrent
+   agents whose cleanup kills by process name; every historical "silent crash" (original
+   review, QA idle death, soak death at ~4–12 min) coincided with concurrent agent activity,
+   and a 12-min gdb session with no concurrent kills survived. Hardening landed: the runtime
+   now logs `loggy: exiting on signal N` on signal-initiated shutdown, so any future death
+   self-identifies. Falsifier: a death WITHOUT that stderr line reopens this as a real bug.
 6. **Coverage note:** `tests/panes_smoke.cc` is now an 81-line boundary stub (by design after
    v1-A4), but PROGRESS.md still describes the old 668-assertion suite — update PROGRESS and
    confirm the moved-to-backend logic (find tools, history comparators) kept its tests.
