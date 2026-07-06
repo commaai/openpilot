@@ -21,7 +21,7 @@ struct Options {
   int height = 900;
   bool show = false;
   bool stream = false;
-  bool show_frame_hud = true;
+  bool show_frame_hud = false;
 };
 
 int run(const Options &options);

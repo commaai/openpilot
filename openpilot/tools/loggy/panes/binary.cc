@@ -206,10 +206,36 @@ bool binary_signal_overlaps_other_dbc_bits(const Msg *msg, const std::string &si
 }
 
 ImU32 heat_color(uint32_t flips, uint32_t max_flips) {
-  if (flips == 0 || max_flips == 0) return ImGui::GetColorU32(binary_grid_background_color());
+  if (flips == 0 || max_flips == 0) return ImGui::GetColorU32(theme().binary_idle_cell);
   const float alpha = 0.18f + 0.58f * (std::log2(1.0f + static_cast<float>(flips)) /
                                        std::log2(1.0f + static_cast<float>(max_flips)));
-  return ImGui::GetColorU32(color_rgb(47, 101, 202, alpha));
+  ImVec4 c = theme().binary_heat_accent;
+  c.w = alpha;
+  return ImGui::GetColorU32(c);
+}
+
+// cabana's soul: every DBC signal covering this bit gets its own color as the cell background,
+// largest-signal-first so a narrower overlapping signal paints last (on top) — same priority
+// cabana's sorted items[idx].sigs gives its delegate painter.
+std::vector<const Signal *> binary_signals_at_bit(const Msg *msg, int bit_index) {
+  std::vector<const Signal *> found;
+  if (msg == nullptr || bit_index < 0) return found;
+  for (const Signal *signal : msg->signals()) {
+    if (signal != nullptr && binary_signal_contains_bit(*signal, bit_index)) found.push_back(signal);
+  }
+  std::sort(found.begin(), found.end(), [](const Signal *a, const Signal *b) { return a->size > b->size; });
+  return found;
+}
+
+ImU32 signal_fill_color(const Signal &signal, float alpha) {
+  return IM_COL32(signal.color.r, signal.color.g, signal.color.b,
+                  static_cast<int>(std::clamp(alpha, 0.0f, 1.0f) * 255.0f));
+}
+
+ImU32 signal_border_color(const Signal &signal) {
+  return IM_COL32(static_cast<int>(static_cast<float>(signal.color.r) * 0.8f),
+                  static_cast<int>(static_cast<float>(signal.color.g) * 0.8f),
+                  static_cast<int>(static_cast<float>(signal.color.b) * 0.8f), 255);
 }
 
 struct BinaryDragState {
@@ -274,7 +300,7 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   const float total_h = row_h * static_cast<float>(grid.rows.size() + 1);
   const ImVec2 origin = ImGui::GetCursorScreenPos();
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  const ImU32 border = ImGui::GetColorU32(color_rgb(92, 96, 98));
+  const ImU32 border = ImGui::GetColorU32(theme().chrome_border);
   const ImU32 text = ImGui::GetColorU32(ImGuiCol_Text);
   const ImU32 disabled = ImGui::GetColorU32(ImGuiCol_TextDisabled);
 
@@ -305,24 +331,60 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
       const bool suppressed_bit = state.suppress_defined_bits && defined_bit;
       const ImVec2 cell_min(origin.x + row_header_w + static_cast<float>(bit) * col_w, y);
       const ImVec2 cell_max(cell_min.x + col_w, cell_min.y + row_h);
-      draw_list->AddRectFilled(cell_min, cell_max,
-                               suppressed_bit ? ImGui::GetColorU32(color_rgb(45, 48, 50))
-                                              : heat_color(cell.flip_count, grid.max_flip_count));
-      if (state.highlight_defined_bits && defined_bit && !suppressed_bit) {
-        draw_list->AddRectFilled(cell_min, cell_max, ImGui::GetColorU32(color_rgb(69, 126, 86, 0.32f)));
+
+      // Signal-colored span is the background; the live change-heat tint is drawn after (on
+      // top) so flip activity always stays visible, matching cabana's per-signal cell coloring
+      // without losing loggy's heat overlay.
+      std::vector<const Signal *> cell_signals;
+      if (suppressed_bit) {
+        draw_list->AddRectFilled(cell_min, cell_max, ImGui::GetColorU32(theme().binary_suppressed_cell));
+      } else if (state.highlight_defined_bits && defined_bit) {
+        cell_signals = binary_signals_at_bit(dbc_msg, bit_index);
+        for (const Signal *cell_signal : cell_signals) {
+          draw_list->AddRectFilled(cell_min, cell_max, signal_fill_color(*cell_signal, 0.62f));
+        }
+        if (cell.flip_count > 0) {
+          draw_list->AddRectFilled(cell_min, cell_max, heat_color(cell.flip_count, grid.max_flip_count));
+        }
+      } else {
+        draw_list->AddRectFilled(cell_min, cell_max, heat_color(cell.flip_count, grid.max_flip_count));
       }
+
       if (drag.active && drag.id == id && drag.dragged) {
         const int first = std::min(drag.anchor_bit, drag.current_bit);
         const int last = std::max(drag.anchor_bit, drag.current_bit);
         if (bit_index >= first && bit_index <= last) {
-          draw_list->AddRectFilled(cell_min, cell_max, ImGui::GetColorU32(color_rgb(82, 141, 255, 0.42f)));
+          draw_list->AddRectFilled(cell_min, cell_max, ImGui::GetColorU32(theme().binary_drag_selection));
         }
       }
       draw_list->AddRect(cell_min, cell_max, border);
-      if (state.highlight_defined_bits && defined_bit) {
-        draw_list->AddRect(ImVec2(cell_min.x + 1.0f, cell_min.y + 1.0f),
-                           ImVec2(cell_max.x - 1.0f, cell_max.y - 1.0f),
-                           ImGui::GetColorU32(color_rgb(114, 175, 124)));
+
+      // Per-signal edge: only stroke the sides that are the true exterior of the signal's span
+      // (a multi-byte signal is a staircase, not a rectangle) — mirrors cabana's drawSignalCell.
+      for (const Signal *cell_signal : cell_signals) {
+        const bool draw_left = bit == 0 || !binary_signal_contains_bit(*cell_signal, bit_index + 1);
+        const bool draw_right = bit == kBitColumns - 1 || !binary_signal_contains_bit(*cell_signal, bit_index - 1);
+        const bool draw_top = row == 0 || !binary_signal_contains_bit(*cell_signal, bit_index - 8);
+        const bool draw_bottom = row + 1 == grid.rows.size() || !binary_signal_contains_bit(*cell_signal, bit_index + 8);
+        const ImU32 edge = signal_border_color(*cell_signal);
+        if (draw_left) draw_list->AddLine(cell_min, ImVec2(cell_min.x, cell_max.y), edge, 1.5f);
+        if (draw_right) draw_list->AddLine(ImVec2(cell_max.x, cell_min.y), cell_max, edge, 1.5f);
+        if (draw_top) draw_list->AddLine(cell_min, ImVec2(cell_max.x, cell_min.y), edge, 1.5f);
+        if (draw_bottom) draw_list->AddLine(ImVec2(cell_min.x, cell_max.y), cell_max, edge, 1.5f);
+      }
+
+      // MSB/LSB endpoint markers, small 'M'/'L' like cabana (M wins if a 1-bit signal is both).
+      if (!cell_signals.empty()) {
+        const bool is_msb = std::any_of(cell_signals.begin(), cell_signals.end(),
+                                        [&](const Signal *s) { return s->msb == bit_index; });
+        const bool is_lsb = std::any_of(cell_signals.begin(), cell_signals.end(),
+                                        [&](const Signal *s) { return s->lsb == bit_index; });
+        if (is_msb || is_lsb) {
+          const char *marker = is_msb ? "M" : "L";
+          const ImVec2 marker_size = ImGui::CalcTextSize(marker);
+          draw_list->AddText(ImVec2(cell_max.x - marker_size.x - 3.0f, cell_max.y - marker_size.y - 2.0f),
+                             disabled, marker);
+        }
       }
 
       char value[2] = {static_cast<char>(cell.value ? '1' : '0'), '\0'};
@@ -386,7 +448,7 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
 
     const ImVec2 hex_cell_min(origin.x + row_header_w + static_cast<float>(kBitColumns) * col_w, y);
     const ImVec2 hex_cell_max(hex_cell_min.x + col_w, hex_cell_min.y + row_h);
-    draw_list->AddRectFilled(hex_cell_min, hex_cell_max, ImGui::GetColorU32(binary_grid_background_color()));
+    draw_list->AddRectFilled(hex_cell_min, hex_cell_max, ImGui::GetColorU32(theme().binary_idle_cell));
     draw_list->AddRect(hex_cell_min, hex_cell_max, border);
     char hex[3];
     std::snprintf(hex, sizeof(hex), "%02X", grid.latest_data[row]);

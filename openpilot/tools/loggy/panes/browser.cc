@@ -320,8 +320,8 @@ void draw_browser_sparkline(const BrowserSparkline &sparkline) {
 
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
   const ImVec2 max(pos.x + width, pos.y + height);
-  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(color_rgb(48, 51, 53)), 2.0f);
-  draw_list->AddRect(pos, max, ImGui::GetColorU32(color_rgb(82, 86, 88)), 2.0f);
+  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(theme().sparkline_bg), 2.0f);
+  draw_list->AddRect(pos, max, ImGui::GetColorU32(theme().sparkline_border), 2.0f);
   if (sparkline.values.empty()) {
     draw_list->AddText(ImVec2(pos.x + 4.0f, pos.y + 2.0f), ImGui::GetColorU32(ImGuiCol_TextDisabled), "--");
     return;
@@ -338,9 +338,9 @@ void draw_browser_sparkline(const BrowserSparkline &sparkline) {
     points.push_back(ImVec2(x, y));
   }
   if (points.size() == 1) {
-    draw_list->AddCircleFilled(points.front(), 2.0f, ImGui::GetColorU32(color_rgb(116, 178, 255)));
+    draw_list->AddCircleFilled(points.front(), 2.0f, ImGui::GetColorU32(theme().sparkline_line));
   } else {
-    draw_list->AddPolyline(points.data(), static_cast<int>(points.size()), ImGui::GetColorU32(color_rgb(116, 178, 255)), 0, 1.5f);
+    draw_list->AddPolyline(points.data(), static_cast<int>(points.size()), ImGui::GetColorU32(theme().sparkline_line), 0, 1.5f);
   }
 }
 

@@ -19,61 +19,176 @@ namespace {
 ImFont *g_ui_font = nullptr;
 ImFont *g_ui_bold_font = nullptr;
 ImFont *g_mono_font = nullptr;
-LoggyThemeKind g_current_theme = LoggyThemeKind::Darcula;
+LoggyThemeKind g_current_theme = LoggyThemeKind::Light;
 
 constexpr float UI_FONT_SIZE = 15.0f;
 constexpr float BOLD_FONT_SIZE = 15.5f;
 constexpr float MONO_FONT_SIZE = 14.5f;
 
-struct ColorDef {
-  ImGuiCol idx;
-  int r;
-  int g;
-  int b;
+ImVec4 rgb(int r, int g, int b, float alpha = 1.0f) {
+  return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
+}
+
+// Pure data. Sampled/measured against the reference tools (Qt cabana's Darcula skin; jotpluggler
+// screenshots pixel-picked for Light — see tools/loggy/REVIEW.md item 8). Ports translate at the
+// boundary: numbers only, no logic.
+const Theme kDarculaTheme = {
+  .window_bg = rgb(53, 53, 53),
+  .child_bg = rgb(60, 63, 65),
+  .border = rgb(85, 85, 85),
+  .title_bg = rgb(43, 43, 43),
+  .title_bg_active = rgb(43, 43, 43),
+  .title_bg_collapsed = rgb(43, 43, 43),
+  .button = rgb(60, 63, 65),
+  .button_hovered = rgb(71, 75, 77),
+  .button_active = rgb(79, 84, 86),
+  .frame_bg = rgb(60, 63, 65),
+  .frame_bg_hovered = rgb(69, 73, 75),
+  .frame_bg_active = rgb(76, 80, 82),
+  .popup_bg = rgb(60, 63, 65),
+  .menu_bar_bg = rgb(53, 53, 53),
+  .separator = rgb(85, 85, 85),
+  .scrollbar_bg = rgb(53, 53, 53),
+  .scrollbar_grab = rgb(92, 96, 98),
+  .scrollbar_grab_hovered = rgb(108, 112, 114),
+  .scrollbar_grab_active = rgb(120, 124, 126),
+  .tab = rgb(49, 52, 54),
+  .tab_hovered = rgb(66, 70, 72),
+  .tab_selected = rgb(60, 63, 65),
+  .tab_dimmed = rgb(45, 47, 49),
+  .tab_dimmed_selected = rgb(55, 58, 60),
+  .docking_empty_bg = rgb(47, 47, 47),
+  .docking_preview = rgb(47, 101, 202, 0.22f),
+  .chrome_border = rgb(92, 96, 98),
+
+  .text = rgb(187, 187, 187),
+  .text_muted = rgb(119, 119, 119),
+
+  .accent = rgb(47, 101, 202),
+  .accent_active = rgb(57, 111, 212),
+  .check_mark = rgb(187, 187, 187),
+  .accent_soft = rgb(47, 101, 202),
+  .accent_soft_hovered = rgb(57, 111, 212),
+  .accent_soft_active = rgb(42, 91, 182),
+
+  .plot_bg = rgb(47, 49, 51),
+  .plot_legend_bg = rgb(53, 53, 53, 0.55f),
+  .plot_legend_border = rgb(92, 96, 98, 0.85f),
+  .plot_grid = rgb(92, 96, 98, 0.70f),
+  .plot_crosshair = rgb(187, 187, 187, 0.70f),
+  .plot_tracker_line = rgb(220, 220, 220, 0.72f),
+  .plot_drop_target_fill = rgb(47, 101, 202, 0.16f),
+  .plot_drop_target_border = rgb(75, 135, 230, 0.90f),
+  .plot_series_palette = {
+    rgb(89, 168, 250),
+    rgb(84, 199, 140),
+    rgb(250, 179, 77),
+    rgb(217, 122, 199),
+    rgb(240, 97, 97),
+  },
+
+  .binary_idle_cell = rgb(68, 71, 73),
+  .binary_suppressed_cell = rgb(45, 48, 50),
+  .binary_heat_accent = rgb(47, 101, 202),
+  .binary_drag_selection = rgb(82, 141, 255, 0.42f),
+
+  .transport_bg = rgb(47, 47, 47),
+  .transport_border = rgb(85, 85, 85),
+  .transport_tracker = rgb(235, 235, 235),
+
+  .hud_bg = rgb(43, 43, 43, 0.92f),
+  .hud_border = rgb(100, 100, 100, 0.95f),
+  .hud_text = rgb(220, 220, 220),
+
+  .sparkline_bg = rgb(48, 51, 53),
+  .sparkline_border = rgb(82, 86, 88),
+  .sparkline_line = rgb(116, 178, 255),
+
+  .camera_video_border = rgb(116, 178, 255, 0.75f),
+  .camera_overlay_bg = rgb(20, 22, 24, 0.60f),
+  .camera_overlay_border = rgb(84, 87, 89, 0.85f),
 };
 
-constexpr ColorDef DARCULA_COLORS[] = {
-  {ImGuiCol_WindowBg, 53, 53, 53},       {ImGuiCol_ChildBg, 60, 63, 65},
-  {ImGuiCol_Border, 85, 85, 85},         {ImGuiCol_TitleBg, 43, 43, 43},
-  {ImGuiCol_TitleBgActive, 43, 43, 43},  {ImGuiCol_TitleBgCollapsed, 43, 43, 43},
-  {ImGuiCol_Text, 187, 187, 187},        {ImGuiCol_TextDisabled, 119, 119, 119},
-  {ImGuiCol_Button, 60, 63, 65},         {ImGuiCol_ButtonHovered, 71, 75, 77},
-  {ImGuiCol_ButtonActive, 79, 84, 86},   {ImGuiCol_FrameBg, 60, 63, 65},
-  {ImGuiCol_FrameBgHovered, 69, 73, 75}, {ImGuiCol_FrameBgActive, 76, 80, 82},
-  {ImGuiCol_Header, 47, 101, 202},       {ImGuiCol_HeaderHovered, 57, 111, 212},
-  {ImGuiCol_HeaderActive, 42, 91, 182},  {ImGuiCol_PopupBg, 60, 63, 65},
-  {ImGuiCol_MenuBarBg, 53, 53, 53},      {ImGuiCol_Separator, 85, 85, 85},
-  {ImGuiCol_ScrollbarBg, 53, 53, 53},    {ImGuiCol_ScrollbarGrab, 92, 96, 98},
-  {ImGuiCol_ScrollbarGrabHovered, 108, 112, 114},
-  {ImGuiCol_ScrollbarGrabActive, 120, 124, 126},
-  {ImGuiCol_Tab, 49, 52, 54},            {ImGuiCol_TabHovered, 66, 70, 72},
-  {ImGuiCol_TabSelected, 60, 63, 65},    {ImGuiCol_TabSelectedOverline, 47, 101, 202},
-  {ImGuiCol_TabDimmed, 45, 47, 49},      {ImGuiCol_TabDimmedSelected, 55, 58, 60},
-  {ImGuiCol_TabDimmedSelectedOverline, 47, 101, 202},
-  {ImGuiCol_DockingEmptyBg, 47, 47, 47}, {ImGuiCol_CheckMark, 187, 187, 187},
-  {ImGuiCol_SliderGrab, 47, 101, 202},   {ImGuiCol_SliderGrabActive, 57, 111, 212},
-};
+// Light is the default theme now (item 9a) and is sampled directly from the jotpluggler
+// reference screenshots (tools/loggy/REVIEW.md item 8): menu/chrome ~ rgb(232,236,241), content
+// panels near-white, borders ~ rgb(190,198,204), and — notably — selected rows are barely tinted
+// rather than a saturated blue, so accent_soft stays close to child_bg instead of copying
+// Darcula's vivid Header blue.
+const Theme kLightTheme = {
+  .window_bg = rgb(233, 236, 240),
+  .child_bg = rgb(250, 250, 251),
+  .border = rgb(190, 195, 201),
+  .title_bg = rgb(226, 229, 233),
+  .title_bg_active = rgb(214, 220, 227),
+  .title_bg_collapsed = rgb(230, 233, 236),
+  .button = rgb(234, 236, 239),
+  .button_hovered = rgb(222, 228, 234),
+  .button_active = rgb(206, 215, 225),
+  .frame_bg = rgb(252, 253, 254),
+  .frame_bg_hovered = rgb(234, 238, 242),
+  .frame_bg_active = rgb(222, 228, 235),
+  .popup_bg = rgb(250, 250, 251),
+  .menu_bar_bg = rgb(232, 235, 238),
+  .separator = rgb(190, 195, 201),
+  .scrollbar_bg = rgb(231, 234, 237),
+  .scrollbar_grab = rgb(184, 193, 202),
+  .scrollbar_grab_hovered = rgb(160, 171, 183),
+  .scrollbar_grab_active = rgb(139, 152, 166),
+  .tab = rgb(224, 228, 232),
+  .tab_hovered = rgb(208, 219, 230),
+  .tab_selected = rgb(250, 251, 253),
+  .tab_dimmed = rgb(217, 221, 225),
+  .tab_dimmed_selected = rgb(235, 238, 241),
+  .docking_empty_bg = rgb(236, 238, 240),
+  .docking_preview = rgb(74, 132, 214, 0.22f),
+  .chrome_border = rgb(194, 198, 204),
 
-constexpr ColorDef LIGHT_COLORS[] = {
-  {ImGuiCol_WindowBg, 238, 240, 242},    {ImGuiCol_ChildBg, 248, 249, 250},
-  {ImGuiCol_Border, 181, 188, 196},      {ImGuiCol_TitleBg, 224, 228, 232},
-  {ImGuiCol_TitleBgActive, 210, 218, 226}, {ImGuiCol_TitleBgCollapsed, 232, 235, 238},
-  {ImGuiCol_Text, 43, 47, 51},           {ImGuiCol_TextDisabled, 111, 119, 128},
-  {ImGuiCol_Button, 229, 233, 237},      {ImGuiCol_ButtonHovered, 215, 224, 233},
-  {ImGuiCol_ButtonActive, 198, 211, 224}, {ImGuiCol_FrameBg, 246, 247, 248},
-  {ImGuiCol_FrameBgHovered, 232, 237, 242}, {ImGuiCol_FrameBgActive, 220, 229, 238},
-  {ImGuiCol_Header, 74, 132, 214},       {ImGuiCol_HeaderHovered, 91, 148, 226},
-  {ImGuiCol_HeaderActive, 58, 116, 196}, {ImGuiCol_PopupBg, 249, 250, 251},
-  {ImGuiCol_MenuBarBg, 232, 235, 238},   {ImGuiCol_Separator, 181, 188, 196},
-  {ImGuiCol_ScrollbarBg, 231, 234, 237}, {ImGuiCol_ScrollbarGrab, 184, 193, 202},
-  {ImGuiCol_ScrollbarGrabHovered, 160, 171, 183},
-  {ImGuiCol_ScrollbarGrabActive, 139, 152, 166},
-  {ImGuiCol_Tab, 224, 228, 232},         {ImGuiCol_TabHovered, 208, 219, 230},
-  {ImGuiCol_TabSelected, 248, 249, 250}, {ImGuiCol_TabSelectedOverline, 74, 132, 214},
-  {ImGuiCol_TabDimmed, 217, 221, 225},   {ImGuiCol_TabDimmedSelected, 235, 238, 241},
-  {ImGuiCol_TabDimmedSelectedOverline, 74, 132, 214},
-  {ImGuiCol_DockingEmptyBg, 236, 238, 240}, {ImGuiCol_CheckMark, 48, 96, 172},
-  {ImGuiCol_SliderGrab, 74, 132, 214},   {ImGuiCol_SliderGrabActive, 58, 116, 196},
+  .text = rgb(43, 47, 51),
+  .text_muted = rgb(111, 119, 128),
+
+  .accent = rgb(74, 132, 214),
+  .accent_active = rgb(58, 116, 196),
+  .check_mark = rgb(58, 116, 196),
+  .accent_soft = rgb(222, 227, 233),
+  .accent_soft_hovered = rgb(208, 216, 225),
+  .accent_soft_active = rgb(195, 206, 218),
+
+  .plot_bg = rgb(248, 249, 250),
+  .plot_legend_bg = rgb(250, 250, 251, 0.55f),
+  .plot_legend_border = rgb(194, 198, 204, 0.85f),
+  .plot_grid = rgb(206, 211, 216, 0.55f),
+  .plot_crosshair = rgb(60, 64, 68, 0.45f),
+  .plot_tracker_line = rgb(60, 64, 68, 0.55f),
+  .plot_drop_target_fill = rgb(74, 132, 214, 0.14f),
+  .plot_drop_target_border = rgb(58, 116, 196, 0.85f),
+  .plot_series_palette = {
+    rgb(43, 105, 199),
+    rgb(41, 143, 97),
+    rgb(199, 128, 25),
+    rgb(163, 66, 148),
+    rgb(191, 59, 59),
+  },
+
+  .binary_idle_cell = rgb(234, 237, 240),
+  .binary_suppressed_cell = rgb(215, 218, 222),
+  .binary_heat_accent = rgb(74, 132, 214),
+  .binary_drag_selection = rgb(58, 116, 196, 0.38f),
+
+  .transport_bg = rgb(222, 225, 229),
+  .transport_border = rgb(190, 195, 201),
+  .transport_tracker = rgb(60, 64, 68),
+
+  .hud_bg = rgb(255, 255, 255, 0.85f),
+  .hud_border = rgb(181, 188, 196, 0.90f),
+  .hud_text = rgb(43, 47, 51),
+
+  .sparkline_bg = rgb(234, 237, 240),
+  .sparkline_border = rgb(194, 198, 204),
+  .sparkline_line = rgb(54, 120, 196),
+
+  .camera_video_border = rgb(58, 116, 196, 0.65f),
+  .camera_overlay_bg = rgb(255, 255, 255, 0.75f),
+  .camera_overlay_border = rgb(181, 188, 196, 0.90f),
 };
 
 const std::filesystem::path &repo_root() {
@@ -99,8 +214,12 @@ void icon_add_font(float size, float density, bool merge = false, const ImFont *
 
 }  // namespace
 
+const Theme &theme() {
+  return g_current_theme == LoggyThemeKind::Light ? kLightTheme : kDarculaTheme;
+}
+
 ImVec4 color_rgb(int r, int g, int b, float alpha) {
-  return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
+  return rgb(r, g, b, alpha);
 }
 
 void load_fonts(float density) {
@@ -131,29 +250,29 @@ void load_fonts(float density) {
 }
 
 LoggyThemeKind loggy_theme_from_name(std::string_view name) {
-  if (name == "light") return LoggyThemeKind::Light;
-  return LoggyThemeKind::Darcula;
+  if (name == "darcula") return LoggyThemeKind::Darcula;
+  return LoggyThemeKind::Light;
 }
 
 const char *loggy_theme_name(LoggyThemeKind theme) {
   switch (theme) {
-    case LoggyThemeKind::Light: return "light";
-    case LoggyThemeKind::Darcula:
-    default: return "darcula";
+    case LoggyThemeKind::Darcula: return "darcula";
+    case LoggyThemeKind::Light:
+    default: return "light";
   }
 }
 
 const char *loggy_theme_label(LoggyThemeKind theme) {
   switch (theme) {
-    case LoggyThemeKind::Light: return "Light";
-    case LoggyThemeKind::Darcula:
-    default: return "Darcula";
+    case LoggyThemeKind::Darcula: return "Darcula";
+    case LoggyThemeKind::Light:
+    default: return "Light";
   }
 }
 
-void apply_theme(LoggyThemeKind theme) {
-  g_current_theme = theme;
-  if (theme == LoggyThemeKind::Light) {
+void apply_theme(LoggyThemeKind kind) {
+  g_current_theme = kind;
+  if (kind == LoggyThemeKind::Light) {
     ImGui::StyleColorsLight();
     ImPlot::StyleColorsLight();
   } else {
@@ -177,33 +296,56 @@ void apply_theme(LoggyThemeKind theme) {
   style.ItemSpacing = ImVec2(8.0f, 5.0f);
   style.ItemInnerSpacing = ImVec2(6.0f, 3.0f);
 
-  const ColorDef *colors = theme == LoggyThemeKind::Light ? LIGHT_COLORS : DARCULA_COLORS;
-  const size_t color_count = theme == LoggyThemeKind::Light
-                           ? sizeof(LIGHT_COLORS) / sizeof(LIGHT_COLORS[0])
-                           : sizeof(DARCULA_COLORS) / sizeof(DARCULA_COLORS[0]);
-  for (size_t i = 0; i < color_count; ++i) {
-    const ColorDef &c = colors[i];
-    style.Colors[c.idx] = color_rgb(c.r, c.g, c.b);
-  }
-  style.Colors[ImGuiCol_DockingPreview] = theme == LoggyThemeKind::Light
-                                        ? color_rgb(74, 132, 214, 0.25f)
-                                        : color_rgb(47, 101, 202, 0.22f);
+  // Single source of truth: every ImGuiCol_* below is read straight from the Theme struct, never
+  // duplicated as a second literal.
+  const Theme &t = theme();
+  style.Colors[ImGuiCol_WindowBg] = t.window_bg;
+  style.Colors[ImGuiCol_ChildBg] = t.child_bg;
+  style.Colors[ImGuiCol_Border] = t.border;
+  style.Colors[ImGuiCol_TitleBg] = t.title_bg;
+  style.Colors[ImGuiCol_TitleBgActive] = t.title_bg_active;
+  style.Colors[ImGuiCol_TitleBgCollapsed] = t.title_bg_collapsed;
+  style.Colors[ImGuiCol_Text] = t.text;
+  style.Colors[ImGuiCol_TextDisabled] = t.text_muted;
+  style.Colors[ImGuiCol_Button] = t.button;
+  style.Colors[ImGuiCol_ButtonHovered] = t.button_hovered;
+  style.Colors[ImGuiCol_ButtonActive] = t.button_active;
+  style.Colors[ImGuiCol_FrameBg] = t.frame_bg;
+  style.Colors[ImGuiCol_FrameBgHovered] = t.frame_bg_hovered;
+  style.Colors[ImGuiCol_FrameBgActive] = t.frame_bg_active;
+  style.Colors[ImGuiCol_Header] = t.accent_soft;
+  style.Colors[ImGuiCol_HeaderHovered] = t.accent_soft_hovered;
+  style.Colors[ImGuiCol_HeaderActive] = t.accent_soft_active;
+  style.Colors[ImGuiCol_PopupBg] = t.popup_bg;
+  style.Colors[ImGuiCol_MenuBarBg] = t.menu_bar_bg;
+  style.Colors[ImGuiCol_Separator] = t.separator;
+  style.Colors[ImGuiCol_ScrollbarBg] = t.scrollbar_bg;
+  style.Colors[ImGuiCol_ScrollbarGrab] = t.scrollbar_grab;
+  style.Colors[ImGuiCol_ScrollbarGrabHovered] = t.scrollbar_grab_hovered;
+  style.Colors[ImGuiCol_ScrollbarGrabActive] = t.scrollbar_grab_active;
+  style.Colors[ImGuiCol_Tab] = t.tab;
+  style.Colors[ImGuiCol_TabHovered] = t.tab_hovered;
+  style.Colors[ImGuiCol_TabSelected] = t.tab_selected;
+  style.Colors[ImGuiCol_TabSelectedOverline] = t.accent;
+  style.Colors[ImGuiCol_TabDimmed] = t.tab_dimmed;
+  style.Colors[ImGuiCol_TabDimmedSelected] = t.tab_dimmed_selected;
+  style.Colors[ImGuiCol_TabDimmedSelectedOverline] = t.accent;
+  style.Colors[ImGuiCol_DockingEmptyBg] = t.docking_empty_bg;
+  style.Colors[ImGuiCol_DockingPreview] = t.docking_preview;
+  style.Colors[ImGuiCol_CheckMark] = t.check_mark;
+  style.Colors[ImGuiCol_SliderGrab] = t.accent;
+  style.Colors[ImGuiCol_SliderGrabActive] = t.accent_active;
 
   ImPlotStyle &plot_style = ImPlot::GetStyle();
   plot_style.PlotBorderSize = 1.0f;
   plot_style.MinorAlpha = 0.65f;
-  plot_style.LegendPadding = ImVec2(6.0f, 5.0f);
-  plot_style.LegendInnerPadding = ImVec2(6.0f, 3.0f);
-  plot_style.LegendSpacing = ImVec2(7.0f, 2.0f);
+  plot_style.LegendPadding = ImVec2(4.0f, 3.0f);
+  plot_style.LegendInnerPadding = ImVec2(4.0f, 2.0f);
+  plot_style.LegendSpacing = ImVec2(5.0f, 1.0f);
   plot_style.PlotPadding = ImVec2(4.0f, 8.0f);
   plot_style.FitPadding = ImVec2(0.02f, 0.05f);
-  if (theme == LoggyThemeKind::Light) {
-    plot_style.Colors[ImPlotCol_FrameBg] = color_rgb(246, 247, 248);
-    plot_style.Colors[ImPlotCol_PlotBg] = color_rgb(248, 249, 250);
-  } else {
-    plot_style.Colors[ImPlotCol_FrameBg] = color_rgb(60, 63, 65);
-    plot_style.Colors[ImPlotCol_PlotBg] = color_rgb(60, 63, 65);
-  }
+  plot_style.Colors[ImPlotCol_FrameBg] = t.frame_bg;
+  plot_style.Colors[ImPlotCol_PlotBg] = t.frame_bg;
 
   ImPlot::MapInputDefault();
   ImPlotInputMap &input_map = ImPlot::GetInputMap();
@@ -215,14 +357,7 @@ void apply_theme(LoggyThemeKind theme) {
 }
 
 ImVec4 clear_color() {
-  return g_current_theme == LoggyThemeKind::Light ? color_rgb(238, 240, 242) : color_rgb(43, 43, 43);
-}
-
-ImVec4 plot_area_background_color() {
-  return g_current_theme == LoggyThemeKind::Light ? color_rgb(248, 249, 250) : color_rgb(47, 49, 51);
-}
-ImVec4 binary_grid_background_color() {
-  return g_current_theme == LoggyThemeKind::Light ? color_rgb(234, 237, 240) : color_rgb(68, 71, 73);
+  return theme().window_bg;
 }
 
 void push_bold_font() {

@@ -90,7 +90,7 @@ TEST_CASE("Loggy settings default on missing and malformed files") {
   CHECK(missing.error.empty());
   CHECK(missing.settings.target_fps == loggy::kDefaultLoggyTargetFps);
   CHECK(missing.settings.theme == loggy::kDefaultLoggyTheme);
-  CHECK(missing.settings.show_frame_hud);
+  CHECK_FALSE(missing.settings.show_frame_hud);
   CHECK(missing.settings.recent_dbc_files.empty());
   CHECK(missing.settings.dbc_assignments.empty());
 

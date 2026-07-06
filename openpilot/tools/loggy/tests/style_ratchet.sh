@@ -53,25 +53,21 @@ check "pane header fns" \
   14
 # 73->84 (2026-07-05): scan/history job+page types now cross the pane<->backend boundary;
 # the REVIEW 2.3 boundary rule outranks the raw count.
+# 84->85 (2026-07-06): owner-directed `struct Theme` (shell/theme.h) — every color token as one
+# plain aggregate, the single source of truth apply_theme() reads from; it replaces several
+# one-off free functions (net token count still goes down) but is itself one more named struct.
 check "named header structs" \
   "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
-  84
-# 21045->21124 (2026-07-06): red-team wave — honest route duration, deprecated series
-# extraction, export/selection isolation. Prior history in git.
+  85
+# LOC history (prior in git): 20605->20950 parity-fix wave; ->21020 ship fixes; ->21124
+# red-team data-honesty wave (honest route duration, deprecated series, export isolation);
+# ->21370 (2026-07-06) visual-identity pass — the owner-directed `struct Theme` (every color
+# token, grouped, two full const instances kLightTheme/kDarculaTheme) plus binary.cc's
+# per-signal colored spans + MSB/LSB markers (cabana's signature look) and camera/plot chrome
+# cleanups. Capability and a real style fix (single source of truth for every color), not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  21124
-# generation-counter discriminator test, constraint comments. Prior history:
-# 20605->20950 (2026-07-06): parity-fix wave (all five batches) — live messages heatmap,
-# camera seek guard, find-bits stats, DBC editing protection incl. BE drag-resize, preset
-# rebalance + polish. Audit-driven capability, not padding.
-check "product LOC" \
-  "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-<<<<<<< HEAD
-  21045
-=======
-  21111
->>>>>>> 3455389f7 (loggy: honest route duration, deprecated series, export correctness)
+  21370
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
   850
@@ -81,3 +77,11 @@ check "pane-local statics" \
 check "backend header camel" \
   "$(rg_count '\b[a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*\s*\(' backend -g'*.h' -g'!generated_*')" \
   0
+# Theme sweep (2026-07-06, visual-identity pass): shell/theme.{h,cc}, shell/runtime.cc,
+# shell/workspace.cc, panes/{binary,camera,plot,browser}.cc are fully on Theme tokens (0
+# literals). Outstanding, different owners' files this pass didn't touch: panes/map.cc (16, its
+# own hand-drawn map palette), panes/signal.cc (2), panes/messages.cc (2) — baseline reflects
+# that honestly rather than claiming 0. Target 0 once those sweeps land.
+check "color_rgb literals outside theme.cc" \
+  "$(rg_count 'color_rgb\(' panes shell -g'*.cc' -g'!theme.cc')" \
+  20

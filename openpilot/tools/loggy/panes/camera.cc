@@ -31,12 +31,6 @@ struct CameraPaneSnapshot {
   bool ingest_failed = false;
 };
 
-struct CameraRouteInfoLines {
-  std::string line1;
-  std::string line2;
-  std::string line3;
-};
-
 struct CameraTextureState {
   GLuint texture = 0;
   int width = 0;
@@ -52,12 +46,12 @@ struct CameraTextureState {
 CameraPaneState parse_camera_pane_state(std::string_view state_json);
 std::string camera_pane_state_json(const CameraPaneState &state);
 CameraPaneSnapshot prepare_camera_pane_snapshot(const Session &session, const CameraPaneState &state);
-CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &snapshot,
-                                                   const CameraDecodeStatus &decode_status,
-                                                   const LiveCameraFrameStatus *live_status,
-                                                   const CameraTextureState &texture,
-                                                   bool has_texture,
-                                                   float text_area_width);
+std::string build_camera_hover_line(const CameraPaneSnapshot &snapshot,
+                                    const CameraDecodeStatus &decode_status,
+                                    const LiveCameraFrameStatus *live_status,
+                                    const CameraTextureState &texture,
+                                    bool has_texture,
+                                    float text_area_width);
 
 std::string trim_overlay_text(const std::string &text, float max_width) {
   if (text.empty() || max_width <= 0.0f) return text;
@@ -170,6 +164,7 @@ bool draw_camera_controls(CameraPaneState *state) {
 
 void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
                         bool fit_to_pane,
+                        bool paused,
                         const CameraTextureState &texture,
                         const CameraDecodeStatus &decode_status,
                         const LiveCameraFrameStatus *live_status) {
@@ -178,11 +173,15 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
   const float height = std::max(180.0f, avail.y);
   const ImVec2 pos = ImGui::GetCursorScreenPos();
   ImGui::InvisibleButton("##camera_canvas", ImVec2(width, height));
+  const bool hovered = ImGui::IsItemHovered();
 
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
   const ImVec2 max(pos.x + width, pos.y + height);
-  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(color_rgb(28, 30, 32)), 0.0f);
-  draw_list->AddRect(pos, max, ImGui::GetColorU32(color_rgb(92, 96, 98)), 0.0f, 0, 1.0f);
+  // Pane bg, not black — fit_to_pane's letterbox bars blend into the pane instead of reading
+  // as a pillarbox (cabana shows clean video with no visible frame around it).
+  const ImU32 canvas_bg = ImGui::GetColorU32(ImGuiCol_ChildBg);
+  draw_list->AddRectFilled(pos, max, canvas_bg, 0.0f);
+  draw_list->AddRect(pos, max, ImGui::GetColorU32(theme().chrome_border), 0.0f, 0, 1.0f);
 
   const bool live_mode = live_status != nullptr;
   const bool has_texture = texture.texture != 0 && texture.width > 0 && texture.height > 0 &&
@@ -204,32 +203,29 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
   if (has_texture) {
     draw_list->AddImage(static_cast<ImTextureID>(texture.texture), video_min, video_max);
   } else {
-    draw_list->AddRectFilled(video_min, video_max, ImGui::GetColorU32(color_rgb(38, 41, 43)), 0.0f);
+    draw_list->AddRectFilled(video_min, video_max, canvas_bg, 0.0f);
   }
-  draw_list->AddRect(video_min, video_max, ImGui::GetColorU32(color_rgb(116, 178, 255, 0.75f)), 0.0f, 0, 1.5f);
+  draw_list->AddRect(video_min, video_max, ImGui::GetColorU32(theme().camera_video_border), 0.0f, 0, 1.5f);
 
-  const float info_width = std::max(0.0f, std::min(video_max.x - video_min.x - 22.0f,
-                                                  (video_max.x - video_min.x) * 0.62f));
-  const CameraRouteInfoLines info = build_camera_route_info_lines(
-    snapshot, decode_status, live_status, texture, has_texture, info_width);
-
-  const ImU32 text = ImGui::GetColorU32(ImGuiCol_Text);
-  const ImU32 muted = ImGui::GetColorU32(ImGuiCol_TextDisabled);
-  const ImVec2 info_min(video_min.x + 8.0f, video_min.y + 8.0f);
-  const float line_height = ImGui::GetTextLineHeight();
-  const float info_height = line_height * 2.8f;
-  draw_list->AddRectFilled(info_min, ImVec2(info_min.x + info_width, info_min.y + info_height),
-                          ImGui::GetColorU32(color_rgb(20, 22, 24, 0.60f)), 4.0f);
-  draw_list->AddRect(info_min, ImVec2(info_min.x + info_width, info_min.y + info_height),
-                     ImGui::GetColorU32(color_rgb(84, 87, 89, 0.85f)), 4.0f, 0, 1.0f);
-  if (!info.line1.empty()) {
-    draw_list->AddText(ImVec2(info_min.x + 7.0f, info_min.y + 4.0f), text, info.line1.c_str());
-  }
-  if (!info.line2.empty()) {
-    draw_list->AddText(ImVec2(info_min.x + 7.0f, info_min.y + 22.0f), muted, info.line2.c_str());
-  }
-  if (!info.line3.empty()) {
-    draw_list->AddText(ImVec2(info_min.x + 7.0f, info_min.y + 40.0f), muted, info.line3.c_str());
+  // No always-on debug text (files/frames/decoded) — cabana shows clean video. Only a small
+  // time/frame readout, and only on hover or while paused.
+  if (hovered || paused) {
+    const float info_width = std::max(0.0f, std::min(video_max.x - video_min.x - 16.0f,
+                                                    (video_max.x - video_min.x) * 0.62f));
+    const std::string line = build_camera_hover_line(snapshot, decode_status, live_status, texture,
+                                                     has_texture, info_width);
+    if (!line.empty()) {
+      push_mono_font();
+      const ImVec2 text_size = ImGui::CalcTextSize(line.c_str());
+      pop_mono_font();
+      const ImVec2 info_min(video_min.x + 8.0f, video_min.y + 8.0f);
+      const ImVec2 info_max(info_min.x + text_size.x + 12.0f, info_min.y + text_size.y + 8.0f);
+      draw_list->AddRectFilled(info_min, info_max, ImGui::GetColorU32(theme().camera_overlay_bg), 3.0f);
+      draw_list->AddRect(info_min, info_max, ImGui::GetColorU32(theme().camera_overlay_border), 3.0f, 0, 1.0f);
+      push_mono_font();
+      draw_list->AddText(ImVec2(info_min.x + 6.0f, info_min.y + 4.0f), ImGui::GetColorU32(ImGuiCol_Text), line.c_str());
+      pop_mono_font();
+    }
   }
 
   if (snapshot.overlay_kind != TimelineSpanKind::None) {
@@ -246,92 +242,50 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
   }
 }
 
-CameraRouteInfoLines build_camera_route_info_lines(const CameraPaneSnapshot &snapshot,
-                                                  const CameraDecodeStatus &decode_status,
-                                                  const LiveCameraFrameStatus *live_status,
-                                                  const CameraTextureState &texture,
-                                                  bool has_texture,
-                                                  float text_area_width) {
+// One compact line, shown only on hover/pause (draw_camera_canvas) — cabana shows clean video,
+// not a persistent debug block. seg/frame/t always come from the displayed texture, never the
+// seek target (REVIEW defect B).
+std::string build_camera_hover_line(const CameraPaneSnapshot &snapshot,
+                                    const CameraDecodeStatus &decode_status,
+                                    const LiveCameraFrameStatus *live_status,
+                                    const CameraTextureState &texture,
+                                    bool has_texture,
+                                    float text_area_width) {
   const CameraViewSpec &spec = camera_view_spec(snapshot.view);
-  CameraRouteInfoLines lines;
   const float info_width = std::max(0.0f, text_area_width);
   char buffer[256] = {};
 
   if (live_status != nullptr) {
-    if (live_status->has_frame) {
-      std::snprintf(buffer, sizeof(buffer), "%s  f%d  %s", spec.label, live_status->frame_id,
-                    live_camera_stream_label(snapshot.view).c_str());
-    } else {
-      std::snprintf(buffer, sizeof(buffer), "%s live", spec.label);
-    }
-    lines.line1 = trim_overlay_text(buffer, info_width);
-
     if (!live_status->supported || !live_status->error.empty()) {
-      lines.line2 = "VisionIPC unsupported";
+      std::snprintf(buffer, sizeof(buffer), "%s  %s", spec.label,
+                    !live_status->error.empty() ? live_status->error.c_str() : "VisionIPC unsupported");
+    } else if (live_status->has_frame) {
+      std::snprintf(buffer, sizeof(buffer), "%s  live  f%d  %zu frames", spec.label, live_status->frame_id,
+                    live_status->received_frames);
     } else if (live_status->connected) {
-      std::snprintf(buffer, sizeof(buffer), "camerad / %s  frame %zu",
-                    live_camera_stream_label(snapshot.view).c_str(), live_status->received_frames);
-      lines.line2 = trim_overlay_text(buffer, info_width);
+      std::snprintf(buffer, sizeof(buffer), "%s  connected, waiting for frames", spec.label);
     } else {
-      lines.line2 = "waiting for camerad VisionIPC";
+      std::snprintf(buffer, sizeof(buffer), "%s  waiting for camerad", spec.label);
     }
-
-    if (!live_status->supported || !live_status->error.empty()) {
-      lines.line3 = trim_overlay_text(live_status->error, info_width);
-    } else if (has_texture && texture.width > 0 && texture.height > 0) {
-      std::snprintf(buffer, sizeof(buffer), "live %dx%d", texture.width, texture.height);
-      lines.line3 = trim_overlay_text(buffer, info_width);
-    } else if (!live_status->connected) {
-      lines.line3 = "route video unavailable";
-    } else {
-      lines.line3 = "connected, waiting for frames";
-    }
-
-    if (lines.line2.empty()) lines.line2 = "camerad / live";
-    return lines;
+    return trim_overlay_text(buffer, info_width);
   }
 
-  // seg/frame/t always come from the displayed texture, never the seek target (REVIEW defect B).
   const bool have_frame_info = has_texture && texture.key.has_value();
-  if (have_frame_info || snapshot.has_frame) {
-    if (have_frame_info) {
-      std::snprintf(buffer, sizeof(buffer), "%s  seg %d  frame %u  t %.2f",
-                    spec.label, texture.key->segment, texture.frame_id, texture.timestamp);
-    } else {
-      std::snprintf(buffer, sizeof(buffer), "%s  loading...", spec.label);
-    }
-    lines.line1 = trim_overlay_text(buffer, info_width);
-    std::snprintf(buffer, sizeof(buffer), "%zu files  %zu frames",
-                  snapshot.segment_file_count, snapshot.frame_count);
-    lines.line2 = trim_overlay_text(buffer, info_width);
-  } else if (snapshot.segment_file_count > 0) {
-    std::snprintf(buffer, sizeof(buffer), "%s  no encode index", spec.label);
-    lines.line1 = trim_overlay_text(buffer, info_width);
-    std::snprintf(buffer, sizeof(buffer), "%zu files, %zu frames", snapshot.segment_file_count,
-                  snapshot.frame_count);
-    lines.line2 = trim_overlay_text(buffer, info_width);
-  } else {
-    std::snprintf(buffer, sizeof(buffer), "%s  no route video", spec.label);
-    lines.line1 = trim_overlay_text(buffer, info_width);
-    lines.line2 = "no route video for this view";
-  }
-
-  if (decode_status.loading) {
-    std::snprintf(buffer, sizeof(buffer), "decoding...  cache %zu  queued %zu",
-                  decode_status.cached_frames, decode_status.queued_frames);
+  if (have_frame_info) {
+    std::snprintf(buffer, sizeof(buffer), "%s  seg %d  frame %u  t %.2fs",
+                  spec.label, texture.key->segment, texture.frame_id, texture.timestamp);
+  } else if (decode_status.loading) {
+    std::snprintf(buffer, sizeof(buffer), "%s  decoding...", spec.label);
   } else if (!decode_status.error.empty()) {
-    std::snprintf(buffer, sizeof(buffer), "%s", decode_status.error.c_str());
-  } else if (have_frame_info) {
-    std::snprintf(buffer, sizeof(buffer), "decoded %dx%d", texture.width, texture.height);
-  } else if (has_texture) {
-    std::snprintf(buffer, sizeof(buffer), "cache %zu", decode_status.cached_frames);
+    std::snprintf(buffer, sizeof(buffer), "%s  %s", spec.label, decode_status.error.c_str());
   } else if (snapshot.ingest_failed) {
-    std::snprintf(buffer, sizeof(buffer), "no camera data");  // terminal (REVIEW defect C)
+    std::snprintf(buffer, sizeof(buffer), "%s  no camera data", spec.label);  // terminal (REVIEW defect C)
+  } else if (snapshot.segment_file_count == 0) {
+    std::snprintf(buffer, sizeof(buffer), "%s  no route video", spec.label);
   } else {
-    std::snprintf(buffer, sizeof(buffer), "waiting for frame index");
+    std::snprintf(buffer, sizeof(buffer), "%s  waiting for frame index", spec.label);
   }
-  lines.line3 = trim_overlay_text(buffer, info_width);
-  return lines;
+  return trim_overlay_text(buffer, info_width);
 }
 
 CameraPaneState parse_camera_pane_state(std::string_view state_json) {
@@ -385,8 +339,8 @@ void draw_camera_pane(Session &session, PaneInstance &pane) {
       upload_camera_frame(&texture, std::move(*frame), true);
     }
     const LiveCameraFrameStatus live_status = source.status(state.view);
-    ImGui::TextDisabled("Live VisionIPC | %s", live_status.connected ? "connected" : "waiting");
-    draw_camera_canvas(snapshot, state.fit_to_pane, texture, CameraDecodeStatus{}, &live_status);
+    const bool paused = session.live_status().paused;
+    draw_camera_canvas(snapshot, state.fit_to_pane, paused, texture, CameraDecodeStatus{}, &live_status);
     return;
   }
 
@@ -397,8 +351,8 @@ void draw_camera_pane(Session &session, PaneInstance &pane) {
   }
   const CameraDecodeStatus decode_status = decoder.status();
 
-  ImGui::TextDisabled("%zu files | %zu frames", snapshot.segment_file_count, snapshot.frame_count);
-  draw_camera_canvas(snapshot, state.fit_to_pane, texture, decode_status, nullptr);
+  const bool paused = !session.playback.playing();
+  draw_camera_canvas(snapshot, state.fit_to_pane, paused, texture, decode_status, nullptr);
 }
 
 }  // namespace loggy

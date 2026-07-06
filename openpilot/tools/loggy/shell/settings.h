@@ -13,7 +13,7 @@ inline constexpr int kLoggySettingsVersion = 1;
 inline constexpr int kDefaultLoggyTargetFps = 60;
 inline constexpr int kMinLoggyTargetFps = 15;
 inline constexpr int kMaxLoggyTargetFps = 240;
-inline constexpr const char *kDefaultLoggyTheme = "darcula";
+inline constexpr const char *kDefaultLoggyTheme = "light";
 inline constexpr size_t kMaxRecentDbcFiles = 16;
 inline constexpr size_t kMaxDbcAssignments = 64;
 inline constexpr size_t kMaxSettingsKeyBytes = 128;
@@ -26,7 +26,7 @@ struct LoggySettings {
   std::string theme = kDefaultLoggyTheme;
   std::vector<std::string> recent_dbc_files;
   int target_fps = kDefaultLoggyTargetFps;
-  bool show_frame_hud = true;
+  bool show_frame_hud = false;
   bool natural_map_drag = true;
   // Keys are caller-owned bus/source identifiers such as "all", "0", or
   // future route-specific source labels. Values are DBC file paths.

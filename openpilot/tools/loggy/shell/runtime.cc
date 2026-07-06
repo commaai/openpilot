@@ -254,9 +254,9 @@ struct AppState {
   Session session;
   FrameStats frame_stats;
   Clock::time_point last_playback_update = Clock::now();
-  bool show_frame_hud = true;
+  bool show_frame_hud = false;
   int target_fps = kDefaultLoggyTargetFps;
-  LoggyThemeKind theme_kind = LoggyThemeKind::Darcula;
+  LoggyThemeKind theme_kind = LoggyThemeKind::Light;
   bool show_demo = false;
   bool request_close = false;
   WorkspaceHistory workspace_history;
@@ -369,10 +369,11 @@ void draw_frame_hud(const FrameStats &stats) {
   const ImVec2 pos(viewport->Pos.x + viewport->Size.x - size.x - margin.x, viewport->Pos.y + margin.y);
   const ImVec2 max(pos.x + size.x, pos.y + size.y);
   ImDrawList *draw_list = ImGui::GetForegroundDrawList();
-  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(color_rgb(43, 43, 43, 0.92f)), 4.0f);
-  draw_list->AddRect(pos, max, ImGui::GetColorU32(color_rgb(100, 100, 100, 0.95f)), 4.0f);
+  const Theme &t = theme();
+  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(t.hud_bg), 4.0f);
+  draw_list->AddRect(pos, max, ImGui::GetColorU32(t.hud_border), 4.0f);
   draw_list->AddText(font, font_size, ImVec2(pos.x + padding.x, pos.y + padding.y),
-                     ImGui::GetColorU32(color_rgb(220, 220, 220)), label.c_str(), nullptr);
+                     ImGui::GetColorU32(t.hud_text), label.c_str(), nullptr);
 }
 
 void pace_frame(const AppState &app, Clock::time_point frame_start) {
@@ -454,11 +455,11 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
   PaneInstance &pane = tab.panes[static_cast<size_t>(pane_index)];
   ImGui::BeginChild(pane_window_label(pane, pane_index).c_str(), size, true);
 
-  push_bold_font();
+  // Quiet chrome, title only (no "Messages messages" type suffix) — compare jotpluggler's
+  // section headers: small, muted, no bold.
+  ImGui::PushStyleColor(ImGuiCol_Text, theme().text_muted);
   ImGui::TextUnformatted(pane.title.empty() ? kDefaultPaneTitle : pane.title.c_str());
-  pop_bold_font();
-  ImGui::SameLine();
-  ImGui::TextDisabled("%s", pane.type.c_str());
+  ImGui::PopStyleColor();
 
   if (ImGui::BeginPopupContextWindow()) {
     if (ImGui::MenuItem("Split Right")) request_split(app, tab_index, pane_index, PaneSplit::Right);
@@ -576,8 +577,9 @@ void draw_timeline_strip(AppState &app, const ImVec2 &size) {
   const ImVec2 pos = ImGui::GetCursorScreenPos();
   const ImVec2 rect_max(pos.x + size.x, pos.y + size.y);
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  draw_list->AddRectFilled(pos, rect_max, ImGui::GetColorU32(color_rgb(47, 47, 47)), 3.0f);
-  draw_list->AddRect(pos, rect_max, ImGui::GetColorU32(color_rgb(85, 85, 85)), 3.0f);
+  const Theme &t = theme();
+  draw_list->AddRectFilled(pos, rect_max, ImGui::GetColorU32(t.transport_bg), 3.0f);
+  draw_list->AddRect(pos, rect_max, ImGui::GetColorU32(t.transport_border), 3.0f);
 
   for (const TimelineRenderSpan &span : timeline.render_spans()) {
     const float x0 = pos.x + static_cast<float>(span.start_fraction) * size.x;
@@ -589,7 +591,7 @@ void draw_timeline_strip(AppState &app, const ImVec2 &size) {
 
   const float tracker_x = pos.x + static_cast<float>(timeline.fraction_from_time(playback.tracker_time())) * size.x;
   draw_list->AddLine(ImVec2(tracker_x, pos.y - 2.0f), ImVec2(tracker_x, rect_max.y + 2.0f),
-                     ImGui::GetColorU32(color_rgb(235, 235, 235)), 2.0f);
+                     ImGui::GetColorU32(t.transport_tracker), 2.0f);
 
   ImGui::InvisibleButton("##timeline", size);
   if (ImGui::IsItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {

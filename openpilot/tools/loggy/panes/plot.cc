@@ -476,14 +476,6 @@ std::vector<PreparedPlotSeries> prepare_plot_series(const Store &store,
   return prepared;
 }
 
-constexpr ImVec4 kPlotColors[] = {
-  ImVec4(0.35f, 0.66f, 0.98f, 1.0f),
-  ImVec4(0.33f, 0.78f, 0.55f, 1.0f),
-  ImVec4(0.98f, 0.70f, 0.30f, 1.0f),
-  ImVec4(0.85f, 0.48f, 0.78f, 1.0f),
-  ImVec4(0.94f, 0.38f, 0.38f, 1.0f),
-};
-
 constexpr size_t kPlotZoomHistoryLimit = 16;
 constexpr size_t kSeriesSelectorLimit = 500;
 
@@ -518,10 +510,13 @@ ImVec4 plot_color_for_request(const PlotSeriesRequest &request, size_t index) {
                   static_cast<float>(b) / 255.0f,
                   1.0f);
   }
-  return kPlotColors[index % std::size(kPlotColors)];
+  const auto &palette = theme().plot_series_palette;
+  return palette[index % palette.size()];
 }
 
-void draw_plot_coverage(const std::vector<PreparedPlotSeries> &series) {
+// Was a persistent toolbar row; now folded into the plot-hover tooltip (item 6 — the coverage
+// line was chrome, not something worth a permanent row).
+std::string plot_coverage_summary(const std::vector<PreparedPlotSeries> &series) {
   size_t visible = 0;
   size_t missing = 0;
   bool decimated = false;
@@ -536,23 +531,15 @@ void draw_plot_coverage(const std::vector<PreparedPlotSeries> &series) {
     decimated = decimated || item.view.decimated;
   }
 
-  ImGui::TextDisabled("%zu series", visible);
-  ImGui::SameLine();
-  ImGui::TextDisabled("| %.2fs covered", covered);
-  if (ImGui::IsItemHovered()) {
-    // REVIEW.md defect #7/#18: this number reads as a bug report ("why doesn't it cover the
-    // whole route?") without context — a route's last segment is almost always partial.
-    ImGui::SetTooltip("Data present for %.2fs of the route.\nShort final segments are normal — "
-                      "every route ends mid-segment.", covered);
-  }
+  char buffer[160];
+  int written = std::snprintf(buffer, sizeof(buffer), "%zu series | %.2fs covered", visible, covered);
+  std::string summary(buffer, static_cast<size_t>(std::max(0, written)));
   if (missing > 0) {
-    ImGui::SameLine();
-    ImGui::TextDisabled("| %zu missing", missing);
+    std::snprintf(buffer, sizeof(buffer), " | %zu missing", missing);
+    summary += buffer;
   }
-  if (decimated) {
-    ImGui::SameLine();
-    ImGui::TextDisabled("| decimated");
-  }
+  if (decimated) summary += " | decimated";
+  return summary;
 }
 
 bool draw_plot_series_selector(const Store &store, PaneInstance *pane) {
@@ -607,7 +594,8 @@ bool draw_plot_series_drag_sources(PaneInstance *pane, const std::vector<PlotSer
     if (i > 0 && ImGui::GetContentRegionAvail().x > 150.0f) ImGui::SameLine();
     ImGui::PushID(static_cast<int>(i));
     const std::string label = request.label.empty() ? plot_label_from_path(request.path) : request.label;
-    ImGui::TextColored(kPlotColors[i % std::size(kPlotColors)], "%s", label.c_str());
+    const auto &palette = theme().plot_series_palette;
+    ImGui::TextColored(palette[i % palette.size()], "%s", label.c_str());
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
       ImGui::SetDragDropPayload(kLoggySeriesPathPayload, request.path.c_str(), request.path.size() + 1);
       ImGui::TextUnformatted(request.path.c_str());
@@ -631,8 +619,8 @@ bool accept_series_drop(PaneInstance *pane) {
       const ImVec2 min = ImGui::GetItemRectMin();
       const ImVec2 max = ImGui::GetItemRectMax();
       ImDrawList *draw_list = ImGui::GetWindowDrawList();
-      draw_list->AddRectFilled(min, max, ImGui::GetColorU32(color_rgb(47, 101, 202, 0.16f)));
-      draw_list->AddRect(min, max, ImGui::GetColorU32(color_rgb(75, 135, 230, 0.90f)), 0.0f, 0, 2.0f);
+      draw_list->AddRectFilled(min, max, ImGui::GetColorU32(theme().plot_drop_target_fill));
+      draw_list->AddRect(min, max, ImGui::GetColorU32(theme().plot_drop_target_border), 0.0f, 0, 2.0f);
     }
     if (!payload->Delivery) {
       ImGui::EndDragDropTarget();
@@ -756,6 +744,10 @@ void push_zoom_history(std::vector<PlotZoomRange> *history, TimeRange range) {
 }  // namespace
 
 void draw_plot_pane(Session &session, PaneInstance &pane) {
+  // Compact toolbar: same controls (Style/Y/+Series/Undo Zoom), tighter padding so the chart
+  // gets the vertical space the coverage line used to take (that line is now a hover tooltip).
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 2.0f));
   PlotSeriesStyle style = parse_plot_series_style(pane.state_json);
   PlotYLimits y_limits = parse_plot_y_limits(pane.state_json);
   if (draw_plot_display_controls(&style, &y_limits)) {
@@ -774,6 +766,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
     pane.state_json = plot_state_with_zoom_history(pane.state_json, zoom_history);
   }
   if (undo_disabled) ImGui::EndDisabled();
+  ImGui::PopStyleVar(2);
 
   const TimeRange range = session.view_range.range();
 
@@ -784,7 +777,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
                                                                session.playback.tracker_time(), max_points);
   const PlotYAxisBounds y_bounds = compute_plot_y_axis_bounds(series, y_limits);
 
-  draw_plot_coverage(series);
+  const std::string coverage_summary = plot_coverage_summary(series);
   const bool series_removed = draw_plot_series_drag_sources(&pane, requests);
 
   bool has_points = false;
@@ -799,12 +792,15 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   ImPlotFlags plot_flags = ImPlotFlags_NoTitle | ImPlotFlags_NoMenus;
   if (!has_points) plot_flags |= ImPlotFlags_NoLegend;
 
-  ImPlot::PushStyleColor(ImPlotCol_PlotBg, plot_area_background_color());
-  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, color_rgb(92, 96, 98));
-  ImPlot::PushStyleColor(ImPlotCol_LegendBg, color_rgb(53, 53, 53, 0.92f));
-  ImPlot::PushStyleColor(ImPlotCol_LegendBorder, color_rgb(92, 96, 98));
-  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, color_rgb(92, 96, 98, 0.70f));
-  ImPlot::PushStyleColor(ImPlotCol_Crosshairs, color_rgb(187, 187, 187, 0.70f));
+  const Theme &t = theme();
+  ImPlot::PushStyleColor(ImPlotCol_PlotBg, t.plot_bg);
+  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, t.chrome_border);
+  ImPlot::PushStyleColor(ImPlotCol_LegendBg, t.plot_legend_bg);
+  ImPlot::PushStyleColor(ImPlotCol_LegendBorder, t.plot_legend_border);
+  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, t.plot_grid);
+  ImPlot::PushStyleColor(ImPlotCol_Crosshairs, t.plot_crosshair);
+  // Legend padding/spacing is tightened once, globally, in apply_theme() (single source of
+  // truth) — semi-transparent + tight legend so it stops hiding a third of the plot.
 
   push_mono_font();
   bool dropped_series = false;
@@ -854,7 +850,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
                                       session.playback.route_range().start_,
                                       session.playback.route_range().end);
     ImPlotSpec tracker_spec;
-    tracker_spec.LineColor = color_rgb(220, 220, 220, 0.72f);
+    tracker_spec.LineColor = t.plot_tracker_line;
     tracker_spec.LineWeight = 1.0f;
     tracker_spec.Flags = ImPlotItemFlags_NoLegend;
     ImPlot::PlotInfLines("##tracker", &tracker, 1, tracker_spec);
@@ -862,6 +858,8 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
     if (ImPlot::IsPlotHovered()) {
       const double hover_t = ImPlot::GetPlotMousePos().x;
       ImGui::BeginTooltip();
+      ImGui::TextUnformatted(coverage_summary.c_str());
+      ImGui::Separator();
       ImGui::Text("t %.3f", hover_t);
       for (const PreparedPlotSeries &item : series) {
         if (item.xs.empty() || item.xs.size() != item.ys.size()) continue;
