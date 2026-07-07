@@ -10,6 +10,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -42,80 +43,88 @@ int main() {
   assert(loggy::pane_type("find_bits") != nullptr);
   assert(loggy::pane_type("computed") != nullptr);
 
+  // Default workspaces are content only now — the message list / series browser is the fixed
+  // shell dock (make_shell), never a workspace pane, so a layout load can't remove it.
   loggy::Workspace cabana = loggy::make_cabana_workspace();
   assert(cabana.tabs.size() == 3);
-  assert(cabana.tabs[0].panes.size() == 4);
-  assert(cabana.tabs[0].panes[0].type == "messages");
+  assert(cabana.tabs[0].panes.size() == 3);
+  assert(count_panes_of_type(cabana, "messages") == 0);
+  assert(cabana.tabs[0].panes[0].type == "binary");
   assert(cabana.tabs[1].name == "DBC");
-  assert(cabana.tabs[1].panes.size() == 1);
   assert(cabana.tabs[1].panes[0].type == "dbc");
   assert(cabana.tabs[2].name == "Analysis");
   assert(cabana.tabs[2].panes.size() == 2);
   assert(cabana.tabs[2].panes[0].type == "find_signal");
   assert(cabana.tabs[2].panes[1].type == "find_bits");
-  const loggy::WorkspaceNode &cabana_root = cabana.tabs[0].root;
-  assert(!cabana_root.is_pane);
-  assert(cabana_root.orientation == loggy::SplitOrientation::Horizontal);
-  assert(cabana_root.children.size() == 2);
-  assert(!cabana_root.children[0].is_pane);
-  assert(cabana_root.children[0].orientation == loggy::SplitOrientation::Vertical);
-  assert(cabana_root.children[0].children.size() == 3);
-  assert(cabana_root.children[0].children[0].pane_index == 0);
-  assert(cabana_root.children[0].children[1].pane_index == 3);
-  assert(cabana_root.children[0].children[2].pane_index == 2);
-  assert(cabana_root.children[1].pane_index == 1);
 
   loggy::Workspace workspace = loggy::make_jotpluggler_workspace();
   assert(workspace.tabs.size() == 2);
-  assert(workspace.tabs[1].panes.size() == 1);
+  assert(count_panes_of_type(workspace, "browser") == 0);
   assert(workspace.tabs[1].panes[0].type == "computed");
   loggy::WorkspaceTab *tab = loggy::active_tab(&workspace);
   assert(tab != nullptr);
-  assert(tab->panes.size() == 4);
+  assert(tab->panes.size() == 3);  // plot, map, logs
 
   assert(loggy::split_pane(tab, 0, loggy::PaneSplit::Right, loggy::make_pane("camera", "Camera")));
   const int camera_index = static_cast<int>(tab->panes.size()) - 1;
-  assert(camera_index == 4);
-  assert(tab->panes.size() == 5);
+  assert(camera_index == 3);
+  assert(tab->panes.size() == 4);
 
   assert(loggy::split_pane(tab, 1, loggy::PaneSplit::Bottom, loggy::make_pane("camera", "Camera")));
-  assert(tab->panes.size() == 6);
-  assert(loggy::close_pane(tab, camera_index));
   assert(tab->panes.size() == 5);
-  assert(loggy::close_pane(tab, 2));
+  assert(loggy::close_pane(tab, camera_index));
   assert(tab->panes.size() == 4);
+  assert(loggy::close_pane(tab, 2));
+  assert(tab->panes.size() == 3);
 
   const std::string encoded = loggy::workspace_to_json(workspace);
   loggy::Workspace decoded = loggy::workspace_from_json(encoded);
   assert(decoded.tabs.size() == workspace.tabs.size());
   assert(decoded.tabs[0].panes.size() == workspace.tabs[0].panes.size());
 
+  // Shell model: chrome types are dock-only, each shell builds its dock, presets map to shells.
+  assert(loggy::is_shell_chrome_pane_type("browser"));
+  assert(loggy::is_shell_chrome_pane_type("messages"));
+  assert(!loggy::is_shell_chrome_pane_type("plot"));
+  assert(loggy::shell_kind_for_preset("cabana") == "cabana");
+  assert(loggy::shell_kind_for_preset("jotpluggler") == "jotpluggler");
+  assert(loggy::shell_kind_for_preset("loggy") == "loggy");
+  assert(loggy::make_shell("cabana").dock.type == "messages");
+  assert(loggy::make_shell("jotpluggler").dock.type == "browser");
+  assert(loggy::make_shell("loggy").dock.type == "browser");
+
   const std::filesystem::path layout_dir = loggy::layouts_dir();
+  // Loading a shipped layout enforces the invariant: chrome panes are stripped from content
+  // (they belong to the dock), whatever the file still contains.
   const loggy::Workspace cabana_file = loggy::load_workspace_json(layout_dir / "cabana.json");
   assert(cabana_file.tabs.size() == 3);
-  assert(cabana_file.tabs[0].panes.size() == 6);
-  assert(count_panes_of_type(cabana_file, "messages") == 1);
+  assert(count_panes_of_type(cabana_file, "messages") == 0);
   assert(count_panes_of_type(cabana_file, "binary") == 1);
-  assert(count_panes_of_type(cabana_file, "camera") == 1);
-  assert(count_panes_of_type(cabana_file, "plot") == 1);
   assert(count_panes_of_type(cabana_file, "dbc") == 1);
   assert(count_panes_of_type(cabana_file, "find_signal") == 1);
 
   const loggy::Workspace jot_file = loggy::load_workspace_json(layout_dir / "jotpluggler.json");
   assert(jot_file.tabs.size() == 2);
-  // Owner-approved canvas shape: sidebar (camera + browser) and one hero plot; logs/map stay
-  // available as pane types and bundled layouts, not in the default preset.
-  assert(count_panes_of_type(jot_file, "browser") == 1);
+  assert(count_panes_of_type(jot_file, "browser") == 0);
   assert(count_panes_of_type(jot_file, "camera") == 1);
   assert(count_panes_of_type(jot_file, "plot") == 1);
-  assert(count_panes_of_type(jot_file, "logs") == 0);
-  assert(count_panes_of_type(jot_file, "map") == 0);
   assert(count_panes_of_type(jot_file, "computed") == 1);
   for (const loggy::PaneInstance &pane : jot_file.tabs[0].panes) {
     if (pane.type != "plot") continue;
     const json11::Json plot_state = parse_json_or_die(pane.state_json);
     assert(plot_state["series"].array_items().size() == 2);
   }
+
+  // Layouts scope to their shell (the "shell" tag): a cabana layout isn't offered to jotpluggler.
+  const std::vector<std::string> cabana_shell_layouts = loggy::layouts_for_shell("cabana");
+  const std::vector<std::string> jot_shell_layouts = loggy::layouts_for_shell("jotpluggler");
+  auto has_layout = [](const std::vector<std::string> &names, const std::string &name) {
+    return std::find(names.begin(), names.end(), name) != names.end();
+  };
+  assert(has_layout(cabana_shell_layouts, "cabana"));
+  assert(!has_layout(cabana_shell_layouts, "jotpluggler"));
+  assert(has_layout(jot_shell_layouts, "jotpluggler"));
+  assert(!has_layout(jot_shell_layouts, "cabana"));
 
   loggy::RouteSelection route_selection =
     loggy::parse_route_selection("5beb9b58bd12b691/0000010a--a51155e496/2:4/q");
@@ -359,7 +368,10 @@ BO_ 291 TEST_MSG: 1 XXX
   preset_config.preset = "jotpluggler";
   preset_config.settings_path = (temp_dir / "preset_settings.json").string();
   loggy::Session preset_session(preset_config);
-  assert(count_panes_of_type(preset_session.workspace, "browser") == 1);
+  // The jotpluggler shell's browser is the fixed dock, resolved from the preset — never a
+  // workspace pane. The content workspace keeps the plot/computed panes.
+  assert(preset_session.shell_kind == "jotpluggler");
+  assert(count_panes_of_type(preset_session.workspace, "browser") == 0);
   assert(count_panes_of_type(preset_session.workspace, "plot") == 1);
   assert(count_panes_of_type(preset_session.workspace, "computed") == 1);
   bool saw_file_backed_plot_state = false;

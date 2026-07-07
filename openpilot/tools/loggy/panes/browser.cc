@@ -399,7 +399,9 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
                                     : session.workspace_layout_path.stem().string();
   ImGui::SetNextItemWidth(-1.0f);
   if (ImGui::BeginCombo("##layout", current_layout.c_str())) {
-    for (const std::string &name : available_layout_names()) {
+    // Scoped to the active shell: a cabana shell only offers cabana layouts, and vice versa, so a
+    // layout load can't drop content that doesn't fit the dock.
+    for (const std::string &name : layouts_for_shell(session.shell_kind)) {
       if (ImGui::Selectable(name.c_str(), name == current_layout)) {
         session.pending_layout_load = layouts_dir() / (name + ".json");
       }

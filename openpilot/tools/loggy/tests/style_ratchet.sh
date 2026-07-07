@@ -58,9 +58,12 @@ check "pane header fns" \
 # 84->85 (2026-07-06): owner-directed `struct Theme` (shell/theme.h) — every color token as one
 # plain aggregate, the single source of truth apply_theme() reads from; it replaces several
 # one-off free functions (net token count still goes down) but is itself one more named struct.
+# 85->86 (2026-07-06): SpecialItemPane (browser special sources).
+# 86->87 (2026-07-06): `struct Shell` (shell/workspace.h) — the fixed dock the browser/messages
+# panel lives in, separate from the swappable Workspace so a layout load can never remove it.
 check "named header structs" \
   "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
-  86
+  87
 # LOC history (prior in git): 20605->20950 parity-fix wave; ->21020 ship fixes; ->21124
 # red-team data-honesty wave (honest route duration, deprecated series, export isolation);
 # ->21368 visual-identity pass (struct Theme, binary per-signal spans + M/L markers, camera/plot
@@ -116,9 +119,14 @@ check "named header structs" \
 # descriptions attached in materialize_decoded_signal, and jotpluggler's StateBlock renderer
 # (build_state_blocks/state_block_color/state_block_label/draw_state_blocks) ported into plot.cc.
 # A whole capability (named-state lanes), not padding.
+# ->23052 (2026-07-06) core shell dock: the browser/messages panel becomes a fixed left dock owned
+# by the shell (Shell struct + make_shell + draw_dock_pane/splitter/reopen in runtime.cc), outside
+# the Workspace so loading a layout can never remove it; normalize_workspace strips chrome from
+# content by invariant; layouts carry a "shell" tag and the selector scopes by it. Owner-directed
+# architecture ("core cabana+jotpluggler shells that can't break"), not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  22845
+  23052
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.
@@ -129,9 +137,12 @@ check "product LOC" \
 # pane menus, splitters) into shell/workspace_ui.cc — same seam as the earlier A8 split.
 # ->1074 (2026-07-06): pane close X + LOGGY_FRAME_TRACE stage attribution. The workspace_ui.cc
 # split threshold from the previous note stands.
+# ->1331 (2026-07-06): shell dock render — draw_dock_pane / draw_dock_splitter /
+# draw_dock_reopen_strip / draw_shell_body plus the View-menu toggle. The workspace_ui.cc split
+# threshold from the earlier note still stands.
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
-  1217
+  1331
 check "pane-local statics" \
   "$(rg_count '^\s+static ' panes -g'*.cc')" \
   0

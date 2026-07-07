@@ -430,7 +430,8 @@ void draw_empty_pane(Session &, PaneInstance &pane) {
   ImGui::TextDisabled("Choose a pane type");
   for (size_t i = 0; i < pane_type_count(); ++i) {
     const PaneType &type = pane_types()[i];
-    if (std::string_view(type.id) == "empty") continue;
+    // Chrome types (browser/messages) live only in the shell dock, never as content panes.
+    if (std::string_view(type.id) == "empty" || is_shell_chrome_pane_type(type.id)) continue;
     ImGui::SetCursorPosX(x);
     if (ImGui::Button(type.display_name, ImVec2(220.0f, 0.0f))) {
       pane.type = type.id;
@@ -528,13 +529,13 @@ std::optional<int> restore_workspace_snapshot(Workspace &workspace, const Worksp
 }
 
 void save_workspace_now(Workspace &workspace, WorkspaceHistory &history, const fs::path &layout_path,
-                       std::string &workspace_status) {
+                       std::string &workspace_status, std::string_view shell_kind) {
   if (!workspace_autosave_available(layout_path)) {
     workspace_status = "No layout file to save";
     return;
   }
   try {
-    save_workspace_json(workspace, layout_path);
+    save_workspace_json(workspace, layout_path, shell_kind);
     clear_workspace_draft(layout_path);
     history.reset(workspace);
     workspace_status = "Saved workspace layout";
@@ -595,10 +596,10 @@ Workspace make_empty_workspace() {
   return workspace;
 }
 
+// Content only — the message list lives in the fixed shell dock (see make_shell), never here.
 Workspace make_cabana_workspace() {
   Workspace workspace;
-  WorkspaceTab tab = make_tab("Cabana", make_pane("messages", "Messages"));
-  add_default_split(&tab, PaneSplit::Right, make_pane("binary", "Binary"));
+  WorkspaceTab tab = make_tab("Cabana", make_pane("binary", "Binary"));
   add_default_split(&tab, PaneSplit::Bottom, make_pane("signal", "Signal"));
   add_default_split(&tab, PaneSplit::Bottom, make_pane("historylog", "History"));
   workspace.tabs.push_back(std::move(tab));
@@ -609,10 +610,10 @@ Workspace make_cabana_workspace() {
   return workspace;
 }
 
+// Content only — the series browser lives in the fixed shell dock (see make_shell), never here.
 Workspace make_jotpluggler_workspace() {
   Workspace workspace;
   WorkspaceTab tab = make_tab("Jotpluggler", make_pane("plot", "Plot"));
-  add_default_split(&tab, PaneSplit::Left, make_pane("browser", "Browser"));
   add_default_split(&tab, PaneSplit::Right, make_pane("map", "Map"));
   add_default_split(&tab, PaneSplit::Bottom, make_pane("logs", "Logs"));
   workspace.tabs.push_back(std::move(tab));
@@ -688,28 +689,64 @@ bool close_pane(WorkspaceTab *tab, int pane_index) {
   return true;
 }
 
+bool is_shell_chrome_pane_type(std::string_view type) {
+  return type == "browser" || type == "messages";
+}
+
+std::string shell_kind_for_preset(std::string_view preset) {
+  if (preset == "cabana") return "cabana";
+  if (preset == "jotpluggler") return "jotpluggler";
+  return "loggy";
+}
+
+Shell make_shell(std::string_view kind) {
+  Shell shell;
+  shell.kind = std::string(kind.empty() ? "loggy" : kind);
+  // Cabana's fixed chrome is the message list; every other shell gets the series browser (the
+  // universal data explorer). A shell always has a dock, so the browser can never be lost.
+  shell.dock = kind == "cabana" ? make_pane("messages", "Messages") : make_pane("browser", "Browser");
+  return shell;
+}
+
+// Drop any chrome pane from a content tab — the dock owns them now, so they must never appear in a
+// workspace or a saved layout. close_pane() reindexes the tree and, for a tab that was nothing but
+// chrome, leaves a single empty pane behind for ensure_nonempty_tab() to keep.
+void strip_shell_chrome(WorkspaceTab *tab) {
+  for (int i = 0; i < static_cast<int>(tab->panes.size());) {
+    if (is_shell_chrome_pane_type(tab->panes[static_cast<size_t>(i)].type)) {
+      close_pane(tab, i);
+    } else {
+      ++i;
+    }
+  }
+}
+
 void normalize_workspace(Workspace *workspace) {
   if (workspace == nullptr) return;
   if (workspace->tabs.empty()) workspace->tabs.push_back(make_tab("tab1"));
   for (WorkspaceTab &tab : workspace->tabs) {
+    strip_shell_chrome(&tab);
     ensure_nonempty_tab(&tab);
     normalize_split_node(&tab.root);
   }
   workspace->current_tab_index = std::clamp(workspace->current_tab_index, 0, static_cast<int>(workspace->tabs.size()) - 1);
 }
 
-std::string workspace_to_json(const Workspace &workspace) {
+std::string workspace_to_json(const Workspace &workspace, std::string_view shell_kind) {
   Workspace copy = workspace;
   normalize_workspace(&copy);
 
   json11::Json::array tabs;
   for (const WorkspaceTab &tab : copy.tabs) tabs.push_back(tab_to_json(tab));
-  const json11::Json root = json11::Json::object{
+  json11::Json::object root = {
     {"version", kVersion},
     {"current_tab_index", copy.current_tab_index},
     {"tabs", tabs},
   };
-  return root.dump() + "\n";
+  // Tag the layout with its shell so the browser's layout selector can scope by it (a cabana
+  // layout should not be offered to a jotpluggler shell). Untagged layouts show everywhere.
+  if (!shell_kind.empty()) root["shell"] = std::string(shell_kind);
+  return json11::Json(root).dump() + "\n";
 }
 
 Workspace workspace_from_json(std::string_view json_text, const fs::path &source) {
@@ -734,8 +771,8 @@ Workspace workspace_from_json(std::string_view json_text, const fs::path &source
   return workspace;
 }
 
-void save_workspace_json(const Workspace &workspace, const fs::path &path) {
-  write_file(path, workspace_to_json(workspace));
+void save_workspace_json(const Workspace &workspace, const fs::path &path, std::string_view shell_kind) {
+  write_file(path, workspace_to_json(workspace, shell_kind));
 }
 
 Workspace load_workspace_json(const fs::path &path) {
@@ -755,6 +792,30 @@ std::vector<std::string> available_layout_names() {
     names.push_back(entry.path().stem().string());
   }
   std::sort(names.begin(), names.end());
+  return names;
+}
+
+// The "shell" tag written into a layout file, or empty if the file has none / can't be read.
+std::string layout_shell_tag(const fs::path &path) {
+  std::error_code ec;
+  if (!fs::exists(path, ec)) return {};
+  try {
+    std::string err;
+    const json11::Json root = json11::Json::parse(read_file(path), err);
+    if (err.empty() && root.is_object()) return root["shell"].string_value();
+  } catch (const std::exception &) {
+  }
+  return {};
+}
+
+std::vector<std::string> layouts_for_shell(std::string_view kind) {
+  std::vector<std::string> names;
+  for (const std::string &name : available_layout_names()) {
+    const std::string tag = layout_shell_tag(layouts_dir() / (name + ".json"));
+    // An untagged layout predates shell scoping (or was hand-written) — show it everywhere rather
+    // than hide it. A tagged layout is offered only to its own shell.
+    if (tag.empty() || tag == kind) names.push_back(name);
+  }
   return names;
 }
 

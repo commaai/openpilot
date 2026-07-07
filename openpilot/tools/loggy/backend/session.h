@@ -49,6 +49,9 @@ public:
   SessionConfig config;
   std::filesystem::path workspace_layout_path;
   bool loaded_workspace_draft = false;
+  // The active shell identity ("cabana" | "jotpluggler" | "loggy"); scopes the browser's layout
+  // selector and picks the fixed dock. Distinct from the Workspace, which layouts replace.
+  std::string shell_kind = "loggy";
   Workspace workspace;
   PlaybackClock playback;
   SharedViewRange view_range;

@@ -450,6 +450,13 @@ Session::Session(SessionConfig cfg) : config(std::move(cfg)), scheduler(&store),
     workspace = loaded_workspace.workspace;
     loaded_workspace_draft = loaded_workspace.loaded_draft;
   }
+  // Resolve the shell from the preset; a custom --layout with no preset inherits the layout's own
+  // shell tag so its dock matches. The dock lives in AppState, outside this Workspace.
+  shell_kind = shell_kind_for_preset(config.preset);
+  if (shell_kind == "loggy" && !workspace_layout_path.empty()) {
+    const std::string tag = layout_shell_tag(workspace_layout_path);
+    if (!tag.empty()) shell_kind = tag;
+  }
   normalize_workspace(&workspace);
   computed_specs = normalize_workspace_computed_series(&workspace);
   computed_dirty_ = !computed_specs.empty();

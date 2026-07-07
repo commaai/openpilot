@@ -72,6 +72,22 @@ struct Workspace {
   int current_tab_index = 0;
 };
 
+// The outer frame identity: a fixed left dock (the browser for jotpluggler, the message list for
+// cabana) plus which saved layouts belong to it. The dock lives OUTSIDE the Workspace, so loading
+// a layout can never remove it — content workspaces and every saved layout are chrome-free by the
+// normalize_workspace() invariant. This is what makes cabana/jotpluggler "core shells".
+struct Shell {
+  std::string kind = "loggy";  // "cabana" | "jotpluggler" | "loggy"
+  PaneInstance dock;           // the fixed chrome pane (browser or messages)
+  bool dock_open = true;
+  float dock_width = 320.0f;
+};
+
+// Chrome pane types belong only in a shell dock, never in a content workspace or a saved layout.
+bool is_shell_chrome_pane_type(std::string_view type);
+std::string shell_kind_for_preset(std::string_view preset);
+Shell make_shell(std::string_view kind);
+
 struct WorkspaceHistory {
   static constexpr size_t kMaxHistory = 50;
 
@@ -100,7 +116,7 @@ std::optional<int> restore_workspace_snapshot(Workspace &workspace, const Worksp
                                              const std::filesystem::path &layout_path, std::string &workspace_status,
                                              std::string_view status);
 void save_workspace_now(Workspace &workspace, WorkspaceHistory &history, const std::filesystem::path &layout_path,
-                       std::string &workspace_status);
+                       std::string &workspace_status, std::string_view shell_kind = {});
 void clear_workspace_draft_now(const std::filesystem::path &layout_path, std::string &workspace_status);
 
 PaneInstance make_pane(std::string type = kDefaultPaneType,
@@ -123,13 +139,17 @@ bool close_pane(WorkspaceTab *tab, int pane_index);
 
 void normalize_workspace(Workspace *workspace);
 
-std::string workspace_to_json(const Workspace &workspace);
+std::string workspace_to_json(const Workspace &workspace, std::string_view shell_kind = {});
 Workspace workspace_from_json(std::string_view json_text, const std::filesystem::path &source = {});
-void save_workspace_json(const Workspace &workspace, const std::filesystem::path &path);
+void save_workspace_json(const Workspace &workspace, const std::filesystem::path &path, std::string_view shell_kind = {});
 Workspace load_workspace_json(const std::filesystem::path &path);
 
 std::filesystem::path layouts_dir();
 std::vector<std::string> available_layout_names();
+// Saved layouts whose "shell" tag matches the given shell (untagged layouts show in every shell).
+std::vector<std::string> layouts_for_shell(std::string_view kind);
+// The "shell" tag written in a layout file, or empty if it has none / can't be read.
+std::string layout_shell_tag(const std::filesystem::path &path);
 std::filesystem::path autosave_dir();
 std::filesystem::path autosave_path_for_layout(const std::filesystem::path &layout_path);
 void save_workspace_draft(const Workspace &workspace, const std::filesystem::path &layout_path);

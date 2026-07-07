@@ -245,6 +245,7 @@ struct AppState {
     apply_theme(theme_kind);
     sync_live_source_fields(session, live_source_ui);
     sync_route_popup_fields(session, route_ui);
+    shell = make_shell(session.shell_kind);
     workspace_history.reset(session.workspace);
     workspace_select_request = session.workspace.current_tab_index;
     if (session.loaded_workspace_draft) {
@@ -265,6 +266,9 @@ struct AppState {
   int target_fps = kDefaultLoggyTargetFps;
   ThemeKind theme_kind = ThemeKind::Light;
   bool request_close = false;
+  // The fixed left dock (browser/messages) for the active shell — chrome that lives outside the
+  // Workspace, so loading a layout can never remove it.
+  Shell shell;
   WorkspaceHistory workspace_history;
   std::string workspace_status;
   int workspace_select_request = -1;
@@ -431,7 +435,7 @@ void draw_main_menu(AppState &app) {
     if (ImGui::MenuItem("Redo", nullptr, false, app.workspace_history.can_redo())) redo_workspace(app);
     ImGui::Separator();
     if (ImGui::MenuItem("Save Layout", nullptr, false, workspace_autosave_available(app.session.workspace_layout_path))) {
-      save_workspace_now(app.session.workspace, app.workspace_history, app.session.workspace_layout_path, app.workspace_status);
+      save_workspace_now(app.session.workspace, app.workspace_history, app.session.workspace_layout_path, app.workspace_status, app.shell.kind);
     }
     if (ImGui::MenuItem("Clear Draft", nullptr, false, workspace_autosave_available(app.session.workspace_layout_path))) {
       clear_workspace_draft_now(app.session.workspace_layout_path, app.workspace_status);
@@ -439,6 +443,10 @@ void draw_main_menu(AppState &app) {
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("View")) {
+    // Always-present recovery for the fixed dock: even if it's collapsed, this brings the
+    // browser/messages panel back. The shell can't lose its chrome.
+    const std::string dock_label = "Show " + (app.shell.dock.title.empty() ? "Browser" : app.shell.dock.title);
+    ImGui::MenuItem(dock_label.c_str(), nullptr, &app.shell.dock_open);
     ImGui::MenuItem("Frame-Time HUD", "F12", &app.show_frame_hud);
     ImGui::EndMenu();
   }
@@ -592,7 +600,9 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
     if (ImGui::BeginMenu("Change Type")) {
       for (size_t i = 0; i < pane_type_count(); ++i) {
         const PaneType &type = pane_types()[i];
-        if (std::string_view(type.id) == "empty" || pane.type == type.id) continue;
+        // Chrome types (browser/messages) live only in the shell dock — not selectable as content.
+        if (std::string_view(type.id) == "empty" || pane.type == type.id ||
+            is_shell_chrome_pane_type(type.id)) continue;
         if (ImGui::MenuItem(type.display_name)) {
           pane.type = type.id;
           pane.title = type.display_name;
@@ -922,6 +932,110 @@ void draw_transport_bar(AppState &app) {
   }
 }
 
+constexpr float kDockCollapsedWidth = 16.0f;
+constexpr float kMinDockWidth = 160.0f;
+constexpr float kMinContentWidth = 240.0f;
+
+// The fixed shell dock (browser/messages): rendered outside the tabbed workspace, with only a
+// title and a collapse chevron for chrome — no close X, no split menu, no type change. It is a
+// drag SOURCE (onto plots), never a drop target, so it skips handle_pane_drops.
+void draw_dock_pane(AppState &app) {
+  PaneInstance &pane = app.shell.dock;
+  ImGui::BeginChild("##shell_dock", ImGui::GetContentRegionAvail(), true,
+                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+  const float header_y = ImGui::GetCursorScreenPos().y;
+  const float box = ImGui::GetTextLineHeight();
+  ImGui::PushStyleColor(ImGuiCol_Text, theme().text_muted);
+  ImGui::TextUnformatted(pane.title.empty() ? kDefaultPaneTitle : pane.title.c_str());
+  ImGui::PopStyleColor();
+
+  // Collapse chevron, right-aligned on the header line — hides the dock; the View-menu toggle
+  // (always present) brings it back, so the browser can never be permanently lost.
+  const ImVec2 box_min(ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - box, header_y);
+  ImGui::SetCursorScreenPos(box_min);
+  ImGui::PushID("##collapse_dock");
+  ImGui::InvisibleButton("c", ImVec2(box, box));
+  const bool hovered = ImGui::IsItemHovered();
+  if (hovered) ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  if (ImGui::IsItemClicked()) app.shell.dock_open = false;
+  ImGui::PopID();
+  const float pad = box * 0.3f;
+  const ImU32 chevron = ImGui::GetColorU32(hovered ? theme().text : theme().text_muted);
+  ImDrawList *dl = ImGui::GetWindowDrawList();
+  dl->AddLine(ImVec2(box_min.x + box - pad, header_y + pad),
+              ImVec2(box_min.x + pad, header_y + box * 0.5f), chevron, 1.6f);
+  dl->AddLine(ImVec2(box_min.x + pad, header_y + box * 0.5f),
+              ImVec2(box_min.x + box - pad, header_y + box - pad), chevron, 1.6f);
+
+  ImGui::Separator();
+  if (const PaneType *type = pane_type(pane.type); type != nullptr && type->draw != nullptr) {
+    type->draw(app.session, pane);
+  }
+  ImGui::EndChild();
+}
+
+// Vertical divider between the dock and the content workspace; drags adjust the dock width.
+void draw_dock_splitter(AppState &app, float height) {
+  ImGui::PushID("##dock_splitter");
+  ImGui::InvisibleButton("s", ImVec2(kSplitterThickness, height));
+  const bool hovered = ImGui::IsItemHovered();
+  const bool active = ImGui::IsItemActive();
+  if (hovered || active) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+  if (active) app.shell.dock_width += ImGui::GetIO().MouseDelta.x;
+  const ImVec2 rmin = ImGui::GetItemRectMin();
+  const ImVec2 rmax = ImGui::GetItemRectMax();
+  const Theme &t = theme();
+  const ImU32 color = ImGui::GetColorU32(active ? t.accent : hovered ? t.scrollbar_grab_hovered : t.separator);
+  const float cx = (rmin.x + rmax.x) * 0.5f;
+  ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(cx - 1.0f, rmin.y), ImVec2(cx + 1.0f, rmax.y), color);
+  ImGui::PopID();
+}
+
+// Thin strip shown where the dock was when collapsed; clicking reopens it (belt-and-braces with
+// the View-menu toggle).
+void draw_dock_reopen_strip(AppState &app, float height) {
+  ImGui::PushID("##dock_reopen");
+  ImGui::InvisibleButton("r", ImVec2(kDockCollapsedWidth, height));
+  const bool hovered = ImGui::IsItemHovered();
+  if (hovered) ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  if (ImGui::IsItemClicked()) app.shell.dock_open = true;
+  const ImVec2 rmin = ImGui::GetItemRectMin();
+  const ImVec2 rmax = ImGui::GetItemRectMax();
+  ImDrawList *dl = ImGui::GetWindowDrawList();
+  const Theme &t = theme();
+  dl->AddRectFilled(rmin, rmax, ImGui::GetColorU32(hovered ? t.frame_bg_hovered : t.frame_bg));
+  const float cx = (rmin.x + rmax.x) * 0.5f;
+  const float cy = (rmin.y + rmax.y) * 0.5f;
+  const float pad = kDockCollapsedWidth * 0.28f;
+  const ImU32 chevron = ImGui::GetColorU32(hovered ? t.text : t.text_muted);
+  dl->AddLine(ImVec2(cx - pad, cy - pad * 1.4f), ImVec2(cx + pad, cy), chevron, 1.6f);
+  dl->AddLine(ImVec2(cx + pad, cy), ImVec2(cx - pad, cy + pad * 1.4f), chevron, 1.6f);
+  ImGui::PopID();
+}
+
+// Lay the shell dock (fixed chrome) beside the tabbed content workspace. The dock is not part of
+// the Workspace, so a layout load replaces only the content to its right.
+void draw_shell_body(AppState &app) {
+  const float height = ImGui::GetContentRegionAvail().y;
+  if (app.shell.dock_open) {
+    const float max_width = std::max(kMinDockWidth, ImGui::GetContentRegionAvail().x - kMinContentWidth);
+    app.shell.dock_width = std::clamp(app.shell.dock_width, kMinDockWidth, max_width);
+    ImGui::BeginChild("##dock_col", ImVec2(app.shell.dock_width, height), false);
+    draw_dock_pane(app);
+    ImGui::EndChild();
+    ImGui::SameLine(0.0f, 0.0f);
+    draw_dock_splitter(app, height);
+    ImGui::SameLine(0.0f, 0.0f);
+  } else {
+    draw_dock_reopen_strip(app, height);
+    ImGui::SameLine(0.0f, 0.0f);
+  }
+  ImGui::BeginChild("##content_col", ImVec2(ImGui::GetContentRegionAvail().x, height), false);
+  draw_workspace(app);
+  ImGui::EndChild();
+}
+
 void draw_shell(AppState &app) {
   draw_main_menu(app);
 
@@ -936,7 +1050,7 @@ void draw_shell(AppState &app) {
   ImGui::Begin("Workspace", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
                                       ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
                                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-  draw_workspace(app);
+  draw_shell_body(app);
   ImGui::End();
 
   ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + viewport->WorkSize.y - status_height));
