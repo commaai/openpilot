@@ -1,4 +1,5 @@
 import math
+import os
 from multiprocessing import Queue
 
 from metadrive.component.sensors.base_camera import _cuda_enable
@@ -56,6 +57,7 @@ class MetaDriveBridge(SimulatorBridge):
     self.should_render = False
     self.test_run = test_run
     self.test_duration = test_duration if self.test_run else math.inf
+    self.ticks_per_frame = 10 if os.getenv("CI") else self.TICKS_PER_FRAME
 
   def spawn_world(self, queue: Queue):
     sensors = {
@@ -84,7 +86,7 @@ class MetaDriveBridge(SimulatorBridge):
       traffic_density=0.0, # traffic is incredibly expensive
       map_config=create_map(),
       decision_repeat=1,
-      physics_world_step_size=self.TICKS_PER_FRAME/100,
+      physics_world_step_size=self.ticks_per_frame/100,
       preload_models=False,
       show_logo=False,
       anisotropic_filtering=False

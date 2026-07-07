@@ -1,5 +1,6 @@
 import ctypes
 import functools
+import math
 import multiprocessing
 import numpy as np
 import time
@@ -50,13 +51,17 @@ class MetaDriveWorld(World):
     print("---- Spawning Metadrive world, this might take awhile ----")
     print("----------------------------------------------------------")
 
-    self.vehicle_last_pos = self.vehicle_state_recv.recv().position # wait for a state message to ensure metadrive is launched
+    self.vehicle_last_pos = self._position_tuple(self.vehicle_state_recv.recv().position) # wait for a state message to ensure metadrive is launched
     self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "started"))
 
     self.steer_ratio = 15
     self.vc = [0.0,0.0]
     self.reset_time = 0
     self.should_reset = False
+
+  @staticmethod
+  def _position_tuple(position):
+    return (float(position[0]), float(position[1]))
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
@@ -83,7 +88,7 @@ class MetaDriveWorld(World):
   def read_sensors(self, state: SimulatorState):
     while self.vehicle_state_recv.poll(0):
       md_vehicle: metadrive_vehicle_state = self.vehicle_state_recv.recv()
-      curr_pos = md_vehicle.position
+      curr_pos = self._position_tuple(md_vehicle.position)
 
       state.velocity = md_vehicle.velocity
       state.bearing = md_vehicle.bearing
@@ -99,23 +104,22 @@ class MetaDriveWorld(World):
       # check moving 5 seconds after engaged, doesn't move right away
       after_engaged_check = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run
 
-      x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
-      y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])
-      dist_threshold = 1
-      if x_dist >= dist_threshold or y_dist >= dist_threshold: # position not the same during staying still, > threshold is considered moving
-        self.distance_moved += x_dist + y_dist
+      x_dist = curr_pos[0] - self.vehicle_last_pos[0]
+      y_dist = curr_pos[1] - self.vehicle_last_pos[1]
+      self.distance_moved += math.hypot(x_dist, y_dist)
+      self.vehicle_last_pos = curr_pos
 
       time_check_threshold = 29
       current_time = time.monotonic()
       since_last_check = current_time - self.last_check_timestamp
+      dist_threshold = 1
       if since_last_check >= time_check_threshold:
-        if after_engaged_check and self.distance_moved == 0:
+        if after_engaged_check and self.distance_moved < dist_threshold:
           self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving" : True}))
           self.exit_event.set()
 
         self.last_check_timestamp = current_time
         self.distance_moved = 0
-        self.vehicle_last_pos = curr_pos
 
   def read_cameras(self):
     pass

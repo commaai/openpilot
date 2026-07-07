@@ -97,6 +97,16 @@ class TestAthenadMethods:
         break
 
   @staticmethod
+  def _wait_for_upload_retry(retry_count: int):
+    now = time.monotonic()
+    while time.monotonic() - now < 5:
+      with athenad.upload_queue.mutex:
+        items = list(athenad.upload_queue.queue)
+      if len(items) == 1 and items[0].retry_count == retry_count:
+        return
+      time.sleep(0.01)
+
+  @staticmethod
   def _create_file(file: str, parent: str | None = None, data: bytes = b'') -> str:
     fn = os.path.join(Paths.log_root() if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
@@ -268,8 +278,7 @@ class TestAthenadMethods:
     assert athenad.upload_queue.qsize() == 0
 
     athenad.upload_queue.put_nowait(item)
-    self._wait_for_upload()
-    time.sleep(0.1)
+    self._wait_for_upload_retry(1)
 
     # Check that upload item was put back in the queue with incremented retry count
     assert athenad.upload_queue.qsize() == 1

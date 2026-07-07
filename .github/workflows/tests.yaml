@@ -196,19 +196,40 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v7
       with:
         submodules: true
-    - run: ./tools/op.sh setup
+    - name: Setup openpilot with simulator dependencies
+      env:
+        INSTALL_METADRIVE: "1"
+      run: ./tools/op.sh setup
     - name: Build openpilot
+      timeout-minutes: 30
       run: scons
     - name: Driving test
-      timeout-minutes: 2
+      timeout-minutes: 5
+      env:
+        METADRIVE_CI: "1"
+        SIM_LOG_SAVE_DIR: /tmp/openpilot-sim-logs
+        SIM_LOGS: "1"
       run: |
         source openpilot/selfdrive/test/setup_xvfb.sh
-        pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+        pytest -s -n0 openpilot/tools/sim/tests/test_metadrive_bridge.py
+    - name: List simulator logs
+      if: always()
+      run: |
+        find /tmp/openpilot-sim-logs -type f \( -name 'qlog*' -o -name 'rlog*' -o -name '*camera*' \) -print || true
+    - name: Upload simulator logs
+      uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: metadrive-sim-logs-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          /tmp/openpilot-sim-logs/**/qlog*
+          /tmp/openpilot-sim-logs/**/rlog*
+          /tmp/openpilot-sim-logs/**/*camera*
+        if-no-files-found: error
 
   create_ui_report:
     name: Create UI Report
