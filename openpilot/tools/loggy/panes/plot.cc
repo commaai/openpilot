@@ -8,6 +8,7 @@
 #include "json11/json11.hpp"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "implot.h"
 
 #include <algorithm>
@@ -66,6 +67,16 @@ struct PreparedPlotSeries {
   bool stairs = false;
   bool has_tracker_value = false;
   double tracker_value = 0.0;
+  // Non-null when this is a raw enum series (value descriptions, no transform): the pane renders
+  // as jotpluggler state blocks and this maps integer values to names.
+  const std::vector<std::string> *enum_names = nullptr;
+};
+
+struct StateBlock {
+  double t0 = 0.0;
+  double t1 = 0.0;
+  int value = 0;
+  std::string label;
 };
 
 struct PlotYAxisBounds {
@@ -445,16 +456,25 @@ size_t parse_plot_max_points(std::string_view state_json, size_t fallback) {
 // rates so a legitimate value isn't lost, but bounded so it never scans the whole route).
 constexpr double kPlotTrackerLookbackSeconds = 60.0;
 
-std::vector<PreparedPlotSeries> prepare_plot_series(const Store &store,
+// Enum value names only line up with the stored samples when nothing rescales them: a
+// derivative, an axis scale/offset, or a python transform all break the value->name mapping.
+bool request_is_raw_passthrough(const PlotSeriesRequest &request) {
+  return request.transform == PlotSeriesTransform::None && request.scale == 1.0 &&
+         request.offset == 0.0 && !request.custom_python.is_object();
+}
+
+std::vector<PreparedPlotSeries> prepare_plot_series(const Session &session,
                                                    const std::vector<PlotSeriesRequest> &requests,
                                                    TimeRange range,
                                                    double tracker_time,
                                                    size_t max_points) {
+  const Store &store = session.store;
   std::vector<PreparedPlotSeries> prepared;
   prepared.reserve(requests.size());
   for (const PlotSeriesRequest &request : requests) {
     PreparedPlotSeries item;
     item.request = request;
+    if (request_is_raw_passthrough(request)) item.enum_names = session.enum_names(request.path);
     item.view = store.series(request.path, range.start_, range.end, max_points);
     item.xs.reserve(item.view.points.size());
     item.ys.reserve(item.view.points.size());
@@ -745,6 +765,157 @@ void push_zoom_history(std::vector<PlotZoomRange> *history, TimeRange range) {
 
 }  // namespace
 
+std::string state_block_row_label(const PreparedPlotSeries &series) {
+  return series.request.label.empty() ? plot_label_from_path(series.request.path) : series.request.label;
+}
+
+constexpr ImU32 kStateBlockPalette[8] = {
+  IM_COL32(111, 143, 175, 255), IM_COL32(0, 163, 108, 255), IM_COL32(255, 195, 0, 255),
+  IM_COL32(199, 0, 57, 255),    IM_COL32(123, 97, 255, 255), IM_COL32(0, 150, 136, 255),
+  IM_COL32(214, 48, 49, 255),   IM_COL32(52, 73, 94, 255),
+};
+
+ImU32 state_block_color(int value, float alpha) {
+  const ImU32 base = kStateBlockPalette[static_cast<size_t>(std::abs(value)) % 8];
+  return (base & 0x00FFFFFFu) | (static_cast<ImU32>(alpha * 255.0f) << IM_COL32_A_SHIFT);
+}
+
+std::string state_block_label(const PreparedPlotSeries &series, int value) {
+  if (series.enum_names != nullptr && value >= 0 &&
+      static_cast<size_t>(value) < series.enum_names->size()) {
+    const std::string &name = (*series.enum_names)[static_cast<size_t>(value)];
+    if (!name.empty()) return name;
+  }
+  return std::to_string(value);
+}
+
+std::vector<StateBlock> build_state_blocks(const PreparedPlotSeries &series) {
+  std::vector<StateBlock> blocks;
+  if (series.xs.size() < 2 || series.xs.size() != series.ys.size()) return blocks;
+
+  int current_value = static_cast<int>(std::llround(series.ys.front()));
+  double start_time = series.xs.front();
+  for (size_t i = 1; i < series.xs.size(); ++i) {
+    const int value = static_cast<int>(std::llround(series.ys[i]));
+    if (value == current_value) continue;
+    const double end_time = series.xs[i];
+    if (end_time > start_time) {
+      blocks.push_back({start_time, end_time, current_value, state_block_label(series, current_value)});
+    }
+    current_value = value;
+    start_time = end_time;
+  }
+  const double final_time = series.xs.back();
+  if (final_time >= start_time) {
+    blocks.push_back({start_time, final_time, current_value, state_block_label(series, current_value)});
+  }
+  return blocks;
+}
+
+// jotpluggler state-block view: one horizontal lane per enum series, each run of a constant value
+// drawn as a labelled colored block. Called inside BeginPlot with Y pinned to [0,1] and axis
+// decorations off, so it owns the whole plot rectangle.
+void draw_state_blocks(const std::vector<PreparedPlotSeries> &series) {
+  const ImPlotRange x_range = ImPlot::GetPlotLimits().X;
+  const double x_min = x_range.Min;
+  const double x_max = x_range.Max;
+  const int row_count = static_cast<int>(series.size());
+  if (row_count <= 0 || x_max <= x_min) return;
+
+  ImDrawList *draw_list = ImPlot::GetPlotDrawList();
+  const ImVec2 plot_min = ImPlot::GetPlotPos();
+  const ImVec2 plot_size = ImPlot::GetPlotSize();
+  if (plot_size.x <= 2.0f || plot_size.y <= 2.0f) return;
+
+  float label_width = 0.0f;
+  if (row_count > 1) {
+    for (const PreparedPlotSeries &item : series) {
+      label_width = std::max(label_width, ImGui::CalcTextSize(state_block_row_label(item).c_str()).x);
+    }
+    label_width = std::clamp(label_width + 14.0f, 72.0f, std::min(160.0f, plot_size.x * 0.35f));
+  }
+
+  const float row_height = plot_size.y / static_cast<float>(row_count);
+  const float blocks_min_x = plot_min.x + label_width;
+  const float blocks_max_x = plot_min.x + plot_size.x;
+  const float blocks_width = std::max(1.0f, blocks_max_x - blocks_min_x);
+  const double x_span = std::max(1.0e-9, x_max - x_min);
+
+  struct HoveredBlock {
+    int row = -1;
+    StateBlock block;
+  };
+  std::optional<HoveredBlock> hovered;
+  const ImVec2 mouse_pos = ImGui::GetMousePos();
+  const bool plot_hovered = ImPlot::IsPlotHovered();
+
+  for (int row = 0; row < row_count; ++row) {
+    const PreparedPlotSeries &item = series[static_cast<size_t>(row)];
+    const float y0 = plot_min.y + row_height * static_cast<float>(row);
+    const float y1 = y0 + row_height;
+    const std::vector<StateBlock> blocks = build_state_blocks(item);
+
+    if (row > 0) {
+      draw_list->AddLine(ImVec2(plot_min.x, y0), ImVec2(plot_min.x + plot_size.x, y0),
+                         IM_COL32(210, 214, 220, 255), 1.0f);
+    }
+    if (row_count > 1) {
+      const std::string label = state_block_row_label(item);
+      draw_list->AddLine(ImVec2(blocks_min_x, y0), ImVec2(blocks_min_x, y1),
+                         IM_COL32(210, 214, 220, 255), 1.0f);
+      const float label_left = plot_min.x + 6.0f;
+      const float label_right = std::max(label_left + 12.0f, blocks_min_x - 6.0f);
+      ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(120, 128, 138, 255));
+      ImGui::RenderTextEllipsis(draw_list, ImVec2(label_left, y0 + 4.0f), ImVec2(label_right, y1 - 4.0f),
+                                label_right, label.c_str(), nullptr, nullptr);
+      ImGui::PopStyleColor();
+    }
+
+    for (const StateBlock &block : blocks) {
+      const double visible_t0 = std::max(block.t0, x_min);
+      const double visible_t1 = std::min(block.t1, x_max);
+      if (visible_t1 <= visible_t0) continue;
+      const float x0 = blocks_min_x + static_cast<float>((visible_t0 - x_min) / x_span) * blocks_width;
+      const float x1 = blocks_min_x + static_cast<float>((visible_t1 - x_min) / x_span) * blocks_width;
+      draw_list->AddRectFilled(ImVec2(x0, y0), ImVec2(std::max(x1, x0 + 1.0f), y1),
+                               state_block_color(block.value, 0.15f));
+      draw_list->AddLine(ImVec2(x0, y0), ImVec2(x0, y1), state_block_color(block.value, 0.90f), 2.0f);
+
+      if (x1 - x0 > 14.0f) {
+        const float text_left = x0 + 6.0f;
+        const float text_right = x1 - 6.0f;
+        if (text_right > text_left) {
+          ImGui::PushStyleColor(ImGuiCol_Text, state_block_color(block.value, 0.90f));
+          ImGui::RenderTextEllipsis(draw_list, ImVec2(text_left, y0 + 4.0f), ImVec2(text_right, y1 - 4.0f),
+                                    text_right, block.label.c_str(), nullptr, nullptr);
+          ImGui::PopStyleColor();
+        }
+      }
+
+      if (plot_hovered && mouse_pos.x >= blocks_min_x && mouse_pos.x <= blocks_max_x &&
+          mouse_pos.y >= y0 && mouse_pos.y <= y1) {
+        const double hover_time = x_min + static_cast<double>((mouse_pos.x - blocks_min_x) / blocks_width) * x_span;
+        if (hover_time >= block.t0 && hover_time <= block.t1) hovered = HoveredBlock{row, block};
+      }
+    }
+  }
+
+  if (hovered.has_value()) {
+    const HoveredBlock &info = *hovered;
+    ImGui::BeginTooltip();
+    if (row_count > 1) {
+      ImGui::Text("%s: %s (%d)", state_block_row_label(series[static_cast<size_t>(info.row)]).c_str(),
+                  info.block.label.c_str(), info.block.value);
+    } else {
+      ImGui::Text("%s (%d)", info.block.label.c_str(), info.block.value);
+    }
+    ImGui::Separator();
+    ImGui::Text("%.3fs -> %.3fs", info.block.t0, info.block.t1);
+    ImGui::Text("duration: %.3fs", info.block.t1 - info.block.t0);
+    ImGui::EndTooltip();
+  }
+}
+
 void draw_plot_pane(Session &session, PaneInstance &pane) {
   // jotpluggler look: no toolbar, no chip row — the chart fills the pane, and every control
   // (add series, style, y limits, undo zoom) lives in the right-click menu.
@@ -780,7 +951,7 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   const std::vector<PlotSeriesRequest> requests = parse_plot_series_requests(pane.state_json);
   const size_t pixel_cap = static_cast<size_t>(std::max(256.0f, ImGui::GetContentRegionAvail().x * 2.0f));
   const size_t max_points = parse_plot_max_points(pane.state_json, pixel_cap);
-  std::vector<PreparedPlotSeries> series = prepare_plot_series(session.store, requests, range,
+  std::vector<PreparedPlotSeries> series = prepare_plot_series(session, requests, range,
                                                                session.playback.tracker_time(), max_points);
   const PlotYAxisBounds y_bounds = compute_plot_y_axis_bounds(series, y_limits);
 
@@ -794,10 +965,17 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
     label_width = std::max(label_width, item.request.label.size());
   }
 
+  // A pane whose every series is an enum renders as jotpluggler state blocks instead of lines.
+  bool state_block_mode = has_points;
+  for (const PreparedPlotSeries &item : series) {
+    if (item.enum_names == nullptr) { state_block_mode = false; break; }
+  }
+
   double x_min = range.start_;
   double x_max = range.end > range.start_ ? range.end : range.start_ + 1.0;
   ImPlotFlags plot_flags = ImPlotFlags_NoTitle | ImPlotFlags_NoMenus;
   if (!has_points) plot_flags |= ImPlotFlags_NoLegend;
+  if (state_block_mode) plot_flags |= ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText;
 
   // All theme-constant ImPlot colors and legend padding/spacing are set once in apply_theme().
   const Theme &t = theme();
@@ -811,45 +989,57 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   if (ImPlot::BeginPlot("##loggy_plot", ImGui::GetContentRegionAvail(), plot_flags)) {
     // RangeFit: Y AutoFit considers only samples inside the visible X window, so off-screen
     // extremes don't drag the axis (jotpluggler does the same). Paired with peak-preserving
-    // decimation, this is what stops the Y range from jittering during playback.
-    ImPlot::SetupAxes(nullptr, nullptr,
-                      ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight,
-                      ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight |
-                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
+    // decimation, this is what stops the Y range from jittering during playback. State-block
+    // panes pin Y to [0,1] and drop its decorations — the lanes own the whole rectangle.
+    ImPlotAxisFlags y_axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight;
+    if (state_block_mode) {
+      y_axis_flags |= ImPlotAxisFlags_NoDecorations;
+    } else {
+      y_axis_flags |= ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    }
+    ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight, y_axis_flags);
     ImPlot::SetupAxisFormat(ImAxis_X1, "%.1f");
-    ImPlot::SetupAxisFormat(ImAxis_Y1, "%.6g");
     ImPlot::SetupAxisLinks(ImAxis_X1, &x_min, &x_max);
-    ImPlot::SetupMouseText(ImPlotLocation_SouthEast, ImPlotMouseTextFlags_NoAuxAxes);
     ImPlot::SetupAxisLimitsConstraints(ImAxis_X1, session.playback.route_range().start_,
                                        session.playback.route_range().end);
-    if (y_bounds.active) ImPlot::SetupAxisLimits(ImAxis_Y1, y_bounds.min, y_bounds.max, ImPlotCond_Always);
-    if (has_points) ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+    if (state_block_mode) {
+      ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, 1.0, ImPlotCond_Always);
+    } else {
+      ImPlot::SetupAxisFormat(ImAxis_Y1, "%.6g");
+      ImPlot::SetupMouseText(ImPlotLocation_SouthEast, ImPlotMouseTextFlags_NoAuxAxes);
+      if (y_bounds.active) ImPlot::SetupAxisLimits(ImAxis_Y1, y_bounds.min, y_bounds.max, ImPlotCond_Always);
+      if (has_points) ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+    }
 
-    for (size_t i = 0; i < series.size(); ++i) {
-      const PreparedPlotSeries &item = series[i];
-      if (item.xs.size() < 2 || item.xs.size() != item.ys.size()) continue;
+    if (state_block_mode) {
+      draw_state_blocks(series);
+    } else {
+      for (size_t i = 0; i < series.size(); ++i) {
+        const PreparedPlotSeries &item = series[i];
+        if (item.xs.size() < 2 || item.xs.size() != item.ys.size()) continue;
 
-      const PlotSeriesStyle item_style = plot_effective_series_style(item, style);
-      ImPlotSpec spec;
-      spec.LineColor = plot_color_for_request(item.request, i);
-      spec.LineWeight = item_style == PlotSeriesStyle::Step ? 1.8f : 2.25f;
-      if (item_style == PlotSeriesStyle::Step) {
-        spec.Flags = ImPlotStairsFlags_PreStep;
-      } else if (item_style == PlotSeriesStyle::Scatter) {
-        spec.Marker = ImPlotMarker_Circle;
-        spec.MarkerSize = 3.0f;
-        spec.MarkerFillColor = spec.LineColor;
-        spec.LineWeight = 0.0f;
-      } else {
-        spec.Flags = ImPlotLineFlags_SkipNaN;
-      }
-      const std::string label = legend_label(item, label_width) + "###series_" + std::to_string(i) + "_" + item.request.path;
-      if (item_style == PlotSeriesStyle::Step) {
-        ImPlot::PlotStairs(label.c_str(), item.xs.data(), item.ys.data(), static_cast<int>(item.xs.size()), spec);
-      } else if (item_style == PlotSeriesStyle::Scatter) {
-        ImPlot::PlotScatter(label.c_str(), item.xs.data(), item.ys.data(), static_cast<int>(item.xs.size()), spec);
-      } else {
-        ImPlot::PlotLine(label.c_str(), item.xs.data(), item.ys.data(), static_cast<int>(item.xs.size()), spec);
+        const PlotSeriesStyle item_style = plot_effective_series_style(item, style);
+        ImPlotSpec spec;
+        spec.LineColor = plot_color_for_request(item.request, i);
+        spec.LineWeight = item_style == PlotSeriesStyle::Step ? 1.8f : 2.25f;
+        if (item_style == PlotSeriesStyle::Step) {
+          spec.Flags = ImPlotStairsFlags_PreStep;
+        } else if (item_style == PlotSeriesStyle::Scatter) {
+          spec.Marker = ImPlotMarker_Circle;
+          spec.MarkerSize = 3.0f;
+          spec.MarkerFillColor = spec.LineColor;
+          spec.LineWeight = 0.0f;
+        } else {
+          spec.Flags = ImPlotLineFlags_SkipNaN;
+        }
+        const std::string label = legend_label(item, label_width) + "###series_" + std::to_string(i) + "_" + item.request.path;
+        if (item_style == PlotSeriesStyle::Step) {
+          ImPlot::PlotStairs(label.c_str(), item.xs.data(), item.ys.data(), static_cast<int>(item.xs.size()), spec);
+        } else if (item_style == PlotSeriesStyle::Scatter) {
+          ImPlot::PlotScatter(label.c_str(), item.xs.data(), item.ys.data(), static_cast<int>(item.xs.size()), spec);
+        } else {
+          ImPlot::PlotLine(label.c_str(), item.xs.data(), item.ys.data(), static_cast<int>(item.xs.size()), spec);
+        }
       }
     }
 

@@ -9,6 +9,8 @@
 #include <string_view>
 #include <mutex>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <thread>
 #include <vector>
@@ -148,6 +150,10 @@ public:
   RouteIngestStatus status() const;
   std::vector<TimelineSpan> drain_timeline_spans();
   std::vector<LogEntry> drain_log_entries();
+  // Enum value-name tables (path -> names indexed by value) for cereal enum fields, harvested
+  // from the extract schema. Schema-constant, so each path is staged at most once; the drain
+  // returns only paths not yet handed to the UI.
+  std::unordered_map<std::string, std::vector<std::string>> drain_enum_metadata();
 
 private:
   void run(RouteIngestConfig config);
@@ -155,6 +161,7 @@ private:
   void mutate_status(void (*fn)(RouteIngestStatus *));
   void stage_timeline_spans(std::vector<TimelineSpan> spans);
   void stage_log_entries(std::vector<LogEntry> logs);
+  void stage_enum_metadata(std::unordered_map<std::string, std::vector<std::string>> enum_names);
   // Workers call this once per loaded segment with that segment's real content end; it only
   // ever grows, so concurrent out-of-order segment completions still converge on the honest max.
   void extend_content_end(double end);
@@ -168,6 +175,9 @@ private:
   std::vector<TimelineSpan> staged_timeline_spans_;
   mutable std::mutex logs_mutex_;
   std::vector<LogEntry> staged_logs_;
+  mutable std::mutex enum_mutex_;
+  std::unordered_set<std::string> enum_seen_;
+  std::unordered_map<std::string, std::vector<std::string>> pending_enum_names_;
 };
 
 }  // namespace loggy

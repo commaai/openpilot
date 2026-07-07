@@ -17,6 +17,8 @@
 #include <array>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -104,6 +106,10 @@ public:
   std::string plot_decoded_signal(const MessageId &id, const std::string &signal_name);
   DrainResult begin_frame();
   void seed_demo_data();
+  // Enum value-name table for a series path (cereal enum fields and decoded DBC signals with
+  // value descriptions), indexed by integer value; nullptr if the series is not an enum. Plots
+  // of only-enum series render as jotpluggler state blocks. UI-thread only.
+  const std::vector<std::string> *enum_names(std::string_view path) const;
 
 private:
   void update_car_fingerprint(std::string fingerprint);
@@ -113,6 +119,10 @@ private:
   // Decoded DBC signals the user asked to plot (id, signal name); re-derived when the DBC edits.
   std::vector<std::pair<MessageId, std::string>> decoded_signals_;
   uint64_t decoded_signals_dbc_generation_ = 0;
+
+  // Series path -> enum value names (dense, indexed by value). Fed by the ingest enum drain
+  // (cereal fields) and materialize_decoded_signal (DBC value descriptions). UI-thread only.
+  std::unordered_map<std::string, std::vector<std::string>> series_enum_names_;
 
   RouteIngestor route_ingest_;
   // In-flight auto DBC parse (fingerprint arrival mid-load): parsed on a worker, adopted in

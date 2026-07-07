@@ -574,6 +574,27 @@ std::string decoded_signal_path(const MessageId &id, const std::string &signal_n
   return buf;
 }
 
+// A DBC value-description list is a sparse {value -> name} map; the state-block renderer wants a
+// dense vector indexed by integer value. Returns empty (not an enum) when there are no
+// descriptions or the value range is too wide to be a real enumeration.
+std::vector<std::string> dense_enum_names_from_val_desc(const ValueDescription &val_desc) {
+  constexpr int kMaxEnumValue = 1024;
+  int max_value = -1;
+  for (const auto &[value, name] : val_desc) {
+    const long rounded = std::lround(value);
+    if (rounded < 0 || rounded > kMaxEnumValue) continue;
+    max_value = std::max(max_value, static_cast<int>(rounded));
+  }
+  if (max_value < 0) return {};
+  std::vector<std::string> names(static_cast<size_t>(max_value) + 1);
+  for (const auto &[value, name] : val_desc) {
+    const long rounded = std::lround(value);
+    if (rounded < 0 || rounded > max_value) continue;
+    names[static_cast<size_t>(rounded)] = name;
+  }
+  return names;
+}
+
 }  // namespace
 
 void Session::materialize_decoded_signal(const MessageId &id, const std::string &signal_name) {
@@ -596,6 +617,15 @@ void Session::materialize_decoded_signal(const MessageId &id, const std::string 
     }
   }
 
+  // Value descriptions in the DBC make this an enum series: register (or clear, if the edit
+  // removed them) so its plot renders as state blocks with named values.
+  std::vector<std::string> names = dense_enum_names_from_val_desc(decoder.val_desc);
+  if (names.empty()) {
+    series_enum_names_.erase(chunk.path);
+  } else {
+    series_enum_names_.insert_or_assign(chunk.path, std::move(names));
+  }
+
   StoreBatch batch;
   batch.replace_series_paths.push_back(chunk.path);  // replace any prior decode of this signal
   if (!chunk.points.empty()) {
@@ -604,6 +634,11 @@ void Session::materialize_decoded_signal(const MessageId &id, const std::string 
     batch.series.push_back(std::move(chunk));
   }
   store.stage(std::move(batch));
+}
+
+const std::vector<std::string> *Session::enum_names(std::string_view path) const {
+  const auto it = series_enum_names_.find(std::string(path));
+  return it != series_enum_names_.end() && !it->second.empty() ? &it->second : nullptr;
 }
 
 std::string Session::plot_decoded_signal(const MessageId &id, const std::string &signal_name) {
@@ -899,6 +934,9 @@ DrainResult Session::begin_frame() {
 
   stage_ms("ingest_meta", mark);
   append_and_sort_logs(&logs, route_ingest_.drain_log_entries());
+  for (auto &[path, names] : route_ingest_.drain_enum_metadata()) {
+    series_enum_names_.insert_or_assign(path, std::move(names));
+  }
   stage_ms("logs", mark);
 
   TimeRange live_keep_range;

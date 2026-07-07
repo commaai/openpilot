@@ -111,9 +111,14 @@ check "named header structs" \
 # peak-preserving decimation + RangeFit, cursor-follow scroll, parallel shutdown. pane header
 # fns 15->17 (browser/plot special-item + added-series helpers), structs 85->86 (SpecialItemPane),
 # runtime.cc 1074->1217 (pane drop zones + layout apply).
+# ->22845 (2026-07-06) enum state-block plots (deferred manual-review #6): cereal enum names
+# plumbed through ingest (route drain_enum_metadata) into a session enum registry, DBC value
+# descriptions attached in materialize_decoded_signal, and jotpluggler's StateBlock renderer
+# (build_state_blocks/state_block_color/state_block_label/draw_state_blocks) ported into plot.cc.
+# A whole capability (named-state lanes), not padding.
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  22576
+  22845
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.

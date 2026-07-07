@@ -706,6 +706,7 @@ struct SegmentLoadResult {
   StoreBatch batch;
   std::vector<TimelineSpan> timeline_spans;
   std::vector<LogEntry> logs;
+  std::unordered_map<std::string, std::vector<std::string>> enum_names;
   std::string car_fingerprint;
   // Real (not nominal-segment-slot) end of this segment's content — see extend_content_end().
   double content_end = 0.0;
@@ -761,6 +762,9 @@ SegmentLoadResult load_route_segment(const SegmentWorkItem &work, bool local_cac
 
   SegmentLoadResult result;
   result.batch = std::move(extracted.batch);
+  for (auto &[path, meta] : extracted.metadata) {
+    if (!meta.enum_names.empty()) result.enum_names.emplace(path, std::move(meta.enum_names));
+  }
   result.timeline_spans = extract_timeline_spans(reader.events, extract.time_offset_seconds());
   result.logs = extract_log_entries(reader.events, extract.time_offset_seconds());
   result.car_fingerprint = extract_car_fingerprint(reader.events);
@@ -835,6 +839,13 @@ std::vector<LogEntry> RouteIngestor::drain_log_entries() {
   return logs;
 }
 
+std::unordered_map<std::string, std::vector<std::string>> RouteIngestor::drain_enum_metadata() {
+  std::lock_guard lock(enum_mutex_);
+  std::unordered_map<std::string, std::vector<std::string>> out;
+  out.swap(pending_enum_names_);
+  return out;
+}
+
 void RouteIngestor::run(RouteIngestConfig config) {
   const auto started_at = Clock::now();
   try {
@@ -879,6 +890,7 @@ void RouteIngestor::run(RouteIngestConfig config) {
           if (loaded.content_end > 0.0) extend_content_end(loaded.content_end);
           stage_timeline_spans(std::move(loaded.timeline_spans));
           stage_log_entries(std::move(loaded.logs));
+          stage_enum_metadata(std::move(loaded.enum_names));
           scheduler_->publish(std::move(loaded.batch));
           mutate_status(mark_loaded);
           mutate_status(mark_published);
@@ -952,6 +964,18 @@ void RouteIngestor::stage_log_entries(std::vector<LogEntry> logs) {
   staged_logs_.insert(staged_logs_.end(),
                       std::make_move_iterator(logs.begin()),
                       std::make_move_iterator(logs.end()));
+}
+
+void RouteIngestor::stage_enum_metadata(std::unordered_map<std::string, std::vector<std::string>> enum_names) {
+  if (enum_names.empty()) return;
+  // Enum tables are schema-constant, so every segment carries the same set; stage each path
+  // once (enum_seen_) and only queue paths the UI hasn't drained yet.
+  std::lock_guard lock(enum_mutex_);
+  for (auto &[path, names] : enum_names) {
+    if (names.empty()) continue;
+    if (!enum_seen_.insert(path).second) continue;
+    pending_enum_names_.emplace(path, std::move(names));
+  }
 }
 
 }  // namespace loggy

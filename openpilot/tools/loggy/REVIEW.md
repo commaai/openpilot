@@ -17,10 +17,20 @@ white canvas, split-to-empty-plot, close X), `7d724152a` (manual-review pass). D
   binary-view message-history chips; message editor collapses so the signal list is primary.
 - Shell: Ctrl+Z undoes DBC-edit-then-workspace; parallel shutdown for a snappy exit.
 
-**Deferred (documented):** enum/state-block plot rendering — needs enum-name propagation through
-the whole extract pipeline (`SeriesMetadata::enum_names` is dropped in route.cc today). Plots are
-stable and clean without it, so it is a scoped follow-up, not a rushed multi-file change. Also
-open from round-3: the exports timestamp/atomicity cluster.
+**Enum/state-block plots — now landed (was deferred #6).** Enum names are propagated through the
+extract pipeline (`SegmentExtractResult.metadata`, previously dropped in route.cc) via a new
+ingest drain (`RouteIngestor::drain_enum_metadata`, same staged-under-mutex / drained-once pattern
+as timeline spans and logs) into a session enum registry keyed by series path. DBC value
+descriptions (`Signal::val_desc`) feed the same registry in `materialize_decoded_signal`, so
+decoded-CAN signals with value tables also render as blocks. A pane whose every series is an enum
+switches to jotpluggler's state-block renderer (`build_state_blocks` / `state_block_color` /
+`state_block_label` / `draw_state_blocks` ported into plot.cc): one labelled colored lane per
+series, Y pinned to [0,1] with decorations off, hover tooltip showing value/name/range/duration.
+A scale/offset/derivative/python transform disqualifies a series (the value→name map no longer
+holds), so those fall back to lines. GUI-verified on the demo route: `/carState/gearShifter`→"drive"
+and `/selfdriveState/state`→colored disabled/enabled lanes, while `/carState/vEgo` stays a line.
+
+**Deferred (documented):** still open from round-3, the exports timestamp/atomicity cluster.
 
 Historical v4/v3/v2 content follows for the audit trail.
 
