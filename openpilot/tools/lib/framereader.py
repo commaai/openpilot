@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from collections import OrderedDict
 
 import numpy as np
-from openpilot.tools.lib.filereader import FileReader, resolve_name
+from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.exceptions import DataUnreadableError
 from openpilot.tools.lib.vidindex import hevc_index
 
@@ -67,7 +67,6 @@ def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc', hwaccel
   return ret
 
 def ffprobe(fn, fmt=None):
-  fn = resolve_name(fn)
   cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"]
   if fmt:
     cmd += ["-f", fmt]

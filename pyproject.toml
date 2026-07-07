@@ -70,6 +70,10 @@ dependencies = [
   "pycryptodome", # used in panda, body, and a test
   "setproctitle",
 
+  # filereader
+  "fsspec[http]",
+  "mkv @ git+https://github.com/commaai/mkvfs.git",
+
   # logreader
   "zstandard",
 

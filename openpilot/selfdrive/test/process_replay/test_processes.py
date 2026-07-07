@@ -16,7 +16,6 @@ from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC
                                                                    check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
-from openpilot.tools.lib.url_file import URLFile
 
 source_segments = [
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA
@@ -157,7 +156,8 @@ if __name__ == "__main__":
     with open(REF_COMMIT_FN) as f:
       ref_commit = f.read().strip()
   except FileNotFoundError:
-    ref_commit = URLFile(BASE_URL + "ref_commit", cache=False).read().decode().strip()
+    with FileReader(BASE_URL + "ref_commit", cache=False) as f:
+      ref_commit = f.read().decode().strip()
 
   cur_commit = get_commit()
   if not cur_commit:

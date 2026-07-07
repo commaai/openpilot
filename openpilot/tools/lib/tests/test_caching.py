@@ -1,14 +1,13 @@
 import http.server
 import os
 import shutil
-import socket
 import tempfile
 import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.common.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile, prune_cache
-import openpilot.tools.lib.url_file as url_file_module
+from openpilot.tools.lib.filereader import ChunkCache, FsspecFile
+import openpilot.tools.lib.filereader as filereader_module
 
 
 class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -38,36 +37,18 @@ def host():
 class TestFileDownload:
 
   def test_pipeline_defaults(self, host):
-    # TODO: parameterize the defaults so we don't rely on hard-coded values in xx
-
-    assert URLFile.pool_manager().pools._maxsize == 10# PoolManager num_pools param
-    pool_manager_defaults = {
-      "maxsize": 100,
-      "socket_options": [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),],
-    }
-    for k, v in pool_manager_defaults.items():
-      assert URLFile.pool_manager().connection_pool_kw.get(k) == v
-
-    retry_defaults = {
-      "total": 5,
-      "backoff_factor": 0.5,
-      "status_forcelist": [409, 429, 503, 504],
-    }
-    for k, v in retry_defaults.items():
-      assert getattr(URLFile.pool_manager().connection_pool_kw["retries"], k) == v
-
     # ensure caching on by default and cache dir gets created
     os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     if os.path.exists(Paths.download_cache_root()):
       shutil.rmtree(Paths.download_cache_root())
-    URLFile(f"{host}/test.txt").get_length()
-    URLFile(f"{host}/test.txt").read()
+    FsspecFile(f"{host}/test.txt").get_length()
+    FsspecFile(f"{host}/test.txt").read()
     assert os.path.exists(Paths.download_cache_root())
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    file_cached = URLFile(url, cache=True)
-    file_downloaded = URLFile(url, cache=False)
+    file_cached = FsspecFile(url, cache=True)
+    file_downloaded = FsspecFile(url, cache=False)
 
     file_cached.seek(start)
     file_downloaded.seek(start)
@@ -81,7 +62,7 @@ class TestFileDownload:
     assert response_cached == response_downloaded
 
     # Now test with cache in place
-    file_cached = URLFile(url, cache=True)
+    file_cached = FsspecFile(url, cache=True)
     file_cached.seek(start)
     response_cached = file_cached.read(ll=length)
 
@@ -98,7 +79,7 @@ class TestFileDownload:
     #  Load full small file
     self.compare_loads(small_file_url)
 
-    file_small = URLFile(small_file_url)
+    file_small = FsspecFile(small_file_url)
     length = file_small.get_length()
 
     self.compare_loads(small_file_url, length - 100, 100)
@@ -111,7 +92,7 @@ class TestFileDownload:
   def test_large_file(self):
     large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
     #  Load the end 100 bytes of both files
-    file_large = URLFile(large_file_url)
+    file_large = FsspecFile(large_file_url)
     length = file_large.get_length()
 
     self.compare_loads(large_file_url, length - 100, 100)
@@ -127,11 +108,11 @@ class TestFileDownload:
     file_url = f"{host}/test.png"
 
     CachingTestRequestHandler.FILE_EXISTS = False
-    length = URLFile(file_url).get_length()
+    length = FsspecFile(file_url).get_length()
     assert length == -1
 
     CachingTestRequestHandler.FILE_EXISTS = True
-    length = URLFile(file_url).get_length()
+    length = FsspecFile(file_url).get_length()
     assert length == 4
 
 
@@ -152,14 +133,14 @@ class TestCache:
 
       # under limit, shouldn't prune
       assert len(os.listdir(tmpdir)) == 4
-      prune_cache()
+      ChunkCache.prune_cache()
       assert len(os.listdir(tmpdir)) == 4
 
       # set a tiny cache limit to force eviction (1.5 chunks worth)
-      monkeypatch.setattr(url_file_module, 'CACHE_SIZE', url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
+      monkeypatch.setattr(filereader_module, 'CACHE_SIZE', filereader_module.CHUNK_SIZE + filereader_module.CHUNK_SIZE // 2)
 
       # prune_cache should evict oldest files to get under limit
-      prune_cache()
+      ChunkCache.prune_cache()
       remaining = os.listdir(tmpdir)
       # should have evicted at least one file + manifest
       assert len(remaining) < 4

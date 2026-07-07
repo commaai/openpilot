@@ -13,7 +13,6 @@ from openpilot.cereal import log as capnp_log
 from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
 from openpilot.tools.lib.file_sources import comma_api_source, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
-from openpilot.tools.lib.url_file import URLFileException
 
 NUM_SEGS = 17  # number of segments in the test route
 ALL_SEGS = list(range(NUM_SEGS))
@@ -92,7 +91,7 @@ class TestLogReader:
 
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_direct_parsing(self, mocker, cache_enabled):
-    file_exists_mock = mocker.patch("openpilot.tools.lib.filereader.file_exists")
+    exists_mock = mocker.patch("openpilot.tools.lib.filereader.FsspecFile.exists")
     if cache_enabled:
       os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     else:
@@ -107,11 +106,11 @@ class TestLogReader:
       l = len(list(LogReader(f)))
       assert l > 100
 
-    with pytest.raises(URLFileException) if not cache_enabled else pytest.raises(AssertionError):
+    with pytest.raises((FileNotFoundError, OSError)):
       l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
 
-    # file_exists should not be called for direct files
-    assert file_exists_mock.call_count == 0
+    # direct files should not go through source probing
+    assert exists_mock.call_count == 0
 
   @parameterized.expand([
     (f"{TEST_ROUTE}///",),
