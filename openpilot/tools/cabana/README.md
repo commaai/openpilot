@@ -10,7 +10,6 @@ Usage: ./cabana [options] route
 
 Options:
   -h, --help                     Displays help on commandline options.
-  --help-all                     Displays help including Qt specific options.
   --demo                         use a demo route instead of providing your own
   --auto                         Auto load the route from the best available source (no video):
                                  internal, openpilotci, comma_api, car_segments, testing_closet
@@ -25,6 +24,10 @@ Options:
   --data_dir <data_dir>          local directory with routes
   --no-vipc                      do not output video
   --dbc <dbc>                    dbc file to open
+  --width <pixels>               window width (default 1600)
+  --height <pixels>              window height (default 900)
+  --output <png>                 render headless and capture a screenshot
+  --theme <light|dark>           color theme (default light)
 
 Arguments:
   route                          the drive to replay. find your drives at

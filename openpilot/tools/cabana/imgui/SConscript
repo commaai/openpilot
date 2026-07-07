@@ -1,0 +1,68 @@
+import os
+
+import bootstrap_icons
+import imgui
+import libusb
+from openpilot.common.basedir import BASEDIR
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
+
+cabana_imgui_env = env.Clone()
+cabana_imgui_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
+cabana_imgui_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
+cabana_imgui_env["CXXFLAGS"] += [
+  "-DGLFW_INCLUDE_NONE",
+  '-DCABANA_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
+  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
+  '-DOPENDBC_FILE_PATH=\'"%s"\'' % cabana_imgui_env.Dir('#opendbc/dbc').abspath,
+]
+
+# Qt-free core (DBC + streams), shared by the imgui UI and its Catch2 tests.
+cabana_core_srcs = [
+  "../dbc/dbc.cc",
+  "../dbc/dbcfile.cc",
+  "../dbc/dbcmanager.cc",
+  "../utils/util_core.cc",
+  "../settings.cc",
+  "../commands.cc",
+  "../panda.cc",
+  "../streams/abstractstream.cc",
+  "../streams/replaystream.cc",
+  "../streams/livestream.cc",
+  "../streams/pandastream.cc",
+  "../streams/devicestream.cc",
+]
+if arch != "Darwin":
+  cabana_core_srcs += ["../streams/socketcanstream.cc"]
+cabana_core = cabana_imgui_env.Library("cabana_core", cabana_core_srcs, LIBS=[common])
+
+libs = [cabana_core, replay_lib, common, messaging, visionipc, cereal,
+        File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"),
+        "avformat", "avcodec", "swresample", "avutil", "x264", "yuv",
+        "z", "bz2", "zstd", "zmq", "usb-1.0", "m", "pthread"]
+if arch == "Darwin":
+  cabana_imgui_env["FRAMEWORKS"] = [
+    "OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo",
+    "CoreMedia", "VideoToolbox", "Security",
+  ]
+else:
+  libs += ["GL", "dl", "va", "va-drm", "drm"]
+
+cabana_imgui_prog = cabana_imgui_env.Program('_cabana', cabana_imgui_env.Glob('*.cc'), LIBS=libs)
+
+# car_fingerprint_to_dbc.json: fingerprint -> opendbc filename map, used by
+# dbc_menus.cc's auto-load-on-stream-start. Moved here from the (now Qt-only,
+# frozen/disabled) tools/cabana/SConscript so it's built for the imgui app.
+output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
+generate_dbc = cabana_imgui_env.Command('#' + output_json_file,
+                                        ['../dbc/generate_dbc_json.py'],
+                                        "python3 openpilot/tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
+cabana_imgui_env.Depends(generate_dbc, ["#openpilot/common", '#opendbc_repo', "#openpilot/cereal", "#msgq_repo"])
+cabana_imgui_env.Depends(cabana_imgui_prog, generate_dbc)
+
+if GetOption('extras'):
+  test_env = cabana_imgui_env.Clone()
+  test_env.Program('test_cabana_core', [
+    '../tests/test_runner.cc',
+    '../tests/test_cabana.cc',
+  ], LIBS=libs)

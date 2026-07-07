@@ -1,9 +1,10 @@
 #include "tools/cabana/streams/abstractstream.h"
 
+#include <cmath>
+#include <cstring>
 #include <limits>
 #include <utility>
 
-#include <QApplication>
 #include "common/timing.h"
 #include "tools/cabana/settings.h"
 
@@ -11,15 +12,11 @@ static const int EVENT_NEXT_BUFFER_SIZE = 6 * 1024 * 1024;  // 6MB
 
 AbstractStream *can = nullptr;
 
-AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
-  assert(parent != nullptr);
+AbstractStream::AbstractStream() : ui_thread_id_(std::this_thread::get_id()) {
   event_buffer_ = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
 
-  QObject::connect(this, &AbstractStream::privateUpdateLastMsgsSignal, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
-  QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
-  QObject::connect(this, &AbstractStream::seeking, this, [this](double sec) { current_sec_ = sec; });
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
-  QObject::connect(dbc(), &DBCManager::maskUpdated, this, &AbstractStream::updateMasks);
+  dbc()->DBCFileChanged.connect([this]() { updateMasks(); });
+  dbc()->maskUpdated.connect([this]() { updateMasks(); });
 }
 
 void AbstractStream::updateMasks() {
@@ -73,6 +70,26 @@ void AbstractStream::clearSuppressed() {
   }
 }
 
+void AbstractStream::enqueue(std::function<void()> action) {
+  std::lock_guard lk(actions_mutex_);
+  actions_.push_back(std::move(action));
+}
+
+void AbstractStream::update() {
+  std::deque<std::function<void()>> actions;
+  {
+    std::lock_guard lk(actions_mutex_);
+    actions.swap(actions_);
+  }
+  for (auto &action : actions) action();
+
+  double ts = millis_since_boot();
+  if ((ts - last_update_ts_) > (1000.0 / settings.fps)) {
+    updateLastMessages();
+    last_update_ts_ = ts;
+  }
+}
+
 void AbstractStream::updateLastMessages() {
   auto prev_src_size = sources.size();
   auto prev_msg_size = last_msgs.size();
@@ -96,9 +113,9 @@ void AbstractStream::updateLastMessages() {
 
   if (sources.size() != prev_src_size) {
     updateMasks();
-    emit sourcesUpdated(sources);
+    sourcesUpdated(sources);
   }
-  emit msgsReceived(&msgs, prev_msg_size != last_msgs.size());
+  msgsReceived(&msgs, prev_msg_size != last_msgs.size());
 }
 
 void AbstractStream::setTimeRange(const std::optional<std::pair<double, double>> &range) {
@@ -106,7 +123,7 @@ void AbstractStream::setTimeRange(const std::optional<std::pair<double, double>>
   if (time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {
     seekTo(time_range_->first);
   }
-  emit timeRangeChanged(time_range_);
+  timeRangeChanged(time_range_);
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
@@ -174,7 +191,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
                     std::any_of(messages_.cbegin(), messages_.cend(),
                                 [this](const auto &m) { return !last_msgs.count(m.first); });
   last_msgs = messages_;
-  emit msgsReceived(nullptr, id_changed);
+  msgsReceived(nullptr, id_changed);
 
   std::lock_guard lk(mutex_);
   seek_finished_ = true;
@@ -217,7 +234,7 @@ void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
     }
     auto pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), events.front()->mono_time, CompareCanEvent());
     all_events_.insert(pos, events.cbegin(), events.cend());
-    emit eventsMerged(msg_events);
+    eventsMerged(msg_events);
   }
 }
 
@@ -232,19 +249,81 @@ std::pair<CanEventIter, CanEventIter> AbstractStream::eventsInRange(const Messag
 
 namespace {
 
-enum Color { GREYISH_BLUE, CYAN, RED};
-QColor getColor(int c) {
-  constexpr int start_alpha = 128;
-  static const QColor colors[] = {
-      [GREYISH_BLUE] = QColor(102, 86, 169, start_alpha / 2),
-      [CYAN] = QColor(0, 187, 255, start_alpha),
-      [RED] = QColor(255, 0, 0, start_alpha),
-  };
-  return settings.theme == LIGHT_THEME ? colors[c] : colors[c].lighter(135);
+enum Color { GREYISH_BLUE, CYAN, RED };
+
+struct HSV {
+  float h = 0, s = 0, v = 0;
+};
+
+HSV rgbToHsv(const ColorRGBA &c) {
+  const float r = c.r / 255.0f, g = c.g / 255.0f, b = c.b / 255.0f;
+  const float maxc = std::max({r, g, b}), minc = std::min({r, g, b});
+  const float delta = maxc - minc;
+
+  HSV hsv;
+  hsv.v = maxc;
+  hsv.s = maxc > 0 ? delta / maxc : 0;
+  if (delta > 0) {
+    if (maxc == r) {
+      hsv.h = std::fmod((g - b) / delta, 6.0f);
+    } else if (maxc == g) {
+      hsv.h = (b - r) / delta + 2.0f;
+    } else {
+      hsv.h = (r - g) / delta + 4.0f;
+    }
+    hsv.h *= 60.0f;
+    if (hsv.h < 0) hsv.h += 360.0f;
+  }
+  return hsv;
 }
 
-inline QColor blend(const QColor &a, const QColor &b) {
-  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
+ColorRGBA hsvToRgb(const HSV &hsv, uint8_t alpha) {
+  const float c = hsv.v * hsv.s;
+  const float x = c * (1.0f - std::fabs(std::fmod(hsv.h / 60.0f, 2.0f) - 1.0f));
+  const float m = hsv.v - c;
+
+  float r = 0, g = 0, b = 0;
+  if (hsv.h < 60) {
+    r = c; g = x; b = 0;
+  } else if (hsv.h < 120) {
+    r = x; g = c; b = 0;
+  } else if (hsv.h < 180) {
+    r = 0; g = c; b = x;
+  } else if (hsv.h < 240) {
+    r = 0; g = x; b = c;
+  } else if (hsv.h < 300) {
+    r = x; g = 0; b = c;
+  } else {
+    r = c; g = 0; b = x;
+  }
+
+  auto to8 = [m](float ch) -> uint8_t { return (uint8_t)std::clamp((long)std::lround((ch + m) * 255.0f), 0L, 255L); };
+  return {to8(r), to8(g), to8(b), alpha};
+}
+
+// Equivalent of QColor::lighter(135): boost value, bleed the excess into a saturation cut.
+ColorRGBA lighter(const ColorRGBA &c) {
+  HSV hsv = rgbToHsv(c);
+  hsv.v *= 1.35f;
+  if (hsv.v > 1.0f) {
+    hsv.s = std::max(0.0f, hsv.s - (hsv.v - 1.0f));
+    hsv.v = 1.0f;
+  }
+  return hsvToRgb(hsv, c.a);
+}
+
+ColorRGBA getColor(int c) {
+  constexpr int start_alpha = 128;
+  static const ColorRGBA colors[] = {
+      [GREYISH_BLUE] = ColorRGBA{102, 86, 169, start_alpha / 2},
+      [CYAN] = ColorRGBA{0, 187, 255, start_alpha},
+      [RED] = ColorRGBA{255, 0, 0, start_alpha},
+  };
+  return settings.theme == LIGHT_THEME ? colors[c] : lighter(colors[c]);
+}
+
+inline ColorRGBA blend(const ColorRGBA &a, const ColorRGBA &b) {
+  return {(uint8_t)((a.r + b.r) / 2), (uint8_t)((a.g + b.g) / 2), (uint8_t)((a.b + b.b) / 2), (uint8_t)((a.a + b.a) / 2)};
 }
 
 // Calculate the frequency from the past one minute data
@@ -271,7 +350,7 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
 
   if (dat.size() != size) {
     dat.assign(can_data, can_data + size);
-    colors.assign(size, QColor(0, 0, 0, 0));
+    colors.assign(size, ColorRGBA{0, 0, 0, 0});
     last_changes.resize(size);
     bit_flip_counts.resize(size);
     std::for_each(last_changes.begin(), last_changes.end(), [current_sec](auto &c) { c.ts = current_sec; });
@@ -317,7 +396,8 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
         last_change.delta = delta;
       } else {
         // Fade out
-        colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
+        double alpha = std::max(0.0, colors[i].a / 255.0 - alpha_delta);
+        colors[i].a = (uint8_t)std::lround(alpha * 255.0);
       }
     }
   }
