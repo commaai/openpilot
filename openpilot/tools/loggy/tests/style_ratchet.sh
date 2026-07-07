@@ -52,7 +52,7 @@ check "getter pairs" \
 # draw_context_menu) is the seam that keeps plot menu items out of runtime.cc.
 check "pane header fns" \
   "$(awk_count '/^[A-Za-z].*\(/ {n++} END {print n+0}' panes/*.h)" \
-  15
+  17
 # 73->84 (2026-07-05): scan/history job+page types now cross the pane<->backend boundary;
 # the REVIEW 2.3 boundary rule outranks the raw count.
 # 84->85 (2026-07-06): owner-directed `struct Theme` (shell/theme.h) — every color token as one
@@ -60,7 +60,7 @@ check "pane header fns" \
 # one-off free functions (net token count still goes down) but is itself one more named struct.
 check "named header structs" \
   "$(rg_count '^struct [A-Za-z]+' backend panes shell -g'*.h' -g'!generated_*')" \
-  85
+  86
 # LOC history (prior in git): 20605->20950 parity-fix wave; ->21020 ship fixes; ->21124
 # red-team data-honesty wave (honest route duration, deprecated series, export isolation);
 # ->21368 visual-identity pass (struct Theme, binary per-signal spans + M/L markers, camera/plot
@@ -105,9 +105,15 @@ check "named header structs" \
 # (toolbar + chip rows gone, jot look), drain carryover buffer, camera rebuild staggered off
 # drain frames, settings modal fixed field widths (AlwaysAutoResize shrink loop).
 # Genuine defect-cluster capability, not padding.
+# ->22576 (2026-07-06) manual-review batch — camera crop default + overlay removal, jotpluggler
+# browser (density, special sources, layout selector, edge drop zones), decoded-CAN-series with
+# per-signal plot/delete buttons, binary history strip, corner close X, Ctrl+Z undo fallback,
+# peak-preserving decimation + RangeFit, cursor-follow scroll, parallel shutdown. pane header
+# fns 15->17 (browser/plot special-item + added-series helpers), structs 85->86 (SpecialItemPane),
+# runtime.cc 1074->1217 (pane drop zones + layout apply).
 check "product LOC" \
   "$(find backend panes shell \( -name '*.cc' -o -name '*.h' \) ! -name 'generated_*' -print0 | xargs -0 cat | wc -l | tr -d ' ')" \
-  22308
+  22576
 # 850->852 (2026-07-06): maybe_autostart_playback (cabana/jotpluggler parity: play on load).
 # 852->912 (2026-07-06): splitter drag (apply_splitter_delta/draw_split_handle) — the workspace
 # tree had no interactive divider between siblings at all; the whole feature, not padding.
@@ -120,7 +126,7 @@ check "product LOC" \
 # split threshold from the previous note stands.
 check "runtime.cc size" \
   "$(wc -l < shell/runtime.cc | tr -d ' ')" \
-  1074
+  1217
 check "pane-local statics" \
   "$(rg_count '^\s+static ' panes -g'*.cc')" \
   0

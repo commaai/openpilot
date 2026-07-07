@@ -587,15 +587,10 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
 
   MessageEditModel &edit = cache->edit;
   ImGui::Separator();
-  push_bold_font();
-  ImGui::TextUnformatted("Message");
-  pop_bold_font();
-
-  // Bounded scrolling child so the Apply/Reset/Undo/Redo row stays reachable at short window
-  // heights. A flat 148px was itself part of #25 -- comfortably more than these 3 rows need, it
-  // could alone exhaust a short Signal pane's budget and leave the table below at zero room.
-  const float editor_height = std::min(108.0f, std::max(1.0f, ImGui::GetContentRegionAvail().y));
-  ImGui::BeginChild("##message_editor_body", ImVec2(0.0f, editor_height), true);
+  // Collapsed by default: the signal LIST is the primary content (like cabana), so the message
+  // header/rename/resize editor stays out of the way until the user opens it. Otherwise the
+  // always-expanded editor starved the signal table to zero rows in the cabana preset.
+  if (!ImGui::CollapsingHeader("Message")) return;
 
   ImGui::SetNextItemWidth(180.0f);
   if (input_text_with_hint("Name##message", "", &edit.name)) *changed = true;
@@ -662,7 +657,6 @@ void draw_message_editor(Session &session, const MessageId &id, SignalPaneState 
     ImGui::SameLine();
     ImGui::TextDisabled("%s", state->edit_error.c_str());
   }
-  ImGui::EndChild();
 }
 
 void draw_signal_sparkline(const SignalPaneRow &row) {
@@ -922,39 +916,62 @@ void draw_signal_editor(Session &session, const MessageId &id, SignalPaneState *
   }
 }
 
-bool draw_signal_row(const SignalPaneRow &row, bool selected) {
-  ImGui::TableNextRow(ImGuiTableRowFlags_None, std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
+struct SignalRowResult {
+  bool selected = false;
+  bool plot = false;
+  bool remove = false;
+};
 
+SignalRowResult draw_signal_row(const SignalPaneRow &row, bool selected) {
+  SignalRowResult result;
+  ImGui::TableNextRow(ImGuiTableRowFlags_None, std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
+  // Per-row ID scope so the "plot"/"x" buttons (same labels every row) don't collide.
+  ImGui::PushID(row.name.c_str());
+
+  // Per-signal actions (cabana parity): plot the decoded signal, or delete it from the DBC.
+  // Only defined DBC signals get actions — a raw bit-candidate has nothing to plot or delete.
   ImGui::TableSetColumnIndex(0);
-  const bool clicked = ImGui::Selectable(row.name.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns);
+  if (row.from_dbc) {
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 1.0f));
+    result.plot = ImGui::SmallButton("plot");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Plot this signal");
+    ImGui::SameLine(0.0f, 3.0f);
+    result.remove = ImGui::SmallButton("x");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Delete this signal");
+    ImGui::PopStyleVar();
+  }
 
   ImGui::TableSetColumnIndex(1);
-  ImGui::TextUnformatted(row.kind.c_str());
+  result.selected = ImGui::Selectable(row.name.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns);
 
   ImGui::TableSetColumnIndex(2);
+  ImGui::TextUnformatted(row.kind.c_str());
+
+  ImGui::TableSetColumnIndex(3);
   push_mono_font();
   ImGui::Text("%d", row.start_bit);
   pop_mono_font();
 
-  ImGui::TableSetColumnIndex(3);
+  ImGui::TableSetColumnIndex(4);
   ImGui::Text("%d", row.size);
 
-  ImGui::TableSetColumnIndex(4);
+  ImGui::TableSetColumnIndex(5);
   ImGui::TextUnformatted(row.endian.c_str());
 
-  ImGui::TableSetColumnIndex(5);
+  ImGui::TableSetColumnIndex(6);
   push_mono_font();
   ImGui::TextUnformatted(row.value.c_str());
   pop_mono_font();
 
-  ImGui::TableSetColumnIndex(6);
+  ImGui::TableSetColumnIndex(7);
   draw_signal_sparkline(row);
 
-  ImGui::TableSetColumnIndex(7);
+  ImGui::TableSetColumnIndex(8);
   if (row.from_dbc || row.byte_change_age < 0.0) ImGui::TextDisabled("--");
   else ImGui::Text("%.2fs", row.byte_change_age);
 
-  return clicked;
+  ImGui::PopID();
+  return result;
 }
 
 }  // namespace
@@ -1046,7 +1063,8 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
     const float wanted = std::clamp(table_size.y * 0.45f, 96.0f, 320.0f);
     table_size.y = std::min(wanted, std::max(0.0f, table_size.y));
   }
-  if (table_size.y > 0.0f && ImGui::BeginTable("##loggy_signal_table", 8, flags, table_size)) {
+  if (table_size.y > 0.0f && ImGui::BeginTable("##loggy_signal_table", 9, flags, table_size)) {
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 66.0f);
     ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 138.0f);
     ImGui::TableSetupColumn("Kind", ImGuiTableColumnFlags_WidthFixed, 58.0f);
     ImGui::TableSetupColumn("Start", ImGuiTableColumnFlags_WidthFixed, 48.0f);
@@ -1057,13 +1075,17 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
     ImGui::TableSetupColumn("Changed", ImGuiTableColumnFlags_WidthFixed, 58.0f);
     ImGui::TableHeadersRow();
 
+    std::string plot_signal_name, delete_signal_name;
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(rows.size()), std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
     while (clipper.Step()) {
       for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
         const SignalPaneRow &row = rows[static_cast<size_t>(row_idx)];
         const std::string new_selection = row.from_dbc ? row.name : std::string();
-        if (draw_signal_row(row, row.from_dbc && row.name == state.selected_signal) &&
+        const SignalRowResult row_result = draw_signal_row(row, row.from_dbc && row.name == state.selected_signal);
+        if (row_result.plot) plot_signal_name = row.name;
+        if (row_result.remove) delete_signal_name = row.name;
+        if (row_result.selected &&
             new_selection != state.selected_signal) {
           // Re-clicking the already-selected row is a no-op (ImGui::Selectable reports a click
           // either way); only a genuine switch may touch the edit cache, and even then the
@@ -1079,6 +1101,21 @@ void draw_signal_pane(Session &session, PaneInstance &pane) {
       }
     }
     ImGui::EndTable();
+
+    if (!plot_signal_name.empty()) {
+      session.plot_decoded_signal(id, plot_signal_name);
+    }
+    if (!delete_signal_name.empty()) {
+      std::string error;
+      if (remove_signal_edit(session.dbc_undo, session.dbc, id, delete_signal_name, error)) {
+        if (state.selected_signal == delete_signal_name) state.selected_signal.clear();
+        state.edit_error.clear();
+        transient_state.edit.valid = false;
+      } else {
+        state.edit_error = error;
+      }
+      changed = true;
+    }
   } else {
     ImGui::Dummy(ImVec2(1.0f, std::max(1.0f, table_size.y)));
   }

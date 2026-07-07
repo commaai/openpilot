@@ -1,6 +1,7 @@
 #include "tools/loggy/backend/store.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <iterator>
@@ -24,7 +25,9 @@ TimeRange orderedRange(double t0, double t1) {
 }
 
 bool canReplaceSeriesPath(std::string_view path) {
-  return path.rfind("/computed/", 0) == 0;
+  // /computed/ (python-derived) and /dbc/ (a decoded CAN signal, re-derived when the DBC edits)
+  // are the two namespaces the store owns and can wholesale-replace on refresh.
+  return path.rfind("/computed/", 0) == 0 || path.rfind("/dbc/", 0) == 0;
 }
 
 TimeRange pointRange(const std::vector<SeriesPoint> &points) {
@@ -65,17 +68,39 @@ CoverageInfo coverageFor(TimeRange requested, std::vector<TimeRange> ranges) {
   return info;
 }
 
+// Peak-preserving decimation (jotpluggler's app_decimate_samples): bucket the series and, per
+// bucket, keep first / min / max / last. A plain stride subsample drops the extremes BETWEEN
+// strided indices, and WHICH extremes survive changes as the window scrolls during playback —
+// that is exactly the Y-axis jitter the owner saw. Keeping each bucket's true min and max makes
+// AutoFit see a stable range, and a scrolling window never pops a peak in or out.
 std::vector<SeriesPoint> decimate(std::vector<SeriesPoint> points, size_t max_points) {
   if (max_points == 0) return {};
   if (points.size() <= max_points) return points;
-  if (max_points == 1) return {points.front()};
+  if (max_points <= 4) return {points.front(), points.back()};
 
+  const size_t bucket_count = std::max<size_t>(1, max_points / 4);
+  const size_t n = points.size();
   std::vector<SeriesPoint> out;
-  out.reserve(max_points);
-  const size_t last = points.size() - 1;
-  const size_t denom = max_points - 1;
-  for (size_t i = 0; i < max_points; ++i) {
-    out.push_back(points[(i * last) / denom]);
+  out.reserve(bucket_count * 4);
+  for (size_t b = 0; b < bucket_count; ++b) {
+    const size_t start = (b * n) / bucket_count;
+    const size_t end = std::min(n, ((b + 1) * n) / bucket_count);
+    if (start >= end) continue;
+    size_t min_i = start;
+    size_t max_i = start;
+    for (size_t i = start + 1; i < end; ++i) {
+      if (points[i].value < points[min_i].value) min_i = i;
+      if (points[i].value > points[max_i].value) max_i = i;
+    }
+    // Emit start, min, max, end in time order, de-duplicating shared indices.
+    std::array<size_t, 4> idx = {start, min_i, max_i, end - 1};
+    std::sort(idx.begin(), idx.end());
+    size_t prev = std::numeric_limits<size_t>::max();
+    for (size_t i : idx) {
+      if (i == prev) continue;
+      out.push_back(points[i]);
+      prev = i;
+    }
   }
   return out;
 }

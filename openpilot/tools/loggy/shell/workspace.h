@@ -129,6 +129,7 @@ void save_workspace_json(const Workspace &workspace, const std::filesystem::path
 Workspace load_workspace_json(const std::filesystem::path &path);
 
 std::filesystem::path layouts_dir();
+std::vector<std::string> available_layout_names();
 std::filesystem::path autosave_dir();
 std::filesystem::path autosave_path_for_layout(const std::filesystem::path &layout_path);
 void save_workspace_draft(const Workspace &workspace, const std::filesystem::path &layout_path);

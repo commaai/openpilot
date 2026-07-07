@@ -1,7 +1,9 @@
 #include "tools/loggy/shell/runtime.h"
 
 #include "tools/loggy/backend/session.h"
+#include "tools/loggy/panes/browser.h"
 #include "tools/loggy/panes/map.h"
+#include "tools/loggy/panes/plot.h"
 #include "tools/loggy/shell/live_source_controls.h"
 #include "tools/loggy/shell/native_dialog.h"
 #include "tools/loggy/shell/settings_ui.h"
@@ -262,7 +264,6 @@ struct AppState {
   bool show_frame_hud = false;
   int target_fps = kDefaultLoggyTargetFps;
   ThemeKind theme_kind = ThemeKind::Light;
-  bool show_demo = false;
   bool request_close = false;
   WorkspaceHistory workspace_history;
   std::string workspace_status;
@@ -278,6 +279,8 @@ struct AppState {
     int tab_index = -1;
     int pane_index = -1;
     PaneSplit split = PaneSplit::Right;
+    // When set on a Split, the new pane is a plot seeded with this series (edge drag-to-split).
+    std::string seed_series;
   };
   std::optional<PaneAction> pending_pane_action;
   int rename_tab_index = -1;
@@ -436,8 +439,7 @@ void draw_main_menu(AppState &app) {
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("View")) {
-    ImGui::MenuItem("Frame-Time HUD", nullptr, &app.show_frame_hud);
-    ImGui::MenuItem("ImGui Demo", nullptr, &app.show_demo);
+    ImGui::MenuItem("Frame-Time HUD", "F12", &app.show_frame_hud);
     ImGui::EndMenu();
   }
   if (ImGui::BeginMenu("Help")) {
@@ -463,6 +465,85 @@ void request_split(AppState &app, int tab_index, int pane_index, PaneSplit split
   };
 }
 
+// Drag-and-drop onto a pane body. A Map/Camera special item converts ANY pane to that source.
+// A series dragged over a PLOT shows jotpluggler's edge drop zones: drop on an edge to split
+// the pane in that direction and seed the new plot with the series (center is handled by the
+// plot's own drop target, which adds the series in place with a full-pane highlight).
+void handle_pane_drops(AppState &app, int tab_index, int pane_index, PaneInstance &pane,
+                       const ImVec2 &body_origin, const ImVec2 &body_size) {
+  const ImGuiPayload *dragging = ImGui::GetDragDropPayload();
+  if (dragging == nullptr) return;
+
+  if (dragging->IsDataType(kLoggySpecialItemPayload)) {
+    ImGui::SetCursorScreenPos(body_origin);
+    ImGui::InvisibleButton("##special_drop", body_size, ImGuiButtonFlags_MouseButtonLeft);
+    if (ImGui::BeginDragDropTarget()) {
+      if (const ImGuiPayload *dropped = ImGui::AcceptDragDropPayload(kLoggySpecialItemPayload)) {
+        const std::string_view id(static_cast<const char *>(dropped->Data),
+                                  static_cast<size_t>(std::max(0, dropped->DataSize - 1)));
+        const SpecialItemPane target = browser_special_item_pane(id);
+        if (!target.type.empty()) {
+          pane.type = target.type;
+          pane.title = target.title;
+          pane.state_json = target.state_json;
+          pane.transient_state.reset();
+          record_workspace_change(app.session.workspace, app.workspace_history,
+                                 app.session.workspace_layout_path, app.workspace_status, "Set pane source");
+        }
+      }
+      ImGui::EndDragDropTarget();
+    }
+    return;
+  }
+
+  if (!dragging->IsDataType(kLoggySeriesPathPayload) || pane.type != "plot") return;
+  // Edge bands (24%, capped) — drop there to split + seed. The inner region is left uncovered so
+  // the plot's own center target handles add-in-place.
+  const float inset = 6.0f;
+  const ImVec2 rect_min(body_origin.x + inset, body_origin.y + inset);
+  const ImVec2 rect_max(body_origin.x + body_size.x - inset, body_origin.y + body_size.y - inset);
+  const float w = rect_max.x - rect_min.x;
+  const float h = rect_max.y - rect_min.y;
+  if (w < 60.0f || h < 60.0f) return;
+  const float edge_w = std::min(90.0f, w * 0.24f);
+  const float edge_h = std::min(72.0f, h * 0.24f);
+  struct Zone { PaneSplit split; ImVec2 min; ImVec2 max; };
+  const std::array<Zone, 4> zones = {{
+    {PaneSplit::Left, rect_min, ImVec2(rect_min.x + edge_w, rect_max.y)},
+    {PaneSplit::Right, ImVec2(rect_max.x - edge_w, rect_min.y), rect_max},
+    {PaneSplit::Top, ImVec2(rect_min.x + edge_w, rect_min.y), ImVec2(rect_max.x - edge_w, rect_min.y + edge_h)},
+    {PaneSplit::Bottom, ImVec2(rect_min.x + edge_w, rect_max.y - edge_h), ImVec2(rect_max.x - edge_w, rect_max.y)},
+  }};
+  ImDrawList *draw_list = ImGui::GetWindowDrawList();
+  for (size_t i = 0; i < zones.size(); ++i) {
+    const Zone &zone = zones[i];
+    ImGui::PushID(static_cast<int>(i));
+    ImGui::SetCursorScreenPos(zone.min);
+    ImGui::InvisibleButton("##edge", ImVec2(zone.max.x - zone.min.x, zone.max.y - zone.min.y),
+                           ImGuiButtonFlags_MouseButtonLeft);
+    if (ImGui::BeginDragDropTarget()) {
+      if (const ImGuiPayload *payload =
+              ImGui::AcceptDragDropPayload(kLoggySeriesPathPayload, ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+        draw_list->AddRectFilled(zone.min, zone.max, ImGui::GetColorU32(theme().plot_drop_target_fill));
+        draw_list->AddRect(zone.min, zone.max, ImGui::GetColorU32(theme().plot_drop_target_border), 0.0f, 0, 2.0f);
+        if (payload->Delivery && payload->Data != nullptr && payload->DataSize > 0) {
+          const char *data = static_cast<const char *>(payload->Data);
+          const int len = data[payload->DataSize - 1] == '\0' ? payload->DataSize - 1 : payload->DataSize;
+          app.pending_pane_action = AppState::PaneAction{
+            .type = AppState::PaneAction::Type::Split,
+            .tab_index = tab_index,
+            .pane_index = pane_index,
+            .split = zone.split,
+            .seed_series = std::string(data, static_cast<size_t>(std::max(0, len))),
+          };
+        }
+      }
+      ImGui::EndDragDropTarget();
+    }
+    ImGui::PopID();
+  }
+}
+
 void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane_index, const ImVec2 &size) {
   if (pane_index < 0 || pane_index >= static_cast<int>(tab.panes.size())) return;
   PaneInstance &pane = tab.panes[static_cast<size_t>(pane_index)];
@@ -470,21 +551,37 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
 
   // Quiet chrome, title only (no "Messages messages" type suffix) — compare jotpluggler's
   // section headers: small, muted, no bold.
+  const float header_y = ImGui::GetCursorScreenPos().y;
   ImGui::PushStyleColor(ImGuiCol_Text, theme().text_muted);
   ImGui::TextUnformatted(pane.title.empty() ? kDefaultPaneTitle : pane.title.c_str());
   ImGui::PopStyleColor();
-  // jotpluggler's close X in the pane's top-right corner (closing the last pane resets it).
-  ImGui::SameLine(std::max(0.0f, ImGui::GetWindowContentRegionMax().x - 22.0f));
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-  ImGui::PushStyleColor(ImGuiCol_Text, theme().text_muted);
-  if (ImGui::SmallButton("×##close_pane")) {
+
+  // Hand-drawn close X, vertically centered on the header line and right-aligned — jotpluggler's
+  // corner cross (no button background, hand cursor, darker on hover). Closing the last pane
+  // resets it to an empty pane.
+  const float line_h = ImGui::GetTextLineHeight();
+  const float box = line_h;
+  const ImVec2 box_min(ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - box, header_y);
+  ImGui::SetCursorScreenPos(box_min);
+  ImGui::PushID("##close_pane");
+  ImGui::InvisibleButton("x", ImVec2(box, box));
+  const bool close_hovered = ImGui::IsItemHovered();
+  if (close_hovered) ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  if (ImGui::IsItemClicked()) {
     app.pending_pane_action = AppState::PaneAction{
       .type = AppState::PaneAction::Type::Close,
       .tab_index = tab_index,
       .pane_index = pane_index,
     };
   }
-  ImGui::PopStyleColor(2);
+  ImGui::PopID();
+  const float pad = box * 0.32f;
+  const ImU32 x_color = ImGui::GetColorU32(close_hovered ? theme().text : theme().text_muted);
+  ImDrawList *header_draw = ImGui::GetWindowDrawList();
+  header_draw->AddLine(ImVec2(box_min.x + pad, header_y + pad),
+                       ImVec2(box_min.x + box - pad, header_y + box - pad), x_color, 1.6f);
+  header_draw->AddLine(ImVec2(box_min.x + pad, header_y + box - pad),
+                       ImVec2(box_min.x + box - pad, header_y + pad), x_color, 1.6f);
 
   if (ImGui::BeginPopupContextWindow("pane_context")) {
     if (ImGui::MenuItem("Split Left")) request_split(app, tab_index, pane_index, PaneSplit::Left);
@@ -523,9 +620,12 @@ void draw_pane_surface(AppState &app, WorkspaceTab &tab, int tab_index, int pane
   }
 
   ImGui::Separator();
+  const ImVec2 body_origin = ImGui::GetCursorScreenPos();
+  const ImVec2 body_size = ImGui::GetContentRegionAvail();
   if (const PaneType *type = pane_type(pane.type); type != nullptr && type->draw != nullptr) {
     type->draw(app.session, pane);
   }
+  handle_pane_drops(app, tab_index, pane_index, pane, body_origin, body_size);
   ImGui::EndChild();
 }
 
@@ -674,9 +774,11 @@ void apply_pending_pane_action(AppState &app) {
   }
 
   // jotpluggler semantics: a split yields an empty PLOT (drop hint showing), ready for a drag
-  // or browser double-click. Change Type covers everything else.
+  // or browser double-click. An edge drag-to-split seeds it with the dropped series.
   PaneInstance pane = make_pane("plot", "Plot");
-  pane.state_json = R"({"series": []})";
+  pane.state_json = action.seed_series.empty()
+                  ? std::string(R"({"series": []})")
+                  : plot_state_with_added_series(R"({"series": []})", action.seed_series);
   if (split_pane(&tab, action.pane_index, action.split, std::move(pane))) {
     record_workspace_change(app.session.workspace, app.workspace_history, app.session.workspace_layout_path,
                            app.workspace_status, "Autosaved workspace draft");
@@ -837,10 +939,6 @@ void draw_shell(AppState &app) {
   draw_workspace(app);
   ImGui::End();
 
-  if (app.show_demo) {
-    ImGui::ShowDemoWindow(&app.show_demo);
-  }
-
   ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + viewport->WorkSize.y - status_height));
   ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, status_height));
   ImGui::Begin("##loggy_status_bar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
@@ -943,6 +1041,35 @@ void maybe_autostart_playback(AppState &app) {
   app.last_ingest_segments_loaded = segments_loaded;
 }
 
+// jotpluggler-style follow: while playing a file route and zoomed in, scroll the shared X view
+// so the playhead rides at ~70% across the plot instead of sweeping off the right edge. Runs
+// BEFORE the panes draw, so the plot sees the scrolled window as its baseline and never records
+// a spurious zoom-history entry. Live streams already follow via live_follow.
+void follow_playhead(AppState &app) {
+  Session &session = app.session;
+  if (session.config.stream || !session.playback.playing()) return;
+  const TimeRange view = session.view_range.range();
+  const TimeRange route = session.playback.route_range();
+  const double span = view.span();
+  if (span <= 0.0 || !route.valid() || view.end >= route.end - 1.0e-6) return;  // fully zoomed out
+
+  constexpr double kAnchor = 0.70;
+  const double tracker = session.playback.tracker_time();
+  const double max_start = std::max(route.start_, route.end - span);
+  double new_start = view.start_;
+  if (tracker < view.start_ || tracker > view.end) {
+    new_start = tracker - span * 0.5;  // playhead jumped outside: recenter
+  } else if (tracker > view.start_ + span * kAnchor) {
+    new_start = tracker - span * kAnchor;  // reached the anchor: pan to keep it at 70%
+  } else {
+    return;
+  }
+  new_start = std::clamp(new_start, route.start_, max_start);
+  if (std::abs(new_start - view.start_) > 1.0e-6) {
+    session.view_range.set_range({new_start, new_start + span});
+  }
+}
+
 void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_path) {
   const auto frame_start = Clock::now();
   glfwPollEvents();
@@ -963,14 +1090,22 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
     app.session.playback.toggle_playing();
     app.autostart_armed = false;
   }
-  // Ctrl+Z is DBC-edit undo, like Qt cabana — that's the muscle memory this tool inherits.
-  // Workspace undo stays a menu action so a stray Ctrl+Z can't silently rearrange panes.
-  if (!ImGui::GetIO().WantTextInput && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+  // Ctrl+Z undoes the most recent action: a DBC edit if the DBC stack has one (cabana muscle
+  // memory), otherwise the last workspace change (what the Workspace menu's Undo does). Ctrl+Y
+  // and Ctrl+Shift+Z redo the same way. This is the "undo the thing I just did" the owner
+  // expects — DBC-only Ctrl+Z did nothing when the only recent change was to the workspace.
+  const ImGuiIO &io = ImGui::GetIO();
+  if (!io.WantTextInput && io.KeyCtrl) {
     UndoStack &dbc_undo = app.session.dbc_undo;
-    if (ImGui::GetIO().KeyShift) {
+    const bool redo = ImGui::IsKeyPressed(ImGuiKey_Y, false) ||
+                      (io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z, false));
+    const bool undo = !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z, false);
+    if (redo) {
       if (dbc_undo.can_redo()) dbc_undo.redo();
-    } else if (dbc_undo.can_undo()) {
-      dbc_undo.undo();
+      else redo_workspace(app);
+    } else if (undo) {
+      if (dbc_undo.can_undo()) dbc_undo.undo();
+      else undo_workspace(app);
     }
   }
   if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
@@ -987,6 +1122,18 @@ void render_frame(GLFWwindow *window, AppState &app, const fs::path *capture_pat
   app.session.begin_frame();
   const auto after_session = Clock::now();
   maybe_autostart_playback(app);
+  follow_playhead(app);
+
+  // Browser layout selector picked a different layout: swap the whole workspace and reset undo
+  // history (panes are wholesale replaced). Deferred here so it happens between frames, not
+  // mid-draw from inside a pane that lives in the workspace being replaced.
+  if (app.session.pending_layout_load.has_value()) {
+    const std::filesystem::path path = *app.session.pending_layout_load;
+    app.session.pending_layout_load.reset();
+    app.session.reload_layout(path);
+    app.workspace_history.reset(app.session.workspace);
+    app.workspace_select_request = app.session.workspace.current_tab_index;
+  }
 
   draw_shell(app);
   g_escape_pressed = false;
@@ -1055,6 +1202,9 @@ int run(const Options &options) {
     while (!glfwWindowShouldClose(glfw_runtime.window()) && !shutdown_requested()) {
       render_frame(glfw_runtime.window(), app, nullptr);
     }
+    // Signal every background thread to abort before the destructors run, so their teardown
+    // overlaps rather than joining one subsystem at a time (snappy exit, esp. on macOS).
+    app.session.prepare_shutdown();
     // Say why we exited: a silent 0 on a stray SIGTERM is indistinguishable from a crash.
     if (shutdown_requested()) std::cerr << "loggy: exiting on signal " << g_shutdown_signal << "\n";
     return 0;

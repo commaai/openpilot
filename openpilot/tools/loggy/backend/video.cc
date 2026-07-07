@@ -243,10 +243,17 @@ public:
   Impl() : worker_([this]() { workerLoop(); }) {}
 
   ~Impl() {
+    signal_stop();
+    if (worker_.joinable()) worker_.join();
+  }
+
+  // Signal the worker to exit WITHOUT joining — lets a shutdown fire this on all decoders up
+  // front so their FFmpeg/reader teardown overlaps instead of joining one at a time (a slow,
+  // serial exit otherwise, most visibly on macOS's hardware decoder).
+  void signal_stop() {
     stop_.store(true);
     abort_.store(true);
     cv_.notify_all();
-    if (worker_.joinable()) worker_.join();
   }
 
   void set_camera_index(CameraFeedIndex index) {
@@ -586,6 +593,10 @@ private:
 CameraFrameDecoder::CameraFrameDecoder() : impl_(std::make_unique<Impl>()) {}
 
 CameraFrameDecoder::~CameraFrameDecoder() = default;
+
+void CameraFrameDecoder::signal_stop() {
+  impl_->signal_stop();
+}
 
 void CameraFrameDecoder::set_camera_index(CameraFeedIndex index) {
   impl_->set_camera_index(std::move(index));

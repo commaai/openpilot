@@ -19,14 +19,15 @@ namespace {
 
 struct CameraPaneState {
   CameraViewKind view = CameraViewKind::Road;
-  bool fit_to_pane = true;
+  // Default to cover-crop (not letterbox): a fresh camera pane fills its area at the video's
+  // aspect instead of showing bars. The preset sizes the pane to a sane aspect so little crops.
+  bool fit_to_pane = false;
 };
 
 struct CameraPaneSnapshot {
   CameraViewKind view = CameraViewKind::Road;
   size_t segment_file_count = 0;
   size_t frame_count = 0;
-  TimelineSpanKind overlay_kind = TimelineSpanKind::None;
   bool has_frame = false;
   bool ingest_failed = false;
 };
@@ -46,22 +47,9 @@ struct CameraTextureState {
 CameraPaneState parse_camera_pane_state(std::string_view state_json);
 std::string camera_pane_state_json(const CameraPaneState &state);
 CameraPaneSnapshot prepare_camera_pane_snapshot(const Session &session, const CameraPaneState &state);
-std::string build_camera_hover_line(const CameraPaneSnapshot &snapshot,
-                                    const CameraDecodeStatus &decode_status,
-                                    const LiveCameraFrameStatus *live_status,
-                                    const CameraTextureState &texture,
-                                    bool has_texture,
-                                    float text_area_width);
-
-std::string trim_overlay_text(const std::string &text, float max_width) {
-  if (text.empty() || max_width <= 0.0f) return text;
-
-  const size_t max_chars = std::max<size_t>(3, static_cast<size_t>(max_width / 7.0f));
-  if (text.size() <= max_chars) return text;
-
-  if (max_chars <= 3) return text.substr(0, max_chars);
-  return text.substr(0, max_chars - 3).append("...");
-}
+std::string build_camera_status_line(const CameraPaneSnapshot &snapshot,
+                                     const CameraDecodeStatus &decode_status,
+                                     const LiveCameraFrameStatus *live_status);
 
 int camera_combo_index(CameraViewKind view) {
   return static_cast<int>(camera_view_index(view));
@@ -96,11 +84,6 @@ CameraPaneState &camera_pane_state(PaneInstance &pane) {
     transient.valid = true;
   }
   return transient.state;
-}
-
-ImU32 camera_timeline_color(TimelineSpanKind kind, uint8_t alpha) {
-  const TimelineColor color = timeline_span_color(kind, alpha);
-  return IM_COL32(color.r, color.g, color.b, color.a);
 }
 
 void upload_camera_frame(CameraTextureState *texture, DecodedCameraFrame frame, bool live_frame) {
@@ -144,7 +127,7 @@ bool draw_camera_controls(CameraPaneState *state) {
   bool changed = false;
   int index = camera_combo_index(state->view);
   ImGui::SetNextItemWidth(150.0f);
-  if (ImGui::BeginCombo("View", camera_view_spec(state->view).label)) {
+  if (ImGui::BeginCombo("##camera_view", camera_view_spec(state->view).label)) {
     const auto &specs = camera_view_specs();
     for (int i = 0; i < static_cast<int>(specs.size()); ++i) {
       const bool selected = i == index;
@@ -222,91 +205,51 @@ void draw_camera_canvas(const CameraPaneSnapshot &snapshot,
   }
   draw_list->AddRect(video_min, video_max, ImGui::GetColorU32(theme().camera_video_border), 0.0f, 0, 1.5f);
 
-  // No always-on debug text (files/frames/decoded) — cabana shows clean video. Only a small
-  // time/frame readout, and only on hover or while paused.
-  if (hovered || paused) {
-    const float info_width = std::max(0.0f, std::min(video_max.x - video_min.x - 16.0f,
-                                                    (video_max.x - video_min.x) * 0.62f));
-    const std::string line = build_camera_hover_line(snapshot, decode_status, live_status, texture,
-                                                     has_texture, info_width);
+  // Clean video, no overlays: the only text is a quiet centered status when there's NO frame to
+  // show yet (loading / no route video / waiting) — never on top of a live picture.
+  (void)hovered;
+  (void)paused;
+  if (!has_texture) {
+    const std::string line = build_camera_status_line(snapshot, decode_status, live_status);
     if (!line.empty()) {
-      push_mono_font();
       const ImVec2 text_size = ImGui::CalcTextSize(line.c_str());
-      pop_mono_font();
-      const ImVec2 info_min(video_min.x + 8.0f, video_min.y + 8.0f);
-      const ImVec2 info_max(info_min.x + text_size.x + 12.0f, info_min.y + text_size.y + 8.0f);
-      draw_list->AddRectFilled(info_min, info_max, ImGui::GetColorU32(theme().camera_overlay_bg), 3.0f);
-      draw_list->AddRect(info_min, info_max, ImGui::GetColorU32(theme().camera_overlay_border), 3.0f, 0, 1.0f);
-      push_mono_font();
-      draw_list->AddText(ImVec2(info_min.x + 6.0f, info_min.y + 4.0f), ImGui::GetColorU32(ImGuiCol_Text), line.c_str());
-      pop_mono_font();
+      const ImVec2 at((video_min.x + video_max.x - text_size.x) * 0.5f,
+                      (video_min.y + video_max.y - text_size.y) * 0.5f);
+      draw_list->AddText(at, ImGui::GetColorU32(ImGuiCol_TextDisabled), line.c_str());
     }
-  }
-
-  if (snapshot.overlay_kind != TimelineSpanKind::None) {
-    const char *label = timeline_span_label(snapshot.overlay_kind);
-    const ImVec2 label_size = ImGui::CalcTextSize(label);
-    const float pad_x = 10.0f;
-    const float pad_y = 5.0f;
-    const ImVec2 badge_max(video_max.x - 12.0f, video_max.y - 12.0f);
-    const ImVec2 badge_min(std::max(video_min.x + 12.0f, badge_max.x - label_size.x - pad_x * 2.0f),
-                           std::max(video_min.y + 12.0f, badge_max.y - label_size.y - pad_y * 2.0f));
-    const ImU32 badge_fill = camera_timeline_color(snapshot.overlay_kind, 210);
-    draw_list->AddRectFilled(badge_min, badge_max, badge_fill, 4.0f);
-    draw_list->AddRect(badge_min, badge_max, camera_timeline_color(snapshot.overlay_kind, 255), 4.0f, 0, 1.0f);
-    // Text color by badge luminance, not a fixed white — "alert info" is amber, where white
-    // text is unreadable.
-    const ImVec4 fill = ImGui::ColorConvertU32ToFloat4(badge_fill);
-    const float luminance = 0.299f * fill.x + 0.587f * fill.y + 0.114f * fill.z;
-    const ImU32 label_color = luminance > 0.6f ? IM_COL32(20, 22, 24, 255) : IM_COL32(255, 255, 255, 255);
-    draw_list->AddText(ImVec2(badge_min.x + pad_x, badge_min.y + pad_y), label_color, label);
   }
 }
 
-// One compact line, shown only on hover/pause (draw_camera_canvas) — cabana shows clean video,
-// not a persistent debug block. seg/frame/t always come from the displayed texture, never the
-// seek target (REVIEW defect B).
-std::string build_camera_hover_line(const CameraPaneSnapshot &snapshot,
-                                    const CameraDecodeStatus &decode_status,
-                                    const LiveCameraFrameStatus *live_status,
-                                    const CameraTextureState &texture,
-                                    bool has_texture,
-                                    float text_area_width) {
-  const CameraViewSpec &spec = camera_view_spec(snapshot.view);
-  const float info_width = std::max(0.0f, text_area_width);
+// Quiet status shown ONLY when there is no frame on screen (draw_camera_canvas). No seg/frame/t
+// on a live picture — cabana/jotpluggler show clean video.
+std::string build_camera_status_line(const CameraPaneSnapshot &snapshot,
+                                     const CameraDecodeStatus &decode_status,
+                                     const LiveCameraFrameStatus *live_status) {
   char buffer[256] = {};
-
   if (live_status != nullptr) {
     if (!live_status->supported || !live_status->error.empty()) {
-      std::snprintf(buffer, sizeof(buffer), "%s  %s", spec.label,
-                    !live_status->error.empty() ? live_status->error.c_str() : "VisionIPC unsupported");
-    } else if (live_status->has_frame) {
-      std::snprintf(buffer, sizeof(buffer), "%s  live  f%d  %zu frames", spec.label, live_status->frame_id,
-                    live_status->received_frames);
+      std::snprintf(buffer, sizeof(buffer), "%s", !live_status->error.empty() ? live_status->error.c_str()
+                                                                              : "VisionIPC unsupported");
     } else if (live_status->connected) {
-      std::snprintf(buffer, sizeof(buffer), "%s  connected, waiting for frames", spec.label);
+      std::snprintf(buffer, sizeof(buffer), "connected, waiting for frames");
     } else {
-      std::snprintf(buffer, sizeof(buffer), "%s  waiting for camerad", spec.label);
+      std::snprintf(buffer, sizeof(buffer), "waiting for camerad");
     }
-    return trim_overlay_text(buffer, info_width);
+    return buffer;
   }
 
-  const bool have_frame_info = has_texture && texture.key.has_value();
-  if (have_frame_info) {
-    std::snprintf(buffer, sizeof(buffer), "%s  seg %d  frame %u  t %.2fs",
-                  spec.label, texture.key->segment, texture.frame_id, texture.timestamp);
-  } else if (decode_status.loading) {
-    std::snprintf(buffer, sizeof(buffer), "%s  decoding...", spec.label);
+  if (decode_status.loading) {
+    std::snprintf(buffer, sizeof(buffer), "decoding...");
   } else if (!decode_status.error.empty()) {
-    std::snprintf(buffer, sizeof(buffer), "%s  %s", spec.label, decode_status.error.c_str());
+    std::snprintf(buffer, sizeof(buffer), "%s", decode_status.error.c_str());
   } else if (snapshot.ingest_failed) {
-    std::snprintf(buffer, sizeof(buffer), "%s  no camera data", spec.label);  // terminal (REVIEW defect C)
+    std::snprintf(buffer, sizeof(buffer), "no camera data");
   } else if (snapshot.segment_file_count == 0) {
-    std::snprintf(buffer, sizeof(buffer), "%s  no route video", spec.label);
+    std::snprintf(buffer, sizeof(buffer), "no route video");
   } else {
-    std::snprintf(buffer, sizeof(buffer), "%s  waiting for frame index", spec.label);
+    std::snprintf(buffer, sizeof(buffer), "waiting for frame index");
   }
-  return trim_overlay_text(buffer, info_width);
+  return buffer;
 }
 
 CameraPaneState parse_camera_pane_state(std::string_view state_json) {
@@ -332,7 +275,6 @@ std::string camera_pane_state_json(const CameraPaneState &state) {
 CameraPaneSnapshot prepare_camera_pane_snapshot(const Session &session, const CameraPaneState &state) {
   CameraPaneSnapshot snapshot;
   snapshot.view = state.view;
-  snapshot.overlay_kind = session.timeline.kind_at_time(session.playback.tracker_time());
   const CameraFeedIndex &index = session.camera_index(state.view);
   snapshot.segment_file_count = index.segment_files.size();
   snapshot.frame_count = index.entries.size();

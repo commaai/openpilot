@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <future>
 #include <array>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -58,6 +59,9 @@ public:
   // switch if the current tab happens to have no plot pane.
   std::string pending_plot_series;
   int pending_plot_series_age = 0;
+  // Browser layout selector picked a different layout file; the shell reloads it next frame
+  // (switching the whole workspace from inside a pane it lives in must be deferred).
+  std::optional<std::filesystem::path> pending_layout_load;
   SegmentScheduler scheduler;
   LoggySettings settings;
   std::filesystem::path settings_path;
@@ -90,12 +94,25 @@ public:
   CameraFrameDecoder &camera_decoder(CameraViewKind view) { return camera_decoders_[camera_view_index(view)]; }
   bool save_settings(std::string &error);
   SelectionContext &selection(std::string_view group);
+  // Signal all background threads (ingest, camera decoders, live sources) to abort so teardown
+  // overlaps instead of joining serially — call once when the main loop exits.
+  void prepare_shutdown();
+  // Replace the whole workspace with another saved layout file (browser layout selector).
+  void reload_layout(const std::filesystem::path &path);
+  // Decode a DBC signal into a plottable series under /dbc/<bus>/0x<addr>/<name>, remember it so
+  // it re-derives when the DBC edits, and queue it for the next plot pane. Returns the path.
+  std::string plot_decoded_signal(const MessageId &id, const std::string &signal_name);
   DrainResult begin_frame();
   void seed_demo_data();
 
 private:
   void update_car_fingerprint(std::string fingerprint);
   bool apply_dbc_selection(std::string &error);
+  void materialize_decoded_signal(const MessageId &id, const std::string &signal_name);
+
+  // Decoded DBC signals the user asked to plot (id, signal name); re-derived when the DBC edits.
+  std::vector<std::pair<MessageId, std::string>> decoded_signals_;
+  uint64_t decoded_signals_dbc_generation_ = 0;
 
   RouteIngestor route_ingest_;
   // In-flight auto DBC parse (fingerprint arrival mid-load): parsed on a worker, adopted in

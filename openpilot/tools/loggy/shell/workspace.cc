@@ -746,6 +746,18 @@ fs::path layouts_dir() {
   return fs::path(repo_root()) / "openpilot" / "tools" / "loggy" / "layouts";
 }
 
+std::vector<std::string> available_layout_names() {
+  std::vector<std::string> names;
+  std::error_code ec;
+  for (const fs::directory_entry &entry : fs::directory_iterator(layouts_dir(), ec)) {
+    if (ec) break;
+    if (!entry.is_regular_file(ec) || entry.path().extension() != ".json") continue;
+    names.push_back(entry.path().stem().string());
+  }
+  std::sort(names.begin(), names.end());
+  return names;
+}
+
 fs::path autosave_dir() {
   // Override so tests and parallel sessions can isolate their drafts — a stray draft from one
   // session silently replaces every other session's preset load (drafts win over presets).

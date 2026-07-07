@@ -424,21 +424,6 @@ std::string plot_state_with_zoom_history(std::string_view state_json, const std:
                         parse_plot_y_limits_node(old_state), history);
 }
 
-std::string plot_state_with_added_series(std::string_view state_json, std::string_view path) {
-  if (path.empty()) return std::string(state_json);
-
-  std::string err;
-  const json11::Json old_state = json11::Json::parse(std::string(state_json), err);
-  std::vector<PlotSeriesRequest> requests = parse_plot_series_requests(state_json);
-  if (!plot_has_series_path(requests, path)) {
-    requests.push_back({
-      .path = std::string(path),
-      .label = plot_label_from_path(path),
-    });
-  }
-  return plot_state_for_series(requests, err.empty() ? old_state : json11::Json());
-}
-
 std::string plot_state_without_series(std::string_view state_json, std::string_view path) {
   if (path.empty()) return std::string(state_json);
   std::string err;
@@ -824,9 +809,13 @@ void draw_plot_pane(Session &session, PaneInstance &pane) {
   const ImVec2 plot_child_origin = ImGui::GetCursorScreenPos();
   const ImVec2 plot_child_size = ImGui::GetContentRegionAvail();
   if (ImPlot::BeginPlot("##loggy_plot", ImGui::GetContentRegionAvail(), plot_flags)) {
+    // RangeFit: Y AutoFit considers only samples inside the visible X window, so off-screen
+    // extremes don't drag the axis (jotpluggler does the same). Paired with peak-preserving
+    // decimation, this is what stops the Y range from jittering during playback.
     ImPlot::SetupAxes(nullptr, nullptr,
                       ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight,
-                      ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_AutoFit);
+                      ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight |
+                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
     ImPlot::SetupAxisFormat(ImAxis_X1, "%.1f");
     ImPlot::SetupAxisFormat(ImAxis_Y1, "%.6g");
     ImPlot::SetupAxisLinks(ImAxis_X1, &x_min, &x_max);
@@ -963,6 +952,19 @@ void draw_plot_context_menu(Session &session, PaneInstance &pane) {
   if (ImGui::MenuItem("Zoom Out")) {
     session.view_range.set_range(session.playback.route_range());
   }
+}
+
+// Public (declared in plot.h): calls the file-local helpers above. Adding a series the pane
+// already has is a no-op, so a redundant drop won't duplicate a curve.
+std::string plot_state_with_added_series(std::string_view state_json, std::string_view path) {
+  if (path.empty()) return std::string(state_json);
+  std::string err;
+  const json11::Json old_state = json11::Json::parse(std::string(state_json), err);
+  std::vector<PlotSeriesRequest> requests = parse_plot_series_requests(state_json);
+  if (!plot_has_series_path(requests, path)) {
+    requests.push_back({.path = std::string(path), .label = plot_label_from_path(path)});
+  }
+  return plot_state_for_series(requests, err.empty() ? old_state : json11::Json());
 }
 
 }  // namespace loggy

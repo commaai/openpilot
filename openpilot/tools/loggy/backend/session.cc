@@ -566,6 +566,82 @@ bool Session::restart_live(LiveSourceConfig source, std::string &error) {
   return true;
 }
 
+namespace {
+
+std::string decoded_signal_path(const MessageId &id, const std::string &signal_name) {
+  char buf[192];
+  std::snprintf(buf, sizeof(buf), "/dbc/%u/0x%X/%s", id.source, id.address, signal_name.c_str());
+  return buf;
+}
+
+}  // namespace
+
+void Session::materialize_decoded_signal(const MessageId &id, const std::string &signal_name) {
+  Msg *msg = dbc.msg(id);
+  if (msg == nullptr) return;
+  Signal *sig = msg->sig(signal_name);
+  if (sig == nullptr) return;
+  Signal decoder = *sig;
+  decoder.update();
+
+  const TimeRange range = playback.route_range();
+  const CanEventView view = store.can_events(id, range.valid() ? range : TimeRange{0.0, 1.0e12});
+  SeriesChunk chunk;
+  chunk.path = decoded_signal_path(id, signal_name);
+  chunk.points.reserve(view.events.size());
+  for (const CanEvent &event : view.events) {
+    double value = 0.0;
+    if (decoder.get_value(event.data.data(), event.data.size(), &value) && std::isfinite(value)) {
+      chunk.points.push_back({event.mono_time, value});
+    }
+  }
+
+  StoreBatch batch;
+  batch.replace_series_paths.push_back(chunk.path);  // replace any prior decode of this signal
+  if (!chunk.points.empty()) {
+    chunk.range = {chunk.points.front().t, chunk.points.back().t};
+    batch.coverage.push_back(chunk.range);
+    batch.series.push_back(std::move(chunk));
+  }
+  store.stage(std::move(batch));
+}
+
+std::string Session::plot_decoded_signal(const MessageId &id, const std::string &signal_name) {
+  const std::string path = decoded_signal_path(id, signal_name);
+  const auto key = std::make_pair(id, signal_name);
+  if (std::find(decoded_signals_.begin(), decoded_signals_.end(), key) == decoded_signals_.end()) {
+    decoded_signals_.push_back(key);
+  }
+  materialize_decoded_signal(id, signal_name);
+  decoded_signals_dbc_generation_ = dbc.generation();
+  pending_plot_series = path;
+  pending_plot_series_age = 0;
+  return path;
+}
+
+void Session::reload_layout(const std::filesystem::path &path) {
+  // Switch the whole workspace to another saved layout (the browser's layout selector). Reuses
+  // the same load path as startup so draft-over-file and normalization behave identically. The
+  // caller resets the undo history since panes are wholesale replaced.
+  workspace_layout_path = path;
+  const WorkspaceLoadResult loaded = load_workspace_or_draft(path);
+  workspace = loaded.workspace;
+  loaded_workspace_draft = loaded.loaded_draft;
+  normalize_workspace(&workspace);
+  computed_specs = normalize_workspace_computed_series(&workspace);
+  computed_dirty_ = !computed_specs.empty();
+}
+
+void Session::prepare_shutdown() {
+  // Fire every background subsystem's abort up front, THEN let destructors join. Otherwise the
+  // ingest thread, four camera-decoder workers, and live sources each abort-and-join in series
+  // as their members destruct — most visibly slow on macOS's hardware video decoder.
+  route_ingest_.stop();
+  live_poller_.stop();
+  live_camera_source.set_enabled(false);
+  for (CameraFrameDecoder &decoder : camera_decoders_) decoder.signal_stop();
+}
+
 void Session::stop_live() {
   live_poller_.stop();
   live_camera_source.set_enabled(false);
@@ -771,6 +847,13 @@ DrainResult Session::begin_frame() {
         dbc_status = "DBC open failed: " + name;
       }
     }
+  }
+
+  // Re-derive any plotted decoded DBC signals when the DBC changes (an edit, undo, or a
+  // different DBC loaded) — otherwise the plotted /dbc/ series shows the pre-edit decode.
+  if (!decoded_signals_.empty() && dbc.generation() != decoded_signals_dbc_generation_) {
+    decoded_signals_dbc_generation_ = dbc.generation();
+    for (const auto &[id, name] : decoded_signals_) materialize_decoded_signal(id, name);
   }
 
   const RouteIngestStatus status = route_ingest_.status();

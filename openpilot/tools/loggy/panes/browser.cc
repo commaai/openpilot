@@ -14,6 +14,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <functional>
 #include <limits>
 #include <string>
@@ -23,24 +24,33 @@
 namespace loggy {
 namespace {
 
-// Floor for the value/sparkline sample window anchored at the tracker (see
-// enrich_browser_series_row); the user's sparkline_seconds slider can widen it further.
-constexpr double kBrowserMinValueLookbackSeconds = 60.0;
+// A value shown against the tracker samples a trailing window; a slow-updating signal keeps its
+// last value rather than dropping to "--" the moment it's older than this.
+constexpr double kBrowserValueLookbackSeconds = 60.0;
+
+// Special draggable sources at the top of the browser (jotpluggler parity): drop one on a pane
+// to turn it into a Map or Camera. camera_view names match camera_view_from_layout_name().
+struct SpecialItem {
+  const char *id;
+  const char *label;
+  const char *pane_type;
+  const char *state_json;
+};
+constexpr std::array<SpecialItem, 5> kSpecialItems = {{
+  {"map", "Map", "map", "{}"},
+  {"camera_road", "Road Camera", "camera", R"({"camera_view":"road"})"},
+  {"camera_driver", "Driver Camera", "camera", R"({"camera_view":"driver"})"},
+  {"camera_wide_road", "Wide Road Camera", "camera", R"({"camera_view":"wide_road"})"},
+  {"camera_qroad", "qRoad Camera", "camera", R"({"camera_view":"qroad"})"},
+}};
 
 struct BrowserState {
   std::string filter;
   // High enough that a full route's series namespace (~11k paths on the demo route) is never
   // silently truncated; the skeleton cache below is what makes this affordable per frame.
   size_t max_rows = 25000;
-  int sparkline_seconds = 30;
   bool show_tree = true;
   bool show_deprecated = false;
-};
-
-struct BrowserSparkline {
-  std::vector<double> values;
-  double min = 0.0;
-  double max = 0.0;
 };
 
 struct BrowserSeriesRow {
@@ -50,7 +60,6 @@ struct BrowserSeriesRow {
   std::string annotation;
   bool has_value = false;
   std::string value = "--";
-  BrowserSparkline sparkline;
 };
 
 struct BrowserTreeNode {
@@ -72,9 +81,6 @@ BrowserState parse_browser_state(std::string_view state_json) {
   if (json["max_rows"].is_number()) {
     state.max_rows = static_cast<size_t>(std::clamp(json["max_rows"].int_value(), 1, 50000));
   }
-  if (json["sparkline_seconds"].is_number()) {
-    state.sparkline_seconds = std::clamp(json["sparkline_seconds"].int_value(), 1, 120);
-  }
   if (json["show_tree"].is_bool()) state.show_tree = json["show_tree"].bool_value();
   if (json["show_deprecated"].is_bool()) state.show_deprecated = json["show_deprecated"].bool_value();
   return state;
@@ -84,7 +90,6 @@ std::string browser_state_json(const BrowserState &state) {
   return json11::Json(json11::Json::object{
     {"filter", state.filter},
     {"max_rows", static_cast<int>(state.max_rows)},
-    {"sparkline_seconds", state.sparkline_seconds},
     {"show_tree", state.show_tree},
     {"show_deprecated", state.show_deprecated},
   }).dump();
@@ -142,32 +147,20 @@ std::vector<BrowserSeriesRow> prepare_browser_series_rows(const Store &store, co
 
 std::vector<std::string> browser_path_segments(std::string_view path) {
   std::vector<std::string> out;
-  size_t start_ = 0;
-  while (start_ < path.size()) {
-    while (start_ < path.size() && path[start_] == '/') ++start_;
-    const size_t end = path.find('/', start_);
+  size_t start = 0;
+  while (start < path.size()) {
+    while (start < path.size() && path[start] == '/') ++start;
+    const size_t end = path.find('/', start);
     const size_t bounded_end = end == std::string_view::npos ? path.size() : end;
-    if (bounded_end > start_) out.emplace_back(path.substr(start_, bounded_end - start_));
+    if (bounded_end > start) out.emplace_back(path.substr(start, bounded_end - start));
     if (end == std::string_view::npos) break;
-    start_ = end + 1;
+    start = end + 1;
   }
   return out;
 }
 
 bool browser_filter_focus_requested(bool ctrl_down, bool key_f_pressed, bool want_text_input) {
   return ctrl_down && key_f_pressed && !want_text_input;
-}
-
-std::string browser_schema_path(std::string_view path) {
-  if (path.empty()) return {};
-  const std::vector<std::string> segments = browser_path_segments(path);
-  if (segments.empty()) return {};
-  std::string out = segments.front();
-  for (size_t i = 1; i < segments.size(); ++i) {
-    out += " / ";
-    out += segments[i];
-  }
-  return out;
 }
 
 BrowserTreeNode *browser_find_or_add_group(BrowserTreeNode *parent,
@@ -251,53 +244,21 @@ std::string browser_format_value(double value) {
   return buf;
 }
 
-BrowserSparkline browser_sparkline_from_view(const SeriesView &view,
-                                            size_t max_points = 36,
-                                            double window_seconds = 0.0) {
-  BrowserSparkline sparkline;
-  if (max_points == 0 || view.points.empty()) return sparkline;
-  const double min_time = window_seconds > 0.0 ? view.points.back().t - window_seconds
-                                               : -std::numeric_limits<double>::infinity();
-  std::vector<double> values;
-  values.reserve(view.points.size());
-  for (const SeriesPoint &point : view.points) {
-    if (point.t < min_time || !std::isfinite(point.value)) continue;
-    values.push_back(point.value);
-  }
-  if (values.empty()) return sparkline;
-
-  const size_t step = values.size() <= max_points ? 1 : (values.size() + max_points - 1) / max_points;
-  double min_value = std::numeric_limits<double>::infinity();
-  double max_value = -std::numeric_limits<double>::infinity();
-  sparkline.values.reserve(std::min(values.size(), max_points));
-  for (size_t i = 0; i < values.size(); i += step) {
-    sparkline.values.push_back(values[i]);
-    min_value = std::min(min_value, values[i]);
-    max_value = std::max(max_value, values[i]);
-  }
-  sparkline.min = min_value;
-  sparkline.max = max_value;
-  return sparkline;
-}
-
-// A row's value/sparkline must resample at the current tracker every frame, not freeze at
-// whatever the chart's zoom/view range last covered. `sample_range` is anchored at the tracker
+// A row's value must resample at the current tracker every frame, not freeze at whatever the
+// chart's zoom/view range last covered. `sample_range` is anchored at the tracker
 // ([tracker - lookback, tracker]), independent of session.view_range.
 BrowserSeriesRow enrich_browser_series_row(const Store &store,
                                           BrowserSeriesRow row,
                                           TimeRange sample_range,
                                           double tracker_time,
-                                          const BrowserState &state,
                                           size_t max_points = 96) {
   const SeriesView view = store.series(row.path, sample_range.start_, sample_range.end, max_points);
   if (!view.points.empty()) {
     row.has_value = true;
     row.value = browser_format_value(browser_sample_at_time(view.points, tracker_time));
-    row.sparkline = browser_sparkline_from_view(view, 36, static_cast<double>(state.sparkline_seconds));
   } else if (sample_range.start_ > 0.0) {
     // Sparse series (carParams and friends publish once) fall outside the tracker-anchored
-    // window — sample-hold the newest value from route start instead of showing "--". Only the
-    // Value column: an empty sparkline is honest for a signal with nothing in the window.
+    // window — sample-hold the newest value from route start instead of showing "--".
     const SeriesView held = store.series(row.path, 0.0, sample_range.end, 2);
     if (!held.points.empty()) {
       row.has_value = true;
@@ -311,9 +272,9 @@ struct BrowserPaneTransientState {
   BrowserState state;
   std::string state_json;
   bool valid = false;
-  // Skeleton cache (paths/labels/tree shape only — values and sparklines are sampled per
-  // visible row every frame): rebuilding 11k rows plus the grouped tree each frame is what the
-  // old 1000-row truncation was hiding.
+  // Skeleton cache (paths/labels/tree shape only — values are sampled per visible row every
+  // frame): rebuilding 11k rows plus the grouped tree each frame is what the old 1000-row
+  // truncation was hiding.
   uint64_t skeleton_generation = std::numeric_limits<uint64_t>::max();
   std::string skeleton_key;
   double skeleton_built_at = -1.0e9;
@@ -339,49 +300,41 @@ BrowserState &browser_pane_state(PaneInstance &pane) {
   return transient.state;
 }
 
-void draw_browser_sparkline(const BrowserSparkline &sparkline) {
-  constexpr float width = 92.0f;
-  const float height = std::max(18.0f, ImGui::GetTextLineHeight() + 4.0f);
-  const ImVec2 pos = ImGui::GetCursorScreenPos();
-  ImGui::Dummy(ImVec2(width, height));
+// jotpluggler's dense list row: label on the left, mono value right-aligned. `value_col` is the
+// x of the value column's left edge (window-relative); empty when the row is a group header.
+void draw_browser_value_cell(const char *value) {
+  if (value == nullptr || value[0] == '\0') return;
+  const float col_w = 84.0f;
+  const float avail = ImGui::GetContentRegionAvail().x;
+  ImGui::SameLine(0.0f, 0.0f);
+  push_mono_font();
+  const ImVec2 text_size = ImGui::CalcTextSize(value);
+  const float offset = std::max(0.0f, avail - std::min(col_w, text_size.x));
+  ImGui::SameLine(0.0f, offset);
+  ImGui::PushStyleColor(ImGuiCol_Text, theme().text_muted);
+  ImGui::TextUnformatted(value);
+  ImGui::PopStyleColor();
+  pop_mono_font();
+}
 
-  ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  const ImVec2 max(pos.x + width, pos.y + height);
-  draw_list->AddRectFilled(pos, max, ImGui::GetColorU32(theme().sparkline_bg), 2.0f);
-  draw_list->AddRect(pos, max, ImGui::GetColorU32(theme().sparkline_border), 2.0f);
-  if (sparkline.values.empty()) {
-    draw_list->AddText(ImVec2(pos.x + 4.0f, pos.y + 2.0f), ImGui::GetColorU32(ImGuiCol_TextDisabled), "--");
-    return;
-  }
-
-  const double raw_span = sparkline.max - sparkline.min;
-  const double span = std::max(raw_span, 1e-9);
-  std::vector<ImVec2> points;
-  points.reserve(sparkline.values.size());
-  for (size_t i = 0; i < sparkline.values.size(); ++i) {
-    const float x = pos.x + 2.0f + (width - 4.0f) * (sparkline.values.size() == 1 ? 0.5f : static_cast<float>(i) / static_cast<float>(sparkline.values.size() - 1));
-    const double normalized = raw_span <= 1e-9 ? 0.5 : (sparkline.max - sparkline.values[i]) / span;
-    const float y = pos.y + 2.0f + (height - 4.0f) * static_cast<float>(normalized);
-    points.push_back(ImVec2(x, y));
-  }
-  if (points.size() == 1) {
-    draw_list->AddCircleFilled(points.front(), 2.0f, ImGui::GetColorU32(theme().sparkline_line));
-  } else {
-    draw_list->AddPolyline(points.data(), static_cast<int>(points.size()), ImGui::GetColorU32(theme().sparkline_line), 0, 1.5f);
+void draw_browser_special_items(Session &session) {
+  for (const SpecialItem &item : kSpecialItems) {
+    ImGui::PushID(item.id);
+    ImGui::Selectable(item.label, false, ImGuiSelectableFlags_AllowOverlap);
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+      ImGui::SetDragDropPayload(kLoggySpecialItemPayload, item.id, std::strlen(item.id) + 1);
+      ImGui::TextUnformatted(item.label);
+      ImGui::EndDragDropSource();
+    }
+    ImGui::PopID();
   }
 }
 
 void draw_browser_row(Session &session, const BrowserSeriesRow &row) {
-  ImGui::TableNextRow(ImGuiTableRowFlags_None, std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
   ImGui::PushID(row.path.c_str());
-
-  ImGui::TableSetColumnIndex(0);
-  const bool selected = false;
   std::string label = row.label;
-  if (!row.annotation.empty()) {
-    label += "  [" + row.annotation + "]";
-  }
-  ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+  if (!row.annotation.empty()) label += "  [" + row.annotation + "]";
+  ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_AllowOverlap);
   // Double-click adds the series to the tab's plot — jotpluggler's fastest add path.
   if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
     session.pending_plot_series = row.path;
@@ -392,47 +345,27 @@ void draw_browser_row(Session &session, const BrowserSeriesRow &row) {
     ImGui::TextUnformatted(row.path.c_str());
     ImGui::EndDragDropSource();
   }
-
-  ImGui::TableSetColumnIndex(1);
-  push_mono_font();
-  ImGui::TextUnformatted(row.value.c_str());
-  pop_mono_font();
-
-  ImGui::TableSetColumnIndex(2);
-  draw_browser_sparkline(row.sparkline);
-
-  ImGui::TableSetColumnIndex(3);
-  push_mono_font();
-  ImGui::TextUnformatted(browser_schema_path(row.path).c_str());
-  pop_mono_font();
-
+  draw_browser_value_cell(row.has_value ? row.value.c_str() : nullptr);
   ImGui::PopID();
 }
 
 void draw_browser_tree_node(Session &session, const BrowserTreeNode &node,
                             const Store &store,
                             TimeRange sample_range,
-                            double tracker_time,
-                            const BrowserState &state) {
+                            double tracker_time) {
   if (node.leaf) {
-    draw_browser_row(session, enrich_browser_series_row(store, node.series, sample_range, tracker_time, state));
+    draw_browser_row(session, enrich_browser_series_row(store, node.series, sample_range, tracker_time));
     return;
   }
 
   if (node.path != "/") {
-    ImGui::TableNextRow(ImGuiTableRowFlags_None, std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
-    ImGui::TableSetColumnIndex(0);
     ImGui::PushID(node.path.c_str());
-    const bool open = ImGui::TreeNodeEx("##browser_group",
-                                        ImGuiTreeNodeFlags_SpanAvailWidth,
+    ImGui::SetNextItemWidth(-1.0f);
+    const bool open = ImGui::TreeNodeEx("##browser_group", ImGuiTreeNodeFlags_SpanAvailWidth,
                                         "%s (%zu)", node.label.c_str(), node.visible_leaf_count);
-    ImGui::TableSetColumnIndex(3);
-    push_mono_font();
-    ImGui::TextUnformatted(browser_schema_path(node.path).c_str());
-    pop_mono_font();
     if (open) {
       for (const BrowserTreeNode &child : node.children) {
-        draw_browser_tree_node(session, child, store, sample_range, tracker_time, state);
+        draw_browser_tree_node(session, child, store, sample_range, tracker_time);
       }
       ImGui::TreePop();
     }
@@ -441,41 +374,52 @@ void draw_browser_tree_node(Session &session, const BrowserTreeNode &node,
   }
 
   for (const BrowserTreeNode &child : node.children) {
-    draw_browser_tree_node(session, child, store, sample_range, tracker_time, state);
+    draw_browser_tree_node(session, child, store, sample_range, tracker_time);
   }
 }
 
 }  // namespace
+
+SpecialItemPane browser_special_item_pane(std::string_view id) {
+  for (const SpecialItem &item : kSpecialItems) {
+    if (id == item.id) return {item.pane_type, item.label, item.state_json};
+  }
+  return {};
+}
 
 void draw_browser_pane(Session &session, PaneInstance &pane) {
   BrowserPaneTransientState &transient = browser_pane_transient_state(pane);
   BrowserState &state = browser_pane_state(pane);
   bool changed = false;
 
+  // Layout selector (jotpluggler parity): pick a saved layout to load it — also how you recover
+  // a tab you closed. Deferred to the shell, which reloads the whole workspace next frame.
+  const std::string current_layout = session.workspace_layout_path.empty()
+                                    ? std::string("untitled")
+                                    : session.workspace_layout_path.stem().string();
+  ImGui::SetNextItemWidth(-1.0f);
+  if (ImGui::BeginCombo("##layout", current_layout.c_str())) {
+    for (const std::string &name : available_layout_names()) {
+      if (ImGui::Selectable(name.c_str(), name == current_layout)) {
+        session.pending_layout_load = layouts_dir() / (name + ".json");
+      }
+    }
+    ImGui::EndCombo();
+  }
+
   std::array<char, 160> filter_buf{};
   std::snprintf(filter_buf.data(), filter_buf.size(), "%s", state.filter.c_str());
   const ImGuiIO &io = ImGui::GetIO();
   const bool focus_filter = browser_filter_focus_requested(io.KeyCtrl, ImGui::IsKeyPressed(ImGuiKey_F, false),
                                                           io.WantTextInput);
-  const float filter_width = std::clamp(ImGui::GetContentRegionAvail().x * 0.50f, 140.0f, 300.0f);
-  ImGui::SetNextItemWidth(filter_width);
+  ImGui::SetNextItemWidth(-1.0f);
   if (focus_filter) ImGui::SetKeyboardFocusHere();
-  if (ImGui::InputTextWithHint("##browser_search", "Search paths", filter_buf.data(), filter_buf.size())) {
+  if (ImGui::InputTextWithHint("##browser_search", "Search", filter_buf.data(), filter_buf.size())) {
     state.filter = filter_buf.data();
     changed = true;
   }
-  // Cumulative thresholds: once one guard fails, every later one fails too and wraps its own row.
-  constexpr float kSparkWidth = 150.0f, kTreeWidth = 80.0f, kDeprecatedWidth = 120.0f;
-  if (ImGui::GetContentRegionAvail().x > filter_width + kSparkWidth) ImGui::SameLine();
-  int sparkline_seconds = state.sparkline_seconds;
-  ImGui::SetNextItemWidth(96.0f);
-  if (ImGui::SliderInt("Spark", &sparkline_seconds, 1, 120, "%ds", ImGuiSliderFlags_AlwaysClamp)) {
-    state.sparkline_seconds = sparkline_seconds;
-    changed = true;
-  }
-  if (ImGui::GetContentRegionAvail().x > filter_width + kSparkWidth + kTreeWidth) ImGui::SameLine();
   changed = ImGui::Checkbox("Tree", &state.show_tree) || changed;
-  if (ImGui::GetContentRegionAvail().x > filter_width + kSparkWidth + kTreeWidth + kDeprecatedWidth) ImGui::SameLine();
+  ImGui::SameLine();
   changed = ImGui::Checkbox("Deprecated", &state.show_deprecated) || changed;
   if (changed) {
     pane.state_json = browser_state_json(state);
@@ -504,43 +448,35 @@ void draw_browser_pane(Session &session, PaneInstance &pane) {
   const size_t visible_count = state.show_tree ? tree.visible_leaf_count : rows.size();
   ImGui::TextDisabled("%zu/%zu series", visible_count, total);
 
-  if (visible_count == 0) {
-    ImGui::TextDisabled("No series in store or filter");
-    return;
-  }
+  // Dense scrolling list (jotpluggler): tight rows, no table chrome, no sparkline column.
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 3.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 2.0f));
+  if (ImGui::BeginChild("##browser_list", ImGui::GetContentRegionAvail(), false)) {
+    // Special sources first, then a separator, then the series tree — jotpluggler's order.
+    draw_browser_special_items(session);
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
-  constexpr ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
-                                    ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingStretchProp |
-                                    ImGuiTableFlags_ScrollY;
-  if (!ImGui::BeginTable("##loggy_browser_series", 4, flags, ImGui::GetContentRegionAvail())) return;
-  ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthFixed, state.show_tree ? 190.0f : 126.0f);
-  ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 88.0f);
-  ImGui::TableSetupColumn("Spark", ImGuiTableColumnFlags_WidthFixed, 102.0f);
-  ImGui::TableSetupColumn("Path", ImGuiTableColumnFlags_WidthStretch);
-  ImGui::TableHeadersRow();
-
-  // Sample anchored at the tracker, not session.view_range (the chart's zoom window) -- rows
-  // must keep ticking during playback/seeks regardless of what any plot pane has zoomed to. The
-  // lookback is generous versus the sparkline window so a value doesn't drop to "--" just
-  // because a slow-updating signal is older than the visible spark.
-  const double tracker_time = session.playback.tracker_time();
-  const double lookback = std::max(kBrowserMinValueLookbackSeconds, static_cast<double>(state.sparkline_seconds));
-  const TimeRange sample_range{tracker_time - lookback, tracker_time};
-  if (state.show_tree) {
-    draw_browser_tree_node(session, tree, session.store, sample_range, tracker_time, state);
-    ImGui::EndTable();
-    return;
-  }
-
-  ImGuiListClipper clipper;
-  clipper.Begin(static_cast<int>(rows.size()), std::max(ImGui::GetFrameHeight(), ImGui::GetTextLineHeight() + 8.0f));
-  while (clipper.Step()) {
-    for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
-      draw_browser_row(session, enrich_browser_series_row(session.store, rows[static_cast<size_t>(row_idx)],
-                                                          sample_range, tracker_time, state));
+    const double tracker_time = session.playback.tracker_time();
+    const TimeRange sample_range{tracker_time - kBrowserValueLookbackSeconds, tracker_time};
+    if (visible_count == 0) {
+      ImGui::TextDisabled("No series in store or filter");
+    } else if (state.show_tree) {
+      draw_browser_tree_node(session, tree, session.store, sample_range, tracker_time);
+    } else {
+      ImGuiListClipper clipper;
+      clipper.Begin(static_cast<int>(rows.size()), ImGui::GetFrameHeight());
+      while (clipper.Step()) {
+        for (int row_idx = clipper.DisplayStart; row_idx < clipper.DisplayEnd; ++row_idx) {
+          draw_browser_row(session, enrich_browser_series_row(session.store, rows[static_cast<size_t>(row_idx)],
+                                                              sample_range, tracker_time));
+        }
+      }
     }
   }
-  ImGui::EndTable();
+  ImGui::EndChild();
+  ImGui::PopStyleVar(2);
 }
 
 }  // namespace loggy

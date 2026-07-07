@@ -117,6 +117,9 @@ public:
   CameraFrameDecoder &operator=(const CameraFrameDecoder &) = delete;
 
   void set_camera_index(CameraFeedIndex index);
+  // Signal the decode worker to exit without waiting — used by Session shutdown so all four
+  // decoders tear down in parallel rather than joining serially (slow app exit on macOS).
+  void signal_stop();
   // Same feed, more of it (ingest landed another segment): swap the index without discarding
   // the frame cache, warm FrameReader, or the displayed frame — set_camera_index resets all of
   // those, which restarted decode from scratch on every segment landing during route load.

@@ -273,6 +273,9 @@ struct BinaryDragState {
   // DBC generation at the moment `status` was set; a later mismatch (an Undo/Redo, or any other
   // edit) means the banner refers to a state that no longer holds, so it gets cleared (#28).
   uint64_t status_generation = 0;
+  // Recently-viewed messages, most-recent first (cabana's binary-view history tabs) — click one
+  // to jump back to a message you were reverse-engineering.
+  std::vector<MessageId> history;
 };
 
 BinaryDragState &binary_drag_state(PaneInstance &pane) {
@@ -295,6 +298,29 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   const std::optional<BinaryGrid> maybe_grid = build_binary_grid(session.store, id, tracker_range);
   Msg *dbc_msg = session.dbc.msg(id);
 
+  // History strip (cabana parity): remember each message we land on, most-recent first, and let
+  // the user click a chip to jump back. Kept in the pane's transient state.
+  BinaryDragState &drag = binary_drag_state(pane);
+  if (drag.history.empty() || !(drag.history.front() == id)) {
+    drag.history.erase(std::remove(drag.history.begin(), drag.history.end(), id), drag.history.end());
+    drag.history.insert(drag.history.begin(), id);
+    if (drag.history.size() > 8) drag.history.resize(8);
+  }
+  for (size_t i = 0; i < drag.history.size(); ++i) {
+    const MessageId &hid = drag.history[i];
+    Msg *hmsg = session.dbc.msg(hid);
+    char chip[64];
+    std::snprintf(chip, sizeof(chip), "%s##hist%zu", hmsg != nullptr ? hmsg->name.c_str() : hid.to_string().c_str(), i);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(i == 0 ? ImGuiCol_ButtonActive : ImGuiCol_Button));
+    if (ImGui::SmallButton(chip)) {
+      selection.selected_msg_id = hid;
+      selection.has_selected_msg = true;
+    }
+    ImGui::PopStyleColor();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", hid.to_string().c_str());
+    if (i + 1 < drag.history.size() && ImGui::GetContentRegionAvail().x > 60.0f) ImGui::SameLine();
+  }
+
   ImGui::TextDisabled("ID %s", id.to_string().c_str());
   if (!maybe_grid.has_value()) {
     ImGui::TextDisabled("No CAN events in view");
@@ -304,7 +330,6 @@ void draw_binary_pane(Session &session, PaneInstance &pane) {
   const BinaryGrid &grid = *maybe_grid;
   ImGui::SameLine();
   ImGui::TextDisabled("| %zu events | latest %.3fs", grid.event_count, grid.last_time);
-  BinaryDragState &drag = binary_drag_state(pane);
   if (!drag.status.empty() && session.dbc.generation() != drag.status_generation) drag.status.clear();
   if (!drag.status.empty()) {
     ImGui::SameLine();
