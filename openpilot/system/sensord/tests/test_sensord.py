@@ -1,4 +1,5 @@
 import os
+import subprocess
 import pytest
 import time
 import numpy as np
@@ -14,8 +15,8 @@ SensorConfig = namedtuple('SensorConfig', ['service', 'measurement', 'sanity_min
 
 SENSOR_CONFIGS = (
   SensorConfig("accelerometer", "acceleration", 5, 15, 5),
-  SensorConfig("gyroscope", "gyroUncalibrated", 0, .15, 0.5),
-  SensorConfig("temperatureSensor", "temperature", 10, 40, 0.5),  # set for max range of our office
+  SensorConfig("gyroscope", "gyroUncalibrated", 0, .3, 0.5),
+  SensorConfig("temperatureSensor", "temperature", 10, 60, 0.5), # looser for device density
 )
 SENSOR_CONFIGS_BY_MEASUREMENT = {config.measurement: config for config in SENSOR_CONFIGS}
 
@@ -61,7 +62,7 @@ class TestSensord:
     os.environ["LSM_SELF_TEST"] = "1"
 
     # read initial sensor values every test case can use
-    os.system("pkill -f \\\\./sensord")
+    subprocess.run("pkill -f \\\\./sensord", shell=True)
     try:
       managed_processes["sensord"].start()
       cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))

@@ -6,10 +6,13 @@ import os
 import pickle
 import tempfile
 import time
+import shutil
 from functools import partial
 from collections import namedtuple
 
 import numpy as np
+
+from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
 
 def _patch_tinygrad_fetch_fw():
   import hashlib
@@ -27,6 +30,23 @@ def _patch_tinygrad_fetch_fw():
   helpers.fetch_fw = fetch_fw
 _patch_tinygrad_fetch_fw()
 
+def _patch_tinygrad_buffer_reduce():
+  from tinygrad.device import Buffer
+  def __reduce_ex__(self, protocol):
+    buf = None
+    if self._base is not None:
+      return self.__class__, (self.device, self.size, self.dtype, None, None, None, 0, self.base, self.offset, self.is_allocated())
+    if self.device == "NPY":
+      return self.__class__, (self.device, self.size, self.dtype, self._buf, self.options, None, self.uop_refcount)
+    if self.is_allocated():
+      buf = bytearray(self.nbytes)
+      self.copyout(memoryview(buf))
+      if protocol >= 5:
+        buf = pickle.PickleBuffer(buf)
+    return self.__class__, (self.device, self.size, self.dtype, None, self.options, buf, self.uop_refcount)
+  Buffer.__reduce_ex__ = __reduce_ex__
+_patch_tinygrad_buffer_reduce()
+
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
@@ -34,8 +54,8 @@ from tinygrad.engine.jit import TinyJit
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
-WARP_INPUTS = ['img_q', 'big_img_q', 'tfm', 'big_tfm']
-POLICY_INPUTS = ['feat_q', 'desire_q', 'packed_npy_inputs']
+WARP_INPUTS = ['tfm', 'big_tfm']
+POLICY_INPUTS = ['img_q', 'big_img_q', 'feat_q', 'desire_q', 'packed_npy_inputs']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -175,20 +195,17 @@ def sample_desire(buf, frame_skip):
 
 def make_warp(nv12, model_w, model_h, frame_skip):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
-  sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
 
-  def warp_enqueue(img_q, big_img_q, tfm, big_tfm, frame, big_frame):
+  def warp(tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(WARP_DEV)
     big_tfm = big_tfm.to(WARP_DEV)
     Tensor.realize(tfm, big_tfm)
 
     warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
     warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
-    warped = Tensor.cat(warped_frame, warped_big_frame).to(Device.DEFAULT)
-    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
-    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
-    return img, big_img
-  return warp_enqueue
+    return Tensor.cat(warped_frame, warped_big_frame)
+
+  return warp
 
 
 def make_run_policy(model_runner, model_metadata, frame_skip):
@@ -196,8 +213,14 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['input_shapes'])
 
-  def run_policy(img, big_img, feat_q, desire_q, packed_npy_inputs):
-    packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT).realize()
+  def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
+    packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
+    warped = warped.to(Device.DEFAULT)
+    Tensor.realize(packed_npy_inputs, warped)
+
+    img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
+    big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
+
     desire, traffic_convention, action_t, prev_feat = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
     feat_buf = shift_and_sample(feat_q, prev_feat.reshape(1, 1, -1), sample_skip_fn)
@@ -252,7 +275,10 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
   print('capture + replay')
   test_val, test_buffers = random_inputs_run(jit, SEED)
   print('pickle round trip')
-  jit = pickle.loads(pickle.dumps(jit))
+  with tempfile.TemporaryFile(dir=".") as f:
+    dump_oob(jit, f)
+    f.seek(0)
+    jit = load_oob(f)
   random_inputs_run(jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run(jit, SEED+1, test_val, test_buffers, expect_match=False)
   return jit
@@ -263,12 +289,11 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def read_file_chunked_to_shm(path):
-  from openpilot.common.file_chunker import read_file_chunked
-  from openpilot.common.hardware.hw import Paths
-  with tempfile.NamedTemporaryFile(prefix='compile_modeld_', dir=Paths.shm_path(), delete=False) as f:
-    f.write(read_file_chunked(path))
-    tmp_path = f.name
+def read_file_chunked_to_disk(path):
+  from openpilot.common.file_chunker import open_file_chunked
+  tmp_path = f'{path}.unchunked'
+  with open(tmp_path, 'wb') as f, open_file_chunked(path) as src:
+    shutil.copyfileobj(src, f)
   atexit.register(lambda: os.path.exists(tmp_path) and os.remove(tmp_path))
   return tmp_path
 
@@ -286,7 +311,7 @@ if __name__ == "__main__":
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
 
-  model_path = read_file_chunked_to_shm(args.onnx)
+  model_path = read_file_chunked_to_disk(args.onnx)
   model_w, model_h = args.model_size
 
   model_runner = OnnxRunner(model_path)
@@ -295,17 +320,17 @@ if __name__ == "__main__":
   run_policy_jit = TinyJit(make_run_policy(model_runner, out['metadata'], args.frame_skip), prune=True)
 
   make_policy_queues = partial(make_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-  make_random_model_inputs = partial(make_random_images, keys=['img', 'big_img'], shape=out['metadata']['input_shapes']['img'])
+  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, *out['metadata']['input_shapes']['img'][2:]), device=WARP_DEV)
   out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
                                   make_policy_queues)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
     make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size, device=WARP_DEV)
-    warp_enqueue = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
+    warp = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
     make_warp_queues = partial(make_warp_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-    out[(cam_w,cam_h)] = compile_jit(warp_enqueue, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
+    out[(cam_w,cam_h)] = compile_jit(warp, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
 
   with open(args.output, "wb") as f:
-    pickle.dump(out, f)
+    dump_oob(out, f)
   print(f"Saved JITs to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")

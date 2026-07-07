@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: commaai/timeout@v1
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
 
@@ -34,7 +34,7 @@ jobs:
         python scripts/docs.py build
 
     # Push to docs.comma.ai
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       with:
         path: openpilot-docs
@@ -45,7 +45,7 @@ jobs:
       run: |
         set -x
 
-        source release/identity.sh
+        source tools/release/identity.sh
 
         cd openpilot-docs
         git checkout --orphan tmp

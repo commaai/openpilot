@@ -414,6 +414,10 @@ struct CanData {
 struct DeviceState @0xa4d8b5af2aa492eb {
   deviceType @45 :InitData.DeviceType;
 
+  # usb
+  chestnutPresent @51 :Bool;
+  usbState @52 :UsbState;
+
   networkType @22 :NetworkType;
   networkInfo @31 :NetworkInfo;
   networkStrength @24 :NetworkStrength;
@@ -684,6 +688,20 @@ struct PeripheralState {
   }
 }
 
+struct UsbState {
+  devices @0 :List(Device);
+
+  struct Device {
+    busnum @0 :UInt8;
+    devnum @1 :UInt8;
+    vendorId @2 :UInt16;
+    productId @3 :UInt16;
+    speedMbps @4 :UInt16;
+    manufacturer @6 :Text;
+    product @5 :Text;
+  }
+}
+
 struct RadarState @0x9a185389d6fdd05f {
   mdMonoTime @6 :UInt64;
   carStateMonoTime @11 :UInt64;
@@ -771,12 +789,29 @@ struct SelfdriveState {
   alertStatus @5 :AlertStatus;
   alertSize @6 :AlertSize;
   alertType @7 :Text;
-  alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
+  alertSound @13 :AudibleAlert;
   alertHudVisual @12 :Car.CarControl.HUDControl.VisualAlert;
 
   # configurable driving settings
   experimentalMode @10 :Bool;
   personality @11 :LongitudinalPersonality;
+
+  enum AudibleAlert {
+    none @0;
+
+    engage @1;
+    disengage @2;
+    refuse @3;
+
+    warningSoft @4;
+    warningImmediate @5;
+
+    prompt @6;
+    promptRepeat @7;
+    promptDistracted @8;
+
+    preAlert @9;
+  }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
     disabled @0;
@@ -797,6 +832,10 @@ struct SelfdriveState {
     small @1;
     mid @2;
     full @3;
+  }
+
+  deprecated :group {
+    alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
   }
 }
 
@@ -918,7 +957,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     alertStatus @38 :SelfdriveState.AlertStatus;
     alertSize @39 :SelfdriveState.AlertSize;
     alertType @44 :Text;
-    alertSound2 @56 :Car.CarControl.HUDControl.AudibleAlert;
+    alertSound2 @56 :SelfdriveState.AudibleAlert;
     engageable @41 :Bool;  # can OP be engaged?
     state @31 :SelfdriveState.OpenpilotState;
     enabled @19 :Bool;
@@ -2120,8 +2159,10 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
 
 struct DriverMonitoringState {
   lockout @0 :Bool;
-  alertCountLockoutPercent @1 :Int8;
-  alertTimeLockoutPercent @2 :Int8;
+  lockoutRecoveryPercent @11 :Int8;
+  alert3Count @12 :Int8;
+  noResponseCount @13 :Int8;
+  noResponseForceDecel @14 :Bool;
 
   alwaysOn @3 :Bool;
   alwaysOnLockout @4 :Bool;
@@ -2184,6 +2225,11 @@ struct DriverMonitoringState {
   struct CalibrationState {
     calibratedPercent @0 :Int8;
     offset @1 :Float32;
+  }
+
+  deprecated :group {
+    alertCountLockoutPercent @1 :Int8;
+    alertTimeLockoutPercent @2 :Int8;
   }
 }
 

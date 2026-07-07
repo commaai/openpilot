@@ -11,7 +11,7 @@ jobs:
       contents: write
     steps:
       - name: Delete stale Jenkins branches
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const cutoff = Date.now() - 24 * 60 * 60 * 1000;
@@ -52,7 +52,7 @@ jobs:
     steps:
     - name: Check for trigger phrase
       id: check_comment
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const triggerPhrase = "trigger-jenkins";
@@ -72,7 +72,7 @@ jobs:
 
     - name: Checkout repository
       if: steps.check_comment.outputs.result == 'true'
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         ref: refs/pull/${{ github.event.issue.number }}/head
 
@@ -86,7 +86,7 @@ jobs:
 
     - name: Delete trigger comment
       if: steps.check_comment.outputs.result == 'true' && always()
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           await github.rest.issues.deleteComment({

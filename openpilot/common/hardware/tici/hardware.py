@@ -241,7 +241,7 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
-    os.system("sudo poweroff")
+    subprocess.run("sudo poweroff", shell=True)
 
   def get_thermal_config(self):
     intake, exhaust, gnss, bottomSoc = None, None, None, None
@@ -335,7 +335,7 @@ class Tici(HardwareBase):
       self.amplifier.initialize_configuration()
 
     # Allow hardwared to write engagement status to kmsg
-    os.system("sudo chmod a+w /dev/kmsg")
+    subprocess.run("sudo chmod a+w /dev/kmsg", shell=True)
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
     gpio_init(GPIO.SOM_ST_IO, True)

@@ -1,6 +1,6 @@
-import os
+import subprocess
 import tempfile
-from typing import Dict
+
 from openpilot.common.parameterized import parameterized
 
 import openpilot.cereal.services as services
@@ -17,5 +17,5 @@ class TestServices:
 
   def test_generated_header(self):
     with tempfile.NamedTemporaryFile(suffix=".h") as f:
-      ret = os.system(f"python3 {services.__file__} > {f.name} && clang++ {f.name} -std=c++11")
+      ret = subprocess.run(f"python3 {services.__file__} > {f.name} && clang++ {f.name} -std=c++11", shell=True).returncode
       assert ret == 0, "generated services header is not valid C"

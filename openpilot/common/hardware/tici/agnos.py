@@ -228,7 +228,7 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, st
   cloudlog.info(f"Target slot {target_slot_number}")
 
   # set target slot as unbootable
-  os.system(f"abctl --set_unbootable {target_slot_number}")
+  subprocess.run(f"abctl --set_unbootable {target_slot_number}", shell=True)
 
   for partition in update:
     success = False

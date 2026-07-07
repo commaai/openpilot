@@ -48,10 +48,6 @@ dependencies = [
   "av",
   "libdatachannel-py>=2026.1.0.dev2",
 
-  # panda
-  "libusb1",
-  "spidev; platform_system == 'Linux'",
-
   # logging
   "pyzmq",
   "sentry-sdk",
@@ -67,7 +63,6 @@ dependencies = [
 
   # these should be removed
   "psutil",
-  "pycryptodome", # used in panda, body, and a test
   "setproctitle",
 
   # logreader
@@ -115,6 +110,16 @@ tools = [
 [project.urls]
 Homepage = "https://github.com/commaai/openpilot"
 
+[dependency-groups]
+submodules = [
+  "msgq",
+  "opendbc",
+  "pandacan",
+  "rednose",
+  "teleoprtc",
+  "tinygrad",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -122,12 +127,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [
   "openpilot",
-  "msgq",
-  "opendbc",
-  "panda",
-  "rednose",
-  "teleoprtc",
-  "tinygrad",
 ]
 
 [tool.hatch.metadata]
@@ -217,3 +216,16 @@ not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
+default-groups = ["submodules"]
+override-dependencies = [
+  "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
+  "av",       # teleoprtc's av<13 pin is stale
+]
+
+[tool.uv.sources]
+msgq = { path = "msgq_repo", editable = true }
+opendbc = { path = "opendbc_repo", editable = true }
+pandacan = { path = "panda", editable = true }
+rednose = { path = "rednose_repo", editable = true }
+teleoprtc = { path = "teleoprtc_repo", editable = true }
+tinygrad = { path = "tinygrad_repo", editable = true }

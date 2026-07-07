@@ -33,7 +33,7 @@ git checkout --orphan $BUILD_BRANCH
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-cp -pR --parents $(./release/release_files.py) $BUILD_DIR/
+cp -pR --parents $(./tools/release/release_files.py) $BUILD_DIR/
 
 # in the directory
 cd $BUILD_DIR
@@ -73,7 +73,7 @@ find . -name '*.os' -delete
 find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
-rm -rf .sconsign.dblite Jenkinsfile release/
+rm -rf .sconsign.dblite Jenkinsfile tools/release/
 rm -f openpilot/selfdrive/modeld/models/*.onnx*
 
 # Mark as prebuilt release

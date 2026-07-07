@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import subprocess
 import sys
 import time
 import threading
@@ -105,12 +105,12 @@ class Reset(Scroller):
       return
 
     # Removing data and formatting
-    rm = os.system("sudo rm -rf /data/*")
-    os.system(f"sudo umount {USERDATA}")
-    fmt = os.system(f"yes | sudo mkfs.ext4 {USERDATA}")
+    rm = subprocess.run("sudo rm -rf /data/*", shell=True).returncode
+    subprocess.run(f"sudo umount {USERDATA}", shell=True)
+    fmt = subprocess.run(f"yes | sudo mkfs.ext4 {USERDATA}", shell=True).returncode
 
     if rm == 0 or fmt == 0:
-      os.system("sudo reboot")
+      subprocess.run("sudo reboot", shell=True)
     else:
       self._reset_failed = True
 

@@ -121,10 +121,10 @@ function git_clone() {
 
 function install_with_op() {
   cd $OPENPILOT_ROOT
-  $OPENPILOT_ROOT/openpilot/tools/op.sh install
-  $OPENPILOT_ROOT/openpilot/tools/op.sh post-commit
+  $OPENPILOT_ROOT/tools/op.sh install
+  $OPENPILOT_ROOT/tools/op.sh post-commit
 
-  if ! $OPENPILOT_ROOT/openpilot/tools/op.sh setup; then
+  if ! $OPENPILOT_ROOT/tools/op.sh setup; then
     echo -e "\n[${RED}✗${NC}] failed to install openpilot!"
     return 1
   fi

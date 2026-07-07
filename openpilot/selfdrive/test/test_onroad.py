@@ -175,8 +175,9 @@ class TestOnroad:
       if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocation', 'gpsLocationExternal', 'qcomGnss'):
         continue
 
+      duration = TEST_DURATION - 5.0  # subtract some selfdrived initializing time
       with subtests.test(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.8))
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(duration*0.8))
 
   def test_manager_starting_time(self):
     st = self.ts['managerState']['t'][0]
@@ -283,7 +284,7 @@ class TestOnroad:
     print("--------------- Memory Usage -------------------")
     print("------------------------------------------------")
 
-    from openpilot.tools.scripts.mem_usage import print_report
+    from openpilot.selfdrive.test.mem_usage import print_report
     print_report(self.msgs['procLog'], self.msgs['deviceState'])
 
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)

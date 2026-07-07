@@ -1,4 +1,4 @@
-import os
+import subprocess
 import threading
 import pyray as rl
 from enum import IntEnum
@@ -103,9 +103,9 @@ class CheckUpdateButton(BigButton):
 
     def run():
       if self.get_value() == "download update":
-        os.system("pkill -SIGHUP -f openpilot.system.updated.updated")
+        subprocess.run("pkill -SIGHUP -f openpilot.system.updated.updated", shell=True)
       else:
-        os.system("pkill -SIGUSR1 -f openpilot.system.updated.updated")
+        subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
 
     threading.Thread(target=run, daemon=True).start()
 
@@ -251,7 +251,7 @@ class TargetBranchButton(BigButton):
   def _on_select(self, branch: str):
     ui_state.params.put("UpdaterTargetBranch", branch, block=True)
     self.set_value(branch)
-    os.system("pkill -SIGUSR1 -f openpilot.system.updated.updated")
+    subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
 
 
 class SoftwareLayoutMici(NavScroller):

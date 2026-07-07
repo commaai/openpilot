@@ -15,17 +15,17 @@ jobs:
     steps:
     - name: Wait for green check mark
       if: ${{ github.event_name == 'schedule' }}
-      uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
+      uses: lewagon/wait-on-check-action@1d57e2c51a58d812d2765e036a028b6bdb5a6154
       with:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build master-ci'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         check-regexp: ^((?!.*(build prebuilt|create badges).*).)*$
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4 # checkout version > v4 breaks nightly release script
       with:
         submodules: true
         fetch-depth: 0
-    - run: ./openpilot/tools/op.sh setup
+    - run: ./tools/op.sh setup
     - name: Push master-ci
-      run: BRANCH=__nightly release/build_stripped.sh
+      run: BRANCH=__nightly tools/release/build_stripped.sh
