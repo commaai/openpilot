@@ -22,8 +22,14 @@ ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
 
 # Cruise speed limit (moved out of the MPC)
+CRUISE_MIN_ACCEL = -1.2
 CRUISE_MAX_ACCEL = 1.6
 CRUISE_JERK = 0.5  # m/s^3, max rate of change of cruise limit acceleration
+# In e2e mode, only enforce the cruise limit within this distance of the set speed,
+# letting the model accelerate freely from well below cruise.
+CRUISE_LIMIT_ENABLE_DELTA = CRUISE_MAX_ACCEL**2 / (2 * CRUISE_JERK)
+# In e2e mode, allow the model to command higher acceleration than the comfort table.
+E2E_MAX_ACCEL = 3.0
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -34,6 +40,18 @@ def get_max_accel(v_ego):
 
 def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
+
+def get_cruise_accel(v_err, force_slow_decel, a_cruise_prev, dt):
+  # Target acceleration to converge to the cruise set speed, then jerk-limit it.
+  if force_slow_decel:
+    a_target = ACCEL_MIN
+  elif v_err > 0:
+    a_target = CRUISE_MAX_ACCEL * np.clip(v_err / (CRUISE_MAX_ACCEL**2 / (2 * CRUISE_JERK)), 0, 1)
+  elif v_err < 0:
+    a_target = CRUISE_MIN_ACCEL * np.clip(-v_err / (CRUISE_MIN_ACCEL**2 / (2 * CRUISE_JERK)), 0, 1)
+  else:
+    a_target = 0.0
+  return float(np.clip(a_target, a_cruise_prev - CRUISE_JERK * dt, a_cruise_prev + CRUISE_JERK * dt))
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -81,6 +99,7 @@ class LongitudinalPlanner:
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
+    experimental_mode = sm['selfdriveState'].experimentalMode
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['selfdriveState'].enabled
@@ -90,7 +109,8 @@ class LongitudinalPlanner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
-    accel_clip = [ACCEL_MIN, get_max_accel(v_ego)]
+    max_accel = E2E_MAX_ACCEL if experimental_mode else get_max_accel(v_ego)
+    accel_clip = [ACCEL_MIN, max_accel]
     steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
     accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP)
 
@@ -116,7 +136,8 @@ class LongitudinalPlanner:
 
     self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['radarState'], personality=sm['selfdriveState'].personality)
+    mpc_a_max = E2E_MAX_ACCEL if experimental_mode else ACCEL_MAX
+    self.mpc.update(sm['radarState'], personality=sm['selfdriveState'].personality, a_max=mpc_a_max)
 
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
@@ -138,21 +159,18 @@ class LongitudinalPlanner:
 
     # Apply cruise speed limit outside the MPC
     v_err = v_cruise - v_ego
-    if force_slow_decel:
-      a_cruise_target = ACCEL_MIN
-    elif v_err > 0:
-      a_cruise_target = CRUISE_MAX_ACCEL * np.clip(v_err / (CRUISE_MAX_ACCEL**2 / (2 * CRUISE_JERK)), 0, 1)
-    else:
-      a_cruise_target = 0.0
-    self.a_cruise = float(np.clip(a_cruise_target, self.a_cruise - CRUISE_JERK * self.dt, self.a_cruise + CRUISE_JERK * self.dt))
-    if self.a_cruise < output_a_target_mpc:
+    self.a_cruise = get_cruise_accel(v_err, force_slow_decel, self.a_cruise, self.dt)
+    # In e2e mode, only apply the cruise limit when close to cruise speed so the
+    # model is free to accelerate from well below the set speed.
+    apply_cruise_limit = not experimental_mode or v_err <= CRUISE_LIMIT_ENABLE_DELTA
+    if apply_cruise_limit and self.a_cruise < output_a_target_mpc:
       output_a_target_mpc = self.a_cruise
       self.mpc.source = LongitudinalPlanSource.cruise
 
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
-    if sm['selfdriveState'].experimentalMode:
+    if experimental_mode:
       output_a_target = min(output_a_target_e2e, output_a_target_mpc)
       self.output_should_stop = output_should_stop_e2e or output_should_stop_mpc
       if output_a_target < output_a_target_mpc:
