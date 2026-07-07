@@ -76,27 +76,20 @@ wheels = [
 
 [[package]]
 name = "aiortc"
-version = "1.10.1"
+version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioice" },
     { name = "av" },
-    { name = "cffi" },
     { name = "cryptography" },
     { name = "google-crc32c" },
     { name = "pyee" },
     { name = "pylibsrtp" },
     { name = "pyopenssl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/f8/408e092748521889c9d33dddcef920afd9891cf6db4615ba6b6bfe114ff8/aiortc-1.10.1.tar.gz", hash = "sha256:64926ad86bde20c1a4dacb7c3a164e57b522606b70febe261fada4acf79641b5", size = 1179406, upload-time = "2025-02-02T17:36:38.684Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/51/9c/4e027bfe0195de0442da301e2389329496745d40ae44d2d7c4571c4290ce/aiortc-1.14.0.tar.gz", hash = "sha256:adc8a67ace10a085721e588e06a00358ed8eaf5f6b62f0a95358ff45628dd762", size = 1180864, upload-time = "2025-10-13T21:40:37.905Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/6b/74547a30d1ddcc81f905ef4ff7fcc2c89b7482cb2045688f2aaa4fa918aa/aiortc-1.10.1-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:3bef536f38394b518aefae9dbf9cdd08f39e4c425f316f9692f0d8dc724810bd", size = 1218457, upload-time = "2025-02-02T17:36:23.172Z" },
-    { url = "https://files.pythonhosted.org/packages/46/92/b4ccf39cd18e366ace2a11dc7d98ed55967b4b325707386b5788149db15e/aiortc-1.10.1-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:8842c02e38513d9432ef22982572833487bb015f23348fa10a690616dbf55143", size = 898855, upload-time = "2025-02-02T17:36:25.9Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/e9/2676de48b493787d8b03129713e6bb2dfbacca2a565090f2a89cbad71f96/aiortc-1.10.1-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:954a420de01c0bf6b07a0c58b662029b1c4204ddbd8f5c4162bbdebd43f882b1", size = 1750403, upload-time = "2025-02-02T17:36:28.446Z" },
-    { url = "https://files.pythonhosted.org/packages/c3/9d/ab6d09183cdaf5df060923d9bd5c9ed5fb1802661d9401dba35f3c85a57b/aiortc-1.10.1-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e7c0d46fb30307a9d7deb4b7d66f0b0e73b77a7221b063fb6dc78821a5d2aa1e", size = 1867886, upload-time = "2025-02-02T17:36:30.209Z" },
-    { url = "https://files.pythonhosted.org/packages/c2/71/0b5666e6b965dbd9a7f331aa827a6c3ab3eb4d582fefb686a7f4227b7954/aiortc-1.10.1-cp39-abi3-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:89582f6923046f79f15d9045f432bc78191eacc95f6bed18714e86ec935188d9", size = 1893709, upload-time = "2025-02-02T17:36:32.342Z" },
-    { url = "https://files.pythonhosted.org/packages/9d/0a/8c0c78fad79ef595a0ed6e2ab413900e6bd0eac65fc5c31c9d8736bff909/aiortc-1.10.1-cp39-abi3-win32.whl", hash = "sha256:d1cbe87f740b33ffaa8e905f21092773e74916be338b64b81c8b79af4c3847eb", size = 923265, upload-time = "2025-02-02T17:36:34.685Z" },
-    { url = "https://files.pythonhosted.org/packages/73/12/a27dd588a4988021da88cb4d338d8ee65ac097afc14e9193ab0be4a48790/aiortc-1.10.1-cp39-abi3-win_amd64.whl", hash = "sha256:c9a5a0b23f8a77540068faec8837fa0a65b0396c20f09116bdb874b75e0b6abe", size = 1009488, upload-time = "2025-02-02T17:36:36.317Z" },
+    { url = "https://files.pythonhosted.org/packages/57/ab/31646a49209568cde3b97eeade0d28bb78b400e6645c56422c101df68932/aiortc-1.14.0-py3-none-any.whl", hash = "sha256:4b244d7e482f4e1f67e685b3468269628eca1ec91fa5b329ab517738cfca086e", size = 93183, upload-time = "2025-10-13T21:40:36.59Z" },
 ]
 
 [[package]]
