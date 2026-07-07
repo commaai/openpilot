@@ -1445,8 +1445,8 @@ wheels = [
 
 [[package]]
 name = "raylib"
-version = "6.0.0.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=release-raylib#c5ba350ea0b9f6454a71cfc1f7250811db98dbff" }
+version = "6.0.0.1"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=release-raylib#b5439c0c8178e5c2fee90eb396708ae1524a2662" }
 dependencies = [
     { name = "cffi" },
 ]
