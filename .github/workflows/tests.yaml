@@ -207,10 +207,10 @@ jobs:
       run: scons
     - name: Driving test
       timeout-minutes: 2
-      run: |
-        # MetaDrive needs an X display; install xvfb when re-enabling this job
-        sudo apt-get install -y --no-install-recommends xvfb
-        xvfb-run -s "-screen 0 2160x1080x24" pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+      env:
+        # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
+        EGL_PLATFORM: surfaceless
+      run: pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
