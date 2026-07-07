@@ -32,6 +32,9 @@ class FontSizes:
 class Colors:
   WHITE = rl.WHITE
   WHITE_TRANSLUCENT = rl.Color(255, 255, 255, 200)
+  GREEN = rl.Color(51, 171, 76, 255)
+  ORANGE = rl.Color(255, 115, 0, 255)
+  RED = rl.Color(255, 0, 21, 255)
 
 
 FONT_SIZES = FontSizes()
@@ -177,7 +180,31 @@ class HudRenderer(Widget):
     if self.is_cruise_set:
       self._draw_set_speed(rect)
 
+    if ui_state.usbgpu:
+      self._draw_model_badge(rect)
+
     self._draw_steering_wheel(rect)
+
+  def _draw_model_badge(self, rect: rl.Rectangle) -> None:
+    # only shown when openpilot can actually drive
+    ss = ui_state.sm['selfdriveState']
+    if not (ss.engageable or ss.enabled):
+      return
+    if ui_state.usbgpu_failed:
+      big_color = COLORS.RED
+    elif ui_state.usbgpu_active:
+      big_color = COLORS.GREEN
+    elif ui_state.usbgpu_ready:
+      big_color = COLORS.WHITE
+    else:
+      big_color = COLORS.ORANGE
+    sm_color = COLORS.WHITE_TRANSLUCENT if ui_state.usbgpu_active else COLORS.GREEN
+    big_size = measure_text_cached(self._font_semi_bold, "BIG", FONT_SIZES.max_speed)
+    sm_size = measure_text_cached(self._font_semi_bold, "SM", FONT_SIZES.max_speed)
+    x = rect.x + rect.width - 12 - big_size.x
+    y = rect.y + rect.height - 14 - FONT_SIZES.max_speed
+    rl.draw_text_ex(self._font_semi_bold, "BIG", rl.Vector2(x, y), FONT_SIZES.max_speed, 0, big_color)
+    rl.draw_text_ex(self._font_semi_bold, "SM", rl.Vector2(x + (big_size.x - sm_size.x) / 2, y - FONT_SIZES.max_speed - 2), FONT_SIZES.max_speed, 0, sm_color)
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel

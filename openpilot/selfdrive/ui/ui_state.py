@@ -77,6 +77,9 @@ class UIState:
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
     self.usbgpu: bool = self.params.get_bool("UsbGpuPresent")
     self.usbgpu_compiled: bool = self.params.get_bool("UsbGpuCompiled")
+    self.usbgpu_active: bool = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_ready: bool = self.params.get_bool("UsbGpuReady")
+    self.usbgpu_failed: bool = self.params.get_bool("UsbGpuFailed")
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
@@ -205,6 +208,9 @@ class UIState:
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
     self.usbgpu = self.params.get_bool("UsbGpuPresent")
     self.usbgpu_compiled = self.params.get_bool("UsbGpuCompiled")
+    self.usbgpu_active = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_ready = self.params.get_bool("UsbGpuReady")
+    self.usbgpu_failed = self.params.get_bool("UsbGpuFailed")
 
 
 class Device:
