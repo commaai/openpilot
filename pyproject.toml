@@ -48,9 +48,6 @@ dependencies = [
   "av",
   "aiortc",
 
-  # panda; declared here since it's commented out in panda's pyproject.toml
-  "spidev; platform_system == 'Linux'",
-
   # logging
   "pyzmq",
   "sentry-sdk",
