@@ -1,4 +1,5 @@
 import math
+import os
 from multiprocessing import Queue
 
 from metadrive.component.sensors.base_camera import _cuda_enable
@@ -28,6 +29,17 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
+  if os.environ.get("SIM_FAKE_MODELD") or os.environ.get("METADRIVE_STRAIGHT_ROAD"):
+    return dict(
+      type=MapGenerateMethod.PG_MAP_FILE,
+      lane_num=2,
+      lane_width=4.5,
+      config=[
+        None,
+        straight_block(2000),
+      ]
+    )
+
   curve_len = track_size * 2
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
@@ -58,12 +70,18 @@ class MetaDriveBridge(SimulatorBridge):
     self.test_duration = test_duration if self.test_run else math.inf
 
   def spawn_world(self, queue: Queue):
+    # Free GitHub Actions runners use software rendering. Render at a lower
+    # resolution in CI and upscale back to the camera size in metadrive_process.
+    render_scale = float(os.environ.get("METADRIVE_RENDER_SCALE", "1"))
+    rw = max(1, round(W * render_scale))
+    rh = max(1, round(H * render_scale))
+
     sensors = {
-      "rgb_road": (RGBCameraRoad, W, H, )
+      "rgb_road": (RGBCameraRoad, rw, rh, )
     }
 
     if self.dual_camera:
-      sensors["rgb_wide"] = (RGBCameraWide, W, H)
+      sensors["rgb_wide"] = (RGBCameraWide, rw, rh)
 
     config = dict(
       use_render=self.should_render,
@@ -87,7 +105,8 @@ class MetaDriveBridge(SimulatorBridge):
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False,
       show_logo=False,
-      anisotropic_filtering=False
+      anisotropic_filtering=False,
+      show_terrain=not bool(os.environ.get("METADRIVE_NO_TERRAIN")),
     )
 
     return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)
