@@ -1,3 +1,29 @@
+# Style review — v5 (2026-07-06, owner manual review)
+
+**Owner manual-review pass.** Adeeb reviewed both presets line-by-line; this batch matches the
+references properly instead of the earlier over-engineered chrome. Commits `9ef62643c` (load
+frame-drops + first parity round), `5aa575e83` (Opus behavior-diff round: input map, palette,
+white canvas, split-to-empty-plot, close X), `7d724152a` (manual-review pass). Delivered 15 of
+16 review items, each GUI-verified under Xvfb:
+
+- Camera: cover-crop default, no engaged/seg-frame-t overlays, no "View" label.
+- Browser: jotpluggler density (Field+Value, no sparkline/path), layout selector combo,
+  Map/Camera special-source draggables, edge drag-to-split, ImGui Demo removed.
+- Plots: peak-preserving decimation + RangeFit (Y no longer jitters), cursor-follow scroll,
+  toolbar/chips moved into the right-click menu, jotpluggler palette/legend/white canvas.
+- Panes: centered corner close X; a split makes an empty plot.
+- Cabana: per-signal plot/delete buttons; **plot materializes a decoded /dbc/ signal series**
+  (the unified-namespace capability — decoded signals are now plottable and browsable);
+  binary-view message-history chips; message editor collapses so the signal list is primary.
+- Shell: Ctrl+Z undoes DBC-edit-then-workspace; parallel shutdown for a snappy exit.
+
+**Deferred (documented):** enum/state-block plot rendering — needs enum-name propagation through
+the whole extract pipeline (`SeriesMetadata::enum_names` is dropped in route.cc today). Plots are
+stable and clean without it, so it is a scoped follow-up, not a rushed multi-file change. Also
+open from round-3: the exports timestamp/atomicity cluster.
+
+Historical v4/v3/v2 content follows for the audit trail.
+
 # Style review — FINAL (v4, 2026-07-06 late)
 
 **Ship verdict (v4).** The red-team recovery push landed as six root-reviewed commits on top of
