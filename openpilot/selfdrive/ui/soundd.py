@@ -39,14 +39,14 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
   AudibleAlert.disengage: ("disengage.wav", 1, MAX_VOLUME),
   AudibleAlert.refuse: ("refuse.wav", 1, MAX_VOLUME),
 
-  AudibleAlert.prompt: ("prompt.wav", 1, MAX_VOLUME),
-  AudibleAlert.promptRepeat: ("prompt.wav", None, MAX_VOLUME),
-  AudibleAlert.promptDistracted: ("prompt_distracted.wav", None, MAX_VOLUME),
+  AudibleAlert.prompt: ("warning.wav", 1, MAX_VOLUME),
+  AudibleAlert.promptRepeat: ("warning.wav", None, MAX_VOLUME),
+  AudibleAlert.promptDistracted: ("dm_warning.wav", None, MAX_VOLUME),
 
   AudibleAlert.preAlert: ("pre_alert.wav", 1, MAX_VOLUME),
 
-  AudibleAlert.warningSoft: ("warning_soft.wav", None, MAX_VOLUME),
-  AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
+  AudibleAlert.warningSoft: ("critical.wav", None, MAX_VOLUME),
+  AudibleAlert.warningImmediate: ("dm_critical.wav", None, MAX_VOLUME),
 }
 if HARDWARE.get_device_type() == "tizi":
   sound_list.update({
