@@ -3,7 +3,7 @@ import struct
 import time
 
 import av
-from teleoprtc.tracks import MediaStreamError, TiciVideoStreamTrack
+from teleoprtc.tracks import TiciVideoStreamTrack
 
 from openpilot.cereal import messaging
 from openpilot.common.realtime import DT_MDL
@@ -73,9 +73,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   async def recv(self):
     while True:
-      if self.readyState != "live":
-        raise MediaStreamError
-
       # while video is disabled, pause here without returning
       if not self.video_enabled:
         await asyncio.sleep(0.005)
