@@ -4,6 +4,7 @@ from abc import abstractmethod
 import os
 import socket
 import time
+import capnp
 import argparse
 import asyncio
 import contextlib
@@ -14,12 +15,9 @@ import signal
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
-import capnp
-if TYPE_CHECKING:
-  from teleoprtc.stream import RTCDataChannelAdapter
-
+from libdatachannel import DataChannel
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
@@ -69,10 +67,10 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
     super().__init__()
     self.services = list(services)
     self.sm = messaging.SubMaster(self.services)
-    self.channels: list[RTCDataChannelAdapter] = []
+    self.channels: list[DataChannel] = []
     self._enabled = enabled
 
-  def add_channel(self, channel: 'RTCDataChannelAdapter'):
+  def add_channel(self, channel: 'DataChannel'):
     self.channels.append(channel)
 
   def enable(self, enable: bool):
@@ -101,7 +99,7 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
       outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
       encoded_msg = json.dumps(outgoing_msg).encode()
       for channel in self.channels:
-        if hasattr(channel, "is_open") and not channel.is_open():
+        if not channel.is_open():
           continue
         channel.send(encoded_msg)
 
