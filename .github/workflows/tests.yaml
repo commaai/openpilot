@@ -110,8 +110,9 @@ jobs:
       run: scons
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
+      env:
+        RAYLIB_BACKEND: headless
       run: |
-        source openpilot/selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
         $PYTEST --collect-only -m 'not slow' -qq
         MAX_EXAMPLES=1 $PYTEST -m 'not slow'
@@ -206,9 +207,10 @@ jobs:
       run: scons
     - name: Driving test
       timeout-minutes: 2
-      run: |
-        source openpilot/selfdrive/test/setup_xvfb.sh
-        pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+      env:
+        # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
+        EGL_PLATFORM: surfaceless
+      run: pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
@@ -226,8 +228,9 @@ jobs:
       - name: Build openpilot
         run: scons
       - name: Create UI Report
+        env:
+          RAYLIB_BACKEND: headless
         run: |
-          source openpilot/selfdrive/test/setup_xvfb.sh
           python3 openpilot/selfdrive/ui/tests/diff/replay.py
           python3 openpilot/selfdrive/ui/tests/diff/replay.py --big
       - name: Upload UI Report
