@@ -34,9 +34,9 @@ dependencies = [
   "comma-deps-eigen",
   "comma-deps-ffmpeg",
   "comma-deps-libyuv",
-  "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
-  "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
-  "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
+  "comma-deps-zstd",
+  "comma-deps-ncurses",
+  "comma-deps-zeromq",
   "comma-deps-libusb",
   "comma-deps-json11",
   "comma-deps-git-lfs",
@@ -67,7 +67,7 @@ dependencies = [
   "zstandard",
 
   # ui
-  "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
+  "comma-deps-raylib",
   "qrcode",
   "jeepney",
   "pillow",
