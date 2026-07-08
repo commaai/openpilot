@@ -385,6 +385,9 @@ class Tici(HardwareBase):
     ms = self.get_modem_state()
     return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
 
+  def has_internal_panda(self):
+    return True
+
   def reset_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)

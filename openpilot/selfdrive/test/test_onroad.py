@@ -62,10 +62,9 @@ PROCS = {
   "openpilot.system.journald": 1.0,
   "openpilot.system.micd": 5.0,
   "openpilot.system.timed": 0,
-  "openpilot.selfdrive.pandad.pandad": 0,
+  "openpilot.selfdrive.pandad.pandad": 25.,
   "openpilot.system.loggerd.uploader": 15.0,
   "openpilot.system.loggerd.deleter": 1.0,
-  "./pandad": 19.0,
   "openpilot.system.qcomgpsd.qcomgpsd": 1.0,
   "openpilot.common.hardware.tici.modem": 10.0,
 }
