@@ -5,9 +5,9 @@
 
 #include "common/swaglog.h"
 
-// Rough analogue to the old libjpeg quality=50 path.
-// Lower qscale = higher quality for MJPEG.
-constexpr int MJPEG_QSCALE = 8;
+// Tuned to match old libjpeg quality=50 thumbnail sizes (not larger).
+// Lower qscale = higher quality / bigger files for MJPEG.
+constexpr int MJPEG_QSCALE = 7;
 
 JpegEncoder::JpegEncoder(const std::string &publish_name, int width, int height)
     : publish_name(publish_name), thumbnail_width(width), thumbnail_height(height) {
@@ -92,6 +92,8 @@ void JpegEncoder::compressToJpeg(uint8_t *y_plane, uint8_t *u_plane, uint8_t *v_
   frame->data[0] = y_plane;
   frame->data[1] = u_plane;
   frame->data[2] = v_plane;
+  // Required for MJPEG qscale to take effect (global_quality alone is not enough).
+  frame->quality = FF_QP2LAMBDA * MJPEG_QSCALE;
   frame->pts = 0;
 
   int err = avcodec_send_frame(codec_ctx, frame);
