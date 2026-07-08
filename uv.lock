@@ -655,10 +655,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/48/e8/7923893f08504f28e0b5fb8b21795fc388d0363cfa2f412e2541c9464cb1/lefthook-2.1.9-py3-none-win_arm64.whl", hash = "sha256:6d8e3923c42a04e9375f88314ebc8c86f68879d3d0c9d856b6adbed109890e90", size = 4959833, upload-time = "2026-05-29T08:39:32.882Z" },
 ]
 
-[[package]]
-name = "libjpeg"
-version = "3.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=release-libjpeg#3f9a0796d1985576b0cb172456e08bb918f3afeb" }
 
 [[package]]
 name = "libusb"
@@ -909,7 +905,6 @@ dependencies = [
     { name = "jeepney" },
     { name = "json-rpc" },
     { name = "json11" },
-    { name = "libjpeg" },
     { name = "libusb" },
     { name = "libyuv" },
     { name = "ncurses" },
@@ -997,7 +992,6 @@ requires-dist = [
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
     { name = "json11", git = "https://github.com/commaai/dependencies.git?subdirectory=json11&rev=release-json11" },
-    { name = "libjpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=release-libjpeg" },
     { name = "libusb", git = "https://github.com/commaai/dependencies.git?subdirectory=libusb&rev=release-libusb" },
     { name = "libyuv", git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=release-libyuv" },
     { name = "matplotlib", marker = "extra == 'dev'" },
