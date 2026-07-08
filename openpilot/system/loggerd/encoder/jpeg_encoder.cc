@@ -5,7 +5,6 @@
 
 #include "common/swaglog.h"
 
-// Tuned to match old libjpeg quality=50 thumbnail sizes (not larger).
 // Lower qscale = higher quality / bigger files for MJPEG.
 constexpr int MJPEG_QSCALE = 7;
 
