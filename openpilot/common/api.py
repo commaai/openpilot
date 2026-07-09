@@ -1,9 +1,8 @@
-import os
-from datetime import UTC, datetime, timedelta
-
 import jwt
+import os
 import requests
 from requests.adapters import HTTPAdapter, Retry
+from datetime import datetime, timedelta, UTC
 
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.version import get_version
@@ -37,8 +36,8 @@ class Api:
   def post(self, *args, **kwargs):
     return self.request('POST', *args, **kwargs)
 
-  def request(self, method, endpoint, timeout=None, access_token=None, **kwargs):
-    return api_get(endpoint, method=method, timeout=timeout, access_token=access_token, **kwargs)
+  def request(self, method, endpoint, timeout=None, access_token=None, **params):
+    return api_get(endpoint, method=method, timeout=timeout, access_token=access_token, **params)
 
   def get_token(self, payload_extra=None, expiry_hours=1):
     now = datetime.now(UTC).replace(tzinfo=None)
@@ -46,7 +45,7 @@ class Api:
       'identity': self.dongle_id,
       'nbf': now,
       'iat': now,
-      'exp': now + timedelta(hours=expiry_hours),
+      'exp': now + timedelta(hours=expiry_hours)
     }
     if payload_extra is not None:
       payload.update(payload_extra)
@@ -56,12 +55,9 @@ class Api:
     return token
 
 
-def api_get(endpoint, method='GET', timeout=None, access_token=None, session=None, **kwargs):
-  headers = dict(kwargs.pop('headers', None) or {})
-  headers.setdefault('User-Agent', "openpilot-" + get_version())
-  if access_token is not None:
-    headers.setdefault('Authorization', "JWT " + access_token)
-  return _request(method, endpoint, session=session, timeout=timeout, headers=headers, **kwargs)
+def api_get(endpoint, method='GET', timeout=None, access_token=None, session=None, **params):
+  return _request(method, endpoint, session=session, timeout=timeout,
+                  headers=_api_headers(access_token), params=params)
 
 
 def api_get_json(endpoint, access_token=None, **kwargs):
@@ -77,7 +73,8 @@ def _api_request_json(method, endpoint, access_token=None, **kwargs):
     retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
     session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    with api_get(endpoint, method=method, access_token=access_token, session=session, **kwargs) as response:
+    headers = _api_headers(access_token, kwargs.pop('headers', None))
+    with _request(method, endpoint, session=session, headers=headers, **kwargs) as response:
       response_json = response.json()
       api_error = response_json.get('error') if isinstance(response_json, dict) else None
       if api_error:
@@ -87,6 +84,15 @@ def _api_request_json(method, endpoint, access_token=None, **kwargs):
         description = response_json.get('description', str(api_error))
         raise APIError(f"{response.status_code}:{description}", response.status_code)
       return response_json
+
+
+def _api_headers(access_token=None, headers=None):
+  request_headers = {'User-Agent': "openpilot-" + get_version()}
+  if access_token is not None:
+    request_headers['Authorization'] = "JWT " + access_token
+  if headers is not None:
+    request_headers.update(headers)
+  return request_headers
 
 
 def _request(method, endpoint, session=None, **kwargs):
