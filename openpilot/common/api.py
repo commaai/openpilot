@@ -1,3 +1,4 @@
+import json
 import jwt
 import os
 import requests
@@ -9,6 +10,8 @@ from openpilot.common.version import get_version
 
 
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
+# Omitted uses the stored account token; None makes an unauthenticated request.
+_DEFAULT_ACCESS_TOKEN = object()
 
 # name: jwt signature algorithm
 KEYS = {"id_rsa": "RS256",
@@ -55,20 +58,44 @@ class Api:
     return token
 
 
+def _get_token():
+  try:
+    with open(_user_token_path()) as f:
+      return json.load(f)['access_token']
+  except (OSError, KeyError, TypeError, json.JSONDecodeError):
+    return None
+
+
+def set_token(token):
+  os.makedirs(Paths.config_root(), exist_ok=True)
+  with open(_user_token_path(), 'w') as f:
+    json.dump({'access_token': token}, f)
+
+
+def clear_token():
+  try:
+    os.unlink(_user_token_path())
+  except FileNotFoundError:
+    pass
+
+
 def api_get(endpoint, method='GET', timeout=None, access_token=None, session=None, **params):
   return _request(method, endpoint, session=session, timeout=timeout,
                   headers=_api_headers(access_token), params=params)
 
 
-def api_get_json(endpoint, access_token=None, **kwargs):
+def api_get_json(endpoint, access_token=_DEFAULT_ACCESS_TOKEN, **kwargs):
   return _api_request_json('GET', endpoint, access_token=access_token, **kwargs)
 
 
-def api_post_json(endpoint, access_token=None, **kwargs):
+def api_post_json(endpoint, access_token=_DEFAULT_ACCESS_TOKEN, **kwargs):
   return _api_request_json('POST', endpoint, access_token=access_token, **kwargs)
 
 
 def _api_request_json(method, endpoint, access_token=None, **kwargs):
+  if access_token is _DEFAULT_ACCESS_TOKEN:
+    access_token = _get_token()
+
   with requests.Session() as session:
     retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
     session.mount('https://', HTTPAdapter(max_retries=retries))
@@ -99,6 +126,10 @@ def _request(method, endpoint, session=None, **kwargs):
   requester = requests if session is None else session
   url = f"{API_HOST.rstrip('/')}/{endpoint.lstrip('/')}"
   return requester.request(method, url, **kwargs)
+
+
+def _user_token_path():
+  return os.path.join(Paths.config_root(), 'auth.json')
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:

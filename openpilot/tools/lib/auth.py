@@ -29,8 +29,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlencode
 
-from openpilot.common.api import APIError, UnauthorizedError, api_get_json, api_post_json
-from openpilot.tools.lib.auth_config import set_token, get_token
+from openpilot.common.api import APIError, UnauthorizedError, api_get_json, api_post_json, set_token
 
 PORT = 3000
 
@@ -115,7 +114,8 @@ def login(method):
       break
 
   try:
-    auth_resp = api_post_json('v2/auth/', data={'code': web_server.query_params['code'], 'provider': web_server.query_params['provider']})
+    auth_resp = api_post_json('v2/auth/', access_token=None,
+                              data={'code': web_server.query_params['code'], 'provider': web_server.query_params['provider']})
     set_token(auth_resp['access_token'])
   except APIError as e:
     print(f'Authentication Error: {e}', file=sys.stderr)
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     login(args.method)
 
   try:
-    me = api_get_json('/v1/me', access_token=get_token())
+    me = api_get_json('/v1/me')
     print("Authenticated!")
     pprint.pprint(me)
   except UnauthorizedError:

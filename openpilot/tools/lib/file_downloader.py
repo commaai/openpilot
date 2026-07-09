@@ -19,14 +19,13 @@ import shutil
 
 from openpilot.common.api import APIError, UnauthorizedError, api_get_json
 from openpilot.common.hardware.hw import Paths
-from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.url_file import URLFile
 
 
 def api_call(endpoint, **kwargs):
   """Run an API call, outputting JSON result or error to stdout."""
   try:
-    result = api_get_json(endpoint, access_token=get_token(), **kwargs)
+    result = api_get_json(endpoint, **kwargs)
     json.dump(result, sys.stdout)
   except UnauthorizedError:
     json.dump({"error": "unauthorized"}, sys.stdout)
