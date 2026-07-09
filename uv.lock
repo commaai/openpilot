@@ -700,15 +700,6 @@ wheels = [
 ]
 
 [[package]]
-name = "json-rpc"
-version = "1.15.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6d/9e/59f4a5b7855ced7346ebf40a2e9a8942863f644378d956f68bcef2c88b90/json-rpc-1.15.0.tar.gz", hash = "sha256:e6441d56c1dcd54241c937d0a2dcd193bdf0bdc539b5316524713f554b7f85b9", size = 28854, upload-time = "2023-06-11T09:45:49.078Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/9e/820c4b086ad01ba7d77369fb8b11470a01fac9b4977f02e18659cf378b6b/json_rpc-1.15.0-py2.py3-none-any.whl", hash = "sha256:4a4668bbbe7116feb4abbd0f54e64a4adcf4b8f648f19ffa0848ad0f6606a9bf", size = 39450, upload-time = "2023-06-11T09:45:47.136Z" },
-]
-
-[[package]]
 name = "kiwisolver"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -985,7 +976,6 @@ dependencies = [
     { name = "cython" },
     { name = "inputs" },
     { name = "jeepney" },
-    { name = "json-rpc" },
     { name = "numpy" },
     { name = "pillow" },
     { name = "psutil" },
@@ -1069,7 +1059,6 @@ requires-dist = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
-    { name = "json-rpc" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pillow" },
