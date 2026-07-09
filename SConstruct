@@ -128,7 +128,8 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#openpilot",
-    "#msgq",
+    "#msgq_repo",
+    "#rednose_repo",
     "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
@@ -138,13 +139,13 @@ env = Environment(
     "#openpilot/common",
     "#msgq_repo",
     "#openpilot/selfdrive/pandad",
-    "#rednose/helpers",
+    "#rednose_repo/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT="#rednose_repo",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
@@ -249,7 +250,7 @@ Export('messaging')
 SConscript(['panda/SConscript'])
 
 # Build rednose library
-SConscript(['rednose/SConscript'])
+SConscript(['rednose_repo/rednose/SConscript'])
 
 # Build system services
 SConscript([
