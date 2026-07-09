@@ -17,16 +17,16 @@ import sys
 import tempfile
 import shutil
 
+from openpilot.common.api import APIError, UnauthorizedError, api_get_json
 from openpilot.common.hardware.hw import Paths
-from openpilot.tools.lib.api import CommaApi, UnauthorizedError, APIError
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.url_file import URLFile
 
 
-def api_call(func):
+def api_call(endpoint, **kwargs):
   """Run an API call, outputting JSON result or error to stdout."""
   try:
-    result = func(CommaApi(get_token()))
+    result = api_get_json(endpoint, access_token=get_token(), **kwargs)
     json.dump(result, sys.stdout)
   except UnauthorizedError:
     json.dump({"error": "unauthorized"}, sys.stdout)
@@ -45,7 +45,7 @@ def cache_file_path(url):
 
 
 def cmd_route_files(args):
-  api_call(lambda api: api.get(f"v1/route/{args.route}/files"))
+  api_call(f"v1/route/{args.route}/files")
 
 
 def cmd_download(args):
@@ -110,20 +110,20 @@ def cmd_download(args):
 
 
 def cmd_devices(args):
-  api_call(lambda api: api.get("v1/me/devices/"))
+  api_call("v1/me/devices/")
 
 
 def cmd_device_routes(args):
-  def fetch(api):
-    if args.preserved:
-      return api.get(f"v1/devices/{args.dongle_id}/routes/preserved")
-    params = {}
-    if args.start is not None:
-      params['start'] = args.start
-    if args.end is not None:
-      params['end'] = args.end
-    return api.get(f"v1/devices/{args.dongle_id}/routes_segments", params=params)
-  api_call(fetch)
+  if args.preserved:
+    api_call(f"v1/devices/{args.dongle_id}/routes/preserved")
+    return
+
+  params = {}
+  if args.start is not None:
+    params['start'] = args.start
+  if args.end is not None:
+    params['end'] = args.end
+  api_call(f"v1/devices/{args.dongle_id}/routes_segments", params=params)
 
 
 def main():

@@ -5,8 +5,8 @@ import argparse
 import re
 
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.api import api_get_json
 from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.api import CommaApi
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper for connecting to devices over the comma prime SSH proxy.\
@@ -18,7 +18,7 @@ if __name__ == "__main__":
   parser.add_argument("--debug", help="enable debug output", action="store_true")
   args = parser.parse_args()
 
-  r = CommaApi(get_token()).get("v1/me/devices")
+  r = api_get_json("v1/me/devices", access_token=get_token())
   devices = {x['dongle_id']: x['alias'] for x in r}
 
   if not re.match("[0-9a-zA-Z]{16}", args.device):
