@@ -27,6 +27,21 @@ AddOption('--minimal',
           default=(not TICI and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
+submodule_python_paths = [
+  Dir("#").abspath,
+  Dir("#msgq_repo").abspath,
+  Dir("#opendbc_repo").abspath,
+  Dir("#rednose_repo").abspath,
+  Dir("#teleoprtc_repo").abspath,
+  Dir("#tinygrad_repo").abspath,
+]
+for p in reversed(submodule_python_paths):
+  if p not in sys.path:
+    sys.path.insert(0, p)
+
+if external_pythonpath := os.environ.get("PYTHONPATH"):
+  submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
+
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
@@ -106,7 +121,7 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath,
+    "PYTHONPATH": os.pathsep.join(submodule_python_paths),
     "ACADOS_SOURCE_DIR": acados.DIR,
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
@@ -128,7 +143,10 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#openpilot",
-    "#msgq",
+    "#msgq_repo",            # #include "msgq/..."
+    "#opendbc_repo",         # #include "opendbc/..."
+    "#rednose_repo",         # #include "rednose/..."
+    "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
     "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
@@ -138,13 +156,13 @@ env = Environment(
     "#openpilot/common",
     "#msgq_repo",
     "#openpilot/selfdrive/pandad",
-    "#rednose/helpers",
+    "#rednose_repo/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT="#rednose_repo",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
@@ -249,7 +267,7 @@ Export('messaging')
 SConscript(['panda/SConscript'])
 
 # Build rednose library
-SConscript(['rednose/SConscript'])
+SConscript(['rednose_repo/rednose/SConscript'])
 
 # Build system services
 SConscript([
