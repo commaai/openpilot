@@ -2159,6 +2159,7 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
 
 struct DriverMonitoringState {
   lockout @0 :Bool;
+  lockoutCountdownPercent @15 :Int8;
   lockoutRecoveryPercent @11 :Int8;
   alert3Count @12 :Int8;
   noResponseCount @13 :Int8;

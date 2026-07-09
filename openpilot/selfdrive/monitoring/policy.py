@@ -380,6 +380,8 @@ class DriverMonitoring:
     dm = dat.driverMonitoringState
 
     dm.lockout = self.too_distracted
+    if self.alert_level == AlertLevel.three:
+      dm.lockoutCountdownPercent = to_percent((self.no_response_timeout - self.cnt_since_alert_3) / self.no_response_timeout)
     dm.lockoutRecoveryPercent = to_percent(self.lockout_time / self.settings._LOCKOUT_TIME)
     dm.alert3Count = self.alert_3_cnt
     dm.noResponseCount = self.no_response_cnt
