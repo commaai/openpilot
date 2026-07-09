@@ -103,7 +103,7 @@ class TestLagd:
     assert np.argmax(corr) in range(lag_frames - MAX_ERR_FRAMES, lag_frames + MAX_ERR_FRAMES + 1)
 
   def test_empty_estimator(self):
-    mocked_CP = car.CarParams(steerActuatorDelay=0.8)
+    mocked_CP = car.CarParams(steerActuatorDelay=0.5)
     estimator = LateralLagEstimator(mocked_CP, DT)
     msg = estimator.get_msg(True)
     assert msg.liveDelay.status == 'unestimated'
@@ -113,9 +113,9 @@ class TestLagd:
     assert msg.liveDelay.calPerc == 0
 
   def test_estimator_basics(self, subtests):
-    for lag_frames in range(3, 10):
+    for lag_frames in range(3, 11):
       with subtests.test(msg=f"lag_frames={lag_frames}"):
-        mocked_CP = car.CarParams(steerActuatorDelay=0.8)
+        mocked_CP = car.CarParams(steerActuatorDelay=0.5)
         estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
         process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
         msg = estimator.get_msg(True)
@@ -127,7 +127,7 @@ class TestLagd:
         assert msg.liveDelay.calPerc == 100
 
   def test_estimator_masking(self):
-    mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.8), random.randint(3, 19)
+    mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.5), random.randint(3, 11)
     estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
     process_messages(estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)
@@ -137,7 +137,7 @@ class TestLagd:
 
   @pytest.mark.skipif(PC, reason="only on device")
   def test_estimator_performance(self):
-    mocked_CP = car.CarParams(steerActuatorDelay=0.8)
+    mocked_CP = car.CarParams(steerActuatorDelay=0.5)
     estimator = LateralLagEstimator(mocked_CP, DT)
 
     ds = []
