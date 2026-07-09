@@ -11,10 +11,8 @@ authors = [
 dependencies = [
   # multiple users
   "sounddevice",  # micd + soundd
-  "pyserial",     # pigeond + qcomgpsd
   "requests",     # many one-off uses
   "sympy",        # rednose + friends
-  "crcmod-plus",  # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
   # core
@@ -26,31 +24,24 @@ dependencies = [
   "numpy >=2.0",
 
   # vendored native dependencies
-  "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
-  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@release-bootstrap-icons#subdirectory=bootstrap-icons",
-  "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
-  "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
-  "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
-  "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
-  "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
-  "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
-  "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
-  "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
-  "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
-  "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
-  "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
-  "json11 @ git+https://github.com/commaai/dependencies.git@release-json11#subdirectory=json11",
-  "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
-  "xvfb @ git+https://github.com/commaai/dependencies.git@release-xvfb#subdirectory=xvfb",
+  "comma-deps-bzip2",
+  "comma-deps-bootstrap-icons",
+  "comma-deps-capnproto",
+  "comma-deps-catch2",
+  "comma-deps-acados",
+  "comma-deps-eigen",
+  "comma-deps-ffmpeg",
+  "comma-deps-zstd",
+  "comma-deps-ncurses",
+  "comma-deps-zeromq",
+  "comma-deps-libusb",
+  "comma-deps-json11",
+  "comma-deps-git-lfs",
+  "comma-deps-gcc-arm-none-eabi",
 
   # body / webrtcd
   "av",
   "aiortc",
-
-  # panda
-  "libusb1",
-  "spidev; platform_system == 'Linux'",
 
   # logging
   "pyzmq",
@@ -67,14 +58,13 @@ dependencies = [
 
   # these should be removed
   "psutil",
-  "pycryptodome", # used in panda, body, and a test
   "setproctitle",
 
   # logreader
   "zstandard",
 
   # ui
-  "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
+  "comma-deps-raylib",
   "qrcode",
   "jeepney",
   "pillow",
@@ -106,7 +96,7 @@ dev = [
 ]
 
 tools = [
-  "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "comma-deps-imgui",
 
   # this can be added back once it's stripped down some more
   #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
@@ -115,6 +105,16 @@ tools = [
 [project.urls]
 Homepage = "https://github.com/commaai/openpilot"
 
+[dependency-groups]
+submodules = [
+  "msgq",
+  "opendbc",
+  "pandacan",
+  "rednose",
+  "teleoprtc",
+  "tinygrad",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -122,12 +122,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [
   "openpilot",
-  "msgq",
-  "opendbc",
-  "panda",
-  "rednose",
-  "teleoprtc",
-  "tinygrad",
 ]
 
 [tool.hatch.metadata]
@@ -217,3 +211,16 @@ not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
+default-groups = ["submodules"]
+override-dependencies = [
+  "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
+  "av",       # teleoprtc's av<13 pin is stale
+]
+
+[tool.uv.sources]
+msgq = { path = "msgq_repo", editable = true }
+opendbc = { path = "opendbc_repo", editable = true }
+pandacan = { path = "panda", editable = true }
+rednose = { path = "rednose_repo", editable = true }
+teleoprtc = { path = "teleoprtc_repo", editable = true }
+tinygrad = { path = "tinygrad_repo", editable = true }
