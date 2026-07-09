@@ -2,6 +2,8 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+# a minimal implementation of json-rpc 2.0 https://www.jsonrpc.org/specification
+
 JSONRPC_VERSION = "2.0"
 
 # JSON-RPC 2.0 reserved / application error codes
@@ -86,11 +88,6 @@ def _invoke(fn: Callable[..., Any], params: Any) -> Any:
 
 
 def handle(raw: str | bytes | JsonDict, methods: MethodMap | None = None) -> str:
-  """Dispatch a call and return a JSON response string.
-
-  Raises ValueError if the message is not a call (e.g. a response).
-  Accepts messages with or without a ``jsonrpc`` field.
-  """
   methods = dispatcher if methods is None else methods
 
   try:
