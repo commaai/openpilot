@@ -6,7 +6,7 @@ import pytest
 from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
-                                               BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC, VERSION
+                                               BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC, VERSION, MIN_LAG, MAX_LAG
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
 from openpilot.common.params import Params
@@ -15,6 +15,7 @@ from openpilot.common.hardware import PC
 
 MAX_ERR_FRAMES = 1
 DT = 0.05
+LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES = int(round(MIN_LAG / DT)), int(round(MAX_LAG / DT))
 
 
 def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_threshold=0.0):
@@ -113,7 +114,7 @@ class TestLagd:
     assert msg.liveDelay.calPerc == 0
 
   def test_estimator_basics(self, subtests):
-    for lag_frames in range(3, 11):
+    for lag_frames in range(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1):
       with subtests.test(msg=f"lag_frames={lag_frames}"):
         mocked_CP = car.CarParams(steerActuatorDelay=0.5)
         estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
@@ -127,7 +128,7 @@ class TestLagd:
         assert msg.liveDelay.calPerc == 100
 
   def test_estimator_masking(self):
-    mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.5), random.randint(3, 11)
+    mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.5), random.randint(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1)
     estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
     process_messages(estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)
