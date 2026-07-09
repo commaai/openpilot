@@ -1,9 +1,3 @@
-"""Minimal POSIX serial port helper (stdlib only).
-
-Replaces the small subset of pyserial used by openpilot on Linux TTYs.
-"""
-from __future__ import annotations
-
 import errno
 import fcntl
 import os
@@ -11,7 +5,6 @@ import select
 import struct
 import termios
 import time
-from typing import Self
 
 
 # Modem control lines (linux/termios.h); fall back to common x86_64 values.
@@ -28,16 +21,8 @@ class SerialException(OSError):
 
 
 class Serial:
-  def __init__(
-    self,
-    port: str,
-    baudrate: int = 9600,
-    timeout: float | None = None,
-    *,
-    rtscts: bool = False,
-    dsrdtr: bool = False,
-    exclusive: bool = False,
-  ) -> None:
+  def __init__(self, port: str, baudrate: int = 9600, timeout: float | None = None, *,
+               rtscts: bool = False, dsrdtr: bool = False, exclusive: bool = False -> None:
     self._port = port
     self._baudrate = baudrate
     self._timeout = timeout
@@ -48,7 +33,7 @@ class Serial:
     self._fd = -1
     self.open()
 
-  def __enter__(self) -> Self:
+  def __enter__(self):
     return self
 
   def __exit__(self, *args) -> None:
