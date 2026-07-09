@@ -1,6 +1,7 @@
 import select
-from serial import Serial
 from struct import pack, unpack_from, calcsize
+
+from openpilot.common.serial import Serial
 
 
 def _gen_crc16_reflected_table(poly: int) -> list[int]:
@@ -24,7 +25,6 @@ def crc16_x25(data: bytes) -> int:
   for b in data:
     crc = _CRC16_X25_TABLE[(crc ^ b) & 0xFF] ^ (crc >> 8)
   return crc ^ 0xFFFF
-
 
 class ModemDiag:
   def __init__(self):
