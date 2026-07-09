@@ -7,7 +7,7 @@ from collections import defaultdict
 from itertools import chain
 
 from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.api import APIError, CommaApi
+from openpilot.common.api import APIError, Api
 from openpilot.tools.lib.helpers import RE
 
 
@@ -65,8 +65,8 @@ class Route:
 
   # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
-    api = CommaApi(get_token())
-    route_files = api.get('v1/route/' + self.name.canonical_name + '/files')
+    api = Api(token=get_token())
+    route_files = api.get_json('v1/route/' + self.name.canonical_name + '/files')
     self.files = list(chain.from_iterable(route_files.values()))
 
     segments = {}
@@ -182,8 +182,8 @@ class Segment:
   @staticmethod
   @cache
   def _get_route_metadata(route_name: str):
-    api = CommaApi(get_token())
-    return api.get(f'v1/route/{route_name}')
+    api = Api(token=get_token())
+    return api.get_json(f'v1/route/{route_name}')
 
   @property
   def url(self):
@@ -308,8 +308,8 @@ class SegmentName:
 @cache
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
   try:
-    api = CommaApi(get_token())
-    max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
+    api = Api(token=get_token())
+    max_seg_number = api.get_json("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
     assert isinstance(max_seg_number, int)
     return max_seg_number
   except Exception as e:
