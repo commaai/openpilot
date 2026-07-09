@@ -274,13 +274,8 @@ wheels = [
 
 [[package]]
 name = "comma-deps-ffmpeg"
-version = "7.1.0.post93"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/02/7e21345a4b6493b94dcacdf14024d24fc143469b3b596dbe0a0433b9055d/comma_deps_ffmpeg-7.1.0.post93-py3-none-macosx_11_0_arm64.whl", hash = "sha256:129f05e177ae8abfb758ff6b56efdb8caa4c10c435f73c774dd4470349c05502", size = 10673113, upload-time = "2026-07-08T19:31:20.253Z" },
-    { url = "https://files.pythonhosted.org/packages/18/ac/579bbb4d8724406738b0eef41f4e49bb0dff17eb4b9b5397296f5d65c84e/comma_deps_ffmpeg-7.1.0.post93-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:185bab6cd683448a1fba9338b11da7e7454b798e27a52d789ea02dd827e944fe", size = 11748947, upload-time = "2026-07-08T19:31:24.618Z" },
-    { url = "https://files.pythonhosted.org/packages/6e/bc/feb5dc8e2e75ecf147281801b1a2a864996c1e1a3be934aeb5cebdcf7323/comma_deps_ffmpeg-7.1.0.post93-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:161e3bcbee02b0d5d2b7bcff2c249904fe7b9c9b3f7820b954a4fb2d24c0fe21", size = 12433434, upload-time = "2026-07-08T19:31:28.965Z" },
-]
+version = "7.1.0"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=ffmpeg-shared-libs#bae0839810d37610fc98f2c9dac543f7f80c49c2" }
 
 [[package]]
 name = "comma-deps-gcc-arm-none-eabi"
@@ -1082,7 +1077,7 @@ requires-dist = [
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
     { name = "comma-deps-eigen" },
-    { name = "comma-deps-ffmpeg" },
+    { name = "comma-deps-ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=ffmpeg-shared-libs" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-imgui", marker = "extra == 'tools'" },
