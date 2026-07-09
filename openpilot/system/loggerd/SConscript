@@ -8,7 +8,6 @@ if arch == "larch64":
   src += ['encoder/v4l_encoder.cc']
 else:
   src += ['encoder/ffmpeg_encoder.cc']
-  libs += ['yuv']
   if arch == "Darwin":
     frameworks += ['VideoToolbox', 'CoreMedia', 'CoreFoundation', 'CoreVideo']
 

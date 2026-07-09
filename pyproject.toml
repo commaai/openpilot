@@ -33,7 +33,6 @@ dependencies = [
   "comma-deps-acados",
   "comma-deps-eigen",
   "comma-deps-ffmpeg",
-  "comma-deps-libyuv",
   "comma-deps-zstd",
   "comma-deps-ncurses",
   "comma-deps-zeromq",

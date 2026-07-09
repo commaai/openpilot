@@ -333,16 +333,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-libyuv"
-version = "1922.0.post93"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/91/f68b07f4ef01860d85e716b5095e10326de74455970cb279d70cdf45ee51/comma_deps_libyuv-1922.0.post93-py3-none-macosx_11_0_arm64.whl", hash = "sha256:f5e0d1550229efdc9aabcaa90b421902322ac7ddadd6e2118596916571c0619b", size = 269554, upload-time = "2026-07-08T19:32:29.709Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/6b/ca7ab7c00a16470f03a25c1079a50a2b7933516584056f15fb05385f377c/comma_deps_libyuv-1922.0.post93-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:3c55195bc905144ef157b8d2f8f36b25250d0a489bb07f2964327e48a0009669", size = 268385, upload-time = "2026-07-08T19:32:33.141Z" },
-    { url = "https://files.pythonhosted.org/packages/0b/9d/ecdbbeef4c3797091ea990bbe4dcc10389e5d6bff27e20bed3b4e4a85eed/comma_deps_libyuv-1922.0.post93-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:1309769c64394294cbd399c77584f7d674753e6dda39b57243ab156711b6d353", size = 273326, upload-time = "2026-07-08T19:32:36.807Z" },
-]
-
-[[package]]
 name = "comma-deps-ncurses"
 version = "6.5.post93"
 source = { registry = "https://pypi.org/simple" }
@@ -1004,7 +994,6 @@ dependencies = [
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-libusb" },
-    { name = "comma-deps-libyuv" },
     { name = "comma-deps-ncurses" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zeromq" },
@@ -1088,7 +1077,6 @@ requires-dist = [
     { name = "comma-deps-imgui", marker = "extra == 'tools'" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-libusb" },
-    { name = "comma-deps-libyuv" },
     { name = "comma-deps-ncurses" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zeromq" },
