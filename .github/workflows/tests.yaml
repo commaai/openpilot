@@ -23,7 +23,9 @@ env:
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
-  # Checkout without submodules; tools/op.sh setup must init them before uv sync.
+  # Most jobs checkout without submodules so tools/op.sh setup must init them
+  # before uv sync. build_release is special: build_stripped copies submodule
+  # trees into the release and runs git clean (wipes .venv) before setup.
   build_release:
     name: build release
     runs-on: ${{
@@ -38,7 +40,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        submodules: false
+        submodules: true
     - name: Getting LFS files
       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
