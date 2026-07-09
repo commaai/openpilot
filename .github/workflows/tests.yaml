@@ -66,8 +66,6 @@ jobs:
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v7
-      with:
-        submodules: true
     - name: Remove Homebrew from environment
       run: |
         FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | tr '\n' ':')
@@ -86,8 +84,6 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
-      with:
-        submodules: true
     - run: ./tools/op.sh setup
     - name: Static analysis
       timeout-minutes: 1
@@ -103,8 +99,6 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
-      with:
-        submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -127,8 +121,6 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
-      with:
-        submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -200,8 +192,6 @@ jobs:
     if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v7
-      with:
-        submodules: true
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -222,8 +212,6 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v7
-        with:
-          submodules: true
       - run: ./tools/op.sh setup
       - name: Build openpilot
         run: scons
