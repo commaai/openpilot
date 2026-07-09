@@ -22,7 +22,7 @@ class SerialException(OSError):
 
 class Serial:
   def __init__(self, port: str, baudrate: int = 9600, timeout: float | None = None, *,
-               rtscts: bool = False, dsrdtr: bool = False, exclusive: bool = False -> None:
+               rtscts: bool = False, dsrdtr: bool = False, exclusive: bool = False):
     self._port = port
     self._baudrate = baudrate
     self._timeout = timeout
