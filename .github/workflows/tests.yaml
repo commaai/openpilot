@@ -93,6 +93,31 @@ jobs:
       timeout-minutes: 1
       run: scripts/lint/lint.sh
 
+  # Catch setup regressions where path deps (pandacan, opendbc, ...) need
+  # submodule checkouts before uv sync. Other jobs always checkout with
+  # submodules: true and would miss that failure mode.
+  setup_from_scratch:
+    name: setup from scratch
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
+      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
+      && fromJSON('["namespace-profile-amd64-8x16"]')
+      || fromJSON('["ubuntu-24.04"]') }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+    - name: Ensure submodules are empty
+      run: |
+        for d in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }'); do
+          if [ -n "$(ls -A "$d" 2>/dev/null || true)" ]; then
+            echo "expected empty submodule dir before setup: $d"
+            exit 1
+          fi
+        done
+    - run: ./tools/op.sh setup
+
   unit_tests:
     name: unit tests
     runs-on: ${{
