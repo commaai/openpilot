@@ -23,7 +23,6 @@ from collections.abc import Callable
 
 import requests
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
-from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
 
@@ -40,6 +39,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
+from openpilot.system.athena.rpc import dispatcher, dumps_call, handle, is_call, is_response, loads
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -211,11 +211,11 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
   while not end_event.is_set():
     try:
       data = recv_queue.get(timeout=1)
-      if "method" in data:
+      msg = loads(data)
+      if is_call(msg):
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
-        response = JSONRPCResponseManager.handle(data, dispatcher)
-        send_queue_push(response.json, SEND_PRIORITY_HIGH)
-      elif "id" in data and ("result" in data or "error" in data):
+        send_queue_push(handle(msg, dispatcher), SEND_PRIORITY_HIGH)
+      elif is_response(msg):
         log_recv_queue.put_nowait(data)
       else:
         raise Exception("not a valid request or response")
@@ -655,15 +655,7 @@ def log_handler(end_event: threading.Event) -> None:
           log_path = os.path.join(Paths.swaglog_root(), log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
           with open(log_path) as f:
-            jsonrpc = {
-              "method": "forwardLogs",
-              "params": {
-                "logs": f.read()
-              },
-              "jsonrpc": "2.0",
-              "id": log_entry
-            }
-            send_queue_push(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
+            send_queue_push(dumps_call("forwardLogs", {"logs": f.read()}, request_id=log_entry), SEND_PRIORITY_LOW)
             curr_log = log_entry
         except OSError:
           pass  # file could be deleted by log rotation
