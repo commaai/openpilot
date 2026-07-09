@@ -47,6 +47,7 @@ ffmpeg = pkgs[pkg_names.index('ffmpeg')]
 # Shared package ships .so/.dylib; older device venvs still have static .a only.
 # Keep static link deps (x264/z/va/drm) when the installed package is static so
 # TICI CI works without upgrading the device venv yet.
+# TODO: drop the static fallback once device venvs have comma-deps-ffmpeg>=7.1.0.post94
 _ffmpeg_lib_names = os.listdir(ffmpeg.LIB_DIR) if os.path.isdir(ffmpeg.LIB_DIR) else []
 ffmpeg_shared = any(
   n.startswith('libavcodec.so') or (n.startswith('libavcodec') and n.endswith('.dylib'))
