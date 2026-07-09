@@ -23,9 +23,6 @@ env:
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
-  # Most jobs checkout without submodules so tools/op.sh setup must init them
-  # before uv sync. build_release is special: build_stripped copies submodule
-  # trees into the release and runs git clean (wipes .venv) before setup.
   build_release:
     name: build release
     runs-on: ${{
