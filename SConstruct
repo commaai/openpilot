@@ -27,6 +27,24 @@ AddOption('--minimal',
           default=(not TICI and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
+# Package symlinks are no longer tracked in git (created at launch on device).
+# Create them here so PYTHONPATH-based imports find in-tree packages and
+# Cython extensions during the build (especially release builds).
+_repo_root = Dir('#').abspath
+for _pkg, _target in (
+  ('msgq', 'msgq_repo/msgq'),
+  ('opendbc', 'opendbc_repo/opendbc'),
+  ('rednose', 'rednose_repo/rednose'),
+  ('teleoprtc', 'teleoprtc_repo/teleoprtc'),
+  ('tinygrad', 'tinygrad_repo/tinygrad'),
+):
+  _link = os.path.join(_repo_root, _pkg)
+  if os.path.lexists(_link):
+    if os.path.islink(_link) and os.readlink(_link) == _target:
+      continue
+    os.unlink(_link)
+  os.symlink(_target, _link)
+
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
@@ -128,7 +146,10 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#openpilot",
-    "#msgq",
+    "#msgq_repo",            # #include "msgq/..."
+    "#opendbc_repo",         # #include "opendbc/..."
+    "#rednose_repo",         # #include "rednose/..."
+    "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
     "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
@@ -138,13 +159,13 @@ env = Environment(
     "#openpilot/common",
     "#msgq_repo",
     "#openpilot/selfdrive/pandad",
-    "#rednose/helpers",
+    "#rednose_repo/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT="#rednose_repo",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
@@ -249,7 +270,7 @@ Export('messaging')
 SConscript(['panda/SConscript'])
 
 # Build rednose library
-SConscript(['rednose/SConscript'])
+SConscript(['rednose_repo/rednose/SConscript'])
 
 # Build system services
 SConscript([
