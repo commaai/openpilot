@@ -23,6 +23,7 @@ env:
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
+  # Checkout without submodules; tools/op.sh setup must init them before uv sync.
   build_release:
     name: build release
     runs-on: ${{
@@ -37,7 +38,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        submodules: true
+        submodules: false
     - name: Getting LFS files
       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
@@ -67,7 +68,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        submodules: true
+        submodules: false
     - name: Remove Homebrew from environment
       run: |
         FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | tr '\n' ':')
@@ -87,36 +88,11 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        submodules: true
+        submodules: false
     - run: ./tools/op.sh setup
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh
-
-  # Catch setup regressions where path deps (pandacan, opendbc, ...) need
-  # submodule checkouts before uv sync. Other jobs always checkout with
-  # submodules: true and would miss that failure mode.
-  setup_from_scratch:
-    name: setup from scratch
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16"]')
-      || fromJSON('["ubuntu-24.04"]') }}
-    steps:
-    - uses: actions/checkout@v7
-      with:
-        submodules: false
-    - name: Ensure submodules are empty
-      run: |
-        for d in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }'); do
-          if [ -n "$(ls -A "$d" 2>/dev/null || true)" ]; then
-            echo "expected empty submodule dir before setup: $d"
-            exit 1
-          fi
-        done
-    - run: ./tools/op.sh setup
 
   unit_tests:
     name: unit tests
@@ -129,7 +105,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        submodules: true
+        submodules: false
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -153,7 +129,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        submodules: true
+        submodules: false
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -226,7 +202,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        submodules: true
+        submodules: false
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -248,7 +224,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          submodules: true
+          submodules: false
       - run: ./tools/op.sh setup
       - name: Build openpilot
         run: scons
