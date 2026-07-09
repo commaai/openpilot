@@ -32,7 +32,7 @@ dependencies = [
   "comma-deps-catch2",
   "comma-deps-acados",
   "comma-deps-eigen",
-  "comma-deps-ffmpeg @ git+https://github.com/commaai/dependencies.git@ffmpeg-shared-libs#subdirectory=ffmpeg",
+  "comma-deps-ffmpeg",
   "comma-deps-libyuv",
   "comma-deps-zstd",
   "comma-deps-ncurses",
