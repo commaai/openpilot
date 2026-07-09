@@ -16,11 +16,8 @@ def _gen_crc16_reflected_table(poly: int) -> list[int]:
     table.append(crc)
   return table
 
-
 # CRC-16/IBM-SDLC (aka X-25 / ISO-HDLC): poly 0x1021, refin/refout, init/xor 0xFFFF
-# Formerly: crcmod.mkCrcFun(0x11021, initCrc=0, xorOut=0xffff)  # rev defaults to True
 _CRC16_X25_TABLE = _gen_crc16_reflected_table(0x8408)
-
 
 def crc16_x25(data: bytes) -> int:
   crc = 0xFFFF
