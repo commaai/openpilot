@@ -24,6 +24,7 @@ AudibleAlert = log.SelfdriveState.AudibleAlert
 EventName = log.OnroadEvent.EventName
 
 DMON_LOCKOUT_TIME = DRIVER_MONITOR_SETTINGS()._LOCKOUT_TIME
+DMON_NO_RESPONSE_TIMEOUT = DRIVER_MONITOR_SETTINGS()._NO_RESPONSE_TIMEOUT
 
 # Alert priorities
 class Priority(IntEnum):
@@ -237,6 +238,17 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
     if soft_disable_time < int(0.5 / DT_CTRL):
       return ImmediateDisableAlert(alert_text_2)
     return UserSoftDisableAlert(alert_text_2)
+  return func
+
+def driver_red_alert(alert_text_2: str) -> AlertCallbackType:
+  def func(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+    lockout_secs = sm['driverMonitoringState'].lockoutCountdownPercent / 100. * DMON_NO_RESPONSE_TIMEOUT
+    cd_str = f"{round(lockout_secs)}" if lockout_secs >= 1 else f"{lockout_secs:.1f}"
+    return Alert(
+      "DISENGAGE IMMEDIATELY",
+      f"{alert_text_2}: openpilot Unavailable in {cd_str}s",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1)
   return func
 
 def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
@@ -540,11 +552,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.driverDistracted3: {
-    ET.PERMANENT: Alert(
-      "DISENGAGE IMMEDIATELY",
-      "Driver Distracted",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1),
+    ET.PERMANENT: driver_red_alert("Driver Distracted"),
   },
 
   EventName.driverUnresponsive1: {
@@ -564,11 +572,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.driverUnresponsive3: {
-    ET.PERMANENT: Alert(
-      "DISENGAGE IMMEDIATELY",
-      "Driver Unresponsive",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1),
+    ET.PERMANENT: driver_red_alert("Driver Unresponsive"),
   },
 
   EventName.manualRestart: {
