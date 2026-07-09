@@ -1,7 +1,8 @@
 import select
-from serial import Serial
 from crcmod import mkCrcFun
 from struct import pack, unpack_from, calcsize
+
+from openpilot.common.serial import Serial
 
 class ModemDiag:
   def __init__(self):
