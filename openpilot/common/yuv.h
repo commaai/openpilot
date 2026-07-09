@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-// Small YUV helpers replacing the few libyuv call sites we used.
 // NV12: Y plane + interleaved UV. I420: planar Y, U, V.
 
 namespace yuv {
@@ -40,4 +39,4 @@ void nv12_to_rgba(const uint8_t *src_y, int src_stride_y,
                   uint8_t *dst_rgba, int dst_stride_rgba,
                   int width, int height);
 
-}  // namespace yuv
+}
