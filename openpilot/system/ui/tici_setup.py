@@ -14,6 +14,7 @@ from openpilot.cereal import log
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import DialogResult, Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
@@ -107,13 +108,7 @@ class Setup(Widget):
     self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                                                       text_color=rl.Color(255, 89, 79, 255),
                                                       text_padding=60)
-    self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
-                                                     + "⚠️ It has not been tested by comma.\n\n"
-                                                     + "⚠️ It may not comply with relevant safety standards.\n\n"
-                                                     + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
-                                                     + "If you'd like to proceed, use https://flash.comma.ai "
-                                                     + "to restore your device to a factory state later.",
-                                                     68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=60)
+    self._yellow_warning_icon = gui_app.texture("icons/yellow_warning.png", 68, 68)
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
 
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM, text_padding=20)
@@ -304,7 +299,43 @@ class Setup(Widget):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(button_y - BODY_FONT_SIZE * FONT_SCALE))
     y_offset = rect.y + offset
     self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
-    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 400, rect.width - 50, BODY_FONT_SIZE * FONT_SCALE * 3))
+
+    body_font_size = 68
+    body_font = gui_app.font(FontWeight.NORMAL)
+    body_x = rect.x + 50 + 60
+    body_y = y_offset + 400
+    body_w = int(rect.width - 50 - 60 * 2)
+    line_height = body_font_size * FONT_SCALE
+    warning_icon = self._yellow_warning_icon
+    icon_size = body_font_size * FONT_SCALE
+    icon_scale = icon_size / warning_icon.height
+    icon_gap = 15
+
+    paragraphs = [
+      ("Use caution when installing third-party software.", False),
+      ("", False),
+      ("It has not been tested by comma.", True),
+      ("", False),
+      ("It may not comply with relevant safety standards.", True),
+      ("", False),
+      ("It may cause damage to your device and/or vehicle.", True),
+      ("", False),
+      ("If you'd like to proceed, use https://flash.comma.ai to restore your device to a factory state later.", False),
+    ]
+
+    for text, has_icon in paragraphs:
+      if text:
+        lines = wrap_text(body_font, text, body_font_size, body_w)
+        for i, line in enumerate(lines):
+          text_x = body_x
+          if has_icon and i == 0:
+            rl.draw_texture_ex(warning_icon, rl.Vector2(body_x, body_y), 0.0, icon_scale, rl.WHITE)
+            text_x = body_x + icon_size + icon_gap
+          rl.draw_text_ex(body_font, line, rl.Vector2(text_x, body_y), body_font_size, 0, rl.WHITE)
+          body_y += line_height
+      else:
+        body_y += line_height
+
     rl.end_scissor_mode()
 
     self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))

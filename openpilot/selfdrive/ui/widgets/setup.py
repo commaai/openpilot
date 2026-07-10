@@ -4,11 +4,11 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label import Label
 
 
 class SetupWidget(Widget):
@@ -18,7 +18,7 @@ class SetupWidget(Widget):
     self._pair_device_btn = Button(lambda: tr("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
     self._open_settings_btn = Button(lambda: tr("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label(lambda: tr("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
+    self._fire_icon = gui_app.texture("icons/fire.png", 64, 64)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
@@ -65,8 +65,21 @@ class SetupWidget(Widget):
     w = rect.width - 112
     spacing = 42
 
-    # Title with fire emojis
-    self._firehose_label.render(rl.Rectangle(rect.x, y, rect.width, 64))
+    # Title with fire icons
+    title_text = tr("Firehose Mode")
+    title_font = gui_app.font(FontWeight.MEDIUM)
+    title_size = measure_text_cached(title_font, title_text, 64)
+    icon = self._fire_icon
+    icon_size = 64 * FONT_SCALE
+    icon_gap = 15
+    total_width = icon_size + icon_gap + title_size.x + icon_gap + icon_size
+    title_y = y + (64 - icon_size) / 2
+    title_x = rect.x + (rect.width - total_width) / 2
+    rl.draw_texture_ex(icon, rl.Vector2(title_x, title_y), 0.0, FONT_SCALE, rl.WHITE)
+    title_x += icon_size + icon_gap
+    rl.draw_text_ex(title_font, title_text, rl.Vector2(title_x, title_y), 64, 0, rl.WHITE)
+    title_x += title_size.x + icon_gap
+    rl.draw_texture_ex(icon, rl.Vector2(title_x, title_y), 0.0, FONT_SCALE, rl.WHITE)
     y += 64 + spacing
 
     # Description
