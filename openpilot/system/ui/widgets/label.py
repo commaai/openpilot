@@ -193,11 +193,11 @@ class Label(Widget):
       if len(self._text_wrapped) > 0:
         if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
           icon_x = self._rect.x + self._text_padding
-          text_pos.x = self._icon.width + ICON_PADDING
+          text_pos.x = self._rect.x + self._icon.width + ICON_PADDING
         elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
           total_width = self._icon.width + ICON_PADDING + text_size.x
           icon_x = self._rect.x + (self._rect.width - total_width) / 2
-          text_pos.x = self._icon.width + ICON_PADDING
+          text_pos.x = self._rect.x + self._icon.width + ICON_PADDING
         else:
           icon_x = (self._rect.x + self._rect.width - text_size.x - self._text_padding) - ICON_PADDING - self._icon.width
       else:
