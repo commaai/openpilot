@@ -93,7 +93,7 @@ procs = [
 
   PythonProcess("modeld", "openpilot.selfdrive.modeld.modeld", only_onroad),
   PythonProcess("bigmodeld", "openpilot.selfdrive.modeld.bigmodeld", bigmodeld),
-  PythonProcess("modelrouterd", "openpilot.selfdrive.modeld.modelrouterd", usbgpu, restart_if_crash=True),
+  PythonProcess("modelrouterd", "openpilot.selfdrive.modeld.modelrouterd", usbgpu),
   PythonProcess("dmonitoringmodeld", "openpilot.selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 
   PythonProcess("sensord", "openpilot.system.sensord.sensord", only_onroad, enabled=not PC),
