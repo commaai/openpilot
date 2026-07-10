@@ -16,7 +16,6 @@ def main() -> None:
   model = "bigModelV2" if params.get_bool("UsbGpuActive") else "smallModelV2"
   big_failed = params.get_bool("UsbGpuFailed")
   last_big_time = time.monotonic() if model == "bigModelV2" else None
-  stopped_count = 0
   last_frame_id = -1
 
   while True:
@@ -25,12 +24,13 @@ def main() -> None:
     if sm.updated["bigModelV2"] and big_available:
       last_big_time = time.monotonic()
 
+    not_running = False
     if sm.updated["managerState"]:
       proc = next(p for p in sm["managerState"].processes if p.name == "bigmodeld")
-      stopped_count = stopped_count + 1 if proc.shouldBeRunning and not proc.running else 0
+      not_running = proc.shouldBeRunning and not proc.running
 
     timed_out = last_big_time is not None and time.monotonic() - last_big_time > 10 * DT_MDL
-    if (timed_out or stopped_count >= 2) and not big_failed:
+    if (timed_out or not_running) and not big_failed:
       big_failed = True
       params.put_bool("UsbGpuFailed", True)
       cloudlog.event("big_model_unavailable", error=True)
