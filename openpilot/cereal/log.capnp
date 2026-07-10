@@ -2347,6 +2347,12 @@ struct CameraOdometry {
   roadTransformTransStd @9 :List(Float32);
 }
 
+struct ModelOutput {
+  modelV2 @0 :ModelDataV2;
+  cameraOdometry @1 :CameraOdometry;
+  cameraOdometryValid @2 :Bool;
+}
+
 struct Sentinel {
   enum SentinelType {
     endOfSegment @0;
@@ -2542,6 +2548,8 @@ struct Event {
     driverMonitoringState @151 :DriverMonitoringState;
     livePose @129 :LivePose;
     modelV2 @75 :ModelDataV2;
+    smallModelV2 @152 :ModelOutput;
+    bigModelV2 @153 :ModelOutput;
     drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;
 

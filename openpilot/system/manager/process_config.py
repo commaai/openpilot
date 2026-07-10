@@ -49,6 +49,12 @@ def not_long_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
 def qcomgps(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
+def usbgpu(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started and "REPLAY" not in os.environ and params.get_bool("UsbGpuCompiled") and params.get_bool("UsbGpuPresent")
+
+def bigmodeld(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return usbgpu(started, params, CP) and not params.get_bool("UsbGpuFailed")
+
 def always_run(started: bool, params: Params, CP: car.CarParams) -> bool:
   return True
 
@@ -86,6 +92,8 @@ procs = [
   PythonProcess("timed", "openpilot.system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "openpilot.selfdrive.modeld.modeld", only_onroad),
+  PythonProcess("bigmodeld", "openpilot.selfdrive.modeld.bigmodeld", bigmodeld),
+  PythonProcess("modelrouterd", "openpilot.selfdrive.modeld.modelrouterd", usbgpu, restart_if_crash=True),
   PythonProcess("dmonitoringmodeld", "openpilot.selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 
   PythonProcess("sensord", "openpilot.system.sensord.sensord", only_onroad, enabled=not PC),

@@ -13,7 +13,7 @@ from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.realtime import config_realtime_process, DT_MDL
+from openpilot.common.realtime import config_realtime_process, set_core_affinity, DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
@@ -133,17 +133,28 @@ class ModelState:
     return outputs_dict
 
 
-def main(demo=False):
+def main(demo=False, model_name="modelV2"):
   cloudlog.warning("modeld init")
 
-  _present = usbgpu_present()
-  _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
-  USBGPU = _present and _compiled
   params = Params()
-  params.put_bool("UsbGpuPresent", _present)
-  params.put_bool("UsbGpuCompiled", _compiled)
+  if model_name == "modelV2":
+    _present = usbgpu_present()
+    _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+    USBGPU = _present and _compiled
+    params.put_bool("UsbGpuPresent", _present)
+    params.put_bool("UsbGpuCompiled", _compiled)
+    if USBGPU and "REPLAY" not in os.environ and not demo:
+      model_name = "smallModelV2"
+      USBGPU = False
+  else:
+    USBGPU = model_name == "bigModelV2"
 
-  config_realtime_process(7, 54)
+  if model_name == "smallModelV2":
+    config_realtime_process([0, 1, 2, 3], 54)
+  elif model_name == "bigModelV2":
+    set_core_affinity([7])
+  else:
+    config_realtime_process(7, 54)
 
   # visionipc clients
   while True:
@@ -174,11 +185,13 @@ def main(demo=False):
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
-  pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
+  if model_name == "modelV2":
+    pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
+  else:
+    pm = PubMaster([model_name])
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
-  params = Params()
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -286,10 +299,11 @@ def main(demo=False):
     model_output = model.run(bufs, transforms, inputs)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
+    if model_name == "bigModelV2" and run_count == 1:
+      config_realtime_process(7, 54)
 
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')
-      drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
       action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
@@ -306,11 +320,20 @@ def main(demo=False):
       modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
       modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
 
-      fill_driving_model_data(drivingdata_send, modelv2_send)
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
-      pm.send('modelV2', modelv2_send)
-      pm.send('drivingModelData', drivingdata_send)
-      pm.send('cameraOdometry', posenet_send)
+      if model_name == "modelV2":
+        drivingdata_send = messaging.new_message('drivingModelData')
+        fill_driving_model_data(drivingdata_send, modelv2_send)
+        pm.send('modelV2', modelv2_send)
+        pm.send('drivingModelData', drivingdata_send)
+        pm.send('cameraOdometry', posenet_send)
+      else:
+        model_send = messaging.new_message(model_name, valid=modelv2_send.valid, logMonoTime=modelv2_send.logMonoTime)
+        candidate = getattr(model_send, model_name)
+        candidate.modelV2 = modelv2_send.modelV2
+        candidate.cameraOdometry = posenet_send.cameraOdometry
+        candidate.cameraOdometryValid = posenet_send.valid
+        pm.send(model_name, model_send)
     last_vipc_frame_id = meta_main.frame_id
 
 
