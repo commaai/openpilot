@@ -2,7 +2,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-ROOT="$(cd "$DIR/../../" && pwd)"
+ROOT="$(cd "$DIR/../../../" && pwd)"
 
 install_qt() {
   if [[ "$(uname)" == "Darwin" ]]; then
@@ -33,6 +33,6 @@ fi
 
 # Build _cabana
 cd "$ROOT"
-scons openpilot/tools/cabana/_cabana openpilot/cereal/messaging/bridge
+scons -u openpilot/tools/cabana/_cabana openpilot/cereal/messaging/bridge
 
 exec "$DIR/_cabana" "$@"

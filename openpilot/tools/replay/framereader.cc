@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "common/util.h"
-#include "libyuv.h"
+#include "common/yuv.h"
 #include "tools/replay/py_downloader.h"
 #include "tools/replay/util.h"
 #include "common/hardware/hw.h"
@@ -258,12 +258,12 @@ bool FFmpegVideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
       memcpy(buf->uv + i*buf->stride, f->data[1] + i*f->linesize[1], width);
     }
   } else {
-    libyuv::I420ToNV12(f->data[0], f->linesize[0],
-                       f->data[1], f->linesize[1],
-                       f->data[2], f->linesize[2],
-                       buf->y, buf->stride,
-                       buf->uv, buf->stride,
-                       width, height);
+    yuv::i420_to_nv12(f->data[0], f->linesize[0],
+                      f->data[1], f->linesize[1],
+                      f->data[2], f->linesize[2],
+                      buf->y, buf->stride,
+                      buf->uv, buf->stride,
+                      width, height);
   }
   return true;
 }

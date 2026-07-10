@@ -96,6 +96,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, pl
         dst.write(contents)
     os.symlink(os.path.join(BASEDIR, "openpilot", "cereal", "include"), os.path.join(tmp_cereal, "include"), target_is_directory=True)
     os.symlink(os.path.join(BASEDIR, "opendbc_repo", "opendbc", "car", "car.capnp"), os.path.join(tmp_cereal, "car.capnp"))
+    os.symlink(os.path.join(BASEDIR, "opendbc_repo", "opendbc"), os.path.join(schema_root, "opendbc"), target_is_directory=True)
     env["BASEDIR"] = schema_root
     subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
