@@ -243,10 +243,9 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
 def driver_red_alert(alert_text_2: str) -> AlertCallbackType:
   def func(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
     lockout_secs = sm['driverMonitoringState'].lockoutCountdownPercent / 100. * DMON_NO_RESPONSE_TIMEOUT
-    cd_str = f"{round(lockout_secs)}" if lockout_secs >= 1 else f"{lockout_secs:.1f}"
     return Alert(
       "DISENGAGE IMMEDIATELY",
-      f"{alert_text_2}: openpilot Unavailable in {cd_str}s",
+      f"{alert_text_2}: openpilot Unavailable in {round(lockout_secs)}s",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1)
   return func
