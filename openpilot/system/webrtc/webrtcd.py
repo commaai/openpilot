@@ -15,7 +15,7 @@ import signal
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
-from typing import Any
+from typing import Any, Callable
 
 from libdatachannel import DataChannel
 from openpilot.system.webrtc.helpers import StreamRequestBody
@@ -153,14 +153,14 @@ class LivestreamBitrateController(AsyncTaskRunner):
   down_samples = 5 # 1s
   param_name = "LivestreamEncoderBitrate"
 
-  def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
+  def __init__(self, get_stats: Callable[[], dict[str, Any]], params: Params, enabled: bool = True):
     super().__init__()
-    self.pc = peer_connection
+    self.get_stats = get_stats
     self.params = params
 
     self.level = 2
     self._publish(self.bitrates[self.level])
-    self.prev_lost, self.prev_sent = None, None
+    self.prev_stats: dict[str, tuple[int, int, int, int, int, int, int]] = {}
     self.counter = 0
     self.up_samples = 5 # 1s
     self._auto = True
@@ -177,7 +177,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
       if not self._auto:
         continue
 
-      loss_rate = await self._sample()
+      loss_rate = self._sample()
       if loss_rate is None:
         continue
       if loss_rate >= self.med_level and self.level > 0:
@@ -194,24 +194,23 @@ class LivestreamBitrateController(AsyncTaskRunner):
           self.counter = 0
           self._publish(self.bitrates[self.level])
 
-  async def _sample(self) -> float | None:
-    if not hasattr(self.pc, "getStats"):
-      return None
-    report = await self.pc.getStats()
-    packets_lost = packets_sent = 0
-    for s in report.values():
-      if s.type == "remote-inbound-rtp":
-        packets_lost += s.packetsLost
-      elif s.type == "outbound-rtp":
-        packets_sent += s.packetsSent
-
-    if self.prev_lost is None:
-      self.prev_lost, self.prev_sent = packets_lost, packets_sent
-      return None
-    lost_delta = max(0, packets_lost - self.prev_lost)
-    sent_delta = max(0, packets_sent - self.prev_sent)
-    self.prev_lost, self.prev_sent = packets_lost, packets_sent
-    return lost_delta / sent_delta if sent_delta else 0.0
+  def _sample(self) -> float | None:
+    loss_rates = []
+    for camera_type, report in self.get_stats().items():
+      current = (
+        report.ssrc,
+        report.fraction_lost,
+        report.packets_lost,
+        report.highest_seq_no,
+        report.jitter,
+        report.lsr,
+        report.dlsr,
+      )
+      if self.prev_stats.get(camera_type) == current:
+        continue
+      self.prev_stats[camera_type] = current
+      loss_rates.append(report.fraction_lost / 256)
+    return max(loss_rates) if loss_rates else None
 
   def _publish(self, bitrate: float):
     self.params.put(self.param_name, bitrate)
@@ -248,7 +247,7 @@ class StreamSession:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.enabled)
-    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.params, self.enabled)
+    self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats, self.params, self.enabled)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
