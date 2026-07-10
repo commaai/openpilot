@@ -963,7 +963,6 @@ dependencies = [
     { name = "comma-deps-bzip2" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
-    { name = "comma-deps-eigen" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
@@ -1042,7 +1041,6 @@ requires-dist = [
     { name = "comma-deps-bzip2" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
-    { name = "comma-deps-eigen" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
@@ -1496,6 +1494,7 @@ version = "0.0.1"
 source = { editable = "rednose_repo" }
 dependencies = [
     { name = "cffi" },
+    { name = "comma-deps-eigen" },
     { name = "numpy" },
     { name = "sympy" },
 ]
@@ -1503,6 +1502,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "cffi" },
+    { name = "comma-deps-eigen" },
     { name = "numpy" },
     { name = "scipy", marker = "extra == 'dev'" },
     { name = "sympy" },

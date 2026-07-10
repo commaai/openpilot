@@ -29,7 +29,6 @@ dependencies = [
   "comma-deps-capnproto",
   "comma-deps-catch2",
   "comma-deps-acados",
-  "comma-deps-eigen",
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
   "comma-deps-ncurses",
