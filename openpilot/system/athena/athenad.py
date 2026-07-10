@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import base64
 import hashlib
-import io
 import itertools
 import json
 import os
@@ -592,24 +590,6 @@ def startStream(sdp: str, enabled: bool) -> dict:
     wait_for_webrtcd()
 
   return post_stream_request(StreamRequestBody(sdp, "wideRoad", enabled, bridge_services_in, ["carState", "deviceState"]))
-
-
-@dispatcher.add_method
-def takeSnapshot() -> str | dict[str, str] | None:
-  from openpilot.system.camerad.snapshot import jpeg_write, snapshot
-  ret = snapshot()
-  if ret is not None:
-    def b64jpeg(x):
-      if x is not None:
-        f = io.BytesIO()
-        jpeg_write(f, x)
-        return base64.b64encode(f.getvalue()).decode("utf-8")
-      else:
-        return None
-    return {'jpegBack': b64jpeg(ret[0]),
-            'jpegFront': b64jpeg(ret[1])}
-  else:
-    raise Exception("not available while camerad is started")
 
 
 def get_logs_to_send_sorted() -> list[str]:
