@@ -9,7 +9,7 @@ from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.values import PLATFORMS
 from openpilot.common.basedir import BASEDIR
 
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
 
 jot_env = env.Clone()
 jot_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
@@ -101,12 +101,12 @@ event_extractors = jot_env.Command("generated_event_extractors.h", [
   generate_event_extractors,
 )
 
-libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"),
-        "avformat", "avcodec", "avutil", "x264", "yuv", "z", "bz2", "zstd", "m", "pthread", "usb-1.0"]
+libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
+        ffmpeg_libs + ["bz2", "zstd", "m", "pthread", "usb-1.0"]
 if arch == "Darwin":
   jot_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
 else:
-  libs += ["GL", "dl", "va", "va-drm", "drm"]
+  libs += ["GL", "dl"]
 
 program = jot_env.Program("jotpluggler", jot_env.Glob("*.cc"), LIBS=libs)
 jot_env.Depends(program, generated_dbc_stamp)
