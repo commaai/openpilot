@@ -1,6 +1,7 @@
 import asyncio
 import struct
 import time
+from collections.abc import Callable
 
 import av
 from teleoprtc.tracks import TiciVideoStreamTrack
@@ -28,9 +29,10 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     "road": "livestreamRoadEncodeData",
   }
 
-  def __init__(self, camera_type: str, video_enabled: bool = True):
+  def __init__(self, camera_type: str, video_enabled: bool = True, on_keyframe: Callable[[str], None] | None = None):
     super().__init__(camera_type, DT_MDL)
 
+    self.camera_type = camera_type
     self._sock = self._make_sock(camera_type)
     self._pts = 0
     self._t0_ns = time.monotonic_ns()
@@ -38,6 +40,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self.params = Params()
     self._seen_keyframe = False
     self.video_enabled = video_enabled
+    self.on_keyframe = on_keyframe
 
   def stop(self) -> None:
     super().stop()
@@ -47,7 +50,9 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     return messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
 
   def switch_camera(self, camera_type: str) -> None:
+    self.camera_type = camera_type
     self._sock = self._make_sock(camera_type)
+    self._seen_keyframe = False
 
   def enable(self, enabled: bool):
     self.video_enabled = enabled
@@ -82,7 +87,10 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       if msg is not None:
         if not self._seen_keyframe and (getattr(msg, msg.which()).idx.flags & V4L2_BUF_FLAG_KEYFRAME):
           self._seen_keyframe = True
-          self.params.put("LivestreamRequestKeyframe", False, block=False)
+          if self.on_keyframe is not None:
+            self.on_keyframe(self.camera_type)
+          else:
+            self.params.put("LivestreamRequestKeyframe", False, block=False)
         break
       await asyncio.sleep(0.005)
 
