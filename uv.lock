@@ -988,7 +988,6 @@ dependencies = [
     { name = "setproctitle" },
     { name = "setuptools" },
     { name = "sounddevice" },
-    { name = "sympy" },
     { name = "tqdm" },
     { name = "websocket-client" },
     { name = "xattr" },
@@ -1078,7 +1077,6 @@ requires-dist = [
     { name = "setproctitle" },
     { name = "setuptools" },
     { name = "sounddevice" },
-    { name = "sympy" },
     { name = "tqdm" },
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
@@ -1495,7 +1493,9 @@ source = { editable = "rednose_repo" }
 dependencies = [
     { name = "cffi" },
     { name = "comma-deps-eigen" },
+    { name = "cython" },
     { name = "numpy" },
+    { name = "scons" },
     { name = "sympy" },
 ]
 
@@ -1503,8 +1503,13 @@ dependencies = [
 requires-dist = [
     { name = "cffi" },
     { name = "comma-deps-eigen" },
+    { name = "cython" },
     { name = "numpy" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-xdist", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'" },
     { name = "scipy", marker = "extra == 'dev'" },
+    { name = "scons" },
     { name = "sympy" },
 ]
 provides-extras = ["dev"]
