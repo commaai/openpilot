@@ -72,7 +72,7 @@ dependencies = [
   "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
   "qrcode",
   "jeepney",
-  "pillow",
+  "fonttools",
 ]
 
 [project.optional-dependencies]

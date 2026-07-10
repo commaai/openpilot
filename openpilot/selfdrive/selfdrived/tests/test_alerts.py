@@ -2,7 +2,7 @@ import copy
 import json
 import os
 import random
-from PIL import Image, ImageDraw, ImageFont
+from fontTools.ttLib import TTFont
 
 from openpilot.cereal import log
 from opendbc.car.structs import car
@@ -22,6 +22,17 @@ ALERTS = []
 for event_types in EVENTS.values():
   for alert in event_types.values():
     ALERTS.append(alert)
+
+
+def _load_font(path, size):
+  font = TTFont(path)
+  return font.getBestCmap(), font["hmtx"], font["head"].unitsPerEm, size
+
+
+def _text_width(font, text):
+  cmap, hmtx, upem, size = font
+  advance = sum(hmtx[cmap.get(ord(ch), ".notdef")][0] for ch in text)
+  return advance * size / upem
 
 
 class TestAlerts:
@@ -54,12 +65,11 @@ class TestAlerts:
     semibold_font_path = os.path.join(font_path, "Inter-SemiBold.ttf")
 
     max_text_width = 2160 - 300  # full screen width is usable, minus sidebar
-    draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
 
     fonts = {
-      AlertSize.small: [ImageFont.truetype(semibold_font_path, 74)],
-      AlertSize.mid: [ImageFont.truetype(bold_font_path, 88),
-                      ImageFont.truetype(regular_font_path, 66)],
+      AlertSize.small: [_load_font(semibold_font_path, 74)],
+      AlertSize.mid: [_load_font(bold_font_path, 88),
+                      _load_font(regular_font_path, 66)],
     }
 
     for alert in ALERTS:
@@ -75,9 +85,7 @@ class TestAlerts:
         if i >= len(fonts[alert.alert_size]):
           break
 
-        font = fonts[alert.alert_size][i]
-        left, _, right, _ = draw.textbbox((0, 0), txt, font)
-        width = right - left
+        width = _text_width(fonts[alert.alert_size][i], txt)
         msg = f"type: {alert.alert_type} msg: {txt}"
         assert width <= max_text_width, msg
 

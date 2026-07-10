@@ -39,8 +39,6 @@ EMOJI_REGEX = re.compile(
 
 @functools.cache
 def _load_emoji_font():
-  # NotoColorEmoji stores each glyph as an embedded PNG in the CBDT/CBLC tables,
-  # so pull those PNGs out directly instead of rasterizing the font with PIL.
   with as_file(FONT_DIR.joinpath("NotoColorEmoji.ttf")) as font_path:
     font = TTFont(io.BytesIO(font_path.read_bytes()))
     return font.getBestCmap(), font["CBDT"].strikeData
