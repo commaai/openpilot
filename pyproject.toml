@@ -50,7 +50,6 @@ dependencies = [
 
   # athena
   "PyJWT",
-  "json-rpc",
   "websocket_client",
 
   # joystickd

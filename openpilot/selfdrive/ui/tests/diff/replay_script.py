@@ -122,7 +122,6 @@ def set_prime_state(prime_type: PrimeType) -> None:
 def setup_offroad_alerts() -> None:
   set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
   set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
-  set_offroad_alert("Offroad_IsTakingSnapshot", True)
 
 
 def setup_update_available(available: bool = True) -> None:
