@@ -1,14 +1,6 @@
-"""Minimal ctypes binding to FFmpeg's libavcodec for streaming video decode.
-
-Only the small API surface needed to feed compressed packets in and get decoded
-frames out is bound. FFmpeg structs are treated as opaque pointers and configured
-through public API calls (AVOptions, av_packet_from_data), with one exception:
-the leading fields of AVFrame, which are identical in every supported FFmpeg
-version, are read directly to get at the decoded image planes.
-"""
 import ctypes
-import ctypes.util
 import errno
+import os
 from functools import cache
 from types import SimpleNamespace
 
@@ -63,23 +55,15 @@ _FUNCTIONS = {
 }
 
 
-def _load_library(name: str) -> ctypes.CDLL:
-  # find_library relies on ldconfig/dyld knowing the library; fall back to plain sonames for setups like homebrew
-  candidates = [ctypes.util.find_library(name)]
-  candidates += [f"lib{name}.so.{v}" for v in SUPPORTED_MAJORS[name]]
-  candidates += [f"lib{name}.{v}.dylib" for v in SUPPORTED_MAJORS[name]]
-  for candidate in candidates:
-    if candidate is not None:
-      try:
-        return ctypes.CDLL(candidate)
-      except OSError:
-        continue
-  raise RuntimeError(f"lib{name} shared library not found, install FFmpeg to use {__name__}")
-
-
 @cache
 def _libav() -> SimpleNamespace:
-  libs = {name: _load_library(name) for name in _FUNCTIONS}
+  from ffmpeg import LIB_DIR
+
+  # unversioned .so files are ld scripts; load the real soname next to them
+  libs = {}
+  for name in _FUNCTIONS:
+    path = next(os.path.join(LIB_DIR, f) for f in os.listdir(LIB_DIR) if f.startswith(f"lib{name}.so."))
+    libs[name] = ctypes.CDLL(path)
 
   for name, lib in libs.items():
     version_fn = getattr(lib, f"{name}_version")
@@ -115,11 +99,7 @@ def _plane(frame: AVFrame, idx: int, rows: int, cols: int) -> np.ndarray:
 
 
 class VideoDecoder:
-  """Streaming decoder: feed compressed packets, get back decoded NV12 frames.
-
-  Unlike the subprocess-based decoders in framereader.py, this decodes packet by
-  packet without buffering the stream, making it suitable for live video.
-  """
+  """Streaming decoder: feed compressed packets, get back decoded NV12 frames."""
 
   def __init__(self, codec: str = "hevc"):
     self._ctx = None
