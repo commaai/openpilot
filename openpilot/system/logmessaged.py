@@ -8,6 +8,13 @@ from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import get_file_handler
 
 
+# msgq queues are 256KiB and msgq asserts that a single message fits in a third
+# of the queue. Records over this limit must be dropped before publishing, or
+# logmessaged dies with SIGABRT - and the crash of the logging daemon is the
+# one crash that can never be logged.
+MAX_PUBLISH_BYTES = 80 * 1024
+
+
 def main() -> NoReturn:
   log_handler = get_file_handler()
   log_handler.setFormatter(SwagLogFileFormatter(None))
@@ -29,7 +36,7 @@ def main() -> NoReturn:
       if level >= log_level:
         log_handler.emit(record)
 
-      if len(record) > 2*1024*1024:
+      if len(record) > MAX_PUBLISH_BYTES:
         print("WARNING: log too big to publish", len(record))
         print(record[:100])
         continue
