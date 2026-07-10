@@ -276,7 +276,7 @@ std::string default_dbc_template() {
 DbcEditorSource resolve_dbc_editor_source(const std::string &dbc_name) {
   const fs::path generated_dbc_dir = repo_root() / "openpilot" / "tools" / "jotpluggler" / "generated_dbcs";
   const std::array<DbcEditorSource, 2> candidates = {{
-    {.path = repo_root() / "opendbc" / "dbc" / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Opendbc},
+    {.path = repo_root() / "opendbc_repo" / "opendbc" / "dbc" / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Opendbc},
     {.path = generated_dbc_dir / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Generated},
   }};
   for (const DbcEditorSource &candidate : candidates) {

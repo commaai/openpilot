@@ -27,6 +27,21 @@ AddOption('--minimal',
           default=(not TICI and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
+submodule_python_paths = [
+  Dir("#").abspath,
+  Dir("#msgq_repo").abspath,
+  Dir("#opendbc_repo").abspath,
+  Dir("#rednose_repo").abspath,
+  Dir("#teleoprtc_repo").abspath,
+  Dir("#tinygrad_repo").abspath,
+]
+for p in reversed(submodule_python_paths):
+  if p not in sys.path:
+    sys.path.insert(0, p)
+
+if external_pythonpath := os.environ.get("PYTHONPATH"):
+  submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
+
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
@@ -40,9 +55,24 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['acados', 'bzip2', 'capnproto', 'catch2', 'eigen', 'ffmpeg', 'json11', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
+pkg_names = ['acados', 'bzip2', 'capnproto', 'catch2', 'eigen', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
+ffmpeg = pkgs[pkg_names.index('ffmpeg')]
+# Shared package ships .so/.dylib; older device venvs still have static .a only.
+# Keep static link deps (x264/z/va/drm) when the installed package is static so
+# TICI CI works without upgrading the device venv yet.
+# TODO: drop the static fallback once device venvs have comma-deps-ffmpeg>=7.1.0.post94
+_ffmpeg_lib_names = os.listdir(ffmpeg.LIB_DIR) if os.path.isdir(ffmpeg.LIB_DIR) else []
+ffmpeg_shared = any(
+  n.startswith('libavcodec.so') or (n.startswith('libavcodec') and n.endswith('.dylib'))
+  for n in _ffmpeg_lib_names
+)
+ffmpeg_libs = ['avformat', 'avcodec', 'swresample', 'avutil']
+if not ffmpeg_shared:
+  ffmpeg_libs += ['x264', 'z']
+  if arch != "Darwin":
+    ffmpeg_libs += ['va', 'va-drm', 'drm']
 acados_include_dirs = [
   acados.INCLUDE_DIR,
   os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
@@ -91,7 +121,7 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath,
+    "PYTHONPATH": os.pathsep.join(submodule_python_paths),
     "ACADOS_SOURCE_DIR": acados.DIR,
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
@@ -113,7 +143,10 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#openpilot",
-    "#msgq",
+    "#msgq_repo",            # #include "msgq/..."
+    "#opendbc_repo",         # #include "opendbc/..."
+    "#rednose_repo",         # #include "rednose/..."
+    "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
     "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
@@ -123,13 +156,13 @@ env = Environment(
     "#openpilot/common",
     "#msgq_repo",
     "#openpilot/selfdrive/pandad",
-    "#rednose/helpers",
+    "#rednose_repo/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
-  RPATH=[],
+  RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT="#rednose_repo",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
@@ -192,7 +225,7 @@ else:
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-Export('env', 'arch', 'acados')
+Export('env', 'arch', 'acados', 'ffmpeg_libs')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
@@ -234,7 +267,7 @@ Export('messaging')
 SConscript(['panda/SConscript'])
 
 # Build rednose library
-SConscript(['rednose/SConscript'])
+SConscript(['rednose_repo/rednose/SConscript'])
 
 # Build system services
 SConscript([
