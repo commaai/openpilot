@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import gc
 import os
 import signal
 import sys
@@ -11,7 +12,7 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 from openpilot.common.hardware import PC, TICI
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process
+from openpilot.common.realtime import set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.loggerd.encoder.encoder import MAIN_FPS, EncoderInfo, EncoderSettings, FrameExtra, LogCameraInfo
 from openpilot.system.loggerd.encoder.jpeg_encoder import JpegEncoder
@@ -186,9 +187,12 @@ def encoder_thread(s: EncoderdState, cam_info: LogCameraInfo, do_exit: threading
         # do rotation if required
         frames_per_seg = segment_length * MAIN_FPS
         if cur_seg >= 0 and extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s.start_frame_id:
-          for e in encoders:
-            e.encoder_close()
-            e.encoder_open()
+          # rotate all encoders in parallel to minimize the time this thread isn't pulling frames
+          rotate_threads = [threading.Thread(target=lambda e=e: (e.encoder_close(), e.encoder_open())) for e in encoders]
+          for t in rotate_threads:
+            t.start()
+          for t in rotate_threads:
+            t.join()
           cur_seg += 1
 
         # encode a frame
@@ -245,7 +249,10 @@ def _thread_excepthook(args) -> None:
 
 def main(stream: bool = False) -> None:
   if not PC:
-    config_realtime_process([3], 52)
+    # unlike the C++ encoderd, this can't run SCHED_FIFO: with the GIL, same-priority
+    # FIFO threads starve each other for hundreds of ms whenever one has work to do
+    gc.disable()
+    set_core_affinity([2, 3])
   threading.excepthook = _thread_excepthook
 
   do_exit = threading.Event()

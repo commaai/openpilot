@@ -177,26 +177,27 @@ class V4LEncoder(VideoEncoder):
         index, bytesused, flags, ts = dequeue_buffer(self.fd, v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
         buf = self.buf_out[index]
         buf.sync_from_device()
+        dat = buf.mm[:bytesused]
+
+        # requeue the buffer before the (relatively slow) publish so the encoder never runs out of output buffers
+        queue_buffer(self.fd, v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, buf.addr, buf.len, buf.fd)
 
         if flags & v4l2.V4L2_QCOM_BUF_FLAG_EOS:
           # eof packet, we exit
           exit_flag = True
         elif flags & v4l2.V4L2_QCOM_BUF_FLAG_CODECCONFIG:
-          header = buf.mm[:bytesused]
+          header = dat
         else:
           extra = self.extras.get()
           assert extra.timestamp_eof // 1000 == ts  # stay in sync
           frame_id = extra.frame_id
           idx += 1
-          self.publisher_publish(self.segment_num, idx, extra, flags, header, buf.mm[:bytesused])
+          self.publisher_publish(self.segment_num, idx, extra, flags, header, dat)
 
         if DEBUG_ENCODER:
           lat = millis_since_boot() - ts / 1000.
           print(f"{self.encoder_info.publish_name:>20} got({index}) {bytesused:6d} bytes flags {flags:8x} " +
                 f"idx {self.segment_num:3d}/{idx:4d} id {frame_id:8d} ts {ts} lat {lat:.2f} ms ({self.free_buf_in.qsize()} frames free)")
-
-        # requeue the buffer
-        queue_buffer(self.fd, v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, buf.addr, buf.len, buf.fd)
 
       if revents & select.POLLOUT:
         index, _, _, _ = dequeue_buffer(self.fd, v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
