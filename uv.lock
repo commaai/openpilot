@@ -1496,6 +1496,7 @@ dependencies = [
     { name = "cython" },
     { name = "numpy" },
     { name = "scons" },
+    { name = "setuptools" },
     { name = "sympy" },
 ]
 
@@ -1505,11 +1506,13 @@ requires-dist = [
     { name = "comma-deps-eigen" },
     { name = "cython" },
     { name = "numpy" },
+    { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-xdist", marker = "extra == 'dev'" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "scipy", marker = "extra == 'dev'" },
     { name = "scons" },
+    { name = "setuptools" },
     { name = "sympy" },
 ]
 provides-extras = ["dev"]
