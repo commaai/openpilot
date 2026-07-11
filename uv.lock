@@ -963,7 +963,6 @@ dependencies = [
     { name = "comma-deps-bzip2" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
-    { name = "comma-deps-eigen" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
@@ -989,7 +988,6 @@ dependencies = [
     { name = "setproctitle" },
     { name = "setuptools" },
     { name = "sounddevice" },
-    { name = "sympy" },
     { name = "tqdm" },
     { name = "websocket-client" },
     { name = "xattr" },
@@ -1042,7 +1040,6 @@ requires-dist = [
     { name = "comma-deps-bzip2" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
-    { name = "comma-deps-eigen" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
@@ -1080,7 +1077,6 @@ requires-dist = [
     { name = "setproctitle" },
     { name = "setuptools" },
     { name = "sounddevice" },
-    { name = "sympy" },
     { name = "tqdm" },
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
@@ -1496,15 +1492,27 @@ version = "0.0.1"
 source = { editable = "rednose_repo" }
 dependencies = [
     { name = "cffi" },
+    { name = "comma-deps-eigen" },
+    { name = "cython" },
     { name = "numpy" },
+    { name = "scons" },
+    { name = "setuptools" },
     { name = "sympy" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "cffi" },
+    { name = "comma-deps-eigen" },
+    { name = "cython" },
     { name = "numpy" },
+    { name = "pre-commit", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-xdist", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'" },
     { name = "scipy", marker = "extra == 'dev'" },
+    { name = "scons" },
+    { name = "setuptools" },
     { name = "sympy" },
 ]
 provides-extras = ["dev"]

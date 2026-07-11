@@ -12,7 +12,6 @@ dependencies = [
   # multiple users
   "sounddevice",  # micd + soundd
   "requests",     # many one-off uses
-  "sympy",        # rednose + friends
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
   # core
@@ -29,7 +28,6 @@ dependencies = [
   "comma-deps-capnproto",
   "comma-deps-catch2",
   "comma-deps-acados",
-  "comma-deps-eigen",
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
   "comma-deps-ncurses",
