@@ -54,7 +54,6 @@ dependencies = [
   "inputs",
 
   # these should be removed
-  "psutil",
   "setproctitle",
 
   # logreader
