@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from functools import partial
 from tqdm import tqdm
 from typing import NamedTuple
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 from openpilot.selfdrive.locationd.models.pose_kf import EARTH_G
 
 RLOG_MIN_LAT_ACTIVE = 50

@@ -29,8 +29,8 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
-from openpilot.tools.lib.logreader import LogIterable
-from openpilot.tools.lib.framereader import FrameReader
+from openpilot.common.logs.logreader import LogIterable
+from openpilot.common.logs.framereader import FrameReader
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-2

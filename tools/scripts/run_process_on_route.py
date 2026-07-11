@@ -3,7 +3,7 @@ import argparse
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from openpilot.selfdrive.test.process_replay.test_processes import EXCLUDED_PROCS
-from openpilot.tools.lib.logreader import LogReader, save_log
+from openpilot.common.logs.logreader import LogReader, save_log
 
 ALLOW_PROCS = {c.proc_name for c in CONFIGS}
 

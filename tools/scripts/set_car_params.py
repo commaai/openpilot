@@ -3,8 +3,8 @@ import sys
 
 from opendbc.car.structs import car
 from openpilot.common.params import Params
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.route import Route
+from openpilot.common.logs.logreader import LogReader
 
 if __name__ == "__main__":
   CP = None

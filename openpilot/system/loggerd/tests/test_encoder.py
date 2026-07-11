@@ -14,7 +14,7 @@ from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.common.hardware import TICI
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 from openpilot.common.hardware.hw import Paths
 
 SEGMENT_LENGTH = 2

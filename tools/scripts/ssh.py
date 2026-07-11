@@ -5,8 +5,8 @@ import argparse
 import re
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.api import CommaApi
+from openpilot.common.auth_config import get_token
+from openpilot.common.api import CommaApi
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper for connecting to devices over the comma prime SSH proxy.\

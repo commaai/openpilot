@@ -13,11 +13,11 @@ from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
 from openpilot.common.hardware import PC
-from openpilot.tools.lib.openpilotci import get_url
+from openpilot.common.logs.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
-from openpilot.tools.lib.framereader import FrameReader
-from openpilot.tools.lib.logreader import LogReader, save_log
+from openpilot.common.logs.framereader import FrameReader
+from openpilot.common.logs.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"

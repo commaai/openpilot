@@ -1,4 +1,5 @@
 import os
+
 import subprocess
 import json
 import logging
@@ -6,9 +7,9 @@ from collections.abc import Iterator
 from collections import OrderedDict
 
 import numpy as np
-from openpilot.tools.lib.filereader import FileReader, resolve_name
-from openpilot.tools.lib.exceptions import DataUnreadableError
-from openpilot.tools.lib.vidindex import hevc_index
+from openpilot.common.logs.filereader import FileReader, resolve_name
+from openpilot.common.logs.exceptions import DataUnreadableError
+from openpilot.common.logs.vidindex import hevc_index
 
 logger = logging.getLogger("tools")
 

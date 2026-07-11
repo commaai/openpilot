@@ -11,7 +11,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from openpilot.common.utils import tabulate
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 from openpilot.common.hardware.hw import Paths
 
 

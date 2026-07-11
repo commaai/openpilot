@@ -6,7 +6,7 @@ import codecs
 
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
-from openpilot.tools.lib.live_logreader import raw_live_logreader
+from openpilot.common.logs.live_logreader import raw_live_logreader
 
 
 codecs.register_error("strict", codecs.backslashreplace_errors)

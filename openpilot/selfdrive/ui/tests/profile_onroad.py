@@ -9,7 +9,7 @@ from msgq.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 
 FPS = 60
 

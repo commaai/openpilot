@@ -9,14 +9,14 @@ from tqdm import tqdm
 from typing import Any
 from opendbc.car.car_helpers import interface_names
 from openpilot.common.git import get_commit
-from openpilot.tools.lib.openpilotci import get_url
+from openpilot.common.logs.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.diff_report import diff_process, diff_report
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
                                                                    check_most_messages_valid
-from openpilot.tools.lib.filereader import FileReader
-from openpilot.tools.lib.logreader import LogReader, save_log
-from openpilot.tools.lib.url_file import URLFile
+from openpilot.common.logs.filereader import FileReader
+from openpilot.common.logs.logreader import LogReader, save_log
+from openpilot.common.logs.url_file import URLFile
 
 source_segments = [
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA

@@ -18,9 +18,9 @@ import tempfile
 import shutil
 
 from openpilot.common.hardware.hw import Paths
-from openpilot.tools.lib.api import CommaApi, UnauthorizedError, APIError
-from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.url_file import URLFile
+from openpilot.common.api import CommaApi, UnauthorizedError, APIError
+from openpilot.common.auth_config import get_token
+from openpilot.common.logs.url_file import URLFile
 
 
 def api_call(func):

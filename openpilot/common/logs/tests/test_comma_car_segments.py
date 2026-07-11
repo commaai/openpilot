@@ -1,9 +1,10 @@
 import pytest
+
 import requests
 from opendbc.car.fingerprints import MIGRATION
-from openpilot.tools.lib.comma_car_segments import get_comma_car_segments_database, get_url
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import SegmentRange
+from openpilot.common.logs.comma_car_segments import get_comma_car_segments_database, get_url
+from openpilot.common.logs.logreader import LogReader
+from openpilot.common.logs.route import SegmentRange
 
 
 @pytest.mark.skip(reason="huggingface is flaky, run this test manually to check for issues")

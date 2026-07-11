@@ -5,7 +5,7 @@ import wave
 import argparse
 import numpy as np
 
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.common.logs.logreader import LogReader, ReadMode
 
 
 def extract_audio(route_or_segment_name, output_file=None, play=False):

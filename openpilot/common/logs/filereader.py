@@ -1,4 +1,5 @@
 import os
+
 import io
 import posixpath
 import socket
@@ -6,7 +7,7 @@ from functools import cache
 from openpilot.common.utils import retry
 from urllib.parse import urlparse
 
-from openpilot.tools.lib.url_file import URLFile
+from openpilot.common.logs.url_file import URLFile
 
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 

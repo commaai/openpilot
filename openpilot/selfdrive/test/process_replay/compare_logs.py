@@ -5,7 +5,7 @@ import capnp
 import numbers
 from collections import Counter
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 
 EPSILON = sys.float_info.epsilon
 

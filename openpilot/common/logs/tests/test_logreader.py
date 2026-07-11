@@ -1,4 +1,5 @@
 import capnp
+
 import contextlib
 import io
 import shutil
@@ -10,10 +11,10 @@ import requests
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
-from openpilot.tools.lib.file_sources import comma_api_source, InternalUnavailableException
-from openpilot.tools.lib.route import SegmentRange
-from openpilot.tools.lib.url_file import URLFileException
+from openpilot.common.logs.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
+from openpilot.common.logs.file_sources import comma_api_source, InternalUnavailableException
+from openpilot.common.logs.route import SegmentRange
+from openpilot.common.logs.url_file import URLFileException
 
 NUM_SEGS = 17  # number of segments in the test route
 ALL_SEGS = list(range(NUM_SEGS))
@@ -27,13 +28,13 @@ def noop(segment: LogIterable):
 
 @contextlib.contextmanager
 def setup_source_scenario(mocker, is_internal=False):
-  internal_source_mock = mocker.patch("openpilot.tools.lib.logreader.internal_source")
+  internal_source_mock = mocker.patch("openpilot.common.logs.logreader.internal_source")
   internal_source_mock.__name__ = internal_source_mock._mock_name
 
-  openpilotci_source_mock = mocker.patch("openpilot.tools.lib.logreader.openpilotci_source")
+  openpilotci_source_mock = mocker.patch("openpilot.common.logs.logreader.openpilotci_source")
   openpilotci_source_mock.__name__ = openpilotci_source_mock._mock_name
 
-  comma_api_source_mock = mocker.patch("openpilot.tools.lib.logreader.comma_api_source")
+  comma_api_source_mock = mocker.patch("openpilot.common.logs.logreader.comma_api_source")
   comma_api_source_mock.__name__ = comma_api_source_mock._mock_name
 
   if is_internal:
@@ -92,7 +93,7 @@ class TestLogReader:
 
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_direct_parsing(self, mocker, cache_enabled):
-    file_exists_mock = mocker.patch("openpilot.tools.lib.filereader.file_exists")
+    file_exists_mock = mocker.patch("openpilot.common.logs.filereader.file_exists")
     if cache_enabled:
       os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     else:
@@ -137,7 +138,7 @@ class TestLogReader:
     (f"{TEST_ROUTE}", True),
   ])
   def test_slicing_api_call(self, mocker, segment_range, api_call):
-    max_seg_mock = mocker.patch("openpilot.tools.lib.route.get_max_seg_number_cached")
+    max_seg_mock = mocker.patch("openpilot.common.logs.route.get_max_seg_number_cached")
     max_seg_mock.return_value = NUM_SEGS
     _ = SegmentRange(segment_range).seg_idxs
     assert api_call == max_seg_mock.called
@@ -165,7 +166,7 @@ class TestLogReader:
 
   @pytest.mark.slow
   def test_multiple_iterations(self, mocker):
-    init_mock = mocker.patch("openpilot.tools.lib.logreader._LogFileReader")
+    init_mock = mocker.patch("openpilot.common.logs.logreader._LogFileReader")
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len1 = len(list(lr))
     qlog_len2 = len(list(lr))
@@ -195,7 +196,7 @@ class TestLogReader:
   def test_auto_mode(self, subtests, mocker):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len = len(list(lr))
-    log_paths_mock = mocker.patch("openpilot.tools.lib.route.Route.log_paths")
+    log_paths_mock = mocker.patch("openpilot.common.logs.route.Route.log_paths")
     log_paths_mock.return_value = [None] * NUM_SEGS
     # Should fall back to qlogs since rlogs are not available
 

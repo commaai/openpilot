@@ -10,9 +10,9 @@ from collections.abc import Iterable
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, check_most_messages_valid, get_custom_params_from_lr
 from openpilot.selfdrive.test.update_ci_routes import upload_route
-from openpilot.tools.lib.framereader import FrameReader
-from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
-from openpilot.tools.lib.openpilotci import get_url
+from openpilot.common.logs.framereader import FrameReader
+from openpilot.common.logs.logreader import LogReader, LogIterable, save_log
+from openpilot.common.logs.openpilotci import get_url
 
 
 def regen_segment(

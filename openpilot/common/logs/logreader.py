@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import bz2
 from functools import partial
 import multiprocessing
@@ -17,10 +18,10 @@ from urllib.parse import parse_qs, urlparse
 
 from openpilot.cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
-from openpilot.tools.lib.filereader import FileReader
-from openpilot.tools.lib.file_sources import comma_api_source, internal_source, openpilotci_source, comma_car_segments_source, Source
-from openpilot.tools.lib.route import SegmentRange, FileName
-from openpilot.tools.lib.log_time_series import msgs_to_time_series
+from openpilot.common.logs.filereader import FileReader
+from openpilot.common.logs.file_sources import comma_api_source, internal_source, openpilotci_source, comma_car_segments_source, Source
+from openpilot.common.logs.route import SegmentRange, FileName
+from openpilot.common.logs.log_time_series import msgs_to_time_series
 
 LogMessage = type[capnp._DynamicStructReader]
 LogIterable = Iterable[LogMessage]

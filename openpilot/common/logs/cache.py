@@ -1,4 +1,5 @@
 import os
+
 import urllib.parse
 
 DEFAULT_CACHE_DIR = os.getenv("CACHE_ROOT", os.path.expanduser("~/.commacache"))

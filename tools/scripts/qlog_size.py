@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.utils import LOG_COMPRESSION_LEVEL
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 from tqdm import tqdm
 
 MIN_SIZE = 0.5  # Percent size of total to show as separate entry

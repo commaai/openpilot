@@ -1,4 +1,5 @@
 import os
+
 import re
 import requests
 from functools import cache
@@ -6,9 +7,9 @@ from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
 
-from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.api import APIError, CommaApi
-from openpilot.tools.lib.helpers import RE
+from openpilot.common.auth_config import get_token
+from openpilot.common.api import APIError, CommaApi
+from openpilot.common.logs.helpers import RE
 
 
 class FileName:

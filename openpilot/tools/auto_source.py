@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.common.logs.logreader import LogReader, ReadMode
 
 
 def main():

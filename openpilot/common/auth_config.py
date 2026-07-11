@@ -1,4 +1,5 @@
 import json
+
 import os
 from openpilot.common.hardware.hw import Paths
 

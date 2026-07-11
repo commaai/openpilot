@@ -7,7 +7,7 @@ from pprint import pprint
 from typing import cast
 
 from openpilot.cereal.services import SERVICE_LIST
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.common.logs.logreader import LogReader, ReadMode
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
 if __name__ == "__main__":

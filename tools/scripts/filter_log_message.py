@@ -3,7 +3,7 @@ import argparse
 import json
 
 import openpilot.cereal.messaging as messaging
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 
 LEVELS = {
   "DEBUG": 10,

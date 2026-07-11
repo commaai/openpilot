@@ -15,7 +15,7 @@ uv venv --python "$PYTHON_VERSION"
 source .venv/bin/activate
 uv pip install "$PACKAGE"
 python3 - <<'PY'
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 
 assert LogReader.__name__ == "LogReader"
 print("ok: imported LogReader")

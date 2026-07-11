@@ -2,9 +2,9 @@ from openpilot.common.parameterized import parameterized
 
 from openpilot.selfdrive.test.process_replay.regen import regen_segment
 from openpilot.selfdrive.test.process_replay.process_replay import check_openpilot_enabled
-from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.framereader import FrameReader
+from openpilot.common.logs.openpilotci import get_url
+from openpilot.common.logs.logreader import LogReader
+from openpilot.common.logs.framereader import FrameReader
 
 TESTED_SEGMENTS = [
   ("PRIUS_C2", "0982d79ebb0de295|2021-01-04--17-13-21--13"), # TOYOTA.TOYOTA_PRIUS:     NEO, pandaStateDEPRECATED, no peripheralState, sensorEventsDEPRECATED

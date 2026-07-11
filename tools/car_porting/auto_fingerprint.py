@@ -6,7 +6,7 @@ from opendbc.car.debug.format_fingerprints import format_brand_fw_versions
 
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.fw_versions import MODEL_TO_BRAND, match_fw_to_car
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.common.logs.logreader import LogReader, ReadMode
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto fingerprint from a route")

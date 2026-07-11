@@ -61,7 +61,7 @@ def replay_process(
 Example usage:
 ```py
 from openpilot.selfdrive.test.process_replay import replay_process_with_name
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 
 lr = LogReader(...)
 
@@ -101,7 +101,7 @@ output_logs = replay_process_with_name('calibrationd', lr, custom_params=custom_
 Replaying processes that use VisionIPC (e.g. modeld, dmonitoringmodeld) require additional `frs` dictionary with camera states as keys and `FrameReader` objects as values.
 
 ```py
-from openpilot.tools.lib.framereader import FrameReader
+from openpilot.common.logs.framereader import FrameReader
 
 frs = {
   'roadCameraState': FrameReader(...),

@@ -14,7 +14,7 @@ from openpilot.common.utils import tabulate
 from opendbc.car.structs import car
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LP_FILTER_CUTOFF_HZ
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.constants import CV
 from openpilot.tools.longitudinal_maneuvers.generate_report import format_car_params

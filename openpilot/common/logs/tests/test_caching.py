@@ -1,4 +1,5 @@
 import http.server
+
 import os
 import shutil
 import socket
@@ -7,8 +8,8 @@ import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.common.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile, prune_cache
-import openpilot.tools.lib.url_file as url_file_module
+from openpilot.common.logs.url_file import URLFile, prune_cache
+import openpilot.common.logs.url_file as url_file_module
 
 
 class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):

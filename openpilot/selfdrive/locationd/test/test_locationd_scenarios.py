@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict
 from enum import Enum
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.logreader import LogReader
 from openpilot.selfdrive.locationd.lagd import masked_symmetric_moving_average
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name

@@ -19,8 +19,8 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.common.hardware.hw import Paths
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.log_time_series import msgs_to_time_series
+from openpilot.common.logs.logreader import LogReader
+from openpilot.common.logs.log_time_series import msgs_to_time_series
 
 """
 CPU usage budget

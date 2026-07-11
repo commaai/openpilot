@@ -14,10 +14,10 @@ from argparse import ArgumentParser
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.filereader import FileReader
-from openpilot.tools.lib.framereader import FrameReader, ffprobe
+from openpilot.common.logs.route import Route
+from openpilot.common.logs.logreader import LogReader
+from openpilot.common.logs.filereader import FileReader
+from openpilot.common.logs.framereader import FrameReader, ffprobe
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.utils import Timer
@@ -82,7 +82,7 @@ def _download_segment(path: str) -> bytes:
 
 def _parse_and_chunk_segment(args: tuple) -> list[dict]:
   raw_data, fps = args
-  from openpilot.tools.lib.logreader import _LogFileReader
+  from openpilot.common.logs.logreader import _LogFileReader
   messages = migrate_all(list(_LogFileReader("", dat=raw_data, sort_by_time=True)))
   if not messages:
     return []

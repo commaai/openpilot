@@ -1,9 +1,10 @@
 from collections.abc import Callable
 
-from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
-from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.filereader import DATA_ENDPOINT, file_exists, internal_source_available
-from openpilot.tools.lib.route import Route, SegmentRange, FileName
+
+from openpilot.common.logs.comma_car_segments import get_url as get_comma_segments_url
+from openpilot.common.logs.openpilotci import get_url
+from openpilot.common.logs.filereader import DATA_ENDPOINT, file_exists, internal_source_available
+from openpilot.common.logs.route import Route, SegmentRange, FileName
 
 # When passed a tuple of file names, each source will return the first that exists (rlog.zst, rlog.bz2)
 FileNames = tuple[str, ...]

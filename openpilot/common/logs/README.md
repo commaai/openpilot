@@ -1,10 +1,11 @@
 ## LogReader
 
+
 Route is a class for conveniently accessing all the [logs](/openpilot/system/loggerd/) from your routes. The LogReader class reads the non-video logs, i.e. rlog.bz2 and qlog.bz2. There's also a matching FrameReader class for reading the videos.
 
 ```python
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.common.logs.route import Route
+from openpilot.common.logs.logreader import LogReader
 
 r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
 
