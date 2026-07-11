@@ -7,7 +7,7 @@ from collections import namedtuple, defaultdict
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
-from openpilot.common.gpio import get_irqs_for_action
+from openpilot.common.gpio import get_irq_action, get_irqs_for_action
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.timeout import Timeout
 from openpilot.system.manager.process_config import managed_processes
@@ -75,6 +75,8 @@ class TestSensord:
       cls.events = read_sensor_events(cls.sample_secs)
 
       # determine sensord's irq
+      # Hardware initialization may cache IRQ actions before sensord registers its own.
+      get_irq_action.cache_clear()
       cls.sensord_irq = get_irqs_for_action("sensord")[0]
     finally:
       # teardown won't run if this doesn't succeed
