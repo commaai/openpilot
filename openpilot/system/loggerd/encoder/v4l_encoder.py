@@ -188,7 +188,7 @@ class V4LEncoder(VideoEncoder):
           assert extra.timestamp_eof // 1000 == ts  # stay in sync
           frame_id = extra.frame_id
           idx += 1
-          self.publisher_publish(self.segment_num, idx, extra, flags, header, buf.view[:bytesused])
+          self.publisher_publish(self.segment_num, idx, extra, flags, header, buf.mm[:bytesused])
 
         if DEBUG_ENCODER:
           lat = millis_since_boot() - ts / 1000.
