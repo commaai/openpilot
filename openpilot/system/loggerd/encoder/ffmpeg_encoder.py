@@ -168,12 +168,15 @@ class FfmpegEncoder(VideoEncoder):
 
   def _write_handler(self, proc: subprocess.Popen) -> None:
     # the encoder can block its stdin pipe while starting up, keep writes off the encode_frame path
+    broken = False
     while (frame := self.frames.get()) is not None:
+      if broken:
+        continue  # keep draining so encode_frame never blocks on a full queue
       try:
         proc.stdin.write(frame)
         proc.stdin.flush()
       except (BrokenPipeError, ValueError):
-        break
+        broken = True
 
   def encoder_open(self) -> None:
     self.proc = subprocess.Popen(self.cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, preexec_fn=drop_realtime_in_child)

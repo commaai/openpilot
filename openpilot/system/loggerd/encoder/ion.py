@@ -6,6 +6,7 @@ Constants and struct layouts were extracted from the agnos-kernel-sdm845 UAPI he
 import ctypes
 import mmap
 import os
+import threading
 
 from openpilot.system.loggerd.encoder.v4l2 import _IOWR, safe_ioctl, u32
 
@@ -75,12 +76,14 @@ ION_IOMMU_HEAP_ID = 25
 ION_FLAG_CACHED = 1
 
 _ion_fd = None
+_ion_fd_lock = threading.Lock()
 
 
 def ion_fd() -> int:
   global _ion_fd
-  if _ion_fd is None:
-    _ion_fd = os.open(ION_DEVICE, os.O_RDWR | os.O_NONBLOCK)
+  with _ion_fd_lock:
+    if _ion_fd is None:
+      _ion_fd = os.open(ION_DEVICE, os.O_RDWR | os.O_NONBLOCK)
   return _ion_fd
 
 

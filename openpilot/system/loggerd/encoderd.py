@@ -124,7 +124,7 @@ def _params() -> Params:
 
 def encoder_set_bitrate(e) -> None:
   val = _params().get("LivestreamEncoderBitrate")
-  if val is None:
+  if not val:
     return
   e.set_bitrate(int(val))
 
