@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-import time
-
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.messaging import PubMaster, SubMaster
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.modeld.fill_model_msg import fill_driving_model_data
 
@@ -13,24 +10,20 @@ def main() -> None:
   params = Params()
   sm = SubMaster(["smallModelV2", "bigModelV2", "carControl", "managerState"])
   pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
-  model = "bigModelV2" if params.get_bool("UsbGpuActive") else "smallModelV2"
+  model = "smallModelV2"
   big_failed = params.get_bool("UsbGpuFailed")
-  last_big_time = time.monotonic() if model == "bigModelV2" else None
   last_frame_id = -1
 
   while True:
     sm.update()
     big_available = sm.all_checks(["bigModelV2"])
-    if sm.updated["bigModelV2"] and big_available:
-      last_big_time = time.monotonic()
 
     not_running = False
     if sm.updated["managerState"]:
       proc = next(p for p in sm["managerState"].processes if p.name == "bigmodeld")
       not_running = proc.shouldBeRunning and not proc.running
 
-    timed_out = last_big_time is not None and time.monotonic() - last_big_time > 10 * DT_MDL
-    if (timed_out or not_running) and not big_failed:
+    if ((model == "bigModelV2" and not big_available) or not_running) and not big_failed:
       big_failed = True
       params.put_bool("UsbGpuFailed", True)
       cloudlog.event("big_model_unavailable", error=True)
