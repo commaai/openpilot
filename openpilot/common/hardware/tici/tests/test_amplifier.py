@@ -1,6 +1,5 @@
 import pytest
 import time
-import random
 import subprocess
 
 from panda import Panda
@@ -57,7 +56,9 @@ class TestAmplifier:
       time.sleep(0.1)
 
       self.panda.set_siren(True)
-      time.sleep(random.randint(0, 5))
+      # Siren I2C traffic toggles at 8Hz. Start during the first toggle instead
+      # of waiting a random number of whole seconds while it keeps running.
+      time.sleep(0.1)
 
       amp = Amplifier(debug=True)
       r = amp.initialize_configuration()

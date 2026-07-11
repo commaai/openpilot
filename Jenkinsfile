@@ -246,9 +246,7 @@ node {
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
-          step("test pandad loopback", "pytest openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"),
-          step("test pandad spi", "pytest openpilot/selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test amp", "pytest openpilot/common/hardware/tici/tests/test_amplifier.py"),
+          step("test pandad + amp", "pytest openpilot/selfdrive/pandad/tests/test_pandad_loopback.py openpilot/selfdrive/pandad/tests/test_pandad_spi.py openpilot/common/hardware/tici/tests/test_amplifier.py"),
         ])
       },
 

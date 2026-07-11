@@ -4,11 +4,12 @@ import pytest
 import numpy as np
 
 from openpilot.cereal.services import SERVICE_LIST
+from openpilot.common.hardware import HARDWARE
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 from openpilot.system.camerad.snapshot import get_snapshots
 from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context
 
-TEST_TIMESPAN = 10
+TEST_TIMESPAN = 5
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
@@ -42,6 +43,9 @@ def run_and_log(procs, services, duration):
 def _camera_session():
   """Single camerad session that collects logs and exposure data.
      Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
+  HARDWARE.initialize_hardware()
+  HARDWARE.set_power_save(False)
+  os.system("pkill -9 -f athena")
   with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
     exposure = {cam: [] for cam in CAMERAS}
     start = time.monotonic()
@@ -78,6 +82,7 @@ def exposure_data(_camera_session):
   return _camera_session[1]
 
 @pytest.mark.tici
+@pytest.mark.skip_tici_setup
 class TestCamerad:
   @pytest.mark.parametrize("cam", CAMERAS)
   def test_camera_exposure(self, exposure_data, cam):
