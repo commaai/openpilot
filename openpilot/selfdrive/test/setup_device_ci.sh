@@ -97,7 +97,6 @@ safe_checkout() {
   git submodule foreach --recursive "git reset --hard && git clean -xdff"
 
   pull_lfs
-  (ulimit -n 65535 && git lfs prune)
 
   echo "git checkout done, t=$SECONDS"
   du -hs $SOURCE_DIR $SOURCE_DIR/.git
@@ -123,7 +122,6 @@ unsafe_checkout() {( set -e
   git submodule foreach --recursive "git reset --hard && git clean -df"
 
   pull_lfs
-  (ulimit -n 65535 && git lfs prune)
 )}
 
 export GIT_PACK_THREADS=8
