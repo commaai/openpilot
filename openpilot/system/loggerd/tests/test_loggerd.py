@@ -118,7 +118,9 @@ class TestLoggerd:
     pm = messaging.PubMaster([s for _, _, s in streams] + ["rawAudioData"])
     vipc_server = VisionIpcServer("camerad")
     for stream_type, frame_spec, _ in streams:
-      vipc_server.create_buffers_with_sizes(stream_type, 40, *(frame_spec))
+      # frames are published as fast as the encoders consume them, so give
+      # encoderd's pipeline a deep buffer ring for slack on loaded CI machines
+      vipc_server.create_buffers_with_sizes(stream_type, 120, *(frame_spec))
     vipc_server.start_listener()
 
     os.environ["LOGGERD_TEST"] = "1"
@@ -199,7 +201,7 @@ class TestLoggerd:
     expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
 
     num_segs = random.randint(2, 3)
-    length = random.randint(4, 5) # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
+    length = random.randint(4, 5) # H264 encoder uses lookahead frames and does B-frame reordering, so qcam output lags the input by over a second
 
     self._publish_camera_and_audio_messages(num_segs=num_segs, segment_length=length)
 
