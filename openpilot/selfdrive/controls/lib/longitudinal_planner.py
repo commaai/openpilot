@@ -21,6 +21,11 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
 
+LAUNCH_DISARM_SPEED = 2.0
+LAUNCH_COMMIT_T = 3.5
+LAUNCH_MOVING_SPEED = 1.2
+LAUNCH_MAX_ACCEL = 1.5
+
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
@@ -58,6 +63,7 @@ class LongitudinalPlanner:
     self.prev_accel_clip = [ACCEL_MIN, ACCEL_MAX]
     self.output_a_target = 0.0
     self.output_should_stop = False
+    self.launch_armed = False
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -116,7 +122,7 @@ class LongitudinalPlanner:
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
-    _, _, _, _, throttle_prob = self.parse_model(sm['modelV2'])
+    _, model_v, model_a, _, throttle_prob = self.parse_model(sm['modelV2'])
     # Don't clip at low speeds since throttle_prob doesn't account for creep
     self.allow_throttle = throttle_prob > ALLOW_THROTTLE_THRESHOLD or v_ego <= MIN_ALLOW_THROTTLE_SPEED
 
@@ -151,6 +157,20 @@ class LongitudinalPlanner:
                                                                         action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
+
+    if sm['carState'].standstill:
+      self.launch_armed = True
+    elif v_ego > LAUNCH_DISARM_SPEED:
+      self.launch_armed = False
+    if (self.launch_armed and sm['selfdriveState'].experimentalMode and not output_should_stop_e2e and
+        np.interp(LAUNCH_COMMIT_T, T_IDXS_MPC, model_v) > LAUNCH_DISARM_SPEED):
+      t_cut = min(float(T_IDXS_MPC[np.argmax(model_v > LAUNCH_MOVING_SPEED)]), LAUNCH_COMMIT_T)
+      t_shifted = T_IDXS_MPC + t_cut
+      v_shifted = np.interp(t_shifted, T_IDXS_MPC, model_v)
+      a_shifted = np.interp(t_shifted, T_IDXS_MPC, model_a)
+      a_launch = get_accel_from_plan(v_shifted, a_shifted, T_IDXS_MPC, action_t=action_t, vEgoStopping=self.CP.vEgoStopping)[0]
+      a_launch_max = np.interp(v_ego, [LAUNCH_MOVING_SPEED, LAUNCH_DISARM_SPEED], [LAUNCH_MAX_ACCEL, 0.])
+      output_a_target_e2e = max(output_a_target_e2e, min(a_launch, a_launch_max))
 
     if sm['selfdriveState'].experimentalMode:
       output_a_target = min(output_a_target_e2e, output_a_target_mpc)
