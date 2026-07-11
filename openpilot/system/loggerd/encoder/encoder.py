@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -8,11 +9,19 @@ import numpy as np
 
 from openpilot.cereal import log, messaging
 from openpilot.common.hardware import PC
+from openpilot.system.loggerd.encoder.v4l2 import V4L2_BUF_FLAG_KEYFRAME
 
 MAIN_FPS = 20
 MAIN_ENCODE_TYPE = log.EncodeIndex.Type.bigBoxLossless if PC else log.EncodeIndex.Type.fullHEVC
 
-V4L2_BUF_FLAG_KEYFRAME = 0x8
+DEBUG_ENCODER = int(os.getenv("DEBUG_ENCODER", "0"))
+
+
+def drop_realtime_in_child() -> None:
+  # don't let spawned ffmpeg inherit encoderd's realtime priority and core affinity
+  if sys.platform == 'linux':
+    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    os.sched_setaffinity(0, range(os.cpu_count() or 1))
 
 
 class FrameExtra(NamedTuple):
@@ -71,6 +80,7 @@ class VideoEncoder:
     self.in_height = in_height
     self.out_width = encoder_info.frame_width if encoder_info.frame_width > 0 else in_width
     self.out_height = encoder_info.frame_height if encoder_info.frame_height > 0 else in_height
+    self.encode_type = encoder_info.get_settings(in_width).encode_type
 
     self.cnt = 0  # total frames encoded
     self.pm = messaging.PubMaster([encoder_info.publish_name])
@@ -101,7 +111,7 @@ class VideoEncoder:
     edata.frameId = extra.frame_id
     edata.timestampSof = extra.timestamp_sof
     edata.timestampEof = extra.timestamp_eof
-    edata.type = self.encoder_info.get_settings(self.in_width).encode_type
+    edata.type = self.encode_type
     edata.encodeId = self.cnt
     edata.segmentNum = segment_num
     edata.segmentId = idx

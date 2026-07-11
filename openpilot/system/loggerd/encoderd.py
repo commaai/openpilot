@@ -4,6 +4,8 @@ import signal
 import sys
 import threading
 import time
+import traceback
+from functools import cache
 
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
@@ -115,15 +117,20 @@ def sync_encoders(s: EncoderdState, cam_type: int, frame_id: int) -> bool:
       return synced
 
 
+@cache
+def _params() -> Params:
+  return Params()
+
+
 def encoder_set_bitrate(e) -> None:
-  val = Params().get("LivestreamEncoderBitrate")
+  val = _params().get("LivestreamEncoderBitrate")
   if val is None:
     return
   e.set_bitrate(int(val))
 
 
 def encoder_request_keyframe(e) -> None:
-  if Params().get_bool("LivestreamRequestKeyframe"):
+  if _params().get_bool("LivestreamRequestKeyframe"):
     e.request_keyframe()
 
 
@@ -199,7 +206,10 @@ def encoder_thread(s: EncoderdState, cam_info: LogCameraInfo, do_exit: threading
           jpeg_encoder.push_thumbnail(buf, extra)
   finally:
     for e in encoders:
-      e.close()
+      try:
+        e.close()
+      except OSError:
+        cloudlog.exception(f"encoder {cam_info.thread_name} close failed")
 
 
 def encoderd_thread(cameras: list[LogCameraInfo], do_exit: threading.Event) -> None:
@@ -226,9 +236,17 @@ def encoderd_thread(cameras: list[LogCameraInfo], do_exit: threading.Event) -> N
         t.join(0.1)
 
 
+def _thread_excepthook(args) -> None:
+  # an encoder thread dying leaves streams silently missing; die loudly like the C++ asserts did and let manager restart us
+  traceback.print_exception(args.exc_type, args.exc_value, args.exc_traceback)
+  cloudlog.error(f"encoderd thread {args.thread.name if args.thread else '?'} crashed: {args.exc_value}")
+  os._exit(1)
+
+
 def main(stream: bool = False) -> None:
   if not PC:
     config_realtime_process([3], 52)
+  threading.excepthook = _thread_excepthook
 
   do_exit = threading.Event()
   signal.signal(signal.SIGINT, lambda sig, frame: do_exit.set())

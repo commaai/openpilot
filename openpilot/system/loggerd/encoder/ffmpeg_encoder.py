@@ -7,11 +7,10 @@ import ffmpeg as ffmpeg_pkg
 
 from openpilot.cereal import log
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.loggerd.encoder.encoder import V4L2_BUF_FLAG_KEYFRAME, EncoderInfo, FrameExtra, VideoEncoder, visionbuf_to_nv12
+from openpilot.system.loggerd.encoder.encoder import (DEBUG_ENCODER, V4L2_BUF_FLAG_KEYFRAME, EncoderInfo, FrameExtra, VideoEncoder,
+                                                      drop_realtime_in_child, visionbuf_to_nv12)
 
 FFMPEG = os.path.join(ffmpeg_pkg.BIN_DIR, "ffmpeg")
-
-DEBUG_ENCODER = int(os.getenv("DEBUG_ENCODER", "0"))
 
 
 class H264Splitter:
@@ -177,7 +176,7 @@ class FfmpegEncoder(VideoEncoder):
         break
 
   def encoder_open(self) -> None:
-    self.proc = subprocess.Popen(self.cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    self.proc = subprocess.Popen(self.cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, preexec_fn=drop_realtime_in_child)
     self.read_thread = threading.Thread(target=self._read_handler, args=(self.proc,), name=f"read-{self.encoder_info.publish_name}")
     self.read_thread.start()
     self.write_thread = threading.Thread(target=self._write_handler, args=(self.proc,), name=f"write-{self.encoder_info.publish_name}")

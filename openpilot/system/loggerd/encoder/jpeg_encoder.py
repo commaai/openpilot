@@ -6,7 +6,7 @@ import ffmpeg as ffmpeg_pkg
 
 from openpilot.cereal import messaging
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.loggerd.encoder.encoder import FrameExtra, visionbuf_to_nv12
+from openpilot.system.loggerd.encoder.encoder import FrameExtra, drop_realtime_in_child, visionbuf_to_nv12
 
 FFMPEG = os.path.join(ffmpeg_pkg.BIN_DIR, "ffmpeg")
 
@@ -40,7 +40,7 @@ class JpegEncoder:
       "-f", "rawvideo", "pipe:1",
     ]
     try:
-      jpeg = subprocess.run(cmd, input=nv12, capture_output=True, check=True).stdout
+      jpeg = subprocess.run(cmd, input=nv12, capture_output=True, check=True, preexec_fn=drop_realtime_in_child).stdout
     except subprocess.CalledProcessError as e:
       cloudlog.error(f"thumbnail ffmpeg error: {e.stderr}")
       jpeg = b""

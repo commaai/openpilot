@@ -98,6 +98,7 @@ class IonBuf:
 
     self.len = length
     self.mm = mmap.mmap(self.fd, length)
+    self.view = memoryview(self.mm)
     self.addr = ctypes.addressof(ctypes.c_char.from_buffer(self.mm))
     ctypes.memset(self.addr, 0, length)
 
@@ -108,6 +109,7 @@ class IonBuf:
     safe_ioctl(ion_fd(), ION_IOC_CUSTOM, custom)
 
   def free(self) -> None:
+    self.view.release()
     self.mm.close()
     os.close(self.fd)
     safe_ioctl(ion_fd(), ION_IOC_FREE, ion_handle_data(handle=self.handle))
