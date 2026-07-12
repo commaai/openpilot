@@ -1,5 +1,6 @@
 import sys
 import capnp
+import opendbc
 from pathlib import Path
 
 NO_DISCRIMINANT = 65535
@@ -321,7 +322,8 @@ if __name__ == "__main__":
   repo_root = Path(sys.argv[1]).resolve()
   output = Path(sys.argv[2])
   capnp.remove_import_hook()
-  log = capnp.load(str(repo_root / "openpilot" / "cereal" / "log.capnp"), imports=[str(repo_root / "opendbc_repo" / "opendbc" / "car")])
+  car_schema_dir = Path(opendbc.__file__).parent / "car"
+  log = capnp.load(str(repo_root / "openpilot" / "cereal" / "log.capnp"), imports=[str(car_schema_dir)])
   generated = Generator(log.Event.schema).generate()
   output.parent.mkdir(parents=True, exist_ok=True)
   output.write_text(generated)

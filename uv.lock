@@ -5,7 +5,7 @@ requires-python = ">=3.12.3, <3.13"
 [manifest]
 overrides = [
     { name = "av" },
-    { name = "opendbc", editable = "opendbc_repo" },
+    { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=8c0b1367c5178f919c05ae58a1dcf7439ed3eb37" },
 ]
 
 [[package]]
@@ -834,24 +834,9 @@ wheels = [
 [[package]]
 name = "msgq"
 version = "0.0.1"
-source = { editable = "msgq_repo" }
+source = { git = "https://github.com/commaai/msgq.git?rev=d77b9dedb47775af42cc80630cc2a6cea4310ecb#d77b9dedb47775af42cc80630cc2a6cea4310ecb" }
 dependencies = [
     { name = "catch2" },
-    { name = "codespell" },
-    { name = "cppcheck" },
-    { name = "cpplint" },
-    { name = "cython" },
-    { name = "lefthook" },
-    { name = "parameterized" },
-    { name = "ruff" },
-    { name = "scons" },
-    { name = "setuptools" },
-    { name = "ty" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "catch2", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
     { name = "codespell" },
     { name = "cppcheck" },
     { name = "cpplint" },
@@ -913,41 +898,12 @@ wheels = [
 [[package]]
 name = "opendbc"
 version = "0.3.1"
-source = { editable = "opendbc_repo" }
+source = { git = "https://github.com/commaai/opendbc.git?rev=8c0b1367c5178f919c05ae58a1dcf7439ed3eb37#8c0b1367c5178f919c05ae58a1dcf7439ed3eb37" }
 dependencies = [
     { name = "numpy" },
     { name = "pycapnp" },
     { name = "pycryptodome" },
     { name = "tqdm" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cffi", marker = "extra == 'testing'" },
-    { name = "codespell", marker = "extra == 'testing'" },
-    { name = "cpplint", marker = "extra == 'testing'" },
-    { name = "gcovr", marker = "extra == 'testing'" },
-    { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
-    { name = "inputs", marker = "extra == 'examples'" },
-    { name = "jinja2", marker = "extra == 'docs'" },
-    { name = "lefthook", marker = "extra == 'testing'" },
-    { name = "numpy" },
-    { name = "pycapnp" },
-    { name = "pycryptodome" },
-    { name = "ruff", marker = "extra == 'testing'" },
-    { name = "tqdm" },
-    { name = "tree-sitter", marker = "extra == 'testing'" },
-    { name = "tree-sitter-c", marker = "extra == 'testing'" },
-    { name = "ty", marker = "extra == 'testing'" },
-    { name = "unittest-parallel", marker = "extra == 'testing'" },
-    { name = "zstandard", marker = "extra == 'testing'" },
-]
-provides-extras = ["testing", "docs", "examples"]
-
-[package.metadata.requires-dev]
-testing = [
-    { name = "comma-car-segments", url = "https://huggingface.co/datasets/commaai/commaCarSegments/resolve/main/dist/comma_car_segments-0.1.0-py3-none-any.whl" },
-    { name = "cppcheck", git = "https://github.com/commaai/dependencies.git?subdirectory=cppcheck&rev=release-cppcheck" },
 ]
 
 [[package]]
@@ -1092,11 +1048,11 @@ provides-extras = ["docs", "testing", "dev", "tools"]
 
 [package.metadata.requires-dev]
 submodules = [
-    { name = "msgq", editable = "msgq_repo" },
-    { name = "opendbc", editable = "opendbc_repo" },
-    { name = "pandacan", editable = "panda" },
-    { name = "rednose", editable = "rednose_repo" },
-    { name = "teleoprtc", editable = "teleoprtc_repo" },
+    { name = "msgq", git = "https://github.com/commaai/msgq.git?rev=d77b9dedb47775af42cc80630cc2a6cea4310ecb" },
+    { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=8c0b1367c5178f919c05ae58a1dcf7439ed3eb37" },
+    { name = "pandacan", git = "https://github.com/commaai/panda.git?rev=a751a74fb460d9bf0c0037eb5167855b8f548a91" },
+    { name = "rednose", git = "https://github.com/commaai/rednose.git?rev=eea85488fee17e60b4fb94a7dc4867f732503408" },
+    { name = "teleoprtc", git = "https://github.com/commaai/teleoprtc.git?rev=22df577821862e32a011fb0cf42577599f3a79c4" },
     { name = "tinygrad", editable = "tinygrad_repo" },
 ]
 
@@ -1112,34 +1068,13 @@ wheels = [
 [[package]]
 name = "pandacan"
 version = "0.0.10"
-source = { editable = "panda" }
+source = { git = "https://github.com/commaai/panda.git?rev=a751a74fb460d9bf0c0037eb5167855b8f548a91#a751a74fb460d9bf0c0037eb5167855b8f548a91" }
 dependencies = [
     { name = "libusb-package" },
     { name = "libusb1" },
     { name = "opendbc" },
     { name = "spidev", marker = "sys_platform == 'linux'" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "cffi", marker = "extra == 'dev'" },
-    { name = "cppcheck", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=cppcheck&rev=release-cppcheck" },
-    { name = "flaky", marker = "extra == 'dev'" },
-    { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=release-gcc-arm-none-eabi" },
-    { name = "libusb-package" },
-    { name = "libusb1" },
-    { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=master" },
-    { name = "pycryptodome", marker = "extra == 'dev'", specifier = ">=3.9.8" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-mock", marker = "extra == 'dev'" },
-    { name = "pytest-timeout", marker = "extra == 'dev'" },
-    { name = "pytest-xdist", marker = "extra == 'dev'" },
-    { name = "ruff", marker = "extra == 'dev'" },
-    { name = "scons", marker = "extra == 'dev'" },
-    { name = "setuptools", marker = "extra == 'dev'" },
-    { name = "spidev", marker = "sys_platform == 'linux'" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "parameterized"
@@ -1493,21 +1428,12 @@ wheels = [
 [[package]]
 name = "rednose"
 version = "0.0.1"
-source = { editable = "rednose_repo" }
+source = { git = "https://github.com/commaai/rednose.git?rev=eea85488fee17e60b4fb94a7dc4867f732503408#eea85488fee17e60b4fb94a7dc4867f732503408" }
 dependencies = [
     { name = "cffi" },
     { name = "numpy" },
     { name = "sympy" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "cffi" },
-    { name = "numpy" },
-    { name = "scipy", marker = "extra == 'dev'" },
-    { name = "sympy" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "requests"
@@ -1662,27 +1588,13 @@ wheels = [
 [[package]]
 name = "teleoprtc"
 version = "1.0.1"
-source = { editable = "teleoprtc_repo" }
+source = { git = "https://github.com/commaai/teleoprtc.git?rev=22df577821862e32a011fb0cf42577599f3a79c4#22df577821862e32a011fb0cf42577599f3a79c4" }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
     { name = "numpy" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiohttp", specifier = ">=3.7.0" },
-    { name = "aiortc", specifier = ">=1.6.0" },
-    { name = "av", specifier = ">=11.0.0,<13.0.0" },
-    { name = "numpy", specifier = ">=1.19.0" },
-    { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.8" },
-    { name = "pre-commit", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'" },
-    { name = "pytest-xdist", marker = "extra == 'dev'" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "tinygrad"

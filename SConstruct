@@ -27,20 +27,27 @@ AddOption('--minimal',
           default=(not TICI and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
-submodule_python_paths = [
+python_paths = [
   Dir("#").abspath,
-  Dir("#msgq_repo").abspath,
-  Dir("#opendbc_repo").abspath,
-  Dir("#rednose_repo").abspath,
-  Dir("#teleoprtc_repo").abspath,
   Dir("#tinygrad_repo").abspath,
 ]
-for p in reversed(submodule_python_paths):
+for p in reversed(python_paths):
   if p not in sys.path:
     sys.path.insert(0, p)
 
 if external_pythonpath := os.environ.get("PYTHONPATH"):
-  submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
+  python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in python_paths]
+
+def package_dir(name):
+  spec = importlib.util.find_spec(name)
+  if spec is None or spec.origin is None:
+    raise ModuleNotFoundError(f"required package {name!r} is not installed")
+  return os.path.dirname(spec.origin)
+
+msgq_root = package_dir('msgq')
+opendbc_root = package_dir('opendbc')
+panda_root = package_dir('panda')
+rednose_root = package_dir('rednose')
 
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
@@ -121,7 +128,7 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": os.pathsep.join(submodule_python_paths),
+    "PYTHONPATH": os.pathsep.join(python_paths),
     "ACADOS_SOURCE_DIR": acados.DIR,
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
@@ -143,10 +150,10 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#openpilot",
-    "#msgq_repo",            # #include "msgq/..."
-    "#opendbc_repo",         # #include "opendbc/..."
-    "#rednose_repo",         # #include "rednose/..."
-    "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
+    os.path.dirname(msgq_root), # #include "msgq/..."
+    os.path.dirname(opendbc_root), # #include "opendbc/..."
+    os.path.dirname(rednose_root), # #include "rednose/..."
+    rednose_root,                # #include "logger/..." (rednose package root)
     "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
@@ -154,17 +161,17 @@ env = Environment(
   ],
   LIBPATH=[
     "#openpilot/common",
-    "#msgq_repo",
+    msgq_root,
     "#openpilot/selfdrive/pandad",
-    "#rednose_repo/rednose/helpers",
+    os.path.join(rednose_root, "helpers"),
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#rednose_repo",
+  REDNOSE_ROOT=os.path.dirname(rednose_root),
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  toolpath=["#site_scons/site_tools"],
 )
 if arch != "larch64":
   env['_LIBFLAGS'] = _libflags
@@ -225,7 +232,7 @@ else:
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-Export('env', 'arch', 'acados', 'ffmpeg_libs')
+Export('env', 'arch', 'acados', 'ffmpeg_libs', 'opendbc_root')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
@@ -254,7 +261,7 @@ Export('common')
 # Enable swaglog include in submodules
 env_swaglog = env.Clone()
 env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
-SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
+SConscript(['site_scons/vendor/msgq.SConscript'], exports={'env': env_swaglog, 'msgq_root': msgq_root})
 
 SConscript(['openpilot/cereal/SConscript'])
 
@@ -264,10 +271,10 @@ Export('messaging')
 
 
 # Build other submodules
-SConscript(['panda/SConscript'])
+SConscript([os.path.join(panda_root, 'SConscript')])
 
 # Build rednose library
-SConscript(['rednose_repo/rednose/SConscript'])
+SConscript(['site_scons/vendor/rednose.SConscript'], exports={'rednose_root': rednose_root})
 
 # Build system services
 SConscript([

@@ -1,15 +1,18 @@
-Import('env', 'common', 'msgq')
+import os
+
+Import('env', 'common', 'msgq', 'opendbc_root')
 
 cereal_dir = Dir('.')
 gen_dir = Dir('gen')
 
 # Build cereal
 schema_files = ['log.capnp', 'deprecated.capnp', 'custom.capnp']
-car_capnp = '#opendbc_repo/opendbc/car/car.capnp'
+car_schema_dir = os.path.join(opendbc_root, 'car')
+car_capnp = os.path.join(car_schema_dir, 'car.capnp')
 all_output = schema_files + ['car.capnp']
 env.Command([f'gen/cpp/{s}.c++' for s in all_output] + [f'gen/cpp/{s}.h' for s in all_output],
             schema_files + [car_capnp],
-            f"capnpc --src-prefix={cereal_dir.path} --src-prefix=opendbc_repo/opendbc/car --import-path=opendbc_repo/opendbc/car $SOURCES -o c++:{gen_dir.path}/cpp/")
+            f"capnpc --src-prefix={cereal_dir.path} --src-prefix={car_schema_dir} --import-path={car_schema_dir} $SOURCES -o c++:{gen_dir.path}/cpp/")
 
 cereal = env.Library('cereal', [f'gen/cpp/{s}.c++' for s in all_output])
 
