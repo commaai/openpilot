@@ -53,7 +53,6 @@ class SettingsLayout(Widget):
 
     # Panel configuration
     wifi_manager = WifiManager()
-    wifi_manager.set_active(False)
 
     self._panels = {
       PanelType.DEVICE: PanelInfo(tr_noop("Device"), DeviceLayout()),
