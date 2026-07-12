@@ -7,8 +7,7 @@ from collections import namedtuple, defaultdict
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
-from openpilot.common.gpio import get_irq_action, get_irqs_for_action
-from openpilot.common.hardware import HARDWARE
+from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
 from openpilot.system.manager.process_config import managed_processes
 
@@ -56,14 +55,9 @@ def iter_measurements(events):
       yield measurement, getattr(measurement, measurement.which())
 
 @pytest.mark.tici
-@pytest.mark.skip_tici_setup
 class TestSensord:
   @classmethod
   def setup_class(cls):
-    HARDWARE.initialize_hardware()
-    HARDWARE.set_power_save(False)
-    os.system("pkill -9 -f athena")
-
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 
@@ -71,12 +65,10 @@ class TestSensord:
     subprocess.run("pkill -f \\\\./sensord", shell=True)
     try:
       managed_processes["sensord"].start()
-      cls.sample_secs = int(os.getenv("SAMPLE_SECS", "5"))
+      cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))
       cls.events = read_sensor_events(cls.sample_secs)
 
       # determine sensord's irq
-      # Hardware initialization may cache IRQ actions before sensord registers its own.
-      get_irq_action.cache_clear()
       cls.sensord_irq = get_irqs_for_action("sensord")[0]
     finally:
       # teardown won't run if this doesn't succeed
@@ -173,18 +165,21 @@ class TestSensord:
 
   def test_sensor_verify_no_interrupts_after_stop(self):
     managed_processes["sensord"].start()
+    time.sleep(3)
 
-    # Verify interrupts start without always paying the full startup timeout.
+    # read /proc/interrupts to verify interrupts are received
     state_one = get_irq_count(self.sensord_irq)
-    with Timeout(3, "no interrupts received after sensord start"):
-      while get_irq_count(self.sensord_irq) == state_one:
-        time.sleep(0.1)
+    time.sleep(1)
+    state_two = get_irq_count(self.sensord_irq)
+
+    error_msg = f"no interrupts received after sensord start!\n{state_one} {state_two}"
+    assert state_one != state_two, error_msg
 
     managed_processes["sensord"].stop()
+    time.sleep(1)
 
-    # Allow any in-flight interrupt to finish, then verify the count stays put.
-    time.sleep(0.2)
+    # read /proc/interrupts to verify no more interrupts are received
     state_one = get_irq_count(self.sensord_irq)
-    time.sleep(0.5)
+    time.sleep(1)
     state_two = get_irq_count(self.sensord_irq)
     assert state_one == state_two, "Interrupts received after sensord stop!"
