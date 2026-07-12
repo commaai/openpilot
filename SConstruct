@@ -171,7 +171,7 @@ env = Environment(
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT=os.path.dirname(rednose_root),
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#site_scons/site_tools"],
+  toolpath=["#site_scons/site_tools", os.path.join(rednose_root, "site_scons", "site_tools")],
 )
 if arch != "larch64":
   env['_LIBFLAGS'] = _libflags

@@ -1051,7 +1051,7 @@ submodules = [
     { name = "msgq", git = "https://github.com/commaai/msgq.git?rev=d77b9dedb47775af42cc80630cc2a6cea4310ecb" },
     { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=8c0b1367c5178f919c05ae58a1dcf7439ed3eb37" },
     { name = "pandacan", git = "https://github.com/commaai/panda.git?rev=a751a74fb460d9bf0c0037eb5167855b8f548a91" },
-    { name = "rednose", git = "https://github.com/commaai/rednose.git?rev=eea85488fee17e60b4fb94a7dc4867f732503408" },
+    { name = "rednose", git = "https://github.com/commaai/rednose.git?rev=e1278985a64b724183f67568c6d2b3f6983d00e5" },
     { name = "teleoprtc", git = "https://github.com/commaai/teleoprtc.git?rev=22df577821862e32a011fb0cf42577599f3a79c4" },
     { name = "tinygrad", editable = "tinygrad_repo" },
 ]
@@ -1428,7 +1428,7 @@ wheels = [
 [[package]]
 name = "rednose"
 version = "0.0.1"
-source = { git = "https://github.com/commaai/rednose.git?rev=eea85488fee17e60b4fb94a7dc4867f732503408#eea85488fee17e60b4fb94a7dc4867f732503408" }
+source = { git = "https://github.com/commaai/rednose.git?rev=e1278985a64b724183f67568c6d2b3f6983d00e5#e1278985a64b724183f67568c6d2b3f6983d00e5" }
 dependencies = [
     { name = "cffi" },
     { name = "numpy" },
