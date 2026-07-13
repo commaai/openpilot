@@ -20,6 +20,7 @@ from openpilot.cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import get_car, interfaces
+from opendbc.car.vin import VIN_UNKNOWN
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
@@ -768,7 +769,7 @@ def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> dict[str
 
   # Regen or python process
   if CP is not None and fingerprint is None:
-    if CP.fingerprintSource == "fw":
+    if CP.fingerprintSource == "fw" and CP.carVin != VIN_UNKNOWN:
       environ_dict['SKIP_FW_QUERY'] = ""
       environ_dict['FINGERPRINT'] = ""
     else:
