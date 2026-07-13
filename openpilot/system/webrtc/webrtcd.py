@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from abc import abstractmethod
+from collections.abc import Callable
 import os
 import socket
 import time
@@ -15,7 +16,7 @@ import signal
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
-from typing import Any, Callable
+from typing import Any
 
 from libdatachannel import DataChannel
 from openpilot.system.webrtc.helpers import StreamRequestBody

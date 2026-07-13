@@ -19,7 +19,7 @@ TIMING_SEI_UUID = bytes([
   0xa5, 0xe0, 0xc4, 0xa4, 0x5b, 0x6e, 0x4e, 0x1e,
   0x9c, 0x7e, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc,
 ])
-_SEI_PREFIX = b'\x00\x00\x00\x01\x06\x05\x30' + TIMING_SEI_UUID
+_HEVC_SEI_PREFIX = b'\x00\x00\x00\x01\x4e\x01\x05\x30' + TIMING_SEI_UUID
 
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
@@ -68,7 +68,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       return encode_data.header + encode_data.data
 
     idx = encode_data.idx
-    sei_nal = _SEI_PREFIX + struct.pack('>4d',
+    sei_nal = _HEVC_SEI_PREFIX + struct.pack('>4d',
       (idx.timestampEof - idx.timestampSof) / 1e6,
       (msg.logMonoTime - idx.timestampEof) / 1e6,
       (time.monotonic_ns() - msg.logMonoTime) / 1e6,
@@ -104,4 +104,4 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     return packet
 
   def codec_preference(self) -> str | None:
-    return "H264"
+    return "H265"
