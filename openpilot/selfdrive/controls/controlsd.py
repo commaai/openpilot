@@ -111,8 +111,6 @@ class Controls:
 
     if not CC.latActive:
       self.LaC.reset()
-    if not CC.longActive:
-      self.LoC.reset()
 
     # accel PID loop
     pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, CS.vCruise * CV.KPH_TO_MS)
