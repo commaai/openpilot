@@ -53,7 +53,7 @@ def get_cruise_accel(v_err, force_slow_decel, a_cruise_prev, dt):
     a_target = 0.0
   return float(np.clip(a_target, a_cruise_prev - CRUISE_JERK * dt, a_cruise_prev + CRUISE_JERK * dt))
 
-def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
+def limit_accel_in_turns(v_ego, angle_steers, accel_clip, CP, a_cruise):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
@@ -64,7 +64,17 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
-  return [a_target[0], min(a_target[1], a_x_allowed)]
+  # Cruise speed limit: cap acceleration to converge to the set speed
+  a_max = min(accel_clip[1], a_x_allowed, a_cruise)
+  return [accel_clip[0], a_max]
+
+def limit_e2e_accel(a_e2e, a_cruise, v_err):
+  # E2E limiter: let the model accelerate freely up to E2E_MAX_ACCEL from well below
+  # cruise, then blend down to the cruise limit as we approach the set speed so the
+  # model can't overshoot cruise.
+  cruise_blend = float(np.clip(1.0 - v_err / CRUISE_LIMIT_ENABLE_DELTA, 0.0, 1.0))
+  a_limit = cruise_blend * a_cruise + (1.0 - cruise_blend) * E2E_MAX_ACCEL
+  return float(min(a_e2e, a_limit))
 
 
 class LongitudinalPlanner:
@@ -109,10 +119,19 @@ class LongitudinalPlanner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
+    # Cruise speed limit: target acceleration to converge to the set speed, jerk-limited
+    if force_slow_decel:
+      v_cruise = 0.0
+    v_err = v_cruise - v_ego
+    self.a_cruise = get_cruise_accel(v_err, force_slow_decel, self.a_cruise, self.dt)
+
     max_accel = E2E_MAX_ACCEL if experimental_mode else get_max_accel(v_ego)
     accel_clip = [ACCEL_MIN, max_accel]
     steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
-    accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP)
+    # In e2e mode the cruise limit is applied to the model output separately
+    # (see limit_e2e_accel), so don't clip the MPC output to the cruise limit here.
+    a_cruise_clip = self.a_cruise if not experimental_mode else E2E_MAX_ACCEL
+    accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP, a_cruise_clip)
 
     if reset_state:
       self.v_desired_filter.x = v_ego
@@ -130,9 +149,6 @@ class LongitudinalPlanner:
       clipped_accel_coast = max(accel_coast, accel_clip[0])
       clipped_accel_coast_interp = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [accel_clip[1], clipped_accel_coast])
       accel_clip[1] = min(accel_clip[1], clipped_accel_coast_interp)
-
-    if force_slow_decel:
-      v_cruise = 0.0
 
     self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
@@ -157,30 +173,20 @@ class LongitudinalPlanner:
     output_a_target_mpc, output_should_stop_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
                                                                         action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
 
-    # Apply cruise speed limit outside the MPC
-    v_err = v_cruise - v_ego
-    self.a_cruise = get_cruise_accel(v_err, force_slow_decel, self.a_cruise, self.dt)
-    # In e2e mode, blend the cruise limit in only as we approach the set speed so
-    # the model is free to accelerate from well below cruise. The blend ramps the
-    # cruise ceiling from E2E_MAX_ACCEL (no limit) down to the full cruise limit.
-    if experimental_mode:
-      cruise_blend = float(np.clip(1.0 - v_err / CRUISE_LIMIT_ENABLE_DELTA, 0.0, 1.0))
-      a_cruise_limit = cruise_blend * self.a_cruise + (1.0 - cruise_blend) * E2E_MAX_ACCEL
-    else:
-      a_cruise_limit = self.a_cruise
-    if a_cruise_limit < output_a_target_mpc:
-      output_a_target_mpc = a_cruise_limit
-      self.mpc.source = LongitudinalPlanSource.cruise
-
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     if experimental_mode:
+      # E2E limiter: cap the model output, blending to the cruise limit near the set speed
+      output_a_target_e2e = limit_e2e_accel(output_a_target_e2e, self.a_cruise, v_err)
       output_a_target = min(output_a_target_e2e, output_a_target_mpc)
       self.output_should_stop = output_should_stop_e2e or output_should_stop_mpc
       if output_a_target < output_a_target_mpc:
         self.mpc.source = LongitudinalPlanSource.e2e
     else:
+      # Cruise limiter is applied via accel_clip in limit_accel_in_turns
+      if self.a_cruise < output_a_target_mpc:
+        self.mpc.source = LongitudinalPlanSource.cruise
       output_a_target = output_a_target_mpc
       self.output_should_stop = output_should_stop_mpc
 
