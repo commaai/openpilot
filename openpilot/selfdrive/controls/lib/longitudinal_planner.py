@@ -88,7 +88,7 @@ class LongitudinalPlanner:
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = 0.0
-    self.prev_accel_clip = [ACCEL_MIN, ACCEL_MAX]
+    self.prev_accel_clip = None
     self.output_a_target = 0.0
     self.output_should_stop = False
 
@@ -190,8 +190,11 @@ class LongitudinalPlanner:
       output_a_target = output_a_target_mpc
       self.output_should_stop = output_should_stop_mpc
 
-    for idx in range(2):
-      accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
+    # Rate-limit the accel clip to smooth transitions. On the first update there is no
+    # previous value to smooth from, so use the computed clip directly.
+    if self.prev_accel_clip is not None:
+      for idx in range(2):
+        accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
     self.prev_accel_clip = accel_clip
 
