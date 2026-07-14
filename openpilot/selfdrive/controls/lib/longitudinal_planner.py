@@ -25,7 +25,7 @@ MIN_ALLOW_THROTTLE_SPEED = 2.5
 CRUISE_MIN_ACCEL = -1.2
 CRUISE_MAX_ACCEL = 1.6
 CRUISE_JERK = 0.5  # m/s^3, max rate of change of cruise limit acceleration
-# In e2e mode, only enforce the cruise limit within this distance of the set speed,
+# In e2e mode, blend the cruise limit in over this distance below the set speed,
 # letting the model accelerate freely from well below cruise.
 CRUISE_LIMIT_ENABLE_DELTA = CRUISE_MAX_ACCEL**2 / (2 * CRUISE_JERK)
 # In e2e mode, allow the model to command higher acceleration than the comfort table.
@@ -160,11 +160,16 @@ class LongitudinalPlanner:
     # Apply cruise speed limit outside the MPC
     v_err = v_cruise - v_ego
     self.a_cruise = get_cruise_accel(v_err, force_slow_decel, self.a_cruise, self.dt)
-    # In e2e mode, only apply the cruise limit when close to cruise speed so the
-    # model is free to accelerate from well below the set speed.
-    apply_cruise_limit = not experimental_mode or v_err <= CRUISE_LIMIT_ENABLE_DELTA
-    if apply_cruise_limit and self.a_cruise < output_a_target_mpc:
-      output_a_target_mpc = self.a_cruise
+    # In e2e mode, blend the cruise limit in only as we approach the set speed so
+    # the model is free to accelerate from well below cruise. The blend ramps the
+    # cruise ceiling from E2E_MAX_ACCEL (no limit) down to the full cruise limit.
+    if experimental_mode:
+      cruise_blend = float(np.clip(1.0 - v_err / CRUISE_LIMIT_ENABLE_DELTA, 0.0, 1.0))
+      a_cruise_limit = cruise_blend * self.a_cruise + (1.0 - cruise_blend) * E2E_MAX_ACCEL
+    else:
+      a_cruise_limit = self.a_cruise
+    if a_cruise_limit < output_a_target_mpc:
+      output_a_target_mpc = a_cruise_limit
       self.mpc.source = LongitudinalPlanSource.cruise
 
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
