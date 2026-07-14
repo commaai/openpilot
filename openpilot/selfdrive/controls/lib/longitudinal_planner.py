@@ -128,10 +128,10 @@ class LongitudinalPlanner:
     max_accel = E2E_MAX_ACCEL if experimental_mode else get_max_accel(v_ego)
     accel_clip = [ACCEL_MIN, max_accel]
     steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
-    # In e2e mode the cruise limit is applied to the model output separately
-    # (see limit_e2e_accel), so don't clip the MPC output to the cruise limit here.
-    a_cruise_clip = self.a_cruise if not experimental_mode else E2E_MAX_ACCEL
-    accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP, a_cruise_clip)
+    # In e2e mode the model accounts for road geometry, so don't apply the turn limit.
+    # The cruise limit is applied to the model output separately (see limit_e2e_accel).
+    if not experimental_mode:
+      accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP, self.a_cruise)
 
     if reset_state:
       self.v_desired_filter.x = v_ego
