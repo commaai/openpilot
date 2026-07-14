@@ -23,7 +23,8 @@ from openpilot.common.params import Params
 from openpilot.cereal import messaging, log
 
 
-VIDEO_STREAM_CAMERAS = ("wideRoad", "driver")
+DEFAULT_VIDEO_CAMERA = "wideRoad"
+ROAD_VIDEO_CAMERAS = ("road", "wideRoad")
 
 
 # socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
@@ -157,7 +158,8 @@ class StreamSession:
 
     self.enabled = body.enabled
     self.video_tracks = {}
-    for camera in VIDEO_STREAM_CAMERAS:
+    primary_camera = body.init_camera if body.init_camera in ROAD_VIDEO_CAMERAS else DEFAULT_VIDEO_CAMERA
+    for camera in (primary_camera, "driver"):
       track = LiveStreamVideoStreamTrack(camera, self.enabled)
       self.video_tracks[camera] = track
       builder.add_video_stream(camera, track)
