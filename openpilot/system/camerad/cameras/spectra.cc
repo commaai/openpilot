@@ -1493,7 +1493,7 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
     double st = millis_since_boot();
     struct cam_sync_wait sync_wait = {};
     sync_wait.sync_obj = sync_obj;
-    sync_wait.timeout_ms = timeout_ms;
+    sync_wait.timeout_ms = stress_test(sync_type) ? 1 : timeout_ms;
     bool ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait)) == 0;
     double et = millis_since_boot();
     if (!ret) LOGE("camera %d %s failed after %.2fms", cc.camera_num, sync_type, et-st);
