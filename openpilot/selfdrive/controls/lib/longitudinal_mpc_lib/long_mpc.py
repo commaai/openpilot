@@ -229,13 +229,11 @@ class LongitudinalMpc:
     self.a_solution = np.zeros(N+1)
     self.j_solution = np.zeros(N)
     self.a_prev = np.array(self.a_solution)
-    self.yref = np.zeros((N+1, COST_DIM))
-
-    for i in range(N):
-      self.solver.cost_set(i, "yref", self.yref[i])
-    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
 
     self.params = np.zeros((N+1, PARAM_DIM))
+    self.params[:,0] = ACCEL_MIN
+    self.params[:,1] = ACCEL_MAX
+    self.params[:,5] = LEAD_DANGER_FACTOR
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
 
@@ -245,9 +243,14 @@ class LongitudinalMpc:
     # timers
     self.solve_time = 0.0
     self.x0 = np.zeros(X_DIM)
+    self._weights_key = None
+
+    constraint_cost_weights = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
+    for i in range(N):
+      self.solver.cost_set(i, 'Zl', constraint_cost_weights)
     self.set_weights()
 
-  def set_cost_weights(self, cost_weights, constraint_cost_weights):
+  def set_cost_weights(self, cost_weights):
     W = np.asfortranarray(np.diag(cost_weights))
     for i in range(N):
       # TODO don't hardcode A_CHANGE_COST idx
@@ -258,17 +261,16 @@ class LongitudinalMpc:
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
-    # Set L2 slack cost on lower bound constraints
-    Zl = np.array(constraint_cost_weights)
-    for i in range(N):
-      self.solver.cost_set(i, 'Zl', Zl)
-
   def set_weights(self, prev_accel_constraint=True, personality=log.LongitudinalPersonality.standard):
     jerk_factor = get_jerk_factor(personality)
+    weights_key = (prev_accel_constraint, jerk_factor)
+    if weights_key == self._weights_key:
+      return
+
     a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
     cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_factor * a_change_cost, jerk_factor * J_EGO_COST]
-    constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
-    self.set_cost_weights(cost_weights, constraint_cost_weights)
+    self.set_cost_weights(cost_weights)
+    self._weights_key = weights_key
 
   def set_cur_state(self, v, a):
     v_prev = self.x0[1]
@@ -327,23 +329,15 @@ class LongitudinalMpc:
     v_lower = v_ego + (T_IDXS * CRUISE_MIN_ACCEL * 1.05)
     # TODO does this make sense when max_a is negative?
     v_upper = v_ego + (T_IDXS * CRUISE_MAX_ACCEL * 1.05)
-    v_cruise_clipped = np.clip(v_cruise * np.ones(N+1), v_lower, v_upper)
+    v_cruise_clipped = np.clip(v_cruise, v_lower, v_upper)
     cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, t_follow)
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
 
-    self.yref[:,:] = 0.0
-    for i in range(N):
-      self.solver.set(i, "yref", self.yref[i])
-    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
-
-    self.params[:,0] = ACCEL_MIN
-    self.params[:,1] = ACCEL_MAX
     self.params[:,2] = np.min(x_obstacles, axis=1)
-    self.params[:,3] = np.copy(self.a_prev)
+    self.params[:,3] = self.a_prev
     self.params[:,4] = t_follow
-    self.params[:,5] = LEAD_DANGER_FACTOR
 
     self.run()
     if (np.any(lead_xv_0[FCW_IDXS,0] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
