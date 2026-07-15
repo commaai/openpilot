@@ -703,6 +703,7 @@ struct UsbState {
 }
 
 struct RadarState @0x9a185389d6fdd05f {
+  mdMonoTime @6 :UInt64;
   radarErrors @13 :Car.RadarData.Error;
 
   leadOne @3 :LeadData;
@@ -739,7 +740,6 @@ struct RadarState @0x9a185389d6fdd05f {
     calPerc @9 :Int8;
     canMonoTimes @10 :List(UInt64);
     cumLagMs @5 :Float32;
-    mdMonoTime @6 :UInt64;
     carStateMonoTime @11 :UInt64;
     radarErrors @12 :List(Car.RadarData.ErrorDEPRECATED);
   }
