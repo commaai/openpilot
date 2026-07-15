@@ -715,10 +715,12 @@ struct RadarState @0x9a185389d6fdd05f {
     yRel @1 :Float32;
     vRel @2 :Float32;
     vLead @4 :Float32;
-    aLeadK @9 :Float32;
+    vLeadK @8 :Float32;  # kalman-filtered lead speed
+    aLeadK @9 :Float32;  # kalman-filtered lead accel
     present @11 :Bool;
     aLeadTau @12 :Float32;
     modelProb @13 :Float32;
+    radar @14 :Bool;  # true if lead is radar-matched (vs vision-only)
     radarTrackId @15 :Int32 = -1;  # for debugging
 
     deprecated :group {
@@ -726,9 +728,7 @@ struct RadarState @0x9a185389d6fdd05f {
       aLead @5 :Float32;
       dPath @6 :Float32;
       vLat @7 :Float32;
-      vLeadK @8 :Float32;
       fcw @10 :Bool;
-      radar @14 :Bool;
     }
   }
 

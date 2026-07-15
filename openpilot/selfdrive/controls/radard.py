@@ -18,7 +18,7 @@ from openpilot.common.simple_kalman import KF1D
 _LEAD_ACCEL_TAU = 1.5
 
 # radar tracks
-ACCEL = 1     # Kalman filter state index
+SPEED, ACCEL = 0, 1     # Kalman filter states enum
 
 # stationary qualification parameters
 V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
@@ -69,6 +69,7 @@ class Track:
     if self.cnt > 0:
       self.kf.update(self.vLead)
 
+    self.vLeadK = float(self.kf.x[SPEED][0])
     self.aLeadK = float(self.kf.x[ACCEL][0])
 
     # Learn if constant acceleration
@@ -85,10 +86,12 @@ class Track:
       "yRel": float(self.yRel),
       "vRel": float(self.vRel),
       "vLead": float(self.vLead),
+      "vLeadK": float(self.vLeadK),
       "aLeadK": float(self.aLeadK),
       "aLeadTau": float(self.aLeadTau.x),
       "present": True,
       "modelProb": model_prob,
+      "radar": True,
       "radarTrackId": self.identifier,
     }
 
@@ -137,10 +140,12 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
     "yRel": float(-lead_msg.y[0]),
     "vRel": float(lead_v_rel_pred),
     "vLead": float(v_ego + lead_v_rel_pred),
+    "vLeadK": float(v_ego + lead_v_rel_pred),
     "aLeadK": float(lead_msg.a[0]),
     "aLeadTau": 0.3,
     "modelProb": float(lead_prob),
     "present": True,
+    "radar": False,
     "radarTrackId": -1,
   }
 
