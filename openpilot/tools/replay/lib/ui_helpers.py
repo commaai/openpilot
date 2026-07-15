@@ -187,7 +187,7 @@ def plot_model(m, img, calibration, top_down):
 
 def plot_lead(rs, top_down):
   for lead in [rs.leadOne, rs.leadTwo]:
-    if not lead.status:
+    if not lead.present:
       continue
 
     x = lead.dRel

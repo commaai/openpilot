@@ -699,6 +699,7 @@ struct UsbState {
     speedMbps @4 :UInt16;
     manufacturer @6 :Text;
     product @5 :Text;
+    linkErrorCount @7 :UInt16;
   }
 }
 
@@ -721,7 +722,7 @@ struct RadarState @0x9a185389d6fdd05f {
     vLeadK @8 :Float32;
     aLeadK @9 :Float32;
     fcw @10 :Bool;
-    status @11 :Bool;
+    present @11 :Bool;
     aLeadTau @12 :Float32;
     modelProb @13 :Float32;
     radar @14 :Bool;
