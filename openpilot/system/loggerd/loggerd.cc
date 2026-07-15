@@ -6,8 +6,13 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef __linux__
+#include <linux/videodev2.h>
+#else
+#define V4L2_BUF_FLAG_KEYFRAME 8
+#endif
+
 #include "common/params.h"
-#include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
 

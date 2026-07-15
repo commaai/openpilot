@@ -9,7 +9,7 @@ SSH into the device and run following in separate terminals:
 
 `cd /data/openpilot && ./openpilot/cereal/messaging/bridge`
 
-`cd /data/openpilot/system/loggerd && ./encoderd`
+`cd /data/openpilot && python3 -m openpilot.system.loggerd.encoderd`
 
 `cd /data/openpilot/system/camerad && ./camerad`
 
@@ -24,8 +24,8 @@ Alternatively paste this as a single command:
   cd /data/openpilot/system/camerad/
   ./camerad &
 
-  cd /data/openpilot/system/loggerd/
-  ./encoderd &
+  cd /data/openpilot
+  python3 -m openpilot.system.loggerd.encoderd &
 
   wait
 ) ; trap 'kill $(jobs -p)' SIGINT

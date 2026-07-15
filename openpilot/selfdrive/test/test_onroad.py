@@ -39,7 +39,7 @@ PROCS = {
   "openpilot.selfdrive.selfdrived.selfdrived": 16.0,
   "openpilot.selfdrive.car.card": 26.0,
   "./loggerd": 14.0,
-  "./encoderd": 13.0,
+  "openpilot.system.loggerd.encoderd": 13.0,
   "./camerad": 10.0,
   "openpilot.selfdrive.controls.plannerd": 8.0,
   "openpilot.selfdrive.ui.ui": 40.0,
