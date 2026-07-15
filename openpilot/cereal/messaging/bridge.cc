@@ -1,4 +1,8 @@
 #include <cassert>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
+#include <unistd.h>
 
 #include "openpilot/cereal/messaging/msgq_to_zmq.h"
 #include "openpilot/cereal/services.h"
@@ -34,8 +38,17 @@ void zmq_to_msgq(const std::vector<std::string> &endpoints, const std::string &i
     auto pub_sock = new PubSocket();
     auto sub_sock = new BridgeZmqSubSocket();
     size_t queue_size = services.at(endpoint).queue_size;
-    pub_sock->connect(pub_context.get(), endpoint, true, queue_size);
-    sub_sock->connect(sub_context.get(), endpoint, ip, false);
+    if (pub_sock->connect(pub_context.get(), endpoint, true, queue_size) != 0) {
+      const int error = errno;
+      dprintf(STDERR_FILENO, "Failed to create MSGQ publisher for [%s]: %s\n", endpoint.c_str(), std::strerror(error));
+      _exit(1);
+    }
+    if (sub_sock->connect(sub_context.get(), endpoint, ip, false) != 0) {
+      const int error = zmq_errno();
+      dprintf(STDERR_FILENO, "Failed to connect ZMQ subscriber for [%s] at [%s]: %s\n",
+              endpoint.c_str(), ip.c_str(), zmq_strerror(error));
+      _exit(1);
+    }
 
     poller->registerSocket(sub_sock);
     sub2pub[sub_sock] = pub_sock;
