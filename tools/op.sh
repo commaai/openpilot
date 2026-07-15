@@ -311,8 +311,7 @@ function op_build() {
     # needed on AGNOS to not run out of memory
     op_run_command openpilot/system/manager/build.py
   else
-    # scons is fine on PC
-    op_run_command scons "$@"
+    op_run_command scons -u "$@"
   fi
 }
 
