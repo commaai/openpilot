@@ -82,15 +82,49 @@ class StatusIconColumn(Widget):
 
   @staticmethod
   def _draw_personality_icon(center: rl.Vector2, filled_bars: int):
-    heights = (18, 26, 34)
-    bar_width = 8
-    bar_gap = 5
-    total_width = len(heights) * bar_width + (len(heights) - 1) * bar_gap
-    left = center.x - total_width / 2
-    baseline = center.y + 17
+    car_color = PERSONALITY_ACTIVE_COLOR if filled_bars else INACTIVE_COLOR
 
-    for index, height in enumerate(heights):
-      rect = rl.Rectangle(left + index * (bar_width + bar_gap), baseline - height, bar_width, height)
+    # Rear half of the lead car, cropped at the left edge of the icon.
+    rear_car = (
+      rl.Vector2(center.x - 28, center.y - 10),
+      rl.Vector2(center.x - 20, center.y - 10),
+      rl.Vector2(center.x - 14, center.y - 4),
+      rl.Vector2(center.x - 11, center.y - 4),
+      rl.Vector2(center.x - 10, center.y - 2),
+      rl.Vector2(center.x - 10, center.y + 7),
+      rl.Vector2(center.x - 28, center.y + 7),
+    )
+    rl.draw_triangle_fan(rear_car, len(rear_car), car_color)
+
+    # Front half of the following car, cropped at the right edge of the icon.
+    front_car = (
+      rl.Vector2(center.x + 10, center.y - 2),
+      rl.Vector2(center.x + 13, center.y - 2),
+      rl.Vector2(center.x + 26, center.y - 10),
+      rl.Vector2(center.x + 28, center.y - 10),
+      rl.Vector2(center.x + 28, center.y + 7),
+      rl.Vector2(center.x + 10, center.y + 7),
+    )
+    rl.draw_triangle_fan(front_car, len(front_car), car_color)
+
+    # A black wheel-well ring keeps each simple wheel visibly separate from the body.
+    for wheel_x in (center.x - 21, center.x + 21):
+      rl.draw_circle(int(wheel_x), int(center.y + 6), 6, rl.BLACK)
+      rl.draw_circle(int(wheel_x), int(center.y + 6), 4, car_color)
+      rl.draw_circle(int(wheel_x), int(center.y + 6), 1, rl.BLACK)
+
+    # Rear and front lamps make the two cropped halves readable at icon scale.
+    rear_lamp_color = rl.RED if filled_bars else INACTIVE_COLOR
+    front_lamp_color = rl.GOLD if filled_bars else INACTIVE_COLOR
+    rl.draw_rectangle_rounded(rl.Rectangle(center.x - 13, center.y - 1, 3, 3), 0.35, 4, rear_lamp_color)
+    rl.draw_rectangle_rounded(rl.Rectangle(center.x + 10, center.y - 1, 3, 3), 0.35, 4, front_lamp_color)
+
+    bar_width = 4
+    bar_gap = 2
+    bar_height = 18
+    left = center.x - (3 * bar_width + 2 * bar_gap) / 2
+    for index in range(3):
+      rect = rl.Rectangle(left + index * (bar_width + bar_gap), center.y - bar_height / 2, bar_width, bar_height)
       color = PERSONALITY_ACTIVE_COLOR if index < filled_bars else INACTIVE_COLOR
       rl.draw_rectangle_rounded(rect, 0.35, 6, color)
 
