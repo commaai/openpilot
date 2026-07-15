@@ -699,6 +699,7 @@ struct UsbState {
     speedMbps @4 :UInt16;
     manufacturer @6 :Text;
     product @5 :Text;
+    linkErrorCount @7 :UInt16;
   }
 }
 
