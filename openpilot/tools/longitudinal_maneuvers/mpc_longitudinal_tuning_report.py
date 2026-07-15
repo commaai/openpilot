@@ -25,7 +25,7 @@ def get_html_from_results(results, labels, AXIS):
   plt.close(fig)
   return fig_buffer.getvalue() + '<br/>'
 
-def generate_mpc_tuning_report():
+def generate_mpc_tuning_report(e2e=False):
   htmls = []
 
   results = {}
@@ -42,6 +42,7 @@ def generate_mpc_tuning_report():
       cruise_values=[100, 100],
       prob_lead_values=[1.0, 1.0],
       breakpoints=[1., 11],
+      e2e=e2e,
     )
     valid, results[lead_accel] = man.evaluate()
     labels.append(f'{lead_accel} m/s^2 lead acceleration')
@@ -63,6 +64,7 @@ def generate_mpc_tuning_report():
       initial_distance_lead=140.,
       speed_lead_values=[0.0, 0.],
       breakpoints=[0., 30.],
+      e2e=e2e,
     )
     valid, results[speed] = man.evaluate()
     labels.append(f'{speed} m/s approach speed')
@@ -85,6 +87,7 @@ def generate_mpc_tuning_report():
       initial_distance_lead=desired_follow_distance(speed, speed),
       speed_lead_values=[speed, speed, speed - oscil, speed + oscil, speed - oscil, speed + oscil, speed - oscil],
       breakpoints=[0.,2., 5, 8, 15, 18, 25.],
+      e2e=e2e,
     )
     valid, results[oscil] = man.evaluate()
     labels.append(f'{oscil} m/s oscillation size')
@@ -112,6 +115,7 @@ def generate_mpc_tuning_report():
       initial_distance_lead=desired_follow_distance(speed, speed),
       speed_lead_values=lead_speeds,
       breakpoints=bps,
+      e2e=e2e,
     )
     valid, results[oscil] = man.evaluate()
     labels.append(f'{oscil} m/s oscillation size')
@@ -134,6 +138,7 @@ def generate_mpc_tuning_report():
       initial_distance_lead=distance,
       speed_lead_values=[30.0],
       breakpoints=[0.],
+      e2e=e2e,
     )
     valid, results[distance] = man.evaluate()
     labels.append(f'{distance} m initial distance')
@@ -155,6 +160,7 @@ def generate_mpc_tuning_report():
       initial_distance_lead=distance,
       speed_lead_values=[20.0],
       breakpoints=[0.],
+      e2e=e2e,
     )
     valid, results[distance] = man.evaluate()
     labels.append(f'{distance} m initial distance')
@@ -177,6 +183,7 @@ def generate_mpc_tuning_report():
       initial_distance_lead=60.0,
       speed_lead_values=[30.0, 30.0, 0.0],
       breakpoints=[0., 5., 5 + stop_time],
+      e2e=e2e,
     )
     valid, results[stop_time] = man.evaluate()
     labels.append(f'{stop_time} seconds stop time')
@@ -200,6 +207,7 @@ def generate_mpc_tuning_report():
       speed_lead_values=[speed, speed, speed],
       prob_lead_values=[0.0, 0.0, 1.0],
       breakpoints=[0., 5.0, 5.01],
+      e2e=e2e,
     )
     valid, results[speed] = man.evaluate()
     labels.append(f'{speed} m/s speed')
@@ -222,6 +230,7 @@ def generate_mpc_tuning_report():
       speed_lead_values=[0.0, 0.0, speed],
       prob_lead_values=[1.0, 1.0, 1.0],
       breakpoints=[0., 1.0, speed/2],
+      e2e=e2e,
     )
     valid, results[speed] = man.evaluate()
     labels.append(f'{speed} m/s speed')
@@ -245,6 +254,7 @@ def generate_mpc_tuning_report():
       cruise_values=[0.0, speed],
       prob_lead_values=[0.0, 0.0],
       breakpoints=[1., 1.01],
+      e2e=e2e,
     )
     valid, results[speed] = man.evaluate()
     labels.append(f'{speed} m/s speed')
@@ -268,6 +278,7 @@ def generate_mpc_tuning_report():
       cruise_values=[speed, 10.0],
       prob_lead_values=[0.0, 0.0],
       breakpoints=[1., 1.01],
+      e2e=e2e,
     )
     valid, results[speed] = man.evaluate()
     labels.append(f'{speed} m/s speed')
@@ -279,12 +290,14 @@ def generate_mpc_tuning_report():
   return htmls
 
 if __name__ == '__main__':
-  htmls = generate_mpc_tuning_report()
+  e2e = '--e2e' in sys.argv
+  file_name = 'long_mpc_tune_report.html'
+  for arg in sys.argv[1:]:
+    if not arg.startswith('-'):
+      file_name = arg
+      break
 
-  if len(sys.argv) < 2:
-    file_name = 'long_mpc_tune_report.html'
-  else:
-    file_name = sys.argv[1]
+  htmls = generate_mpc_tuning_report(e2e=e2e)
 
   with open(file_name, 'w') as f:
     f.write(markdown.markdown('# MPC longitudinal tuning report'))
