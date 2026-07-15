@@ -27,7 +27,7 @@ def fill_xyzt(builder, t, x, y, z, x_std=None, y_std=None, z_std=None):
   if z_std is not None:
     builder.zStd = z_std.tolist()
 
-def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None):
+def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std=None):
   builder.t = t
   builder.x = x.tolist()
   builder.y = y.tolist()
@@ -39,6 +39,8 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None):
     builder.yStd = y_std.tolist()
   if v_std is not None:
     builder.vStd = v_std.tolist()
+  if a_std is not None:
+    builder.aStd = a_std.tolist()
 
 def fill_xyz_poly(builder, degree, x, y, z):
   xyz = np.stack([x, y, z], axis=1)
@@ -115,11 +117,9 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
   modelV2.init('leadsV3', 3)
   for i in range(3):
     lead = modelV2.leadsV3[i]
-    # lead_stds are x,y,v,a; a std is unused
-    x, y, v, a = net_output_data['lead'][0, i].T
-    x_std, y_std, v_std, _a_std = net_output_data['lead_stds'][0, i].T
-    fill_xyvat(lead, ModelConstants.LEAD_T_IDXS, x, y, v, a, x_std, y_std, v_std)
-    lead.prob = net_output_data['lead_prob'][0, i].tolist()
+    fill_xyvat(lead, ModelConstants.LEAD_T_IDXS, *net_output_data['lead'][0,i].T, *net_output_data['lead_stds'][0,i].T)
+    lead.prob = net_output_data['lead_prob'][0,i].tolist()
+    lead.probTime = ModelConstants.LEAD_T_OFFSETS[i]
 
   # meta
   meta = modelV2.meta

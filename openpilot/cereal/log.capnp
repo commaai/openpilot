@@ -1065,6 +1065,7 @@ struct ModelDataV2 {
 
   struct LeadDataV3 {
     prob @0 :Float32; # probability that car is your lead at time t
+    probTime @1 :Float32;
     t @2 :List(Float32);
 
     # x and y are relative position in device frame
@@ -1077,11 +1078,7 @@ struct ModelDataV2 {
     v @7 :List(Float32);
     vStd @8 :List(Float32);
     a @9 :List(Float32);
-
-    deprecated :group {
-      probTime @1 :Float32;
-      aStd @10 :List(Float32);
-    }
+    aStd @10 :List(Float32);
   }
 
 
