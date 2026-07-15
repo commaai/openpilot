@@ -41,7 +41,7 @@ class TestCruiseSpeed(OpenpilotTestCase):
     cruise_speed = float(self.speed)
 
     simulation_steady_state = run_cruise_simulation(cruise_speed, self.e2e, self.personality)
-    assert simulation_steady_state == pytest.approx(cruise_speed, abs=1.5), f'Did not reach {self.speed} m/s'
+    assert simulation_steady_state == pytest.approx(cruise_speed, abs=.01), f'Did not reach {self.speed} m/s'
 
 
 # TODO: test pcmCruise
