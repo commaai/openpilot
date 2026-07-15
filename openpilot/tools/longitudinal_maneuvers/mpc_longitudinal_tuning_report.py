@@ -194,7 +194,7 @@ def generate_mpc_tuning_report():
       '',
       duration=20,
       initial_speed=float(speed),
-      cruise_values=[speed, speed, speed],
+      cruise_values=[speed, speed, 45.0],
       lead_relevancy=True,
       initial_distance_lead=desired_follow_distance(speed, speed)/2,
       speed_lead_values=[speed, speed, speed],
