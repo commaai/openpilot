@@ -10,8 +10,7 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
-def long_control_state_trans(CP, active, long_control_state, v_ego,
-                             should_stop, brake_pressed, cruise_standstill):
+def long_control_state_trans(active, long_control_state, should_stop, brake_pressed, cruise_standstill):
   starting_condition = (not should_stop and
                         not cruise_standstill and
                         not brake_pressed)
@@ -23,22 +22,17 @@ def long_control_state_trans(CP, active, long_control_state, v_ego,
     if long_control_state == LongCtrlState.off:
       if not starting_condition:
         long_control_state = LongCtrlState.stopping
-      elif CP.startingState:
-        long_control_state = LongCtrlState.starting
       else:
         long_control_state = LongCtrlState.pid
 
     elif long_control_state == LongCtrlState.stopping:
-      if starting_condition and CP.startingState:
-        long_control_state = LongCtrlState.starting
-      elif starting_condition:
+      if starting_condition:
         long_control_state = LongCtrlState.pid
 
-    elif long_control_state in [LongCtrlState.starting, LongCtrlState.pid]:
+    elif long_control_state == LongCtrlState.pid:
       if should_stop:
         long_control_state = LongCtrlState.stopping
-      elif v_ego > CP.vEgoStarting:
-        long_control_state = LongCtrlState.pid
+
   return long_control_state
 
 class LongControl:
@@ -58,9 +52,8 @@ class LongControl:
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
-    self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
-                                                       should_stop, CS.brakePressed,
-                                                       CS.cruiseState.standstill)
+    self.long_control_state = long_control_state_trans(active, self.long_control_state, should_stop,
+                                                       CS.brakePressed, CS.cruiseState.standstill)
     if self.long_control_state == LongCtrlState.off:
       self.reset()
       output_accel = 0.
@@ -70,10 +63,6 @@ class LongControl:
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
         output_accel -= self.CP.stoppingDecelRate * DT_CTRL
-      self.reset()
-
-    elif self.long_control_state == LongCtrlState.starting:
-      output_accel = self.CP.startAccel
       self.reset()
 
     else:  # LongCtrlState.pid
