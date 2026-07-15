@@ -1,6 +1,7 @@
 import pyray as rl
 
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
+from openpilot.selfdrive.ui.personality import personality_bar_count
 from openpilot.selfdrive.ui.plan_source import SpeedLimiter, speed_limiter_from_source
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
@@ -12,10 +13,11 @@ INACTIVE_TEXTURE_TINT = rl.Color(140, 140, 140, 255)
 CRUISE_COLOR = rl.Color(0, 163, 255, 255)
 LEAD_COLOR = rl.Color(255, 190, 0, 255)
 E2E_COLOR = rl.Color(0, 255, 204, 255)
+PERSONALITY_ACTIVE_COLOR = rl.Color(255, 255, 255, 230)
 
 
 class StatusIconColumn(Widget):
-  """Three-slot status rail for experimental mode, speed limiter, and eGPU use."""
+  """Four-slot status rail for experimental mode, speed limiter, eGPU use, and personality."""
 
   def __init__(self):
     super().__init__()
@@ -28,11 +30,14 @@ class StatusIconColumn(Widget):
     self._speed_limiter = SpeedLimiter.CRUISE
     self._speed_limiter_active = False
     self._using_egpu = False
+    self._personality_bar_count = 0
 
   def _update_state(self):
     sm = ui_state.sm
-    self._experimental_mode = (sm.alive["selfdriveState"] and sm.valid["selfdriveState"] and
-                               sm["selfdriveState"].experimentalMode)
+    selfdrive_state_valid = sm.alive["selfdriveState"] and sm.valid["selfdriveState"]
+    self._experimental_mode = selfdrive_state_valid and sm["selfdriveState"].experimentalMode
+    personality_available = selfdrive_state_valid and ui_state.has_longitudinal_control
+    self._personality_bar_count = personality_bar_count(sm["selfdriveState"].personality, personality_available)
     self._speed_limiter = speed_limiter_from_source(sm["longitudinalPlan"].longitudinalPlanSource)
     self._speed_limiter_active = (sm.alive["carControl"] and sm.valid["carControl"] and
                                   sm["carControl"].longActive and
@@ -75,6 +80,20 @@ class StatusIconColumn(Widget):
     for point in (start, left, right, end):
       rl.draw_circle(int(point.x), int(point.y), 5, color)
 
+  @staticmethod
+  def _draw_personality_icon(center: rl.Vector2, filled_bars: int):
+    heights = (18, 26, 34)
+    bar_width = 8
+    bar_gap = 5
+    total_width = len(heights) * bar_width + (len(heights) - 1) * bar_gap
+    left = center.x - total_width / 2
+    baseline = center.y + 17
+
+    for index, height in enumerate(heights):
+      rect = rl.Rectangle(left + index * (bar_width + bar_gap), baseline - height, bar_width, height)
+      color = PERSONALITY_ACTIVE_COLOR if index < filled_bars else INACTIVE_COLOR
+      rl.draw_rectangle_rounded(rect, 0.35, 6, color)
+
   def _draw_speed_limiter(self, center: rl.Vector2):
     if not self._speed_limiter_active:
       color = INACTIVE_COLOR
@@ -100,7 +119,7 @@ class StatusIconColumn(Widget):
       self.rect.height,
     )
     center_x = panel.x + panel.width / 2
-    centers = [rl.Vector2(center_x, panel.y + panel.height * (slot + 0.5) / 3) for slot in range(3)]
+    centers = [rl.Vector2(center_x, panel.y + panel.height * (slot + 0.5) / 4) for slot in range(4)]
 
     experimental_tint = rl.WHITE if self._experimental_mode else INACTIVE_COLOR
     self._draw_texture_centered(self._experimental_texture, centers[0], experimental_tint)
@@ -108,3 +127,4 @@ class StatusIconColumn(Widget):
     egpu_texture = self._egpu_texture if self._using_egpu else self._egpu_gray_texture
     egpu_tint = rl.WHITE if self._using_egpu else INACTIVE_TEXTURE_TINT
     self._draw_texture_centered(egpu_texture, centers[2], egpu_tint)
+    self._draw_personality_icon(centers[3], self._personality_bar_count)
