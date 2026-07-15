@@ -703,8 +703,6 @@ struct UsbState {
 }
 
 struct RadarState @0x9a185389d6fdd05f {
-  mdMonoTime @6 :UInt64;
-  carStateMonoTime @11 :UInt64;
   radarErrors @13 :Car.RadarData.Error;
 
   leadOne @3 :LeadData;
@@ -714,21 +712,21 @@ struct RadarState @0x9a185389d6fdd05f {
     dRel @0 :Float32;
     yRel @1 :Float32;
     vRel @2 :Float32;
-    aRel @3 :Float32;
     vLead @4 :Float32;
-    dPath @6 :Float32;
-    vLat @7 :Float32;
-    vLeadK @8 :Float32;
     aLeadK @9 :Float32;
-    fcw @10 :Bool;
     status @11 :Bool;
     aLeadTau @12 :Float32;
     modelProb @13 :Float32;
-    radar @14 :Bool;
-    radarTrackId @15 :Int32 = -1;
 
     deprecated :group {
+      aRel @3 :Float32;
       aLead @5 :Float32;
+      dPath @6 :Float32;
+      vLat @7 :Float32;
+      vLeadK @8 :Float32;
+      fcw @10 :Bool;
+      radar @14 :Bool;
+      radarTrackId @15 :Int32 = -1;
     }
   }
 
@@ -741,6 +739,8 @@ struct RadarState @0x9a185389d6fdd05f {
     calPerc @9 :Int8;
     canMonoTimes @10 :List(UInt64);
     cumLagMs @5 :Float32;
+    mdMonoTime @6 :UInt64;
+    carStateMonoTime @11 :UInt64;
     radarErrors @12 :List(Car.RadarData.ErrorDEPRECATED);
   }
 }
@@ -1040,7 +1040,6 @@ struct ModelDataV2 {
   roadEdgeStds @14 :List(Float32);
 
   # predicted lead cars
-  leads @11 :List(LeadDataV2);
   leadsV3 @18 :List(LeadDataV3);
 
   meta @12 :MetaData;
@@ -1050,8 +1049,9 @@ struct ModelDataV2 {
   action @26: Action;
 
   lateralPlannerSolutionDEPRECATED @25: Deprecated.LateralPlannerSolution;
+  leadsDEPRECATED @11 :List(LeadDataV2DEPRECATED);
 
-  struct LeadDataV2 {
+  struct LeadDataV2DEPRECATED {
     prob @0 :Float32; # probability that car is your lead at time t
     t @1 :Float32;
 
@@ -1064,7 +1064,6 @@ struct ModelDataV2 {
 
   struct LeadDataV3 {
     prob @0 :Float32; # probability that car is your lead at time t
-    probTime @1 :Float32;
     t @2 :List(Float32);
 
     # x and y are relative position in device frame
@@ -1077,7 +1076,11 @@ struct ModelDataV2 {
     v @7 :List(Float32);
     vStd @8 :List(Float32);
     a @9 :List(Float32);
-    aStd @10 :List(Float32);
+
+    deprecated :group {
+      probTime @1 :Float32;
+      aStd @10 :List(Float32);
+    }
   }
 
 
