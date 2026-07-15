@@ -7,9 +7,7 @@
 #include <vector>
 
 #include <sys/types.h>
-
 inline constexpr char kStreamMsgqAddress[] = "127.0.0.1";
-
 std::string stream_bridge_whitelist(const std::vector<std::string> &services);
 class ScopedMsgqPrefix {
 public:
@@ -34,10 +32,12 @@ public:
   ~StreamBridgeProcess();
   StreamBridgeProcess(const StreamBridgeProcess &) = delete;
   StreamBridgeProcess &operator=(const StreamBridgeProcess &) = delete;
-  void start(const std::filesystem::path &executable, const std::vector<std::string> &arguments = {});
+  void start(const std::filesystem::path &executable, const std::vector<std::string> &arguments = {},
+             const std::filesystem::path &cleanup_path = {});
   void check_running();
   void stop() noexcept;
   bool owned() const { return pid_ > 0; }
+  pid_t pid() const { return pid_; }
 private:
   std::chrono::milliseconds terminate_grace_;
   std::string executable_;

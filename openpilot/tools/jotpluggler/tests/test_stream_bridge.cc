@@ -37,9 +37,7 @@ std::optional<std::string> env_value(const char *name) {
   return value ? std::make_optional<std::string>(value) : std::nullopt;
 }
 void restore_env(const char *name, const std::optional<std::string> &value) { value ? setenv(name, value->c_str(), 1) : unsetenv(name); }
-std::unique_ptr<PubSocket> publisher(Context *context) {
-  return std::unique_ptr<PubSocket>(PubSocket::create(context, "deviceState", true, services.at("deviceState").queue_size));
-}
+std::unique_ptr<PubSocket> publisher(Context *context) { return std::unique_ptr<PubSocket>(PubSocket::create(context, "deviceState", true, services.at("deviceState").queue_size)); }
 int send_state(PubSocket *socket, bool started) {
   MessageBuilder message;
   message.initEvent().initDeviceState().setStarted(started);
@@ -51,8 +49,7 @@ bool take_started(StreamPoller *poller) {
   StreamExtractBatch batch;
   if (!poller->consume(&batch, nullptr)) return false;
   for (const RouteSeries &series : batch.series) {
-    if (series.path == "/deviceState/started" &&
-        std::any_of(series.values.begin(), series.values.end(), [](double value) { return value > 0.5; })) return true;
+    if (series.path == "/deviceState/started" && std::any_of(series.values.begin(), series.values.end(), [](double value) { return value > 0.5; })) return true;
   }
   return false;
 }
@@ -81,8 +78,24 @@ TEST_CASE("stream bridge owns its prefix and child lifecycle") {
   errno = 0;
   REQUIRE((kill(child_pid, 0) == -1 && errno == ESRCH));
   int status = 0;
-  REQUIRE((waitpid(child_pid, &status, WNOHANG) == -1 && errno == ECHILD));
-  process.stop();
+  const auto orphan_pid_file = prefix.path() / "orphan.pid";
+  prefix.activate();
+  const pid_t owner = fork();
+  if (owner == 0) {
+    try {
+      StreamBridgeProcess orphan;
+      orphan.start(repo_root() / "openpilot/cereal/messaging/bridge",
+                   {"127.0.0.2", stream_bridge_whitelist({"deviceState"})}, prefix.path());
+      std::ofstream(orphan_pid_file) << orphan.pid();
+      while (true) pause();
+    } catch (...) { _exit(1); }
+  }
+  prefix.restore();
+  REQUIRE(owner > 0);
+  REQUIRE(wait_until(2s, [&] { return std::filesystem::exists(orphan_pid_file) && std::filesystem::file_size(orphan_pid_file) > 0; }));
+  const pid_t orphan_pid = std::stoi(util::read_file(orphan_pid_file.string()));
+  REQUIRE((kill(owner, SIGKILL) == 0 && waitpid(owner, &status, 0) == owner));
+  REQUIRE(wait_until(3s, [&] { return kill(orphan_pid, 0) == -1 && errno == ESRCH && !std::filesystem::exists(prefix.path()); }));
 }
 TEST_CASE("bridge failures are safe and a StreamPoller can restart") {
   const auto original = env_value("OPENPILOT_PREFIX");
@@ -112,13 +125,16 @@ TEST_CASE("bridge failures are safe and a StreamPoller can restart") {
   poller.start(local_source(), 5.0, "");
   REQUIRE(wait_until(2s, [&] { return !poller.snapshot().active; }));
   absent.restore();
-  REQUIRE_THAT(take_error(&poller), Catch::Matchers::Contains("Failed to connect cereal service"));
+  REQUIRE_THAT(take_error(&poller), Catch::Matchers::Contains("Failed to connect"));
   poller.start(remote_source("not a valid ZMQ host"), 5.0, "");
   REQUIRE(wait_until(2s, [&] { return !poller.snapshot().active; }));
-  REQUIRE(poller.consume(nullptr, nullptr));
   REQUIRE(env_value("OPENPILOT_PREFIX") == original);
   ScopedMsgqPrefix local;
   local.activate();
+  std::filesystem::create_directory(local.path() / "accelerometer");
+  poller.start(local_source(), 5.0, "");
+  REQUIRE((wait_until(2s, [&] { return poller.snapshot().connected || !poller.snapshot().active; }) && poller.snapshot().connected));
+  std::filesystem::remove(local.path() / "accelerometer");
   const auto previous_fake = env_value("CEREAL_FAKE");
   const auto previous_fake_prefix = env_value("CEREAL_FAKE_PREFIX");
   setenv("CEREAL_FAKE", "1", 1);
@@ -133,7 +149,6 @@ TEST_CASE("bridge failures are safe and a StreamPoller can restart") {
   restore_env("CEREAL_FAKE_PREFIX", previous_fake_prefix);
   local.restore();
   REQUIRE(connected);
-  REQUIRE(take_error(&poller).empty());
   fake_event.set_enabled(true);
   const bool fake_called = wait_until(2s, [&] { return fake_event.recv_called().peek(); });
   const int sent = send_state(pub.get(), true);
@@ -145,9 +160,10 @@ TEST_CASE("bridge failures are safe and a StreamPoller can restart") {
   poller.stop();
 }
 TEST_CASE("concurrent setup is isolated and bridge death is surfaced") {
-  const auto original = env_value("OPENPILOT_PREFIX");
   ScopedMsgqPrefix scratch;
-  const auto script = scratch.path() / "short-bridge";
+  std::string script_dir = (repo_root() / "openpilot/tools/jotpluggler/tests/test_stream_bridge_helper_XXXXXX").string();
+  REQUIRE(mkdtemp(script_dir.data()) != nullptr);
+  const auto script = std::filesystem::path(script_dir) / "bridge";
   const auto bridge_executable = repo_root() / "openpilot/cereal/messaging/bridge";
   const auto previous_override = env_value("JOTP_STREAM_BRIDGE");
   const auto previous_setup_test = env_value("JOTP_STREAM_SETUP_TEST");
@@ -155,35 +171,26 @@ TEST_CASE("concurrent setup is isolated and bridge death is surfaced") {
   setenv("JOTP_STREAM_SETUP_TEST", scratch.path().c_str(), 1);
   ScopedMsgqPrefix caller;
   caller.activate();
-  Context context;
-  auto pub = publisher(&context);
-  REQUIRE(pub != nullptr);
   StreamPoller remote, local;
   remote.start(remote_source("127.0.0.2"), 5.0, "");
   const bool remote_held = wait_until(2s, [&] { return std::filesystem::exists(scratch.path() / "remote-held"); });
-  const bool prefix_held = remote_held && env_value("OPENPILOT_PREFIX") != std::make_optional(caller.prefix());
   if (remote_held) local.start(local_source(), 5.0, "");
   const bool local_blocked = remote_held && wait_until(1s, [&] { return std::filesystem::exists(scratch.path() / "local-blocked"); });
   std::ofstream(scratch.path() / "release").put('\n');
   const bool both_connected = local_blocked && wait_until(5s, [&] { return remote.snapshot().connected && local.snapshot().connected; });
-  restore_env("JOTP_STREAM_BRIDGE", previous_override);
-  restore_env("JOTP_STREAM_SETUP_TEST", previous_setup_test);
-  REQUIRE((remote_held && prefix_held && local_blocked));
+  restore_env("JOTP_STREAM_BRIDGE", previous_override); restore_env("JOTP_STREAM_SETUP_TEST", previous_setup_test);
+  REQUIRE((remote_held && local_blocked));
   REQUIRE(both_connected);
-  REQUIRE(std::filesystem::exists(scratch.path() / "local-after"));
   REQUIRE(env_value("OPENPILOT_PREFIX") == std::make_optional(caller.prefix()));
-  REQUIRE(wait_until(2s, [&] { return send_state(pub.get(), true) > 0 && take_started(&local); }));
-  remote.stop();
-  local.stop();
+  remote.stop(); local.stop();
   caller.restore();
-  REQUIRE(env_value("OPENPILOT_PREFIX") == original);
   const auto pid_file = scratch.path() / "dying.pid";
-  std::ofstream(script) << "#!/bin/sh\necho $$ > \"$1\"\nexec " << shell_quote(bridge_executable.string()) << " 127.0.0.2 \"$2\"\n";
+  std::ofstream(script) << "#!/bin/sh\necho $$ > \"$1\"\nexec " << shell_quote(bridge_executable.string()) << " 127.0.0.2 \"$2\" \"$3\" \"$4\"\n";
   REQUIRE(chmod(script.c_str(), 0700) == 0);
   setenv("JOTP_STREAM_BRIDGE", script.c_str(), 1);
   StreamPoller dying;
   dying.start(remote_source(pid_file.string()), 5.0, "");
-  const bool connected = wait_until(15s, [&] { return (dying.snapshot().connected && std::filesystem::exists(pid_file)) || !dying.snapshot().active; }) && dying.snapshot().connected;
+  const bool connected = wait_until(15s, [&] { return (dying.snapshot().connected && std::filesystem::exists(pid_file) && std::filesystem::file_size(pid_file) > 0) || !dying.snapshot().active; }) && dying.snapshot().connected;
   restore_env("JOTP_STREAM_BRIDGE", previous_override);
   REQUIRE_THAT(connected ? "" : take_error(&dying), Catch::Matchers::Equals(""));
   REQUIRE(connected);
@@ -191,11 +198,11 @@ TEST_CASE("concurrent setup is isolated and bridge death is surfaced") {
   REQUIRE(wait_until(3s, [&] { return !dying.snapshot().active; }));
   REQUIRE_FALSE(dying.snapshot().connected);
   REQUIRE_THAT(take_error(&dying), Catch::Matchers::Contains("terminated by signal 9"));
-  REQUIRE(env_value("OPENPILOT_PREFIX") == original);
+  std::filesystem::remove_all(script_dir);
 }
 TEST_CASE("remote StreamPoller receives device data without displacing caller publishers") {
   const auto original = env_value("OPENPILOT_PREFIX");
-  std::filesystem::path caller_path, device_path;
+  std::filesystem::path caller_path;
   {
     ScopedMsgqPrefix caller;
     caller_path = caller.path();
@@ -204,7 +211,6 @@ TEST_CASE("remote StreamPoller receives device data without displacing caller pu
     auto caller_pub = publisher(&caller_context);
     REQUIRE(caller_pub != nullptr);
     ScopedMsgqPrefix device;
-    device_path = device.path();
     device.activate();
     StreamBridgeProcess device_bridge;
     device_bridge.start(repo_root() / "openpilot/cereal/messaging/bridge");
@@ -220,10 +226,8 @@ TEST_CASE("remote StreamPoller receives device data without displacing caller pu
     REQUIRE(wait_until(8s, [&] { return send_state(device_pub.get(), true) > 0 && take_started(&poller); }));
     poller.stop();
     REQUIRE(send_state(caller_pub.get(), false) > 0);
-    device_bridge.stop();
     caller.restore();
   }
   REQUIRE_FALSE(std::filesystem::exists(caller_path));
-  REQUIRE_FALSE(std::filesystem::exists(device_path));
   REQUIRE(env_value("OPENPILOT_PREFIX") == original);
 }

@@ -20,20 +20,17 @@ std::filesystem::path msgq_root() {
   return "/dev/shm";
 #endif
 }
-
 pid_t wait_nointr(pid_t pid, int *status, int options) {
   pid_t result;
   do { result = waitpid(pid, status, options); } while (result < 0 && errno == EINTR);
   return result;
 }
-
 std::string exit_error(const std::string &executable, int status) {
   if (WIFEXITED(status)) return executable + " exited with status " + std::to_string(WEXITSTATUS(status));
   if (WIFSIGNALED(status)) return executable + " terminated by signal " + std::to_string(WTERMSIG(status));
   return executable + " exited unexpectedly";
 }
 }  // namespace
-
 std::string stream_bridge_whitelist(const std::vector<std::string> &service_names) {
   std::string whitelist;
   for (const std::string &name : service_names) whitelist += "/\"" + name + "\"/";
@@ -46,18 +43,12 @@ ScopedMsgqPrefix::ScopedMsgqPrefix() {
   path_ = created;
   prefix_ = path_.filename().string().substr(std::strlen("msgq_"));
 }
-ScopedMsgqPrefix::~ScopedMsgqPrefix() {
-  restore();
-  std::error_code error;
-  std::filesystem::remove_all(path_, error);
-}
+ScopedMsgqPrefix::~ScopedMsgqPrefix() { restore(); std::error_code error; std::filesystem::remove_all(path_, error); }
 void ScopedMsgqPrefix::activate() {
   if (active_) throw std::runtime_error("MSGQ namespace is already active");
   previous_prefix_.reset();
   if (const char *prefix = std::getenv("OPENPILOT_PREFIX")) previous_prefix_ = prefix;
-  if (setenv("OPENPILOT_PREFIX", prefix_.c_str(), 1) != 0) {
-    throw std::runtime_error("Failed to activate MSGQ namespace: " + std::string(std::strerror(errno)));
-  }
+  if (setenv("OPENPILOT_PREFIX", prefix_.c_str(), 1) != 0) throw std::runtime_error("Failed to activate MSGQ namespace: " + std::string(std::strerror(errno)));
   active_ = true;
 }
 void ScopedMsgqPrefix::restore() noexcept {
@@ -68,19 +59,20 @@ void ScopedMsgqPrefix::restore() noexcept {
 }
 StreamBridgeProcess::StreamBridgeProcess(std::chrono::milliseconds terminate_grace) : terminate_grace_(terminate_grace) {}
 StreamBridgeProcess::~StreamBridgeProcess() { stop(); }
-void StreamBridgeProcess::start(const std::filesystem::path &executable, const std::vector<std::string> &arguments) {
+void StreamBridgeProcess::start(const std::filesystem::path &executable, const std::vector<std::string> &arguments,
+                                const std::filesystem::path &cleanup_path) {
   if (owned()) throw std::runtime_error("A stream bridge process is already running");
   if (executable.empty()) throw std::runtime_error("Stream bridge executable path is empty");
   executable_ = executable.string();
   std::vector<std::string> storage{executable_};
   storage.insert(storage.end(), arguments.begin(), arguments.end());
+  if (!cleanup_path.empty()) { storage.push_back(std::to_string(getpid())); storage.push_back(cleanup_path.string()); }
   std::vector<char *> argv;
   for (std::string &argument : storage) argv.push_back(argument.data());
   argv.push_back(nullptr);
   const int result = posix_spawn(&pid_, executable_.c_str(), nullptr, nullptr, argv.data(), environ);
   if (result != 0) {
-    pid_ = -1;
-    throw std::runtime_error("Failed to start stream bridge " + executable_ + ": " + std::strerror(result));
+    pid_ = -1; throw std::runtime_error("Failed to start stream bridge " + executable_ + ": " + std::strerror(result));
   }
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
   do {
@@ -95,12 +87,10 @@ void StreamBridgeProcess::check_running() {
   const pid_t result = wait_nointr(pid_, &status, WNOHANG);
   if (result == 0) return;
   if (result == pid_) {
-    pid_ = -1;
-    throw std::runtime_error(exit_error(executable_, status));
+    pid_ = -1; throw std::runtime_error(exit_error(executable_, status));
   }
   if (result < 0 && errno == ECHILD) {
-    pid_ = -1;
-    throw std::runtime_error(executable_ + " is no longer waitable");
+    pid_ = -1; throw std::runtime_error(executable_ + " is no longer waitable");
   }
   if (result < 0) throw std::runtime_error("Failed to inspect stream bridge " + executable_ + ": " + std::strerror(errno));
 }
@@ -109,9 +99,7 @@ void StreamBridgeProcess::stop() noexcept {
   const pid_t child = pid_;
   int status = 0;
   const pid_t initial = wait_nointr(child, &status, WNOHANG);
-  if (initial == child || (initial < 0 && errno == ECHILD)) {
-    pid_ = -1; return;
-  }
+  if (initial == child || (initial < 0 && errno == ECHILD)) { pid_ = -1; return; }
   kill(child, SIGTERM);
   const auto deadline = std::chrono::steady_clock::now() + terminate_grace_;
   while (std::chrono::steady_clock::now() < deadline) {

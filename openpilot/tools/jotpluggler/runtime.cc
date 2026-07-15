@@ -589,9 +589,9 @@ struct StreamPoller::Impl {
       const char *override = std::getenv("JOTP_STREAM_BRIDGE");
       const std::filesystem::path executable = override != nullptr
         ? override : repo_root() / "openpilot/cereal/messaging/bridge";
-      bridge_process.start(executable, {source.address, stream_bridge_whitelist(selected_services)});
+      bridge_process.start(executable, {source.address, stream_bridge_whitelist(selected_services)}, private_namespace->path());
     }
-    stream_setup_test_checkpoint(remote ? "remote-held" : "local-after", remote);
+    if (remote) stream_setup_test_checkpoint("remote-held", true);
 
     std::unique_ptr<Context> context(Context::create());
     std::unique_ptr<Poller> poller(Poller::create());
@@ -605,6 +605,7 @@ struct StreamPoller::Impl {
           msgq_socket->getQueue()->mmap_p = nullptr;
           msgq_socket->getQueue()->size = 0;
         }
+        if (!remote) continue;
         throw std::runtime_error("Failed to connect cereal service " + name + ": " + std::strerror(error));
       }
       socket->setTimeout(0);
