@@ -704,7 +704,7 @@ struct UsbState {
 }
 
 struct RadarState @0x9a185389d6fdd05f {
-  mdMonoTime @6 :UInt64;
+  mdMonoTime @6 :UInt64;  # for debugging
   radarErrors @13 :Car.RadarData.Error;
 
   leadOne @3 :LeadData;
@@ -719,6 +719,7 @@ struct RadarState @0x9a185389d6fdd05f {
     present @11 :Bool;
     aLeadTau @12 :Float32;
     modelProb @13 :Float32;
+    radarTrackId @15 :Int32 = -1;  # for debugging
 
     deprecated :group {
       aRel @3 :Float32;
@@ -728,7 +729,6 @@ struct RadarState @0x9a185389d6fdd05f {
       vLeadK @8 :Float32;
       fcw @10 :Bool;
       radar @14 :Bool;
-      radarTrackId @15 :Int32 = -1;
     }
   }
 

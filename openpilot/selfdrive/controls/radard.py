@@ -49,7 +49,8 @@ class KalmanParams:
 
 
 class Track:
-  def __init__(self, v_lead: float, kalman_params: KalmanParams):
+  def __init__(self, identifier: int, v_lead: float, kalman_params: KalmanParams):
+    self.identifier = identifier
     self.cnt = 0
     self.aLeadTau = FirstOrderFilter(_LEAD_ACCEL_TAU, 0.45, DT_MDL)
     self.K_A = kalman_params.A
@@ -88,6 +89,7 @@ class Track:
       "aLeadTau": float(self.aLeadTau.x),
       "present": True,
       "modelProb": model_prob,
+      "radarTrackId": self.identifier,
     }
 
   def potential_low_speed_lead(self, v_ego: float):
@@ -139,6 +141,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
     "aLeadTau": 0.3,
     "modelProb": float(lead_prob),
     "present": True,
+    "radarTrackId": -1,
   }
 
 
@@ -210,7 +213,7 @@ class RadarD:
 
       # create the track if it doesn't exist or it's a new track
       if ids not in self.tracks:
-        self.tracks[ids] = Track(v_lead, self.kalman_params)
+        self.tracks[ids] = Track(ids, v_lead, self.kalman_params)
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead)
 
     # *** publish radarState ***
