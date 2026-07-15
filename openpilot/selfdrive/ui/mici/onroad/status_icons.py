@@ -13,7 +13,6 @@ INACTIVE_TEXTURE_TINT = rl.Color(140, 140, 140, 255)
 CRUISE_COLOR = rl.Color(0, 163, 255, 255)
 LEAD_COLOR = rl.Color(255, 190, 0, 255)
 E2E_COLOR = rl.Color(0, 255, 204, 255)
-PERSONALITY_ACTIVE_COLOR = rl.Color(255, 255, 255, 230)
 
 
 class StatusIconColumn(Widget):
@@ -25,6 +24,10 @@ class StatusIconColumn(Widget):
     self._experimental_texture = gui_app.texture("icons_mici/experimental_mode.png", 48, 48)
     self._egpu_texture = gui_app.texture("icons_mici/egpu.png", 50, 37)
     self._egpu_gray_texture = gui_app.texture("icons_mici/egpu_gray.png", 50, 37)
+    self._personality_textures = tuple(
+      gui_app.texture(f"icons_mici/personality_{bar_count}.png", 56, 20)
+      for bar_count in range(1, 4)
+    )
 
     self._experimental_mode = False
     self._speed_limiter = SpeedLimiter.CRUISE
@@ -80,54 +83,6 @@ class StatusIconColumn(Widget):
     for point in (start, left, right, end):
       rl.draw_circle(int(point.x), int(point.y), 5, color)
 
-  @staticmethod
-  def _draw_personality_icon(center: rl.Vector2, filled_bars: int):
-    car_color = PERSONALITY_ACTIVE_COLOR if filled_bars else INACTIVE_COLOR
-
-    # Rear half of the lead car, cropped at the left edge of the icon.
-    rear_car = (
-      rl.Vector2(center.x - 28, center.y - 10),
-      rl.Vector2(center.x - 20, center.y - 10),
-      rl.Vector2(center.x - 14, center.y - 4),
-      rl.Vector2(center.x - 11, center.y - 4),
-      rl.Vector2(center.x - 10, center.y - 2),
-      rl.Vector2(center.x - 10, center.y + 7),
-      rl.Vector2(center.x - 28, center.y + 7),
-    )
-    rl.draw_triangle_fan(rear_car, len(rear_car), car_color)
-
-    # Front half of the following car, cropped at the right edge of the icon.
-    front_car = (
-      rl.Vector2(center.x + 10, center.y - 2),
-      rl.Vector2(center.x + 13, center.y - 2),
-      rl.Vector2(center.x + 26, center.y - 10),
-      rl.Vector2(center.x + 28, center.y - 10),
-      rl.Vector2(center.x + 28, center.y + 7),
-      rl.Vector2(center.x + 10, center.y + 7),
-    )
-    rl.draw_triangle_fan(front_car, len(front_car), car_color)
-
-    # A black wheel-well ring keeps each simple wheel visibly separate from the body.
-    for wheel_x in (center.x - 21, center.x + 21):
-      rl.draw_circle(int(wheel_x), int(center.y + 6), 6, rl.BLACK)
-      rl.draw_circle(int(wheel_x), int(center.y + 6), 4, car_color)
-      rl.draw_circle(int(wheel_x), int(center.y + 6), 1, rl.BLACK)
-
-    # Rear and front lamps make the two cropped halves readable at icon scale.
-    rear_lamp_color = rl.RED if filled_bars else INACTIVE_COLOR
-    front_lamp_color = rl.GOLD if filled_bars else INACTIVE_COLOR
-    rl.draw_rectangle_rounded(rl.Rectangle(center.x - 13, center.y - 1, 3, 3), 0.35, 4, rear_lamp_color)
-    rl.draw_rectangle_rounded(rl.Rectangle(center.x + 10, center.y - 1, 3, 3), 0.35, 4, front_lamp_color)
-
-    bar_width = 4
-    bar_gap = 2
-    bar_height = 18
-    left = center.x - (3 * bar_width + 2 * bar_gap) / 2
-    for index in range(3):
-      rect = rl.Rectangle(left + index * (bar_width + bar_gap), center.y - bar_height / 2, bar_width, bar_height)
-      color = PERSONALITY_ACTIVE_COLOR if index < filled_bars else INACTIVE_COLOR
-      rl.draw_rectangle_rounded(rect, 0.35, 6, color)
-
   def _draw_speed_limiter(self, center: rl.Vector2):
     if not self._speed_limiter_active:
       color = INACTIVE_COLOR
@@ -161,4 +116,6 @@ class StatusIconColumn(Widget):
     egpu_texture = self._egpu_texture if self._using_egpu else self._egpu_gray_texture
     egpu_tint = rl.WHITE if self._using_egpu else INACTIVE_TEXTURE_TINT
     self._draw_texture_centered(egpu_texture, centers[2], egpu_tint)
-    self._draw_personality_icon(centers[3], self._personality_bar_count)
+    personality_index = self._personality_bar_count - 1 if self._personality_bar_count else 2
+    personality_tint = rl.WHITE if self._personality_bar_count else INACTIVE_COLOR
+    self._draw_texture_centered(self._personality_textures[personality_index], centers[3], personality_tint)
