@@ -292,7 +292,7 @@ class LongitudinalMpc:
 
   def process_lead(self, lead):
     v_ego = self.x0[1]
-    if lead is not None and lead.status:
+    if lead is not None and lead.present:
       x_lead = lead.dRel
       v_lead = lead.vLead
       a_lead = lead.aLeadK
@@ -316,7 +316,7 @@ class LongitudinalMpc:
   def update(self, radarstate, v_cruise, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
-    self.status = radarstate.leadOne.status or radarstate.leadTwo.status
+    self.status = radarstate.leadOne.present or radarstate.leadTwo.present
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)

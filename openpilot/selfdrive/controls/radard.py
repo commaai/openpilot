@@ -91,7 +91,7 @@ class Track:
       "vLeadK": float(self.vLeadK),
       "aLeadK": float(self.aLeadK),
       "aLeadTau": float(self.aLeadTau.x),
-      "status": True,
+      "present": True,
       "fcw": self.is_potential_fcw(model_prob),
       "modelProb": model_prob,
       "radar": True,
@@ -151,7 +151,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
     "aLeadTau": 0.3,
     "fcw": False,
     "modelProb": float(lead_prob),
-    "status": True,
+    "present": True,
     "radar": False,
     "radarTrackId": -1,
   }
@@ -165,7 +165,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
   else:
     track = None
 
-  lead_dict = {'status': False}
+  lead_dict = {'present': False}
   if track is not None:
     lead_dict = track.get_RadarState(lead_prob)
   elif (track is None) and ready and (lead_prob > .5):
@@ -177,7 +177,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
       closest_track = min(low_speed_tracks, key=lambda c: c.dRel)
 
       # Only choose new track if it is actually closer than the previous one
-      if (not lead_dict['status']) or (closest_track.dRel < lead_dict['dRel']):
+      if (not lead_dict['present']) or (closest_track.dRel < lead_dict['dRel']):
         lead_dict = closest_track.get_RadarState()
 
   return lead_dict
