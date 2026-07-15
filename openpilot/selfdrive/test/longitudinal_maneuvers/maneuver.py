@@ -15,6 +15,7 @@ class Maneuver:
     self.prob_throttle_values = kwargs.get("prob_throttle_values", [1.0 for i in range(len(self.breakpoints))])
     self.cruise_values = kwargs.get("cruise_values", [50.0 for i in range(len(self.breakpoints))])
     self.pitch_values = kwargs.get("pitch_values", [0.0 for i in range(len(self.breakpoints))])
+    self.lead_distance_values = kwargs.get("lead_distance_values", None)
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
@@ -49,9 +50,11 @@ class Maneuver:
       cruise = np.interp(plant.current_time, self.breakpoints, self.cruise_values)
       pitch = np.interp(plant.current_time, self.breakpoints, self.pitch_values)
       prob_throttle = np.interp(plant.current_time, self.breakpoints, self.prob_throttle_values)
-      log = plant.step(speed_lead, prob_lead, cruise, pitch, prob_throttle)
+      lead_distance_offset = (np.interp(plant.current_time, self.breakpoints, self.lead_distance_values)
+                              if self.lead_distance_values is not None else 0.0)
+      log = plant.step(speed_lead, prob_lead, cruise, pitch, prob_throttle, lead_distance_offset=lead_distance_offset)
 
-      d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
+      d_rel = log['distance_lead'] + lead_distance_offset - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel

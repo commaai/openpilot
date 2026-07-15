@@ -190,15 +190,18 @@ def generate_mpc_tuning_report():
   name = 'Response to cut-in at half follow distance'
   labels = []
   for speed in np.arange(0, 40, 5):
+    follow_dist = desired_follow_distance(speed, speed)
     man = Maneuver(
       '',
       duration=20,
       initial_speed=float(speed),
-      cruise_values=[speed, speed, speed],
+      cruise_values=[45.0, 45.0, 45.0],
       lead_relevancy=True,
-      initial_distance_lead=desired_follow_distance(speed, speed)/2,
+      initial_distance_lead=follow_dist,
       speed_lead_values=[speed, speed, speed],
-      prob_lead_values=[0.0, 0.0, 1.0],
+      prob_lead_values=[1.0, 1.0, 1.0],
+      # Lead is followed at full follow distance, then abruptly halves the distance (cut-in)
+      lead_distance_values=[0.0, 0.0, -follow_dist / 2],
       breakpoints=[0., 5.0, 5.01],
     )
     valid, results[speed] = man.evaluate()
