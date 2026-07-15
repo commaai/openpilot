@@ -699,36 +699,36 @@ struct UsbState {
     speedMbps @4 :UInt16;
     manufacturer @6 :Text;
     product @5 :Text;
+    linkErrorCount @7 :UInt16;
   }
 }
 
 struct RadarState @0x9a185389d6fdd05f {
-  mdMonoTime @6 :UInt64;
-  carStateMonoTime @11 :UInt64;
+  mdMonoTime @6 :UInt64;  # for debugging
   radarErrors @13 :Car.RadarData.Error;
 
   leadOne @3 :LeadData;
   leadTwo @4 :LeadData;
 
   struct LeadData {
-    dRel @0 :Float32;
-    yRel @1 :Float32;
-    vRel @2 :Float32;
-    aRel @3 :Float32;
-    vLead @4 :Float32;
-    dPath @6 :Float32;
-    vLat @7 :Float32;
-    vLeadK @8 :Float32;
-    aLeadK @9 :Float32;
-    fcw @10 :Bool;
-    status @11 :Bool;
-    aLeadTau @12 :Float32;
-    modelProb @13 :Float32;
-    radar @14 :Bool;
-    radarTrackId @15 :Int32 = -1;
+    dRel @0 :Float32;  # m from the front bumper of the car
+    yRel @1 :Float32;  # m in car frame, left positive
+    vRel @2 :Float32;  # m/s relative longitudinal speed
+    vLead @4 :Float32;  # m/s absolute lead speed
+    vLeadK @8 :Float32;  # kalman-filtered lead speed
+    aLeadK @9 :Float32;  # kalman-filtered lead accel
+    present @11 :Bool;  # true if a lead is present
+    aLeadTau @12 :Float32;  # lead accel time constant
+    modelProb @13 :Float32;  # vision model lead probability
+    radar @14 :Bool;  # true if lead is radar-matched (vs vision-only)
+    radarTrackId @15 :Int32 = -1;  # for debugging
 
     deprecated :group {
+      aRel @3 :Float32;
       aLead @5 :Float32;
+      dPath @6 :Float32;
+      vLat @7 :Float32;
+      fcw @10 :Bool;
     }
   }
 
@@ -741,6 +741,7 @@ struct RadarState @0x9a185389d6fdd05f {
     calPerc @9 :Int8;
     canMonoTimes @10 :List(UInt64);
     cumLagMs @5 :Float32;
+    carStateMonoTime @11 :UInt64;
     radarErrors @12 :List(Car.RadarData.ErrorDEPRECATED);
   }
 }
@@ -1040,7 +1041,6 @@ struct ModelDataV2 {
   roadEdgeStds @14 :List(Float32);
 
   # predicted lead cars
-  leads @11 :List(LeadDataV2);
   leadsV3 @18 :List(LeadDataV3);
 
   meta @12 :MetaData;
@@ -1050,8 +1050,9 @@ struct ModelDataV2 {
   action @26: Action;
 
   lateralPlannerSolutionDEPRECATED @25: Deprecated.LateralPlannerSolution;
+  leadsDEPRECATED @11 :List(LeadDataV2DEPRECATED);
 
-  struct LeadDataV2 {
+  struct LeadDataV2DEPRECATED {
     prob @0 :Float32; # probability that car is your lead at time t
     t @1 :Float32;
 
