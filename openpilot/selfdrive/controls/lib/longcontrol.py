@@ -6,6 +6,7 @@ from openpilot.common.pid import PIDController
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
+TAKEOVER_ACCEL_JERK = 2.0  # m/s^3, only limits increasing accel on takeover
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -15,6 +16,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego,
   starting_condition = (not should_stop and
                         not cruise_standstill and
                         not brake_pressed)
+  use_starting_state = CP.startingState and v_ego <= CP.vEgoStarting
 
   if not active:
     long_control_state = LongCtrlState.off
@@ -23,13 +25,13 @@ def long_control_state_trans(CP, active, long_control_state, v_ego,
     if long_control_state == LongCtrlState.off:
       if not starting_condition:
         long_control_state = LongCtrlState.stopping
-      elif CP.startingState:
+      elif use_starting_state:
         long_control_state = LongCtrlState.starting
       else:
         long_control_state = LongCtrlState.pid
 
     elif long_control_state == LongCtrlState.stopping:
-      if starting_condition and CP.startingState:
+      if starting_condition and use_starting_state:
         long_control_state = LongCtrlState.starting
       elif starting_condition:
         long_control_state = LongCtrlState.pid
@@ -49,15 +51,18 @@ class LongControl:
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                              rate=1 / DT_CTRL)
     self.last_output_accel = 0.0
+    self.takeover_active = False
 
   def reset(self):
     self.pid.reset()
+    self.takeover_active = False
 
   def update(self, active, CS, a_target, should_stop, accel_limits):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
+    prev_long_control_state = self.long_control_state
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        should_stop, CS.brakePressed,
                                                        CS.cruiseState.standstill)
@@ -78,8 +83,20 @@ class LongControl:
 
     else:  # LongCtrlState.pid
       error = a_target - CS.aEgo
-      output_accel = self.pid.update(error, speed=CS.vEgo,
-                                     feedforward=a_target)
+      starting_takeover = prev_long_control_state == LongCtrlState.off
+      raw_output_accel = self.pid.update(error, speed=CS.vEgo, feedforward=a_target,
+                                         freeze_integrator=starting_takeover or self.takeover_active)
+
+      if starting_takeover:
+        # Match measured acceleration when it is safer than the request, then
+        # smoothly add acceleration. Never delay a stronger decel request.
+        output_accel = min(raw_output_accel, CS.aEgo)
+        self.takeover_active = output_accel < raw_output_accel
+      elif self.takeover_active:
+        output_accel = min(raw_output_accel, self.last_output_accel + TAKEOVER_ACCEL_JERK * DT_CTRL)
+        self.takeover_active = output_accel < raw_output_accel
+      else:
+        output_accel = raw_output_accel
 
     self.last_output_accel = np.clip(output_accel, accel_limits[0], accel_limits[1])
     return self.last_output_accel
