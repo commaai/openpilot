@@ -711,15 +711,15 @@ struct RadarState @0x9a185389d6fdd05f {
   leadTwo @4 :LeadData;
 
   struct LeadData {
-    dRel @0 :Float32;
-    yRel @1 :Float32;
-    vRel @2 :Float32;
-    vLead @4 :Float32;
+    dRel @0 :Float32;  # m from the front bumper of the car
+    yRel @1 :Float32;  # m in car frame, left positive
+    vRel @2 :Float32;  # m/s relative longitudinal speed
+    vLead @4 :Float32;  # m/s absolute lead speed
     vLeadK @8 :Float32;  # kalman-filtered lead speed
     aLeadK @9 :Float32;  # kalman-filtered lead accel
-    present @11 :Bool;
-    aLeadTau @12 :Float32;
-    modelProb @13 :Float32;
+    present @11 :Bool;  # true if a lead is present
+    aLeadTau @12 :Float32;  # lead accel time constant
+    modelProb @13 :Float32;  # vision model lead probability
     radar @14 :Bool;  # true if lead is radar-matched (vs vision-only)
     radarTrackId @15 :Int32 = -1;  # for debugging
 
