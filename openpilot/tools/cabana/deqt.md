@@ -14,6 +14,9 @@ our workflow is:
 - spin up reviewer agents to review the code in a clean context and a separate one to click around in xvfb as a gui test
 - then implement the fixes from the above reviewer agents
 
+some rules
+- do not add more Qt usage ever
+
 - `QObject`, `QMetaObject`, `QMetaType`
 - `QApplication`, `QCoreApplication`, `QGuiApplication`
 - `QString`, `QStringList`, `QStringBuilder`, `QChar`, `QLatin1Char`
@@ -22,7 +25,6 @@ our workflow is:
 - `QVector`, `QMap`, `QSet`, `QPointer`
 - `QJsonDocument`, `QJsonObject`, `QJsonArray`, `QJsonValue`
 - `QSettings`
-- `QDateTime`, `QLocale`
 - `QFile`, `QFileInfo`, `QDir`, `QIODevice`, `QStandardPaths`
 - `QThread`
 - `QTimer`, `QBasicTimer`, `QTimerEvent`

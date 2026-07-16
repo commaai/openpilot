@@ -2,7 +2,11 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
 #include <csignal>
+#include <ctime>
 #include <limits>
 #include <memory>
 #include <string>
@@ -10,10 +14,8 @@
 #include <unistd.h>
 
 #include <QColor>
-#include <QDateTime>
 #include <QDir>
 #include <QFontDatabase>
-#include <QLocale>
 #include <QPixmapCache>
 #include <QSurfaceFormat>
 #include <QFileInfo>
@@ -262,11 +264,34 @@ QValidator::State IpAddressValidator::validate(QString &input, int &pos) const {
   return (dots == 3 && has_digit) ? QValidator::Acceptable : QValidator::Intermediate;
 }
 
-DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
-  // Match locale of QString::toDouble() instead of system
-  QLocale locale(QLocale::C);
-  locale.setNumberOptions(QLocale::RejectGroupSeparator);
-  setLocale(locale);
+DoubleValidator::DoubleValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+
+  // Match QString::toDouble() (C locale, no group separators).
+  const QByteArray bytes = input.toLatin1();
+  const char *start = bytes.constData();
+  char *end = nullptr;
+  std::strtod(start, &end);
+  if (end == start) {
+    // Still typing a sign, decimal point, or exponent prefix.
+    if (input == "-" || input == "+" || input == "." || input == "-." || input == "+.") {
+      return QValidator::Intermediate;
+    }
+    return QValidator::Invalid;
+  }
+  if (*end == '\0') return QValidator::Acceptable;
+
+  // Partial exponent / trailing sign while typing (e.g. "1e", "1e-", "1.").
+  for (const char *p = end; *p; ++p) {
+    const char c = *p;
+    if (!(c == 'e' || c == 'E' || c == '+' || c == '-' || c == '.' || (c >= '0' && c <= '9'))) {
+      return QValidator::Invalid;
+    }
+  }
+  return QValidator::Intermediate;
 }
 
 namespace utils {
@@ -332,10 +357,34 @@ void setTheme(int theme) {
 }
 
 QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
-  QString format = absolute_time ? "yyyy-MM-dd hh:mm:ss"
-                                 : (sec > 60 * 60 ? "hh:mm:ss" : "mm:ss");
-  if (include_milliseconds) format += ".zzz";
-  return QDateTime::fromMSecsSinceEpoch(sec * 1000).toString(format);
+  if (absolute_time) {
+    const auto ms_total = static_cast<int64_t>(std::llround(sec * 1000.0));
+    const std::time_t secs = static_cast<std::time_t>(ms_total / 1000);
+    int millis = static_cast<int>(ms_total % 1000);
+    if (millis < 0) millis = -millis;
+    std::tm tm{};
+    localtime_r(&secs, &tm);
+    char buf[64];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+    if (include_milliseconds) {
+      return QString::asprintf("%s.%03d", buf, millis);
+    }
+    return QString::fromUtf8(buf);
+  }
+
+  // Relative duration (not wall-clock).
+  const bool show_hours = sec > 60 * 60;
+  int total_ms = static_cast<int>(std::llround(std::max(0.0, sec) * 1000.0));
+  const int hours = total_ms / (3600 * 1000);
+  const int minutes = (total_ms / (60 * 1000)) % 60;
+  const int seconds = (total_ms / 1000) % 60;
+  const int millis = total_ms % 1000;
+  if (show_hours) {
+    return include_milliseconds ? QString::asprintf("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis)
+                                : QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
+  }
+  return include_milliseconds ? QString::asprintf("%02d:%02d.%03d", minutes, seconds, millis)
+                              : QString::asprintf("%02d:%02d", minutes, seconds);
 }
 
 }  // namespace utils

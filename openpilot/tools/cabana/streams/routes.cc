@@ -1,7 +1,10 @@
 #include "tools/cabana/streams/routes.h"
 
+#include <chrono>
+#include <ctime>
+#include <thread>
+
 #include <QApplication>
-#include <QDateTime>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QJsonArray>
@@ -11,7 +14,6 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPointer>
-#include <thread>
 
 #include "tools/replay/py_downloader.h"
 
@@ -25,6 +27,45 @@ std::pair<bool, int> checkApiResponse(const std::string &result) {
     return {false, doc.object()["error"].toString() == "unauthorized" ? 401 : 500};
   }
   return {true, 0};
+}
+
+int64_t nowUnixMs() {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+             std::chrono::system_clock::now().time_since_epoch())
+      .count();
+}
+
+// Parse ISO-8601 (with optional fractional seconds / Z) to unix ms. Returns 0 on failure.
+int64_t parseIsoToUnixMs(const QString &s) {
+  QByteArray bytes = s.toUtf8();
+  // Strip trailing Z
+  if (bytes.endsWith('Z') || bytes.endsWith('z')) bytes.chop(1);
+  // Split fractional seconds
+  int millis = 0;
+  int dot = bytes.indexOf('.');
+  if (dot >= 0) {
+    QByteArray frac = bytes.mid(dot + 1);
+    bytes = bytes.left(dot);
+    while (frac.size() < 3) frac.append('0');
+    millis = frac.left(3).toInt();
+  }
+  std::tm tm{};
+  const char *ret = strptime(bytes.constData(), "%Y-%m-%dT%H:%M:%S", &tm);
+  if (!ret) ret = strptime(bytes.constData(), "%Y-%m-%d %H:%M:%S", &tm);
+  if (!ret) return 0;
+  tm.tm_isdst = -1;
+  time_t secs = timegm(&tm);
+  if (secs == static_cast<time_t>(-1)) return 0;
+  return static_cast<int64_t>(secs) * 1000 + millis;
+}
+
+QString formatUnixMs(int64_t ms) {
+  time_t secs = static_cast<time_t>(ms / 1000);
+  std::tm tm{};
+  localtime_r(&secs, &tm);
+  char buf[64];
+  std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+  return QString::fromUtf8(buf);
 }
 
 }  // namespace
@@ -106,9 +147,8 @@ void RoutesDialog::fetchRoutes() {
   bool preserved = (period == -1);
   int64_t start_ms = 0, end_ms = 0;
   if (!preserved) {
-    QDateTime now = QDateTime::currentDateTime();
-    start_ms = now.addDays(-period).toMSecsSinceEpoch();
-    end_ms = now.toMSecsSinceEpoch();
+    end_ms = nowUnixMs();
+    start_ms = end_ms - static_cast<int64_t>(period) * 24LL * 60LL * 60LL * 1000LL;
   }
 
   int request_id = ++fetch_id_;
@@ -125,15 +165,16 @@ void RoutesDialog::fetchRoutes() {
 void RoutesDialog::parseRouteList(const QString &json, bool success, int error_code) {
   if (success) {
     for (const QJsonValue &route : QJsonDocument::fromJson(json.toUtf8()).array()) {
-      QDateTime from, to;
+      int64_t from_ms = 0, to_ms = 0;
       if (period_selector_->currentData().toInt() == -1) {
-        from = QDateTime::fromString(route["start_time"].toString(), Qt::ISODateWithMs);
-        to = QDateTime::fromString(route["end_time"].toString(), Qt::ISODateWithMs);
+        from_ms = parseIsoToUnixMs(route["start_time"].toString());
+        to_ms = parseIsoToUnixMs(route["end_time"].toString());
       } else {
-        from = QDateTime::fromMSecsSinceEpoch(route["start_time_utc_millis"].toDouble());
-        to = QDateTime::fromMSecsSinceEpoch(route["end_time_utc_millis"].toDouble());
+        from_ms = static_cast<int64_t>(route["start_time_utc_millis"].toDouble());
+        to_ms = static_cast<int64_t>(route["end_time_utc_millis"].toDouble());
       }
-      auto item = new QListWidgetItem(QString("%1    %2min").arg(from.toString()).arg(from.secsTo(to) / 60));
+      const int mins = static_cast<int>((to_ms - from_ms) / 60000);
+      auto item = new QListWidgetItem(QString("%1    %2min").arg(formatUnixMs(from_ms)).arg(mins));
       item->setData(Qt::UserRole, route["fullname"].toString());
       route_list_->addItem(item);
     }

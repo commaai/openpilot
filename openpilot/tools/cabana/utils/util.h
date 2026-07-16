@@ -10,7 +10,6 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QColor>
-#include <QDoubleValidator>
 #include <QFont>
 #include <QFontMetrics>
 #include <QPainter>
@@ -122,10 +121,12 @@ public:
   QValidator::State validate(QString &input, int &pos) const override;
 };
 
-class DoubleValidator : public QDoubleValidator {
+// C-locale floating-point validator (matches QString::toDouble).
+class DoubleValidator : public QValidator {
   Q_OBJECT
 public:
   DoubleValidator(QObject *parent = nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
 };
 
 namespace utils {
