@@ -324,12 +324,6 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 // StreamCameraView
 StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent)
     : CameraWidget(stream_name, stream_type, parent) {
-  fade_animation = new QPropertyAnimation(this, "overlayOpacity");
-  fade_animation->setDuration(500);
-  fade_animation->setStartValue(0.2f);
-  fade_animation->setEndValue(0.7f);
-  fade_animation->setEasingCurve(QEasingCurve::InOutQuad);
-  connect(fade_animation, &QPropertyAnimation::valueChanged, this, QOverload<>::of(&StreamCameraView::update));
 }
 
 void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
@@ -376,7 +370,7 @@ void StreamCameraView::paintGL() {
   }
 
   if (can->isPaused()) {
-    p.setPen(QColor(200, 200, 200, static_cast<int>(255 * fade_animation->currentValue().toFloat())));
+    p.setPen(QColor(200, 200, 200, static_cast<int>(255 * 0.7f)));
     p.setFont(QFont(font().family(), 16, QFont::Bold));
     p.drawText(rect(), Qt::AlignCenter, tr("PAUSED"));
   }

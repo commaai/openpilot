@@ -11,10 +11,8 @@
 #include <QGraphicsLayout>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsItemGroup>
-#include <QGraphicsOpacityEffect>
 #include <QMimeData>
 #include <QOpenGLWidget>
-#include <QPropertyAnimation>
 #include <QRubberBand>
 #include <QScreen>
 #include <QWindow>
@@ -644,14 +642,8 @@ void ChartView::resetChartCache() {
 }
 
 void ChartView::startAnimation() {
-  QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
-  viewport()->setGraphicsEffect(eff);
-  QPropertyAnimation *a = new QPropertyAnimation(eff, "opacity");
-  a->setDuration(250);
-  a->setStartValue(0.3);
-  a->setEndValue(1);
-  a->setEasingCurve(QEasingCurve::InBack);
-  a->start(QPropertyAnimation::DeleteWhenStopped);
+  // Previously faded the chart in with QPropertyAnimation; just repaint.
+  viewport()->update();
 }
 
 void ChartView::paintEvent(QPaintEvent *event) {

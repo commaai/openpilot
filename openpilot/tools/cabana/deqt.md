@@ -64,7 +64,6 @@ our workflow is:
 - `QGraphicsScene`, `QGraphicsView`, `QGraphicsItemGroup`, `QGraphicsLayout`
 - `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
 - `QGraphicsDropShadowEffect`, `QGraphicsOpacityEffect`
-- `QPropertyAnimation`, `QEasingCurve`
 - `QOpenGLWidget`, `QOpenGLFunctions`
 - `QOpenGLShader`, `QOpenGLShaderProgram`
 - `QMatrix4x4`, `QSurfaceFormat`
