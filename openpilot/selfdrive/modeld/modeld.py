@@ -2,6 +2,7 @@
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
+import queue
 import threading
 import time
 import numpy as np
@@ -133,19 +134,64 @@ class ModelState:
       outputs_dict['raw_pred'] = model_output.copy()
     return outputs_dict
 
-  def warmup(self) -> None:
-    bufs = {k: np.zeros(self.frame_buf_params[k][3], dtype=np.uint8) for k in self.vision_input_names}
-    transforms = {k: np.zeros((3, 3), dtype=np.float32) for k in self.vision_input_names}
-    inputs = {
-      'desire_pulse': np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32),
-      'traffic_convention': np.zeros(2, dtype=np.float32),
-      'action_t': np.zeros(2, dtype=np.float32),
-    }
-    self.run(bufs, transforms, inputs)  # type: ignore[arg-type]
-    self.prev_desire.fill(0)
-    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
-    self.full_frames.clear()
-    self._blob_cache.clear()
+class BigModelWorker:
+  READY_OUTPUTS = 5
+
+  def __init__(self, cam_w: int, cam_h: int):
+    self.cam_w, self.cam_h = cam_w, cam_h
+    self.jobs = queue.Queue(maxsize=1)
+    self.results = queue.Queue(maxsize=1)
+    self.ready = False
+    self.failed = False
+    self.last_output_time = 0.0
+    threading.Thread(target=self._run, daemon=True).start()
+
+  @staticmethod
+  def _replace(q: queue.Queue, item) -> None:
+    try:
+      q.put_nowait(item)
+    except queue.Full:
+      try:
+        q.get_nowait()
+      except queue.Empty:
+        pass
+      q.put_nowait(item)
+
+  def submit(self, job) -> None:
+    if not self.failed:
+      self._replace(self.jobs, job)
+
+  def get_result(self):
+    result = None
+    while True:
+      try:
+        result = self.results.get_nowait()
+      except queue.Empty:
+        return result
+
+  def _run(self) -> None:
+    drop_realtime()
+    set_core_affinity([7])
+    try:
+      model = ModelState(self.cam_w, self.cam_h, True)
+      good_outputs = 0
+      while True:
+        job = self.jobs.get()
+        buf_main, buf_extra, transform_main, transform_extra, inputs, frame_meta = job
+        bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
+        transforms = {name: transform_extra if 'big' in name else transform_main for name in model.vision_input_names}
+        mt1 = time.perf_counter()
+        model_output = model.run(bufs, transforms, inputs)
+        execution_time = time.perf_counter() - mt1
+        if model_output is None:
+          continue
+        good_outputs += 1
+        self.ready = good_outputs >= self.READY_OUTPUTS
+        self.last_output_time = time.monotonic()
+        self._replace(self.results, (model_output, execution_time, frame_meta))
+    except Exception:
+      cloudlog.exception("big model worker failed")
+      self.failed = True
 
 
 def main(demo=False):
@@ -187,25 +233,10 @@ def main(demo=False):
   st = time.monotonic()
   cloudlog.warning("loading model")
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False if fallback else USBGPU)
-  model = small_model
-  big_model = None
-  big_failed = False
-  params.put_bool("UsbGpuActive", USBGPU and not fallback)
-
-  def load_big_model():
-    nonlocal big_model, big_failed
-    drop_realtime()
-    set_core_affinity([7])
-    try:
-      candidate = ModelState(vipc_client_main.width, vipc_client_main.height, True)
-      candidate.warmup()
-      big_model = candidate
-    except Exception:
-      cloudlog.exception("big model failed to load")
-      big_failed = True
-
-  if fallback:
-    threading.Thread(target=load_big_model, daemon=True).start()
+  big_worker = BigModelWorker(vipc_client_main.width, vipc_client_main.height) if fallback else None
+  big_active = False
+  reported_big_active = USBGPU and not fallback
+  params.put_bool("UsbGpuActive", reported_big_active)
   cloudlog.warning(f"model loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
@@ -217,6 +248,8 @@ def main(demo=False):
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
   frame_id = 0
   last_vipc_frame_id = 0
+  last_big_frame_id = -1
+  latest_big_result = None
   run_count = 0
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
@@ -273,15 +306,14 @@ def main(demo=False):
       meta_extra = meta_main
 
     sm.update(0)
-    if not sm["carControl"].enabled:
-      next_model = model
-      if big_failed:
-        next_model = small_model
-      elif big_model is not None:
-        next_model = big_model
-      if next_model is not model:
-        model = next_model
-        params.put_bool("UsbGpuActive", model is not small_model)
+    if big_worker is not None:
+      if big_worker.failed:
+        big_active = False
+      elif not sm["carControl"].enabled and big_worker.ready:
+        big_active = True
+      if big_active != reported_big_active:
+        params.put_bool("UsbGpuActive", big_active)
+        reported_big_active = big_active
 
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
@@ -313,8 +345,8 @@ def main(demo=False):
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
 
-    bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
-    transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
+    bufs = {name: buf_extra if 'big' in name else buf_main for name in small_model.vision_input_names}
+    transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in small_model.vision_input_names}
     frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
     action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
     lat_action_t = lat_delay + frame_delay + action_delay
@@ -325,31 +357,51 @@ def main(demo=False):
       'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
     }
 
-    if big_failed and model is not small_model:
-      continue
-
     mt1 = time.perf_counter()
-    try:
-      model_output = model.run(bufs, transforms, inputs)
-    except Exception:
-      if model is small_model:
-        raise
-      cloudlog.exception("big model failed")
-      big_failed = True
-      continue
+    small_output = small_model.run(bufs, transforms, inputs)
     mt2 = time.perf_counter()
-    model_execution_time = mt2 - mt1
+    small_execution_time = mt2 - mt1
+
+    if big_worker is not None:
+      worker_inputs = {name: value.copy() for name, value in inputs.items()}
+      worker_meta = (meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
+                     meta_main.timestamp_eof, vipc_dropped_frames, live_calib_seen,
+                     lat_action_t, long_action_t, v_ego)
+      big_worker.submit((buf_main, buf_extra, model_transform_main.copy(), model_transform_extra.copy(), worker_inputs, worker_meta))
+
+    model_output = small_output
+    model_execution_time = small_execution_time
+    output_meta = (meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
+                   meta_main.timestamp_eof, vipc_dropped_frames, live_calib_seen,
+                   lat_action_t, long_action_t, v_ego)
+    big_result = big_worker.get_result() if big_worker is not None else None
+    if big_result is not None:
+      latest_big_result = big_result
+    if big_active:
+      if latest_big_result is not None and latest_big_result[2][0] > last_big_frame_id:
+        big_output, big_execution_time, big_meta = latest_big_result
+        model_output, model_execution_time, output_meta = big_output, big_execution_time, big_meta
+        last_big_frame_id = big_meta[0]
+      elif time.monotonic() - big_worker.last_output_time > 0.15:
+        big_worker.failed = True
+        big_active = False
+        params.put_bool("UsbGpuActive", False)
+        reported_big_active = False
+        cloudlog.error("big model missed output, falling back to small")
+
+    out_main_frame_id, out_extra_frame_id, out_frame_id, out_drop_ratio, out_timestamp_eof, \
+      out_vipc_dropped_frames, out_live_calib_seen, out_lat_action_t, out_long_action_t, out_v_ego = output_meta
 
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
-      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
+      action = get_action_from_model(model_output, prev_action, out_lat_action_t, out_long_action_t, out_v_ego)
       prev_action = action
       fill_model_msg(modelv2_send, model_output, action,
-                     publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
-                     frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen)
+                     publish_state, out_main_frame_id, out_extra_frame_id, out_frame_id,
+                     out_drop_ratio, out_timestamp_eof, model_execution_time, out_live_calib_seen)
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
@@ -360,7 +412,7 @@ def main(demo=False):
       modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
 
       fill_driving_model_data(drivingdata_send, modelv2_send)
-      fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
+      fill_pose_msg(posenet_send, model_output, out_main_frame_id, out_vipc_dropped_frames, out_timestamp_eof, out_live_calib_seen)
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
