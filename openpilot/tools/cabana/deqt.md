@@ -23,7 +23,6 @@ some rules
 - `QByteArray`
 - `QVariant`
 - `QVector`, `QMap`, `QSet`, `QPointer`
-- `QSettings`
 - `QFile`, `QFileInfo`, `QDir`, `QIODevice`, `QStandardPaths`
 - `QThread`
 - `QTimer`, `QBasicTimer`, `QTimerEvent`
