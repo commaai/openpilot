@@ -276,7 +276,7 @@ def main(demo=False):
     if big_failed and model is not small_model:
       model = small_model
       params.put_bool("UsbGpuActive", False)
-    elif not sm["carControl"].enabled and big_model is not None and model is not big_model:
+    elif not big_failed and not sm["carControl"].enabled and big_model is not None and model is not big_model:
       model = big_model
       params.put_bool("UsbGpuActive", True)
 
