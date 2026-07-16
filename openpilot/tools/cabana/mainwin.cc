@@ -570,6 +570,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   remindSaveChanges();
 
   installDownloadProgressHandler(nullptr);
+  installMessageHandler(nullptr);
 
   if (floating_window)
     floating_window->deleteLater();

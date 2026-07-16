@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <csignal>
 #include <cstring>
+#include <fcntl.h>
 #include <memory>
 #include <string>
 #include <unistd.h>
@@ -55,16 +56,45 @@ void DeviceStream::start() {
     const std::string addr = zmq_address.toStdString();
     const char *can_filter = "/\"can/\"";
 
-    pid_t pid = ::fork();
-    if (pid == 0) {
-      execl(path.c_str(), path.c_str(), addr.c_str(), can_filter, static_cast<char *>(nullptr));
-      _exit(127);
-    }
-    if (pid < 0) {
+    // Self-pipe: write end is CLOEXEC so it closes on successful exec. If exec
+    // fails, the child writes errno and the parent aborts stream start.
+    int err_pipe[2] = {-1, -1};
+    if (::pipe(err_pipe) != 0) {
       QMessageBox::warning(nullptr, tr("Error"),
                            tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
       return;
     }
+
+    pid_t pid = ::fork();
+    if (pid == 0) {
+      ::close(err_pipe[0]);
+      ::fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
+      execl(path.c_str(), path.c_str(), addr.c_str(), can_filter, static_cast<char *>(nullptr));
+      const int err = errno;
+      (void)!::write(err_pipe[1], &err, sizeof(err));
+      _exit(127);
+    }
+
+    ::close(err_pipe[1]);
+    if (pid < 0) {
+      ::close(err_pipe[0]);
+      QMessageBox::warning(nullptr, tr("Error"),
+                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      return;
+    }
+
+    int exec_errno = 0;
+    const ssize_t n = ::read(err_pipe[0], &exec_errno, sizeof(exec_errno));
+    ::close(err_pipe[0]);
+    if (n == static_cast<ssize_t>(sizeof(exec_errno))) {
+      // Child failed to exec; reap and surface the error.
+      int status = 0;
+      ::waitpid(pid, &status, 0);
+      QMessageBox::warning(nullptr, tr("Error"),
+                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(exec_errno))));
+      return;
+    }
+
     bridge_pid = pid;
   }
 
