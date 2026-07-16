@@ -9,7 +9,6 @@
 #include <QApplication>
 #include <QDrag>
 #include <QGraphicsLayout>
-#include <QGraphicsDropShadowEffect>
 #include <QGraphicsItemGroup>
 #include <QMimeData>
 #include <QOpenGLWidget>
@@ -419,27 +418,22 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
   return q * z;
 }
 
+// Soft drop-shadow without QGraphicsDropShadowEffect: stacked translucent rects.
 QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
-  QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
-  e->setColor(QColor(40, 40, 40, 245));
-  e->setOffset(0, 0);
-  e->setBlurRadius(radius);
-
-  qreal dpr = px.devicePixelRatio();
-  QPixmap blank(px.size());
-  blank.setDevicePixelRatio(dpr);
-  blank.fill(Qt::white);
-
-  QGraphicsScene scene;
-  QGraphicsPixmapItem item(blank);
-  item.setGraphicsEffect(e);
-  scene.addItem(&item);
-
+  const qreal dpr = px.devicePixelRatio();
   QPixmap shadow(px.size() + QSize(radius * dpr * 2, radius * dpr * 2));
   shadow.setDevicePixelRatio(dpr);
   shadow.fill(Qt::transparent);
+
   QPainter p(&shadow);
-  scene.render(&p, {QPoint(), shadow.size() / dpr}, item.boundingRect().adjusted(-radius, -radius, radius, radius));
+  p.setRenderHint(QPainter::Antialiasing, true);
+  p.setPen(Qt::NoPen);
+  const QRectF core(radius, radius, px.width() / dpr, px.height() / dpr);
+  for (int i = radius; i >= 1; --i) {
+    const int alpha = std::max(8, 200 * (radius - i + 1) / (radius * (radius + 1) / 2));
+    p.setBrush(QColor(40, 40, 40, std::min(245, alpha)));
+    p.drawRoundedRect(core.adjusted(-i, -i, i, i), 2, 2);
+  }
   return shadow;
 }
 

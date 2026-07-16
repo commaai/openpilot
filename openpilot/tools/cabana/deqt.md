@@ -65,7 +65,6 @@ some rules
 - `QLegend`, `QLegendMarker`
 - `QGraphicsScene`, `QGraphicsView`, `QGraphicsItemGroup`, `QGraphicsLayout`
 - `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
-- `QGraphicsDropShadowEffect`, `QGraphicsOpacityEffect`
 - `QOpenGLWidget`, `QOpenGLFunctions`
 - `QOpenGLShader`, `QOpenGLShaderProgram`
 - `QMatrix4x4`, `QSurfaceFormat`
