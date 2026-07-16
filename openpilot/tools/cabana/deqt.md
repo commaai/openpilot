@@ -20,7 +20,6 @@ some rules
 - `QObject`, `QMetaObject`, `QMetaType`
 - `QApplication`, `QCoreApplication`, `QGuiApplication`
 - `QString`, `QStringList`, `QStringBuilder`, `QChar`, `QLatin1Char`
-- `QByteArray`
 - `QVariant`
 - `QThread`
 - `QTimer`, `QBasicTimer`, `QTimerEvent`

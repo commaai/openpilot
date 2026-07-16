@@ -273,13 +273,13 @@ QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
   if (input.isEmpty()) return QValidator::Intermediate;
 
   // Match QString::toDouble(): C locale, no hex floats / inf / nan.
-  const QByteArray bytes = input.toLatin1();
+  const std::string bytes = input.toLatin1().toStdString();
   // strtod accepts 0x… hex floats and p-exponents; QString::toDouble does not.
-  if (bytes.contains('x') || bytes.contains('X') || bytes.contains('p') || bytes.contains('P')) {
+  if (bytes.find_first_of("xXpP") != std::string::npos) {
     return QValidator::Invalid;
   }
 
-  const char *start = bytes.constData();
+  const char *start = bytes.c_str();
   char *end = nullptr;
   const double value = std::strtod(start, &end);
   if (end == start) {
@@ -496,7 +496,7 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   app_dir = std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
 #endif
 
-  qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
+  qputenv("QT_DBL_CLICK_DIST", "150");
   // ensure the current dir matches the exectuable's directory
   std::error_code ec;
   std::filesystem::current_path(app_dir, ec);

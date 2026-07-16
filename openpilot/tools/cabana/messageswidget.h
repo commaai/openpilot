@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <set>
@@ -96,8 +97,13 @@ class MessagesWidget : public QWidget {
 public:
   MessagesWidget(QWidget *parent);
   void selectMessage(const MessageId &message_id);
-  QByteArray saveHeaderState() const { return view->header()->saveState(); }
-  bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
+  std::vector<uint8_t> saveHeaderState() const {
+    const auto state = view->header()->saveState();
+    return {state.begin(), state.end()};
+  }
+  bool restoreHeaderState(const std::vector<uint8_t> &state) const {
+    return view->header()->restoreState({(const char *)state.data(), (int)state.size()});
+  }
   void suppressHighlighted();
 
 signals:

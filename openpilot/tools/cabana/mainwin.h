@@ -6,9 +6,11 @@
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
+#include <cstdint>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -98,7 +100,7 @@ protected:
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
   QString car_fingerprint;
-  QByteArray default_state;
+  std::vector<uint8_t> default_state;
 };
 
 class HelpOverlay : public QWidget {

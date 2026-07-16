@@ -447,7 +447,7 @@ void ChartView::contextMenuEvent(QContextMenuEvent *event) {
 void ChartView::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && move_icon->sceneBoundingRect().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
-    mimeData->setData(CHART_MIME_TYPE, QByteArray::number((qulonglong)this));
+    mimeData->setData(CHART_MIME_TYPE, QString::number((qulonglong)this).toUtf8());
     QPixmap px = grab().scaledToWidth(CHART_MIN_WIDTH * viewport()->devicePixelRatio(), Qt::SmoothTransformation);
     charts_widget->stopAutoScroll();
     QDrag *drag = new QDrag(this);

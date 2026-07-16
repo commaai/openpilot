@@ -10,7 +10,6 @@
 #include <utility>
 
 #include <QApplication>
-#include <QByteArray>
 #include <QColor>
 #include <QFont>
 #include <QFontMetrics>
@@ -146,7 +145,22 @@ inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text)
   p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
 }
 inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
-  return QByteArray::fromRawData((const char *)dat.data(), dat.size()).toHex(separator).toUpper();
+  static const char digits[] = "0123456789ABCDEF";
+  QString hex;
+  hex.reserve(dat.size() * (separator ? 3 : 2));
+  for (size_t i = 0; i < dat.size(); ++i) {
+    if (separator && i) hex += QLatin1Char(separator);
+    hex += QLatin1Char(digits[dat[i] >> 4]);
+    hex += QLatin1Char(digits[dat[i] & 0xf]);
+  }
+  return hex;
+}
+
+// boundary conversions for the remaining Qt byte-array based state APIs
+template <typename T>
+std::vector<uint8_t> toBytes(const T &dat) { return {dat.begin(), dat.end()}; }
+inline auto qbytes(const std::vector<uint8_t> &dat) {
+  return decltype(QString().toUtf8())((const char *)dat.data(), (int)dat.size());
 }
 
 }

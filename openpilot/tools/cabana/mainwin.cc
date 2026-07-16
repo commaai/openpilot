@@ -37,11 +37,11 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   createShortcuts();
 
   // save default window state to allow resetting it
-  default_state = saveState();
+  default_state = utils::toBytes(saveState());
 
   // restore states
-  restoreGeometry(settings.geometry);
-  restoreState(settings.window_state);
+  restoreGeometry(utils::qbytes(settings.geometry));
+  restoreState(utils::qbytes(settings.window_state));
 
   // install handlers
   static auto static_main_win = this;
@@ -155,7 +155,7 @@ void MainWindow::createActions() {
   view_menu->addAction(messages_dock->toggleViewAction());
   view_menu->addAction(video_dock->toggleViewAction());
   view_menu->addSeparator();
-  view_menu->addAction(tr("Reset Window Layout"), [this]() { restoreState(default_state); });
+  view_menu->addAction(tr("Reset Window Layout"), [this]() { restoreState(utils::qbytes(default_state)); });
 
   // Tools Menu
   tools_menu = menuBar()->addMenu(tr("&Tools"));
@@ -202,7 +202,7 @@ void MainWindow::createDockWidgets() {
 
   video_splitter->addWidget(charts_container);
   video_splitter->setStretchFactor(1, 1);
-  video_splitter->restoreState(settings.video_splitter_state);
+  video_splitter->restoreState(utils::qbytes(settings.video_splitter_state));
   video_splitter->handle(1)->setEnabled(!can->liveStreaming());
   video_dock->setWidget(video_splitter);
   QObject::connect(charts_widget, &ChartsWidget::toggleChartsDocking, this, &MainWindow::toggleChartsDocking);
@@ -585,10 +585,10 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     floating_window->deleteLater();
 
   // save states
-  settings.geometry = saveGeometry();
-  settings.window_state = saveState();
+  settings.geometry = utils::toBytes(saveGeometry());
+  settings.window_state = utils::toBytes(saveState());
   if (can && !can->liveStreaming()) {
-    settings.video_splitter_state = video_splitter->saveState();
+    settings.video_splitter_state = utils::toBytes(video_splitter->saveState());
   }
   if (messages_widget) {
     settings.message_header_state = messages_widget->saveHeaderState();

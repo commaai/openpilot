@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <cctype>
 #include <charconv>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -158,6 +159,13 @@ struct LegacyValue {
 
 using LegacySettings = std::map<std::string, LegacyValue>;
 
+int hexDigit(char c) {
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  return -1;
+}
+
 #ifndef __APPLE__
 
 void appendUtf8(std::string &result, uint32_t codepoint) {
@@ -176,13 +184,6 @@ void appendUtf8(std::string &result, uint32_t codepoint) {
     result.push_back(0x80 | ((codepoint >> 6) & 0x3f));
     result.push_back(0x80 | (codepoint & 0x3f));
   }
-}
-
-int hexDigit(char c) {
-  if (c >= '0' && c <= '9') return c - '0';
-  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-  return -1;
 }
 
 LegacyValue decodeIniValue(std::string_view encoded) {
@@ -392,10 +393,10 @@ void readLegacySetting(const LegacySettings &legacy_settings, const char *key, s
   if (it != legacy_settings.end() && !it->second.is_byte_array) value = it->second.strings;
 }
 
-void readLegacySetting(const LegacySettings &legacy_settings, const char *key, QByteArray &value) {
+void readLegacySetting(const LegacySettings &legacy_settings, const char *key, std::vector<uint8_t> &value) {
   auto it = legacy_settings.find(key);
   if (it != legacy_settings.end() && it->second.is_byte_array) {
-    value = QByteArray(it->second.bytes.data(), static_cast<int>(it->second.bytes.size()));
+    value.assign(it->second.bytes.begin(), it->second.bytes.end());
   }
 }
 
@@ -430,13 +431,17 @@ void readSetting(const json11::Json::object &settings_json, const char *key, std
   value = std::move(stored);
 }
 
-void readSetting(const json11::Json::object &settings_json, const char *key, QByteArray &value) {
+void readSetting(const json11::Json::object &settings_json, const char *key, std::vector<uint8_t> &value) {
   auto it = settings_json.find(key);
   if (it == settings_json.end() || !it->second.is_string()) return;
 
   const auto &hex = it->second.string_value();
   if (hex.size() % 2 == 0 && std::all_of(hex.begin(), hex.end(), [](unsigned char c) { return std::isxdigit(c); })) {
-    value = QByteArray::fromHex(hex.c_str());
+    value.clear();
+    value.reserve(hex.size() / 2);
+    for (size_t i = 0; i < hex.size(); i += 2) {
+      value.push_back((hexDigit(hex[i]) << 4) | hexDigit(hex[i + 1]));
+    }
   }
 }
 
@@ -457,8 +462,15 @@ void writeSetting(json11::Json::object &settings_json, const char *key, const st
   settings_json[key] = value;
 }
 
-void writeSetting(json11::Json::object &settings_json, const char *key, const QByteArray &value) {
-  settings_json[key] = value.toHex().toStdString();
+void writeSetting(json11::Json::object &settings_json, const char *key, const std::vector<uint8_t> &value) {
+  static const char digits[] = "0123456789abcdef";
+  std::string hex;
+  hex.reserve(value.size() * 2);
+  for (uint8_t b : value) {
+    hex.push_back(digits[b >> 4]);
+    hex.push_back(digits[b & 0xf]);
+  }
+  settings_json[key] = hex;
 }
 
 template <class Store, class SettingOperation>
