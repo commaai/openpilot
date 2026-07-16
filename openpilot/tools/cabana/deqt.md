@@ -62,7 +62,6 @@ some rules
 - `QChart`, `QChartView`, `QAbstractAxis`, `QValueAxis`
 - `QXYSeries`, `QLineSeries`, `QScatterSeries`
 - `QLegend`, `QLegendMarker`
-- `QGraphicsScene`, `QGraphicsView`, `QGraphicsItemGroup`, `QGraphicsLayout`
 - `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
 - `QOpenGLWidget`, `QOpenGLFunctions`
 - `QOpenGLShader`, `QOpenGLShaderProgram`

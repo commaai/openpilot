@@ -8,8 +8,6 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QDrag>
-#include <QGraphicsLayout>
-#include <QGraphicsItemGroup>
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QRubberBand>
@@ -25,6 +23,15 @@ const double MIN_ZOOM_SECONDS = 0.01; // 10ms
 const float EPSILON = 0.000001;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < (x - EPSILON); }
 
+static QMargins layoutMargins(const QStyle *style) {
+  return {
+    style->pixelMetric(QStyle::PM_LayoutLeftMargin),
+    style->pixelMetric(QStyle::PM_LayoutTopMargin),
+    style->pixelMetric(QStyle::PM_LayoutRightMargin),
+    style->pixelMetric(QStyle::PM_LayoutBottomMargin),
+  };
+}
+
 ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
     : charts_widget(parent), QChartView(parent) {
   series_type = (SeriesType)settings.chart_series_type;
@@ -33,7 +40,6 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   axis_y = new QValueAxis(this);
   chart()->addAxis(axis_x, Qt::AlignBottom);
   chart()->addAxis(axis_y, Qt::AlignLeft);
-  chart()->legend()->layout()->setContentsMargins(0, 0, 0, 0);
   chart()->legend()->setShowToolTips(true);
   chart()->setMargins({0, 0, 0, 0});
 
@@ -186,12 +192,11 @@ void ChartView::manageSignals() {
 }
 
 void ChartView::resizeEvent(QResizeEvent *event) {
-  qreal left, top, right, bottom;
-  chart()->layout()->getContentsMargins(&left, &top, &right, &bottom);
-  move_icon->setPos(left, top);
-  close_btn_proxy->setPos(rect().right() - right - close_btn_proxy->size().width(), top);
+  const auto margins = layoutMargins(chart()->style());
+  move_icon->setPos(margins.left(), margins.top());
+  close_btn_proxy->setPos(rect().right() - margins.right() - close_btn_proxy->size().width(), margins.top());
   int x = close_btn_proxy->pos().x() - manage_btn_proxy->size().width() - style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
-  manage_btn_proxy->setPos(x, top);
+  manage_btn_proxy->setPos(x, margins.top());
   if (align_to > 0) {
     updatePlotArea(align_to, true);
   }
@@ -202,20 +207,25 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
   if (align_to != left_pos || force) {
     align_to = left_pos;
 
-    qreal left, top, right, bottom;
-    chart()->layout()->getContentsMargins(&left, &top, &right, &bottom);
-    QSizeF legend_size = chart()->legend()->layout()->minimumSize();
-    legend_size.setWidth(manage_btn_proxy->sceneBoundingRect().left() - move_icon->sceneBoundingRect().right());
-    chart()->legend()->setGeometry({move_icon->sceneBoundingRect().topRight(), legend_size});
+    const auto margins = layoutMargins(chart()->style());
+    QSizeF legend_content_size = chart()->legend()->minimumSize() -
+                                 QSizeF(margins.left() + margins.right(), margins.top() + margins.bottom());
+    legend_content_size.setWidth(manage_btn_proxy->sceneBoundingRect().left() - move_icon->sceneBoundingRect().right());
+    const QRectF legend_geometry{
+      move_icon->sceneBoundingRect().topRight() - QPointF(margins.left(), margins.top()),
+      legend_content_size + QSizeF(margins.left() + margins.right(), margins.top() + margins.bottom()),
+    };
+    chart()->legend()->setGeometry(legend_geometry);
 
     // add top space for signal value
-    int adjust_top = chart()->legend()->geometry().height() + QFontMetrics(signal_value_font).height() + 3;
+    int adjust_top = legend_content_size.height() + QFontMetrics(signal_value_font).height() + 3;
     adjust_top = std::max<int>(adjust_top, manage_btn_proxy->sceneBoundingRect().height() + style()->pixelMetric(QStyle::PM_LayoutTopMargin));
     // add right space for x-axis label
     QSizeF x_label_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, QString::number(axis_x->max(), 'f', 2));
     x_label_size += QSizeF{5, 5};
-    chart()->setPlotArea(rect().adjusted(align_to + left, adjust_top + top, -x_label_size.width() / 2 - right, -x_label_size.height() - bottom));
-    chart()->layout()->invalidate();
+    chart()->setPlotArea(rect().adjusted(align_to + margins.left(), adjust_top + margins.top(),
+                                         -x_label_size.width() / 2 - margins.right(),
+                                         -x_label_size.height() - margins.bottom()));
     resetChartCache();
   }
 }
@@ -473,7 +483,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     charts_widget->zoom_undo_stack->undo();
     event->accept();
   } else {
-    QGraphicsView::mouseReleaseEvent(event);
+    QChartView::mouseReleaseEvent(event);
   }
 
   // Resume playback if we were scrubbing
@@ -702,7 +712,7 @@ void ChartView::drawTimeline(QPainter *painter) {
 }
 
 void ChartView::drawSignalValue(QPainter *painter) {
-  auto item_group = qgraphicsitem_cast<QGraphicsItemGroup *>(chart()->legend()->childItems()[0]);
+  auto item_group = chart()->legend()->childItems()[0];
   assert(item_group != nullptr);
   auto legend_markers = item_group->childItems();
   assert(legend_markers.size() == sigs.size());
