@@ -1,7 +1,12 @@
 #include "tools/cabana/streams/devicestream.h"
 
+#include <cerrno>
+#include <csignal>
+#include <cstring>
 #include <memory>
 #include <string>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include "openpilot/cereal/services.h"
 
@@ -20,26 +25,47 @@ DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(addre
 }
 
 DeviceStream::~DeviceStream() {
-  if (!bridge_process)
-    return;
+  stopBridge();
+}
 
-  bridge_process->terminate();
-  if (!bridge_process->waitForFinished(3000)) {
-    bridge_process->kill();
-    bridge_process->waitForFinished();
+void DeviceStream::stopBridge() {
+  if (bridge_pid <= 0) return;
+
+  ::kill(bridge_pid, SIGTERM);
+  for (int i = 0; i < 30; ++i) {
+    int status = 0;
+    pid_t r = ::waitpid(bridge_pid, &status, WNOHANG);
+    if (r == bridge_pid || (r < 0 && errno == ECHILD)) {
+      bridge_pid = -1;
+      return;
+    }
+    usleep(100000);  // 100ms, up to ~3s
   }
+  ::kill(bridge_pid, SIGKILL);
+  ::waitpid(bridge_pid, nullptr, 0);
+  bridge_pid = -1;
 }
 
 void DeviceStream::start() {
   if (!zmq_address.isEmpty()) {
-    bridge_process = new QProcess(this);
-    QString bridge_path = QCoreApplication::applicationDirPath() + "/../../openpilot/cereal/messaging/bridge";
-    bridge_process->start(QFileInfo(bridge_path).absoluteFilePath(), QStringList { zmq_address, "/\"can/\"" });
+    stopBridge();
+    QString bridge_path = QFileInfo(QCoreApplication::applicationDirPath() +
+                                    "/../../openpilot/cereal/messaging/bridge").absoluteFilePath();
+    const std::string path = bridge_path.toStdString();
+    const std::string addr = zmq_address.toStdString();
+    const char *can_filter = "/\"can/\"";
 
-    if (!bridge_process->waitForStarted()) {
-      QMessageBox::warning(nullptr, tr("Error"), tr("Failed to start bridge: %1").arg(bridge_process->errorString()));
+    pid_t pid = ::fork();
+    if (pid == 0) {
+      execl(path.c_str(), path.c_str(), addr.c_str(), can_filter, static_cast<char *>(nullptr));
+      _exit(127);
+    }
+    if (pid < 0) {
+      QMessageBox::warning(nullptr, tr("Error"),
+                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
       return;
     }
+    bridge_pid = pid;
   }
 
   LiveStream::start();

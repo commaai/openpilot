@@ -24,7 +24,6 @@ our workflow is:
 - `QSettings`
 - `QDateTime`, `QLocale`
 - `QFile`, `QFileInfo`, `QDir`, `QIODevice`, `QStandardPaths`
-- `QProcess`
 - `QThread`
 - `QTimer`, `QBasicTimer`, `QTimerEvent`
 - `QSocketNotifier`
