@@ -2,14 +2,16 @@
 #include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
+#include <vector>
 
 #include <QClipboard>
 #include <QDesktopWidget>
-#include <QFile>
 #include <QFileDialog>
-#include <QFileInfo>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -73,10 +75,11 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
 }
 
 void MainWindow::loadFingerprints() {
-  QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
-  if (!json_file.open(QIODevice::ReadOnly)) return;
+  std::ifstream json_file((QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json").toStdString());
+  if (!json_file) return;
+  const std::string contents{std::istreambuf_iterator<char>(json_file), std::istreambuf_iterator<char>()};
   std::string err;
-  auto doc = json11::Json::parse(json_file.readAll().toStdString(), err);
+  auto doc = json11::Json::parse(contents, err);
   if (!err.empty() || !doc.is_object()) return;
   fingerprint_to_dbc.clear();
   for (const auto &kv : doc.object_items()) {
@@ -108,8 +111,17 @@ void MainWindow::createActions() {
   file_menu->addSeparator();
   QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
   // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
-  for (const auto &dbc_name : QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
-    load_opendbc_menu->addAction(dbc_name, [this, name = dbc_name]() { loadDBCFromOpendbc(name); });
+  std::vector<std::string> dbc_names;
+  std::error_code ec;
+  for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH, ec)) {
+    if (entry.is_regular_file() && entry.path().extension() == ".dbc") {
+      dbc_names.push_back(entry.path().filename().string());
+    }
+  }
+  std::sort(dbc_names.begin(), dbc_names.end());
+  for (const auto &dbc_name : dbc_names) {
+    QString name = QString::fromStdString(dbc_name);
+    load_opendbc_menu->addAction(name, [this, name]() { loadDBCFromOpendbc(name); });
   }
 
   file_menu->addAction(tr("Load DBC From Clipboard"), [=]() { loadFromClipboard(); });
@@ -436,7 +448,7 @@ void MainWindow::saveFile(DBCFile *dbc_file) {
 
 void MainWindow::saveFileAs(DBCFile *dbc_file) {
   QString title = tr("Save File (bus: %1)").arg(QString::fromStdString(toString(dbc()->sources(dbc_file))));
-  QString fn = QFileDialog::getSaveFileName(this, title, QDir::cleanPath(QString::fromStdString(settings.last_dir) + "/untitled.dbc"), tr("DBC (*.dbc)"));
+  QString fn = QFileDialog::getSaveFileName(this, title, QString::fromStdString((std::filesystem::path(settings.last_dir) / "untitled.dbc").string()), tr("DBC (*.dbc)"));
   if (!fn.isEmpty()) {
     dbc_file->saveAs(fn.toStdString());
     UndoStack::instance()->setClean();
@@ -496,7 +508,7 @@ void MainWindow::updateRecentFiles(const QString &fn) {
   while (settings.recent_files.size() > MAX_RECENT_FILES) {
     settings.recent_files.pop_back();
   }
-  settings.last_dir = QFileInfo(fn).absolutePath().toStdString();
+  settings.last_dir = std::filesystem::absolute(fn.toStdString()).parent_path().string();
 }
 
 void MainWindow::updateRecentFileMenu() {
@@ -509,7 +521,7 @@ void MainWindow::updateRecentFileMenu() {
   }
 
   for (int i = 0; i < num_recent_files; ++i) {
-    QString text = tr("&%1 %2").arg(i + 1).arg(QFileInfo(QString::fromStdString(settings.recent_files[i])).fileName());
+    QString text = tr("&%1 %2").arg(i + 1).arg(QString::fromStdString(std::filesystem::path(settings.recent_files[i]).filename().string()));
     open_recent_menu->addAction(text, this, [this, file = settings.recent_files[i]]() { loadFile(QString::fromStdString(file)); });
   }
 }

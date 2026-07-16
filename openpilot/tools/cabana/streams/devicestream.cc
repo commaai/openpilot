@@ -4,6 +4,7 @@
 #include <csignal>
 #include <cstring>
 #include <fcntl.h>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <unistd.h>
@@ -12,7 +13,6 @@
 #include "openpilot/cereal/services.h"
 
 #include <QButtonGroup>
-#include <QFileInfo>
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QRadioButton>
@@ -50,9 +50,8 @@ void DeviceStream::stopBridge() {
 void DeviceStream::start() {
   if (!zmq_address.isEmpty()) {
     stopBridge();
-    QString bridge_path = QFileInfo(QCoreApplication::applicationDirPath() +
-                                    "/../../openpilot/cereal/messaging/bridge").absoluteFilePath();
-    const std::string path = bridge_path.toStdString();
+    const std::string path = (std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) /
+                              "../../openpilot/cereal/messaging/bridge").lexically_normal().string();
     const std::string addr = zmq_address.toStdString();
     const char *can_filter = "/\"can/\"";
 

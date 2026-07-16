@@ -1,5 +1,7 @@
 #include "tools/cabana/streams/replaystream.h"
 
+#include <filesystem>
+
 #include <QLabel>
 #include <QFileDialog>
 #include <QGridLayout>
@@ -139,7 +141,7 @@ OpenReplayWidget::OpenReplayWidget(QWidget *parent) : AbstractOpenStreamWidget(p
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), QString::fromStdString(settings.last_route_dir));
     if (!dir.isEmpty()) {
       route_edit->setText(dir);
-      settings.last_route_dir = QFileInfo(dir).absolutePath().toStdString();
+      settings.last_route_dir = std::filesystem::absolute(dir.toStdString()).parent_path().string();
     }
   });
   QObject::connect(browse_remote_btn, &QPushButton::clicked, [this]() {

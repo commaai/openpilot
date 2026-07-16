@@ -7,6 +7,9 @@
 #include <cstdlib>
 #include <csignal>
 #include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <string>
@@ -14,11 +17,9 @@
 #include <unistd.h>
 
 #include <QColor>
-#include <QDir>
 #include <QFontDatabase>
 #include <QPixmapCache>
 #include <QSurfaceFormat>
-#include <QFileInfo>
 #include <QPainterPath>
 #include <unordered_map>
 #include "common/util.h"
@@ -304,6 +305,20 @@ QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 
+std::string homePath() {
+  const char *home = ::getenv("HOME");
+  return home ? home : "";
+}
+
+std::filesystem::path configPath() {
+#ifdef __APPLE__
+  return std::filesystem::path(homePath()) / "Library/Preferences";
+#else
+  const char *xdg = ::getenv("XDG_CONFIG_HOME");
+  return (xdg && xdg[0]) ? std::filesystem::path(xdg) : std::filesystem::path(homePath()) / ".config";
+#endif
+}
+
 bool isDarkTheme() {
   QColor windowColor = QApplication::palette().color(QPalette::Window);
   return windowColor.lightness() < 128;
@@ -437,21 +452,22 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
 
-  QString app_dir;
+  std::filesystem::path app_dir;
 #ifdef __APPLE__
   // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
   QApplication tmp(argc, argv);
-  app_dir = QCoreApplication::applicationDirPath();
+  app_dir = QCoreApplication::applicationDirPath().toStdString();
   if (disable_hidpi) {
     qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio()).toLocal8Bit());
   }
 #else
-  app_dir = QFileInfo(util::readlink("/proc/self/exe").c_str()).path();
+  app_dir = std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
 #endif
 
   qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
   // ensure the current dir matches the exectuable's directory
-  QDir::setCurrent(app_dir);
+  std::error_code ec;
+  std::filesystem::current_path(app_dir, ec);
 
   setSurfaceFormat();
 }
@@ -459,9 +475,9 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
 static std::unordered_map<std::string, std::string> load_bootstrap_icons() {
   std::unordered_map<std::string, std::string> icons;
 
-  QFile f(":/bootstrap-icons.svg");
-  if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    std::string content = f.readAll().toStdString();
+  std::ifstream f(BOOTSTRAP_ICONS_PATH);
+  if (f) {
+    const std::string content{std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>()};
     const std::string sym_open = "<symbol ";
     const std::string sym_close = "</symbol>";
     const std::string id_attr = "id=\"";

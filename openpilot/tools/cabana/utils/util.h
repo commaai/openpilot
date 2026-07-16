@@ -3,6 +3,8 @@
 #include <array>
 #include <atomic>
 #include <cmath>
+#include <filesystem>
+#include <string>
 #include <thread>
 #include <vector>
 #include <utility>
@@ -132,6 +134,8 @@ public:
 namespace utils {
 
 QPixmap icon(const QString &id);
+std::string homePath();
+std::filesystem::path configPath();
 bool isDarkTheme();
 void setTheme(int theme);
 QString formatSeconds(double sec, bool include_milliseconds = false, bool absolute_time = false);

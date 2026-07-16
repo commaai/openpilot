@@ -22,7 +22,6 @@ some rules
 - `QString`, `QStringList`, `QStringBuilder`, `QChar`, `QLatin1Char`
 - `QByteArray`
 - `QVariant`
-- `QFile`, `QFileInfo`, `QDir`, `QIODevice`, `QStandardPaths`
 - `QThread`
 - `QTimer`, `QBasicTimer`, `QTimerEvent`
 - `QWidget`, `QMainWindow`, `QWindow`

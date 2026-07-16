@@ -25,11 +25,9 @@
 
 #include <QAbstractButton>
 #include <QDialogButtonBox>
-#include <QDir>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QPushButton>
-#include <QStandardPaths>
 #include <type_traits>
 
 #include "json11/json11.hpp"
@@ -43,7 +41,7 @@ Settings settings;
 namespace {
 
 std::filesystem::path settingsFile() {
-  return std::filesystem::path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation).toStdString()) / "cabana.json";
+  return utils::configPath() / "cabana.json";
 }
 
 struct LoadedSettings {
@@ -495,8 +493,8 @@ void settingsOp(Store &s, SettingOperation op) {
 }  // namespace
 
 Settings::Settings() {
-  last_dir = last_route_dir = QDir::homePath().toStdString();
-  log_path = (QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/").toStdString();
+  last_dir = last_route_dir = utils::homePath();
+  log_path = utils::homePath() + "/cabana_live_stream/";
   const auto stored_settings = loadSettings();
   if (stored_settings.valid) {
     if (stored_settings.exists) {
@@ -581,7 +579,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   QObject::connect(browse_btn, &QPushButton::clicked, [this]() {
     QString fn = QFileDialog::getExistingDirectory(
         this, tr("Log File Location"),
-        QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+        QString::fromStdString(utils::homePath()),
         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (!fn.isEmpty()) {
       log_path->setText(fn);

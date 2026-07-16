@@ -77,24 +77,13 @@ cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
 cabana_libs = [cereal, messaging, visionipc, replay_lib] + ffmpeg_libs + ['bz2', 'zstd', 'usb-1.0'] + base_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
-cabana_env['CXXFLAGS'] += [opendbc_path]
-
-def write_assets_qrc(target, source, env):
-  with open(str(source[0])) as f:
-    qrc = f.read()
-  with open(str(target[0]), "w") as f:
-    f.write(qrc.replace("@BOOTSTRAP_ICONS_SVG@", str(bootstrap_icons.SVG_PATH)))
+bootstrap_icons_path = '-DBOOTSTRAP_ICONS_PATH=\'"%s"\'' % (bootstrap_icons.SVG_PATH)
+cabana_env['CXXFLAGS'] += [opendbc_path, bootstrap_icons_path]
 
 # build assets
 assets = "assets/assets.cc"
-assets_src = cabana_env.Command(
-  "assets/assets.generated.qrc",
-  "assets/assets.qrc",
-  write_assets_qrc,
-)
-cabana_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
-cabana_env.Depends(assets_src, str(bootstrap_icons.SVG_PATH))
-cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "assets/assets.o"]))
+cabana_env.Command(assets, "assets/assets.qrc", f"rcc $SOURCES -o $TARGET")
+cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, "assets/assets.o"]))
 
 cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
                'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'dbc/dbcqt.cc',
