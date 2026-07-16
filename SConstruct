@@ -166,6 +166,10 @@ env = Environment(
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+# SCons doesn't emit RPATH entries on Darwin, so add the equivalent linker flag
+# explicitly for vendored shared libraries that use @rpath install names.
+if arch == "Darwin" and ffmpeg_shared:
+  env.Append(LINKFLAGS=[f"-Wl,-rpath,{ffmpeg.LIB_DIR}"])
 if arch != "larch64":
   env['_LIBFLAGS'] = _libflags
 
