@@ -586,6 +586,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   }
 
   saveSessionState();
+  settings.save();
   QWidget::closeEvent(event);
 }
 

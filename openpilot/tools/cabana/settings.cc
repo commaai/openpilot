@@ -508,7 +508,10 @@ Settings::Settings() {
   }
 }
 
-Settings::~Settings() {
+// Must be called before main() returns: json11's internal statics are constructed on first
+// use at runtime, so they are destroyed before this pre-main global. Saving from ~Settings
+// would use them after destruction and corrupt the heap.
+void Settings::save() {
   if (!ensureSettingsDirectory()) return;
 
   auto lock_path = settingsFile();

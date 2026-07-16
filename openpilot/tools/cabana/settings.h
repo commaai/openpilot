@@ -14,7 +14,7 @@ class Settings : public QObject, public CabanaSettingsState {
 
 public:
   Settings();
-  ~Settings();
+  void save();
 
   // Qt frontend layout state. This intentionally stays outside CabanaSettingsState.
   QByteArray geometry;
