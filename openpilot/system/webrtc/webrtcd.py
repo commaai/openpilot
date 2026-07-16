@@ -18,7 +18,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import Any
 
-from libdatachannel import DataChannel
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
@@ -68,10 +67,10 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
     super().__init__()
     self.services = list(services)
     self.sm = messaging.SubMaster(self.services)
-    self.channels: list[DataChannel] = []
+    self.channels = []
     self._enabled = enabled
 
-  def add_channel(self, channel: 'DataChannel'):
+  def add_channel(self, channel):
     self.channels.append(channel)
 
   def enable(self, enable: bool):
