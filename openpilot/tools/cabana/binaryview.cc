@@ -1,4 +1,5 @@
 #include "tools/cabana/binaryview.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 
@@ -34,7 +35,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setMouseTracking(true);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &BinaryView::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
 
   addShortcuts();
@@ -334,7 +335,7 @@ void BinaryViewModel::updateState() {
       color.setAlpha(alpha);
       updateItem(i, j, bit_val, color);
     }
-    updateItem(i, 8, binary[i], last_msg.colors[i]);
+    updateItem(i, 8, binary[i], toQColor(last_msg.colors[i]));
   }
 }
 
@@ -421,14 +422,14 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->fillRect(option.rect, item->bg_color);
     }
   } else if (option.state & QStyle::State_Selected) {
-    auto color = bin_view->resize_sig ? bin_view->resize_sig->color : option.palette.color(QPalette::Active, QPalette::Highlight);
+    auto color = bin_view->resize_sig ? toQColor(bin_view->resize_sig->color) : option.palette.color(QPalette::Active, QPalette::Highlight);
     painter->fillRect(option.rect, color);
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!bin_view->selectionModel()->hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), bin_view->resize_sig) == item->sigs.end()) {  // not resizing
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == bin_view->hovered_sig) {
-          painter->fillRect(option.rect, s->color.darker(125));  // 4/5x brightness
+          painter->fillRect(option.rect, toQColor(s->color.darker(125)));  // 4/5x brightness
         } else {
           drawSignalCell(painter, option, index, s);
         }
@@ -483,14 +484,14 @@ void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionVie
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
 
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  QColor color = sig->color;
+  QColor color = toQColor(sig->color);
   color.setAlpha(item->bg_color.alpha());
   // Mixing the signal color with the Base background color to fade it
   painter->fillRect(rc, option.palette.color(QPalette::Base));
   painter->fillRect(rc, color);
 
   // Draw edges
-  color = sig->color.darker(125);
+  color = toQColor(sig->color.darker(125));
   painter->setPen(QPen(color, 1));
   if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
   if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());

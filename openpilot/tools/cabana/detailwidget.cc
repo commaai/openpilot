@@ -1,4 +1,5 @@
 #include "tools/cabana/detailwidget.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <QFormLayout>
 #include <QMenu>
@@ -56,7 +57,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &DetailWidget::updateState);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::refresh);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &DetailWidget::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {

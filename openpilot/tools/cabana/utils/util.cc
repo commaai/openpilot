@@ -100,7 +100,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
   // Paint hex column
   const auto &bytes = *static_cast<std::vector<uint8_t> *>(data.value<void *>());
-  const auto &colors = *static_cast<std::vector<QColor> *>(index.data(ColorsRole).value<void *>());
+  const auto &colors = *static_cast<std::vector<CabanaColor> *>(index.data(ColorsRole).value<void *>());
 
   painter->setFont(fixed_font);
   const QPen text_pen(option.state & QStyle::State_Selected ? highlighted_color : text_color);
@@ -115,7 +115,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
         painter->setPen(option.palette.color(QPalette::Text));
         painter->fillRect(r, option.palette.color(QPalette::Window));
       }
-      painter->fillRect(r, colors[i]);
+      painter->fillRect(r, toQColor(colors[i]));
     } else {
       painter->setPen(text_pen);
     }

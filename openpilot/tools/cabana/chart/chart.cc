@@ -1,4 +1,5 @@
 #include "tools/cabana/chart/chart.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <limits>
@@ -52,10 +53,10 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, this, &ChartView::resetChartCache);
   QObject::connect(window()->windowHandle(), &QWindow::screenChanged, this, &ChartView::resetChartCache);
 
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalRemoved, this, &ChartView::signalRemoved);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &ChartView::signalUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgRemoved, this, &ChartView::msgRemoved);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgUpdated, this, &ChartView::msgUpdated);
 }
 
 void ChartView::createToolButtons() {
@@ -115,14 +116,14 @@ void ChartView::setTheme(QChart::ChartTheme theme) {
   axis_x->setLineVisible(false);
   axis_y->setLineVisible(false);
   for (auto &s : sigs) {
-    s.series->setColor(s.sig->color);
+    s.series->setColor(toQColor(s.sig->color));
   }
 }
 
 void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
   if (hasSignal(msg_id, sig)) return;
 
-  QXYSeries *series = createSeries(series_type, sig->color);
+  QXYSeries *series = createSeries(series_type, toQColor(sig->color));
   sigs.push_back({.msg_id = msg_id, .sig = sig, .series = series});
   updateSeries(sig);
   updateSeriesPoints();
@@ -157,8 +158,8 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 void ChartView::signalUpdated(const cabana::Signal *sig) {
   auto it = std::find_if(sigs.begin(), sigs.end(), [sig](auto &s) { return s.sig == sig; });
   if (it != sigs.end()) {
-    if (it->series->color() != sig->color) {
-      setSeriesColor(it->series, sig->color);
+    if (it->series->color() != toQColor(sig->color)) {
+      setSeriesColor(it->series, toQColor(sig->color));
     }
     updateTitle();
     updateSeries(sig);
@@ -838,7 +839,7 @@ void ChartView::setSeriesType(SeriesType type) {
       s.series->deleteLater();
     }
     for (auto &s : sigs) {
-      s.series = createSeries(series_type, s.sig->color);
+      s.series = createSeries(series_type, toQColor(s.sig->color));
       const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
       s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
     }

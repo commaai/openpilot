@@ -1,4 +1,5 @@
 #include "tools/cabana/chart/chartswidget.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <future>
@@ -115,7 +116,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   align_timer->setSingleShot(true);
   QObject::connect(align_timer, &QTimer::timeout, this, &ChartsWidget::alignCharts);
   QObject::connect(auto_scroll_timer, &QTimer::timeout, this, &ChartsWidget::doAutoScroll);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &AbstractStream::msgsReceived, this, &ChartsWidget::updateState);
   QObject::connect(can, &AbstractStream::seeking, this, &ChartsWidget::updateState);
@@ -309,7 +310,7 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
       src_chart->chart()->removeSeries(it->series);
 
       // Restore to the original color
-      it->series->setColor(it->sig->color);
+      it->series->setColor(toQColor(it->sig->color));
 
       c->addSeries(it->series);
       c->sigs.emplace_back(std::move(*it));
