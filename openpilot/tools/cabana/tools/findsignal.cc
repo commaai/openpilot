@@ -1,5 +1,6 @@
 #include "tools/cabana/tools/findsignal.h"
 
+#include <set>
 #include <thread>
 
 #include <QFormLayout>
@@ -210,13 +211,13 @@ void FindSignalDlg::search() {
 }
 
 void FindSignalDlg::setInitialSignals() {
-  QSet<ushort> buses;
+  std::set<ushort> buses;
   for (auto bus : bus_edit->text().trimmed().split(",")) {
     bus = bus.trimmed();
     if (!bus.isEmpty()) buses.insert(bus.toUShort());
   }
 
-  QSet<uint32_t> addresses;
+  std::set<uint32_t> addresses;
   for (auto addr : address_edit->text().trimmed().split(",")) {
     addr = addr.trimmed();
     if (!addr.isEmpty()) addresses.insert(addr.toULong(nullptr, 16));
@@ -239,7 +240,7 @@ void FindSignalDlg::setInitialSignals() {
   model->initial_signals.clear();
 
   for (const auto &[id, m] : can->lastMessages()) {
-    if ((buses.isEmpty() || buses.contains(id.source)) && (addresses.isEmpty() || addresses.contains(id.address))) {
+    if ((buses.empty() || buses.count(id.source)) && (addresses.empty() || addresses.count(id.address))) {
       const auto &events = can->events(id);
       auto e = std::lower_bound(events.cbegin(), events.cend(), first_time, CompareCanEvent());
       if (e != events.cend()) {

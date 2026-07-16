@@ -23,6 +23,14 @@ const double MIN_ZOOM_SECONDS = 0.01; // 10ms
 const float EPSILON = 0.000001;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < (x - EPSILON); }
 
+static void replaceSeriesPoints(QXYSeries *series, const std::vector<QPointF> &points) {
+  auto pts = series->pointsVector();
+  pts.clear();
+  pts.reserve(points.size());
+  for (const QPointF &p : points) pts.append(p);
+  series->replace(pts);
+}
+
 static QMargins layoutMargins(const QStyle *style) {
   return {
     style->pixelMetric(QStyle::PM_LayoutLeftMargin),
@@ -333,7 +341,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
         s.segment_tree.build(s.vals);
       }
       const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
-      s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
+      replaceSeriesPoints(s.series, points);
     }
   }
   updateAxisY();
@@ -800,7 +808,7 @@ void ChartView::setSeriesType(SeriesType type) {
     for (auto &s : sigs) {
       s.series = createSeries(series_type, toQColor(s.sig->color));
       const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
-      s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
+      replaceSeriesPoints(s.series, points);
     }
     updateSeriesPoints();
     updateTitle();

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
+
 #include <QComboBox>
 #include <QDialog>
 
@@ -21,4 +23,6 @@ protected:
   QComboBox *period_selector_;
   RouteListWidget *route_list_;
   std::atomic<int> fetch_id_{0};
+  // expires on destruction; guards main-thread callbacks from detached worker threads
+  std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
 };

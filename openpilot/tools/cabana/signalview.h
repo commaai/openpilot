@@ -129,9 +129,12 @@ private:
       // update widget geometries in QTreeView::rowsInserted
       QTreeView::rowsInserted(parent, start, end);
     }
-    void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override {
+    void setModel(QAbstractItemModel *model) override {
+      QTreeView::setModel(model);
       // Bypass the slow call to QTreeView::dataChanged.
-      QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+      QObject::disconnect(model, &QAbstractItemModel::dataChanged, this, nullptr);
+      QObject::connect(model, &QAbstractItemModel::dataChanged, this,
+                       [this](const QModelIndex &tl, const QModelIndex &br, const auto &roles) { QAbstractItemView::dataChanged(tl, br, roles); });
     }
     void leaveEvent(QEvent *event) override {
       emit static_cast<SignalView *>(parentWidget())->highlight(nullptr);
