@@ -277,7 +277,7 @@ void FindSignalDlg::customMenuRequested(const QPoint &pos) {
     menu.addAction(tr("Create Signal"));
     if (menu.exec(view->mapToGlobal(pos))) {
       auto &s = model->filtered_signals[index.row()];
-      UndoStack::push(new AddSigCommand(s.id, s.sig));
+      UndoStack::instance()->push(new AddSigCommand(s.id, s.sig));
       emit openMessage(s.id);
     }
   }

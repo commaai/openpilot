@@ -37,7 +37,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &BinaryView::refresh);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &BinaryView::refresh);
 
   addShortcuts();
   setWhatsThis(R"(
@@ -66,7 +66,7 @@ void BinaryView::addShortcuts() {
   QObject::connect(shortcut_delete_backspace, &QShortcut::activated, shortcut_delete_x, &QShortcut::activated);
   QObject::connect(shortcut_delete_x, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      UndoStack::push(new RemoveSigCommand(model->msg_id, hovered_sig));
+      UndoStack::instance()->push(new RemoveSigCommand(model->msg_id, hovered_sig));
       hovered_sig = nullptr;
     }
   });
@@ -179,7 +179,7 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
       auto sig = resize_sig ? *resize_sig : cabana::Signal{};
       std::tie(sig.start_bit, sig.size, sig.is_little_endian) = getSelection(release_index);
       resize_sig ? emit editSignal(resize_sig, sig)
-                 : UndoStack::push(new AddSigCommand(model->msg_id, sig));
+                 : UndoStack::instance()->push(new AddSigCommand(model->msg_id, sig));
     } else {
       auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
       if (item && item->sigs.size() > 0)

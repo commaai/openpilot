@@ -72,11 +72,14 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   range_slider_action = toolbar->addWidget(range_slider);
 
   // zoom controls
-  zoom_undo_stack = new QUndoStack(this);
-  toolbar->addAction(undo_zoom_action = zoom_undo_stack->createUndoAction(this));
-  undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
-  toolbar->addAction(redo_zoom_action = zoom_undo_stack->createRedoAction(this));
-  redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
+  undo_zoom_action = toolbar->addAction(utils::icon("arrow-counterclockwise"), tr("Undo Zoom"), [this]() { zoom_undo_stack.undo(); });
+  redo_zoom_action = toolbar->addAction(utils::icon("arrow-clockwise"), tr("Redo Zoom"), [this]() { zoom_undo_stack.redo(); });
+  undo_zoom_action->setEnabled(false);
+  redo_zoom_action->setEnabled(false);
+  zoom_undo_stack.setCallbacks({.index_changed = [this]() {
+    undo_zoom_action->setEnabled(zoom_undo_stack.canUndo());
+    redo_zoom_action->setEnabled(zoom_undo_stack.canRedo());
+  }});
   reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new ToolButton("zoom-out", tr("Reset Zoom")));
   reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
@@ -186,7 +189,7 @@ void ChartsWidget::timeRangeChanged(const std::optional<std::pair<double, double
 
 void ChartsWidget::zoomReset() {
   can->setTimeRange(std::nullopt);
-  zoom_undo_stack->clear();
+  zoom_undo_stack.clear();
 }
 
 QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
@@ -530,7 +533,7 @@ bool ChartsWidget::event(QEvent *event) {
   }
 
   if (back_button) {
-    zoom_undo_stack->undo();
+    zoom_undo_stack.undo();
     return true;  // Return true since the event has been handled
   }
   return QFrame::event(event);

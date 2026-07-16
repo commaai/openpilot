@@ -16,9 +16,7 @@
 #include <QResizeEvent>
 #include <QShortcut>
 #include <QTextDocument>
-#include <QUndoView>
 #include <QVBoxLayout>
-#include <QWidgetAction>
 
 #include "json11/json11.hpp"
 #include "tools/cabana/commands.h"
@@ -62,7 +60,7 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &MainWindow::DBCFileChanged);
-  QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::cleanChanged, this, &MainWindow::undoStackCleanChanged);
   QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
 
   QTimer::singleShot(0, this, [=]() { stream ? openStream(stream, dbc_file) : selectAndOpenStream(); });
@@ -134,18 +132,12 @@ void MainWindow::createActions() {
 
   // Edit Menu
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
-  auto undo_act = UndoStack::instance()->createUndoAction(this, tr("&Undo"));
+  undo_act = edit_menu->addAction(tr("&Undo"), []() { UndoStack::instance()->undo(); });
   undo_act->setShortcuts(QKeySequence::Undo);
-  edit_menu->addAction(undo_act);
-  auto redo_act = UndoStack::instance()->createRedoAction(this, tr("&Redo"));
+  redo_act = edit_menu->addAction(tr("&Redo"), []() { UndoStack::instance()->redo(); });
   redo_act->setShortcuts(QKeySequence::Redo);
-  edit_menu->addAction(redo_act);
-  edit_menu->addSeparator();
-
-  QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
-  QWidgetAction *commands_act = new QWidgetAction(this);
-  commands_act->setDefaultWidget(new QUndoView(UndoStack::instance()));
-  commands_menu->addAction(commands_act);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &MainWindow::updateUndoRedoActions);
+  updateUndoRedoActions();
 
   // View Menu
   QMenu *view_menu = menuBar()->addMenu(tr("&View"));
@@ -231,6 +223,14 @@ void MainWindow::createShortcuts() {
 
 void MainWindow::undoStackCleanChanged(bool clean) {
   setWindowModified(!clean);
+}
+
+void MainWindow::updateUndoRedoActions() {
+  auto stack = UndoStack::instance();
+  undo_act->setEnabled(stack->canUndo());
+  undo_act->setText(stack->canUndo() ? tr("&Undo %1").arg(QString::fromStdString(stack->undoText())) : tr("&Undo"));
+  redo_act->setEnabled(stack->canRedo());
+  redo_act->setText(stack->canRedo() ? tr("&Redo %1").arg(QString::fromStdString(stack->redoText())) : tr("&Redo"));
 }
 
 void MainWindow::DBCFileChanged() {

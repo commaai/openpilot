@@ -70,6 +70,7 @@ protected:
   void findSimilarBits();
   void findSignal();
   void undoStackCleanChanged(bool clean);
+  void updateUndoRedoActions();
   void onlineHelp();
   void toggleFullScreen();
   void updateStatus();
@@ -99,6 +100,8 @@ protected:
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
+  QAction *undo_act = nullptr;
+  QAction *redo_act = nullptr;
   QString car_fingerprint;
   std::vector<uint8_t> default_state;
 };

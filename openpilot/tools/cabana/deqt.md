@@ -60,4 +60,3 @@ some rules
 - `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
 - `QOpenGLWidget`, `QOpenGLFunctions`
 - `QSurfaceFormat`
-- `QUndoCommand`, `QUndoStack`, `QUndoView`

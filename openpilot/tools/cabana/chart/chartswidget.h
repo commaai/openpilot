@@ -8,10 +8,9 @@
 #include <QScrollArea>
 #include <QTimer>
 #include <QToolBar>
-#include <QUndoCommand>
-#include <QUndoStack>
 
 #include "tools/cabana/chart/signalselector.h"
+#include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -97,7 +96,7 @@ private:
   QAction *redo_zoom_action;
   QAction *reset_zoom_action;
   ToolButton *reset_zoom_btn;
-  QUndoStack *zoom_undo_stack;
+  UndoStack zoom_undo_stack;
 
   ToolButton *remove_all_btn;
   std::vector<ChartView *> charts;
@@ -120,11 +119,10 @@ private:
   friend class ChartsContainer;
 };
 
-class ZoomCommand : public QUndoCommand {
+class ZoomCommand : public UndoCommand {
 public:
-  ZoomCommand(std::pair<double, double> range) : range(range), QUndoCommand() {
+  ZoomCommand(std::pair<double, double> range) : range(range) {
     prev_range = can->timeRange();
-    setText(QObject::tr("Zoom to %1-%2").arg(range.first, 0, 'f', 2).arg(range.second, 0, 'f', 2));
   }
   void undo() override { can->setTimeRange(prev_range); }
   void redo() override { can->setTimeRange(range); }

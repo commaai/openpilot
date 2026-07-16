@@ -198,7 +198,7 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
   if (s.is_little_endian != origin_s->is_little_endian) {
     s.start_bit = flipBitPos(s.start_bit);
   }
-  UndoStack::push(new EditSignalCommand(msg_id, origin_s, s));
+  UndoStack::instance()->push(new EditSignalCommand(msg_id, origin_s, s));
   return true;
 }
 
@@ -515,7 +515,7 @@ void SignalView::rowsChanged() {
 
       tree->setIndexWidget(index, w);
       auto sig = model->getItem(index)->sig;
-      QObject::connect(remove_btn, &QToolButton::clicked, [=]() { UndoStack::push(new RemoveSigCommand(model->msg_id, sig)); });
+      QObject::connect(remove_btn, &QToolButton::clicked, [=]() { UndoStack::instance()->push(new RemoveSigCommand(model->msg_id, sig)); });
       QObject::connect(plot_btn, &QToolButton::clicked, [=](bool checked) {
         emit showChart(model->msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
       });
