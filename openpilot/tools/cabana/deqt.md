@@ -47,7 +47,6 @@ our workflow is:
 - `QTableWidget`, `QTableWidgetItem`, `QListWidget`, `QListWidgetItem`
 - `QItemSelection`, `QItemSelectionModel`, `QItemSelectionRange`
 - `QHeaderView`, `QStyledItemDelegate`, `QStyleOptionViewItem`
-- `QCompleter`
 - `QValidator`, `QIntValidator`, `QDoubleValidator`
 - `QRegExp`, `QRegExpValidator`
 - `QRegularExpression`, `QRegularExpressionValidator`

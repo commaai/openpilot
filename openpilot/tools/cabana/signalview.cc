@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <future>
 
-#include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -376,15 +375,6 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     else if (item->type == SignalModel::Item::Node) e->setValidator(node_validator);
     else e->setValidator(double_validator);
 
-    if (item->type == SignalModel::Item::Name) {
-      auto names = dbc()->signalNames();
-      QStringList qnames;
-      for (const auto &n : names) qnames.push_back(QString::fromStdString(n));
-      QCompleter *completer = new QCompleter(qnames, e);
-      completer->setCaseSensitivity(Qt::CaseInsensitive);
-      completer->setFilterMode(Qt::MatchContains);
-      e->setCompleter(completer);
-    }
     return e;
   } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);

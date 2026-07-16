@@ -1,7 +1,6 @@
 #include "tools/cabana/chart/signalselector.h"
 #include "tools/cabana/dbc/dbcqt.h"
 
-#include <QCompleter>
 #include <QDialogButtonBox>
 #include <QGridLayout>
 #include <QLabel>
@@ -21,8 +20,6 @@ SignalSelector::SignalSelector(QString title, QWidget *parent) : QDialog(parent)
   msgs_combo->setEditable(true);
   msgs_combo->lineEdit()->setPlaceholderText(tr("Select a msg..."));
   msgs_combo->setInsertPolicy(QComboBox::NoInsert);
-  msgs_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
-  msgs_combo->completer()->setFilterMode(Qt::MatchContains);
 
   main_layout->addWidget(available_list = new QListWidget(this), 2, 0);
 
