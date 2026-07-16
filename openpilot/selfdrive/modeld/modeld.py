@@ -2,6 +2,7 @@
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
+import threading
 import time
 import numpy as np
 import openpilot.cereal.messaging as messaging
@@ -13,7 +14,7 @@ from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.realtime import config_realtime_process, DT_MDL
+from openpilot.common.realtime import config_realtime_process, drop_realtime, set_core_affinity, DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
@@ -132,6 +133,20 @@ class ModelState:
       outputs_dict['raw_pred'] = model_output.copy()
     return outputs_dict
 
+  def warmup(self) -> None:
+    bufs = {k: np.zeros(self.frame_buf_params[k][3], dtype=np.uint8) for k in self.vision_input_names}
+    transforms = {k: np.zeros((3, 3), dtype=np.float32) for k in self.vision_input_names}
+    inputs = {
+      'desire_pulse': np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32),
+      'traffic_convention': np.zeros(2, dtype=np.float32),
+      'action_t': np.zeros(2, dtype=np.float32),
+    }
+    self.run(bufs, transforms, inputs)  # type: ignore[arg-type]
+    self.prev_desire.fill(0)
+    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+    self.full_frames.clear()
+    self._blob_cache.clear()
+
 
 def main(demo=False):
   cloudlog.warning("modeld init")
@@ -139,6 +154,7 @@ def main(demo=False):
   _present = usbgpu_present()
   _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
   USBGPU = _present and _compiled
+  fallback = USBGPU and "REPLAY" not in os.environ and not demo
   params = Params()
   params.put_bool("UsbGpuPresent", _present)
   params.put_bool("UsbGpuCompiled", _compiled)
@@ -170,16 +186,32 @@ def main(demo=False):
 
   st = time.monotonic()
   cloudlog.warning("loading model")
-  model = ModelState(vipc_client_main.width, vipc_client_main.height, USBGPU)
-  cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
+  small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False if fallback else USBGPU)
+  model = small_model
+  big_model = None
+  big_failed = False
+
+  def load_big_model():
+    nonlocal big_model, big_failed
+    drop_realtime()
+    set_core_affinity([7])
+    try:
+      candidate = ModelState(vipc_client_main.width, vipc_client_main.height, True)
+      candidate.warmup()
+      big_model = candidate
+    except Exception:
+      cloudlog.exception("big model failed to load")
+      big_failed = True
+
+  if fallback:
+    threading.Thread(target=load_big_model, daemon=True).start()
+  cloudlog.warning(f"model loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
   pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
-  params = Params()
-
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
   frame_id = 0
@@ -240,6 +272,12 @@ def main(demo=False):
       meta_extra = meta_main
 
     sm.update(0)
+    if not sm["carControl"].enabled:
+      if big_failed:
+        model = small_model
+      elif big_model is not None:
+        model = big_model
+
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
@@ -282,8 +320,18 @@ def main(demo=False):
       'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
     }
 
+    if big_failed and model is not small_model:
+      continue
+
     mt1 = time.perf_counter()
-    model_output = model.run(bufs, transforms, inputs)
+    try:
+      model_output = model.run(bufs, transforms, inputs)
+    except Exception:
+      if model is small_model:
+        raise
+      cloudlog.exception("big model failed")
+      big_failed = True
+      continue
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
