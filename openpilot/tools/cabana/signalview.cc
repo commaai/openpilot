@@ -251,7 +251,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
-  node_validator = new QRegExpValidator(QRegExp("^\\w+(,\\w+)*$"), this);
+  node_validator = new NodeValidator(this);
   double_validator = new DoubleValidator(this);
 
   label_font.setPointSize(8);

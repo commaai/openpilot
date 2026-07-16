@@ -180,11 +180,37 @@ void UnixSignalHandler::handleSigTerm() {
 
 // NameValidator
 
-NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
+NameValidator::NameValidator(QObject *parent) : QValidator(parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
   input.replace(' ', '_');
-  return QRegExpValidator::validate(input, pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+  for (const QChar &c : input) {
+    if (!c.isLetterOrNumber() && c != '_') return QValidator::Invalid;
+  }
+  return QValidator::Acceptable;
+}
+
+// NodeValidator
+
+NodeValidator::NodeValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State NodeValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+  // Match ^\w+(,\w+)*$ ; a trailing comma is Intermediate (user still typing).
+  bool need_word = true;
+  for (const QChar &c : input) {
+    if (c.isLetterOrNumber() || c == '_') {
+      need_word = false;
+    } else if (c == ',' && !need_word) {
+      need_word = true;
+    } else {
+      return QValidator::Invalid;
+    }
+  }
+  return need_word ? QValidator::Intermediate : QValidator::Acceptable;
 }
 
 DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {

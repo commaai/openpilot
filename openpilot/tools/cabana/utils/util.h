@@ -12,12 +12,12 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <QPainter>
-#include <QRegExpValidator>
 #include <QSocketNotifier>
 #include <QStaticText>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
+#include <QValidator>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
@@ -89,10 +89,19 @@ private:
   int h_margin, v_margin;
 };
 
-class NameValidator : public QRegExpValidator {
+// Accepts a single identifier: one or more [A-Za-z0-9_], spaces rewritten to '_'.
+class NameValidator : public QValidator {
   Q_OBJECT
 public:
   NameValidator(QObject *parent=nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
+};
+
+// Accepts comma-separated identifiers: \w+(,\w+)*
+class NodeValidator : public QValidator {
+  Q_OBJECT
+public:
+  NodeValidator(QObject *parent=nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
 };
 
