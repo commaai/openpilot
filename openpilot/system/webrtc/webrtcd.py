@@ -38,7 +38,6 @@ def _default_route_ip() -> str | None:
 
 class AsyncTaskRunner:
   def __init__(self):
-    self.is_running = False
     self.task = None
     self.logger = logging.getLogger("webrtcd")
 
@@ -395,7 +394,12 @@ async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, b
     session = StreamSession(body, debug_mode)
     stream_dict[session.identifier] = session
     try:
-      answer = await session.get_answer()
+      answer = await asyncio.wait_for(session.get_answer(), timeout=30)
+    except asyncio.TimeoutError:
+      await session.stop()
+      stream_dict.pop(session.identifier, None)
+      logging.getLogger("webrtcd").exception("Timed out creating stream answer")
+      raise
     except Exception:
       await session.stop()
       stream_dict.pop(session.identifier, None)

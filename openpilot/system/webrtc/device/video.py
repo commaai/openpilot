@@ -94,6 +94,3 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self.log_debug("track sending frame %d", self._pts)
 
     return packet
-
-  def codec_preference(self) -> str | None:
-    return "H264"

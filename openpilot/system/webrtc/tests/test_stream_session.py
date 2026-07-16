@@ -69,7 +69,6 @@ class TestStreamSession:
     track = LiveStreamVideoStreamTrack("driver")
 
     assert track.id.startswith("driver")
-    assert track.codec_preference() == "H264"
 
     for i in range(5):
       packet = self.loop.run_until_complete(track.recv())
