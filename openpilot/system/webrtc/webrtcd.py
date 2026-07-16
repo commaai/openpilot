@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from abc import abstractmethod
+from collections.abc import Callable
 import os
 import socket
 import time
@@ -194,24 +195,16 @@ class LivestreamBitrateController(AsyncTaskRunner):
           self.counter = 0
           self._publish(self.bitrates[self.level])
 
-  async def _sample(self) -> float | None:
-    if not hasattr(self.pc, "getStats"):
-      return None
-    report = await self.pc.getStats()
-    packets_lost = packets_sent = 0
-    for s in report.values():
-      if s.type == "remote-inbound-rtp":
-        packets_lost += s.packetsLost
-      elif s.type == "outbound-rtp":
-        packets_sent += s.packetsSent
-
-    if self.prev_lost is None:
-      self.prev_lost, self.prev_sent = packets_lost, packets_sent
-      return None
-    lost_delta = max(0, packets_lost - self.prev_lost)
-    sent_delta = max(0, packets_sent - self.prev_sent)
-    self.prev_lost, self.prev_sent = packets_lost, packets_sent
-    return lost_delta / sent_delta if sent_delta else 0.0
+  def _sample(self) -> float | None:
+    loss_rates = []
+    for camera_type, report in self.get_stats().items():
+      current = (report.ssrc, report.fraction_lost, report.packets_lost, report.highest_seq_no, report.jitter, report.lsr, report.dlsr)
+      if self.prev_stats.get(camera_type) == current:
+        continue
+      self.prev_stats[camera_type] = current
+      loss_rate = report.fraction_lost / 256
+      loss_rates.append(loss_rate)
+    return max(loss_rates) if loss_rates else None
 
   def _publish(self, bitrate: float):
     self.params.put(self.param_name, bitrate)
