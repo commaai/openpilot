@@ -154,14 +154,14 @@ class LivestreamBitrateController(AsyncTaskRunner):
   down_samples = 5 # 1s
   param_name = "LivestreamEncoderBitrate"
 
-  def __init__(self, peer_connection: Any, params: Params, enabled: bool = True):
+  def __init__(self, get_stats: Callable[[], dict[str, Any]], params: Params, enabled: bool = True):
     super().__init__()
-    self.pc = peer_connection
+    self.get_stats = get_stats
     self.params = params
 
     self.level = 2
     self._publish(self.bitrates[self.level])
-    self.prev_lost, self.prev_sent = None, None
+    self.prev_stats: tuple[Any, ...] | None = None
     self.counter = 0
     self.up_samples = 5 # 1s
     self._auto = True
@@ -178,7 +178,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
       if not self._auto:
         continue
 
-      loss_rate = await self._sample()
+      loss_rate = self._sample()
       if loss_rate is None:
         continue
       if loss_rate >= self.med_level and self.level > 0:
@@ -196,15 +196,17 @@ class LivestreamBitrateController(AsyncTaskRunner):
           self._publish(self.bitrates[self.level])
 
   def _sample(self) -> float | None:
-    loss_rates = []
-    for camera_type, report in self.get_stats().items():
-      current = (report.ssrc, report.fraction_lost, report.packets_lost, report.highest_seq_no, report.jitter, report.lsr, report.dlsr)
-      if self.prev_stats.get(camera_type) == current:
-        continue
-      self.prev_stats[camera_type] = current
-      loss_rate = report.fraction_lost / 256
-      loss_rates.append(loss_rate)
-    return max(loss_rates) if loss_rates else None
+    report = next(iter(self.get_stats().values()), None)
+    if report is None:
+      return None
+
+    current = (report.ssrc, report.fraction_lost, report.packets_lost, report.highest_seq_no, report.jitter, report.lsr, report.dlsr)
+    if self.prev_stats == current:
+      return None
+    self.prev_stats = current
+
+    loss_rate = report.fraction_lost / 256
+    return loss_rate
 
   def _publish(self, bitrate: float):
     self.params.put(self.param_name, bitrate)
@@ -241,7 +243,7 @@ class StreamSession:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.enabled)
-    self.bitrate_controller = LivestreamBitrateController(self.stream.peer_connection, self.params, self.enabled)
+    self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats, self.params, self.enabled)
 
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
