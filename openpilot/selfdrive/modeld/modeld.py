@@ -133,21 +133,6 @@ class ModelState:
       outputs_dict['raw_pred'] = model_output.copy()
     return outputs_dict
 
-  def warmup(self) -> None:
-    bufs = {k: np.zeros(self.frame_buf_params[k][3], dtype=np.uint8) for k in self.vision_input_names}
-    transforms = {k: np.zeros((3, 3), dtype=np.float32) for k in self.vision_input_names}
-    inputs = {
-      'desire_pulse': np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32),
-      'traffic_convention': np.zeros(2, dtype=np.float32),
-      'action_t': np.zeros(2, dtype=np.float32),
-    }
-    self.run(bufs, transforms, inputs)  # type: ignore[arg-type]
-    self.prev_desire.fill(0)
-    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
-    self.full_frames.clear()
-    self._blob_cache.clear()
-
-
 def main(demo=False):
   cloudlog.warning("modeld init")
 
@@ -197,9 +182,7 @@ def main(demo=False):
     drop_realtime()
     set_core_affinity([7])
     try:
-      candidate = ModelState(vipc_client_main.width, vipc_client_main.height, True)
-      candidate.warmup()
-      big_model = candidate
+      big_model = ModelState(vipc_client_main.width, vipc_client_main.height, True)
     except Exception:
       cloudlog.exception("big model failed to load")
       big_failed = True
@@ -273,15 +256,13 @@ def main(demo=False):
       meta_extra = meta_main
 
     sm.update(0)
-    if not sm["carControl"].enabled:
-      next_model = model
-      if big_failed:
-        next_model = small_model
-      elif big_model is not None:
-        next_model = big_model
-      if next_model is not model:
-        model = next_model
-        params.put_bool("UsbGpuActive", model is not small_model)
+    if big_failed:
+      if model is not small_model:
+        model = small_model
+        params.put_bool("UsbGpuActive", False)
+    elif not sm["carControl"].enabled and big_model is not None and model is not big_model:
+      model = big_model
+      params.put_bool("UsbGpuActive", True)
 
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
@@ -325,9 +306,6 @@ def main(demo=False):
       'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
     }
 
-    if big_failed and model is not small_model:
-      continue
-
     mt1 = time.perf_counter()
     try:
       model_output = model.run(bufs, transforms, inputs)
@@ -336,6 +314,8 @@ def main(demo=False):
         raise
       cloudlog.exception("big model failed")
       big_failed = True
+      model = small_model
+      params.put_bool("UsbGpuActive", False)
       continue
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
