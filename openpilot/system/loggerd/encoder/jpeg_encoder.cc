@@ -93,7 +93,7 @@ void JpegEncoder::compressToJpeg(uint8_t *y_plane, uint8_t *u_plane, uint8_t *v_
   frame->data[2] = v_plane;
   // Required for MJPEG qscale to take effect (global_quality alone is not enough).
   frame->quality = FF_QP2LAMBDA * MJPEG_QSCALE;
-  frame->pts = 0;
+  frame->pts = AV_NOPTS_VALUE;
 
   int err = avcodec_send_frame(codec_ctx, frame);
   if (err < 0) {
