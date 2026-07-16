@@ -10,9 +10,9 @@
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QRadioButton>
-#include <QRegularExpression>
-#include <QRegularExpressionValidator>
 #include <QThread>
+
+#include "tools/cabana/utils/util.h"
 
 // DeviceStream
 
@@ -69,10 +69,7 @@ OpenDeviceWidget::OpenDeviceWidget(QWidget *parent) : AbstractOpenStreamWidget(p
   QRadioButton *zmq = new QRadioButton(tr("ZMQ"));
   ip_address = new QLineEdit(this);
   ip_address->setPlaceholderText(tr("Enter device Ip Address"));
-  QString ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
-  QString pattern("^" + ip_range + "\\." + ip_range + "\\." + ip_range + "\\." + ip_range + "$");
-  QRegularExpression re(pattern);
-  ip_address->setValidator(new QRegularExpressionValidator(re, this));
+  ip_address->setValidator(new IpAddressValidator(this));
 
   group = new QButtonGroup(this);
   group->addButton(msgq, 0);

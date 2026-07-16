@@ -105,6 +105,22 @@ public:
   QValidator::State validate(QString &input, int &pos) const override;
 };
 
+// Accepts one or more non-whitespace characters (\S+).
+class NonWhitespaceValidator : public QValidator {
+  Q_OBJECT
+public:
+  NonWhitespaceValidator(QObject *parent=nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
+};
+
+// Accepts a dotted IPv4 address (0-255 per octet).
+class IpAddressValidator : public QValidator {
+  Q_OBJECT
+public:
+  IpAddressValidator(QObject *parent=nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
+};
+
 class DoubleValidator : public QDoubleValidator {
   Q_OBJECT
 public:

@@ -15,6 +15,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/utils/util.h"
 
 // SignalModel
 
@@ -419,8 +420,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
-  QRegularExpression re("\\S+");
-  filter_edit->setValidator(new QRegularExpressionValidator(re, this));
+  filter_edit->setValidator(new NonWhitespaceValidator(this));
   filter_edit->setClearButtonEnabled(true);
   filter_edit->setPlaceholderText(tr("Filter Signal"));
   hl->addWidget(filter_edit);

@@ -48,7 +48,6 @@ our workflow is:
 - `QItemSelection`, `QItemSelectionModel`, `QItemSelectionRange`
 - `QHeaderView`, `QStyledItemDelegate`, `QStyleOptionViewItem`
 - `QValidator`, `QIntValidator`, `QDoubleValidator`
-- `QRegularExpression`, `QRegularExpressionValidator`
 - `QColor`, `QRgb`, `QPalette`
 - `QBrush`, `QPen`
 - `QPainter`, `QPainterPath`, `QStylePainter`

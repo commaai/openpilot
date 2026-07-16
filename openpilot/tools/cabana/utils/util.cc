@@ -213,6 +213,47 @@ QValidator::State NodeValidator::validate(QString &input, int &pos) const {
   return need_word ? QValidator::Intermediate : QValidator::Acceptable;
 }
 
+// NonWhitespaceValidator
+
+NonWhitespaceValidator::NonWhitespaceValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State NonWhitespaceValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+  for (const QChar &c : input) {
+    if (c.isSpace()) return QValidator::Invalid;
+  }
+  return QValidator::Acceptable;
+}
+
+// IpAddressValidator
+
+IpAddressValidator::IpAddressValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State IpAddressValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+
+  int dots = 0;
+  int value = 0;
+  bool has_digit = false;
+  for (const QChar &c : input) {
+    if (c.isDigit()) {
+      value = has_digit ? value * 10 + c.digitValue() : c.digitValue();
+      if (value > 255) return QValidator::Invalid;
+      has_digit = true;
+    } else if (c == '.') {
+      if (!has_digit || dots >= 3) return QValidator::Invalid;
+      ++dots;
+      has_digit = false;
+      value = 0;
+    } else {
+      return QValidator::Invalid;
+    }
+  }
+  return (dots == 3 && has_digit) ? QValidator::Acceptable : QValidator::Intermediate;
+}
+
 DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
   // Match locale of QString::toDouble() instead of system
   QLocale locale(QLocale::C);
