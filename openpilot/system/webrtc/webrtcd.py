@@ -395,7 +395,7 @@ async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, b
     stream_dict[session.identifier] = session
     try:
       answer = await asyncio.wait_for(session.get_answer(), timeout=30)
-    except asyncio.TimeoutError:
+    except TimeoutError:
       await session.stop()
       stream_dict.pop(session.identifier, None)
       logging.getLogger("webrtcd").exception("Timed out creating stream answer")
