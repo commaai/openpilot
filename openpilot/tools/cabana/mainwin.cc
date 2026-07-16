@@ -10,7 +10,6 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QJsonObject>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -21,6 +20,7 @@
 #include <QVBoxLayout>
 #include <QWidgetAction>
 
+#include "json11/json11.hpp"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
@@ -74,8 +74,15 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
 
 void MainWindow::loadFingerprints() {
   QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
-  if (json_file.open(QIODevice::ReadOnly)) {
-    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+  if (!json_file.open(QIODevice::ReadOnly)) return;
+  std::string err;
+  auto doc = json11::Json::parse(json_file.readAll().toStdString(), err);
+  if (!err.empty() || !doc.is_object()) return;
+  fingerprint_to_dbc.clear();
+  for (const auto &kv : doc.object_items()) {
+    if (kv.second.is_string()) {
+      fingerprint_to_dbc.emplace(kv.first, kv.second.string_value());
+    }
   }
 }
 
@@ -372,8 +379,11 @@ void MainWindow::eventsMerged() {
                                     .arg(QString::fromStdString(can->routeName()))
                                     .arg(car_fingerprint.isEmpty() ? tr("Unknown Car") : car_fingerprint));
     // Don't overwrite already loaded DBC
-    if (!dbc()->nonEmptyDBCCount() && fingerprint_to_dbc.object().contains(car_fingerprint)) {
-      QTimer::singleShot(0, this, [this]() { loadDBCFromOpendbc(fingerprint_to_dbc[car_fingerprint].toString() + ".dbc"); });
+    auto it = fingerprint_to_dbc.find(car_fingerprint.toStdString());
+    if (!dbc()->nonEmptyDBCCount() && it != fingerprint_to_dbc.end()) {
+      QTimer::singleShot(0, this, [this, dbc_name = QString::fromStdString(it->second)]() {
+        loadDBCFromOpendbc(dbc_name + ".dbc");
+      });
     }
   }
 }

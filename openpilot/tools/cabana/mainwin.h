@@ -1,13 +1,14 @@
 #pragma once
 
 #include <QDockWidget>
-#include <QJsonDocument>
 #include <QMainWindow>
 #include <QMenu>
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
 #include <set>
+#include <string>
+#include <unordered_map>
 
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -85,7 +86,7 @@ protected:
   QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QLabel *status_label;
-  QJsonDocument fingerprint_to_dbc;
+  std::unordered_map<std::string, std::string> fingerprint_to_dbc;
   QSplitter *video_splitter = nullptr;
   enum { MAX_RECENT_FILES = 15 };
   QMenu *open_recent_menu = nullptr;

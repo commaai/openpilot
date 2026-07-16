@@ -23,7 +23,6 @@ some rules
 - `QByteArray`
 - `QVariant`
 - `QVector`, `QMap`, `QSet`, `QPointer`
-- `QJsonDocument`, `QJsonObject`, `QJsonArray`, `QJsonValue`
 - `QSettings`
 - `QFile`, `QFileInfo`, `QDir`, `QIODevice`, `QStandardPaths`
 - `QThread`
