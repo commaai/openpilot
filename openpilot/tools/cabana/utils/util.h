@@ -180,7 +180,7 @@ private:
 };
 
 // Watches SIGINT/SIGTERM via a self-pipe and a dedicated waiter thread
-// (no Qt notifiers/timers). Exit is marshalled onto the GUI thread.
+// (no Qt notifiers/timers). Exit is marshaled onto the GUI thread.
 class UnixSignalHandler {
 public:
   UnixSignalHandler();
