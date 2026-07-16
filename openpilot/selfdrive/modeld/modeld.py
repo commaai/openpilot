@@ -273,15 +273,12 @@ def main(demo=False):
       meta_extra = meta_main
 
     sm.update(0)
-    if not sm["carControl"].enabled:
-      next_model = model
-      if big_failed:
-        next_model = small_model
-      elif big_model is not None:
-        next_model = big_model
-      if next_model is not model:
-        model = next_model
-        params.put_bool("UsbGpuActive", model is not small_model)
+    if big_failed and model is not small_model:
+      model = small_model
+      params.put_bool("UsbGpuActive", False)
+    elif not sm["carControl"].enabled and big_model is not None and model is not big_model:
+      model = big_model
+      params.put_bool("UsbGpuActive", True)
 
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
@@ -325,9 +322,6 @@ def main(demo=False):
       'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
     }
 
-    if big_failed and model is not small_model:
-      continue
-
     mt1 = time.perf_counter()
     try:
       model_output = model.run(bufs, transforms, inputs)
@@ -336,7 +330,11 @@ def main(demo=False):
         raise
       cloudlog.exception("big model failed")
       big_failed = True
-      continue
+      model = small_model
+      params.put_bool("UsbGpuActive", False)
+      bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
+      transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
+      model_output = model.run(bufs, transforms, inputs)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
