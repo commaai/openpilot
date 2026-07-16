@@ -69,12 +69,14 @@ bool takeValue(int argc, char *argv[], int &i, std::string &out) {
   return true;
 }
 
-bool parseArgs(int argc, char *argv[], CabanaArgs &args) {
+// Returns 0 to continue, or a process exit code (0 for --help, 1 for errors).
+int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
+  ok = false;
   for (int i = 1; i < argc; ++i) {
     const char *a = argv[i];
     if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0) {
       printUsage(argv[0]);
-      return false;
+      return 0;
     } else if (std::strcmp(a, "--demo") == 0) {
       args.demo = true;
     } else if (std::strcmp(a, "--auto") == 0) {
@@ -90,36 +92,37 @@ bool parseArgs(int argc, char *argv[], CabanaArgs &args) {
     } else if (std::strcmp(a, "--panda") == 0) {
       args.panda = true;
     } else if (std::strcmp(a, "--panda-serial") == 0) {
-      if (!takeValue(argc, argv, i, args.panda_serial)) return false;
+      if (!takeValue(argc, argv, i, args.panda_serial)) return 1;
       args.panda = true;
     } else if (std::strcmp(a, "--socketcan") == 0) {
-      if (!takeValue(argc, argv, i, args.socketcan)) return false;
+      if (!takeValue(argc, argv, i, args.socketcan)) return 1;
 #ifdef __linux__
 #else
       fprintf(stderr, "error: --socketcan is only supported on Linux\n");
-      return false;
+      return 1;
 #endif
     } else if (std::strcmp(a, "--zmq") == 0) {
-      if (!takeValue(argc, argv, i, args.zmq)) return false;
+      if (!takeValue(argc, argv, i, args.zmq)) return 1;
     } else if (std::strcmp(a, "--data_dir") == 0) {
-      if (!takeValue(argc, argv, i, args.data_dir)) return false;
+      if (!takeValue(argc, argv, i, args.data_dir)) return 1;
     } else if (std::strcmp(a, "--no-vipc") == 0) {
       args.no_vipc = true;
     } else if (std::strcmp(a, "--dbc") == 0) {
-      if (!takeValue(argc, argv, i, args.dbc)) return false;
+      if (!takeValue(argc, argv, i, args.dbc)) return 1;
     } else if (a[0] == '-') {
       fprintf(stderr, "error: unknown option %s\n", a);
       printUsage(argv[0]);
-      return false;
+      return 1;
     } else if (args.route.empty()) {
       args.route = a;
     } else {
       fprintf(stderr, "error: unexpected argument %s\n", a);
       printUsage(argv[0]);
-      return false;
+      return 1;
     }
   }
-  return true;
+  ok = true;
+  return 0;
 }
 
 }  // namespace
@@ -136,8 +139,9 @@ int main(int argc, char *argv[]) {
   utils::setTheme(settings.theme);
 
   CabanaArgs args;
-  if (!parseArgs(argc, argv, args)) {
-    return 0;
+  bool args_ok = false;
+  if (const int code = parseArgs(argc, argv, args, args_ok); !args_ok) {
+    return code;
   }
 
   AbstractStream *stream = nullptr;

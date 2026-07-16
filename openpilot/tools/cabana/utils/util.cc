@@ -270,11 +270,16 @@ QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
   Q_UNUSED(pos);
   if (input.isEmpty()) return QValidator::Intermediate;
 
-  // Match QString::toDouble() (C locale, no group separators).
+  // Match QString::toDouble(): C locale, no hex floats / inf / nan.
   const QByteArray bytes = input.toLatin1();
+  // strtod accepts 0x… hex floats and p-exponents; QString::toDouble does not.
+  if (bytes.contains('x') || bytes.contains('X') || bytes.contains('p') || bytes.contains('P')) {
+    return QValidator::Invalid;
+  }
+
   const char *start = bytes.constData();
   char *end = nullptr;
-  std::strtod(start, &end);
+  const double value = std::strtod(start, &end);
   if (end == start) {
     // Still typing a sign, decimal point, or exponent prefix.
     if (input == "-" || input == "+" || input == "." || input == "-." || input == "+.") {
@@ -282,7 +287,10 @@ QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
     }
     return QValidator::Invalid;
   }
-  if (*end == '\0') return QValidator::Acceptable;
+  if (*end == '\0') {
+    // Reject inf/nan (strtod accepts them; QDoubleValidator / toDouble path should not).
+    return std::isfinite(value) ? QValidator::Acceptable : QValidator::Invalid;
+  }
 
   // Partial exponent / trailing sign while typing (e.g. "1e", "1e-", "1.").
   for (const char *p = end; *p; ++p) {
