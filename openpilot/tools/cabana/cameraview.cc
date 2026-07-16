@@ -6,6 +6,8 @@
 #include <GLES3/gl3.h>
 #endif
 
+#include <cstdio>
+
 #include <QApplication>
 
 namespace {
@@ -221,7 +223,8 @@ void CameraWidget::vipcThread() {
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream != requested_stream_type) {
       clearFrames();
-      qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
+      fprintf(stderr, "connecting to stream %d, was connected to %d\n",
+              (int)requested_stream_type, (int)cur_stream);
       cur_stream = requested_stream_type;
       vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
     }

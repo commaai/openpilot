@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <future>
 
-#include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -16,6 +15,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/utils/util.h"
 
 // SignalModel
 
@@ -252,7 +252,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
-  node_validator = new QRegExpValidator(QRegExp("^\\w+(,\\w+)*$"), this);
+  node_validator = new NodeValidator(this);
   double_validator = new DoubleValidator(this);
 
   label_font.setPointSize(8);
@@ -376,15 +376,6 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     else if (item->type == SignalModel::Item::Node) e->setValidator(node_validator);
     else e->setValidator(double_validator);
 
-    if (item->type == SignalModel::Item::Name) {
-      auto names = dbc()->signalNames();
-      QStringList qnames;
-      for (const auto &n : names) qnames.push_back(QString::fromStdString(n));
-      QCompleter *completer = new QCompleter(qnames, e);
-      completer->setCaseSensitivity(Qt::CaseInsensitive);
-      completer->setFilterMode(Qt::MatchContains);
-      e->setCompleter(completer);
-    }
     return e;
   } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);
@@ -429,8 +420,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
-  QRegularExpression re("\\S+");
-  filter_edit->setValidator(new QRegularExpressionValidator(re, this));
+  filter_edit->setValidator(new NonWhitespaceValidator(this));
   filter_edit->setClearButtonEnabled(true);
   filter_edit->setPlaceholderText(tr("Filter Signal"));
   hl->addWidget(filter_edit);
