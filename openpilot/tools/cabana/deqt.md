@@ -29,7 +29,6 @@ our workflow is:
 - `QThread`
 - `QTimer`, `QBasicTimer`, `QTimerEvent`
 - `QSocketNotifier`
-- `QDebug`, `QMessageLogContext`
 - `QWidget`, `QMainWindow`, `QWindow`
 - `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QProgressDialog`
 - `QFileDialog`

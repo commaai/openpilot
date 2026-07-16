@@ -53,11 +53,9 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   installDownloadProgressHandler([](uint64_t cur, uint64_t total, bool success) {
     emit static_main_win->updateProgressBar(cur, total, success);
   });
-  qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-    if (type == QtDebugMsg) return;
-    emit static_main_win->showMessage(msg, 2000);
+  installMessageHandler([](ReplyMsgType type, const std::string msg) {
+    emit static_main_win->showMessage(QString::fromStdString(msg), 2000);
   });
-  installMessageHandler([](ReplyMsgType type, const std::string msg) { qInfo() << msg.c_str(); });
 
   setStyleSheet(QString(R"(QMainWindow::separator {
     width: %1px; /* when vertical */
@@ -562,7 +560,6 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   remindSaveChanges();
 
   installDownloadProgressHandler(nullptr);
-  qInstallMessageHandler(nullptr);
 
   if (floating_window)
     floating_window->deleteLater();

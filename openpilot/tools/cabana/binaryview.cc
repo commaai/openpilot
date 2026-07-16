@@ -3,7 +3,8 @@
 
 #include <algorithm>
 
-#include <QDebug>
+#include <cstdio>
+
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>
@@ -260,7 +261,8 @@ void BinaryViewModel::refresh() {
         int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
         int idx = column_count * (pos / 8) + pos % 8;
         if (idx >= items.size()) {
-          qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
+          fprintf(stderr, "signal %s out of bounds.start_bit: %d size: %d\n",
+                  sig->name.c_str(), sig->start_bit, sig->size);
           break;
         }
         if (j == 0) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;

@@ -1,6 +1,7 @@
 #include "tools/cabana/streams/pandastream.h"
 
-#include <QDebug>
+#include <cstdio>
+
 #include <QCheckBox>
 #include <QLabel>
 #include <QMessageBox>
@@ -16,10 +17,10 @@ PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(co
 
 bool PandaStream::connect() {
   try {
-    qDebug() << "Connecting to panda " << config.serial.c_str();
+    fprintf(stderr, "Connecting to panda %s\n", config.serial.c_str());
     panda.reset(new Panda(config.serial));
     config.bus_config.resize(3);
-    qDebug() << "Connected";
+    fprintf(stderr, "Connected\n");
   } catch (const std::exception& e) {
     return false;
   }
@@ -48,7 +49,7 @@ void PandaStream::streamThread() {
     QThread::msleep(1);
 
     if (!panda->connected()) {
-      qDebug() << "Connection to panda lost. Attempting reconnect.";
+      fprintf(stderr, "Connection to panda lost. Attempting reconnect.\n");
       if (!connect()){
         QThread::msleep(1000);
         continue;
@@ -57,7 +58,7 @@ void PandaStream::streamThread() {
 
     raw_can_data.clear();
     if (!panda->can_receive(raw_can_data)) {
-      qDebug() << "failed to receive";
+      fprintf(stderr, "failed to receive\n");
       continue;
     }
 
@@ -123,7 +124,7 @@ void OpenPandaWidget::buildConfigForm() {
       Panda panda(serial.toStdString());
       has_fd = (panda.hw_type == cereal::PandaState::PandaType::RED_PANDA) || (panda.hw_type == cereal::PandaState::PandaType::RED_PANDA_V2);
     } catch (const std::exception& e) {
-      qDebug() << "failed to open panda" << serial;
+      fprintf(stderr, "failed to open panda %s\n", serial.toUtf8().constData());
       has_panda = false;
     }
   }

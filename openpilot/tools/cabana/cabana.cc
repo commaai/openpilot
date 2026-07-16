@@ -1,3 +1,5 @@
+#include <cstdio>
+
 #include <QApplication>
 #include <QCommandLineParser>
 
@@ -52,7 +54,7 @@ int main(int argc, char *argv[]) {
     try {
       stream = new PandaStream(&app, {.serial = cmd_parser.value("panda-serial").toStdString()});
     } catch (std::exception &e) {
-      qWarning() << e.what();
+      fprintf(stderr, "%s\n", e.what());
       return 0;
     }
 #ifdef __linux__
