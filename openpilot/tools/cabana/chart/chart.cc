@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <random>
 
 #include <QActionGroup>
 #include <QApplication>
@@ -14,7 +15,6 @@
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
-#include <QRandomGenerator>
 #include <QRubberBand>
 #include <QScreen>
 #include <QWindow>
@@ -822,9 +822,12 @@ void ChartView::setSeriesColor(QXYSeries *series, QColor color) {
     if (s != series && std::abs(color.hueF() - qobject_cast<QXYSeries *>(s)->color().hueF()) < 0.1) {
       // use different color to distinguish it from others.
       auto last_color = qobject_cast<QXYSeries *>(existing_series.back())->color();
+      static thread_local std::mt19937 rng{std::random_device{}()};
+      std::uniform_int_distribution<int> sat(35, 99);
+      std::uniform_int_distribution<int> val(85, 99);
       color.setHsvF(std::fmod(last_color.hueF() + 60 / 360.0, 1.0),
-                    QRandomGenerator::global()->bounded(35, 100) / 100.0,
-                    QRandomGenerator::global()->bounded(85, 100) / 100.0);
+                    sat(rng) / 100.0,
+                    val(rng) / 100.0);
       break;
     }
   }
