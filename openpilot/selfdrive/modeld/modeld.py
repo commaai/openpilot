@@ -190,6 +190,7 @@ def main(demo=False):
   model = small_model
   big_model = None
   big_failed = False
+  params.put_bool("UsbGpuActive", USBGPU and not fallback)
 
   def load_big_model():
     nonlocal big_model, big_failed
@@ -273,10 +274,14 @@ def main(demo=False):
 
     sm.update(0)
     if not sm["carControl"].enabled:
+      next_model = model
       if big_failed:
-        model = small_model
+        next_model = small_model
       elif big_model is not None:
-        model = big_model
+        next_model = big_model
+      if next_model is not model:
+        model = next_model
+        params.put_bool("UsbGpuActive", model is not small_model)
 
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
