@@ -1,6 +1,7 @@
 #include "tools/cabana/utils/util.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <csignal>
 #include <limits>
 #include <memory>
@@ -148,34 +149,41 @@ void TabBar::closeTabClicked() {
 
 // UnixSignalHandler
 
-UnixSignalHandler::UnixSignalHandler(QObject *parent) : QObject(nullptr) {
+UnixSignalHandler::UnixSignalHandler() {
   if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd)) {
     qFatal("Couldn't create TERM socketpair");
   }
 
-  sn = new QSocketNotifier(sig_fd[1], QSocketNotifier::Read, this);
-  connect(sn, &QSocketNotifier::activated, this, &UnixSignalHandler::handleSigTerm);
+  waiter = std::thread([this]() {
+    int tmp = 0;
+    while (::read(sig_fd[1], &tmp, sizeof(tmp)) < 0) {
+      if (errno != EINTR) return;
+    }
+    if (shutting_down.load()) return;
+
+    // Marshal exit onto the GUI thread (qApp methods are not thread-safe).
+    QMetaObject::invokeMethod(qApp, []() {
+      printf("\nexiting...\n");
+      qApp->closeAllWindows();
+      qApp->exit();
+    }, Qt::QueuedConnection);
+  });
+
   std::signal(SIGINT, signalHandler);
   std::signal(SIGTERM, UnixSignalHandler::signalHandler);
 }
 
 UnixSignalHandler::~UnixSignalHandler() {
+  shutting_down.store(true);
+  int dummy = 0;
+  (void)!::write(sig_fd[0], &dummy, sizeof(dummy));
+  if (waiter.joinable()) waiter.join();
   ::close(sig_fd[0]);
   ::close(sig_fd[1]);
 }
 
 void UnixSignalHandler::signalHandler(int s) {
   (void)!::write(sig_fd[0], &s, sizeof(s));
-}
-
-void UnixSignalHandler::handleSigTerm() {
-  sn->setEnabled(false);
-  int tmp;
-  (void)!::read(sig_fd[1], &tmp, sizeof(tmp));
-
-  printf("\nexiting...\n");
-  qApp->closeAllWindows();
-  qApp->exit();
 }
 
 // NameValidator

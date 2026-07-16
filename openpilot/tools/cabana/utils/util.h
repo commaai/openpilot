@@ -1,7 +1,9 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cmath>
+#include <thread>
 #include <vector>
 #include <utility>
 
@@ -12,7 +14,6 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <QPainter>
-#include <QSocketNotifier>
 #include <QStaticText>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
@@ -177,20 +178,18 @@ private:
   void closeTabClicked();
 };
 
-class UnixSignalHandler : public QObject {
-  Q_OBJECT
-
+// Watches SIGINT/SIGTERM via a self-pipe and a dedicated waiter thread
+// (no Qt notifiers/timers). Exit is marshalled onto the GUI thread.
+class UnixSignalHandler {
 public:
-  UnixSignalHandler(QObject *parent = nullptr);
+  UnixSignalHandler();
   ~UnixSignalHandler();
   static void signalHandler(int s);
 
-public slots:
-  void handleSigTerm();
-
 private:
   inline static int sig_fd[2] = {};
-  QSocketNotifier *sn;
+  std::atomic<bool> shutting_down{false};
+  std::thread waiter;
 };
 
 int num_decimals(double num);

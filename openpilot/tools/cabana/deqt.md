@@ -26,7 +26,6 @@ our workflow is:
 - `QFile`, `QFileInfo`, `QDir`, `QIODevice`, `QStandardPaths`
 - `QThread`
 - `QTimer`, `QBasicTimer`, `QTimerEvent`
-- `QSocketNotifier`
 - `QWidget`, `QMainWindow`, `QWindow`
 - `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QProgressDialog`
 - `QFileDialog`
