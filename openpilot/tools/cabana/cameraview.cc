@@ -67,21 +67,71 @@ CameraWidget::~CameraWidget() {
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
     glDeleteTextures(2, textures);
-    shader_program_.reset();
+    glDeleteProgram(shader_program);
   }
   doneCurrent();
 }
 
 void CameraWidget::initializeGL() {
   initializeOpenGLFunctions();
+  glDeleteProgram(shader_program);
+  shader_program = 0;
+  transform_uniform = -1;
 
-  shader_program_ = std::make_unique<QOpenGLShaderProgram>(context());
-  shader_program_->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
-  shader_program_->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
-  shader_program_->link();
+  auto compile_shader = [this](GLenum type, const char *source) {
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
 
-  GLint frame_pos_loc = shader_program_->attributeLocation("aPosition");
-  GLint frame_texcoord_loc = shader_program_->attributeLocation("aTexCoord");
+    GLint success = GL_FALSE;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (success != GL_TRUE) {
+      char log[1024] = {};
+      glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
+      fprintf(stderr, "failed to compile camera shader: %s\n", log);
+      glDeleteShader(shader);
+      return GLuint{0};
+    }
+    return shader;
+  };
+
+  const GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, frame_vertex_shader);
+  const GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, frame_fragment_shader);
+  if (vertex_shader == 0 || fragment_shader == 0) {
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+    return;
+  }
+
+  shader_program = glCreateProgram();
+  glAttachShader(shader_program, vertex_shader);
+  glAttachShader(shader_program, fragment_shader);
+  glLinkProgram(shader_program);
+  glDeleteShader(vertex_shader);
+  glDeleteShader(fragment_shader);
+
+  GLint success = GL_FALSE;
+  glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+  if (success != GL_TRUE) {
+    char log[1024] = {};
+    glGetProgramInfoLog(shader_program, sizeof(log), nullptr, log);
+    fprintf(stderr, "failed to link camera shader program: %s\n", log);
+    glDeleteProgram(shader_program);
+    shader_program = 0;
+    return;
+  }
+
+  const GLint frame_pos_loc = glGetAttribLocation(shader_program, "aPosition");
+  const GLint frame_texcoord_loc = glGetAttribLocation(shader_program, "aTexCoord");
+  transform_uniform = glGetUniformLocation(shader_program, "uTransform");
+  const GLint texture_y_uniform = glGetUniformLocation(shader_program, "uTextureY");
+  const GLint texture_uv_uniform = glGetUniformLocation(shader_program, "uTextureUV");
+  if (frame_pos_loc < 0 || frame_texcoord_loc < 0 || transform_uniform < 0 || texture_y_uniform < 0 || texture_uv_uniform < 0) {
+    fprintf(stderr, "failed to find camera shader attributes or uniforms\n");
+    glDeleteProgram(shader_program);
+    shader_program = 0;
+    return;
+  }
 
   auto [x1, x2, y1, y2] = requested_stream_type == VISION_STREAM_DRIVER ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
@@ -111,10 +161,10 @@ void CameraWidget::initializeGL() {
 
   glGenTextures(2, textures);
 
-  shader_program_->bind();
-  shader_program_->setUniformValue("uTextureY", 0);
-  shader_program_->setUniformValue("uTextureUV", 1);
-  shader_program_->release();
+  glUseProgram(shader_program);
+  glUniform1i(texture_y_uniform, 0);
+  glUniform1i(texture_uv_uniform, 1);
+  glUseProgram(0);
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
@@ -146,7 +196,7 @@ void CameraWidget::paintGL() {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   std::lock_guard lk(frame_lock);
-  if (!current_frame_) return;
+  if (!current_frame_ || shader_program == 0) return;
 
   // Scale for aspect ratio
   float widget_ratio = (float)width() / height();
@@ -156,10 +206,14 @@ void CameraWidget::paintGL() {
 
   glViewport(0, 0, width() * devicePixelRatio(), height() * devicePixelRatio());
 
-  shader_program_->bind();
-  QMatrix4x4 transform;
-  transform.scale(scale_x, scale_y, 1.0f);
-  shader_program_->setUniformValue("uTransform", transform);
+  glUseProgram(shader_program);
+  const GLfloat transform[] = {
+    scale_x, 0.0f, 0.0f, 0.0f,
+    0.0f, scale_y, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f,
+  };
+  glUniformMatrix4fv(transform_uniform, 1, GL_FALSE, transform);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -185,11 +239,13 @@ void CameraWidget::paintGL() {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
-  shader_program_->release();
+  glUseProgram(0);
 }
 
 void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
+  if (shader_program == 0) return;
+
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
   stream_stride = vipc_client->buffers[0].stride;

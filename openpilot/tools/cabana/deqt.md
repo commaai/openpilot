@@ -64,6 +64,5 @@ some rules
 - `QLegend`, `QLegendMarker`
 - `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
 - `QOpenGLWidget`, `QOpenGLFunctions`
-- `QOpenGLShader`, `QOpenGLShaderProgram`
 - `QMatrix4x4`, `QSurfaceFormat`
 - `QUndoCommand`, `QUndoStack`, `QUndoView`

@@ -1,13 +1,11 @@
 #pragma once
 
-#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
 #include <utility>
 
 #include <QOpenGLFunctions>
-#include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
 #include <QThread>
 
@@ -38,9 +36,10 @@ protected:
   void vipcThread();
   void clearFrames();
 
-  GLuint frame_vao, frame_vbo, frame_ibo;
-  GLuint textures[2];
-  std::unique_ptr<QOpenGLShaderProgram> shader_program_;
+  GLuint frame_vao = 0, frame_vbo = 0, frame_ibo = 0;
+  GLuint textures[2] = {};
+  GLuint shader_program = 0;
+  GLint transform_uniform = -1;
   QColor bg = Qt::black;
 
   std::string stream_name;
