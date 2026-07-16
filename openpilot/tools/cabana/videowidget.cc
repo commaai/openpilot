@@ -157,7 +157,7 @@ QWidget *VideoWidget::createCameraWidget() {
   slider->setTimeRange(can->minSeconds(), can->maxSeconds());
 
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
-  QObject::connect(can, &AbstractStream::paused, cam_widget, [c = cam_widget]() { c->showPausedOverlay(); });
+  QObject::connect(can, &AbstractStream::paused, cam_widget, qOverload<>(&StreamCameraView::update));
   QObject::connect(can, &AbstractStream::eventsMerged, this, [this]() { slider->update(); });
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);

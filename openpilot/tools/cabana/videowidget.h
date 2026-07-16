@@ -36,7 +36,6 @@ class StreamCameraView : public CameraWidget {
 public:
   StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent = nullptr);
   void paintGL() override;
-  void showPausedOverlay() { update(); }
   void parseQLog(std::shared_ptr<LogReader> qlog);
 
 private:

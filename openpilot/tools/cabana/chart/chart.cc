@@ -418,40 +418,6 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
   return q * z;
 }
 
-// Soft drop-shadow without QGraphicsDropShadowEffect: stacked translucent rects.
-QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
-  const qreal dpr = px.devicePixelRatio();
-  QPixmap shadow(px.size() + QSize(radius * dpr * 2, radius * dpr * 2));
-  shadow.setDevicePixelRatio(dpr);
-  shadow.fill(Qt::transparent);
-
-  QPainter p(&shadow);
-  p.setRenderHint(QPainter::Antialiasing, true);
-  p.setPen(Qt::NoPen);
-  const QRectF core(radius, radius, px.width() / dpr, px.height() / dpr);
-  for (int i = radius; i >= 1; --i) {
-    const int alpha = std::max(8, 200 * (radius - i + 1) / (radius * (radius + 1) / 2));
-    p.setBrush(QColor(40, 40, 40, std::min(245, alpha)));
-    p.drawRoundedRect(core.adjusted(-i, -i, i, i), 2, 2);
-  }
-  return shadow;
-}
-
-static QPixmap getDropPixmap(const QPixmap &src) {
-  static QPixmap shadow_px;
-  const int radius = 10;
-  if (shadow_px.size() != src.size() + QSize(radius * 2, radius * 2)) {
-    shadow_px = getBlankShadowPixmap(src, radius);
-  }
-  QPixmap px = shadow_px;
-  QPainter p(&px);
-  QRectF target_rect(QPointF(radius, radius), src.size() / src.devicePixelRatio());
-  p.drawPixmap(target_rect.topLeft(), src);
-  p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-  p.fillRect(target_rect, QColor(0, 0, 0, 200));
-  return px;
-}
-
 void ChartView::contextMenuEvent(QContextMenuEvent *event) {
   QMenu context_menu(this);
   context_menu.addActions(menu->actions());
@@ -471,7 +437,7 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     charts_widget->stopAutoScroll();
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
-    drag->setPixmap(getDropPixmap(px));
+    drag->setPixmap(px);
     drag->setHotSpot(-QPoint(5, 5));
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
@@ -620,7 +586,6 @@ void ChartView::dropEvent(QDropEvent *event) {
       sigs.insert(sigs.end(), std::move_iterator(source_chart->sigs.begin()), std::move_iterator(source_chart->sigs.end()));
       updateAxisY();
       updateTitle();
-      startAnimation();
 
       source_chart->sigs.clear();
       charts_widget->removeChart(source_chart);
@@ -632,11 +597,6 @@ void ChartView::dropEvent(QDropEvent *event) {
 
 void ChartView::resetChartCache() {
   chart_pixmap = QPixmap();
-  viewport()->update();
-}
-
-void ChartView::startAnimation() {
-  // Previously faded the chart in with QPropertyAnimation; just repaint.
   viewport()->update();
 }
 
