@@ -16,7 +16,6 @@ our workflow is:
 
 - `QObject`, `QMetaObject`, `QMetaType`
 - `QApplication`, `QCoreApplication`, `QGuiApplication`
-- `QCommandLineParser`
 - `QString`, `QStringList`, `QStringBuilder`, `QChar`, `QLatin1Char`
 - `QByteArray`
 - `QVariant`
