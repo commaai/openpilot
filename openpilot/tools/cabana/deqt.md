@@ -50,7 +50,6 @@ some rules
 - `QStyle`, `QStyleOption`, `QStyleOptionFrame`, `QStyleOptionSlider`
 - `QPoint`, `QPointF`, `QRect`, `QRectF`, `QRegion`
 - `QSize`, `QSizeF`
-- `QCursor`, `QClipboard`, `QScreen`, `QDesktopWidget`
 - `QEvent`, `QPaintEvent`, `QResizeEvent`, `QShowEvent`, `QCloseEvent`
 - `QMouseEvent`, `QWheelEvent`, `QNativeGestureEvent`, `QContextMenuEvent`
 - `QDrag`, `QMimeData`

@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-#include <QClipboard>
-#include <QDesktopWidget>
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -43,9 +41,6 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
 
   // restore states
   restoreGeometry(settings.geometry);
-  if (isMaximized()) {
-    setGeometry(QApplication::desktop()->availableGeometry(this));
-  }
   restoreState(settings.window_state);
 
   // install handlers
@@ -320,9 +315,8 @@ void MainWindow::loadDBCFromOpendbc(const QString &name) {
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   closeFile(s);
 
-  QString dbc_str = QGuiApplication::clipboard()->text();
   std::string error;
-  bool ret = dbc()->open(s, std::string(""), dbc_str.toStdString(), &error);
+  bool ret = dbc()->open(s, std::string(""), utils::getClipboardText(), &error);
   if (ret && dbc()->nonEmptyDBCCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
@@ -467,8 +461,11 @@ void MainWindow::saveToClipboard() {
 
 void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
   assert(dbc_file != nullptr);
-  QGuiApplication::clipboard()->setText(QString::fromStdString(dbc_file->generateDBC()));
-  QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
+  if (utils::setClipboardText(dbc_file->generateDBC())) {
+    QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
+  } else {
+    QMessageBox::warning(this, tr("Copy To Clipboard"), tr("Failed to copy DBC to clipboard!"));
+  }
 }
 
 void MainWindow::updateLoadSaveMenus() {

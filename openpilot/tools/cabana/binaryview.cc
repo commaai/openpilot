@@ -126,7 +126,7 @@ void BinaryView::highlight(const cabana::Signal *sig) {
 }
 
 void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) {
-  auto index = indexAt(viewport()->mapFromGlobal(QCursor::pos()));
+  auto index = indexAt(last_mouse_pos);
   if (!anchor_index.isValid() || !index.isValid())
     return;
 
@@ -141,7 +141,7 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
   resize_sig = nullptr;
-  if (auto index = indexAt(event->pos()); index.isValid() && index.column() != 8) {
+  if (auto index = indexAt(last_mouse_pos = event->pos()); index.isValid() && index.column() != 8) {
     anchor_index = index;
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
     int bit_pos = get_bit_pos(anchor_index);
@@ -158,7 +158,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 }
 
 void BinaryView::highlightPosition(const QPoint &pos) {
-  if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
+  if (auto index = indexAt(pos); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     const cabana::Signal *sig = item->sigs.empty() ? nullptr : item->sigs.back();
     highlight(sig);
@@ -166,7 +166,7 @@ void BinaryView::highlightPosition(const QPoint &pos) {
 }
 
 void BinaryView::mouseMoveEvent(QMouseEvent *event) {
-  highlightPosition(event->globalPos());
+  highlightPosition(last_mouse_pos = event->pos());
   QTableView::mouseMoveEvent(event);
 }
 
@@ -208,7 +208,7 @@ void BinaryView::refresh() {
   resize_sig = nullptr;
   hovered_sig = nullptr;
   model->refresh();
-  highlightPosition(QCursor::pos());
+  if (underMouse()) highlightPosition(last_mouse_pos);
 }
 
 std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {

@@ -11,8 +11,6 @@
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QRubberBand>
-#include <QScreen>
-#include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
 
@@ -62,7 +60,6 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
   QObject::connect(axis_y, &QValueAxis::rangeChanged, this, &ChartView::resetChartCache);
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, this, &ChartView::resetChartCache);
-  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, this, &ChartView::resetChartCache);
 
   QObject::connect(dbcNotifier(), &QtDBCNotifier::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &ChartView::signalUpdated);
@@ -590,7 +587,7 @@ void ChartView::dragMoveEvent(QDragMoveEvent *event) {
     event->setDropAction(event->source() == this ? Qt::MoveAction : Qt::CopyAction);
     event->accept();
   }
-  charts_widget->startAutoScroll();
+  charts_widget->startAutoScroll(viewport()->mapToGlobal(event->pos()));
 }
 
 void ChartView::dropEvent(QDropEvent *event) {
@@ -620,8 +617,8 @@ void ChartView::resetChartCache() {
 
 void ChartView::paintEvent(QPaintEvent *event) {
   if (!can->liveStreaming()) {
-    if (chart_pixmap.isNull()) {
-      const qreal dpr = viewport()->devicePixelRatioF();
+    const qreal dpr = viewport()->devicePixelRatioF();
+    if (chart_pixmap.isNull() || chart_pixmap.devicePixelRatioF() != dpr) {
       chart_pixmap = QPixmap(viewport()->size() * dpr);
       chart_pixmap.setDevicePixelRatio(dpr);
       QPainter p(&chart_pixmap);

@@ -136,6 +136,8 @@ namespace utils {
 QPixmap icon(const QString &id);
 std::string homePath();
 std::filesystem::path configPath();
+std::string getClipboardText();
+bool setClipboardText(const std::string &text);
 bool isDarkTheme();
 void setTheme(int theme);
 QString formatSeconds(double sec, bool include_milliseconds = false, bool absolute_time = false);

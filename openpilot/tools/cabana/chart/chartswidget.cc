@@ -390,7 +390,8 @@ void ChartsWidget::updateLayout(bool force) {
   }
 }
 
-void ChartsWidget::startAutoScroll() {
+void ChartsWidget::startAutoScroll(const QPoint &global_pos) {
+  auto_scroll_pos = global_pos;
   auto_scroll_timer->start(50);
 }
 
@@ -406,7 +407,7 @@ void ChartsWidget::doAutoScroll() {
   }
 
   int value = scroll->value();
-  QPoint pos = charts_scroll->viewport()->mapFromGlobal(QCursor::pos());
+  QPoint pos = charts_scroll->viewport()->mapFromGlobal(auto_scroll_pos);
   QRect area = charts_scroll->viewport()->rect();
 
   if (pos.y() - area.top() < settings.chart_height / 2) {
@@ -419,9 +420,8 @@ void ChartsWidget::doAutoScroll() {
     stopAutoScroll();
   } else {
     // mouseMoveEvent to updates the drag-selection rectangle
-    const QPoint globalPos = charts_scroll->viewport()->mapToGlobal(pos);
-    const QPoint windowPos = charts_scroll->window()->mapFromGlobal(globalPos);
-    QMouseEvent mm(QEvent::MouseMove, pos, windowPos, globalPos,
+    const QPoint windowPos = charts_scroll->window()->mapFromGlobal(auto_scroll_pos);
+    QMouseEvent mm(QEvent::MouseMove, pos, windowPos, auto_scroll_pos,
                    Qt::NoButton, Qt::LeftButton, Qt::NoModifier, Qt::MouseEventSynthesizedByQt);
     QApplication::sendEvent(charts_scroll->viewport(), &mm);
   }

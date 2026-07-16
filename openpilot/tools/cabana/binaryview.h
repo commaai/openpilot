@@ -94,6 +94,7 @@ private:
   void highlightPosition(const QPoint &pt);
 
   QModelIndex anchor_index;
+  QPoint last_mouse_pos{-1, -1};
   BinaryViewModel *model;
   BinaryItemDelegate *delegate;
   bool is_message_active = false;

@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <csignal>
 #include <ctime>
@@ -317,6 +318,37 @@ std::filesystem::path configPath() {
   const char *xdg = ::getenv("XDG_CONFIG_HOME");
   return (xdg && xdg[0]) ? std::filesystem::path(xdg) : std::filesystem::path(homePath()) / ".config";
 #endif
+}
+
+#ifdef __APPLE__
+static const char *clipboard_read_cmds[] = {"pbpaste"};
+static const char *clipboard_write_cmds[] = {"pbcopy"};
+#else
+static const char *clipboard_read_cmds[] = {"wl-paste --no-newline 2>/dev/null", "xclip -selection clipboard -o 2>/dev/null", "xsel -ob 2>/dev/null"};
+static const char *clipboard_write_cmds[] = {"wl-copy 2>/dev/null", "xclip -selection clipboard 2>/dev/null", "xsel -ib 2>/dev/null"};
+#endif
+
+std::string getClipboardText() {
+  for (const char *cmd : clipboard_read_cmds) {
+    FILE *f = ::popen(cmd, "r");
+    if (!f) continue;
+    std::string text;
+    char buf[4096];
+    for (size_t n; (n = ::fread(buf, 1, sizeof(buf), f)) > 0;) text.append(buf, n);
+    if (::pclose(f) == 0) return text;
+  }
+  return "";
+}
+
+bool setClipboardText(const std::string &text) {
+  std::signal(SIGPIPE, SIG_IGN);
+  for (const char *cmd : clipboard_write_cmds) {
+    FILE *f = ::popen(cmd, "w");
+    if (!f) continue;
+    size_t written = ::fwrite(text.data(), 1, text.size(), f);
+    if (::pclose(f) == 0 && written == text.size()) return true;
+  }
+  return false;
 }
 
 bool isDarkTheme() {

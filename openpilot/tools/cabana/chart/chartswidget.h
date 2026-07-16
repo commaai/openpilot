@@ -69,7 +69,7 @@ private:
   void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
-  void startAutoScroll();
+  void startAutoScroll(const QPoint &global_pos);
   void stopAutoScroll();
   void doAutoScroll();
   void updateToolBar();
@@ -111,6 +111,7 @@ private:
   int column_count = 1;
   int current_column_count = 0;
   int auto_scroll_count = 0;
+  QPoint auto_scroll_pos;
   QTimer *auto_scroll_timer;
   QTimer *align_timer;
   int current_theme = 0;
