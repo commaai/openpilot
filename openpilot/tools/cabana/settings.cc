@@ -17,8 +17,31 @@ const int MAX_CACHE_MINIUTES = 120;
 
 Settings settings;
 
+template <typename T>
+void readSetting(QSettings &settings_store, const char *key, T &value) {
+  if (auto stored = settings_store.value(key); stored.canConvert<T>()) value = stored.value<T>();
+}
+
+void readSetting(QSettings &settings_store, const char *key, std::string &value) {
+  value = settings_store.value(key, QString::fromStdString(value)).toString().toStdString();
+}
+
+void readSetting(QSettings &settings_store, const char *key, std::vector<std::string> &value) {
+  value.clear();
+  for (const auto &item : settings_store.value(key).toStringList()) value.push_back(item.toStdString());
+}
+
+template <typename T>
+void writeSetting(QSettings &settings_store, const char *key, const T &value) { settings_store.setValue(key, value); }
+void writeSetting(QSettings &settings_store, const char *key, const std::string &value) { settings_store.setValue(key, QString::fromStdString(value)); }
+void writeSetting(QSettings &settings_store, const char *key, const std::vector<std::string> &value) {
+  QStringList items;
+  for (const auto &item : value) items.push_back(QString::fromStdString(item));
+  settings_store.setValue(key, items);
+}
+
 template <class SettingOperation>
-void settings_op(SettingOperation op) {
+void settingsOp(SettingOperation op) {
   QSettings s("cabana");
   op(s, "absolute_time", settings.absolute_time);
   op(s, "fps", settings.fps);
@@ -48,16 +71,13 @@ void settings_op(SettingOperation op) {
 }
 
 Settings::Settings() {
-  last_dir = last_route_dir = QDir::homePath();
-  log_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/";
-  settings_op([](QSettings &s, const QString &key, auto &value) {
-    if (auto v = s.value(key); v.canConvert<std::decay_t<decltype(value)>>())
-      value = v.value<std::decay_t<decltype(value)>>();
-  });
+  last_dir = last_route_dir = QDir::homePath().toStdString();
+  log_path = (QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/").toStdString();
+  settingsOp([](QSettings &s, const char *key, auto &value) { readSetting(s, key, value); });
 }
 
 Settings::~Settings() {
-  settings_op([](QSettings &s, const QString &key, auto &v) { s.setValue(key, v); });
+  settingsOp([](QSettings &s, const char *key, const auto &value) { writeSetting(s, key, value); });
 }
 
 // SettingsDlg
@@ -102,7 +122,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   log_livestream = new QGroupBox(tr("Enable live stream logging"), this);
   log_livestream->setCheckable(true);
   QHBoxLayout *path_layout = new QHBoxLayout(log_livestream);
-  path_layout->addWidget(log_path = new QLineEdit(settings.log_path, this));
+  path_layout->addWidget(log_path = new QLineEdit(QString::fromStdString(settings.log_path), this));
   log_path->setReadOnly(true);
   auto browse_btn = new QPushButton(tr("B&rowse..."));
   path_layout->addWidget(browse_btn);
@@ -134,7 +154,7 @@ void SettingsDlg::save() {
   settings.max_cached_minutes = cached_minutes->value();
   settings.chart_height = chart_height->value();
   settings.log_livestream = log_livestream->isChecked();
-  settings.log_path = log_path->text();
+  settings.log_path = log_path->text().toStdString();
   settings.drag_direction = (Settings::DragDirection)drag_direction->currentIndex();
   emit settings.changed();
   QDialog::accept();

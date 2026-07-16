@@ -1,4 +1,5 @@
 #include "tools/cabana/signalview.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <future>
@@ -25,12 +26,12 @@ static QString signalTypeToString(cabana::Signal::Type type) {
 }
 
 SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(parent) {
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &SignalModel::refresh);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &SignalModel::handleMsgChanged);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &SignalModel::handleMsgChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalModel::handleSignalAdded);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalModel::handleSignalUpdated);
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &SignalModel::handleSignalRemoved);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &SignalModel::refresh);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgUpdated, this, &SignalModel::handleMsgChanged);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgRemoved, this, &SignalModel::handleMsgChanged);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalAdded, this, &SignalModel::handleSignalAdded);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &SignalModel::handleSignalUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalRemoved, this, &SignalModel::handleSignalRemoved);
 }
 
 void SignalModel::insertItem(SignalModel::Item *root_item, int pos, const cabana::Signal *sig) {
@@ -304,7 +305,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       path.addRoundedRect(icon_rect, 3, 3);
       painter->setPen(item->highlight ? Qt::white : Qt::black);
       painter->setFont(label_font);
-      painter->fillPath(path, item->sig->color.darker(item->highlight ? 125 : 0));
+      painter->fillPath(path, toQColor(item->sig->color.darker(item->highlight ? 125 : 0)));
       painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
       rect.setLeft(icon_rect.right() + h_margin * 2);
@@ -481,8 +482,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(tree, &QTreeView::entered, [this](const QModelIndex &index) { emit highlight(model->getItem(index)->sig); });
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalView::handleSignalAdded);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalAdded, this, &SignalView::handleSignalAdded);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &SignalView::handleSignalUpdated);
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);

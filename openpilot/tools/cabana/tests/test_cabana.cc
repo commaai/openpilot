@@ -1,8 +1,10 @@
 
 #undef INFO
-#include <QDir>
+#include <filesystem>
+#include <sstream>
 
 #include "catch2/catch.hpp"
+#include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
@@ -143,15 +145,44 @@ CM_ SG_ 162 signal_1 "signal comment with \"escaped quotes\"";
 }
 
 TEST_CASE("parse_opendbc") {
-  QDir dir(OPENDBC_FILE_PATH);
-  QStringList errors;
-  for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+  std::vector<std::string> errors;
+  for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH)) {
+    if (!entry.is_regular_file() || entry.path().extension() != ".dbc") continue;
     try {
-      auto dbc = DBCFile(dir.filePath(fn).toStdString());
+      auto dbc = DBCFile(entry.path().string());
     } catch (std::exception &e) {
       errors.push_back(e.what());
     }
   }
-  INFO(errors.join("\n").toStdString());
+  std::ostringstream details;
+  for (const auto &error : errors) details << error << '\n';
+  INFO(details.str());
   REQUIRE(errors.empty());
+}
+
+TEST_CASE("DBCManager core callbacks") {
+  DBCManager manager;
+  int files_changed = 0;
+  int signals_added = 0;
+  int masks_updated = 0;
+  manager.setCallbacks({
+    .signal_added = [&](MessageId, const cabana::Signal *) { ++signals_added; },
+    .file_changed = [&]() { ++files_changed; },
+    .mask_updated = [&]() { ++masks_updated; },
+  });
+
+  std::string error;
+  REQUIRE(manager.open(SOURCE_ALL, "test", "BO_ 160 message: 8 XXX\n", &error));
+  REQUIRE(error.empty());
+  REQUIRE(files_changed == 1);
+
+  cabana::Signal signal{};
+  signal.name = "speed";
+  signal.start_bit = 0;
+  signal.size = 8;
+  signal.is_little_endian = true;
+  manager.addSignal({.source = 0, .address = 160}, signal);
+  REQUIRE(signals_added == 1);
+  REQUIRE(masks_updated == 1);
+  REQUIRE(manager.msg({.source = 0, .address = 160})->sig("speed") != nullptr);
 }

@@ -203,7 +203,7 @@ void VideoWidget::timeRangeChanged() {
 
 QString VideoWidget::formatTime(double sec, bool include_milliseconds) {
   if (settings.absolute_time)
-    sec = can->beginDateTime().addMSecs(sec * 1000).toMSecsSinceEpoch() / 1000.0;
+    sec += std::chrono::duration<double>(can->beginDateTime().time_since_epoch()).count();
   return utils::formatSeconds(sec, include_milliseconds, settings.absolute_time);
 }
 

@@ -1,4 +1,5 @@
 #include "tools/cabana/messageswidget.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <limits>
 #include <utility>
@@ -43,7 +44,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
   QObject::connect(header, &MessageViewHeader::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::dbcModified);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, model, &MessageListModel::dbcModified);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &MessageListModel::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {

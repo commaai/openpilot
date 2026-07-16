@@ -16,7 +16,7 @@ public:
   virtual ~LiveStream();
   void start() override;
   void stop();
-  inline QDateTime beginDateTime() const { return begin_date_time; }
+  inline std::chrono::system_clock::time_point beginDateTime() const override { return begin_date_time; }
   inline uint64_t beginMonoTime() const override { return begin_event_ts; }
   double maxSeconds() const override { return std::max(1.0, (lastest_event_ts - begin_event_ts) / 1e9); }
   void setSpeed(float speed) override { speed_ = speed; }
@@ -41,7 +41,7 @@ private:
   int timer_id;
   QBasicTimer update_timer;
 
-  QDateTime begin_date_time;
+  std::chrono::system_clock::time_point begin_date_time;
   uint64_t begin_event_ts = 0;
   uint64_t lastest_event_ts = 0;
   uint64_t current_event_ts = 0;

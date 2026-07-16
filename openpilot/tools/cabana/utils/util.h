@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QByteArray>
+#include <QColor>
 #include <QDoubleValidator>
 #include <QFont>
 #include <QFontMetrics>
@@ -20,6 +21,10 @@
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
+
+inline QColor toQColor(const CabanaColor &color) {
+  return QColor(color.r, color.g, color.b, color.a);
+}
 
 class LogSlider : public QSlider {
   Q_OBJECT
