@@ -1,7 +1,12 @@
 #include "tools/cabana/utils/util.h"
 
 #include <algorithm>
+#include <cerrno>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
 #include <csignal>
+#include <ctime>
 #include <limits>
 #include <memory>
 #include <string>
@@ -9,10 +14,8 @@
 #include <unistd.h>
 
 #include <QColor>
-#include <QDateTime>
 #include <QDir>
 #include <QFontDatabase>
-#include <QLocale>
 #include <QPixmapCache>
 #include <QSurfaceFormat>
 #include <QFileInfo>
@@ -100,7 +103,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
   // Paint hex column
   const auto &bytes = *static_cast<std::vector<uint8_t> *>(data.value<void *>());
-  const auto &colors = *static_cast<std::vector<QColor> *>(index.data(ColorsRole).value<void *>());
+  const auto &colors = *static_cast<std::vector<CabanaColor> *>(index.data(ColorsRole).value<void *>());
 
   painter->setFont(fixed_font);
   const QPen text_pen(option.state & QStyle::State_Selected ? highlighted_color : text_color);
@@ -115,7 +118,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
         painter->setPen(option.palette.color(QPalette::Text));
         painter->fillRect(r, option.palette.color(QPalette::Window));
       }
-      painter->fillRect(r, colors[i]);
+      painter->fillRect(r, toQColor(colors[i]));
     } else {
       painter->setPen(text_pen);
     }
@@ -148,18 +151,35 @@ void TabBar::closeTabClicked() {
 
 // UnixSignalHandler
 
-UnixSignalHandler::UnixSignalHandler(QObject *parent) : QObject(nullptr) {
+UnixSignalHandler::UnixSignalHandler() {
   if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd)) {
     qFatal("Couldn't create TERM socketpair");
   }
 
-  sn = new QSocketNotifier(sig_fd[1], QSocketNotifier::Read, this);
-  connect(sn, &QSocketNotifier::activated, this, &UnixSignalHandler::handleSigTerm);
+  waiter = std::thread([this]() {
+    int tmp = 0;
+    while (::read(sig_fd[1], &tmp, sizeof(tmp)) < 0) {
+      if (errno != EINTR) return;
+    }
+    if (shutting_down.load()) return;
+
+    // Marshal exit onto the GUI thread (qApp methods are not thread-safe).
+    QMetaObject::invokeMethod(qApp, []() {
+      printf("\nexiting...\n");
+      qApp->closeAllWindows();
+      qApp->exit();
+    }, Qt::QueuedConnection);
+  });
+
   std::signal(SIGINT, signalHandler);
   std::signal(SIGTERM, UnixSignalHandler::signalHandler);
 }
 
 UnixSignalHandler::~UnixSignalHandler() {
+  shutting_down.store(true);
+  int dummy = 0;
+  (void)!::write(sig_fd[0], &dummy, sizeof(dummy));
+  if (waiter.joinable()) waiter.join();
   ::close(sig_fd[0]);
   ::close(sig_fd[1]);
 }
@@ -168,30 +188,118 @@ void UnixSignalHandler::signalHandler(int s) {
   (void)!::write(sig_fd[0], &s, sizeof(s));
 }
 
-void UnixSignalHandler::handleSigTerm() {
-  sn->setEnabled(false);
-  int tmp;
-  (void)!::read(sig_fd[1], &tmp, sizeof(tmp));
-
-  printf("\nexiting...\n");
-  qApp->closeAllWindows();
-  qApp->exit();
-}
-
 // NameValidator
 
-NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
+NameValidator::NameValidator(QObject *parent) : QValidator(parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
   input.replace(' ', '_');
-  return QRegExpValidator::validate(input, pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+  for (const QChar &c : input) {
+    if (!c.isLetterOrNumber() && c != '_') return QValidator::Invalid;
+  }
+  return QValidator::Acceptable;
 }
 
-DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
-  // Match locale of QString::toDouble() instead of system
-  QLocale locale(QLocale::C);
-  locale.setNumberOptions(QLocale::RejectGroupSeparator);
-  setLocale(locale);
+// NodeValidator
+
+NodeValidator::NodeValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State NodeValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+  // Match ^\w+(,\w+)*$ ; a trailing comma is Intermediate (user still typing).
+  bool need_word = true;
+  for (const QChar &c : input) {
+    if (c.isLetterOrNumber() || c == '_') {
+      need_word = false;
+    } else if (c == ',' && !need_word) {
+      need_word = true;
+    } else {
+      return QValidator::Invalid;
+    }
+  }
+  return need_word ? QValidator::Intermediate : QValidator::Acceptable;
+}
+
+// NonWhitespaceValidator
+
+NonWhitespaceValidator::NonWhitespaceValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State NonWhitespaceValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+  for (const QChar &c : input) {
+    if (c.isSpace()) return QValidator::Invalid;
+  }
+  return QValidator::Acceptable;
+}
+
+// IpAddressValidator
+
+IpAddressValidator::IpAddressValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State IpAddressValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+
+  int dots = 0;
+  int value = 0;
+  bool has_digit = false;
+  for (const QChar &c : input) {
+    if (c.isDigit()) {
+      value = has_digit ? value * 10 + c.digitValue() : c.digitValue();
+      if (value > 255) return QValidator::Invalid;
+      has_digit = true;
+    } else if (c == '.') {
+      if (!has_digit || dots >= 3) return QValidator::Invalid;
+      ++dots;
+      has_digit = false;
+      value = 0;
+    } else {
+      return QValidator::Invalid;
+    }
+  }
+  return (dots == 3 && has_digit) ? QValidator::Acceptable : QValidator::Intermediate;
+}
+
+DoubleValidator::DoubleValidator(QObject *parent) : QValidator(parent) {}
+
+QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
+  Q_UNUSED(pos);
+  if (input.isEmpty()) return QValidator::Intermediate;
+
+  // Match QString::toDouble(): C locale, no hex floats / inf / nan.
+  const QByteArray bytes = input.toLatin1();
+  // strtod accepts 0x… hex floats and p-exponents; QString::toDouble does not.
+  if (bytes.contains('x') || bytes.contains('X') || bytes.contains('p') || bytes.contains('P')) {
+    return QValidator::Invalid;
+  }
+
+  const char *start = bytes.constData();
+  char *end = nullptr;
+  const double value = std::strtod(start, &end);
+  if (end == start) {
+    // Still typing a sign, decimal point, or exponent prefix.
+    if (input == "-" || input == "+" || input == "." || input == "-." || input == "+.") {
+      return QValidator::Intermediate;
+    }
+    return QValidator::Invalid;
+  }
+  if (*end == '\0') {
+    // Reject inf/nan (strtod accepts them; QDoubleValidator / toDouble path should not).
+    return std::isfinite(value) ? QValidator::Acceptable : QValidator::Invalid;
+  }
+
+  // Partial exponent / trailing sign while typing (e.g. "1e", "1e-", "1.").
+  for (const char *p = end; *p; ++p) {
+    const char c = *p;
+    if (!(c == 'e' || c == 'E' || c == '+' || c == '-' || c == '.' || (c >= '0' && c <= '9'))) {
+      return QValidator::Invalid;
+    }
+  }
+  return QValidator::Intermediate;
 }
 
 namespace utils {
@@ -257,10 +365,34 @@ void setTheme(int theme) {
 }
 
 QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
-  QString format = absolute_time ? "yyyy-MM-dd hh:mm:ss"
-                                 : (sec > 60 * 60 ? "hh:mm:ss" : "mm:ss");
-  if (include_milliseconds) format += ".zzz";
-  return QDateTime::fromMSecsSinceEpoch(sec * 1000).toString(format);
+  if (absolute_time) {
+    const auto ms_total = static_cast<int64_t>(std::llround(sec * 1000.0));
+    const std::time_t secs = static_cast<std::time_t>(ms_total / 1000);
+    int millis = static_cast<int>(ms_total % 1000);
+    if (millis < 0) millis = -millis;
+    std::tm tm{};
+    localtime_r(&secs, &tm);
+    char buf[64];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+    if (include_milliseconds) {
+      return QString::asprintf("%s.%03d", buf, millis);
+    }
+    return QString::fromUtf8(buf);
+  }
+
+  // Relative duration (not wall-clock).
+  const bool show_hours = sec > 60 * 60;
+  int total_ms = static_cast<int>(std::llround(std::max(0.0, sec) * 1000.0));
+  const int hours = total_ms / (3600 * 1000);
+  const int minutes = (total_ms / (60 * 1000)) % 60;
+  const int seconds = (total_ms / 1000) % 60;
+  const int millis = total_ms % 1000;
+  if (show_hours) {
+    return include_milliseconds ? QString::asprintf("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis)
+                                : QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
+  }
+  return include_milliseconds ? QString::asprintf("%02d:%02d.%03d", minutes, seconds, millis)
+                              : QString::asprintf("%02d:%02d", minutes, seconds);
 }
 
 }  // namespace utils

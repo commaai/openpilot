@@ -5,6 +5,7 @@ common_libs = [
   'swaglog.cc',
   'util.cc',
   'ratekeeper.cc',
+  'yuv.cc',
 ]
 
 _common = env.Library('common', common_libs, LIBS="json11")
@@ -12,7 +13,7 @@ Export('_common')
 
 if GetOption('extras'):
   env.Program('tests/test_common',
-              ['tests/test_runner.cc', 'tests/test_params.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc'],
+              ['tests/test_runner.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc'],
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
 # Cython bindings

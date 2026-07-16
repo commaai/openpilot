@@ -89,14 +89,14 @@ class Plant:
     lead.dRel = float(d_rel)
     lead.yRel = 0.0
     lead.vRel = float(v_rel)
-    lead.aRel = float(a_lead - self.acceleration)
     lead.vLead = float(v_lead)
     lead.vLeadK = float(v_lead)
     lead.aLeadK = float(a_lead)
     # TODO use real radard logic for this
     lead.aLeadTau = float(_LEAD_ACCEL_TAU)
-    lead.status = status
+    lead.present = status
     lead.modelProb = float(prob_lead)
+    lead.radar = True
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead

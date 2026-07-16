@@ -1,19 +1,17 @@
 #include "tools/cabana/chart/chart.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <limits>
+#include <random>
 
 #include <QActionGroup>
 #include <QApplication>
 #include <QDrag>
 #include <QGraphicsLayout>
-#include <QGraphicsDropShadowEffect>
 #include <QGraphicsItemGroup>
-#include <QGraphicsOpacityEffect>
 #include <QMimeData>
 #include <QOpenGLWidget>
-#include <QPropertyAnimation>
-#include <QRandomGenerator>
 #include <QRubberBand>
 #include <QScreen>
 #include <QWindow>
@@ -52,10 +50,10 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, this, &ChartView::resetChartCache);
   QObject::connect(window()->windowHandle(), &QWindow::screenChanged, this, &ChartView::resetChartCache);
 
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalRemoved, this, &ChartView::signalRemoved);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &ChartView::signalUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgRemoved, this, &ChartView::msgRemoved);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgUpdated, this, &ChartView::msgUpdated);
 }
 
 void ChartView::createToolButtons() {
@@ -115,14 +113,14 @@ void ChartView::setTheme(QChart::ChartTheme theme) {
   axis_x->setLineVisible(false);
   axis_y->setLineVisible(false);
   for (auto &s : sigs) {
-    s.series->setColor(s.sig->color);
+    s.series->setColor(toQColor(s.sig->color));
   }
 }
 
 void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
   if (hasSignal(msg_id, sig)) return;
 
-  QXYSeries *series = createSeries(series_type, sig->color);
+  QXYSeries *series = createSeries(series_type, toQColor(sig->color));
   sigs.push_back({.msg_id = msg_id, .sig = sig, .series = series});
   updateSeries(sig);
   updateSeriesPoints();
@@ -157,8 +155,8 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 void ChartView::signalUpdated(const cabana::Signal *sig) {
   auto it = std::find_if(sigs.begin(), sigs.end(), [sig](auto &s) { return s.sig == sig; });
   if (it != sigs.end()) {
-    if (it->series->color() != sig->color) {
-      setSeriesColor(it->series, sig->color);
+    if (it->series->color() != toQColor(sig->color)) {
+      setSeriesColor(it->series, toQColor(sig->color));
     }
     updateTitle();
     updateSeries(sig);
@@ -420,45 +418,6 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
   return q * z;
 }
 
-QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
-  QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
-  e->setColor(QColor(40, 40, 40, 245));
-  e->setOffset(0, 0);
-  e->setBlurRadius(radius);
-
-  qreal dpr = px.devicePixelRatio();
-  QPixmap blank(px.size());
-  blank.setDevicePixelRatio(dpr);
-  blank.fill(Qt::white);
-
-  QGraphicsScene scene;
-  QGraphicsPixmapItem item(blank);
-  item.setGraphicsEffect(e);
-  scene.addItem(&item);
-
-  QPixmap shadow(px.size() + QSize(radius * dpr * 2, radius * dpr * 2));
-  shadow.setDevicePixelRatio(dpr);
-  shadow.fill(Qt::transparent);
-  QPainter p(&shadow);
-  scene.render(&p, {QPoint(), shadow.size() / dpr}, item.boundingRect().adjusted(-radius, -radius, radius, radius));
-  return shadow;
-}
-
-static QPixmap getDropPixmap(const QPixmap &src) {
-  static QPixmap shadow_px;
-  const int radius = 10;
-  if (shadow_px.size() != src.size() + QSize(radius * 2, radius * 2)) {
-    shadow_px = getBlankShadowPixmap(src, radius);
-  }
-  QPixmap px = shadow_px;
-  QPainter p(&px);
-  QRectF target_rect(QPointF(radius, radius), src.size() / src.devicePixelRatio());
-  p.drawPixmap(target_rect.topLeft(), src);
-  p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-  p.fillRect(target_rect, QColor(0, 0, 0, 200));
-  return px;
-}
-
 void ChartView::contextMenuEvent(QContextMenuEvent *event) {
   QMenu context_menu(this);
   context_menu.addActions(menu->actions());
@@ -478,7 +437,7 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     charts_widget->stopAutoScroll();
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
-    drag->setPixmap(getDropPixmap(px));
+    drag->setPixmap(px);
     drag->setHotSpot(-QPoint(5, 5));
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
@@ -627,7 +586,6 @@ void ChartView::dropEvent(QDropEvent *event) {
       sigs.insert(sigs.end(), std::move_iterator(source_chart->sigs.begin()), std::move_iterator(source_chart->sigs.end()));
       updateAxisY();
       updateTitle();
-      startAnimation();
 
       source_chart->sigs.clear();
       charts_widget->removeChart(source_chart);
@@ -640,17 +598,6 @@ void ChartView::dropEvent(QDropEvent *event) {
 void ChartView::resetChartCache() {
   chart_pixmap = QPixmap();
   viewport()->update();
-}
-
-void ChartView::startAnimation() {
-  QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
-  viewport()->setGraphicsEffect(eff);
-  QPropertyAnimation *a = new QPropertyAnimation(eff, "opacity");
-  a->setDuration(250);
-  a->setStartValue(0.3);
-  a->setEndValue(1);
-  a->setEasingCurve(QEasingCurve::InBack);
-  a->start(QPropertyAnimation::DeleteWhenStopped);
 }
 
 void ChartView::paintEvent(QPaintEvent *event) {
@@ -821,9 +768,12 @@ void ChartView::setSeriesColor(QXYSeries *series, QColor color) {
     if (s != series && std::abs(color.hueF() - qobject_cast<QXYSeries *>(s)->color().hueF()) < 0.1) {
       // use different color to distinguish it from others.
       auto last_color = qobject_cast<QXYSeries *>(existing_series.back())->color();
+      static thread_local std::mt19937 rng{std::random_device{}()};
+      std::uniform_int_distribution<int> sat(35, 99);
+      std::uniform_int_distribution<int> val(85, 99);
       color.setHsvF(std::fmod(last_color.hueF() + 60 / 360.0, 1.0),
-                    QRandomGenerator::global()->bounded(35, 100) / 100.0,
-                    QRandomGenerator::global()->bounded(85, 100) / 100.0);
+                    sat(rng) / 100.0,
+                    val(rng) / 100.0);
       break;
     }
   }
@@ -838,7 +788,7 @@ void ChartView::setSeriesType(SeriesType type) {
       s.series->deleteLater();
     }
     for (auto &s : sigs) {
-      s.series = createSeries(series_type, s.sig->color);
+      s.series = createSeries(series_type, toQColor(s.sig->color));
       const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
       s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
     }

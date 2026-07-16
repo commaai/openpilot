@@ -1,6 +1,6 @@
 #include "tools/cabana/chart/signalselector.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
-#include <QCompleter>
 #include <QDialogButtonBox>
 #include <QGridLayout>
 #include <QLabel>
@@ -20,8 +20,6 @@ SignalSelector::SignalSelector(QString title, QWidget *parent) : QDialog(parent)
   msgs_combo->setEditable(true);
   msgs_combo->lineEdit()->setPlaceholderText(tr("Select a msg..."));
   msgs_combo->setInsertPolicy(QComboBox::NoInsert);
-  msgs_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
-  msgs_combo->completer()->setFilterMode(Qt::MatchContains);
 
   main_layout->addWidget(available_list = new QListWidget(this), 2, 0);
 
@@ -92,7 +90,7 @@ void SignalSelector::updateAvailableList(int index) {
 }
 
 void SignalSelector::addItemToList(QListWidget *parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name) {
-  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(sig->color.name(), QString::fromStdString(sig->name));
+  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(toQColor(sig->color).name(), QString::fromStdString(sig->name));
   if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(QString::fromStdString(msgName(id)), QString::fromStdString(id.toString()));
 
   QLabel *label = new QLabel(text);

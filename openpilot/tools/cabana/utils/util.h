@@ -1,25 +1,30 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cmath>
+#include <thread>
 #include <vector>
 #include <utility>
 
 #include <QApplication>
 #include <QByteArray>
-#include <QDoubleValidator>
+#include <QColor>
 #include <QFont>
 #include <QFontMetrics>
 #include <QPainter>
-#include <QRegExpValidator>
-#include <QSocketNotifier>
 #include <QStaticText>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
+#include <QValidator>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
+
+inline QColor toQColor(const CabanaColor &color) {
+  return QColor(color.r, color.g, color.b, color.a);
+}
 
 class LogSlider : public QSlider {
   Q_OBJECT
@@ -84,17 +89,44 @@ private:
   int h_margin, v_margin;
 };
 
-class NameValidator : public QRegExpValidator {
+// Accepts a single identifier: one or more [A-Za-z0-9_], spaces rewritten to '_'.
+class NameValidator : public QValidator {
   Q_OBJECT
 public:
   NameValidator(QObject *parent=nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
 };
 
-class DoubleValidator : public QDoubleValidator {
+// Accepts comma-separated identifiers: \w+(,\w+)*
+class NodeValidator : public QValidator {
+  Q_OBJECT
+public:
+  NodeValidator(QObject *parent=nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
+};
+
+// Accepts one or more non-whitespace characters (\S+).
+class NonWhitespaceValidator : public QValidator {
+  Q_OBJECT
+public:
+  NonWhitespaceValidator(QObject *parent=nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
+};
+
+// Accepts a dotted IPv4 address (0-255 per octet).
+class IpAddressValidator : public QValidator {
+  Q_OBJECT
+public:
+  IpAddressValidator(QObject *parent=nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
+};
+
+// C-locale floating-point validator (matches QString::toDouble).
+class DoubleValidator : public QValidator {
   Q_OBJECT
 public:
   DoubleValidator(QObject *parent = nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
 };
 
 namespace utils {
@@ -147,20 +179,18 @@ private:
   void closeTabClicked();
 };
 
-class UnixSignalHandler : public QObject {
-  Q_OBJECT
-
+// Watches SIGINT/SIGTERM via a self-pipe and a dedicated waiter thread
+// (no Qt notifiers/timers). Exit is marshaled onto the GUI thread.
+class UnixSignalHandler {
 public:
-  UnixSignalHandler(QObject *parent = nullptr);
+  UnixSignalHandler();
   ~UnixSignalHandler();
   static void signalHandler(int s);
 
-public slots:
-  void handleSigTerm();
-
 private:
   inline static int sig_fd[2] = {};
-  QSocketNotifier *sn;
+  std::atomic<bool> shutting_down{false};
+  std::thread waiter;
 };
 
 int num_decimals(double num);

@@ -3,7 +3,6 @@ import os
 import re
 import datetime
 import subprocess
-import psutil
 import shutil
 import signal
 import fcntl
@@ -426,11 +425,6 @@ def main() -> None:
       fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError as e:
       raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
-
-    # Set low io priority
-    proc = psutil.Process()
-    if psutil.LINUX:
-      proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
     # Check if we just performed an update
     if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():

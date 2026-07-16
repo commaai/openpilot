@@ -3,7 +3,9 @@
 #include <QThread>
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
 #include <memory>
+#include <sstream>
 
 #include "common/timing.h"
 #include "common/util.h"
@@ -14,9 +16,14 @@ struct LiveStream::Logger {
   void write(kj::ArrayPtr<capnp::word> data) {
     int n = (seconds_since_epoch() - start_ts) / 60.0;
     if (std::exchange(segment_num, n) != segment_num) {
+      const time_t start_time = start_ts;
+      std::tm local_time = {};
+      localtime_r(&start_time, &local_time);
+      std::ostringstream date;
+      date << std::put_time(&local_time, "%Y-%m-%d--%H-%M-%S");
       QString dir = QString("%1/%2--%3")
-                        .arg(settings.log_path)
-                        .arg(QDateTime::fromSecsSinceEpoch(start_ts).toString("yyyy-MM-dd--hh-mm-ss"))
+                        .arg(QString::fromStdString(settings.log_path))
+                        .arg(QString::fromStdString(date.str()))
                         .arg(n);
       util::create_directories(dir.toStdString(), 0755);
       fs.reset(new std::ofstream((dir + "/rlog").toStdString(), std::ios::binary | std::ios::out));
@@ -55,7 +62,7 @@ void LiveStream::startUpdateTimer() {
 void LiveStream::start() {
   stream_thread->start();
   startUpdateTimer();
-  begin_date_time = QDateTime::currentDateTime();
+  begin_date_time = std::chrono::system_clock::now();
 }
 
 void LiveStream::stop() {

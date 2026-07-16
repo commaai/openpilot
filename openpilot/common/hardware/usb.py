@@ -27,11 +27,19 @@ def usb_devices() -> list[Path]:
     return []
 
 
+def controller(device: Path) -> Path | None:
+  try:
+    return next((parent for parent in device.resolve().parents if parent.name.endswith(".ssusb")), None)
+  except OSError:
+    return None
+
+
 def get_usb_state() -> list[dict]:
   devices = []
   for device in usb_devices():
     vendor_id = read_int(device / "idVendor", 16)
     product_id = read_int(device / "idProduct", 16)
+    ctrl = controller(device)
     devices.append({
       "busnum": read_int(device / "busnum"),
       "devnum": read_int(device / "devnum"),
@@ -40,6 +48,7 @@ def get_usb_state() -> list[dict]:
       "speedMbps": read_int(device / "speed"),
       "manufacturer": read(device / "manufacturer") or "",
       "product": read(device / "product") or "",
+      "linkErrorCount": read_int(ctrl / "portli", 0) & 0xFFFF if ctrl is not None else 0,
     })
   return devices
 
@@ -56,6 +65,7 @@ def set_usb_state(device_state, devices: list[dict]) -> None:
     entry.speedMbps = device["speedMbps"]
     entry.manufacturer = device["manufacturer"]
     entry.product = device["product"]
+    entry.linkErrorCount = device["linkErrorCount"]
 
     if (entry.vendorId, entry.productId) == (CHESTNUT_VENDOR_ID, CHESTNUT_PRODUCT_ID):
       chestnut_present = True
