@@ -43,11 +43,11 @@ some rules
 - `QTableWidget`, `QTableWidgetItem`, `QListWidget`, `QListWidgetItem`
 - `QItemSelection`, `QItemSelectionModel`, `QItemSelectionRange`
 - `QHeaderView`, `QStyledItemDelegate`, `QStyleOptionViewItem`
-- `QValidator`, `QIntValidator`, `QDoubleValidator`
+- `QValidator`, `QIntValidator`
 - `QColor`, `QRgb`, `QPalette`
 - `QBrush`, `QPen`
 - `QPainter`, `QPainterPath`, `QStylePainter`
-- `QPixmap`, `QPixmapCache`, `QIcon`, `QStaticText`
+- `QPixmap`, `QPixmapCache`, `QStaticText`
 - `QFont`, `QFontDatabase`, `QFontMetrics`, `QTextDocument`
 - `QStyle`, `QStyleOption`, `QStyleOptionFrame`, `QStyleOptionSlider`
 - `QPoint`, `QPointF`, `QRect`, `QRectF`, `QRegion`
@@ -63,5 +63,5 @@ some rules
 - `QLegend`, `QLegendMarker`
 - `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
 - `QOpenGLWidget`, `QOpenGLFunctions`
-- `QMatrix4x4`, `QSurfaceFormat`
+- `QSurfaceFormat`
 - `QUndoCommand`, `QUndoStack`, `QUndoView`

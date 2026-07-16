@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
   initApp(argc, argv, false);
   QApplication app(argc, argv);
   app.setApplicationDisplayName("Cabana");
-  app.setWindowIcon(QIcon(":cabana-icon.png"));
+  //app.setWindowIcon(QIcon(":cabana-icon.png"));  // TODO: do this in imgui
 
   UnixSignalHandler signalHandler;
   utils::setTheme(settings.theme);
