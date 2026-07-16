@@ -153,9 +153,9 @@ class DriverMonitoring:
     self.no_response_timeout = int(self.settings._NO_RESPONSE_TIMEOUT / DT_DMON)
     self.no_response_cnt = 0
     self.lockout_active = Params().get_bool("DriverTooDistracted")
-    self.lockout_duration = 0
-    self.lockout_time_elapsed = 0
     self.lockout_count = Params().get("DriverLockoutCount") or 0
+    self.lockout_duration = self.settings._LOCKOUT_TIMES[min(max(self.lockout_count - 1, 0), len(self.settings._LOCKOUT_TIMES) - 1)]
+    self.lockout_time_elapsed = 0
     self.step_change = 0.
     self.active_policy = MonitoringPolicy.vision
     self.driver_interacting = False
