@@ -195,7 +195,7 @@ def main(demo=False):
   def load_big_model():
     nonlocal big_model, big_failed
     drop_realtime()
-    set_core_affinity([7])
+    set_core_affinity([6])
     try:
       candidate = ModelState(vipc_client_main.width, vipc_client_main.height, True)
       candidate.warmup()
