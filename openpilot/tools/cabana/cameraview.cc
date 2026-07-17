@@ -51,21 +51,21 @@ void CameraWidget::drawFrame() {
     std::lock_guard lk(frame_lock);
     if (uploaded_gen != frame_gen) {
       uploaded_gen = frame_gen;
-      tex_valid = !rgb_frame.isNull();
+      tex_valid = !rgb_frame.empty();
       if (tex_valid) {
         if (!texture) glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        if (rgb_frame.width() != tex_width || rgb_frame.height() != tex_height) {
+        if (frame_width != tex_width || frame_height != tex_height) {
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
           glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rgb_frame.width(), rgb_frame.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb_frame.constBits());
-          tex_width = rgb_frame.width();
-          tex_height = rgb_frame.height();
+          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb_frame.data());
+          tex_width = frame_width;
+          tex_height = frame_height;
         } else {
-          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, GL_RGBA, GL_UNSIGNED_BYTE, rgb_frame.constBits());
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, GL_RGBA, GL_UNSIGNED_BYTE, rgb_frame.data());
         }
         glBindTexture(GL_TEXTURE_2D, 0);
       }
@@ -121,14 +121,14 @@ void CameraWidget::vipcThread() {
 
     if (VisionBuf *buf = vipc_client->recv(&frame_meta, 100)) {
       // NV12 -> RGBA once per frame on the receive thread; the GUI thread uploads to GL
-      if (rgb_back.width() != (int)buf->width || rgb_back.height() != (int)buf->height) {
-        rgb_back = QImage(buf->width, buf->height, QImage::Format_RGBA8888);
-      }
+      rgb_back.resize(buf->width * buf->height * 4);
       yuv::nv12_to_rgba(buf->y, buf->stride, buf->uv, buf->stride,
-                        rgb_back.bits(), rgb_back.bytesPerLine(), buf->width, buf->height);
+                        rgb_back.data(), buf->width * 4, buf->width, buf->height);
       {
         std::lock_guard lk(frame_lock);
         rgb_frame.swap(rgb_back);
+        frame_width = buf->width;
+        frame_height = buf->height;
         ++frame_gen;
       }
       emit vipcThreadFrameReceived();
@@ -139,8 +139,9 @@ void CameraWidget::vipcThread() {
 // runs on the vipc thread: no GL here, just drop the CPU buffers and let the GUI thread notice
 void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
-  rgb_frame = QImage();
-  rgb_back = QImage();
+  rgb_frame.clear();
+  rgb_back.clear();
+  frame_width = frame_height = 0;
   ++frame_gen;
   available_streams.clear();
 }

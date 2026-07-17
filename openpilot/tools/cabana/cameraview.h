@@ -5,8 +5,7 @@
 #include <set>
 #include <string>
 #include <thread>
-
-#include <QImage>
+#include <vector>
 
 #include "msgq/visionipc/visionipc_client.h"
 #include "tools/cabana/imguihost.h"
@@ -37,9 +36,12 @@ protected:
   void vipcThread();
   void clearFrames();
 
-  QImage rgb_frame;       // written by vipc thread, uploaded by GUI thread; guarded by frame_lock
-  QImage rgb_back;        // vipc thread only
-  uint64_t frame_gen = 0; // guarded by frame_lock
+  // guarded by frame_lock: written by vipc thread, uploaded by GUI thread
+  std::vector<uint8_t> rgb_frame;  // RGBA, tightly packed
+  int frame_width = 0, frame_height = 0;
+  uint64_t frame_gen = 0;
+
+  std::vector<uint8_t> rgb_back;  // vipc thread only
 
   // GUI thread only
   uint32_t texture = 0;
