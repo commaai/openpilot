@@ -117,10 +117,9 @@ class Setup(Widget):
         ("It has not been tested by comma.", True),
         ("It may not comply with relevant safety standards.", True),
         ("It may cause damage to your device and/or vehicle.", True),
-        ("If you'd like to proceed, use https://flash.comma.ai to restore your device to a factory state later.", False),
+        ("If you'd like to proceed, use https://flash.comma.ai to restore your device to a factory state later.", False)
       ]
     ]
-
 
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
 
@@ -313,9 +312,9 @@ class Setup(Widget):
     y_offset = rect.y + offset
     self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
 
-    y = y_offset + 400
+    y = y_offset + 300
     for label in self._custom_software_warning_body_labels:
-      label.render(rl.Rectangle(rect.x + 50, y, rect.width - 50, 68))
+      label.render(rl.Rectangle(rect.x + 50,  y, rect.width - 50, BODY_FONT_SIZE))
       y += 160
 
     rl.end_scissor_mode()
