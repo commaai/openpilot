@@ -316,10 +316,20 @@ void MainWindow::loadDBCFromOpendbc(const QString &name) {
 }
 
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
+  std::string text;
+  if (!utils::getClipboardText(&text)) {
+    QMessageBox::warning(this, tr("Load From Clipboard"), tr("No clipboard tool found. Install xclip (X11) or wl-clipboard (Wayland)."));
+    return;
+  }
+  if (text.empty()) {
+    QMessageBox::warning(this, tr("Load From Clipboard"), tr("Clipboard is empty."));
+    return;
+  }
+
   closeFile(s);
 
   std::string error;
-  bool ret = dbc()->open(s, std::string(""), utils::getClipboardText(), &error);
+  bool ret = dbc()->open(s, std::string(""), text, &error);
   if (ret && dbc()->nonEmptyDBCCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
@@ -467,7 +477,7 @@ void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
   if (utils::setClipboardText(dbc_file->generateDBC())) {
     QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
   } else {
-    QMessageBox::warning(this, tr("Copy To Clipboard"), tr("Failed to copy DBC to clipboard!"));
+    QMessageBox::warning(this, tr("Copy To Clipboard"), tr("Failed to copy DBC to clipboard. Install xclip (X11) or wl-clipboard (Wayland)."));
   }
 }
 

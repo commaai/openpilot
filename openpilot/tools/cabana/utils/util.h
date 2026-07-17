@@ -135,7 +135,7 @@ namespace utils {
 QPixmap icon(const QString &id);
 std::string homePath();
 std::filesystem::path configPath();
-std::string getClipboardText();
+bool getClipboardText(std::string *text);  // false if no clipboard tool is available
 bool setClipboardText(const std::string &text);
 bool isDarkTheme();
 void setTheme(int theme);

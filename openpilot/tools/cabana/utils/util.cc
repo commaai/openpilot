@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <QColor>
@@ -325,16 +326,23 @@ static const char *clipboard_read_cmds[] = {"wl-paste --no-newline 2>/dev/null",
 static const char *clipboard_write_cmds[] = {"wl-copy 2>/dev/null", "xclip -selection clipboard 2>/dev/null", "xsel -ib 2>/dev/null"};
 #endif
 
-std::string getClipboardText() {
+bool getClipboardText(std::string *text) {
+  text->clear();
+  bool has_tool = false;
   for (const char *cmd : clipboard_read_cmds) {
     FILE *f = ::popen(cmd, "r");
     if (!f) continue;
-    std::string text;
+    std::string out;
     char buf[4096];
-    for (size_t n; (n = ::fread(buf, 1, sizeof(buf), f)) > 0;) text.append(buf, n);
-    if (::pclose(f) == 0) return text;
+    for (size_t n; (n = ::fread(buf, 1, sizeof(buf), f)) > 0;) out.append(buf, n);
+    int status = ::pclose(f);
+    if (status == 0) {
+      *text = std::move(out);
+      return true;
+    }
+    has_tool |= WIFEXITED(status) && WEXITSTATUS(status) != 127;  // 127: command not found
   }
-  return "";
+  return has_tool;  // tool present but clipboard empty
 }
 
 bool setClipboardText(const std::string &text) {
