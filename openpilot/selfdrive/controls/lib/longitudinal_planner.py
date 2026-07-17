@@ -147,7 +147,8 @@ class LongitudinalPlanner:
       clipped_accel_coast_interp = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [accel_clip[1], clipped_accel_coast])
       accel_clip[1] = min(accel_clip[1], clipped_accel_coast_interp)
 
-    self.mpc.set_weights(personality=sm['selfdriveState'].personality)
+    has_lead = sm['radarState'].leadOne.present
+    self.mpc.set_weights(personality=sm['selfdriveState'].personality, has_lead=has_lead)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     mpc_a_max = E2E_MAX_ACCEL if experimental_mode else ACCEL_MAX
     self.mpc.update(sm['radarState'], personality=sm['selfdriveState'].personality, a_max=mpc_a_max)
