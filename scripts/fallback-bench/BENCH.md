@@ -1,9 +1,18 @@
 # eGPU fallback bench control
 
-Runbook for the big/small fallback bench. Device: `comma-e3b715f2` at `192.168.61.224`
-(mici hardware), ssh `comma@` with key `~/.ssh/comma_ed25519`. eGPU: ASM2464PD bridge +
-AMD GPU, USB `add1:0001`, normally bus `4-1` at 5 Gbps. CAN comes from a panda jungle on
-the workstation (`192.168.43.51`), replaying a Corolla TSS2 route.
+Runbook for the big/small fallback bench: a comma device (mici hardware) with an eGPU
+(ASM2464PD bridge + AMD GPU, USB `add1:0001`, normally bus `4-1` at 5 Gbps), fed CAN by
+a panda jungle attached to the workstation, replaying a Corolla TSS2 route.
+
+Addresses are deliberately not hardcoded — use whatever device/jungle is attached:
+
+```bash
+export BENCH_DEV=<device ip>   # find it: scan the bench subnets for ssh answering
+                               # the comma key, eGPU rig has add1:0001 in /sys/bus/usb
+```
+
+ssh as `comma@$BENCH_DEV` with key `~/.ssh/comma_ed25519`. The jungle is auto-detected
+(first attached jungle).
 
 ## 0. Before touching anything: check who owns the bench
 
@@ -11,7 +20,7 @@ Several agent sessions share this device (kernel work in tmux `agnos`, USB link 
 `codex`, bridge firmware in `codex2`). Signs someone else is driving it:
 
 ```bash
-ssh comma@192.168.61.224 'sudo journalctl -b --no-pager | grep -E "sudo.*COMMAND" | tail -10'
+ssh comma@${BENCH_DEV:?set BENCH_DEV to the bench device IP} 'sudo journalctl -b --no-pager | grep -E "sudo.*COMMAND" | tail -10'
 ```
 
 Look for `systemctl stop comma`, `qmp_dump.py`, `tee /sys/class/usbpd/usbpd0/hard_reset`
@@ -67,8 +76,8 @@ Start/stop: `sudo systemctl restart comma` / `sudo systemctl stop comma`
 ## 3. Event watcher
 
 ```bash
-scp watch_fallback.py comma@192.168.61.224:/data/watch_fallback.py
-ssh comma@192.168.61.224 '
+scp watch_fallback.py comma@${BENCH_DEV:?set BENCH_DEV to the bench device IP}:/data/watch_fallback.py
+ssh comma@${BENCH_DEV:?set BENCH_DEV to the bench device IP} '
   sudo systemctl reset-failed fbwatch 2>/dev/null; sudo systemctl stop fbwatch 2>/dev/null
   : > /data/fallback_watch.jsonl
   sudo systemd-run -q --unit=fbwatch --collect -p User=comma -p WorkingDirectory=/data/openpilot \
@@ -126,7 +135,7 @@ crash the xHCI. In escalating order when the big model worker fails:
 ## 6. Handing the bench back
 
 ```bash
-ssh comma@192.168.61.224 'sudo systemctl stop fbwatch comma'
+ssh comma@${BENCH_DEV:?set BENCH_DEV to the bench device IP} 'sudo systemctl stop fbwatch comma'
 echo 0 > /tmp/bench_ign          # before killing bench_ctl
 kill <bench_ctl pid>
 ```

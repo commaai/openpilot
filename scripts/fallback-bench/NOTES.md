@@ -1,6 +1,6 @@
 # fallback2 handoff — 2026-07-16
 
-## UPDATE 2026-07-17: bench deployment on 192.168.61.224 (in progress)
+## UPDATE 2026-07-17: bench deployment on ${BENCH_DEV:?set BENCH_DEV to the bench device IP} (in progress)
 
 Commits reworked to a minimal diff after review: `ac40394ae2` "modeld: run big model in
 separate process" (+104/-42, everything in modeld.py, one line in cereal/services.py,
@@ -8,9 +8,9 @@ no new files, big_worker() entered via `modeld.py --big-worker`) and `dfacba99cf
 "promote to big only after proven on-time outputs" (promotion needs 20 consecutive
 frames of fresh worker outputs, prevents latching on the worker's cold first frames).
 
-Deployed to `comma-e3b715f2` at 192.168.61.224 (user-directed; it has the eGPU,
+Deployed to `comma-e3b715f2` at ${BENCH_DEV:?set BENCH_DEV to the bench device IP} (user-directed; it has the eGPU,
 add1:0001 at 5 Gbps on bus 4-1). The old fallback bench `.96` re-leased to
-192.168.62.67 (usbgpu-test harness rig, no eGPU attached). Deployment is the two
+<usbgpu-test rig> (usbgpu-test harness rig, no eGPU attached). Deployment is the two
 files ported onto the device's own lineage in /data/openpilot (a "reboot recovery"
 lineage, dd55ef573e) — python-only overlay, prebuilt stays valid, backup of replaced
 bits in /data/continue.sh.goal6.bak and /data/goal6-local-mods-backup.patch.
@@ -59,7 +59,7 @@ re-promotion check, soak.
   codex2 = ASM2464 firmware) are working through. The fallback layer itself was never
   the crash cause.
 - Something on the workstation ssh'd in at 06:23 and ran `systemctl stop comma`
-  (source 192.168.43.51 = this workstation, all other agent sessions idle at the
+  (source the workstation = this workstation, all other agent sessions idle at the
   time) — unattributed, watch for it when resuming.
 - Bench quiesced on user request: device comma+fbwatch stopped (device then took
   another watchdog reboot, expected to come back idle), workstation bench_ctl killed,
@@ -230,7 +230,7 @@ inside `load_big_model()`. The local revert restores core 7.
 
 ## Bench evidence
 
-Device restriction used throughout: **only `192.168.62.96`, over SSH; never ADB**.
+Device restriction used throughout: **only `<old bench device>`, over SSH; never ADB**.
 
 The Jungle/bench controller was already running and sending CAN. Later work intentionally did not start, stop, or control it.
 
@@ -337,9 +337,9 @@ Suggested launch sequence once the device is reachable:
 
 ```bash
 scp -i ~/.ssh/comma_ed25519 /home/batman/bench-tools/watch_fallback.py \
-  comma@192.168.62.96:/tmp/watch_fallback.py
+  comma@$BENCH_DEV:/tmp/watch_fallback.py
 
-ssh -i ~/.ssh/comma_ed25519 comma@192.168.62.96 '
+ssh -i ~/.ssh/comma_ed25519 comma@$BENCH_DEV '
   pkill -f /tmp/watch_fallback.py 2>/dev/null || true
   : > /data/fallback_watch.jsonl
   cd /data/openpilot
@@ -352,7 +352,7 @@ Start the monitor before restarting only the device service so it captures the c
 
 ## Last known device state
 
-- Device: `192.168.62.96`
+- Device: `<old bench device>`
 - Access policy: SSH only
 - Last confirmed deployed source before loss of connectivity: `5a9bfc1dce` on the clean minimal history
 - Last confirmed tinygrad revision: stock `e6fbede1576f0a201e0b2c112499552a61280abd`

@@ -1,8 +1,8 @@
 #!/bin/bash
 # retry rising edges until device reports enabled, then hold engage
 # usage: engage.sh [timeout_s]
-KEY=/home/batman/xx/private/key/id_rsa
-DEV=comma@192.168.61.224
+KEY=${BENCH_KEY:-$HOME/.ssh/comma_ed25519}
+DEV=comma@${BENCH_DEV:?set BENCH_DEV to the bench device IP}
 T=${1:-120}
 START=$(date +%s)
 while true; do

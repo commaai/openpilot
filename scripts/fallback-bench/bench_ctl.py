@@ -8,7 +8,7 @@ import threading
 
 import usb1
 
-sys.path.insert(0, "/home/batman/openpilot")
+sys.path.insert(0, os.path.expanduser(os.getenv("OPENPILOT_ROOT", "~/openpilot")))
 from openpilot.common.realtime import Ratekeeper, DT_CTRL
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.tools.lib.logreader import LogReader
@@ -64,7 +64,7 @@ def main():
   can_msgs = load_route()
   if len(can_msgs) != 21017 or not 0 < DRIVING_LOOP_START < len(can_msgs):
     raise RuntimeError(f"unexpected route shape: {len(can_msgs)} frames")
-  j = PandaJungle("09001e000d51333038363231")
+  j = PandaJungle()  # first attached jungle
   j.reset()
   for i in [0, 1, 2, 3, 0xFFFF]:
     j.can_clear(i)
