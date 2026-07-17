@@ -39,7 +39,6 @@ dependencies = [
 
   # body / webrtcd
   "av",
-  "aiortc",
 
   # logging
   "pyzmq",
@@ -47,7 +46,7 @@ dependencies = [
   "xattr",  # used in place of 'os.getxattr' for macOS compatibility
 
   # athena
-  "PyJWT",
+  "PyJWT[crypto]",
   "websocket_client",
 
   # joystickd
