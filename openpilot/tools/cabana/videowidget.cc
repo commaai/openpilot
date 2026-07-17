@@ -356,8 +356,8 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
   update();
 }
 
-void StreamCameraView::paintGL() {
-  CameraWidget::paintGL();
+void StreamCameraView::paintEvent(QPaintEvent *event) {
+  CameraWidget::paintEvent(event);
 
   QPainter p(this);
   bool scrubbing = false;

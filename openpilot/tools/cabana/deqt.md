@@ -43,7 +43,7 @@ some rules
 - `QColor`, `QRgb`, `QPalette`
 - `QBrush`, `QPen`
 - `QPainter`, `QPainterPath`, `QStylePainter`
-- `QPixmap`, `QPixmapCache`, `QStaticText`
+- `QImage`, `QPixmap`, `QPixmapCache`, `QStaticText`
 - `QFont`, `QFontDatabase`, `QFontMetrics`, `QTextDocument`
 - `QStyle`, `QStyleOption`, `QStyleOptionFrame`, `QStyleOptionSlider`
 - `QPoint`, `QPointF`, `QRect`, `QRectF`, `QRegion`
@@ -57,5 +57,3 @@ some rules
 - `QXYSeries`, `QLineSeries`, `QScatterSeries`
 - `QLegend`, `QLegendMarker`
 - `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
-- `QOpenGLWidget`, `QOpenGLFunctions`
-- `QSurfaceFormat`

@@ -7,16 +7,15 @@
 #include <thread>
 #include <utility>
 
-#include <QOpenGLFunctions>
-#include <QOpenGLWidget>
+#include <QImage>
+#include <QWidget>
 
 #include "msgq/visionipc/visionipc_client.h"
 
-class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
+class CameraWidget : public QWidget {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraWidget();
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
@@ -25,23 +24,18 @@ public:
 
 signals:
   void clicked();
-  void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType>);
 
 protected:
-  void paintGL() override;
-  void initializeGL() override;
+  void paintEvent(QPaintEvent *event) override;
   void showEvent(QShowEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   void vipcThread();
   void clearFrames();
 
-  GLuint frame_vao = 0, frame_vbo = 0, frame_ibo = 0;
-  GLuint textures[2] = {};
-  GLuint shader_program = 0;
-  GLint transform_uniform = -1;
   QColor bg = Qt::black;
+  QImage rgb_frame;
 
   std::string stream_name;
   int stream_width = 0;
@@ -57,7 +51,6 @@ protected:
   VisionIpcBufExtra frame_meta_ = {};
 
 protected slots:
-  void vipcConnected(VisionIpcClient *vipc_client);
   void vipcFrameReceived();
   void availableStreamsUpdated(std::set<VisionStreamType> streams);
 };

@@ -30,7 +30,7 @@ if arch == "Darwin":
   ]
   qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
   qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
-  qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
+  qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 else:
   qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
@@ -46,7 +46,7 @@ else:
   qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
-  qt_libs = [f"Qt5{m}" for m in qt_modules] + ["GL"]
+  qt_libs = [f"Qt5{m}" for m in qt_modules]
 qt_env['QT3DIR'] = qt_env['QTDIR']
 qt_env.Tool('qt3')
 

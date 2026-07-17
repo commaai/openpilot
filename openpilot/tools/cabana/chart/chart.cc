@@ -9,7 +9,6 @@
 #include <QApplication>
 #include <QDrag>
 #include <QMimeData>
-#include <QOpenGLWidget>
 #include <QRubberBand>
 
 #include "tools/cabana/chart/chartswidget.h"
@@ -750,15 +749,6 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
     chart()->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
   }
   series->setColor(color);
-  // TODO: Due to a bug in CameraWidget the camera frames
-  // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
-#ifndef __APPLE__
-  series->setUseOpenGL(true);
-  // Qt doesn't properly apply device pixel ratio in OpenGL mode
-  QPen pen = series->pen();
-  pen.setWidthF(2.0 * devicePixelRatioF());
-  series->setPen(pen);
-#endif
   addSeries(series);
   return series;
 }
@@ -768,13 +758,6 @@ void ChartView::addSeries(QXYSeries *series) {
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
-
-  // disables the delivery of mouse events to the opengl widget.
-  // this enables the user to select the zoom area when the mouse press on the data point.
-  auto glwidget = findChild<QOpenGLWidget *>();
-  if (glwidget && !glwidget->testAttribute(Qt::WA_TransparentForMouseEvents)) {
-    glwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
-  }
 }
 
 void ChartView::setSeriesColor(QXYSeries *series, QColor color) {

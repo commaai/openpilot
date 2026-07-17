@@ -20,7 +20,6 @@
 #include <QColor>
 #include <QFontDatabase>
 #include <QPixmapCache>
-#include <QSurfaceFormat>
 #include <QPainterPath>
 #include <unordered_map>
 #include "common/util.h"
@@ -460,20 +459,6 @@ QString signalToolTip(const cabana::Signal *sig) {
      .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }
 
-void setSurfaceFormat() {
-  QSurfaceFormat fmt;
-#ifdef __APPLE__
-  fmt.setVersion(3, 2);
-  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-  fmt.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-  fmt.setSamples(16);
-  fmt.setStencilBufferSize(1);
-  QSurfaceFormat::setDefaultFormat(fmt);
-}
-
 void sigTermHandler(int s) {
   std::signal(s, SIG_DFL);
   qApp->quit();
@@ -500,8 +485,6 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   // ensure the current dir matches the exectuable's directory
   std::error_code ec;
   std::filesystem::current_path(app_dir, ec);
-
-  setSurfaceFormat();
 }
 
 static std::unordered_map<std::string, std::string> load_bootstrap_icons() {
