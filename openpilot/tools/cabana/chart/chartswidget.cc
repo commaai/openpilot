@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QMenu>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QScrollBar>
 #include <QToolBar>
 
@@ -259,10 +260,6 @@ void ChartsWidget::settingChanged() {
   if (std::exchange(current_theme, settings.theme) != current_theme) {
     undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
     redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
-    auto theme = utils::isDarkTheme() ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
-    for (auto c : charts) {
-      c->setTheme(theme);
-    }
   }
   if (range_slider->maximum() != settings.max_cached_minutes * 60) {
     range_slider->setRange(1, settings.max_cached_minutes * 60);
@@ -310,12 +307,8 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
     int pos = std::find(charts.begin(), charts.end(), src_chart) - charts.begin() + 1;
     for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
       auto c = createChart(pos);
-      src_chart->chart()->removeSeries(it->series);
-
       // Restore to the original color
-      it->series->setColor(toQColor(it->sig->color));
-
-      c->addSeries(it->series);
+      it->color = toQColor(it->sig->color);
       c->sigs.emplace_back(std::move(*it));
       c->updateAxisY();
       c->updateTitle();
@@ -495,7 +488,7 @@ bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
 
     for (const auto &c : charts) {
       auto local_pos = c->mapFromGlobal(global_pos);
-      if (c->chart()->plotArea().contains(local_pos)) {
+      if (c->plot_area.contains(local_pos)) {
         if (on_tip) {
           showValueTip(c->secondsAtPoint(local_pos));
         }
