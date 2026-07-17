@@ -108,21 +108,19 @@ class Setup(Widget):
                                                       text_color=rl.Color(255, 89, 79, 255),
                                                       text_padding=60)
     self._yellow_warning_icon = gui_app.texture("icons/yellow_warning.png", int(68 * FONT_SCALE), int(68 * FONT_SCALE))
-    self._custom_software_warning_body_params = {
-      "font_size": 68,
-      "text_alignment": rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-      "text_alignment_vertical": rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
-      "text_padding": 60,
-    }
     self._custom_software_warning_body_labels = [
-      Label(item["text"], icon=item.get("icon"), **self._custom_software_warning_body_params)
-      for item in [
-        {"text": "Use caution when installing third-party software."},
-        {"text": "It has not been tested by comma.", "icon": self._yellow_warning_icon},
-        {"text": "It may not comply with relevant safety standards.", "icon": self._yellow_warning_icon},
-        {"text": "It may cause damage to your device and/or vehicle.", "icon": self._yellow_warning_icon},
-        {"text": "If you'd like to proceed, use https://flash.comma.ai to restore your device to a factory state later."},
-    ]]
+      Label(text, 68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+            text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
+            text_padding=60, icon=self._yellow_warning_icon if has_icon else None)
+      for text, has_icon in [
+        ("Use caution when installing third-party software.", False),
+        ("It has not been tested by comma.", True),
+        ("It may not comply with relevant safety standards.", True),
+        ("It may cause damage to your device and/or vehicle.", True),
+        ("If you'd like to proceed, use https://flash.comma.ai to restore your device to a factory state later.", False),
+      ]
+    ]
+
 
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
 
@@ -316,10 +314,9 @@ class Setup(Widget):
     self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
 
     y = y_offset + 400
-    line_height = self._custom_software_warning_body_params["font_size"] * FONT_SCALE
     for label in self._custom_software_warning_body_labels:
-      label.render(rl.Rectangle(rect.x + 50, y, rect.width - 50, line_height))
-      y += line_height * 2
+      label.render(rl.Rectangle(rect.x + 50, y, rect.width - 50, 68))
+      y += 160
 
     rl.end_scissor_mode()
 
