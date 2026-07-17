@@ -516,6 +516,7 @@ Settings::Settings() {
       settingsOp(legacy_settings, [](const auto &s, const char *key, auto &value) { readLegacySetting(s, key, value); });
     }
   }
+  fps = std::clamp(fps, 1, 100);
 }
 
 // Must be called before main() returns: json11's internal statistics are constructed on first
