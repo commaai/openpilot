@@ -149,7 +149,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
   high_level = 0.1 # drop immediately
   med_level = 0.05 # drop after # of samples
   low_level = 0 # raise after # of samples
-  down_samples = 5 # 1s
+  down_samples = 5
   param_name = "LivestreamEncoderBitrate"
 
   def __init__(self, get_stats: Callable[[], dict[str, Any]], params: Params, enabled: bool = True):
