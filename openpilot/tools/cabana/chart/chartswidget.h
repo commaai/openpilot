@@ -67,6 +67,7 @@ private:
   void startChartDrag(ChartView *chart, const QPoint &global_pos);
   void dragChartMove(const QPoint &global_pos);
   void dragChartRelease(const QPoint &global_pos);
+  void cancelChartDrag();
   bool chartDragActive() const { return drag.source != nullptr; }
   void startAutoScroll(const QPoint &global_pos);
   void stopAutoScroll();

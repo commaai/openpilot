@@ -318,6 +318,7 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
     }
     src_chart->updateAxisY();
     src_chart->updateTitle();
+    updateState();
     QTimer::singleShot(0, src_chart, &ChartView::resetChartCache);
   }
 }
@@ -431,15 +432,19 @@ void ChartsWidget::dragChartMove(const QPoint &global_pos) {
   }
 }
 
-void ChartsWidget::dragChartRelease(const QPoint &global_pos) {
-  ChartView *source = drag.source;
-  bool active = drag.active;
+void ChartsWidget::cancelChartDrag() {
   drag = {};
   stopAutoScroll();
   drag_preview->hide();
   charts_container->drawDropIndicator({});
-  ChartView *target = std::exchange(drop_target, nullptr);
-  if (target) target->setDropHighlight(false);
+  if (auto target = std::exchange(drop_target, nullptr)) target->setDropHighlight(false);
+}
+
+void ChartsWidget::dragChartRelease(const QPoint &global_pos) {
+  ChartView *source = drag.source;
+  bool active = drag.active;
+  ChartView *target = drop_target;
+  cancelChartDrag();
   if (!active) return;
 
   const QPoint container_pos = charts_container->mapFromGlobal(global_pos);
@@ -509,6 +514,7 @@ void ChartsWidget::newChart() {
       for (auto it : items) {
         c->addSignal(it->msg_id, it->sig);
       }
+      updateState();
     }
   }
 }
@@ -609,7 +615,7 @@ bool ChartsWidget::event(QEvent *event) {
       break;
     case QEvent::WindowDeactivate:
     case QEvent::FocusOut:
-      if (chartDragActive()) dragChartRelease({-1, -1});  // cancel the drag
+      if (chartDragActive()) cancelChartDrag();
       showValueTip(-1);
     default:
       break;

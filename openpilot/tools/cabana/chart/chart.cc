@@ -440,7 +440,10 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void ChartView::takeSignalsFrom(ChartView *source) {
-  sigs.insert(sigs.end(), std::move_iterator(source->sigs.begin()), std::move_iterator(source->sigs.end()));
+  for (auto &s : source->sigs) {
+    sigs.push_back(std::move(s));
+    sigs.back().color = uniqueColor(sigs.back().color, sigs.back().sig);
+  }
   source->sigs.clear();
   updateAxisY();
   updateTitle();
