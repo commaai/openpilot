@@ -63,6 +63,8 @@ private:
                        std::vector<QPointF> &vals, std::vector<QPointF> &step_vals);
   void createToolButtons();
   void contextMenuEvent(QContextMenuEvent *event) override;
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   QSize sizeHint() const override;
@@ -77,6 +79,7 @@ private:
   void drawForeground(QPainter *painter);
   void drawSignalValue(QPainter *painter);
   void drawTimeline(QPainter *painter);
+  void drawRubberBandTimeRange(QPainter *painter);
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QColor uniqueColor(QColor color, const cabana::Signal *exclude = nullptr) const;
@@ -99,6 +102,12 @@ private:
   QString y_unit;
   int y_label_width = 0;
   int align_to = 0;
+  // interaction
+  enum class MouseMode { None, Rubber, Scrub };
+  MouseMode mouse_mode = MouseMode::None;
+  QPoint press_pos;
+  QRect rubber_rect;
+  bool resume_after_scrub = false;
 
   QMenu *menu;
   QAction *split_chart_act;

@@ -14,6 +14,7 @@
 
 const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;
+const double MIN_ZOOM_SECONDS = 0.01;  // 10ms
 // Define a small value of epsilon to compare double values
 const float EPSILON = 0.000001;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < (x - EPSILON); }
@@ -31,6 +32,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
     : x_min(x_range.first), x_max(x_range.second), charts_widget(parent), QWidget(parent) {
   series_type = (SeriesType)settings.chart_series_type;
   align_to = 50;
+  setMouseTracking(true);
   tip_label = new TipLabel(this);
   createToolButtons();
   signal_value_font.setPointSize(9);
@@ -353,14 +355,85 @@ void ChartView::contextMenuEvent(QContextMenuEvent *event) {
   context_menu.exec(event->globalPos());
 }
 
+void ChartView::mousePressEvent(QMouseEvent *event) {
+  if (event->button() == Qt::LeftButton && event->modifiers().testFlag(Qt::ShiftModifier)) {
+    // Save current playback state when scrubbing
+    resume_after_scrub = !can->isPaused();
+    if (resume_after_scrub) {
+      can->pause(true);
+    }
+    mouse_mode = MouseMode::Scrub;
+  } else if (event->button() == Qt::LeftButton && plot_area.contains(event->pos())) {
+    mouse_mode = MouseMode::Rubber;
+    press_pos = event->pos();
+    rubber_rect = QRect();
+  } else {
+    QWidget::mousePressEvent(event);
+  }
+}
+
+void ChartView::mouseMoveEvent(QMouseEvent *ev) {
+  // Scrubbing
+  if (mouse_mode == MouseMode::Scrub && ev->modifiers().testFlag(Qt::ShiftModifier)) {
+    if (plot_area.contains(ev->pos())) {
+      can->seekTo(std::clamp(secondsAtPoint(ev->pos()), can->minSeconds(), can->maxSeconds()));
+    }
+  }
+
+  if (mouse_mode == MouseMode::Rubber) {
+    // horizontal selection, clamped to the plot area
+    int left = std::clamp(std::min(press_pos.x(), ev->pos().x()), plot_area.left(), plot_area.right());
+    int right = std::clamp(std::max(press_pos.x(), ev->pos().x()), plot_area.left(), plot_area.right());
+    rubber_rect = QRect(left, plot_area.top(), right - left, plot_area.height());
+    update();
+  }
+
+  clearTrackPoints();
+  if (mouse_mode != MouseMode::Rubber && plot_area.contains(ev->pos()) && isActiveWindow()) {
+    charts_widget->showValueTip(secondsAtPoint(ev->pos()));
+  } else if (tip_label->isVisible()) {
+    charts_widget->showValueTip(-1);
+  }
+  QWidget::mouseMoveEvent(ev);
+}
+
 void ChartView::mouseReleaseEvent(QMouseEvent *event) {
-  if (event->button() == Qt::LeftButton && plot_area.contains(event->pos())) {
-    // seek to mouse position
-    can->seekTo(std::clamp(secondsAtPoint(event->pos()), can->minSeconds(), can->maxSeconds()));
+  if (event->button() == Qt::LeftButton && mouse_mode == MouseMode::Rubber) {
+    mouse_mode = MouseMode::None;
+    // Prevent zooming/seeking past the end of the route
+    double min = std::clamp(secondsAtPoint(rubber_rect.topLeft()), can->minSeconds(), can->maxSeconds());
+    double max = std::clamp(secondsAtPoint(rubber_rect.bottomRight()), can->minSeconds(), can->maxSeconds());
+    if (rubber_rect.width() <= 0) {
+      // no rubber dragged, seek to mouse position
+      can->seekTo(std::clamp(secondsAtPoint(press_pos), can->minSeconds(), can->maxSeconds()));
+    } else if (rubber_rect.width() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
+      charts_widget->zoom_undo_stack.push(new ZoomCommand({min, max}));
+    }
+    rubber_rect = QRect();
+    update();
+  } else if (event->button() == Qt::LeftButton && sigs.size() > 1) {
+    // toggle series visibility by clicking its legend entry
+    for (int i = 0; i < sigs.size() && i < legend_rects.size(); ++i) {
+      if (legend_rects[i].contains(event->pos())) {
+        sigs[i].visible = !sigs[i].visible;
+        updateAxisY();
+        updateTitle();
+        break;
+      }
+    }
   } else if (event->button() == Qt::RightButton) {
     charts_widget->zoom_undo_stack.undo();
   } else {
     QWidget::mouseReleaseEvent(event);
+  }
+
+  // Resume playback if we were scrubbing
+  if (mouse_mode == MouseMode::Scrub) {
+    mouse_mode = MouseMode::None;
+    if (resume_after_scrub) {
+      can->pause(false);
+      resume_after_scrub = false;
+    }
   }
 }
 
@@ -593,6 +666,32 @@ void ChartView::drawForeground(QPainter *painter) {
   if (track_line_x > 0) {
     painter->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
     painter->drawLine(QPointF{track_line_x, (qreal)plot_area.top()}, QPointF{track_line_x, (qreal)plot_area.bottom()});
+  }
+
+  drawRubberBandTimeRange(painter);
+}
+
+void ChartView::drawRubberBandTimeRange(QPainter *painter) {
+  if (rubber_rect.width() <= 1) return;
+
+  // selection rect, replaces QRubberBand
+  QColor highlight = palette().color(QPalette::Highlight);
+  QColor fill = highlight;
+  fill.setAlpha(50);
+  painter->fillRect(rubber_rect, fill);
+  painter->setPen(highlight);
+  painter->setBrush(Qt::NoBrush);
+  painter->drawRect(rubber_rect);
+
+  // time labels at the bottom corners
+  painter->setPen(Qt::white);
+  painter->setFont(font());
+  for (const auto &pt : {rubber_rect.bottomLeft(), rubber_rect.bottomRight()}) {
+    QString sec = QString::number(secondsAtPoint(pt), 'f', 2);
+    auto r = painter->fontMetrics().boundingRect(sec).adjusted(-6, -AXIS_X_TOP_MARGIN, 6, AXIS_X_TOP_MARGIN);
+    pt == rubber_rect.bottomLeft() ? r.moveTopRight(pt + QPoint{0, 2}) : r.moveTopLeft(pt + QPoint{0, 2});
+    painter->fillRect(r, Qt::gray);
+    painter->drawText(r, Qt::AlignCenter, sec);
   }
 }
 
