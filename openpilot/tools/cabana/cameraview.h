@@ -5,14 +5,13 @@
 #include <set>
 #include <string>
 #include <thread>
-#include <utility>
 
 #include <QImage>
-#include <QWidget>
 
 #include "msgq/visionipc/visionipc_client.h"
+#include "tools/cabana/imguihost.h"
 
-class CameraWidget : public QWidget {
+class CameraWidget : public ImGuiHost {
   Q_OBJECT
 
 public:
@@ -28,16 +27,25 @@ signals:
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType>);
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
+  void drawFrame() override;
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override { stopVipcThread(); }
-  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  void mouseReleaseEvent(QMouseEvent *event) override {
+    ImGuiHost::mouseReleaseEvent(event);
+    emit clicked();
+  }
   void vipcThread();
   void clearFrames();
 
-  QColor bg = Qt::black;
-  QImage rgb_frame;   // written by vipc thread, drawn by GUI thread; guarded by frame_lock
-  QImage rgb_back;    // vipc thread only
+  QImage rgb_frame;       // written by vipc thread, uploaded by GUI thread; guarded by frame_lock
+  QImage rgb_back;        // vipc thread only
+  uint64_t frame_gen = 0; // guarded by frame_lock
+
+  // GUI thread only
+  uint32_t texture = 0;
+  int tex_width = 0, tex_height = 0;
+  bool tex_valid = false;
+  uint64_t uploaded_gen = 0;
 
   std::string stream_name;
   std::atomic<VisionStreamType> active_stream_type;
