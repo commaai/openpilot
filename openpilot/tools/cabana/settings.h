@@ -1,6 +1,8 @@
 #pragma once
 
-#include <QByteArray>
+#include <cstdint>
+#include <vector>
+
 #include <QComboBox>
 #include <QDialog>
 #include <QGroupBox>
@@ -14,13 +16,13 @@ class Settings : public QObject, public CabanaSettingsState {
 
 public:
   Settings();
-  ~Settings();
+  void save();
 
   // Qt frontend layout state. This intentionally stays outside CabanaSettingsState.
-  QByteArray geometry;
-  QByteArray video_splitter_state;
-  QByteArray window_state;
-  QByteArray message_header_state;
+  std::vector<uint8_t> geometry;
+  std::vector<uint8_t> video_splitter_state;
+  std::vector<uint8_t> window_state;
+  std::vector<uint8_t> message_header_state;
 
 signals:
   void changed();

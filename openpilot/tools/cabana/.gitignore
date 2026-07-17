@@ -3,6 +3,7 @@ moc_*
 *.generated.qrc
 
 assets.cc
+bootstrap_icons.cc
 
 _cabana
 dbc/car_fingerprint_to_dbc.json

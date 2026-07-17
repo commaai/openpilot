@@ -209,7 +209,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(export_btn, &QToolButton::clicked, this, &LogsWidget::exportToCSV);
   QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::reset);
   QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, model, &HistoryLogModel::reset);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &HistoryLogModel::reset);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, model, &HistoryLogModel::reset);
   QObject::connect(model, &HistoryLogModel::modelReset, this, &LogsWidget::modelReset);
   QObject::connect(model, &HistoryLogModel::rowsInserted, [this]() { export_btn->setEnabled(true); });
 }
