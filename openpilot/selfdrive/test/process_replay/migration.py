@@ -175,8 +175,6 @@ def migrate_liveTracks(msgs):
       pt.dRel = track.dRel
       pt.yRel = track.yRel
       pt.vRel = track.vRel
-      pt.aRel = track.aRel
-      pt.measured = True
       pts.append(pt)
 
     new_msg.liveTracks.points = pts

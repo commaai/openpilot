@@ -7,7 +7,6 @@
 #include <utility>
 
 #include <QFrame>
-#include <QPropertyAnimation>
 #include <QSlider>
 #include <QToolBar>
 #include <QTabBar>
@@ -36,8 +35,7 @@ class StreamCameraView : public CameraWidget {
 
 public:
   StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent = nullptr);
-  void paintGL() override;
-  void showPausedOverlay() { fade_animation->start(); }
+  void paintEvent(QPaintEvent *event) override;
   void parseQLog(std::shared_ptr<LogReader> qlog);
 
 private:
@@ -47,7 +45,6 @@ private:
   void drawScrubThumbnail(QPainter &p);
   void drawTime(QPainter &p, const QRect &rect, double seconds);
 
-  QPropertyAnimation *fade_animation;
   std::map<uint64_t, QPixmap> big_thumbnails;
   std::map<uint64_t, QPixmap> thumbnails;
   double thumbnail_dispaly_time = -1;
