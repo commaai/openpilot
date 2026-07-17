@@ -31,17 +31,13 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
-  void keyPressEvent(QKeyEvent *event) override;
-  void keyReleaseEvent(QKeyEvent *event) override;
   void leaveEvent(QEvent *event) override;
-  void focusOutEvent(QFocusEvent *event) override;
 
 private:
   bool ensureContext(int w, int h);
   bool ensureSurface(int w, int h);
   void destroyGL();
   void forwardMouseButton(QMouseEvent *event, bool down);
-  void forwardKey(QKeyEvent *event, bool down);
 
 #ifdef __APPLE__
   GLFWwindow *window = nullptr;
@@ -53,6 +49,7 @@ private:
 #endif
   ImGuiContext *imgui = nullptr;
   bool init_failed = false;
+  bool backend_init = false;
   int fb_width = 0, fb_height = 0;
   QImage frame;
   std::vector<uint8_t> readback;

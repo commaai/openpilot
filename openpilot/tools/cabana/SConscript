@@ -76,7 +76,7 @@ cabana_env['LIBPATH'] += [libusb.LIB_DIR, imgui.MESA_DIR]
 
 cabana_libs = [cereal, messaging, visionipc, replay_lib, File(f"{imgui.LIB_DIR}/libimgui.a")] + ffmpeg_libs + ['bz2', 'zstd', 'usb-1.0'] + base_libs
 if arch == "Darwin":
-  base_frameworks += ['OpenGL']
+  base_frameworks += ['OpenGL', 'Cocoa']
   cabana_libs += [File(f"{imgui.LIB_DIR}/libglfw3.a")]
 else:
   cabana_libs += ['EGL', 'dl']

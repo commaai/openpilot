@@ -2,10 +2,9 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <cstdio>
 #include <cstring>
 
-#include <QDebug>
-#include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
 
@@ -49,7 +48,6 @@ static void releaseDisplay() {
 
 ImGuiHost::ImGuiHost(QWidget *parent) : QWidget(parent) {
   setMouseTracking(true);
-  setFocusPolicy(Qt::ClickFocus);
 }
 
 ImGuiHost::~ImGuiHost() {
@@ -71,7 +69,10 @@ bool ImGuiHost::ensureSurface(int w, int h) {
 #ifdef __APPLE__
   int fw = 0, fh = 0;
   glfwGetFramebufferSize(window, &fw, &fh);
-  if (fw < w || fh < h) return false;  // hidden-window resize is async; created oversized instead
+  if (fw < w || fh < h) {
+    glfwSetWindowSize(window, std::max(w, fw), std::max(h, fh));  // async; black until the resize lands
+    return false;
+  }
 #else
   if (surface == EGL_NO_SURFACE || w != fb_width || h != fb_height) {
     if (surface != EGL_NO_SURFACE) {
@@ -128,13 +129,14 @@ bool ImGuiHost::ensureContext(int w, int h) {
     ImGuiIO &io = ImGui::GetIO();
     io.IniFilename = io.LogFilename = nullptr;
     if (!ImGui_ImplOpenGL3_Init("#version 330")) return false;
+    backend_init = true;
     last_frame = std::chrono::steady_clock::now();
     return true;
   };
   if (!init()) {
     destroyGL();
     init_failed = true;
-    qWarning() << "ImGuiHost: GL init failed";
+    fprintf(stderr, "ImGuiHost: GL init failed\n");
     return false;
   }
   return true;
@@ -142,7 +144,8 @@ bool ImGuiHost::ensureContext(int w, int h) {
 
 void ImGuiHost::destroyGL() {
   if (imgui) {
-    if (makeCurrent()) ImGui_ImplOpenGL3_Shutdown();
+    if (backend_init && makeCurrent()) ImGui_ImplOpenGL3_Shutdown();
+    backend_init = false;
     ImGui::DestroyContext(imgui);
     imgui = nullptr;
   }
@@ -204,32 +207,16 @@ void ImGuiHost::paintEvent(QPaintEvent *event) {
   frame.setDevicePixelRatio(dpr);
   QPainter(this).drawImage(0, 0, frame);
 
-  // imgui trickles queued input over multiple frames (e.g. press/release of a click)
-  if (imgui->InputEventsQueue.Size > 0) update();
+  // keep repainting while imgui trickles queued input over multiple frames
+  // (e.g. press/release of a click) or runs held-button repeat
+  if (imgui->InputEventsQueue.Size > 0 || ImGui::IsAnyMouseDown()) update();
 }
 
-static ImGuiKey toImGuiKey(int key) {
-  switch (key) {
-    case Qt::Key_Tab: return ImGuiKey_Tab;
-    case Qt::Key_Left: return ImGuiKey_LeftArrow;
-    case Qt::Key_Right: return ImGuiKey_RightArrow;
-    case Qt::Key_Up: return ImGuiKey_UpArrow;
-    case Qt::Key_Down: return ImGuiKey_DownArrow;
-    case Qt::Key_PageUp: return ImGuiKey_PageUp;
-    case Qt::Key_PageDown: return ImGuiKey_PageDown;
-    case Qt::Key_Home: return ImGuiKey_Home;
-    case Qt::Key_End: return ImGuiKey_End;
-    case Qt::Key_Delete: return ImGuiKey_Delete;
-    case Qt::Key_Backspace: return ImGuiKey_Backspace;
-    case Qt::Key_Space: return ImGuiKey_Space;
-    case Qt::Key_Return: return ImGuiKey_Enter;
-    case Qt::Key_Enter: return ImGuiKey_KeypadEnter;
-    case Qt::Key_Escape: return ImGuiKey_Escape;
-    default:
-      if (key >= Qt::Key_A && key <= Qt::Key_Z) return (ImGuiKey)(ImGuiKey_A + (key - Qt::Key_A));
-      if (key >= Qt::Key_0 && key <= Qt::Key_9) return (ImGuiKey)(ImGuiKey_0 + (key - Qt::Key_0));
-      return ImGuiKey_None;
-  }
+static void addModifiers(ImGuiIO &io, Qt::KeyboardModifiers mods) {
+  io.AddKeyEvent(ImGuiMod_Ctrl, mods & Qt::ControlModifier);
+  io.AddKeyEvent(ImGuiMod_Shift, mods & Qt::ShiftModifier);
+  io.AddKeyEvent(ImGuiMod_Alt, mods & Qt::AltModifier);
+  io.AddKeyEvent(ImGuiMod_Super, mods & Qt::MetaModifier);
 }
 
 void ImGuiHost::forwardMouseButton(QMouseEvent *event, bool down) {
@@ -239,24 +226,9 @@ void ImGuiHost::forwardMouseButton(QMouseEvent *event, bool down) {
   if (button < 0) return;
   ImGui::SetCurrentContext(imgui);
   ImGuiIO &io = ImGui::GetIO();
+  addModifiers(io, event->modifiers());
   io.AddMousePosEvent(event->x(), event->y());
   io.AddMouseButtonEvent(button, down);
-}
-
-void ImGuiHost::forwardKey(QKeyEvent *event, bool down) {
-  if (!imgui) return;
-  ImGui::SetCurrentContext(imgui);
-  ImGuiIO &io = ImGui::GetIO();
-  io.AddKeyEvent(ImGuiMod_Ctrl, event->modifiers() & Qt::ControlModifier);
-  io.AddKeyEvent(ImGuiMod_Shift, event->modifiers() & Qt::ShiftModifier);
-  io.AddKeyEvent(ImGuiMod_Alt, event->modifiers() & Qt::AltModifier);
-  io.AddKeyEvent(ImGuiMod_Super, event->modifiers() & Qt::MetaModifier);
-  if (ImGuiKey key = toImGuiKey(event->key()); key != ImGuiKey_None) {
-    io.AddKeyEvent(key, down);
-  }
-  if (down && !(event->modifiers() & Qt::ControlModifier) && !event->text().isEmpty()) {
-    io.AddInputCharactersUTF8(event->text().toUtf8().constData());
-  }
 }
 
 void ImGuiHost::mousePressEvent(QMouseEvent *event) {
@@ -274,7 +246,9 @@ void ImGuiHost::mouseReleaseEvent(QMouseEvent *event) {
 void ImGuiHost::mouseMoveEvent(QMouseEvent *event) {
   if (imgui) {
     ImGui::SetCurrentContext(imgui);
-    ImGui::GetIO().AddMousePosEvent(event->x(), event->y());
+    ImGuiIO &io = ImGui::GetIO();
+    addModifiers(io, event->modifiers());
+    io.AddMousePosEvent(event->x(), event->y());
   }
   QWidget::mouseMoveEvent(event);
   update();
@@ -283,21 +257,11 @@ void ImGuiHost::mouseMoveEvent(QMouseEvent *event) {
 void ImGuiHost::wheelEvent(QWheelEvent *event) {
   if (imgui) {
     ImGui::SetCurrentContext(imgui);
-    ImGui::GetIO().AddMouseWheelEvent(event->angleDelta().x() / 120.0f, event->angleDelta().y() / 120.0f);
+    ImGuiIO &io = ImGui::GetIO();
+    addModifiers(io, event->modifiers());
+    io.AddMouseWheelEvent(event->angleDelta().x() / 120.0f, event->angleDelta().y() / 120.0f);
   }
   QWidget::wheelEvent(event);
-  update();
-}
-
-void ImGuiHost::keyPressEvent(QKeyEvent *event) {
-  forwardKey(event, true);
-  QWidget::keyPressEvent(event);
-  update();
-}
-
-void ImGuiHost::keyReleaseEvent(QKeyEvent *event) {
-  forwardKey(event, false);
-  QWidget::keyReleaseEvent(event);
   update();
 }
 
@@ -307,14 +271,5 @@ void ImGuiHost::leaveEvent(QEvent *event) {
     ImGui::GetIO().AddMousePosEvent(-FLT_MAX, -FLT_MAX);
   }
   QWidget::leaveEvent(event);
-  update();
-}
-
-void ImGuiHost::focusOutEvent(QFocusEvent *event) {
-  if (imgui) {
-    ImGui::SetCurrentContext(imgui);
-    ImGui::GetIO().AddFocusEvent(false);
-  }
-  QWidget::focusOutEvent(event);
   update();
 }
