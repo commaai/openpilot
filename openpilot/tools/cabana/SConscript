@@ -3,6 +3,7 @@ import os
 import shutil
 
 import bootstrap_icons
+import imgui
 import libusb
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
@@ -70,10 +71,15 @@ if arch == "Darwin":
   base_frameworks += ['CoreFoundation', 'CoreVideo', 'CoreMedia', 'IOKit', 'Security', 'VideoToolbox']
 
 cabana_env = qt_env.Clone()
-cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR]
-cabana_env['LIBPATH'] += [libusb.LIB_DIR]
+cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR, imgui.INCLUDE_DIR]
+cabana_env['LIBPATH'] += [libusb.LIB_DIR, imgui.MESA_DIR]
 
-cabana_libs = [cereal, messaging, visionipc, replay_lib] + ffmpeg_libs + ['bz2', 'zstd', 'usb-1.0'] + base_libs
+cabana_libs = [cereal, messaging, visionipc, replay_lib, File(f"{imgui.LIB_DIR}/libimgui.a")] + ffmpeg_libs + ['bz2', 'zstd', 'usb-1.0'] + base_libs
+if arch == "Darwin":
+  base_frameworks += ['OpenGL']
+  cabana_libs += [File(f"{imgui.LIB_DIR}/libglfw3.a")]
+else:
+  cabana_libs += ['EGL', 'dl']
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
@@ -102,7 +108,7 @@ cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc'
                'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'dbc/dbcqt.cc',
                'utils/export.cc', 'utils/util.cc', 'utils/elidedlabel.cc',
                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
-               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
+               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc', 'imguihost.cc',
                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc']
 if arch != "Darwin":
   cabana_srcs += ['streams/socketcanstream.cc']

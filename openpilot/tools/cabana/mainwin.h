@@ -83,6 +83,7 @@ protected:
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
   QDockWidget *messages_dock;
+  QDockWidget *imgui_dock = nullptr;
   MessagesWidget *messages_widget = nullptr;
   CenterWidget *center_widget;
   QWidget *floating_window = nullptr;
