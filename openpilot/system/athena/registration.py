@@ -83,7 +83,7 @@ def register(show_spinner=False) -> str | None:
           dongle_id = dongleauth["dongle_id"]
         break
       except NotImplementedError:
-        # dependency issues with PyJWT will hang the registeration test in backoff loop otherwise
+        # dependency issues with PyJWT will hang the registration test in backoff loop otherwise
         raise
       except Exception:
         cloudlog.exception("failed to authenticate")
