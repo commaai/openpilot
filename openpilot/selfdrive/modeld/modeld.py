@@ -233,7 +233,7 @@ def main(demo=False):
   cloudlog.warning("loading model")
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False if fallback else USBGPU)
   big_proc, big_pub, big_sub, big_out = None, None, None, None
-  big_active, big_failed, big_misses = False, False, 0
+  big_active, big_failed, big_misses, big_streak = False, False, 0, 0
   if fallback:
     big_pub = messaging.pub_sock('customReservedRawData0')
     big_sub = messaging.sub_sock('customReservedRawData1', conflate=True, timeout=10)
@@ -367,7 +367,9 @@ def main(demo=False):
             big_failed = True  # never trust big again after a NaN
             break
         if not big_active:
-          if big_out is None or meta_main.frame_id - big_out['frame_id'] > 2 or sm["carControl"].enabled:
+          fresh = big_out is not None and meta_main.frame_id - big_out['frame_id'] <= 1
+          big_streak = big_streak + 1 if fresh else 0
+          if big_streak < 20 or sm["carControl"].enabled:  # promote only after a second of proven on-time outputs
             big_failed = big_proc.poll() is not None
             break
           cloudlog.warning("big model active")
