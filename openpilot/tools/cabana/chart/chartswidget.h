@@ -15,7 +15,6 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 const int CHART_MIN_WIDTH = 300;
-const QString CHART_MIME_TYPE = "application/x-cabanachartview";
 
 class ChartView;
 class ChartsWidget;
@@ -23,9 +22,6 @@ class ChartsWidget;
 class ChartsContainer : public QWidget {
 public:
   ChartsContainer(ChartsWidget *parent);
-  void dragEnterEvent(QDragEnterEvent *event) override;
-  void dropEvent(QDropEvent *event) override;
-  void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator({}); }
   void drawDropIndicator(const QPoint &pt) { drop_indictor_pos = pt; update(); }
   void paintEvent(QPaintEvent *ev) override;
   ChartView *getDropAfter(const QPoint &pos) const;
@@ -68,6 +64,10 @@ private:
   void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
+  void startChartDrag(ChartView *chart, const QPoint &global_pos);
+  void dragChartMove(const QPoint &global_pos);
+  void dragChartRelease(const QPoint &global_pos);
+  bool chartDragActive() const { return drag.source != nullptr; }
   void startAutoScroll(const QPoint &global_pos);
   void stopAutoScroll();
   void doAutoScroll();
@@ -109,6 +109,13 @@ private:
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
+  struct ChartDrag {
+    ChartView *source = nullptr;
+    QPoint press_pos;  // global
+    bool active = false;
+  } drag;
+  QLabel *drag_preview;
+  ChartView *drop_target = nullptr;
   int auto_scroll_count = 0;
   QPoint auto_scroll_pos;
   QTimer *auto_scroll_timer;

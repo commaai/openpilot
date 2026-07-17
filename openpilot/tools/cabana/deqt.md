@@ -31,7 +31,7 @@ some rules
 - `QComboBox`, `QLineEdit`, `QTextEdit`, `QSpinBox`, `QSlider`
 - `QLabel`, `QGroupBox`, `QFrame`
 - `QTabBar`, `QTabWidget`, `QSplitter`, `QScrollArea`, `QScrollBar`
-- `QDockWidget`, `QStatusBar`, `QProgressBar`, `QRubberBand`
+- `QDockWidget`, `QStatusBar`, `QProgressBar`
 - `QFormLayout`, `QGridLayout`, `QHBoxLayout`, `QVBoxLayout`
 - `QSizePolicy`
 - `QAbstractItemModel`, `QAbstractTableModel`, `QModelIndex`
@@ -50,10 +50,4 @@ some rules
 - `QSize`, `QSizeF`
 - `QEvent`, `QPaintEvent`, `QResizeEvent`, `QShowEvent`, `QCloseEvent`
 - `QMouseEvent`, `QWheelEvent`, `QNativeGestureEvent`, `QContextMenuEvent`
-- `QDrag`, `QMimeData`
-- `QDragEnterEvent`, `QDragLeaveEvent`, `QDragMoveEvent`, `QDropEvent`
 - `QKeySequence`, `QShortcut`, `QToolTip`
-- `QChart`, `QChartView`, `QAbstractAxis`, `QValueAxis`
-- `QXYSeries`, `QLineSeries`, `QScatterSeries`
-- `QLegend`, `QLegendMarker`
-- `QGraphicsPixmapItem`, `QGraphicsProxyWidget`

@@ -84,6 +84,8 @@ private:
   qreal niceNumber(qreal x, bool ceiling);
   QColor uniqueColor(QColor color, const cabana::Signal *exclude = nullptr) const;
   void removeIf(std::function<bool(const SigItem &)> predicate);
+  void takeSignalsFrom(ChartView *source);
+  void setDropHighlight(bool highlight) { if (std::exchange(can_drop, highlight) != highlight) update(); }
   inline void clearTrackPoints() { for (auto &s : sigs) s.track_pt = {}; }
   inline qreal xPos(double sec) const { return plot_area.left() + (sec - x_min) / (x_max - x_min) * plot_area.width(); }
   inline qreal yPos(double val) const { return plot_area.bottom() - (val - y_min) / (y_max - y_min) * plot_area.height(); }

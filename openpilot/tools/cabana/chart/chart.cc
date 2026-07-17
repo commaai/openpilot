@@ -356,7 +356,9 @@ void ChartView::contextMenuEvent(QContextMenuEvent *event) {
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
-  if (event->button() == Qt::LeftButton && event->modifiers().testFlag(Qt::ShiftModifier)) {
+  if (event->button() == Qt::LeftButton && move_icon_rect.contains(event->pos())) {
+    charts_widget->startChartDrag(this, event->globalPos());
+  } else if (event->button() == Qt::LeftButton && event->modifiers().testFlag(Qt::ShiftModifier)) {
     // Save current playback state when scrubbing
     resume_after_scrub = !can->isPaused();
     if (resume_after_scrub) {
@@ -435,6 +437,14 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       resume_after_scrub = false;
     }
   }
+}
+
+void ChartView::takeSignalsFrom(ChartView *source) {
+  sigs.insert(sigs.end(), std::move_iterator(source->sigs.begin()), std::move_iterator(source->sigs.end()));
+  source->sigs.clear();
+  updateAxisY();
+  updateTitle();
+  charts_widget->removeChart(source);
 }
 
 void ChartView::showTip(double sec) {
@@ -674,7 +684,7 @@ void ChartView::drawForeground(QPainter *painter) {
 void ChartView::drawRubberBandTimeRange(QPainter *painter) {
   if (rubber_rect.width() <= 1) return;
 
-  // selection rect, replaces QRubberBand
+  // selection rect
   QColor highlight = palette().color(QPalette::Highlight);
   QColor fill = highlight;
   fill.setAlpha(50);
