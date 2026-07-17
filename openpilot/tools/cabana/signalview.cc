@@ -1,9 +1,9 @@
 #include "tools/cabana/signalview.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <future>
 
-#include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -15,6 +15,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/utils/util.h"
 
 // SignalModel
 
@@ -25,12 +26,12 @@ static QString signalTypeToString(cabana::Signal::Type type) {
 }
 
 SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(parent) {
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &SignalModel::refresh);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &SignalModel::handleMsgChanged);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &SignalModel::handleMsgChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalModel::handleSignalAdded);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalModel::handleSignalUpdated);
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &SignalModel::handleSignalRemoved);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &SignalModel::refresh);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgUpdated, this, &SignalModel::handleMsgChanged);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgRemoved, this, &SignalModel::handleMsgChanged);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalAdded, this, &SignalModel::handleSignalAdded);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &SignalModel::handleSignalUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalRemoved, this, &SignalModel::handleSignalRemoved);
 }
 
 void SignalModel::insertItem(SignalModel::Item *root_item, int pos, const cabana::Signal *sig) {
@@ -197,7 +198,7 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
   if (s.is_little_endian != origin_s->is_little_endian) {
     s.start_bit = flipBitPos(s.start_bit);
   }
-  UndoStack::push(new EditSignalCommand(msg_id, origin_s, s));
+  UndoStack::instance()->push(new EditSignalCommand(msg_id, origin_s, s));
   return true;
 }
 
@@ -251,7 +252,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
-  node_validator = new QRegExpValidator(QRegExp("^\\w+(,\\w+)*$"), this);
+  node_validator = new NodeValidator(this);
   double_validator = new DoubleValidator(this);
 
   label_font.setPointSize(8);
@@ -304,7 +305,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       path.addRoundedRect(icon_rect, 3, 3);
       painter->setPen(item->highlight ? Qt::white : Qt::black);
       painter->setFont(label_font);
-      painter->fillPath(path, item->sig->color.darker(item->highlight ? 125 : 0));
+      painter->fillPath(path, toQColor(item->sig->color.darker(item->highlight ? 125 : 0)));
       painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
       rect.setLeft(icon_rect.right() + h_margin * 2);
@@ -375,15 +376,6 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     else if (item->type == SignalModel::Item::Node) e->setValidator(node_validator);
     else e->setValidator(double_validator);
 
-    if (item->type == SignalModel::Item::Name) {
-      auto names = dbc()->signalNames();
-      QStringList qnames;
-      for (const auto &n : names) qnames.push_back(QString::fromStdString(n));
-      QCompleter *completer = new QCompleter(qnames, e);
-      completer->setCaseSensitivity(Qt::CaseInsensitive);
-      completer->setFilterMode(Qt::MatchContains);
-      e->setCompleter(completer);
-    }
     return e;
   } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);
@@ -428,8 +420,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
-  QRegularExpression re("\\S+");
-  filter_edit->setValidator(new QRegularExpressionValidator(re, this));
+  filter_edit->setValidator(new NonWhitespaceValidator(this));
   filter_edit->setClearButtonEnabled(true);
   filter_edit->setPlaceholderText(tr("Filter Signal"));
   hl->addWidget(filter_edit);
@@ -481,8 +472,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(tree, &QTreeView::entered, [this](const QModelIndex &index) { emit highlight(model->getItem(index)->sig); });
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalView::handleSignalAdded);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalAdded, this, &SignalView::handleSignalAdded);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &SignalView::handleSignalUpdated);
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
@@ -524,7 +515,7 @@ void SignalView::rowsChanged() {
 
       tree->setIndexWidget(index, w);
       auto sig = model->getItem(index)->sig;
-      QObject::connect(remove_btn, &QToolButton::clicked, [=]() { UndoStack::push(new RemoveSigCommand(model->msg_id, sig)); });
+      QObject::connect(remove_btn, &QToolButton::clicked, [=]() { UndoStack::instance()->push(new RemoveSigCommand(model->msg_id, sig)); });
       QObject::connect(plot_btn, &QToolButton::clicked, [=](bool checked) {
         emit showChart(model->msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
       });

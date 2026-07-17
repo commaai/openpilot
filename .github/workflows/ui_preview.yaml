@@ -25,7 +25,8 @@ env:
 
 jobs:
   preview:
-    if: github.repository == 'commaai/openpilot'
+    if: false # tmp disable due to GH API rate limiting flakiness
+    #if: github.repository == 'commaai/openpilot'
     name: preview
     runs-on: ubuntu-latest
     timeout-minutes: 20

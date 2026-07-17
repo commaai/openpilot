@@ -31,7 +31,7 @@ void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIt
   }
 
   freq_ = points_.size() / std::max(points_.back().x() - points_.front().x(), 1.0);
-  render(sig->color, range, size);
+  render(toQColor(sig->color), range, size);
 }
 
 void Sparkline::render(const QColor &color, int range, QSize size) {
