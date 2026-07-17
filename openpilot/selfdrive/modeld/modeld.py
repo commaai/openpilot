@@ -2,7 +2,9 @@
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
-import threading
+import pickle
+import subprocess
+import sys
 import time
 import numpy as np
 import openpilot.cereal.messaging as messaging
@@ -14,7 +16,7 @@ from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.realtime import config_realtime_process, drop_realtime, set_core_affinity, DT_MDL
+from openpilot.common.realtime import config_realtime_process, set_core_affinity, DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
@@ -148,6 +150,49 @@ class ModelState:
     self._blob_cache.clear()
 
 
+def big_worker(main_wide_camera: bool, use_extra_client: bool):
+  # loads and runs the big model in its own process, so neither the load nor a usbgpu
+  # failure can ever stall small model inference in modeld
+  set_core_affinity([7])  # SCHED_OTHER, modeld's SCHED_FIFO always preempts us
+  input_sock = messaging.sub_sock('customReservedRawData0', conflate=True, timeout=20)
+  output_pub = messaging.pub_sock('customReservedRawData1')
+
+  main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
+  vipc_client_main = VisionIpcClient("camerad", main_stream, False)
+  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False)
+  while not vipc_client_main.connect(False) or (use_extra_client and not vipc_client_extra.connect(False)):
+    time.sleep(0.1)
+
+  model = ModelState(vipc_client_main.width, vipc_client_main.height, True)
+  model.warmup()
+  cloudlog.warning("big model ready")
+
+  buf_main, buf_extra = None, None
+  meta_main, meta_extra = FrameMeta(), FrameMeta()
+  while True:
+    if os.getppid() == 1:
+      return  # modeld is gone
+    dat = input_sock.receive()
+    if dat is None:
+      continue
+    req = pickle.loads(messaging.log_from_bytes(dat).customReservedRawData0)
+    while meta_main.frame_id < req['frame_id'] and (buf := vipc_client_main.recv()) is not None:
+      buf_main, meta_main = buf, FrameMeta(vipc_client_main)
+    while use_extra_client and meta_extra.timestamp_sof + 25000000 < meta_main.timestamp_sof and (buf := vipc_client_extra.recv()) is not None:
+      buf_extra, meta_extra = buf, FrameMeta(vipc_client_extra)
+    if not use_extra_client:
+      buf_extra, meta_extra = buf_main, meta_main
+    if meta_main.frame_id != req['frame_id'] or abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
+      continue  # out of sync with modeld, skip and let small cover this frame
+
+    bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
+    transforms = {name: req['big_transform'] if 'big' in name else req['transform'] for name in model.vision_input_names}
+    outputs = model.run(bufs, transforms, req['inputs'])
+    msg = messaging.new_message(None)
+    msg.customReservedRawData1 = pickle.dumps({'frame_id': req['frame_id'], 'outputs': outputs})
+    output_pub.send(msg.to_bytes())
+
+
 def main(demo=False):
   cloudlog.warning("modeld init")
 
@@ -187,25 +232,13 @@ def main(demo=False):
   st = time.monotonic()
   cloudlog.warning("loading model")
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False if fallback else USBGPU)
-  model = small_model
-  big_model = None
-  big_failed = False
-  params.put_bool("UsbGpuActive", USBGPU and not fallback)
-
-  def load_big_model():
-    nonlocal big_model, big_failed
-    drop_realtime()
-    set_core_affinity([7])
-    try:
-      candidate = ModelState(vipc_client_main.width, vipc_client_main.height, True)
-      candidate.warmup()
-      big_model = candidate
-    except Exception:
-      cloudlog.exception("big model failed to load")
-      big_failed = True
-
+  big_proc, big_pub, big_sub, big_out = None, None, None, None
+  big_active, big_failed, big_misses = False, False, 0
   if fallback:
-    threading.Thread(target=load_big_model, daemon=True).start()
+    big_pub = messaging.pub_sock('customReservedRawData0')
+    big_sub = messaging.sub_sock('customReservedRawData1', conflate=True, timeout=10)
+    big_proc = subprocess.Popen([sys.executable, __file__, "--big-worker", str(int(main_wide_camera)), str(int(use_extra_client))])
+  params.put_bool("UsbGpuActive", USBGPU and not fallback)
   cloudlog.warning(f"model loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
@@ -273,13 +306,6 @@ def main(demo=False):
       meta_extra = meta_main
 
     sm.update(0)
-    if big_failed and model is not small_model:
-      model = small_model
-      params.put_bool("UsbGpuActive", False)
-    elif not big_failed and not sm["carControl"].enabled and big_model is not None and model is not big_model:
-      model = big_model
-      params.put_bool("UsbGpuActive", True)
-
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
@@ -310,8 +336,8 @@ def main(demo=False):
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
 
-    bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
-    transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
+    bufs = {name: buf_extra if 'big' in name else buf_main for name in small_model.vision_input_names}
+    transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in small_model.vision_input_names}
     frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
     action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
     lat_action_t = lat_delay + frame_delay + action_delay
@@ -323,18 +349,45 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
-    try:
-      model_output = model.run(bufs, transforms, inputs)
-    except Exception:
-      if model is small_model:
-        raise
-      cloudlog.exception("big model failed")
-      big_failed = True
-      model = small_model
-      params.put_bool("UsbGpuActive", False)
-      bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
-      transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
-      model_output = model.run(bufs, transforms, inputs)
+    model_output = None
+    if big_proc is not None and not big_failed:
+      msg = messaging.new_message(None)
+      msg.customReservedRawData0 = pickle.dumps({'frame_id': meta_main.frame_id, 'transform': model_transform_main,
+                                                 'big_transform': model_transform_extra, 'inputs': inputs})
+      big_pub.send(msg.to_bytes())
+      # promote to big once its outputs are fresh and the car is disengaged, then wait for it every
+      # frame. the deadline leaves room to run small on the same frame after a miss, so no gaps ever
+      deadline = time.monotonic() + 0.045
+      while not big_failed:
+        if (dat := big_sub.receive(non_blocking=not big_active)) is not None:
+          out = pickle.loads(messaging.log_from_bytes(dat).customReservedRawData1)
+          if all(np.isfinite(v).all() for v in out['outputs'].values() if v.dtype.kind == 'f'):
+            big_out = out
+          else:
+            big_failed = True  # never trust big again after a NaN
+            break
+        if not big_active:
+          if big_out is None or meta_main.frame_id - big_out['frame_id'] > 2 or sm["carControl"].enabled:
+            big_failed = big_proc.poll() is not None
+            break
+          cloudlog.warning("big model active")
+          big_active = True
+          params.put_bool("UsbGpuActive", True)
+        if big_out is not None and big_out['frame_id'] == meta_main.frame_id:
+          model_output, big_misses = big_out['outputs'], 0
+          break
+        if time.monotonic() > deadline:
+          big_misses += 1
+          big_failed = big_misses >= 3 or big_proc.poll() is not None  # transient misses are fine, 3 in a row means it's gone
+          break
+      if big_failed:
+        cloudlog.error("big model failed, latching to small")
+        big_active = False
+        params.put_bool("UsbGpuActive", False)
+        if big_proc.poll() is None:
+          big_proc.kill()
+    if model_output is None:
+      model_output = small_model.run(bufs, transforms, inputs)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
@@ -370,7 +423,15 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
+    parser.add_argument('--big-worker', nargs=2, type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
-    main(demo=args.demo)
+    if args.big_worker is not None:
+      try:
+        big_worker(bool(args.big_worker[0]), bool(args.big_worker[1]))
+      except Exception:
+        cloudlog.exception("big model worker died")
+        sys.exit(1)
+    else:
+      main(demo=args.demo)
   except KeyboardInterrupt:
     cloudlog.warning("got SIGINT")
