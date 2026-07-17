@@ -56,7 +56,7 @@ public:
   explicit FileLock(const std::filesystem::path &path) {
     fd = open(path.c_str(), O_CREAT | O_CLOEXEC, 0600);
     if (fd < 0 || flock(fd, LOCK_EX) < 0) {
-      fprintf(stderr, "failed to lock Cabana settings: %s\n", strerror(errno));
+      fprintf(stderr, "failed to lock Cabana settings %s: %s\n", path.c_str(), strerror(errno));
       if (fd >= 0) close(fd);
       fd = -1;
     }
@@ -78,7 +78,7 @@ LoadedSettings loadSettings() {
   std::string error;
   auto settings_json = json11::Json::parse(contents, error);
   if (!error.empty() || !settings_json.is_object()) {
-    fprintf(stderr, "failed to read Cabana settings%s%s\n", error.empty() ? "" : ": ", error.c_str());
+    fprintf(stderr, "failed to read Cabana settings %s%s%s\n", settingsFile().c_str(), error.empty() ? "" : ": ", error.c_str());
     return {.exists = true, .valid = false};
   }
   return {.values = settings_json.object_items(), .exists = true};
@@ -89,7 +89,7 @@ bool ensureSettingsDirectory() {
   std::error_code error;
   std::filesystem::create_directories(path.parent_path(), error);
   if (error) {
-    fprintf(stderr, "failed to create Cabana settings directory: %s\n", error.message().c_str());
+    fprintf(stderr, "failed to create Cabana settings directory %s: %s\n", path.parent_path().c_str(), error.message().c_str());
     return false;
   }
   return true;
@@ -112,7 +112,7 @@ bool saveSettings(const json11::Json::object &settings_json) {
   std::string temporary_path = path.string() + ".tmp.XXXXXX";
   int fd = mkstemp(temporary_path.data());
   if (fd < 0) {
-    fprintf(stderr, "failed to create temporary Cabana settings: %s\n", strerror(errno));
+    fprintf(stderr, "failed to create temporary Cabana settings %s: %s\n", temporary_path.c_str(), strerror(errno));
     return false;
   }
 
@@ -129,7 +129,7 @@ bool saveSettings(const json11::Json::object &settings_json) {
   if (!success) {
     const int saved_errno = errno;
     unlink(temporary_path.c_str());
-    fprintf(stderr, "failed to save Cabana settings: %s\n", strerror(saved_errno));
+    fprintf(stderr, "failed to save Cabana settings to %s: %s\n", path.c_str(), strerror(saved_errno));
   }
   return success;
 }
@@ -143,7 +143,7 @@ bool preserveCorruptSettings() {
     backup += ".corrupt." + std::to_string(i);
   }
   if (rename(path.c_str(), backup.c_str()) < 0) {
-    fprintf(stderr, "failed to preserve corrupt Cabana settings: %s\n", strerror(errno));
+    fprintf(stderr, "failed to preserve corrupt Cabana settings %s: %s\n", path.c_str(), strerror(errno));
     return false;
   }
   fprintf(stderr, "preserved corrupt Cabana settings at %s\n", backup.c_str());
