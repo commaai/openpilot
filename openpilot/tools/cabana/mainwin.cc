@@ -37,11 +37,8 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   // save default window state to allow resetting it
   default_state = utils::toBytes(saveState());
 
-  // restore states
-  const QRect default_geometry = geometry();
+  // restore states; restoreGeometry() itself corrects stale off-screen geometry
   restoreGeometry(utils::qbytes(settings.geometry));
-  // saved normal geometry may be stale (e.g. display change); unmaximize to the default
-  if (isMaximized()) setGeometry(default_geometry);
   restoreState(utils::qbytes(settings.window_state));
 
   // install handlers
