@@ -6,6 +6,7 @@
 #include <GLES3/gl3.h>
 #endif
 
+#include <chrono>
 #include <cstdio>
 
 #include <QApplication>
@@ -168,22 +169,18 @@ void CameraWidget::initializeGL() {
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
-  if (!vipc_thread) {
+  if (!vipc_thread.joinable()) {
     clearFrames();
-    vipc_thread = new QThread();
-    connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
-    connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
-    vipc_thread->start();
+    vipc_exit = false;
+    vipc_thread = std::thread(&CameraWidget::vipcThread, this);
   }
 }
 
 void CameraWidget::stopVipcThread() {
   makeCurrent();
-  if (vipc_thread) {
-    vipc_thread->requestInterruption();
-    vipc_thread->quit();
-    vipc_thread->wait();
-    vipc_thread = nullptr;
+  vipc_exit = true;
+  if (vipc_thread.joinable()) {
+    vipc_thread.join();
   }
 }
 
@@ -276,7 +273,7 @@ void CameraWidget::vipcThread() {
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra frame_meta = {};
 
-  while (!QThread::currentThread()->isInterruptionRequested()) {
+  while (!vipc_exit) {
     if (!vipc_client || cur_stream != requested_stream_type) {
       clearFrames();
       fprintf(stderr, "connecting to stream %d, was connected to %d\n",
@@ -290,13 +287,13 @@ void CameraWidget::vipcThread() {
       clearFrames();
       auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
       if (streams.empty()) {
-        QThread::msleep(100);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         continue;
       }
       emit vipcAvailableStreamsUpdated(streams);
 
       if (!vipc_client->connect(false)) {
-        QThread::msleep(100);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         continue;
       }
       emit vipcThreadConnected(vipc_client.get());

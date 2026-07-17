@@ -21,8 +21,7 @@ some rules
 - `QApplication`, `QCoreApplication`, `QGuiApplication`
 - `QString`, `QStringList`, `QStringBuilder`, `QChar`, `QLatin1Char`
 - `QVariant`
-- `QThread`
-- `QTimer`, `QBasicTimer`, `QTimerEvent`
+- `QTimer`
 - `QWidget`, `QMainWindow`, `QWindow`
 - `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QProgressDialog`
 - `QFileDialog`

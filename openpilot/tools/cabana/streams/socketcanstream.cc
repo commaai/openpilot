@@ -15,7 +15,6 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QThread>
 
 SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
   if (!available()) {
@@ -83,7 +82,7 @@ bool SocketCanStream::connect() {
 void SocketCanStream::streamThread() {
   struct canfd_frame frame;
 
-  while (!QThread::currentThread()->isInterruptionRequested()) {
+  while (!exit_) {
     ssize_t nbytes = read(sock_fd, &frame, sizeof(frame));
     if (nbytes <= 0) continue;
 

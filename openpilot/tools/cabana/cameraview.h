@@ -1,13 +1,14 @@
 #pragma once
 
+#include <atomic>
 #include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
-#include <QThread>
 
 #include "msgq/visionipc/visionipc_client.h"
 
@@ -49,7 +50,8 @@ protected:
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
   std::set<VisionStreamType> available_streams;
-  QThread *vipc_thread = nullptr;
+  std::thread vipc_thread;
+  std::atomic<bool> vipc_exit = false;
   std::recursive_mutex frame_lock;
   VisionBuf* current_frame_ = nullptr;
   VisionIpcBufExtra frame_meta_ = {};
