@@ -35,20 +35,16 @@ protected:
   void clearFrames();
 
   QColor bg = Qt::black;
-  QImage rgb_frame;
+  QImage rgb_frame;   // written by vipc thread, drawn by GUI thread; guarded by frame_lock
+  QImage rgb_back;    // vipc thread only
 
   std::string stream_name;
-  int stream_width = 0;
-  int stream_height = 0;
-  int stream_stride = 0;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
   std::set<VisionStreamType> available_streams;
   std::thread vipc_thread;
   std::atomic<bool> vipc_exit = false;
-  std::recursive_mutex frame_lock;
-  VisionBuf* current_frame_ = nullptr;
-  VisionIpcBufExtra frame_meta_ = {};
+  std::mutex frame_lock;
 
 protected slots:
   void vipcFrameReceived();

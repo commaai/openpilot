@@ -47,21 +47,14 @@ void CameraWidget::paintEvent(QPaintEvent *event) {
   p.fillRect(rect(), bg);
 
   std::lock_guard lk(frame_lock);
-  if (!current_frame_ || stream_width <= 0 || stream_height <= 0) return;
+  if (rgb_frame.isNull()) return;
 
   // Scale for aspect ratio
   float widget_ratio = (float)width() / height();
-  float frame_ratio = (float)stream_width / stream_height;
+  float frame_ratio = (float)rgb_frame.width() / rgb_frame.height();
   int w = std::lround(width() * std::min(frame_ratio / widget_ratio, 1.0f));
   int h = std::lround(height() * std::min(widget_ratio / frame_ratio, 1.0f));
   QRect video_rect((width() - w) / 2, (height() - h) / 2, w, h);
-
-  // YUV (NV12) -> RGBA at stream resolution; the painter scales it into the video rect
-  if (rgb_frame.width() != stream_width || rgb_frame.height() != stream_height) {
-    rgb_frame = QImage(stream_width, stream_height, QImage::Format_RGBA8888);
-  }
-  yuv::nv12_to_rgba(current_frame_->y, stream_stride, current_frame_->uv, stream_stride,
-                    rgb_frame.bits(), rgb_frame.bytesPerLine(), stream_width, stream_height);
 
   p.setRenderHint(QPainter::SmoothPixmapTransform);
   if (active_stream_type == VISION_STREAM_DRIVER) {
@@ -106,17 +99,18 @@ void CameraWidget::vipcThread() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         continue;
       }
-      std::lock_guard lk(frame_lock);
-      stream_width = vipc_client->buffers[0].width;
-      stream_height = vipc_client->buffers[0].height;
-      stream_stride = vipc_client->buffers[0].stride;
     }
 
     if (VisionBuf *buf = vipc_client->recv(&frame_meta, 100)) {
+      // NV12 -> RGBA once per frame on the receive thread; paint just draws the image
+      if (rgb_back.width() != (int)buf->width || rgb_back.height() != (int)buf->height) {
+        rgb_back = QImage(buf->width, buf->height, QImage::Format_RGBA8888);
+      }
+      yuv::nv12_to_rgba(buf->y, buf->stride, buf->uv, buf->stride,
+                        rgb_back.bits(), rgb_back.bytesPerLine(), buf->width, buf->height);
       {
         std::lock_guard lk(frame_lock);
-        current_frame_ = buf;
-        frame_meta_ = frame_meta;
+        rgb_frame.swap(rgb_back);
       }
       emit vipcThreadFrameReceived();
     }
@@ -125,6 +119,7 @@ void CameraWidget::vipcThread() {
 
 void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
-  current_frame_ = nullptr;
+  rgb_frame = QImage();
+  rgb_back = QImage();
   available_streams.clear();
 }
