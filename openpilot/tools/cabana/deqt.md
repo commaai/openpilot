@@ -48,7 +48,7 @@ some rules
 - `QStyle`, `QStyleOption`, `QStyleOptionFrame`, `QStyleOptionSlider`
 - `QPoint`, `QPointF`, `QRect`, `QRectF`, `QRegion`
 - `QSize`, `QSizeF`
-- `QEvent`, `QPaintEvent`, `QResizeEvent`, `QShowEvent`, `QCloseEvent`
+- `QEvent`, `QPaintEvent`, `QResizeEvent`, `QShowEvent`, `QHideEvent`, `QCloseEvent`
 - `QMouseEvent`, `QWheelEvent`, `QNativeGestureEvent`, `QContextMenuEvent`
 - `QKeySequence`, `QShortcut`, `QToolTip`
 
