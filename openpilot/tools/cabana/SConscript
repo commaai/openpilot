@@ -75,8 +75,23 @@ cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
 cabana_libs = [cereal, messaging, visionipc, replay_lib] + ffmpeg_libs + ['bz2', 'zstd', 'usb-1.0'] + base_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
-bootstrap_icons_path = '-DBOOTSTRAP_ICONS_PATH=\'"%s"\'' % (bootstrap_icons.SVG_PATH)
-cabana_env['CXXFLAGS'] += [opendbc_path, bootstrap_icons_path]
+cabana_env['CXXFLAGS'] += [opendbc_path]
+
+# embed the bootstrap icons SVG into the binary
+def build_bootstrap_icons_src(target, source, env):
+  data = open(str(source[0]), 'rb').read()
+  with open(str(target[0]), 'w') as f:
+    f.write('#include <cstddef>\n')
+    f.write('extern const unsigned char bootstrap_icons_svg[];\n')
+    f.write('extern const size_t bootstrap_icons_svg_len;\n')
+    f.write('const unsigned char bootstrap_icons_svg[] = {\n')
+    for i in range(0, len(data), 32):
+      f.write(','.join(str(b) for b in data[i:i+32]) + ',\n')
+    f.write('};\n')
+    f.write('const size_t bootstrap_icons_svg_len = sizeof(bootstrap_icons_svg);\n')
+  return None
+
+bootstrap_icons_src = cabana_env.Command('assets/bootstrap_icons.cc', str(bootstrap_icons.SVG_PATH), build_bootstrap_icons_src)
 
 # build assets
 assets = "assets/assets.cc"
@@ -91,7 +106,7 @@ cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc'
                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc']
 if arch != "Darwin":
   cabana_srcs += ['streams/socketcanstream.cc']
-cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs, LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs + [bootstrap_icons_src], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):

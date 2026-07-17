@@ -9,8 +9,6 @@
 #include <csignal>
 #include <ctime>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <string>
@@ -487,38 +485,39 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   std::filesystem::current_path(app_dir, ec);
 }
 
+// embedded at build time from the bootstrap_icons package (see SConscript)
+extern const unsigned char bootstrap_icons_svg[];
+extern const size_t bootstrap_icons_svg_len;
+
 static std::unordered_map<std::string, std::string> load_bootstrap_icons() {
   std::unordered_map<std::string, std::string> icons;
 
-  std::ifstream f(BOOTSTRAP_ICONS_PATH);
-  if (f) {
-    const std::string content{std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>()};
-    const std::string sym_open = "<symbol ";
-    const std::string sym_close = "</symbol>";
-    const std::string id_attr = "id=\"";
+  const std::string content(reinterpret_cast<const char *>(bootstrap_icons_svg), bootstrap_icons_svg_len);
+  const std::string sym_open = "<symbol ";
+  const std::string sym_close = "</symbol>";
+  const std::string id_attr = "id=\"";
 
-    size_t pos = 0;
-    while ((pos = content.find(sym_open, pos)) != std::string::npos) {
-      size_t end = content.find(sym_close, pos);
-      if (end == std::string::npos) break;
-      end += sym_close.size();
+  size_t pos = 0;
+  while ((pos = content.find(sym_open, pos)) != std::string::npos) {
+    size_t end = content.find(sym_close, pos);
+    if (end == std::string::npos) break;
+    end += sym_close.size();
 
-      // extract id
-      size_t id_start = content.find(id_attr, pos);
-      if (id_start != std::string::npos && id_start < end) {
-        id_start += id_attr.size();
-        size_t id_end = content.find('"', id_start);
-        if (id_end != std::string::npos && id_end < end) {
-          std::string id = content.substr(id_start, id_end - id_start);
-          std::string svg_str = content.substr(pos, end - pos);
-          // replace <symbol with <svg, </symbol> with </svg>
-          svg_str.replace(0, 7, "<svg");               // "<symbol" (7) -> "<svg" (4)
-          svg_str.replace(svg_str.size() - 9, 9, "</svg>");  // "</symbol>" (9) -> "</svg>" (6)
-          icons[id] = std::move(svg_str);
-        }
+    // extract id
+    size_t id_start = content.find(id_attr, pos);
+    if (id_start != std::string::npos && id_start < end) {
+      id_start += id_attr.size();
+      size_t id_end = content.find('"', id_start);
+      if (id_end != std::string::npos && id_end < end) {
+        std::string id = content.substr(id_start, id_end - id_start);
+        std::string svg_str = content.substr(pos, end - pos);
+        // replace <symbol with <svg, </symbol> with </svg>
+        svg_str.replace(0, 7, "<svg");               // "<symbol" (7) -> "<svg" (4)
+        svg_str.replace(svg_str.size() - 9, 9, "</svg>");  // "</symbol>" (9) -> "</svg>" (6)
+        icons[id] = std::move(svg_str);
       }
-      pos = end;
     }
+    pos = end;
   }
   return icons;
 }
