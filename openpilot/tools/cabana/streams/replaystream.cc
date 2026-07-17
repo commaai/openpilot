@@ -1,5 +1,14 @@
 #include "tools/cabana/streams/replaystream.h"
 
+#include <cstdint>
+#include <utility>
+
+#include <QAudioDeviceInfo>
+#include <QAudioFormat>
+#include <QAudioOutput>
+#include <QByteArray>
+#include <QDebug>
+#include <QIODevice>
 #include <QLabel>
 #include <QFileDialog>
 #include <QGridLayout>
@@ -9,6 +18,80 @@
 #include "common/timing.h"
 #include "common/util.h"
 #include "tools/cabana/streams/routes.h"
+
+class ReplayAudioOutput : public QObject {
+public:
+  void play(const cereal::AudioData::Reader &audio) {
+    const auto data = audio.getData();
+    const uint32_t sample_rate = audio.getSampleRate();
+    if (data.size() == 0 || sample_rate == 0) return;
+
+    QByteArray pcm(reinterpret_cast<const char *>(data.begin()), data.size());
+    QMetaObject::invokeMethod(this, [this, pcm = std::move(pcm), sample_rate]() {
+      write(sample_rate, pcm);
+    }, Qt::QueuedConnection);
+  }
+
+  void reset() {
+    QMetaObject::invokeMethod(this, [this]() { resetOutput(); }, Qt::QueuedConnection);
+  }
+
+private:
+  bool ensureOutput(uint32_t sample_rate) {
+    if (audio_output && sample_rate == current_sample_rate) return true;
+    if (sample_rate == unsupported_sample_rate) return false;
+
+    resetOutput();
+
+    QAudioFormat format;
+    format.setSampleRate(sample_rate);
+    format.setChannelCount(1);
+    format.setSampleSize(16);
+    format.setCodec("audio/pcm");
+    format.setByteOrder(QAudioFormat::LittleEndian);
+    format.setSampleType(QAudioFormat::SignedInt);
+
+    const QAudioDeviceInfo device_info = QAudioDeviceInfo::defaultOutputDevice();
+    if (!device_info.isFormatSupported(format)) {
+      const QAudioFormat nearest = device_info.nearestFormat(format);
+      if (nearest.sampleRate() != format.sampleRate() ||
+          nearest.channelCount() != format.channelCount() ||
+          nearest.sampleSize() != format.sampleSize() ||
+          nearest.sampleType() != format.sampleType()) {
+        qWarning() << "rawAudioData playback format is not supported:" << format;
+        unsupported_sample_rate = sample_rate;
+        return false;
+      }
+    }
+
+    audio_output = std::make_unique<QAudioOutput>(format);
+    audio_output->setBufferSize(sample_rate * sizeof(int16_t) / 2);
+    audio_device = audio_output->start();
+    current_sample_rate = sample_rate;
+    return audio_device != nullptr;
+  }
+
+  void write(uint32_t sample_rate, const QByteArray &pcm) {
+    if (!ensureOutput(sample_rate)) return;
+    if (audio_output->bytesFree() >= pcm.size()) {
+      audio_device->write(pcm.constData(), pcm.size());
+    }
+  }
+
+  void resetOutput() {
+    if (audio_output) {
+      audio_output->stop();
+      audio_output.reset();
+    }
+    audio_device = nullptr;
+    current_sample_rate = 0;
+  }
+
+  std::unique_ptr<QAudioOutput> audio_output;
+  QIODevice *audio_device = nullptr;
+  uint32_t current_sample_rate = 0;
+  uint32_t unsupported_sample_rate = 0;
+};
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   unsetenv("ZMQ");
@@ -22,6 +105,13 @@ ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   QObject::connect(&settings, &Settings::changed, this, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
+
+  audio_output = std::make_unique<ReplayAudioOutput>();
+}
+
+ReplayStream::~ReplayStream() {
+  replay.reset();
+  audio_output.reset();
 }
 
 void ReplayStream::mergeSegments() {
@@ -41,20 +131,30 @@ void ReplayStream::mergeSegments() {
           }
         }
       }
-      mergeEvents(new_events);
+      if (new_events.empty()) {
+        static const MessageEventsMap empty_events;
+        emit eventsMerged(empty_events);
+      } else {
+        mergeEvents(new_events);
+      }
     }
   }
 }
 
 bool ReplayStream::loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags, bool auto_source) {
-  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx", "carParams"},
+  audio_output->reset();
+  replay.reset(new Replay(route, {"can", "rawAudioData", "roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx", "carParams"},
                           {}, nullptr, replay_flags, data_dir, auto_source));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
 
   // Forward replay callbacks to corresponding Qt signals.
-  replay->onSeeking = [this](double sec) { emit seeking(sec); };
+  replay->onSeeking = [this](double sec) {
+    audio_output->reset();
+    emit seeking(sec);
+  };
   replay->onSeekedTo = [this](double sec) {
+    audio_output->reset();
     emit seekedTo(sec);
     waitForSeekFinshed();
   };
@@ -99,6 +199,10 @@ bool ReplayStream::eventFilter(const Event *event) {
       const auto dat = c.getDat();
       updateEvent(id, current_sec, (const uint8_t*)dat.begin(), dat.size());
     }
+  } else if (event->which == cereal::Event::Which::RAW_AUDIO_DATA && replay->getSpeed() == 1.0f && !replay->isPaused()) {
+    capnp::FlatArrayMessageReader reader(event->data);
+    auto e = reader.getRoot<cereal::Event>();
+    audio_output->play(e.getRawAudioData());
   }
 
   double ts = millis_since_boot();
@@ -109,7 +213,15 @@ bool ReplayStream::eventFilter(const Event *event) {
   return true;
 }
 
+void ReplayStream::setSpeed(float speed) {
+  replay->setSpeed(speed);
+  if (speed != 1.0f) {
+    audio_output->reset();
+  }
+}
+
 void ReplayStream::pause(bool pause) {
+  audio_output->reset();
   replay->pause(pause);
   emit(pause ? paused() : resume());
 }

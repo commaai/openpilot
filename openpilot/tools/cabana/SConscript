@@ -20,7 +20,7 @@ if not has_qt:
   Return()
 
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core"]
+qt_modules = ["Widgets", "Gui", "Core", "Multimedia"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -57,6 +57,7 @@ qt_flags = [
   "-DQT_WIDGETS_LIB",
   "-DQT_GUI_LIB",
   "-DQT_CORE_LIB",
+  "-DQT_MULTIMEDIA_LIB",
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags

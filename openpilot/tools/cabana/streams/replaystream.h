@@ -12,11 +12,14 @@
 
 Q_DECLARE_METATYPE(std::shared_ptr<LogReader>);
 
+class ReplayAudioOutput;
+
 class ReplayStream : public AbstractStream {
   Q_OBJECT
 
 public:
   ReplayStream(QObject *parent);
+  ~ReplayStream() override;
   void start() override { replay->start(); }
   bool loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE, bool auto_source = false);
   bool eventFilter(const Event *event);
@@ -30,8 +33,8 @@ public:
     return std::chrono::system_clock::from_time_t(replay->routeDateTime());
   }
   inline uint64_t beginMonoTime() const override { return replay->routeStartNanos(); }
-  inline void setSpeed(float speed) override { replay->setSpeed(speed); }
-  inline float getSpeed() const { return replay->getSpeed(); }
+  void setSpeed(float speed) override;
+  double getSpeed() override { return replay->getSpeed(); }
   inline Replay *getReplay() const { return replay.get(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
@@ -44,6 +47,7 @@ private:
   std::unique_ptr<Replay> replay = nullptr;
   std::set<int> processed_segments;
   std::unique_ptr<OpenpilotPrefix> op_prefix;
+  std::unique_ptr<ReplayAudioOutput> audio_output;
 };
 
 class OpenReplayWidget : public AbstractOpenStreamWidget {

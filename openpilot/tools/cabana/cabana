@@ -18,6 +18,7 @@ install_qt() {
       qtbase5-dev-tools \
       qttools5-dev-tools \
       libqt5charts5-dev \
+      qtmultimedia5-dev \
       libqt5svg5-dev \
       libqt5serialbus5-dev \
       libqt5x11extras5-dev \
