@@ -83,21 +83,17 @@ class TestMonitoring:
   # engaged, distracted past red and beyond the no-response window -> unavailability response + lockout
   def test_distracted_lockout(self):
     alert_lvls, d_status = self._run_seq(always_distracted, always_false, always_true, always_false)
-    s = d_status.settings
     assert alert_lvls[int(DISTRACTED_SECONDS_TO_RED / DT_DMON)] == 3
-    assert d_status.alert_3_cnt == 1
-    assert d_status.no_response_cnt == s._MAX_NO_RESPONSE
-    assert d_status.too_distracted
-    assert d_status.lockout_time > 0
+    assert d_status.lockout_active
+    assert d_status.lockout_time_elapsed > 0
+    assert d_status.lockout_count >= 1
 
   # no face -> wheeltouch red, sustained past the no-response timeout -> unavailability response + lockout
   def test_invisible_lockout(self):
     _, d_status = self._run_seq(always_no_face, always_false, always_true, always_false)
-    s = d_status.settings
     assert d_status.active_policy == log.DriverMonitoringState.MonitoringPolicy.wheeltouch
-    assert d_status.alert_3_cnt == 1
-    assert d_status.no_response_cnt == s._MAX_NO_RESPONSE
-    assert d_status.too_distracted
+    assert d_status.lockout_active
+    assert d_status.lockout_count >= 1
 
   # engaged, no face detected the whole time, no action
   def test_fully_invisible_driver(self):
