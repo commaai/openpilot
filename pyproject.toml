@@ -39,7 +39,6 @@ dependencies = [
 
   # body / webrtcd
   "av",
-  "libdatachannel-py>=2026.1.0.dev2",
 
   # logging
   "pyzmq",
