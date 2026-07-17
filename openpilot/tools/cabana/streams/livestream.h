@@ -1,10 +1,10 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
+#include <thread>
 #include <vector>
-
-#include <QBasicTimer>
 
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -29,17 +29,18 @@ protected:
   virtual void streamThread() = 0;
   void handleEvent(kj::ArrayPtr<capnp::word> event);
 
+  std::atomic<bool> exit_ = false;
+
 private:
-  void startUpdateTimer();
-  void timerEvent(QTimerEvent *event) override;
+  void updateThread();
+  void updateLastMessages() override;
   void updateEvents();
 
   std::mutex lock;
-  QThread *stream_thread;
+  std::thread stream_thread, update_thread;
+  std::atomic<bool> update_pending_ = false;
+  std::atomic<int> fps_ = 10;
   std::vector<const CanEvent *> received_events_;
-
-  int timer_id;
-  QBasicTimer update_timer;
 
   std::chrono::system_clock::time_point begin_date_time;
   uint64_t begin_event_ts = 0;

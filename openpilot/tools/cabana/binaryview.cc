@@ -37,7 +37,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &BinaryView::refresh);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &BinaryView::refresh);
 
   addShortcuts();
   setWhatsThis(R"(
@@ -66,7 +66,7 @@ void BinaryView::addShortcuts() {
   QObject::connect(shortcut_delete_backspace, &QShortcut::activated, shortcut_delete_x, &QShortcut::activated);
   QObject::connect(shortcut_delete_x, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      UndoStack::push(new RemoveSigCommand(model->msg_id, hovered_sig));
+      UndoStack::instance()->push(new RemoveSigCommand(model->msg_id, hovered_sig));
       hovered_sig = nullptr;
     }
   });
@@ -126,7 +126,7 @@ void BinaryView::highlight(const cabana::Signal *sig) {
 }
 
 void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) {
-  auto index = indexAt(viewport()->mapFromGlobal(QCursor::pos()));
+  auto index = indexAt(last_mouse_pos);
   if (!anchor_index.isValid() || !index.isValid())
     return;
 
@@ -141,7 +141,7 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
   resize_sig = nullptr;
-  if (auto index = indexAt(event->pos()); index.isValid() && index.column() != 8) {
+  if (auto index = indexAt(last_mouse_pos = event->pos()); index.isValid() && index.column() != 8) {
     anchor_index = index;
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
     int bit_pos = get_bit_pos(anchor_index);
@@ -158,7 +158,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 }
 
 void BinaryView::highlightPosition(const QPoint &pos) {
-  if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
+  if (auto index = indexAt(pos); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     const cabana::Signal *sig = item->sigs.empty() ? nullptr : item->sigs.back();
     highlight(sig);
@@ -166,7 +166,7 @@ void BinaryView::highlightPosition(const QPoint &pos) {
 }
 
 void BinaryView::mouseMoveEvent(QMouseEvent *event) {
-  highlightPosition(event->globalPos());
+  highlightPosition(last_mouse_pos = event->pos());
   QTableView::mouseMoveEvent(event);
 }
 
@@ -179,7 +179,7 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
       auto sig = resize_sig ? *resize_sig : cabana::Signal{};
       std::tie(sig.start_bit, sig.size, sig.is_little_endian) = getSelection(release_index);
       resize_sig ? emit editSignal(resize_sig, sig)
-                 : UndoStack::push(new AddSigCommand(model->msg_id, sig));
+                 : UndoStack::instance()->push(new AddSigCommand(model->msg_id, sig));
     } else {
       auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
       if (item && item->sigs.size() > 0)
@@ -208,7 +208,7 @@ void BinaryView::refresh() {
   resize_sig = nullptr;
   hovered_sig = nullptr;
   model->refresh();
-  highlightPosition(QCursor::pos());
+  if (underMouse()) highlightPosition(last_mouse_pos);
 }
 
 std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {

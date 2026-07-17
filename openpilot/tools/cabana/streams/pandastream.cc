@@ -1,12 +1,13 @@
 #include "tools/cabana/streams/pandastream.h"
 
+#include <chrono>
 #include <cstdio>
+#include <thread>
 
 #include <QCheckBox>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QThread>
 #include <QTimer>
 
 PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
@@ -45,13 +46,13 @@ bool PandaStream::connect() {
 void PandaStream::streamThread() {
   std::vector<can_frame> raw_can_data;
 
-  while (!QThread::currentThread()->isInterruptionRequested()) {
-    QThread::msleep(1);
+  while (!exit_) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     if (!panda->connected()) {
       fprintf(stderr, "Connection to panda lost. Attempting reconnect.\n");
       if (!connect()){
-        QThread::msleep(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         continue;
       }
     }

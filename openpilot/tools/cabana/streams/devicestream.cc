@@ -1,22 +1,23 @@
 #include "tools/cabana/streams/devicestream.h"
 
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstring>
 #include <fcntl.h>
+#include <filesystem>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unistd.h>
 #include <sys/wait.h>
 
 #include "openpilot/cereal/services.h"
 
 #include <QButtonGroup>
-#include <QFileInfo>
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QRadioButton>
-#include <QThread>
 
 #include "tools/cabana/utils/util.h"
 
@@ -26,6 +27,7 @@ DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(addre
 }
 
 DeviceStream::~DeviceStream() {
+  stop();
   stopBridge();
 }
 
@@ -50,9 +52,8 @@ void DeviceStream::stopBridge() {
 void DeviceStream::start() {
   if (!zmq_address.isEmpty()) {
     stopBridge();
-    QString bridge_path = QFileInfo(QCoreApplication::applicationDirPath() +
-                                    "/../../openpilot/cereal/messaging/bridge").absoluteFilePath();
-    const std::string path = bridge_path.toStdString();
+    const std::string path = (std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) /
+                              "../../openpilot/cereal/messaging/bridge").lexically_normal().string();
     const std::string addr = zmq_address.toStdString();
     const char *can_filter = "/\"can/\"";
 
@@ -108,10 +109,10 @@ void DeviceStream::streamThread() {
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", "127.0.0.1", false, true, services.at("can").queue_size));
   assert(sock != NULL);
   // run as fast as messages come in
-  while (!QThread::currentThread()->isInterruptionRequested()) {
+  while (!exit_) {
     std::unique_ptr<Message> msg(sock->receive(true));
     if (!msg) {
-      QThread::msleep(50);
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
       continue;
     }
     handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));

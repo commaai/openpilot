@@ -129,11 +129,10 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
 
 int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Cabana");
-  QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   initApp(argc, argv, false);
   QApplication app(argc, argv);
   app.setApplicationDisplayName("Cabana");
-  app.setWindowIcon(QIcon(":cabana-icon.png"));
+  //app.setWindowIcon(QIcon(":cabana-icon.png"));  // TODO: do this in imgui
 
   UnixSignalHandler signalHandler;
   utils::setTheme(settings.theme);

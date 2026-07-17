@@ -12,7 +12,6 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPainter>
-#include <QPointer>
 
 #include "json11/json11.hpp"
 #include "tools/replay/py_downloader.h"
@@ -112,11 +111,10 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
   // Fetch devices
-  QPointer<RoutesDialog> self = this;
-  std::thread([self]() {
+  std::thread([this, alive = std::weak_ptr<bool>(alive_)]() {
     std::string result = PyDownloader::getDevices();
-    QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), response = checkApiResponse(result)]() {
-      if (self) self->parseDeviceList(r, response.first, response.second);
+    QMetaObject::invokeMethod(qApp, [this, alive, r = QString::fromStdString(result), response = checkApiResponse(result)]() {
+      if (!alive.expired()) parseDeviceList(r, response.first, response.second);
     }, Qt::QueuedConnection);
   }).detach();
 }
@@ -156,12 +154,10 @@ void RoutesDialog::fetchRoutes() {
   }
 
   int request_id = ++fetch_id_;
-  QPointer<RoutesDialog> self = this;
-  std::thread([self, did, start_ms, end_ms, preserved, request_id]() {
+  std::thread([this, alive = std::weak_ptr<bool>(alive_), did, start_ms, end_ms, preserved, request_id]() {
     std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
-    if (!self || self->fetch_id_ != request_id) return;
-    QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), response = checkApiResponse(result), request_id]() {
-      if (self && self->fetch_id_ == request_id) self->parseRouteList(r, response.first, response.second);
+    QMetaObject::invokeMethod(qApp, [this, alive, r = QString::fromStdString(result), response = checkApiResponse(result), request_id]() {
+      if (!alive.expired() && fetch_id_ == request_id) parseRouteList(r, response.first, response.second);
     }, Qt::QueuedConnection);
   }).detach();
 }

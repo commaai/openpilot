@@ -20,13 +20,8 @@ some rules
 - `QObject`, `QMetaObject`, `QMetaType`
 - `QApplication`, `QCoreApplication`, `QGuiApplication`
 - `QString`, `QStringList`, `QStringBuilder`, `QChar`, `QLatin1Char`
-- `QByteArray`
 - `QVariant`
-- `QVector`, `QMap`, `QSet`, `QPointer`
-- `QSettings`
-- `QFile`, `QFileInfo`, `QDir`, `QIODevice`, `QStandardPaths`
-- `QThread`
-- `QTimer`, `QBasicTimer`, `QTimerEvent`
+- `QTimer`
 - `QWidget`, `QMainWindow`, `QWindow`
 - `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QProgressDialog`
 - `QFileDialog`
@@ -36,7 +31,7 @@ some rules
 - `QComboBox`, `QLineEdit`, `QTextEdit`, `QSpinBox`, `QSlider`
 - `QLabel`, `QGroupBox`, `QFrame`
 - `QTabBar`, `QTabWidget`, `QSplitter`, `QScrollArea`, `QScrollBar`
-- `QDockWidget`, `QStatusBar`, `QProgressBar`, `QRubberBand`
+- `QDockWidget`, `QStatusBar`, `QProgressBar`
 - `QFormLayout`, `QGridLayout`, `QHBoxLayout`, `QVBoxLayout`
 - `QSizePolicy`
 - `QAbstractItemModel`, `QAbstractTableModel`, `QModelIndex`
@@ -44,27 +39,15 @@ some rules
 - `QTableWidget`, `QTableWidgetItem`, `QListWidget`, `QListWidgetItem`
 - `QItemSelection`, `QItemSelectionModel`, `QItemSelectionRange`
 - `QHeaderView`, `QStyledItemDelegate`, `QStyleOptionViewItem`
-- `QValidator`, `QIntValidator`, `QDoubleValidator`
+- `QValidator`, `QIntValidator`
 - `QColor`, `QRgb`, `QPalette`
 - `QBrush`, `QPen`
 - `QPainter`, `QPainterPath`, `QStylePainter`
-- `QPixmap`, `QPixmapCache`, `QIcon`, `QStaticText`
+- `QImage`, `QPixmap`, `QPixmapCache`, `QStaticText`
 - `QFont`, `QFontDatabase`, `QFontMetrics`, `QTextDocument`
 - `QStyle`, `QStyleOption`, `QStyleOptionFrame`, `QStyleOptionSlider`
 - `QPoint`, `QPointF`, `QRect`, `QRectF`, `QRegion`
 - `QSize`, `QSizeF`
-- `QCursor`, `QClipboard`, `QScreen`, `QDesktopWidget`
 - `QEvent`, `QPaintEvent`, `QResizeEvent`, `QShowEvent`, `QCloseEvent`
 - `QMouseEvent`, `QWheelEvent`, `QNativeGestureEvent`, `QContextMenuEvent`
-- `QDrag`, `QMimeData`
-- `QDragEnterEvent`, `QDragLeaveEvent`, `QDragMoveEvent`, `QDropEvent`
 - `QKeySequence`, `QShortcut`, `QToolTip`
-- `QChart`, `QChartView`, `QAbstractAxis`, `QValueAxis`
-- `QXYSeries`, `QLineSeries`, `QScatterSeries`
-- `QLegend`, `QLegendMarker`
-- `QGraphicsScene`, `QGraphicsView`, `QGraphicsItemGroup`, `QGraphicsLayout`
-- `QGraphicsPixmapItem`, `QGraphicsProxyWidget`
-- `QOpenGLWidget`, `QOpenGLFunctions`
-- `QOpenGLShader`, `QOpenGLShaderProgram`
-- `QMatrix4x4`, `QSurfaceFormat`
-- `QUndoCommand`, `QUndoStack`, `QUndoView`

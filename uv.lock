@@ -762,6 +762,14 @@ docs = [
     { name = "jinja2" },
     { name = "zensical" },
 ]
+submodules = [
+    { name = "msgq" },
+    { name = "opendbc" },
+    { name = "pandacan" },
+    { name = "rednose" },
+    { name = "teleoprtc" },
+    { name = "tinygrad" },
+]
 testing = [
     { name = "codespell" },
     { name = "coverage" },
@@ -780,13 +788,8 @@ tools = [
 ]
 
 [package.dev-dependencies]
-submodules = [
-    { name = "msgq" },
-    { name = "opendbc" },
-    { name = "pandacan" },
-    { name = "rednose" },
-    { name = "teleoprtc" },
-    { name = "tinygrad" },
+standalone = [
+    { name = "openpilot", extra = ["submodules"] },
 ]
 
 [package.metadata]
@@ -816,7 +819,10 @@ requires-dist = [
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
+    { name = "msgq", marker = "extra == 'submodules'", editable = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
+    { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
+    { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },
     { name = "pillow" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "pycapnp", specifier = "==2.1.0" },
@@ -828,6 +834,7 @@ requires-dist = [
     { name = "pytest-xdist", marker = "extra == 'testing'", git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da" },
     { name = "pyzmq" },
     { name = "qrcode" },
+    { name = "rednose", marker = "extra == 'submodules'", editable = "rednose_repo" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
     { name = "scons" },
@@ -835,6 +842,8 @@ requires-dist = [
     { name = "setproctitle" },
     { name = "setuptools" },
     { name = "sounddevice" },
+    { name = "teleoprtc", marker = "extra == 'submodules'", editable = "teleoprtc_repo" },
+    { name = "tinygrad", marker = "extra == 'submodules'", editable = "tinygrad_repo" },
     { name = "tqdm" },
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
@@ -842,17 +851,10 @@ requires-dist = [
     { name = "zensical", marker = "extra == 'docs'" },
     { name = "zstandard" },
 ]
-provides-extras = ["docs", "testing", "dev", "tools"]
+provides-extras = ["docs", "testing", "dev", "tools", "submodules"]
 
 [package.metadata.requires-dev]
-submodules = [
-    { name = "msgq", editable = "msgq_repo" },
-    { name = "opendbc", editable = "opendbc_repo" },
-    { name = "pandacan", editable = "panda" },
-    { name = "rednose", editable = "rednose_repo" },
-    { name = "teleoprtc", editable = "teleoprtc_repo" },
-    { name = "tinygrad", editable = "tinygrad_repo" },
-]
+standalone = [{ name = "openpilot", extras = ["submodules"] }]
 
 [[package]]
 name = "packaging"

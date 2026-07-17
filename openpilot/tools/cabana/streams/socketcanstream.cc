@@ -8,13 +8,13 @@
 #include <unistd.h>
 
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 
-#include <QDir>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QThread>
 
 SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
   if (!available()) {
@@ -82,7 +82,7 @@ bool SocketCanStream::connect() {
 void SocketCanStream::streamThread() {
   struct canfd_frame frame;
 
-  while (!QThread::currentThread()->isInterruptionRequested()) {
+  while (!exit_) {
     ssize_t nbytes = read(sock_fd, &frame, sizeof(frame));
     if (nbytes <= 0) continue;
 
@@ -128,14 +128,12 @@ OpenSocketCanWidget::OpenSocketCanWidget(QWidget *parent) : AbstractOpenStreamWi
 void OpenSocketCanWidget::refreshDevices() {
   device_edit->clear();
   // Scan /sys/class/net/ for CAN interfaces (type 280 = ARPHRD_CAN)
-  QDir net_dir("/sys/class/net");
-  for (const auto &iface : net_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-    QFile type_file(net_dir.filePath(iface) + "/type");
-    if (type_file.open(QIODevice::ReadOnly)) {
-      int type = type_file.readAll().trimmed().toInt();
-      if (type == 280) {
-        device_edit->addItem(iface);
-      }
+  std::error_code ec;
+  for (const auto &entry : std::filesystem::directory_iterator("/sys/class/net", ec)) {
+    std::ifstream type_file(entry.path() / "type");
+    int type = 0;
+    if (type_file >> type && type == 280) {
+      device_edit->addItem(QString::fromStdString(entry.path().filename().string()));
     }
   }
 }

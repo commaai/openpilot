@@ -4,21 +4,21 @@
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <csignal>
 #include <ctime>
+#include <filesystem>
 #include <limits>
 #include <memory>
 #include <string>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <QColor>
-#include <QDir>
 #include <QFontDatabase>
 #include <QPixmapCache>
-#include <QSurfaceFormat>
-#include <QFileInfo>
 #include <QPainterPath>
 #include <unordered_map>
 #include "common/util.h"
@@ -271,13 +271,13 @@ QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
   if (input.isEmpty()) return QValidator::Intermediate;
 
   // Match QString::toDouble(): C locale, no hex floats / inf / nan.
-  const QByteArray bytes = input.toLatin1();
+  const std::string bytes = input.toLatin1().toStdString();
   // strtod accepts 0x… hex floats and p-exponents; QString::toDouble does not.
-  if (bytes.contains('x') || bytes.contains('X') || bytes.contains('p') || bytes.contains('P')) {
+  if (bytes.find_first_of("xXpP") != std::string::npos) {
     return QValidator::Invalid;
   }
 
-  const char *start = bytes.constData();
+  const char *start = bytes.c_str();
   char *end = nullptr;
   const double value = std::strtod(start, &end);
   if (end == start) {
@@ -303,6 +303,58 @@ QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
 }
 
 namespace utils {
+
+std::string homePath() {
+  const char *home = ::getenv("HOME");
+  return home ? home : "";
+}
+
+std::filesystem::path configPath() {
+#ifdef __APPLE__
+  return std::filesystem::path(homePath()) / "Library/Preferences";
+#else
+  const char *xdg = ::getenv("XDG_CONFIG_HOME");
+  return (xdg && xdg[0]) ? std::filesystem::path(xdg) : std::filesystem::path(homePath()) / ".config";
+#endif
+}
+
+#ifdef __APPLE__
+static const char *clipboard_read_cmds[] = {"pbpaste"};
+static const char *clipboard_write_cmds[] = {"pbcopy"};
+#else
+static const char *clipboard_read_cmds[] = {"wl-paste --no-newline 2>/dev/null", "xclip -selection clipboard -o 2>/dev/null", "xsel -ob 2>/dev/null"};
+static const char *clipboard_write_cmds[] = {"wl-copy 2>/dev/null", "xclip -selection clipboard 2>/dev/null", "xsel -ib 2>/dev/null"};
+#endif
+
+bool getClipboardText(std::string *text) {
+  text->clear();
+  bool has_tool = false;
+  for (const char *cmd : clipboard_read_cmds) {
+    FILE *f = ::popen(cmd, "r");
+    if (!f) continue;
+    std::string out;
+    char buf[4096];
+    for (size_t n; (n = ::fread(buf, 1, sizeof(buf), f)) > 0;) out.append(buf, n);
+    int status = ::pclose(f);
+    if (status == 0) {
+      *text = std::move(out);
+      return true;
+    }
+    has_tool |= WIFEXITED(status) && WEXITSTATUS(status) != 127;  // 127: command not found
+  }
+  return has_tool;  // tool present but clipboard empty
+}
+
+bool setClipboardText(const std::string &text) {
+  std::signal(SIGPIPE, SIG_IGN);
+  for (const char *cmd : clipboard_write_cmds) {
+    FILE *f = ::popen(cmd, "w");
+    if (!f) continue;
+    size_t written = ::fwrite(text.data(), 1, text.size(), f);
+    if (::pclose(f) == 0 && written == text.size()) return true;
+  }
+  return false;
+}
 
 bool isDarkTheme() {
   QColor windowColor = QApplication::palette().color(QPalette::Window);
@@ -413,20 +465,6 @@ QString signalToolTip(const cabana::Signal *sig) {
      .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }
 
-void setSurfaceFormat() {
-  QSurfaceFormat fmt;
-#ifdef __APPLE__
-  fmt.setVersion(3, 2);
-  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-  fmt.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-  fmt.setSamples(16);
-  fmt.setStencilBufferSize(1);
-  QSurfaceFormat::setDefaultFormat(fmt);
-}
-
 void sigTermHandler(int s) {
   std::signal(s, SIG_DFL);
   qApp->quit();
@@ -437,57 +475,57 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
 
-  QString app_dir;
+  std::filesystem::path app_dir;
 #ifdef __APPLE__
   // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
   QApplication tmp(argc, argv);
-  app_dir = QCoreApplication::applicationDirPath();
+  app_dir = QCoreApplication::applicationDirPath().toStdString();
   if (disable_hidpi) {
     qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio()).toLocal8Bit());
   }
 #else
-  app_dir = QFileInfo(util::readlink("/proc/self/exe").c_str()).path();
+  app_dir = std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
 #endif
 
-  qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
+  qputenv("QT_DBL_CLICK_DIST", "150");
   // ensure the current dir matches the exectuable's directory
-  QDir::setCurrent(app_dir);
-
-  setSurfaceFormat();
+  std::error_code ec;
+  std::filesystem::current_path(app_dir, ec);
 }
+
+// embedded at build time from the bootstrap_icons package (see SConscript)
+extern const unsigned char bootstrap_icons_svg[];
+extern const size_t bootstrap_icons_svg_len;
 
 static std::unordered_map<std::string, std::string> load_bootstrap_icons() {
   std::unordered_map<std::string, std::string> icons;
 
-  QFile f(":/bootstrap-icons.svg");
-  if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    std::string content = f.readAll().toStdString();
-    const std::string sym_open = "<symbol ";
-    const std::string sym_close = "</symbol>";
-    const std::string id_attr = "id=\"";
+  const std::string content(reinterpret_cast<const char *>(bootstrap_icons_svg), bootstrap_icons_svg_len);
+  const std::string sym_open = "<symbol ";
+  const std::string sym_close = "</symbol>";
+  const std::string id_attr = "id=\"";
 
-    size_t pos = 0;
-    while ((pos = content.find(sym_open, pos)) != std::string::npos) {
-      size_t end = content.find(sym_close, pos);
-      if (end == std::string::npos) break;
-      end += sym_close.size();
+  size_t pos = 0;
+  while ((pos = content.find(sym_open, pos)) != std::string::npos) {
+    size_t end = content.find(sym_close, pos);
+    if (end == std::string::npos) break;
+    end += sym_close.size();
 
-      // extract id
-      size_t id_start = content.find(id_attr, pos);
-      if (id_start != std::string::npos && id_start < end) {
-        id_start += id_attr.size();
-        size_t id_end = content.find('"', id_start);
-        if (id_end != std::string::npos && id_end < end) {
-          std::string id = content.substr(id_start, id_end - id_start);
-          std::string svg_str = content.substr(pos, end - pos);
-          // replace <symbol with <svg, </symbol> with </svg>
-          svg_str.replace(0, 7, "<svg");               // "<symbol" (7) -> "<svg" (4)
-          svg_str.replace(svg_str.size() - 9, 9, "</svg>");  // "</symbol>" (9) -> "</svg>" (6)
-          icons[id] = std::move(svg_str);
-        }
+    // extract id
+    size_t id_start = content.find(id_attr, pos);
+    if (id_start != std::string::npos && id_start < end) {
+      id_start += id_attr.size();
+      size_t id_end = content.find('"', id_start);
+      if (id_end != std::string::npos && id_end < end) {
+        std::string id = content.substr(id_start, id_end - id_start);
+        std::string svg_str = content.substr(pos, end - pos);
+        // replace <symbol with <svg, </symbol> with </svg>
+        svg_str.replace(0, 7, "<svg");               // "<symbol" (7) -> "<svg" (4)
+        svg_str.replace(svg_str.size() - 9, 9, "</svg>");  // "</symbol>" (9) -> "</svg>" (6)
+        icons[id] = std::move(svg_str);
       }
-      pos = end;
     }
+    pos = end;
   }
   return icons;
 }

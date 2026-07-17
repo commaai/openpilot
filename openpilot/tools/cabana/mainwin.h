@@ -6,9 +6,11 @@
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
+#include <cstdint>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -68,6 +70,7 @@ protected:
   void findSimilarBits();
   void findSignal();
   void undoStackCleanChanged(bool clean);
+  void updateUndoRedoActions();
   void onlineHelp();
   void toggleFullScreen();
   void updateStatus();
@@ -97,8 +100,10 @@ protected:
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
+  QAction *undo_act = nullptr;
+  QAction *redo_act = nullptr;
   QString car_fingerprint;
-  QByteArray default_state;
+  std::vector<uint8_t> default_state;
 };
 
 class HelpOverlay : public QWidget {

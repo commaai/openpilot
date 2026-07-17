@@ -97,10 +97,6 @@ tools = [
   #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
-[project.urls]
-Homepage = "https://github.com/commaai/openpilot"
-
-[dependency-groups]
 submodules = [
   "msgq",
   "opendbc",
@@ -108,6 +104,14 @@ submodules = [
   "rednose",
   "teleoprtc",
   "tinygrad",
+]
+
+[project.urls]
+Homepage = "https://github.com/commaai/openpilot"
+
+[dependency-groups]
+standalone = [
+  "openpilot[submodules]",
 ]
 
 [build-system]
@@ -206,7 +210,7 @@ not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
-default-groups = ["submodules"]
+default-groups = ["standalone"]
 override-dependencies = [
   "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
   "av",       # teleoprtc's av<13 pin is stale
