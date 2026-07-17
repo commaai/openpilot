@@ -80,6 +80,7 @@ private:
   void drawSignalValue(QPainter *painter);
   void drawTimeline(QPainter *painter);
   void drawRubberBandTimeRange(QPainter *painter);
+  int xAxisPrecision() const;
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QColor uniqueColor(QColor color, const cabana::Signal *exclude = nullptr) const;

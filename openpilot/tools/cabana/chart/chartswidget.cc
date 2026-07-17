@@ -520,10 +520,7 @@ void ChartsWidget::newChart() {
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
-  if (drag.source == chart) {
-    drag = {};
-    drag_preview->hide();
-  }
+  if (drag.source == chart) cancelChartDrag();
   if (drop_target == chart) drop_target = nullptr;
   charts.erase(std::remove(charts.begin(), charts.end(), chart), charts.end());
   chart->deleteLater();
@@ -571,7 +568,9 @@ bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
       return true;
     } else if (e->type() == QEvent::MouseButtonRelease && static_cast<QMouseEvent *>(e)->button() == Qt::LeftButton) {
       dragChartRelease(static_cast<QMouseEvent *>(e)->globalPos());
-      return true;
+      return false;  // let the release through so Qt clears the implicit mouse grab
+    } else if (e->type() == QEvent::MouseButtonPress || e->type() == QEvent::MouseButtonRelease) {
+      return true;  // swallow other buttons during the drag
     }
   }
 

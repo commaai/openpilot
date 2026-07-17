@@ -181,7 +181,7 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
     int adjust_top = (y + row_height) - margins.top();
     adjust_top = std::max(adjust_top, manage_btn->geometry().bottom() + style()->pixelMetric(QStyle::PM_LayoutTopMargin));
     // add right space for x-axis label
-    QSizeF x_label_size = fm.size(Qt::TextSingleLine, QString::number(x_max, 'f', 2)) + QSizeF{5, 5};
+    QSizeF x_label_size = fm.size(Qt::TextSingleLine, QString::number(x_max, 'f', xAxisPrecision())) + QSizeF{5, 5};
     plot_area = rect().adjusted(align_to + margins.left(), adjust_top + margins.top(),
                                 -x_label_size.width() / 2 - margins.right(),
                                 -x_label_size.height() - margins.bottom());
@@ -327,6 +327,10 @@ std::tuple<double, double, int> ChartView::getNiceAxisNumbers(qreal min, qreal m
   return {min * step, max * step, tick_count};
 }
 
+int ChartView::xAxisPrecision() const {
+  return std::max(int(-std::floor(std::log10((x_max - x_min) / (X_TICK_COUNT - 1)))), 2);
+}
+
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
 qreal ChartView::niceNumber(qreal x, bool ceiling) {
   qreal z = std::pow(10, std::floor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
@@ -357,6 +361,7 @@ void ChartView::contextMenuEvent(QContextMenuEvent *event) {
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
+  press_pos = event->pos();
   if (event->button() == Qt::LeftButton && move_icon_rect.contains(event->pos())) {
     charts_widget->startChartDrag(this, event->globalPos());
   } else if (event->button() == Qt::LeftButton && event->modifiers().testFlag(Qt::ShiftModifier)) {
@@ -368,7 +373,6 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     mouse_mode = MouseMode::Scrub;
   } else if (event->button() == Qt::LeftButton && plot_area.contains(event->pos())) {
     mouse_mode = MouseMode::Rubber;
-    press_pos = event->pos();
     rubber_rect = QRect();
   } else {
     QWidget::mousePressEvent(event);
@@ -414,10 +418,10 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     }
     rubber_rect = QRect();
     update();
-  } else if (event->button() == Qt::LeftButton && sigs.size() > 1) {
+  } else if (event->button() == Qt::LeftButton && mouse_mode == MouseMode::None && sigs.size() > 1) {
     // toggle series visibility by clicking its legend entry
     for (int i = 0; i < sigs.size() && i < legend_rects.size(); ++i) {
-      if (legend_rects[i].contains(event->pos())) {
+      if (legend_rects[i].contains(press_pos) && legend_rects[i].contains(event->pos())) {
         sigs[i].visible = !sigs[i].visible;
         updateAxisY();
         updateTitle();
@@ -505,20 +509,17 @@ void ChartView::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
   painter.setRenderHints(QPainter::Antialiasing);
 
-  if (!can->liveStreaming()) {
-    const qreal dpr = devicePixelRatioF();
-    if (chart_pixmap.isNull() || chart_pixmap.size() != size() * dpr) {
-      chart_pixmap = QPixmap(size() * dpr);
-      chart_pixmap.setDevicePixelRatio(dpr);
-      QPainter p(&chart_pixmap);
-      p.setRenderHints(QPainter::Antialiasing);
-      p.setFont(font());
-      drawStaticLayer(&p);
-    }
-    painter.drawPixmap(QPoint(), chart_pixmap);
-  } else {
-    drawStaticLayer(&painter);
+  // the static layer is invalidated on x-range change and data merge, so cache it in live mode too
+  const qreal dpr = devicePixelRatioF();
+  if (chart_pixmap.isNull() || chart_pixmap.size() != size() * dpr) {
+    chart_pixmap = QPixmap(size() * dpr);
+    chart_pixmap.setDevicePixelRatio(dpr);
+    QPainter p(&chart_pixmap);
+    p.setRenderHints(QPainter::Antialiasing);
+    p.setFont(font());
+    drawStaticLayer(&p);
   }
+  painter.drawPixmap(QPoint(), chart_pixmap);
 
   if (can_drop) {
     painter.setPen(QPen(palette().color(QPalette::Highlight), 4));
@@ -564,13 +565,14 @@ void ChartView::drawAxes(QPainter *painter) {
   }
 
   // x grid lines and tick labels
+  const int x_precision = xAxisPrecision();
   for (int i = 0; i < X_TICK_COUNT; ++i) {
     double sec = x_min + i * (x_max - x_min) / (X_TICK_COUNT - 1);
     qreal x = xPos(sec);
     painter->setPen(grid_color);
     painter->drawLine(QPointF(x, plot_area.top()), QPointF(x, plot_area.bottom()));
     painter->setPen(text_color);
-    QString label = QString::number(sec, 'f', 2);
+    QString label = QString::number(sec, 'f', x_precision);
     QRectF label_rect(x - 100, plot_area.bottom() + AXIS_X_TOP_MARGIN, 200, fm.height());
     painter->drawText(label_rect, Qt::AlignHCenter | Qt::AlignTop, label);
   }
