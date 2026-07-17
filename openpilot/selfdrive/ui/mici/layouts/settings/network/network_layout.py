@@ -14,11 +14,12 @@ class NetworkLayoutMici(NavScroller):
     super().__init__()
 
     self._wifi_manager = WifiManager()
-    self._wifi_manager.set_active(False)
     self._wifi_ui = WifiUIMici(self._wifi_manager)
 
     self._wifi_manager.add_callbacks(
       networks_updated=self._on_network_updated,
+      activated=lambda: self._on_tethering_finished(),
+      disconnected=lambda: self._on_tethering_finished(),
     )
 
     # ******** Tethering ********
@@ -32,9 +33,13 @@ class NetworkLayoutMici(NavScroller):
 
     def tethering_password_callback(password: str):
       if password:
-        self._tethering_toggle_btn.set_enabled(False)
-        self._tethering_password_btn.set_enabled(False)
         self._wifi_manager.set_tethering_password(password)
+        if self._wifi_manager.is_tethering_active():
+          self._tethering_toggle_btn.set_enabled(False)
+          self._tethering_password_btn.set_enabled(False)
+        else:
+          self._tethering_toggle_btn.set_enabled(True)
+          self._tethering_password_btn.set_enabled(True)
 
     def tethering_password_clicked():
       tethering_password = self._wifi_manager.tethering_password
@@ -100,14 +105,12 @@ class NetworkLayoutMici(NavScroller):
 
   def show_event(self):
     super().show_event()
-    self._wifi_manager.set_active(True)
 
     # Process wifi callbacks while at any point in the nav stack
     gui_app.add_nav_stack_tick(self._wifi_manager.process_callbacks)
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_manager.set_active(False)
 
     gui_app.remove_nav_stack_tick(self._wifi_manager.process_callbacks)
 
@@ -123,14 +126,16 @@ class NetworkLayoutMici(NavScroller):
     dlg = BigInputDialog("enter APN...", current_apn, minimum_length=0, confirm_callback=update_apn)
     gui_app.push_widget(dlg)
 
-  def _on_network_updated(self, networks: list[Network]):
-    # Update tethering state
+  def _on_tethering_finished(self):
     tethering_active = self._wifi_manager.is_tethering_active()
-    # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
     self._tethering_toggle_btn.set_enabled(True)
     self._tethering_password_btn.set_enabled(True)
-    self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
     self._tethering_toggle_btn.set_checked(tethering_active)
+    self._on_network_updated(self._wifi_manager.networks)
+
+  def _on_network_updated(self, networks: list[Network]):
+    tethering_active = self._wifi_manager.is_tethering_active()
+    self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
 
     # Update network metered
     self._network_metered_btn.set_value(

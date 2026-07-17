@@ -3,7 +3,8 @@ import pyray as rl
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
+from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType
+from openpilot.system.ui.lib.wpa_ctrl import normalize_ssid
 
 
 class WifiNetworkButton(BigButton):
