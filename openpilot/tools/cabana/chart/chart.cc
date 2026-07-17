@@ -168,6 +168,7 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
     for (auto &s : sigs) {
       int w = marker_size + 5 + bfm.horizontalAdvance(QString::fromStdString(s.sig->name)) +
               fm.horizontalAdvance(QString::fromStdString(" " + msgName(s.msg_id) + " " + s.msg_id.toString()));
+      w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
       if (x + w > legend_right && x > legend_left) {
         x = legend_left;
         y += row_height;
@@ -599,12 +600,13 @@ void ChartView::drawLegend(QPainter *painter) {
     qreal x = r.left() + marker_size + 5;
     painter->setFont(bold_font);
     painter->setPen(title_color);
-    QString name = QString::fromStdString(s.sig->name);
+    QString name = QFontMetrics(bold_font).elidedText(QString::fromStdString(s.sig->name), Qt::ElideRight, r.right() - x);
     painter->drawText(QRectF(x, r.top(), r.right() - x, r.height()), Qt::AlignLeft | Qt::AlignVCenter, name);
     x += QFontMetrics(bold_font).horizontalAdvance(name);
     painter->setFont(normal_font);
     painter->setPen(msg_color);
-    QString msg = QString::fromStdString(" " + msgName(s.msg_id) + " " + s.msg_id.toString());
+    QString msg = QFontMetrics(normal_font).elidedText(QString::fromStdString(" " + msgName(s.msg_id) + " " + s.msg_id.toString()),
+                                                       Qt::ElideRight, r.right() - x);
     painter->drawText(QRectF(x, r.top(), r.right() - x, r.height()), Qt::AlignLeft | Qt::AlignVCenter, msg);
   }
 }
