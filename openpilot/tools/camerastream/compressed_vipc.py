@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import av
-import av.video.format
 import os
 import sys
 import argparse
@@ -8,10 +6,12 @@ import numpy as np
 import multiprocessing
 import time
 import signal
+from collections import deque
 
 
 import openpilot.cereal.messaging as messaging
 from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.tools.camerastream.ffmpeg_decoder import Decoder, FFmpegError
 
 V4L2_BUF_FLAG_KEYFRAME = 8
 
@@ -41,7 +41,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
     nvDwn_yuv = nvc.PySurfaceDownloader(W, H, nvc.PixelFormat.YUV420, 0)
     img_yuv = np.ndarray((H*W//2*3), dtype=np.uint8)
   else:
-    codec = av.CodecContext.create("hevc", "r")
+    codec = Decoder("hevc")
 
   os.environ["ZMQ"] = "1"
   messaging.reset_context()
@@ -50,13 +50,18 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
   last_idx = -1
   seen_iframe = False
 
-  time_q = []
+  time_q = deque()
   while 1:
     msgs = messaging.drain_sock(sock, wait_for_one=True)
     for evt in msgs:
       evta = getattr(evt, evt.which())
-      if debug and evta.idx.encodeId != 0 and evta.idx.encodeId != (last_idx+1):
-        print("DROP PACKET!")
+      if last_idx != -1 and evta.idx.encodeId != (last_idx + 1):
+        if debug:
+          print("DROP PACKET!")
+        if not nvidia:
+          codec.reset()
+        seen_iframe = False
+        time_q.clear()
       last_idx = evta.idx.encodeId
       if not seen_iframe and not (evta.idx.flags & V4L2_BUF_FLAG_KEYFRAME):
         if debug:
@@ -72,7 +77,16 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
         if nvidia:
           nvDec.DecodeSurfaceFromPacket(np.frombuffer(evta.header, dtype=np.uint8))
         else:
-          codec.decode(av.packet.Packet(evta.header))
+          # The header contains VPS/SPS/PPS only and cannot produce a frame.
+          try:
+            for _ in codec.decode(evta.header):
+              raise FFmpegError("codec header unexpectedly produced a frame")
+          except FFmpegError as e:
+            if debug:
+              print(f"HEADER ERROR: {e}")
+            codec.reset()
+            time_q.clear()
+            continue
         seen_iframe = True
 
       if nvidia:
@@ -83,29 +97,38 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
           continue
         convSurface = conv_yuv.Execute(rawSurface, cc1)
         nvDwn_yuv.DownloadSingleSurface(convSurface, img_yuv)
+        images = (img_yuv,)
       else:
-        frames = codec.decode(av.packet.Packet(evta.data))
-        if len(frames) == 0:
+        images = codec.decode(evta.data)
+
+      decoded = False
+      try:
+        for img_yuv in images:
+          decoded = True
+          if not time_q:
+            raise FFmpegError("decoder produced more frames than submitted packets")
+          if not nvidia and (codec.width != W or codec.height != H):
+            raise FFmpegError(f"decoded frame is {codec.width}x{codec.height}, expected {W}x{H}")
+
+          frame_start_time = time_q.popleft()
+          vipc_server.send(vst, img_yuv.data, cnt, int(frame_start_time*1e9), int(time.monotonic()*1e9))
+          cnt += 1
+
+          pc_latency = (time.monotonic()-frame_start_time)*1000
           if debug:
-            print("DROP SURFACE")
-          continue
-        assert len(frames) == 1
-        img_yuv = frames[0].to_ndarray(format=av.video.format.VideoFormat('yuv420p')).flatten()
-        uv_offset = H*W
-        y = img_yuv[:uv_offset]
-        uv = img_yuv[uv_offset:].reshape(2, -1).ravel('F')
-        img_yuv = np.hstack((y, uv))
-
-      vipc_server.send(vst, img_yuv.data, cnt, int(time_q[0]*1e9), int(time.monotonic()*1e9))
-      cnt += 1
-
-      pc_latency = (time.monotonic()-time_q[0])*1000
-      time_q = time_q[1:]
-      if debug:
-        print(f"{len(msgs):2d} {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} \
-            roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms \
-            = {process_latency+network_latency+pc_latency:6.2f} ms", len(evta.data), sock_name)
-
+            print(f"{len(msgs):2d} {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} \
+                roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms \
+                = {process_latency+network_latency+pc_latency:6.2f} ms", len(evta.data), sock_name)
+      except FFmpegError as e:
+        if debug:
+          print(f"DECODE ERROR: {e}")
+        if not nvidia:
+          codec.reset()
+        seen_iframe = False
+        time_q.clear()
+        continue
+      if not decoded and debug:
+        print("DROP SURFACE")
 
 class CompressedVipc:
   def __init__(self, addr, vision_streams, server_name, nvidia=False, debug=False):

@@ -2,6 +2,8 @@
 
 `compressed_vipc.py` connects to a remote device running openpilot, decodes the video streams, and republishes them over VisionIPC.
 
+The default software decoder calls the FFmpeg shared libraries provided by `comma-deps-ffmpeg` directly. It uses slice-threaded low-delay decoding and reuses an NV12 output buffer to avoid frame-queue latency and per-frame allocations. PyAV is not used by camerastream.
+
 ## Usage
 
 ### On the device
