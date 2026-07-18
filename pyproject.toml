@@ -37,9 +37,6 @@ dependencies = [
   "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
 
-  # body / webrtcd
-  "av",
-
   # logging
   "pyzmq",
   "sentry-sdk",
