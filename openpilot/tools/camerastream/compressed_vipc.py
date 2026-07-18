@@ -38,6 +38,13 @@ def decoder(addr, vipc_server, vst, W, H, debug=False):
   seen_iframe = False
 
   time_q = deque()
+
+  def resync():
+    nonlocal seen_iframe
+    codec.reset()
+    seen_iframe = False
+    time_q.clear()
+
   while 1:
     msgs = messaging.drain_sock(sock, wait_for_one=True)
     for evt in msgs:
@@ -45,9 +52,7 @@ def decoder(addr, vipc_server, vst, W, H, debug=False):
       if last_idx != -1 and evta.idx.encodeId != (last_idx + 1):
         if debug:
           print("DROP PACKET!")
-        codec.reset()
-        seen_iframe = False
-        time_q.clear()
+        resync()
       last_idx = evta.idx.encodeId
       if not seen_iframe and not (evta.idx.flags & V4L2_BUF_FLAG_KEYFRAME):
         if debug:
@@ -58,49 +63,45 @@ def decoder(addr, vipc_server, vst, W, H, debug=False):
       frame_latency = ((evta.idx.timestampEof/1e9) - (evta.idx.timestampSof/1e9))*1000
       process_latency = ((evt.logMonoTime/1e9) - (evta.idx.timestampEof/1e9))*1000
 
-      # put in header (first)
+      # put in header (first) — VPS/SPS/PPS only, no frame expected
       if not seen_iframe:
-        # The header contains VPS/SPS/PPS only and cannot produce a frame.
         try:
-          for _ in codec.decode(evta.header):
-            raise FFmpegError("codec header unexpectedly produced a frame")
+          codec.decode(evta.header)
         except FFmpegError as e:
           if debug:
             print(f"HEADER ERROR: {e}")
-          codec.reset()
-          time_q.clear()
+          resync()
           continue
         seen_iframe = True
 
-      images = codec.decode(evta.data)
-
-      decoded = False
       try:
-        for img_yuv in images:
-          decoded = True
-          if not time_q:
-            raise FFmpegError("decoder produced more frames than submitted packets")
-          if codec.width != W or codec.height != H:
-            raise FFmpegError(f"decoded frame is {codec.width}x{codec.height}, expected {W}x{H}")
-
-          frame_start_time = time_q.popleft()
-          vipc_server.send(vst, img_yuv.data, cnt, int(frame_start_time*1e9), int(time.monotonic()*1e9))
-          cnt += 1
-
-          pc_latency = (time.monotonic()-frame_start_time)*1000
-          if debug:
-            print(f"{len(msgs):2d} {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} \
-                roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms \
-                = {process_latency+network_latency+pc_latency:6.2f} ms", len(evta.data), sock_name)
+        img_yuv = codec.decode(evta.data)
       except FFmpegError as e:
         if debug:
           print(f"DECODE ERROR: {e}")
-        codec.reset()
-        seen_iframe = False
-        time_q.clear()
+        resync()
         continue
-      if not decoded and debug:
-        print("DROP SURFACE")
+
+      if img_yuv is None:
+        if debug:
+          print("DROP SURFACE")
+        continue
+
+      if codec.width != W or codec.height != H:
+        if debug:
+          print(f"DECODE ERROR: decoded frame is {codec.width}x{codec.height}, expected {W}x{H}")
+        resync()
+        continue
+
+      frame_start_time = time_q.popleft()
+      vipc_server.send(vst, img_yuv.data, cnt, int(frame_start_time*1e9), int(time.monotonic()*1e9))
+      cnt += 1
+
+      pc_latency = (time.monotonic()-frame_start_time)*1000
+      if debug:
+        print(f"{len(msgs):2d} {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} \
+            roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms \
+            = {process_latency+network_latency+pc_latency:6.2f} ms", len(evta.data), sock_name)
 
 class CompressedVipc:
   def __init__(self, addr, vision_streams, server_name, debug=False):
