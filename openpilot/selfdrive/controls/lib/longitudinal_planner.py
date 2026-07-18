@@ -17,19 +17,11 @@ from openpilot.common.swaglog import cloudlog
 
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
+A_CRUISE_MIN = -1.2
+J_CRUISE = 0.5
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
-
-# Cruise speed limit (moved out of the MPC)
-CRUISE_MIN_ACCEL = -1.2
-CRUISE_MAX_ACCEL = 1.6
-CRUISE_JERK = 0.5  # m/s^3, max rate of change of cruise limit acceleration
-# In e2e mode, blend the cruise limit in over this distance below the set speed,
-# letting the model accelerate freely from well below cruise.
-CRUISE_LIMIT_ENABLE_DELTA = CRUISE_MAX_ACCEL**2 / (2 * CRUISE_JERK)
-# In e2e mode, allow the model to command higher acceleration than the comfort table.
-E2E_MAX_ACCEL = 3.0
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -67,6 +59,9 @@ def get_cruise_accel(e2e, v_ego, v_err, force_slow_decel, a_cruise_prev, angle_s
     a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
     a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
     a_limit = min(a_cruise, a_x_allowed)
+  # Comfort acceleration cap: speed-dependent table in non-e2e, E2E_MAX_ACCEL in e2e.
+  max_accel = E2E_MAX_ACCEL if e2e else get_max_accel(v_ego)
+  a_limit = min(a_limit, max_accel)
   return a_cruise, a_limit
 
 
@@ -98,28 +93,26 @@ class LongitudinalPlanner:
     v_ego = sm['carState'].vEgo
     v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
-    v_cruise_initialized = sm['carState'].vCruise != V_CRUISE_UNSET
+    if sm['controlsState'].forceDecel:
+      v_cruise = 0.0
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
-    force_slow_decel = sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['selfdriveState'].enabled
     # PCM cruise speed may be updated a few cycles later, check if initialized
+    v_cruise_initialized = sm['carState'].vCruise != V_CRUISE_UNSET
     reset_state = reset_state or not v_cruise_initialized
 
     # Cruise speed limit: target acceleration to converge to the set speed, jerk-limited.
     # In e2e mode the model accounts for road geometry, so the turn limit is only applied
     # in non-e2e mode. The resulting limit is min'd with the MPC/e2e outputs below.
-    if force_slow_decel:
-      v_cruise = 0.0
     v_err = v_cruise - v_ego
     steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
     self.a_cruise, a_cruise_limit = get_cruise_accel(sm['selfdriveState'].experimentalMode, v_ego, v_err, force_slow_decel,
                                                      self.a_cruise, steer_angle_without_offset, self.CP, self.dt)
 
-    max_accel = E2E_MAX_ACCEL if sm['selfdriveState'].experimentalMode else get_max_accel(v_ego)
-    accel_clip = [ACCEL_MIN, min(max_accel, a_cruise_limit)]
+    accel_clip = [ACCEL_MIN, ACCEL_MAX]
 
     if reset_state:
       self.v_desired_filter.x = v_ego
