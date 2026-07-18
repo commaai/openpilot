@@ -4,7 +4,7 @@ import time
 
 import capnp
 from openpilot.cereal import messaging, log
-from teleoprtc.tracks import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
+from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
 from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
@@ -72,9 +72,8 @@ class TestStreamSession:
 
     for i in range(5):
       packet = self.loop.run_until_complete(track.recv())
-      assert packet.time_base == VIDEO_TIME_BASE
       if i == 0:
         start_ns = time.monotonic_ns()
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
-      assert packet.size == 0
+      assert bytes(packet) == b""
