@@ -1,17 +1,9 @@
 import numpy as np
 from opendbc.car.structs import car
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
 from openpilot.common.pid import PIDController
-from openpilot.selfdrive.modeld.constants import ModelConstants
-
-CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
-
-
-def long_control_state_trans(active):
-  return LongCtrlState.pid if active else LongCtrlState.off
 
 class LongControl:
   def __init__(self, CP):
@@ -30,7 +22,7 @@ class LongControl:
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
-    self.long_control_state = long_control_state_trans(active)
+    self.long_control_state = LongCtrlState.pid if active else LongCtrlState.off
     if self.long_control_state == LongCtrlState.off:
       self.reset()
       output_accel = 0.
