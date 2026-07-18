@@ -742,7 +742,6 @@ dev = [
     { name = "matplotlib" },
 ]
 docs = [
-    { name = "jinja2" },
     { name = "zensical" },
 ]
 submodules = [
@@ -799,7 +798,6 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
     { name = "jeepney" },
-    { name = "jinja2", marker = "extra == 'docs'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "msgq", marker = "extra == 'submodules'", editable = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
