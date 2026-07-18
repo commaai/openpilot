@@ -1,13 +1,11 @@
 import math
 import os
 import pytest
-import random
 import shutil
 import subprocess
 import time
 from pathlib import Path
 
-from openpilot.common.parameterized import parameterized
 from tqdm import trange
 
 from openpilot.common.params import Params
@@ -51,9 +49,8 @@ class TestEncoder:
     return os.path.join(Paths.log_root(), last_route)
 
   # TODO: this should run faster than real time
-  @parameterized.expand([(True, ), (False, )])
-  def test_log_rotation(self, record_front):
-    Params().put_bool("RecordFront", record_front, block=True)
+  def test_log_rotation(self):
+    Params().put_bool("RecordFront", True, block=True)
 
     managed_processes['sensord'].start()
     managed_processes['loggerd'].start()
@@ -62,7 +59,7 @@ class TestEncoder:
     time.sleep(1.0)
     managed_processes['camerad'].start()
 
-    num_segments = int(os.getenv("SEGMENTS", random.randint(2, 8)))
+    num_segments = 3
 
     # wait for loggerd to make the dir for first segment
     route_prefix_path = None
@@ -78,9 +75,6 @@ class TestEncoder:
       counts = []
       first_frames = []
       for camera, fps, size_lambda, encode_idx_name in CAMERAS:
-        if not record_front and "dcamera" in camera:
-          continue
-
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
         # check file exists

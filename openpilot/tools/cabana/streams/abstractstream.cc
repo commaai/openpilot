@@ -1,4 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <limits>
 #include <utility>
@@ -18,8 +19,8 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   QObject::connect(this, &AbstractStream::privateUpdateLastMsgsSignal, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
   QObject::connect(this, &AbstractStream::seeking, this, [this](double sec) { current_sec_ = sec; });
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
-  QObject::connect(dbc(), &DBCManager::maskUpdated, this, &AbstractStream::updateMasks);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &AbstractStream::updateMasks);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::maskUpdated, this, &AbstractStream::updateMasks);
 }
 
 void AbstractStream::updateMasks() {
@@ -233,18 +234,18 @@ std::pair<CanEventIter, CanEventIter> AbstractStream::eventsInRange(const Messag
 namespace {
 
 enum Color { GREYISH_BLUE, CYAN, RED};
-QColor getColor(int c) {
+CabanaColor getColor(int c) {
   constexpr int start_alpha = 128;
-  static const QColor colors[] = {
-      [GREYISH_BLUE] = QColor(102, 86, 169, start_alpha / 2),
-      [CYAN] = QColor(0, 187, 255, start_alpha),
-      [RED] = QColor(255, 0, 0, start_alpha),
+  static const CabanaColor colors[] = {
+      [GREYISH_BLUE] = CabanaColor(102, 86, 169, start_alpha / 2),
+      [CYAN] = CabanaColor(0, 187, 255, start_alpha),
+      [RED] = CabanaColor(255, 0, 0, start_alpha),
   };
   return settings.theme == LIGHT_THEME ? colors[c] : colors[c].lighter(135);
 }
 
-inline QColor blend(const QColor &a, const QColor &b) {
-  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
+inline CabanaColor blend(const CabanaColor &a, const CabanaColor &b) {
+  return CabanaColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
 // Calculate the frequency from the past one minute data
@@ -271,7 +272,7 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
 
   if (dat.size() != size) {
     dat.assign(can_data, can_data + size);
-    colors.assign(size, QColor(0, 0, 0, 0));
+    colors.assign(size, CabanaColor(0, 0, 0, 0));
     last_changes.resize(size);
     bit_flip_counts.resize(size);
     std::for_each(last_changes.begin(), last_changes.end(), [current_sec](auto &c) { c.ts = current_sec; });
@@ -317,7 +318,7 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
         last_change.delta = delta;
       } else {
         // Fade out
-        colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
+        colors[i].setAlphaF(std::max(0.0f, colors[i].alphaF() - alpha_delta));
       }
     }
   }

@@ -4,7 +4,6 @@ import time
 
 import av
 from teleoprtc.tracks import TiciVideoStreamTrack
-from aiortc import MediaStreamError
 
 from openpilot.cereal import messaging
 from openpilot.common.realtime import DT_MDL
@@ -55,6 +54,9 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     if not enabled:
       self._seen_keyframe = False
 
+  def request_keyframe(self) -> None:
+    self.params.put("LivestreamRequestKeyframe", True, block=False)
+
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
     if not self.timing_sei_enabled:
@@ -71,9 +73,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   async def recv(self):
     while True:
-      if self.readyState != "live":
-        raise MediaStreamError
-
       # while video is disabled, pause here without returning
       if not self.video_enabled:
         await asyncio.sleep(0.005)
@@ -95,6 +94,3 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self.log_debug("track sending frame %d", self._pts)
 
     return packet
-
-  def codec_preference(self) -> str | None:
-    return "H264"

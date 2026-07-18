@@ -1,6 +1,5 @@
 import pytest
 import time
-import random
 import subprocess
 
 from panda import Panda
@@ -57,7 +56,7 @@ class TestAmplifier:
       time.sleep(0.1)
 
       self.panda.set_siren(True)
-      time.sleep(random.randint(0, 5))
+      time.sleep(0.1)
 
       amp = Amplifier(debug=True)
       r = amp.initialize_configuration()

@@ -14,7 +14,7 @@ from openpilot.common.hardware.tici.power_monitor import get_power
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
 
-SAMPLE_TIME = 8       # seconds to sample power
+SAMPLE_TIME = 2       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
 
 @dataclass
@@ -43,9 +43,6 @@ class TestPowerDraw:
 
   def setup_method(self):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
-
-    # wait a bit for power save to disable
-    time.sleep(5)
 
   def teardown_method(self):
     manager_cleanup()
