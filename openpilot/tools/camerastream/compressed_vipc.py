@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os
-import sys
 import argparse
-import numpy as np
 import multiprocessing
 import time
 import signal
@@ -25,23 +23,12 @@ ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
 }
 
-def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
+def decoder(addr, vipc_server, vst, W, H, debug=False):
   sock_name = ENCODE_SOCKETS[vst]
   if debug:
     print(f"start decoder for {sock_name}, {W}x{H}")
 
-  if nvidia:
-    os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
-    sys.path += os.environ["LD_LIBRARY_PATH"].split(":")
-    import PyNvCodec as nvc
-
-    nvDec = nvc.PyNvDecoder(W, H, nvc.PixelFormat.NV12, nvc.CudaVideoCodec.HEVC, 0)
-    cc1 = nvc.ColorspaceConversionContext(nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)
-    conv_yuv = nvc.PySurfaceConverter(W, H, nvc.PixelFormat.NV12, nvc.PixelFormat.YUV420, 0)
-    nvDwn_yuv = nvc.PySurfaceDownloader(W, H, nvc.PixelFormat.YUV420, 0)
-    img_yuv = np.ndarray((H*W//2*3), dtype=np.uint8)
-  else:
-    codec = Decoder("hevc")
+  codec = Decoder("hevc")
 
   os.environ["ZMQ"] = "1"
   messaging.reset_context()
@@ -58,8 +45,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
       if last_idx != -1 and evta.idx.encodeId != (last_idx + 1):
         if debug:
           print("DROP PACKET!")
-        if not nvidia:
-          codec.reset()
+        codec.reset()
         seen_iframe = False
         time_q.clear()
       last_idx = evta.idx.encodeId
@@ -74,32 +60,19 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
 
       # put in header (first)
       if not seen_iframe:
-        if nvidia:
-          nvDec.DecodeSurfaceFromPacket(np.frombuffer(evta.header, dtype=np.uint8))
-        else:
-          # The header contains VPS/SPS/PPS only and cannot produce a frame.
-          try:
-            for _ in codec.decode(evta.header):
-              raise FFmpegError("codec header unexpectedly produced a frame")
-          except FFmpegError as e:
-            if debug:
-              print(f"HEADER ERROR: {e}")
-            codec.reset()
-            time_q.clear()
-            continue
+        # The header contains VPS/SPS/PPS only and cannot produce a frame.
+        try:
+          for _ in codec.decode(evta.header):
+            raise FFmpegError("codec header unexpectedly produced a frame")
+        except FFmpegError as e:
+          if debug:
+            print(f"HEADER ERROR: {e}")
+          codec.reset()
+          time_q.clear()
+          continue
         seen_iframe = True
 
-      if nvidia:
-        rawSurface = nvDec.DecodeSurfaceFromPacket(np.frombuffer(evta.data, dtype=np.uint8))
-        if rawSurface.Empty():
-          if debug:
-            print("DROP SURFACE")
-          continue
-        convSurface = conv_yuv.Execute(rawSurface, cc1)
-        nvDwn_yuv.DownloadSingleSurface(convSurface, img_yuv)
-        images = (img_yuv,)
-      else:
-        images = codec.decode(evta.data)
+      images = codec.decode(evta.data)
 
       decoded = False
       try:
@@ -107,7 +80,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
           decoded = True
           if not time_q:
             raise FFmpegError("decoder produced more frames than submitted packets")
-          if not nvidia and (codec.width != W or codec.height != H):
+          if codec.width != W or codec.height != H:
             raise FFmpegError(f"decoded frame is {codec.width}x{codec.height}, expected {W}x{H}")
 
           frame_start_time = time_q.popleft()
@@ -122,8 +95,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
       except FFmpegError as e:
         if debug:
           print(f"DECODE ERROR: {e}")
-        if not nvidia:
-          codec.reset()
+        codec.reset()
         seen_iframe = False
         time_q.clear()
         continue
@@ -131,7 +103,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
         print("DROP SURFACE")
 
 class CompressedVipc:
-  def __init__(self, addr, vision_streams, server_name, nvidia=False, debug=False):
+  def __init__(self, addr, vision_streams, server_name, debug=False):
     print("getting frame sizes")
     os.environ["ZMQ"] = "1"
     messaging.reset_context()
@@ -150,7 +122,7 @@ class CompressedVipc:
     self.procs = []
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
-      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, ed.width, ed.height, debug))
+      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, ed.width, ed.height, debug))
       p.start()
       self.procs.append(p)
 
@@ -166,7 +138,6 @@ class CompressedVipc:
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Decode video streams and broadcast on VisionIPC")
   parser.add_argument("addr", help="Address of comma three")
-  parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
   parser.add_argument("--server", default="camerad", help="choose vipc server name")
   parser.add_argument("--silent", action="store_true", help="Suppress debug output")
@@ -179,7 +150,7 @@ if __name__ == "__main__":
   ]
 
   vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
-  cvipc = CompressedVipc(args.addr, vsts, args.server, args.nvidia, debug=(not args.silent))
+  cvipc = CompressedVipc(args.addr, vsts, args.server, debug=(not args.silent))
 
   # register exit handler
   signal.signal(signal.SIGINT, lambda sig, frame: cvipc.kill())
