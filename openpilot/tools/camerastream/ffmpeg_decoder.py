@@ -152,6 +152,17 @@ class Decoder:
 
     self.closed = False
 
+  def __enter__(self):
+    self._ensure_open()
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    self.close()
+
+  def _ensure_open(self) -> None:
+    if self.closed:
+      raise RuntimeError("decoder is closed")
+
   def _prepare_packet(self, data) -> None:
     size = len(data)
     required = size + AV_INPUT_BUFFER_PADDING_SIZE
@@ -219,6 +230,7 @@ class Decoder:
       _avcodec.av_frame_unref(self._frame)
 
   def decode(self, data) -> np.ndarray | None:
+    self._ensure_open()
     if len(data) == 0:
       return None
 
@@ -233,6 +245,7 @@ class Decoder:
 
   def reset(self) -> None:
     """Discard decoder state after a stream discontinuity."""
+    self._ensure_open()
     _avcodec.avcodec_flush_buffers(self._context)
 
   def close(self) -> None:
