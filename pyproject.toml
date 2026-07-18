@@ -62,7 +62,7 @@ dependencies = [
   "comma-deps-raylib",
   "qrcode",
   "jeepney",
-  "pillow",
+  "fonttools",
 ]
 
 [project.optional-dependencies]
