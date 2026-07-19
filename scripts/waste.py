@@ -3,7 +3,6 @@ import os
 import time
 import numpy as np
 from multiprocessing import Process
-from setproctitle import setproctitle
 
 def waste(core):
   os.sched_setaffinity(0, [core,])
@@ -16,7 +15,6 @@ def waste(core):
   j = 0
   while 1:
     if (i % 100) == 0:
-      setproctitle(f"{core:3d}: {i:8d}")
       lt = time.monotonic()
       print(f"{core:3d}: {i:8d} {lt-st:f}  {j:.2f}")
       st = lt

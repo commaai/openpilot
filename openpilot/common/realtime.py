@@ -4,8 +4,6 @@ import os
 import sys
 import time
 
-from setproctitle import getproctitle
-
 from openpilot.common.utils import MovingAverage
 from openpilot.common.hardware import PC
 
@@ -53,7 +51,7 @@ class Ratekeeper:
     self._print_delay_threshold = print_delay_threshold
     self._frame = 0
     self._remaining = 0.0
-    self._process_name = getproctitle()
+    self._process_name = os.getenv("MANAGER_PROCESS", sys.argv[0])
     self._last_monitor_time = -1.
     self._next_frame_time = -1.
 

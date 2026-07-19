@@ -1,47 +1,23 @@
-import importlib
 import os
 import signal
+import sys
 import time
 import subprocess
 from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
-from setproctitle import setproctitle
-
 from openpilot.cereal import log
 from opendbc.car.structs import car
-import openpilot.cereal.messaging as messaging
-import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 
 
-def launcher(proc: str, name: str) -> None:
-  try:
-    # import the process
-    mod = importlib.import_module(proc)
-
-    # rename the process
-    setproctitle(proc)
-
-    # create new context since we forked
-    messaging.reset_context()
-
-    # add daemon name tag to logs
-    cloudlog.bind(daemon=name)
-    sentry.set_tag("daemon", name)
-
-    # exec the process
-    mod.main()
-  except KeyboardInterrupt:
-    cloudlog.warning(f"child {proc} got SIGINT")
-  except Exception:
-    # can't install the crash handler because sys.excepthook doesn't play nice
-    # with threads, so catch it here.
-    sentry.capture_exception()
-    raise
+def pythonlauncher(module: str, name: str) -> None:
+  os.environ['MANAGER_DAEMON'] = name
+  os.environ['MANAGER_PROCESS'] = module
+  os.execv(sys.executable, [sys.executable, '-m', 'openpilot.system.manager.process_runner', module, name])
 
 
 def nativelauncher(pargs: list[str], cwd: str, name: str) -> None:
@@ -175,13 +151,11 @@ class PythonProcess(ManagerProcess):
     self.should_run = should_run
     self.enabled = enabled
     self.sigkill = sigkill
-    self.launcher = launcher
+    self.launcher = pythonlauncher
     self.restart_if_crash = restart_if_crash
 
   def prepare(self) -> None:
-    if self.enabled:
-      cloudlog.info(f"preimporting {self.module}")
-      importlib.import_module(self.module)
+    pass
 
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting

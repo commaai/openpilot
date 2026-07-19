@@ -43,9 +43,6 @@ dependencies = [
   # joystickd
   "inputs",
 
-  # these should be removed
-  "setproctitle",
-
   # logreader
   "zstandard",
 

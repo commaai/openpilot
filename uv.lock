@@ -722,7 +722,6 @@ dependencies = [
     { name = "requests" },
     { name = "scons" },
     { name = "sentry-sdk" },
-    { name = "setproctitle" },
     { name = "sounddevice" },
     { name = "tqdm" },
     { name = "websocket-client" },
@@ -815,7 +814,6 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'testing'" },
     { name = "scons" },
     { name = "sentry-sdk" },
-    { name = "setproctitle" },
     { name = "sounddevice" },
     { name = "teleoprtc", marker = "extra == 'submodules'", editable = "teleoprtc_repo" },
     { name = "tinygrad", marker = "extra == 'submodules'", editable = "tinygrad_repo" },
@@ -1225,24 +1223,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/60/31/b7341f156a5f6f36f0b4845d6f1c28a2ae4799171dba7007f3a1e9b234b4/sentry_sdk-2.64.0.tar.gz", hash = "sha256:68be2c29e14ae310f8a39e1a79916b6d85c6cb41dcce789d14ff05fe293e4c55", size = 921020, upload-time = "2026-06-30T08:13:47.682Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/36/a8/3fb9a4319efa3b26f5be0e90e6d8918df43fa7c7e977d26390f589501d82/sentry_sdk-2.64.0-py3-none-any.whl", hash = "sha256:715ea91ca860a819e8d8a50a7bde3a80d0df3b4ed7b6660a20fb9a2d084188f1", size = 498901, upload-time = "2026-06-30T08:13:45.566Z" },
-]
-
-[[package]]
-name = "setproctitle"
-version = "1.3.7"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8d/48/49393a96a2eef1ab418b17475fb92b8fcfad83d099e678751b05472e69de/setproctitle-1.3.7.tar.gz", hash = "sha256:bc2bc917691c1537d5b9bca1468437176809c7e11e5694ca79a9ca12345dcb9e", size = 27002, upload-time = "2025-09-05T12:51:25.278Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fb/f0/2dc88e842077719d7384d86cc47403e5102810492b33680e7dadcee64cd8/setproctitle-1.3.7-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:2dc99aec591ab6126e636b11035a70991bc1ab7a261da428491a40b84376654e", size = 18049, upload-time = "2025-09-05T12:49:36.241Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/b4/50940504466689cda65680c9e9a1e518e5750c10490639fa687489ac7013/setproctitle-1.3.7-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:cdd8aa571b7aa39840fdbea620e308a19691ff595c3a10231e9ee830339dd798", size = 13079, upload-time = "2025-09-05T12:49:38.088Z" },
-    { url = "https://files.pythonhosted.org/packages/d0/99/71630546b9395b095f4082be41165d1078204d1696c2d9baade3de3202d0/setproctitle-1.3.7-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:2906b6c7959cdb75f46159bf0acd8cc9906cf1361c9e1ded0d065fe8f9039629", size = 32932, upload-time = "2025-09-05T12:49:39.271Z" },
-    { url = "https://files.pythonhosted.org/packages/50/22/cee06af4ffcfb0e8aba047bd44f5262e644199ae7527ae2c1f672b86495c/setproctitle-1.3.7-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6915964a6dda07920a1159321dcd6d94fc7fc526f815ca08a8063aeca3c204f1", size = 33736, upload-time = "2025-09-05T12:49:40.565Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/00/a5949a8bb06ef5e7df214fc393bb2fb6aedf0479b17214e57750dfdd0f24/setproctitle-1.3.7-cp312-cp312-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:cff72899861c765bd4021d1ff1c68d60edc129711a2fdba77f9cb69ef726a8b6", size = 35605, upload-time = "2025-09-05T12:49:42.362Z" },
-    { url = "https://files.pythonhosted.org/packages/b0/3a/50caca532a9343828e3bf5778c7a84d6c737a249b1796d50dd680290594d/setproctitle-1.3.7-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:b7cb05bd446687ff816a3aaaf831047fc4c364feff7ada94a66024f1367b448c", size = 33143, upload-time = "2025-09-05T12:49:43.515Z" },
-    { url = "https://files.pythonhosted.org/packages/ca/14/b843a251296ce55e2e17c017d6b9f11ce0d3d070e9265de4ecad948b913d/setproctitle-1.3.7-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:3a57b9a00de8cae7e2a1f7b9f0c2ac7b69372159e16a7708aa2f38f9e5cc987a", size = 34434, upload-time = "2025-09-05T12:49:45.31Z" },
-    { url = "https://files.pythonhosted.org/packages/c8/b7/06145c238c0a6d2c4bc881f8be230bb9f36d2bf51aff7bddcb796d5eed67/setproctitle-1.3.7-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:d8828b356114f6b308b04afe398ed93803d7fca4a955dd3abe84430e28d33739", size = 32795, upload-time = "2025-09-05T12:49:46.419Z" },
-    { url = "https://files.pythonhosted.org/packages/ef/dc/ef76a81fac9bf27b84ed23df19c1f67391a753eed6e3c2254ebcb5133f56/setproctitle-1.3.7-cp312-cp312-win32.whl", hash = "sha256:b0304f905efc845829ac2bc791ddebb976db2885f6171f4a3de678d7ee3f7c9f", size = 12552, upload-time = "2025-09-05T12:49:47.635Z" },
-    { url = "https://files.pythonhosted.org/packages/e2/5b/a9fe517912cd6e28cf43a212b80cb679ff179a91b623138a99796d7d18a0/setproctitle-1.3.7-cp312-cp312-win_amd64.whl", hash = "sha256:9888ceb4faea3116cf02a920ff00bfbc8cc899743e4b4ac914b03625bdc3c300", size = 13247, upload-time = "2025-09-05T12:49:49.16Z" },
 ]
 
 [[package]]
