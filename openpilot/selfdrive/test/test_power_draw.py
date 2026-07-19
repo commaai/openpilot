@@ -24,6 +24,7 @@ class Proc:
   msgs: list[str]
   rtol: float = 0.05
   atol: float = 0.12
+  min_warmup_time: float = 0
 
   @property
   def name(self):
@@ -34,7 +35,9 @@ PROCS = [
   Proc(['camerad'], 1.65, atol=0.4, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
   Proc(['modeld'], 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
-  Proc(['encoderd'], 0.23, msgs=[]),
+  # encoderd has no output message to indicate readiness, so allow its startup
+  # power transient to settle before sampling steady-state consumption.
+  Proc(['encoderd'], 0.23, msgs=[], min_warmup_time=1),
 ]
 
 
@@ -87,7 +90,8 @@ class TestPowerDraw:
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
       now = np.mean([m[0] for m in msgs_and_power])
 
-      if self.valid_msg_count(proc, msg_counts):
+      elapsed = time.monotonic() - start_time
+      if elapsed >= SAMPLE_TIME + proc.min_warmup_time and self.valid_msg_count(proc, msg_counts):
         break
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
