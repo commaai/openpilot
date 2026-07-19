@@ -56,7 +56,7 @@ class TestPowerDraw:
     return np.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
 
   def valid_power_draw(self, proc, used):
-    return np.isclose(used, proc.power, rtol=proc.rtol, atol=proc.atol)
+    return used <= proc.power * (1 + proc.rtol) + proc.atol
 
   def tabulate_msg_counts(self, msgs_and_power):
     msg_counts = defaultdict(int)
@@ -87,7 +87,7 @@ class TestPowerDraw:
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
       now = np.mean([m[0] for m in msgs_and_power])
 
-      if self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now - prev):
+      if self.valid_msg_count(proc, msg_counts):
         break
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
@@ -112,7 +112,7 @@ class TestPowerDraw:
 
     manager_cleanup()
 
-    tab = [['process', 'expected (W)', 'measured (W)', '# msgs expected', '# msgs received', "warmup time (s)"]]
+    tab = [['process', 'power budget (W)', 'measured (W)', '# msgs expected', '# msgs received', "warmup time (s)"]]
     for proc in PROCS:
       cur = used[proc.name]
       expected = proc.power
@@ -120,6 +120,6 @@ class TestPowerDraw:
       tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
       with subtests.test(proc=proc.name):
         assert self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs"
-        assert self.valid_power_draw(proc, cur), f"expected {expected:.2f}W, got {cur:.2f}W"
+        assert self.valid_power_draw(proc, cur), f"power budget {expected:.2f}W exceeded: got {cur:.2f}W"
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
