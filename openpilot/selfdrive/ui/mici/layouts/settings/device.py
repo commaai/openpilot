@@ -172,7 +172,6 @@ class DeviceLayoutMici(NavScroller):
       params = ui_state.params
       params.remove("CalibrationParams")
       params.remove("LiveTorqueParameters")
-      params.remove("LiveParameters")
       params.remove("LiveParametersV2")
       params.remove("LiveDelay")
       params.put_bool("OnroadCycleRequested", True, block=True)

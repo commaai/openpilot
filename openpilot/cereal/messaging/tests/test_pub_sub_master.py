@@ -91,15 +91,6 @@ class TestSubMaster:
         else:
           assert not sm._check_avg_freq(service)
 
-  def test_alive(self):
-    pass
-
-  def test_ignore_alive(self):
-    pass
-
-  def test_valid(self):
-    pass
-
   # SubMaster should always conflate
   def test_conflate(self):
     sock = "carState"
