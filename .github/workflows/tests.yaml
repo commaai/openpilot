@@ -106,8 +106,6 @@ jobs:
       env:
         RAYLIB_BACKEND: headless
       run: |
-        # import check + pre-compile Python bytecode so each test process doesn't need to
-        ./run_tests.py --list > /dev/null
         MAX_EXAMPLES=1 ./run_tests.py
 
   process_replay:
