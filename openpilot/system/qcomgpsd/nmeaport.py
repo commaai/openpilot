@@ -3,7 +3,7 @@ import sys
 from dataclasses import dataclass, fields
 from subprocess import check_output, CalledProcessError
 from time import sleep
-from typing import NoReturn
+from typing import NoReturn, cast
 
 DEBUG = int(os.environ.get("DEBUG", "0"))
 
@@ -30,7 +30,8 @@ class GnssClockNmeaPort:
   def __post_init__(self):
     for field in fields(self):
       val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+      field_type = cast(type, field.type)
+      setattr(self, field.name, field_type(val) if val else None)
 
 @dataclass
 class GnssMeasNmeaPort:
@@ -73,7 +74,8 @@ class GnssMeasNmeaPort:
   def __post_init__(self):
     for field in fields(self):
       val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+      field_type = cast(type, field.type)
+      setattr(self, field.name, field_type(val) if val else None)
 
 def nmea_checksum_ok(s):
   checksum = 0

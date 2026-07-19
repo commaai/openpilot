@@ -105,6 +105,7 @@ class NetworkUI(Widget):
 
 class AdvancedNetworkSettings(Widget):
   def __init__(self, wifi_manager: WifiManager):
+    assert Params is not None
     super().__init__()
     self._wifi_manager = wifi_manager
     self._wifi_manager.add_callbacks(networks_updated=self._on_network_updated)

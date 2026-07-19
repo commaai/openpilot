@@ -27,7 +27,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
     self.log_files = self.get_existing_logfiles()
     log_indexes = [f.split(".")[-1] for f in self.log_files]
     self.last_file_idx = max([int(i) for i in log_indexes if i.isdigit()] or [-1])
-    self.last_rollover = None
+    self.last_rollover = 0.0
     self.doRollover()
 
   def _open(self):
