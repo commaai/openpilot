@@ -29,16 +29,11 @@ def check_shebang_scripts_are_executable(filenames: list[str]) -> int:
   for mode, filename in staged_modes(filenames):
     if mode != "100755" and has_shebang(filename):
       quoted = shlex.quote(filename)
-      message = "\n".join((
+      print("\n".join((
         f"{filename}: has a shebang but is not marked executable!",
         f"  If it is supposed to be executable, try: `chmod +x {quoted}`",
-        f"  If on Windows, you may also need to: `git add --chmod=+x {quoted}`",
         "  If it is not supposed to be executable, double-check its shebang is wanted.\n",
-      ))
-      print(
-        message,
-        file=sys.stderr,
-      )
+      )), file=sys.stderr)
       failed = True
 
   return int(failed)
