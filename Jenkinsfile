@@ -75,6 +75,28 @@ END"""
   }
 }
 
+def rebootLowMemoryDevice(String ip) {
+  try {
+    device(ip, "check available memory", '''
+available_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
+if [ "$available_kb" -lt 1600000 ]; then
+  echo "Only ${available_kb} kB available, rebooting before onroad tests"
+  sudo systemd-run --on-active=1s reboot
+  sleep 10
+fi
+''')
+  } catch (Exception e) {
+    // The SSH connection drops when the scheduled reboot starts. Keep the
+    // device locked until it is back rather than letting another build take it.
+    sleep(20)
+    retryWithDelay(12, 10) {
+      device(ip, "wait for reboot", "true")
+    }
+    def date = sh(script: 'date', returnStdout: true).trim();
+    device(ip, "set time after reboot", "date -s '" + date + "'")
+  }
+}
+
 def deviceStage(String stageName, String deviceType, List extra_env, def steps) {
   stage(stageName) {
     if (currentBuild.result != null) {
@@ -96,6 +118,9 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             def date = sh(script: 'date', returnStdout: true).trim();
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
+          }
+          if (stageName == "onroad") {
+            rebootLowMemoryDevice(device_ip)
           }
           steps.each { item ->
             def name = item[0]
