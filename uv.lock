@@ -3,10 +3,7 @@ revision = 3
 requires-python = ">=3.12.3, <3.13"
 
 [manifest]
-overrides = [
-    { name = "av" },
-    { name = "opendbc", editable = "opendbc_repo" },
-]
+overrides = [{ name = "opendbc", editable = "opendbc_repo" }]
 
 [[package]]
 name = "attrs"
@@ -704,16 +701,12 @@ source = { editable = "." }
 dependencies = [
     { name = "cffi" },
     { name = "comma-deps-acados" },
-    { name = "comma-deps-bootstrap-icons" },
-    { name = "comma-deps-bzip2" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
-    { name = "comma-deps-libusb" },
-    { name = "comma-deps-ncurses" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
@@ -765,7 +758,11 @@ testing = [
     { name = "ty" },
 ]
 tools = [
+    { name = "comma-deps-bootstrap-icons" },
+    { name = "comma-deps-bzip2" },
     { name = "comma-deps-imgui" },
+    { name = "comma-deps-libusb" },
+    { name = "comma-deps-ncurses" },
 ]
 
 [package.dev-dependencies]
@@ -778,8 +775,8 @@ requires-dist = [
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "comma-deps-acados" },
-    { name = "comma-deps-bootstrap-icons" },
-    { name = "comma-deps-bzip2" },
+    { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
+    { name = "comma-deps-bzip2", marker = "extra == 'tools'" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
@@ -787,8 +784,8 @@ requires-dist = [
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-imgui", marker = "extra == 'tools'" },
     { name = "comma-deps-json11" },
-    { name = "comma-deps-libusb" },
-    { name = "comma-deps-ncurses" },
+    { name = "comma-deps-libusb", marker = "extra == 'tools'" },
+    { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },

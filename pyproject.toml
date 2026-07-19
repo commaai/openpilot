@@ -22,16 +22,12 @@ dependencies = [
   "numpy >=2.0",
 
   # vendored native dependencies
-  "comma-deps-bzip2",
-  "comma-deps-bootstrap-icons",
   "comma-deps-capnproto",
   "comma-deps-catch2",
   "comma-deps-acados",
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
-  "comma-deps-ncurses",
   "comma-deps-zeromq",
-  "comma-deps-libusb",
   "comma-deps-json11",
   "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
@@ -86,6 +82,10 @@ dev = [
 
 tools = [
   "comma-deps-imgui",
+  "comma-deps-bzip2",
+  "comma-deps-bootstrap-icons",
+  "comma-deps-libusb",
+  "comma-deps-ncurses",
 
   # this can be added back once it's stripped down some more
   #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
@@ -200,7 +200,6 @@ python-preference = "only-managed"
 default-groups = ["standalone"]
 override-dependencies = [
   "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
-  "av",       # teleoprtc's av<13 pin is stale
 ]
 
 [tool.uv.sources]
