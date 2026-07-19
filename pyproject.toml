@@ -171,9 +171,6 @@ lint.ignore = [
   "UP045", "UP007",  # these don't play nice with raylib atm
 ]
 line-length = 160
-exclude = [
-  "generated",
-]
 lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
