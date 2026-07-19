@@ -250,10 +250,8 @@ class MiciOffroadAlerts(Scroller):
                               {alert_data.key: self.params.get(alert_data.key) for alert_data in self.sorted_alerts})
       time.sleep(REFRESH_INTERVAL)
 
-  def _refresh(self) -> int:
+  def _refresh(self, pending_params: dict) -> int:
     """Refresh alerts from params and return active count."""
-    pending_params = self._pending_params
-    assert pending_params is not None
     active_count = 0
 
     # Handle UpdateAvailable alert specially
@@ -313,8 +311,9 @@ class MiciOffroadAlerts(Scroller):
   def _update_state(self):
     """Periodically refresh alerts."""
     # Refresh alerts when thread updates params
-    if self._pending_params is not None:
-      self._refresh()
+    pending_params = self._pending_params
+    if pending_params is not None:
+      self._refresh(pending_params)
       self._pending_params = None
 
   def _render(self, rect: rl.Rectangle):
