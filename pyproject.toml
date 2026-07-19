@@ -72,7 +72,6 @@ testing = [
   "pytest-mock",
   "ruff",
   "codespell",
-  "pre-commit-hooks",
 ]
 
 dev = [
