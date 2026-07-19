@@ -184,7 +184,7 @@ class BinaryStruct:
         setattr(obj, name, value)
       return obj
 
-    cls._read = _read
+    cls._read = _read  # ty: ignore[invalid-assignment]  # installed dynamically for each subclass
 
   @classmethod
   def from_bytes(cls: type[T], data: bytes) -> T:

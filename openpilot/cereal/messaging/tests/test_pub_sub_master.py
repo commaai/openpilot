@@ -1,6 +1,7 @@
 import random
 import time
-from typing import Sized, cast
+from typing import cast
+from collections.abc import Sized
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
@@ -91,6 +92,7 @@ class TestSubMaster:
 
       for service, (max_freq, min_freq) in checks.items():
         if max_freq is not None:
+          assert min_freq is not None
           assert sm._check_avg_freq(service)
           assert sm.freq_tracker[service].max_freq == max_freq*1.2
           assert sm.freq_tracker[service].min_freq == min_freq*0.8
