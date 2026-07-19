@@ -61,14 +61,13 @@ docs = [
 ]
 
 testing = [
-  "coverage",
-
-  # TODO: replace with our own implementation
-  "hypothesis ==6.47.*",
-
   "ty",         # type checking
   "ruff",       # linting
   "codespell",  # spellcheck
+
+  # TODO: replace with our own implementation
+  "coverage",
+  "hypothesis ==6.47.*",
 ]
 
 dev = [
@@ -147,8 +146,7 @@ line-length = 160
 lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-"pytest".msg = "pytest was removed; write unittest tests and run them with run_tests.py"
-"time.time".msg = "Use time.monotonic"  # time.time can skip due to its reference clock, you probably want a monotonic clock
+"time.time".msg = "Use time.monotonic. time.time can skip due to its reference clock, you probably want a monotonic clock"
 
 # raylib banned APIs
 "pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
