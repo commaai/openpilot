@@ -186,7 +186,6 @@ quote-style = "preserve"
 [tool.ty.rules]
 unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
 unresolved-attribute = "ignore"  # many from capnp and Cython modules
-invalid-method-override = "ignore"  # signature variance issues
 possibly-missing-attribute = "ignore"  # too many false positives
 invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
 

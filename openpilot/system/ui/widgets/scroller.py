@@ -40,7 +40,7 @@ class ScrollIndicator(Widget):
     self._content_size = content_size
     self._viewport = viewport
 
-  def _render(self, _):
+  def _render(self, _, /):
     # scale indicator width based on content size
     indicator_w = float(np.interp(self._content_size, [1000, 3000], [300, 100]))
 
@@ -332,7 +332,7 @@ class _Scroller(Widget):
     else:
       item.render()
 
-  def _render(self, _):
+  def _render(self, _, /):
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
@@ -397,7 +397,7 @@ class Scroller(Widget):
     # pass down enabled to child widget for nav stack
     self._scroller.set_enabled(lambda: self.enabled)
 
-  def _render(self, _):
+  def _render(self, _, /):
     self._scroller.render(self._rect)
 
 

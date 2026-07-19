@@ -72,7 +72,7 @@ class World(ABC):
     self.exit_event = multiprocessing.Event()
 
   @abstractmethod
-  def apply_controls(self, steer_sim, throttle_out, brake_out):
+  def apply_controls(self, steer_sim, throttle_out, brake_out, /):
     pass
 
   @abstractmethod
@@ -84,7 +84,7 @@ class World(ABC):
     pass
 
   @abstractmethod
-  def read_sensors(self, simulator_state: SimulatorState):
+  def read_sensors(self, simulator_state: SimulatorState, /):
     pass
 
   @abstractmethod

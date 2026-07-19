@@ -194,16 +194,16 @@ class Widget(abc.ABC):
     """Optionally update the widget's non-layout state. This is called before rendering."""
 
   @abc.abstractmethod
-  def _render(self, rect: rl.Rectangle) -> bool | int | None:
+  def _render(self, rect: rl.Rectangle, /) -> bool | int | None:
     """Render the widget within the given rectangle."""
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
 
-  def _handle_mouse_press(self, mouse_pos: MousePos) -> None:
+  def _handle_mouse_press(self, mouse_pos: MousePos, /) -> None:
     """Optionally handle mouse press events."""
 
-  def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
+  def _handle_mouse_release(self, mouse_pos: MousePos, /) -> None:
     """Optionally handle mouse release events."""
     if self._click_delay is not None:
       self._click_release_time = rl.get_time() + self._click_delay
