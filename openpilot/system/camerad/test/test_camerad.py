@@ -42,7 +42,9 @@ def run_and_log(procs, services, duration):
 def _camera_session():
   """Single camerad session that collects logs and exposure data.
      Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
-  with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
+  # Connect subscribers before starting camerad. Otherwise, the subscription
+  # handshake can catch one startup frame and miss the next one.
+  with log_collector(CAMERAS) as (raw_logs, lock), processes_context(["camerad"]):
     exposure = {cam: [] for cam in CAMERAS}
     start = time.monotonic()
     while time.monotonic() - start < MAX_TEST_TIME:
