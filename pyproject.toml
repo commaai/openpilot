@@ -186,7 +186,6 @@ quote-style = "preserve"
 [tool.ty.rules]
 unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
 unresolved-attribute = "ignore"  # many from capnp and Cython modules
-possibly-missing-attribute = "ignore"  # too many false positives
 
 [tool.uv]
 python-preference = "only-managed"
