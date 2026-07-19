@@ -1,6 +1,7 @@
 import random
 import time
-from typing import Sized, cast
+from typing import cast
+from collections.abc import Sized
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \

@@ -172,7 +172,6 @@ lint.ignore = [
 ]
 line-length = 160
 exclude = [
-  "openpilot/cereal",
   "*.ipynb",
   "generated",
 ]

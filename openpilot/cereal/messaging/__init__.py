@@ -1,13 +1,14 @@
 # must be built with scons
-from msgq import fake_event_handle, drain_sock_raw, MultiplePublishersError, IpcError, \
-                 Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, \
-                 set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event
+from msgq import fake_event_handle as fake_event_handle, drain_sock_raw, MultiplePublishersError as MultiplePublishersError, IpcError as IpcError, \
+                 Context, Poller, SubSocket, PubSocket, SocketEventHandle as SocketEventHandle, toggle_fake_events as toggle_fake_events, \
+                 set_fake_prefix as set_fake_prefix, get_fake_prefix as get_fake_prefix, delete_fake_prefix as delete_fake_prefix, \
+                 wait_for_one_event as wait_for_one_event
 import msgq
 import os
 import capnp
 import time
 
-from typing import Optional, List, Union, Dict
+from typing import Optional, Union
 
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
@@ -54,7 +55,7 @@ def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) ->
   return dat
 
 
-def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> List[capnp.lib.capnp._DynamicStructReader]:
+def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> list[capnp.lib.capnp._DynamicStructReader]:
   """Receive all message currently available on the queue"""
   msgs = drain_sock_raw(sock, wait_for_one=wait_for_one)
   return [log_from_bytes(m) for m in msgs]
@@ -148,27 +149,27 @@ class FrequencyTracker:
 
 
 class SubMaster:
-  def __init__(self, services: List[str], poll: Optional[str] = None,
-               ignore_alive: Optional[List[str]] = None, ignore_avg_freq: Optional[List[str]] = None,
-               ignore_valid: Optional[List[str]] = None, addr: str = "127.0.0.1", frequency: Optional[float] = None):
+  def __init__(self, services: list[str], poll: Optional[str] = None,
+               ignore_alive: Optional[list[str]] = None, ignore_avg_freq: Optional[list[str]] = None,
+               ignore_valid: Optional[list[str]] = None, addr: str = "127.0.0.1", frequency: Optional[float] = None):
     self.frame = -1
     self.services = services
-    self.seen = {s: False for s in services}
-    self.updated = {s: False for s in services}
-    self.recv_time = {s: 0. for s in services}
-    self.recv_frame = {s: 0 for s in services}
+    self.seen = dict.fromkeys(services, False)
+    self.updated = dict.fromkeys(services, False)
+    self.recv_time = dict.fromkeys(services, 0.0)
+    self.recv_frame = dict.fromkeys(services, 0)
     self.sock = {}
     self.data = {}
-    self.logMonoTime = {s: 0 for s in services}
+    self.logMonoTime = dict.fromkeys(services, 0)
 
     # zero-frequency / on-demand services are always alive and presumed valid; all others must pass checks
     on_demand = {s: SERVICE_LIST[s].frequency <= 1e-5 for s in services}
-    self.static_freq_services = set(s for s in services if not on_demand[s])
+    self.static_freq_services = {s for s in services if not on_demand[s]}
     self.alive = {s: on_demand[s] for s in services}
     self.freq_ok = {s: on_demand[s] for s in services}
     self.valid = {s: on_demand[s] for s in services}
 
-    self.freq_tracker: Dict[str, FrequencyTracker] = {}
+    self.freq_tracker: dict[str, FrequencyTracker] = {}
     self.poller = Poller()
     polled_services = set([poll, ] if poll is not None else services)
     self.non_polled_services = set(services) - polled_services
@@ -211,7 +212,7 @@ class SubMaster:
       msgs.append(recv_one_or_none(self.sock[s]))
     self.update_msgs(time.monotonic(), msgs)
 
-  def update_msgs(self, cur_time: float, msgs: List[capnp.lib.capnp._DynamicStructReader]) -> None:
+  def update_msgs(self, cur_time: float, msgs: list[capnp.lib.capnp._DynamicStructReader]) -> None:
     self.frame += 1
     self.updated = dict.fromkeys(self.services, False)
     for msg in msgs:
@@ -234,21 +235,21 @@ class SubMaster:
       self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
       self.freq_ok[s] = self.freq_tracker[s].valid or self.simulation
 
-  def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_alive(self, service_list: Optional[list[str]] = None) -> bool:
     return all(self.alive[s] for s in (service_list or self.services) if s not in self.ignore_alive)
 
-  def all_freq_ok(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_freq_ok(self, service_list: Optional[list[str]] = None) -> bool:
     return all(self.freq_ok[s] for s in (service_list or self.services) if self._check_avg_freq(s))
 
-  def all_valid(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_valid(self, service_list: Optional[list[str]] = None) -> bool:
     return all(self.valid[s] for s in (service_list or self.services) if s not in self.ignore_valid)
 
-  def all_checks(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_checks(self, service_list: Optional[list[str]] = None) -> bool:
     return self.all_alive(service_list) and self.all_freq_ok(service_list) and self.all_valid(service_list)
 
 
 class PubMaster:
-  def __init__(self, services: List[str]):
+  def __init__(self, services: list[str]):
     self.sock = {}
     for s in services:
       self.sock[s] = pub_sock(s)
