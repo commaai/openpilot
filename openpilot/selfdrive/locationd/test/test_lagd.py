@@ -81,6 +81,7 @@ class TestLagd:
         assert retrieve_initial_lag(params, CP) is None
 
   def test_ncc(self):
+    rng = np.random.default_rng()
     lag_frames = random.randint(1, 19)
 
     desired_sig = np.sin(np.arange(0.0, 10.0, 0.1))
@@ -91,15 +92,15 @@ class TestLagd:
     assert np.argmax(corr) == lag_frames
 
     # add some noise
-    desired_sig += np.random.normal(0, 0.05, len(desired_sig))
-    actual_sig += np.random.normal(0, 0.05, len(actual_sig))
+    desired_sig += rng.normal(0, 0.05, len(desired_sig))
+    actual_sig += rng.normal(0, 0.05, len(actual_sig))
     corr = masked_normalized_cross_correlation(desired_sig, actual_sig, mask, 200)[len(desired_sig) - 1:len(desired_sig) + 20]
     assert np.argmax(corr)  in range(lag_frames - MAX_ERR_FRAMES, lag_frames + MAX_ERR_FRAMES + 1)
 
     # mask out 40% of the values, and make them noise
-    mask = np.random.choice([True, False], size=len(desired_sig), p=[0.6, 0.4])
-    desired_sig[~mask] = np.random.normal(0, 1, size=np.sum(~mask))
-    actual_sig[~mask] = np.random.normal(0, 1, size=np.sum(~mask))
+    mask = rng.choice([True, False], size=len(desired_sig), p=[0.6, 0.4])
+    desired_sig[~mask] = rng.normal(0, 1, size=np.sum(~mask))
+    actual_sig[~mask] = rng.normal(0, 1, size=np.sum(~mask))
     corr = masked_normalized_cross_correlation(desired_sig, actual_sig, mask, 200)[len(desired_sig) - 1:len(desired_sig) + 20]
     assert np.argmax(corr) in range(lag_frames - MAX_ERR_FRAMES, lag_frames + MAX_ERR_FRAMES + 1)
 
