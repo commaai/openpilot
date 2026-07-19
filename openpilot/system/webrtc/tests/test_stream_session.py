@@ -56,8 +56,7 @@ class TestStreamSession:
       mocked_pubmaster.send.assert_called_once()
       mt, md = mocked_pubmaster.send.call_args.args
       msg_type = msg["type"]
-      if not isinstance(msg_type, str):
-        raise TypeError("message type must be a string")
+      assert isinstance(msg_type, str)
       assert mt == msg_type
       assert isinstance(md, capnp._DynamicStructBuilder)
       assert hasattr(md, msg_type)

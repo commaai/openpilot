@@ -351,8 +351,8 @@ class TestAthenadMethods:
     assert items[0] == asdict(item)
     assert not items[0]['current']
 
-    if item.id is not None:
-      athenad.cancelled_uploads.add(item.id)
+    assert item.id is not None
+    athenad.cancelled_uploads.add(item.id)
     items = dispatcher["listUploadQueue"]()
     assert len(items) == 0
 
@@ -364,8 +364,8 @@ class TestAthenadMethods:
     athenad.upload_queue.put_nowait(item2)
 
     # Ensure canceled items are not persisted
-    if item2.id is not None:
-      athenad.cancelled_uploads.add(item2.id)
+    assert item2.id is not None
+    athenad.cancelled_uploads.add(item2.id)
 
     # serialize item
     athenad.UploadQueueCache.cache(athenad.upload_queue)

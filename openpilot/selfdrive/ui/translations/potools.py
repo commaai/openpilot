@@ -67,22 +67,22 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
   cur_field: str | None = None
   plural_idx = 0
 
-  def finish():
-    nonlocal cur, header
-    if cur is None:
+  def finish(entry: POEntry | None):
+    nonlocal header
+    if entry is None:
       return
-    if cur.msgid == "" and cur.msgstr:
-      header = cur
-    elif cur.msgid != "" or cur.is_plural:
-      entries.append(cur)
-    cur = None
+    if entry.msgid == "" and entry.msgstr:
+      header = entry
+    elif entry.msgid != "" or entry.is_plural:
+      entries.append(entry)
 
   for raw in lines:
     line = raw.rstrip('\n')
     stripped = line.strip()
 
     if not stripped:
-      finish()
+      finish(cur)
+      cur = None
       cur_field = None
       continue
 
@@ -102,16 +102,16 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       continue
 
     if stripped.startswith('msgid_plural '):
-      entry = cur or POEntry()
-      entry.msgid_plural = _parse_quoted(stripped[len('msgid_plural '):])
-      cur = entry
+      if cur is None:
+        cur = POEntry()
+      cur.msgid_plural = _parse_quoted(stripped[len('msgid_plural '):])
       cur_field = 'msgid_plural'
       continue
 
     if stripped.startswith('msgid '):
-      entry = cur or POEntry()
-      entry.msgid = _parse_quoted(stripped[len('msgid '):])
-      cur = entry
+      if cur is None:
+        cur = POEntry()
+      cur.msgid = _parse_quoted(stripped[len('msgid '):])
       cur_field = 'msgid'
       continue
 
@@ -123,9 +123,9 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       continue
 
     if stripped.startswith('msgstr '):
-      entry = cur or POEntry()
-      entry.msgstr = _parse_quoted(stripped[len('msgstr '):])
-      cur = entry
+      if cur is None:
+        cur = POEntry()
+      cur.msgstr = _parse_quoted(stripped[len('msgstr '):])
       cur_field = 'msgstr'
       continue
 
@@ -140,7 +140,7 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       elif cur_field == 'msgstr_plural':
         cur.msgstr_plural[plural_idx] += val
 
-  finish()
+  finish(cur)
   return header, entries
 
 

@@ -6,9 +6,6 @@ from openpilot.system.ui.widgets import Widget
 
 PASSWORD_MASK_CHAR = "•"
 PASSWORD_MASK_DELAY = 1.5  # Seconds to show character before masking
-KEY_LEFT = rl.KEY_LEFT
-KEY_RIGHT = rl.KEY_RIGHT
-KEY_BACKSPACE = rl.KEY_BACKSPACE
 
 
 class InputBox(Widget):
@@ -196,7 +193,7 @@ class InputBox(Widget):
     key = rl.get_key_pressed()
     if key != 0:
       self._process_key(key)
-      if key in (KEY_LEFT, KEY_RIGHT, KEY_BACKSPACE, rl.KEY_DELETE):
+      if key in (rl.KEY_LEFT, rl.KEY_RIGHT, rl.KEY_BACKSPACE, rl.KEY_DELETE):
         self._last_key_pressed = key
         self._key_press_time = 0
 
@@ -215,13 +212,13 @@ class InputBox(Widget):
       self.add_char_at_cursor(chr(char))
 
   def _process_key(self, key):
-    if key == KEY_LEFT:
+    if key == rl.KEY_LEFT:
       if self._cursor_position > 0:
         self.set_cursor_position(self._cursor_position - 1)
-    elif key == KEY_RIGHT:
+    elif key == rl.KEY_RIGHT:
       if self._cursor_position < len(self._input_text):
         self.set_cursor_position(self._cursor_position + 1)
-    elif key == KEY_BACKSPACE:
+    elif key == rl.KEY_BACKSPACE:
       self.delete_char_before_cursor()
     elif key == rl.KEY_DELETE:
       self.delete_char_at_cursor()
