@@ -1,11 +1,9 @@
-import os
 import capnp
 import multiprocessing
 import numbers
 import random
 import threading
 import time
-import unittest
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log
@@ -24,10 +22,6 @@ def random_socks(num_socks=10):
 
 def random_bytes(length=1000):
   return bytes([random.randrange(0xFF) for _ in range(length)])
-
-def zmq_sleep(t=1):
-  if "ZMQ" in os.environ:
-    time.sleep(t)
 
 
 # TODO: this should take any capnp struct and returrn a msg with random populated data
@@ -54,17 +48,6 @@ def delayed_send(delay, sock, dat):
 
 
 class TestMessaging(OpenpilotTestCase):
-  def setUp(self):
-    super().setUp()
-    # TODO: ZMQ tests are too slow; all sleeps will need to be
-    # replaced with logic to block on the necessary condition
-    if "ZMQ" in os.environ:
-      raise unittest.SkipTest("ZMQ tests are too slow")
-
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep()
-
   @parameterized.expand(events)
   def test_new_message(self, evt):
     try:
@@ -91,7 +74,6 @@ class TestMessaging(OpenpilotTestCase):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock, timeout=1000)
-    zmq_sleep()
 
     # no wait and no msgs in queue
     msgs = func(sub_sock)
@@ -112,7 +94,6 @@ class TestMessaging(OpenpilotTestCase):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock, timeout=100)
-    zmq_sleep()
 
     # no wait and no msg in queue, socket should timeout
     recvd = messaging.recv_sock(sub_sock)
@@ -131,7 +112,6 @@ class TestMessaging(OpenpilotTestCase):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock, timeout=1000)
-    zmq_sleep()
 
     # no msg in queue, socket should timeout
     recvd = messaging.recv_one(sub_sock)
@@ -148,7 +128,6 @@ class TestMessaging(OpenpilotTestCase):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock)
-    zmq_sleep()
 
     # no msg in queue, socket shouldn't block
     recvd = messaging.recv_one_or_none(sub_sock)
@@ -166,16 +145,13 @@ class TestMessaging(OpenpilotTestCase):
     sock_timeout = 0.1
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock, timeout=round(sock_timeout*1000))
-    zmq_sleep()
 
-    # this test doesn't work with ZMQ since multiprocessing interrupts it
-    if "ZMQ" not in os.environ:
-      # wait 5 socket timeouts and make sure it's still retrying
-      p = multiprocessing.Process(target=messaging.recv_one_retry, args=(sub_sock,))
-      p.start()
-      time.sleep(sock_timeout*5)
-      assert p.is_alive()
-      p.terminate()
+    # wait 5 socket timeouts and make sure it's still retrying
+    p = multiprocessing.Process(target=messaging.recv_one_retry, args=(sub_sock,))
+    p.start()
+    time.sleep(sock_timeout*5)
+    assert p.is_alive()
+    p.terminate()
 
     # wait 5 socket timeouts before sending
     msg = random_carstate()

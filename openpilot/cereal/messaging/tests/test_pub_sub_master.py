@@ -5,20 +5,12 @@ from collections.abc import Sized
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
-                                                  random_bytes, random_carstate, assert_carstate, \
-                                                  zmq_sleep
+                                                  random_bytes, random_carstate, assert_carstate
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 
 class TestSubMaster(OpenpilotTestCase):
-
-  def setUp(self):
-    super().setUp()
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep(3)
-
   def test_init(self):
     sm = messaging.SubMaster(events)
     for p in [sm.updated, sm.recv_time, sm.recv_frame, sm.alive,
@@ -45,7 +37,6 @@ class TestSubMaster(OpenpilotTestCase):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
-    zmq_sleep()
 
     msg = random_carstate()
     pub_sock.send(msg.to_bytes())
@@ -57,7 +48,6 @@ class TestSubMaster(OpenpilotTestCase):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
-    zmq_sleep()
 
     for i in range(10):
       msg = messaging.new_message(sock)
@@ -101,15 +91,6 @@ class TestSubMaster(OpenpilotTestCase):
         else:
           assert not sm._check_avg_freq(service)
 
-  def test_alive(self):
-    pass
-
-  def test_ignore_alive(self):
-    pass
-
-  def test_valid(self):
-    pass
-
   # SubMaster should always conflate
   def test_conflate(self):
     sock = "carState"
@@ -128,12 +109,6 @@ class TestSubMaster(OpenpilotTestCase):
 
 class TestPubMaster(OpenpilotTestCase):
 
-  def setUp(self):
-    super().setUp()
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep(3)
-
   def test_init(self):
     messaging.PubMaster(events)
 
@@ -141,7 +116,6 @@ class TestPubMaster(OpenpilotTestCase):
     socks = random_socks()
     pm = messaging.PubMaster(socks)
     sub_socks = {s: messaging.sub_sock(s, conflate=True, timeout=1000) for s in socks}
-    zmq_sleep()
 
     # PubMaster accepts either a capnp msg builder or bytes
     for capnp in [True, False]:
