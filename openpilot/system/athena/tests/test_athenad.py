@@ -60,7 +60,7 @@ class TestAthenadMethods:
   @classmethod
   def setup_class(cls):
     cls.SOCKET_PORT = 45454
-    athenad.Api = MockApi
+    athenad.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setup_method(self):
@@ -351,6 +351,7 @@ class TestAthenadMethods:
     assert items[0] == asdict(item)
     assert not items[0]['current']
 
+    assert item.id is not None
     athenad.cancelled_uploads.add(item.id)
     items = dispatcher["listUploadQueue"]()
     assert len(items) == 0
@@ -363,6 +364,7 @@ class TestAthenadMethods:
     athenad.upload_queue.put_nowait(item2)
 
     # Ensure canceled items are not persisted
+    assert item2.id is not None
     athenad.cancelled_uploads.add(item2.id)
 
     # serialize item

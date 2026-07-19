@@ -519,7 +519,7 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
   def do_OPTIONS(self) -> None:
     self._dispatch_request()
 
-  def log_message(self, fmt, *args) -> None:
+  def log_message(self, format: str, *args: object) -> None:  # noqa: A002  # stdlib override
     # silence default access logging; errors are logged explicitly in _dispatch_request
     pass
 
