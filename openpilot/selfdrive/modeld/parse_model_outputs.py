@@ -45,6 +45,7 @@ class Parser:
     if self.check_missing(outs, name):
       return
     raw = outs[name]
+    out_shape = out_shape or ()
     raw = raw.reshape((raw.shape[0], max(in_N, 1), -1))
 
     n_values = (raw.shape[2] - out_N)//2

@@ -251,7 +251,7 @@ class MiciHomeLayout(Widget):
     self._egpu_icon.set_visible(ui_state.usbgpu and ui_state.usbgpu_compiled)
     self._egpu_icon_gray.set_visible(ui_state.usbgpu and not ui_state.usbgpu_compiled)
     self._mic_icon.set_visible(ui_state.recording_audio)
-    self._body_icon.set_visible(ui_state.is_body)
+    self._body_icon.set_visible(bool(ui_state.is_body))
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)

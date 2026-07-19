@@ -1,7 +1,6 @@
 import math
 from enum import IntEnum
 from collections.abc import Callable
-from itertools import zip_longest
 from typing import Union
 import pyray as rl
 
@@ -210,7 +209,7 @@ class Label(Widget):
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
 
-    for text, text_size, emojis in zip_longest(self._text_wrapped, self._text_size, self._emojis, fillvalue=[]):
+    for text, text_size, emojis in zip(self._text_wrapped, self._text_size, self._emojis, strict=True):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
       if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
         line_pos.x += self._text_padding

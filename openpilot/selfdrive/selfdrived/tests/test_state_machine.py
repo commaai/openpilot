@@ -13,10 +13,11 @@ ALL_STATES = tuple(State.schema.enumerants.values())
 ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE, ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL)
 
 
-def make_event(event_types: list[str]):
+def make_event(event_types: list[str | None]):
   EVENTS[0] = {}
   for ev in event_types:
-    EVENTS[0][ev] = NormalPermanentAlert("alert")
+    if ev is not None:
+      EVENTS[0][ev] = NormalPermanentAlert("alert")
   return 0
 
 

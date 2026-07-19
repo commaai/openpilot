@@ -5,6 +5,7 @@ import random
 import string
 import subprocess
 import time
+from collections.abc import Collection
 from collections import defaultdict
 from pathlib import Path
 import pytest
@@ -74,8 +75,8 @@ class TestLoggerd:
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
     assert msgs[-1].sentinel.type == end_type
 
-  def _publish_random_messages(self, services: list[str]) -> dict[str, list]:
-    pm = messaging.PubMaster(services)
+  def _publish_random_messages(self, services: Collection[str]) -> dict[str, list]:
+    pm = messaging.PubMaster(list(services))
 
     managed_processes["loggerd"].start()
     for s in services:

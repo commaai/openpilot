@@ -60,7 +60,7 @@ class TestPandad:
 
   def test_in_reset(self):
     gpio_init(GPIO.STM_RST_N, True)
-    gpio_set(GPIO.STM_RST_N, 1)
+    gpio_set(GPIO.STM_RST_N, True)
     assert not Panda.list()
     self._run_test()
 

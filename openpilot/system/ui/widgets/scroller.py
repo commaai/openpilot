@@ -1,6 +1,6 @@
 import pyray as rl
 import numpy as np
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.common.swaglog import cloudlog
@@ -69,7 +69,7 @@ class ScrollIndicator(Widget):
 
 class _Scroller(Widget):
   """Should use wrapper below to reduce boilerplate"""
-  def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
+  def __init__(self, items: Sequence[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
     self._items: list[Widget] = []
@@ -150,7 +150,7 @@ class _Scroller(Widget):
                                           and not self.moving_items and (original_touch_valid_callback() if
                                                                          original_touch_valid_callback else True))
 
-  def add_widgets(self, items: list[Widget]) -> None:
+  def add_widgets(self, items: Sequence[Widget]) -> None:
     for item in items:
       self.add_widget(item)
 
