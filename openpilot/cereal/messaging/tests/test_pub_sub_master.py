@@ -5,17 +5,11 @@ from collections.abc import Sized
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
-                                                  random_bytes, random_carstate, assert_carstate, \
-                                                  zmq_sleep
+                                                  random_bytes, random_carstate, assert_carstate
 from openpilot.cereal.services import SERVICE_LIST
 
 
 class TestSubMaster:
-
-  def setup_method(self):
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep(3)
 
   def test_init(self):
     sm = messaging.SubMaster(events)
@@ -43,7 +37,6 @@ class TestSubMaster:
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
-    zmq_sleep()
 
     msg = random_carstate()
     pub_sock.send(msg.to_bytes())
@@ -55,7 +48,6 @@ class TestSubMaster:
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
-    zmq_sleep()
 
     for i in range(10):
       msg = messaging.new_message(sock)
@@ -126,11 +118,6 @@ class TestSubMaster:
 
 class TestPubMaster:
 
-  def setup_method(self):
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep(3)
-
   def test_init(self):
     messaging.PubMaster(events)
 
@@ -138,7 +125,6 @@ class TestPubMaster:
     socks = random_socks()
     pm = messaging.PubMaster(socks)
     sub_socks = {s: messaging.sub_sock(s, conflate=True, timeout=1000) for s in socks}
-    zmq_sleep()
 
     # PubMaster accepts either a capnp msg builder or bytes
     for capnp in [True, False]:
