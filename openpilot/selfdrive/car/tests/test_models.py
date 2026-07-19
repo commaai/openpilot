@@ -250,7 +250,13 @@ class TestCarModelBase(unittest.TestCase):
 
       # Don't check relay malfunction on disabled routes (relay closed),
       # or before fingerprinting is done (elm327 and noOutput)
-      if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
+      if self.openpilot_enabled:
+        assert self.car_safety_mode_frame is not None
+        check_relay_malfunction = t / 1e4 > self.car_safety_mode_frame
+      else:
+        check_relay_malfunction = False
+
+      if check_relay_malfunction:
         self.assertFalse(self.safety.get_relay_malfunction())
       else:
         self.safety.set_relay_malfunction(False)

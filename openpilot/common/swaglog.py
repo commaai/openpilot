@@ -48,6 +48,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
     return sorted(log_files)
 
   def shouldRollover(self, record):
+    assert self.last_rollover is not None
     size_exceeded = self.max_bytes > 0 and self.stream.tell() >= self.max_bytes
     time_exceeded = self.interval > 0 and self.last_rollover + self.interval <= time.monotonic()
     return size_exceeded or time_exceeded
