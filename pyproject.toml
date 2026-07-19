@@ -189,7 +189,6 @@ unresolved-attribute = "ignore"  # many from capnp and Cython modules
 invalid-method-override = "ignore"  # signature variance issues
 possibly-missing-attribute = "ignore"  # too many false positives
 invalid-assignment = "ignore"  # often intentional monkey-patching
-no-matching-overload = "ignore"  # numpy/ctypes overload matching issues
 invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
 call-non-callable = "ignore"  # false positives from dynamic types
 unsupported-operator = "ignore" # false positives from dynamic types
