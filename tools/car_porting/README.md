@@ -32,7 +32,7 @@ Finds common bugs for car interfaces, without even requiring a route.
 
 #### Example: Typo in signal name
 ```bash
-> pytest openpilot/selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
+> ./run_tests.py openpilot/selfdrive/car/tests/test_car_interfaces.py -k SUBARU  # replace with the brand you are working on
 
 =====================================================================
 FAILED openpilot/selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
