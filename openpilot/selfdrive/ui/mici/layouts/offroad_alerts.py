@@ -252,10 +252,12 @@ class MiciOffroadAlerts(Scroller):
 
   def _refresh(self) -> int:
     """Refresh alerts from params and return active count."""
+    pending_params = self._pending_params
+    assert pending_params is not None
     active_count = 0
 
     # Handle UpdateAvailable alert specially
-    update_available = self._pending_params["UpdateAvailable"]
+    update_available = pending_params["UpdateAvailable"]
     update_alert_data = next((alert_data for alert_data in self.sorted_alerts if alert_data.key == "UpdateAvailable"), None)
 
     if update_alert_data:
@@ -263,7 +265,7 @@ class MiciOffroadAlerts(Scroller):
         version_string = ""
 
         # Get new version description and parse version and date
-        new_desc = self._pending_params["UpdaterNewDescription"] or ""
+        new_desc = pending_params["UpdaterNewDescription"] or ""
         if new_desc:
           # format: "version / branch / commit / date"
           parts = new_desc.split(" / ")
@@ -284,7 +286,7 @@ class MiciOffroadAlerts(Scroller):
         continue  # Skip, already handled above
 
       text = ""
-      alert_json = self._pending_params[alert_data.key]
+      alert_json = pending_params[alert_data.key]
 
       if alert_json:
         text = alert_json.get("text", "").replace("%1", alert_json.get("extra", ""))

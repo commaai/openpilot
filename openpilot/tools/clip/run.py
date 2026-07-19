@@ -161,7 +161,12 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
         seg_frames = FrameReader(path, pix_fmt="nv12")
 
     assert seg_frames is not None
-    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)
+    if use_qcam:
+      assert isinstance(seg_frames, np.ndarray)
+      frame = seg_frames[local_idx]
+    else:
+      assert isinstance(seg_frames, FrameReader)
+      frame = seg_frames.get(local_idx)
     yield global_idx, frame
 
 

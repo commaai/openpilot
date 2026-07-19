@@ -190,7 +190,6 @@ invalid-method-override = "ignore"  # signature variance issues
 possibly-missing-attribute = "ignore"  # too many false positives
 invalid-assignment = "ignore"  # often intentional monkey-patching
 invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
-not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
