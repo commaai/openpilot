@@ -216,7 +216,6 @@ class ProcessContainer:
   def _start_process(self):
     if self.capture is not None:
       self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)  # ty: ignore[invalid-assignment]  # intentional wrapper
-    self.process.prepare()
     self.process.start()
 
   def start(
