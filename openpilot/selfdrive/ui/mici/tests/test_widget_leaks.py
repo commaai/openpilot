@@ -41,80 +41,81 @@ def get_child_widgets(widget) -> list:
   return children
 
 
-@pytest.mark.skip(reason="segfaults")
-def test_dialogs_do_not_leak():
-  import pyray as rl
-  rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
-  from openpilot.system.ui.lib.application import gui_app
+class TestWidgetLeaks:
+  @pytest.mark.skip(reason="segfaults")
+  def test_dialogs_do_not_leak(self):
+    import pyray as rl
+    rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
+    from openpilot.system.ui.lib.application import gui_app
 
-  # mici dialogs
-  from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
-  from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog as MiciDriverCameraDialog
-  from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
-  from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigInputDialog
-  from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
+    # mici dialogs
+    from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
+    from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog as MiciDriverCameraDialog
+    from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
+    from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigInputDialog
+    from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
 
-  # tici dialogs
-  from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog as TiciDriverCameraDialog
-  from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow as TiciOnboardingWindow
-  from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog as TiciPairingDialog
-  from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
-  from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
-  from openpilot.system.ui.widgets.html_render import HtmlModal
-  from openpilot.system.ui.widgets.keyboard import Keyboard
+    # tici dialogs
+    from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog as TiciDriverCameraDialog
+    from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow as TiciOnboardingWindow
+    from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog as TiciPairingDialog
+    from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+    from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
+    from openpilot.system.ui.widgets.html_render import HtmlModal
+    from openpilot.system.ui.widgets.keyboard import Keyboard
 
-  gui_app.init_window("ref-test")
+    gui_app.init_window("ref-test")
 
-  leaked_widgets = set()
+    leaked_widgets = set()
 
-  for ctor in (
-    # mici
-    MiciDriverCameraDialog, MiciPairingDialog,
-    lambda: MiciTrainingGuide(lambda: None),
-    lambda: MiciOnboardingWindow(lambda: None),
-    lambda: BigDialog("test", "test"),
-    lambda: BigConfirmationDialog("test", gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64), lambda: None),
-    lambda: BigInputDialog("test"),
-    lambda: MiciFccModal(text="test"),
-    # tici
-    TiciDriverCameraDialog, TiciOnboardingWindow, TiciPairingDialog, Keyboard,
-    lambda: ConfirmDialog("test", "ok"),
-    lambda: MultiOptionDialog("test", ["a", "b"]),
-    lambda: HtmlModal(text="test"),
-  ):
-    widget = ctor()
-    all_refs = [weakref.ref(w) for w in get_child_widgets(widget) + [widget]]
+    for ctor in (
+      # mici
+      MiciDriverCameraDialog, MiciPairingDialog,
+      lambda: MiciTrainingGuide(lambda: None),
+      lambda: MiciOnboardingWindow(lambda: None),
+      lambda: BigDialog("test", "test"),
+      lambda: BigConfirmationDialog("test", gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64), lambda: None),
+      lambda: BigInputDialog("test"),
+      lambda: MiciFccModal(text="test"),
+      # tici
+      TiciDriverCameraDialog, TiciOnboardingWindow, TiciPairingDialog, Keyboard,
+      lambda: ConfirmDialog("test", "ok"),
+      lambda: MultiOptionDialog("test", ["a", "b"]),
+      lambda: HtmlModal(text="test"),
+    ):
+      widget = ctor()
+      all_refs = [weakref.ref(w) for w in get_child_widgets(widget) + [widget]]
 
-    del widget
+      del widget
 
-    for ref in all_refs:
-      if ref() is not None:
-        obj = ref()
-        name = f"{type(obj).__module__}.{type(obj).__qualname__}"
-        leaked_widgets.add(name)
+      for ref in all_refs:
+        if ref() is not None:
+          obj = ref()
+          name = f"{type(obj).__module__}.{type(obj).__qualname__}"
+          leaked_widgets.add(name)
 
-        print(f"\n===  Widget {name} alive after del")
-        print("  Referrers:")
-        for r in gc.get_referrers(obj):
-          if r is obj:
-            continue
+          print(f"\n===  Widget {name} alive after del")
+          print("  Referrers:")
+          for r in gc.get_referrers(obj):
+            if r is obj:
+              continue
 
-          if hasattr(r, '__self__') and r.__self__ is not obj:
-            print(f"    bound method: {type(r.__self__).__qualname__}.{r.__name__}")
-          elif hasattr(r, '__func__'):
-            print(f"    method: {r.__name__}")
-          else:
-            print(f"    {type(r).__module__}.{type(r).__qualname__}")
-        del obj
+            if hasattr(r, '__self__') and r.__self__ is not obj:
+              print(f"    bound method: {type(r.__self__).__qualname__}.{r.__name__}")
+            elif hasattr(r, '__func__'):
+              print(f"    method: {r.__name__}")
+            else:
+              print(f"    {type(r).__module__}.{type(r).__qualname__}")
+          del obj
 
-  gui_app.close()
+    gui_app.close()
 
-  unexpected = leaked_widgets - KNOWN_LEAKS
-  assert not unexpected, f"New leaked widgets: {unexpected}"
+    unexpected = leaked_widgets - KNOWN_LEAKS
+    assert not unexpected, f"New leaked widgets: {unexpected}"
 
-  fixed = KNOWN_LEAKS - leaked_widgets
-  assert not fixed, f"These leaks are fixed, remove from KNOWN_LEAKS: {fixed}"
+    fixed = KNOWN_LEAKS - leaked_widgets
+    assert not fixed, f"These leaks are fixed, remove from KNOWN_LEAKS: {fixed}"
 
 
 if __name__ == "__main__":
-  test_dialogs_do_not_leak()
+  TestWidgetLeaks().test_dialogs_do_not_leak()
