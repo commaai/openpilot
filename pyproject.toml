@@ -15,7 +15,6 @@ dependencies = [
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
   # core
-  "cffi",
   "scons",
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "Cython",
