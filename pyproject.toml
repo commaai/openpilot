@@ -172,7 +172,6 @@ lint.ignore = [
 ]
 line-length = 160
 exclude = [
-  "*.ipynb",
   "generated",
 ]
 lint.flake8-implicit-str-concat.allow-multiline = false
