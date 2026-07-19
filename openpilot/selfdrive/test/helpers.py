@@ -2,6 +2,7 @@ import contextlib
 import gc
 import http.server
 import os
+import subprocess
 import threading
 import time
 import unittest
@@ -44,7 +45,7 @@ class OpenpilotTestCase(unittest.TestCase):
       # ensure a consistent state on-device
       HARDWARE.initialize_hardware()
       HARDWARE.set_power_save(False)
-      os.system("pkill -9 -f athena")
+      subprocess.call(["pkill", "-9", "-f", "athena"])
 
   def _assert_prefix_unchanged(self):
     assert os.environ.get("OPENPILOT_PREFIX") == self._op_prefix.prefix, "test changed OPENPILOT_PREFIX"
