@@ -330,27 +330,28 @@ class TestOnroad:
             assert np.all(eof_sof_diff > 0)
             assert np.all(eof_sof_diff < 50*1e6)
 
-        first_fid = {min(self.ts[c]['frameId']) for c in cams}
-        assert len(first_fid) == 1, "Cameras don't start on same frame ID"
-        if cam.endswith('CameraState'):
-          # camerad guarantees that all cams start on frame ID 0
-          # (note loggerd also needs to start up fast enough to catch it)
-          assert next(iter(first_fid)) < 100, "Cameras start on frame ID too high"
+        first_fid = {c: min(self.ts[c]['frameId']) for c in cams}
+        if cams == cam_states:
+          # camerad starts all cameras at frame ID 0, but loggerd can subscribe to
+          # each socket at a different time and miss a few of the first messages.
+          assert max(first_fid.values()) < 100, "Cameras start on frame ID too high"
 
         # we don't do a full segment rotation, so these might not match exactly
-        last_fid = {max(self.ts[c]['frameId']) for c in cams}
-        assert max(last_fid) - min(last_fid) < 10
+        last_fid = {c: max(self.ts[c]['frameId']) for c in cams}
+        assert max(last_fid.values()) - min(last_fid.values()) < 10
 
-        start, end = min(first_fid), min(last_fid)
-        for i in range(end-start):
+        start, end = max(first_fid.values()), min(last_fid.values())
+        assert start < end, "Camera streams don't overlap"
+        sof_by_fid = {c: dict(zip(self.ts[c]['frameId'], self.ts[c]['timestampSof'], strict=True)) for c in cams}
+        for frame_id in range(start, end + 1):
           # road and wide cameras (first two) should be synced within 2ms
-          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams[:2]}
+          ts = {c: round(sof_by_fid[c][frame_id]/1e6, 1) for c in cams[:2]}
           diff = (max(ts.values()) - min(ts.values()))
-          assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
+          assert diff < 2, f"Cameras not synced properly: {frame_id=}, {diff=:.1f}ms, {ts=}"
 
           # driver camera should be staggered ~25ms from road camera
-          offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
-          assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
+          offset_ms = abs(sof_by_fid[cams[2]][frame_id] - sof_by_fid[cams[0]][frame_id]) / 1e6
+          assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {frame_id}: {offset_ms:.1f}ms"
 
   def test_camera_encoder_matches(self, subtests):
     # sanity check that the frame metadata is consistent with the encoded frames
