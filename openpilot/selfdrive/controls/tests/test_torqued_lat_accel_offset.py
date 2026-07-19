@@ -7,8 +7,6 @@ from opendbc.car.lateral import get_friction, FRICTION_THRESHOLD
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.locationd.torqued import TorqueEstimator, MIN_BUCKET_POINTS, POINTS_PER_BUCKET, STEER_BUCKET_BOUNDS
 
-np.random.seed(0)
-
 LA_ERR_STD = 1.0
 INPUT_NOISE_STD = 0.08
 V_EGO = 30.0
