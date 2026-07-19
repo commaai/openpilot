@@ -16,7 +16,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 
@@ -160,7 +160,7 @@ class DeviceLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 
-    self._fcc_dialog: HtmlModal | None = None
+    self._fcc_dialog: MiciFccModal | None = None
 
     def power_off_callback():
       ui_state.params.put_bool("DoShutdown", True, block=True)

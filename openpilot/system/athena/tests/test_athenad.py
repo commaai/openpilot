@@ -60,7 +60,7 @@ class TestAthenadMethods:
   @classmethod
   def setup_class(cls):
     cls.SOCKET_PORT = 45454
-    athenad.Api = MockApi
+    athenad.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setup_method(self):

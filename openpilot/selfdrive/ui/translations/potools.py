@@ -102,16 +102,16 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       continue
 
     if stripped.startswith('msgid_plural '):
-      if cur is None:
-        cur = POEntry()
-      cur.msgid_plural = _parse_quoted(stripped[len('msgid_plural '):])
+      entry = cur or POEntry()
+      entry.msgid_plural = _parse_quoted(stripped[len('msgid_plural '):])
+      cur = entry
       cur_field = 'msgid_plural'
       continue
 
     if stripped.startswith('msgid '):
-      if cur is None:
-        cur = POEntry()
-      cur.msgid = _parse_quoted(stripped[len('msgid '):])
+      entry = cur or POEntry()
+      entry.msgid = _parse_quoted(stripped[len('msgid '):])
+      cur = entry
       cur_field = 'msgid'
       continue
 
@@ -123,7 +123,9 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       continue
 
     if stripped.startswith('msgstr '):
-      cur.msgstr = _parse_quoted(stripped[len('msgstr '):])
+      entry = cur or POEntry()
+      entry.msgstr = _parse_quoted(stripped[len('msgstr '):])
+      cur = entry
       cur_field = 'msgstr'
       continue
 

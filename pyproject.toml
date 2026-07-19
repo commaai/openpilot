@@ -188,7 +188,6 @@ unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
 unresolved-attribute = "ignore"  # many from capnp and Cython modules
 invalid-method-override = "ignore"  # signature variance issues
 possibly-missing-attribute = "ignore"  # too many false positives
-invalid-assignment = "ignore"  # often intentional monkey-patching
 invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
 
 [tool.uv]

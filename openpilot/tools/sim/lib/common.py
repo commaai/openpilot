@@ -40,7 +40,7 @@ class SimulatorState:
     self.is_engaged = False
     self.ignition = True
 
-    self.velocity: vec3 = None
+    self.velocity = vec3(0, 0, 0)
     self.bearing: float = 0
     self.gps = GPSState()
     self.imu = IMUState()
