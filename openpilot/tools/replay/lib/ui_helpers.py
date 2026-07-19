@@ -5,6 +5,7 @@ import numpy as np
 import pyray as rl
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.artist import Artist
 from matplotlib.offsetbox import AnchoredOffsetbox, HPacker, TextArea
 
 from openpilot.common.transformations.camera import get_view_frame_from_calib_frame
@@ -119,7 +120,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       idxs.append(name_to_arr_idx[item])
       plot_select.append(i)
     # Build colored title: each label colored to match its plot line
-    title_texts = []
+    title_texts: list[Artist] = []
     for j2, (nm, cl) in enumerate(zip(pl_list, plot_colors[i], strict=False)):
       if j2 > 0:
         title_texts.append(TextArea(", ", textprops={"color": "white", "fontsize": 10}))
