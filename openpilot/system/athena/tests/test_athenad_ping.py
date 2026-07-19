@@ -1,11 +1,13 @@
-import pytest
 import subprocess
 import threading
 import time
+import unittest
 from typing import cast
+from unittest import mock
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.athena import athenad
 from openpilot.common.hardware import TICI
 
@@ -19,7 +21,7 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-class TestAthenadPing:
+class TestAthenadPing(OpenpilotTestCase):
   params: Params
   dongle_id: str
 
@@ -36,10 +38,11 @@ class TestAthenadPing:
     return self._get_ping_time() is not None
 
   @classmethod
-  def teardown_class(cls) -> None:
+  def tearDownClass(cls) -> None:
     wifi_radio(True)
 
-  def setup_method(self) -> None:
+  def setUp(self) -> None:
+    super().setUp()
     self.params = Params()
     self.dongle_id = self.params.get("DongleId")
 
@@ -49,23 +52,23 @@ class TestAthenadPing:
     self.exit_event = threading.Event()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
-  def teardown_method(self) -> None:
+  def tearDown(self) -> None:
     if self.athenad.is_alive():
       self.exit_event.set()
       self.athenad.join()
 
-  def assertTimeout(self, reconnect_time: float, subtests, mocker) -> None:
+  def assertTimeout(self, reconnect_time: float) -> None:
     self.athenad.start()
 
-    mock_create_connection = mocker.patch('openpilot.system.athena.athenad.create_connection',
-                                          new_callable=lambda: mocker.MagicMock(wraps=athenad.create_connection))
+    mock_create_connection = self.enterContext(mock.patch('openpilot.system.athena.athenad.create_connection',
+                                                          new_callable=lambda: mock.MagicMock(wraps=athenad.create_connection)))
 
     time.sleep(1)
     mock_create_connection.assert_called_once()
     mock_create_connection.reset_mock()
 
     # check normal behavior, server pings on connection
-    with subtests.test("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
+    with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
@@ -73,7 +76,7 @@ class TestAthenadPing:
     mock_create_connection.assert_not_called()
 
     # websocket should attempt reconnect after short time
-    with subtests.test("LTE: attempt reconnect"):
+    with self.subTest("LTE: attempt reconnect"):
       wifi_radio(False)
       print("waiting for reconnect attempt")
       start_time = time.monotonic()
@@ -85,17 +88,17 @@ class TestAthenadPing:
     self._clear_ping_time()
 
     # check ping received after reconnect
-    with subtests.test("LTE: receives ping"), Timeout(70, "no ping received"):
+    with self.subTest("LTE: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
 
-  @pytest.mark.skipif(not TICI, reason="only run on desk")
-  def test_offroad(self, subtests, mocker) -> None:
+  @unittest.skipIf(not TICI, "only run on desk")
+  def test_offroad(self) -> None:
     self.params.put_bool("IsOffroad", True, block=True)
-    self.assertTimeout(60 + TIMEOUT_TOLERANCE, subtests, mocker)  # based using TCP keepalive settings
+    self.assertTimeout(60 + TIMEOUT_TOLERANCE)  # based using TCP keepalive settings
 
-  @pytest.mark.skipif(not TICI, reason="only run on desk")
-  def test_onroad(self, subtests, mocker) -> None:
+  @unittest.skipIf(not TICI, "only run on desk")
+  def test_onroad(self) -> None:
     self.params.put_bool("IsOffroad", False, block=True)
-    self.assertTimeout(21 + TIMEOUT_TOLERANCE, subtests, mocker)
+    self.assertTimeout(21 + TIMEOUT_TOLERANCE)

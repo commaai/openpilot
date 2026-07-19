@@ -1,16 +1,63 @@
 import contextlib
+import gc
 import http.server
 import os
 import threading
 import time
-import pytest
+import unittest
 
 from functools import wraps
 
 import openpilot.cereal.messaging as messaging
+from openpilot.common.hardware import TICI, HARDWARE
 from openpilot.common.params import Params
+from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.version import training_version, terms_version
+
+# tests that take awhile; skipped unless RUN_SLOW is set (run_tests.py sets it when a file is explicitly named)
+slow = unittest.skipUnless(os.getenv("RUN_SLOW"), "slow test, set RUN_SLOW=1 to run")
+
+
+class OpenpilotTestCase(unittest.TestCase):
+  """Every openpilot test runs with a clean env and a fresh OpenpilotPrefix per test method.
+
+     Subclasses overriding setUp/setUpClass MUST call super() first."""
+
+  SHARED_DOWNLOAD_CACHE = False
+  SKIP_TICI_SETUP = False
+
+  @classmethod
+  def setUpClass(cls):
+    env = dict(os.environ)
+    cls.addClassCleanup(lambda: (os.environ.clear(), os.environ.update(env)))
+
+  def setUp(self):
+    # cleanups run LIFO: prefix-unchanged assert -> prefix exit -> manager/gc cleanup -> env restore
+    env = dict(os.environ)
+    self.addCleanup(lambda: (os.environ.clear(), os.environ.update(env)))
+    self.addCleanup(self._post_prefix_cleanup)
+    self._op_prefix = self.enterContext(OpenpilotPrefix(shared_download_cache=self.SHARED_DOWNLOAD_CACHE))
+    self.addCleanup(self._assert_prefix_unchanged)
+
+    if TICI and not self.SKIP_TICI_SETUP:
+      # ensure a consistent state on-device
+      HARDWARE.initialize_hardware()
+      HARDWARE.set_power_save(False)
+      os.system("pkill -9 -f athena")
+
+  def _assert_prefix_unchanged(self):
+    assert os.environ.get("OPENPILOT_PREFIX") == self._op_prefix.prefix, "test changed OPENPILOT_PREFIX"
+
+  @staticmethod
+  def _post_prefix_cleanup():
+    from openpilot.system.manager import manager  # lazy: helpers is imported by the sim bridge at runtime
+    manager.manager_cleanup()
+
+    # some processes disable gc for performance, re-enable here
+    if not gc.isenabled():
+      gc.enable()
+      gc.collect()
 
 
 def set_params_enabled():
@@ -32,7 +79,7 @@ def release_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if "RELEASE" not in os.environ:
-      pytest.skip("This test is only for release branches")
+      raise unittest.SkipTest("This test is only for release branches")
     f(self, *args, **kwargs)
   return wrap
 

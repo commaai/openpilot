@@ -2,6 +2,7 @@ from openpilot.cereal import log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.selfdrived.state import StateMachine, SOFT_DISABLE_TIME
 from openpilot.selfdrive.selfdrived.events import Events, ET, EVENTS, NormalPermanentAlert
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 State = log.SelfdriveState.OpenpilotState
 
@@ -21,8 +22,9 @@ def make_event(event_types: list[str | None]):
   return 0
 
 
-class TestStateMachine:
-  def setup_method(self):
+class TestStateMachine(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
     self.events = Events()
     self.state_machine = StateMachine()
     self.state_machine.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)

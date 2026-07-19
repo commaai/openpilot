@@ -11,6 +11,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
 
 AlertSize = log.SelfdriveState.AlertSize
@@ -24,10 +25,11 @@ for event_types in EVENTS.values():
     ALERTS.append(alert)
 
 
-class TestAlerts:
+class TestAlerts(OpenpilotTestCase):
 
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     with open(OFFROAD_ALERTS_PATH) as f:
       cls.offroad_alerts = json.loads(f.read())
 

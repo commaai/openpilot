@@ -1,9 +1,9 @@
 import math
 import os
-import pytest
 import shutil
 import subprocess
 import time
+import unittest
 from pathlib import Path
 
 from tqdm import trange
@@ -11,6 +11,7 @@ from tqdm import trange
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.common.hardware import TICI
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.common.hardware.hw import Paths
@@ -29,15 +30,16 @@ CAMERAS = [
 FILE_SIZE_TOLERANCE = 0.7
 
 
-@pytest.mark.tici # TODO: all of loggerd should work on PC
-class TestEncoder:
+@unittest.skipUnless(TICI, "requires device") # TODO: all of loggerd should work on PC
+class TestEncoder(OpenpilotTestCase):
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     self._clear_logs()
     os.environ["LOGGERD_TEST"] = "1"
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(SEGMENT_LENGTH)
 
-  def teardown_method(self):
+  def tearDown(self):
     self._clear_logs()
 
   def _clear_logs(self):

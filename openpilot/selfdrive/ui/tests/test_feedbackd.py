@@ -1,13 +1,17 @@
-import pytest
+import unittest
+
 import openpilot.cereal.messaging as messaging
 from opendbc.car.structs import car
 from openpilot.common.params import Params
+from openpilot.common.parameterized import parameterized
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.manager.process_config import managed_processes
 
 
-@pytest.mark.skip("tmp disabled")
-class TestFeedbackd:
-  def setup_method(self):
+@unittest.skip("tmp disabled")
+class TestFeedbackd(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
     self.pm = messaging.PubMaster(['carState', 'rawAudioData'])
     self.sm = messaging.SubMaster(['audioFeedback'])
 
@@ -25,7 +29,7 @@ class TestFeedbackd:
       self.pm.send('rawAudioData', audio_msg)
       self.sm.update(timeout=100)
 
-  @pytest.mark.parametrize("record_feedback", [False, True])
+  @parameterized.expand([(False,), (True,)])
   def test_audio_feedback(self, record_feedback):
     Params().put_bool("RecordAudioFeedback", record_feedback, block=True)
 

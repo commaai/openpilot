@@ -8,6 +8,7 @@ from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROU
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
 from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 
 def get_random_live_parameters(CP):
@@ -19,7 +20,7 @@ def get_random_live_parameters(CP):
   return msg
 
 
-class TestParamsd:
+class TestParamsd(OpenpilotTestCase):
   def test_read_saved_params(self):
     params = Params()
 

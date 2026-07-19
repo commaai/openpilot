@@ -5,10 +5,11 @@ import numbers
 import random
 import threading
 import time
+import unittest
 from openpilot.common.parameterized import parameterized
-import pytest
 
 from openpilot.cereal import log
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from opendbc.car.structs import car
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
@@ -52,12 +53,13 @@ def delayed_send(delay, sock, dat):
   threading.Timer(delay, send_func).start()
 
 
-class TestMessaging:
+class TestMessaging(OpenpilotTestCase):
   def setUp(self):
+    super().setUp()
     # TODO: ZMQ tests are too slow; all sleeps will need to be
     # replaced with logic to block on the necessary condition
     if "ZMQ" in os.environ:
-      pytest.skip()
+      raise unittest.SkipTest("ZMQ tests are too slow")
 
     # ZMQ pub socket takes too long to die
     # sleep to prevent multiple publishers error between tests
@@ -142,7 +144,6 @@ class TestMessaging:
     assert isinstance(recvd, capnp._DynamicStructReader)
     assert_carstate(msg.carState, recvd.carState)
 
-  @pytest.mark.xfail(condition="ZMQ" in os.environ, reason='ZMQ detected')
   def test_recv_one_or_none(self):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)

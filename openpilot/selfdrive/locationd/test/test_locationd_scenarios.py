@@ -6,6 +6,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.locationd.lagd import masked_symmetric_moving_average
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 # TODO find a new segment to test
 TEST_ROUTE = "4019fff6e54cf1c7|00000123--4bc0d95ef6/5"
@@ -96,7 +97,7 @@ def run_scenarios(scenario, logs):
   return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
 
 
-class TestLocationdScenarios:
+class TestLocationdScenarios(OpenpilotTestCase):
   """
   Test locationd with different scenarios. In all these scenarios, we expect the following:
     - locationd kalman filter should never go unstable (we care mostly about yaw_rate, roll, gpsOK, inputsOK, sensorsOK)
@@ -104,7 +105,8 @@ class TestLocationdScenarios:
   """
 
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     cls.logs = migrate_all(LogReader(TEST_ROUTE))
 
   def test_base(self):

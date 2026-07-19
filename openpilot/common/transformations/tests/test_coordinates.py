@@ -1,6 +1,7 @@
 import numpy as np
 
 import openpilot.common.transformations.coordinates as coord
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 geodetic_positions = np.array([[37.7610403, -122.4778699, 115],
                                  [27.4840915, -68.5867592, 2380],
@@ -41,7 +42,7 @@ ned_offsets_batch = np.array([[  53.88103168,   43.83445935,  -46.27488057],
                               [  78.56272609,   18.53100158,  -43.25290759]])
 
 
-class TestNED:
+class TestNED(OpenpilotTestCase):
   def test_small_distances(self):
     start_geodetic = np.array([33.8042184, -117.888593, 0.0])
     local_coord = coord.LocalCoord.from_geodetic(start_geodetic)

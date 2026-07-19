@@ -7,6 +7,7 @@ from openpilot.common.parameterized import parameterized
 from openpilot.cereal import log
 from opendbc.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 import openpilot.selfdrive.test.process_replay.process_replay as pr
 
 # These processes currently fail because of unrealistic data breaking assumptions
@@ -17,7 +18,7 @@ NOT_TESTED = ['selfdrived', 'controlsd', 'card', 'plannerd', 'calibrationd', 'dm
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "10"))
 
-class TestFuzzProcesses:
+class TestFuzzProcesses(OpenpilotTestCase):
 
   # TODO: make this faster and increase examples
   @parameterized.expand(TEST_CASES)

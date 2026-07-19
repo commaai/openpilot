@@ -3,9 +3,10 @@ import os
 import shutil
 import socket
 import tempfile
-import pytest
+from unittest import mock
 
-from openpilot.selfdrive.test.helpers import http_server_context
+from openpilot.common.parameterized import parameterized
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, http_server_context
 from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile, prune_cache
 import openpilot.tools.lib.url_file as url_file_module
@@ -30,14 +31,14 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
     self.end_headers()
 
 
-@pytest.fixture
-def host():
-  with http_server_context(handler=CachingTestRequestHandler) as (host, port):
-    yield f"http://{host}:{port}"
+class TestFileDownload(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
+    host, port = self.enterContext(http_server_context(handler=CachingTestRequestHandler))
+    self.host = f"http://{host}:{port}"
 
-class TestFileDownload:
-
-  def test_pipeline_defaults(self, host):
+  def test_pipeline_defaults(self):
+    host = self.host
     # TODO: parameterize the defaults so we don't rely on hard-coded values in xx
 
     assert URLFile.pool_manager().pools._maxsize == 10# PoolManager num_pools param
@@ -117,8 +118,9 @@ class TestFileDownload:
     self.compare_loads(large_file_url, length - 100, 100)
     self.compare_loads(large_file_url)
 
-  @pytest.mark.parametrize("cache_enabled", [True, False])
-  def test_recover_from_missing_file(self, host, cache_enabled):
+  @parameterized.expand([(True,), (False,)])
+  def test_recover_from_missing_file(self, cache_enabled):
+    host = self.host
     if cache_enabled:
       os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     else:
@@ -135,10 +137,10 @@ class TestFileDownload:
     assert length == 4
 
 
-class TestCache:
-  def test_prune_cache(self, monkeypatch):
+class TestCache(OpenpilotTestCase):
+  def test_prune_cache(self):
     with tempfile.TemporaryDirectory() as tmpdir:
-      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
+      self.enterContext(mock.patch.object(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/")))
 
       # setup test files and manifest
       manifest_lines = []
@@ -156,7 +158,7 @@ class TestCache:
       assert len(os.listdir(tmpdir)) == 4
 
       # set a tiny cache limit to force eviction (1.5 chunks worth)
-      monkeypatch.setattr(url_file_module, 'CACHE_SIZE', url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
+      self.enterContext(mock.patch.object(url_file_module, 'CACHE_SIZE', url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2))
 
       # prune_cache should evict oldest files to get under limit
       prune_cache()

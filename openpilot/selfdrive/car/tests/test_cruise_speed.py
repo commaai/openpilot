@@ -1,8 +1,9 @@
-import pytest
 import itertools
+import math
 import numpy as np
 
 from openpilot.common.parameterized import parameterized_class
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.cereal import log
 from openpilot.selfdrive.car.cruise import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from opendbc.car.structs import car
@@ -35,19 +36,20 @@ def run_cruise_simulation(cruise, e2e, personality, t_end=20.):
                       [True, False], # e2e
                       log.LongitudinalPersonality.schema.enumerants, # personality
                       [5,35])) # speed
-class TestCruiseSpeed:
+class TestCruiseSpeed(OpenpilotTestCase):
   def test_cruise_speed(self):
     print(f'Testing {self.speed} m/s')
     cruise_speed = float(self.speed)
 
     simulation_steady_state = run_cruise_simulation(cruise_speed, self.e2e, self.personality)
-    assert simulation_steady_state == pytest.approx(cruise_speed, abs=.01), f'Did not reach {self.speed} m/s'
+    assert math.isclose(simulation_steady_state, cruise_speed, abs_tol=.01), f'Did not reach {self.speed} m/s'
 
 
 # TODO: test pcmCruise
 @parameterized_class(('pcm_cruise',), [(False,)])
-class TestVCruiseHelper:
-  def setup_method(self):
+class TestVCruiseHelper(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
     self.CP = car.CarParams(pcmCruise=self.pcm_cruise)
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.reset_cruise_speed_state()

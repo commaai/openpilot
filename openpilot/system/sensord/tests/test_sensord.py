@@ -1,14 +1,16 @@
 import os
 import subprocess
-import pytest
 import time
+import unittest
 import numpy as np
 from collections import namedtuple, defaultdict
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
+from openpilot.common.hardware import TICI
 from openpilot.common.timeout import Timeout
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.manager.process_config import managed_processes
 
 SensorConfig = namedtuple('SensorConfig', ['service', 'measurement', 'sanity_min', 'sanity_max', 'std_max'])
@@ -54,10 +56,11 @@ def iter_measurements(events):
     for measurement in msgs:
       yield measurement, getattr(measurement, measurement.which())
 
-@pytest.mark.tici
-class TestSensord:
+@unittest.skipUnless(TICI, "requires device")
+class TestSensord(OpenpilotTestCase):
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 
@@ -75,17 +78,17 @@ class TestSensord:
       managed_processes["sensord"].stop()
 
   @classmethod
-  def teardown_class(cls):
+  def tearDownClass(cls):
     managed_processes["sensord"].stop()
 
-  def teardown_method(self):
+  def tearDown(self):
     managed_processes["sensord"].stop()
 
   def test_all_sensors_present(self):
     missing = [config.service for config in SENSOR_CONFIGS if config.service not in self.events]
     assert len(missing) == 0, f"missing sensors: {missing}"
 
-  def test_lsm6ds3_timing(self, subtests):
+  def test_lsm6ds3_timing(self):
     # verify measurements are sampled and published at 104Hz
 
     sensor_t = {service: [] for service in ('accelerometer', 'gyroscope')}
@@ -96,7 +99,7 @@ class TestSensord:
         sensor_t[service].append(m.timestamp)
 
     for s, vals in sensor_t.items():
-      with subtests.test(sensor=s):
+      with self.subTest(sensor=s):
         assert len(vals) > 0
         tdiffs = np.diff(vals) / 1e6 # millis
 
@@ -110,9 +113,9 @@ class TestSensord:
         stddev = np.std(tdiffs)
         assert stddev < 2.0, f"Standard-dev to big {stddev}"
 
-  def test_sensor_frequency(self, subtests):
+  def test_sensor_frequency(self):
     for s, msgs in self.events.items():
-      with subtests.test(sensor=s):
+      with self.subTest(sensor=s):
         freq = len(msgs) / self.sample_secs
         ef = SERVICE_LIST[s].frequency
         assert ef*0.85 <= freq <= ef*1.15

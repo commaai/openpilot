@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import time
-import pytest
+import unittest
 
 from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
@@ -12,6 +12,7 @@ from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROU
 from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.common.hardware import PC
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 MAX_ERR_FRAMES = 1
 DT = 0.05
@@ -45,7 +46,7 @@ def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_thres
     estimator.update_estimate()
 
 
-class TestLagd:
+class TestLagd(OpenpilotTestCase):
   def test_read_saved_params(self):
     params = Params()
 
@@ -66,14 +67,14 @@ class TestLagd:
     assert lag == msg.liveDelay.lateralDelayEstimate
     assert valid_blocks == msg.liveDelay.validBlocks
 
-  def test_read_invalid_saved_params(self, subtests):
+  def test_read_invalid_saved_params(self):
     params = Params()
 
     lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
     for msg_dict in [{'version': 0}, {'status': 'invalid'}, {'validBlocks': 100}]:
-      with subtests.test(msg=f"liveDelay={msg_dict}"):
+      with self.subTest(msg=f"liveDelay={msg_dict}"):
         msg = messaging.new_message('liveDelay')
         msg.liveDelay = msg_dict
         params.put("LiveDelay", msg.to_bytes(), block=True)
@@ -114,9 +115,9 @@ class TestLagd:
     assert msg.liveDelay.validBlocks == 0
     assert msg.liveDelay.calPerc == 0
 
-  def test_estimator_basics(self, subtests):
+  def test_estimator_basics(self):
     for lag_frames in range(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1):
-      with subtests.test(msg=f"lag_frames={lag_frames}"):
+      with self.subTest(msg=f"lag_frames={lag_frames}"):
         mocked_CP = car.CarParams(steerActuatorDelay=0.5)
         estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
         process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
@@ -137,7 +138,7 @@ class TestLagd:
     assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
     assert msg.liveDelay.calPerc == 100
 
-  @pytest.mark.skipif(PC, reason="only on device")
+  @unittest.skipIf(PC, "only on device")
   def test_estimator_performance(self):
     mocked_CP = car.CarParams(steerActuatorDelay=0.5)
     estimator = LateralLagEstimator(mocked_CP, DT)

@@ -15,9 +15,9 @@ class TestDeleter(UploaderTestCase):
   def fake_statvfs(self, d):
     return self.fake_stats
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     self.f_type = "fcamera.hevc"
-    super().setup_method()
     self.fake_stats = Stats(f_bavail=0, f_blocks=10, f_frsize=4096)
     deleter.os.statvfs = self.fake_statvfs  # ty: ignore[invalid-assignment]  # test double
 

@@ -1,6 +1,7 @@
 from openpilot.cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.selfdrive.monitoring.policy import DriverMonitoring, DRIVER_MONITOR_SETTINGS
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 EventName = log.OnroadEvent.EventName
 dm_settings = DRIVER_MONITOR_SETTINGS()
@@ -46,7 +47,7 @@ always_distracted = [msg_DISTRACTED] * int(TEST_TIMESPAN / DT_DMON)
 always_true = [True] * int(TEST_TIMESPAN / DT_DMON)
 always_false = [False] * int(TEST_TIMESPAN / DT_DMON)
 
-class TestMonitoring:
+class TestMonitoring(OpenpilotTestCase):
   def _run_seq(self, msgs, interaction, engaged, lowspeed):
     DM = DriverMonitoring()
     alert_lvls = []

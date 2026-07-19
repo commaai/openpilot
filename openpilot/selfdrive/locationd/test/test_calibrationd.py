@@ -7,6 +7,7 @@ from openpilot.cereal import log
 from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
                                                          MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 
 def process_messages(c, cam_odo_calib, cycles,
@@ -29,7 +30,7 @@ def process_messages(c, cam_odo_calib, cycles,
                         [0.0, 0.0, HEIGHT_INIT.item()],
                         [cam_odo_height_std, cam_odo_height_std, cam_odo_height_std])
 
-class TestCalibrationd:
+class TestCalibrationd(OpenpilotTestCase):
 
   def test_read_saved_params(self):
     msg = messaging.new_message('liveCalibration')

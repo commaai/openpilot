@@ -8,11 +8,13 @@ from openpilot.cereal.messaging.tests.test_messaging import events, random_sock,
                                                   random_bytes, random_carstate, assert_carstate, \
                                                   zmq_sleep
 from openpilot.cereal.services import SERVICE_LIST
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 
-class TestSubMaster:
+class TestSubMaster(OpenpilotTestCase):
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     # ZMQ pub socket takes too long to die
     # sleep to prevent multiple publishers error between tests
     zmq_sleep(3)
@@ -124,9 +126,10 @@ class TestSubMaster:
     assert sm[sock].vEgo == n
 
 
-class TestPubMaster:
+class TestPubMaster(OpenpilotTestCase):
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     # ZMQ pub socket takes too long to die
     # sleep to prevent multiple publishers error between tests
     zmq_sleep(3)

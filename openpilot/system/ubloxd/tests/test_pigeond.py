@@ -1,19 +1,20 @@
-import pytest
 import time
+import unittest
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
-from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.common.hardware import TICI
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, with_processes
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware.tici.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS
-@pytest.mark.tici
-class TestPigeond:
+@unittest.skipUnless(TICI, "requires device")
+class TestPigeond(OpenpilotTestCase):
 
-  def teardown_method(self):
+  def tearDown(self):
     managed_processes['pigeond'].stop()
 
   @with_processes(['pigeond'])

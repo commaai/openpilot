@@ -1,7 +1,7 @@
 import math
 import json
 import os
-import pytest
+import unittest
 import shutil
 import subprocess
 import time
@@ -17,7 +17,8 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
-from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
+from openpilot.common.hardware import TICI
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, set_params_enabled, release_only
 from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
@@ -102,12 +103,13 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
-@pytest.mark.tici
-@pytest.mark.skip_tici_setup
-class TestOnroad:
+@unittest.skipUnless(TICI, "requires device")
+class TestOnroad(OpenpilotTestCase):
+  SKIP_TICI_SETUP = True
 
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
@@ -166,7 +168,7 @@ class TestOnroad:
     for m in cls.lr:
       cls.msgs[m.which()].append(m)
 
-  def test_service_frequencies(self, subtests):
+  def test_service_frequencies(self):
     for s, msgs in self.msgs.items():
       if s in ('initData', 'sentinel'):
         continue
@@ -176,7 +178,7 @@ class TestOnroad:
         continue
 
       duration = TEST_DURATION - 5.0  # subtract some selfdrived initializing time
-      with subtests.test(service=s):
+      with self.subTest(service=s):
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(duration*0.8))
 
   def test_manager_starting_time(self):
@@ -193,13 +195,13 @@ class TestOnroad:
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     assert len(big_logs) == 0, f"Log spam: {big_logs}"
 
-  def test_log_sizes(self, subtests):
+  def test_log_sizes(self):
     # TODO: this isn't super stable between different devices
     for f, sz in self.log_sizes.items():
       rate = LOGS_SIZE[f.name]/60.
       minn = rate * TEST_DURATION * 0.5
       maxx = rate * TEST_DURATION * 1.5
-      with subtests.test(file=f.name):
+      with self.subTest(file=f.name):
         assert minn < sz <  maxx
 
   def test_ui_timings(self):
@@ -226,7 +228,7 @@ class TestOnroad:
     veryslow = [x for x in ts if x > 40.]
     assert len(veryslow) < 5, f"Too many slow frame draw times: {veryslow}"
 
-  def test_cpu_usage(self, subtests):
+  def test_cpu_usage(self):
     print("\n------------------------------------------------")
     print("------------------ CPU Usage -------------------")
     print("------------------------------------------------")
@@ -266,12 +268,12 @@ class TestOnroad:
     # Ensure there's no missing procs
     all_procs = {p.name for p in self.msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
     for p in all_procs:
-      with subtests.test(proc=p):
+      with self.subTest(proc=p):
         assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
 
     # total CPU check
     procs_tot = sum([(max(x) if isinstance(x, tuple) else x) for x in PROCS.values()])
-    with subtests.test(name="total CPU"):
+    with self.subTest(name="total CPU"):
       assert procs_tot < MAX_TOTAL_CPU, "Total CPU budget exceeded"
     print("------------------------------------------------")
     print(f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left")
@@ -297,7 +299,7 @@ class TestOnroad:
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
-  def test_camera_frame_timings(self, subtests):
+  def test_camera_frame_timings(self):
     # test timing within a single camera
     result = "\n"
     result += "------------------------------------------------\n"
@@ -310,19 +312,19 @@ class TestOnroad:
       result += f"{name} sof delta vs 50ms: min  {min(d50):.2f}ms\n"
       result += f"{name} sof delta vs 50ms: max  {max(d50):.2f}ms\n"
       result += f"{name} sof delta vs 50ms: mean {d50.mean():.2f}ms\n"
-      with subtests.test(camera=name):
+      with self.subTest(camera=name):
         assert max(d50) < 5.0, f"high SOF delta vs 50ms: {max(d50)}"
     result += "------------------------------------------------\n"
     print(result)
 
-  def test_camera_sync(self, subtests):
+  def test_camera_sync(self):
     cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
     encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
     for cams in (cam_states, encode_cams):
-      with subtests.test(cams=cams):
+      with self.subTest(cams=cams):
         # sanity checks within a single cam
         for cam in cams:
-          with subtests.test(test="frame_skips", camera=cam):
+          with self.subTest(test="frame_skips", camera=cam):
             assert set(np.diff(self.ts[cam]['frameId'])) == {1, }, "Frame ID skips"
 
             # EOF > SOF
@@ -352,13 +354,13 @@ class TestOnroad:
           offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
           assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
 
-  def test_camera_encoder_matches(self, subtests):
+  def test_camera_encoder_matches(self):
     # sanity check that the frame metadata is consistent with the encoded frames
     pairs = [('roadCameraState', 'roadEncodeIdx'),
              ('wideRoadCameraState', 'wideRoadEncodeIdx'),
              ('driverCameraState', 'driverEncodeIdx')]
     for cam, enc in pairs:
-      with subtests.test(camera=cam, encoder=enc):
+      with self.subTest(camera=cam, encoder=enc):
         cam_frames = {fid: (sof, eof) for fid, sof, eof in zip(
           self.ts[cam]['frameId'],
           self.ts[cam]['timestampSof'],
@@ -371,7 +373,7 @@ class TestOnroad:
           assert enc_sof == cam_sof, f"SOF mismatch: frameId={fid}, enc_sof={enc_sof}, cam_sof={cam_sof}"
           assert enc_eof == cam_eof, f"EOF mismatch: frameId={fid}, enc_eof={enc_eof}, cam_eof={cam_eof}"
 
-  def test_model_execution_timings(self, subtests):
+  def test_model_execution_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
@@ -389,7 +391,7 @@ class TestOnroad:
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
-      with subtests.test(s):
+      with self.subTest(s):
         assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
         assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
     result += "------------------------------------------------\n"

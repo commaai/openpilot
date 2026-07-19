@@ -1,12 +1,14 @@
 import os
 import time
-import pytest
+import unittest
 import numpy as np
 
 from openpilot.cereal.services import SERVICE_LIST
+from openpilot.common.hardware import TICI
+from openpilot.common.parameterized import parameterized
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 from openpilot.system.camerad.snapshot import get_snapshots
-from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, collect_logs, log_collector, processes_context
 
 TEST_TIMESPAN = 10
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
@@ -38,51 +40,45 @@ def run_and_log(procs, services, duration):
   with processes_context(procs):
     return collect_logs(services, duration)
 
-@pytest.fixture(scope="module")
-def _camera_session():
-  """Single camerad session that collects logs and exposure data.
-     Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
-  with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
-    exposure = {cam: [] for cam in CAMERAS}
-    start = time.monotonic()
-    while time.monotonic() - start < MAX_TEST_TIME:
-      rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
-      wpic, _ = get_snapshots(frame="wideRoadCameraState")
-      for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
-        exposure[cam].append(_exposure_stats(img))
+@unittest.skipUnless(TICI, "requires camera hardware")
+class TestCamerad(OpenpilotTestCase):
+  @classmethod
+  def setUpClass(cls):
+    """Single camerad session that collects logs and exposure data.
+       Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
+    super().setUpClass()
+    with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
+      exposure = {cam: [] for cam in CAMERAS}
+      start = time.monotonic()
+      while time.monotonic() - start < MAX_TEST_TIME:
+        rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
+        wpic, _ = get_snapshots(frame="wideRoadCameraState")
+        for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
+          exposure[cam].append(_exposure_stats(img))
 
-      if time.monotonic() - start >= TEST_TIMESPAN and _exposure_stable(exposure):
-        break
+        if time.monotonic() - start >= TEST_TIMESPAN and _exposure_stable(exposure):
+          break
 
-    elapsed = time.monotonic() - start
+      elapsed = time.monotonic() - start
 
-  with lock:
-    ts = msgs_to_time_series(raw_logs)
+    with lock:
+      ts = msgs_to_time_series(raw_logs)
 
-  for cam in CAMERAS:
-    expected_frames = SERVICE_LIST[cam].frequency * elapsed
-    cnt = len(ts[cam]['t'])
-    assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=}, got {cnt}"
+    for cam in CAMERAS:
+      expected_frames = SERVICE_LIST[cam].frequency * elapsed
+      cnt = len(ts[cam]['t'])
+      assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=}, got {cnt}"
 
-    dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/SERVICE_LIST[cam].frequency)
-    assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
+      dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/SERVICE_LIST[cam].frequency)
+      assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
 
-  return ts, exposure
+    cls.logs = ts
+    cls.exposure_data = exposure
 
-@pytest.fixture(scope="module")
-def logs(_camera_session):
-  return _camera_session[0]
-
-@pytest.fixture(scope="module")
-def exposure_data(_camera_session):
-  return _camera_session[1]
-
-@pytest.mark.tici
-class TestCamerad:
-  @pytest.mark.parametrize("cam", CAMERAS)
-  def test_camera_exposure(self, exposure_data, cam):
+  @parameterized.expand(CAMERAS)
+  def test_camera_exposure(self, cam):
     lo, hi = EXPOSURE_RANGE
-    checks = exposure_data[cam]
+    checks = self.exposure_data[cam]
     assert len(checks) >= EXPOSURE_STABLE_COUNT, f"{cam}: only got {len(checks)} samples"
 
     # check that exposure converges into the valid range
@@ -96,15 +92,17 @@ class TestCamerad:
     for i, (median, mean) in enumerate(checks):
       ok = _in_range(median, mean)
       if in_range and not ok:
-        pytest.fail(f"{cam}: exposure regressed on sample {i+1} " +
-                    f"(median={median:.4f}, mean={mean:.4f}, expected: ({lo}, {hi}))")
+        self.fail(f"{cam}: exposure regressed on sample {i+1} " +
+                  f"(median={median:.4f}, mean={mean:.4f}, expected: ({lo}, {hi}))")
       in_range = ok
 
-  def test_frame_skips(self, logs):
+  def test_frame_skips(self):
+    logs = self.logs
     for c in CAMERAS:
       assert set(np.diff(logs[c]['frameId'])) == {1, }, f"{c} has frame skips"
 
-  def test_frame_sync(self, logs):
+  def test_frame_sync(self):
+    logs = self.logs
     SYNCED_CAMS = ('roadCameraState', 'wideRoadCameraState')
     n = range(len(logs['roadCameraState']['t'][:-10]))
 
@@ -122,7 +120,8 @@ class TestCamerad:
       offset_ms = abs(logs['driverCameraState']['timestampSof'][i] - logs['roadCameraState']['timestampSof'][i]) / 1e6
       assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {i}: {offset_ms:.1f}ms (expected ~25ms)"
 
-  def test_sanity_checks(self, logs):
+  def test_sanity_checks(self):
+    logs = self.logs
     self._sanity_checks(logs)
 
   def _sanity_checks(self, ts):

@@ -1,11 +1,12 @@
 import os
-import pytest
 import signal
 import time
+import unittest
 
 from opendbc.car.structs import car
 from openpilot.common.params import Params
 import openpilot.system.manager.manager as manager
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes, procs
 from openpilot.common.hardware import HARDWARE
@@ -16,15 +17,16 @@ MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
-class TestManager:
-  def setup_method(self):
+class TestManager(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
     HARDWARE.set_power_save(False)
 
     # ensure clean CarParams
     params = Params()
     params.clear_all()
 
-  def teardown_method(self):
+  def tearDown(self):
     manager.manager_cleanup()
 
   def test_duplicate_procs(self):
@@ -47,8 +49,8 @@ class TestManager:
     assert params.get("OpenpilotEnabledToggle")
     assert params.get("RouteCount") == 0
 
-  @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
-  def test_clean_exit(self, subtests):
+  @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
+  def test_clean_exit(self):
     """
       Ensure all processes exit cleanly when stopped.
     """
@@ -61,7 +63,7 @@ class TestManager:
     time.sleep(10)
 
     for p in procs:
-      with subtests.test(proc=p.name):
+      with self.subTest(proc=p.name):
         state = p.get_process_state_msg()
         assert state.running, f"{p.name} not running"
         exit_code = p.stop(retry=False)

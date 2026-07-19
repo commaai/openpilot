@@ -1,13 +1,15 @@
-import pytest
+import unittest
+
 import requests
 from opendbc.car.fingerprints import MIGRATION
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.tools.lib.comma_car_segments import get_comma_car_segments_database, get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import SegmentRange
 
 
-@pytest.mark.skip(reason="huggingface is flaky, run this test manually to check for issues")
-class TestCommaCarSegments:
+@unittest.skip("huggingface is flaky, run this test manually to check for issues")
+class TestCommaCarSegments(OpenpilotTestCase):
   def test_database(self):
     database = get_comma_car_segments_database()
 

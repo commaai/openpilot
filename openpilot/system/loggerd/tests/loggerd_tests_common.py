@@ -7,6 +7,7 @@ import openpilot.system.loggerd.deleter as deleter
 import openpilot.system.loggerd.uploader as uploader
 from openpilot.common.params import Params
 from openpilot.common.hardware.hw import Paths
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.loggerd.xattr_cache import setxattr
 
 
@@ -53,7 +54,7 @@ class MockApiIgnore:
   def get_token(self):
     return "fake-token"
 
-class UploaderTestCase:
+class UploaderTestCase(OpenpilotTestCase):
   f_type = "UNKNOWN"
 
   root: Path
@@ -65,7 +66,8 @@ class UploaderTestCase:
   def set_ignore(self):
     uploader.Api = MockApiIgnore  # ty: ignore[invalid-assignment]  # test double
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     uploader.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     uploader.fake_upload = True
     uploader.force_wifi = True

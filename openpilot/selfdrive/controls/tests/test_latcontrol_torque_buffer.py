@@ -7,6 +7,7 @@ from opendbc.car.toyota.values import CAR as TOYOTA
 from opendbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque, LAT_ACCEL_REQUEST_BUFFER_SECONDS
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 def get_controller(car_name):
   CarInterface = interfaces[car_name]
@@ -16,7 +17,7 @@ def get_controller(car_name):
   controller = LatControlTorque(CP.as_reader(), CI, DT_CTRL)
   return controller, VM
 
-class TestLatControlTorqueBuffer:
+class TestLatControlTorqueBuffer(OpenpilotTestCase):
 
   @parameterized.expand([(TOYOTA.TOYOTA_COROLLA_TSS2,)])
   def test_request_buffer_consistency(self, car_name):

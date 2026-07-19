@@ -1,23 +1,26 @@
 import os
 import subprocess
 import time
-import pytest
+import unittest
 
 from multiprocessing import Queue
 
 from openpilot.cereal import messaging
 from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
 
-class TestSimBridgeBase:
+class TestSimBridgeBase(OpenpilotTestCase):
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     if cls is TestSimBridgeBase:
-      raise pytest.skip("Don't run this base class, run test_metadrive_bridge.py instead")
+      raise unittest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     self.processes = []
 
   def test_driving(self):
@@ -83,7 +86,7 @@ class TestSimBridgeBase:
         break
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
-  def teardown_method(self):
+  def tearDown(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
       p.terminate()

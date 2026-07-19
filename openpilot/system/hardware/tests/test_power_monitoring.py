@@ -1,6 +1,7 @@
-import pytest
+from unittest import mock
 
 from openpilot.common.params import Params
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.hardware.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                 CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
 
@@ -15,20 +16,17 @@ TEST_DURATION_S = 50
 GOOD_VOLTAGE = 12 * 1e3
 VOLTAGE_BELOW_PAUSE_CHARGING = (VBATT_PAUSE_CHARGING - 1) * 1e3
 
-def pm_patch(mocker, name, value, constant=False):
+def pm_patch(test, name, value, constant=False):
   if constant:
-    mocker.patch(f"openpilot.system.hardware.power_monitoring.{name}", value)
+    test.enterContext(mock.patch(f"openpilot.system.hardware.power_monitoring.{name}", value))
   else:
-    mocker.patch(f"openpilot.system.hardware.power_monitoring.{name}", return_value=value)
+    test.enterContext(mock.patch(f"openpilot.system.hardware.power_monitoring.{name}", return_value=value))
 
 
-@pytest.fixture(autouse=True)
-def mock_time(mocker):
-  mocker.patch("time.monotonic", mock_time_monotonic)
-
-
-class TestPowerMonitoring:
-  def setup_method(self):
+class TestPowerMonitoring(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
+    self.enterContext(mock.patch("time.monotonic", mock_time_monotonic))
     self.params = Params()
 
   # Test to see that it doesn't do anything when pandaState is None
@@ -47,9 +45,9 @@ class TestPowerMonitoring:
     assert pm.get_power_used() == 0
 
   # Test to see that it integrates with discharging battery
-  def test_offroad_integration_discharging(self, mocker):
+  def test_offroad_integration_discharging(self):
     POWER_DRAW = 4
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     for _ in range(TEST_DURATION_S + 1):
       pm.calculate(GOOD_VOLTAGE, False)
@@ -57,9 +55,9 @@ class TestPowerMonitoring:
     assert abs(pm.get_power_used() - expected_power_usage) < 10
 
   # Test to check positive integration of car_battery_capacity
-  def test_car_battery_integration_onroad(self, mocker):
+  def test_car_battery_integration_onroad(self):
     POWER_DRAW = 4
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = 0
     for _ in range(TEST_DURATION_S + 1):
@@ -68,9 +66,9 @@ class TestPowerMonitoring:
     assert abs(pm.get_car_battery_capacity() - expected_capacity) < 10
 
   # Test to check positive integration upper limit
-  def test_car_battery_integration_upper_limit(self, mocker):
+  def test_car_battery_integration_upper_limit(self):
     POWER_DRAW = 4
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh - 1000
     for _ in range(TEST_DURATION_S + 1):
@@ -79,9 +77,9 @@ class TestPowerMonitoring:
     assert abs(pm.get_car_battery_capacity() - estimated_capacity) < 10
 
   # Test to check negative integration of car_battery_capacity
-  def test_car_battery_integration_offroad(self, mocker):
+  def test_car_battery_integration_offroad(self):
     POWER_DRAW = 4
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     for _ in range(TEST_DURATION_S + 1):
@@ -90,9 +88,9 @@ class TestPowerMonitoring:
     assert abs(pm.get_car_battery_capacity() - expected_capacity) < 10
 
   # Test to check negative integration lower limit
-  def test_car_battery_integration_lower_limit(self, mocker):
+  def test_car_battery_integration_lower_limit(self):
     POWER_DRAW = 4
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = 1000
     for _ in range(TEST_DURATION_S + 1):
@@ -101,11 +99,11 @@ class TestPowerMonitoring:
     assert abs(pm.get_car_battery_capacity() - estimated_capacity) < 10
 
   # Test to check policy of stopping charging after MAX_TIME_OFFROAD_S
-  def test_max_time_offroad(self, mocker):
+  def test_max_time_offroad(self):
     MOCKED_MAX_OFFROAD_TIME = 3600
     POWER_DRAW = 0 # To stop shutting down for other reasons
-    pm_patch(mocker, "MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True)
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     start_time = ssb
@@ -116,12 +114,12 @@ class TestPowerMonitoring:
         assert not pm.should_shutdown(ignition, True, start_time, False)
     assert pm.should_shutdown(ignition, True, start_time, False)
 
-  def test_car_voltage(self, mocker):
+  def test_car_voltage(self):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 350
     VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S = 50
-    pm_patch(mocker, "VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S, constant=True)
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S, constant=True)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     ignition = False
@@ -136,11 +134,11 @@ class TestPowerMonitoring:
     assert pm.should_shutdown(ignition, True, start_time, True)
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
-  def test_disable_power_down(self, mocker):
+  def test_disable_power_down(self):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
     self.params.put_bool("DisablePowerDown", True, block=True)
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     ignition = False
@@ -151,10 +149,10 @@ class TestPowerMonitoring:
     assert not pm.should_shutdown(ignition, True, ssb, False)
 
   # Test to check policy of not stopping charging when ignition
-  def test_ignition(self, mocker):
+  def test_ignition(self):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     ignition = True
@@ -165,10 +163,10 @@ class TestPowerMonitoring:
     assert not pm.should_shutdown(ignition, True, ssb, False)
 
   # Test to check policy of not stopping charging when harness is not connected
-  def test_harness_connection(self, mocker):
+  def test_harness_connection(self):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
+    pm_patch(self, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
 

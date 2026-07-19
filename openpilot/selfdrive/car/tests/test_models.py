@@ -1,12 +1,12 @@
 import time
 import os
-import pytest
 import random
 import unittest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from openpilot.common.parameterized import parameterized_class
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, slow
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
@@ -66,9 +66,9 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   return test_cases
 
 
-@pytest.mark.slow
-@pytest.mark.shared_download_cache
-class TestCarModelBase(unittest.TestCase):
+@slow
+class TestCarModelBase(OpenpilotTestCase):
+  SHARED_DOWNLOAD_CACHE = True
   platform: Platform | None = None
   test_route: CarTestRoute | None = None
 
@@ -142,6 +142,7 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    super().setUpClass()
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
@@ -168,6 +169,7 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
+    super().setUp()
     self.CI = self.CarInterface(self.CP.copy())
     assert self.CI
 
@@ -302,8 +304,6 @@ class TestCarModelBase(unittest.TestCase):
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
     test_car_controller(CC.as_reader())
 
-  # Skip stdout/stderr capture with pytest, causes elevated memory usage
-  @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
@@ -471,7 +471,6 @@ class TestCarModelBase(unittest.TestCase):
 
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
-@pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
 

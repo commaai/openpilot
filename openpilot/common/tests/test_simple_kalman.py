@@ -1,8 +1,10 @@
 from openpilot.common.simple_kalman import KF1D
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 
-class TestSimpleKalman:
-  def setup_method(self):
+class TestSimpleKalman(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
     dt = 0.01
     x0_0 = 0.0
     x1_0 = 0.0

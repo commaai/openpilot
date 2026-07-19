@@ -1,20 +1,23 @@
-import pytest
 import time
 import subprocess
+import unittest
 
 from panda import Panda
 from openpilot.common.hardware import TICI, HARDWARE
 from openpilot.common.hardware.tici.amplifier import Amplifier
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 
-class TestAmplifier:
+class TestAmplifier(OpenpilotTestCase):
 
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     if not TICI:
-      pytest.skip()
+      raise unittest.SkipTest("requires device")
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     # clear dmesg
     subprocess.check_call("sudo dmesg -C", shell=True)
 
@@ -22,7 +25,7 @@ class TestAmplifier:
     Panda.wait_for_panda(None, 30)
     self.panda = Panda()
 
-  def teardown_method(self):
+  def tearDown(self):
     HARDWARE.reset_internal_panda()
 
   def _check_for_i2c_errors(self, expected):
@@ -65,4 +68,4 @@ class TestAmplifier:
       if self._check_for_i2c_errors(True):
         break
     else:
-      pytest.fail("didn't hit any i2c errors")
+      self.fail("didn't hit any i2c errors")

@@ -1,21 +1,22 @@
 import os
-import pytest
 import time
+import unittest
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.common.hardware import HARDWARE
+from openpilot.common.hardware import HARDWARE, TICI
 from openpilot.common.hardware.tici.pins import GPIO
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-@pytest.mark.tici
-class TestPandad:
-  def teardown_method(self):
+@unittest.skipUnless(TICI, "requires device")
+class TestPandad(OpenpilotTestCase):
+  def tearDown(self):
     managed_processes['pandad'].stop()
 
   def _run_test(self, timeout=30) -> float:

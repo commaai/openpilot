@@ -5,9 +5,10 @@ from openpilot.common.parameterized import parameterized
 
 import openpilot.cereal.services as services
 from openpilot.cereal.services import SERVICE_LIST
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 
-class TestServices:
+class TestServices(OpenpilotTestCase):
 
   @parameterized.expand(SERVICE_LIST.keys())
   def test_services(self, s):

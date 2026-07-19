@@ -1,5 +1,5 @@
-import pytest
 from functools import wraps
+from unittest import mock
 import json
 import multiprocessing
 import os
@@ -21,7 +21,8 @@ from openpilot.common.timeout import Timeout
 from openpilot.system.athena import athenad
 from openpilot.system.athena.athenad import MAX_RETRY_COUNT, UPLOAD_SESS, dispatcher
 from openpilot.system.athena.tests.helpers import HTTPRequestHandler, MockWebsocket, MockApi, EchoSocket
-from openpilot.selfdrive.test.helpers import http_server_context
+from openpilot.common.parameterized import parameterized
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, http_server_context
 from openpilot.common.hardware.hw import Paths
 
 
@@ -47,23 +48,18 @@ def with_upload_handler(func):
       thread.join()
   return wrapper
 
-@pytest.fixture
-def mock_create_connection(mocker):
-    return mocker.patch('openpilot.system.athena.athenad.create_connection')
-
-@pytest.fixture
-def host():
-  with http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server) as (host, port):
-    yield f"http://{host}:{port}"
-
-class TestAthenadMethods:
+class TestAthenadMethods(OpenpilotTestCase):
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     cls.SOCKET_PORT = 45454
     athenad.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
+    host, port = self.enterContext(http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server))
+    self.host = f"http://{host}:{port}"
     self.default_params = {
       "DongleId": "0000000000000000",
       "GithubSshKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
@@ -111,7 +107,7 @@ class TestAthenadMethods:
     assert dispatcher["echo"]("bob") == "bob"
 
   def test_get_message(self):
-    with pytest.raises(TimeoutError) as _:
+    with self.assertRaises(TimeoutError):
       dispatcher["getMessage"]("controlsState")
 
     end_event = multiprocessing.Event()
@@ -184,21 +180,23 @@ class TestAthenadMethods:
     if fn.endswith('.zst'):
       assert athenad.strip_zst_extension(fn) == fn[:-4]
 
-  @pytest.mark.parametrize("compress", [True, False])
-  def test_do_upload(self, host, compress):
+  @parameterized.expand([(True,), (False,)])
+  def test_do_upload(self, compress):
+    host = self.host
     # random bytes to ensure rather large object post-compression
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
     upload_fn = fn + ('.zst' if compress else '')
     item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
-    with pytest.raises(requests.exceptions.ConnectionError):
+    with self.assertRaises(requests.exceptions.ConnectionError):
       athenad._do_upload(item)
 
     item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
     resp = athenad._do_upload(item)
     assert resp.status_code == 201
 
-  def test_upload_file_to_url(self, host):
+  def test_upload_file_to_url(self):
+    host = self.host
     fn = self._create_file('qlog.zst')
 
     resp = dispatcher["uploadFileToUrl"]("qlog.zst", f"{host}/qlog.zst", {})
@@ -208,7 +206,8 @@ class TestAthenadMethods:
     assert resp['items'][0].get('id') is not None
     assert athenad.upload_queue.qsize() == 1
 
-  def test_upload_file_to_url_duplicate(self, host):
+  def test_upload_file_to_url_duplicate(self):
+    host = self.host
     self._create_file('qlog.zst')
 
     url1 = f"{host}/qlog.zst?sig=sig1"
@@ -219,12 +218,13 @@ class TestAthenadMethods:
     resp = dispatcher["uploadFileToUrl"]("qlog.zst", url2, {})
     assert resp == {'enqueued': 0, 'items': []}
 
-  def test_upload_file_to_url_does_not_exist(self, host):
+  def test_upload_file_to_url_does_not_exist(self):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.zst", "http://localhost:1238", {})
     assert not_exists_resp == {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.zst']}
 
   @with_upload_handler
-  def test_upload_handler(self, host):
+  def test_upload_handler(self):
+    host = self.host
     fn = self._create_file('qlog.zst')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
 
@@ -236,10 +236,11 @@ class TestAthenadMethods:
     # TODO: also check that end_event and metered network raises AbortTransferException
     assert athenad.upload_queue.qsize() == 0
 
-  @pytest.mark.parametrize("status,retry", [(500,True), (412,False)])
+  @parameterized.expand([(500, True), (412, False)])
   @with_upload_handler
-  def test_upload_handler_retry(self, mocker, host, status, retry):
-    mock_put = mocker.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put')
+  def test_upload_handler_retry(self, status, retry):
+    host = self.host
+    mock_put = self.enterContext(mock.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put'))
     mock_put.return_value.__enter__.return_value.status_code = status
     fn = self._create_file('qlog.zst')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
@@ -310,7 +311,8 @@ class TestAthenadMethods:
     assert len(items) == 0
 
   @with_upload_handler
-  def test_list_upload_queue_current(self, host: str):
+  def test_list_upload_queue_current(self):
+    host = self.host
     fn = self._create_file('qlog.zst')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
 
@@ -377,7 +379,8 @@ class TestAthenadMethods:
     assert athenad.upload_queue.qsize() == 1
     assert asdict(athenad.upload_queue.queue[-1]) == asdict(item1)
 
-  def test_start_local_proxy(self, mock_create_connection):
+  def test_start_local_proxy(self):
+    mock_create_connection = self.enterContext(mock.patch('openpilot.system.athena.athenad.create_connection'))
     end_event = threading.Event()
 
     ws_recv = queue.Queue()

@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
-import pytest
 import time
+import unittest
 import numpy as np
 from dataclasses import dataclass
 from openpilot.common.utils import tabulate
@@ -10,7 +10,9 @@ from openpilot.cereal.services import SERVICE_LIST
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
+from openpilot.common.hardware import TICI
 from openpilot.common.hardware.tici.power_monitor import get_power
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
 
@@ -38,13 +40,14 @@ PROCS = [
 ]
 
 
-@pytest.mark.tici
-class TestPowerDraw:
+@unittest.skipUnless(TICI, "requires device")
+class TestPowerDraw(OpenpilotTestCase):
 
-  def setup_method(self):
+  def setUp(self):
+    super().setUp()
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
 
-  def teardown_method(self):
+  def tearDown(self):
     manager_cleanup()
 
   def get_expected_messages(self, proc):
@@ -93,7 +96,7 @@ class TestPowerDraw:
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
 
   @mock_messages(['livePose'])
-  def test_camera_procs(self, subtests):
+  def test_camera_procs(self):
     baseline = get_power()
 
     prev = baseline
@@ -118,7 +121,7 @@ class TestPowerDraw:
       expected = proc.power
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
       tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
-      with subtests.test(proc=proc.name):
+      with self.subTest(proc=proc.name):
         assert self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs"
         assert self.valid_power_draw(proc, cur), f"expected {expected:.2f}W, got {cur:.2f}W"
     print(tabulate(tab))

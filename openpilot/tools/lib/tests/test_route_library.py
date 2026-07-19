@@ -1,8 +1,9 @@
 from collections import namedtuple
 
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.tools.lib.route import SegmentName
 
-class TestRouteLibrary:
+class TestRouteLibrary(OpenpilotTestCase):
   def test_segment_name_formats(self):
     Case = namedtuple('Case', ['input', 'expected_route', 'expected_segment_num', 'expected_data_dir'])
 

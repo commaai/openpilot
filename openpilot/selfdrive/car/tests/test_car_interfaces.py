@@ -2,6 +2,7 @@ import os
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from openpilot.common.parameterized import parameterized
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 
 from opendbc.car.structs import car
 from opendbc.car import DT_CTRL
@@ -18,7 +19,7 @@ from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
 
-class TestCarInterfaces:
+class TestCarInterfaces(OpenpilotTestCase):
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK])

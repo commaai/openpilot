@@ -1,28 +1,30 @@
 import os
 import time
 import numpy as np
-import pytest
 import random
+import unittest
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
+from openpilot.common.hardware import TICI
 from openpilot.common.timeout import Timeout
-from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, with_processes
 from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, send_random_can_messages
 
 JUNGLE_SPAM = "JUNGLE_SPAM" in os.environ
 
-@pytest.mark.tici
-class TestBoarddSpi:
+@unittest.skipUnless(TICI, "requires device")
+class TestBoarddSpi(OpenpilotTestCase):
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     os.environ['STARTED'] = '1'
     os.environ['SPI_ERR_PROB'] = '0.001'
     if not JUNGLE_SPAM:
       os.environ['BOARDD_LOOPBACK'] = '1'
 
   @with_processes(['pandad'])
-  def test_spi_corruption(self, subtests):
+  def test_spi_corruption(self):
     setup_pandad()
 
     sendcan = messaging.pub_sock('sendcan')
@@ -95,13 +97,13 @@ class TestBoarddSpi:
     for service, times in ts.items():
       dts = np.diff(times)/1e6
       print(service.ljust(17), f"{np.mean(dts):7.2f} {np.min(dts):7.2f} {np.max(dts):7.2f}")
-      with subtests.test(msg="timing check", service=service):
+      with self.subTest(msg="timing check", service=service):
         edt = 1e3 / SERVICE_LIST[service].frequency
         assert edt*0.9 < np.mean(dts) < edt*1.1
         assert np.max(dts) < edt*8
         assert np.min(dts) < edt
         assert len(dts) >= ((et-0.5)*SERVICE_LIST[service].frequency*0.8)
 
-    with subtests.test(msg="CAN traffic"):
+    with self.subTest(msg="CAN traffic"):
       print(f"Sent {total_sent_count} CAN messages, got {total_recv_count} back. {total_recv_count/(total_sent_count+1e-4):.2%} received")
       assert total_recv_count > 20

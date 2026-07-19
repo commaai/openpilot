@@ -3,13 +3,15 @@ import os
 import time
 
 import openpilot.cereal.messaging as messaging
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog, ipchandler
 
 
-class TestLogmessaged:
-  def setup_method(self):
+class TestLogmessaged(OpenpilotTestCase):
+  def setUp(self):
+    super().setUp()
     # clear the IPC buffer in case some other tests used cloudlog and filled it
     ipchandler.close()
     ipchandler.connect()
@@ -23,7 +25,7 @@ class TestLogmessaged:
     messaging.drain_sock(self.sock)
     messaging.drain_sock(self.error_sock)
 
-  def teardown_method(self):
+  def tearDown(self):
     del self.sock
     del self.error_sock
     managed_processes['logmessaged'].stop(block=True)

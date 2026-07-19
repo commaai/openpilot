@@ -2,7 +2,7 @@ import os
 import copy
 import random
 import time
-import pytest
+import unittest
 from collections import defaultdict
 from pprint import pprint
 
@@ -13,8 +13,9 @@ from opendbc.car.can_definitions import CanData
 from openpilot.common.utils import retry
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
+from openpilot.common.hardware import TICI
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
-from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.test.helpers import OpenpilotTestCase, with_processes
 
 
 def publish_device_state(pm, started):
@@ -69,10 +70,11 @@ def send_random_can_messages(sendcan, count):
   return sent_msgs
 
 
-@pytest.mark.tici
-class TestBoarddLoopback:
+@unittest.skipUnless(TICI, "requires device")
+class TestBoarddLoopback(OpenpilotTestCase):
   @classmethod
-  def setup_class(cls):
+  def setUpClass(cls):
+    super().setUpClass()
     os.environ['STARTED'] = '1'
     os.environ['BOARDD_LOOPBACK'] = '1'
 
