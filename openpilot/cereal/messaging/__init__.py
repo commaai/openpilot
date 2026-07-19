@@ -8,7 +8,7 @@ import os
 import capnp
 import time
 
-from typing import Optional, Union
+from typing import Union
 
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
@@ -23,8 +23,8 @@ def pub_sock(endpoint: str) -> PubSocket:
   return msgq.pub_sock(endpoint, segment_size)
 
 
-def sub_sock(endpoint: str, poller: Optional[Poller] = None, addr: str = "127.0.0.1",
-             conflate: bool = False, timeout: Optional[int] = None) -> SubSocket:
+def sub_sock(endpoint: str, poller: Poller | None = None, addr: str = "127.0.0.1",
+             conflate: bool = False, timeout: int | None = None) -> SubSocket:
   service = SERVICE_LIST.get(endpoint)
   segment_size = service.queue_size if service else 0
   return msgq.sub_sock(endpoint, poller=poller, addr=addr, conflate=conflate,
@@ -40,7 +40,7 @@ def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event
     return msg
 
 
-def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
+def new_message(service: str | None, size: int | None = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
   args = {
     'valid': False,
     'logMonoTime': int(time.monotonic() * 1e9),
@@ -62,7 +62,7 @@ def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> list[capnp.lib.ca
 
 
 # TODO: print when we drop packets?
-def recv_sock(sock: SubSocket, wait: bool = False) -> Optional[capnp.lib.capnp._DynamicStructReader]:
+def recv_sock(sock: SubSocket, wait: bool = False) -> capnp.lib.capnp._DynamicStructReader | None:
   """Same as drain sock, but only returns latest message. Consider using conflate instead."""
   dat = None
 
@@ -83,14 +83,14 @@ def recv_sock(sock: SubSocket, wait: bool = False) -> Optional[capnp.lib.capnp._
   return dat
 
 
-def recv_one(sock: SubSocket) -> Optional[capnp.lib.capnp._DynamicStructReader]:
+def recv_one(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader | None:
   dat = sock.receive()
   if dat is not None:
     dat = log_from_bytes(dat)
   return dat
 
 
-def recv_one_or_none(sock: SubSocket) -> Optional[capnp.lib.capnp._DynamicStructReader]:
+def recv_one_or_none(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader | None:
   dat = sock.receive(non_blocking=True)
   if dat is not None:
     dat = log_from_bytes(dat)
@@ -149,9 +149,9 @@ class FrequencyTracker:
 
 
 class SubMaster:
-  def __init__(self, services: list[str], poll: Optional[str] = None,
-               ignore_alive: Optional[list[str]] = None, ignore_avg_freq: Optional[list[str]] = None,
-               ignore_valid: Optional[list[str]] = None, addr: str = "127.0.0.1", frequency: Optional[float] = None):
+  def __init__(self, services: list[str], poll: str | None = None,
+               ignore_alive: list[str] | None = None, ignore_avg_freq: list[str] | None = None,
+               ignore_valid: list[str] | None = None, addr: str = "127.0.0.1", frequency: float | None = None):
     self.frame = -1
     self.services = services
     self.seen = dict.fromkeys(services, False)
@@ -235,16 +235,16 @@ class SubMaster:
       self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
       self.freq_ok[s] = self.freq_tracker[s].valid or self.simulation
 
-  def all_alive(self, service_list: Optional[list[str]] = None) -> bool:
+  def all_alive(self, service_list: list[str] | None = None) -> bool:
     return all(self.alive[s] for s in (service_list or self.services) if s not in self.ignore_alive)
 
-  def all_freq_ok(self, service_list: Optional[list[str]] = None) -> bool:
+  def all_freq_ok(self, service_list: list[str] | None = None) -> bool:
     return all(self.freq_ok[s] for s in (service_list or self.services) if self._check_avg_freq(s))
 
-  def all_valid(self, service_list: Optional[list[str]] = None) -> bool:
+  def all_valid(self, service_list: list[str] | None = None) -> bool:
     return all(self.valid[s] for s in (service_list or self.services) if s not in self.ignore_valid)
 
-  def all_checks(self, service_list: Optional[list[str]] = None) -> bool:
+  def all_checks(self, service_list: list[str] | None = None) -> bool:
     return self.all_alive(service_list) and self.all_freq_ok(service_list) and self.all_valid(service_list)
 
 

@@ -122,8 +122,8 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
     title_texts = []
     for j2, (nm, cl) in enumerate(zip(pl_list, plot_colors[i], strict=False)):
       if j2 > 0:
-        title_texts.append(TextArea(", ", textprops=dict(color="white", fontsize=10)))
-      title_texts.append(TextArea(nm, textprops=dict(color=label_palette[cl], fontsize=10)))
+        title_texts.append(TextArea(", ", textprops={"color": "white", "fontsize": 10}))
+      title_texts.append(TextArea(nm, textprops={"color": label_palette[cl], "fontsize": 10}))
     packed = HPacker(children=title_texts, pad=0, sep=0)
     ab = AnchoredOffsetbox(loc='lower center', child=packed, bbox_to_anchor=(0.5, 1.0),
                            bbox_transform=axs[i].transAxes, frameon=False, pad=0)

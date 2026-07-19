@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from enum import IntEnum
-from typing import Optional
 
 
 # TODO: this should be automatically determined using the capnp schema
@@ -11,7 +10,7 @@ class QueueSize(IntEnum):
 
 
 class Service:
-  def __init__(self, should_log: bool, frequency: float, decimation: Optional[int] = None,
+  def __init__(self, should_log: bool, frequency: float, decimation: int | None = None,
                queue_size: QueueSize = QueueSize.SMALL):
     self.should_log = should_log
     self.frequency = frequency

@@ -163,10 +163,9 @@ lint.select = [
 lint.ignore = [
   "E741",
   "E402",
-  "C408",
   "B027",
   "NPY002",  # new numpy random syntax is worse
-  "UP045", "UP007",  # these don't play nice with raylib atm
+  "UP007",  # this doesn't play nice with raylib atm
 ]
 line-length = 160
 lint.flake8-implicit-str-concat.allow-multiline = false
