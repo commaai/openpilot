@@ -80,7 +80,7 @@ def rebootLowMemoryDevice(String ip) {
     device(ip, "check available memory", '''
 available_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
 if [ "$available_kb" -lt 2200000 ]; then
-  echo "Only ${available_kb} kB available, rebooting before onroad tests"
+    echo "Only ${available_kb} kB available, rebooting before hardware tests"
   sudo systemd-run --on-active=1s reboot
   sleep 10
 fi
@@ -119,7 +119,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
           }
-          if (stageName in ["onroad", "model-replay"]) {
+          if (stageName in ["onroad", "model-replay", "tizi-hardware"]) {
             rebootLowMemoryDevice(device_ip)
           }
           steps.each { item ->
