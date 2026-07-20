@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import socket
 import time
 import threading
 from collections.abc import Callable
@@ -12,6 +14,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.hardware import HARDWARE, PC
+from openpilot.common.file_chunker import get_manifest_path
+from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
 PARAM_UPDATE_TIME = 1 / 5.0
@@ -75,8 +79,15 @@ class UIState:
     self.is_release = self.params.get_bool("IsReleaseBranch")
     self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
-    self.usbgpu: bool = self.params.get_bool("UsbGpuPresent")
-    self.usbgpu_compiled: bool = self.params.get_bool("UsbGpuCompiled")
+    self.usbgpu: bool = usbgpu_present()
+    self.usbgpu_compiled: bool = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+    # kernel uevents tell us when to rescan for the egpu instead of polling sysfs
+    self._uevent_sock = socket.socket(socket.AF_NETLINK, socket.SOCK_DGRAM, 15)  # NETLINK_KOBJECT_UEVENT
+    self._uevent_sock.bind((0, 1))
+    self._uevent_sock.setblocking(False)
+    self._usbgpu_started_prev = False
+    self.usbgpu_active: bool = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_loading: bool = self.params.get_bool("UsbGpuLoading")
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
@@ -203,8 +214,19 @@ class UIState:
     self.is_metric = self.params.get_bool("IsMetric")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
-    self.usbgpu = self.params.get_bool("UsbGpuPresent")
-    self.usbgpu_compiled = self.params.get_bool("UsbGpuCompiled")
+    usb_event = False
+    try:
+      while self._uevent_sock.recv(4096):
+        usb_event = True
+    except BlockingIOError:
+      pass
+    if usb_event or (self._usbgpu_started_prev and not self.started):
+      # latch through a mid-drive unplug so the hud can keep showing BIG red, reality returns offroad
+      self.usbgpu = usbgpu_present() or (self.usbgpu and self.started)
+    self._usbgpu_started_prev = self.started
+    self.usbgpu_compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+    self.usbgpu_active = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_loading = self.params.get_bool("UsbGpuLoading")
 
 
 class Device:
