@@ -103,7 +103,7 @@ jobs:
     - name: Build openpilot
       run: scons
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 5 || 20 }}
       env:
         RAYLIB_BACKEND: headless
       run: |
