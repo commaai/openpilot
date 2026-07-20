@@ -75,12 +75,12 @@ END"""
   }
 }
 
-def rebootLowMemoryDevice(String ip) {
+def recoverDeviceState(String ip) {
   try {
-    device(ip, "check available memory", '''
+    device(ip, "check device state", '''
 available_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
-if [ "$available_kb" -lt 2200000 ]; then
-    echo "Only ${available_kb} kB available, rebooting before hardware tests"
+if [ "$available_kb" -lt 2200000 ] || ! python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null 2>&1; then
+  echo "Device state unhealthy (${available_kb} kB available), rebooting before hardware tests"
   sudo systemd-run --on-active=1s reboot
   sleep 10
 fi
@@ -119,8 +119,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
           }
-          if (stageName in ["onroad", "model-replay", "tizi-hardware"]) {
-            rebootLowMemoryDevice(device_ip)
+          if (stageName in ["onroad", "model-replay", "tizi-hardware", "OX03C10", "OS04C10"]) {
+            recoverDeviceState(device_ip)
           }
           steps.each { item ->
             def name = item[0]
