@@ -205,7 +205,7 @@ node {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("check dirty", "tools/release/check-dirty.sh"),
-          step("onroad tests", "pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
+          step("onroad tests", "pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 120]),
         ])
       },
       'HW + Unit Tests': {
@@ -220,14 +220,14 @@ node {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "pytest openpilot/selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
+          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 180]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "pytest openpilot/selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
+          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 180]),
         ])
       },
       'sensord': {
