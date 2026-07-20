@@ -79,7 +79,7 @@ def rebootLowMemoryDevice(String ip) {
   try {
     device(ip, "check available memory", '''
 available_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
-if [ "$available_kb" -lt 1600000 ]; then
+if [ "$available_kb" -lt 2200000 ]; then
   echo "Only ${available_kb} kB available, rebooting before onroad tests"
   sudo systemd-run --on-active=1s reboot
   sleep 10
