@@ -13,6 +13,7 @@ from collections import namedtuple
 import numpy as np
 
 from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
+from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
 
 def _patch_tinygrad_fetch_fw():
   import hashlib
@@ -310,6 +311,9 @@ if __name__ == "__main__":
   p.add_argument('--output', required=True)
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
+
+  if 'USB+AMD' in os.environ.get('DEV', ''):
+    wait_usbgpu_link()
 
   model_path = read_file_chunked_to_disk(args.onnx)
   model_w, model_h = args.model_size
