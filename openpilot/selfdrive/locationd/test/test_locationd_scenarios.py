@@ -2,6 +2,7 @@ import numpy as np
 from collections import defaultdict
 from enum import Enum
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.locationd.lagd import masked_symmetric_moving_average
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -96,7 +97,7 @@ def run_scenarios(scenario, logs):
   return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
 
 
-class TestLocationdScenarios:
+class TestLocationdScenarios(OpenpilotTestCase):
   """
   Test locationd with different scenarios. In all these scenarios, we expect the following:
     - locationd kalman filter should never go unstable (we care mostly about yaw_rate, roll, gpsOK, inputsOK, sensorsOK)

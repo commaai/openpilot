@@ -1,10 +1,11 @@
 from opendbc.car.structs import car
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState, long_control_state_trans
 
 
 
 
-class TestLongControlStateTransition:
+class TestLongControlStateTransition(OpenpilotTestCase):
 
   def test_stay_stopped(self):
     CP = car.CarParams.new_message()

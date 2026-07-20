@@ -1,10 +1,11 @@
 import os
 from uuid import uuid4
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.utils import atomic_write
 
 
-class TestFileHelpers:
+class TestFileHelpers(OpenpilotTestCase):
   def run_atomic_write_func(self, atomic_write_func):
     path = f"/tmp/tmp{uuid4()}"
     with atomic_write_func(path) as f:

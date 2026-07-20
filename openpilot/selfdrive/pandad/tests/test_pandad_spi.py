@@ -1,9 +1,9 @@
 import os
 import time
 import numpy as np
-import pytest
 import random
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.timeout import Timeout
@@ -12,8 +12,8 @@ from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, 
 
 JUNGLE_SPAM = "JUNGLE_SPAM" in os.environ
 
-@pytest.mark.tici
-class TestBoarddSpi:
+class TestBoarddSpi(OpenpilotTestCase):
+  TICI_TEST = True
   @classmethod
   def setup_class(cls):
     os.environ['STARTED'] = '1'

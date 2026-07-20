@@ -20,7 +20,7 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
+  UNITTEST: python -m unittest_parallel -s openpilot -p test_*.py -t . -j 0 --level class
 
 jobs:
   build_release:
@@ -107,9 +107,9 @@ jobs:
       env:
         RAYLIB_BACKEND: headless
       run: |
-        # Pre-compile Python bytecode so each pytest worker doesn't need to
-        $PYTEST --collect-only -m 'not slow' -qq
-        MAX_EXAMPLES=1 $PYTEST -m 'not slow'
+        # Pre-compile Python bytecode so each worker doesn't need to.
+        python -m compileall -q openpilot
+        MAX_EXAMPLES=1 SKIP_SLOW=1 $UNITTEST
 
   process_replay:
     name: process replay
@@ -179,7 +179,7 @@ jobs:
       timeout-minutes: 4
       env:
         ONNXCPU: 1
-      run: $PYTEST openpilot/selfdrive/test/process_replay/test_regen.py
+      run: python -m unittest openpilot.selfdrive.test.process_replay.test_regen
 
   simulator_driving:
     name: simulator driving
@@ -200,7 +200,7 @@ jobs:
       env:
         # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
         EGL_PLATFORM: surfaceless
-      run: pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+      run: python -m unittest openpilot.tools.sim.tests.test_metadrive_bridge
 
   create_ui_report:
     name: Create UI Report

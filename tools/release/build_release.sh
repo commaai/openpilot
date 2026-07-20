@@ -85,8 +85,8 @@ git commit --amend -m "openpilot v$VERSION"
 
 # Run tests
 cd $BUILD_DIR
-RELEASE=1 pytest -n0 -s openpilot/selfdrive/test/test_onroad.py
-#pytest openpilot/selfdrive/car/tests/test_car_interfaces.py
+RELEASE=1 python -m unittest openpilot.selfdrive.test.test_onroad
+# python -m unittest openpilot.selfdrive.car.tests.test_car_interfaces
 
 echo "[-] pushing release T=$SECONDS"
 REFS=()

@@ -2,6 +2,7 @@ import copy
 import os
 from hypothesis import given, HealthCheck, Phase, settings
 import hypothesis.strategies as st
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log
@@ -17,7 +18,7 @@ NOT_TESTED = ['selfdrived', 'controlsd', 'card', 'plannerd', 'calibrationd', 'dm
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "10"))
 
-class TestFuzzProcesses:
+class TestFuzzProcesses(OpenpilotTestCase):
 
   # TODO: make this faster and increase examples
   @parameterized.expand(TEST_CASES)

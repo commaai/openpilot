@@ -1,10 +1,11 @@
 import os
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.markdown import parse_markdown
 
 
-class TestMarkdown:
+class TestMarkdown(OpenpilotTestCase):
   def test_all_release_notes(self):
     with open(os.path.join(BASEDIR, "RELEASES.md")) as f:
       release_notes = f.read().split("\n\n")

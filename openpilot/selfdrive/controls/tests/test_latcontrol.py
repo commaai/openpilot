@@ -1,3 +1,4 @@
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log
@@ -14,7 +15,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 
 
-class TestLatControl:
+class TestLatControl(OpenpilotTestCase):
 
   @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque),
                          (NISSAN.NISSAN_LEAF, LatControlAngle), (GM.CHEVROLET_BOLT_EUV, LatControlTorque)])

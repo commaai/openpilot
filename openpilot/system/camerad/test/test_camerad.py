@@ -1,8 +1,9 @@
 import os
 import time
-import pytest
 import numpy as np
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 from openpilot.system.camerad.snapshot import get_snapshots
@@ -38,7 +39,6 @@ def run_and_log(procs, services, duration):
   with processes_context(procs):
     return collect_logs(services, duration)
 
-@pytest.fixture(scope="module")
 def _camera_session():
   """Single camerad session that collects logs and exposure data.
      Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
@@ -69,17 +69,15 @@ def _camera_session():
 
   return ts, exposure
 
-@pytest.fixture(scope="module")
 def logs(_camera_session):
   return _camera_session[0]
 
-@pytest.fixture(scope="module")
 def exposure_data(_camera_session):
   return _camera_session[1]
 
-@pytest.mark.tici
-class TestCamerad:
-  @pytest.mark.parametrize("cam", CAMERAS)
+class TestCamerad(OpenpilotTestCase):
+  TICI_TEST = True
+  @parameterized.expand(CAMERAS, names=("cam",))
   def test_camera_exposure(self, exposure_data, cam):
     lo, hi = EXPOSURE_RANGE
     checks = exposure_data[cam]
@@ -96,7 +94,7 @@ class TestCamerad:
     for i, (median, mean) in enumerate(checks):
       ok = _in_range(median, mean)
       if in_range and not ok:
-        pytest.fail(f"{cam}: exposure regressed on sample {i+1} " +
+        self.fail(f"{cam}: exposure regressed on sample {i+1} " +
                     f"(median={median:.4f}, mean={mean:.4f}, expected: ({lo}, {hi}))")
       in_range = ok
 
