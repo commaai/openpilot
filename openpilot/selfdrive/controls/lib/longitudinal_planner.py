@@ -39,49 +39,43 @@ def get_max_accel(v_ego):
 def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
-class get_cruise_accel:
-  # Holds the jerk-limiter state (a_cruise) so the caller doesn't have to.
-  def __init__(self, dt):
-    self.dt = dt
-    self.a_cruise = 0.0
+def get_cruise_accel(e2e, v_cruise, v_ego, a_cruise_prev, angle_steers, CP, dt, accel_coast, allow_throttle):
+  # Target acceleration to converge to the cruise set speed, jerk-limited.
+  v_err = v_cruise - v_ego
+  if v_err > 0:
+    a_target = A_CRUISE_MAX * np.clip(v_err / (A_CRUISE_MAX**2 / (2 * J_CRUISE)), 0, 1)
+  elif v_err < 0:
+    a_target = A_CRUISE_MIN * np.clip(-v_err / (A_CRUISE_MIN**2 / (2 * J_CRUISE)), 0, 1)
+  else:
+    a_target = 0.0
+  a_cruise = float(np.clip(a_target, a_cruise_prev - J_CRUISE * dt, a_cruise_prev + J_CRUISE * dt))
 
-  def __call__(self, e2e, v_cruise, v_ego, angle_steers, CP, accel_coast, allow_throttle):
-    # Target acceleration to converge to the cruise set speed, jerk-limited.
-    v_err = v_cruise - v_ego
-    if v_err > 0:
-      a_target = A_CRUISE_MAX * np.clip(v_err / (A_CRUISE_MAX**2 / (2 * J_CRUISE)), 0, 1)
-    elif v_err < 0:
-      a_target = A_CRUISE_MIN * np.clip(-v_err / (A_CRUISE_MIN**2 / (2 * J_CRUISE)), 0, 1)
-    else:
-      a_target = 0.0
-    self.a_cruise = float(np.clip(a_target, self.a_cruise - J_CRUISE * self.dt, self.a_cruise + J_CRUISE * self.dt))
-
-    if e2e:
-      # In e2e mode the model accounts for road geometry, so don't limit in turns. Let the
-      # model accelerate freely up to E2E_MAX_ACCEL from well below cruise, then blend down to
-      # the cruise limit as we approach the set speed so it can't overshoot.
-      cruise_blend = float(np.clip(1.0 - v_err / CRUISE_LIMIT_ENABLE_DELTA, 0.0, 1.0))
-      a_cruise = cruise_blend * self.a_cruise + (1.0 - cruise_blend) * E2E_MAX_ACCEL
-    else:
-      # Cap acceleration to converge to the set speed, and limit it in turns.
-      # FIXME: calculating lateral accel this way is incorrect and should use the VehicleModel.
-      # The lookup table for turns should also be updated if we do this.
-      a_total_max = np.interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-      a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
-      a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
-      a_cruise = min(self.a_cruise, a_x_allowed)
-    # Comfort acceleration cap: speed-dependent table in non-e2e, E2E_MAX_ACCEL in e2e.
-    max_accel = E2E_MAX_ACCEL if e2e else get_max_accel(v_ego)
-    a_cruise = min(a_cruise, max_accel)
-    # When the model predicts the driver wants to press the gas, limit to coasting.
-    # Don't clip at low speeds since throttle_prob doesn't account for creep.
-    if not allow_throttle:
-      clipped_accel_coast = max(accel_coast, ACCEL_MIN)
-      coast_limit = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [a_cruise, clipped_accel_coast])
-      a_cruise = min(a_cruise, coast_limit)
-    # When forced to stop (v_cruise forced to 0), command a stop.
-    cruise_should_stop = v_cruise == 0.0
-    return a_cruise, cruise_should_stop
+  if e2e:
+    # In e2e mode the model accounts for road geometry, so don't limit in turns. Let the
+    # model accelerate freely up to E2E_MAX_ACCEL from well below cruise, then blend down to
+    # the cruise limit as we approach the set speed so it can't overshoot.
+    cruise_blend = float(np.clip(1.0 - v_err / CRUISE_LIMIT_ENABLE_DELTA, 0.0, 1.0))
+    a_cruise = cruise_blend * a_cruise + (1.0 - cruise_blend) * E2E_MAX_ACCEL
+  else:
+    # Cap acceleration to converge to the set speed, and limit it in turns.
+    # FIXME: calculating lateral accel this way is incorrect and should use the VehicleModel.
+    # The lookup table for turns should also be updated if we do this.
+    a_total_max = np.interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+    a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+    a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
+    a_cruise = min(a_cruise, a_x_allowed)
+  # Comfort acceleration cap: speed-dependent table in non-e2e, E2E_MAX_ACCEL in e2e.
+  max_accel = E2E_MAX_ACCEL if e2e else get_max_accel(v_ego)
+  a_cruise = min(a_cruise, max_accel)
+  # When the model predicts the driver wants to press the gas, limit to coasting.
+  # Don't clip at low speeds since throttle_prob doesn't account for creep.
+  if not allow_throttle:
+    clipped_accel_coast = max(accel_coast, ACCEL_MIN)
+    coast_limit = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [a_cruise, clipped_accel_coast])
+    a_cruise = min(a_cruise, coast_limit)
+  # When forced to stop (v_cruise forced to 0), command a stop.
+  cruise_should_stop = v_cruise == 0.0
+  return a_cruise, cruise_should_stop
 
 
 class LongitudinalPlanner:
@@ -94,7 +88,7 @@ class LongitudinalPlanner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
-    self.cruise_accel = get_cruise_accel(self.dt)
+    self.a_cruise = 0.0
     self.output_a_target = 0.0
     self.output_should_stop = False
 
@@ -164,14 +158,14 @@ class LongitudinalPlanner:
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
-    a_cruise, cruise_should_stop = self.cruise_accel(sm['selfdriveState'].experimentalMode, v_cruise, v_ego,
-                                                      steer_angle_without_offset, self.CP,
-                                                      accel_coast, self.allow_throttle)
+    self.a_cruise, cruise_should_stop = get_cruise_accel(sm['selfdriveState'].experimentalMode, v_cruise, v_ego,
+                                                          self.a_cruise, steer_angle_without_offset, self.CP, self.dt,
+                                                          accel_coast, self.allow_throttle)
 
     # Final output is the min of the cruise, MPC, and e2e (in experimental mode).
     # The source is whichever input is the min; should_stop is the OR of all.
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
-                  (a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop)]
+                  (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop)]
     if sm['selfdriveState'].experimentalMode:
       candidates.append((output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e))
 
