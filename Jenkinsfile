@@ -119,9 +119,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
           }
-          if (stageName in ["onroad", "model-replay", "tizi-hardware", "OX03C10", "OS04C10"]) {
-            recoverDeviceState(device_ip)
-          }
+          recoverDeviceState(device_ip)
           steps.each { item ->
             def name = item[0]
             def cmd = item[1]
