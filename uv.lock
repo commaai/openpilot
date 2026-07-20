@@ -3,10 +3,7 @@ revision = 3
 requires-python = ">=3.12.3, <3.13"
 
 [manifest]
-overrides = [
-    { name = "av" },
-    { name = "opendbc", editable = "opendbc_repo" },
-]
+overrides = [{ name = "opendbc", editable = "opendbc_repo" }]
 
 [[package]]
 name = "attrs"
@@ -704,16 +701,12 @@ source = { editable = "." }
 dependencies = [
     { name = "cffi" },
     { name = "comma-deps-acados" },
-    { name = "comma-deps-bootstrap-icons" },
-    { name = "comma-deps-bzip2" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
-    { name = "comma-deps-libusb" },
-    { name = "comma-deps-ncurses" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
@@ -730,11 +723,9 @@ dependencies = [
     { name = "scons" },
     { name = "sentry-sdk" },
     { name = "setproctitle" },
-    { name = "setuptools" },
     { name = "sounddevice" },
     { name = "tqdm" },
     { name = "websocket-client" },
-    { name = "xattr" },
     { name = "zstandard" },
 ]
 
@@ -743,7 +734,6 @@ dev = [
     { name = "matplotlib" },
 ]
 docs = [
-    { name = "jinja2" },
     { name = "zensical" },
 ]
 submodules = [
@@ -758,7 +748,6 @@ testing = [
     { name = "codespell" },
     { name = "coverage" },
     { name = "hypothesis" },
-    { name = "pre-commit-hooks" },
     { name = "pytest" },
     { name = "pytest-cpp" },
     { name = "pytest-mock" },
@@ -768,7 +757,11 @@ testing = [
     { name = "ty" },
 ]
 tools = [
+    { name = "comma-deps-bootstrap-icons" },
+    { name = "comma-deps-bzip2" },
     { name = "comma-deps-imgui" },
+    { name = "comma-deps-libusb" },
+    { name = "comma-deps-ncurses" },
 ]
 
 [package.dev-dependencies]
@@ -781,8 +774,8 @@ requires-dist = [
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "comma-deps-acados" },
-    { name = "comma-deps-bootstrap-icons" },
-    { name = "comma-deps-bzip2" },
+    { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
+    { name = "comma-deps-bzip2", marker = "extra == 'tools'" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
@@ -790,8 +783,8 @@ requires-dist = [
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-imgui", marker = "extra == 'tools'" },
     { name = "comma-deps-json11" },
-    { name = "comma-deps-libusb" },
-    { name = "comma-deps-ncurses" },
+    { name = "comma-deps-libusb", marker = "extra == 'tools'" },
+    { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
@@ -800,14 +793,12 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
     { name = "jeepney" },
-    { name = "jinja2", marker = "extra == 'docs'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "msgq", marker = "extra == 'submodules'", editable = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
     { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },
     { name = "pillow" },
-    { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "pycapnp", specifier = "==2.1.0" },
     { name = "pyjwt", extras = ["crypto"] },
     { name = "pytest", marker = "extra == 'testing'" },
@@ -823,14 +814,12 @@ requires-dist = [
     { name = "scons" },
     { name = "sentry-sdk" },
     { name = "setproctitle" },
-    { name = "setuptools" },
     { name = "sounddevice" },
     { name = "teleoprtc", marker = "extra == 'submodules'", editable = "teleoprtc_repo" },
     { name = "tinygrad", marker = "extra == 'submodules'", editable = "tinygrad_repo" },
     { name = "tqdm" },
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
-    { name = "xattr" },
     { name = "zensical", marker = "extra == 'docs'" },
     { name = "zstandard" },
 ]
@@ -904,18 +893,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
-]
-
-[[package]]
-name = "pre-commit-hooks"
-version = "6.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "ruamel-yaml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/36/4d/93e63e48f8fd16d6c1e4cef5dabadcade4d1325c7fd6f29f075a4d2284f3/pre_commit_hooks-6.0.0.tar.gz", hash = "sha256:76d8370c006f5026cdd638a397a678d26dda735a3c88137e05885a020f824034", size = 28293, upload-time = "2025-08-09T19:25:04.6Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/46/eba9be9daa403fa94854ce16a458c29df9a01c6c047931c3d8be6016cd9a/pre_commit_hooks-6.0.0-py2.py3-none-any.whl", hash = "sha256:76161b76d321d2f8ee2a8e0b84c30ee8443e01376121fd1c90851e33e3bd7ee2", size = 41338, upload-time = "2025-08-09T19:25:03.513Z" },
 ]
 
 [[package]]
@@ -1178,15 +1155,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ac/c3/e2a2b89f2d3e2179abd6d00ebd70bff6273f37fb3e0cc209f48b39d00cbf/requests-2.34.2.tar.gz", hash = "sha256:f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed", size = 142856, upload-time = "2026-05-14T19:25:27.735Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl", hash = "sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0", size = 73075, upload-time = "2026-05-14T19:25:26.443Z" },
-]
-
-[[package]]
-name = "ruamel-yaml"
-version = "0.19.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/3b/ebda527b56beb90cb7652cb1c7e4f91f48649fbcd8d2eb2fb6e77cd3329b/ruamel_yaml-0.19.1.tar.gz", hash = "sha256:53eb66cd27849eff968ebf8f0bf61f46cdac2da1d1f3576dd4ccee9b25c31993", size = 142709, upload-time = "2026-01-02T16:50:31.84Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl", hash = "sha256:27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93", size = 118102, upload-time = "2026-01-02T16:50:29.201Z" },
 ]
 
 [[package]]
@@ -1464,24 +1432,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/2c/41/aa4bf9664e4cda14c3b39865b12251e8e7d239f4cd0e3cc1b6c2ccde25c1/websocket_client-1.9.0.tar.gz", hash = "sha256:9e813624b6eb619999a97dc7958469217c3176312b3a16a4bd1bc7e08a46ec98", size = 70576, upload-time = "2025-10-07T21:16:36.495Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/34/db/b10e48aa8fff7407e67470363eac595018441cf32d5e1001567a7aeba5d2/websocket_client-1.9.0-py3-none-any.whl", hash = "sha256:af248a825037ef591efbf6ed20cc5faa03d3b47b9e5a2230a529eeee1c1fc3ef", size = 82616, upload-time = "2025-10-07T21:16:34.951Z" },
-]
-
-[[package]]
-name = "xattr"
-version = "1.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cffi" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/08/d5/25f7b19af3a2cb4000cac4f9e5525a40bec79f4f5d0ac9b517c0544586a0/xattr-1.3.0.tar.gz", hash = "sha256:30439fabd7de0787b27e9a6e1d569c5959854cb322f64ce7380fedbfa5035036", size = 17148, upload-time = "2025-10-13T22:16:47.353Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/78/00bdc9290066173e53e1e734d8d8e1a84a6faa9c66aee9df81e4d9aeec1c/xattr-1.3.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:dd4e63614722d183e81842cb237fd1cc978d43384166f9fe22368bfcb187ebe5", size = 23476, upload-time = "2025-10-13T22:16:06.942Z" },
-    { url = "https://files.pythonhosted.org/packages/53/16/5243722294eb982514fa7b6b87a29dfb7b29b8e5e1486500c5babaf6e4b3/xattr-1.3.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:995843ef374af73e3370b0c107319611f3cdcdb6d151d629449efecad36be4c4", size = 18556, upload-time = "2025-10-13T22:16:08.209Z" },
-    { url = "https://files.pythonhosted.org/packages/d6/5c/d7ab0e547bea885b55f097206459bd612cefb652c5fc1f747130cbc0d42c/xattr-1.3.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:fa23a25220e29d956cedf75746e3df6cc824cc1553326d6516479967c540e386", size = 18869, upload-time = "2025-10-13T22:16:10.319Z" },
-    { url = "https://files.pythonhosted.org/packages/98/25/25cc7d64f07de644b7e9057842227adf61017e5bcfe59a79df79f768874c/xattr-1.3.0-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:b4345387087fffcd28f709eb45aae113d911e1a1f4f0f70d46b43ba81e69ccdd", size = 38797, upload-time = "2025-10-13T22:16:11.624Z" },
-    { url = "https://files.pythonhosted.org/packages/a9/24/cc350bcdbed006dfcc6ade0ac817693b8b3d4b2787f20e427fd0697042e4/xattr-1.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:fe92bb05eb849ab468fe13e942be0f8d7123f15d074f3aba5223fad0c4b484de", size = 38956, upload-time = "2025-10-13T22:16:13.121Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/b2/9416317ac89e2ed759a861857cda0d5e284c3691e6f460d36cc2bd5ce4d1/xattr-1.3.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:6c42ef5bdac3febbe28d3db14d3a8a159d84ba5daca2b13deae6f9f1fc0d4092", size = 38214, upload-time = "2025-10-13T22:16:14.389Z" },
-    { url = "https://files.pythonhosted.org/packages/38/63/188f7cb41ab35d795558325d5cc8ab552171d5498cfb178fd14409651e18/xattr-1.3.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:2aaa5d66af6523332189108f34e966ca120ff816dfa077ca34b31e6263f8a236", size = 37754, upload-time = "2025-10-13T22:16:15.306Z" },
 ]
 
 [[package]]

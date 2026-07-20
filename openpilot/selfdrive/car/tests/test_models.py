@@ -2,7 +2,7 @@ import time
 import os
 import pytest
 import random
-import unittest # noqa: TID251
+import unittest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
@@ -21,6 +21,7 @@ from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.common.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source, internal_source, comma_api_source
+from openpilot.tools.lib.file_sources import Source
 from openpilot.tools.lib.route import SegmentName
 
 SafetyModel = car.CarParams.SafetyModel
@@ -130,7 +131,7 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        sources = [internal_source] if len(INTERNAL_SEG_LIST) else [openpilotci_source, comma_api_source]
+        sources: list[Source] = [internal_source] if len(INTERNAL_SEG_LIST) else [openpilotci_source, comma_api_source]
         lr = LogReader(segment_range, sources=sources, sort_by_time=True)
         return cls.get_testing_data_from_logreader(lr)
       except (LogsUnavailable, AssertionError):
@@ -250,7 +251,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # Don't check relay malfunction on disabled routes (relay closed),
       # or before fingerprinting is done (elm327 and noOutput)
-      if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
+      if self.car_safety_mode_frame is not None and t / 1e4 > self.car_safety_mode_frame:
         self.assertFalse(self.safety.get_relay_malfunction())
       else:
         self.safety.set_relay_malfunction(False)
