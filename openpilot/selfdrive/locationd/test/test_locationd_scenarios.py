@@ -1,4 +1,7 @@
+import fcntl
 import numpy as np
+import os
+import tempfile
 from collections import defaultdict
 from enum import Enum
 
@@ -106,7 +109,20 @@ class TestLocationdScenarios(OpenpilotTestCase):
 
   @classmethod
   def setup_class(cls):
-    cls.logs = migrate_all(LogReader(TEST_ROUTE))
+    # xdist can initialize this class in several workers at once. URLFile's
+    # cache writes are atomic, but cache misses are not locked, so every worker
+    # otherwise downloads the same route concurrently.
+    lock_path = os.path.join(tempfile.gettempdir(), "openpilot-locationd-scenarios.lock")
+    ready_path = f"{lock_path}.ready"
+    logs = None
+    with open(lock_path, "w") as lock:
+      fcntl.flock(lock, fcntl.LOCK_EX)
+      if not os.path.exists(ready_path):
+        logs = list(LogReader(TEST_ROUTE))
+        open(ready_path, "w").close()
+    if logs is None:
+      logs = list(LogReader(TEST_ROUTE))
+    cls.logs = migrate_all(logs)
 
   def test_base(self):
     """
