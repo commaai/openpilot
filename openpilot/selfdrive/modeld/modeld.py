@@ -158,6 +158,7 @@ def main(demo=False):
   params = Params()
   params.put_bool("UsbGpuPresent", _present)
   params.put_bool("UsbGpuCompiled", _compiled)
+  params.put_bool("UsbGpuActive", False)  # a crashed modeld must not leave big claimed
   BIG = USBGPU and not params.get_bool("UsbGpuFailed")
   if BIG:
     # set before the vipc wait so selfdrived refuses engagement from the very first frame
@@ -209,6 +210,7 @@ def main(demo=False):
         wait_usbgpu_link()
         model = ModelState(vipc_client_main.width, vipc_client_main.height, True)
         model.warmup()
+        params.put_bool("UsbGpuActive", True)
         break
       except Exception:
         cloudlog.exception("big model load failed, retrying")
