@@ -75,6 +75,22 @@ END"""
   }
 }
 
+def recoverDeviceState(String ip) {
+  device(ip, "check device state", '''
+available_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
+if [ "$available_kb" -lt 2200000 ] || ! python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null 2>&1; then
+  ion_before=$(sudo awk '/total orphaned/ {print $3}' /sys/kernel/debug/ion/heaps/system)
+  echo "Device state unhealthy (${available_kb} kB available, ${ion_before:-unknown} orphaned ION bytes), restarting magic"
+  sudo systemctl restart magic.service
+  sleep 5
+  sudo systemctl is-active --quiet magic.service
+  python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null
+  ion_after=$(sudo awk '/total orphaned/ {print $3}' /sys/kernel/debug/ion/heaps/system)
+  echo "magic restarted (${ion_after:-unknown} orphaned ION bytes remain)"
+fi
+''')
+}
+
 def deviceStage(String stageName, String deviceType, List extra_env, def steps) {
   stage(stageName) {
     if (currentBuild.result != null) {
@@ -92,13 +108,14 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
         timeout(time: 35, unit: 'MINUTES') {
-          // Devices can be temporarily unreachable while recovering from a
-          // reboot. Keep the resource locked and wait for SSH to return.
+          // Devices can be temporarily unreachable during setup. Keep the
+          // resource locked and retry rather than handing it to another build.
           retryWithDelay(30, 10) {
             def date = sh(script: 'date', returnStdout: true).trim();
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
           }
+          recoverDeviceState(device_ip)
           steps.each { item ->
             def name = item[0]
             def cmd = item[1]
