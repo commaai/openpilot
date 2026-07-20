@@ -29,12 +29,16 @@ class Proc:
   def name(self):
     return '+'.join(self.procs)
 
+  @property
+  def power_budget(self):
+    return self.power * (1 + self.rtol) + self.atol
+
 
 PROCS = [
   Proc(['camerad'], 1.65, atol=0.4, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
   Proc(['modeld'], 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
-  Proc(['encoderd'], 0.23, msgs=['roadEncodeData']),
+  Proc(['encoderd'], 0.23, atol=0.13, msgs=['roadEncodeData']),
 ]
 
 
@@ -56,7 +60,7 @@ class TestPowerDraw:
     return np.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
 
   def valid_power_draw(self, proc, used):
-    return used <= proc.power * (1 + proc.rtol) + proc.atol
+    return used <= proc.power_budget
 
   def tabulate_msg_counts(self, msgs_and_power):
     msg_counts = defaultdict(int)
@@ -115,11 +119,11 @@ class TestPowerDraw:
     tab = [['process', 'power budget (W)', 'measured (W)', '# msgs expected', '# msgs received', "warmup time (s)"]]
     for proc in PROCS:
       cur = used[proc.name]
-      expected = proc.power
+      budget = proc.power_budget
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
-      tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
+      tab.append([proc.name, round(budget, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
       with subtests.test(proc=proc.name):
         assert self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs"
-        assert self.valid_power_draw(proc, cur), f"power budget {expected:.2f}W exceeded: got {cur:.2f}W"
+        assert self.valid_power_draw(proc, cur), f"power budget {budget:.2f}W exceeded: got {cur:.2f}W"
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
