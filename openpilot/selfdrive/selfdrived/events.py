@@ -73,6 +73,9 @@ class Events:
     self.event_counters = {k: (v + 1 if k in self.events else 0) for k, v in self.event_counters.items()}
     self.events = self.static_events.copy()
 
+  def remove(self, event_name: int) -> None:
+    self.events = [e for e in self.events if e != event_name]
+
   def contains(self, event_type: str) -> bool:
     return any(event_type in EVENTS.get(e, {}) for e in self.events)
 

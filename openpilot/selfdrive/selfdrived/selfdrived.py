@@ -7,6 +7,7 @@ import openpilot.cereal.messaging as messaging
 
 from openpilot.cereal import log
 from opendbc.car.structs import car
+from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 
@@ -96,6 +97,9 @@ class SelfdriveD:
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    self.mads_available = bool(self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.ENABLE_MADS)
+    self.mads_main_requested = False
+    self.mads_lateral_only = False
 
     car_recognized = self.CP.brand != 'mock'
 
@@ -217,6 +221,16 @@ class SelfdriveD:
       car_events = self.car_events.update(CS, self.CS_prev, self.sm['carControl']).to_msg()
       self.events.add_from_msg(car_events)
 
+      if self.mads_available:
+        # The main switch owns lateral engagement. ACC transitions only change
+        # the stock longitudinal controller while the main switch remains on.
+        if CS.cruiseState.available:
+          self.events.remove(EventName.pcmDisable)
+          self.events.remove(EventName.buttonCancel)
+          self.events.remove(EventName.pedalPressed)
+          if not self.CS_prev.cruiseState.available:
+            self.events.add(EventName.pcmEnable)
+
       if self.CP.notCar:
         # wait for everything to init first
         if self.sm.frame > int(2. / DT_CTRL) and self.initialized:
@@ -224,9 +238,7 @@ class SelfdriveD:
           self.events.add(EventName.pcmEnable)
 
       # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
-      if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
-        (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
-        (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
+      if self.should_disengage_on_pedal(CS):
         self.events.add(EventName.pedalPressed)
 
     # Create events for temperature, disk space, and memory
@@ -433,6 +445,19 @@ class SelfdriveD:
         self.params.put('LongitudinalPersonality', self.personality)
         self.events.add(EventName.personalityChanged)
 
+  def should_disengage_on_pedal(self, CS):
+    pedal_disengage = (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
+                       (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
+                       (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill))
+    return pedal_disengage and not (self.mads_available and CS.cruiseState.available)
+
+  def update_mads_cruise_state(self, CS):
+    # Invalid CarState data must not look like a physical Main switch cycle and
+    # clear a latched MADS disengagement.
+    if CS.canValid:
+      self.mads_main_requested = self.mads_available and CS.cruiseState.available
+      self.mads_lateral_only = self.mads_main_requested and not CS.cruiseState.enabled
+
   def data_sample(self):
     _car_state = messaging.recv_one(self.car_state_sock)
     CS = _car_state.carState if _car_state else self.CS_prev
@@ -451,8 +476,11 @@ class SelfdriveD:
           self.sm.ignore_alive.append('wideRoadCameraState')
           self.sm.ignore_valid.append('wideRoadCameraState')
 
-        if REPLAY and any(ps.controlsAllowed for ps in self.sm['pandaStates']):
-          self.state_machine.state = State.enabled
+        if REPLAY:
+          if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
+            self.state_machine.state = State.enabled
+          elif self.mads_available and any(ps.controlsAllowedLateral for ps in self.sm['pandaStates']):
+            self.state_machine.state = State.lateralEnabled
 
         self.initialized = True
         cloudlog.event(
@@ -474,9 +502,10 @@ class SelfdriveD:
       self.mismatch_counter = 0
 
     # All pandas not in silent mode must have controlsAllowed when openpilot is enabled
-    if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
-           if ps.safetyModel not in IGNORED_SAFETY_MODES):
-      self.mismatch_counter += 1
+    if self.enabled:
+      controls_mismatch = any(not (ps.controlsAllowed or (self.mads_available and ps.controlsAllowedLateral)) for ps in self.sm['pandaStates']
+                              if ps.safetyModel not in IGNORED_SAFETY_MODES)
+      self.mismatch_counter = self.mismatch_counter + 1 if controls_mismatch else 0
 
     return CS
 
@@ -504,6 +533,8 @@ class SelfdriveD:
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
+    ss.madsEnabled = self.mads_available and self.sm['carControl'].latActive
+    ss.madsAvailable = self.mads_available
 
     ss.alertText1 = self.AM.current_alert.alert_text_1
     ss.alertText2 = self.AM.current_alert.alert_text_2
@@ -527,7 +558,9 @@ class SelfdriveD:
     CS = self.data_sample()
     self.update_events(CS)
     if not self.CP.passive and self.initialized:
-      self.enabled, self.active = self.state_machine.update(self.events)
+      self.update_mads_cruise_state(CS)
+      self.enabled, self.active = self.state_machine.update(self.events, lateral_only=self.mads_lateral_only,
+                                                            mads_requested=self.mads_main_requested)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)
