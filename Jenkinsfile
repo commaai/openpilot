@@ -114,7 +114,9 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
         timeout(time: 35, unit: 'MINUTES') {
-          retry (3) {
+          // Devices can be temporarily unreachable while recovering from a
+          // reboot. Keep the resource locked and wait for SSH to return.
+          retryWithDelay(12, 10) {
             def date = sh(script: 'date', returnStdout: true).trim();
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
