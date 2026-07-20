@@ -24,6 +24,7 @@ class Proc:
   msgs: list[str]
   rtol: float = 0.05
   atol: float = 0.12
+  sample_time: int = SAMPLE_TIME
 
   @property
   def name(self):
@@ -38,7 +39,7 @@ PROCS = [
   Proc(['camerad'], 1.65, atol=0.4, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
   Proc(['modeld'], 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
-  Proc(['encoderd'], 0.23, rtol=0, atol=0.17, msgs=['roadEncodeData']),
+  Proc(['encoderd'], 0.23, rtol=0, atol=0.17, msgs=['roadEncodeData'], sample_time=5),
 ]
 
 
@@ -52,7 +53,7 @@ class TestPowerDraw:
     manager_cleanup()
 
   def get_expected_messages(self, proc):
-    return int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
+    return int(sum(proc.sample_time * SERVICE_LIST[msg].frequency for msg in proc.msgs))
 
   def valid_msg_count(self, proc, msg_counts):
     msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
@@ -74,7 +75,7 @@ class TestPowerDraw:
     for sock in socks.values():
       messaging.drain_sock_raw(sock)
 
-    msgs_and_power = deque([], maxlen=SAMPLE_TIME)
+    msgs_and_power = deque([], maxlen=proc.sample_time)
 
     start_time = time.monotonic()
 
@@ -85,7 +86,7 @@ class TestPowerDraw:
         iteration_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
       msgs_and_power.append((power, iteration_msg_counts))
 
-      if len(msgs_and_power) < SAMPLE_TIME:
+      if len(msgs_and_power) < proc.sample_time:
         continue
 
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
@@ -94,7 +95,7 @@ class TestPowerDraw:
       if self.valid_msg_count(proc, msg_counts):
         break
 
-    return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
+    return now, msg_counts, time.monotonic() - start_time - proc.sample_time
 
   @mock_messages(['livePose'])
   def test_camera_procs(self, subtests):
