@@ -3,7 +3,6 @@ import fcntl
 import json
 import logging
 import os
-import serial
 import signal
 import subprocess
 import tempfile
@@ -12,6 +11,8 @@ import time
 from ipaddress import IPv4Address, AddressValueError
 
 from enum import Enum
+
+from openpilot.common.serial import Serial
 
 logging.basicConfig(
   level=logging.INFO,
@@ -51,7 +52,7 @@ PPPD_CMD = [
   "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
   "user", '""', "password", '""',
 ]
-INITIAL_STATE = {
+INITIAL_STATE: dict[str, object] = {
   "seconds_since_boot": 0,
   "state": "INITIALIZING",
   "connected": False, "ip_address": "",
@@ -96,7 +97,7 @@ class PPPSession:
   def reset_data_port():
     """Drop DTR on PPP_PORT so the modem terminates any stuck PPP session."""
     try:
-      with serial.Serial(PPP_PORT, 460800, timeout=1) as s:
+      with Serial(PPP_PORT, baudrate=460800, timeout=1) as s:
         s.dtr = False
         time.sleep(0.2)
         s.dtr = True
@@ -220,7 +221,7 @@ class Modem:
       os.close(fd)
       return []
     try:
-      with serial.Serial(AT_PORT, 9600, timeout=5) as ser:
+      with Serial(AT_PORT, baudrate=9600, timeout=5) as ser:
         ser.reset_input_buffer()
         ser.write((cmd + "\r").encode())
         lines = []

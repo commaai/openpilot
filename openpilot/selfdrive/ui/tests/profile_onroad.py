@@ -49,7 +49,7 @@ def patch_submaster(message_chunks):
         sm.recv_frame[service] = sm.frame
         sm.valid[service] = True
     sm.frame += 1
-  ui_state.sm.update = mock_update
+  ui_state.sm.update = mock_update  # ty: ignore[invalid-assignment]  # profiling hook
 
 
 if __name__ == "__main__":
@@ -92,7 +92,7 @@ if __name__ == "__main__":
   vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, W, H)
   vipc.start_listener()
   yuv_buffer_size = W * H + (W // 2) * (H // 2) * 2
-  yuv_data = np.random.randint(0, 256, yuv_buffer_size, dtype=np.uint8).tobytes()
+  yuv_data = np.random.default_rng().integers(0, 256, yuv_buffer_size, dtype=np.uint8).tobytes()
   with cProfile.Profile() as pr:
     for _ in gui_app.render():
       if ui_state.sm.frame >= len(message_chunks):

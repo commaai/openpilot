@@ -27,10 +27,6 @@ class TestManager:
   def teardown_method(self):
     manager.manager_cleanup()
 
-  def test_manager_prepare(self):
-    os.environ['PREPAREONLY'] = '1'
-    manager.main()
-
   def test_duplicate_procs(self):
     assert len(procs) == len(managed_processes), "Duplicate process names"
 

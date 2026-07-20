@@ -6,6 +6,7 @@ import random
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
+from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, send_random_can_messages
 
@@ -26,16 +27,21 @@ class TestBoarddSpi:
 
     sendcan = messaging.pub_sock('sendcan')
     socks = {s: messaging.sub_sock(s, conflate=False, timeout=100) for s in ('can', 'pandaStates', 'peripheralState')}
-    time.sleep(2)
-    for s in socks.values():
-      messaging.drain_sock_raw(s)
+    readiness_services = {'pandaStates', 'peripheralState'}
+    ready = set()
+    with Timeout(2, "pandad services didn't become ready"):
+      while not readiness_services <= ready:
+        for service, sock in socks.items():
+          if messaging.drain_sock_raw(sock):
+            ready.add(service)
+        time.sleep(0.01)
 
     total_recv_count = 0
     total_sent_count = 0
-    sent_msgs = {bus: list() for bus in range(3)}
+    sent_msgs = {bus: [] for bus in range(3)}
 
     st = time.monotonic()
-    ts = {s: list() for s in socks.keys()}
+    ts = {s: [] for s in socks.keys()}
     for _ in range(int(os.getenv("TEST_TIME", "20"))):
       # send some CAN messages
       if not JUNGLE_SPAM:

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import base64
 import hashlib
-import io
 import itertools
 import json
 import os
@@ -23,7 +21,6 @@ from collections.abc import Callable
 
 import requests
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
-from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
 
@@ -40,6 +37,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
+from openpilot.system.athena.rpc import dispatcher, dumps_call, handle, is_call, is_response, loads
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -211,11 +209,11 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
   while not end_event.is_set():
     try:
       data = recv_queue.get(timeout=1)
-      if "method" in data:
+      msg = loads(data)
+      if is_call(msg):
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
-        response = JSONRPCResponseManager.handle(data, dispatcher)
-        send_queue_push(response.json, SEND_PRIORITY_HIGH)
-      elif "id" in data and ("result" in data or "error" in data):
+        send_queue_push(handle(msg, dispatcher), SEND_PRIORITY_HIGH)
+      elif is_response(msg):
         log_recv_queue.put_nowait(data)
       else:
         raise Exception("not a valid request or response")
@@ -490,10 +488,6 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
   try:
-    # migration, can be removed once 0.9.8 is out for a while
-    if local_port == 8022:
-      local_port = 22
-
     if local_port not in LOCAL_PORT_WHITELIST:
       raise Exception("Requested local port not whitelisted")
 
@@ -594,24 +588,6 @@ def startStream(sdp: str, enabled: bool) -> dict:
   return post_stream_request(StreamRequestBody(sdp, "wideRoad", enabled, bridge_services_in, ["carState", "deviceState"]))
 
 
-@dispatcher.add_method
-def takeSnapshot() -> str | dict[str, str] | None:
-  from openpilot.system.camerad.snapshot import jpeg_write, snapshot
-  ret = snapshot()
-  if ret is not None:
-    def b64jpeg(x):
-      if x is not None:
-        f = io.BytesIO()
-        jpeg_write(f, x)
-        return base64.b64encode(f.getvalue()).decode("utf-8")
-      else:
-        return None
-    return {'jpegBack': b64jpeg(ret[0]),
-            'jpegFront': b64jpeg(ret[1])}
-  else:
-    raise Exception("not available while camerad is started")
-
-
 def get_logs_to_send_sorted() -> list[str]:
   # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())  # noqa: TID251
@@ -655,15 +631,7 @@ def log_handler(end_event: threading.Event) -> None:
           log_path = os.path.join(Paths.swaglog_root(), log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
           with open(log_path) as f:
-            jsonrpc = {
-              "method": "forwardLogs",
-              "params": {
-                "logs": f.read()
-              },
-              "jsonrpc": "2.0",
-              "id": log_entry
-            }
-            send_queue_push(json.dumps(jsonrpc), SEND_PRIORITY_LOW)
+            send_queue_push(dumps_call("forwardLogs", {"logs": f.read()}, request_id=log_entry), SEND_PRIORITY_LOW)
             curr_log = log_entry
         except OSError:
           pass  # file could be deleted by log rotation
@@ -697,7 +665,10 @@ def log_handler(end_event: threading.Event) -> None:
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
-      r = select.select((ws.sock,), (), (), 30)
+      sock = ws.sock
+      if sock is None:
+        return
+      r = select.select((sock,), (), (), 30)
       if r[0]:
         data = ws.recv()
         if isinstance(data, str):

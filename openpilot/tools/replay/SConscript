@@ -1,4 +1,4 @@
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'ffmpeg_libs')
 
 replay_env = env.Clone()
 replay_env['CCFLAGS'] += ['-Wno-deprecated-declarations']
@@ -12,9 +12,7 @@ if arch != "Darwin":
   replay_lib_src.append("qcom_decoder.cc")
 replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
 Export('replay_lib')
-replay_libs = [replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'ncurses'] + base_libs
-if arch != "Darwin":
-  replay_libs += ['va', 'va-drm', 'drm']
+replay_libs = [replay_lib] + ffmpeg_libs + ['bz2', 'zstd', 'ncurses'] + base_libs
 replay_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):

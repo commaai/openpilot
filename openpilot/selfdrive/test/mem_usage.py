@@ -7,7 +7,7 @@ from openpilot.common.utils import tabulate
 
 DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
 MB = 1024 * 1024
-TABULATE_OPTS = dict(tablefmt="simple_grid", stralign="center", numalign="center")
+TABULATE_OPTS = {"tablefmt": "simple_grid", "stralign": "center", "numalign": "center"}
 
 
 def _get_procs():
