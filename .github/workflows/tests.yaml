@@ -20,7 +20,7 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical --dist worksteal
+  PYTEST: pytest --continue-on-collection-errors --durations=0 -n 12 --dist worksteal
 
 jobs:
   build_release:
@@ -108,7 +108,7 @@ jobs:
         RAYLIB_BACKEND: headless
       run: |
         # Pre-compile Python bytecode so each worker doesn't need to.
-        python -m compileall -q openpilot
+        python -m compileall -q -j 0 openpilot
         MAX_EXAMPLES=1 SKIP_SLOW=1 $PYTEST
 
   process_replay:
