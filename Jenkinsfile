@@ -119,7 +119,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
           }
-          if (stageName == "onroad") {
+          if (stageName in ["onroad", "model-replay"]) {
             rebootLowMemoryDevice(device_ip)
           }
           steps.each { item ->
