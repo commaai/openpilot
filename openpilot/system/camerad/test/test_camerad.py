@@ -13,6 +13,7 @@ CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
 MAX_TEST_TIME = 25
+CADENCE_WARMUP_TIME = 1  # sensor synchronization can perturb initial SOF intervals
 
 
 def _numpy_rgb2gray(im):
@@ -66,7 +67,9 @@ def _camera_session():
     cnt = len(ts[cam]['t'])
     assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=}, got {cnt}"
 
-    dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/SERVICE_LIST[cam].frequency)
+    warmup_frames = int(CADENCE_WARMUP_TIME * SERVICE_LIST[cam].frequency)
+    steady_sof = ts[cam]['timestampSof'][warmup_frames:] / 1e6
+    dts = np.abs(np.diff(steady_sof) - 1000/SERVICE_LIST[cam].frequency)
     assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
 
   return ts, exposure
