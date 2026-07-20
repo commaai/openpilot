@@ -1,11 +1,5 @@
-import threading
-import time
-import wave
 from collections.abc import Callable
-from openpilot.cereal import messaging
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.time_helpers import system_time_valid
-from openpilot.selfdrive.ui.soundd import AudibleAlert, sound_list
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl, GreyBigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationCircleButton
@@ -91,13 +85,8 @@ class DeveloperLayoutMici(NavScroller):
     self._debug_mode_toggle = BigParamControl("ui debug mode", "ShowDebugInfo",
                                               toggle_callback=lambda checked: (gui_app.set_show_touches(checked),
                                                                                gui_app.set_show_fps(checked)))
-    self._playing_sounds = False
-    self._play_sounds_btn = BigButton("play sounds")
-    self._play_sounds_btn.set_click_callback(self._on_play_sounds)
-    self._play_sounds_btn.set_enabled(lambda: ui_state.is_offroad() and not self._playing_sounds)
 
     self._scroller.add_widgets([
-      self._play_sounds_btn,
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys_btn,
@@ -172,46 +161,6 @@ class DeveloperLayoutMici(NavScroller):
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:
       item.set_checked(ui_state.params.get_bool(key))
-
-  def _on_play_sounds(self):
-    self._playing_sounds = True
-
-    def play():
-      pm = messaging.PubMaster(['selfdriveState'])
-      sm = messaging.SubMaster(['managerState'])
-
-      def publish(alert, duration):
-        for _ in range(int(duration * 20)):
-          msg = messaging.new_message('selfdriveState')
-          msg.selfdriveState.alertSound = alert
-          pm.send('selfdriveState', msg)
-          time.sleep(0.05)
-
-      try:
-        ui_state.params.put_bool("IsDriverViewEnabled", True)  # get manager to start soundd offroad
-        deadline = time.monotonic() + 10.
-        while time.monotonic() < deadline:
-          sm.update(100)
-          if any(p.name == 'soundd' and p.running for p in sm['managerState'].processes):
-            break
-        time.sleep(1.)  # let soundd open its audio stream
-
-        # each sound plays twice back to back, same transitions soundd sees while driving
-        for alert, (filename, play_count, _) in sound_list.items():
-          with wave.open(BASEDIR + "/openpilot/selfdrive/assets/sounds/" + filename) as f:
-            duration = f.getnframes() / f.getframerate()
-          if play_count is None:
-            publish(alert, 2 * duration - 0.1)  # seamless loop, stop finishes the second loop
-          else:
-            publish(alert, duration + 0.1)
-            publish(AudibleAlert.none, 0.05)  # one frame of none to retrigger
-            publish(alert, duration + 0.1)
-          publish(AudibleAlert.none, 1.)
-      finally:
-        ui_state.params.put_bool("IsDriverViewEnabled", False)
-        self._playing_sounds = False
-
-    threading.Thread(target=play, daemon=True).start()
 
   def _on_joystick_debug_mode(self, state: bool):
     ui_state.params.put_bool("JoystickDebugMode", state, block=True)
