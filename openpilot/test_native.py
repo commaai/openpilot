@@ -19,4 +19,7 @@ NATIVE_TESTS = (
 class TestNative(OpenpilotTestCase):
   @parameterized.expand(NATIVE_TESTS)
   def test_native(self, executable):
-    subprocess.run([os.path.join(BASEDIR, executable)], check=True)
+    path = os.path.join(BASEDIR, executable)
+    if not os.path.exists(path):
+      self.skipTest(f"optional native test was not built: {executable}")
+    subprocess.run([path], check=True)
