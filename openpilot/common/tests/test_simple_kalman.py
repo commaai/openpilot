@@ -3,7 +3,7 @@ from openpilot.common.simple_kalman import KF1D
 
 
 class TestSimpleKalman(OpenpilotTestCase):
-  def setup_method(self):
+  def setup_method(self, method=None):
     dt = 0.01
     x0_0 = 0.0
     x1_0 = 0.0

@@ -14,7 +14,7 @@ class TestAmplifier(OpenpilotTestCase):
   def setup_class(cls):
     pass
 
-  def setup_method(self):
+  def setup_method(self, method=None):
     # clear dmesg
     subprocess.check_call("sudo dmesg -C", shell=True)
 
@@ -22,7 +22,7 @@ class TestAmplifier(OpenpilotTestCase):
     Panda.wait_for_panda(None, 30)
     self.panda = Panda()
 
-  def teardown_method(self):
+  def teardown_method(self, method=None):
     HARDWARE.reset_internal_panda()
 
   def _check_for_i2c_errors(self, expected):

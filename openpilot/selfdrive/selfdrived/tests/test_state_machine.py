@@ -23,7 +23,7 @@ def make_event(event_types: list[str | None]):
 
 
 class TestStateMachine(OpenpilotTestCase):
-  def setup_method(self):
+  def setup_method(self, method=None):
     self.events = Events()
     self.state_machine = StateMachine()
     self.state_machine.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)

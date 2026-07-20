@@ -327,7 +327,7 @@ function op_lint() {
 
 function op_test() {
   op_before_cmd
-  op_run_command python -m unittest_parallel -s openpilot -p 'test_*.py' -t . -j 0 --level class "$@"
+  op_run_command pytest -n logical "$@"
 }
 
 function op_replay() {

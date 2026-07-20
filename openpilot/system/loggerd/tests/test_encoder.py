@@ -32,12 +32,12 @@ FILE_SIZE_TOLERANCE = 0.7
 class TestEncoder(OpenpilotTestCase):
   TICI_TEST = True
 
-  def setup_method(self):
+  def setup_method(self, method=None):
     self._clear_logs()
     os.environ["LOGGERD_TEST"] = "1"
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(SEGMENT_LENGTH)
 
-  def teardown_method(self):
+  def teardown_method(self, method=None):
     self._clear_logs()
 
   def _clear_logs(self):

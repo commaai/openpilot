@@ -13,7 +13,7 @@ from openpilot.common.hardware.tici.pins import GPIO
 class TestPigeond(OpenpilotTestCase):
   TICI_TEST = True
 
-  def teardown_method(self):
+  def teardown_method(self, method=None):
     managed_processes['pigeond'].stop()
 
   @with_processes(['pigeond'])

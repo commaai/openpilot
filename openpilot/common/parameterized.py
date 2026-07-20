@@ -10,32 +10,60 @@ def _to_safe_name(s):
 
 class parameterized:
   @staticmethod
-  def expand(cases, names=None, ids=None):
+  def expand(cases, names=None, ids=None, serial=False):
     cases = list(cases)
 
     if not cases:
       return lambda func: unittest.skip("no parameterized cases")(func)
 
-    def decorator(func):
-      params = [p for p in inspect.signature(func).parameters if p != 'self']
-      normalized = [c if isinstance(c, tuple) else (c,) for c in cases]
-      # Infer arg count from first case so extra params (e.g. from @given) are left untouched
-      expand_params = params[: len(normalized[0])]
-      def wrapper(self):
-        for case in normalized:
-          label = ids(*case) if ids is not None else None
-          with self.subTest(label, **dict(zip(expand_params, case, strict=False))):
-            if names is None:
-              func(self, *case)
-            else:
-              values = dict(zip(names, case, strict=True))
-              values.update({name: self._fixture(name) for name in params if name not in values})
-              func(self, **values)
-      wrapper.__name__ = func.__name__
-      wrapper.__doc__ = func.__doc__
-      return wrapper
+    if serial:
+      def decorator(func):
+        normalized = [case if isinstance(case, tuple) else (case,) for case in cases]
 
-    return decorator
+        def wrapper(self):
+          for case in normalized:
+            with self.subTest():
+              func(self, *case)
+
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+        return wrapper
+
+      return decorator
+
+    return lambda func: _Expanded(func, cases, names, ids)
+
+
+class _Expanded:
+  """Descriptor that turns every parameter case into a real unittest method."""
+
+  def __init__(self, func, cases, names, ids):
+    self.func = func
+    self.cases = [c if isinstance(c, tuple) else (c,) for c in cases]
+    self.names = names
+    self.ids = ids
+
+  def __set_name__(self, owner, name):
+    params = [p for p in inspect.signature(self.func).parameters if p != "self"]
+
+    for index, case in enumerate(self.cases):
+      label = self.ids(*case) if self.ids is not None else None
+      method_name = f"{name}_{index}" + (f"_{_to_safe_name(label)}" if label is not None else "")
+
+      def test_method(test_case, current_case=case):
+        if self.names is None:
+          self.func(test_case, *current_case)
+        else:
+          values = dict(zip(self.names, current_case, strict=True))
+          values.update({param: test_case._fixture(param) for param in params if param not in values})
+          self.func(test_case, **values)
+
+      test_method.__name__ = method_name
+      test_method.__doc__ = self.func.__doc__
+      setattr(owner, method_name, test_method)
+
+    # The descriptor itself is only a method factory, not a test.
+    setattr(owner, name, None)
 
 
 def parameterized_class(attrs, input_list=None):

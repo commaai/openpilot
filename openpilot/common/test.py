@@ -30,6 +30,16 @@ class OpenpilotTestCase(unittest.TestCase):
   SHARED_DOWNLOAD_CACHE = False
   SLOW_TEST = False
 
+  def __init_subclass__(cls, **kwargs):
+    super().__init_subclass__(**kwargs)
+    # Hide legacy pytest xunit hook names from pytest. unittest invokes the
+    # preserved hooks inside the OpenpilotPrefix boundary below.
+    for name in ("setup_method", "teardown_method"):
+      hook = cls.__dict__.get(name)
+      if hook is not None:
+        setattr(cls, f"openpilot_{name}", hook)
+        setattr(cls, name, None)
+
   def _fixture(self, name):
     if name == "mocker":
       return Mocker(self.addCleanup)
@@ -107,13 +117,13 @@ class OpenpilotTestCase(unittest.TestCase):
       HARDWARE.set_power_save(False)
       subprocess.run(["pkill", "-9", "-f", "athena"], check=False)
 
-    setup_method = getattr(self, "setup_method", None)
+    setup_method = getattr(self, "openpilot_setup_method", None)
     if setup_method is not None:
       setup_method()
 
   def tearDown(self):
     try:
-      teardown_method = getattr(self, "teardown_method", None)
+      teardown_method = getattr(self, "openpilot_teardown_method", None)
       if teardown_method is not None:
         teardown_method()
     finally:

@@ -12,10 +12,10 @@ from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
 class TestStreamSession(OpenpilotTestCase):
-  def setup_method(self):
+  def setup_method(self, method=None):
     self.loop = asyncio.new_event_loop()
 
-  def teardown_method(self):
+  def teardown_method(self, method=None):
     self.loop.stop()
     self.loop.close()
 

@@ -41,10 +41,10 @@ PROCS = [
 class TestPowerDraw(OpenpilotTestCase):
   TICI_TEST = True
 
-  def setup_method(self):
+  def setup_method(self, method=None):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
 
-  def teardown_method(self):
+  def teardown_method(self, method=None):
     manager_cleanup()
 
   def get_expected_messages(self, proc):

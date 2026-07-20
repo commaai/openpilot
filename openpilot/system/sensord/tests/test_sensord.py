@@ -78,7 +78,7 @@ class TestSensord(OpenpilotTestCase):
   def teardown_class(cls):
     managed_processes["sensord"].stop()
 
-  def teardown_method(self):
+  def teardown_method(self, method=None):
     managed_processes["sensord"].stop()
 
   def test_all_sensors_present(self):

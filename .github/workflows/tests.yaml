@@ -20,7 +20,7 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  UNITTEST: python -m unittest_parallel -s openpilot -p test_*.py -t . -j 0 --level class
+  PYTEST: pytest --continue-on-collection-errors -n logical
 
 jobs:
   build_release:
@@ -103,13 +103,13 @@ jobs:
     - name: Build openpilot
       run: scons
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 5 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       env:
         RAYLIB_BACKEND: headless
       run: |
         # Pre-compile Python bytecode so each worker doesn't need to.
         python -m compileall -q openpilot
-        MAX_EXAMPLES=1 SKIP_SLOW=1 $UNITTEST
+        MAX_EXAMPLES=1 SKIP_SLOW=1 $PYTEST
 
   process_replay:
     name: process replay
@@ -179,7 +179,7 @@ jobs:
       timeout-minutes: 4
       env:
         ONNXCPU: 1
-      run: python -m unittest openpilot.selfdrive.test.process_replay.test_regen
+      run: pytest openpilot/selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving
@@ -200,7 +200,7 @@ jobs:
       env:
         # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
         EGL_PLATFORM: surfaceless
-      run: python -m unittest openpilot.tools.sim.tests.test_metadrive_bridge
+      run: pytest openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
