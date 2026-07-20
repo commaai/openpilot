@@ -282,7 +282,10 @@ if __name__ == "__main__":
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
-        comment_replay_report(log_msgs, cmp_log, log_msgs)
+        try:
+          comment_replay_report(log_msgs, cmp_log, log_msgs)
+        except Exception as e:
+          print(f"Failed to publish model replay report: {e}")
         failed = False
         print(diff_long)
       print('-------------\n'*5)
