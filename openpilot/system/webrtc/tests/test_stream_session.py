@@ -1,15 +1,10 @@
 import asyncio
 import json
 import time
-# for aiortc and its dependencies
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
-from aiortc import RTCDataChannel
-from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import capnp
 from openpilot.cereal import messaging, log
+from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
 from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
@@ -31,7 +26,8 @@ class TestStreamSession:
     expected_dict = {"type": "customReservedRawData0", "logMonoTime": 123, "valid": True, "data": "test"}
     expected_json = json.dumps(expected_dict).encode()
 
-    channel = mocker.Mock(spec=RTCDataChannel)
+    channel = mocker.Mock()
+    channel.is_open.return_value = True
     proxy = CerealOutgoingMessageProxy(["customReservedRawData0"])
     def mocked_update(t):
       proxy.sm.update_msgs(0, [test_msg])
@@ -59,9 +55,11 @@ class TestStreamSession:
 
       mocked_pubmaster.send.assert_called_once()
       mt, md = mocked_pubmaster.send.call_args.args
-      assert mt == msg["type"]
+      msg_type = msg["type"]
+      assert isinstance(msg_type, str)
+      assert mt == msg_type
       assert isinstance(md, capnp._DynamicStructBuilder)
-      assert hasattr(md, msg["type"])
+      assert hasattr(md, msg_type)
 
       mocked_pubmaster.reset_mock()
 
@@ -73,14 +71,11 @@ class TestStreamSession:
     track = LiveStreamVideoStreamTrack("driver")
 
     assert track.id.startswith("driver")
-    assert track.codec_preference() == "H264"
 
     for i in range(5):
       packet = self.loop.run_until_complete(track.recv())
-      assert packet.time_base == VIDEO_TIME_BASE
       if i == 0:
         start_ns = time.monotonic_ns()
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
-      assert packet.size == 0
-
+      assert bytes(packet) == b""

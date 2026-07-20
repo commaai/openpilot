@@ -812,6 +812,7 @@ struct SelfdriveState {
     promptDistracted @8;
 
     preAlert @9;
+    complete @10;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
@@ -2160,7 +2161,8 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
 
 struct DriverMonitoringState {
   lockout @0 :Bool;
-  lockoutRecoveryPercent @11 :Int8;
+  lockoutCount @15 :Int8;
+  lockoutMinutesRemaining @11 :Int8;
   alert3Count @12 :Int8;
   noResponseCount @13 :Int8;
   noResponseForceDecel @14 :Bool;

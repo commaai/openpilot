@@ -35,7 +35,7 @@ class TestPowerMonitoring:
   def test_panda_state_present(self):
     pm = PowerMonitoring()
     for _ in range(10):
-      pm.calculate(None, None)
+      pm.calculate(None, False)
     assert pm.get_power_used() == 0
     assert pm.get_car_battery_capacity() == (CAR_BATTERY_CAPACITY_uWh / 10)
 

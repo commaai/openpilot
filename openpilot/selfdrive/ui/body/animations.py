@@ -204,7 +204,10 @@ class FaceAnimator:
       frames_back = round(rewind_elapsed / self._animation.frame_duration)
       frame_index = self._rewind_from - frames_back
       if frame_index <= 0:
-        return self._switch_to_next(now)
+        if self._next is None:
+          self._rewinding = False
+          return self._animation.frames[0]
+        return self._switch_to_next(now, self._next)
       return self._animation.frames[frame_index]
 
     # Play starting frames first (once)
@@ -223,7 +226,7 @@ class FaceAnimator:
 
     if self._next is not None:
       if frame_index == 0 and (len(self._animation.frames) == 1 or self._seen_nonzero):
-        return self._switch_to_next(now)
+        return self._switch_to_next(now, self._next)
       # No natural return to frame 0 — start rewinding
       if self._animation.mode in (AnimationMode.ONCE_FORWARD, AnimationMode.REPEAT_FORWARD):
         self._rewinding = True
@@ -232,8 +235,8 @@ class FaceAnimator:
 
     return self._animation.frames[frame_index]
 
-  def _switch_to_next(self, now: float) -> list[tuple[int, int]]:
-    self._animation = self._next
+  def _switch_to_next(self, now: float, animation: Animation) -> list[tuple[int, int]]:
+    self._animation = animation
     self._next = None
     self._rewinding = False
     self._seen_nonzero = False

@@ -488,10 +488,6 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
   try:
-    # migration, can be removed once 0.9.8 is out for a while
-    if local_port == 8022:
-      local_port = 22
-
     if local_port not in LOCAL_PORT_WHITELIST:
       raise Exception("Requested local port not whitelisted")
 
@@ -669,7 +665,10 @@ def log_handler(end_event: threading.Event) -> None:
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
-      r = select.select((ws.sock,), (), (), 30)
+      sock = ws.sock
+      if sock is None:
+        return
+      r = select.select((sock,), (), (), 30)
       if r[0]:
         data = ws.recv()
         if isinstance(data, str):

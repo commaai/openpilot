@@ -102,7 +102,6 @@ class DeviceLayout(Widget):
 
       self._params.remove("CalibrationParams")
       self._params.remove("LiveTorqueParameters")
-      self._params.remove("LiveParameters")
       self._params.remove("LiveParametersV2")
       self._params.remove("LiveDelay")
       self._params.put_bool("OnroadCycleRequested", True, block=True)

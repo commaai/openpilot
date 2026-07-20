@@ -63,10 +63,10 @@ class UploaderTestCase:
   seg_dir: str
 
   def set_ignore(self):
-    uploader.Api = MockApiIgnore
+    uploader.Api = MockApiIgnore  # ty: ignore[invalid-assignment]  # test double
 
   def setup_method(self):
-    uploader.Api = MockApi
+    uploader.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     uploader.fake_upload = True
     uploader.force_wifi = True
     uploader.allow_sleep = False
