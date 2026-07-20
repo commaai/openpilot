@@ -20,7 +20,7 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors -n logical
+  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
   build_release:
