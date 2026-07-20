@@ -62,9 +62,6 @@ class TestPowerDraw:
     msgs_expected = self.get_expected_messages(proc)
     return np.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
 
-  def valid_power_draw(self, proc, used):
-    return used <= proc.power_budget
-
   def tabulate_msg_counts(self, msgs_and_power):
     msg_counts = defaultdict(int)
     for _, counts in msgs_and_power:
@@ -105,6 +102,7 @@ class TestPowerDraw:
 
     prev = baseline
     used = {}
+    cumulative_used = {}
     warmup_time = {}
     msg_counts = {}
 
@@ -115,18 +113,24 @@ class TestPowerDraw:
       msg_counts.update(local_msg_counts)
 
       used[proc.name] = now - prev
+      cumulative_used[proc.name] = now - baseline
       prev = now
 
     manager_cleanup()
 
-    tab = [['process', 'power budget (W)', 'measured (W)', '# msgs expected', '# msgs received', "warmup time (s)"]]
+    cumulative_budget = 0.
+    tab = [['process', 'marginal measured (W)', 'cumulative budget (W)', 'cumulative measured (W)',
+            '# msgs expected', '# msgs received', "warmup time (s)"]]
     for proc in PROCS:
       cur = used[proc.name]
-      budget = proc.power_budget
+      cumulative_budget += proc.power_budget
+      cumulative_cur = cumulative_used[proc.name]
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
-      tab.append([proc.name, round(budget, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
+      tab.append([proc.name, round(cur, 2), round(cumulative_budget, 2), round(cumulative_cur, 2),
+                  self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
       with subtests.test(proc=proc.name):
         assert self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs"
-        assert self.valid_power_draw(proc, cur), f"power budget {budget:.2f}W exceeded: got {cur:.2f}W"
+        assert cumulative_cur <= cumulative_budget, \
+          f"cumulative power budget {cumulative_budget:.2f}W exceeded: got {cumulative_cur:.2f}W"
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
