@@ -45,6 +45,7 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
 
   AudibleAlert.preAlert: ("pre_alert.wav", 1, MAX_VOLUME),
   AudibleAlert.complete: ("complete.wav", 1, MAX_VOLUME),
+
   AudibleAlert.warningSoft: ("critical.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("dm_critical.wav", None, MAX_VOLUME),
 }
