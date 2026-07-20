@@ -65,6 +65,8 @@ class SelfdriveD:
     self.calibrated_pose: Pose | None = None
     self.excessive_actuation_check = ExcessiveActuationCheck()
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
+    self.big_model_loading = False
+    self.big_model_settle_frame = -1000
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -153,6 +155,14 @@ class SelfdriveD:
     if self.sm['controlsState'].lateralControlState.which() == 'debugState':
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
+
+    if self.sm.frame < 500 or self.sm.frame % 100 == 0:  # poll fast at start, modeld sets loading a few seconds in
+      big_model_loading = self.params.get_bool("UsbGpuLoading")
+      if self.big_model_loading and not big_model_loading:
+        self.big_model_settle_frame = self.sm.frame  # the stack needs a beat to warm up after the long load
+      self.big_model_loading = big_model_loading
+    if self.big_model_loading:
+      self.events.add(EventName.bigModelLoading)
 
     if self.sm.recv_frame['lateralManeuverPlan'] > 0:
       self.events.add(EventName.lateralManeuver)
@@ -352,7 +362,8 @@ class SelfdriveD:
     # generic catch-all. ideally, a more specific event should be added above instead
     has_disable_events = self.events.contains(ET.NO_ENTRY) and (self.events.contains(ET.SOFT_DISABLE) or self.events.contains(ET.IMMEDIATE_DISABLE))
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
-    if not self.sm.all_checks() and no_system_errors:
+    big_model_settling = self.big_model_loading or self.sm.frame < self.big_model_settle_frame + 500
+    if not self.sm.all_checks() and no_system_errors and not big_model_settling:  # loading holds modelV2 and friends back on purpose
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
@@ -371,7 +382,7 @@ class SelfdriveD:
     else:
       self.logged_comm_issue = None
 
-    if not self.CP.notCar:
+    if not self.CP.notCar and not big_model_settling:  # localization has nothing to work with while loading
       if not self.sm['livePose'].posenetOK:
         self.events.add(EventName.posenetInvalid)
       if not self.sm['livePose'].inputsOK:

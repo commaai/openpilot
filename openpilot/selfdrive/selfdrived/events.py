@@ -418,6 +418,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
                                        "Ensure road ahead is clear"),
   },
 
+  EventName.bigModelLoading: {
+    ET.NO_ENTRY: NoEntryAlert("Big Model Loading"),
+  },
+
   EventName.lateralManeuver: {
     ET.WARNING: longitudinal_maneuver_alert,
     ET.PERMANENT: NormalPermanentAlert("Lateral Maneuver Mode"),
