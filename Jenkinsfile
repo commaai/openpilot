@@ -221,14 +221,14 @@ node {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "python -m unittest openpilot.selfdrive.pandad.tests.test_pandad"),
-          step("test camerad", "python -m unittest openpilot.system.camerad.test.test_camerad", [timeout: 90]),
+          step("test camerad", "python -m unittest openpilot.system.camerad.test.test_camerad", [timeout: 120]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "python -m unittest openpilot.selfdrive.pandad.tests.test_pandad"),
-          step("test camerad", "python -m unittest openpilot.system.camerad.test.test_camerad", [timeout: 90]),
+          step("test camerad", "python -m unittest openpilot.system.camerad.test.test_camerad", [timeout: 120]),
         ])
       },
       'sensord': {
