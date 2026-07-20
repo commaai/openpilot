@@ -6,7 +6,7 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
       sleep(delay)
     }
   }
-  throw Exception("Failed after ${maxRetries} retries")
+  error("Failed after ${maxRetries} retries")
 }
 
 def device(String ip, String step_label, String cmd) {
@@ -89,7 +89,7 @@ fi
     // The SSH connection drops when the scheduled reboot starts. Keep the
     // device locked until it is back rather than letting another build take it.
     sleep(20)
-    retryWithDelay(12, 10) {
+    retryWithDelay(30, 10) {
       device(ip, "wait for reboot", "true")
     }
     def date = sh(script: 'date', returnStdout: true).trim();
@@ -116,7 +116,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
         timeout(time: 35, unit: 'MINUTES') {
           // Devices can be temporarily unreachable while recovering from a
           // reboot. Keep the resource locked and wait for SSH to return.
-          retryWithDelay(12, 10) {
+          retryWithDelay(30, 10) {
             def date = sh(script: 'date', returnStdout: true).trim();
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
