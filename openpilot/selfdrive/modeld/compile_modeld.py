@@ -243,7 +243,7 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
   SEED = 42
   def random_inputs_run(fn, seed, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy = make_queues(Device.DEFAULT)
-    np.random.seed(seed)
+    rng = np.random.default_rng(seed)
     Tensor.manual_seed(seed)
 
     testing = test_val is not None or test_buffers is not None
@@ -251,7 +251,7 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
 
     for i in range(n_runs):
       for v in npy.values():
-        v[:] = np.random.randn(*v.shape).astype(v.dtype)
+        v[:] = rng.standard_normal(v.shape).astype(v.dtype)
       Device.default.synchronize()
       random_inputs = make_random_inputs()
       st = time.perf_counter()

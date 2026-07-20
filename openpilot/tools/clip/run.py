@@ -11,6 +11,7 @@ import itertools
 import numpy as np
 import tqdm
 from argparse import ArgumentParser
+from collections.abc import Callable
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -138,7 +139,7 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
   frames_per_seg = fps * 60
   start_frame, end_frame = int(start_time * fps), int(end_time * fps)
   current_seg: int = -1
-  seg_frames: FrameReader | np.ndarray | None = None
+  get_frame: Callable[[int], np.ndarray] | None = None
 
   for global_idx in range(start_frame, end_frame):
     seg_idx, local_idx = global_idx // frames_per_seg, global_idx % frames_per_seg
@@ -157,12 +158,12 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
         if result.returncode != 0:
           raise RuntimeError(f"ffmpeg failed: {result.stderr.decode()}")
         seg_frames = np.frombuffer(result.stdout, dtype=np.uint8).reshape(-1, w * h * 3 // 2)
+        get_frame = seg_frames.__getitem__
       else:
-        seg_frames = FrameReader(path, pix_fmt="nv12")
+        get_frame = FrameReader(path, pix_fmt="nv12").get
 
-    assert seg_frames is not None
-    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)
-    yield global_idx, frame
+    assert get_frame is not None
+    yield global_idx, get_frame(local_idx)
 
 
 class FrameQueue:

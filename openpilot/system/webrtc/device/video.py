@@ -1,10 +1,9 @@
 import asyncio
+from dataclasses import dataclass
 import struct
 import time
 
-import av
 from teleoprtc.tracks import TiciVideoStreamTrack
-from aiortc import MediaStreamError
 
 from openpilot.cereal import messaging
 from openpilot.common.realtime import DT_MDL
@@ -20,6 +19,15 @@ TIMING_SEI_UUID = bytes([
   0x9c, 0x7e, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc,
 ])
 _SEI_PREFIX = b'\x00\x00\x00\x01\x06\x05\x30' + TIMING_SEI_UUID
+
+
+@dataclass(frozen=True)
+class EncodedVideoFrame:
+  data: bytes
+  pts: int
+
+  def __bytes__(self) -> bytes:
+    return self.data
 
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
@@ -55,6 +63,9 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     if not enabled:
       self._seen_keyframe = False
 
+  def request_keyframe(self) -> None:
+    self.params.put("LivestreamRequestKeyframe", True, block=False)
+
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
     if not self.timing_sei_enabled:
@@ -71,9 +82,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   async def recv(self):
     while True:
-      if self.readyState != "live":
-        raise MediaStreamError
-
       # while video is disabled, pause here without returning
       if not self.video_enabled:
         await asyncio.sleep(0.005)
@@ -87,14 +95,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
         break
       await asyncio.sleep(0.005)
 
-    packet = av.Packet(self._build_frame_data(msg))
-    packet.time_base = self._time_base
-
     self._pts =  ((time.monotonic_ns() - self._t0_ns) * self._clock_rate) // 1_000_000_000
-    packet.pts = self._pts
     self.log_debug("track sending frame %d", self._pts)
 
-    return packet
-
-  def codec_preference(self) -> str | None:
-    return "H264"
+    return EncodedVideoFrame(self._build_frame_data(msg), self._pts)
