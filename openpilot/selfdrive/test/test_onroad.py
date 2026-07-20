@@ -366,11 +366,19 @@ class TestOnroad:
           self.ts[cam]['timestampEof'],
           strict=True,
         )}
+        first_cam_frame, last_cam_frame = min(cam_frames), max(cam_frames)
+        matched_frames = 0
         for i, fid in enumerate(self.ts[enc]['frameId']):
+          # Logger subscriptions can capture an encoded frame before the
+          # corresponding camera-state stream begins (or after it ends).
+          if fid < first_cam_frame or fid > last_cam_frame:
+            continue
           cam_sof, cam_eof = cam_frames[fid]
           enc_sof, enc_eof = self.ts[enc]['timestampSof'][i], self.ts[enc]['timestampEof'][i]
           assert enc_sof == cam_sof, f"SOF mismatch: frameId={fid}, enc_sof={enc_sof}, cam_sof={cam_sof}"
           assert enc_eof == cam_eof, f"EOF mismatch: frameId={fid}, enc_eof={enc_eof}, cam_eof={cam_eof}"
+          matched_frames += 1
+        assert matched_frames > 0, "Camera and encoder streams don't overlap"
 
   def test_model_execution_timings(self, subtests):
     result = "\n"
