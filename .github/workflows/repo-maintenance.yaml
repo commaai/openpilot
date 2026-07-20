@@ -89,12 +89,10 @@ jobs:
             const { owner, repo } = context.repo;
             const upstream = `${owner}/${repo}`;
 
-            // on PR close just delete that branch, the full scan burns the repo's API rate limit
             const closed = context.payload.pull_request;
             if (closed) {
               if (closed.head.repo?.full_name === upstream) {
-                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${closed.head.ref}` })
-                  .catch((error) => console.log(`Skipping branch ${closed.head.ref}: ${error.message}`));
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${closed.head.ref}` }).catch(console.log);
               }
               return;
             }
