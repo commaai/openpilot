@@ -5,6 +5,10 @@ from openpilot.common.basedir import BASEDIR
 
 class Spinner:
   def __init__(self):
+    if os.getenv("CI"):
+      self.spinner_proc = None
+      return
+
     try:
       self.spinner_proc = subprocess.Popen(["./spinner.py"],
                                            stdin=subprocess.PIPE,

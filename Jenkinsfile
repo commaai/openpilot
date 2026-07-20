@@ -75,28 +75,6 @@ END"""
   }
 }
 
-def recoverDeviceState(String ip) {
-  try {
-    device(ip, "check device state", '''
-available_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
-if [ "$available_kb" -lt 2200000 ] || ! python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null 2>&1; then
-  echo "Device state unhealthy (${available_kb} kB available), rebooting before hardware tests"
-  sudo systemd-run --on-active=1s reboot
-  sleep 10
-fi
-''')
-  } catch (Exception e) {
-    // The SSH connection drops when the scheduled reboot starts. Keep the
-    // device locked until it is back rather than letting another build take it.
-    sleep(20)
-    retryWithDelay(30, 10) {
-      device(ip, "wait for reboot", "true")
-    }
-    def date = sh(script: 'date', returnStdout: true).trim();
-    device(ip, "set time after reboot", "date -s '" + date + "'")
-  }
-}
-
 def deviceStage(String stageName, String deviceType, List extra_env, def steps) {
   stage(stageName) {
     if (currentBuild.result != null) {
@@ -121,7 +99,6 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("openpilot/selfdrive/test/setup_device_ci.sh"))
           }
-          recoverDeviceState(device_ip)
           steps.each { item ->
             def name = item[0]
             def cmd = item[1]
