@@ -138,6 +138,11 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
+  if os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True))):
+    for _ in range(25):  # after a cold power-on the asm bridge needs ~20s of its own firmware boot
+      if usbgpu_present():
+        break
+      time.sleep(1)
   USBGPU = usbgpu_present() and os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
   params = Params()
   params.put_bool("UsbGpuActive", False)

@@ -160,6 +160,9 @@ class SelfdriveD:
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
 
+    if not self.big_model and self.sm.frame % 100 == 0:
+      # the egpu can enumerate well after we start, keep looking for it
+      self.big_model = usbgpu_present() and os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
     if self.big_model and self.sm.frame % 100 == 0:
       active = self.params.get_bool("UsbGpuActive")
       if active and not self.big_model_active:
