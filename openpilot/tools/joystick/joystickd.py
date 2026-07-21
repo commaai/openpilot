@@ -48,7 +48,7 @@ def joystickd_thread():
 
     if CC.longActive:
       actuators.accel = 4.0 * float(np.clip(joystick_axes[0], -1, 1))
-      actuators.longControlState = LongCtrlState.pid if sm['carState'].vEgo > CP.vEgoStopping else LongCtrlState.stopping
+      actuators.longControlState = LongCtrlState.pid if sm['carState'].vEgo > 0.1 else LongCtrlState.stopping
       CC.cruiseControl.resume = actuators.accel > 0.0
 
     if CC.latActive:
