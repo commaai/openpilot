@@ -568,10 +568,13 @@ def getNetworkMetered() -> bool:
 
 
 @dispatcher.add_method
-def startStream(sdp: str, enabled: bool) -> dict:
+def startStream(sdp: str, enabled: bool, cameras: list[str] | None) -> dict:
   from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
   params = Params()
   bridge_services_in = []
+
+  # default to wideroad camera
+  if not cameras: cameras = ["wideRoad"]
 
   # stale car params case taken care of by webrtcd being shut off on ignition
   cp_bytes = Params().get("CarParamsPersistent")
@@ -589,7 +592,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
     # wait for webrtcd end points to wake up
     wait_for_webrtcd()
 
-  return post_stream_request(StreamRequestBody(sdp, "wideRoad", enabled, bridge_services_in, ["carState", "deviceState"]))
+  return post_stream_request(StreamRequestBody(sdp, cameras, enabled, bridge_services_in, ["carState", "deviceState"]))
 
 
 def get_logs_to_send_sorted() -> list[str]:

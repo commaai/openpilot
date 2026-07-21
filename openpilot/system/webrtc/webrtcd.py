@@ -229,7 +229,10 @@ class StreamSession:
     builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
     self.enabled = body.enabled
-    self.video_track = LiveStreamVideoStreamTrack(body.init_camera, self.enabled)
+    for camera in body.cameras:
+      track = LiveStreamVideoStreamTrack(camera, self.enabled)
+      self.video_tracks[camera] = track
+      builder.add_video_stream(camera, track)
     builder.add_video_stream(body.init_camera, self.video_track)
     self.stream = builder.stream()
 
@@ -248,8 +251,8 @@ class StreamSession:
     self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
-      "New stream session (%s), init camera %s, video enabled %s, incoming services %s, outgoing services %s",
-      self.identifier, body.init_camera, body.enabled, body.bridge_services_in, body.bridge_services_out,
+      "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s",
+      self.identifier, list(self.video_tracks), body.enabled, body.bridge_services_in, body.bridge_services_out,
     )
 
   def start(self):
@@ -274,14 +277,17 @@ class StreamSession:
 
         match msg_type:
           case "livestreamCameraSwitch":
-            self.video_track.switch_camera(payload["data"]["camera"])
+            # only needed for 1 track stream
+            if len(self.video_tracks) == 1:
+              self.video_tracks[0].switch_camera(payload["data"]["camera"])
           case "livestreamSettings":
             if self.bitrate_controller is not None:
               self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
             self.enabled = enabled
-            self.video_track.enable(enabled)
+            for track in self.video_tracks.values():
+              track.enable(enabled)
             if self.outgoing_bridge is not None:
               self.outgoing_bridge.enable(enabled)
             if self.bitrate_controller is not None:
@@ -294,8 +300,8 @@ class StreamSession:
             }})
             self.stream.get_messaging_channel().send(pong)
           case "enableTimingSei":
-            if hasattr(self.video_track, 'timing_sei_enabled'):
-              self.video_track.timing_sei_enabled = bool(payload["data"]["enabled"])
+            for track in self.video_tracks.values():
+              track.timing_sei_enabled = bool(payload["data"]["enabled"])
           case _:
             if payload.get("type") not in self.incoming_bridge_services:
               return
@@ -337,9 +343,9 @@ class StreamSession:
         await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
-      if self.video_track is not None:
-        self.video_track.stop()
-        self.video_track = None
+      for track in self.video_tracks.values():
+        track.stop()
+      self.video_tracks.clear()
       await self.stream.stop()
 
 
