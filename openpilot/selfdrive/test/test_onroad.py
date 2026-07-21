@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 import math
 import json
 import os
 import shutil
 import subprocess
 import time
+import unittest
 import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -451,3 +454,7 @@ class TestOnroad(OpenpilotTestCase):
     eng = [m.selfdriveState.engageable for m in self.msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
+
+
+if __name__ == "__main__":
+  unittest.main()

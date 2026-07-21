@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 from collections import defaultdict, deque
 import time
+import unittest
 import numpy as np
 from dataclasses import dataclass
 from openpilot.common.test import OpenpilotTestCase
@@ -132,3 +135,7 @@ class TestPowerDraw(OpenpilotTestCase):
           f"cumulative power budget {cumulative_budget:.2f}W exceeded: got {cumulative_cur:.2f}W"
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
+
+
+if __name__ == "__main__":
+  unittest.main()
