@@ -14,22 +14,6 @@ import numpy as np
 from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
 from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
 
-def _patch_tinygrad_fetch_fw():
-  import hashlib
-  import pathlib
-  import zstandard
-  from tinygrad import helpers
-  _orig = helpers.fetch_fw
-  def fetch_fw(path, name, sha256):
-    p = pathlib.Path(f"/lib/firmware/{path}/{name}.zst")
-    if p.is_file():
-      blob = zstandard.ZstdDecompressor().stream_reader(p.read_bytes()).read()
-      if hashlib.sha256(blob).hexdigest() == sha256:
-        return blob
-    return _orig(path, name, sha256)
-  helpers.fetch_fw = fetch_fw
-_patch_tinygrad_fetch_fw()
-
 
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
