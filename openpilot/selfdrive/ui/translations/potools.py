@@ -67,22 +67,22 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
   cur_field: str | None = None
   plural_idx = 0
 
-  def finish():
-    nonlocal cur, header
-    if cur is None:
+  def finish(entry: POEntry | None):
+    nonlocal header
+    if entry is None:
       return
-    if cur.msgid == "" and cur.msgstr:
-      header = cur
-    elif cur.msgid != "" or cur.is_plural:
-      entries.append(cur)
-    cur = None
+    if entry.msgid == "" and entry.msgstr:
+      header = entry
+    elif entry.msgid != "" or entry.is_plural:
+      entries.append(entry)
 
   for raw in lines:
     line = raw.rstrip('\n')
     stripped = line.strip()
 
     if not stripped:
-      finish()
+      finish(cur)
+      cur = None
       cur_field = None
       continue
 
@@ -123,6 +123,8 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       continue
 
     if stripped.startswith('msgstr '):
+      if cur is None:
+        cur = POEntry()
       cur.msgstr = _parse_quoted(stripped[len('msgstr '):])
       cur_field = 'msgstr'
       continue
@@ -138,7 +140,7 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       elif cur_field == 'msgstr_plural':
         cur.msgstr_plural[plural_idx] += val
 
-  finish()
+  finish(cur)
   return header, entries
 
 
