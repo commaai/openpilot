@@ -13,7 +13,6 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.common.utils import retry
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
@@ -27,7 +26,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_drivi
 from openpilot.common.file_chunker import open_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices, load_oob
-from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
+from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link, recover_usbgpu_link
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -177,16 +176,25 @@ def main(demo=False):
   cloudlog.warning("loading model")
   model = None
   if USBGPU:
-    @retry(attempts=3, delay=2.0, ignore_failure=True)
     def load_big():
-      wait_usbgpu_link()  # the link can renegotiate right at open, settle and try again
-      return ModelState(vipc_client_main.width, vipc_client_main.height, True)
+      for attempt in range(3):
+        try:
+          wait_usbgpu_link()  # the link can renegotiate right at open, settle and try again
+          return ModelState(vipc_client_main.width, vipc_client_main.height, True)
+        except Exception:
+          cloudlog.exception(f"big model load attempt {attempt} failed")
+          recover_usbgpu_link()
+      params.put_bool("UsbGpuRecoveryPending", True)  # the manager reboots at the next offroad, bounded
+      return None
     big: dict = {}
     loader = threading.Thread(target=lambda: big.update(model=load_big()), daemon=True)
     loader.start()
-    loader.join(90)  # a wedged link can hang the load in libusb, the hung thread is abandoned
+    loader.join(120)  # a wedged link can hang the load in libusb, the hung thread is abandoned
     model = big.get('model')
     params.put_bool("UsbGpuActive", model is not None)
+    if model is not None:
+      params.put("UsbGpuRecoveryAttempts", 0)
+      params.remove("UsbGpuRecoveryPending")
   if model is None:
     model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
   params.put_bool("UsbGpuLoading", False)
@@ -310,6 +318,7 @@ def main(demo=False):
       # the egpu died, swap to the small model without letting modeld die
       cloudlog.exception("big model died, swapping to small")
       params.put_bool("UsbGpuActive", False)
+      params.put_bool("UsbGpuRecoveryPending", True)  # recover at the next offroad
       model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
       run_count = 0  # the swap gap is not real frame lag
       model_output = None
