@@ -184,7 +184,6 @@ def main(demo=False):
         except Exception:
           cloudlog.exception(f"big model load attempt {attempt} failed")
           recover_usbgpu_link()
-      params.put_bool("UsbGpuRecoveryPending", True)  # the manager reboots at the next offroad, bounded
       return None
     big: dict = {}
     loader = threading.Thread(target=lambda: big.update(model=load_big()), daemon=True)
@@ -192,9 +191,6 @@ def main(demo=False):
     loader.join(120)  # a wedged link can hang the load in libusb, the hung thread is abandoned
     model = big.get('model')
     params.put_bool("UsbGpuActive", model is not None)
-    if model is not None:
-      params.put("UsbGpuRecoveryAttempts", 0)
-      params.remove("UsbGpuRecoveryPending")
   if model is None:
     model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
   params.put_bool("UsbGpuLoading", False)
@@ -318,7 +314,6 @@ def main(demo=False):
       # the egpu died, swap to the small model without letting modeld die
       cloudlog.exception("big model died, swapping to small")
       params.put_bool("UsbGpuActive", False)
-      params.put_bool("UsbGpuRecoveryPending", True)  # recover at the next offroad
       model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
       run_count = 0  # the swap gap is not real frame lag
       model_output = None
