@@ -113,8 +113,7 @@ class LongitudinalPlanner:
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
 
-    has_lead = sm['radarState'].leadOne.present
-    self.mpc.set_weights(personality=sm['selfdriveState'].personality, has_lead=has_lead)
+    self.mpc.set_weights(personality=sm['selfdriveState'].personality)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     self.mpc.update(sm['radarState'], personality=sm['selfdriveState'].personality)
 

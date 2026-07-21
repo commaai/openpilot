@@ -253,12 +253,9 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
-  def set_weights(self, personality=log.LongitudinalPersonality.standard, has_lead=True):
+  def set_weights(self, personality=log.LongitudinalPersonality.standard):
     jerk_factor = get_jerk_factor(personality)
-    # Don't restrict accel with the jerk cost when there is no lead, the cruise
-    # limit controls speed in that case.
-    jerk_cost = jerk_factor * J_EGO_COST if has_lead else 0.0
-    cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_cost]
+    cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_factor * J_EGO_COST]
     constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     self.set_cost_weights(cost_weights, constraint_cost_weights)
 
