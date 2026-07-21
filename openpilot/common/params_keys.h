@@ -128,5 +128,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"UptimeOffroad", {PERSISTENT, FLOAT, "0.0"}},
     {"UptimeOnroad", {PERSISTENT, FLOAT, "0.0"}},
     {"UsbGpuActive", {CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION, BOOL}},
+    {"UsbGpuRecoveryAttempts", {PERSISTENT, INT, "0"}},
+    {"UsbGpuRecoveryPending", {PERSISTENT, BOOL}},
     {"Version", {PERSISTENT, STRING}},
 };

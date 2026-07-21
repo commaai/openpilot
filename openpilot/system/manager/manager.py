@@ -163,6 +163,15 @@ def manager_thread() -> None:
     except Exception:
       pass
 
+    # a degraded usbgpu usually needs a reboot to retrain, do it offroad and bounded
+    if not started and params.get_bool("UsbGpuRecoveryPending"):
+      params.remove("UsbGpuRecoveryPending")
+      attempts = params.get("UsbGpuRecoveryAttempts", return_default=True)
+      if attempts < 2:
+        cloudlog.event("usbgpu recovery reboot", attempts=attempts, error=True)
+        params.put("UsbGpuRecoveryAttempts", attempts + 1)
+        params.put_bool("DoReboot", True)
+
     # Exit main loop when uninstall/shutdown/reboot is needed
     shutdown = False
     for param in ("DoUninstall", "DoShutdown", "DoReboot"):
