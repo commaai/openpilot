@@ -9,12 +9,15 @@ CAR_ROTATION_RADIUS = 0.0
 MAX_CURVATURE = 0.2
 MAX_VEL_ERR = 5.0  # m/s
 MIN_STABLE_DELAY = 0.3
-V_EGO_STOPPING = 0.5  # m/s, speed at which the car goes into stopping state
+V_EGO_STOPPING = 0.25  # m/s, speed at which the car goes into stopping state
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0  # m/s^3
 MAX_LATERAL_ACCEL_NO_ROLL = 3.0  # m/s^2
 
+
+def should_stop(v_ego: float, a_target: float, a_thresh: float = 0.1) -> bool:
+  return bool(v_ego < V_EGO_STOPPING and a_target < a_thresh)
 
 def clamp(val, min_val, max_val):
   clamped_val = float(np.clip(val, min_val, max_val))
@@ -54,8 +57,7 @@ def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL):
     v_now = 0.0
     v_target = 0.0
     a_target = 0.0
-  should_stop = (v_now < V_EGO_STOPPING and a_target < 0.1)
-  return a_target, should_stop
+  return a_target, should_stop(v_now, a_target)
 
 def curv_from_psis(psi_target, psi_rate, vego, action_t):
   vego = np.clip(vego, MIN_SPEED, np.inf)

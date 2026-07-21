@@ -7,7 +7,7 @@ from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.controls.lib.drive_helpers import V_EGO_STOPPING
+from openpilot.selfdrive.controls.lib.drive_helpers import should_stop
 
 
 @dataclass
@@ -178,7 +178,7 @@ def main():
     pm.send('alertDebug', alert_msg)
 
     longitudinalPlan.aTarget = accel
-    longitudinalPlan.shouldStop = v_ego < V_EGO_STOPPING and accel < 1e-2
+    longitudinalPlan.shouldStop = should_stop(v_ego, accel, a_thresh=1e-2)
 
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
