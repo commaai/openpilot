@@ -488,6 +488,10 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
   try:
+    # TODO: remove once the SSH proxy requests port 22 directly.
+    if local_port == 8022:
+      local_port = 22
+
     if local_port not in LOCAL_PORT_WHITELIST:
       raise Exception("Requested local port not whitelisted")
 
