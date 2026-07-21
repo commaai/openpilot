@@ -137,12 +137,8 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  _present = usbgpu_present()
-  _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
-  USBGPU = _present and _compiled
+  USBGPU = usbgpu_present() and os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
   params = Params()
-  params.put_bool("UsbGpuPresent", _present)
-  params.put_bool("UsbGpuCompiled", _compiled)
 
   config_realtime_process(7, 54)
 
