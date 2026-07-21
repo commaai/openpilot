@@ -31,8 +31,15 @@ class OpenpilotTestCase(unittest.TestCase):
 
   def __init_subclass__(cls, **kwargs):
     super().__init_subclass__(**kwargs)
-    # Hide legacy pytest xunit hook names from pytest. unittest invokes the
-    # preserved hooks inside the OpenpilotPrefix boundary below.
+    if cls.SLOW_TEST and os.environ.get("SKIP_SLOW"):
+      cls.__unittest_skip__ = True
+      cls.__unittest_skip_why__ = "slow test"
+    elif cls.TICI_TEST and not TICI:
+      cls.__unittest_skip__ = True
+      cls.__unittest_skip_why__ = "Skipping tici test on PC"
+
+    # Preserve legacy xunit hook names and invoke them inside the
+    # OpenpilotPrefix boundary below.
     for name in ("setup_method", "teardown_method"):
       hook = cls.__dict__.get(name)
       if hook is not None:

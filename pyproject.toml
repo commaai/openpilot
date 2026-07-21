@@ -64,8 +64,6 @@ testing = [
   "coverage",
   "hypothesis ==6.47.*",
   "ty",
-  "pytest",
-  "pytest-xdist",
   "ruff",
   "codespell",
 ]
@@ -113,14 +111,6 @@ packages = [
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-Werror --strict-config --durations=10"
-python_files = "test_*.py"
-testpaths = [
-  "openpilot",
-]
 
 [tool.codespell]
 quiet-level = 3

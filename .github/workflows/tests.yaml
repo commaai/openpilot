@@ -20,7 +20,7 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical --dist worksteal
+  UNITTEST: python -m openpilot.common.parallel_runner -W error -b -s openpilot -t . -j 0 --level class --durations 0
   GIT_CONFIG_COUNT: 1
   GIT_CONFIG_KEY_0: lfs.fetchexclude
   GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
@@ -112,7 +112,7 @@ jobs:
       run: |
         # Pre-compile Python bytecode so each worker doesn't need to.
         python -m compileall -q -j 0 openpilot
-        MAX_EXAMPLES=1 SKIP_SLOW=1 $PYTEST
+        MAX_EXAMPLES=1 SKIP_SLOW=1 $UNITTEST
 
   process_replay:
     name: process replay
@@ -182,7 +182,7 @@ jobs:
       timeout-minutes: 4
       env:
         ONNXCPU: 1
-      run: $PYTEST openpilot/selfdrive/test/process_replay/test_regen.py
+      run: $UNITTEST openpilot/selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving
@@ -203,7 +203,7 @@ jobs:
       env:
         # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
         EGL_PLATFORM: surfaceless
-      run: pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+      run: python -m openpilot.common.parallel_runner -W error openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report

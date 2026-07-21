@@ -22,7 +22,7 @@ MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 class TestCarInterfaces(OpenpilotTestCase):
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK])
+  @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK], ids=lambda car: car)
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())

@@ -109,8 +109,8 @@ class TestLocationdScenarios(OpenpilotTestCase):
 
   @classmethod
   def setup_class(cls):
-    # xdist can initialize this class in several workers at once. URLFile's
-    # cache writes are atomic, but cache misses are not locked, so every worker
+    # Parallel runs can initialize this class in several processes at once.
+    # URLFile's cache writes are atomic, but cache misses are not locked, so every worker
     # otherwise downloads the same route concurrently.
     lock_path = os.path.join(tempfile.gettempdir(), "openpilot-locationd-scenarios.lock")
     ready_path = f"{lock_path}.ready"

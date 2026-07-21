@@ -327,7 +327,7 @@ function op_lint() {
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest -n logical --dist worksteal "$@"
+  op_run_command python -m openpilot.common.parallel_runner -W error -s openpilot -t . -j 0 --level class "$@"
 }
 
 function op_replay() {

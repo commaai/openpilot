@@ -82,7 +82,11 @@ def parameterized_class(attrs, input_list=None):
       name = f"{cls.__name__}_{i}" + (f"_{suffix}" if suffix else "")
       new_cls = type(name, (cls,), dict(params))
       new_cls.__module__ = cls.__module__
-      new_cls.__unittest_skip__ = False
+      # The template is marked skipped below, so generated classes need their
+      # own skip state. Preserve explicit and environment-driven skips.
+      if "__unittest_skip__" not in new_cls.__dict__:
+        new_cls.__unittest_skip__ = getattr(cls, "__unittest_skip__", False)
+        new_cls.__unittest_skip_why__ = getattr(cls, "__unittest_skip_why__", "")
       globs[name] = new_cls
     # Don't collect the un-parametrised base.
     cls.__unittest_skip__ = True
