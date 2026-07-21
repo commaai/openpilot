@@ -1,7 +1,7 @@
 import os
-import pytest
 import time
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
@@ -13,8 +13,8 @@ from openpilot.common.hardware.tici.pins import GPIO
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-@pytest.mark.tici
-class TestPandad:
+class TestPandad(OpenpilotTestCase):
+  TICI_TEST = True
   def teardown_method(self):
     managed_processes['pandad'].stop()
 

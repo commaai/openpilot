@@ -1,6 +1,6 @@
 import gc
 import weakref
-import pytest
+import unittest
 
 # FIXME: known small leaks not worth worrying about at the moment
 KNOWN_LEAKS = {
@@ -41,8 +41,9 @@ def get_child_widgets(widget) -> list:
   return children
 
 
-class TestWidgetLeaks:
-  @pytest.mark.skip(reason="segfaults")
+from openpilot.common.test import OpenpilotTestCase
+class TestWidgetLeaks(OpenpilotTestCase):
+  @unittest.skip("segfaults")
   def test_dialogs_do_not_leak(self):
     import pyray as rl
     rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)

@@ -2,10 +2,10 @@ import os
 import copy
 import random
 import time
-import pytest
 from collections import defaultdict
 from pprint import pprint
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from opendbc.car.structs import car
@@ -69,8 +69,8 @@ def send_random_can_messages(sendcan, count):
   return sent_msgs
 
 
-@pytest.mark.tici
-class TestBoarddLoopback:
+class TestBoarddLoopback(OpenpilotTestCase):
+  TICI_TEST = True
   @classmethod
   def setup_class(cls):
     os.environ['STARTED'] = '1'

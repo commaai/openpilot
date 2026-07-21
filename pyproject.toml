@@ -65,11 +65,7 @@ testing = [
   "hypothesis ==6.47.*",
   "ty",
   "pytest",
-  "pytest-cpp",
-  "pytest-subtests",
-  # https://github.com/pytest-dev/pytest-xdist/pull/1229
-  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
-  "pytest-mock",
+  "pytest-xdist",
   "ruff",
   "codespell",
 ]
@@ -120,18 +116,8 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
-cpp_files = "test_*"
-cpp_harness = "openpilot/selfdrive/test/cpp_harness.py"
+addopts = "-Werror --strict-config --durations=10"
 python_files = "test_*.py"
-markers = [
-  "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
-  "tici: tests that are only meant to run on the C3/C3X",
-  "skip_tici_setup: mark test to skip tici setup fixture",
-  "nocapture: don't capture test output",
-  "shared_download_cache: share download cache between tests",
-  "xdist_group_class_property: group tests by a property of the class that contains them",
-]
 testpaths = [
   "openpilot",
 ]
@@ -168,6 +154,7 @@ line-length = 160
 lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest".msg = "Use unittest"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "time.time".msg = "Use time.monotonic"  # time.time can skip due to its reference clock, you probably want a monotonic clock
 

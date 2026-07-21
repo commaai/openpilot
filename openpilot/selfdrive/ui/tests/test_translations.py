@@ -3,8 +3,9 @@ import re
 import string
 from pathlib import Path
 
-import pytest
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.ui.translations.potools import parse_po
 from openpilot.system.ui.lib.multilang import LANGUAGES_FILE, TRANSLATIONS_DIR
 
@@ -46,13 +47,13 @@ def load_po_text(po_path: Path) -> str:
   return po_path.read_text(encoding='utf-8')
 
 
-class TestTranslations:
-  @pytest.mark.parametrize("language_code", sorted(TRANSLATION_LANGUAGES.values()))
+class TestTranslations(OpenpilotTestCase):
+  @parameterized.expand(sorted(TRANSLATION_LANGUAGES.values()))
   def test_translation_file_exists(self, language_code: str):
     po_path = PO_DIR / f"app_{language_code}.po"
     assert po_path.exists(), f"missing translation file: {po_path}"
 
-  @pytest.mark.parametrize("po_path", sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
+  @parameterized.expand(sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
   def test_translation_placeholders_are_preserved(self, po_path: Path):
     _, entries = parse_po(po_path)
     language = po_path.stem.removeprefix("app_")
@@ -89,14 +90,14 @@ class TestTranslations:
         )
         assert translated_placeholders == source_placeholders, message
 
-  @pytest.mark.parametrize("po_path", sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
+  @parameterized.expand(sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
   def test_translation_refs_do_not_include_line_numbers(self, po_path: Path):
     for line in load_po_text(po_path).splitlines():
       assert not LINE_NUMBER_REF_RE.match(line), (
         f"{po_path.name}: line-number source reference found: {line}"
       )
 
-  @pytest.mark.parametrize("po_path", sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
+  @parameterized.expand(sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
   def test_translation_entities_are_valid(self, po_path: Path):
     matches = BAD_ENTITY_RE.findall(load_po_text(po_path))
     assert not matches, (

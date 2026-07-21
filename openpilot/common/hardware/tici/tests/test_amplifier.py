@@ -1,18 +1,14 @@
-import pytest
 import time
 import subprocess
 
 from panda import Panda
-from openpilot.common.hardware import TICI, HARDWARE
+from openpilot.common.test import OpenpilotTestCase
+from openpilot.common.hardware import HARDWARE
 from openpilot.common.hardware.tici.amplifier import Amplifier
 
 
-class TestAmplifier:
-
-  @classmethod
-  def setup_class(cls):
-    if not TICI:
-      pytest.skip()
+class TestAmplifier(OpenpilotTestCase):
+  TICI_TEST = True
 
   def setup_method(self):
     # clear dmesg
@@ -65,4 +61,4 @@ class TestAmplifier:
       if self._check_for_i2c_errors(True):
         break
     else:
-      pytest.fail("didn't hit any i2c errors")
+      self.fail("didn't hit any i2c errors")

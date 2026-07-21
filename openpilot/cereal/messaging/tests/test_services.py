@@ -1,13 +1,14 @@
 import subprocess
 import tempfile
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 import openpilot.cereal.services as services
 from openpilot.cereal.services import SERVICE_LIST
 
 
-class TestServices:
+class TestServices(OpenpilotTestCase):
 
   @parameterized.expand(SERVICE_LIST.keys())
   def test_services(self, s):
