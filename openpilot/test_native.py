@@ -17,7 +17,7 @@ NATIVE_TESTS = (
 
 
 class TestNative(OpenpilotTestCase):
-  @parameterized.expand(NATIVE_TESTS, serial=True)
+  @parameterized.expand(NATIVE_TESTS)
   def test_native(self, executable):
     path = os.path.join(BASEDIR, executable)
     if not os.path.exists(path):
