@@ -111,7 +111,7 @@ class Car:
       self.RI = RI
 
     self.CP.alternativeExperience = 0
-    if self.CP.carFingerprint == HYUNDAI_CAR.HYUNDAI_SONATA and self.CP.pcmCruise and self.params.get_bool("MadsEnabled"):
+    if self.CP.carFingerprint == HYUNDAI_CAR.HYUNDAI_SONATA and self.params.get_bool("MadsEnabled"):
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ENABLE_MADS
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
     controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
