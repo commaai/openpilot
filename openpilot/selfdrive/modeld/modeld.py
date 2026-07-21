@@ -174,29 +174,38 @@ def main(demo=False):
 
   st = time.monotonic()
   cloudlog.warning("loading model")
-  model = None
-  if USBGPU:
-    def load_big():
-      for attempt in range(3):
-        try:
-          wait_usbgpu_link()  # the link can renegotiate right at open, settle and try again
-          return ModelState(vipc_client_main.width, vipc_client_main.height, True)
-        except Exception:
-          cloudlog.exception(f"big model load attempt {attempt} failed")
-          release_leaked_locks()
-          recover_usbgpu_link()
+
+  def load_big():
+    for attempt in range(3):
+      try:
+        wait_usbgpu_link()  # the link can renegotiate right at open, settle and try again
+        return ModelState(vipc_client_main.width, vipc_client_main.height, True)
+      except Exception:
+        cloudlog.exception(f"big model load attempt {attempt} failed")
+        release_leaked_locks()
+        recover_usbgpu_link()
+    return None
+
+  def acquire_big():
+    # big only while an egpu is in play: hold the loading refusal and keep trying, never fall to small
+    params.put_bool("UsbGpuLoading", True)
+    while True:
+      big: dict = {}
+      loader = threading.Thread(target=lambda out=big: out.update(model=load_big()), daemon=True)
+      loader.start()
+      loader.join(150)  # a wedged link can hang the load in libusb, the hung thread is abandoned
+      if big.get('model') is not None:
+        params.put("UsbGpuRecoveryAttempts", 0)
+        params.remove("UsbGpuRecoveryPending")
+        params.put_bool("UsbGpuActive", True)
+        params.put_bool("UsbGpuLoading", False)
+        return big['model']
       params.put_bool("UsbGpuRecoveryPending", True)  # the manager reboots at the next offroad, bounded
-      return None
-    big: dict = {}
-    loader = threading.Thread(target=lambda: big.update(model=load_big()), daemon=True)
-    loader.start()
-    loader.join(120)  # a wedged link can hang the load in libusb, the hung thread is abandoned
-    model = big.get('model')
-    params.put_bool("UsbGpuActive", model is not None)
-    if model is not None:
-      params.put("UsbGpuRecoveryAttempts", 0)
-      params.remove("UsbGpuRecoveryPending")
-  if model is None:
+      time.sleep(5)
+
+  if USBGPU:
+    model = acquire_big()
+  else:
     model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
@@ -315,11 +324,11 @@ def main(demo=False):
     except Exception:
       if not params.get_bool("UsbGpuActive"):
         raise
-      # the egpu died, swap to the small model without letting modeld die
-      cloudlog.exception("big model died, swapping to small")
+      # the egpu died mid-drive: soft disable happens on the gap, then reload big in place
+      cloudlog.exception("big model died, reloading")
       params.put_bool("UsbGpuActive", False)
-      model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
-      run_count = 0  # the swap gap is not real frame lag
+      model = acquire_big()
+      run_count = 0  # the reload gap is not real frame lag
       model_output = None
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
