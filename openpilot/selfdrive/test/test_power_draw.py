@@ -1,8 +1,8 @@
 from collections import defaultdict, deque
-import pytest
 import time
 import numpy as np
 from dataclasses import dataclass
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.utils import tabulate
 
 import openpilot.cereal.messaging as messaging
@@ -43,8 +43,8 @@ PROCS = [
 ]
 
 
-@pytest.mark.tici
-class TestPowerDraw:
+class TestPowerDraw(OpenpilotTestCase):
+  TICI_TEST = True
 
   def setup_method(self):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)

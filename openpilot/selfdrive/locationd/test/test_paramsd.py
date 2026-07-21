@@ -1,6 +1,7 @@
 import random
 import numpy as np
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
 from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman
@@ -19,7 +20,7 @@ def get_random_live_parameters(CP):
   return msg
 
 
-class TestParamsd:
+class TestParamsd(OpenpilotTestCase):
   def test_read_saved_params(self):
     params = Params()
 

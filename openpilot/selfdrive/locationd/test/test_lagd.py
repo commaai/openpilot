@@ -1,8 +1,9 @@
 import random
 import numpy as np
 import time
-import pytest
+import unittest
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
@@ -45,7 +46,7 @@ def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_thres
     estimator.update_estimate()
 
 
-class TestLagd:
+class TestLagd(OpenpilotTestCase):
   def test_read_saved_params(self):
     params = Params()
 
@@ -137,7 +138,7 @@ class TestLagd:
     assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
     assert msg.liveDelay.calPerc == 100
 
-  @pytest.mark.skipif(PC, reason="only on device")
+  @unittest.skipIf(PC, "only on device")
   def test_estimator_performance(self):
     mocked_CP = car.CarParams(steerActuatorDelay=0.5)
     estimator = LateralLagEstimator(mocked_CP, DT)

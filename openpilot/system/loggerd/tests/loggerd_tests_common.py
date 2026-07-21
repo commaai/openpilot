@@ -3,6 +3,7 @@ import random
 from pathlib import Path
 
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.system.loggerd.deleter as deleter
 import openpilot.system.loggerd.uploader as uploader
 from openpilot.common.params import Params
@@ -53,7 +54,7 @@ class MockApiIgnore:
   def get_token(self):
     return "fake-token"
 
-class UploaderTestCase:
+class UploaderTestCase(OpenpilotTestCase):
   f_type = "UNKNOWN"
 
   root: Path

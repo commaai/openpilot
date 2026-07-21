@@ -1,13 +1,13 @@
 import math
 import json
 import os
-import pytest
 import shutil
 import subprocess
 import time
 import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.utils import tabulate
 
 from openpilot.cereal import log
@@ -102,9 +102,9 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
-@pytest.mark.tici
-@pytest.mark.skip_tici_setup
-class TestOnroad:
+class TestOnroad(OpenpilotTestCase):
+  TICI_TEST = True
+  SKIP_TICI_SETUP = True
 
   @classmethod
   def setup_class(cls):

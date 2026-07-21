@@ -1,10 +1,10 @@
 import os
 import subprocess
-import pytest
 import time
 import numpy as np
 from collections import namedtuple, defaultdict
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
@@ -54,8 +54,8 @@ def iter_measurements(events):
     for measurement in msgs:
       yield measurement, getattr(measurement, measurement.which())
 
-@pytest.mark.tici
-class TestSensord:
+class TestSensord(OpenpilotTestCase):
+  TICI_TEST = True
   @classmethod
   def setup_class(cls):
     # enable LSM self test

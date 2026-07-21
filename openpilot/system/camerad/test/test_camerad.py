@@ -1,8 +1,9 @@
 import os
 import time
-import pytest
 import numpy as np
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 from openpilot.system.camerad.snapshot import get_snapshots
@@ -39,7 +40,6 @@ def run_and_log(procs, services, duration):
   with processes_context(procs):
     return collect_logs(services, duration)
 
-@pytest.fixture(scope="module")
 def _camera_session():
   """Single camerad session that collects logs and exposure data.
      Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
@@ -74,20 +74,18 @@ def _camera_session():
 
   return ts, exposure
 
-@pytest.fixture(scope="module")
-def logs(_camera_session):
-  return _camera_session[0]
+class TestCamerad(OpenpilotTestCase):
+  TICI_TEST = True
 
-@pytest.fixture(scope="module")
-def exposure_data(_camera_session):
-  return _camera_session[1]
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.logs, cls.exposure_data = _camera_session()
 
-@pytest.mark.tici
-class TestCamerad:
-  @pytest.mark.parametrize("cam", CAMERAS)
-  def test_camera_exposure(self, exposure_data, cam):
+  @parameterized.expand(CAMERAS, names=("cam",))
+  def test_camera_exposure(self, cam):
     lo, hi = EXPOSURE_RANGE
-    checks = exposure_data[cam]
+    checks = self.exposure_data[cam]
     assert len(checks) >= EXPOSURE_STABLE_COUNT, f"{cam}: only got {len(checks)} samples"
 
     # check that exposure converges into the valid range
@@ -101,34 +99,34 @@ class TestCamerad:
     for i, (median, mean) in enumerate(checks):
       ok = _in_range(median, mean)
       if in_range and not ok:
-        pytest.fail(f"{cam}: exposure regressed on sample {i+1} " +
+        self.fail(f"{cam}: exposure regressed on sample {i+1} " +
                     f"(median={median:.4f}, mean={mean:.4f}, expected: ({lo}, {hi}))")
       in_range = ok
 
-  def test_frame_skips(self, logs):
+  def test_frame_skips(self):
     for c in CAMERAS:
-      assert set(np.diff(logs[c]['frameId'])) == {1, }, f"{c} has frame skips"
+      assert set(np.diff(self.logs[c]['frameId'])) == {1, }, f"{c} has frame skips"
 
-  def test_frame_sync(self, logs):
+  def test_frame_sync(self):
     SYNCED_CAMS = ('roadCameraState', 'wideRoadCameraState')
-    n = range(len(logs['roadCameraState']['t'][:-10]))
+    n = range(len(self.logs['roadCameraState']['t'][:-10]))
 
-    frame_ids = {i: [logs[cam]['frameId'][i] for cam in CAMERAS] for i in n}
+    frame_ids = {i: [self.logs[cam]['frameId'][i] for cam in CAMERAS] for i in n}
     assert all(len(set(v)) == 1 for v in frame_ids.values()), "frame IDs not aligned"
 
     # road and wide cameras should be synced within 1.1ms
-    synced_times = {i: [logs[cam]['timestampSof'][i] for cam in SYNCED_CAMS] for i in n}
+    synced_times = {i: [self.logs[cam]['timestampSof'][i] for cam in SYNCED_CAMS] for i in n}
     diffs = {i: (max(ts) - min(ts))/1e6 for i, ts in synced_times.items()}
     laggy_frames = {k: v for k, v in diffs.items() if v > 1.1}
     assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
 
     # driver camera should be staggered ~25ms from road camera
     for i in n:
-      offset_ms = abs(logs['driverCameraState']['timestampSof'][i] - logs['roadCameraState']['timestampSof'][i]) / 1e6
+      offset_ms = abs(self.logs['driverCameraState']['timestampSof'][i] - self.logs['roadCameraState']['timestampSof'][i]) / 1e6
       assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {i}: {offset_ms:.1f}ms (expected ~25ms)"
 
-  def test_sanity_checks(self, logs):
-    self._sanity_checks(logs)
+  def test_sanity_checks(self):
+    self._sanity_checks(self.logs)
 
   def _sanity_checks(self, ts):
     for c in CAMERAS:

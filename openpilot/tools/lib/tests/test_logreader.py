@@ -4,9 +4,10 @@ import io
 import shutil
 import tempfile
 import os
-import pytest
+import unittest
 import requests
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log as capnp_log
@@ -47,7 +48,7 @@ def setup_source_scenario(mocker, is_internal=False):
   yield
 
 
-class TestLogReader:
+class TestLogReader(OpenpilotTestCase):
   @parameterized.expand([
     (f"{TEST_ROUTE}", ALL_SEGS),
     (f"{TEST_ROUTE.replace('/', '|')}", ALL_SEGS),
@@ -72,7 +73,7 @@ class TestLogReader:
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '|')}", ALL_SEGS),
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '%7C')}", ALL_SEGS),
   ])
-  @pytest.mark.skip("this got flaky. internet tests are stupid.")
+  @unittest.skip("this got flaky. internet tests are stupid.")
   def test_indirect_parsing(self, identifier, expected):
     parsed = parse_indirect(identifier)
     sr = SegmentRange(parsed)
@@ -90,7 +91,7 @@ class TestLogReader:
     sr = SegmentRange(identifier)
     assert str(sr) == expected
 
-  @pytest.mark.parametrize("cache_enabled", [True, False])
+  @parameterized.expand([True, False], names=("cache_enabled",))
   def test_direct_parsing(self, mocker, cache_enabled):
     file_exists_mock = mocker.patch("openpilot.tools.lib.filereader.file_exists")
     if cache_enabled:
@@ -107,7 +108,7 @@ class TestLogReader:
       l = len(list(LogReader(f)))
       assert l > 100
 
-    with pytest.raises(URLFileException) if not cache_enabled else pytest.raises(AssertionError):
+    with self.assertRaises(URLFileException if not cache_enabled else AssertionError):
       l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
 
     # file_exists should not be called for direct files
@@ -126,44 +127,44 @@ class TestLogReader:
     (f"{TEST_ROUTE}--3a",),
   ])
   def test_bad_ranges(self, segment_range):
-    with pytest.raises(AssertionError):
+    with self.assertRaises(AssertionError):
       _ = SegmentRange(segment_range).seg_idxs
 
-  @pytest.mark.parametrize("segment_range, api_call", [
+  @parameterized.expand([
     (f"{TEST_ROUTE}/0", False),
     (f"{TEST_ROUTE}/:2", False),
     (f"{TEST_ROUTE}/0:", True),
     (f"{TEST_ROUTE}/-1", True),
     (f"{TEST_ROUTE}", True),
-  ])
+  ], names=("segment_range", "api_call"))
   def test_slicing_api_call(self, mocker, segment_range, api_call):
     max_seg_mock = mocker.patch("openpilot.tools.lib.route.get_max_seg_number_cached")
     max_seg_mock.return_value = NUM_SEGS
     _ = SegmentRange(segment_range).seg_idxs
     assert api_call == max_seg_mock.called
 
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_modes(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
 
     assert qlog_len * 6 < rlog_len
 
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_modes_from_name(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/r")))
 
     assert qlog_len * 6 < rlog_len
 
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_list(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
 
     assert qlog_len * 2 == qlog_len_2
 
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_multiple_iterations(self, mocker):
     init_mock = mocker.patch("openpilot.tools.lib.logreader._LogFileReader")
     lr = LogReader(f"{TEST_ROUTE}/0/q")
@@ -175,14 +176,14 @@ class TestLogReader:
 
     assert qlog_len1 == qlog_len2
 
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_helpers(self):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     assert lr.first("carParams").carFingerprint == "SUBARU OUTBACK 6TH GEN"
     assert 0 < len(list(lr.filter("carParams"))) < len(list(lr))
 
   @parameterized.expand([(True,), (False,)])
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_run_across_segments(self, cache_enabled):
     if cache_enabled:
       os.environ.pop("DISABLE_FILEREADER_CACHE", None)
@@ -191,7 +192,7 @@ class TestLogReader:
     lr = LogReader(f"{TEST_ROUTE}/0:4")
     assert len(lr.run_across_segments(4, noop)) == len(list(lr))
 
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_auto_mode(self, subtests, mocker):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len = len(list(lr))
@@ -207,7 +208,7 @@ class TestLogReader:
 
     with subtests.test("interactive_no"):
       mocker.patch("sys.stdin", new=io.StringIO("n\n"))
-      with pytest.raises(LogsUnavailable):
+      with self.assertRaises(LogsUnavailable):
         lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, sources=[comma_api_source])
 
     with subtests.test("non_interactive"):
@@ -215,7 +216,7 @@ class TestLogReader:
       log_len = len(list(lr))
       assert qlog_len == log_len
 
-  @pytest.mark.parametrize("is_internal", [True, False])
+  @parameterized.expand([True, False], names=("is_internal",))
   def test_auto_source_scenarios(self, mocker, is_internal):
     lr = LogReader(QLOG_FILE)
     qlog_len = len(list(lr))
@@ -225,7 +226,7 @@ class TestLogReader:
       log_len = len(list(lr))
       assert qlog_len == log_len
 
-  @pytest.mark.slow
+  @unittest.skipIf(os.environ.get("SKIP_SLOW"), "slow test")
   def test_sort_by_time(self):
     msgs = list(LogReader(f"{TEST_ROUTE}/0/q"))
     assert msgs != sorted(msgs, key=lambda m: m.logMonoTime)
@@ -254,7 +255,7 @@ class TestLogReader:
       # ensure new message is added, but is not a union type
       msgs = list(LogReader(qlog.name))
       assert len(msgs) == num_msgs + 1
-      with pytest.raises(capnp.KjException):
+      with self.assertRaises(capnp.KjException):
         [m.which() for m in msgs]
 
       # should not be added when only_union_types=True
