@@ -699,7 +699,6 @@ name = "openpilot"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "cffi" },
     { name = "comma-deps-acados" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-catch2" },
@@ -742,7 +741,7 @@ submodules = [
     { name = "pandacan" },
     { name = "rednose" },
     { name = "teleoprtc" },
-    { name = "tinygrad" },
+    { name = "tinygrad", extra = ["mesa"] },
 ]
 testing = [
     { name = "codespell" },
@@ -768,7 +767,6 @@ standalone = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "comma-deps-acados" },
     { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
@@ -810,7 +808,7 @@ requires-dist = [
     { name = "setproctitle" },
     { name = "sounddevice" },
     { name = "teleoprtc", marker = "extra == 'submodules'", editable = "teleoprtc_repo" },
-    { name = "tinygrad", marker = "extra == 'submodules'", editable = "tinygrad_repo" },
+    { name = "tinygrad", extras = ["mesa"], marker = "extra == 'submodules'", editable = "tinygrad_repo" },
     { name = "tqdm" },
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
@@ -1268,6 +1266,11 @@ name = "tinygrad"
 version = "0.13.0"
 source = { editable = "tinygrad_repo" }
 
+[package.optional-dependencies]
+mesa = [
+    { name = "tinymesa" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'docs'" },
@@ -1321,6 +1324,16 @@ requires-dist = [
     { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
 ]
 provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa"]
+
+[[package]]
+name = "tinymesa"
+version = "25.2.7.2"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/c8/ad3c2ff59fbfb9f56fda7c951100a8db147b49dadb63064a82c90c10e2fc/tinymesa-25.2.7.2-py3-none-macosx_14_0_arm64.whl", hash = "sha256:c93e4c1779d9e5de54263169a3565aa350be1a27d4112a40a34c62d9574feee0", size = 6866230, upload-time = "2026-07-02T21:51:10.714Z" },
+    { url = "https://files.pythonhosted.org/packages/98/ef/3e0fa4662ba3cc27d5d58669f048625f9f9267933db0ba64cf0094f38376/tinymesa-25.2.7.2-py3-none-manylinux_2_32_aarch64.whl", hash = "sha256:778104a1372229778eed33c271249484733837fdfe662b43c228fef2a5ce1fa3", size = 40832772, upload-time = "2026-07-02T21:51:13.073Z" },
+    { url = "https://files.pythonhosted.org/packages/29/9f/45417bb237d57ecdbe2d96195ff836c5c80ee58c1b83cf4cd0f0498c0a47/tinymesa-25.2.7.2-py3-none-manylinux_2_32_x86_64.whl", hash = "sha256:a0b1d93405fc38202c03d0b76d0e4b72824116cce3e16e088690833bda39ba0c", size = 41951224, upload-time = "2026-07-02T21:51:16.68Z" },
+]
 
 [[package]]
 name = "tomli"
