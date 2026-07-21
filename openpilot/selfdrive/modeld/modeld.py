@@ -138,13 +138,8 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  _present = usbgpu_present()
-  _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
-  USBGPU = _present and _compiled
+  USBGPU = usbgpu_present() and os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
   params = Params()
-  params.put_bool("UsbGpuPresent", _present)
-  params.put_bool("UsbGpuCompiled", _compiled)
-  params.put_bool("UsbGpuLoading", USBGPU)  # engagement is refused until the model is settled
   params.put_bool("UsbGpuActive", False)
 
   config_realtime_process(7, 54)
@@ -193,7 +188,6 @@ def main(demo=False):
     params.put_bool("UsbGpuActive", model is not None)
   if model is None:
     model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
-  params.put_bool("UsbGpuLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging

@@ -16,7 +16,9 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
 
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents
+from openpilot.common.file_chunker import get_manifest_path
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
+from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.helpers import ExcessiveActuationCheck
 from openpilot.selfdrive.selfdrived.state import StateMachine
@@ -65,7 +67,9 @@ class SelfdriveD:
     self.calibrated_pose: Pose | None = None
     self.excessive_actuation_check = ExcessiveActuationCheck()
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
-    self.big_model_loading = False
+    # no handshake with modeld: a plugged, compiled usbgpu with no model output yet means the big model is loading
+    self.big_model = usbgpu_present() and os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+    self.big_model_active = False
     self.big_model_ready_t = -10.
 
     # Setup sockets
@@ -156,15 +160,14 @@ class SelfdriveD:
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
 
-    if self.sm.frame < 500 or self.sm.frame % 100 == 0:  # fast polls at first, the loading flag is set early in the drive
-      loading = self.params.get_bool("UsbGpuLoading")
-      if self.big_model_loading and not loading:
-        self.big_model_ready_t = time.monotonic()  # the rest of the stack needs a beat after the long load
-        if self.params.get_bool("UsbGpuActive"):
-          self.events.add(EventName.bigModelLoaded)
-      self.big_model_loading = loading
-    if self.big_model_loading:
+    if self.big_model and self.sm.frame % 100 == 0:
+      active = self.params.get_bool("UsbGpuActive")
+      if active and not self.big_model_active:
+        self.events.add(EventName.bigModelLoaded)
+      self.big_model_active = active
+    if self.big_model and not self.big_model_active and self.sm.recv_frame['modelV2'] == 0:
       self.events.add(EventName.bigModelLoading)
+      self.big_model_ready_t = time.monotonic()  # the settle grace slides until the model shows up
 
     if self.sm.recv_frame['lateralManeuverPlan'] > 0:
       self.events.add(EventName.lateralManeuver)
@@ -364,7 +367,7 @@ class SelfdriveD:
     # generic catch-all. ideally, a more specific event should be added above instead
     has_disable_events = self.events.contains(ET.NO_ENTRY) and (self.events.contains(ET.SOFT_DISABLE) or self.events.contains(ET.IMMEDIATE_DISABLE))
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
-    big_model_settling = self.big_model_loading or time.monotonic() < self.big_model_ready_t + 10.
+    big_model_settling = time.monotonic() < self.big_model_ready_t + 10.
     if not self.sm.all_checks() and no_system_errors and not big_model_settling:  # the load holds modelV2 and friends back on purpose
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)

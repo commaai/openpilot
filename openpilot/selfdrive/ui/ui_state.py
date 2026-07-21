@@ -87,7 +87,7 @@ class UIState:
     self._uevent_sock.setblocking(False)
     self._usbgpu_started_prev = False
     self.usbgpu_active: bool = self.params.get_bool("UsbGpuActive")
-    self.usbgpu_loading: bool = self.params.get_bool("UsbGpuLoading")
+    self.usbgpu_loading: bool = False
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
@@ -226,7 +226,8 @@ class UIState:
     self._usbgpu_started_prev = self.started
     self.usbgpu_compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
     self.usbgpu_active = self.params.get_bool("UsbGpuActive")
-    self.usbgpu_loading = self.params.get_bool("UsbGpuLoading")
+    # same derivation as selfdrived: plugged + compiled + no model output yet = loading
+    self.usbgpu_loading = self.usbgpu and self.usbgpu_compiled and not self.usbgpu_active and self.sm.recv_frame['modelV2'] <= self.started_frame
 
 
 class Device:
