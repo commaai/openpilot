@@ -78,6 +78,7 @@ END"""
 def recoverDeviceState(String ip) {
   device(ip, "restart display service", '''
 ion_before=$(sudo awk '/total orphaned/ {print $3}' /sys/kernel/debug/ion/heaps/system)
+# Restarting the DRM master releases display buffers leaked by short-lived UI processes.
 sudo systemctl restart magic.service
 sudo systemctl is-active --quiet magic.service
 python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null
