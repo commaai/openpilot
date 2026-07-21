@@ -9,9 +9,6 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
-# Stopping state constant (previously per-car CarParams)
-STOPPING_DECEL_RATE = 0.8  # m/s^2/s while trying to stop
-
 
 def long_control_state_trans(active, long_control_state, should_stop, brake_pressed, cruise_standstill):
   starting_condition = (not should_stop and
@@ -65,7 +62,7 @@ class LongControl:
       output_accel = self.last_output_accel
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
-        output_accel -= STOPPING_DECEL_RATE * DT_CTRL
+        output_accel -= 0.8 * DT_CTRL  # m/s^2/s while trying to stop
       self.reset()
 
     else:  # LongCtrlState.pid
