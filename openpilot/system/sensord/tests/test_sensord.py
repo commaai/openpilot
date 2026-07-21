@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 import os
 import subprocess
 import time
+import unittest
 import numpy as np
 from collections import namedtuple, defaultdict
 
@@ -183,3 +186,7 @@ class TestSensord(OpenpilotTestCase):
     time.sleep(1)
     state_two = get_irq_count(self.sensord_irq)
     assert state_one == state_two, "Interrupts received after sensord stop!"
+
+
+if __name__ == "__main__":
+  unittest.main(warnings="error")

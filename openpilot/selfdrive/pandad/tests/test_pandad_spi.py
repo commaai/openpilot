@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import os
 import time
+import unittest
 import numpy as np
 import random
 
@@ -105,3 +108,7 @@ class TestBoarddSpi(OpenpilotTestCase):
     with subtests.test(msg="CAN traffic"):
       print(f"Sent {total_sent_count} CAN messages, got {total_recv_count} back. {total_recv_count/(total_sent_count+1e-4):.2%} received")
       assert total_recv_count > 20
+
+
+if __name__ == "__main__":
+  unittest.main(warnings="error")
