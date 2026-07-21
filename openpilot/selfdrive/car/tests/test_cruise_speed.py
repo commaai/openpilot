@@ -47,7 +47,7 @@ class TestCruiseSpeed(OpenpilotTestCase):
 # TODO: test pcmCruise
 @parameterized_class(('pcm_cruise',), [(False,)])
 class TestVCruiseHelper(OpenpilotTestCase):
-  def setup_method(self, method=None):
+  def setup_method(self):
     self.CP = car.CarParams(pcmCruise=self.pcm_cruise)
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.reset_cruise_speed_state()

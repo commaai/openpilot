@@ -18,14 +18,14 @@ BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
 class TestManager(OpenpilotTestCase):
-  def setup_method(self, method=None):
+  def setup_method(self):
     HARDWARE.set_power_save(False)
 
     # ensure clean CarParams
     params = Params()
     params.clear_all()
 
-  def teardown_method(self, method=None):
+  def teardown_method(self):
     manager.manager_cleanup()
 
   def test_duplicate_procs(self):

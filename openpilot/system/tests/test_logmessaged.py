@@ -10,7 +10,7 @@ from openpilot.common.swaglog import cloudlog, ipchandler
 
 
 class TestLogmessaged(OpenpilotTestCase):
-  def setup_method(self, method=None):
+  def setup_method(self):
     # clear the IPC buffer in case some other tests used cloudlog and filled it
     ipchandler.close()
     ipchandler.connect()
@@ -24,7 +24,7 @@ class TestLogmessaged(OpenpilotTestCase):
     messaging.drain_sock(self.sock)
     messaging.drain_sock(self.error_sock)
 
-  def teardown_method(self, method=None):
+  def teardown_method(self):
     del self.sock
     del self.error_sock
     managed_processes['logmessaged'].stop(block=True)

@@ -1,7 +1,6 @@
 import contextlib
 import gc
 import inspect
-import multiprocessing
 import os
 import subprocess
 import unittest
@@ -68,8 +67,6 @@ class OpenpilotTestCase(unittest.TestCase):
     if ((self.SLOW_TEST and os.environ.get("SKIP_SLOW")) or
         (self.TICI_TEST and not TICI) or getattr(type(self), "__unittest_skip__", False)):
       return super().run(result)
-    multiprocessing.current_process()._config["daemon"] = False
-    multiprocessing.Process = multiprocessing.get_context("fork").Process  # ty: ignore[invalid-assignment]
     test_env = clean_env()
     test_env.__enter__()
     prefix = OpenpilotPrefix(shared_download_cache=self.SHARED_DOWNLOAD_CACHE)

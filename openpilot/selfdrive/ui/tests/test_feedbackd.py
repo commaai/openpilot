@@ -9,7 +9,7 @@ from openpilot.system.manager.process_config import managed_processes
 
 @unittest.skip("tmp disabled")
 class TestFeedbackd(OpenpilotTestCase):
-  def setup_method(self, method=None):
+  def setup_method(self):
     self.pm = messaging.PubMaster(['carState', 'rawAudioData'])
     self.sm = messaging.SubMaster(['audioFeedback'])
 

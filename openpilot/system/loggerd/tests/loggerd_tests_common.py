@@ -66,7 +66,7 @@ class UploaderTestCase(OpenpilotTestCase):
   def set_ignore(self):
     uploader.Api = MockApiIgnore  # ty: ignore[invalid-assignment]  # test double
 
-  def setup_method(self, method=None):
+  def setup_method(self):
     uploader.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     uploader.fake_upload = True
     uploader.force_wifi = True

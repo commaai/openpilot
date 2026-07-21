@@ -23,7 +23,7 @@ def pm_patch(mocker, name, value, constant=False):
 
 
 class TestPowerMonitoring(OpenpilotTestCase):
-  def setup_method(self, method=None):
+  def setup_method(self):
     self._fixture("mocker").patch("time.monotonic", mock_time_monotonic)
     self.params = Params()
 

@@ -19,7 +19,7 @@ class TestSimBridgeBase(OpenpilotTestCase):
     if cls is TestSimBridgeBase:
       raise unittest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
 
-  def setup_method(self, method=None):
+  def setup_method(self):
     self.processes = []
 
   def test_driving(self):
@@ -85,7 +85,7 @@ class TestSimBridgeBase(OpenpilotTestCase):
         break
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
-  def teardown_method(self, method=None):
+  def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
       p.terminate()

@@ -31,6 +31,7 @@ export CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
 export GITHUB_COMMENTS_TOKEN=${env.GITHUB_COMMENTS_TOKEN}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
+export PYTEST_ADDOPTS="-n0 -s"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
@@ -205,13 +206,13 @@ node {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("check dirty", "tools/release/check-dirty.sh"),
-          step("onroad tests", "python -m unittest openpilot.selfdrive.test.test_onroad", [timeout: 120]),
+          step("onroad tests", "pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
         ])
       },
       'HW + Unit Tests': {
         deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
-          step("test power draw", "pytest -s openpilot/selfdrive/test/test_power_draw.py"),
+          step("test power draw", "pytest -s openpilot/selfdrive/test//test_power_draw.py"),
           step("test encoder", "pytest openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/"]]),
           step("test manager", "pytest openpilot/system/manager/test/test_manager.py"),
         ])
@@ -220,14 +221,14 @@ node {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "pytest openpilot/selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 180]),
+          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "pytest openpilot/selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 180]),
+          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'sensord': {

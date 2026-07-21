@@ -13,7 +13,7 @@ from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 
 @unittest.skipIf(MetaDriveBridge is None, "metadrive is not installed")
 class TestMetaDriveBridge(TestSimBridgeBase):
-  def setup_method(self, method=None):
+  def setup_method(self):
     super().openpilot_setup_method()
     self.test_duration = 30
 

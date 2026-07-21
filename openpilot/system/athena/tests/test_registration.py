@@ -11,7 +11,7 @@ from openpilot.common.hardware.hw import Paths
 
 class TestRegistration(OpenpilotTestCase):
 
-  def setup_method(self, method=None):
+  def setup_method(self):
     # clear params and setup key paths
     self.params = Params()
 

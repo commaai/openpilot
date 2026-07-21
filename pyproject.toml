@@ -64,10 +64,10 @@ testing = [
   "coverage",
   "hypothesis ==6.47.*",
   "ty",
-  "ruff",
-  "codespell",
   "pytest",
   "pytest-xdist",
+  "ruff",
+  "codespell",
 ]
 
 dev = [
@@ -115,8 +115,12 @@ packages = [
 allow-direct-references = true
 
 [tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-Werror --strict-config --durations=10"
 python_files = "test_*.py"
-testpaths = ["openpilot"]
+testpaths = [
+  "openpilot",
+]
 
 [tool.codespell]
 quiet-level = 3
@@ -146,10 +150,12 @@ lint.ignore = [
   "B027",
   "UP007",  # this doesn't play nice with raylib atm
 ]
-lint.flake8-implicit-str-concat.allow-multiline = false
 line-length = 160
+lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest".msg = "Use unittest"
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "time.time".msg = "Use time.monotonic"  # time.time can skip due to its reference clock, you probably want a monotonic clock
 
 # raylib banned APIs

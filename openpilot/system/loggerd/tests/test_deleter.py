@@ -15,7 +15,7 @@ class TestDeleter(UploaderTestCase):
   def fake_statvfs(self, d):
     return self.fake_stats
 
-  def setup_method(self, method=None):
+  def setup_method(self):
     self.f_type = "fcamera.hevc"
     super().openpilot_setup_method()
     self.fake_stats = Stats(f_bavail=0, f_blocks=10, f_frsize=4096)

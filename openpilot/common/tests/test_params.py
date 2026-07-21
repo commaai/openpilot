@@ -8,7 +8,7 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params, ParamKeyFlag, UnknownKeyName
 
 class TestParams(OpenpilotTestCase):
-  def setup_method(self, method=None):
+  def setup_method(self):
     self.params = Params()
 
   def test_params_put_and_get(self):

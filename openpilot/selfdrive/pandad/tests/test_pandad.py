@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 class TestPandad(OpenpilotTestCase):
   TICI_TEST = True
-  def teardown_method(self, method=None):
+  def teardown_method(self):
     managed_processes['pandad'].stop()
 
   def _run_test(self, timeout=30) -> float:
