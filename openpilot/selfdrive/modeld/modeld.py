@@ -2,6 +2,7 @@
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
+import threading
 import time
 import numpy as np
 import openpilot.cereal.messaging as messaging
@@ -12,6 +13,7 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.common.utils import retry
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
@@ -143,6 +145,8 @@ def main(demo=False):
   params = Params()
   params.put_bool("UsbGpuPresent", _present)
   params.put_bool("UsbGpuCompiled", _compiled)
+  params.put_bool("UsbGpuLoading", USBGPU)  # engagement is refused until the model is settled
+  params.put_bool("UsbGpuActive", False)
 
   config_realtime_process(7, 54)
 
@@ -169,11 +173,23 @@ def main(demo=False):
   if use_extra_client:
     cloudlog.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
 
-  if USBGPU:
-    wait_usbgpu_link()
   st = time.monotonic()
   cloudlog.warning("loading model")
-  model = ModelState(vipc_client_main.width, vipc_client_main.height, USBGPU)
+  model = None
+  if USBGPU:
+    @retry(attempts=3, delay=2.0, ignore_failure=True)
+    def load_big():
+      wait_usbgpu_link()  # the link can renegotiate right at open, settle and try again
+      return ModelState(vipc_client_main.width, vipc_client_main.height, True)
+    big: dict = {}
+    loader = threading.Thread(target=lambda: big.update(model=load_big()), daemon=True)
+    loader.start()
+    loader.join(90)  # a wedged link can hang the load in libusb, the hung thread is abandoned
+    model = big.get('model')
+    params.put_bool("UsbGpuActive", model is not None)
+  if model is None:
+    model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
+  params.put_bool("UsbGpuLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
@@ -286,7 +302,17 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
-    model_output = model.run(bufs, transforms, inputs)
+    try:
+      model_output = model.run(bufs, transforms, inputs)
+    except Exception:
+      if not params.get_bool("UsbGpuActive"):
+        raise
+      # the egpu died, swap to the small model without letting modeld die
+      cloudlog.exception("big model died, swapping to small")
+      params.put_bool("UsbGpuActive", False)
+      model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
+      run_count = 0  # the swap gap is not real frame lag
+      model_output = None
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
