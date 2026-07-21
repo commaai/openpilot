@@ -220,7 +220,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, body: StreamRequestBody, debug_mode: bool = False):
+  def __init__(self, body: StreamRequestBody):
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc.builder import WebRTCAnswerBuilder
 
@@ -350,10 +350,9 @@ class StreamSession:
 
 
 class ServerState:
-  def __init__(self, debug: bool):
+  def __init__(self):
     self.streams: dict[str, StreamSession] = {}
     self.stream_lock = asyncio.Lock()
-    self.debug = debug
     self.teardown: asyncio.TimerHandle | None = None
 
 
@@ -378,7 +377,7 @@ def _text_response(text: str, status: int = 200) -> tuple[int, bytes, str]:
 
 
 async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, bytes, str]:
-  stream_dict, debug_mode = state.streams, state.debug
+  stream_dict = state.streams
   body = StreamRequestBody(**json.loads(raw_body))
 
   async with state.stream_lock:
@@ -397,7 +396,7 @@ async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, b
       await s.stop()
       stream_dict.pop(sid, None)
 
-    session = StreamSession(body, debug_mode)
+    session = StreamSession(body)
     stream_dict[session.identifier] = session
     try:
       answer = await asyncio.wait_for(session.get_answer(), timeout=30)
@@ -545,23 +544,23 @@ async def _shutdown(server: WebrtcdHTTPServer, state: ServerState, loop: asyncio
   loop.stop()
 
 
-def prewarm_stream_session_imports(debug_mode: bool = False) -> None:
+def prewarm_stream_session_imports() -> None:
   from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
   from teleoprtc.builder import WebRTCAnswerBuilder
   assert LiveStreamVideoStreamTrack
   assert WebRTCAnswerBuilder
 
 
-def webrtcd_thread(host: str, port: int, debug: bool):
+def webrtcd_thread(host: str, port: int):
   logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
   prewarm_start = time.monotonic()
-  prewarm_stream_session_imports(debug)
+  prewarm_stream_session_imports()
   prewarm_end = time.monotonic()
   logging.getLogger("webrtcd").info(f"webrtc prewarm finished in {(prewarm_end - prewarm_start) * 1000} ms")
 
   loop = asyncio.new_event_loop()
   asyncio.set_event_loop(loop)
-  state = ServerState(debug)
+  state = ServerState()
 
   server = WebrtcdHTTPServer((host, port), WebrtcdHandler)
   server.state = state
@@ -594,10 +593,9 @@ def main():
   parser = argparse.ArgumentParser(description="WebRTC daemon")
   parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to listen on")
   parser.add_argument("--port", type=int, default=5001, help="Port to listen on")
-  parser.add_argument("--debug", action="store_true", help="Enable debug mode")
   args = parser.parse_args()
 
-  webrtcd_thread(args.host, args.port, args.debug)
+  webrtcd_thread(args.host, args.port)
 
 
 if __name__=="__main__":
