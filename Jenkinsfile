@@ -76,18 +76,13 @@ END"""
 }
 
 def recoverDeviceState(String ip) {
-  device(ip, "check device state", '''
-available_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
-if [ "$available_kb" -lt 2200000 ] || ! python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null 2>&1; then
-  ion_before=$(sudo awk '/total orphaned/ {print $3}' /sys/kernel/debug/ion/heaps/system)
-  echo "Device state unhealthy (${available_kb} kB available, ${ion_before:-unknown} orphaned ION bytes), restarting magic"
-  sudo systemctl restart magic.service
-  sleep 5
-  sudo systemctl is-active --quiet magic.service
-  python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null
-  ion_after=$(sudo awk '/total orphaned/ {print $3}' /sys/kernel/debug/ion/heaps/system)
-  echo "magic restarted (${ion_after:-unknown} orphaned ION bytes remain)"
-fi
+  device(ip, "restart display service", '''
+ion_before=$(sudo awk '/total orphaned/ {print $3}' /sys/kernel/debug/ion/heaps/system)
+sudo systemctl restart magic.service
+sudo systemctl is-active --quiet magic.service
+python -c 'from tinygrad import Device; Device.get_available_devices()' >/dev/null
+ion_after=$(sudo awk '/total orphaned/ {print $3}' /sys/kernel/debug/ion/heaps/system)
+echo "magic restarted (orphaned ION bytes: ${ion_before:-unknown} -> ${ion_after:-unknown})"
 ''')
 }
 
