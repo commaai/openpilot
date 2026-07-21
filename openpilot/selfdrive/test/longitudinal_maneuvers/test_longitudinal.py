@@ -1,4 +1,5 @@
 import itertools
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized_class
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
@@ -179,7 +180,7 @@ def create_maneuvers(kwargs):
 
 
 @parameterized_class(("e2e", "force_decel"), itertools.product([True, False], repeat=2))
-class TestLongitudinalControl:
+class TestLongitudinalControl(OpenpilotTestCase):
   e2e: bool
   force_decel: bool
 

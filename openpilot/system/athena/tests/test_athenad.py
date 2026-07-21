@@ -1,4 +1,3 @@
-import pytest
 from functools import wraps
 import json
 import multiprocessing
@@ -14,6 +13,8 @@ from datetime import datetime, timedelta
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
 
 from openpilot.common.params import Params
@@ -47,16 +48,14 @@ def with_upload_handler(func):
       thread.join()
   return wrapper
 
-@pytest.fixture
 def mock_create_connection(mocker):
     return mocker.patch('openpilot.system.athena.athenad.create_connection')
 
-@pytest.fixture
 def host():
   with http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server) as (host, port):
     yield f"http://{host}:{port}"
 
-class TestAthenadMethods:
+class TestAthenadMethods(OpenpilotTestCase):
   @classmethod
   def setup_class(cls):
     cls.SOCKET_PORT = 45454
@@ -111,7 +110,7 @@ class TestAthenadMethods:
     assert dispatcher["echo"]("bob") == "bob"
 
   def test_get_message(self):
-    with pytest.raises(TimeoutError) as _:
+    with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState")
 
     end_event = multiprocessing.Event()
@@ -184,14 +183,14 @@ class TestAthenadMethods:
     if fn.endswith('.zst'):
       assert athenad.strip_zst_extension(fn) == fn[:-4]
 
-  @pytest.mark.parametrize("compress", [True, False])
+  @parameterized.expand([True, False], names=("compress",))
   def test_do_upload(self, host, compress):
     # random bytes to ensure rather large object post-compression
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
     upload_fn = fn + ('.zst' if compress else '')
     item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
-    with pytest.raises(requests.exceptions.ConnectionError):
+    with self.assertRaises(requests.exceptions.ConnectionError):
       athenad._do_upload(item)
 
     item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
@@ -236,7 +235,7 @@ class TestAthenadMethods:
     # TODO: also check that end_event and metered network raises AbortTransferException
     assert athenad.upload_queue.qsize() == 0
 
-  @pytest.mark.parametrize("status,retry", [(500,True), (412,False)])
+  @parameterized.expand([(500,True), (412,False)], names=("status", "retry"))
   @with_upload_handler
   def test_upload_handler_retry(self, mocker, host, status, retry):
     mock_put = mocker.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put')

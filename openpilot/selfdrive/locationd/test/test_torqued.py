@@ -1,8 +1,9 @@
 from opendbc.car.structs import car
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.locationd.torqued import TorqueEstimator
 
 
-class TestTorqued:
+class TestTorqued(OpenpilotTestCase):
   def test_cal_percent(self):
     est = TorqueEstimator(car.CarParams())
     msg = est.get_msg()

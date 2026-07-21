@@ -3,13 +3,14 @@ import time
 from typing import cast
 from collections.abc import Sized
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
                                                   random_bytes, random_carstate, assert_carstate
 from openpilot.cereal.services import SERVICE_LIST
 
 
-class TestSubMaster:
+class TestSubMaster(OpenpilotTestCase):
 
   def test_init(self):
     sm = messaging.SubMaster(events)
@@ -107,7 +108,7 @@ class TestSubMaster:
     assert sm[sock].vEgo == n
 
 
-class TestPubMaster:
+class TestPubMaster(OpenpilotTestCase):
 
   def test_init(self):
     messaging.PubMaster(events)

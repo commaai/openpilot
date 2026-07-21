@@ -1,4 +1,5 @@
 import numpy as np
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
 from opendbc.car.structs import car
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
@@ -56,7 +57,7 @@ def simulate_straight_road_msgs(est):
     for which, msg in (('carControl', carControl), ('carOutput', carOutput), ('carState', carState), ('livePose', livePose)):
       est.handle_log(t, which, msg)
 
-class TestTorquedLatAccelOffset:
+class TestTorquedLatAccelOffset(OpenpilotTestCase):
   def test_estimated_offset(self):
     steer_torques, lat_accels = generate_inputs(TORQUE_TUNE_BIASED, la_err_std=LA_ERR_STD, input_noise_std=INPUT_NOISE_STD)
     est = get_warmed_up_estimator(steer_torques, lat_accels)
