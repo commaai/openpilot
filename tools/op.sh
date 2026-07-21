@@ -327,7 +327,12 @@ function op_lint() {
 
 function op_test() {
   op_before_cmd
-  op_run_command python -m openpilot.common.parallel_runner -W error -s openpilot -t . -j 0 --level class "$@"
+  local runner=(env UNITTEST_JOBS=0 UNITTEST_LEVEL=class python -W error -m openpilot.common.parallel_runner)
+  if [[ $# -eq 0 || $1 == -* ]]; then
+    op_run_command "${runner[@]}" discover -s openpilot -p 'test_*.py' -t . "$@"
+  else
+    op_run_command "${runner[@]}" "$@"
+  fi
 }
 
 function op_replay() {

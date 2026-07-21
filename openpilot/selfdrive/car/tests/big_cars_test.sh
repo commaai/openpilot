@@ -8,5 +8,5 @@ export MAX_EXAMPLES=300
 export INTERNAL_SEG_CNT=300
 export INTERNAL_SEG_LIST=openpilot/selfdrive/car/tests/test_models_segs.txt
 
-python -m openpilot.common.parallel_runner -W error -j 0 --level class \
+UNITTEST_JOBS=0 UNITTEST_LEVEL=class python -W error -m openpilot.common.parallel_runner \
   openpilot/selfdrive/car/tests/test_models.py openpilot/selfdrive/car/tests/test_car_interfaces.py
