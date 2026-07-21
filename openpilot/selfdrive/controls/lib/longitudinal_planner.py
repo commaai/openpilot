@@ -18,6 +18,7 @@ from openpilot.common.swaglog import cloudlog
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN = -1.2
+J_CRUISE = 1.0
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
@@ -32,7 +33,7 @@ def get_max_accel(v_ego):
 def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
-def get_cruise_accel(e2e, v_cruise, v_ego, angle_steers, CP, dt, accel_coast, allow_throttle):
+def get_cruise_accel(e2e, v_cruise, v_ego, a_cruise_prev, angle_steers, CP, dt, accel_coast, allow_throttle):
   max_accel = ACCEL_MAX if e2e else get_max_accel(v_ego)
 
   if not e2e:
@@ -48,6 +49,8 @@ def get_cruise_accel(e2e, v_cruise, v_ego, angle_steers, CP, dt, accel_coast, al
     max_accel = min(max_accel, coast_limit)
 
   target_accel = np.clip(v_cruise - v_ego, A_CRUISE_MIN, max_accel)
+  if not e2e:
+    target_accel = float(np.clip(target_accel, a_cruise_prev - J_CRUISE * dt, a_cruise_prev + J_CRUISE * dt))
 
   cruise_should_stop = v_cruise == 0.0
   return target_accel, cruise_should_stop
@@ -63,6 +66,7 @@ class LongitudinalPlanner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
+    self.a_cruise = 0.0
     self.output_a_target = 0.0
     self.output_should_stop = False
 
@@ -132,14 +136,14 @@ class LongitudinalPlanner:
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
-    a_cruise, cruise_should_stop = get_cruise_accel(sm['selfdriveState'].experimentalMode, v_cruise, v_ego,
-                                                      steer_angle_without_offset, self.CP, self.dt,
-                                                      accel_coast, self.allow_throttle)
+    self.a_cruise, cruise_should_stop = get_cruise_accel(sm['selfdriveState'].experimentalMode, v_cruise, v_ego,
+                                                          self.a_cruise, steer_angle_without_offset, self.CP, self.dt,
+                                                          accel_coast, self.allow_throttle)
 
     # Final output is the min of the cruise, MPC, and e2e (in experimental mode).
     # The source is whichever input is the min; should_stop is the OR of all.
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
-                  (a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop)]
+                  (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop)]
     if sm['selfdriveState'].experimentalMode:
       candidates.append((output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e))
 
