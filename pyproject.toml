@@ -1,6 +1,6 @@
 [project]
 name = "openpilot"
-requires-python = ">= 3.14, < 3.15"
+requires-python = ">= 3.14"
 license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
