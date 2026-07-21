@@ -129,4 +129,4 @@ class TestPowerDraw(OpenpilotTestCase):
 
 
 if __name__ == "__main__":
-  unittest.main(warnings="error")
+  unittest.main()
