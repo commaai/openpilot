@@ -357,7 +357,7 @@ class Updater:
     setup_git_options(OVERLAY_MERGED)
     output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
 
-    self.branches = defaultdict(lambda: None)
+    self.branches.clear()
     for line in output.split('\n'):
       ls_remotes_re = r'(?P<commit_sha>\b[0-9a-f]{5,40}\b)(\s+)(refs\/heads\/)(?P<branch_name>.*$)'
       x = re.fullmatch(ls_remotes_re, line.strip())

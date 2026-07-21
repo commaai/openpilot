@@ -257,7 +257,7 @@ class WifiManager:
 
   def add_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
-                    forgotten: Callable[[str], None] | None = None,
+                    forgotten: Callable[[str | None], None] | None = None,
                     networks_updated: Callable[[list[Network]], None] | None = None,
                     disconnected: Callable[[], None] | None = None):
     if need_auth is not None:

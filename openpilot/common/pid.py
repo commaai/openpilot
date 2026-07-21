@@ -1,11 +1,13 @@
 import numpy as np
-from numbers import Number
+from collections.abc import Sequence
+
+Gain = int | float | tuple[Sequence[float], Sequence[float]] | list[list[float]]
 
 class PIDController:
-  def __init__(self, k_p, k_i, k_d=0., pos_limit=1e308, neg_limit=-1e308, rate=100):
-    self._k_p: list[list[float]] = [[0], [k_p]] if isinstance(k_p, Number) else k_p
-    self._k_i: list[list[float]] = [[0], [k_i]] if isinstance(k_i, Number) else k_i
-    self._k_d: list[list[float]] = [[0], [k_d]] if isinstance(k_d, Number) else k_d
+  def __init__(self, k_p: Gain, k_i: Gain, k_d: Gain = 0., pos_limit=1e308, neg_limit=-1e308, rate=100):
+    self._k_p = ([0], [k_p]) if isinstance(k_p, (int, float)) else k_p
+    self._k_i = ([0], [k_i]) if isinstance(k_i, (int, float)) else k_i
+    self._k_d = ([0], [k_d]) if isinstance(k_d, (int, float)) else k_d
 
     self.set_limits(pos_limit, neg_limit)
 

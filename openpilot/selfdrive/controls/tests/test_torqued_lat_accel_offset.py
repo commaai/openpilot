@@ -7,8 +7,6 @@ from opendbc.car.lateral import get_friction, FRICTION_THRESHOLD
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.locationd.torqued import TorqueEstimator, MIN_BUCKET_POINTS, POINTS_PER_BUCKET, STEER_BUCKET_BOUNDS
 
-np.random.seed(0)
-
 LA_ERR_STD = 1.0
 INPUT_NOISE_STD = 0.08
 V_EGO = 30.0
@@ -58,16 +56,17 @@ def simulate_straight_road_msgs(est):
     for which, msg in (('carControl', carControl), ('carOutput', carOutput), ('carState', carState), ('livePose', livePose)):
       est.handle_log(t, which, msg)
 
-def test_estimated_offset():
-  steer_torques, lat_accels = generate_inputs(TORQUE_TUNE_BIASED, la_err_std=LA_ERR_STD, input_noise_std=INPUT_NOISE_STD)
-  est = get_warmed_up_estimator(steer_torques, lat_accels)
-  msg = est.get_msg()
-  # TODO add lataccelfactor and friction check when we have more accurate estimates
-  assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - TORQUE_TUNE_BIASED.latAccelOffset) < 0.1
+class TestTorquedLatAccelOffset:
+  def test_estimated_offset(self):
+    steer_torques, lat_accels = generate_inputs(TORQUE_TUNE_BIASED, la_err_std=LA_ERR_STD, input_noise_std=INPUT_NOISE_STD)
+    est = get_warmed_up_estimator(steer_torques, lat_accels)
+    msg = est.get_msg()
+    # TODO add lataccelfactor and friction check when we have more accurate estimates
+    assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - TORQUE_TUNE_BIASED.latAccelOffset) < 0.1
 
-def test_straight_road_roll_bias():
-  steer_torques, lat_accels = generate_inputs(TORQUE_TUNE, la_err_std=LA_ERR_STD, input_noise_std=INPUT_NOISE_STD)
-  est = get_warmed_up_estimator(steer_torques, lat_accels)
-  simulate_straight_road_msgs(est)
-  msg = est.get_msg()
-  assert (msg.liveTorqueParameters.latAccelOffsetRaw < -0.05) and np.isfinite(msg.liveTorqueParameters.latAccelOffsetRaw)
+  def test_straight_road_roll_bias(self):
+    steer_torques, lat_accels = generate_inputs(TORQUE_TUNE, la_err_std=LA_ERR_STD, input_noise_std=INPUT_NOISE_STD)
+    est = get_warmed_up_estimator(steer_torques, lat_accels)
+    simulate_straight_road_msgs(est)
+    msg = est.get_msg()
+    assert (msg.liveTorqueParameters.latAccelOffsetRaw < -0.05) and np.isfinite(msg.liveTorqueParameters.latAccelOffsetRaw)

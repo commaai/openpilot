@@ -34,7 +34,7 @@ class PowerMonitoring:
     self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), car_battery_capacity_uWh)
 
   # Calculation tick
-  def calculate(self, voltage: int | None, ignition: bool):
+  def calculate(self, voltage: float | None, ignition: bool):
     try:
       now = time.monotonic()
 
