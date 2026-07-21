@@ -1,6 +1,6 @@
 [project]
 name = "openpilot"
-requires-python = ">= 3.12.3, < 3.13"
+requires-python = ">= 3.14, < 3.15"
 license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
@@ -16,7 +16,7 @@ dependencies = [
 
   # core
   "scons",
-  "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
+  "pycapnp==2.2.4",
   "Cython",
   "numpy >=2.0",
 
