@@ -16,6 +16,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.common.file_chunker import get_manifest_path
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
+from openpilot.selfdrive.modeld.usbgpu_link import _chestnut_portli
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
 PARAM_UPDATE_TIME = 1 / 5.0
@@ -86,6 +87,8 @@ class UIState:
     self._uevent_sock.bind((0, 1))
     self._uevent_sock.setblocking(False)
     self._usbgpu_started_prev = False
+    self.portli_rate: float = -1.
+    self._portli_prev: tuple[float, int] | None = None
     self.usbgpu_active: bool = self.params.get_bool("UsbGpuActive")
     self.usbgpu_loading: bool = False
     self.started: bool = False
@@ -226,6 +229,17 @@ class UIState:
     self._usbgpu_started_prev = self.started
     self.usbgpu_compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
     self.usbgpu_active = self.params.get_bool("UsbGpuActive")
+    try:
+      portli = _chestnut_portli()
+      if portli is None:
+        self.portli_rate, self._portli_prev = -1., None
+      else:
+        now, count = time.monotonic(), int(portli.read_text().strip(), 0)
+        if self._portli_prev is not None and now > self._portli_prev[0]:
+          self.portli_rate = (count - self._portli_prev[1]) / (now - self._portli_prev[0])
+        self._portli_prev = (now, count)
+    except (OSError, ValueError):
+      self.portli_rate, self._portli_prev = -1., None
     # same derivation as selfdrived: plugged + compiled + no model output yet = loading
     self.usbgpu_loading = self.usbgpu and self.usbgpu_compiled and not self.usbgpu_active and self.sm.recv_frame['modelV2'] <= self.started_frame
 

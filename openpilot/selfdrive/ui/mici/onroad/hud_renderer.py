@@ -179,8 +179,17 @@ class HudRenderer(Widget):
 
     if ui_state.usbgpu and ui_state.usbgpu_compiled:
       self._draw_model_source(rect)
+    if ui_state.portli_rate >= 0:
+      self._draw_link_errors(rect)
 
     self._draw_steering_wheel(rect)
+
+  def _draw_link_errors(self, rect: rl.Rectangle) -> None:
+    txt = f"{ui_state.portli_rate:.0f}"
+    color = rl.GREEN if ui_state.portli_rate < 20 else rl.YELLOW if ui_state.portli_rate < 100 else rl.RED
+    size = measure_text_cached(self._font_semi_bold, txt, FONT_SIZES.current_speed)
+    pos = rl.Vector2(rect.x + (rect.width - size.x) / 2, rect.y + (rect.height - size.y) / 2)
+    rl.draw_text_ex(self._font_semi_bold, txt, pos, FONT_SIZES.current_speed, 0, color)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
