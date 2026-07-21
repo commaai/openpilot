@@ -41,8 +41,6 @@ def get_cruise_accel(e2e, v_cruise, v_ego, a_cruise_prev, angle_steers, CP, dt, 
     a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
     a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
     max_accel = min(max_accel, a_x_allowed)
-  # When the model predicts the driver wants to press the gas, limit to coasting.
-  # Don't clip at low speeds since throttle_prob doesn't account for creep.
   if not allow_throttle:
     clipped_accel_coast = max(accel_coast, ACCEL_MIN)
     coast_limit = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [max_accel, clipped_accel_coast])
@@ -94,16 +92,10 @@ class LongitudinalPlanner:
     v_cruise_initialized = sm['carState'].vCruise != V_CRUISE_UNSET
     reset_state = reset_state or not v_cruise_initialized
 
-    # Throttle probability: when the model predicts the driver wants to press the gas,
-    # limit to coasting (applied in get_cruise_accel). Don't clip at low speeds since
-    # throttle_prob doesn't account for creep.
     throttle_probs = sm['modelV2'].meta.disengagePredictions.gasPressProbs
     throttle_prob = throttle_probs[1] if len(throttle_probs) > 1 else 1.0
     self.allow_throttle = throttle_prob > ALLOW_THROTTLE_THRESHOLD or v_ego <= MIN_ALLOW_THROTTLE_SPEED
 
-    # Cruise speed limit: target acceleration to converge to the set speed, jerk-limited.
-    # In e2e mode the model accounts for road geometry, so the turn limit is only applied
-    # in non-e2e mode. The resulting limit is min'd with the MPC/e2e outputs below.
     steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
 
     if reset_state:
@@ -139,8 +131,6 @@ class LongitudinalPlanner:
                                                           self.a_cruise, steer_angle_without_offset, self.CP, self.dt,
                                                           accel_coast, self.allow_throttle)
 
-    # Final output is the min of the cruise, MPC, and e2e (in experimental mode).
-    # The source is whichever input is the min; should_stop is the OR of all.
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop)]
     if sm['selfdriveState'].experimentalMode:
