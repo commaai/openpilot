@@ -87,16 +87,13 @@ void Panda::set_ir_pwr(uint16_t ir_pwr) {
 std::optional<health_t> Panda::get_state() {
   health_t health {0};
   int err = handle->control_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
-  if (err != static_cast<int>(sizeof(health)) || health.voltage_pkt > 50000U || health.current_pkt > 100000U) {
-    return std::nullopt;
-  }
-  return health;
+  return err >= 0 ? std::make_optional(health) : std::nullopt;
 }
 
 std::optional<can_health_t> Panda::get_can_state(uint16_t can_number) {
   can_health_t can_health {0};
   int err = handle->control_read(0xc2, can_number, 0, (unsigned char*)&can_health, sizeof(can_health));
-  return err == static_cast<int>(sizeof(can_health)) ? std::make_optional(can_health) : std::nullopt;
+  return err >= 0 ? std::make_optional(can_health) : std::nullopt;
 }
 
 void Panda::set_loopback(bool loopback) {
