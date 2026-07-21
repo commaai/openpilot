@@ -21,6 +21,9 @@ env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical --dist worksteal
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
 
 jobs:
   build_release:
