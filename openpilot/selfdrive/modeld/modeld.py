@@ -26,7 +26,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_drivi
 from openpilot.common.file_chunker import open_file_chunked, get_manifest_path
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices, load_oob
-from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link, recover_usbgpu_link
+from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link, recover_usbgpu_link, release_leaked_locks
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -183,6 +183,7 @@ def main(demo=False):
           return ModelState(vipc_client_main.width, vipc_client_main.height, True)
         except Exception:
           cloudlog.exception(f"big model load attempt {attempt} failed")
+          release_leaked_locks()
           recover_usbgpu_link()
       return None
     big: dict = {}

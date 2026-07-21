@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -40,6 +41,18 @@ def _write_sysfs(path: Path, value: str) -> None:
     path.write_text(value)
   except PermissionError:
     subprocess.run(['sudo', '-n', 'tee', str(path)], input=value, capture_output=True, text=True)
+
+
+def release_leaked_locks() -> None:
+  # a failed load can leak the device lock fd from its half-built state, which makes
+  # every retry in this process fail with EAGAIN against our own lock
+  for fd in os.listdir('/proc/self/fd'):
+    try:
+      if 'am_usb' in os.readlink(f'/proc/self/fd/{fd}'):
+        cloudlog.warning(f"releasing leaked usbgpu lock fd {fd}")
+        os.close(int(fd))
+    except OSError:
+      pass
 
 
 def recover_usbgpu_link() -> None:
