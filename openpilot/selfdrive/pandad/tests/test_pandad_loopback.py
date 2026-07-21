@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+
 import os
 import copy
 import random
 import time
+import unittest
 from collections import defaultdict
 from pprint import pprint
 
@@ -114,3 +117,7 @@ class TestBoarddLoopback(OpenpilotTestCase):
       pprint(sm['pandaStates'])  # may drop messages due to RX buffer overflow
       for bus in sent_loopback.keys():
         assert not len(sent_loopback[bus]), f"loop {i}: bus {bus} missing {len(sent_loopback[bus])} out of {sent_total[bus]} messages"
+
+
+if __name__ == "__main__":
+  unittest.main()

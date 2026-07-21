@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import time
 import subprocess
+import unittest
 
 from panda import Panda
 from openpilot.common.test import OpenpilotTestCase
@@ -62,3 +65,7 @@ class TestAmplifier(OpenpilotTestCase):
         break
     else:
       self.fail("didn't hit any i2c errors")
+
+
+if __name__ == "__main__":
+  unittest.main()

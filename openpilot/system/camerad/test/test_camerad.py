@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import os
 import time
+import unittest
 import numpy as np
 
 from openpilot.common.parameterized import parameterized
@@ -158,3 +161,7 @@ class TestCamerad(OpenpilotTestCase):
     assert np.max([ np.max(np.diff(ts[c]['requestId'])) for c in CAMERAS ]) > 1
 
     self._sanity_checks(ts)
+
+
+if __name__ == "__main__":
+  unittest.main()

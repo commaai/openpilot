@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import unittest
 import signal
@@ -76,3 +78,7 @@ class TestManager(OpenpilotTestCase):
         if p.sigkill:
           exit_codes = [-signal.SIGKILL]
         assert exit_code in exit_codes, f"{p.name} died with {exit_code}"
+
+
+if __name__ == "__main__":
+  unittest.main()

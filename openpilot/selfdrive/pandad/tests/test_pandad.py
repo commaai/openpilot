@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import os
 import time
+import unittest
 
 from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
@@ -79,3 +82,7 @@ class TestPandad(OpenpilotTestCase):
     assert not PandaDFU.list()
 
     self._run_test()
+
+
+if __name__ == "__main__":
+  unittest.main()

@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+
 import math
 import os
 import shutil
 import subprocess
 import time
+import unittest
 from pathlib import Path
 
 from tqdm import trange
@@ -144,3 +147,7 @@ class TestEncoder(OpenpilotTestCase):
       managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
+
+
+if __name__ == "__main__":
+  unittest.main()
