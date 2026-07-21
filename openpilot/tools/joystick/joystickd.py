@@ -9,6 +9,7 @@ from opendbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL, Ratekeeper
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.controls.lib.drive_helpers import V_EGO_STOPPING
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 MAX_LAT_ACCEL = 3.0
@@ -48,7 +49,7 @@ def joystickd_thread():
 
     if CC.longActive:
       actuators.accel = 4.0 * float(np.clip(joystick_axes[0], -1, 1))
-      actuators.longControlState = LongCtrlState.pid if sm['carState'].vEgo > CP.vEgoStopping else LongCtrlState.stopping
+      actuators.longControlState = LongCtrlState.pid if sm['carState'].vEgo > V_EGO_STOPPING else LongCtrlState.stopping
       CC.cruiseControl.resume = actuators.accel > 0.0
 
     if CC.latActive:
