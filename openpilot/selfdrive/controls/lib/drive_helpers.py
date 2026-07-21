@@ -9,15 +9,14 @@ CAR_ROTATION_RADIUS = 0.0
 MAX_CURVATURE = 0.2
 MAX_VEL_ERR = 5.0  # m/s
 MIN_STABLE_DELAY = 0.3
-V_EGO_STOPPING = 0.25  # m/s, speed at which the car goes into stopping state
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0  # m/s^3
 MAX_LATERAL_ACCEL_NO_ROLL = 3.0  # m/s^2
 
 
-def should_stop(v_ego: float, a_target: float, a_thresh: float = 0.1) -> bool:
-  return bool(v_ego < V_EGO_STOPPING and a_target < a_thresh)
+def should_stop(v_ego: float, a_target: float, v_thresh: float = 0.25, a_thresh: float = 0.1) -> bool:
+  return bool(v_ego < v_thresh and a_target < a_thresh)
 
 def clamp(val, min_val, max_val):
   clamped_val = float(np.clip(val, min_val, max_val))

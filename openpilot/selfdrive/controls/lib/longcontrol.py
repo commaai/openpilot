@@ -62,7 +62,8 @@ class LongControl:
       output_accel = self.last_output_accel
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
-        output_accel -= 0.8 * DT_CTRL  # m/s^2/s while trying to stop
+        # TODO: can we just go straight to stopAccel?
+        output_accel -= 1.0 * DT_CTRL  # m/s^2/s while trying to stop
       self.reset()
 
     else:  # LongCtrlState.pid
