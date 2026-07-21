@@ -178,7 +178,7 @@ def main():
     pm.send('alertDebug', alert_msg)
 
     longitudinalPlan.aTarget = accel
-    longitudinalPlan.shouldStop = should_stop(v_ego, accel, a_thresh=1e-2)
+    longitudinalPlan.shouldStop = should_stop(v_ego, accel)
 
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
