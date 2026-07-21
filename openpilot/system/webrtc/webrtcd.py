@@ -23,6 +23,7 @@ from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from openpilot.cereal import messaging, log
 
+SESSION_TIMEOUT_SECONDS = 300
 
 # socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
 # return the source interfaces IP which is the default interface of the device
@@ -320,7 +321,14 @@ class StreamSession:
         self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
-      await self.stream.wait_for_disconnection()
+      try:
+        await asyncio.wait_for(self.stream.wait_for_disconnection(), timeout=SESSION_TIMEOUT_SECONDS)
+      except TimeoutError:
+        self.logger.warning("Stream session (%s) timed out after %d s", self.identifier, SESSION_TIMEOUT_SECONDS)
+        try:
+          self.stream.get_messaging_channel().send(json.dumps({"type": "disconnect", "data": "Session timed out"}))
+        except Exception:
+          pass
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
