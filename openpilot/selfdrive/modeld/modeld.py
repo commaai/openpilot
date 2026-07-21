@@ -333,7 +333,17 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
-    model_output = model.run(bufs, transforms, inputs)
+    try:
+      model_output = model.run(bufs, transforms, inputs)
+    except Exception:
+      if not params.get_bool("UsbGpuActive"):
+        raise
+      # the egpu died mid-drive, rescue in-process so the stack never sees a dead modeld
+      cloudlog.exception("big model failed mid-drive, falling back to small")
+      params.put_bool("UsbGpuActive", False)
+      model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
+      run_count = 0  # the load gap is not real frame lag, let the drop filter re-warm
+      continue
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
