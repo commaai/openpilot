@@ -776,7 +776,7 @@ struct GpsTrajectory @0x8cfeb072f5301000 {
   y @1 :List(Float32);
 }
 
-struct AudioFeedbackDEPRECATED {
+struct AudioFeedbackDEPRECATED @0xed47e3c075be372a {
   audio @0 :AudioData;
   blockNum @1 :UInt16;
 
