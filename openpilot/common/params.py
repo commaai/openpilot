@@ -1,11 +1,11 @@
-import builtins
-import ctypes
-import datetime
-from enum import IntEnum, IntFlag
-import json
-from pathlib import Path
 import sys
+import json
+import ctypes
 import weakref
+import builtins
+import datetime
+from pathlib import Path
+from enum import IntEnum, IntFlag
 
 from openpilot.common.swaglog import cloudlog
 
