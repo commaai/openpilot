@@ -55,7 +55,7 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['acados', 'bzip2', 'capnproto', 'catch2', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
+pkg_names = ['acados', 'bzip2', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
