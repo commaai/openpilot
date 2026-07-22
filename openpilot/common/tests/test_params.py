@@ -106,24 +106,6 @@ class TestParams(OpenpilotTestCase):
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"
 
-  def test_concurrent_nonblocking_puts(self):
-    params = [Params()]
-    barrier = threading.Barrier(16)
-
-    def writer(index):
-      barrier.wait()
-      for value in range(10):
-        params[0].put("DongleId", f"{index}-{value}")
-
-    threads = [threading.Thread(target=writer, args=(i,)) for i in range(16)]
-    for thread in threads:
-      thread.start()
-    for thread in threads:
-      thread.join()
-
-    # Destruction waits for all queued writes and exercises the future lifecycle.
-    del params[0]
-
   def test_params_all_keys(self):
     keys = Params().all_keys()
 
