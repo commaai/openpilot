@@ -20,7 +20,10 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
+  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical --dist worksteal
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
 
 jobs:
   build_release:
@@ -107,9 +110,9 @@ jobs:
       env:
         RAYLIB_BACKEND: headless
       run: |
-        # Pre-compile Python bytecode so each pytest worker doesn't need to
-        $PYTEST --collect-only -m 'not slow' -qq
-        MAX_EXAMPLES=1 $PYTEST -m 'not slow'
+        # Pre-compile Python bytecode so each worker doesn't need to.
+        python -m compileall -q -j 0 openpilot
+        MAX_EXAMPLES=1 SKIP_SLOW=1 $PYTEST
 
   process_replay:
     name: process replay

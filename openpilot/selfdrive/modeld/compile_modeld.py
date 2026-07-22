@@ -3,7 +3,6 @@ import argparse
 import atexit
 import math
 import os
-import pickle
 import tempfile
 import time
 import shutil
@@ -31,22 +30,6 @@ def _patch_tinygrad_fetch_fw():
   helpers.fetch_fw = fetch_fw
 _patch_tinygrad_fetch_fw()
 
-def _patch_tinygrad_buffer_reduce():
-  from tinygrad.device import Buffer
-  def __reduce_ex__(self, protocol):
-    buf = None
-    if self._base is not None:
-      return self.__class__, (self.device, self.size, self.dtype, None, None, None, 0, self.base, self.offset, self.is_allocated())
-    if self.device == "NPY":
-      return self.__class__, (self.device, self.size, self.dtype, self._buf, self.options, None, self.uop_refcount)
-    if self.is_allocated():
-      buf = bytearray(self.nbytes)
-      self.copyout(memoryview(buf))
-      if protocol >= 5:
-        buf = pickle.PickleBuffer(buf)
-    return self.__class__, (self.device, self.size, self.dtype, None, self.options, buf, self.uop_refcount)
-  Buffer.__reduce_ex__ = __reduce_ex__
-_patch_tinygrad_buffer_reduce()
 
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context

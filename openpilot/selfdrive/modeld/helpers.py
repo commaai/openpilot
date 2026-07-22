@@ -40,14 +40,10 @@ def dump_oob(obj, f):
 def load_oob(f):
   opcodes = f.read(struct.unpack('<q', f.read(8))[0])
   def buffers():
-    prev = None
     while (h := f.read(8)):
-      if prev is not None:
-        prev.release()
-      buf = bytearray(struct.unpack('<q', h)[0])
-      f.readinto(buf)
-      prev = pickle.PickleBuffer(buf)
-      yield prev
+      pb = pickle.PickleBuffer(bytearray(struct.unpack('<q', h)[0]))
+      f.readinto(pb)
+      yield pb
   return pickle.load(io.BytesIO(opcodes), buffers=buffers())
 
 def usbgpu_present() -> bool:

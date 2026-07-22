@@ -4,6 +4,7 @@ import numbers
 import random
 import threading
 import time
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log
@@ -46,7 +47,7 @@ def delayed_send(delay, sock, dat):
   threading.Timer(delay, send_func).start()
 
 
-class TestMessaging:
+class TestMessaging(OpenpilotTestCase):
   @parameterized.expand(events)
   def test_new_message(self, evt):
     try:

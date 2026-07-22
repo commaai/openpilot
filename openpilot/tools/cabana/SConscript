@@ -110,14 +110,11 @@ cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs + [bootstrap_icons_src
 cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
-  cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
-
   # This target deliberately uses the base environment and links no Qt libraries.
   # It prevents Qt dependencies from creeping back into the DBC core.
   dbc_core_test_env = env.Clone()
   dbc_core_test_env['CXXFLAGS'] += [opendbc_path]
   dbc_core_test_objects = [
-    dbc_core_test_env.Object('tests/dbc_core_test_runner', 'tests/test_runner.cc'),
     dbc_core_test_env.Object('tests/dbc_core_tests', 'tests/test_cabana.cc'),
     dbc_core_test_env.Object('tests/dbc_core_model', 'dbc/dbc.cc'),
     dbc_core_test_env.Object('tests/dbc_core_file', 'dbc/dbcfile.cc'),
