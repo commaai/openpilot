@@ -1,9 +1,10 @@
 #pragma once
 
-#include <future>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -85,6 +86,7 @@ private:
   std::string params_prefix;
 
   // for nonblocking write
-  std::future<void> future;
-  SafeQueue<std::pair<std::string, std::string>> queue;
+  std::once_flag start_thread;
+  std::thread worker;
+  SafeQueue<std::optional<std::pair<std::string, std::string>>> queue;
 };

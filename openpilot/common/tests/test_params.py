@@ -1,11 +1,12 @@
 import datetime
 import os
+import random
 import threading
 import time
 import uuid
 
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.common.params import Params, ParamKeyFlag, UnknownKeyName
+from openpilot.common.params import Params, ParamKeyFlag, ParamKeyType, UnknownKeyName
 
 class TestParams(OpenpilotTestCase):
   def setup_method(self):
@@ -100,6 +101,30 @@ class TestParams(OpenpilotTestCase):
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"
+
+  def test_concurrent_nonblocking_puts_are_drained(self):
+    string_keys = [key for key in self.params.all_keys() if self.params.get_type(key) == ParamKeyType.STRING]
+    keys = random.sample(string_keys, 8)
+
+    def write_params():
+      params = Params()
+      barrier = threading.Barrier(len(keys))
+
+      def writer(key):
+        barrier.wait()
+        for value in range(5):
+          params.put(key, f"{key!r}-{value}")
+
+      threads = [threading.Thread(target=writer, args=(key,)) for key in keys]
+      for thread in threads:
+        thread.start()
+      for thread in threads:
+        thread.join()
+
+    # Scope exit destroys Params and must drain all writes before returning.
+    write_params()
+    for key in keys:
+      assert self.params.get(key) == f"{key!r}-4"
 
   def test_params_all_keys(self):
     keys = Params().all_keys()

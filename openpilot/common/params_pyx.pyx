@@ -31,19 +31,19 @@ cdef extern from "common/params.h":
 
   cdef cppclass c_Params "Params":
     c_Params(string) except + nogil
-    string get(string, bool) nogil
-    bool getBool(string, bool) nogil
-    int remove(string) nogil
-    int put(string, string) nogil
-    void putNonBlocking(string, string) nogil
-    void putBoolNonBlocking(string, bool) nogil
-    int putBool(string, bool) nogil
-    bool checkKey(string) nogil
-    ParamKeyType getKeyType(string) nogil
-    optional[string] getKeyDefaultValue(string) nogil
-    string getParamPath(string) nogil
-    void clearAll(ParamKeyFlag)
-    vector[string] allKeys()
+    string get(string, bool) except + nogil
+    bool getBool(string, bool) except + nogil
+    int remove(string) except + nogil
+    int put(string, string) except + nogil
+    void putNonBlocking(string, string) except + nogil
+    void putBoolNonBlocking(string, bool) except + nogil
+    int putBool(string, bool) except + nogil
+    bool checkKey(string) except + nogil
+    ParamKeyType getKeyType(string) except + nogil
+    optional[string] getKeyDefaultValue(string) except + nogil
+    string getParamPath(string) except + nogil
+    void clearAll(ParamKeyFlag) except +
+    vector[string] allKeys() except +
 
 PYTHON_2_CPP = {
   (str, STRING): lambda v: v,

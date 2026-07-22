@@ -97,8 +97,9 @@ Params::Params(const std::string &path) {
 }
 
 Params::~Params() {
-  if (future.valid()) {
-    future.wait();
+  if (worker.joinable()) {
+    queue.push(std::nullopt);
+    worker.join();
   }
   assert(queue.empty());
 }
@@ -225,18 +226,15 @@ void Params::clearAll(ParamKeyFlag key_flag) {
 }
 
 void Params::putNonBlocking(const std::string &key, const std::string &val) {
-   queue.push(std::make_pair(key, val));
-  // start thread on demand
-  if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-    future = std::async(std::launch::async, &Params::asyncWriteThread, this);
-  }
+  std::call_once(start_thread, [this]() {
+    worker = std::thread(&Params::asyncWriteThread, this);
+  });
+  queue.push(std::make_pair(key, val));
 }
 
 void Params::asyncWriteThread() {
-  // TODO: write the latest one if a key has multiple values in the queue.
-  std::pair<std::string, std::string> p;
-  while (queue.try_pop(p, 0)) {
+  while (auto p = queue.pop()) {
     // Params::put is Thread-Safe
-    put(p.first, p.second);
+    put(p->first, p->second);
   }
 }
