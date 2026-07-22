@@ -1,17 +1,22 @@
-import pytest
 import warnings
+import unittest
+import importlib
 
 # Since metadrive depends on pkg_resources, and pkg_resources is deprecated as an API
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
+try:
+  MetaDriveBridge = importlib.import_module("openpilot.tools.sim.bridge.metadrive.metadrive_bridge").MetaDriveBridge
+except ModuleNotFoundError:
+  MetaDriveBridge = None
 from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 
-@pytest.mark.slow
+@unittest.skipIf(MetaDriveBridge is None, "metadrive is not installed")
 class TestMetaDriveBridge(TestSimBridgeBase):
-  @pytest.fixture(autouse=True)
-  def setup_create_bridge(self, test_duration):
+  def setup_method(self):
+    super().openpilot_setup_method()
     self.test_duration = 30
 
   def create_bridge(self):
+    assert MetaDriveBridge is not None
     return MetaDriveBridge(False, False, self.test_duration, True)

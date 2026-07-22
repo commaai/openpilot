@@ -1,3 +1,4 @@
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.selfdrived.state import StateMachine, SOFT_DISABLE_TIME
@@ -21,7 +22,7 @@ def make_event(event_types: list[str | None]):
   return 0
 
 
-class TestStateMachine:
+class TestStateMachine(OpenpilotTestCase):
   def setup_method(self):
     self.events = Events()
     self.state_machine = StateMachine()

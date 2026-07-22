@@ -1,7 +1,8 @@
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.simple_kalman import KF1D
 
 
-class TestSimpleKalman:
+class TestSimpleKalman(OpenpilotTestCase):
   def setup_method(self):
     dt = 0.01
     x0_0 = 0.0

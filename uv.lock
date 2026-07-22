@@ -143,14 +143,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-catch2"
-version = "2.13.10.post93"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/ee/b4ef7758d04a024775d49558ca930fec19aa37cd691ad9182b7141f4d4d7/comma_deps_catch2-2.13.10.post93-py3-none-any.whl", hash = "sha256:8f23293251b5db48c08885d8816ca252b3fb11b0c1c26775bae36e8b217e865e", size = 137085, upload-time = "2026-07-08T19:30:53.44Z" },
-]
-
-[[package]]
 name = "comma-deps-eigen"
 version = "3.4.0.post93"
 source = { registry = "https://pypi.org/simple" }
@@ -621,7 +613,6 @@ source = { editable = "msgq_repo" }
 
 [package.metadata]
 requires-dist = [
-    { name = "catch2", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
     { name = "codespell", marker = "extra == 'dev'" },
     { name = "cppcheck", marker = "extra == 'dev'" },
     { name = "cpplint", marker = "extra == 'dev'" },
@@ -699,10 +690,8 @@ name = "openpilot"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "cffi" },
     { name = "comma-deps-acados" },
     { name = "comma-deps-capnproto" },
-    { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
@@ -749,9 +738,6 @@ testing = [
     { name = "coverage" },
     { name = "hypothesis" },
     { name = "pytest" },
-    { name = "pytest-cpp" },
-    { name = "pytest-mock" },
-    { name = "pytest-subtests" },
     { name = "pytest-xdist" },
     { name = "ruff" },
     { name = "ty" },
@@ -771,13 +757,11 @@ standalone = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "comma-deps-acados" },
     { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
     { name = "comma-deps-bzip2", marker = "extra == 'tools'" },
     { name = "comma-deps-capnproto" },
-    { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
@@ -802,10 +786,7 @@ requires-dist = [
     { name = "pycapnp", specifier = "==2.1.0" },
     { name = "pyjwt", extras = ["crypto"] },
     { name = "pytest", marker = "extra == 'testing'" },
-    { name = "pytest-cpp", marker = "extra == 'testing'" },
-    { name = "pytest-mock", marker = "extra == 'testing'" },
-    { name = "pytest-subtests", marker = "extra == 'testing'" },
-    { name = "pytest-xdist", marker = "extra == 'testing'", git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da" },
+    { name = "pytest-xdist", marker = "extra == 'testing'" },
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "rednose", marker = "extra == 'submodules'", editable = "rednose_repo" },
@@ -1005,49 +986,16 @@ wheels = [
 ]
 
 [[package]]
-name = "pytest-cpp"
-version = "2.6.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/a1/c2679d7ff2da20a0f89c7820ae2739cde739eac9b43c192531117b31b5f4/pytest_cpp-2.6.0.tar.gz", hash = "sha256:c2f49d3c038539ac84786a94d852e4f4619c34c95979c2bc69c20b3bdf051d85", size = 465490, upload-time = "2024-09-18T00:08:08.251Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/44/dc2f5d53165264ae5831f361fe7723c45da05718a97015b2eddc452cf503/pytest_cpp-2.6.0-py3-none-any.whl", hash = "sha256:b33de94609450feea2fba9efff3558b8ac8f1fdf40a99e263b395d4798b911bb", size = 15074, upload-time = "2024-09-18T00:08:06.415Z" },
-]
-
-[[package]]
-name = "pytest-mock"
-version = "3.15.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/68/14/eb014d26be205d38ad5ad20d9a80f7d201472e08167f0bb4361e251084a9/pytest_mock-3.15.1.tar.gz", hash = "sha256:1849a238f6f396da19762269de72cb1814ab44416fa73a8686deac10b0d87a0f", size = 34036, upload-time = "2025-09-16T16:37:27.081Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/cc/06253936f4a7fa2e0f48dfe6d851d9c56df896a9ab09ac019d70b760619c/pytest_mock-3.15.1-py3-none-any.whl", hash = "sha256:0a25e2eb88fe5168d535041d09a4529a188176ae608a6d249ee65abc0949630d", size = 10095, upload-time = "2025-09-16T16:37:25.734Z" },
-]
-
-[[package]]
-name = "pytest-subtests"
-version = "0.15.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "attrs" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/d9/20097971a8d315e011e055d512fa120fd6be3bdb8f4b3aa3e3c6bf77bebc/pytest_subtests-0.15.0.tar.gz", hash = "sha256:cb495bde05551b784b8f0b8adfaa27edb4131469a27c339b80fd8d6ba33f887c", size = 18525, upload-time = "2025-10-20T16:26:18.358Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/64/bba465299b37448b4c1b84c7a04178399ac22d47b3dc5db1874fe55a2bd3/pytest_subtests-0.15.0-py3-none-any.whl", hash = "sha256:da2d0ce348e1f8d831d5a40d81e3aeac439fec50bd5251cbb7791402696a9493", size = 9185, upload-time = "2025-10-20T16:26:17.239Z" },
-]
-
-[[package]]
 name = "pytest-xdist"
-version = "3.7.1.dev24+g2b4372bd6"
-source = { git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da#2b4372bd62699fb412c4fe2f95bf9f01bd2018da" }
+version = "3.8.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "execnet" },
     { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/78/b4/439b179d1ff526791eb921115fca8e44e596a13efeda518b9d845a619450/pytest_xdist-3.8.0.tar.gz", hash = "sha256:7e578125ec9bc6050861aa93f2d59f1d8d085595d6551c2c90b6f4fad8d3a9f1", size = 88069, upload-time = "2025-07-01T13:30:59.346Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/31/d4e37e9e550c2b92a9cbc2e4d0b7420a27224968580b5a447f420847c975/pytest_xdist-3.8.0-py3-none-any.whl", hash = "sha256:202ca578cfeb7370784a8c33d6d05bc6e13b4f25b5053c30a152269fd10f0b88", size = 46396, upload-time = "2025-07-01T13:30:56.632Z" },
 ]
 
 [[package]]

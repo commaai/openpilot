@@ -327,7 +327,7 @@ function op_lint() {
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest "$@"
+  op_run_command pytest -n logical --dist worksteal "$@"
 }
 
 function op_replay() {
@@ -431,7 +431,7 @@ function op_default() {
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
   echo -e "  ${BOLD}lint${NC}         Run the linter"
   echo -e "  ${BOLD}post-commit${NC}  Install the linter as a post-commit hook"
-  echo -e "  ${BOLD}test${NC}         Run all unit tests from pytest"
+  echo -e "  ${BOLD}test${NC}         Run all unit tests"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"

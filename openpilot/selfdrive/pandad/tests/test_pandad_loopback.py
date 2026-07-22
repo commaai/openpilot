@@ -1,11 +1,14 @@
+#!/usr/bin/env python3
+
 import os
 import copy
 import random
 import time
-import pytest
+import unittest
 from collections import defaultdict
 from pprint import pprint
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from opendbc.car.structs import car
@@ -69,8 +72,8 @@ def send_random_can_messages(sendcan, count):
   return sent_msgs
 
 
-@pytest.mark.tici
-class TestBoarddLoopback:
+class TestBoarddLoopback(OpenpilotTestCase):
+  TICI_TEST = True
   @classmethod
   def setup_class(cls):
     os.environ['STARTED'] = '1'
@@ -114,3 +117,7 @@ class TestBoarddLoopback:
       pprint(sm['pandaStates'])  # may drop messages due to RX buffer overflow
       for bus in sent_loopback.keys():
         assert not len(sent_loopback[bus]), f"loop {i}: bus {bus} missing {len(sent_loopback[bus])} out of {sent_total[bus]} messages"
+
+
+if __name__ == "__main__":
+  unittest.main()

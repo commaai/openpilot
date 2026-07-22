@@ -1,13 +1,13 @@
-import pytest
 import datetime
 import os
 import threading
 import time
 import uuid
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params, ParamKeyFlag, UnknownKeyName
 
-class TestParams:
+class TestParams(OpenpilotTestCase):
   def setup_method(self):
     self.params = Params()
 
@@ -50,17 +50,22 @@ class TestParams:
     assert self.params.get("CarParams", block=True) == b"test"
 
   def test_params_unknown_key_fails(self):
-    with pytest.raises(UnknownKeyName):
+    with self.assertRaises(UnknownKeyName):
       self.params.get("swag")
 
-    with pytest.raises(UnknownKeyName):
+    with self.assertRaises(UnknownKeyName):
       self.params.get_bool("swag")
 
-    with pytest.raises(UnknownKeyName):
+    with self.assertRaises(UnknownKeyName):
       self.params.put("swag", "abc", block=True)
 
-    with pytest.raises(UnknownKeyName):
+    with self.assertRaises(UnknownKeyName):
       self.params.put_bool("swag", True, block=True)
+
+    with self.assertRaises(UnknownKeyName):
+      self.params.put(b"DongleId\0suffix", "abc", block=True)
+
+    assert self.params.get_param_path(b"key\0suffix").endswith("/key\0suffix")
 
   def test_remove_not_there(self):
     assert self.params.get("CarParams") is None
