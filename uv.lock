@@ -143,14 +143,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-catch2"
-version = "2.13.10.post93"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/ee/b4ef7758d04a024775d49558ca930fec19aa37cd691ad9182b7141f4d4d7/comma_deps_catch2-2.13.10.post93-py3-none-any.whl", hash = "sha256:8f23293251b5db48c08885d8816ca252b3fb11b0c1c26775bae36e8b217e865e", size = 137085, upload-time = "2026-07-08T19:30:53.44Z" },
-]
-
-[[package]]
 name = "comma-deps-eigen"
 version = "3.4.0.post93"
 source = { registry = "https://pypi.org/simple" }
@@ -621,7 +613,6 @@ source = { editable = "msgq_repo" }
 
 [package.metadata]
 requires-dist = [
-    { name = "catch2", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
     { name = "codespell", marker = "extra == 'dev'" },
     { name = "cppcheck", marker = "extra == 'dev'" },
     { name = "cpplint", marker = "extra == 'dev'" },
@@ -701,7 +692,6 @@ source = { editable = "." }
 dependencies = [
     { name = "comma-deps-acados" },
     { name = "comma-deps-capnproto" },
-    { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
@@ -773,7 +763,6 @@ requires-dist = [
     { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
     { name = "comma-deps-bzip2", marker = "extra == 'tools'" },
     { name = "comma-deps-capnproto" },
-    { name = "comma-deps-catch2" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
