@@ -23,102 +23,106 @@ namespace {
 thread_local char last_error[512] = {};
 thread_local std::string result;
 
+void set_error(const char *error) {
+  snprintf(last_error, sizeof(last_error), "%s", error);
+}
+
 ParamsBuffer return_string(std::string value) {
   result = std::move(value);
   return {result.data(), result.size()};
 }
 
 template <typename Result, typename Callable>
-Result guard(Callable &&callable, Result failure) noexcept {
+Result translate_exceptions(Result failure, Callable &&callable) noexcept {
   last_error[0] = '\0';
   try {
     return callable();
   } catch (const std::exception &e) {
-    snprintf(last_error, sizeof(last_error), "%s", e.what());
+    set_error(e.what());
   } catch (...) {
-    snprintf(last_error, sizeof(last_error), "unknown C++ exception");
+    set_error("unknown C++ exception");
   }
   return failure;
 }
 
 template <typename Callable>
-void guard(Callable &&callable) noexcept {
-  guard([&]() {
+void translate_exceptions(Callable &&callable) noexcept {
+  translate_exceptions(false, [&]() {
     callable();
     return true;
-  }, false);
+  });
 }
 }  // namespace
 
 extern "C" {
 
-ParamsHandle *params_create(const char *path, size_t path_size) {
-  return guard([&]() { return new ParamsHandle(path, path_size); }, static_cast<ParamsHandle *>(nullptr));
+ParamsHandle *params_create(const char *path, size_t path_size) noexcept {
+  return translate_exceptions(static_cast<ParamsHandle *>(nullptr), [&]() { return new ParamsHandle(path, path_size); });
 }
 
-void params_destroy(ParamsHandle *handle) { guard([&]() { delete handle; }); }
+void params_destroy(ParamsHandle *handle) noexcept { translate_exceptions([&]() { delete handle; }); }
 
-const char *params_last_error() { return last_error; }
+const char *params_last_error() noexcept { return last_error; }
 
-void params_clear_all(ParamsHandle *handle, unsigned int flag) {
-  guard([&]() { handle->params.clearAll(static_cast<ParamKeyFlag>(flag)); });
+void params_clear_all(ParamsHandle *handle, unsigned int flag) noexcept {
+  translate_exceptions([&]() { handle->params.clearAll(static_cast<ParamKeyFlag>(flag)); });
 }
 
-bool params_check_key(ParamsHandle *handle, const char *key) {
-  return guard([&]() { return handle->params.checkKey(key); }, false);
+bool params_check_key(ParamsHandle *handle, const char *key) noexcept {
+  return translate_exceptions(false, [&]() { return handle->params.checkKey(key); });
 }
 
-int params_get_key_type(ParamsHandle *handle, const char *key) {
-  return guard([&]() { return static_cast<int>(handle->params.getKeyType(key)); }, -1);
+int params_get_key_type(ParamsHandle *handle, const char *key) noexcept {
+  return translate_exceptions(-1, [&]() { return static_cast<int>(handle->params.getKeyType(key)); });
 }
 
-ParamsBuffer params_get_default(ParamsHandle *handle, const char *key) {
-  return guard([&]() {
+ParamsBuffer params_get_default(ParamsHandle *handle, const char *key) noexcept {
+  return translate_exceptions(ParamsBuffer{nullptr, 0}, [&]() {
     auto value = handle->params.getKeyDefaultValue(key);
     return value.has_value() ? return_string(*value) : ParamsBuffer{nullptr, 0};
-  }, ParamsBuffer{nullptr, 0});
+  });
 }
 
-ParamsBuffer params_get(ParamsHandle *handle, const char *key, bool block) {
-  return guard([&]() { return return_string(handle->params.get(key, block)); }, ParamsBuffer{nullptr, 0});
+ParamsBuffer params_get(ParamsHandle *handle, const char *key, bool block) noexcept {
+  return translate_exceptions(ParamsBuffer{nullptr, 0}, [&]() { return return_string(handle->params.get(key, block)); });
 }
 
-bool params_get_bool(ParamsHandle *handle, const char *key, bool block) {
-  return guard([&]() { return handle->params.getBool(key, block); }, false);
+bool params_get_bool(ParamsHandle *handle, const char *key, bool block) noexcept {
+  return translate_exceptions(false, [&]() { return handle->params.getBool(key, block); });
 }
 
-int params_put(ParamsHandle *handle, const char *key, const char *value, size_t size, bool block) {
-  return guard([&]() {
+int params_put(ParamsHandle *handle, const char *key, const char *value, size_t size, bool block) noexcept {
+  return translate_exceptions(-1, [&]() {
     if (block) return handle->params.put(key, value, size);
     handle->params.putNonBlocking(key, std::string(value, size));
     return 0;
-  }, -1);
+  });
 }
 
-int params_put_bool(ParamsHandle *handle, const char *key, bool value, bool block) {
-  return guard([&]() {
+int params_put_bool(ParamsHandle *handle, const char *key, bool value, bool block) noexcept {
+  return translate_exceptions(-1, [&]() {
     if (block) return handle->params.putBool(key, value);
     handle->params.putBoolNonBlocking(key, value);
     return 0;
-  }, -1);
+  });
 }
 
-int params_remove(ParamsHandle *handle, const char *key) {
-  return guard([&]() { return handle->params.remove(key); }, -1);
+int params_remove(ParamsHandle *handle, const char *key) noexcept {
+  return translate_exceptions(-1, [&]() { return handle->params.remove(key); });
 }
 
-ParamsBuffer params_get_path(ParamsHandle *handle, const char *key, size_t key_size) {
-  return guard([&]() { return return_string(handle->params.getParamPath(std::string(key, key_size))); }, ParamsBuffer{nullptr, 0});
+ParamsBuffer params_get_path(ParamsHandle *handle, const char *key, size_t key_size) noexcept {
+  return translate_exceptions(ParamsBuffer{nullptr, 0}, [&]() { return return_string(handle->params.getParamPath(std::string(key, key_size))); });
 }
 
-size_t params_keys_size(ParamsHandle *handle) {
-  return guard([&]() { return handle->keys.size(); }, size_t{0});
+size_t params_keys_size(ParamsHandle *handle) noexcept {
+  return translate_exceptions(size_t{0}, [&]() { return handle->keys.size(); });
 }
 
-ParamsBuffer params_key_at(ParamsHandle *handle, size_t index) {
-  return guard([&]() {
+ParamsBuffer params_key_at(ParamsHandle *handle, size_t index) noexcept {
+  return translate_exceptions(ParamsBuffer{nullptr, 0}, [&]() {
     return index < handle->keys.size() ? return_string(handle->keys[index]) : ParamsBuffer{nullptr, 0};
-  }, ParamsBuffer{nullptr, 0});
+  });
 }
 
 }  // extern "C"
