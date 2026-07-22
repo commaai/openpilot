@@ -21,6 +21,9 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
 
+LAUNCH_MAX_SPEED = 2.0
+LAUNCH_MIN_ACCEL = 1.2
+
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
@@ -58,6 +61,7 @@ class LongitudinalPlanner:
     self.prev_accel_clip = [ACCEL_MIN, ACCEL_MAX]
     self.output_a_target = 0.0
     self.output_should_stop = False
+    self.launch_armed = False
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -132,6 +136,15 @@ class LongitudinalPlanner:
                                                                         action_t=action_t)
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
+
+    if sm['carState'].standstill:
+      self.launch_armed = True
+    elif v_ego > LAUNCH_MAX_SPEED:
+      self.launch_armed = False
+    if self.launch_armed and sm['selfdriveState'].experimentalMode and not output_should_stop_e2e:
+      launch_accel = max(output_a_target_e2e, LAUNCH_MIN_ACCEL)
+      # Keep MPC clipping on launch even when overall MPC clipping is removed
+      output_a_target_e2e = min(launch_accel, output_a_target_mpc)
 
     if sm['selfdriveState'].experimentalMode:
       output_a_target = min(output_a_target_e2e, output_a_target_mpc)
