@@ -1,4 +1,5 @@
 import math
+import os
 from multiprocessing import Queue
 
 from metadrive.component.sensors.base_camera import _cuda_enable
@@ -58,13 +59,42 @@ class MetaDriveBridge(SimulatorBridge):
     self.test_duration = test_duration if self.test_run else math.inf
 
   def spawn_world(self, queue: Queue):
+    # render at a reduced resolution and upscale, software rasterization cost
+    # scales with pixel count and can't keep up at full res on CI runners
+    render_scale = float(os.environ.get("METADRIVE_RENDER_SCALE", "1"))
+    rw, rh = round(W * render_scale), round(H * render_scale)
     sensors = {
-      "rgb_road": (RGBCameraRoad, W, H, )
+      "rgb_road": (RGBCameraRoad, rw, rh, )
     }
 
     if self.dual_camera:
-      sensors["rgb_wide"] = (RGBCameraWide, W, H)
+      sensors["rgb_wide"] = (RGBCameraWide, rw, rh)
 
+    config = dict(
+      use_render=self.should_render,
+      vehicle_config=dict(
+        enable_reverse=False,
+        render_vehicle=False,
+        image_source="rgb_road",
+      ),
+      sensors=sensors,
+      image_on_cuda=_cuda_enable,
+      image_observation=True,
+      interface_panel=[],
+      out_of_route_done=False,
+      on_continuous_line_done=False,
+      crash_vehicle_done=False,
+      crash_object_done=False,
+      arrive_dest_done=False,
+      traffic_density=0.0, # traffic is incredibly expensive
+      map_config=create_map(),
+      decision_repeat=1,
+      physics_world_step_size=self.TICKS_PER_FRAME/100,
+      preload_models=False,
+      show_logo=False,
+      anisotropic_filtering=False,
+      show_terrain=not bool(os.environ.get("METADRIVE_NO_TERRAIN")),
+    )
     config = {
       "use_render": self.should_render,
       "vehicle_config": {

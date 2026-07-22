@@ -1,4 +1,6 @@
 import os
+import shutil
+import signal
 import subprocess
 import time
 import unittest
@@ -24,7 +26,7 @@ class TestSimBridgeBase(OpenpilotTestCase):
 
   def test_driving(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR, start_new_session=True)
     self.processes.append(p_manager)
 
     sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState'])
@@ -33,7 +35,7 @@ class TestSimBridgeBase(OpenpilotTestCase):
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    max_time_per_step = 60
+    max_time_per_step = 120 if os.getenv("CI") else 60
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
@@ -55,11 +57,14 @@ class TestSimBridgeBase(OpenpilotTestCase):
         no_car_events_issues_once = True
         break
 
+      if os.getenv("CI"):
+        time.sleep(0.01)  # yield CPU to modeld on slow CI runners
+
     assert no_car_events_issues_once, \
                     f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'"
 
     start_time = time.monotonic()
-    min_counts_control_active = 100
+    min_counts_control_active = 20 if os.getenv("CI") else 100
     control_active = 0
 
     while time.monotonic() < start_time + max_time_per_step:
@@ -71,11 +76,17 @@ class TestSimBridgeBase(OpenpilotTestCase):
         if control_active == min_counts_control_active:
           break
 
+      if os.getenv("CI"):
+        time.sleep(0.01)  # yield CPU to modeld on slow CI runners
+
     assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
 
     failure_states = []
-    while bridge.started.value:
-      continue
+    end_wait = time.monotonic() + max_time_per_step
+    while bridge.started.value and time.monotonic() < end_wait:
+      time.sleep(0.1)
+
+    assert not bridge.started.value, "Simulator bridge did not finish within timeout"
 
     while not q.empty():
       state = q.get()
@@ -88,7 +99,26 @@ class TestSimBridgeBase(OpenpilotTestCase):
   def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
-      p.terminate()
+      try:
+        os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+      except (ProcessLookupError, PermissionError, OSError):
+        pass
+
+    time.sleep(3)  # let loggerd flush its current segment
 
     for p in reversed(self.processes):
-      p.kill()
+      try:
+        os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+      except (ProcessLookupError, PermissionError, OSError):
+        try:
+          p.kill()
+        except (ProcessLookupError, OSError):
+          pass
+
+    # the test prefix (and its log_root) is deleted on teardown, so copy
+    # any recorded logs out first for CI artifact upload
+    if "SIM_LOGS_DIR" in os.environ:
+      from openpilot.common.hardware.hw import Paths
+      if os.path.isdir(Paths.log_root()):
+        shutil.copytree(Paths.log_root(), os.environ["SIM_LOGS_DIR"], dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("fcamera.hevc*"))

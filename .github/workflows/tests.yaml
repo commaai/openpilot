@@ -14,7 +14,8 @@ on:
         type: string
 
 concurrency:
-  group: tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  # include the head repo so same-named branches from different forks don't cancel each other's runs
+  group: tests-ci-run-${{ inputs.run_number }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -48,7 +49,8 @@ jobs:
         max_attempts: 3
         command: git lfs pull
     - name: Build devel
-      timeout-minutes: 1
+      # the free ubuntu runners used for fork PRs need more than a minute
+      timeout-minutes: 3
       run: TARGET_DIR=$STRIPPED_DIR tools/release/build_stripped.sh
     - run: ./tools/op.sh setup
     - name: Build openpilot and run checks
@@ -192,13 +194,35 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
+    - name: Install MetaDrive
+      run: uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal"
     - name: Driving test
+      timeout-minutes: 20
+      env:
+        PYTHONFAULTHANDLER: 1
+        METADRIVE_RENDER_SCALE: "0.5"
+        METADRIVE_NO_MSAA: "1"
+        METADRIVE_SIMPLE_RENDER: "1"
+        METADRIVE_NO_SHADOWS: "1"
+        METADRIVE_FLAT_TERRAIN_CARD: "1"
+      run: |
+        source openpilot/selfdrive/test/setup_xvfb.sh
+        python3 -m metadrive.pull_asset || true
+        SIM_LOGS=1 SIM_LOGS_DIR="$GITHUB_WORKSPACE/sim_logs" pytest -n0 -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: sim-driving-logs
+        path: |
+          sim_logs/**
+          !sim_logs/**/fcamera.hevc
+        if-no-files-found: warn
       timeout-minutes: 2
       env:
         # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
