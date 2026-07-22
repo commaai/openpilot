@@ -62,6 +62,11 @@ class TestParams(OpenpilotTestCase):
     with self.assertRaises(UnknownKeyName):
       self.params.put_bool("swag", True, block=True)
 
+    with self.assertRaises(UnknownKeyName):
+      self.params.put(b"DongleId\0suffix", "abc", block=True)
+
+    assert self.params.get_param_path(b"key\0suffix").endswith("/key\0suffix")
+
   def test_remove_not_there(self):
     assert self.params.get("CarParams") is None
     self.params.remove("CarParams")
@@ -100,6 +105,24 @@ class TestParams(OpenpilotTestCase):
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"
+
+  def test_concurrent_nonblocking_puts(self):
+    params = [Params()]
+    barrier = threading.Barrier(16)
+
+    def writer(index):
+      barrier.wait()
+      for value in range(10):
+        params[0].put("DongleId", f"{index}-{value}")
+
+    threads = [threading.Thread(target=writer, args=(i,)) for i in range(16)]
+    for thread in threads:
+      thread.start()
+    for thread in threads:
+      thread.join()
+
+    # Destruction waits for all queued writes and exercises the future lifecycle.
+    del params[0]
 
   def test_params_all_keys(self):
     keys = Params().all_keys()

@@ -14,7 +14,7 @@ typedef struct {
   size_t size;
 } ParamsBuffer;
 
-ParamsHandle *params_create(const char *path);
+ParamsHandle *params_create(const char *path, size_t path_size);
 void params_destroy(ParamsHandle *handle);
 const char *params_last_error(void);
 
@@ -27,7 +27,7 @@ bool params_get_bool(ParamsHandle *handle, const char *key, bool block);
 int params_put(ParamsHandle *handle, const char *key, const char *value, size_t size, bool block);
 int params_put_bool(ParamsHandle *handle, const char *key, bool value, bool block);
 int params_remove(ParamsHandle *handle, const char *key);
-ParamsBuffer params_get_path(ParamsHandle *handle, const char *key);
+ParamsBuffer params_get_path(ParamsHandle *handle, const char *key, size_t key_size);
 size_t params_keys_size(ParamsHandle *handle);
 ParamsBuffer params_key_at(ParamsHandle *handle, size_t index);
 

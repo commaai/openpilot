@@ -225,7 +225,8 @@ void Params::clearAll(ParamKeyFlag key_flag) {
 }
 
 void Params::putNonBlocking(const std::string &key, const std::string &val) {
-   queue.push(std::make_pair(key, val));
+  queue.push(std::make_pair(key, val));
+  std::lock_guard lock(future_lock);
   // start thread on demand
   if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
     future = std::async(std::launch::async, &Params::asyncWriteThread, this);

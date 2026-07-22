@@ -40,16 +40,30 @@ class ParamsBuffer(ctypes.Structure):
   _fields_ = [("data", ctypes.c_void_p), ("size", ctypes.c_size_t)]
 
 
-def _bind(name, args, result=None):
+def _bind_raw(name, args, result=None):
   function = getattr(lib, name)
   function.argtypes = args
   function.restype = result
   return function
 
 
-params_create = _bind("params_create", [ctypes.c_char_p], ParamsHandle)
+params_last_error = _bind_raw("params_last_error", [], ctypes.c_char_p)
+
+
+def _bind(name, args, result=None):
+  function = _bind_raw(name, args, result)
+
+  def checked(*call_args):
+    value = function(*call_args)
+    if error := params_last_error():
+      raise RuntimeError(error.decode())
+    return value
+
+  return checked
+
+
+params_create = _bind("params_create", [ctypes.c_char_p, ctypes.c_size_t], ParamsHandle)
 params_destroy = _bind("params_destroy", [ParamsHandle])
-params_last_error = _bind("params_last_error", [], ctypes.c_char_p)
 params_clear_all = _bind("params_clear_all", [ParamsHandle, ctypes.c_uint])
 params_check_key = _bind("params_check_key", [ParamsHandle, ctypes.c_char_p], ctypes.c_bool)
 params_get_key_type = _bind("params_get_key_type", [ParamsHandle, ctypes.c_char_p], ctypes.c_int)
@@ -59,7 +73,7 @@ params_get_bool = _bind("params_get_bool", [ParamsHandle, ctypes.c_char_p, ctype
 params_put = _bind("params_put", [ParamsHandle, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t, ctypes.c_bool], ctypes.c_int)
 params_put_bool = _bind("params_put_bool", [ParamsHandle, ctypes.c_char_p, ctypes.c_bool, ctypes.c_bool], ctypes.c_int)
 params_remove = _bind("params_remove", [ParamsHandle, ctypes.c_char_p], ctypes.c_int)
-params_get_path = _bind("params_get_path", [ParamsHandle, ctypes.c_char_p], ParamsBuffer)
+params_get_path = _bind("params_get_path", [ParamsHandle, ctypes.c_char_p, ctypes.c_size_t], ParamsBuffer)
 params_keys_size = _bind("params_keys_size", [ParamsHandle], ctypes.c_size_t)
 params_key_at = _bind("params_key_at", [ParamsHandle, ctypes.c_size_t], ParamsBuffer)
 
@@ -100,7 +114,8 @@ class UnknownKeyName(Exception):
 
 class Params:
   def __init__(self, d=""):
-    self.p = params_create(ensure_bytes(d))
+    path = ensure_bytes(d)
+    self.p = params_create(path, len(path))
     if self.p is None:
       raise RuntimeError(params_last_error().decode())
     self._finalizer = weakref.finalize(self, params_destroy, self.p)
@@ -114,7 +129,7 @@ class Params:
 
   def check_key(self, key):
     key = ensure_bytes(key)
-    if not params_check_key(self.p, key):
+    if b"\0" in key or not params_check_key(self.p, key):
       raise UnknownKeyName(key)
     return key
 
@@ -166,7 +181,8 @@ class Params:
     params_remove(self.p, self.check_key(key))
 
   def get_param_path(self, key=""):
-    return _copy_string(params_get_path(self.p, ensure_bytes(key))).decode()
+    key = ensure_bytes(key)
+    return _copy_string(params_get_path(self.p, key, len(key))).decode()
 
   def get_type(self, key):
     return ParamKeyType(params_get_key_type(self.p, self.check_key(key)))
