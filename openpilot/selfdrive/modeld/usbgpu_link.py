@@ -50,10 +50,24 @@ def _chestnut_portli() -> Path | None:
   return None
 
 
+def release_leaked_locks() -> None:
+  # a failed gpu init leaks its device flock fd, so the next in-process retry blocks
+  # with EAGAIN ("Failed to acquire lock file"). close any leaked am_usb lock fds.
+  for fd in os.listdir('/proc/self/fd'):
+    try:
+      if 'am_usb' in os.readlink(f'/proc/self/fd/{fd}'):
+        cloudlog.warning(f"releasing leaked usbgpu lock fd {fd}")
+        os.close(int(fd))
+    except OSError:
+      pass
+
+
 def recover_usbgpu(timeout: float = 12.0) -> None:
   # restore the pcie link when a hotplug leaves it down (ltssm stuck off): the 0xF4
   # tunnel recover retrains it where a power cycle or re-enum do not. the gpu psp is
-  # reset separately via AM_RESET on the retry. wait for the device before retrying.
+  # reset separately via AM_RESET on the retry. release the leaked device lock so the
+  # retry can acquire it, and wait for the device before retrying.
+  release_leaked_locks()
   device = _chestnut_device()
   if device is not None:
     node = f"/dev/bus/usb/{read_int(device / 'busnum'):03d}/{read_int(device / 'devnum'):03d}"
