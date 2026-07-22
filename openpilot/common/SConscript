@@ -1,4 +1,4 @@
-Import('env', 'envCython')
+Import('env')
 
 common_libs = [
   'params.cc',
@@ -11,12 +11,8 @@ common_libs = [
 _common = env.Library('common', common_libs, LIBS="json11")
 Export('_common')
 
+# Python loads this C ABI wrapper around the C++ Params implementation.
+env.SharedLibrary('params_c', 'params_c.cc', LIBS=[_common, 'zmq', 'json11'])
+
 if GetOption('extras'):
   env.Program('tests/test_swaglog', 'tests/test_swaglog.cc', LIBS=[_common, 'json11', 'zmq', 'pthread'])
-
-# Python loads this C ABI wrapper around the C++ Params implementation.
-params_python = env.SharedLibrary('params_c', 'params_c.cc', LIBS=[_common, 'zmq', 'json11'])
-
-common_python = [params_python]
-
-Export('common_python')

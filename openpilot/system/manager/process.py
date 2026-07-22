@@ -6,7 +6,6 @@ import subprocess
 from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
-from typing import cast
 
 from setproctitle import setproctitle
 
@@ -229,14 +228,14 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params: Params, CP: car.CarParams,
                    not_run: list[str] | None=None) -> list[ManagerProcess]:
   if not_run is None:
     not_run = []
 
   running = []
   for p in procs:
-    if p.enabled and p.name not in not_run and p.should_run(started, cast(Params, params), CP):
+    if p.enabled and p.name not in not_run and p.should_run(started, params, CP):
       if p.restart_if_crash and p.proc is not None and not p.proc.is_alive():
         cloudlog.error(f'Restarting {p.name} (exitcode {p.proc.exitcode})')
         p.restart()

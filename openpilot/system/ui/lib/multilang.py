@@ -2,15 +2,9 @@ from importlib.resources import files
 import json
 import os
 import re
-from typing import Any
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-
-try:
-  from openpilot.common.params import Params as _Params
-  Params: Any = _Params
-except ImportError:
-  Params = None
 
 SYSTEM_UI_DIR = os.path.join(BASEDIR, "openpilot/system", "ui")
 UI_DIR = files("openpilot.selfdrive.ui")
@@ -149,7 +143,7 @@ def load_translations(path) -> tuple[dict[str, str], dict[str, list[str]]]:
 
 class Multilang:
   def __init__(self):
-    self._params = Params() if Params is not None else None
+    self._params = Params()
     self._language: str = "en"
     self.languages: dict[str, str] = {}
     self.codes: dict[str, str] = {}
@@ -198,10 +192,9 @@ class Multilang:
       self.languages = json.load(f)
     self.codes = {v: k for k, v in self.languages.items()}
 
-    if self._params is not None:
-      lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
-      if lang in self.codes:
-        self._language = lang
+    lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
+    if lang in self.codes:
+      self._language = lang
 
 
 multilang = Multilang()

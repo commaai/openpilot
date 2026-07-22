@@ -15,6 +15,7 @@ from jeepney.io.threading import DBusRouter, open_dbus_connection as open_dbus_c
 from jeepney.low_level import MessageType
 from jeepney.wrappers import Properties
 
+from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
                                                     NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
@@ -25,12 +26,6 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
                                                     NM_DEVICE_TYPE_WIFI, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState, NMDeviceStateReason)
-
-try:
-  from openpilot.common.params import Params as _Params
-  Params: Any = _Params
-except Exception:
-  Params = None
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
@@ -186,10 +181,9 @@ class WifiManager:
     self._callback_queue: list[Callable] = []
 
     self._tethering_ssid = "weedle"
-    if Params is not None:
-      dongle_id = Params().get("DongleId")
-      if dongle_id:
-        self._tethering_ssid += "-" + dongle_id[:4]
+    dongle_id = Params().get("DongleId")
+    if dongle_id:
+      self._tethering_ssid += "-" + dongle_id[:4]
 
     # Callbacks
     self._need_auth: list[Callable[[str], None]] = []
@@ -213,7 +207,7 @@ class WifiManager:
       self._state_thread.start()
 
       self._init_connections()
-      if Params is not None and self._tethering_ssid not in self._connections:
+      if self._tethering_ssid not in self._connections:
         self._add_tethering_connection()
 
       self._init_wifi_state()
