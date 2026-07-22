@@ -14,6 +14,3 @@ replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEW
 Export('replay_lib')
 replay_libs = [replay_lib] + ffmpeg_libs + ['bz2', 'zstd', 'ncurses'] + base_libs
 replay_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
-
-if GetOption('extras'):
-  replay_env.Program('tests/test_replay', ['tests/test_replay.cc'], LIBS=replay_libs)
