@@ -215,8 +215,7 @@ class ProcessContainer:
 
   def _start_process(self):
     if self.capture is not None:
-      self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)
-    self.process.prepare()
+      self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)  # ty: ignore[invalid-assignment]  # intentional wrapper
     self.process.start()
 
   def start(
@@ -437,7 +436,7 @@ CONFIGS = [
       "longitudinalPlan", "livePose", "liveDelay", "liveParameters", "radarState", "modelV2",
       "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState", "liveTorqueParameters",
       "accelerometer", "gyroscope", "carOutput", "gpsLocationExternal", "gpsLocation", "controlsState",
-      "carControl", "driverAssistance", "alertDebug", "audioFeedback",
+      "carControl", "driverAssistance", "alertDebug",
     ],
     subs=["selfdriveState", "onroadEvents"],
     ignore=["logMonoTime"],
@@ -631,10 +630,10 @@ def replay_process(
   fingerprint: str | None = None, return_all_logs: bool = False, custom_params: dict[str, Any] | None = None,
   captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
-  if isinstance(cfg, Iterable):
-    cfgs = list(cfg)
-  else:
+  if isinstance(cfg, ProcessConfig):
     cfgs = [cfg]
+  else:
+    cfgs = list(cfg)
 
   all_msgs = migrate_all(lr,
                          manager_states=True,

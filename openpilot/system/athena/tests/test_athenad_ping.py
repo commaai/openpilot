@@ -1,9 +1,10 @@
-import pytest
+import unittest
 import subprocess
 import threading
 import time
 from typing import cast
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.athena import athenad
@@ -19,7 +20,7 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-class TestAthenadPing:
+class TestAthenadPing(OpenpilotTestCase):
   params: Params
   dongle_id: str
 
@@ -90,12 +91,12 @@ class TestAthenadPing:
         time.sleep(0.1)
       print("ping received")
 
-  @pytest.mark.skipif(not TICI, reason="only run on desk")
+  @unittest.skipIf(not TICI, "only run on desk")
   def test_offroad(self, subtests, mocker) -> None:
     self.params.put_bool("IsOffroad", True, block=True)
     self.assertTimeout(60 + TIMEOUT_TOLERANCE, subtests, mocker)  # based using TCP keepalive settings
 
-  @pytest.mark.skipif(not TICI, reason="only run on desk")
+  @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self, subtests, mocker) -> None:
     self.params.put_bool("IsOffroad", False, block=True)
     self.assertTimeout(21 + TIMEOUT_TOLERANCE, subtests, mocker)

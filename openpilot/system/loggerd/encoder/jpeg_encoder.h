@@ -1,18 +1,20 @@
 #pragma once
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstddef>
 #include <cstdint>
-#include <jpeglib.h>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
+
 #include "openpilot/cereal/messaging/messaging.h"
 #include "msgq/visionipc/visionbuf.h"
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
+
 class JpegEncoder {
 public:
-  JpegEncoder(const std::string &pusblish_name, int width, int height);
+  JpegEncoder(const std::string &publish_name, int width, int height);
   ~JpegEncoder();
   void pushThumbnail(VisionBuf *buf, const VisionIpcBufExtra &extra);
 
@@ -24,9 +26,10 @@ private:
   int thumbnail_height;
   std::string publish_name;
   std::vector<uint8_t> yuv_buffer;
+  std::vector<uint8_t> out_buffer;
   std::unique_ptr<PubMaster> pm;
 
-  // JPEG output buffer
-  unsigned char* out_buffer = nullptr;
-  unsigned long out_size = 0;
+  AVCodecContext *codec_ctx = nullptr;
+  AVFrame *frame = nullptr;
+  AVPacket *pkt = nullptr;
 };

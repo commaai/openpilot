@@ -30,11 +30,11 @@ def curve_block(length, angle=45, direction=0):
 
 def create_map(track_size=60):
   curve_len = track_size * 2
-  return dict(
-    type=MapGenerateMethod.PG_MAP_FILE,
-    lane_num=2,
-    lane_width=4.5,
-    config=[
+  return {
+    "type": MapGenerateMethod.PG_MAP_FILE,
+    "lane_num": 2,
+    "lane_width": 4.5,
+    "config": [
       None,
       straight_block(track_size),
       curve_block(curve_len, 90),
@@ -45,7 +45,7 @@ def create_map(track_size=60):
       straight_block(track_size),
       curve_block(curve_len, 90),
     ]
-  )
+  }
 
 
 class MetaDriveBridge(SimulatorBridge):
@@ -95,5 +95,29 @@ class MetaDriveBridge(SimulatorBridge):
       anisotropic_filtering=False,
       show_terrain=not bool(os.environ.get("METADRIVE_NO_TERRAIN")),
     )
+    config = {
+      "use_render": self.should_render,
+      "vehicle_config": {
+        "enable_reverse": False,
+        "render_vehicle": False,
+        "image_source": "rgb_road",
+      },
+      "sensors": sensors,
+      "image_on_cuda": _cuda_enable,
+      "image_observation": True,
+      "interface_panel": [],
+      "out_of_route_done": False,
+      "on_continuous_line_done": False,
+      "crash_vehicle_done": False,
+      "crash_object_done": False,
+      "arrive_dest_done": False,
+      "traffic_density": 0.0, # traffic is incredibly expensive
+      "map_config": create_map(),
+      "decision_repeat": 1,
+      "physics_world_step_size": self.TICKS_PER_FRAME/100,
+      "preload_models": False,
+      "show_logo": False,
+      "anisotropic_filtering": False
+    }
 
     return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)

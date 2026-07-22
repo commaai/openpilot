@@ -11,70 +11,45 @@ authors = [
 dependencies = [
   # multiple users
   "sounddevice",  # micd + soundd
-  "pyserial",     # pigeond + qcomgpsd
   "requests",     # many one-off uses
-  "sympy",        # rednose + friends
-  "crcmod-plus",  # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
   # core
-  "cffi",
   "scons",
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "Cython",
-  "setuptools",
   "numpy >=2.0",
 
   # vendored native dependencies
-  "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
-  "bootstrap-icons @ git+https://github.com/commaai/dependencies.git@release-bootstrap-icons#subdirectory=bootstrap-icons",
-  "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
-  "catch2 @ git+https://github.com/commaai/dependencies.git@release-catch2#subdirectory=catch2",
-  "acados @ git+https://github.com/commaai/dependencies.git@release-acados#subdirectory=acados",
-  "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
-  "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
-  "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
-  "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
-  "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
-  "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
-  "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
-  "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
-  "json11 @ git+https://github.com/commaai/dependencies.git@release-json11#subdirectory=json11",
-  "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
-  "xvfb @ git+https://github.com/commaai/dependencies.git@release-xvfb#subdirectory=xvfb",
-
-  # body / webrtcd
-  "av",
-  "aiortc",
-
-  # panda
-  "libusb1",
-  "spidev; platform_system == 'Linux'",
+  "comma-deps-capnproto",
+  "comma-deps-catch2",
+  "comma-deps-acados",
+  "comma-deps-ffmpeg",
+  "comma-deps-zstd",
+  "comma-deps-zeromq",
+  "comma-deps-json11",
+  "comma-deps-git-lfs",
+  "comma-deps-gcc-arm-none-eabi",
 
   # logging
   "pyzmq",
   "sentry-sdk",
-  "xattr",  # used in place of 'os.getxattr' for macOS compatibility
 
   # athena
-  "PyJWT",
-  "json-rpc",
+  "PyJWT[crypto]",
   "websocket_client",
 
   # joystickd
   "inputs",
 
   # these should be removed
-  "psutil",
-  "pycryptodome", # used in panda, body, and a test
   "setproctitle",
 
   # logreader
   "zstandard",
 
   # ui
-  "raylib @ git+https://github.com/commaai/dependencies.git@release-raylib#subdirectory=raylib",
+  "comma-deps-raylib",
   "qrcode",
   "jeepney",
   "pillow",
@@ -82,7 +57,6 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = [
-  "Jinja2",
   "zensical",
 ]
 
@@ -91,14 +65,9 @@ testing = [
   "hypothesis ==6.47.*",
   "ty",
   "pytest",
-  "pytest-cpp",
-  "pytest-subtests",
-  # https://github.com/pytest-dev/pytest-xdist/pull/1229
-  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
-  "pytest-mock",
+  "pytest-xdist",
   "ruff",
   "codespell",
-  "pre-commit-hooks",
 ]
 
 dev = [
@@ -106,14 +75,32 @@ dev = [
 ]
 
 tools = [
-  "imgui @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
+  "comma-deps-imgui",
+  "comma-deps-bzip2",
+  "comma-deps-bootstrap-icons",
+  "comma-deps-libusb",
+  "comma-deps-ncurses",
 
   # this can be added back once it's stripped down some more
   #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
+submodules = [
+  "msgq",
+  "opendbc",
+  "pandacan",
+  "rednose",
+  "teleoprtc",
+  "tinygrad",
+]
+
 [project.urls]
 Homepage = "https://github.com/commaai/openpilot"
+
+[dependency-groups]
+standalone = [
+  "openpilot[submodules]",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -122,12 +109,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [
   "openpilot",
-  "msgq",
-  "opendbc",
-  "panda",
-  "rednose",
-  "teleoprtc",
-  "tinygrad",
 ]
 
 [tool.hatch.metadata]
@@ -135,18 +116,8 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
-cpp_files = "test_*"
-cpp_harness = "openpilot/selfdrive/test/cpp_harness.py"
+addopts = "-Werror --strict-config --durations=10"
 python_files = "test_*.py"
-markers = [
-  "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
-  "tici: tests that are only meant to run on the C3/C3X",
-  "skip_tici_setup: mark test to skip tici setup fixture",
-  "nocapture: don't capture test output",
-  "shared_download_cache: share download cache between tests",
-  "xdist_group_class_property: group tests by a property of the class that contains them",
-]
 testpaths = [
   "openpilot",
 ]
@@ -165,33 +136,27 @@ lint.select = [
   "E", "F", "W", "PIE", "C4", "ISC", "A", "B",
   "NPY", # numpy
   "UP",  # pyupgrade
+  "ASYNC",
+  "B904", "B905",
+  "PLC0207",
   "TRY203", "TRY400", "TRY401", # try/excepts
-  "RUF008", "RUF100",
+  "RUF006", "RUF008", "RUF009", "RUF061", "RUF064", "RUF100", "RUF102", "RUF103", "RUF104",
   "TID251",
   "PLE", "PLR1704",
 ]
 lint.ignore = [
   "E741",
   "E402",
-  "C408",
-  "ISC003",
   "B027",
-  "B024",
-  "NPY002",  # new numpy random syntax is worse
-  "UP045", "UP007",  # these don't play nice with raylib atm
+  "UP007",  # this doesn't play nice with raylib atm
 ]
 line-length = 160
-exclude = [
-  "openpilot/cereal",
-  "*.ipynb",
-  "generated",
-]
 lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest".msg = "Use unittest"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
-"unittest".msg = "Use pytest"
-"time.time".msg = "Use time.monotonic"
+"time.time".msg = "Use time.monotonic"  # time.time can skip due to its reference clock, you probably want a monotonic clock
 
 # raylib banned APIs
 "pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
@@ -206,14 +171,18 @@ quote-style = "preserve"
 [tool.ty.rules]
 unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
 unresolved-attribute = "ignore"  # many from capnp and Cython modules
-invalid-method-override = "ignore"  # signature variance issues
-possibly-missing-attribute = "ignore"  # too many false positives
-invalid-assignment = "ignore"  # often intentional monkey-patching
-no-matching-overload = "ignore"  # numpy/ctypes overload matching issues
-invalid-argument-type = "ignore"  # many false positives from raylib, ctypes, numpy
-call-non-callable = "ignore"  # false positives from dynamic types
-unsupported-operator = "ignore" # false positives from dynamic types
-not-subscriptable = "ignore" # false positives from dynamic types
 
 [tool.uv]
 python-preference = "only-managed"
+default-groups = ["standalone"]
+override-dependencies = [
+  "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
+]
+
+[tool.uv.sources]
+msgq = { path = "msgq_repo", editable = true }
+opendbc = { path = "opendbc_repo", editable = true }
+pandacan = { path = "panda", editable = true }
+rednose = { path = "rednose_repo", editable = true }
+teleoprtc = { path = "teleoprtc_repo", editable = true }
+tinygrad = { path = "tinygrad_repo", editable = true }

@@ -5,7 +5,7 @@ import shutil
 import bootstrap_icons
 import libusb
 
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
 
 # Detect Qt - skip build if not available
 if arch == "Darwin":
@@ -30,7 +30,7 @@ if arch == "Darwin":
   ]
   qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
   qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
-  qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
+  qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 else:
   qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
@@ -46,7 +46,7 @@ else:
   qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
-  qt_libs = [f"Qt5{m}" for m in qt_modules] + ["GL"]
+  qt_libs = [f"Qt5{m}" for m in qt_modules]
 qt_env['QT3DIR'] = qt_env['QTDIR']
 qt_env.Tool('qt3')
 
@@ -67,50 +67,63 @@ base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, 'm', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
-  base_frameworks += ['QtCharts', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'IOKit', 'Security', 'VideoToolbox']
-else:
-  base_libs.append('Qt5Charts')
+  base_frameworks += ['CoreFoundation', 'CoreVideo', 'CoreMedia', 'IOKit', 'Security', 'VideoToolbox']
 
 cabana_env = qt_env.Clone()
 cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR]
 cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
-cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'usb-1.0'] + base_libs
-if arch != "Darwin":
-  cabana_libs += ['va', 'va-drm', 'drm']
-opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
+cabana_libs = [cereal, messaging, visionipc, replay_lib] + ffmpeg_libs + ['bz2', 'zstd', 'usb-1.0'] + base_libs
+opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
-def write_assets_qrc(target, source, env):
-  with open(str(source[0])) as f:
-    qrc = f.read()
-  with open(str(target[0]), "w") as f:
-    f.write(qrc.replace("@BOOTSTRAP_ICONS_SVG@", str(bootstrap_icons.SVG_PATH)))
+# embed the bootstrap icons SVG into the binary
+def build_bootstrap_icons_src(target, source, env):
+  data = open(str(source[0]), 'rb').read()
+  with open(str(target[0]), 'w') as f:
+    f.write('#include <cstddef>\n')
+    f.write('extern const unsigned char bootstrap_icons_svg[];\n')
+    f.write('extern const size_t bootstrap_icons_svg_len;\n')
+    f.write('const unsigned char bootstrap_icons_svg[] = {\n')
+    for i in range(0, len(data), 32):
+      f.write(','.join(str(b) for b in data[i:i+32]) + ',\n')
+    f.write('};\n')
+    f.write('const size_t bootstrap_icons_svg_len = sizeof(bootstrap_icons_svg);\n')
+  return None
+
+bootstrap_icons_src = cabana_env.Command('assets/bootstrap_icons.cc', str(bootstrap_icons.SVG_PATH), build_bootstrap_icons_src)
 
 # build assets
 assets = "assets/assets.cc"
-assets_src = cabana_env.Command(
-  "assets/assets.generated.qrc",
-  "assets/assets.qrc",
-  write_assets_qrc,
-)
-cabana_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
-cabana_env.Depends(assets_src, str(bootstrap_icons.SVG_PATH))
-cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "assets/assets.o"]))
+cabana_env.Command(assets, "assets/assets.qrc", f"rcc $SOURCES -o $TARGET")
+cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, "assets/assets.o"]))
 
 cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
-               'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
+               'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'dbc/dbcqt.cc',
                'utils/export.cc', 'utils/util.cc', 'utils/elidedlabel.cc',
                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
                'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc']
 if arch != "Darwin":
   cabana_srcs += ['streams/socketcanstream.cc']
-cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs, LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs + [bootstrap_icons_src], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
   cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
+
+  # This target deliberately uses the base environment and links no Qt libraries.
+  # It prevents Qt dependencies from creeping back into the DBC core.
+  dbc_core_test_env = env.Clone()
+  dbc_core_test_env['CXXFLAGS'] += [opendbc_path]
+  dbc_core_test_objects = [
+    dbc_core_test_env.Object('tests/dbc_core_test_runner', 'tests/test_runner.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_tests', 'tests/test_cabana.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_model', 'dbc/dbc.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_file', 'dbc/dbcfile.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_manager', 'dbc/dbcmanager.cc'),
+  ]
+  dbc_core_test_env.Program('tests/test_dbc_core', dbc_core_test_objects)
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,

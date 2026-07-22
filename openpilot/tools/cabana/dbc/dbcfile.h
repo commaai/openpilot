@@ -2,7 +2,6 @@
 
 #include <map>
 #include <string>
-#include <QTextStream>
 
 #include "tools/cabana/dbc/dbc.h"
 
@@ -32,12 +31,12 @@ public:
   std::string filename;
 
 private:
-  void parse(const QString &content);
-  cabana::Msg *parseBO(const QString &line);
-  void parseSG(const QString &line, cabana::Msg *current_msg, int &multiplexor_cnt);
-  void parseCM_BO(const QString &line, const QString &content, const QString &raw_line, const QTextStream &stream);
-  void parseCM_SG(const QString &line, const QString &content, const QString &raw_line, const QTextStream &stream);
-  void parseVAL(const QString &line);
+  void parse(const std::string &content);
+  cabana::Msg *parseBO(const std::string &line);
+  void parseSG(const std::string &line, cabana::Msg *current_msg, int &multiplexor_cnt);
+  void parseCM_BO(const std::string &line);
+  void parseCM_SG(const std::string &line);
+  void parseVAL(const std::string &line);
 
   std::string header;
   std::map<uint32_t, cabana::Msg> msgs;

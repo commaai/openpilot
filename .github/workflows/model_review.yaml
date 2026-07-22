@@ -7,6 +7,11 @@ on:
       - 'openpilot/selfdrive/modeld/models/*.onnx'
   workflow_dispatch:
 
+env:
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
+
 jobs:
   comment:
     permissions:

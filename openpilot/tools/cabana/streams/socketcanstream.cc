@@ -7,20 +7,21 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <QDebug>
-#include <QDir>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QThread>
 
 SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
   if (!available()) {
     throw std::runtime_error("SocketCAN not available");
   }
 
-  qDebug() << "Connecting to SocketCAN device" << config.device.c_str();
+  fprintf(stderr, "Connecting to SocketCAN device %s\n", config.device.c_str());
   if (!connect()) {
     throw std::runtime_error("Failed to connect to SocketCAN device");
   }
@@ -44,7 +45,7 @@ bool SocketCanStream::available() {
 bool SocketCanStream::connect() {
   sock_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
   if (sock_fd < 0) {
-    qDebug() << "Failed to create CAN socket";
+    fprintf(stderr, "Failed to create CAN socket\n");
     return false;
   }
 
@@ -55,7 +56,7 @@ bool SocketCanStream::connect() {
   struct ifreq ifr = {};
   strncpy(ifr.ifr_name, config.device.c_str(), IFNAMSIZ - 1);
   if (ioctl(sock_fd, SIOCGIFINDEX, &ifr) < 0) {
-    qDebug() << "Failed to get interface index for" << config.device.c_str();
+    fprintf(stderr, "Failed to get interface index for %s\n", config.device.c_str());
     ::close(sock_fd);
     sock_fd = -1;
     return false;
@@ -65,7 +66,7 @@ bool SocketCanStream::connect() {
   addr.can_family = AF_CAN;
   addr.can_ifindex = ifr.ifr_ifindex;
   if (bind(sock_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-    qDebug() << "Failed to bind CAN socket";
+    fprintf(stderr, "Failed to bind CAN socket\n");
     ::close(sock_fd);
     sock_fd = -1;
     return false;
@@ -81,7 +82,7 @@ bool SocketCanStream::connect() {
 void SocketCanStream::streamThread() {
   struct canfd_frame frame;
 
-  while (!QThread::currentThread()->isInterruptionRequested()) {
+  while (!exit_) {
     ssize_t nbytes = read(sock_fd, &frame, sizeof(frame));
     if (nbytes <= 0) continue;
 
@@ -127,14 +128,12 @@ OpenSocketCanWidget::OpenSocketCanWidget(QWidget *parent) : AbstractOpenStreamWi
 void OpenSocketCanWidget::refreshDevices() {
   device_edit->clear();
   // Scan /sys/class/net/ for CAN interfaces (type 280 = ARPHRD_CAN)
-  QDir net_dir("/sys/class/net");
-  for (const auto &iface : net_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-    QFile type_file(net_dir.filePath(iface) + "/type");
-    if (type_file.open(QIODevice::ReadOnly)) {
-      int type = type_file.readAll().trimmed().toInt();
-      if (type == 280) {
-        device_edit->addItem(iface);
-      }
+  std::error_code ec;
+  for (const auto &entry : std::filesystem::directory_iterator("/sys/class/net", ec)) {
+    std::ifstream type_file(entry.path() / "type");
+    int type = 0;
+    if (type_file >> type && type == 280) {
+      device_edit->addItem(QString::fromStdString(entry.path().filename().string()));
     }
   }
 }

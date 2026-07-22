@@ -1,12 +1,12 @@
 import time
 import os
-import pytest
 import random
-import unittest # noqa: TID251
+import unittest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from openpilot.common.parameterized import parameterized_class
+from openpilot.common.test import OpenpilotTestCase
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
@@ -21,6 +21,7 @@ from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.common.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source, internal_source, comma_api_source
+from openpilot.tools.lib.file_sources import Source
 from openpilot.tools.lib.route import SegmentName
 
 SafetyModel = car.CarParams.SafetyModel
@@ -65,9 +66,9 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   return test_cases
 
 
-@pytest.mark.slow
-@pytest.mark.shared_download_cache
-class TestCarModelBase(unittest.TestCase):
+class TestCarModelBase(OpenpilotTestCase):
+  SLOW_TEST = True
+  SHARED_DOWNLOAD_CACHE = True
   platform: Platform | None = None
   test_route: CarTestRoute | None = None
 
@@ -130,7 +131,7 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        sources = [internal_source] if len(INTERNAL_SEG_LIST) else [openpilotci_source, comma_api_source]
+        sources: list[Source] = [internal_source] if len(INTERNAL_SEG_LIST) else [openpilotci_source, comma_api_source]
         lr = LogReader(segment_range, sources=sources, sort_by_time=True)
         return cls.get_testing_data_from_logreader(lr)
       except (LogsUnavailable, AssertionError):
@@ -250,7 +251,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # Don't check relay malfunction on disabled routes (relay closed),
       # or before fingerprinting is done (elm327 and noOutput)
-      if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
+      if self.car_safety_mode_frame is not None and t / 1e4 > self.car_safety_mode_frame:
         self.assertFalse(self.safety.get_relay_malfunction())
       else:
         self.safety.set_relay_malfunction(False)
@@ -301,8 +302,7 @@ class TestCarModelBase(unittest.TestCase):
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
     test_car_controller(CC.as_reader())
 
-  # Skip stdout/stderr capture with pytest, causes elevated memory usage
-  @pytest.mark.nocapture
+  # Capturing stdout/stderr here causes elevated memory usage.
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
@@ -470,7 +470,6 @@ class TestCarModelBase(unittest.TestCase):
 
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
-@pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
 

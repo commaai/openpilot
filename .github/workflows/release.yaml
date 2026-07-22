@@ -4,6 +4,11 @@ on:
     - cron: '0 9 * * *'
   workflow_dispatch:
 
+env:
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
+
 jobs:
   build_masterci:
     name: build master-ci
@@ -22,7 +27,7 @@ jobs:
         running-workflow-name: 'build master-ci'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         check-regexp: ^((?!.*(build prebuilt|create badges).*).)*$
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v4 # checkout version > v4 breaks nightly release script
       with:
         submodules: true
         fetch-depth: 0
