@@ -13,20 +13,7 @@ STABLE_THRESHOLD = 5.0  # link errors per second
 USBGPU_RECOVER = 0xF4          # bridge vendor cmd: recover the wedged pcie tunnel
 USBGPU_LTSSM = 0xB450          # pcie link state register, 0x78 = link up
 LTSSM_UP = 0x78
-USBGPU_XWRITE = 0xE5           # xdata write vendor cmd
-CPU_RESET_REG = 0xCC31        # write 0x01 -> reboot bridge cpu + re-enumerate usb
 _USBDEVFS_CONTROL = 0xC0185500  # _IOWR('U', 0, struct usbdevfs_ctrltransfer), 64-bit
-
-
-def _clear_tg_usb_cache() -> None:
-  # a cpu reset re-enumerates usb, so tinygrad's cached device pointer goes stale and the
-  # retry fails with "No interface for AMD". drop the cache so it re-scans. lazy import so
-  # non-modeld importers (ui) do not pull in tinygrad.
-  try:
-    from tinygrad.runtime.support.usb import USB3
-    USB3.list_devices.cache_clear()
-  except Exception:
-    pass
 
 
 class _CtrlTransfer(ctypes.Structure):
@@ -75,11 +62,11 @@ def release_leaked_locks() -> None:
       pass
 
 
-def recover_usbgpu(timeout: float = 15.0) -> None:
-  # release the leaked device lock, then reset the bridge so the retry gets a clean device.
-  # 0xF4 retrains a down pcie link; if the usb link itself is erroring (bulk/control i/o
-  # errors that 0xF4 cannot clear or even be delivered through), the cpu reset reboots the
-  # bridge and re-enumerates usb. the gpu psp is reset separately via AM_RESET on the retry.
+def recover_usbgpu(timeout: float = 12.0) -> None:
+  # restore the pcie link when a hotplug leaves it down (ltssm stuck off): the 0xF4
+  # tunnel recover retrains it where a power cycle or re-enum do not. the gpu psp is
+  # reset separately via AM_RESET on the retry. release the leaked device lock so the
+  # retry can acquire it, and wait for the device before retrying.
   release_leaked_locks()
   device = _chestnut_device()
   if device is not None:
@@ -88,21 +75,14 @@ def recover_usbgpu(timeout: float = 15.0) -> None:
       fd = os.open(node, os.O_RDWR)
       try:
         lt = _ltssm(fd)
-        cloudlog.warning(f"usbgpu recover: ltssm=0x{lt:02X} ({'link down' if lt != LTSSM_UP else 'psp hang'}), 0xF4 + cpu reset")
-        try:
-          fcntl.ioctl(fd, _USBDEVFS_CONTROL, _CtrlTransfer(0x40, USBGPU_RECOVER, 0, 0, 0, 10000, None))
-        except OSError:
-          pass
-        try:
-          fcntl.ioctl(fd, _USBDEVFS_CONTROL, _CtrlTransfer(0x40, USBGPU_XWRITE, CPU_RESET_REG, 0x01, 0, 3000, None))
-        except OSError:
-          pass  # the transfer drops when the reset fires, that's expected
+        cloudlog.warning(f"usbgpu recover: ltssm=0x{lt:02X} ({'link down' if lt != LTSSM_UP else 'psp hang'}), 0xF4 + gpu reset")
+        req = _CtrlTransfer(0x40, USBGPU_RECOVER, 0, 0, 0, 10000, None)
+        fcntl.ioctl(fd, _USBDEVFS_CONTROL, req)  # the transfer can drop if the reset fires, that's fine
       finally:
         os.close(fd)
     except OSError:
       pass
-  _clear_tg_usb_cache()  # the cpu reset re-enumerates usb, so the cached device pointer is stale
-  time.sleep(6)  # let the bridge reboot and re-enumerate before the retry
+  time.sleep(3)  # let the in-place retrain settle before checking for a re-enumeration
   t0 = time.monotonic()
   while time.monotonic() - t0 < timeout:
     if _chestnut_device() is not None:
