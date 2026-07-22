@@ -129,6 +129,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     userBookmark @95;
     excessiveActuation @96;
     bigModelLoading @100;
+    bigModelReady @101;
 
     lowBatteryDEPRECATED @40;
     soundsUnavailableDEPRECATED @47;
