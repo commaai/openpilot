@@ -775,3 +775,13 @@ struct GpsTrajectory @0x8cfeb072f5301000 {
   x @0 :List(Float32);
   y @1 :List(Float32);
 }
+
+struct AudioFeedbackDEPRECATED {
+  audio @0 :AudioData;
+  blockNum @1 :UInt16;
+
+  struct AudioData {
+    data @0 :Data;
+    sampleRate @1 :UInt32;
+  }
+}

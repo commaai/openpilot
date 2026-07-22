@@ -2485,11 +2485,6 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
-struct AudioFeedbackDEPRECATED {
-  audio @0 :AudioData;
-  blockNum @1 :UInt16;
-}
-
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2632,7 +2627,7 @@ struct Event {
 
     # *********** legacy + deprecated ***********
     model @9 :Deprecated.ModelData; # TODO: rename modelV2 and mark this as deprecated
-    audioFeedbackDEPRECATED @149 :AudioFeedbackDEPRECATED;
+    audioFeedbackDEPRECATED @149 :Deprecated.AudioFeedbackDEPRECATED;
     liveMpcDEPRECATED @36 :Deprecated.LiveMpcData;
     liveLongitudinalMpcDEPRECATED @37 :Deprecated.LiveLongitudinalMpcData;
     liveLocationKalmanDeprecatedDEPRECATED @51 :Deprecated.LiveLocationData;
