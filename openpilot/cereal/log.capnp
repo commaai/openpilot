@@ -131,9 +131,9 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     aeb @92;
     userBookmark @95;
     excessiveActuation @96;
-    audioFeedback @97;
 
     soundsUnavailableDEPRECATED @47;
+    audioFeedbackDEPRECATED @97;
   }
 }
 
@@ -2485,7 +2485,7 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
-struct AudioFeedback {
+struct AudioFeedbackDEPRECATED {
   audio @0 :AudioData;
   blockNum @1 :UInt16;
 }
@@ -2583,7 +2583,6 @@ struct Event {
     # driving feedback
     userBookmark @93 :UserBookmark;
     bookmarkButton @148 :UserBookmark;
-    audioFeedback @149 :AudioFeedback;
 
     lateralManeuverPlan @150 :LateralManeuverPlan;
 
@@ -2633,6 +2632,7 @@ struct Event {
 
     # *********** legacy + deprecated ***********
     model @9 :Deprecated.ModelData; # TODO: rename modelV2 and mark this as deprecated
+    audioFeedbackDEPRECATED @149 :AudioFeedbackDEPRECATED;
     liveMpcDEPRECATED @36 :Deprecated.LiveMpcData;
     liveLongitudinalMpcDEPRECATED @37 :Deprecated.LiveLongitudinalMpcData;
     liveLocationKalmanDeprecatedDEPRECATED @51 :Deprecated.LiveLocationData;
