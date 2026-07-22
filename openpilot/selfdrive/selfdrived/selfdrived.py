@@ -67,7 +67,7 @@ class SelfdriveD:
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
     self.big_model_loading = False
     self.big_model_ready_t = -10.
-    self.big_model_active = False  # big ran this engagement; if it dies, soft disable
+    self.big_model_active = False
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -167,12 +167,12 @@ class SelfdriveD:
     if self.big_model_loading:
       self.events.add(EventName.bigModelLoading)
 
-    # big model died mid-drive -> soft disable so the driver takes over and re-engages on small
+    # soft disable if the big model fails
     big_active = self.params.get_bool("UsbGpuActive")
     if big_active:
       self.big_model_active = True
     if self.enabled and self.big_model_active and not big_active:
-      self.events.add(EventName.bigModelStopped)
+      self.events.add(EventName.modeldLagging)
     if not self.enabled:
       self.big_model_active = False
 

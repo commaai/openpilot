@@ -417,10 +417,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: EngagementAlert(AudibleAlert.complete),
   },
 
-  EventName.bigModelStopped: {
-    ET.SOFT_DISABLE: soft_disable_alert("Big Model Stopped"),
-  },
-
   EventName.lateralManeuver: {
     ET.WARNING: longitudinal_maneuver_alert,
     ET.PERMANENT: NormalPermanentAlert("Lateral Maneuver Mode"),
