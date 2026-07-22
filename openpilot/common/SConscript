@@ -14,8 +14,8 @@ Export('_common')
 if GetOption('extras'):
   env.Program('tests/test_swaglog', 'tests/test_swaglog.cc', LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
-# ctypes loads this small C ABI wrapper around the C++ Params implementation.
-params_python = env.SharedLibrary('params_ctypes', 'params_ctypes.cc', LIBS=[_common, 'zmq', 'json11'])
+# Python loads this C ABI wrapper around the C++ Params implementation.
+params_python = env.SharedLibrary('params_c', 'params_c.cc', LIBS=[_common, 'zmq', 'json11'])
 
 common_python = [params_python]
 
