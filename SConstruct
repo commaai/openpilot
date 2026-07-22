@@ -129,6 +129,7 @@ env = Environment(
   CCFLAGS=[
     "-g",
     "-fPIC",
+    "-pipe",
     "-O2",
     "-Wunused",
     "-Werror",
