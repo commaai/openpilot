@@ -296,21 +296,13 @@ class AlertRenderer(Widget):
 
     # TODO: hack
     alert_text1 = alert.text1.lower().replace('calibrating: ', 'calibrating:\n')
-    can_draw_second_line = False
     # TODO: there should be a common way to determine font size based on text length to maximize rect
     if len(alert_text1) <= 12:
-      can_draw_second_line = True
       font_size = 92 - 10
     elif len(alert_text1) <= 16:
-      can_draw_second_line = True
       font_size = 70
     else:
       font_size = 64 - 10
-
-    # Full-screen alerts have room below a wrapped title. Their secondary text
-    # carries the disengagement reason (including level-3 DM alerts), so never
-    # suppress it just because the primary text is long.
-    can_draw_second_line |= alert.size == AlertSize.full
 
     if icon_side is not None:
       font_size -= 10
@@ -339,13 +331,13 @@ class AlertRenderer(Widget):
         self._text_gen_time = time.monotonic()
       alert_text2 = self._alert_text2_gen or alert_text2
 
-    if can_draw_second_line and alert_text2:
+    if alert_text2:
       last_line_h = self._alert_text1_label.rect.y + self._alert_text1_label.get_content_height(int(alert_layout.text_rect.width))
       last_line_h -= 4
-      if len(alert_text2) > 18:
-        small_font_size = 36
-      elif len(alert_text2) > 24:
+      if len(alert_text2) > 24:
         small_font_size = 32
+      elif len(alert_text2) > 18:
+        small_font_size = 36
       else:
         small_font_size = 40
       text_rect2 = rl.Rectangle(
