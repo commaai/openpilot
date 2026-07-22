@@ -26,7 +26,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_drivi
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
-from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link, recover_usbgpu
+from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -184,28 +184,23 @@ def main(demo=False):
   model = None
   if USBGPU:
     def load_big(out):
-      for _ in range(3):  # the link can renegotiate right at open, settle and try again
-        try:
-          wait_usbgpu_link()
-          m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
-          m.warmup()
-          out['model'] = m
-          return
-        except Exception:
-          cloudlog.exception("big model load failed")
-          recover_usbgpu()  # bring the bridge/tunnel back for a link-down wedge
-          os.environ['AM_RESET'] = '1'  # force a gpu mode1 reset next try - the wedge is a hung psp, link stays up
-        if 'give_up' in out:
-          return
+      try:
+        wait_usbgpu_link()
+        m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
+        m.warmup()
+        out['model'] = m
+      except Exception:
+        cloudlog.exception("big model load failed")
     big: dict = {}
     loader = threading.Thread(target=load_big, args=(big,), daemon=True)
     loader.start()
-    loader.join(90)
-    big['give_up'] = True  # a wedged link can hang the load in libusb, abandon the hung thread
+    loader.join(90)  # a wedged link can hang the load in libusb, abandon the hung thread
     model = big.get('model')
     params.put_bool("UsbGpuActive", model is not None)
+  # small model runs as the fallback and is kept loaded for an instant swap if big dies
+  small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or USBGPU else None
   if model is None:
-    model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
+    model = small_model
   params.put_bool("UsbGpuLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
@@ -324,12 +319,12 @@ def main(demo=False):
     except Exception:
       if not params.get_bool("UsbGpuActive"):
         raise
-      # the egpu died, swap to the small model without letting modeld die
+      # the egpu died, swap to the pre-loaded small model without letting modeld die.
+      # it is already loaded so the swap is instant - modelV2 resumes next frame, no comm errors.
       cloudlog.exception("big model died, swapping to small")
       params.put_bool("UsbGpuActive", False)
-      time.sleep(5)  # stay silent long enough for the soft disable to complete, not bounce back to enabled
-      model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
-      run_count = 0  # the swap gap is not real frame lag
+      model = small_model
+      run_count = 0  # the one-frame swap is not real frame lag
       model_output = None
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
