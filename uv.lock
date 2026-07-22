@@ -690,7 +690,6 @@ name = "openpilot"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "cffi" },
     { name = "comma-deps-acados" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-ffmpeg" },
@@ -757,7 +756,6 @@ standalone = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "comma-deps-acados" },
     { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
