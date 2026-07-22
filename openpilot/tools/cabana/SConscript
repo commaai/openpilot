@@ -15,7 +15,8 @@ if arch == "Darwin":
   except (FileNotFoundError, subprocess.CalledProcessError):
     has_qt = False
 else:
-  has_qt = shutil.which('qmake') is not None
+  qmake = shutil.which('qmake')
+  has_qt = qmake is not None
 if not has_qt:
   Return()
 
@@ -33,8 +34,9 @@ if arch == "Darwin":
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 else:
-  qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
-  qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
+  qt_query = dict(line.split(':', 1) for line in subprocess.check_output([qmake, '-query'], encoding='utf8').splitlines())
+  qt_install_prefix = qt_query['QT_INSTALL_PREFIX']
+  qt_install_headers = qt_query['QT_INSTALL_HEADERS']
 
   qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
@@ -98,29 +100,31 @@ assets = "assets/assets.cc"
 cabana_env.Command(assets, "assets/assets.qrc", f"rcc $SOURCES -o $TARGET")
 cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, "assets/assets.o"]))
 
+# Compile the Qt-independent DBC core with the base environment. These objects
+# are shared by Cabana and the no-Qt boundary test below.
+dbc_core_env = env.Clone()
+dbc_core_env['CXXFLAGS'] += [opendbc_path]
+dbc_core_srcs = ['dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc']
+dbc_core_objects = dbc_core_env.Object(dbc_core_srcs)
+
 cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
-               'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'dbc/dbcqt.cc',
+               'streams/routes.cc', 'dbc/dbcqt.cc',
                'utils/export.cc', 'utils/util.cc', 'utils/elidedlabel.cc',
                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
                'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc']
 if arch != "Darwin":
   cabana_srcs += ['streams/socketcanstream.cc']
-cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs + [bootstrap_icons_src], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs + dbc_core_objects + [bootstrap_icons_src], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
   # This target deliberately uses the base environment and links no Qt libraries.
   # It prevents Qt dependencies from creeping back into the DBC core.
-  dbc_core_test_env = env.Clone()
-  dbc_core_test_env['CXXFLAGS'] += [opendbc_path]
   dbc_core_test_objects = [
-    dbc_core_test_env.Object('tests/dbc_core_tests', 'tests/test_cabana.cc'),
-    dbc_core_test_env.Object('tests/dbc_core_model', 'dbc/dbc.cc'),
-    dbc_core_test_env.Object('tests/dbc_core_file', 'dbc/dbcfile.cc'),
-    dbc_core_test_env.Object('tests/dbc_core_manager', 'dbc/dbcmanager.cc'),
-  ]
-  dbc_core_test_env.Program('tests/test_dbc_core', dbc_core_test_objects)
+    dbc_core_env.Object('tests/dbc_core_tests', 'tests/test_cabana.cc'),
+  ] + dbc_core_objects
+  dbc_core_env.Program('tests/test_dbc_core', dbc_core_test_objects)
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,

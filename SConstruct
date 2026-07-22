@@ -11,16 +11,15 @@ import SCons.Errors
 from SCons.Defaults import _stripixes
 
 TICI = os.path.isfile('/TICI')
+repo_root = os.getcwd()
 
 SCons.Warnings.warningAsException(True)
-
-Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2))))
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
-release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
+release = not os.path.exists(os.path.join(repo_root, '.gitattributes')) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -28,12 +27,12 @@ AddOption('--minimal',
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 submodule_python_paths = [
-  Dir("#").abspath,
-  Dir("#msgq_repo").abspath,
-  Dir("#opendbc_repo").abspath,
-  Dir("#rednose_repo").abspath,
-  Dir("#teleoprtc_repo").abspath,
-  Dir("#tinygrad_repo").abspath,
+  repo_root,
+  os.path.join(repo_root, "msgq_repo"),
+  os.path.join(repo_root, "opendbc_repo"),
+  os.path.join(repo_root, "rednose_repo"),
+  os.path.join(repo_root, "teleoprtc_repo"),
+  os.path.join(repo_root, "tinygrad_repo"),
 ]
 for p in reversed(submodule_python_paths):
   if p not in sys.path:
@@ -43,7 +42,7 @@ if external_pythonpath := os.environ.get("PYTHONPATH"):
   submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
 
 # Detect platform
-arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+arch = platform.machine()
 if platform.system() == "Darwin":
   arch = "Darwin"
 elif arch == "aarch64" and TICI:
@@ -54,6 +53,17 @@ assert arch in [
   "x86_64",   # linux pc x64
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
+
+if arch == "Darwin":
+  cc, cxx = "clang", "clang++"
+  linker_tool = "applelink"
+elif arch == "larch64":
+  cc, cxx = "clang", "clang++"
+  linker_tool = "gnulink"
+else:
+  cc, cxx = "gcc", "g++"
+  linker_tool = "gnulink"
+compiler_tools = ["cc", "c++", linker_tool, "ar"]
 
 pkg_names = ['acados', 'bzip2', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
@@ -118,7 +128,7 @@ def _libflags(target, source, env, for_signature):
   return _stripixes(env['LIBLINKPREFIX'], libs, env['LIBLINKSUFFIX'],
                     env['LIBPREFIXES'], env['LIBSUFFIXES'], env, env['LIBLITERALPREFIX'])
 
-env = Environment(
+env = DefaultEnvironment(
   ENV={
     "PATH": os.environ['PATH'],
     "PYTHONPATH": os.pathsep.join(submodule_python_paths),
@@ -126,6 +136,8 @@ env = Environment(
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
   },
+  CC=cc,
+  CXX=cxx,
   CCFLAGS=[
     "-g",
     "-fPIC",
@@ -139,6 +151,7 @@ env = Environment(
     "-Wno-reorder-init-list",
     "-Wno-vla-cxx-extension",
   ],
+  SHCCFLAGS="$CCFLAGS -fPIC",
   CFLAGS=["-std=gnu11"],
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
@@ -163,9 +176,12 @@ env = Environment(
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#rednose_repo",
-  tools=["default", "cython", "compilation_db", "rednose_filter"],
+  tools=compiler_tools,
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+for tool in ["cython", "compilation_db", "rednose_filter"]:
+  env.Tool(tool)
+env.Decider('MD5-timestamp')
 # SCons' Darwin linker tool doesn't define the variables used to expand RPATH.
 if arch == "Darwin":
   env["RPATHPREFIX"] = "-Wl,-rpath,"
@@ -236,7 +252,8 @@ Export('env', 'arch', 'acados', 'ffmpeg_libs')
 cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
 cache_size_limit = 4e9 if "CI" in os.environ else 2e9
 CacheDir(cache_dir)
-Clean(["."], cache_dir)
+if not GetOption('cache_disable'):
+  Clean(["."], cache_dir)
 
 def prune_cache_dir(target=None, source=None, env=None):
   cache_files = sorted((os.path.join(root, f) for root, _, files in os.walk(cache_dir) for f in files), key=os.path.getmtime)
@@ -299,6 +316,24 @@ if GetOption('extras') and arch != "larch64":
     'openpilot/tools/jotpluggler/SConscript',
   ])
 
+  # SCons otherwise reaches these expensive desktop objects late in its
+  # depth-first walk, leaving the machine mostly idle at the end of a clean
+  # build. Listing them before the directory target keeps the same complete
+  # product graph while balancing the longest compile actions across workers.
+  desktop_critical_path = [
+    "openpilot/tools/jotpluggler/sketch_layout.o",
+    "rednose_repo/rednose/helpers/ekf_sym_pyx.so",
+    "openpilot/tools/jotpluggler/layout.o",
+    "openpilot/tools/jotpluggler/app.o",
+    "openpilot/tools/jotpluggler/custom_series.o",
+    "openpilot/tools/jotpluggler/browser.o",
+    "openpilot/tools/jotpluggler/runtime.o",
+    "openpilot/tools/jotpluggler/stream.o",
+    "openpilot/tools/jotpluggler/session.o",
+    "openpilot/tools/replay/route.o",
+  ]
+  Default([File(target) for target in desktop_critical_path] + [Dir(".")])
+
 
 env.CompilationDatabase('compile_commands.json')
 
@@ -320,24 +355,32 @@ def count_scons_nodes(nodes):
 
   return len(seen)
 
-progress_interval = 5
+progress_interval = 50
 progress_count = 0
 build_product_nodes = set()
-progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
+progress_total = None
+if not GetOption('extras'):
+  # The minimal build needs the product list for the size check below, so the
+  # graph walk is useful work there. Walking the graph solely to calculate a
+  # percentage for desktop builds duplicates SCons' own dependency scan.
+  progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
 
 def progress_function(node):
   global progress_count
-  if progress_count >= progress_total:
-    return
-  progress_count = min(progress_count + progress_interval, progress_total)
-  progress = round(100. * progress_count / progress_total, 1)
-  sys.stderr.write("\rBuilding: %5.1f%%" % progress if sys.stderr.isatty() else "progress: %.1f\n" % progress)
-  if progress == 100. and sys.stderr.isatty():
+  progress_count += progress_interval
+  if progress_total is None:
+    message = f"Building: {progress_count} nodes"
+  else:
+    progress = round(100. * min(progress_count, progress_total) / progress_total, 1)
+    message = f"Building: {progress:5.1f}%"
+  sys.stderr.write(f"\r{message}" if sys.stderr.isatty() else f"{message}\n")
+  if progress_total is not None and progress_count >= progress_total and sys.stderr.isatty():
     sys.stderr.write("\n")
   sys.stderr.flush()
 
 Progress(progress_function, interval=progress_interval)
-AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
+if not GetOption('cache_disable'):
+  AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
 
 def check_build_product_size(target, source, env):
   limit = 50 * 1024 * 1024  # GitHub max size
