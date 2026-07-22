@@ -193,7 +193,8 @@ def main(demo=False):
           return
         except Exception:
           cloudlog.exception("big model load failed")
-          recover_usbgpu()  # trigger the bridge tunnel recovery, then the loop reopens with a fresh device
+          recover_usbgpu()  # bring the bridge/tunnel back for a link-down wedge
+          os.environ['AM_RESET'] = '1'  # force a gpu mode1 reset next try - the wedge is a hung psp, link stays up
         if 'give_up' in out:
           return
     big: dict = {}
