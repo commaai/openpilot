@@ -1,5 +1,4 @@
-#include "common/params_c.h"
-
+#include <cstddef>
 #include <cstdio>
 #include <exception>
 #include <string>
@@ -7,6 +6,11 @@
 #include <vector>
 
 #include "common/params.h"
+
+typedef struct {
+  const char *data;
+  size_t size;
+} ParamsBuffer;
 
 struct ParamsHandle {
   ParamsHandle(const char *path, size_t path_size) : params(std::string(path, path_size)), keys(params.allKeys()) {}
@@ -45,6 +49,8 @@ void guard(Callable &&callable) noexcept {
   }, false);
 }
 }  // namespace
+
+extern "C" {
 
 ParamsHandle *params_create(const char *path, size_t path_size) {
   return guard([&]() { return new ParamsHandle(path, path_size); }, static_cast<ParamsHandle *>(nullptr));
@@ -114,3 +120,5 @@ ParamsBuffer params_key_at(ParamsHandle *handle, size_t index) {
     return index < handle->keys.size() ? return_string(handle->keys[index]) : ParamsBuffer{nullptr, 0};
   }, ParamsBuffer{nullptr, 0});
 }
+
+}  // extern "C"
