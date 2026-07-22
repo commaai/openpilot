@@ -6,6 +6,8 @@ import struct
 import tempfile
 from pathlib import Path
 
+from openpilot.common.file_chunker import get_manifest_path
+
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
 TG_INPUT_DEVICES_PATH = MODELS_DIR / 'tg_input_devices.json'
 USBGPU_VID = 0xADD1
@@ -53,3 +55,6 @@ def usbgpu_present() -> bool:
     except Exception:
       pass
   return False
+
+def usbgpu_compiled() -> bool:
+  return Path(get_manifest_path(modeld_pkl_path(usbgpu=True))).is_file()

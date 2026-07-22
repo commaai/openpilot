@@ -22,9 +22,9 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
-from openpilot.common.file_chunker import open_file_chunked, get_manifest_path
+from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path, get_tg_input_devices, load_oob
+from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
 from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
@@ -137,12 +137,8 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  _present = usbgpu_present()
-  _compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
-  USBGPU = _present and _compiled
+  USBGPU = usbgpu_present() and usbgpu_compiled()
   params = Params()
-  params.put_bool("UsbGpuPresent", _present)
-  params.put_bool("UsbGpuCompiled", _compiled)
 
   config_realtime_process(7, 54)
 
