@@ -27,7 +27,8 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState, NMDeviceStateReason)
 
 try:
-  from openpilot.common.params import Params
+  from openpilot.common.params import Params as _Params
+  Params: Any = _Params
 except Exception:
   Params = None
 

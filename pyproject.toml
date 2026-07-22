@@ -18,6 +18,7 @@ dependencies = [
   "scons",
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "Cython",
+  "cffi",
   "numpy >=2.0",
 
   # vendored native dependencies

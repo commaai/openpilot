@@ -2,11 +2,13 @@ from importlib.resources import files
 import json
 import os
 import re
+from typing import Any
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
 try:
-  from openpilot.common.params import Params
+  from openpilot.common.params import Params as _Params
+  Params: Any = _Params
 except ImportError:
   Params = None
 

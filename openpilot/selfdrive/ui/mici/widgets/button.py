@@ -1,6 +1,6 @@
 import math
 import pyray as rl
-from typing import Union
+from typing import Any, Union
 from enum import Enum
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
@@ -10,7 +10,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.common.filter_simple import BounceFilter
 
 try:
-  from openpilot.common.params import Params
+  from openpilot.common.params import Params as _Params
+  Params: Any = _Params
 except ImportError:
   Params = None
 
