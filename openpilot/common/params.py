@@ -1,10 +1,11 @@
 import builtins
+import ctypes
 import datetime
 from enum import IntEnum, IntFlag
 import json
 from pathlib import Path
-
-from cffi import FFI
+import sys
+import weakref
 
 from openpilot.common.swaglog import cloudlog
 
@@ -29,29 +30,45 @@ class ParamKeyType(IntEnum):
   BYTES = 6
 
 
-ffi = FFI()
-ffi.cdef("""
-  typedef void ParamsHandle;
-  ParamsHandle *params_create(const char *path);
-  void params_destroy(ParamsHandle *p);
-  const char *params_last_error(void);
-  void params_clear_all(ParamsHandle *p, unsigned int flag);
-  int params_check_key(ParamsHandle *p, const char *key);
-  int params_get_key_type(ParamsHandle *p, const char *key);
-  char *params_get_default(ParamsHandle *p, const char *key, size_t *size, int *present);
-  char *params_get(ParamsHandle *p, const char *key, int block, size_t *size);
-  int params_get_bool(ParamsHandle *p, const char *key, int block);
-  int params_put(ParamsHandle *p, const char *key, const char *value, size_t size, int block);
-  int params_put_bool(ParamsHandle *p, const char *key, int value, int block);
-  int params_remove(ParamsHandle *p, const char *key);
-  char *params_get_path(ParamsHandle *p, const char *key, size_t *size);
-  size_t params_keys_size(ParamsHandle *p);
-  char *params_key_at(ParamsHandle *p, size_t index, size_t *size);
-  void params_free(void *value);
-""")
+_suffix = ".dylib" if sys.platform == "darwin" else ".so"
+lib = ctypes.CDLL(Path(__file__).with_name(f"libparams_ctypes{_suffix}"))
 
-_suffix = ".dylib" if __import__("sys").platform == "darwin" else ".so"
-lib = ffi.dlopen(str(Path(__file__).with_name(f"libparams_cffi{_suffix}")))
+ParamsHandle = ctypes.c_void_p
+SizePointer = ctypes.POINTER(ctypes.c_size_t)
+IntPointer = ctypes.POINTER(ctypes.c_int)
+
+lib.params_create.argtypes = [ctypes.c_char_p]
+lib.params_create.restype = ParamsHandle
+lib.params_destroy.argtypes = [ParamsHandle]
+lib.params_destroy.restype = None
+lib.params_last_error.argtypes = []
+lib.params_last_error.restype = ctypes.c_char_p
+lib.params_clear_all.argtypes = [ParamsHandle, ctypes.c_uint]
+lib.params_clear_all.restype = None
+lib.params_check_key.argtypes = [ParamsHandle, ctypes.c_char_p]
+lib.params_check_key.restype = ctypes.c_int
+lib.params_get_key_type.argtypes = [ParamsHandle, ctypes.c_char_p]
+lib.params_get_key_type.restype = ctypes.c_int
+lib.params_get_default.argtypes = [ParamsHandle, ctypes.c_char_p, SizePointer, IntPointer]
+lib.params_get_default.restype = ctypes.c_void_p
+lib.params_get.argtypes = [ParamsHandle, ctypes.c_char_p, ctypes.c_int, SizePointer]
+lib.params_get.restype = ctypes.c_void_p
+lib.params_get_bool.argtypes = [ParamsHandle, ctypes.c_char_p, ctypes.c_int]
+lib.params_get_bool.restype = ctypes.c_int
+lib.params_put.argtypes = [ParamsHandle, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t, ctypes.c_int]
+lib.params_put.restype = ctypes.c_int
+lib.params_put_bool.argtypes = [ParamsHandle, ctypes.c_char_p, ctypes.c_int, ctypes.c_int]
+lib.params_put_bool.restype = ctypes.c_int
+lib.params_remove.argtypes = [ParamsHandle, ctypes.c_char_p]
+lib.params_remove.restype = ctypes.c_int
+lib.params_get_path.argtypes = [ParamsHandle, ctypes.c_char_p, SizePointer]
+lib.params_get_path.restype = ctypes.c_void_p
+lib.params_keys_size.argtypes = [ParamsHandle]
+lib.params_keys_size.restype = ctypes.c_size_t
+lib.params_key_at.argtypes = [ParamsHandle, ctypes.c_size_t, SizePointer]
+lib.params_key_at.restype = ctypes.c_void_p
+lib.params_free.argtypes = [ctypes.c_void_p]
+lib.params_free.restype = None
 
 PYTHON_2_CPP = {
   (str, ParamKeyType.STRING): lambda v: v,
@@ -79,10 +96,10 @@ def ensure_bytes(v):
 
 
 def _take_string(value, size):
-  if value == ffi.NULL:
+  if value is None:
     return None
   try:
-    return bytes(ffi.buffer(value, size))
+    return ctypes.string_at(value, size)
   finally:
     lib.params_free(value)
 
@@ -94,9 +111,9 @@ class UnknownKeyName(Exception):
 class Params:
   def __init__(self, d=""):
     self.p = lib.params_create(ensure_bytes(d))
-    if self.p == ffi.NULL:
-      raise RuntimeError(ffi.string(lib.params_last_error()).decode())
-    self.p = ffi.gc(self.p, lib.params_destroy)
+    if self.p is None:
+      raise RuntimeError(lib.params_last_error().decode())
+    self._finalizer = weakref.finalize(self, lib.params_destroy, self.p)
     self.d = d
 
   def __reduce__(self):
@@ -127,16 +144,16 @@ class Params:
       return self._cpp2python(t, default, None, key)
 
   def _default(self, key):
-    size, present = ffi.new("size_t *"), ffi.new("int *")
-    value = lib.params_get_default(self.p, key, size, present)
-    return _take_string(value, size[0]) if present[0] else None
+    size, present = ctypes.c_size_t(), ctypes.c_int()
+    value = lib.params_get_default(self.p, key, ctypes.byref(size), ctypes.byref(present))
+    return _take_string(value, size.value) if present.value else None
 
   def get(self, key, block=False, return_default=False):
     k = self.check_key(key)
     t = self.get_type(k)
     default = self._default(k) if return_default else None
-    size = ffi.new("size_t *")
-    value = _take_string(lib.params_get(self.p, k, block, size), size[0])
+    size = ctypes.c_size_t()
+    value = _take_string(lib.params_get(self.p, k, block, ctypes.byref(size)), size.value)
     if value == b"":
       if block:
         raise KeyboardInterrupt
@@ -162,8 +179,8 @@ class Params:
     lib.params_remove(self.p, self.check_key(key))
 
   def get_param_path(self, key=""):
-    size = ffi.new("size_t *")
-    return _take_string(lib.params_get_path(self.p, ensure_bytes(key), size), size[0]).decode()
+    size = ctypes.c_size_t()
+    return _take_string(lib.params_get_path(self.p, ensure_bytes(key), ctypes.byref(size)), size.value).decode()
 
   def get_type(self, key):
     return ParamKeyType(lib.params_get_key_type(self.p, self.check_key(key)))
@@ -171,8 +188,8 @@ class Params:
   def all_keys(self):
     keys = []
     for i in range(lib.params_keys_size(self.p)):
-      size = ffi.new("size_t *")
-      keys.append(_take_string(lib.params_key_at(self.p, i, size), size[0]))
+      size = ctypes.c_size_t()
+      keys.append(_take_string(lib.params_key_at(self.p, i, ctypes.byref(size)), size.value))
     return keys
 
   def get_default_value(self, key):
