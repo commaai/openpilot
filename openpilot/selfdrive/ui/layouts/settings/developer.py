@@ -1,8 +1,16 @@
+import threading
+import wave
+from pathlib import Path
+
+import numpy as np
+
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.widgets.ssh_key import ssh_key_item
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import toggle_item
+from openpilot.system.ui.widgets.list_view import button_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
@@ -33,6 +41,14 @@ class DeveloperLayout(Widget):
     super().__init__()
     self._params = Params()
     self._is_release = self._params.get_bool("IsReleaseBranch")
+    self._sounds_playing = False
+
+    self._play_sounds_button = button_item(
+      lambda: tr("Play All Sounds"),
+      lambda: tr("PLAY"),
+      callback=self._on_play_all_sounds,
+      enabled=lambda: not self._sounds_playing,
+    )
 
     # Build items and keep references for callbacks/state updates
     self._adb_toggle = toggle_item(
@@ -91,6 +107,7 @@ class DeveloperLayout(Widget):
     self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
 
     self._scroller = Scroller([
+      self._play_sounds_button,
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys,
@@ -149,6 +166,26 @@ class DeveloperLayout(Widget):
       ("ShowDebugInfo", self._ui_debug_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))
+
+  def _on_play_all_sounds(self):
+    if self._sounds_playing:
+      return
+    self._sounds_playing = True
+    threading.Thread(target=self._play_all_sounds, daemon=True).start()
+
+  def _play_all_sounds(self):
+    # sounddevice must be imported after forking processes
+    import sounddevice as sd
+    try:
+      for f in sorted(Path(BASEDIR, "openpilot/selfdrive/assets/sounds").glob("*.wav")):
+        with wave.open(str(f), 'r') as wavefile:
+          data = np.frombuffer(wavefile.readframes(wavefile.getnframes()), dtype=np.int16)
+          cloudlog.info(f"playing {f.name}")
+          sd.play(data, wavefile.getframerate(), blocking=True)
+    except Exception:
+      cloudlog.exception("failed to play sounds")
+    finally:
+      self._sounds_playing = False
 
   def _on_enable_ui_debug(self, state: bool):
     self._params.put_bool("ShowDebugInfo", state, block=True)
