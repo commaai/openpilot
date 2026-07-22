@@ -62,6 +62,8 @@ class Generator:
   def __init__(self, event_schema):
     self.event_schema = event_schema
     self.fixed_paths = []
+    self.event_base_slots = {}
+    self.static_enums = []
     self.tmp_index = 0
     self.lines = []
     self.emits_memo = {}
@@ -103,9 +105,13 @@ class Generator:
         self.emit(indent, f"append_dynamic_scalar_point({path_expr}, tm, {double_expr}, series);")
       else:
         slot = self.add_fixed_path(path)
-        if kind == "Enum":
-          self.emit_enum_capture(indent, cxx_string(path), enum_names(schema))
-        self.emit(indent, f"append_fixed_scalar_point(&series->fixed_series[{slot}], tm, {double_expr});")
+        names = enum_names(schema) if kind == "Enum" else []
+        if names:
+          enum_index = len(self.static_enums)
+          self.static_enums.append(names)
+          self.emit(indent, f"append_fixed_enum_point({slot}, {enum_index}, tm, {double_expr}, series);")
+        else:
+          self.emit(indent, f"append_fixed_scalar_point(&series->fixed_series[{slot}], tm, {double_expr});")
       return
 
     if type_kind == "struct":
@@ -144,9 +150,13 @@ class Generator:
       self.emit(indent, f"if ({' && '.join(conditions)}) {{")
       indent += 2
 
-    value_var = self.tmp("value")
-    self.emit(indent, f"const auto {value_var} = {get_call};")
-    self.emit_node(indent, type_kind, type_proto, value_schema, value_var, field_path, field_path_expr, dynamic_path)
+    # Scalar getters are only consumed once. Emitting them directly avoids
+    # thousands of single-use locals in the generated extractor.
+    value_expr = get_call
+    if kind is None:
+      value_expr = self.tmp("value")
+      self.emit(indent, f"const auto {value_expr} = {get_call};")
+    self.emit_node(indent, type_kind, type_proto, value_schema, value_expr, field_path, field_path_expr, dynamic_path)
 
     if conditions:
       indent -= 2
@@ -247,31 +257,43 @@ class Generator:
     self.emit(indent + 2, "}")
     self.emit(indent, "}")
     self.emit(indent, "if (skip_raw_can) {")
-    self.emit(indent + 2, "return true;")
+    self.emit(indent + 2, "return;")
     self.emit(indent, "}")
 
-  def emit_event_case(self, field_name):
+  def emit_event_reader(self, field_name):
     field = self.event_schema.fields[field_name]
     proto = field.proto
     type_kind = field_type(field)
     type_proto = field_type_proto(field)
     kind = scalar_kind(type_proto)
     schema = field.schema if kind == "Enum" or type_kind in NESTED_TYPE_KINDS else None
-    self.emit(4, f"case static_cast<cereal::Event::Which>({proto.discriminantValue}): {{")
     valid_slot = self.add_fixed_path(f"/{field_name}/valid")
-    mono_slot = self.add_fixed_path(f"/{field_name}/logMonoTime")
-    seconds_slot = self.add_fixed_path(f"/{field_name}/t")
-    self.emit(6, f"append_fixed_scalar_point(&series->fixed_series[{valid_slot}], tm, event.getValid() ? 1.0 : 0.0);")
-    self.emit(6, f"append_fixed_scalar_point(&series->fixed_series[{mono_slot}], tm, static_cast<double>(event.getLogMonoTime()));")
-    self.emit(6, f"append_fixed_scalar_point(&series->fixed_series[{seconds_slot}], tm, tm);")
-    if field_name in {"can", "sendcan"}:
-      self.emit_can_special(6, field_name)
-    if self.node_emits(type_kind, type_proto, schema):
+    self.add_fixed_path(f"/{field_name}/logMonoTime")
+    self.add_fixed_path(f"/{field_name}/t")
+    self.event_base_slots[proto.discriminantValue] = valid_slot
+
+    emits_payload = self.node_emits(type_kind, type_proto, schema)
+    if field_name not in {"can", "sendcan"} and not emits_payload:
+      return None
+
+    reader_name = f"append_event_{proto.discriminantValue}"
+    needs_can = field_name in {"can", "sendcan"}
+    header_index = len(self.lines)
+    self.emit(0, "")
+    if needs_can:
+      self.emit_can_special(2, field_name)
+    if emits_payload:
       payload = self.tmp("payload")
-      self.emit(6, f"const auto {payload} = event.{accessor('get', field_name)}();")
-      self.emit_node(6, type_kind, type_proto, schema, payload, f"/{field_name}", None, False)
-    self.emit(6, "return true;")
-    self.emit(4, "}")
+      self.emit(2, f"const auto {payload} = event.{accessor('get', field_name)}();")
+      self.emit_node(2, type_kind, type_proto, schema, payload, f"/{field_name}", None, False)
+    self.emit(0, "}")
+    self.emit(0, "")
+    if needs_can:
+      signature = "const cereal::Event::Reader &event, const dbc::Database *can_dbc, bool skip_raw_can, double tm, SeriesAccumulator *series"
+    else:
+      signature = "const cereal::Event::Reader &event, double tm, SeriesAccumulator *series"
+    self.lines[header_index] = f"__attribute__((noinline)) void {reader_name}({signature}) {{"
+    return reader_name, needs_can
 
   def generate(self):
     self.lines = []
@@ -298,11 +320,66 @@ class Generator:
     self.emit(2, "}")
     self.emit(0, "}")
     self.emit(0, "")
+    self.emit(0, "__attribute__((noinline)) void append_fixed_enum_point(size_t series_slot, size_t enum_index, double tm, double value, SeriesAccumulator *series);")  # noqa: E501
+    self.emit(0, "")
+
+    self.emit(0, "// Keep each event payload behind its own optimizer boundary. Combining the")
+    self.emit(0, "// whole schema into one function creates much more code and runs slower.")
+    event_readers = {}
+    for field_name in self.event_schema.union_fields:
+      event_readers[field_name] = self.emit_event_reader(field_name)
+
+    self.emit(0, "static const std::initializer_list<std::string_view> static_event_enum_names[] = {")
+    for names in self.static_enums:
+      names_expr = "{" + ", ".join(cxx_string(name) for name in names) + "}"
+      self.emit(2, f"{names_expr},")
+    self.emit(0, "};")
+    self.emit(0, "")
+    self.emit(0, "__attribute__((noinline)) void append_fixed_enum_point(size_t series_slot, size_t enum_index, double tm, double value, SeriesAccumulator *series) {")  # noqa: E501
+    self.emit(2, "RouteSeries *fixed_series = &series->fixed_series[series_slot];")
+    self.emit(2, "capture_static_enum_info(fixed_series->path, static_event_enum_names[enum_index], series);")
+    self.emit(2, "fixed_series->times.push_back(tm);")
+    self.emit(2, "fixed_series->values.push_back(value);")
+    self.emit(0, "}")
+    self.emit(0, "")
+
     self.emit(0, "bool append_event_static_reader(cereal::Event::Which which, const cereal::Event::Reader &event, const dbc::Database *can_dbc, bool skip_raw_can, double time_offset, SeriesAccumulator *series) {")  # noqa: E501
-    self.emit(2, "const double tm = static_cast<double>(event.getLogMonoTime()) / 1.0e9 - time_offset;")
+    self.emit(2, "const auto log_mono_time = event.getLogMonoTime();")
+    self.emit(2, "const double tm = static_cast<double>(log_mono_time) / 1.0e9 - time_offset;")
+
+    invalid_slot = "static_cast<size_t>(-1)"
+    max_discriminant = max(self.event_base_slots)
+    base_slots = [self.event_base_slots.get(i, invalid_slot) for i in range(max_discriminant + 1)]
+    self.emit(2, "static constexpr size_t event_base_slots[] = {")
+    for slot in base_slots:
+      self.emit(4, f"{slot},")
+    self.emit(2, "};")
+    self.emit(2, "const size_t event_index = static_cast<size_t>(which);")
+    self.emit(2, "if (event_index >= sizeof(event_base_slots) / sizeof(event_base_slots[0])) {")
+    self.emit(4, "return false;")
+    self.emit(2, "}")
+    self.emit(2, "const size_t base_slot = event_base_slots[event_index];")
+    self.emit(2, f"if (base_slot == {invalid_slot}) {{")
+    self.emit(4, "return false;")
+    self.emit(2, "}")
+    self.emit(2, "RouteSeries *base_series = &series->fixed_series[base_slot];")
+    self.emit(2, "base_series[0].times.push_back(tm);")
+    self.emit(2, "base_series[0].values.push_back(event.getValid() ? 1.0 : 0.0);")
+    self.emit(2, "base_series[1].times.push_back(tm);")
+    self.emit(2, "base_series[1].values.push_back(static_cast<double>(log_mono_time));")
+    self.emit(2, "base_series[2].times.push_back(tm);")
+    self.emit(2, "base_series[2].values.push_back(tm);")
     self.emit(2, "switch (which) {")
     for field_name in self.event_schema.union_fields:
-      self.emit_event_case(field_name)
+      field = self.event_schema.fields[field_name]
+      self.emit(4, f"case static_cast<cereal::Event::Which>({field.proto.discriminantValue}):")
+      reader = event_readers[field_name]
+      if reader is not None:
+        if reader[1]:
+          self.emit(6, f"{reader[0]}(event, can_dbc, skip_raw_can, tm, series);")
+        else:
+          self.emit(6, f"{reader[0]}(event, tm, series);")
+      self.emit(6, "return true;")
     self.emit(4, "default:")
     self.emit(6, "return false;")
     self.emit(2, "}")
