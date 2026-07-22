@@ -246,7 +246,7 @@ class DriverMonitoring:
     self.distracted_types['eye'] = bool(blink_average > self.settings._BLINK_THRESHOLD)
     self.distracted_types['phone'] = bool(self.phone_prob > self.settings._PHONE_THRESH)
     self.distracted_types['sleep'] = bool(
-      self.sleep_prob > self.settings._SLEEP_E2E_THRESH and 
+      self.sleep_prob > self.settings._SLEEP_E2E_THRESH and
       (blink_average > self.settings._SLEEP_BLINK_THRESH or self.eye_prob < self.settings._SLEEP_EYE_THRESH)
     )
 
@@ -291,7 +291,8 @@ class DriverMonitoring:
 
     self._get_distracted_types()
     # TODO: Sleep head outputs are currently ignored for alerts. The current thresholds are NOT suitable for generating sleep alerts.
-    self.driver_distracted = any([v for k, v in self.distracted_types.items() if k != 'sleep']) and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+    self.driver_distracted = any(v for k, v in self.distracted_types.items() if k != 'sleep') and \
+                             driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # only update offsetter when driver is actively driving the car above a certain speed
