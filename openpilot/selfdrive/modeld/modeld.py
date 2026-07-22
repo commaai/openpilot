@@ -26,7 +26,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_drivi
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
-from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
+from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link, recover_usbgpu
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -193,7 +193,7 @@ def main(demo=False):
           return
         except Exception:
           cloudlog.exception("big model load failed")
-          time.sleep(2)
+          recover_usbgpu()  # trigger the bridge tunnel recovery, then the loop reopens with a fresh device
         if 'give_up' in out:
           return
     big: dict = {}
