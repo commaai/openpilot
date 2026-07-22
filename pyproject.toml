@@ -20,6 +20,9 @@ dependencies = [
   "Cython",
   "numpy >=2.0",
 
+  # tmp
+  "tinymesa==25.2.7.2",
+
   # vendored native dependencies
   "comma-deps-capnproto",
   "comma-deps-catch2",
