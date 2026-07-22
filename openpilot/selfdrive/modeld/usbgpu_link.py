@@ -11,6 +11,8 @@ STABLE_SECONDS = 2.0
 STABLE_THRESHOLD = 5.0  # link errors per second
 
 USBGPU_RECOVER = 0xF4          # bridge vendor cmd: recover the wedged pcie tunnel
+USBGPU_LTSSM = 0xB450          # pcie link state register, 0x78 = link up
+LTSSM_UP = 0x78
 _USBDEVFS_CONTROL = 0xC0185500  # _IOWR('U', 0, struct usbdevfs_ctrltransfer), 64-bit
 
 
@@ -19,6 +21,16 @@ class _CtrlTransfer(ctypes.Structure):
               ("wValue", ctypes.c_uint16), ("wIndex", ctypes.c_uint16),
               ("wLength", ctypes.c_uint16), ("timeout", ctypes.c_uint32),
               ("data", ctypes.c_void_p)]
+
+
+def _ltssm(fd: int) -> int:
+  buf = (ctypes.c_ubyte * 1)()
+  req = _CtrlTransfer(0xC0, 0xE4, USBGPU_LTSSM, 0, 1, 2000, ctypes.cast(buf, ctypes.c_void_p))
+  try:
+    fcntl.ioctl(fd, _USBDEVFS_CONTROL, req)
+    return buf[0]
+  except OSError:
+    return -1
 
 
 def _chestnut_device() -> Path | None:
@@ -48,6 +60,8 @@ def recover_usbgpu(timeout: float = 12.0) -> None:
     try:
       fd = os.open(node, os.O_RDWR)
       try:
+        lt = _ltssm(fd)
+        cloudlog.warning(f"usbgpu recover: ltssm=0x{lt:02X} ({'link down' if lt != LTSSM_UP else 'psp hang'}), 0xF4 + gpu reset")
         req = _CtrlTransfer(0x40, USBGPU_RECOVER, 0, 0, 0, 10000, None)
         fcntl.ioctl(fd, _USBDEVFS_CONTROL, req)  # the transfer can drop if the reset fires, that's fine
       finally:
