@@ -41,10 +41,10 @@ def get_cruise_accel(e2e, v_cruise, v_ego, a_cruise_prev, angle_steers, CP, dt, 
     a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
     a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
     max_accel = min(max_accel, a_x_allowed)
-  if not allow_throttle:
-    clipped_accel_coast = max(accel_coast, ACCEL_MIN)
-    coast_limit = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [max_accel, clipped_accel_coast])
-    max_accel = min(max_accel, coast_limit)
+    if not allow_throttle:
+      clipped_accel_coast = max(accel_coast, ACCEL_MIN)
+      coast_limit = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [max_accel, clipped_accel_coast])
+      max_accel = min(max_accel, coast_limit)
 
   target_accel = np.clip(v_cruise - v_ego, A_CRUISE_MIN, max_accel)
   if not e2e:
@@ -127,7 +127,7 @@ class LongitudinalPlanner:
 
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
     output_a_target_mpc, output_should_stop_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
-                                                                        action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+                                                                        action_t=action_t)
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
