@@ -12,8 +12,6 @@ from openpilot.common.constants import CV
 from openpilot.common.git import get_short_branch
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
-from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
-from openpilot.selfdrive.ui.feedback.feedbackd import FEEDBACK_MAX_DURATION
 from openpilot.common.hardware import HARDWARE
 
 AlertSize = log.SelfdriveState.AlertSize
@@ -270,14 +268,6 @@ def too_distracted_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
     mins_left = sm['driverMonitoringState'].lockoutMinutesRemaining
     return NoEntryAlert("Too Distracted", f"{mins_left} minute{'s' if mins_left != 1 else ''} Left", priority=Priority.HIGH)
   return NoEntryAlert("Pay Attention to Engage", priority=Priority.HIGH)
-
-
-def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  duration = FEEDBACK_MAX_DURATION - ((sm['audioFeedback'].blockNum + 1) * SAMPLE_BUFFER / SAMPLE_RATE)
-  return NormalPermanentAlert(
-    "Recording Audio Feedback",
-    f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
-    priority=Priority.LOW)
 
 
 # *** debug alerts ***
@@ -1031,10 +1021,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.userBookmark: {
     ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
-  },
-
-  EventName.audioFeedback: {
-    ET.PERMANENT: audio_feedback_alert,
   },
 }
 

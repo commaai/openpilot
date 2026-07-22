@@ -86,7 +86,7 @@ class SelfdriveD:
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark', 'audioFeedback',
+                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark',
                                    'lateralManeuverPlan'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore,
@@ -171,12 +171,9 @@ class SelfdriveD:
       self.events.add(EventName.selfdriveInitializing)
       return
 
-    # Check for user bookmark press (bookmark button or end of LKAS button feedback)
+    # Check for user bookmark press
     if self.sm.updated['userBookmark']:
       self.events.add(EventName.userBookmark)
-
-    if self.sm.updated['audioFeedback']:
-      self.events.add(EventName.audioFeedback)
 
     # Don't add any more events while in dashcam mode
     if self.CP.passive:
