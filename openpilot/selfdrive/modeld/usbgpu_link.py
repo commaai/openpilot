@@ -39,9 +39,9 @@ def _chestnut_portli() -> Path | None:
 
 
 def recover_usbgpu(timeout: float = 12.0) -> None:
-  # ask the bridge to recover the wedged pcie tunnel. the fw retrains in place,
-  # or escalates to a self reset - then the device re-enumerates (~5s), so wait
-  # for it back before the next load attempt.
+  # restore the pcie link when a hotplug leaves it down (ltssm stuck off): the 0xF4
+  # tunnel recover retrains it where a power cycle or re-enum do not. the gpu psp is
+  # reset separately via AM_RESET on the retry. wait for the device before retrying.
   device = _chestnut_device()
   if device is not None:
     node = f"/dev/bus/usb/{read_int(device / 'busnum'):03d}/{read_int(device / 'devnum'):03d}"
