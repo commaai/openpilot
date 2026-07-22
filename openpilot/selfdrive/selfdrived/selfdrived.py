@@ -66,8 +66,8 @@ class SelfdriveD:
     self.excessive_actuation_check = ExcessiveActuationCheck()
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
     self.big_model_loading = False
-    self.big_model_ready_t = 0.
     self.big_model_active = False
+    self.big_model_ready_t = 0.
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
