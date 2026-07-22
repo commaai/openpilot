@@ -11,7 +11,9 @@ common_libs = [
 _common = env.Library('common', common_libs, LIBS="json11")
 Export('_common')
 
-env.SharedLibrary('params_c', 'params_c.cc', LIBS=[_common, 'zmq', 'json11'])
+params_python = env.SharedLibrary('params_c', 'params_c.cc', LIBS=[_common, 'zmq', 'json11'])
+common_python = [params_python]
+Export('common_python')
 
 if GetOption('extras'):
   env.Program('tests/test_swaglog', 'tests/test_swaglog.cc', LIBS=[_common, 'json11', 'zmq', 'pthread'])

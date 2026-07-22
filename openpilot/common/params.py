@@ -116,8 +116,6 @@ class Params:
   def __init__(self, d=""):
     path = ensure_bytes(d)
     self.p = params_create(path, len(path))
-    if self.p is None:
-      raise RuntimeError(params_last_error().decode())
     self._finalizer = weakref.finalize(self, params_destroy, self.p)
     self.d = d
 
