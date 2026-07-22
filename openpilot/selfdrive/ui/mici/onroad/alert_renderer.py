@@ -307,6 +307,11 @@ class AlertRenderer(Widget):
     else:
       font_size = 64 - 10
 
+    # Full-screen alerts have room below a wrapped title. Their secondary text
+    # carries the disengagement reason (including level-3 DM alerts), so never
+    # suppress it just because the primary text is long.
+    can_draw_second_line |= alert.size == AlertSize.full
+
     if icon_side is not None:
       font_size -= 10
 
