@@ -326,6 +326,7 @@ def main(demo=False):
       # the egpu died, swap to the small model without letting modeld die
       cloudlog.exception("big model died, swapping to small")
       params.put_bool("UsbGpuActive", False)
+      time.sleep(5)  # stay silent long enough for the soft disable to complete, not bounce back to enabled
       model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
       run_count = 0  # the swap gap is not real frame lag
       model_output = None
