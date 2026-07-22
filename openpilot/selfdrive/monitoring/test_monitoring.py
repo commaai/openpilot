@@ -11,19 +11,20 @@ DISTRACTED_SECONDS_TO_RED = dm_settings._VISION_POLICY_ALERT_3_TIMEOUT + 1
 INVISIBLE_SECONDS_TO_ORANGE = dm_settings._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT + 1
 INVISIBLE_SECONDS_TO_RED = dm_settings._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT + 1
 
-def make_msg(face_detected, distracted=False, model_uncertain=False):
+def make_msg(face_detected, distracted=False, model_uncertain=False, sleep=False):
   ds = log.DriverStateV2.new_message()
   ds.leftDriverData.faceOrientation = [0., 0., 0.]
   ds.leftDriverData.facePosition = [0., 0.]
   ds.leftDriverData.faceProb = 1. * face_detected
-  ds.leftDriverData.leftEyeProb = 1.
-  ds.leftDriverData.rightEyeProb = 1.
+  ds.leftDriverData.leftEyeProb = 1. - 1 * sleep
+  ds.leftDriverData.rightEyeProb = 1. - 1 * sleep
   ds.leftDriverData.leftBlinkProb = 1. * distracted
   ds.leftDriverData.rightBlinkProb = 1. * distracted
   ds.leftDriverData.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.leftDriverData.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
   # TODO: test both separately when e2e is used
   ds.leftDriverData.phoneProb = 0.
+  ds.leftDriverData.sleepProb = 1 * sleep
   return ds
 
 
@@ -34,6 +35,7 @@ msg_DISTRACTED = make_msg(True, distracted=True)
 msg_ATTENTIVE_UNCERTAIN = make_msg(True, model_uncertain=True)
 msg_DISTRACTED_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=True)
 msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=dm_settings._HI_STD_THRESHOLD*1.5)
+msg_SLEEP_NO_EYES = make_msg(True, distracted=False, sleep=True)
 
 # driver interaction with car
 car_interaction_DETECTED = True
@@ -229,3 +231,11 @@ class TestMonitoring:
     assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE-1+DT_DMON*s._HI_STD_FALLBACK_TIME-0.1)/DT_DMON)] == 1
     assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE-1+DT_DMON*s._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)] == 2
     assert alert_lvls[int((INVISIBLE_SECONDS_TO_RED-1+DT_DMON*s._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)] == 3
+
+  # verify that sleep is logged but does not affect awareness
+  def test_sleep_shadow_mode(self):
+    alert_lvls, d_status = self._run_seq([msg_SLEEP_NO_EYES] * int(TEST_TIMESPAN / DT_DMON), always_false, always_true, always_false)
+    assert d_status.distracted_types['sleep'], "sleep"
+    assert all(a == 0 for a in alert_lvls), 'no alerts'
+    assert not d_status.driver_distracted, 'not distracted'
+
