@@ -1,6 +1,4 @@
 import numpy as np
-import os
-import socket
 import time
 import threading
 from collections.abc import Callable
@@ -14,10 +12,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.hardware import HARDWARE, PC
-from openpilot.common.file_chunker import get_manifest_path
-from openpilot.selfdrive.modeld.helpers import usbgpu_present, modeld_pkl_path
-
-NETLINK_KOBJECT_UEVENT = 15
+from openpilot.selfdrive.modeld.helpers import usbgpu_compiled
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
 PARAM_UPDATE_TIME = 1 / 5.0
@@ -81,11 +76,8 @@ class UIState:
     self.is_release = self.params.get_bool("IsReleaseBranch")
     self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
-    self.usbgpu: bool = usbgpu_present()
-    self.usbgpu_compiled: bool = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
-    self._uevents = socket.socket(socket.AF_NETLINK, socket.SOCK_DGRAM, NETLINK_KOBJECT_UEVENT)
-    self._uevents.bind((0, 1))
-    self._uevents.setblocking(False)
+    self.usbgpu: bool = False
+    self.usbgpu_compiled: bool = usbgpu_compiled()
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
@@ -212,13 +204,9 @@ class UIState:
     self.is_metric = self.params.get_bool("IsMetric")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
-    try:
-      while self._uevents.recv(4096):
-        self.usbgpu = usbgpu_present()
-    except BlockingIOError:
-      pass
+    self.usbgpu = self.sm["deviceState"].chestnutPresent
     if not self.usbgpu_compiled:
-      self.usbgpu_compiled = os.path.isfile(get_manifest_path(modeld_pkl_path(usbgpu=True)))
+      self.usbgpu_compiled = usbgpu_compiled()
 
 
 class Device:
