@@ -20,7 +20,10 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
+  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical --dist worksteal
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
 
 jobs:
   build_release:
@@ -35,19 +38,19 @@ jobs:
       STRIPPED_DIR: /tmp/releasepilot
       PYTHONPATH: /tmp/releasepilot
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - name: Getting LFS files
-      uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
         timeout_minutes: 2
         max_attempts: 3
         command: git lfs pull
     - name: Build devel
       timeout-minutes: 1
-      run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
-    - run: ./openpilot/tools/op.sh setup
+      run: TARGET_DIR=$STRIPPED_DIR tools/release/build_stripped.sh
+    - run: ./tools/op.sh setup
     - name: Build openpilot and run checks
       timeout-minutes: 30
       working-directory: ${{ env.STRIPPED_DIR }}
@@ -55,24 +58,22 @@ jobs:
     - name: Run tests
       timeout-minutes: 1
       working-directory: ${{ env.STRIPPED_DIR }}
-      run: release/check-dirty.sh
+      run: tools/release/check-dirty.sh
     - name: Check submodules
       if: github.repository == 'commaai/openpilot'
       timeout-minutes: 3
-      run: release/check-submodules.sh
+      run: tools/release/check-submodules.sh
 
   build_mac:
     name: build macOS
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: true
+    - uses: actions/checkout@v7
     - name: Remove Homebrew from environment
       run: |
         FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | tr '\n' ':')
         echo "PATH=${FILTERED}/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" >> $GITHUB_ENV
-    - run: ./openpilot/tools/op.sh setup
+    - run: ./tools/op.sh setup
     - name: Building openpilot
       run: scons
 
@@ -85,10 +86,8 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: true
-    - run: ./openpilot/tools/op.sh setup
+    - uses: actions/checkout@v7
+    - run: ./tools/op.sh setup
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh
@@ -102,19 +101,18 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: true
-    - run: ./openpilot/tools/op.sh setup
+    - uses: actions/checkout@v7
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
+      env:
+        RAYLIB_BACKEND: headless
       run: |
-        source openpilot/selfdrive/test/setup_xvfb.sh
-        # Pre-compile Python bytecode so each pytest worker doesn't need to
-        $PYTEST --collect-only -m 'not slow' -qq
-        MAX_EXAMPLES=1 $PYTEST -m 'not slow'
+        # Pre-compile Python bytecode so each worker doesn't need to.
+        python -m compileall -q -j 0 openpilot
+        MAX_EXAMPLES=1 SKIP_SLOW=1 $PYTEST
 
   process_replay:
     name: process replay
@@ -125,10 +123,8 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: true
-    - run: ./openpilot/tools/op.sh setup
+    - uses: actions/checkout@v7
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
     - name: Run replay
@@ -142,14 +138,14 @@ jobs:
     - name: Print diff report
       if: always()
       run: cat openpilot/selfdrive/test/process_replay/diff_report.txt
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: always()
       continue-on-error: true
       with:
         name: process_replay_diff.txt
         path: openpilot/selfdrive/test/process_replay/diff.txt
     - name: Upload diff report
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: always() && github.event_name == 'pull_request'
       continue-on-error: true
       with:
@@ -157,7 +153,7 @@ jobs:
         path: openpilot/selfdrive/test/process_replay/diff_report.txt
     - name: Checkout ci-artifacts
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: commaai/ci-artifacts
         ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
@@ -176,7 +172,7 @@ jobs:
         git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}" || echo "No changes to commit"
     - name: Push refs
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
-      uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
         timeout_minutes: 2
         max_attempts: 3
@@ -198,17 +194,16 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     if: false  # FIXME: Started to timeout recently
     steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: true
-    - run: ./openpilot/tools/op.sh setup
+    - uses: actions/checkout@v7
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
     - name: Driving test
       timeout-minutes: 2
-      run: |
-        source openpilot/selfdrive/test/setup_xvfb.sh
-        pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
+      env:
+        # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
+        EGL_PLATFORM: surfaceless
+      run: pytest -s openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
@@ -219,19 +214,18 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - run: ./openpilot/tools/op.sh setup
+      - uses: actions/checkout@v7
+      - run: ./tools/op.sh setup
       - name: Build openpilot
         run: scons
       - name: Create UI Report
+        env:
+          RAYLIB_BACKEND: headless
         run: |
-          source openpilot/selfdrive/test/setup_xvfb.sh
           python3 openpilot/selfdrive/ui/tests/diff/replay.py
           python3 openpilot/selfdrive/ui/tests/diff/replay.py --big
       - name: Upload UI Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ui-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
           path: openpilot/selfdrive/ui/tests/diff/report

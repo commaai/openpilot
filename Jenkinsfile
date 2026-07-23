@@ -63,6 +63,8 @@ if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
 fi
 
+export LD_LIBRARY_PATH="\$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/usr/local/lib:\${LD_LIBRARY_PATH:-}"
+
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
@@ -179,7 +181,7 @@ node {
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
-        step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/release/build_release.sh"),
+        step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/tools/release/build_release.sh"),
       ])
     }
 
@@ -187,12 +189,12 @@ node {
       parallel (
         'nightly': {
           deviceStage("build nightly", "tizi-needs-can", [], [
-            step("build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"),
+            step("build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/tools/release/build_release.sh"),
           ])
         },
         'nightly-dev': {
           deviceStage("build nightly-dev", "tizi-needs-can", [], [
-            step("build nightly-dev", "PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/release/build_release.sh"),
+            step("build nightly-dev", "PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/tools/release/build_release.sh"),
           ])
         },
       )
@@ -203,36 +205,36 @@ node {
       'onroad tests': {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
-          step("check dirty", "release/check-dirty.sh"),
-          step("onroad tests", "pytest openpilot/selfdrive/test/test_onroad.py -s", [timeout: 60]),
+          step("check dirty", "tools/release/check-dirty.sh"),
+          step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py", [timeout: 60]),
         ])
       },
       'HW + Unit Tests': {
         deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
-          step("test power draw", "pytest -s openpilot/selfdrive/test//test_power_draw.py"),
-          step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/"]]),
-          step("test manager", "pytest openpilot/system/manager/test/test_manager.py"),
+          step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
+          step("test encoder", "./openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/"]]),
+          step("test manager", "./openpilot/system/manager/test/test_manager.py"),
         ])
       },
       'camerad OX03C10': {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
-          step("test pandad", "pytest openpilot/selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
+          step("test pandad", "./openpilot/selfdrive/pandad/tests/test_pandad.py"),
+          step("test camerad", "./openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
-          step("test pandad", "pytest openpilot/selfdrive/pandad/tests/test_pandad.py"),
-          step("test camerad", "pytest openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
+          step("test pandad", "./openpilot/selfdrive/pandad/tests/test_pandad.py"),
+          step("test camerad", "./openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'sensord': {
         deviceStage("LSM + MMC", "tizi-lsmc", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
-          step("test sensord", "pytest openpilot/system/sensord/tests/test_sensord.py"),
+          step("test sensord", "./openpilot/system/sensord/tests/test_sensord.py"),
         ])
       },
       'replay': {
@@ -244,9 +246,9 @@ node {
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
-          step("test pandad loopback", "pytest openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"),
-          step("test pandad spi", "pytest openpilot/selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test amp", "pytest openpilot/common/hardware/tici/tests/test_amplifier.py"),
+          step("test pandad loopback", "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"),
+          step("test pandad spi", "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"),
+          step("test amp", "./openpilot/common/hardware/tici/tests/test_amplifier.py"),
         ])
       },
 

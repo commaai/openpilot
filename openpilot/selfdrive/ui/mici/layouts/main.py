@@ -19,7 +19,7 @@ class MiciMainLayout(Scroller):
   def __init__(self):
     super().__init__(snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
 
-    self._pm = messaging.PubMaster(['bookmarkButton'])
+    self._pm = messaging.PubMaster(['bookmarkButton', 'userBookmark'])
 
     self._prev_onroad = False
     self._prev_standstill = False
@@ -60,6 +60,9 @@ class MiciMainLayout(Scroller):
     self._onboarding_window = OnboardingWindow(lambda: gui_app.pop_widgets_to(self))
     if not self._onboarding_window.completed:
       gui_app.push_widget(self._onboarding_window)
+
+    # initialize correct onroad layout
+    self._on_body_changed()
 
   @property
   def _onroad_layout(self) -> Widget:
@@ -140,10 +143,10 @@ class MiciMainLayout(Scroller):
       self._scroll_to(self._home_layout)
 
   def _on_bookmark_clicked(self):
-    user_bookmark = messaging.new_message('bookmarkButton')
-    user_bookmark.valid = True
-    self._pm.send('bookmarkButton', user_bookmark)
+    for service in ('bookmarkButton', 'userBookmark'):
+      msg = messaging.new_message(service, valid=True)
+      self._pm.send(service, msg)
 
   def _on_body_changed(self):
     self._car_onroad_layout.set_visible(not ui_state.is_body)
-    self._body_onroad_layout.set_visible(ui_state.is_body)
+    self._body_onroad_layout.set_visible(bool(ui_state.is_body))

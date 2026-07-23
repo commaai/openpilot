@@ -9,8 +9,6 @@
 
 #define __STDC_CONSTANT_MACROS
 
-#include "libyuv.h"
-
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -19,6 +17,7 @@ extern "C" {
 
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "common/yuv.h"
 
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
@@ -87,26 +86,25 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   uint8_t *cy = convert_buf.data();
   uint8_t *cu = cy + in_width * in_height;
   uint8_t *cv = cu + (in_width / 2) * (in_height / 2);
-  libyuv::NV12ToI420(buf->y, buf->stride,
-                     buf->uv, buf->stride,
-                     cy, in_width,
-                     cu, in_width/2,
-                     cv, in_width/2,
-                     in_width, in_height);
+  yuv::nv12_to_i420(buf->y, buf->stride,
+                    buf->uv, buf->stride,
+                    cy, in_width,
+                    cu, in_width/2,
+                    cv, in_width/2,
+                    in_width, in_height);
 
   if (downscale_buf.size() > 0) {
     uint8_t *out_y = downscale_buf.data();
     uint8_t *out_u = out_y + frame->width * frame->height;
     uint8_t *out_v = out_u + (frame->width / 2) * (frame->height / 2);
-    libyuv::I420Scale(cy, in_width,
-                      cu, in_width/2,
-                      cv, in_width/2,
-                      in_width, in_height,
-                      out_y, frame->width,
-                      out_u, frame->width/2,
-                      out_v, frame->width/2,
-                      frame->width, frame->height,
-                      libyuv::kFilterNone);
+    yuv::i420_scale(cy, in_width,
+                    cu, in_width/2,
+                    cv, in_width/2,
+                    in_width, in_height,
+                    out_y, frame->width,
+                    out_u, frame->width/2,
+                    out_v, frame->width/2,
+                    frame->width, frame->height);
     frame->data[0] = out_y;
     frame->data[1] = out_u;
     frame->data[2] = out_v;

@@ -66,7 +66,7 @@ class LocationEstimator:
     self.observations = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
     self.observation_errors = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
 
-  def reset(self, t: float, x_initial: np.ndarray = PoseKalman.initial_x, P_initial: np.ndarray = PoseKalman.initial_P):
+  def reset(self, t: float | None, x_initial: np.ndarray = PoseKalman.initial_x, P_initial: np.ndarray = PoseKalman.initial_P):
     self.kf.init_state(x_initial, covs=P_initial, filter_time=t)
 
   def _validate_sensor_source(self, source: log.SensorEventData.SensorSource):

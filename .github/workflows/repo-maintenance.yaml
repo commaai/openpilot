@@ -3,21 +3,28 @@ name: repo maintenance
 on:
   schedule:
     - cron: "0 14 * * 1" # every Monday at 2am UTC (6am PST)
+  pull_request:
+    types: [closed]
   workflow_dispatch:
 
 env:
   PYTHONPATH: ${{ github.workspace }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
 
 jobs:
   package_updates:
     name: package_updates
     runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
+    if: >-
+      github.repository == 'commaai/openpilot' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
-    - run: ./openpilot/tools/op.sh setup
+    - run: ./tools/op.sh setup
     - name: uv lock
       run: uv lock --upgrade
     - name: uv pip tree
@@ -49,7 +56,7 @@ jobs:
         python openpilot/selfdrive/car/docs.py
         git add docs/CARS.md
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
       with:
         author: Vehicle Researcher <user@comma.ai>
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
@@ -71,3 +78,51 @@ jobs:
           ${{ steps.pip_tree.outputs.PIP_TREE }}
           ```
         labels: bot
+
+  cleanup_closed_branches:
+    if: github.repository == 'commaai/openpilot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const upstream = `${owner}/${repo}`;
+
+            const closed = context.payload.pull_request;
+            if (closed) {
+              if (closed.head.repo?.full_name === upstream) {
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${closed.head.ref}` }).catch(console.log);
+              }
+              return;
+            }
+
+            for await (const response of github.paginate.iterator(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'closed',
+              per_page: 100,
+            })) {
+              for (const pr of response.data) {
+                if (pr.head.repo?.full_name !== upstream) continue;
+
+                const branch = pr.head.ref;
+                try {
+                  await github.rest.git.deleteRef({
+                    owner,
+                    repo,
+                    ref: `heads/${branch}`,
+                  });
+                  console.log(`Deleted branch ${branch} (PR #${pr.number})`);
+                } catch (error) {
+                  if (error.status === 422 || error.status === 403) {
+                    console.log(`Skipping branch ${branch} (PR #${pr.number}): ${error.message}`);
+                    continue;
+                  }
+                  throw error;
+                }
+              }
+            }

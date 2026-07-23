@@ -12,14 +12,12 @@ from openpilot.common.constants import CV
 from openpilot.common.git import get_short_branch
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
-from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
-from openpilot.selfdrive.ui.feedback.feedbackd import FEEDBACK_MAX_DURATION
 from openpilot.common.hardware import HARDWARE
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+AudibleAlert = log.SelfdriveState.AudibleAlert
 EventName = log.OnroadEvent.EventName
 
 
@@ -118,7 +116,7 @@ class Alert:
                alert_size: log.SelfdriveState.AlertSize,
                priority: Priority,
                visual_alert: car.CarControl.HUDControl.VisualAlert,
-               audible_alert: car.CarControl.HUDControl.AudibleAlert,
+               audible_alert: log.SelfdriveState.AudibleAlert,
                duration: float,
                creation_delay: float = 0.):
 
@@ -151,11 +149,12 @@ EmptyAlert = Alert("" , "", AlertStatus.normal, AlertSize.none, Priority.LOWEST,
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2: str,
                alert_text_1: str = "openpilot Unavailable",
-               visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
+               visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none,
+               priority: Priority = Priority.LOW):
     if HARDWARE.get_device_type() == 'mici':
       alert_text_1, alert_text_2 = alert_text_2, alert_text_1
     super().__init__(alert_text_1, alert_text_2, AlertStatus.normal,
-                     AlertSize.mid, Priority.LOW, visual_alert,
+                     AlertSize.mid, priority, visual_alert,
                      AudibleAlert.refuse, 3.)
 
 
@@ -183,7 +182,7 @@ class ImmediateDisableAlert(Alert):
 
 
 class EngagementAlert(Alert):
-  def __init__(self, audible_alert: car.CarControl.HUDControl.AudibleAlert):
+  def __init__(self, audible_alert: log.SelfdriveState.AudibleAlert):
     super().__init__("", "",
                      AlertStatus.normal, AlertSize.none,
                      Priority.MID, VisualAlert.none,
@@ -264,12 +263,11 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
 
 
-def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  duration = FEEDBACK_MAX_DURATION - ((sm['audioFeedback'].blockNum + 1) * SAMPLE_BUFFER / SAMPLE_RATE)
-  return NormalPermanentAlert(
-    "Recording Audio Feedback",
-    f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
-    priority=Priority.LOW)
+def too_distracted_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  if sm['driverMonitoringState'].lockout:
+    mins_left = sm['driverMonitoringState'].lockoutMinutesRemaining
+    return NoEntryAlert("Too Distracted", f"{mins_left} minute{'s' if mins_left != 1 else ''} Left", priority=Priority.HIGH)
+  return NoEntryAlert("Pay Attention to Engage", priority=Priority.HIGH)
 
 
 # *** debug alerts ***
@@ -394,6 +392,7 @@ def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messagin
 EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # ********** events with no alerts **********
 
+  EventName.noGps: {},
   EventName.stockFcw: {},
   EventName.actuatorsApiUnavailable: {},
 
@@ -408,6 +407,15 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.WARNING: longitudinal_maneuver_alert,
     ET.PERMANENT: NormalPermanentAlert("Longitudinal Maneuver Mode",
                                        "Ensure road ahead is clear"),
+  },
+
+  EventName.bigModelLoading: {
+    ET.NO_ENTRY: NoEntryAlert("Big Model Loading"),
+    ET.PERMANENT: NormalPermanentAlert("Big Model Loading"),
+  },
+
+  EventName.bigModelReady: {
+    ET.PERMANENT: EngagementAlert(AudibleAlert.complete),
   },
 
   EventName.lateralManeuver: {
@@ -518,7 +526,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Pay Attention",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+      Priority.LOW, VisualAlert.none, AudibleAlert.preAlert, .1),
   },
 
   EventName.driverDistracted2: {
@@ -623,7 +631,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   # Thrown when the fan is driven at >50% but is not rotating
   EventName.fanMalfunction: {
-    ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Likely Hardware Issue"),
+    ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Contact comma.ai/support"),
   },
 
   # Camera is not outputting frames
@@ -774,18 +782,15 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.sensorDataInvalid: {
     ET.PERMANENT: Alert(
       "Sensor Data Invalid",
-      "Possible Hardware Issue",
+      "Contact comma.ai/support",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("Sensor Data Invalid"),
     ET.SOFT_DISABLE: soft_disable_alert("Sensor Data Invalid"),
   },
 
-  EventName.noGps: {
-  },
-
   EventName.tooDistracted: {
-    ET.NO_ENTRY: NoEntryAlert("Distraction Level Too High"),
+    ET.NO_ENTRY: too_distracted_alert,
   },
 
   EventName.excessiveActuation: {
@@ -842,11 +847,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Electronic Stability Control Disabled"),
   },
 
-  EventName.lowBattery: {
-    ET.SOFT_DISABLE: soft_disable_alert("Low Battery"),
-    ET.NO_ENTRY: NoEntryAlert("Low Battery"),
-  },
-
   # Different openpilot services communicate between each other at a certain
   # interval. If communication does not follow the regular schedule this alert
   # is thrown. This can mean a service crashed, did not broadcast a message for
@@ -900,13 +900,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: posenet_invalid_alert,
   },
 
-  # When the localizer detects an acceleration of more than 40 m/s^2 (~4G) we
-  # alert the driver the device might have fallen from the windshield.
-  EventName.deviceFalling: {
-    ET.SOFT_DISABLE: soft_disable_alert("Device Fell Off Mount"),
-    ET.NO_ENTRY: NoEntryAlert("Device Fell Off Mount"),
-  },
-
   EventName.lowMemory: {
     ET.SOFT_DISABLE: soft_disable_alert("Low Memory: Reboot Your Device"),
     ET.PERMANENT: low_memory_alert,
@@ -927,14 +920,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.controlsMismatch: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
     ET.NO_ENTRY: NoEntryAlert("Controls Mismatch"),
-  },
-
-  # Sometimes the USB stack on the device can get into a bad state
-  # causing the connection to the panda to be lost
-  EventName.usbError: {
-    ET.SOFT_DISABLE: soft_disable_alert("USB Error: Reboot Your Device"),
-    ET.PERMANENT: NormalPermanentAlert("USB Error: Reboot Your Device"),
-    ET.NO_ENTRY: NoEntryAlert("USB Error: Reboot Your Device"),
   },
 
   # This alert can be thrown for the following reasons:
@@ -989,7 +974,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # and this alert is thrown.
   EventName.relayMalfunction: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Harness Relay Malfunction"),
-    ET.PERMANENT: NormalPermanentAlert("Harness Relay Malfunction", "Check Hardware"),
+    ET.PERMANENT: NormalPermanentAlert("Harness Relay Malfunction", "Contact comma.ai/support"),
     ET.NO_ENTRY: NoEntryAlert("Harness Relay Malfunction"),
   },
 
@@ -1024,10 +1009,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.userBookmark: {
     ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
   },
-
-  EventName.audioFeedback: {
-    ET.PERMANENT: audio_feedback_alert,
-  },
 }
 
 
@@ -1038,7 +1019,7 @@ if HARDWARE.get_device_type() == 'mici':
         "Pay Attention",
         "",
         AlertStatus.normal, AlertSize.small,
-        Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
+        Priority.LOW, VisualAlert.none, AudibleAlert.preAlert, 2),
     },
     EventName.driverDistracted2: {
       ET.PERMANENT: Alert(

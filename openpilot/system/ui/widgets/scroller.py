@@ -1,6 +1,6 @@
 import pyray as rl
 import numpy as np
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.common.swaglog import cloudlog
@@ -40,7 +40,7 @@ class ScrollIndicator(Widget):
     self._content_size = content_size
     self._viewport = viewport
 
-  def _render(self, _):
+  def _render(self, _, /):
     # scale indicator width based on content size
     indicator_w = float(np.interp(self._content_size, [1000, 3000], [300, 100]))
 
@@ -69,7 +69,7 @@ class ScrollIndicator(Widget):
 
 class _Scroller(Widget):
   """Should use wrapper below to reduce boilerplate"""
-  def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
+  def __init__(self, items: Sequence[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
     self._items: list[Widget] = []
@@ -150,7 +150,7 @@ class _Scroller(Widget):
                                           and not self.moving_items and (original_touch_valid_callback() if
                                                                          original_touch_valid_callback else True))
 
-  def add_widgets(self, items: list[Widget]) -> None:
+  def add_widgets(self, items: Sequence[Widget]) -> None:
     for item in items:
       self.add_widget(item)
 
@@ -332,7 +332,7 @@ class _Scroller(Widget):
     else:
       item.render()
 
-  def _render(self, _):
+  def _render(self, _, /):
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
@@ -397,7 +397,7 @@ class Scroller(Widget):
     # pass down enabled to child widget for nav stack
     self._scroller.set_enabled(lambda: self.enabled)
 
-  def _render(self, _):
+  def _render(self, _, /):
     self._scroller.render(self._rect)
 
 

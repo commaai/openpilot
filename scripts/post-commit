@@ -3,5 +3,5 @@ set -e
 if [[ -f .git/hooks/post-commit.d/post-commit ]]; then
   .git/hooks/post-commit.d/post-commit
 fi
-openpilot/tools/op.sh lint --fast
+tools/op.sh lint --fast
 echo ""

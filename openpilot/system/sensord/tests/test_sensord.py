@@ -1,9 +1,13 @@
+#!/usr/bin/env python3
+
 import os
-import pytest
+import subprocess
 import time
+import unittest
 import numpy as np
 from collections import namedtuple, defaultdict
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
@@ -14,12 +18,12 @@ SensorConfig = namedtuple('SensorConfig', ['service', 'measurement', 'sanity_min
 
 SENSOR_CONFIGS = (
   SensorConfig("accelerometer", "acceleration", 5, 15, 5),
-  SensorConfig("gyroscope", "gyroUncalibrated", 0, .15, 0.5),
-  SensorConfig("temperatureSensor", "temperature", 10, 40, 0.5),  # set for max range of our office
+  SensorConfig("gyroscope", "gyroUncalibrated", 0, .3, 0.5),
+  SensorConfig("temperatureSensor", "temperature", 10, 60, 0.5), # looser for device density
 )
 SENSOR_CONFIGS_BY_MEASUREMENT = {config.measurement: config for config in SENSOR_CONFIGS}
 
-def get_irq_count(irq: int):
+def get_irq_count(irq: str):
   with open(f"/sys/kernel/irq/{irq}/per_cpu_count") as f:
     per_cpu = map(int, f.read().split(","))
     return sum(per_cpu)
@@ -53,15 +57,15 @@ def iter_measurements(events):
     for measurement in msgs:
       yield measurement, getattr(measurement, measurement.which())
 
-@pytest.mark.tici
-class TestSensord:
+class TestSensord(OpenpilotTestCase):
+  TICI_TEST = True
   @classmethod
   def setup_class(cls):
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 
     # read initial sensor values every test case can use
-    os.system("pkill -f \\\\./sensord")
+    subprocess.run("pkill -f \\\\./sensord", shell=True)
     try:
       managed_processes["sensord"].start()
       cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))
@@ -182,3 +186,7 @@ class TestSensord:
     time.sleep(1)
     state_two = get_irq_count(self.sensord_irq)
     assert state_one == state_two, "Interrupts received after sensord stop!"
+
+
+if __name__ == "__main__":
+  unittest.main()

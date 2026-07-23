@@ -8,4 +8,4 @@ export MAX_EXAMPLES=300
 export INTERNAL_SEG_CNT=300
 export INTERNAL_SEG_LIST=openpilot/selfdrive/car/tests/test_models_segs.txt
 
-cd openpilot/selfdrive/car/tests && pytest test_models.py test_car_interfaces.py
+pytest -n logical --dist worksteal openpilot/selfdrive/car/tests/test_models.py openpilot/selfdrive/car/tests/test_car_interfaces.py

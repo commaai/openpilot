@@ -1,12 +1,11 @@
 import time
 import os
-import pytest
 import random
-import unittest # noqa: TID251
+import unittest
 from collections import defaultdict, Counter
-import hypothesis.strategies as st
-from hypothesis import Phase, given, settings
+from openpilot.common.fuzzy import fuzzy_test
 from openpilot.common.parameterized import parameterized_class
+from openpilot.common.test import OpenpilotTestCase
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
@@ -21,6 +20,7 @@ from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.common.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source, internal_source, comma_api_source
+from openpilot.tools.lib.file_sources import Source
 from openpilot.tools.lib.route import SegmentName
 
 SafetyModel = car.CarParams.SafetyModel
@@ -38,7 +38,6 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
-MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
 
 
@@ -65,9 +64,9 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   return test_cases
 
 
-@pytest.mark.slow
-@pytest.mark.shared_download_cache
-class TestCarModelBase(unittest.TestCase):
+class TestCarModelBase(OpenpilotTestCase):
+  SLOW_TEST = True
+  SHARED_DOWNLOAD_CACHE = True
   platform: Platform | None = None
   test_route: CarTestRoute | None = None
 
@@ -130,7 +129,7 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        sources = [internal_source] if len(INTERNAL_SEG_LIST) else [openpilotci_source, comma_api_source]
+        sources: list[Source] = [internal_source] if len(INTERNAL_SEG_LIST) else [openpilotci_source, comma_api_source]
         lr = LogReader(segment_range, sources=sources, sort_by_time=True)
         return cls.get_testing_data_from_logreader(lr)
       except (LogsUnavailable, AssertionError):
@@ -250,7 +249,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # Don't check relay malfunction on disabled routes (relay closed),
       # or before fingerprinting is done (elm327 and noOutput)
-      if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
+      if self.car_safety_mode_frame is not None and t / 1e4 > self.car_safety_mode_frame:
         self.assertFalse(self.safety.get_relay_malfunction())
       else:
         self.safety.set_relay_malfunction(False)
@@ -301,12 +300,9 @@ class TestCarModelBase(unittest.TestCase):
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
     test_car_controller(CC.as_reader())
 
-  # Skip stdout/stderr capture with pytest, causes elevated memory usage
-  @pytest.mark.nocapture
-  @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
-  @given(data=st.data())
-  def test_panda_safety_carstate_fuzzy(self, data):
+  # Capturing stdout/stderr here causes elevated memory usage.
+  @fuzzy_test(max_examples=300)
+  def test_panda_safety_carstate_fuzzy(self, fuzzy):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
@@ -316,10 +312,9 @@ class TestCarModelBase(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
-    address, bus, size = data.draw(st.sampled_from(valid_addrs))
+    address, bus, size = fuzzy.choice(valid_addrs)
 
-    msg_strategy = st.binary(min_size=size, max_size=size)
-    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+    msgs = fuzzy.list(lambda: fuzzy.binary(min_size=size, max_size=size), min_size=20)
 
     vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
 
@@ -470,7 +465,6 @@ class TestCarModelBase(unittest.TestCase):
 
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
-@pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
 

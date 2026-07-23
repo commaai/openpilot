@@ -65,6 +65,9 @@ class SelfdriveD:
     self.calibrated_pose: Pose | None = None
     self.excessive_actuation_check = ExcessiveActuationCheck()
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
+    self.big_model_loading = False
+    self.big_model_active = False
+    self.big_model_ready_t = 0.
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -86,7 +89,7 @@ class SelfdriveD:
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark', 'audioFeedback',
+                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark',
                                    'lateralManeuverPlan'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore,
@@ -154,6 +157,24 @@ class SelfdriveD:
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
 
+    loading = self.params.get_bool("UsbGpuLoading")
+    if self.big_model_loading and not loading:
+      self.big_model_ready_t = time.monotonic()
+      if self.params.get_bool("UsbGpuActive"):
+        self.events.add(EventName.bigModelReady)
+    self.big_model_loading = loading
+    if self.big_model_loading:
+      self.events.add(EventName.bigModelLoading)
+
+    # soft disable if the big model fails
+    big_active = self.params.get_bool("UsbGpuActive")
+    if big_active:
+      self.big_model_active = True
+    if self.enabled and self.big_model_active and not big_active:
+      self.events.add(EventName.modeldLagging)
+    if not self.enabled:
+      self.big_model_active = False
+
     if self.sm.recv_frame['lateralManeuverPlan'] > 0:
       self.events.add(EventName.lateralManeuver)
       self.startup_event = None
@@ -171,12 +192,9 @@ class SelfdriveD:
       self.events.add(EventName.selfdriveInitializing)
       return
 
-    # Check for user bookmark press (bookmark button or end of LKAS button feedback)
+    # Check for user bookmark press
     if self.sm.updated['userBookmark']:
       self.events.add(EventName.userBookmark)
-
-    if self.sm.updated['audioFeedback']:
-      self.events.add(EventName.audioFeedback)
 
     # Don't add any more events while in dashcam mode
     if self.CP.passive:
@@ -189,10 +207,13 @@ class SelfdriveD:
 
     # Handle DM
     if not self.CP.notCar:
-      # Block engaging until ignition cycle after max number or time of distractions
+      # Block engaging until lockout times out or ignition reset
       if self.sm['driverMonitoringState'].lockout and not self.dm_lockout_set:
         self.params.put_bool("DriverTooDistracted", True)
         self.dm_lockout_set = True
+      elif not self.sm['driverMonitoringState'].lockout and self.dm_lockout_set:
+        self.params.remove("DriverTooDistracted")
+        self.dm_lockout_set = False
       # No entry conditions
       if self.sm['driverMonitoringState'].lockout or self.sm['driverMonitoringState'].alwaysOnLockout:
         self.events.add(EventName.tooDistracted)
@@ -339,8 +360,6 @@ class SelfdriveD:
         self.events.add(EventName.radarTempUnavailable)
       elif any(self.sm['radarState'].radarErrors.to_dict().values()):
         self.events.add(EventName.radarFault)
-    if not self.sm.valid['pandaStates']:
-      self.events.add(EventName.usbError)
     if CS.canTimeout:
       self.events.add(EventName.canBusMissing)
     elif not CS.canValid:
@@ -349,7 +368,9 @@ class SelfdriveD:
     # generic catch-all. ideally, a more specific event should be added above instead
     has_disable_events = self.events.contains(ET.NO_ENTRY) and (self.events.contains(ET.SOFT_DISABLE) or self.events.contains(ET.IMMEDIATE_DISABLE))
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
-    if not self.sm.all_checks() and no_system_errors:
+    warmup_sec = 5.
+    big_model_settling = self.big_model_loading or time.monotonic() < self.big_model_ready_t + warmup_sec
+    if not self.sm.all_checks() and no_system_errors and not big_model_settling:  # the load holds modelV2 and friends back on purpose
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
@@ -368,7 +389,7 @@ class SelfdriveD:
     else:
       self.logged_comm_issue = None
 
-    if not self.CP.notCar:
+    if not self.CP.notCar and not big_model_settling:  # localization has nothing to work with during the load
       if not self.sm['livePose'].posenetOK:
         self.events.add(EventName.posenetInvalid)
       if not self.sm['livePose'].inputsOK:

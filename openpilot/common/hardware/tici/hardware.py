@@ -241,7 +241,7 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
-    os.system("sudo poweroff")
+    subprocess.run("sudo poweroff", shell=True)
 
   def get_thermal_config(self):
     intake, exhaust, gnss, bottomSoc = None, None, None, None
@@ -335,11 +335,11 @@ class Tici(HardwareBase):
       self.amplifier.initialize_configuration()
 
     # Allow hardwared to write engagement status to kmsg
-    os.system("sudo chmod a+w /dev/kmsg")
+    subprocess.run("sudo chmod a+w /dev/kmsg", shell=True)
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
     gpio_init(GPIO.SOM_ST_IO, True)
-    gpio_set(GPIO.SOM_ST_IO, 1)
+    gpio_set(GPIO.SOM_ST_IO, True)
 
     # *** IRQ config ***
 
@@ -389,21 +389,21 @@ class Tici(HardwareBase):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
 
-    gpio_set(GPIO.STM_RST_N, 1)
-    gpio_set(GPIO.STM_BOOT0, 0)
+    gpio_set(GPIO.STM_RST_N, True)
+    gpio_set(GPIO.STM_BOOT0, False)
     time.sleep(0.01)
-    gpio_set(GPIO.STM_RST_N, 0)
+    gpio_set(GPIO.STM_RST_N, False)
 
   def recover_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
 
-    gpio_set(GPIO.STM_RST_N, 1)
-    gpio_set(GPIO.STM_BOOT0, 1)
+    gpio_set(GPIO.STM_RST_N, True)
+    gpio_set(GPIO.STM_BOOT0, True)
     time.sleep(0.01)
-    gpio_set(GPIO.STM_RST_N, 0)
+    gpio_set(GPIO.STM_RST_N, False)
     time.sleep(0.01)
-    gpio_set(GPIO.STM_BOOT0, 0)
+    gpio_set(GPIO.STM_BOOT0, False)
 
   def booted(self):
     # this normally boots within 8s, but on rare occasions takes 30+s
