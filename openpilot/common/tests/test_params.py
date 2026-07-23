@@ -114,6 +114,10 @@ class TestParams(OpenpilotTestCase):
     assert len(keys) == len(set(keys))
     assert b"CarParams" in keys
 
+  def test_params_get_flags(self):
+    assert self.params.get_flags("AccessToken") & ParamKeyFlag.DONT_LOG
+    assert not self.params.get_flags("DongleId") & ParamKeyFlag.DONT_LOG
+
   def test_params_default_value(self):
     self.params.remove("LanguageSetting")
     self.params.remove("LongitudinalPersonality")
