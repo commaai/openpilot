@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from metadrive.component.sensors.rgb_camera import RGBCamera
@@ -10,6 +11,41 @@ class CopyRamRGBCamera(RGBCamera):
     super().__init__(*args, **kwargs)
     self.cpu_texture = Texture()
     self.buffer.addRenderTexture(self.cpu_texture, GraphicsOutput.RTMCopyRam)
+
+  def _setup_effect(self):
+    if os.environ.get("METADRIVE_SIMPLE_RENDER"):
+      # the default RGBCamera pipeline renders the scene with 16x MSAA into a
+      # float HDR buffer plus a tonemap post-pass, which is prohibitively slow
+      # on software rasterizers (CI); render straight into the 8-bit buffer,
+      # keeping the terrain shader tag so the road still draws correctly
+      from metadrive.constants import CameraTagStateKey, Semantics
+      from metadrive.engine.core.terrain import Terrain
+      cam = self.get_cam().node()
+      cam.setTagStateKey(CameraTagStateKey.RGB)
+      if os.environ.get("METADRIVE_FLAT_TERRAIN_CARD"):
+        # flat quad terrain + flat-lit shader, ~2 texture taps per fragment
+        from metadrive.engine.asset_loader import AssetLoader
+        from panda3d.core import NodePath, Shader
+        here = os.path.dirname(os.path.abspath(__file__))
+        dummy_np = NodePath("Dummy")
+        dummy_np.setShader(Shader.load(Shader.SL_GLSL,
+                                       os.path.join(here, "terrain_card.vert.glsl"),
+                                       os.path.join(here, "terrain_ci.frag.glsl")))
+        terrain_state = dummy_np.getState()
+      elif os.environ.get("METADRIVE_CHEAP_TERRAIN"):
+        # flat-lit terrain shader on the stock terrain mesh
+        from metadrive.engine.asset_loader import AssetLoader
+        from panda3d.core import NodePath, Shader
+        vert = AssetLoader.file_path("../shaders", "terrain.vert.glsl")
+        frag = os.path.join(os.path.dirname(os.path.abspath(__file__)), "terrain_ci.frag.glsl")
+        dummy_np = NodePath("Dummy")
+        dummy_np.setShader(Shader.load(Shader.SL_GLSL, vert, frag))
+        terrain_state = dummy_np.getState()
+      else:
+        terrain_state = Terrain.make_render_state(self.engine, "terrain.vert.glsl", "terrain.frag.glsl")
+      cam.setTagState(Semantics.TERRAIN.label, terrain_state)
+    else:
+      super()._setup_effect()
 
   def get_rgb_array_cpu(self):
     origin_img = self.cpu_texture
