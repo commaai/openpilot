@@ -33,6 +33,9 @@ class MiciMainLayout(Scroller):
     self._car_onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
     self._body_onroad_layout = BodyLayout()
 
+    if ui_state.CP is None:
+      self._body_onroad_layout.set_visible(False)
+
     # Initialize widget rects
     for widget in (self._home_layout, self._alerts_layout, self._settings_layout,
                    self._car_onroad_layout, self._body_onroad_layout):
