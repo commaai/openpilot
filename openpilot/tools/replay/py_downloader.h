@@ -12,6 +12,9 @@ namespace PyDownloader {
 // Downloads url to local cache, returns local file path. Reports progress via installDownloadProgressHandler.
 std::string download(const std::string &url, bool use_cache = true, std::atomic<bool> *abort = nullptr);
 
+// Decompresses a local bzip2 file and returns the temporary output path.
+std::string decompress(const std::string &path, std::atomic<bool> *abort = nullptr);
+
 // Returns JSON string of route files (same format as /v1/route/.../files API)
 std::string getRouteFiles(const std::string &route);
 

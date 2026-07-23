@@ -71,7 +71,6 @@ dev = [
 
 tools = [
   "comma-deps-imgui",
-  "comma-deps-bzip2",
   "comma-deps-bootstrap-icons",
   "comma-deps-libusb",
   "comma-deps-ncurses",

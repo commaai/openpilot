@@ -34,9 +34,7 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
   download_seconds_ = std::chrono::duration<double>(download_end - download_start).count();
   if (!data.empty()) {
     const auto decompress_start = Clock::now();
-    if (url.find(".bz2") != std::string::npos || util::starts_with(data, "BZh9")) {
-      data = decompressBZ2(data, abort);
-    } else if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
+    if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
       data = decompressZST(data, abort);
     }
     const auto decompress_end = Clock::now();
