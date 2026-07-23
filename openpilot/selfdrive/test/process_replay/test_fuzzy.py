@@ -1,5 +1,4 @@
 import copy
-import os
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 from openpilot.common.fuzzy import capnp_random_dict, fuzzy_test
@@ -14,13 +13,12 @@ import openpilot.selfdrive.test.process_replay.process_replay as pr
 NOT_TESTED = ['selfdrived', 'controlsd', 'card', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'dmonitoringmodeld', 'modeld']
 
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
-MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "10"))
 
 class TestFuzzProcesses(OpenpilotTestCase):
 
   # TODO: make this faster and increase examples
   @parameterized.expand(TEST_CASES)
-  @fuzzy_test(max_examples=MAX_EXAMPLES)
+  @fuzzy_test(max_examples=10)
   def test_fuzz_process(self, proc_name, cfg, fuzzy):
     msgs = [capnp_random_dict(fuzzy, log.Event.schema, event, real_floats=True) for event in sorted(cfg.pubs)]
     for i, msg in enumerate(msgs):

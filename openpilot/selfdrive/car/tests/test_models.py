@@ -38,7 +38,6 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
-MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
 
 
@@ -302,7 +301,7 @@ class TestCarModelBase(OpenpilotTestCase):
     test_car_controller(CC.as_reader())
 
   # Capturing stdout/stderr here causes elevated memory usage.
-  @fuzzy_test(max_examples=MAX_EXAMPLES)
+  @fuzzy_test(max_examples=300)
   def test_panda_safety_carstate_fuzzy(self, fuzzy):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,

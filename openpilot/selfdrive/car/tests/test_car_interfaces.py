@@ -1,4 +1,3 @@
-import os
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 from openpilot.common.fuzzy import capnp_random_dict, fuzzy_test
@@ -16,8 +15,6 @@ from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
-
 ALL_ECUS = tuple(sorted({ecu for ecus in FW_VERSIONS.values() for ecu in ecus} |
                         {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}))
 ALL_REQUESTS = tuple(sorted({tuple(request.request) for config in FW_QUERY_CONFIGS.values() for request in config.requests}))
@@ -26,7 +23,7 @@ DLC_TO_LEN = (0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64)
 
 class TestCarInterfaces(OpenpilotTestCase):
   @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK])
-  @fuzzy_test(max_examples=MAX_EXAMPLES)
+  @fuzzy_test(max_examples=60)
   def test_car_interfaces(self, car_name, fuzzy):
     fingerprint = dict(fuzzy.list(lambda: (fuzzy.integer(0, 0x800), fuzzy.choice(DLC_TO_LEN))))
     fingerprints = dict.fromkeys(range(7), fingerprint)

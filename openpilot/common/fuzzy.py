@@ -27,7 +27,7 @@ _INTEGER_RANGES = {
 
 # One seed is shared by the whole test process. Individual tests derive their seed
 # from their unittest ID, so FUZZ_SEED is reproducible under pytest-xdist too.
-FUZZ_SEED = int(os.environ["FUZZ_SEED"], 0) if "FUZZ_SEED" in os.environ else secrets.randbits(64)
+FUZZ_SEED = int(os.environ.get("FUZZ_SEED", secrets.randbits(64)))
 
 
 class Fuzzy:
@@ -169,8 +169,8 @@ class Fuzzy:
 
 def fuzzy_test(max_examples: int) -> Callable[[Callable[..., None]], Callable[..., None]]:
   """Run a unittest method repeatedly with independent, reproducible fuzzy data."""
-  if max_examples < 1:
-    raise ValueError("max_examples must be positive")
+  max_examples = int(os.environ.get("MAX_EXAMPLES", max_examples))
+  assert max_examples >= 1
 
   def decorator(fn: Callable[..., None]) -> Callable[..., None]:
     @wraps(fn)
