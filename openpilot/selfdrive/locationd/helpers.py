@@ -1,4 +1,5 @@
 import numpy as np
+from collections.abc import Sequence
 from typing import Any
 from functools import cache
 
@@ -68,7 +69,8 @@ class NPQueue:
 
 
 class PointBuckets:
-  def __init__(self, x_bounds: list[tuple[float, float]], min_points: list[float], min_points_total: int, points_per_bucket: int, rowsize: int) -> None:
+  def __init__(self, x_bounds: list[tuple[float, float]], min_points: Sequence[float], min_points_total: int, points_per_bucket: int, rowsize: int) -> None:
+    self._rng = np.random.default_rng()
     self.x_bounds = x_bounds
     self.buckets = {bounds: NPQueue(maxlen=points_per_bucket, rowsize=rowsize) for bounds in x_bounds}
     self.buckets_min_points = dict(zip(x_bounds, min_points, strict=True))
@@ -98,9 +100,9 @@ class PointBuckets:
     points = np.vstack([x.arr for x in self.buckets.values()])
     if num_points is None:
       return points
-    return points[np.random.choice(np.arange(len(points)), min(len(points), num_points), replace=False)]
+    return points[self._rng.choice(np.arange(len(points)), min(len(points), num_points), replace=False)]
 
-  def load_points(self, points: list[list[float]]) -> None:
+  def load_points(self, points: Sequence[Sequence[float]]) -> None:
     for point in points:
       self.add_point(*point)
 

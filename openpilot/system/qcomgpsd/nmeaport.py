@@ -1,6 +1,6 @@
 import os
 import sys
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from subprocess import check_output, CalledProcessError
 from time import sleep
 from typing import NoReturn
@@ -17,26 +17,27 @@ class GnssClockNmeaPort:
   # 0x10 = bias_uncertainty_ns valid
   # 0x20 = drift_nsps valid
   # 0x40 = drift_uncertainty_nsps valid
-  flags: int
-  leap_seconds: int
-  time_ns: int
-  time_uncertainty_ns: int # 1-sigma
-  full_bias_ns: int
-  bias_ns: float
-  bias_uncertainty_ns: float # 1-sigma
-  drift_nsps: float
-  drift_uncertainty_nsps: float # 1-sigma
+  flags: int | None
+  leap_seconds: int | None
+  time_ns: int | None
+  time_uncertainty_ns: int | None # 1-sigma
+  full_bias_ns: int | None
+  bias_ns: float | None
+  bias_uncertainty_ns: float | None # 1-sigma
+  drift_nsps: float | None
+  drift_uncertainty_nsps: float | None # 1-sigma
 
-  def __post_init__(self):
-    for field in fields(self):
-      val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+  @classmethod
+  def from_fields(cls, values: list[str]) -> 'GnssClockNmeaPort':
+    ints = [int(value) if value else None for value in values[:5]]
+    floats = [float(value) if value else None for value in values[5:9]]
+    return cls(*ints, *floats)
 
 @dataclass
 class GnssMeasNmeaPort:
-  messageCount: int
-  messageNum: int
-  svCount: int
+  messageCount: int | None
+  messageNum: int | None
+  svCount: int | None
   # constellation enum:
   # 1 = GPS
   # 2 = SBAS
@@ -44,10 +45,10 @@ class GnssMeasNmeaPort:
   # 4 = QZSS
   # 5 = BEIDOU
   # 6 = GALILEO
-  constellation: int
-  svId: int
-  flags: int # always zero
-  time_offset_ns: int
+  constellation: int | None
+  svId: int | None
+  flags: int | None # always zero
+  time_offset_ns: int | None
   # state bit mask:
   # 0x0001 = CODE LOCK
   # 0x0002 = BIT SYNC
@@ -63,17 +64,18 @@ class GnssMeasNmeaPort:
   # 0x0800 = GALILEO E1C 2ND CODE LOCK
   # 0x1000 = GALILEO E1B PAGE SYNC
   # 0x2000 = GALILEO E1B PAGE SYNC
-  state: int
-  time_of_week_ns: int
-  time_of_week_uncertainty_ns: int # 1-sigma
-  carrier_to_noise_ratio: float
-  pseudorange_rate: float
-  pseudorange_rate_uncertainty: float # 1-sigma
+  state: int | None
+  time_of_week_ns: int | None
+  time_of_week_uncertainty_ns: int | None # 1-sigma
+  carrier_to_noise_ratio: float | None
+  pseudorange_rate: float | None
+  pseudorange_rate_uncertainty: float | None # 1-sigma
 
-  def __post_init__(self):
-    for field in fields(self):
-      val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+  @classmethod
+  def from_fields(cls, values: list[str]) -> 'GnssMeasNmeaPort':
+    ints = [int(value) if value else None for value in values[:10]]
+    floats = [float(value) if value else None for value in values[10:13]]
+    return cls(*ints, *floats)
 
 def nmea_checksum_ok(s):
   checksum = 0
@@ -107,11 +109,11 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
           match fields[0]:
             case "$GNCLK":
               # fields at end are reserved (not used)
-              gnss_clock = GnssClockNmeaPort(*fields[1:10])
+              gnss_clock = GnssClockNmeaPort.from_fields(fields[1:10])
               print(gnss_clock)
             case "$GNMEAS":
               # fields at end are reserved (not used)
-              gnss_meas = GnssMeasNmeaPort(*fields[1:14])
+              gnss_meas = GnssMeasNmeaPort.from_fields(fields[1:14])
               print(gnss_meas)
     except Exception as e:
       print(e)

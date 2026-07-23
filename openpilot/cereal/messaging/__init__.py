@@ -7,11 +7,42 @@ import os
 import capnp
 import time
 
-from typing import Optional, List, Union, Dict
+from typing import Union
 
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.utils import MovingAverage
+
+__all__ = (
+  "NO_TRAVERSAL_LIMIT",
+  "Context",
+  "FrequencyTracker",
+  "IpcError",
+  "MultiplePublishersError",
+  "Poller",
+  "PubMaster",
+  "PubSocket",
+  "SocketEventHandle",
+  "SubMaster",
+  "SubSocket",
+  "delete_fake_prefix",
+  "drain_sock",
+  "drain_sock_raw",
+  "fake_event_handle",
+  "get_fake_prefix",
+  "log_from_bytes",
+  "new_message",
+  "pub_sock",
+  "recv_one",
+  "recv_one_or_none",
+  "recv_one_retry",
+  "recv_sock",
+  "reset_context",
+  "set_fake_prefix",
+  "sub_sock",
+  "toggle_fake_events",
+  "wait_for_one_event",
+)
 
 NO_TRAVERSAL_LIMIT = 2**64-1
 
@@ -22,8 +53,8 @@ def pub_sock(endpoint: str) -> PubSocket:
   return msgq.pub_sock(endpoint, segment_size)
 
 
-def sub_sock(endpoint: str, poller: Optional[Poller] = None, addr: str = "127.0.0.1",
-             conflate: bool = False, timeout: Optional[int] = None) -> SubSocket:
+def sub_sock(endpoint: str, poller: Poller | None = None, addr: str = "127.0.0.1",
+             conflate: bool = False, timeout: int | None = None) -> SubSocket:
   service = SERVICE_LIST.get(endpoint)
   segment_size = service.queue_size if service else 0
   return msgq.sub_sock(endpoint, poller=poller, addr=addr, conflate=conflate,
@@ -39,7 +70,7 @@ def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event
     return msg
 
 
-def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
+def new_message(service: str | None, size: int | None = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
   args = {
     'valid': False,
     'logMonoTime': int(time.monotonic() * 1e9),
@@ -54,14 +85,14 @@ def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) ->
   return dat
 
 
-def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> List[capnp.lib.capnp._DynamicStructReader]:
+def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> list[capnp.lib.capnp._DynamicStructReader]:
   """Receive all message currently available on the queue"""
   msgs = drain_sock_raw(sock, wait_for_one=wait_for_one)
   return [log_from_bytes(m) for m in msgs]
 
 
 # TODO: print when we drop packets?
-def recv_sock(sock: SubSocket, wait: bool = False) -> Optional[capnp.lib.capnp._DynamicStructReader]:
+def recv_sock(sock: SubSocket, wait: bool = False) -> capnp.lib.capnp._DynamicStructReader | None:
   """Same as drain sock, but only returns latest message. Consider using conflate instead."""
   dat = None
 
@@ -82,14 +113,14 @@ def recv_sock(sock: SubSocket, wait: bool = False) -> Optional[capnp.lib.capnp._
   return dat
 
 
-def recv_one(sock: SubSocket) -> Optional[capnp.lib.capnp._DynamicStructReader]:
+def recv_one(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader | None:
   dat = sock.receive()
   if dat is not None:
     dat = log_from_bytes(dat)
   return dat
 
 
-def recv_one_or_none(sock: SubSocket) -> Optional[capnp.lib.capnp._DynamicStructReader]:
+def recv_one_or_none(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader | None:
   dat = sock.receive(non_blocking=True)
   if dat is not None:
     dat = log_from_bytes(dat)
@@ -148,27 +179,27 @@ class FrequencyTracker:
 
 
 class SubMaster:
-  def __init__(self, services: List[str], poll: Optional[str] = None,
-               ignore_alive: Optional[List[str]] = None, ignore_avg_freq: Optional[List[str]] = None,
-               ignore_valid: Optional[List[str]] = None, addr: str = "127.0.0.1", frequency: Optional[float] = None):
+  def __init__(self, services: list[str], poll: str | None = None,
+               ignore_alive: list[str] | None = None, ignore_avg_freq: list[str] | None = None,
+               ignore_valid: list[str] | None = None, addr: str = "127.0.0.1", frequency: float | None = None):
     self.frame = -1
     self.services = services
-    self.seen = {s: False for s in services}
-    self.updated = {s: False for s in services}
-    self.recv_time = {s: 0. for s in services}
-    self.recv_frame = {s: 0 for s in services}
+    self.seen = dict.fromkeys(services, False)
+    self.updated = dict.fromkeys(services, False)
+    self.recv_time = dict.fromkeys(services, 0.0)
+    self.recv_frame = dict.fromkeys(services, 0)
     self.sock = {}
     self.data = {}
-    self.logMonoTime = {s: 0 for s in services}
+    self.logMonoTime = dict.fromkeys(services, 0)
 
     # zero-frequency / on-demand services are always alive and presumed valid; all others must pass checks
     on_demand = {s: SERVICE_LIST[s].frequency <= 1e-5 for s in services}
-    self.static_freq_services = set(s for s in services if not on_demand[s])
+    self.static_freq_services = {s for s in services if not on_demand[s]}
     self.alive = {s: on_demand[s] for s in services}
     self.freq_ok = {s: on_demand[s] for s in services}
     self.valid = {s: on_demand[s] for s in services}
 
-    self.freq_tracker: Dict[str, FrequencyTracker] = {}
+    self.freq_tracker: dict[str, FrequencyTracker] = {}
     self.poller = Poller()
     polled_services = set([poll, ] if poll is not None else services)
     self.non_polled_services = set(services) - polled_services
@@ -211,7 +242,7 @@ class SubMaster:
       msgs.append(recv_one_or_none(self.sock[s]))
     self.update_msgs(time.monotonic(), msgs)
 
-  def update_msgs(self, cur_time: float, msgs: List[capnp.lib.capnp._DynamicStructReader]) -> None:
+  def update_msgs(self, cur_time: float, msgs: list[capnp.lib.capnp._DynamicStructReader]) -> None:
     self.frame += 1
     self.updated = dict.fromkeys(self.services, False)
     for msg in msgs:
@@ -234,21 +265,21 @@ class SubMaster:
       self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
       self.freq_ok[s] = self.freq_tracker[s].valid or self.simulation
 
-  def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_alive(self, service_list: list[str] | None = None) -> bool:
     return all(self.alive[s] for s in (service_list or self.services) if s not in self.ignore_alive)
 
-  def all_freq_ok(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_freq_ok(self, service_list: list[str] | None = None) -> bool:
     return all(self.freq_ok[s] for s in (service_list or self.services) if self._check_avg_freq(s))
 
-  def all_valid(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_valid(self, service_list: list[str] | None = None) -> bool:
     return all(self.valid[s] for s in (service_list or self.services) if s not in self.ignore_valid)
 
-  def all_checks(self, service_list: Optional[List[str]] = None) -> bool:
+  def all_checks(self, service_list: list[str] | None = None) -> bool:
     return self.all_alive(service_list) and self.all_freq_ok(service_list) and self.all_valid(service_list)
 
 
 class PubMaster:
-  def __init__(self, services: List[str]):
+  def __init__(self, services: list[str]):
     self.sock = {}
     for s in services:
       self.sock[s] = pub_sock(s)

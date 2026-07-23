@@ -3,7 +3,6 @@ import argparse
 import atexit
 import math
 import os
-import pickle
 import tempfile
 import time
 import shutil
@@ -13,6 +12,7 @@ from collections import namedtuple
 import numpy as np
 
 from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
+from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
 
 def _patch_tinygrad_fetch_fw():
   import hashlib
@@ -30,22 +30,6 @@ def _patch_tinygrad_fetch_fw():
   helpers.fetch_fw = fetch_fw
 _patch_tinygrad_fetch_fw()
 
-def _patch_tinygrad_buffer_reduce():
-  from tinygrad.device import Buffer
-  def __reduce_ex__(self, protocol):
-    buf = None
-    if self._base is not None:
-      return self.__class__, (self.device, self.size, self.dtype, None, None, None, 0, self.base, self.offset, self.is_allocated())
-    if self.device == "NPY":
-      return self.__class__, (self.device, self.size, self.dtype, self._buf, self.options, None, self.uop_refcount)
-    if self.is_allocated():
-      buf = bytearray(self.nbytes)
-      self.copyout(memoryview(buf))
-      if protocol >= 5:
-        buf = pickle.PickleBuffer(buf)
-    return self.__class__, (self.device, self.size, self.dtype, None, self.options, buf, self.uop_refcount)
-  Buffer.__reduce_ex__ = __reduce_ex__
-_patch_tinygrad_buffer_reduce()
 
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
@@ -242,7 +226,7 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
   SEED = 42
   def random_inputs_run(fn, seed, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy = make_queues(Device.DEFAULT)
-    np.random.seed(seed)
+    rng = np.random.default_rng(seed)
     Tensor.manual_seed(seed)
 
     testing = test_val is not None or test_buffers is not None
@@ -250,7 +234,7 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
 
     for i in range(n_runs):
       for v in npy.values():
-        v[:] = np.random.randn(*v.shape).astype(v.dtype)
+        v[:] = rng.standard_normal(v.shape).astype(v.dtype)
       Device.default.synchronize()
       random_inputs = make_random_inputs()
       st = time.perf_counter()
@@ -310,6 +294,9 @@ if __name__ == "__main__":
   p.add_argument('--output', required=True)
   p.add_argument('--frame-skip', type=int, required=True)
   args = p.parse_args()
+
+  if 'USB+AMD' in os.environ.get('DEV', ''):
+    wait_usbgpu_link()
 
   model_path = read_file_chunked_to_disk(args.onnx)
   model_w, model_h = args.model_size

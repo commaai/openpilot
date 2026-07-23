@@ -1,3 +1,4 @@
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.selfdrive.test.process_replay.regen import regen_segment
@@ -26,7 +27,9 @@ def ci_setup_data_readers(route, sidx):
   return lr, frs
 
 
-class TestRegen:
+class TestRegen(OpenpilotTestCase):
+  SLOW_TEST = True
+
   @parameterized.expand(TESTED_SEGMENTS)
   def test_engaged(self, case_name, segment):
     route, sidx = segment.rsplit("--", 1)

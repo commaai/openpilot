@@ -3,6 +3,7 @@ import random
 from pathlib import Path
 
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.system.loggerd.deleter as deleter
 import openpilot.system.loggerd.uploader as uploader
 from openpilot.common.params import Params
@@ -53,7 +54,7 @@ class MockApiIgnore:
   def get_token(self):
     return "fake-token"
 
-class UploaderTestCase:
+class UploaderTestCase(OpenpilotTestCase):
   f_type = "UNKNOWN"
 
   root: Path
@@ -63,10 +64,10 @@ class UploaderTestCase:
   seg_dir: str
 
   def set_ignore(self):
-    uploader.Api = MockApiIgnore
+    uploader.Api = MockApiIgnore  # ty: ignore[invalid-assignment]  # test double
 
   def setup_method(self):
-    uploader.Api = MockApi
+    uploader.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     uploader.fake_upload = True
     uploader.force_wifi = True
     uploader.allow_sleep = False
