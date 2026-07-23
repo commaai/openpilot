@@ -1,6 +1,7 @@
 import os
 import subprocess
 import bootstrap_icons
+import ffmpeg
 import imgui
 import libusb
 from opendbc import get_generated_dbcs
@@ -108,7 +109,14 @@ if arch == "Darwin":
 else:
   libs += ["GL", "dl"]
 
-program = jot_env.Program("jotpluggler", jot_env.Glob("*.cc"), LIBS=libs)
-jot_env.Depends(program, generated_dbc_stamp)
-jot_env.Depends(program, car_fingerprint_to_dbc)
-jot_env.Depends(program, event_extractors)
+jot_sources = [source for source in jot_env.Glob("*.cc") if os.path.basename(str(source)) != "main.cc"]
+jot_objects = jot_env.Object(jot_sources)
+jot_env.Depends(jot_objects, [generated_dbc_stamp, car_fingerprint_to_dbc, event_extractors])
+program = jot_env.Program("jotpluggler", ["main.cc"] + jot_objects, LIBS=libs)
+bridge = File("#openpilot/cereal/messaging/bridge")
+stream_test_env = jot_env.Clone()
+if arch == "Darwin":
+  stream_test_env["LINKFLAGS"] += [f"-Wl,-rpath,{ffmpeg.LIB_DIR}"]
+stream_bridge_test = stream_test_env.Program(
+  "tests/test_stream_bridge", ["tests/test_stream_bridge.cc"] + jot_objects, LIBS=libs)
+jot_env.Depends([program, stream_bridge_test], bridge)

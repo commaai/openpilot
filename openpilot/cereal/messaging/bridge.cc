@@ -1,4 +1,10 @@
 #include <cassert>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <unistd.h>
 
 #include "openpilot/cereal/messaging/msgq_to_zmq.h"
 #include "openpilot/cereal/services.h"
@@ -24,7 +30,7 @@ void msgq_to_zmq(const std::vector<std::string> &endpoints, const std::string &i
   bridge.run(endpoints, ip);
 }
 
-void zmq_to_msgq(const std::vector<std::string> &endpoints, const std::string &ip) {
+void zmq_to_msgq(const std::vector<std::string> &endpoints, const std::string &ip, pid_t parent_pid) {
   auto poller = std::make_unique<BridgeZmqPoller>();
   auto pub_context = std::make_unique<Context>();
   auto sub_context = std::make_unique<BridgeZmqContext>();
@@ -34,14 +40,23 @@ void zmq_to_msgq(const std::vector<std::string> &endpoints, const std::string &i
     auto pub_sock = new PubSocket();
     auto sub_sock = new BridgeZmqSubSocket();
     size_t queue_size = services.at(endpoint).queue_size;
-    pub_sock->connect(pub_context.get(), endpoint, true, queue_size);
-    sub_sock->connect(sub_context.get(), endpoint, ip, false);
+    if (pub_sock->connect(pub_context.get(), endpoint, true, queue_size) != 0) {
+      const int error = errno;
+      dprintf(STDERR_FILENO, "Failed to create MSGQ publisher for [%s]: %s\n", endpoint.c_str(), std::strerror(error));
+      _exit(1);
+    }
+    if (sub_sock->connect(sub_context.get(), endpoint, ip, false) != 0) {
+      const int error = zmq_errno();
+      dprintf(STDERR_FILENO, "Failed to connect ZMQ subscriber for [%s] at [%s]: %s\n",
+              endpoint.c_str(), ip.c_str(), zmq_strerror(error));
+      _exit(1);
+    }
 
     poller->registerSocket(sub_sock);
     sub2pub[sub_sock] = pub_sock;
   }
 
-  while (!do_exit) {
+  while (!do_exit && (parent_pid == 0 || getppid() == parent_pid)) {
     for (auto sub_sock : poller->poll(100)) {
       std::unique_ptr<Message> msg(sub_sock->receive(true));
       if (msg) {
@@ -61,10 +76,13 @@ int main(int argc, char **argv) {
   bool is_zmq_to_msgq = argc > 2;
   std::string ip = is_zmq_to_msgq ? argv[1] : "127.0.0.1";
   std::string whitelist_str = is_zmq_to_msgq ? std::string(argv[2]) : "";
+  const pid_t parent_pid = argc > 3 ? std::atoi(argv[3]) : 0;
   std::vector<std::string> endpoints = get_services(whitelist_str, is_zmq_to_msgq);
 
   if (is_zmq_to_msgq) {
-    zmq_to_msgq(endpoints, ip);
+    zmq_to_msgq(endpoints, ip, parent_pid);
+    std::error_code error;
+    if (argc > 4) std::filesystem::remove_all(argv[4], error);
   } else {
     msgq_to_zmq(endpoints, ip);
   }

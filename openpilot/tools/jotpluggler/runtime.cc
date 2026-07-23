@@ -1,5 +1,6 @@
 #include "tools/jotpluggler/app.h"
 #include "tools/jotpluggler/common.h"
+#include "tools/jotpluggler/stream_bridge.h"
 
 #include "openpilot/cereal/services.h"
 #include "common/timing.h"
@@ -8,17 +9,20 @@
 #include "imgui_impl_opengl3_loader.h"
 #include "implot.h"
 #include "common/yuv.h"
-#include "msgq_repo/msgq/ipc.h"
+#include "msgq_repo/msgq/impl_msgq.h"
 #include "tools/replay/framereader.h"
 
 #include <GLFW/glfw3.h>
 
 #include <chrono>
+#include <cerrno>
 #include <cmath>
 #include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <deque>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -36,6 +40,15 @@ namespace {
 
 std::atomic<bool> g_glfw_alive{false};
 const bool kLogCameraTimings = env_flag_enabled("JOTP_CAMERA_TIMINGS");
+std::mutex stream_msgq_setup_mutex;
+void stream_setup_test_checkpoint(const char *name, bool wait_for_release = false) {
+  if (const char *root = std::getenv("JOTP_STREAM_SETUP_TEST"); root != nullptr && std::getenv("JOTP_STREAM_BRIDGE") != nullptr) {
+    std::ofstream(std::filesystem::path(root) / name).put('\n');
+    for (int i = 0; wait_for_release && !std::filesystem::exists(std::filesystem::path(root) / "release") && i < 5000; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+  }
+}
 
 CameraType decoder_camera_type(CameraViewKind view) {
   switch (view) {
@@ -559,29 +572,54 @@ struct StreamPoller::Impl {
   }
 
   void run_cereal_source(StreamAccumulator *accumulator) {
-    if (source.kind == StreamSourceKind::CerealRemote) {
-      setenv("ZMQ", "1", 1);
-    } else {
-      unsetenv("ZMQ");
+    const bool remote = source.kind == StreamSourceKind::CerealRemote;
+    std::vector<std::string> selected_services;
+    for (const auto &[name, _] : services) {
+      if (should_subscribe_stream_service(name)) selected_services.push_back(name);
     }
+    const bool setup_test = std::getenv("JOTP_STREAM_SETUP_TEST") != nullptr && std::getenv("JOTP_STREAM_BRIDGE") != nullptr;
+    std::unique_lock setup_lock(stream_msgq_setup_mutex, std::defer_lock);
+    if (!remote && setup_test && !setup_lock.try_lock()) stream_setup_test_checkpoint("local-blocked");
+    if (!setup_lock.owns_lock()) setup_lock.lock();
+    std::unique_ptr<ScopedMsgqPrefix> private_namespace;
+    StreamBridgeProcess bridge_process;
+    if (remote) {
+      private_namespace = std::make_unique<ScopedMsgqPrefix>();
+      private_namespace->activate();
+      const char *override = std::getenv("JOTP_STREAM_BRIDGE");
+      const std::filesystem::path executable = override != nullptr
+        ? override : repo_root() / "openpilot/cereal/messaging/bridge";
+      bridge_process.start(executable, {source.address, stream_bridge_whitelist(selected_services)}, private_namespace->path());
+    }
+    if (remote) stream_setup_test_checkpoint("remote-held", true);
 
     std::unique_ptr<Context> context(Context::create());
     std::unique_ptr<Poller> poller(Poller::create());
     std::vector<std::unique_ptr<SubSocket>> sockets;
-    sockets.reserve(services.size());
-    for (const auto &[name, info] : services) {
-      if (!should_subscribe_stream_service(name)) continue;
-      std::unique_ptr<SubSocket> socket(
-        SubSocket::create(context.get(), name.c_str(), source.address.c_str(), false, true, info.queue_size));
-      if (socket == nullptr) continue;
+    for (const std::string &name : selected_services) {
+      const service &info = services.at(name);
+      std::unique_ptr<SubSocket> socket(SubSocket::create());
+      if (socket->connect(context.get(), name, kStreamMsgqAddress, false, true, info.queue_size) != 0) {
+        const int error = errno;
+        if (auto *msgq_socket = dynamic_cast<MSGQSubSocket *>(socket.get()); msgq_socket && msgq_socket->getQueue()) {
+          msgq_socket->getQueue()->mmap_p = nullptr;
+          msgq_socket->getQueue()->size = 0;
+        }
+        if (!remote) continue;
+        throw std::runtime_error("Failed to connect cereal service " + name + ": " + std::strerror(error));
+      }
       socket->setTimeout(0);
       poller->registerSocket(socket.get());
       sockets.push_back(std::move(socket));
     }
+    if (private_namespace) private_namespace->restore();
+    setup_lock.unlock();
     if (sockets.empty()) throw std::runtime_error("Failed to connect to any cereal service");
+    if (remote) bridge_process.check_running();
     connected.store(true);
 
     while (running.load()) {
+      if (remote) bridge_process.check_running();
       std::vector<SubSocket *> ready = poller->poll(1);
       for (SubSocket *socket : ready) {
         while (running.load()) {
