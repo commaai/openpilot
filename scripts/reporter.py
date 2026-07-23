@@ -36,6 +36,8 @@ if __name__ == "__main__":
 
   for f in glob.glob(BASEDIR + MODEL_PATH + "/*.onnx"):
     fn = os.path.basename(f)
+    if fn == "big_driving_supercombo.onnx":
+      continue
     master_path = MASTER_PATH + MODEL_PATH + fn
     if os.path.exists(master_path):
       master = get_checkpoint(master_path)
