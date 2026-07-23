@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import fcntl
+import math
 import os
 import queue
 import struct
@@ -35,6 +36,10 @@ PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
+
+def max_temp(temps) -> float:
+  # unreadable sensors report NaN (see ThermalZone.read); never let it into the filters
+  return max((t for t in temps if not math.isnan(t)), default=0.)
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
                                              'network_metered', 'modem_temps', 'usb_state'])
 
@@ -254,14 +259,14 @@ def hardware_thread(end_event, hw_queue) -> None:
     # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC, default=0.),
-      max(msg.deviceState.gpuTempC, default=0.),
+      max_temp(msg.deviceState.cpuTempC),
+      max_temp(msg.deviceState.gpuTempC),
     ]
-    offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
+    offroad_comp_temp = offroad_temp_filter.update(max_temp(temp_sources))
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
-    all_comp_temp = all_temp_filter.update(max(temp_sources))
+    temp_sources.append(max_temp(msg.deviceState.pmicTempC))
+    all_comp_temp = all_temp_filter.update(max_temp(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
     msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
