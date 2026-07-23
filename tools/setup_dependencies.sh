@@ -38,26 +38,32 @@ function install_linux_deps() {
     fi
   done
 
+  if ! command -v ldconfig > /dev/null 2>&1 || \
+     ! ldconfig -p 2>/dev/null | grep -Fq 'libEGL.so.1' || \
+     ! ldconfig -p 2>/dev/null | grep -Fq 'libGLESv2.so.2'; then
+    missing_linux_deps=1
+  fi
+
   # normal stuff, this mostly for bare docker images
   if [[ "$missing_linux_deps" -eq 0 ]]; then
     # the native package managers are slow, so skip if we can
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
     $SUDO apt-get update
-    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard
+    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev libegl1 libgles2 locales git xclip wl-clipboard
   elif command -v dnf > /dev/null 2>&1; then
-    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel libglvnd-egl libglvnd-gles glibc-langpack-en git
   elif command -v yum > /dev/null 2>&1; then
-    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel libatomic libglvnd-egl libglvnd-gles glibc-langpack-en git
   elif command -v pacman > /dev/null 2>&1; then
-    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git
+    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git libglvnd
   elif command -v zypper > /dev/null 2>&1; then
     $SUDO zypper --non-interactive refresh
-    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git
+    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel libglvnd glibc-locale git
   elif command -v apk > /dev/null 2>&1; then
-    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git
+    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev mesa-egl mesa-gles musl-locales git
   elif command -v xbps-install > /dev/null 2>&1; then
-    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales
+    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel libglvnd glibc-locales
   else
     echo "Unsupported Linux distribution. Supported package managers: apt-get, dnf, yum, pacman, zypper, apk, xbps-install."
     exit 1
