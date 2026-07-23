@@ -1,0 +1,326 @@
+from tinygrad.runtime.ops_dsp import DSPDevice
+
+kernel = """__attribute__((noinline)) void r_6_10_13_4_4_29(float* restrict __attribute__((align_value(128))) data0, const float* restrict __attribute__((align_value(128))) data1, const float* restrict __attribute__((align_value(128))) data2, const float* restrict __attribute__((align_value(128))) data3) {
+  float val0 = data1[0];
+  float val1 = data1[1];
+  float val2 = data1[2];
+  float val3 = data1[3];
+  float val4 = data1[4];
+  float val5 = data1[5];
+  float val6 = data1[6];
+  float val7 = data1[7];
+  float val8 = data1[8];
+  float val9 = data1[9];
+  float val10 = data1[10];
+  float val11 = data1[11];
+  float val12 = data1[12];
+  float val13 = data1[13];
+  float val14 = data1[14];
+  float val15 = data1[15];
+  float val16 = data1[16];
+  float val17 = data1[17];
+  float val18 = data1[18];
+  float val19 = data1[19];
+  float val20 = data1[20];
+  float val21 = data1[21];
+  float val22 = data1[22];
+  float val23 = data1[23];
+  float val24 = data1[24];
+  float val25 = data1[25];
+  float val26 = data1[26];
+  float val27 = data1[27];
+  float val28 = data1[28];
+  for (int ridx0 = 0; ridx0 < 6; ridx0++) {
+    for (int ridx1 = 0; ridx1 < 10; ridx1++) {
+      int alu0 = ((ridx0*1160)+(ridx1*4));
+      float val29 = data3[alu0+1];
+      float val30 = data3[alu0+2];
+      float val31 = data3[alu0+3];
+      float val32 = data3[alu0+40];
+      float val33 = data3[alu0+41];
+      float val34 = data3[alu0+42];
+      float val35 = data3[alu0+43];
+      float val36 = data3[alu0+80];
+      float val37 = data3[alu0+81];
+      float val38 = data3[alu0+82];
+      float val39 = data3[alu0+83];
+      float val40 = data3[alu0+120];
+      float val41 = data3[alu0+121];
+      float val42 = data3[alu0+122];
+      float val43 = data3[alu0+123];
+      float val44 = data3[alu0+160];
+      float val45 = data3[alu0+161];
+      float val46 = data3[alu0+162];
+      float val47 = data3[alu0+163];
+      float val48 = data3[alu0+200];
+      float val49 = data3[alu0+201];
+      float val50 = data3[alu0+202];
+      float val51 = data3[alu0+203];
+      float val52 = data3[alu0+240];
+      float val53 = data3[alu0+241];
+      float val54 = data3[alu0+242];
+      float val55 = data3[alu0+243];
+      float val56 = data3[alu0+280];
+      float val57 = data3[alu0+281];
+      float val58 = data3[alu0+282];
+      float val59 = data3[alu0+283];
+      float val60 = data3[alu0+320];
+      float val61 = data3[alu0+321];
+      float val62 = data3[alu0+322];
+      float val63 = data3[alu0+323];
+      float val64 = data3[alu0+360];
+      float val65 = data3[alu0+361];
+      float val66 = data3[alu0+362];
+      float val67 = data3[alu0+363];
+      float val68 = data3[alu0+400];
+      float val69 = data3[alu0+401];
+      float val70 = data3[alu0+402];
+      float val71 = data3[alu0+403];
+      float val72 = data3[alu0+440];
+      float val73 = data3[alu0+441];
+      float val74 = data3[alu0+442];
+      float val75 = data3[alu0+443];
+      float val76 = data3[alu0+480];
+      float val77 = data3[alu0+481];
+      float val78 = data3[alu0+482];
+      float val79 = data3[alu0+483];
+      float val80 = data3[alu0+520];
+      float val81 = data3[alu0+521];
+      float val82 = data3[alu0+522];
+      float val83 = data3[alu0+523];
+      float val84 = data3[alu0+560];
+      float val85 = data3[alu0+561];
+      float val86 = data3[alu0+562];
+      float val87 = data3[alu0+563];
+      float val88 = data3[alu0+600];
+      float val89 = data3[alu0+601];
+      float val90 = data3[alu0+602];
+      float val91 = data3[alu0+603];
+      float val92 = data3[alu0+640];
+      float val93 = data3[alu0+641];
+      float val94 = data3[alu0+642];
+      float val95 = data3[alu0+643];
+      float val96 = data3[alu0+680];
+      float val97 = data3[alu0+681];
+      float val98 = data3[alu0+682];
+      float val99 = data3[alu0+683];
+      float val100 = data3[alu0+720];
+      float val101 = data3[alu0+721];
+      float val102 = data3[alu0+722];
+      float val103 = data3[alu0+723];
+      float val104 = data3[alu0+760];
+      float val105 = data3[alu0+761];
+      float val106 = data3[alu0+762];
+      float val107 = data3[alu0+763];
+      float val108 = data3[alu0+800];
+      float val109 = data3[alu0+801];
+      float val110 = data3[alu0+802];
+      float val111 = data3[alu0+803];
+      float val112 = data3[alu0+840];
+      float val113 = data3[alu0+841];
+      float val114 = data3[alu0+842];
+      float val115 = data3[alu0+843];
+      float val116 = data3[alu0+880];
+      float val117 = data3[alu0+881];
+      float val118 = data3[alu0+882];
+      float val119 = data3[alu0+883];
+      float val120 = data3[alu0+920];
+      float val121 = data3[alu0+921];
+      float val122 = data3[alu0+922];
+      float val123 = data3[alu0+923];
+      float val124 = data3[alu0+960];
+      float val125 = data3[alu0+961];
+      float val126 = data3[alu0+962];
+      float val127 = data3[alu0+963];
+      float val128 = data3[alu0+1000];
+      float val129 = data3[alu0+1001];
+      float val130 = data3[alu0+1002];
+      float val131 = data3[alu0+1003];
+      float val132 = data3[alu0+1040];
+      float val133 = data3[alu0+1041];
+      float val134 = data3[alu0+1042];
+      float val135 = data3[alu0+1043];
+      float val136 = data3[alu0+1080];
+      float val137 = data3[alu0+1081];
+      float val138 = data3[alu0+1082];
+      float val139 = data3[alu0+1083];
+      float val140 = data3[alu0+1120];
+      float val141 = data3[alu0+1121];
+      float val142 = data3[alu0+1122];
+      float val143 = data3[alu0+1123];
+      float val144 = data3[alu0];
+      for (int ridx2 = 0; ridx2 < 13; ridx2++) {
+        int alu1 = (ridx2*4);
+        int alu2 = ((ridx0*2080)+(ridx1*208)+alu1);
+        float val145 = data2[alu1+1];
+        float cast0 = (float)(((val0!=val145)!=1));
+        float cast1 = (float)(((val1!=val145)!=1));
+        float cast2 = (float)(((val2!=val145)!=1));
+        float cast3 = (float)(((val3!=val145)!=1));
+        float cast4 = (float)(((val4!=val145)!=1));
+        float cast5 = (float)(((val5!=val145)!=1));
+        float cast6 = (float)(((val6!=val145)!=1));
+        float cast7 = (float)(((val7!=val145)!=1));
+        float cast8 = (float)(((val8!=val145)!=1));
+        float cast9 = (float)(((val9!=val145)!=1));
+        float cast10 = (float)(((val10!=val145)!=1));
+        float cast11 = (float)(((val11!=val145)!=1));
+        float cast12 = (float)(((val12!=val145)!=1));
+        float cast13 = (float)(((val13!=val145)!=1));
+        float cast14 = (float)(((val14!=val145)!=1));
+        float cast15 = (float)(((val15!=val145)!=1));
+        float cast16 = (float)(((val16!=val145)!=1));
+        float cast17 = (float)(((val17!=val145)!=1));
+        float cast18 = (float)(((val18!=val145)!=1));
+        float cast19 = (float)(((val19!=val145)!=1));
+        float cast20 = (float)(((val20!=val145)!=1));
+        float cast21 = (float)(((val21!=val145)!=1));
+        float cast22 = (float)(((val22!=val145)!=1));
+        float cast23 = (float)(((val23!=val145)!=1));
+        float cast24 = (float)(((val24!=val145)!=1));
+        float cast25 = (float)(((val25!=val145)!=1));
+        float cast26 = (float)(((val26!=val145)!=1));
+        float cast27 = (float)(((val27!=val145)!=1));
+        float cast28 = (float)(((val28!=val145)!=1));
+        data0[alu2+1] = ((cast0*val144)+(cast1*val32)+(cast2*val36)+(cast3*val40)+(cast4*val44)+(cast5*val48)+(cast6*val52)+(cast7*val56)+(cast8*val60)+(cast9*val64)+(cast10*val68)+(cast11*val72)+(cast12*val76)+(cast13*val80)+(cast14*val84)+(cast15*val88)+(cast16*val92)+(cast17*val96)+(cast18*val100)+(cast19*val104)+(cast20*val108)+(cast21*val112)+(cast22*val116)+(cast23*val120)+(cast24*val124)+(cast25*val128)+(cast26*val132)+(cast27*val136)+(cast28*val140));
+        data0[alu2+53] = ((cast0*val29)+(cast1*val33)+(cast2*val37)+(cast3*val41)+(cast4*val45)+(cast5*val49)+(cast6*val53)+(cast7*val57)+(cast8*val61)+(cast9*val65)+(cast10*val69)+(cast11*val73)+(cast12*val77)+(cast13*val81)+(cast14*val85)+(cast15*val89)+(cast16*val93)+(cast17*val97)+(cast18*val101)+(cast19*val105)+(cast20*val109)+(cast21*val113)+(cast22*val117)+(cast23*val121)+(cast24*val125)+(cast25*val129)+(cast26*val133)+(cast27*val137)+(cast28*val141));
+        data0[alu2+105] = ((cast0*val30)+(cast1*val34)+(cast2*val38)+(cast3*val42)+(cast4*val46)+(cast5*val50)+(cast6*val54)+(cast7*val58)+(cast8*val62)+(cast9*val66)+(cast10*val70)+(cast11*val74)+(cast12*val78)+(cast13*val82)+(cast14*val86)+(cast15*val90)+(cast16*val94)+(cast17*val98)+(cast18*val102)+(cast19*val106)+(cast20*val110)+(cast21*val114)+(cast22*val118)+(cast23*val122)+(cast24*val126)+(cast25*val130)+(cast26*val134)+(cast27*val138)+(cast28*val142));
+        data0[alu2+157] = ((cast0*val31)+(cast1*val35)+(cast2*val39)+(cast3*val43)+(cast4*val47)+(cast5*val51)+(cast6*val55)+(cast7*val59)+(cast8*val63)+(cast9*val67)+(cast10*val71)+(cast11*val75)+(cast12*val79)+(cast13*val83)+(cast14*val87)+(cast15*val91)+(cast16*val95)+(cast17*val99)+(cast18*val103)+(cast19*val107)+(cast20*val111)+(cast21*val115)+(cast22*val119)+(cast23*val123)+(cast24*val127)+(cast25*val131)+(cast26*val135)+(cast27*val139)+(cast28*val143));
+        float val146 = data2[alu1+2];
+        float cast29 = (float)(((val0!=val146)!=1));
+        float cast30 = (float)(((val1!=val146)!=1));
+        float cast31 = (float)(((val2!=val146)!=1));
+        float cast32 = (float)(((val3!=val146)!=1));
+        float cast33 = (float)(((val4!=val146)!=1));
+        float cast34 = (float)(((val5!=val146)!=1));
+        float cast35 = (float)(((val6!=val146)!=1));
+        float cast36 = (float)(((val7!=val146)!=1));
+        float cast37 = (float)(((val8!=val146)!=1));
+        float cast38 = (float)(((val9!=val146)!=1));
+        float cast39 = (float)(((val10!=val146)!=1));
+        float cast40 = (float)(((val11!=val146)!=1));
+        float cast41 = (float)(((val12!=val146)!=1));
+        float cast42 = (float)(((val13!=val146)!=1));
+        float cast43 = (float)(((val14!=val146)!=1));
+        float cast44 = (float)(((val15!=val146)!=1));
+        float cast45 = (float)(((val16!=val146)!=1));
+        float cast46 = (float)(((val17!=val146)!=1));
+        float cast47 = (float)(((val18!=val146)!=1));
+        float cast48 = (float)(((val19!=val146)!=1));
+        float cast49 = (float)(((val20!=val146)!=1));
+        float cast50 = (float)(((val21!=val146)!=1));
+        float cast51 = (float)(((val22!=val146)!=1));
+        float cast52 = (float)(((val23!=val146)!=1));
+        float cast53 = (float)(((val24!=val146)!=1));
+        float cast54 = (float)(((val25!=val146)!=1));
+        float cast55 = (float)(((val26!=val146)!=1));
+        float cast56 = (float)(((val27!=val146)!=1));
+        float cast57 = (float)(((val28!=val146)!=1));
+        data0[alu2+2] = ((cast29*val144)+(cast30*val32)+(cast31*val36)+(cast32*val40)+(cast33*val44)+(cast34*val48)+(cast35*val52)+(cast36*val56)+(cast37*val60)+(cast38*val64)+(cast39*val68)+(cast40*val72)+(cast41*val76)+(cast42*val80)+(cast43*val84)+(cast44*val88)+(cast45*val92)+(cast46*val96)+(cast47*val100)+(cast48*val104)+(cast49*val108)+(cast50*val112)+(cast51*val116)+(cast52*val120)+(cast53*val124)+(cast54*val128)+(cast55*val132)+(cast56*val136)+(cast57*val140));
+        data0[alu2+54] = ((cast29*val29)+(cast30*val33)+(cast31*val37)+(cast32*val41)+(cast33*val45)+(cast34*val49)+(cast35*val53)+(cast36*val57)+(cast37*val61)+(cast38*val65)+(cast39*val69)+(cast40*val73)+(cast41*val77)+(cast42*val81)+(cast43*val85)+(cast44*val89)+(cast45*val93)+(cast46*val97)+(cast47*val101)+(cast48*val105)+(cast49*val109)+(cast50*val113)+(cast51*val117)+(cast52*val121)+(cast53*val125)+(cast54*val129)+(cast55*val133)+(cast56*val137)+(cast57*val141));
+        data0[alu2+106] = ((cast29*val30)+(cast30*val34)+(cast31*val38)+(cast32*val42)+(cast33*val46)+(cast34*val50)+(cast35*val54)+(cast36*val58)+(cast37*val62)+(cast38*val66)+(cast39*val70)+(cast40*val74)+(cast41*val78)+(cast42*val82)+(cast43*val86)+(cast44*val90)+(cast45*val94)+(cast46*val98)+(cast47*val102)+(cast48*val106)+(cast49*val110)+(cast50*val114)+(cast51*val118)+(cast52*val122)+(cast53*val126)+(cast54*val130)+(cast55*val134)+(cast56*val138)+(cast57*val142));
+        data0[alu2+158] = ((cast29*val31)+(cast30*val35)+(cast31*val39)+(cast32*val43)+(cast33*val47)+(cast34*val51)+(cast35*val55)+(cast36*val59)+(cast37*val63)+(cast38*val67)+(cast39*val71)+(cast40*val75)+(cast41*val79)+(cast42*val83)+(cast43*val87)+(cast44*val91)+(cast45*val95)+(cast46*val99)+(cast47*val103)+(cast48*val107)+(cast49*val111)+(cast50*val115)+(cast51*val119)+(cast52*val123)+(cast53*val127)+(cast54*val131)+(cast55*val135)+(cast56*val139)+(cast57*val143));
+        float val147 = data2[alu1+3];
+        float cast58 = (float)(((val0!=val147)!=1));
+        float cast59 = (float)(((val1!=val147)!=1));
+        float cast60 = (float)(((val2!=val147)!=1));
+        float cast61 = (float)(((val3!=val147)!=1));
+        float cast62 = (float)(((val4!=val147)!=1));
+        float cast63 = (float)(((val5!=val147)!=1));
+        float cast64 = (float)(((val6!=val147)!=1));
+        float cast65 = (float)(((val7!=val147)!=1));
+        float cast66 = (float)(((val8!=val147)!=1));
+        float cast67 = (float)(((val9!=val147)!=1));
+        float cast68 = (float)(((val10!=val147)!=1));
+        float cast69 = (float)(((val11!=val147)!=1));
+        float cast70 = (float)(((val12!=val147)!=1));
+        float cast71 = (float)(((val13!=val147)!=1));
+        float cast72 = (float)(((val14!=val147)!=1));
+        float cast73 = (float)(((val15!=val147)!=1));
+        float cast74 = (float)(((val16!=val147)!=1));
+        float cast75 = (float)(((val17!=val147)!=1));
+        float cast76 = (float)(((val18!=val147)!=1));
+        float cast77 = (float)(((val19!=val147)!=1));
+        float cast78 = (float)(((val20!=val147)!=1));
+        float cast79 = (float)(((val21!=val147)!=1));
+        float cast80 = (float)(((val22!=val147)!=1));
+        float cast81 = (float)(((val23!=val147)!=1));
+        float cast82 = (float)(((val24!=val147)!=1));
+        float cast83 = (float)(((val25!=val147)!=1));
+        float cast84 = (float)(((val26!=val147)!=1));
+        float cast85 = (float)(((val27!=val147)!=1));
+        float cast86 = (float)(((val28!=val147)!=1));
+        data0[alu2+3] = ((cast58*val144)+(cast59*val32)+(cast60*val36)+(cast61*val40)+(cast62*val44)+(cast63*val48)+(cast64*val52)+(cast65*val56)+(cast66*val60)+(cast67*val64)+(cast68*val68)+(cast69*val72)+(cast70*val76)+(cast71*val80)+(cast72*val84)+(cast73*val88)+(cast74*val92)+(cast75*val96)+(cast76*val100)+(cast77*val104)+(cast78*val108)+(cast79*val112)+(cast80*val116)+(cast81*val120)+(cast82*val124)+(cast83*val128)+(cast84*val132)+(cast85*val136)+(cast86*val140));
+        data0[alu2+55] = ((cast58*val29)+(cast59*val33)+(cast60*val37)+(cast61*val41)+(cast62*val45)+(cast63*val49)+(cast64*val53)+(cast65*val57)+(cast66*val61)+(cast67*val65)+(cast68*val69)+(cast69*val73)+(cast70*val77)+(cast71*val81)+(cast72*val85)+(cast73*val89)+(cast74*val93)+(cast75*val97)+(cast76*val101)+(cast77*val105)+(cast78*val109)+(cast79*val113)+(cast80*val117)+(cast81*val121)+(cast82*val125)+(cast83*val129)+(cast84*val133)+(cast85*val137)+(cast86*val141));
+        data0[alu2+107] = ((cast58*val30)+(cast59*val34)+(cast60*val38)+(cast61*val42)+(cast62*val46)+(cast63*val50)+(cast64*val54)+(cast65*val58)+(cast66*val62)+(cast67*val66)+(cast68*val70)+(cast69*val74)+(cast70*val78)+(cast71*val82)+(cast72*val86)+(cast73*val90)+(cast74*val94)+(cast75*val98)+(cast76*val102)+(cast77*val106)+(cast78*val110)+(cast79*val114)+(cast80*val118)+(cast81*val122)+(cast82*val126)+(cast83*val130)+(cast84*val134)+(cast85*val138)+(cast86*val142));
+        data0[alu2+159] = ((cast58*val31)+(cast59*val35)+(cast60*val39)+(cast61*val43)+(cast62*val47)+(cast63*val51)+(cast64*val55)+(cast65*val59)+(cast66*val63)+(cast67*val67)+(cast68*val71)+(cast69*val75)+(cast70*val79)+(cast71*val83)+(cast72*val87)+(cast73*val91)+(cast74*val95)+(cast75*val99)+(cast76*val103)+(cast77*val107)+(cast78*val111)+(cast79*val115)+(cast80*val119)+(cast81*val123)+(cast82*val127)+(cast83*val131)+(cast84*val135)+(cast85*val139)+(cast86*val143));
+        float val148 = data2[alu1];
+        float cast87 = (float)(((val0!=val148)!=1));
+        float cast88 = (float)(((val1!=val148)!=1));
+        float cast89 = (float)(((val2!=val148)!=1));
+        float cast90 = (float)(((val3!=val148)!=1));
+        float cast91 = (float)(((val4!=val148)!=1));
+        float cast92 = (float)(((val5!=val148)!=1));
+        float cast93 = (float)(((val6!=val148)!=1));
+        float cast94 = (float)(((val7!=val148)!=1));
+        float cast95 = (float)(((val8!=val148)!=1));
+        float cast96 = (float)(((val9!=val148)!=1));
+        float cast97 = (float)(((val10!=val148)!=1));
+        float cast98 = (float)(((val11!=val148)!=1));
+        float cast99 = (float)(((val12!=val148)!=1));
+        float cast100 = (float)(((val13!=val148)!=1));
+        float cast101 = (float)(((val14!=val148)!=1));
+        float cast102 = (float)(((val15!=val148)!=1));
+        float cast103 = (float)(((val16!=val148)!=1));
+        float cast104 = (float)(((val17!=val148)!=1));
+        float cast105 = (float)(((val18!=val148)!=1));
+        float cast106 = (float)(((val19!=val148)!=1));
+        float cast107 = (float)(((val20!=val148)!=1));
+        float cast108 = (float)(((val21!=val148)!=1));
+        float cast109 = (float)(((val22!=val148)!=1));
+        float cast110 = (float)(((val23!=val148)!=1));
+        float cast111 = (float)(((val24!=val148)!=1));
+        float cast112 = (float)(((val25!=val148)!=1));
+        float cast113 = (float)(((val26!=val148)!=1));
+        float cast114 = (float)(((val27!=val148)!=1));
+        float cast115 = (float)(((val28!=val148)!=1));
+        data0[alu2+52] = ((cast87*val29)+(cast88*val33)+(cast89*val37)+(cast90*val41)+(cast91*val45)+(cast92*val49)+(cast93*val53)+(cast94*val57)+(cast95*val61)+(cast96*val65)+(cast97*val69)+(cast98*val73)+(cast99*val77)+(cast100*val81)+(cast101*val85)+(cast102*val89)+(cast103*val93)+(cast104*val97)+(cast105*val101)+(cast106*val105)+(cast107*val109)+(cast108*val113)+(cast109*val117)+(cast110*val121)+(cast111*val125)+(cast112*val129)+(cast113*val133)+(cast114*val137)+(cast115*val141));
+        data0[alu2+104] = ((cast87*val30)+(cast88*val34)+(cast89*val38)+(cast90*val42)+(cast91*val46)+(cast92*val50)+(cast93*val54)+(cast94*val58)+(cast95*val62)+(cast96*val66)+(cast97*val70)+(cast98*val74)+(cast99*val78)+(cast100*val82)+(cast101*val86)+(cast102*val90)+(cast103*val94)+(cast104*val98)+(cast105*val102)+(cast106*val106)+(cast107*val110)+(cast108*val114)+(cast109*val118)+(cast110*val122)+(cast111*val126)+(cast112*val130)+(cast113*val134)+(cast114*val138)+(cast115*val142));
+        data0[alu2+156] = ((cast87*val31)+(cast88*val35)+(cast89*val39)+(cast90*val43)+(cast91*val47)+(cast92*val51)+(cast93*val55)+(cast94*val59)+(cast95*val63)+(cast96*val67)+(cast97*val71)+(cast98*val75)+(cast99*val79)+(cast100*val83)+(cast101*val87)+(cast102*val91)+(cast103*val95)+(cast104*val99)+(cast105*val103)+(cast106*val107)+(cast107*val111)+(cast108*val115)+(cast109*val119)+(cast110*val123)+(cast111*val127)+(cast112*val131)+(cast113*val135)+(cast114*val139)+(cast115*val143));
+        data0[alu2] = ((cast87*val144)+(cast88*val32)+(cast89*val36)+(cast90*val40)+(cast91*val44)+(cast92*val48)+(cast93*val52)+(cast94*val56)+(cast95*val60)+(cast96*val64)+(cast97*val68)+(cast98*val72)+(cast99*val76)+(cast100*val80)+(cast101*val84)+(cast102*val88)+(cast103*val92)+(cast104*val96)+(cast105*val100)+(cast106*val104)+(cast107*val108)+(cast108*val112)+(cast109*val116)+(cast110*val120)+(cast111*val124)+(cast112*val128)+(cast113*val132)+(cast114*val136)+(cast115*val140));
+      }
+    }
+  }
+}"""
+
+entry = """typedef union { struct { void *pv; unsigned int len; } buf; struct { int fd; unsigned int offset; } dma; } remote_arg;
+void* HAP_mmap(void *addr, int len, int prot, int flags, int fd, long offset);
+int HAP_munmap(void *addr, int len);
+int HAP_mmap_get(int fd, void **vaddr, void **paddr);
+int HAP_mmap_put(int fd);
+unsigned long long HAP_perf_get_time_us(void);
+int entry(unsigned long long handle, unsigned int sc, remote_arg* pra) {
+if ((sc>>24) != 2) return 0;
+
+unsigned long long start = HAP_perf_get_time_us();
+for (int i = 0; i < 50; i++) {
+  void* buf = HAP_mmap(0, 1, 3, 0, pra[2].dma.fd, 0);
+  HAP_munmap(buf, 1);
+}
+*(unsigned long long *)(pra[1].buf.pv) = HAP_perf_get_time_us() - start;
+
+return 0; }
+"""
+
+if __name__ == "__main__":
+  dev = DSPDevice()
+
+  bufs = [dev.allocator.alloc(0x60000) for _ in range(4)]
+
+  only_entry = dev.compiler.compile(entry)
+  app1 = dev.runtime("test", only_entry)
+  x = app1(*bufs)
+
+  entry_n_unsued_code = dev.compiler.compile(kernel + "\n" + entry)
+  app2 = dev.runtime("test", entry_n_unsued_code)
+  x = app2(*bufs)

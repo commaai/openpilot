@@ -1,0 +1,20 @@
+BO_ 662 SCM_BUTTONS: 4 SCM
+ SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
+ SG_ CRUISE_SETTING : 3|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 29|2@0+ (1,0) [0|3] "" EON
+
+BO_ 806 SCM_FEEDBACK: 8 SCM
+ SG_ DRIVERS_DOOR_OPEN : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ REVERSE_LIGHT : 18|1@0+ (1,0) [0|1] "" EON
+ SG_ CMBS_BUTTON : 22|2@0+ (1,0) [0|3] "" EON
+ SG_ LEFT_BLINKER : 26|1@0+ (1,0) [0|1] "" EON
+ SG_ RIGHT_BLINKER : 27|1@0+ (1,0) [0|1] "" EON
+ SG_ MAIN_ON : 28|1@0+ (1,0) [0|1] "" EON
+ SG_ PARKING_BRAKE_ON : 29|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
+VAL_ 806 CMBS_BUTTON 3 "pressed" 0 "released" ;
