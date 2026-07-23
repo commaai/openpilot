@@ -24,8 +24,11 @@ class UIParams:
   lidar_x, lidar_y, lidar_zoom = 384, 960, 6
   lidar_car_x, lidar_car_y = lidar_x / 2.0, lidar_y / 1.1
   car_hwidth = 1.7272 / 2 * lidar_zoom
-  car_front = 2.6924 * lidar_zoom
-  car_back = 1.8796 * lidar_zoom
+  # front of the drawn car = the radar "front of car" reference (RADAR_TO_CAMERA ahead of the camera
+  # origin), so a dRel=0 track lands on the front bumper. The rear fills out a nominal car length.
+  avg_car_length = 4.5
+  car_front = RADAR_TO_CAMERA * lidar_zoom
+  car_back = (avg_car_length - RADAR_TO_CAMERA) * lidar_zoom
   car_color = 110
 
 
@@ -167,7 +170,6 @@ def plot_model(m, img, calibration, top_down):
 
     x, y = lead.x[0], lead.y[0]
     x_std = lead.xStd[0]
-    x -= RADAR_TO_CAMERA
 
     _, py_top = to_topdown_pt(x + x_std, y)
     px, py_bottom = to_topdown_pt(x - x_std, y)
@@ -191,10 +193,16 @@ def plot_lead(rs, top_down):
     if not lead.present:
       continue
 
-    x = lead.dRel
+    x = lead.dRel + RADAR_TO_CAMERA
     px_left, py = to_topdown_pt(x, -10)
     px_right, _ = to_topdown_pt(x, 10)
     top_down[1][px_left:px_right, py] = find_color(top_down[0], RED)
+
+
+def _draw_radar_dot(lid_overlay, px, py):
+  # odd-size squares so the dot is centered exactly on (px, py), not offset half a pixel up-left
+  lid_overlay[px - 4 : px + 5, py - 4 : py + 5] = 0
+  lid_overlay[px - 2 : px + 3, py - 2 : py + 3] = 255
 
 
 def maybe_update_radar_points(lt, lid_overlay):
@@ -204,11 +212,10 @@ def maybe_update_radar_points(lt, lid_overlay):
     for track in lt:
       ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel]
   for pt in ar_pts.values():
-    # negative here since radar is left positive
-    px, py = to_topdown_pt(pt[0], -pt[1])
+    # negative y since radar is left positive
+    px, py = to_topdown_pt(pt[0] + RADAR_TO_CAMERA, -pt[1])
     if px != -1:
-      lid_overlay[px - 4 : px + 4, py - 4 : py + 4] = 0
-      lid_overlay[px - 2 : px + 2, py - 2 : py + 2] = 255
+      _draw_radar_dot(lid_overlay, px, py)
 
 
 def get_blank_lid_overlay(UP):
