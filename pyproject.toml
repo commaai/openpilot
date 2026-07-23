@@ -17,7 +17,6 @@ dependencies = [
   # core
   "scons",
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
-  "Cython",
   "numpy >=2.0",
 
   # vendored native dependencies
@@ -30,10 +29,6 @@ dependencies = [
   "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
 
-  # logging
-  "pyzmq",
-  "sentry-sdk",
-
   # athena
   "PyJWT[crypto]",
   "websocket_client",
@@ -42,16 +37,16 @@ dependencies = [
   "inputs",
 
   # these should be removed
+  "pyzmq",
+  "sentry-sdk",
   "setproctitle",
-
-  # logreader
-  "zstandard",
+  "jeepney",
+  "pillow",
+  "zstandard",  # this can go once we're on Python 3.14+
 
   # ui
   "comma-deps-raylib",
   "qrcode",
-  "jeepney",
-  "pillow",
 ]
 
 [project.optional-dependencies]
@@ -60,12 +55,14 @@ docs = [
 ]
 
 testing = [
-  "coverage",
-  "ty",
+  "coverage",   # line coverage
+  "ty",         # type checking
+  "ruff",       # linting
+  "codespell",  # spellcheck
+
+  # TODO: replace these with our own nice simple test runner
   "pytest",
   "pytest-xdist",
-  "ruff",
-  "codespell",
 ]
 
 dev = [
