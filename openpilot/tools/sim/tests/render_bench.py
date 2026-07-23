@@ -63,28 +63,28 @@ def measure():
     return {"id": "C", "pre_block_socket_index": 0, "length": length, "radius": length, "angle": angle, "dir": direction}
 
   ts = 60
-  config = dict(
-    use_render=False,
-    vehicle_config=dict(enable_reverse=False, render_vehicle=False, image_source="rgb_road"),
-    sensors={"rgb_road": (RGBCameraRoad, rw, rh)},
-    image_on_cuda=False,
-    image_observation=True,
-    interface_panel=[],
-    out_of_route_done=False,
-    on_continuous_line_done=False,
-    crash_vehicle_done=False,
-    crash_object_done=False,
-    traffic_density=0.0,
-    map_config=dict(type=MapGenerateMethod.PG_MAP_FILE, lane_num=2, lane_width=4.5,
-                    config=[None, straight(ts), curve(ts * 2, 90), straight(ts), curve(ts * 2, 90),
-                            straight(ts), curve(ts * 2, 90), straight(ts), curve(ts * 2, 90)]),
-    decision_repeat=1,
-    physics_world_step_size=0.05,
-    preload_models=False,
-    show_logo=False,
-    anisotropic_filtering=False,
-    show_terrain=not bool(os.environ.get("METADRIVE_NO_TERRAIN")),
-  )
+  config = {
+    "use_render": False,
+    "vehicle_config": {"enable_reverse": False, "render_vehicle": False, "image_source": "rgb_road"},
+    "sensors": {"rgb_road": (RGBCameraRoad, rw, rh)},
+    "image_on_cuda": False,
+    "image_observation": True,
+    "interface_panel": [],
+    "out_of_route_done": False,
+    "on_continuous_line_done": False,
+    "crash_vehicle_done": False,
+    "crash_object_done": False,
+    "traffic_density": 0.0,
+    "map_config": {"type": MapGenerateMethod.PG_MAP_FILE, "lane_num": 2, "lane_width": 4.5,
+                    "config": [None, straight(ts), curve(ts * 2, 90), straight(ts), curve(ts * 2, 90),
+                            straight(ts), curve(ts * 2, 90), straight(ts), curve(ts * 2, 90)]},
+    "decision_repeat": 1,
+    "physics_world_step_size": 0.05,
+    "preload_models": False,
+    "show_logo": False,
+    "anisotropic_filtering": False,
+    "show_terrain": not bool(os.environ.get("METADRIVE_NO_TERRAIN")),
+  }
 
   env = MetaDriveEnv(config)
   env.reset()
