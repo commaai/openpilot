@@ -812,7 +812,6 @@ requires-dist = [
     { name = "libusb-package" },
     { name = "libusb1" },
     { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=master" },
-    { name = "pycryptodome", marker = "extra == 'dev'", specifier = ">=3.9.8" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-mock", marker = "extra == 'dev'" },
     { name = "pytest-timeout", marker = "extra == 'dev'" },
