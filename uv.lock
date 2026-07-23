@@ -114,16 +114,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-bzip2"
-version = "1.0.8.post95"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/ac/539d76e9bcebbc53d62274a19c47522b118dce3261fc6baea045f93c98b6/comma_deps_bzip2-1.0.8.post95-py3-none-macosx_11_0_arm64.whl", hash = "sha256:be466743b7fc56fa18c2c389a46bdeb0fc885cf3cf39b779d748ce540609ebd5", size = 42832, upload-time = "2026-06-24T23:58:39.592Z" },
-    { url = "https://files.pythonhosted.org/packages/a1/fe/5206bd6d716022cea259c4878c6a1927ab3555f4caa48a74efaa83d8f418/comma_deps_bzip2-1.0.8.post95-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:7c015d720cc5462f87062b4482c54684de6a237b4edb60612c2f58721413682f", size = 38629, upload-time = "2026-06-24T23:58:40.496Z" },
-    { url = "https://files.pythonhosted.org/packages/39/0e/78218f9a645ad9d27000153795d6819b3b52ca62d882aa46a413e40887be/comma_deps_bzip2-1.0.8.post95-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:3188a197aaf3efbfac975193887c59600b91a3b4eb7f62cc975377133cd48834", size = 36271, upload-time = "2026-06-24T23:58:41.2Z" },
-]
-
-[[package]]
 name = "comma-deps-capnproto"
 version = "1.0.1.post93"
 source = { registry = "https://pypi.org/simple" }
@@ -720,7 +710,6 @@ testing = [
 ]
 tools = [
     { name = "comma-deps-bootstrap-icons" },
-    { name = "comma-deps-bzip2" },
     { name = "comma-deps-imgui" },
     { name = "comma-deps-libusb" },
     { name = "comma-deps-ncurses" },
@@ -736,7 +725,6 @@ requires-dist = [
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "comma-deps-acados" },
     { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
-    { name = "comma-deps-bzip2", marker = "extra == 'tools'" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },

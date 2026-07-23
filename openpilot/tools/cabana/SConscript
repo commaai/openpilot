@@ -73,7 +73,7 @@ cabana_env = qt_env.Clone()
 cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR]
 cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
-cabana_libs = [cereal, messaging, visionipc, replay_lib] + ffmpeg_libs + ['bz2', 'zstd', 'usb-1.0'] + base_libs
+cabana_libs = [cereal, messaging, visionipc, replay_lib] + ffmpeg_libs + ['usb-1.0'] + base_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
