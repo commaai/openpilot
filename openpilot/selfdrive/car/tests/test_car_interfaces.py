@@ -1,8 +1,7 @@
 import os
-
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
-from openpilot.common.fuzzy import Fuzzy, capnp_random_dict, fuzzy_test
+from openpilot.common.fuzzy import capnp_random_dict, fuzzy_test
 
 from opendbc.car.structs import car
 from opendbc.car import DT_CTRL
@@ -25,25 +24,21 @@ ALL_REQUESTS = tuple(sorted({tuple(request.request) for config in FW_QUERY_CONFI
 DLC_TO_LEN = (0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64)
 
 
-def get_fuzzy_car_interface(car_name: str, fuzzy: Fuzzy):
-  fingerprint = fuzzy.dictionary(lambda: fuzzy.integer(0, 0x800), lambda: fuzzy.choice(DLC_TO_LEN))
-  fingerprints = dict.fromkeys(range(7), fingerprint)
-
-  def generate_car_fw():
-    ecu, address, sub_address = fuzzy.choice(ALL_ECUS)
-    return CarParams.CarFw(ecu=ecu, address=address, subAddress=sub_address or 0, request=fuzzy.choice(ALL_REQUESTS))
-
-  car_fw = fuzzy.list(generate_car_fw)
-  CarInterface = interfaces[car_name]
-  car_params = CarInterface.get_params(car_name, fingerprints, car_fw, alpha_long=fuzzy.boolean(), is_release=False, docs=False)
-  return CarInterface(car_params)
-
-
 class TestCarInterfaces(OpenpilotTestCase):
   @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK])
   @fuzzy_test(max_examples=MAX_EXAMPLES)
   def test_car_interfaces(self, car_name, fuzzy):
-    car_interface = get_fuzzy_car_interface(car_name, fuzzy)
+    fingerprint = dict(fuzzy.list(lambda: (fuzzy.integer(0, 0x800), fuzzy.choice(DLC_TO_LEN))))
+    fingerprints = dict.fromkeys(range(7), fingerprint)
+
+    def generate_car_fw():
+      ecu, address, sub_address = fuzzy.choice(ALL_ECUS)
+      return CarParams.CarFw(ecu=ecu, address=address, subAddress=sub_address or 0, request=fuzzy.choice(ALL_REQUESTS))
+
+    CarInterface = interfaces[car_name]
+    car_params = CarInterface.get_params(car_name, fingerprints, fuzzy.list(generate_car_fw),
+                                         alpha_long=fuzzy.boolean(), is_release=False, docs=False)
+    car_interface = CarInterface(car_params)
     car_params = car_interface.CP.as_reader()
 
     cc_msg = capnp_random_dict(fuzzy, car.CarControl.schema, real_floats=True)

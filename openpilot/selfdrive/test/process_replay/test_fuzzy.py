@@ -24,7 +24,7 @@ class TestFuzzProcesses(OpenpilotTestCase):
   def test_fuzz_process(self, proc_name, cfg, fuzzy):
     msgs = [capnp_random_dict(fuzzy, log.Event.schema, event, real_floats=True) for event in sorted(cfg.pubs)]
     for i, msg in enumerate(msgs):
-      msg["logMonoTime"] = i * int(1e9)
+      msg["logMonoTime"] = i * 1_000_000_000
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5
-    pr.replay_process(cfg, lr, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2, disable_progress=True, disable_migrations=True)
+    pr.replay_process(cfg, lr, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2, disable_progress=True)

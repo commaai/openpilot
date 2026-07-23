@@ -1,4 +1,3 @@
-import hashlib
 import math
 import os
 import random
@@ -11,7 +10,6 @@ from typing import Any, TypeVar
 import capnp
 
 
-R = TypeVar("R")
 T = TypeVar("T")
 
 _EDGE_SLOTS = 16
@@ -27,22 +25,15 @@ _INTEGER_RANGES = {
   "uint64": (0, 2**64 - 1),
 }
 
-
-def _env_int(name: str, default: int) -> int:
-  value = os.environ.get(name)
-  return default if value is None else int(value, 0)
-
-
 # One seed is shared by the whole test process. Individual tests derive their seed
 # from their unittest ID, so FUZZ_SEED is reproducible under pytest-xdist too.
-FUZZ_SEED = _env_int("FUZZ_SEED", secrets.randbits(64))
+FUZZ_SEED = int(os.environ["FUZZ_SEED"], 0) if "FUZZ_SEED" in os.environ else secrets.randbits(64)
 
 
 class Fuzzy:
   """Fast, deterministic data generator with systematic boundary coverage."""
 
-  def __init__(self, seed: int, example_index: int = 0):
-    self.seed = seed
+  def __init__(self, seed: int | str, example_index: int):
     self.example_index = example_index
     self._random = random.Random(seed)
     self._draw_index = 0
@@ -68,14 +59,7 @@ class Fuzzy:
   def choice(self, values: Sequence[T]) -> T:
     if not values:
       raise ValueError("cannot choose from an empty sequence")
-    draw_index = self._draw_index
-    self._draw_index += 1
-    if self.example_index < _MINIMAL_EXAMPLES:
-      return values[0]
-    search_example = self.example_index - _MINIMAL_EXAMPLES
-    if search_example < _EDGE_SLOTS * 2 and search_example % 2 == 0:
-      return values[(search_example // 2 + draw_index) % len(values)]
-    return self._random.choice(values)
+    return self._draw(values, lambda: self._random.choice(values))
 
   def integer(self, min_value: int, max_value: int) -> int:
     if min_value > max_value:
@@ -138,17 +122,6 @@ class Fuzzy:
 
     offsets = (0, 1, 2, 4, 8, 16, 32)
     edges = tuple(min_length + offset for offset in offsets if max_length is None or min_length + offset <= max_length)
-    draw_index = self._draw_index
-    self._draw_index += 1
-
-    # Start with minimal collections. This keeps the cheap, structurally simple
-    # cases that Hypothesis generated first, then expands collection shapes
-    # without constraining the eventual search space.
-    if self.example_index < _MINIMAL_EXAMPLES:
-      return min_length
-    collection_example = self.example_index - _MINIMAL_EXAMPLES
-    if collection_example < _EDGE_SLOTS * 2 and collection_example % 2 == 0:
-      return edges[(collection_example // 2 + draw_index) % len(edges)]
 
     def random_length() -> int:
       # A geometric tail keeps ordinary examples small without placing an
@@ -160,9 +133,7 @@ class Fuzzy:
         length += 1
       return length
 
-    if self._random.randrange(4) == 0:
-      return self._random.choice(edges)
-    return random_length()
+    return self._draw(edges, random_length)
 
   def binary(self, min_size: int = 0, max_size: int | None = None) -> bytes:
     size = self._length(min_size, max_size)
@@ -195,48 +166,27 @@ class Fuzzy:
   def list(self, generate: Callable[[], T], min_size: int = 0, max_size: int | None = None) -> list[T]:
     return [generate() for _ in range(self._length(min_size, max_size))]
 
-  def dictionary(self, generate_key: Callable[[], T], generate_value: Callable[[], R],
-                 min_size: int = 0, max_size: int | None = None) -> dict[T, R]:
-    target_size = self._length(min_size, max_size)
-    result = {}
-    attempts = 0
-    max_attempts = max(10, target_size * 10)
-    while len(result) < target_size and attempts < max_attempts:
-      result[generate_key()] = generate_value()
-      attempts += 1
-    return result
 
-
-def _test_seed(test_id: str) -> int:
-  digest = hashlib.blake2b(f"{FUZZ_SEED}:{test_id}".encode(), digest_size=8).digest()
-  return int.from_bytes(digest)
-
-
-def fuzzy_test(max_examples: int) -> Callable[[Callable[..., R]], Callable[..., R | None]]:
+def fuzzy_test(max_examples: int) -> Callable[[Callable[..., None]], Callable[..., None]]:
   """Run a unittest method repeatedly with independent, reproducible fuzzy data."""
   if max_examples < 1:
     raise ValueError("max_examples must be positive")
 
-  def decorator(fn: Callable[..., R]) -> Callable[..., R | None]:
+  def decorator(fn: Callable[..., None]) -> Callable[..., None]:
     @wraps(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> R | None:
-      test_case = args[0] if args else None
-      test_id = test_case.id() if callable(getattr(test_case, "id", None)) else f"{fn.__module__}.{fn.__qualname__}"
-      seed = _test_seed(test_id)
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+      test_seed = f"{FUZZ_SEED}:{args[0].id()}"
       selected_example = os.environ.get("FUZZ_EXAMPLE")
       examples = [int(selected_example, 0)] if selected_example is not None else range(max_examples)
 
-      result = None
       for example_index in examples:
         if not 0 <= example_index < max_examples:
           raise ValueError(f"FUZZ_EXAMPLE={example_index} is outside [0, {max_examples})")
-        example_seed = seed ^ (example_index * 0x9e3779b97f4a7c15)
         try:
-          result = fn(*args, **kwargs, fuzzy=Fuzzy(example_seed, example_index))
+          fn(*args, **kwargs, fuzzy=Fuzzy(f"{test_seed}:{example_index}", example_index))
         except Exception as exc:
           exc.add_note(f"reproduce with FUZZ_SEED={FUZZ_SEED} FUZZ_EXAMPLE={example_index}")
           raise
-      return result
 
     return wrapper
   return decorator
