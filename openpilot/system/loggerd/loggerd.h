@@ -14,7 +14,13 @@
 #include "system/loggerd/logger.h"
 
 constexpr int MAIN_FPS = 20;
-const auto MAIN_ENCODE_TYPE = Hardware::PC() ? cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS : cereal::EncodeIndex::Type::FULL_H_E_V_C;
+const bool DASHCAM_MODE = getenv("DASHCAM") != nullptr;
+// Generic hosts default to lossless FFVHUFF for development. That is much too
+// large for an embedded recorder, so the CM5 runtime uses software H.264 for
+// both the full-resolution road stream and qcamera stream.
+const auto MAIN_ENCODE_TYPE = DASHCAM_MODE ? cereal::EncodeIndex::Type::FULL_H264
+                                           : (Hardware::PC() ? cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS
+                                                             : cereal::EncodeIndex::Type::FULL_H_E_V_C);
 #define NO_CAMERA_PATIENCE 500  // fall back to time-based rotation if all cameras are dead
 
 #define INIT_ENCODE_FUNCTIONS(encode_type)                                \
@@ -35,10 +41,11 @@ struct EncoderSettings {
   int b_frames = 0; // we don't use b frames
 
   static EncoderSettings MainEncoderSettings(int in_width) {
+    const int dashcam_bitrate = getenv("DASHCAM_MAIN_BITRATE") ? atoi(getenv("DASHCAM_MAIN_BITRATE")) : 5'000'000;
     if (in_width <= 1344) {
-      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = 5'000'000, .gop_size = 20};
+      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = DASHCAM_MODE ? dashcam_bitrate : 5'000'000, .gop_size = 20};
     } else {
-      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = 10'000'000, .gop_size = 30};
+      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = DASHCAM_MODE ? dashcam_bitrate : 10'000'000, .gop_size = 30};
     }
   }
 

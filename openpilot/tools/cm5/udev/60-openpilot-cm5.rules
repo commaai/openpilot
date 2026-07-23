@@ -1,0 +1,7 @@
+# Panda application and bootstub USB identifiers. DFU/flashing access is
+# intentionally not granted to the recorder service. Assignments are final so
+# later development rules cannot restore world-write access.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcc", GROUP:="openpilot-dashcam", MODE:="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddee", GROUP:="openpilot-dashcam", MODE:="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", GROUP:="openpilot-dashcam", MODE:="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", GROUP:="openpilot-dashcam", MODE:="0660"

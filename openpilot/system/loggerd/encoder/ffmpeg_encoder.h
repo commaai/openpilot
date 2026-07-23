@@ -27,6 +27,7 @@ public:
 private:
   int segment_num = -1;
   int counter = 0;
+  int input_counter = 0;
   bool is_open = false;
 
   AVCodecContext *codec_ctx;

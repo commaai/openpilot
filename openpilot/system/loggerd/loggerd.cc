@@ -12,6 +12,14 @@
 #include "system/loggerd/video_writer.h"
 
 ExitHandler do_exit;
+std::atomic<bool> dashcam_runtime_fault = false;
+
+void handle_dashcam_runtime_fault(int) {
+  dashcam_runtime_fault = true;
+  do_exit = true;
+}
+
+constexpr double PANDA_STATE_MAX_GAP_MS = 2000.0;
 
 struct LoggerdState {
   LoggerState logger;
@@ -19,13 +27,47 @@ struct LoggerdState {
   std::atomic<int> ready_to_rotate{0};  // count of encoders ready to rotate
   int max_waiting = 0;
   double last_rotate_tms = 0.;      // last rotate time in ms
+  double last_panda_state_tms = 0.;
+  bool panda_state_seen = false;
+  bool panda_state_continuous = true;
+  bool panda_state_safe = true;
+  bool can_seen = false;
 };
 
-void logger_rotate(LoggerdState *s) {
-  bool ret =s->logger.next();
+bool panda_recording_complete(const LoggerdState *s) {
+  return s->can_seen && s->panda_state_seen && s->panda_state_continuous && s->panda_state_safe &&
+         (millis_since_boot() - s->last_panda_state_tms) <= PANDA_STATE_MAX_GAP_MS;
+}
+
+bool panda_state_is_receive_only(cereal::Event::Reader event) {
+  const auto panda_states = event.getPandaStates();
+  if (panda_states.size() != 1) return false;
+
+  const auto state = panda_states[0];
+  if (state.getPandaType() != cereal::PandaState::PandaType::RED_PANDA ||
+      state.getSafetyModel() != cereal::CarParams::SafetyModel::SILENT || state.getControlsAllowed() ||
+      state.getRxBufferOverflow() != 0) {
+    return false;
+  }
+
+  const auto can_state_is_receive_only = [](cereal::PandaState::PandaCanState::Reader can_state) {
+    return can_state.getTotalTxCnt() == 0 && can_state.getTotalFwdCnt() == 0 && can_state.getTotalRxLostCnt() == 0;
+  };
+  return can_state_is_receive_only(state.getCanState0()) &&
+         can_state_is_receive_only(state.getCanState1()) &&
+         can_state_is_receive_only(state.getCanState2());
+}
+
+void logger_rotate(LoggerdState *s, bool previous_segment_complete = true) {
+  bool ret = s->logger.next(previous_segment_complete);
   assert(ret);
   s->ready_to_rotate = 0;
   s->last_rotate_tms = millis_since_boot();
+  s->last_panda_state_tms = 0.;
+  s->panda_state_seen = false;
+  s->panda_state_continuous = true;
+  s->panda_state_safe = true;
+  s->can_seen = false;
   LOGW((s->logger.segment() == 0) ? "logging to %s" : "rotated to %s", s->logger.segmentPath().c_str());
 }
 
@@ -49,7 +91,10 @@ void rotate_if_needed(LoggerdState *s) {
   }
 
   if (all_ready || timed_out) {
-    logger_rotate(s);
+    // Keep the route-level lock unless both encoders and the passive Panda data
+    // path stayed healthy throughout the old segment.
+    const bool panda_complete = getenv("DASHCAM") == nullptr || panda_recording_complete(s);
+    logger_rotate(s, all_ready && panda_complete);
   }
 }
 
@@ -218,6 +263,8 @@ void handle_preserve_segment(LoggerdState *s) {
 }
 
 void loggerd_thread() {
+  const bool dashcam = getenv("DASHCAM") != nullptr;
+
   // setup messaging
   struct ServiceState {
     std::string name;
@@ -260,6 +307,9 @@ void loggerd_thread() {
   std::map<std::string, EncoderInfo> encoder_infos_dict;
   std::vector<RemoteEncoder*> encoders_with_audio;
   for (const auto &cam : cameras_logged) {
+    // The CM5 baseline exposes only the road stream. Count only its main and
+    // qcamera encoders so loggerd rotates in lockstep with encoderd at 60 s.
+    if (dashcam && cam.stream_type != VISION_STREAM_ROAD) continue;
     for (const auto &encoder_info : cam.encoder_infos) {
       encoder_infos_dict[encoder_info.publish_name] = encoder_info;
       s.max_waiting++;
@@ -290,6 +340,19 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
+
+        if (dashcam && service.name == "pandaStates") {
+          const double now = millis_since_boot();
+          const double previous = s.panda_state_seen ? s.last_panda_state_tms : s.last_rotate_tms;
+          if ((now - previous) > PANDA_STATE_MAX_GAP_MS) s.panda_state_continuous = false;
+          capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
+          if (!panda_state_is_receive_only(cmsg.getRoot<cereal::Event>())) s.panda_state_safe = false;
+          s.panda_state_seen = true;
+          s.last_panda_state_tms = now;
+        } else if (dashcam && service.name == "can") {
+          // The dedicated USB publisher suppresses empty CAN batches.
+          s.can_seen = true;
+        }
 
         if (service.record_audio) {
           capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
@@ -330,10 +393,52 @@ void loggerd_thread() {
   }
 
   LOGW("closing logger");
+  if (dashcam_runtime_fault && !s.logger.mark_previous_segment_incomplete()) {
+    LOGE("failed to re-lock previous segment after dashcam runtime fault");
+  }
+  // Snapshot input health before potentially slow video trailer/fsync work.
+  const bool panda_complete = !dashcam || panda_recording_complete(&s);
+
+  // Finalize and durably close every video before declaring the segment logs
+  // complete. Any failed video finalization deliberately leaves its .lock.
+  size_t expected_video_writers = 0;
+  size_t finalized_video_writers = 0;
+  if (dashcam) {
+    for (const auto &[sock, service] : service_state) {
+      auto encoder_info = encoder_infos_dict.find(service.name);
+      if (encoder_info == encoder_infos_dict.end() || !encoder_info->second.record) continue;
+
+      ++expected_video_writers;
+      auto encoder = remote_encoders.find(sock);
+      if (encoder != remote_encoders.end() && encoder->second.current_segment == s.logger.segment() &&
+          encoder->second.writer && encoder->second.writer->close()) {
+        ++finalized_video_writers;
+      }
+    }
+  }
+  for (auto &[sock, encoder] : remote_encoders) {
+    encoder.writer.reset();
+  }
+  const bool videos_complete = !dashcam || (expected_video_writers > 0 && finalized_video_writers == expected_video_writers);
+  if (!videos_complete) {
+    LOGE("keeping route lock: finalized %zu/%zu expected video writers", finalized_video_writers, expected_video_writers);
+  }
+  if (!panda_complete) {
+    LOGE("keeping route lock: CAN/Panda health was missing, discontinuous, or not receive-only");
+  }
+  const bool segment_complete = videos_complete && panda_complete;
+  if (dashcam_runtime_fault) {
+    LOGE("keeping route lock: dashcam supervisor reported a runtime fault");
+  }
+  // Read the exit signal after potentially slow video finalization so a late
+  // SIGPWR upgrade is reflected in the ending sentinel.
   s.logger.setExitSignal(do_exit.signal);
+  s.logger.close(dashcam || do_exit.power_failure, segment_complete && !dashcam_runtime_fault);
 
   if (do_exit.power_failure) {
     LOGE("power failure");
+    // Logger and video writers have already emitted their final sentinel or
+    // trailer and fsync'd. This final sync covers the remaining system state.
     sync();
     LOGE("sync done");
   }
@@ -343,6 +448,7 @@ void loggerd_thread() {
 }
 
 int main(int argc, char** argv) {
+  std::signal(SIGUSR1, handle_dashcam_runtime_fault);
   if (!Hardware::PC()) {
     int ret;
     ret = util::set_core_affinity({0, 1, 2, 3});

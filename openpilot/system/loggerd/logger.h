@@ -17,7 +17,9 @@ class LoggerState {
 public:
   LoggerState(const std::string& log_root = Path::log_root());
   ~LoggerState();
-  bool next();
+  bool next(bool previous_segment_complete = true);
+  void close(bool durable = false, bool unlock = true);
+  bool mark_previous_segment_incomplete();
   void write(uint8_t* data, size_t size, bool in_qlog);
   inline int segment() const { return part; }
   inline const std::string& segmentPath() const { return segment_path; }
@@ -26,6 +28,8 @@ public:
   inline void setExitSignal(int signal) { exit_signal = signal; }
 
 protected:
+  void close_segment(SentinelType sentinel_type, bool durable, bool unlock);
+
   int part = -1, exit_signal = 0;
   std::string route_path, route_name, segment_path, lock_file;
   kj::Array<capnp::word> init_data;

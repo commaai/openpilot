@@ -1,0 +1,57 @@
+[Unit]
+Description=openpilot CM5 passive camera and CAN recorder
+After=local-fs.target
+RequiresMountsFor=/mnt/dashcam
+# Keep retrying when camera/Panda enumeration is delayed during boot.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=openpilot-dashcam
+Group=openpilot-dashcam
+SupplementaryGroups=video
+WorkingDirectory=/opt/openpilot-cm5
+EnvironmentFile=/etc/default/openpilot-cm5-dashcam
+Environment=CAMERA=/dev/video0
+Environment=ENCODER_PRESET=ultrafast
+Environment=MAIN_BITRATE=5000000
+Environment=MIN_FREE_GB=10
+Environment=MIN_FREE_PERCENT=10
+Environment=CAN_SPEEDS=500,500,500
+Environment=CAN_DATA_SPEEDS=2000,2000,2000
+Environment=CANFD_NON_ISO_BUSES=none
+Environment=REQUIRED_CAN_BUSES=none
+Environment=CAN_STALE_TIMEOUT=5
+Environment=WATCHDOG_STARTUP_TIMEOUT=30
+Environment=WATCHDOG_STALE_TIMEOUT=5
+ExecStartPre=/usr/bin/mountpoint --quiet /mnt/dashcam
+ExecStart=/opt/openpilot-cm5/.venv/bin/python -m openpilot.system.manager.dashcam --camera ${CAMERA} --log-root /mnt/dashcam/realdata --params-root /var/lib/openpilot-cm5/params --require-mount /mnt/dashcam --encoder-preset ${ENCODER_PRESET} --main-bitrate ${MAIN_BITRATE} --min-free-gb ${MIN_FREE_GB} --min-free-percent ${MIN_FREE_PERCENT} --can-speeds ${CAN_SPEEDS} --can-data-speeds ${CAN_DATA_SPEEDS} --canfd-non-iso-buses ${CANFD_NON_ISO_BUSES} --required-can-buses ${REQUIRED_CAN_BUSES} --can-stale-timeout ${CAN_STALE_TIMEOUT} --watchdog-startup-timeout ${WATCHDOG_STARTUP_TIMEOUT} --watchdog-stale-timeout ${WATCHDOG_STALE_TIMEOUT}
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+# Use the recorder's durable power-failure path for every managed stop. A hard
+# power cut still requires an automotive supply/UPS with sufficient hold-up.
+KillSignal=SIGPWR
+TimeoutStopSec=60
+UMask=0027
+
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+# msgq uses Unix sockets; libusb may use netlink for USB hotplug/enumeration.
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+RestrictRealtime=true
+LockPersonality=true
+ReadWritePaths=/mnt/dashcam /var/lib/openpilot-cm5
+
+[Install]
+WantedBy=multi-user.target

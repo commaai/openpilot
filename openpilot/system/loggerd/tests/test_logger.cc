@@ -1,5 +1,6 @@
 #include "catch2/catch.hpp"
 #include "system/loggerd/logger.h"
+#include "system/loggerd/video_writer.h"
 
 typedef cereal::Sentinel::SentinelType SentinelType;
 
@@ -56,7 +57,7 @@ void write_msg(LoggerState *logger) {
 TEST_CASE("logger") {
   const int segment_cnt = 100;
   const std::string log_root = "/tmp/test_logger";
-  REQUIRE(system(("rm " + log_root + " -rf").c_str()) == 0);
+  REQUIRE(system(("rm -rf " + log_root).c_str()) == 0);
   std::string route_name;
   {
     LoggerState logger(log_root);
@@ -72,4 +73,40 @@ TEST_CASE("logger") {
   for (int i = 0; i < segment_cnt; ++i) {
     verify_segment(log_root + "/" + route_name, i, segment_cnt, 1);
   }
+}
+
+TEST_CASE("mark previous segment incomplete restores completion lock") {
+  const std::string log_root = "/tmp/test_logger_previous_segment_incomplete";
+  REQUIRE(system(("rm -rf " + log_root).c_str()) == 0);
+  std::string previous_segment_path;
+  {
+    LoggerState logger(log_root);
+    REQUIRE(logger.next());
+    previous_segment_path = logger.segmentPath();
+    write_msg(&logger);
+
+    REQUIRE(logger.next());
+    REQUIRE(!util::file_exists(previous_segment_path + "/rlog.lock"));
+    REQUIRE(util::file_exists(logger.segmentPath() + "/rlog.lock"));
+
+    REQUIRE(logger.mark_previous_segment_incomplete());
+    REQUIRE(util::file_exists(previous_segment_path + "/rlog.lock"));
+  }
+
+  REQUIRE(util::file_exists(previous_segment_path + "/rlog.lock"));
+  REQUIRE(system(("rm -rf " + log_root).c_str()) == 0);
+}
+
+TEST_CASE("empty video keeps completion lock") {
+  const std::string path = "/tmp/test_empty_video_writer";
+  REQUIRE(system(("rm -rf " + path).c_str()) == 0);
+  REQUIRE(util::create_directories(path, 0775));
+
+  {
+    VideoWriter writer(path.c_str(), "empty.hevc", false, 64, 64, 20, cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    REQUIRE(!writer.close());
+    REQUIRE(util::file_exists(path + "/empty.hevc.lock"));
+  }
+
+  REQUIRE(system(("rm -rf " + path).c_str()) == 0);
 }

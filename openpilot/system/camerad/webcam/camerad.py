@@ -16,13 +16,20 @@ DRIVER_CAM = os.getenv("DRIVER_CAM")
 
 CameraType = namedtuple("CameraType", ["msg_name", "stream_type", "cam_id"])
 
-CAMERAS = [
-  CameraType("roadCameraState", VisionStreamType.VISION_STREAM_ROAD, ROAD_CAM)
-]
+CAMERAS = [CameraType("roadCameraState", VisionStreamType.VISION_STREAM_ROAD, ROAD_CAM)]
 if WIDE_CAM:
   CAMERAS.append(CameraType("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD, WIDE_CAM))
 if DRIVER_CAM:
   CAMERAS.append(CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, DRIVER_CAM))
+
+
+def camera_device(camera_id: str, system: str | None = None):
+  value = str(camera_id)
+  system = platform.system() if system is None else system
+  if system != "Darwin" and value.isdecimal():
+    return f"/dev/video{value}"
+  return camera_id
+
 
 class Camerad:
   def __init__(self):
@@ -31,30 +38,23 @@ class Camerad:
 
     self.cameras = []
     for c in CAMERAS:
-      cam_device = f"/dev/video{c.cam_id}" if platform.system() != "Darwin" else c.cam_id
-      cam = Camera(c.msg_name, c.stream_type, cam_device)
+      cam = Camera(c.msg_name, c.stream_type, camera_device(c.cam_id))
       self.cameras.append(cam)
       self.vipc_server.create_buffers(c.stream_type, 20, cam.W, cam.H)
 
     self.vipc_server.start_listener()
 
-  def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
-    eof = int(frame_id * 0.05 * 1e9)
-    self.vipc_server.send(yuv_type, yuv, frame_id, eof, eof)
+  def _send_yuv(self, yuv, frame_id, pub_type, yuv_type, timestamp_sof, timestamp_eof):
+    self.vipc_server.send(yuv_type, yuv, frame_id, timestamp_sof, timestamp_eof)
     dat = messaging.new_message(pub_type, valid=True)
-    msg = {
-      "frameId": frame_id,
-      "transform": [1.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0,
-                    0.0, 0.0, 1.0]
-    }
+    msg = {"frameId": frame_id, "timestampSof": timestamp_sof, "timestampEof": timestamp_eof, "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]}
     setattr(dat, pub_type, msg)
     self.pm.send(pub_type, dat)
 
   def camera_runner(self, cam):
     rk = Ratekeeper(20, None)
-    for yuv in cam.read_frames():
-      self._send_yuv(yuv, cam.cur_frame_id, cam.cam_type_state, cam.stream_type)
+    for yuv, timestamp_sof, timestamp_eof in cam.read_frames():
+      self._send_yuv(yuv, cam.cur_frame_id, cam.cam_type_state, cam.stream_type, timestamp_sof, timestamp_eof)
       cam.cur_frame_id += 1
       rk.keep_time()
 

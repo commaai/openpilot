@@ -33,16 +33,18 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
 
 struct DecoderManager {
   VideoDecoder *acquire(CameraType type, AVCodecParameters *codecpar, bool hw_decoder) {
-    auto key = std::tuple(type, codecpar->width, codecpar->height);
+    auto key = std::tuple(type, codecpar->width, codecpar->height, codecpar->codec_id, hw_decoder);
     std::unique_lock lock(mutex_);
     if (auto it = decoders_.find(key); it != decoders_.end()) {
       return it->second.get();
     }
 
     std::unique_ptr<VideoDecoder> decoder;
+    bool tried_qcom = false;
     #ifndef __APPLE__
-    if (!Hardware::PC() && hw_decoder) {
+    if (!Hardware::PC() && hw_decoder && codecpar->codec_id == AV_CODEC_ID_HEVC) {
       decoder = std::make_unique<QcomVideoDecoder>();
+      tried_qcom = true;
     } else
     #endif
     {
@@ -50,14 +52,19 @@ struct DecoderManager {
     }
 
     if (!decoder->open(codecpar, hw_decoder)) {
-      decoder.reset(nullptr);
+      if (tried_qcom) {
+        decoder = std::make_unique<FFmpegVideoDecoder>();
+        if (!decoder->open(codecpar, false)) decoder.reset(nullptr);
+      } else {
+        decoder.reset(nullptr);
+      }
     }
     decoders_[key] = std::move(decoder);
     return decoders_[key].get();
   }
 
   std::mutex mutex_;
-  std::map<std::tuple<CameraType, int, int>, std::unique_ptr<VideoDecoder>> decoders_;
+  std::map<std::tuple<CameraType, int, int, AVCodecID, bool>, std::unique_ptr<VideoDecoder>> decoders_;
 };
 
 DecoderManager decoder_manager;

@@ -15,6 +15,7 @@ public:
   VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec);
   void write(uint8_t *data, int len, long long timestamp, bool codecconfig, bool keyframe);
   void write_audio(uint8_t *data, int len, long long timestamp, int sample_rate);
+  bool close();
 
   ~VideoWriter();
 
@@ -32,6 +33,10 @@ private:
 
   bool audio_initialized = false;
   bool header_written = false;
+  bool wrote_video_packet = false;
+  bool write_failed = false;
+  bool closed = false;
+  bool finalized = false;
   AVStream *audio_stream = nullptr;
   AVCodecContext *audio_codec_ctx = nullptr;
   AVFrame *audio_frame = nullptr;

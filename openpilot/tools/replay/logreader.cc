@@ -88,7 +88,8 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort,
           evt.which == cereal::Event::DRIVER_ENCODE_IDX ||
           evt.which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
         auto idx = capnp::AnyStruct::Reader(event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-        if (idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+        if (idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C ||
+            idx.getType() == cereal::EncodeIndex::Type::FULL_H264) {
           uint64_t sof = idx.getTimestampSof();
           events.emplace_back(which, sof ? sof : mono_time, event_data, idx.getSegmentNum());
         }

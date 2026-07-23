@@ -1,5 +1,8 @@
 #include "system/loggerd/logger.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <fstream>
 #include <map>
 #include <vector>
@@ -10,6 +13,25 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/version.h"
+
+namespace {
+
+void sync_directory(const std::string &path) {
+  int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY | O_CLOEXEC));
+  assert(fd >= 0);
+  int result = HANDLE_EINTR(fsync(fd));
+  assert(result == 0);
+  result = HANDLE_EINTR(::close(fd));
+  assert(result == 0);
+}
+
+void sync_parent_directory(const std::string &path) {
+  const size_t separator = path.rfind('/');
+  assert(separator != std::string::npos);
+  sync_directory(path.substr(0, separator));
+}
+
+}  // namespace
 
 // ***** log metadata *****
 kj::Array<capnp::word> logger_build_init_data() {
@@ -47,7 +69,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setGitCommitDate(params_map["GitCommitDate"]);
   init.setGitBranch(params_map["GitBranch"]);
   init.setGitRemote(params_map["GitRemote"]);
-  init.setPassive(false);
+  init.setPassive(getenv("DASHCAM") != nullptr);
   init.setDongleId(params_map["DongleId"]);
 
   // for prebuilt branches
@@ -168,24 +190,64 @@ LoggerState::LoggerState(const std::string &log_root) {
 }
 
 LoggerState::~LoggerState() {
-  if (rlog) {
-    log_sentinel(this, SentinelType::END_OF_ROUTE, exit_signal);
-    std::remove(lock_file.c_str());
+  close(getenv("DASHCAM") != nullptr);
+}
+
+void LoggerState::close_segment(SentinelType sentinel_type, bool durable, bool unlock) {
+  if (!rlog) return;
+
+  log_sentinel(this, sentinel_type, sentinel_type == SentinelType::END_OF_ROUTE ? exit_signal : 0);
+  rlog->close(durable);
+  qlog->close(durable);
+  rlog.reset();
+  qlog.reset();
+
+  if (unlock) {
+    if (durable) sync_directory(segment_path);
+    int result = std::remove(lock_file.c_str());
+    assert(result == 0);
+    if (durable) sync_directory(segment_path);
   }
 }
 
-bool LoggerState::next() {
-  if (rlog) {
-    log_sentinel(this, SentinelType::END_OF_SEGMENT);
-    std::remove(lock_file.c_str());
-  }
+void LoggerState::close(bool durable, bool unlock) {
+  close_segment(SentinelType::END_OF_ROUTE, durable, unlock);
+}
+
+bool LoggerState::mark_previous_segment_incomplete() {
+  if (part <= 0) return true;
+
+  const std::string previous_path = route_path + "--" + std::to_string(part - 1);
+  const std::string previous_lock = previous_path + "/rlog.lock";
+  int lock_fd = HANDLE_EINTR(open(previous_lock.c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0664));
+  if (lock_fd < 0) return false;
+  int result = HANDLE_EINTR(fsync(lock_fd));
+  const bool synced = result == 0;
+  result = HANDLE_EINTR(::close(lock_fd));
+  if (result != 0) return false;
+  if (synced) sync_directory(previous_path);
+  return synced;
+}
+
+bool LoggerState::next(bool previous_segment_complete) {
+  const bool durable = getenv("DASHCAM") != nullptr;
+  close_segment(SentinelType::END_OF_SEGMENT, durable, previous_segment_complete);
 
   segment_path = route_path + "--" + std::to_string(++part);
   bool ret = util::create_directories(segment_path, 0775);
   assert(ret == true);
+  if (durable) sync_parent_directory(segment_path);
 
   lock_file = segment_path + "/rlog.lock";
-  std::ofstream{lock_file};
+  int lock_fd = HANDLE_EINTR(open(lock_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0664));
+  assert(lock_fd >= 0);
+  if (durable) {
+    int result = HANDLE_EINTR(fsync(lock_fd));
+    assert(result == 0);
+  }
+  int result = HANDLE_EINTR(::close(lock_fd));
+  assert(result == 0);
+  if (durable) sync_directory(segment_path);
 
   rlog.reset(new ZstdFileWriter(segment_path + "/rlog.zst", LOG_COMPRESSION_LEVEL));
   qlog.reset(new ZstdFileWriter(segment_path + "/qlog.zst", LOG_COMPRESSION_LEVEL));

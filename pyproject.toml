@@ -56,6 +56,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+dashcam = [
+  "av",
+  "opencv-python-headless",
+  "setuptools",  # Cython still imports distutils on Python 3.12
+]
+
 docs = [
   "zensical",
 ]

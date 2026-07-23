@@ -2,6 +2,7 @@ import numpy as np
 import os
 import re
 import random
+import signal
 import string
 import subprocess
 import time
@@ -23,13 +24,14 @@ from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_V
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.version import get_version
 from openpilot.tools.lib.helpers import RE
+from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.cm5.ffmpeg import executable
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 SentinelType = log.Sentinel.SentinelType
 
-CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in SERVICE_LIST
-                   and SERVICE_LIST[f].should_log and "encode" not in f.lower()]
+CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in SERVICE_LIST and SERVICE_LIST[f].should_log and "encode" not in f.lower()]
 
 
 class TestLoggerd:
@@ -104,7 +106,8 @@ class TestLoggerd:
 
     return sent_msgs
 
-  def _publish_camera_and_audio_messages(self, num_segs=1, segment_length=5):
+  def _publish_camera_and_audio_messages(self, num_segs=1, segment_length=5, publish_panda=True,
+                                         panda_receive_only=True, panda_receive_loss=False, logger_runtime_fault=False):
     # Use small frame sizes for testing (width, height, size, stride, uv_offset)
     # NV12 format: size = stride * height * 1.5, uv_offset = stride * height
     w, h = 320, 240
@@ -114,9 +117,15 @@ class TestLoggerd:
       (VisionStreamType.VISION_STREAM_DRIVER, frame_spec, "driverCameraState"),
       (VisionStreamType.VISION_STREAM_WIDE_ROAD, frame_spec, "wideRoadCameraState"),
     ]
+    dashcam = os.getenv("DASHCAM") is not None
+    if dashcam:
+      streams = streams[:1]
 
     sm = messaging.SubMaster(["roadEncodeData"])
-    pm = messaging.PubMaster([s for _, _, s in streams] + ["rawAudioData"])
+    publish_services = [s for _, _, s in streams] + ["rawAudioData"]
+    if dashcam:
+      publish_services += ["can", "pandaStates"]
+    pm = messaging.PubMaster(publish_services)
     vipc_server = VisionIpcServer("camerad")
     for stream_type, frame_spec, _ in streams:
       vipc_server.create_buffers_with_sizes(stream_type, 40, *(frame_spec))
@@ -142,22 +151,43 @@ class TestLoggerd:
 
       # send audio
       msg = messaging.new_message('rawAudioData')
-      msg.rawAudioData.data = bytes(800 * 2) # 800 samples of int16
+      msg.rawAudioData.data = bytes(800 * 2)  # 800 samples of int16
       msg.rawAudioData.sampleRate = 16000
       pm.send('rawAudioData', msg)
+
+      if dashcam:
+        can = messaging.new_message("can", 1)
+        can.can[0].address = 0x123
+        can.can[0].dat = b"\x01\x02"
+        can.can[0].src = 0
+        pm.send("can", can)
+
+        if publish_panda:
+          panda_states = messaging.new_message("pandaStates", 1)
+          panda_states.valid = True
+          panda_states.pandaStates[0].pandaType = "redPanda"
+          panda_states.pandaStates[0].safetyModel = "silent"
+          panda_states.pandaStates[0].controlsAllowed = False
+          if not panda_receive_only:
+            panda_states.pandaStates[0].canState0.totalTxCnt = 1
+          if panda_receive_loss:
+            panda_states.pandaStates[0].canState1.totalRxLostCnt = 1
+          pm.send("pandaStates", panda_states)
 
       for _, _, state in streams:
         assert pm.wait_for_readers_to_update(state, timeout=5, dt=0.001)
 
       sm.update(100)  # wait for encode data publish
 
+    if logger_runtime_fault:
+      managed_processes["loggerd"].signal(signal.SIGUSR1)
     managed_processes["loggerd"].stop()
     managed_processes["encoderd"].stop()
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
 
-    dongle  = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
+    dongle = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
     fake_params = [
       # param, initData field, value
       ("DongleId", "dongleId", dongle),
@@ -200,7 +230,7 @@ class TestLoggerd:
     expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
 
     num_segs = random.randint(2, 3)
-    length = random.randint(4, 5) # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
+    length = random.randint(4, 5)  # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
 
     self._publish_camera_and_audio_messages(num_segs=num_segs, segment_length=length)
 
@@ -210,6 +240,104 @@ class TestLoggerd:
       logged = {f.name for f in p.iterdir() if f.is_file()}
       diff = logged ^ expected_files
       assert len(diff) == 0, f"didn't get all expected files. seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}"
+
+  @pytest.mark.xdist_group("camera_encoder_tests")
+  def test_dashcam_rotation(self, monkeypatch):
+    monkeypatch.setenv("DASHCAM", "1")
+    monkeypatch.setenv("DASHCAM_ENCODER", "libx264")
+    expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc"}
+
+    self._publish_camera_and_audio_messages(num_segs=2, segment_length=4)
+
+    route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
+    for n in range(2):
+      path = Path(f"{route_path}--{n}")
+      logged = {file.name for file in path.iterdir() if file.is_file()}
+      assert logged == expected_files
+      init_data = next(message.initData for message in LogReader(str(path / "rlog.zst")) if message.which() == "initData")
+      assert init_data.passive
+      road_indexes = [message.roadEncodeIdx for message in LogReader(str(path / "rlog.zst")) if message.which() == "roadEncodeIdx"]
+      assert road_indexes and {index.type for index in road_indexes} == {"fullH264"}
+
+      ffprobe = executable("ffprobe")
+      assert ffprobe is not None
+      probe = subprocess.check_output([
+        ffprobe, "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(path / "fcamera.hevc"),
+      ], text=True).splitlines()
+      assert probe and set(probe) == {"h264"}
+
+      frames = FrameReader(str(path / "fcamera.hevc"), cache_size=1, pix_fmt="rgb24")
+      assert (frames.w, frames.h, frames.frame_count) == (320, 240, 80)
+      assert frames.get(0).shape == (240, 320, 3)
+
+  def test_dashcam_without_video_keeps_route_lock(self, monkeypatch):
+    monkeypatch.setenv("DASHCAM", "1")
+    before = set(Path(Paths.log_root()).iterdir())
+    created = set()
+    managed_processes["loggerd"].start()
+    try:
+      with Timeout(5):
+        while not (created := set(Path(Paths.log_root()).iterdir()) - before):
+          time.sleep(0.01)
+    finally:
+      managed_processes["loggerd"].stop()
+
+    segment = max(created, key=lambda path: path.stat().st_mtime)
+    assert (segment / "rlog.lock").is_file()
+    messages = list(LogReader(str(segment / "rlog.zst")))
+    assert messages[-1].which() == "sentinel"
+    assert messages[-1].sentinel.type == SentinelType.endOfRoute
+
+  @pytest.mark.xdist_group("camera_encoder_tests")
+  def test_dashcam_without_panda_health_keeps_route_lock(self, monkeypatch):
+    monkeypatch.setenv("DASHCAM", "1")
+    monkeypatch.setenv("DASHCAM_ENCODER", "libx264")
+
+    self._publish_camera_and_audio_messages(num_segs=1, segment_length=4, publish_panda=False)
+
+    segment = self._get_latest_log_dir()
+    assert (segment / "fcamera.hevc").is_file()
+    assert (segment / "qcamera.ts").is_file()
+    assert (segment / "rlog.lock").is_file()
+    assert not (segment / "fcamera.hevc.lock").exists()
+    assert not (segment / "qcamera.ts.lock").exists()
+
+  @pytest.mark.xdist_group("camera_encoder_tests")
+  def test_dashcam_unsafe_panda_state_keeps_route_lock(self, monkeypatch):
+    monkeypatch.setenv("DASHCAM", "1")
+    monkeypatch.setenv("DASHCAM_ENCODER", "libx264")
+
+    self._publish_camera_and_audio_messages(num_segs=1, segment_length=4, panda_receive_only=False)
+
+    segment = self._get_latest_log_dir()
+    assert (segment / "fcamera.hevc").is_file()
+    assert (segment / "qcamera.ts").is_file()
+    assert (segment / "rlog.lock").is_file()
+
+  @pytest.mark.xdist_group("camera_encoder_tests")
+  def test_dashcam_runtime_fault_signal_keeps_route_lock(self, monkeypatch):
+    monkeypatch.setenv("DASHCAM", "1")
+    monkeypatch.setenv("DASHCAM_ENCODER", "libx264")
+
+    self._publish_camera_and_audio_messages(num_segs=2, segment_length=4, logger_runtime_fault=True)
+
+    route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
+    for segment_number in range(2):
+      segment = Path(f"{route_path}--{segment_number}")
+      assert (segment / "fcamera.hevc").is_file()
+      assert (segment / "qcamera.ts").is_file()
+      assert (segment / "rlog.lock").is_file()
+
+  @pytest.mark.xdist_group("camera_encoder_tests")
+  def test_dashcam_receive_loss_keeps_route_lock(self, monkeypatch):
+    monkeypatch.setenv("DASHCAM", "1")
+    monkeypatch.setenv("DASHCAM_ENCODER", "libx264")
+
+    self._publish_camera_and_audio_messages(num_segs=1, segment_length=4, panda_receive_loss=True)
+
+    segment = self._get_latest_log_dir()
+    assert (segment / "rlog.lock").is_file()
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
@@ -231,7 +359,7 @@ class TestLoggerd:
 
     # sanity check values
     boot = bootlog_msgs.pop().boot
-    assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9 # within 5s
+    assert abs(boot.wallTimeNanos - time.time_ns()) < 5 * 1e9  # within 5s
     assert boot.launchLog == launch_log
 
     if TICI:
@@ -255,8 +383,9 @@ class TestLoggerd:
     qlog_services = [s for s in CEREAL_SERVICES if SERVICE_LIST[s].decimation is not None]
     no_qlog_services = [s for s in CEREAL_SERVICES if SERVICE_LIST[s].decimation is None]
 
-    services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
-               random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
+    services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + random.sample(
+      no_qlog_services, random.randint(2, min(10, len(no_qlog_services)))
+    )
     sent_msgs = self._publish_random_messages(services)
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.zst")
@@ -294,7 +423,7 @@ class TestLoggerd:
     self._check_sentinel(lr, True)
 
     # check all messages were logged and in order
-    lr = lr[2:-1] # slice off initData and both sentinels
+    lr = lr[2:-1]  # slice off initData and both sentinels
     for m in lr:
       sent = sent_msgs[m.which()].pop(0)
       sent.clear_write_flag()

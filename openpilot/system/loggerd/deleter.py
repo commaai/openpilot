@@ -8,8 +8,8 @@ from openpilot.system.loggerd.config import get_available_bytes, get_available_p
 from openpilot.system.loggerd.uploader import listdir_by_creation
 from openpilot.system.loggerd.xattr_cache import getxattr
 
-MIN_BYTES = 5 * 1024 * 1024 * 1024
-MIN_PERCENT = 10
+MIN_BYTES = int(os.getenv("DASHCAM_MIN_FREE_BYTES", 5 * 1024 * 1024 * 1024))
+MIN_PERCENT = float(os.getenv("DASHCAM_MIN_FREE_PERCENT", 10))
 
 DELETE_LAST = ['boot', 'crash']
 

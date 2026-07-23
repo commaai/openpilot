@@ -142,16 +142,80 @@ class FfmpegDecoder:
           yield fidx, frm
       fidx += 1
 
+
+class ContainerDecoder:
+  """Decode containerized video whose legacy filename does not match its codec."""
+  def __init__(self, fn: str, pix_fmt: str = "rgb24", **_kwargs):
+    try:
+      import av
+    except ImportError as exc:
+      raise DataUnreadableError("containerized video requires the PyAV package") from exc
+
+    self.av = av
+    self.fn = resolve_name(fn)
+    self.pix_fmt = pix_fmt
+    try:
+      with av.open(self.fn) as container:
+        stream = container.streams.video[0]
+        self.w, self.h = stream.codec_context.width, stream.codec_context.height
+        keyframes = []
+        frame_count = 0
+        for frame in container.decode(stream):
+          if frame.key_frame:
+            keyframes.append(frame_count)
+          frame_count += 1
+    except Exception as exc:
+      raise DataUnreadableError(f"Failed to inspect containerized video {fn!r}") from exc
+
+    if frame_count == 0 or self.w <= 0 or self.h <= 0:
+      raise DataUnreadableError(f"No video frames found in {fn!r}")
+    self.frame_count = frame_count
+    if not keyframes or keyframes[0] != 0:
+      keyframes.insert(0, 0)
+    self.iframes = np.array(keyframes or [0], dtype=np.int64)
+
+  def get_gop_start(self, frame_idx: int):
+    return self.iframes[np.searchsorted(self.iframes, frame_idx, side="right") - 1]
+
+  def get_iterator(self, start_fidx: int = 0, end_fidx: int | None = None,
+                   frame_skip: int = 1) -> Iterator[tuple[int, np.ndarray]]:
+    end_fidx = self.frame_count if end_fidx is None else end_fidx
+    try:
+      with self.av.open(self.fn) as container:
+        stream = container.streams.video[0]
+        for fidx, frame in enumerate(container.decode(stream)):
+          if fidx >= end_fidx:
+            return
+          if fidx < start_fidx or (fidx - start_fidx) % frame_skip != 0:
+            continue
+          decoded = frame.to_ndarray(format=self.pix_fmt)
+          if self.pix_fmt in ("nv12", "yuv420p"):
+            decoded = decoded.reshape(-1)
+          yield fidx, decoded
+    except Exception as exc:
+      raise DataUnreadableError(f"Failed to decode containerized video {self.fn!r}") from exc
+
+
+def _decoder_for_video(fn: str, *, index_data: dict | None = None, pix_fmt: str = "rgb24",
+                       hwaccel="auto", loglevel="quiet"):
+  with FileReader(fn) as file:
+    header = file.read(4)
+  if not header:
+    raise DataUnreadableError(f"{fn} is empty")
+  if header == b"\x00\x00\x00\x01":
+    return FfmpegDecoder(fn, index_data=index_data, pix_fmt=pix_fmt, hwaccel=hwaccel, loglevel=loglevel)
+  return ContainerDecoder(fn, pix_fmt=pix_fmt)
+
 def FrameIterator(fn: str, index_data: dict|None=None, pix_fmt: str = "rgb24",
                   start_fidx:int=0, end_fidx=None, frame_skip:int=1, hwaccel="auto", loglevel="quiet") -> Iterator[np.ndarray]:
-  dec = FfmpegDecoder(fn, pix_fmt=pix_fmt, index_data=index_data, hwaccel=hwaccel, loglevel=loglevel)
+  dec = _decoder_for_video(fn, pix_fmt=pix_fmt, index_data=index_data, hwaccel=hwaccel, loglevel=loglevel)
   for _, frame in dec.get_iterator(start_fidx=start_fidx, end_fidx=end_fidx, frame_skip=frame_skip):
     yield frame
 
 class FrameReader:
   def __init__(self, fn: str, index_data: dict|None = None, cache_size: int = 30,
                pix_fmt: str = "rgb24", hwaccel="auto", loglevel="quiet"):
-    self.decoder = FfmpegDecoder(fn, index_data=index_data, pix_fmt=pix_fmt, hwaccel=hwaccel, loglevel=loglevel)
+    self.decoder = _decoder_for_video(fn, index_data=index_data, pix_fmt=pix_fmt, hwaccel=hwaccel, loglevel=loglevel)
     self.iframes = self.decoder.iframes
     self._cache: LRUCache = LRUCache(cache_size)
     self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count

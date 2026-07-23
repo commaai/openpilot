@@ -18,8 +18,16 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 
 
-def launcher(proc: str, name: str) -> None:
+def launcher(proc: str, name: str, separate_process_group: bool = False) -> None:
   try:
+    if separate_process_group:
+      os.setpgrp()
+      # The CM5 supervisor installs handlers before forking. Do not inherit a
+      # handler bound to the parent's copied runtime; manager stop signals must
+      # terminate this child rather than set an unreachable child-local Event.
+      signal.signal(signal.SIGINT, signal.default_int_handler)
+      signal.signal(signal.SIGTERM, signal.SIG_DFL)
+
     # import the process
     mod = importlib.import_module(proc)
 
@@ -44,7 +52,9 @@ def launcher(proc: str, name: str) -> None:
     raise
 
 
-def nativelauncher(pargs: list[str], cwd: str, name: str) -> None:
+def nativelauncher(pargs: list[str], cwd: str, name: str, separate_process_group: bool = False) -> None:
+  if separate_process_group:
+    os.setpgrp()
   os.environ['MANAGER_DAEMON'] = name
 
   # exec the process
@@ -78,7 +88,8 @@ class ManagerProcess(ABC):
     self.stop(sig=signal.SIGKILL)
     self.start()
 
-  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals | None = None) -> int | None:
+  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals | None = None,
+           timeout: float = 5.0) -> int | None:
     if self.proc is None:
       return None
 
@@ -93,7 +104,7 @@ class ManagerProcess(ABC):
         if not block:
           return None
 
-      join_process(self.proc, 5)
+      join_process(self.proc, timeout)
 
       # If process failed to die send SIGKILL
       if self.proc.exitcode is None and retry:
@@ -137,13 +148,14 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, should_run, enabled=True, sigkill=False):
+  def __init__(self, name, cwd, cmdline, should_run, enabled=True, sigkill=False, separate_process_group=False):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.should_run = should_run
     self.enabled = enabled
     self.sigkill = sigkill
+    self.separate_process_group = separate_process_group
     self.launcher = nativelauncher
 
   def start(self) -> None:
@@ -156,18 +168,19 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info(f"starting process {self.name}")
-    self.proc = Process(name=self.name, target=self.launcher, args=(self.cmdline, cwd, self.name))
+    self.proc = Process(name=self.name, target=self.launcher, args=(self.cmdline, cwd, self.name, self.separate_process_group))
     self.proc.start()
     self.shutting_down = False
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, should_run, enabled=True, sigkill=False, restart_if_crash=False):
+  def __init__(self, name, module, should_run, enabled=True, sigkill=False, restart_if_crash=False, separate_process_group=False):
     self.name = name
     self.module = module
     self.should_run = should_run
     self.enabled = enabled
     self.sigkill = sigkill
+    self.separate_process_group = separate_process_group
     self.launcher = launcher
     self.restart_if_crash = restart_if_crash
 
@@ -180,7 +193,7 @@ class PythonProcess(ManagerProcess):
       return
 
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
+    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name, self.separate_process_group))
     self.proc.start()
     self.shutting_down = False
 
@@ -224,7 +237,7 @@ class DaemonProcess(ManagerProcess):
 
     self.params.put(self.param_name, proc.pid, block=True)
 
-  def stop(self, retry=True, block=True, sig=None) -> None:
+  def stop(self, retry=True, block=True, sig=None, timeout=5.0) -> None:
     pass
 
 

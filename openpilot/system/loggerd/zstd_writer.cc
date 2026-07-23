@@ -2,6 +2,7 @@
 #include "system/loggerd/zstd_writer.h"
 
 #include <cassert>
+#include <unistd.h>
 
 #include "common/util.h"
 
@@ -24,13 +25,26 @@ ZstdFileWriter::ZstdFileWriter(const std::string& filename, int compression_leve
 
 // Destructor: Finalizes compression and closes file
 ZstdFileWriter::~ZstdFileWriter() {
-  flushCache(true);
-  util::safe_fflush(file_);
+  close();
+}
 
-  int err = fclose(file_);
+void ZstdFileWriter::close(bool durable) {
+  if (file_ == nullptr) return;
+
+  flushCache(true);
+  int err = util::safe_fflush(file_);
   assert(err == 0);
+  if (durable) {
+    err = HANDLE_EINTR(fsync(fileno(file_)));
+    assert(err == 0);
+  }
+
+  err = fclose(file_);
+  assert(err == 0);
+  file_ = nullptr;
 
   ZSTD_freeCStream(cstream_);
+  cstream_ = nullptr;
 }
 
 // Compresses and writes data to file

@@ -20,11 +20,17 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2)
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
+AddOption('--dashcam',
+          action='store_true',
+          default=False,
+          help='build only the passive camera and CAN logging stack; implies --minimal')
+dashcam = GetOption('dashcam')
+
 release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=(not TICI and not release),
+          default=(not TICI and not release and not dashcam),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 submodule_python_paths = [
@@ -56,8 +62,10 @@ assert arch in [
 ]
 
 pkg_names = ['acados', 'bzip2', 'capnproto', 'catch2', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
+if dashcam:
+  pkg_names = ['capnproto', 'ffmpeg', 'json11', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
-acados = pkgs[pkg_names.index('acados')]
+acados = pkgs[pkg_names.index('acados')] if 'acados' in pkg_names else None
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
 # Shared package ships .so/.dylib; older device venvs still have static .a only.
 # Keep static link deps (x264/z/va/drm) when the installed package is static so
@@ -73,7 +81,7 @@ if not ffmpeg_shared:
   ffmpeg_libs += ['x264', 'z']
   if arch != "Darwin":
     ffmpeg_libs += ['va', 'va-drm', 'drm']
-acados_include_dirs = [
+acados_include_dirs = [] if acados is None else [
   acados.INCLUDE_DIR,
   os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
   os.path.join(acados.INCLUDE_DIR, "hpipm", "include"),
@@ -118,14 +126,25 @@ def _libflags(target, source, env, for_signature):
   return _stripixes(env['LIBLINKPREFIX'], libs, env['LIBLINKSUFFIX'],
                     env['LIBPREFIXES'], env['LIBSUFFIXES'], env, env['LIBLITERALPREFIX'])
 
-env = Environment(
-  ENV={
-    "PATH": os.environ['PATH'],
-    "PYTHONPATH": os.pathsep.join(submodule_python_paths),
+build_env = {
+  "PATH": os.environ['PATH'],
+  "PYTHONPATH": os.pathsep.join(submodule_python_paths),
+}
+if acados is not None:
+  build_env.update({
     "ACADOS_SOURCE_DIR": acados.DIR,
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
-  },
+  })
+
+build_tools = ["default", "cython", "compilation_db"]
+build_toolpath = ["#site_scons/site_tools"]
+if not dashcam:
+  build_tools.append("rednose_filter")
+  build_toolpath.append("#rednose_repo/site_scons/site_tools")
+
+env = Environment(
+  ENV=build_env,
   CCFLAGS=[
     "-g",
     "-fPIC",
@@ -160,11 +179,14 @@ env = Environment(
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
+  # Cython still imports distutils on Python 3.12. Loading setuptools first
+  # activates its compatibility shim without relying on user sitecustomize.
+  CYTHON=f"{shlex.quote(sys.executable)} {shlex.quote(File('#tools/cythonize_with_setuptools.py').abspath)}",
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#rednose_repo",
-  tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  tools=build_tools,
+  toolpath=build_toolpath,
 )
 # SCons' Darwin linker tool doesn't define the variables used to expand RPATH.
 if arch == "Darwin":
@@ -268,28 +290,29 @@ messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
 
 
-# Build other submodules
-SConscript(['panda/SConscript'])
-
-# Build rednose library
-SConscript(['rednose_repo/rednose/SConscript'])
+# Panda firmware and rednose are not dependencies of the passive recorder.
+if not dashcam:
+  SConscript(['panda/SConscript'])
+  SConscript(['rednose_repo/rednose/SConscript'])
 
 # Build system services
 SConscript([
   'openpilot/system/loggerd/SConscript',
 ])
 
-if arch == "larch64":
+if arch == "larch64" and not dashcam:
   SConscript(['openpilot/system/camerad/SConscript'])
 
-# Build selfdrive
-SConscript([
-  'openpilot/selfdrive/pandad/SConscript',
-  'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
-  'openpilot/selfdrive/locationd/SConscript',
-  'openpilot/selfdrive/modeld/SConscript',
-  'openpilot/selfdrive/ui/SConscript',
-])
+# Build selfdrive. The CM5 dashcam uses the Python USB Panda publisher; the
+# native pandad transport is SPI-only and is intended for comma hardware.
+if not dashcam:
+  SConscript([
+    'openpilot/selfdrive/pandad/SConscript',
+    'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+    'openpilot/selfdrive/locationd/SConscript',
+    'openpilot/selfdrive/modeld/SConscript',
+    'openpilot/selfdrive/ui/SConscript',
+  ])
 
 # Build desktop-only tools
 if GetOption('extras') and arch != "larch64":

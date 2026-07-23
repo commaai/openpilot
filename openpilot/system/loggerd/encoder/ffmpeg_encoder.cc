@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <cstring>
 #include <cstdio>
 #include <cstdlib>
 
@@ -45,10 +46,24 @@ FfmpegEncoder::~FfmpegEncoder() {
 }
 
 void FfmpegEncoder::encoder_open() {
-  auto codec_id = encoder_info.get_settings(in_width).encode_type == cereal::EncodeIndex::Type::QCAMERA_H264
-                      ? AV_CODEC_ID_H264
-                      : AV_CODEC_ID_FFVHUFF;
-  const AVCodec *codec = avcodec_find_encoder(codec_id);
+  const EncoderSettings settings = encoder_info.get_settings(in_width);
+  const bool h264 = settings.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264 ||
+                    settings.encode_type == cereal::EncodeIndex::Type::FULL_H264;
+  const auto codec_id = h264 ? AV_CODEC_ID_H264 : AV_CODEC_ID_FFVHUFF;
+
+  const AVCodec *codec = nullptr;
+  if (h264 && getenv("DASHCAM")) {
+    const char *encoder_name = getenv("DASHCAM_ENCODER");
+    codec = avcodec_find_encoder_by_name(encoder_name ? encoder_name : "libx264");
+    if (codec == nullptr) LOGE("requested dashcam encoder is unavailable: %s", encoder_name ? encoder_name : "libx264");
+    if (codec != nullptr && codec->id != AV_CODEC_ID_H264) {
+      LOGE("requested dashcam encoder does not produce H.264: %s", codec->name);
+      codec = nullptr;
+    }
+  } else {
+    codec = avcodec_find_encoder(codec_id);
+  }
+  assert(codec);
 
   this->codec_ctx = avcodec_alloc_context3(codec);
   assert(this->codec_ctx);
@@ -56,12 +71,29 @@ void FfmpegEncoder::encoder_open() {
   this->codec_ctx->height = frame->height;
   this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
   this->codec_ctx->time_base = (AVRational){ 1, encoder_info.fps };
-  int err = avcodec_open2(this->codec_ctx, codec, NULL);
+  this->codec_ctx->framerate = (AVRational){ encoder_info.fps, 1 };
+  this->codec_ctx->bit_rate = settings.bitrate;
+  this->codec_ctx->gop_size = settings.gop_size;
+  this->codec_ctx->max_b_frames = settings.b_frames;
+
+  AVDictionary *options = nullptr;
+  if (h264 && getenv("DASHCAM") && strcmp(codec->name, "libx264") == 0) {
+    const char *preset = getenv("DASHCAM_ENCODER_PRESET");
+    av_dict_set(&options, "preset", preset ? preset : "ultrafast", 0);
+    av_dict_set(&options, "tune", "zerolatency", 0);
+    // Each 60-second segment must be independently decodable.
+    av_dict_set(&options, "x264-params", "repeat-headers=1:scenecut=0:rc-lookahead=0:sync-lookahead=0:ref=1:weightp=0", 0);
+  }
+
+  LOGW("encoder %s using %s at %d bit/s", encoder_info.publish_name, codec->name, settings.bitrate);
+  int err = avcodec_open2(this->codec_ctx, codec, &options);
+  av_dict_free(&options);
   assert(err >= 0);
 
   is_open = true;
   segment_num++;
   counter = 0;
+  input_counter = 0;
 }
 
 void FfmpegEncoder::encoder_close() {
@@ -113,7 +145,8 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
     frame->data[1] = cu;
     frame->data[2] = cv;
   }
-  frame->pts = counter*50*1000; // 50ms per frame
+  // time_base is 1/fps, so one input frame advances PTS by exactly one tick.
+  frame->pts = input_counter++;
 
   int ret = counter;
 

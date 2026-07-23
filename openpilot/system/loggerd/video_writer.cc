@@ -1,22 +1,64 @@
 #include <cassert>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "system/loggerd/video_writer.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+
+namespace {
+
+void sync_file(const std::string &path) {
+  int fd = HANDLE_EINTR(open(path.c_str(), O_RDWR | O_CLOEXEC));
+  assert(fd >= 0);
+  int result = HANDLE_EINTR(fsync(fd));
+  assert(result == 0);
+  result = HANDLE_EINTR(::close(fd));
+  assert(result == 0);
+}
+
+void sync_parent_directory(const std::string &path) {
+  const size_t separator = path.rfind('/');
+  assert(separator != std::string::npos);
+  int fd = HANDLE_EINTR(open(path.substr(0, separator).c_str(), O_RDONLY | O_CLOEXEC));
+  assert(fd >= 0);
+  int result = HANDLE_EINTR(fsync(fd));
+  assert(result == 0);
+  result = HANDLE_EINTR(::close(fd));
+  assert(result == 0);
+}
+
+}  // namespace
 
 VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec)
   : remuxing(remuxing) {
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
 
-  int lock_fd = HANDLE_EINTR(open(lock_path.c_str(), O_RDWR | O_CREAT, 0664));
+  int lock_fd = HANDLE_EINTR(open(lock_path.c_str(), O_RDWR | O_CREAT | O_TRUNC | O_CLOEXEC, 0664));
   assert(lock_fd >= 0);
-  close(lock_fd);
+  if (getenv("DASHCAM") != nullptr) {
+    int result = HANDLE_EINTR(fsync(lock_fd));
+    assert(result == 0);
+  }
+  int result = HANDLE_EINTR(::close(lock_fd));
+  assert(result == 0);
+  if (getenv("DASHCAM") != nullptr) sync_parent_directory(lock_path);
 
   LOGD("encoder_open %s remuxing:%d", this->vid_path.c_str(), this->remuxing);
   if (this->remuxing) {
     bool raw = (codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS);
-    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, raw ? "matroska" : NULL, this->vid_path.c_str());
+    // openpilot historically calls the main-camera file fcamera.hevc. In the
+    // CM5 dashcam runtime it contains H.264, so explicitly select MPEG-TS
+    // instead of letting FFmpeg infer raw HEVC from the legacy extension.
+    const bool dashcam_h264 = getenv("DASHCAM") && codec == cereal::EncodeIndex::Type::FULL_H264;
+    const bool legacy_main_filename = dashcam_h264 && this->vid_path.size() >= 5 &&
+                                      this->vid_path.compare(this->vid_path.size() - 5, 5, ".hevc") == 0;
+    const char *format_name = raw ? "matroska" : (legacy_main_filename ? "mpegts" : NULL);
+    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, format_name, this->vid_path.c_str());
     assert(this->ofmt_ctx);
 
     // set codec correctly. needed?
@@ -89,10 +131,14 @@ void VideoWriter::initialize_audio(int sample_rate) {
 }
 
 void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecconfig, bool keyframe) {
+  assert(!closed);
   if (of && data) {
     size_t written = util::safe_fwrite(data, 1, len, of);
     if (written != len) {
       LOGE("failed to write file.errno=%d", errno);
+      write_failed = true;
+    } else if (len > 0) {
+      wrote_video_packet = true;
     }
   }
 
@@ -104,12 +150,25 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
         memcpy(codec_ctx->extradata, data, len);
       }
       int err = avcodec_parameters_from_context(out_stream->codecpar, codec_ctx);
-      assert(err >= 0);
+      if (err < 0) {
+        LOGE("avcodec_parameters_from_context failed %d", err);
+        write_failed = true;
+        return;
+      }
       // if there is an audio stream, it must be initialized before this point
       err = avformat_write_header(ofmt_ctx, NULL);
-      assert(err >= 0);
+      if (err < 0) {
+        LOGE("avformat_write_header failed %d", err);
+        write_failed = true;
+        return;
+      }
       header_written = true;
     } else {
+      if (!header_written) {
+        LOGE("refusing video packet before container header");
+        write_failed = true;
+        return;
+      }
       // input timestamps are in microseconds
       AVRational in_timebase = {1, 1000000};
 
@@ -128,7 +187,12 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
       // TODO: can use av_write_frame for non raw?
       int err = av_interleaved_write_frame(ofmt_ctx, &pkt);
-      if (err < 0) { LOGW("ts encoder write issue len: %d ts: %lld", len, timestamp); }
+      if (err < 0) {
+        LOGW("ts encoder write issue len: %d ts: %lld", len, timestamp);
+        write_failed = true;
+      } else {
+        wrote_video_packet = true;
+      }
 
       av_packet_unref(&pkt);
     }
@@ -136,6 +200,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 }
 
 void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp, int sample_rate) {
+  assert(!closed);
   if (!remuxing) return;
   if (!audio_initialized) {
     initialize_audio(sample_rate);
@@ -188,12 +253,14 @@ void VideoWriter::encode_and_write_audio_frame(AVFrame* frame) {
       int err = av_interleaved_write_frame(ofmt_ctx, pkt); // write encoded frame
       if (err < 0) {
         LOGW("AUDIO: Write frame failed - error: %d", err);
+        write_failed = true;
       }
       av_packet_unref(pkt);
     }
     av_packet_free(&pkt);
   } else {
     LOGW("AUDIO: Failed to send audio frame to encoder: %d", send_result);
+    write_failed = true;
   }
   audio_pts += audio_codec_ctx->frame_size;
 }
@@ -211,24 +278,61 @@ void VideoWriter::process_remaining_audio() {
   }
 }
 
-VideoWriter::~VideoWriter() {
+bool VideoWriter::close() {
+  if (closed) return finalized;
+  closed = true;
+
+  bool close_ok = true;
   if (this->remuxing) {
     if (this->audio_codec_ctx) {
       process_remaining_audio();
       encode_and_write_audio_frame(NULL); // flush encoder
       avcodec_free_context(&this->audio_codec_ctx);
     }
-    int err = av_write_trailer(this->ofmt_ctx);
-    if (err != 0) LOGE("av_write_trailer failed %d", err);
+    if (header_written) {
+      int err = av_write_trailer(this->ofmt_ctx);
+      if (err != 0) {
+        LOGE("av_write_trailer failed %d", err);
+        close_ok = false;
+      }
+    } else {
+      LOGE("container header was never written for %s", this->vid_path.c_str());
+      close_ok = false;
+    }
     avcodec_free_context(&this->codec_ctx);
     if (this->audio_frame) av_frame_free(&this->audio_frame);
-    err = avio_closep(&this->ofmt_ctx->pb);
-    if (err != 0) LOGE("avio_closep failed %d", err);
+    int err = avio_closep(&this->ofmt_ctx->pb);
+    if (err != 0) {
+      LOGE("avio_closep failed %d", err);
+      close_ok = false;
+    }
     avformat_free_context(this->ofmt_ctx);
   } else {
-    util::safe_fflush(this->of);
-    fclose(this->of);
+    close_ok = util::safe_fflush(this->of) == 0 && close_ok;
+    close_ok = fclose(this->of) == 0 && close_ok;
     this->of = nullptr;
   }
-  unlink(this->lock_path.c_str());
+
+  finalized = close_ok && !write_failed && wrote_video_packet && (!remuxing || header_written);
+
+  const bool durable = getenv("DASHCAM") != nullptr;
+  if (durable && finalized) {
+    sync_file(this->vid_path);
+    sync_parent_directory(this->vid_path);
+  }
+  if (finalized) {
+    if (unlink(this->lock_path.c_str()) != 0) {
+      LOGE("failed to remove completed video lock %s: %s", this->lock_path.c_str(), strerror(errno));
+      finalized = false;
+    } else if (durable) {
+      sync_parent_directory(this->lock_path);
+    }
+  } else {
+    LOGE("leaving %s in place for incomplete video %s", this->lock_path.c_str(), this->vid_path.c_str());
+  }
+  return finalized;
+}
+
+VideoWriter::~VideoWriter() {
+  close();
 }
