@@ -32,14 +32,6 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
   }
   compressed_size_ = data.size();
   download_seconds_ = std::chrono::duration<double>(download_end - download_start).count();
-  if (!data.empty()) {
-    const auto decompress_start = Clock::now();
-    if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
-      data = decompressZST(data, abort);
-    }
-    const auto decompress_end = Clock::now();
-    decompress_seconds_ = std::chrono::duration<double>(decompress_end - decompress_start).count();
-  }
   decompressed_size_ = data.size();
 
   bool success = !data.empty() && load(data.data(), data.size(), abort, progress);

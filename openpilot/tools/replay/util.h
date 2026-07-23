@@ -47,8 +47,6 @@ private:
 };
 
 void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &interrupt_requested);
-std::string decompressZST(const std::string &in, std::atomic<bool> *abort = nullptr);
-std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool> *abort = nullptr);
 std::string getUrlWithoutQuery(const std::string &url);
 std::string formattedDataSize(size_t size);
 std::string extractFileName(const std::string& file);

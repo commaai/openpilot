@@ -6,7 +6,7 @@ Called by C++ replay/cabana via subprocess.
 Subcommands:
   route-files <route>    - Get route file URLs as JSON
   download <url>         - Download/decompress URL to local cache, print local path
-  decompress <path>      - Decompress a local bzip2 file, print temporary path
+  decompress <path>      - Decompress a local log file, print temporary path
   devices                - List user's devices as JSON
   device-routes <did>    - List routes for a device as JSON
 """
@@ -15,9 +15,11 @@ import bz2
 import hashlib
 import json
 import os
+import shutil
 import sys
 import tempfile
-import shutil
+
+import zstandard as zstd
 
 from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib.api import CommaApi, UnauthorizedError, APIError
@@ -41,35 +43,50 @@ def api_call(func):
   sys.stdout.flush()
 
 
-def cache_file_path(url, decompressed=False):
+def cache_file_path(url, compression=None):
   url_without_query = url.split("?")[0]
-  if decompressed:
-    url_without_query = f"decompressed-bz2:{url_without_query}"
+  if compression:
+    url_without_query = f"decompressed-{compression}:{url_without_query}"
   return os.path.join(Paths.download_cache_root(), hashlib.sha256(url_without_query.encode()).hexdigest())
 
 
-def is_bz2_header(data):
-  return data.startswith(b'BZh')
+def compression_type(data):
+  if data.startswith(b'BZh'):
+    return 'bz2'
+  if data.startswith(b'\x28\xb5\x2f\xfd'):
+    return 'zst'
+  return None
 
 
-def decompress_bz2_file(source, destination):
-  decompressor = bz2.BZ2Decompressor()
+def make_decompressor(compression):
+  if compression == 'bz2':
+    return bz2.BZ2Decompressor()
+  if compression == 'zst':
+    return zstd.ZstdDecompressor().decompressobj()
+  raise ValueError(f"Unsupported compression type: {compression}")
+
+
+def decompress_file(source, destination, compression=None):
   with open(source, 'rb') as src, open(destination, 'wb') as dst:
+    header = src.read(4)
+    compression = compression or compression_type(header)
+    decompressor = make_decompressor(compression)
+    dst.write(decompressor.decompress(header))
     while data := src.read(1024 * 1024):
       dst.write(decompressor.decompress(data))
   if not decompressor.eof:
-    raise EOFError("Compressed bzip2 file ended before the end-of-stream marker")
+    raise EOFError(f"Compressed {compression} file ended before the end-of-stream marker")
 
 
-def materialize_cached_bz2(source, url):
-  local_path = cache_file_path(url, decompressed=True)
+def materialize_cached_file(source, url, compression):
+  local_path = cache_file_path(url, compression)
   if os.path.exists(local_path):
     return local_path
 
   tmp_fd, tmp_path = tempfile.mkstemp(dir=Paths.download_cache_root())
   os.close(tmp_fd)
   try:
-    decompress_bz2_file(source, tmp_path)
+    decompress_file(source, tmp_path, compression)
     shutil.move(tmp_path, local_path)
   except Exception:
     try:
@@ -89,17 +106,19 @@ def cmd_download(args):
   use_cache = not args.no_cache
 
   if use_cache:
-    decompressed_path = cache_file_path(url, decompressed=True)
-    if os.path.exists(decompressed_path):
-      sys.stdout.write(decompressed_path + "\n")
-      sys.stdout.flush()
-      return
+    for compression in ('bz2', 'zst'):
+      decompressed_path = cache_file_path(url, compression)
+      if os.path.exists(decompressed_path):
+        sys.stdout.write(decompressed_path + "\n")
+        sys.stdout.flush()
+        return
 
     local_path = cache_file_path(url)
     if os.path.exists(local_path):
       with open(local_path, 'rb') as f:
-        if is_bz2_header(f.read(3)):
-          local_path = materialize_cached_bz2(local_path, url)
+        compression = compression_type(f.read(4))
+        if compression:
+          local_path = materialize_cached_file(local_path, url, compression)
       sys.stdout.write(local_path + "\n")
       sys.stdout.flush()
       return
@@ -125,29 +144,28 @@ def cmd_download(args):
     try:
       downloaded = 0
       chunk_size = 1024 * 1024
+      compression = None
+      decompressor = None
       with os.fdopen(tmp_fd, 'wb') as f:
         for data in r.stream(chunk_size):
-          f.write(data)
+          if downloaded == 0:
+            compression = compression_type(data)
+            if compression:
+              decompressor = make_decompressor(compression)
+          f.write(decompressor.decompress(data) if decompressor else data)
           downloaded += len(data)
           sys.stderr.write(f"PROGRESS:{downloaded}:{total}\n")
           sys.stderr.flush()
 
-      with open(tmp_path, 'rb') as f:
-        is_bz2 = is_bz2_header(f.read(3))
+      if decompressor and not decompressor.eof:
+        raise EOFError(f"Compressed {compression} file ended before the end-of-stream marker")
 
-      if is_bz2:
+      if decompressor:
         if use_cache:
-          output_path = materialize_cached_bz2(tmp_path, url)
-          os.unlink(tmp_path)
+          output_path = cache_file_path(url, compression)
+          shutil.move(tmp_path, output_path)
         else:
-          output_fd, output_path = tempfile.mkstemp(dir=Paths.download_cache_root())
-          os.close(output_fd)
-          try:
-            decompress_bz2_file(tmp_path, output_path)
-          except Exception:
-            os.unlink(output_path)
-            raise
-          os.unlink(tmp_path)
+          output_path = tmp_path
         sys.stdout.write(output_path + "\n")
       elif use_cache:
         shutil.move(tmp_path, local_path)
@@ -176,7 +194,7 @@ def cmd_decompress(args):
   output_fd, output_path = tempfile.mkstemp(dir=Paths.download_cache_root())
   os.close(output_fd)
   try:
-    decompress_bz2_file(args.path, output_path)
+    decompress_file(args.path, output_path)
   except Exception as e:
     try:
       os.unlink(output_path)

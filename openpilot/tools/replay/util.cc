@@ -5,8 +5,6 @@
 #include <cstring>
 #include <iostream>
 #include <mutex>
-#include <zstd.h>
-
 #include "common/timing.h"
 #include "common/util.h"
 
@@ -54,49 +52,6 @@ std::string formattedDataSize(size_t size) {
 std::string getUrlWithoutQuery(const std::string &url) {
   size_t idx = url.find("?");
   return (idx == std::string::npos ? url : url.substr(0, idx));
-}
-
-std::string decompressZST(const std::string &in, std::atomic<bool> *abort) {
-  return decompressZST((std::byte *)in.data(), in.size(), abort);
-}
-
-std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
-  ZSTD_DCtx *dctx = ZSTD_createDCtx();
-  assert(dctx != nullptr);
-
-  // Initialize input and output buffers
-  ZSTD_inBuffer input = {in, in_size, 0};
-
-  // Estimate and reserve memory for decompressed data
-  size_t estimatedDecompressedSize = ZSTD_getFrameContentSize(in, in_size);
-  if (estimatedDecompressedSize == ZSTD_CONTENTSIZE_ERROR || estimatedDecompressedSize == ZSTD_CONTENTSIZE_UNKNOWN) {
-    estimatedDecompressedSize = in_size * 2;  // Use a fallback size
-  }
-
-  std::string decompressedData;
-  decompressedData.reserve(estimatedDecompressedSize);
-
-  const size_t bufferSize = ZSTD_DStreamOutSize();  // Recommended output buffer size
-  std::string outputBuffer(bufferSize, '\0');
-
-  while (input.pos < input.size && !(abort && *abort)) {
-    ZSTD_outBuffer output = {outputBuffer.data(), bufferSize, 0};
-
-    size_t result = ZSTD_decompressStream(dctx, &output, &input);
-    if (ZSTD_isError(result)) {
-      rWarning("decompressZST error: content is corrupt");
-      break;
-    }
-
-    decompressedData.append(outputBuffer.data(), output.pos);
-  }
-
-  ZSTD_freeDCtx(dctx);
-  if (!(abort && *abort)) {
-    decompressedData.shrink_to_fit();
-    return decompressedData;
-  }
-  return {};
 }
 
 void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &interrupt_requested) {
