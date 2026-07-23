@@ -3,8 +3,7 @@ import os
 import random
 import unittest
 from collections import defaultdict, Counter
-import hypothesis.strategies as st
-from hypothesis import Phase, given, settings
+from openpilot.common.fuzzy import fuzzy_test
 from openpilot.common.parameterized import parameterized_class
 from openpilot.common.test import OpenpilotTestCase
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
@@ -39,7 +38,6 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
-MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
 
 
@@ -303,10 +301,8 @@ class TestCarModelBase(OpenpilotTestCase):
     test_car_controller(CC.as_reader())
 
   # Capturing stdout/stderr here causes elevated memory usage.
-  @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
-  @given(data=st.data())
-  def test_panda_safety_carstate_fuzzy(self, data):
+  @fuzzy_test(max_examples=300)
+  def test_panda_safety_carstate_fuzzy(self, fuzzy):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
@@ -316,10 +312,9 @@ class TestCarModelBase(OpenpilotTestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
-    address, bus, size = data.draw(st.sampled_from(valid_addrs))
+    address, bus, size = fuzzy.choice(valid_addrs)
 
-    msg_strategy = st.binary(min_size=size, max_size=size)
-    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+    msgs = fuzzy.list(lambda: fuzzy.binary(min_size=size, max_size=size), min_size=20)
 
     vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
 

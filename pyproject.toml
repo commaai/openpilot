@@ -60,9 +60,6 @@ testing = [
   "ruff",       # linting
   "codespell",  # spellcheck
 
-  # TODO: replace this with our own implementation
-  "hypothesis ==6.47.*",
-
   # TODO: replace these with our own nice simple test runner
   "pytest",
   "pytest-xdist",
