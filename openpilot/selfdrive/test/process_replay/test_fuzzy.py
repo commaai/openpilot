@@ -1,13 +1,11 @@
 import copy
 import os
-from hypothesis import given, HealthCheck, Phase, settings
-import hypothesis.strategies as st
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
+from openpilot.common.fuzzy import capnp_random_dict, fuzzy_test
 
 from openpilot.cereal import log
 from opendbc.car.toyota.values import CAR as TOYOTA
-from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 import openpilot.selfdrive.test.process_replay.process_replay as pr
 
 # These processes currently fail because of unrealistic data breaking assumptions
@@ -22,11 +20,11 @@ class TestFuzzProcesses(OpenpilotTestCase):
 
   # TODO: make this faster and increase examples
   @parameterized.expand(TEST_CASES)
-  @given(st.data())
-  @settings(phases=[Phase.generate, Phase.target], max_examples=MAX_EXAMPLES, deadline=1000,
-            suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large])
-  def test_fuzz_process(self, proc_name, cfg, data):
-    msgs = FuzzyGenerator.get_random_event_msg(data.draw, events=cfg.pubs, real_floats=True)
+  @fuzzy_test(max_examples=MAX_EXAMPLES)
+  def test_fuzz_process(self, proc_name, cfg, fuzzy):
+    msgs = [capnp_random_dict(fuzzy, log.Event.schema, event, real_floats=True) for event in sorted(cfg.pubs)]
+    for i, msg in enumerate(msgs):
+      msg["logMonoTime"] = i * int(1e9)
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5
-    pr.replay_process(cfg, lr, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2, disable_progress=True)
+    pr.replay_process(cfg, lr, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2, disable_progress=True, disable_migrations=True)
