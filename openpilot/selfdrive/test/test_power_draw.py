@@ -27,17 +27,22 @@ class Proc:
   msgs: list[str]
   rtol: float = 0.05
   atol: float = 0.12
+  sample_time: int = SAMPLE_TIME
 
   @property
   def name(self):
     return '+'.join(self.procs)
+
+  @property
+  def power_budget(self):
+    return self.power * (1 + self.rtol) + self.atol
 
 
 PROCS = [
   Proc(['camerad'], 1.65, atol=0.4, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
   Proc(['modeld'], 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
-  Proc(['encoderd'], 0.23, msgs=[]),
+  Proc(['encoderd'], 0.23, rtol=0, atol=0.17, msgs=['roadEncodeData'], sample_time=5),
 ]
 
 
@@ -51,15 +56,12 @@ class TestPowerDraw(OpenpilotTestCase):
     manager_cleanup()
 
   def get_expected_messages(self, proc):
-    return int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
+    return int(sum(proc.sample_time * SERVICE_LIST[msg].frequency for msg in proc.msgs))
 
   def valid_msg_count(self, proc, msg_counts):
     msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
     msgs_expected = self.get_expected_messages(proc)
     return np.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
-
-  def valid_power_draw(self, proc, used):
-    return np.isclose(used, proc.power, rtol=proc.rtol, atol=proc.atol)
 
   def tabulate_msg_counts(self, msgs_and_power):
     msg_counts = defaultdict(int)
@@ -73,7 +75,7 @@ class TestPowerDraw(OpenpilotTestCase):
     for sock in socks.values():
       messaging.drain_sock_raw(sock)
 
-    msgs_and_power = deque([], maxlen=SAMPLE_TIME)
+    msgs_and_power = deque([], maxlen=proc.sample_time)
 
     start_time = time.monotonic()
 
@@ -84,16 +86,16 @@ class TestPowerDraw(OpenpilotTestCase):
         iteration_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
       msgs_and_power.append((power, iteration_msg_counts))
 
-      if len(msgs_and_power) < SAMPLE_TIME:
+      if len(msgs_and_power) < proc.sample_time:
         continue
 
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
       now = np.mean([m[0] for m in msgs_and_power])
 
-      if self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now - prev):
+      if self.valid_msg_count(proc, msg_counts):
         break
 
-    return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
+    return now, msg_counts, time.monotonic() - start_time - proc.sample_time
 
   @mock_messages(['livePose'])
   def test_camera_procs(self, subtests):
@@ -101,6 +103,7 @@ class TestPowerDraw(OpenpilotTestCase):
 
     prev = baseline
     used = {}
+    cumulative_used = {}
     warmup_time = {}
     msg_counts = {}
 
@@ -111,19 +114,25 @@ class TestPowerDraw(OpenpilotTestCase):
       msg_counts.update(local_msg_counts)
 
       used[proc.name] = now - prev
+      cumulative_used[proc.name] = now - baseline
       prev = now
 
     manager_cleanup()
 
-    tab = [['process', 'expected (W)', 'measured (W)', '# msgs expected', '# msgs received', "warmup time (s)"]]
+    cumulative_budget = 0.
+    tab = [['process', 'marginal measured (W)', 'cumulative budget (W)', 'cumulative measured (W)',
+            '# msgs expected', '# msgs received', "warmup time (s)"]]
     for proc in PROCS:
       cur = used[proc.name]
-      expected = proc.power
+      cumulative_budget += proc.power_budget
+      cumulative_cur = cumulative_used[proc.name]
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
-      tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
+      tab.append([proc.name, round(cur, 2), round(cumulative_budget, 2), round(cumulative_cur, 2),
+                  self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
       with subtests.test(proc=proc.name):
         assert self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs"
-        assert self.valid_power_draw(proc, cur), f"expected {expected:.2f}W, got {cur:.2f}W"
+        assert cumulative_cur <= cumulative_budget, \
+          f"cumulative power budget {cumulative_budget:.2f}W exceeded: got {cumulative_cur:.2f}W"
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 

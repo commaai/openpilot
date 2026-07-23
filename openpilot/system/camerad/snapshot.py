@@ -44,6 +44,13 @@ def extract_image(buf):
   return yuv_to_rgb(y, u, v)
 
 
+def recv_image(client, retries=3):
+  for _ in range(retries):
+    if (buf := client.recv()) is not None:
+      return extract_image(buf)
+  raise RuntimeError(f"failed to receive camera frame after {retries} attempts")
+
+
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   sockets = [s for s in (frame, front_frame) if s is not None]
   sm = messaging.SubMaster(sockets)
@@ -59,9 +66,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   # grab images
   rear, front = None, None
   if frame is not None:
-    c = vipc_clients[frame]
-    rear = extract_image(c.recv())
+    rear = recv_image(vipc_clients[frame])
   if front_frame is not None:
-    c = vipc_clients[front_frame]
-    front = extract_image(c.recv())
+    front = recv_image(vipc_clients[front_frame])
   return rear, front
