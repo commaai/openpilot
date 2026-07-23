@@ -18,8 +18,10 @@
 #include <QTextDocument>
 #include <QVBoxLayout>
 
+#include "imgui.h"
 #include "json11/json11.hpp"
 #include "tools/cabana/commands.h"
+#include "tools/cabana/imguihost.h"
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
 #include "tools/cabana/utils/export.h"
@@ -146,6 +148,7 @@ void MainWindow::createActions() {
   view_menu->addSeparator();
   view_menu->addAction(messages_dock->toggleViewAction());
   view_menu->addAction(video_dock->toggleViewAction());
+  if (imgui_dock) view_menu->addAction(imgui_dock->toggleViewAction());
   view_menu->addSeparator();
   view_menu->addAction(tr("Reset Window Layout"), [this]() { restoreState(utils::qbytes(default_state)); });
 
@@ -172,6 +175,28 @@ void MainWindow::createDockWindows() {
   video_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   video_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
   addDockWidget(Qt::RightDockWidgetArea, video_dock);
+
+  // dev-only imgui beachhead (see deqt.md)
+  if (getenv("CABANA_IMGUI")) {
+    class DemoHost : public ImGuiHost {
+      bool moved = false;
+      void drawFrame() override {
+        ImGui::ShowDemoWindow();
+        if (!moved) {  // demo's default position lands outside the dock
+          ImGui::SetWindowPos("Dear ImGui Demo", {0, 0});
+          moved = true;
+          update();
+        }
+      }
+    };
+    auto host = new DemoHost();
+    host->setMinimumSize(400, 300);
+    imgui_dock = new QDockWidget(tr("IMGUI"), this);
+    imgui_dock->setObjectName("ImGuiPanel");
+    imgui_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    imgui_dock->setWidget(host);
+    addDockWidget(Qt::RightDockWidgetArea, imgui_dock);
+  }
 }
 
 void MainWindow::createDockWidgets() {

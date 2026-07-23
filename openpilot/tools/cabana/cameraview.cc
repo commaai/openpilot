@@ -2,16 +2,17 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <cstdio>
+#include <utility>
 
 #include <QApplication>
-#include <QPainter>
 
 #include "common/yuv.h"
+#include "imgui.h"
+#include "imgui_impl_opengl3_loader.h"
 
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, QWidget* parent) :
-                          stream_name(stream_name), active_stream_type(type), requested_stream_type(type), QWidget(parent) {
+                          stream_name(stream_name), active_stream_type(type), requested_stream_type(type), ImGuiHost(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
@@ -21,6 +22,9 @@ CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, QWidg
 
 CameraWidget::~CameraWidget() {
   stopVipcThread();
+  if (texture && makeCurrent()) {
+    glDeleteTextures(1, &texture);
+  }
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
@@ -42,29 +46,43 @@ void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
   available_streams = streams;
 }
 
-void CameraWidget::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
-  p.fillRect(rect(), bg);
-
-  std::lock_guard lk(frame_lock);
-  if (rgb_frame.isNull()) return;
-
-  // Scale for aspect ratio
-  float widget_ratio = (float)width() / height();
-  float frame_ratio = (float)rgb_frame.width() / rgb_frame.height();
-  int w = std::lround(width() * std::min(frame_ratio / widget_ratio, 1.0f));
-  int h = std::lround(height() * std::min(widget_ratio / frame_ratio, 1.0f));
-  QRect video_rect((width() - w) / 2, (height() - h) / 2, w, h);
-
-  p.setRenderHint(QPainter::SmoothPixmapTransform);
-  if (active_stream_type == VISION_STREAM_DRIVER) {
-    // mirror driver camera horizontally
-    const qreal cx = video_rect.x() + video_rect.width() / 2.0;
-    p.translate(cx, 0);
-    p.scale(-1, 1);
-    p.translate(-cx, 0);
+void CameraWidget::drawFrame() {
+  {
+    std::lock_guard lk(frame_lock);
+    if (uploaded_gen != frame_gen) {
+      uploaded_gen = frame_gen;
+      tex_valid = !rgb_frame.empty();
+      if (tex_valid) {
+        if (!texture) glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        if (frame_width != tex_width || frame_height != tex_height) {
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+          glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb_frame.data());
+          tex_width = frame_width;
+          tex_height = frame_height;
+        } else {
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, GL_RGBA, GL_UNSIGNED_BYTE, rgb_frame.data());
+        }
+        glBindTexture(GL_TEXTURE_2D, 0);
+      }
+    }
   }
-  p.drawImage(video_rect, rgb_frame);
+  if (!tex_valid) return;
+
+  // aspect-fit letterbox
+  const ImVec2 ds = ImGui::GetIO().DisplaySize;
+  float widget_ratio = ds.x / ds.y;
+  float frame_ratio = (float)tex_width / tex_height;
+  float w = ds.x * std::min(frame_ratio / widget_ratio, 1.0f);
+  float h = ds.y * std::min(widget_ratio / frame_ratio, 1.0f);
+  ImVec2 p0((ds.x - w) / 2, (ds.y - h) / 2);
+  ImVec2 uv0(0, 0), uv1(1, 1);
+  if (active_stream_type == VISION_STREAM_DRIVER) std::swap(uv0.x, uv1.x);  // mirror driver camera
+  ImGui::GetBackgroundDrawList()->AddImage(static_cast<ImTextureID>(texture), p0, ImVec2(p0.x + w, p0.y + h), uv0, uv1);
 }
 
 void CameraWidget::vipcFrameReceived() {
@@ -102,24 +120,28 @@ void CameraWidget::vipcThread() {
     }
 
     if (VisionBuf *buf = vipc_client->recv(&frame_meta, 100)) {
-      // NV12 -> RGBA once per frame on the receive thread; paint just draws the image
-      if (rgb_back.width() != (int)buf->width || rgb_back.height() != (int)buf->height) {
-        rgb_back = QImage(buf->width, buf->height, QImage::Format_RGBA8888);
-      }
+      // NV12 -> RGBA once per frame on the receive thread; the GUI thread uploads to GL
+      rgb_back.resize(buf->width * buf->height * 4);
       yuv::nv12_to_rgba(buf->y, buf->stride, buf->uv, buf->stride,
-                        rgb_back.bits(), rgb_back.bytesPerLine(), buf->width, buf->height);
+                        rgb_back.data(), buf->width * 4, buf->width, buf->height);
       {
         std::lock_guard lk(frame_lock);
         rgb_frame.swap(rgb_back);
+        frame_width = buf->width;
+        frame_height = buf->height;
+        ++frame_gen;
       }
       emit vipcThreadFrameReceived();
     }
   }
 }
 
+// runs on the vipc thread: no GL here, just drop the CPU buffers and let the GUI thread notice
 void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
-  rgb_frame = QImage();
-  rgb_back = QImage();
+  rgb_frame.clear();
+  rgb_back.clear();
+  frame_width = frame_height = 0;
+  ++frame_gen;
   available_streams.clear();
 }
