@@ -61,6 +61,9 @@ def listdir_by_creation(d: str) -> list[str]:
     return []
 
 def clear_locks(root: str) -> None:
+  if not os.path.isdir(root):
+    return
+
   for logdir in os.listdir(root):
     path = os.path.join(root, logdir)
     try:

@@ -1,9 +1,12 @@
+import os
+import shutil
+
 Import('env', 'arch', 'messaging', 'common', 'visionipc', 'ffmpeg_libs')
 
-libs = [common, messaging, visionipc] + ffmpeg_libs + ['pthread', 'm', 'zstd']
+libs = [common, messaging, visionipc] + ffmpeg_libs + ['pthread', 'm']
 frameworks = []
 
-src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/jpeg_encoder.cc']
+src = ['encoder/encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch == "larch64":
   src += ['encoder/v4l_encoder.cc']
 else:
@@ -11,9 +14,14 @@ else:
   if arch == "Darwin":
     frameworks += ['VideoToolbox', 'CoreMedia', 'CoreFoundation', 'CoreVideo']
 
-logger_lib = env.Library('logger', src)
-libs.insert(0, logger_lib)
+encoder_lib = env.Library('encoder', src)
+libs.insert(0, encoder_lib)
 
-env.Program('loggerd', ['loggerd.cc'], LIBS=libs, FRAMEWORKS=frameworks)
 env.Program('encoderd', ['encoderd.cc'], LIBS=libs, FRAMEWORKS=frameworks)
-env.Program('bootlog.cc', LIBS=libs, FRAMEWORKS=frameworks)
+
+def copy_python_entrypoint(target, source, env):
+  del env
+  shutil.copyfile(str(source[0]), str(target[0]))
+  os.chmod(str(target[0]), 0o755)
+
+env.Command('bootlog', 'bootlog.py', copy_python_entrypoint)

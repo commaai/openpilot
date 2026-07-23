@@ -21,6 +21,7 @@ from openpilot.common.hardware.hw import Paths
 from openpilot.common.hardware import TICI
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from openpilot.system.loggerd.loggerd import event_name
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.version import get_version
 from openpilot.tools.lib.helpers import RE
@@ -34,6 +35,14 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in SERVICE_LIST
 
 
 class TestLoggerd(OpenpilotTestCase):
+  def test_event_name(self):
+    for service in SERVICE_LIST:
+      try:
+        msg = messaging.new_message(service)
+      except Exception:
+        msg = messaging.new_message(service, 1)
+      assert event_name(msg.to_bytes()) == service
+
   def _get_latest_log_dir(self):
     log_dirs = sorted(Path(Paths.log_root()).iterdir(), key=lambda f: f.stat().st_mtime)
     return log_dirs[-1]
