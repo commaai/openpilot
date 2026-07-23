@@ -229,11 +229,11 @@ class StreamSession:
     builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
     self.enabled = body.enabled
+    self.video_tracks = []
     for camera in body.cameras:
       track = LiveStreamVideoStreamTrack(camera, self.enabled)
-      self.video_tracks[camera] = track
+      self.video_tracks.append(track)
       builder.add_video_stream(camera, track)
-    builder.add_video_stream(body.init_camera, self.video_track)
     self.stream = builder.stream()
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
@@ -252,7 +252,7 @@ class StreamSession:
     self.logger = logging.getLogger("webrtcd")
     self.logger.info(
       "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s",
-      self.identifier, list(self.video_tracks), body.enabled, body.bridge_services_in, body.bridge_services_out,
+      self.identifier, [t.id for t in self.video_tracks], body.enabled, body.bridge_services_in, body.bridge_services_out,
     )
 
   def start(self):
@@ -286,7 +286,7 @@ class StreamSession:
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
             self.enabled = enabled
-            for track in self.video_tracks.values():
+            for track in self.video_tracks:
               track.enable(enabled)
             if self.outgoing_bridge is not None:
               self.outgoing_bridge.enable(enabled)
@@ -300,7 +300,7 @@ class StreamSession:
             }})
             self.stream.get_messaging_channel().send(pong)
           case "enableTimingSei":
-            for track in self.video_tracks.values():
+            for track in self.video_tracks:
               track.timing_sei_enabled = bool(payload["data"]["enabled"])
           case _:
             if payload.get("type") not in self.incoming_bridge_services:
@@ -343,7 +343,7 @@ class StreamSession:
         await self.bitrate_controller.stop()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
-      for track in self.video_tracks.values():
+      for track in self.video_tracks:
         track.stop()
       self.video_tracks.clear()
       await self.stream.stop()
