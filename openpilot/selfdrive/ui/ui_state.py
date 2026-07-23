@@ -78,13 +78,15 @@ class UIState:
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
     self.usbgpu: bool = False
     self.usbgpu_compiled: bool = usbgpu_compiled()
+    self.usbgpu_active: bool = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_loading: bool = self.params.get_bool("UsbGpuLoading")
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
-    self.is_body: bool | None = None
+    self.is_body: bool | None = False
     self.CP: car.CarParams | None = None
     self.light_sensor: float = -1.0
 
@@ -204,9 +206,12 @@ class UIState:
     self.is_metric = self.params.get_bool("IsMetric")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
-    self.usbgpu = self.sm["deviceState"].chestnutPresent
+    # keep usbgpu UI active until offroad transition when gpu disappears
+    self.usbgpu = self.sm["deviceState"].chestnutPresent or (self.usbgpu and self.started)
     if not self.usbgpu_compiled:
       self.usbgpu_compiled = usbgpu_compiled()
+    self.usbgpu_active = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_loading = self.params.get_bool("UsbGpuLoading")
 
 
 class Device:

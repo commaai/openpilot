@@ -61,6 +61,9 @@ class MiciMainLayout(Scroller):
     if not self._onboarding_window.completed:
       gui_app.push_widget(self._onboarding_window)
 
+    # initialize correct onroad layout
+    self._on_body_changed()
+
   @property
   def _onroad_layout(self) -> Widget:
     # For scroll_to

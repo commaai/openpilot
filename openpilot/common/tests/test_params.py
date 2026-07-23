@@ -62,6 +62,11 @@ class TestParams(OpenpilotTestCase):
     with self.assertRaises(UnknownKeyName):
       self.params.put_bool("swag", True, block=True)
 
+    with self.assertRaises(UnknownKeyName):
+      self.params.put(b"DongleId\0suffix", "abc", block=True)
+
+    assert self.params.get_param_path(b"key\0suffix").endswith("/key\0suffix")
+
   def test_remove_not_there(self):
     assert self.params.get("CarParams") is None
     self.params.remove("CarParams")
