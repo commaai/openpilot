@@ -91,6 +91,12 @@ int params_get_key_type(ParamsHandle *handle, const char *key) noexcept {
   });
 }
 
+unsigned int params_get_key_flag(ParamsHandle *handle, const char *key) noexcept {
+  return translate_exceptions(0U, [&]() {
+    return static_cast<unsigned int>(handle->params.getKeyFlag(key));
+  });
+}
+
 ParamsBuffer params_get_default(ParamsHandle *handle, const char *key) noexcept {
   return translate_exceptions(ParamsBuffer{nullptr, 0}, [&]() {
     auto value = handle->params.getKeyDefaultValue(key);
