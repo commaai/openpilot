@@ -27,7 +27,12 @@ jobs:
       env:
         RENDER_BENCH_PYSPY: 1
       run: |
-        source openpilot/selfdrive/test/setup_xvfb.sh
+        # upstream removed setup_xvfb.sh in #38298 (openpilot itself is
+        # headless now); MetaDrive/panda3d still needs a display for
+        # software GL, so set one up inline
+        sudo apt-get install -y -qq xvfb
+        Xvfb :99 -screen 0 1928x1208x24 &
+        export DISPLAY=:99
         python3 openpilot/tools/sim/tests/render_bench.py
     - name: Upload frames
       if: always()
@@ -83,7 +88,12 @@ jobs:
         # self-diagnosing core dumps for any native crash (e.g. transient modeld death)
         ulimit -c unlimited
         sudo sysctl -w kernel.core_pattern='/tmp/sim_profile/core.%e.%p' > /dev/null
-        source openpilot/selfdrive/test/setup_xvfb.sh
+        # upstream removed setup_xvfb.sh in #38298 (openpilot itself is
+        # headless now); MetaDrive/panda3d still needs a display for
+        # software GL, so set one up inline
+        sudo apt-get install -y -qq xvfb
+        Xvfb :99 -screen 0 1928x1208x24 &
+        export DISPLAY=:99
         # pre-download metadrive assets so the test's startup window isn't
         # spent on a ~17s download
         python3 -m metadrive.pull_asset || true
