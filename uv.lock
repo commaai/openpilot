@@ -581,6 +581,7 @@ source = { editable = "msgq_repo" }
 
 [package.metadata]
 requires-dist = [
+    { name = "catch2", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=catch2&rev=release-catch2" },
     { name = "codespell", marker = "extra == 'dev'" },
     { name = "cppcheck", marker = "extra == 'dev'" },
     { name = "cpplint", marker = "extra == 'dev'" },
