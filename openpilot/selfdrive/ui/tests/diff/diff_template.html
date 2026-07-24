@@ -5,76 +5,213 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UI Diff Report</title>
   <style>
-    h1, h2, h3, h4 {
-      margin: 0.5em 0 0.25em;
-    }
-    #videoTable {
-      width: 100%;
-    }
+    body { font-family: sans-serif; margin: 0.75em; }
+    h1, h2, h3, h4 { margin: 0.5em 0 0.25em; }
+    table.videos { width: 100%; }
+    /* Video box is used to maintain aspect ratio for video placeholder size and to prevent layout shifts when switching scenes */
+    .video-box { width: 100%; position: relative; aspect-ratio: var(--scene-aspect, 16/9); }
+    .video-box video, .video-box .no-video { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; }
+    .video-box video { object-fit: contain; }
+    .video-box .no-video { display: none; align-items: center; justify-content: center; text-align: center; border: 1px dashed #aaa; box-sizing: border-box; background: #fafafa; color: #666; }
+    #nav { display: flex; flex-wrap: wrap; gap: 0.6em; margin: 1em 0;}
+    #nav button { width: 200px; display: flex; flex-direction: column; align-items: center; padding: 0; border: 2px solid #aaa; border-radius: 6px; cursor: pointer; background: #f5f5f5; position: relative; }
+    #nav button img { width: 100%; }
+    #nav button.active { border-color: #0078d4; background: #e5f2fc; border-width: 3px; }
+    #nav button.active .nav-index { color: black; }
+    #nav button.type-full { justify-content: center; }
+    #nav button.type-insert { border-color: #2a9d2a; }
+    #nav button.type-insert.active { border-color: #1a7a1a; background: #e6f7e6; }
+    #nav button.type-delete { border-color: #c0392b; }
+    #nav button.type-delete.active { border-color: #922b21; background: #fde8e6; }
+    .nav-title { flex: 1; text-align: center; font-weight: 600; }
+    .nav-desc { font-size: 0.60rem; padding: 0.12rem 0.25rem 0.35rem; text-align: center; }
+    .nav-index { position: absolute; left: 6px; bottom: 4px; font-weight: 600; color: #777; }
+    .nav-index.hidden { display: none; }
     @media (max-width: 800px) {
-      #videoTable tr {
-        display: flex;
-        flex-direction: column;
-      }
-      #videoTable td {
-        width: 100% !important;
-      }
+      table.videos tr { display: flex; flex-direction: column; }
+      table.videos td { width: 100%; }
+      #nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5em; }
+      #nav button { width: 100%; }
     }
   </style>
 </head>
 <body>
   <h2>UI Diff</h2>
-  <table id='videoTable'></table>
+  <div id='player'></div>
   <hr>
   <p><strong>Results:</strong> $RESULT_TEXT</p>
+  <div id='nav'></div>
   <script>
-    const videoDefs = [
-      { id: 'video1', title: 'Video 1', src: '$VIDEO1_SRC', sync: true },
-      { id: 'video2', title: 'Video 2', src: '$VIDEO2_SRC', sync: true },
-      { id: 'diffVideo', title: 'Pixel Diff', src: '$DIFF_SRC', sync: false },
+    const LABELS = ['Video 1', 'Video 2', 'Pixel Diff'];
+    const chunks = $CHUNKS_JSON;
+
+    const frames_label = (n) => `${n} frame${n !== 1 ? 's' : ''}`;
+    const frames_range_label = (start, end) =>
+      start === end ? `frame ${start + 1}` : `frames ${start + 1}–${end + 1}`;
+    const video_frames_range_label = (v, start, end) => `${frames_range_label(start, end)} (video ${v})`;
+
+    const scenes = [
+      { title: 'Full Video', desc: '', type: '', srcs: ['$VIDEO1_SRC', '$VIDEO2_SRC', '$DIFF_SRC'], loop: true },
+      ...chunks.map(({ v1_start, v1_end, v2_start, v2_end, v1_count, v2_count, type, clips, thumb }, i) => {
+        // Build title based on type and frame counts
+        let title = 'Unknown change';
+        if (type === 'insert') {
+          title = `➕ Added ${frames_label(v2_count)}`;
+        } else if (type === 'delete') {
+          title = `➖ Removed ${frames_label(v1_count)}`;
+        } else if (type === 'replace') {
+          if (v1_count === v2_count) {
+            title = `✏️ Changed ${frames_label(v1_count)}`;
+          } else {
+            const changeType = v2_count > v1_count ? '➕' : '➖';
+            title = `✏️${changeType} Changed ${v1_count}→${v2_count} frames`;
+          }
+        }
+
+        // Build description with frame ranges
+        let desc = '';
+        if (type === 'insert') {
+          desc = video_frames_range_label(2, v2_start, v2_end);
+        } else if (type === 'delete') {
+          desc = video_frames_range_label(1, v1_start, v1_end);
+        } else if (type === 'replace') {
+          if (v1_start === v2_start && v1_end === v2_end) {
+            desc = frames_range_label(v1_start, v1_end);
+          } else {
+            desc = `${video_frames_range_label(1, v1_start, v1_end)} → ${video_frames_range_label(2, v2_start, v2_end)}`;
+          }
+        }
+
+        return {
+          idx: i + 1, title, desc, type, thumb, loop: true,
+          srcs: [clips.video1, clips.video2, clips.diff],
+        };
+      }),
     ];
 
-    const row = document.getElementById('videoTable').insertRow();
-    videoDefs.forEach(({ id, title, src, sync }) => {
-      const td = row.insertCell();
-      td.width = '33%';
-      td.innerHTML = `<h4>${title}</h4>
-        <video id='${id}' width='100%' autoplay muted ${sync ? "onplay='syncVideos()'" : ''}>
-          <source src='${src}' type='video/mp4'>
-          Your browser does not support the video tag.
-        </video>`;
-    });
+    // Build video player table
+    document.getElementById('player').innerHTML = `<table class='videos'><tbody><tr>
+        ${LABELS.map((label, i) => `<td width='33.33%'>
+          <h4>${label}</h4>
+          <div class='video-box'>
+            <video id='v${i}' width='100%' muted playsinline preload='metadata'><source type='video/mp4'></video>
+            <div id='nv${i}' class='no-video'>No video</div>
+          </div>
+        </td>`).join('')}
+      </tr></tbody></table>`;
+    const videos = [0, 1, 2].map(i => document.getElementById(`v${i}`));
+    const videoBoxes = Array.from(document.querySelectorAll('.video-box'));
+    const noVideoEls = [0, 1, 2].map(i => document.getElementById(`nv${i}`));
+    let active = [true, true, true];  // Whether each video is active/exists for the current scene
 
-    const videos = videoDefs.map(({ id }) => document.getElementById(id));
+    let loopEnabled = false;
+    let restarting = false;
 
-    const isEnded = (v) => v.ended || (Number.isFinite(v.duration) && v.currentTime >= (v.duration - 0.05));
-    const playAll = () => videos.forEach((v) => v.play());
+    const isEnded = (v, i) => !active[i] || v.ended || (Number.isFinite(v.duration) && v.currentTime >= v.duration - 0.05);
 
-    function syncVideos() {
-      const t = Math.min(...videos.map((v) => v.currentTime));
-      videos.forEach((v) => { v.currentTime = t; });
-      playAll();
-    }
+    const applySceneAspectRatio = (ratio) => {
+      videoBoxes.forEach(box => box.style.setProperty('--scene-aspect', ratio));
+    };
 
-    function handleEnded(endedVideo) {
-      endedVideo.pause();
-      if (videos.every(isEnded)) {
-        videos.forEach((v) => { v.currentTime = 0; });
-        playAll();
-      }
-    }
+    // Sync: keep playing videos at the same playhead
+    videos.forEach((v, vi) => {
+      v.addEventListener('loadedmetadata', () => {
+        // Once metadata is available for this video, update scene ratio from this video and hide its placeholder
+        if (!active[vi]) return;
+        if (v.videoWidth > 0 && v.videoHeight > 0) applySceneAspectRatio(`${v.videoWidth}/${v.videoHeight}`);
+        noVideoEls[vi].style.display = 'none';
+        v.style.display = '';
+      });
 
-    videos.forEach((v) => {
       v.addEventListener('timeupdate', () => {
-        videos.forEach((other) => {
-          if (other !== v && !isEnded(other) && Math.abs(v.currentTime - other.currentTime) > 0.1) {
-            other.currentTime = v.currentTime;
-            if (other.paused) other.play();
+        if (restarting || !active[vi]) return;
+        videos.forEach((o, oi) => {
+          if (o === v || !active[oi] || isEnded(o, oi)) return;
+          const target = Number.isFinite(o.duration) ? Math.min(v.currentTime, o.duration) : v.currentTime;
+          if (Math.abs(target - o.currentTime) > 0.1) {
+            o.currentTime = target;
+            if (o.paused) o.play().catch(() => {});
           }
         });
       });
-      v.addEventListener('ended', () => handleEnded(v));
+
+      // When a video ends, pause it and let the longer ones continue. Only restart the whole scene once ALL videos have finished.
+      v.addEventListener('ended', () => {
+        if (!active[vi]) return;
+        v.pause();
+        if (!restarting && loopEnabled && videos.every((x, i) => isEnded(x, i))) {
+          restarting = true;
+          videos.forEach((x, i) => { if (active[i]) x.currentTime = 0; });
+          // Brief delay so all currentTime resets settle before we call play().
+          setTimeout(() => {
+            restarting = false;
+            videos.forEach((x, i) => { if (active[i]) x.play().catch(() => {}); });
+          }, 50);
+        }
+      });
     });
+
+    // Switch to a different scene (chunk group)
+    function switchTo(idx) {
+      restarting = false;
+      videos.forEach(v => { v.pause(); v.loop = false; });  // never use native loop
+      const { srcs, loop } = scenes[idx];
+      loopEnabled = loop;
+
+      // Update videos with new sources, show/hide as needed, and show placeholders until ready
+      videos.forEach((v, vi) => {
+        const src = srcs[vi];
+        active[vi] = !!src;
+        const source = v.querySelector('source');
+        source.src = src || '';
+        v.load();
+        v.style.display = src ? '' : 'none';
+        if (src) v.play().catch(() => {});
+        // Show placeholder until video is ready
+        noVideoEls[vi].style.display = 'flex';
+        noVideoEls[vi].innerText = src ? 'Loading…' : 'No video';
+      });
+
+      // Update active nav button
+      document.querySelectorAll('#nav button').forEach((b, j) => b.classList.toggle('active', j === idx));
+
+      // Update selected query param
+      const newUrl = new URL(window.location);
+      idx > 0 ? newUrl.searchParams.set('selected', idx) : newUrl.searchParams.delete('selected');
+      history.replaceState(null, '', newUrl);
+
+      // Scroll to top (nicer on mobile)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    const TYPE_NAV_CLASSES = { insert: 'type-insert', delete: 'type-delete' };
+
+    // Build nav buttons for each scene/chunk
+    const navEl = document.getElementById('nav');
+    if (scenes.length <= 1) {
+      navEl.style.display = 'none';  // hide the nav container if there are no diff chunks (only the full video scene)
+    } else {
+      let navHtml = '';
+      scenes.forEach(({ idx, type, title, desc, thumb }, i) => {
+        const thumbHtml = thumb ? `<img src="${thumb}" alt="${title}">` : '';
+        const titleHtml = `<span class="nav-title">${title}</span>`;
+        const descHtml = `<span class="nav-desc">${desc || ''}</span>`;
+        const idxHtml = `<span class="nav-index${idx ? '' : ' hidden'}">${idx ? idx + '.' : ''}</span>`;
+        const headerHtml = `<div>${titleHtml}${idxHtml}</div>`;
+        const btnTitle = ((title || '') + (desc ? ' — ' + desc : '')).trim();
+        navHtml += `<button class="${type ? TYPE_NAV_CLASSES[type] || '' : 'type-full'}" title="${btnTitle}" data-idx="${i}">${thumbHtml}${headerHtml}${descHtml}</button>`;
+      });
+      navEl.innerHTML = navHtml;
+      Array.from(navEl.children).forEach((btn, i) => {
+        btn.onclick = () => switchTo(i);
+      });
+    }
+
+    // If 'selected' query param is present, use that scene; otherwise default to 0.
+    const params = new URLSearchParams(window.location.search);
+    const v = parseInt(params.get('selected') || '0', 10);
+    const initial = (!Number.isNaN(v) && v >= 0 && v < scenes.length) ? v : 0;
+    switchTo(initial);
   </script>
 </body>
 </html>
