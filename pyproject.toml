@@ -74,6 +74,7 @@ tools = [
   "comma-deps-bootstrap-icons",
   "comma-deps-libusb",
   "comma-deps-ncurses",
+  "hypothesis==6.47.*",  # tools/car_porting/test_car_model.py
 
   # this can be added back once it's stripped down some more
   #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",

@@ -39,14 +39,16 @@ FAILED openpilot/selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::
 
 ```
 
-### [opendbc_repo/opendbc/car/tests/test_models.py](/opendbc_repo/opendbc/car/tests/test_models.py)
+### [tools/car_porting/test_car_model.py](/tools/car_porting/test_car_model.py)
 
-The model tests run most of the car interface to check for common errors like missing signals, blocked panda messages, and safety mismatches.
+Given a route, runs most of the car interface to check for common errors like missing signals, blocked panda messages, and safety mismatches.
 
 #### Example: panda safety mismatch for gasPressed
 ```bash
+> python3 tools/car_porting/test_car_model.py '4822a427b188122a|2023-08-14--16-22-21'
+
 =====================================================================
-FAIL: test_panda_safety_carstate (test_models.TestCarModel_0.test_panda_safety_carstate)
+FAIL: test_panda_safety_carstate (__main__.CarModelTestCase.test_panda_safety_carstate)
 Assert that panda safety matches openpilot's carState
 ----------------------------------------------------------------------
 Traceback (most recent call last):
