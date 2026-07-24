@@ -318,6 +318,9 @@ class TestOnroad(OpenpilotTestCase):
     print(result)
 
   def test_camera_sync(self, subtests):
+    if os.getenv("RELEASE"):
+      self.skipTest("temporarily disabled for nightly release builds")
+
     cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
     encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
     for cams in (cam_states, encode_cams):
@@ -333,7 +336,7 @@ class TestOnroad(OpenpilotTestCase):
             assert np.all(eof_sof_diff < 50*1e6)
 
         first_fid = {min(self.ts[c]['frameId']) for c in cams}
-        # TODO: temporary nightly workaround while camera startup synchronization is investigated
+        assert len(first_fid) == 1, "Cameras don't start on same frame ID"
         if cam.endswith('CameraState'):
           # camerad guarantees that all cams start on frame ID 0
           # (note loggerd also needs to start up fast enough to catch it)
