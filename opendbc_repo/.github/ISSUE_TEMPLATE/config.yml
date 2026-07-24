@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: openpilot bug report
+    url: https://github.com/commaai/openpilot/issues/new
+    about: For issues not limited to a particular car make or model, e.g. driving model performance or issues with your comma device.
+  - name: Join the Discord
+    url: https://discord.comma.ai
+    about: The community Discord is for both car port development and experience discussion
+  - name: Report driving behavior feedback
+    url: https://discord.com/channels/469524606043160576/1254834193066623017
+    about: Feedback for the driving and driver monitoring models goes in the #driving-feedback in Discord
+  - name: Community Wiki
+    url: https://github.com/commaai/openpilot/wiki
+    about: Check out our community wiki

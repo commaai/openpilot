@@ -1,0 +1,187 @@
+[project]
+name = "openpilot"
+requires-python = ">= 3.12.3, < 3.13"
+license = {text = "MIT License"}
+version = "0.1.0"
+description = "an open source driver assistance system"
+authors = [
+  {name = "Vehicle Researcher", email="user@comma.ai"}
+]
+
+dependencies = [
+  # multiple users
+  "sounddevice",  # micd + soundd
+  "requests",     # many one-off uses
+  "tqdm",         # cars (fw_versions.py) on start + many one-off uses
+
+  # core
+  "scons",
+  "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
+  "Cython",
+  "numpy >=2.0",
+
+  # vendored native dependencies
+  "comma-deps-capnproto",
+  "comma-deps-acados",
+  "comma-deps-ffmpeg",
+  "comma-deps-zstd",
+  "comma-deps-zeromq",
+  "comma-deps-json11",
+  "comma-deps-git-lfs",
+  "comma-deps-gcc-arm-none-eabi",
+
+  # logging
+  "pyzmq",
+  "sentry-sdk",
+
+  # athena
+  "PyJWT[crypto]",
+  "websocket_client",
+
+  # joystickd
+  "inputs",
+
+  # these should be removed
+  "setproctitle",
+
+  # logreader
+  "zstandard",
+
+  # ui
+  "comma-deps-raylib",
+  "qrcode",
+  "jeepney",
+  "pillow",
+]
+
+[project.optional-dependencies]
+docs = [
+  "zensical",
+]
+
+testing = [
+  "coverage",
+  "hypothesis ==6.47.*",
+  "ty",
+  "pytest",
+  "pytest-xdist",
+  "ruff",
+  "codespell",
+]
+
+dev = [
+  "matplotlib",
+]
+
+tools = [
+  "comma-deps-imgui",
+  "comma-deps-bzip2",
+  "comma-deps-bootstrap-icons",
+  "comma-deps-libusb",
+  "comma-deps-ncurses",
+
+  # this can be added back once it's stripped down some more
+  #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
+]
+
+submodules = [
+  "msgq",
+  "opendbc",
+  "pandacan",
+  "rednose",
+  "teleoprtc",
+  "tinygrad",
+]
+
+[project.urls]
+Homepage = "https://github.com/commaai/openpilot"
+
+[dependency-groups]
+standalone = [
+  "openpilot[submodules]",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "openpilot",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-Werror --strict-config --durations=10"
+python_files = "test_*.py"
+testpaths = [
+  "openpilot",
+]
+
+[tool.codespell]
+quiet-level = 3
+# if you've got a short variable name that's getting flagged, add it here
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite,ser"
+builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
+skip = "*.po, uv.lock, *.onnx, *.pem, */c_generated_code/*, docs/assets/*, openpilot/tools/plotjuggler/layouts/*, openpilot/selfdrive/assets/offroad/mici_fcc.html"
+
+# https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
+[tool.ruff]
+indent-width = 2
+lint.select = [
+  "E", "F", "W", "PIE", "C4", "ISC", "A", "B",
+  "NPY", # numpy
+  "UP",  # pyupgrade
+  "ASYNC",
+  "B904", "B905",
+  "PLC0207",
+  "TRY203", "TRY400", "TRY401", # try/excepts
+  "RUF006", "RUF008", "RUF009", "RUF061", "RUF064", "RUF100", "RUF102", "RUF103", "RUF104",
+  "TID251",
+  "PLE", "PLR1704",
+]
+lint.ignore = [
+  "E741",
+  "E402",
+  "B027",
+  "UP007",  # this doesn't play nice with raylib atm
+]
+line-length = 160
+lint.flake8-implicit-str-concat.allow-multiline = false
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest".msg = "Use unittest"
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"time.time".msg = "Use time.monotonic"  # time.time can skip due to its reference clock, you probably want a monotonic clock
+
+# raylib banned APIs
+"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
+"pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
+"pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
+"pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
+"pyray.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
+
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.ty.rules]
+unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
+unresolved-attribute = "ignore"  # many from capnp and Cython modules
+
+[tool.uv]
+python-preference = "only-managed"
+default-groups = ["standalone"]
+override-dependencies = [
+  "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
+]
+
+[tool.uv.sources]
+msgq = { path = "msgq_repo", editable = true }
+opendbc = { path = "opendbc_repo", editable = true }
+pandacan = { path = "panda", editable = true }
+rednose = { path = "rednose_repo", editable = true }
+teleoprtc = { path = "teleoprtc_repo", editable = true }
+tinygrad = { path = "tinygrad_repo", editable = true }

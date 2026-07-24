@@ -1,0 +1,3 @@
+include opendbc/car/car.capnp
+include opendbc/car/include/c++.capnp
+recursive-include opendbc/safety *.h

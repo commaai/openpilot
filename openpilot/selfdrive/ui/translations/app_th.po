@@ -1,0 +1,820 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: th\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid " Steering torque response calibration is complete."
+msgstr "การสอบเทียบการตอบสนองแรงบิดของพวงมาลัยเสร็จสมบูรณ์"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid " Steering torque response calibration is {}% complete."
+msgstr "การสอบเทียบการตอบสนองแรงบิดของพวงมาลัยเสร็จสมบูรณ์ {}%"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
+msgstr "อุปกรณ์ของคุณชี้ไปที่ {:.1f}° {} และ {:.1f}° {}"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "--"
+msgstr "--"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "1 year of drive storage"
+msgstr "พื้นที่เก็บข้อมูลไดรฟ์ 1 ปี"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "24/7 LTE connectivity"
+msgstr "การเชื่อมต่อ LTE ตลอด 24 ชั่วโมงทุกวัน"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "2G"
+msgstr "2จี"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "3G"
+msgstr "3จี"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "5G"
+msgstr "5จี"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "<br><br>Steering lag calibration is complete."
+msgstr "<br><br>การปรับเทียบความล่าช้าของพวงมาลัยเสร็จสมบูรณ์"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "<br><br>Steering lag calibration is {}% complete."
+msgstr "<br><br>การปรับเทียบความล่าช้าของพวงมาลัย {}% เสร็จสมบูรณ์"
+
+#: openpilot/selfdrive/ui/widgets/ssh_key.py
+msgid "ADD"
+msgstr "เพิ่ม"
+
+#: system/ui/widgets/network.py
+msgid "APN Setting"
+msgstr "การตั้งค่า APN"
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Acknowledge Excessive Actuation"
+msgstr "รับทราบการดำเนินการที่มากเกินไป"
+
+#: system/ui/widgets/network.py
+msgid "Advanced"
+msgstr "ขั้นสูง"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Aggressive"
+msgstr "ก้าวร้าว"
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Agree"
+msgstr "เห็นด้วย"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Always-On Driver Monitoring"
+msgstr "การตรวจสอบไดรเวอร์ตลอดเวลา"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Are you sure you want to power off?"
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการปิดเครื่อง?"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Are you sure you want to reboot?"
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการรีบูต?"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Are you sure you want to reset calibration?"
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตการปรับเทียบ"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Are you sure you want to uninstall?"
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง?"
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+#: system/ui/widgets/network.py
+msgid "Back"
+msgstr "กลับ"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "Become a comma prime member at connect.comma.ai"
+msgstr "เป็นสมาชิกจุลภาคไพรม์ที่ Connect.comma.ai"
+
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
+msgstr "คั่นหน้า Connect.comma.ai ไปที่หน้าจอหลักของคุณเพื่อใช้เหมือนแอป"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "CHANGE"
+msgstr "เปลี่ยน"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "CHECK"
+msgstr "ตรวจสอบ"
+
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
+msgid "CHILL MODE ON"
+msgstr "เปิดโหมด Chill"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+#: system/ui/widgets/network.py
+msgid "CONNECT"
+msgstr "เชื่อมต่อ"
+
+#: system/ui/widgets/network.py
+msgid "CONNECTING..."
+msgstr "กำลังเชื่อมต่อ..."
+
+#: system/ui/widgets/confirm_dialog.py
+#: system/ui/widgets/keyboard.py
+#: system/ui/widgets/network.py
+#: system/ui/widgets/option_dialog.py
+msgid "Cancel"
+msgstr "ยกเลิก"
+
+#: system/ui/widgets/network.py
+msgid "Cellular Metered"
+msgstr "เซลล์วัดแสง"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Change Language"
+msgstr "เปลี่ยนภาษา"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Changing this setting will restart openpilot if the car is powered on."
+msgstr "การเปลี่ยนการตั้งค่านี้จะรีสตาร์ท Openpilot หากรถเปิดอยู่"
+
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Click \"add new device\" and scan the QR code on the right"
+msgstr "คลิก \"เพิ่มอุปกรณ์ใหม่\" และสแกนโค้ด QR ทางด้านขวา"
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Close"
+msgstr "ปิด"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Current Version"
+msgstr "เวอร์ชันปัจจุบัน"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "DOWNLOAD"
+msgstr "ดาวน์โหลด"
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Decline"
+msgstr "ปฏิเสธ"
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Decline, uninstall openpilot"
+msgstr "ปฏิเสธ ถอนการติดตั้ง openpilot"
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Developer"
+msgstr "นักพัฒนา"
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Device"
+msgstr "อุปกรณ์"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Disengage on Accelerator Pedal"
+msgstr "ปลดเมื่อเหยียบคันเร่ง"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Disengage to Power Off"
+msgstr "ปลดเพื่อปิดเครื่อง"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Disengage to Reboot"
+msgstr "ยกเลิกการเชื่อมต่อเพื่อรีบูต"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Disengage to Reset Calibration"
+msgstr "ปลดเพื่อรีเซ็ตการปรับเทียบ"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Display speed in km/h instead of mph."
+msgstr "แสดงความเร็วเป็น km/h แทน mph"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Dongle ID"
+msgstr "รหัสดองเกิล"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Download"
+msgstr "ดาวน์โหลด"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Driver Camera"
+msgstr "กล้องไดร์เวอร์"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Driving Personality"
+msgstr "บุคลิกภาพในการขับขี่"
+
+#: system/ui/widgets/network.py
+msgid "EDIT"
+msgstr "แก้ไข"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "ERROR"
+msgstr "ข้อผิดพลาด"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "ETH"
+msgstr "ผลประโยชน์ทับซ้อน"
+
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
+msgid "EXPERIMENTAL MODE ON"
+msgstr "โหมดทดลองเปิดอยู่"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable"
+msgstr "เปิดใช้งาน"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Enable ADB"
+msgstr "เปิดใช้งาน ADB"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable Lane Departure Warnings"
+msgstr "เปิดใช้งานคำเตือนการออกนอกเลน"
+
+#: system/ui/widgets/network.py
+msgid "Enable Roaming"
+msgstr "เปิดใช้งานโรมมิ่ง"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Enable SSH"
+msgstr "เปิดใช้งาน SSH"
+
+#: system/ui/widgets/network.py
+msgid "Enable Tethering"
+msgstr "เปิดใช้งานการปล่อยสัญญาณ"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable driver monitoring even when openpilot is not engaged."
+msgstr "เปิดใช้งานการตรวจสอบไดรเวอร์แม้ว่าจะไม่ได้ใช้งาน openpilot ก็ตาม"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable openpilot"
+msgstr "เปิดใช้งานโอเพ่นไพลอต"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
+msgstr "เปิดใช้งานการสลับการควบคุมตามยาวของ openpilot (อัลฟา) เพื่ออนุญาตโหมดการทดลอง"
+
+#: system/ui/widgets/network.py
+msgid "Enter APN"
+msgstr "ป้อน APN"
+
+#: system/ui/widgets/network.py
+msgid "Enter SSID"
+msgstr "ป้อน SSID"
+
+#: system/ui/widgets/network.py
+msgid "Enter new tethering password"
+msgstr "ป้อนรหัสผ่านการปล่อยสัญญาณใหม่"
+
+#: system/ui/widgets/network.py
+msgid "Enter password"
+msgstr "ใส่รหัสผ่าน"
+
+#: openpilot/selfdrive/ui/widgets/ssh_key.py
+msgid "Enter your GitHub username"
+msgstr "ป้อนชื่อผู้ใช้ GitHub ของคุณ"
+
+#: system/ui/widgets/list_view.py
+msgid "Error"
+msgstr "ข้อผิดพลาด"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental Mode"
+msgstr "โหมดทดลอง"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
+msgstr "ขณะนี้โหมดทดลองไม่สามารถใช้งานได้บนรถคันนี้ เนื่องจาก ACC ในสต็อกของรถใช้สำหรับการควบคุมตามยาว"
+
+#: system/ui/widgets/network.py
+msgid "FORGETTING..."
+msgstr "กำลังลืม..."
+
+#: openpilot/selfdrive/ui/widgets/setup.py
+msgid "Finish Setup"
+msgstr "เสร็จสิ้นการตั้งค่า"
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Firehose"
+msgstr "สายดับเพลิง"
+
+#: openpilot/selfdrive/ui/layouts/settings/firehose.py
+msgid "Firehose Mode"
+msgstr "โหมดสายดับเพลิง"
+
+#: system/ui/widgets/network.py
+msgid "Forget"
+msgstr "ลืม"
+
+#: system/ui/widgets/network.py
+msgid "Forget Wi-Fi Network \"{}\"?"
+msgstr "ลืมเครือข่าย Wi-Fi \"{}\" หรือไม่"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "GOOD"
+msgstr "ดี"
+
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Go to https://connect.comma.ai on your phone"
+msgstr "ไปที่ https://connect.comma.ai บนโทรศัพท์ของคุณ"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "HIGH"
+msgstr "สูง"
+
+#: system/ui/widgets/network.py
+msgid "Hidden Network"
+msgstr "เครือข่ายที่ซ่อนอยู่"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "INSTALL"
+msgstr "ติดตั้ง"
+
+#: system/ui/widgets/network.py
+msgid "IP Address"
+msgstr "ที่อยู่ IP"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Install Update"
+msgstr "ติดตั้งอัปเดต"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Joystick Debug Mode"
+msgstr "โหมดดีบักจอยสติ๊ก"
+
+#: openpilot/selfdrive/ui/widgets/ssh_key.py
+msgid "LOADING"
+msgstr "กำลังโหลด"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "LTE"
+msgstr "แอลทีที"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Longitudinal Maneuver Mode"
+msgstr "โหมดการซ้อมรบตามยาว"
+
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py
+msgid "MAX"
+msgstr "สูงสุด"
+
+#: openpilot/selfdrive/ui/widgets/setup.py
+msgid "Maximize your training data uploads to improve openpilot's driving models."
+msgstr "เพิ่มการอัปโหลดข้อมูลการฝึกของคุณให้สูงสุดเพื่อปรับปรุงโมเดลการขับขี่ของ Openpilot"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "N/A"
+msgstr "ไม่มี"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "NO"
+msgstr "เลขที่"
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Network"
+msgstr "เครือข่าย"
+
+#: openpilot/selfdrive/ui/widgets/ssh_key.py
+msgid "No SSH keys found for user '{}'"
+msgstr "ไม่พบคีย์ SSH สำหรับผู้ใช้ '{}'"
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "No release notes available."
+msgstr "ไม่มีบันทึกประจำรุ่น"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "OFFLINE"
+msgstr "ออฟไลน์"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+#: system/ui/widgets/confirm_dialog.py
+#: system/ui/widgets/html_render.py
+msgid "OK"
+msgstr "ตกลง"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "ONLINE"
+msgstr "ออนไลน์"
+
+#: openpilot/selfdrive/ui/widgets/setup.py
+msgid "Open"
+msgstr "เปิด"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "PAIR"
+msgstr "คู่"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "PANDA"
+msgstr "แพนด้า"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "PREVIEW"
+msgstr "ดูตัวอย่าง"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "PRIME FEATURES:"
+msgstr "คุณสมบัติเด่น:"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Pair Device"
+msgstr "จับคู่อุปกรณ์"
+
+#: openpilot/selfdrive/ui/widgets/setup.py
+msgid "Pair device"
+msgstr "จับคู่อุปกรณ์"
+
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Pair your device to your comma account"
+msgstr "จับคู่อุปกรณ์ของคุณกับบัญชีลูกน้ำของคุณ"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+#: openpilot/selfdrive/ui/widgets/setup.py
+msgid "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
+msgstr "จับคู่อุปกรณ์ของคุณกับการเชื่อมต่อด้วยเครื่องหมายจุลภาค (connect.comma.ai) และรับข้อเสนอจุลภาคเฉพาะของคุณ"
+
+#: openpilot/selfdrive/ui/widgets/setup.py
+msgid "Please connect to Wi-Fi to complete initial pairing"
+msgstr "โปรดเชื่อมต่อ Wi-Fi เพื่อทำการจับคู่ครั้งแรกให้เสร็จสิ้น"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Power Off"
+msgstr "ปิดเครื่อง"
+
+#: system/ui/widgets/network.py
+msgid "Prevent large data uploads when on a metered Wi-Fi connection"
+msgstr "ป้องกันการอัปโหลดข้อมูลขนาดใหญ่เมื่อใช้การเชื่อมต่อ Wi-Fi แบบมิเตอร์"
+
+#: system/ui/widgets/network.py
+msgid "Prevent large data uploads when on a metered cellular connection"
+msgstr "ป้องกันการอัพโหลดข้อมูลขนาดใหญ่เมื่อใช้การเชื่อมต่อมือถือแบบคิดค่าบริการตามปริมาณข้อมูล"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr "ดูตัวอย่างกล้องที่หันหน้าไปทางคนขับเพื่อให้แน่ใจว่าการตรวจสอบผู้ขับขี่มีทัศนวิสัยที่ดี (รถจะต้องถูกปิด)"
+
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "QR Code Error"
+msgstr "ข้อผิดพลาดรหัส QR"
+
+#: openpilot/selfdrive/ui/widgets/ssh_key.py
+msgid "REMOVE"
+msgstr "ลบ"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "RESET"
+msgstr "รีเซ็ต"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "REVIEW"
+msgstr "ทบทวน"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Reboot"
+msgstr "รีบูต"
+
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py
+msgid "Reboot Device"
+msgstr "รีบูตอุปกรณ์"
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Reboot and Update"
+msgstr "รีบูตและอัปเดต"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Record and Upload Driver Camera"
+msgstr "บันทึกและอัพโหลดกล้องไดร์เวอร์"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Record and Upload Microphone Audio"
+msgstr "บันทึกและอัปโหลดเสียงไมโครโฟน"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."
+msgstr "บันทึกและจัดเก็บเสียงไมโครโฟนขณะขับรถ เสียงจะรวมอยู่ในวิดีโอ dashcam ด้วยการเชื่อมต่อด้วยเครื่องหมายจุลภาค"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Regulatory"
+msgstr "กฎระเบียบ"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Relaxed"
+msgstr "ผ่อนคลาย"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "Remote access"
+msgstr "การเข้าถึงระยะไกล"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "Remote snapshots"
+msgstr "สแนปชอตระยะไกล"
+
+#: openpilot/selfdrive/ui/widgets/ssh_key.py
+msgid "Request timed out"
+msgstr "คำขอหมดเวลา"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Reset"
+msgstr "รีเซ็ต"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Reset Calibration"
+msgstr "รีเซ็ตการปรับเทียบ"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Review Training Guide"
+msgstr "ทบทวนคู่มือการฝึกอบรม"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Review the rules, features, and limitations of openpilot"
+msgstr "ตรวจสอบกฎ คุณสมบัติ และข้อจำกัดของ openpilot"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "SELECT"
+msgstr "เลือก"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "SSH Keys"
+msgstr "คีย์ SSH"
+
+#: system/ui/widgets/network.py
+msgid "Scanning Wi-Fi networks..."
+msgstr "กำลังสแกนเครือข่าย Wi-Fi..."
+
+#: system/ui/widgets/option_dialog.py
+msgid "Select"
+msgstr "เลือก"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Select a branch"
+msgstr "เลือกสาขา"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Select a language"
+msgstr "เลือกภาษา"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Serial"
+msgstr "อนุกรม"
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Snooze Update"
+msgstr "เลื่อนการอัปเดต"
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Software"
+msgstr "ซอฟต์แวร์"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Standard"
+msgstr "มาตรฐาน"
+
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py
+msgid "System Unresponsive"
+msgstr "ระบบไม่ตอบสนอง"
+
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py
+msgid "TAKE CONTROL IMMEDIATELY"
+msgstr "เข้าควบคุมทันที"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "TEMP"
+msgstr "อุณหภูมิ"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Target Branch"
+msgstr "สาขาเป้าหมาย"
+
+#: system/ui/widgets/network.py
+msgid "Tethering Password"
+msgstr "รหัสผ่านการแชร์อินเทอร์เน็ต"
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Toggles"
+msgstr "สลับ"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "UI Debug Mode"
+msgstr "โหมดดีบัก UI"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "UNINSTALL"
+msgstr "ถอนการติดตั้ง"
+
+#: openpilot/selfdrive/ui/layouts/home.py
+msgid "UPDATE"
+msgstr "อัปเดต"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Uninstall"
+msgstr "ถอนการติดตั้ง"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "Unknown"
+msgstr "ไม่ทราบ"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "Updates are only downloaded while the car is off."
+msgstr "การอัพเดตจะถูกดาวน์โหลดในขณะที่รถดับอยู่เท่านั้น"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "Upgrade Now"
+msgstr "อัพเกรดทันที"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
+msgstr "อัปโหลดข้อมูลจากกล้องที่หันเข้าหาคนขับและช่วยปรับปรุงอัลกอริธึมการตรวจสอบผู้ขับขี่"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Use Metric System"
+msgstr "ใช้ระบบเมตริก"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "VEHICLE"
+msgstr "ยานพาหนะ"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "VIEW"
+msgstr "ดู"
+
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py
+msgid "Waiting to start"
+msgstr "กำลังรอที่จะเริ่ม"
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Welcome to openpilot"
+msgstr "ยินดีต้อนรับสู่ openpilot"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
+msgstr "เมื่อเปิดใช้งาน การกดแป้นคันเร่งจะเป็นการปลดโอเพ่นไพลอต"
+
+#: openpilot/selfdrive/ui/layouts/sidebar.py
+msgid "Wi-Fi"
+msgstr "อินเตอร์เน็ตไร้สาย"
+
+#: system/ui/widgets/network.py
+msgid "Wi-Fi Network Metered"
+msgstr "เครือข่าย Wi-Fi มีการตรวจวัด"
+
+#: system/ui/widgets/network.py
+msgid "Wrong password"
+msgstr "รหัสผ่านผิด"
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "You must accept the Terms and Conditions in order to use openpilot."
+msgstr "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้งาน openpilot"
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
+msgstr "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้ openpilot อ่านข้อกำหนดล่าสุดได้ที่ https://comma.ai/terms ก่อนดำเนินการต่อ"
+
+#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+msgid "camera starting"
+msgstr "กำลังเริ่มกล้อง"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "checking..."
+msgstr "กำลังตรวจสอบ..."
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "comma prime"
+msgstr "เครื่องหมายลูกน้ำเฉพาะ"
+
+#: system/ui/widgets/network.py
+msgid "default"
+msgstr "ค่าเริ่มต้น"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "down"
+msgstr "ลง"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "downloading..."
+msgstr "กำลังดาวน์โหลด..."
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "failed to check for update"
+msgstr "ไม่สามารถตรวจสอบการอัปเดตได้"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "finalizing update..."
+msgstr "กำลังสรุปการอัปเดต..."
+
+#: system/ui/widgets/network.py
+msgid "for \"{}\""
+msgstr "สำหรับ \"{}\""
+
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py
+msgid "km/h"
+msgstr "กม./ชม"
+
+#: system/ui/widgets/network.py
+msgid "leave blank for automatic configuration"
+msgstr "เว้นว่างไว้เพื่อกำหนดค่าอัตโนมัติ"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "left"
+msgstr "ซ้าย"
+
+#: system/ui/widgets/network.py
+msgid "metered"
+msgstr "คิดค่าบริการตามปริมาณ"
+
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py
+msgid "mph"
+msgstr "ไมล์/ชม."
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "never"
+msgstr "ไม่เคย"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "now"
+msgstr "ตอนนี้"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "openpilot Longitudinal Control (Alpha)"
+msgstr "การควบคุมตามยาวของ openpilot (อัลฟา)"
+
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py
+msgid "openpilot Unavailable"
+msgstr "openpilot ไม่พร้อมใช้งาน"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "openpilot longitudinal control may come in a future update."
+msgstr "ระบบควบคุมตามยาวของ openpilot อาจมาในการอัปเดตครั้งถัดไป"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."
+msgstr "openpilot ต้องติดตั้งอุปกรณ์ให้อยู่ในช่วงเอียงซ้ายหรือขวาไม่เกิน 4° และเอียงขึ้นไม่เกิน 5° หรือเอียงลงไม่เกิน 9°"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "right"
+msgstr "ขวา"
+
+#: system/ui/widgets/network.py
+msgid "unmetered"
+msgstr "ไม่จำกัดปริมาณ"
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "up"
+msgstr "ขึ้น"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "up to date, last checked never"
+msgstr "เป็นเวอร์ชันล่าสุด ตรวจสอบครั้งล่าสุด: ไม่เคย"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "up to date, last checked {}"
+msgstr "เป็นเวอร์ชันล่าสุด ตรวจสอบครั้งล่าสุดเมื่อ {}"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "update available"
+msgstr "มีอัปเดตใหม่"
+
+#: openpilot/selfdrive/ui/layouts/home.py
+msgid "{} ALERT"
+msgid_plural "{} ALERTS"
+msgstr[0] "การแจ้งเตือน {} รายการ"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "{} day ago"
+msgid_plural "{} days ago"
+msgstr[0] "{} วันที่แล้ว"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "{} hour ago"
+msgid_plural "{} hours ago"
+msgstr[0] "{} ชั่วโมงที่แล้ว"
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py
+msgid "{} minute ago"
+msgid_plural "{} minutes ago"
+msgstr[0] "{} นาทีที่แล้ว"
+
+#: openpilot/selfdrive/ui/layouts/settings/firehose.py
+msgid "{} segment of your driving is in the training dataset so far."
+msgid_plural "{} segments of your driving is in the training dataset so far."
+msgstr[0] "ขณะนี้มีช่วงการขับขี่ของคุณ {} ช่วงอยู่ในชุดข้อมูลฝึกสอนแล้ว"
+
+#: openpilot/selfdrive/ui/widgets/prime.py
+msgid "✓ SUBSCRIBED"
+msgstr "✓ สมัครแล้ว"
+
+#: openpilot/selfdrive/ui/widgets/setup.py
+msgid "🔥 Firehose Mode 🔥"
+msgstr "🔥 โหมด Firehose 🔥"
+
