@@ -175,9 +175,10 @@ def decoder(addr, vipc_server, vst, W, H, debug=False):
 
       pc_latency = (time.monotonic()-frame_start_time)*1000
       if debug:
-        print(f"{len(msgs):2d} {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} \
-            roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms \
-            = {process_latency+network_latency+pc_latency:6.2f} ms", len(evta.data), sock_name)
+        msg = f" 1 {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} "
+        msg += f"roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms "
+        msg += f"= {process_latency+network_latency+pc_latency:6.2f} ms [{len(evta.data)} bytes] {sock_name}"
+        print(msg)
 
 class CompressedVipc:
   def __init__(self, addr, vision_streams, server_name, debug=False):
