@@ -193,6 +193,8 @@ function op_before_cmd() {
 }
 
 function op_setup() {
+  op_install
+
   op_get_openpilot_dir
   cd $OPENPILOT_ROOT
 
@@ -409,9 +411,8 @@ function op_default() {
   echo -e "  ${BOLD}check${NC}        Check the development environment (git, os) to start using openpilot"
   echo -e "  ${BOLD}esim${NC}         Manage eSIM profiles on your comma device"
   echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
-  echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
+  echo -e "  ${BOLD}setup${NC}        Install the 'op' tool and openpilot dependencies"
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
-  echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
   echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)"
   echo -e "  ${BOLD}start${NC}        Starts (or restarts) openpilot"
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
