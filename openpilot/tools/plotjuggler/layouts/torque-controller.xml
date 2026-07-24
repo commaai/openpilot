@@ -1,0 +1,250 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab containers="1" tab_name="Lateral Plan Conformance">
+   <Container>
+    <DockSplitter orientation="-" count="4" sizes="0.250949;0.249051;0.250949;0.249051">
+     <DockArea name="desired vs actual lateral acceleration (closer means better conformance to plan)">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="1.858161" bottom="-1.823407" right="1138.891674" left="0.000194"/>
+       <limitY/>
+       <curve name="/controlsState/lateralControlState/torqueState/actualLateralAccel" color="#1f77b4"/>
+       <curve name="/controlsState/lateralControlState/torqueState/desiredLateralAccel" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="desired vs actual lateral acceleration, road-roll factored out (closer means better conformance to plan)">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="2.749816" bottom="-3.723091" right="1138.891674" left="0.000194"/>
+       <limitY/>
+       <curve name="Actual lateral accel (roll compensated)" color="#1ac938"/>
+       <curve name="Desired lateral accel (roll compensated)" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+     <DockArea name="controller feed-forward vs actuator output (closer means controller prediction is more accurate)">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="1.978032" bottom="-1.570956" right="1138.891674" left="0.000194"/>
+       <limitY/>
+       <curve name="/carOutput/actuatorsOutput/torque" color="#9467bd">
+        <transform alias="/carOutput/actuatorsOutput/torque[Scale/Offset]" name="Scale/Offset">
+         <options value_offset="0" value_scale="-1" time_offset="0"/>
+        </transform>
+       </curve>
+       <curve name="/controlsState/lateralControlState/torqueState/f" color="#1f77b4"/>
+       <curve name="/carState/steeringPressed" color="#ff000f"/>
+      </plot>
+     </DockArea>
+     <DockArea name="vehicle speed">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="105.981304" bottom="-2.709314" right="1138.891674" left="0.000194"/>
+       <limitY/>
+       <curve name="carState.vEgo mph" color="#d62728"/>
+       <curve name="carState.vEgo kmh" color="#1ac938"/>
+       <curve name="/carState/vEgo" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="Vehicle Dynamics">
+   <Container>
+    <DockSplitter orientation="-" count="3" sizes="0.334282;0.331437;0.334282">
+     <DockArea name="configured-initial vs online-learned steerRatio, set configured value to match learned">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="19.665784" bottom="19.359553" right="1138.816328" left="0.000000"/>
+       <limitY/>
+       <curve name="/carParams/steerRatio" color="#1f77b4"/>
+       <curve name="/liveParameters/steerRatio" color="#1ac938"/>
+      </plot>
+     </DockArea>
+     <DockArea name="configured-initial vs online-learned tireStiffnessRatio, set configured value to match learned">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="1.112210" bottom="0.995631" right="1138.816328" left="0.000000"/>
+       <limitY/>
+       <curve name="/carParams/tireStiffnessFactor" color="#d62728"/>
+       <curve name="/liveParameters/stiffnessFactor" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+     <DockArea name="live steering angle offsets for straight-ahead driving, large values here may indicate alignment problems">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="-1.081041" bottom="-4.494133" right="1138.816328" left="0.000000"/>
+       <limitY/>
+       <curve name="/liveParameters/angleOffsetAverageDeg" color="#f14cc1"/>
+       <curve name="/liveParameters/angleOffsetDeg" color="#9467bd"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="Actuator Performance">
+   <Container>
+    <DockSplitter orientation="-" count="3" sizes="0.333333;0.333333;0.333333">
+     <DockArea name="offline-calculated vs online-learned lateral accel scaling factor, accel obtained from 100% actuator output">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="1.216110" bottom="0.539474" right="1138.920072" left="0.000000"/>
+       <limitY/>
+       <curve name="/liveTorqueParameters/latAccelFactorFiltered" color="#1f77b4"/>
+       <curve name="/liveTorqueParameters/latAccelFactorRaw" color="#d62728"/>
+       <curve name="/carParams/lateralTuning/torque/latAccelFactor" color="#1c9222"/>
+      </plot>
+     </DockArea>
+     <DockArea name="learned lateral accel offset, vehicle-specific compensation to obtain true zero lateral accel">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="-0.304367" bottom="-0.418688" right="1138.920072" left="0.000000"/>
+       <limitY/>
+       <curve name="/liveTorqueParameters/latAccelOffsetFiltered" color="#1ac938"/>
+       <curve name="/liveTorqueParameters/latAccelOffsetRaw" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+     <DockArea name="offline-calculated vs online-learned EPS friction factor, necessary to start moving the steering wheel">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="0.226389" bottom="0.158050" right="1138.920072" left="0.000000"/>
+       <limitY/>
+       <curve name="/liveTorqueParameters/frictionCoefficientFiltered" color="#f14cc1"/>
+       <curve name="/liveTorqueParameters/frictionCoefficientRaw" color="#9467bd"/>
+       <curve name="/carParams/lateralTuning/torque/friction" color="#1c9222"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="Actuator Delay">
+   <Container>
+    <DockSplitter orientation="-" count="3" sizes="0.30441;0.358464;0.337127">
+     <DockArea name="actuator lag learning state, 0 = learning, 1 = learned/applying, 2 = invalid">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="1.025000" bottom="-0.025000" right="1138.749979" left="0.000000"/>
+       <limitY/>
+       <curve name="/liveDelay/status" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+     <DockArea name="offline default vs online estimated steering actuator lag">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="0.419648" bottom="0.318362" right="1138.749979" left="0.000000"/>
+       <limitY/>
+       <curve name="/liveDelay/lateralDelay" color="#1f77b4"/>
+       <curve name="/liveDelay/lateralDelayEstimate" color="#d62728"/>
+       <curve name="opendbc default steering lag" color="#1ac938"/>
+      </plot>
+     </DockArea>
+     <DockArea name="online estimated steering actuator lag, standard deviation">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="0.067320" bottom="-0.001642" right="1138.749979" left="0.000000"/>
+       <limitY/>
+       <curve name="/liveDelay/lateralDelayEstimateStd" color="#f14cc1"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="Controls Performance">
+   <Container>
+    <DockSplitter orientation="-" count="4" sizes="0.265655;0.251898;0.245731;0.236717">
+     <DockArea name="rate-of-change limits on steering actuator (blue = original, green = rate-limited before CAN output)">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="1.050000" bottom="-1.050000" right="1138.891921" left="0.000194"/>
+       <limitY/>
+       <curve name="/carControl/actuators/torque" color="#0c00f2"/>
+       <curve name="/carOutput/actuatorsOutput/torque" color="#2cd63a"/>
+      </plot>
+     </DockArea>
+     <DockArea name="controller feed-forward vs actuator output (closer means controller prediction is more accurate)">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="1.978032" bottom="-1.570956" right="1138.891921" left="0.000194"/>
+       <limitY/>
+       <curve name="/carOutput/actuatorsOutput/torque" color="#9467bd">
+        <transform alias="/carOutput/actuatorsOutput/torque[Scale/Offset]" name="Scale/Offset">
+         <options value_offset="0" value_scale="-1.0" time_offset="0"/>
+        </transform>
+       </curve>
+       <curve name="/controlsState/lateralControlState/torqueState/f" color="#1f77b4"/>
+       <curve name="/carState/steeringPressed" color="#ff000f"/>
+      </plot>
+     </DockArea>
+     <DockArea name="proportional, integral, and feed-forward terms (actuator output = sum of PIF terms)">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="2.099784" bottom="-4.027542" right="1138.891921" left="0.000194"/>
+       <limitY/>
+       <curve name="/controlsState/lateralControlState/torqueState/f" color="#0ab027"/>
+       <curve name="/controlsState/lateralControlState/torqueState/p" color="#d62728"/>
+       <curve name="/controlsState/lateralControlState/torqueState/i" color="#ffaf00"/>
+       <curve name="Zero" color="#756a6a"/>
+      </plot>
+     </DockArea>
+     <DockArea name="road roll angle, from openpilot localizer">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range top="0.109446" bottom="-0.045525" right="1138.891921" left="0.000194"/>
+       <limitY/>
+       <curve name="/liveParameters/roll" color="#f14cc1"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <default delimiter="0" time_axis=""/>
+  </plugin>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="Cereal Subscriber"/>
+  <plugin ID="UDP Server"/>
+  <plugin ID="ZMQ Subscriber"/>
+  <plugin ID="Fast Fourier Transform"/>
+  <plugin ID="Quaternion to RPY"/>
+  <plugin ID="Reactive Script Editor">
+   <library code="--[[ Helper function to create a series from arrays&#xa;&#xa; new_series: a series previously created with ScatterXY.new(name)&#xa; prefix:     prefix of the timeseries, before the index of the array&#xa; suffix_X:   suffix to complete the name of the series containing the X value. If [nil], use the index of the array.&#xa; suffix_Y:   suffix to complete the name of the series containing the Y value&#xa; timestamp:   usually the tracker_time variable&#xa;              &#xa; Example:&#xa; &#xa; Assuming we have multiple series in the form:&#xa; &#xa;   /trajectory/node.{X}/position/x&#xa;   /trajectory/node.{X}/position/y&#xa;   &#xa; where {N} is the index of the array (integer). We can create a reactive series from the array with:&#xa; &#xa;   new_series = ScatterXY.new(&quot;my_trajectory&quot;) &#xa;   CreateSeriesFromArray( new_series, &quot;/trajectory/node&quot;, &quot;position/x&quot;, &quot;position/y&quot;, tracker_time );&#xa;--]]&#xa;&#xa;function CreateSeriesFromArray( new_series, prefix, suffix_X, suffix_Y, timestamp )&#xa;  &#xa;  --- clear previous values&#xa;  new_series:clear()&#xa;  &#xa;  --- Append points to new_series&#xa;  index = 0&#xa;  while(true) do&#xa;&#xa;    x = index;&#xa;    -- if not nil, get the X coordinate from a series&#xa;    if suffix_X ~= nil then &#xa;      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_X) )&#xa;      if series_x == nil then break end&#xa;      x = series_x:atTime(timestamp)&#x9; &#xa;    end&#xa;    &#xa;    series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_Y) )&#xa;    if series_y == nil then break end &#xa;    y = series_y:atTime(timestamp)&#xa;    &#xa;    new_series:push_back(x,y)&#xa;    index = index+1&#xa;  end&#xa;end&#xa;&#xa;--[[ Similar to the built-in function GetSeriesNames(), but select only the names with a give prefix. --]]&#xa;&#xa;function GetSeriesNamesByPrefix(prefix)&#xa;  -- GetSeriesNames(9 is a built-in function&#xa;  all_names = GetSeriesNames()&#xa;  filtered_names = {}&#xa;  for i, name in ipairs(all_names)  do&#xa;    -- check the prefix&#xa;    if name:find(prefix, 1, #prefix) then&#xa;      table.insert(filtered_names, name);&#xa;    end&#xa;  end&#xa;  return filtered_names&#xa;end&#xa;&#xa;--[[ Modify an existing series, applying offsets to all their X and Y values&#xa;&#xa; series: an existing timeseries, obtained with TimeseriesView.find(name)&#xa; delta_x: offset to apply to each x value&#xa; delta_y: offset to apply to each y value &#xa;  &#xa;--]]&#xa;&#xa;function ApplyOffsetInPlace(series, delta_x, delta_y)&#xa;  -- use C++ indeces, not Lua indeces&#xa;  for index=0, series:size()-1 do&#xa;    x,y = series:at(index)&#xa;    series:set(index, x + delta_x, y + delta_y)&#xa;  end&#xa;end&#xa;"/>
+   <scripts/>
+  </plugin>
+  <plugin ID="CSV Exporter"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations>
+  <snippet name="carState.vEgo kmh">
+   <global></global>
+   <function>return value * 3.6</function>
+   <linked_source>/carState/vEgo</linked_source>
+  </snippet>
+  <snippet name="carState.vEgo mph">
+   <global></global>
+   <function>return value * 2.23694</function>
+   <linked_source>/carState/vEgo</linked_source>
+  </snippet>
+  <snippet name="Desired lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/desiredCurvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
+  <snippet name="Actual lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/curvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
+  <snippet name="opendbc default steering lag">
+   <global></global>
+   <function>return value + 0.2</function>
+   <linked_source>/carParams/steerActuatorDelay</linked_source>
+  </snippet>
+  <snippet name="Zero">
+   <global></global>
+   <function>return (0)</function>
+   <linked_source>/carState/canValid</linked_source>
+  </snippet>
+ </customMathEquations>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+
