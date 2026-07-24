@@ -581,6 +581,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
         if HARDWARE.get_device_type() == "tizi":
+          # 3x drives with dcam, 4 drives with fcam
           init_camera = "driver"
   else:
       raise Exception("failed to get CarParamsPersistent")

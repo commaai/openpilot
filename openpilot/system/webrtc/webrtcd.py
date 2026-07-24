@@ -230,8 +230,9 @@ class StreamSession:
     builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
     self.enabled = body.enabled
-    self.video_track = LiveStreamVideoStreamTrack(body.init_camera, self.enabled)
-    builder.add_video_stream(body.init_camera, self.video_track)
+    self.init_camera = body.init_camera
+    self.video_track = LiveStreamVideoStreamTrack(self.init_camera, self.enabled)
+    builder.add_video_stream(self.init_camera, self.video_track)
     self.stream = builder.stream()
 
     self.is_body = "testJoystick" in body.bridge_services_in
@@ -326,6 +327,9 @@ class StreamSession:
       await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
       if self.stream.has_messaging_channel():
         self.stream.set_message_handler(self.message_handler)
+        self.stream.get_messaging_channel().send(
+          json.dumps({"type": "initCamera", "data": {"camera": self.init_camera}})
+        )
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
         if self.outgoing_bridge is not None:
