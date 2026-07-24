@@ -33,6 +33,7 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
+SIMULATION = "SIMULATION" in os.environ
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -287,7 +288,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
+    startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2 or SIMULATION
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
 
