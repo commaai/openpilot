@@ -39,24 +39,6 @@ FAILED openpilot/selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::
 
 ```
 
-### [tools/car_porting/test_car_model.py](/tools/car_porting/test_car_model.py)
-
-Given a route, runs most of the car interface to check for common errors like missing signals, blocked panda messages, and safety mismatches.
-
-#### Example: panda safety mismatch for gasPressed
-```bash
-> python3 tools/car_porting/test_car_model.py '4822a427b188122a|2023-08-14--16-22-21'
-
-=====================================================================
-FAIL: test_panda_safety_carstate (__main__.CarModelTestCase.test_panda_safety_carstate)
-Assert that panda safety matches openpilot's carState
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/batman/xx/openpilot/openpilot/selfdrive/car/tests/test_models.py", line 380, in test_panda_safety_carstate
-    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
-AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'gasPressed': 116}
-```
-
 ## Jupyter notebooks
 
 To use these notebooks, install Jupyter within your [openpilot virtual environment](/tools/README.md).
