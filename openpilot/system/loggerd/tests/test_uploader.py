@@ -18,8 +18,8 @@ class FakeLogHandler(logging.Handler):
     self.reset()
 
   def reset(self):
-    self.upload_order = list()
-    self.upload_ignored = list()
+    self.upload_order = []
+    self.upload_ignored = []
 
   def emit(self, record):
     try:
@@ -37,7 +37,7 @@ cloudlog.addHandler(log_handler)
 
 class TestUploader(UploaderTestCase):
   def setup_method(self):
-    super().setup_method()
+    super().openpilot_setup_method()
     log_handler.reset()
 
   def start_thread(self):

@@ -17,29 +17,41 @@ jobs:
     - name: Wait for process replay
       id: wait
       continue-on-error: true
-      uses: lewagon/wait-on-check-action@v1.3.4
+      uses: lewagon/wait-on-check-action@1d57e2c51a58d812d2765e036a028b6bdb5a6154
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         check-name: process replay
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         allowed-conclusions: success,failure
         wait-interval: 20
+    - name: Get tests run ID
+      if: steps.wait.outcome == 'success'
+      id: tests-run
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        run_id=$(gh api \
+          "repos/${{ github.repository }}/actions/workflows/tests.yaml/runs?event=pull_request&head_sha=${{ github.event.pull_request.head.sha }}&per_page=1" \
+          --jq '.workflow_runs[0].id // empty')
+        if [ -z "$run_id" ]; then
+          echo "No tests.yaml run found for ${{ github.event.pull_request.head.sha }}" >&2
+          exit 1
+        fi
+        echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
     - name: Download diff
       if: steps.wait.outcome == 'success'
-      uses: dawidd6/action-download-artifact@v6
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        workflow: tests.yaml
-        workflow_conclusion: ''
-        pr: ${{ github.event.number }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        run-id: ${{ steps.tests-run.outputs.run-id }}
         name: diff_report_${{ github.event.number }}
         path: .
-        allow_forks: true
     - name: Comment on PR
       if: steps.wait.outcome == 'success'
-      uses: thollander/actions-comment-pull-request@v2
+      uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b
       with:
-        filePath: diff_report.txt
-        comment_tag: diff_report
-        pr_number: ${{ github.event.number }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        file-path: diff_report.txt
+        comment-tag: diff_report
+        pr-number: ${{ github.event.number }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}

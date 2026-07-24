@@ -199,6 +199,17 @@ function op_setup() {
   op_check_openpilot_dir
   op_check_os
 
+  # Submodules must be present before uv sync: pyproject path sources
+  # (pandacan, opendbc, msgq, ...) live in the submodule checkouts.
+  echo "Getting git submodules..."
+  st="$(date +%s)"
+  if ! retry 3 git submodule update --jobs 4 --init --recursive; then
+    echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
+    return 1
+  fi
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
+
   echo "Installing dependencies..."
   st="$(date +%s)"
   SETUP_SCRIPT="tools/setup_dependencies.sh"
@@ -210,15 +221,6 @@ function op_setup() {
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
 
   op_activate_venv
-
-  echo "Getting git submodules..."
-  st="$(date +%s)"
-  if ! retry 3 git submodule update --jobs 4 --init --recursive; then
-    echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
-    return 1
-  fi
-  et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
@@ -309,8 +311,7 @@ function op_build() {
     # needed on AGNOS to not run out of memory
     op_run_command openpilot/system/manager/build.py
   else
-    # scons is fine on PC
-    op_run_command scons "$@"
+    op_run_command scons -u "$@"
   fi
 }
 
@@ -326,7 +327,7 @@ function op_lint() {
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest "$@"
+  op_run_command pytest -n logical --dist worksteal "$@"
 }
 
 function op_replay() {
@@ -430,7 +431,7 @@ function op_default() {
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
   echo -e "  ${BOLD}lint${NC}         Run the linter"
   echo -e "  ${BOLD}post-commit${NC}  Install the linter as a post-commit hook"
-  echo -e "  ${BOLD}test${NC}         Run all unit tests from pytest"
+  echo -e "  ${BOLD}test${NC}         Run all unit tests"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"

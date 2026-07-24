@@ -5,10 +5,12 @@ import random
 import string
 import subprocess
 import time
+from collections.abc import Collection
 from collections import defaultdict
 from pathlib import Path
-import pytest
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
@@ -31,7 +33,7 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in SERVICE_LIST
                    and SERVICE_LIST[f].should_log and "encode" not in f.lower()]
 
 
-class TestLoggerd:
+class TestLoggerd(OpenpilotTestCase):
   def _get_latest_log_dir(self):
     log_dirs = sorted(Path(Paths.log_root()).iterdir(), key=lambda f: f.stat().st_mtime)
     return log_dirs[-1]
@@ -74,8 +76,8 @@ class TestLoggerd:
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
     assert msgs[-1].sentinel.type == end_type
 
-  def _publish_random_messages(self, services: list[str]) -> dict[str, list]:
-    pm = messaging.PubMaster(services)
+  def _publish_random_messages(self, services: Collection[str]) -> dict[str, list]:
+    pm = messaging.PubMaster(list(services))
 
     managed_processes["loggerd"].start()
     for s in services:
@@ -192,7 +194,6 @@ class TestLoggerd:
       assert getattr(initData, initData_key) == v
       assert logged_params[param_key].decode() == v
 
-  @pytest.mark.xdist_group("camera_encoder_tests")  # setting xdist group ensures tests are run in same worker, prevents encoderd from crashing
   def test_rotation(self):
     Params().put("RecordFront", True, block=True)
 
@@ -277,7 +278,9 @@ class TestLoggerd:
         assert recv_cnt == 0, f"got {recv_cnt} {s} msgs in qlog"
       else:
         # check logged message count matches decimation
-        expected_cnt = (len(msgs) - 1) // SERVICE_LIST[s].decimation + 1
+        decimation = SERVICE_LIST[s].decimation
+        assert decimation is not None
+        expected_cnt = (len(msgs) - 1) // decimation + 1
         assert recv_cnt == expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}"
 
   def test_rlog(self):
@@ -305,14 +308,13 @@ class TestLoggerd:
     assert getxattr(segment_dir, PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
   def test_not_preserving_nonbookmarked_segments(self):
-    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) - {"userBookmark", "audioFeedback"}
+    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) - {"userBookmark"}
     self._publish_random_messages(services)
 
     segment_dir = self._get_latest_log_dir()
     assert getxattr(segment_dir, PRESERVE_ATTR_NAME) is None
 
-  @pytest.mark.xdist_group("camera_encoder_tests")  # setting xdist group ensures tests are run in same worker, prevents encoderd from crashing
-  @pytest.mark.parametrize("record_front", [True, False])
+  @parameterized.expand([True, False])
   def test_record_front(self, record_front):
     params = Params()
     params.put_bool("RecordFront", record_front, block=True)
@@ -322,8 +324,7 @@ class TestLoggerd:
     dcamera_hevc_exists = os.path.exists(os.path.join(self._get_latest_log_dir(), 'dcamera.hevc'))
     assert dcamera_hevc_exists == record_front
 
-  @pytest.mark.xdist_group("camera_encoder_tests")  # setting xdist group ensures tests are run in same worker, prevents encoderd from crashing
-  @pytest.mark.parametrize("record_audio", [True, False])
+  @parameterized.expand([True, False])
   def test_record_audio(self, record_audio):
     params = Params()
     params.put_bool("RecordAudio", record_audio, block=True)

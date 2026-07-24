@@ -1,5 +1,7 @@
 #include "tools/cabana/streamselector.h"
 
+#include <filesystem>
+
 #include <QFileDialog>
 #include <QLabel>
 #include <QPushButton>
@@ -52,10 +54,10 @@ StreamSelector::StreamSelector(QWidget *parent) : QDialog(parent) {
     setEnabled(true);
   });
   QObject::connect(file_btn, &QPushButton::clicked, [this]() {
-    QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
+    QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), QString::fromStdString(settings.last_dir), "DBC (*.dbc)");
     if (!fn.isEmpty()) {
       dbc_file->setText(fn);
-      settings.last_dir = QFileInfo(fn).absolutePath();
+      settings.last_dir = std::filesystem::absolute(fn.toStdString()).parent_path().string();
     }
   });
 }

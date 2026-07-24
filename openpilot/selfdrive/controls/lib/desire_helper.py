@@ -68,7 +68,7 @@ class DesireHelper:
             self.lane_change_state = LaneChangeState.off
             self.lane_change_direction = LaneChangeDirection.none
 
-    self.prev_one_blinker = one_blinker
+    self.prev_one_blinker = one_blinker and lateral_active
 
     self.desire = log.Desire.none
     if self.lane_change_state == LaneChangeState.laneChangeStarting:

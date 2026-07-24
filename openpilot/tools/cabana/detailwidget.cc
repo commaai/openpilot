@@ -1,4 +1,5 @@
 #include "tools/cabana/detailwidget.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <QFormLayout>
 #include <QMenu>
@@ -56,8 +57,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &DetailWidget::updateState);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::refresh);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &DetailWidget::refresh);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) {
@@ -210,13 +211,13 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
   EditMessageDialog dlg(msg_id, QString::fromStdString(msgName(msg_id)), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed().toStdString(), dlg.size_spin->value(),
+    UndoStack::instance()->push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed().toStdString(), dlg.size_spin->value(),
                                        dlg.node->text().trimmed().toStdString(), dlg.comment_edit->toPlainText().trimmed().toStdString()));
   }
 }
 
 void DetailWidget::removeMsg() {
-  UndoStack::push(new RemoveMsgCommand(msg_id));
+  UndoStack::instance()->push(new RemoveMsgCommand(msg_id));
 }
 
 // EditMessageDialog

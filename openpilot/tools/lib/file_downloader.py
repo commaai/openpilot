@@ -5,17 +5,21 @@ Called by C++ replay/cabana via subprocess.
 
 Subcommands:
   route-files <route>    - Get route file URLs as JSON
-  download <url>         - Download URL to local cache, print local path
+  download <url>         - Download/decompress URL to local cache, print local path
+  decompress <path>      - Decompress a local log file, print temporary path
   devices                - List user's devices as JSON
   device-routes <did>    - List routes for a device as JSON
 """
 import argparse
+import bz2
 import hashlib
 import json
 import os
+import shutil
 import sys
 import tempfile
-import shutil
+
+import zstandard as zstd
 
 from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib.api import CommaApi, UnauthorizedError, APIError
@@ -39,9 +43,58 @@ def api_call(func):
   sys.stdout.flush()
 
 
-def cache_file_path(url):
+def cache_file_path(url, compression=None):
   url_without_query = url.split("?")[0]
+  if compression:
+    url_without_query = f"decompressed-{compression}:{url_without_query}"
   return os.path.join(Paths.download_cache_root(), hashlib.sha256(url_without_query.encode()).hexdigest())
+
+
+def compression_type(data):
+  if data.startswith(b'BZh'):
+    return 'bz2'
+  if data.startswith(b'\x28\xb5\x2f\xfd'):
+    return 'zst'
+  return None
+
+
+def make_decompressor(compression):
+  if compression == 'bz2':
+    return bz2.BZ2Decompressor()
+  if compression == 'zst':
+    return zstd.ZstdDecompressor().decompressobj()
+  raise ValueError(f"Unsupported compression type: {compression}")
+
+
+def decompress_file(source, destination, compression=None):
+  with open(source, 'rb') as src, open(destination, 'wb') as dst:
+    header = src.read(4)
+    compression = compression or compression_type(header)
+    decompressor = make_decompressor(compression)
+    dst.write(decompressor.decompress(header))
+    while data := src.read(1024 * 1024):
+      dst.write(decompressor.decompress(data))
+  if not decompressor.eof:
+    raise EOFError(f"Compressed {compression} file ended before the end-of-stream marker")
+
+
+def materialize_cached_file(source, url, compression):
+  local_path = cache_file_path(url, compression)
+  if os.path.exists(local_path):
+    return local_path
+
+  tmp_fd, tmp_path = tempfile.mkstemp(dir=Paths.download_cache_root())
+  os.close(tmp_fd)
+  try:
+    decompress_file(source, tmp_path, compression)
+    shutil.move(tmp_path, local_path)
+  except Exception:
+    try:
+      os.unlink(tmp_path)
+    except OSError:
+      pass
+    raise
+  return local_path
 
 
 def cmd_route_files(args):
@@ -53,8 +106,19 @@ def cmd_download(args):
   use_cache = not args.no_cache
 
   if use_cache:
+    for compression in ('bz2', 'zst'):
+      decompressed_path = cache_file_path(url, compression)
+      if os.path.exists(decompressed_path):
+        sys.stdout.write(decompressed_path + "\n")
+        sys.stdout.flush()
+        return
+
     local_path = cache_file_path(url)
     if os.path.exists(local_path):
+      with open(local_path, 'rb') as f:
+        compression = compression_type(f.read(4))
+        if compression:
+          local_path = materialize_cached_file(local_path, url, compression)
       sys.stdout.write(local_path + "\n")
       sys.stdout.flush()
       return
@@ -80,14 +144,30 @@ def cmd_download(args):
     try:
       downloaded = 0
       chunk_size = 1024 * 1024
+      compression = None
+      decompressor = None
       with os.fdopen(tmp_fd, 'wb') as f:
         for data in r.stream(chunk_size):
-          f.write(data)
+          if downloaded == 0:
+            compression = compression_type(data)
+            if compression:
+              decompressor = make_decompressor(compression)
+          f.write(decompressor.decompress(data) if decompressor else data)
           downloaded += len(data)
           sys.stderr.write(f"PROGRESS:{downloaded}:{total}\n")
           sys.stderr.flush()
 
-      if use_cache:
+      if decompressor and not decompressor.eof:
+        raise EOFError(f"Compressed {compression} file ended before the end-of-stream marker")
+
+      if decompressor:
+        if use_cache:
+          output_path = cache_file_path(url, compression)
+          shutil.move(tmp_path, output_path)
+        else:
+          output_path = tmp_path
+        sys.stdout.write(output_path + "\n")
+      elif use_cache:
         shutil.move(tmp_path, local_path)
         sys.stdout.write(local_path + "\n")
       else:
@@ -106,6 +186,24 @@ def cmd_download(args):
     sys.stderr.flush()
     sys.exit(1)
 
+  sys.stdout.flush()
+
+
+def cmd_decompress(args):
+  os.makedirs(Paths.download_cache_root(), exist_ok=True)
+  output_fd, output_path = tempfile.mkstemp(dir=Paths.download_cache_root())
+  os.close(output_fd)
+  try:
+    decompress_file(args.path, output_path)
+  except Exception as e:
+    try:
+      os.unlink(output_path)
+    except OSError:
+      pass
+    sys.stderr.write(f"ERROR:{e}\n")
+    sys.stderr.flush()
+    sys.exit(1)
+  sys.stdout.write(output_path + "\n")
   sys.stdout.flush()
 
 
@@ -138,6 +236,10 @@ def main():
   p_dl.add_argument("url")
   p_dl.add_argument("--no-cache", action="store_true")
   p_dl.set_defaults(func=cmd_download)
+
+  p_dc = subparsers.add_parser("decompress")
+  p_dc.add_argument("path")
+  p_dc.set_defaults(func=cmd_decompress)
 
   p_dev = subparsers.add_parser("devices")
   p_dev.set_defaults(func=cmd_devices)
