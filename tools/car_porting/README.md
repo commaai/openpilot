@@ -39,6 +39,22 @@ FAILED openpilot/selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::
 
 ```
 
+### [opendbc_repo/opendbc/car/tests/test_models.py](/opendbc_repo/opendbc/car/tests/test_models.py)
+
+The model tests run most of the car interface to check for common errors like missing signals, blocked panda messages, and safety mismatches.
+
+#### Example: panda safety mismatch for gasPressed
+```bash
+=====================================================================
+FAIL: test_panda_safety_carstate (test_models.TestCarModel_0.test_panda_safety_carstate)
+Assert that panda safety matches openpilot's carState
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/batman/openpilot/opendbc_repo/opendbc/car/tests/test_models.py", line 440, in test_panda_safety_carstate
+    self.assertFalse(failed_checks, f"panda safety doesn't agree with CarState: {failed_checks}")
+AssertionError: {'gasPressed': 116} is not false : panda safety doesn't agree with CarState: {'gasPressed': 116}
+```
+
 ## Jupyter notebooks
 
 To use these notebooks, install Jupyter within your [openpilot virtual environment](/tools/README.md).
