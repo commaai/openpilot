@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import argparse
 import multiprocessing
 import time
@@ -8,8 +7,6 @@ import zmq
 from cereal import log
 from collections import deque
 
-
-import openpilot.cereal.messaging as messaging
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.tools.camerastream.ffmpeg_decoder import Decoder, FFmpegError
 
