@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
+import time
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.esim.base import LPABase, Profile
 
@@ -27,6 +29,17 @@ def print_profiles(lpa: LPABase) -> None:
     print(f'{i}. {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
 
 
+def execute_and_process_notifications(lpa: LPABase, operation) -> None:
+  try:
+    operation()
+  finally:
+    time.sleep(1)  # Need to wait for 1s after the operation is finished so the eUICC/modem can settle down.
+    try:
+      lpa.process_notifications()
+    except Exception as e:
+      print(f'failed to process eSIM notifications: {e}', file=sys.stderr)
+
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
   sub = parser.add_subparsers(dest='cmd')
@@ -51,17 +64,18 @@ if __name__ == '__main__':
 
   lpa = HARDWARE.get_sim_lpa()
   if args.cmd == 'switch':
-    lpa.switch_profile(resolve_iccid(lpa, args.profile))
+    iccid = resolve_iccid(lpa, args.profile)
+    execute_and_process_notifications(lpa, lambda: lpa.switch_profile(iccid))
   elif args.cmd == 'delete':
     iccid = resolve_iccid(lpa, args.profile)
     confirm = input(f'are you sure you want to delete profile {iccid}? (y/N) ')
     if confirm == 'y':
-      lpa.delete_profile(iccid)
+      execute_and_process_notifications(lpa, lambda: lpa.delete_profile(iccid))
     else:
       print('cancelled')
       exit(0)
   elif args.cmd == 'download':
-    lpa.download_profile(args.qr, args.name)
+    execute_and_process_notifications(lpa, lambda: lpa.download_profile(args.qr, args.name))
   elif args.cmd == 'nickname':
     lpa.nickname_profile(resolve_iccid(lpa, args.profile), args.name)
   else:
