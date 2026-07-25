@@ -16,7 +16,6 @@ HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
 HEVC_SLICE_I = 2
 
-
 class LRUCache:
   def __init__(self, capacity: int):
     self._cache: OrderedDict = OrderedDict()
@@ -29,11 +28,10 @@ class LRUCache:
   def __setitem__(self, key, value):
     self._cache[key] = value
     if len(self._cache) > self.capacity:
-      self._cache.popitem(last=False)
+        self._cache.popitem(last=False)
 
   def __contains__(self, key):
     return key in self._cache
-
 
 def assert_hvec(fn: str) -> None:
   with FileReader(fn) as f:
@@ -44,44 +42,29 @@ def assert_hvec(fn: str) -> None:
     if 'hevc' not in fn:
       raise NotImplementedError(fn)
 
-
 def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc', hwaccel="auto", loglevel="info") -> np.ndarray:
   threads = os.getenv("FFMPEG_THREADS", "0")
-  args = [
-    "ffmpeg",
-    "-v",
-    loglevel,
-    "-threads",
-    threads,
-    "-hwaccel",
-    hwaccel,
-    "-c:v",
-    "hevc",
-    "-vsync",
-    "0",
-    "-f",
-    vid_fmt,
-    "-flags2",
-    "showall",
-    "-i",
-    "pipe:0",
-    "-f",
-    "rawvideo",
-    "-pix_fmt",
-    pix_fmt,
-    "pipe:1",
-  ]
+  args = ["ffmpeg", "-v", loglevel,
+          "-threads", threads,
+          "-hwaccel", hwaccel,
+          "-c:v", "hevc",
+          "-vsync", "0",
+          "-f", vid_fmt,
+          "-flags2", "showall",
+          "-i", "pipe:0",
+          "-f", "rawvideo",
+          "-pix_fmt", pix_fmt,
+          "pipe:1"]
   dat = subprocess.check_output(args, input=rawdat)
 
   ret: np.ndarray
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
   elif pix_fmt in ["nv12", "yuv420p"]:
-    ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, (h * w * 3 // 2))
+    ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, (h*w*3//2))
   else:
     raise NotImplementedError(f"Unsupported pixel format: {pix_fmt}")
   return ret
-
 
 def ffprobe(fn, fmt=None):
   fn = resolve_name(fn)
@@ -97,8 +80,7 @@ def ffprobe(fn, fmt=None):
     raise DataUnreadableError(fn) from e
   return json.loads(ffprobe_output)
 
-
-def get_index_data(fn: str, index_data: dict | None = None):
+def get_index_data(fn: str, index_data: dict|None = None):
   if index_data is None:
     index_data = get_video_index(fn)
     if index_data is None:
@@ -106,20 +88,23 @@ def get_index_data(fn: str, index_data: dict | None = None):
   stream = index_data["probe"]["streams"][0]
   return index_data["index"], index_data["global_prefix"], stream["width"], stream["height"]
 
-
 def get_video_index(fn):
   assert_hvec(fn)
   frame_types, dat_len, prefix = hevc_index(fn)
   index = np.array(frame_types + [(0xFFFFFFFF, dat_len)], dtype=np.uint32)
   probe = ffprobe(fn, "hevc")
-  return {'index': index, 'global_prefix': prefix, 'probe': probe}
-
+  return {
+    'index': index,
+    'global_prefix': prefix,
+    'probe': probe
+  }
 
 class FfmpegDecoder:
-  def __init__(self, fn: str, index_data: dict | None = None, pix_fmt: str = "rgb24", hwaccel="auto", loglevel="quiet"):
+  def __init__(self, fn: str, index_data: dict|None = None,
+               pix_fmt: str = "rgb24", hwaccel="auto", loglevel="quiet"):
     self.fn = fn
     self.index, self.prefix, self.w, self.h = get_index_data(fn, index_data)
-    self.frame_count = len(self.index) - 1  # sentinel row at the end
+    self.frame_count = len(self.index) - 1          # sentinel row at the end
     self.iframes = np.where(self.index[:, 0] == HEVC_SLICE_I)[0]
     self.pix_fmt = pix_fmt
     self.loglevel, self.hwaccel = loglevel, hwaccel
@@ -139,7 +124,8 @@ class FfmpegDecoder:
   def get_gop_start(self, frame_idx: int):
     return self.iframes[np.searchsorted(self.iframes, frame_idx, side="right") - 1]
 
-  def get_iterator(self, start_fidx: int = 0, end_fidx: int | None = None, frame_skip: int = 1) -> Iterator[tuple[int, np.ndarray]]:
+  def get_iterator(self, start_fidx: int = 0, end_fidx: int|None = None,
+                   frame_skip: int = 1) -> Iterator[tuple[int, np.ndarray]]:
     end_fidx = end_fidx or self.frame_count
     fidx = start_fidx
     while fidx < end_fidx:
@@ -156,31 +142,25 @@ class FfmpegDecoder:
           yield fidx, frm
       fidx += 1
 
-
-def FrameIterator(
-  fn: str, index_data: dict | None = None, pix_fmt: str = "rgb24", start_fidx: int = 0, end_fidx=None, frame_skip: int = 1, hwaccel="auto", loglevel="quiet"
-) -> Iterator[np.ndarray]:
+def FrameIterator(fn: str, index_data: dict|None=None, pix_fmt: str = "rgb24",
+                  start_fidx:int=0, end_fidx=None, frame_skip:int=1, hwaccel="auto", loglevel="quiet") -> Iterator[np.ndarray]:
   dec = FfmpegDecoder(fn, pix_fmt=pix_fmt, index_data=index_data, hwaccel=hwaccel, loglevel=loglevel)
   for _, frame in dec.get_iterator(start_fidx=start_fidx, end_fidx=end_fidx, frame_skip=frame_skip):
     yield frame
 
-
 class FrameReader:
-  def __init__(self, fn: str, index_data: dict | None = None, cache_size: int = 30, pix_fmt: str = "rgb24", hwaccel="auto", loglevel="quiet"):
+  def __init__(self, fn: str, index_data: dict|None = None, cache_size: int = 30,
+               pix_fmt: str = "rgb24", hwaccel="auto", loglevel="quiet"):
     self.decoder = FfmpegDecoder(fn, index_data=index_data, pix_fmt=pix_fmt, hwaccel=hwaccel, loglevel=loglevel)
     self.iframes = self.decoder.iframes
     self._cache: LRUCache = LRUCache(cache_size)
-    (
-      self.w,
-      self.h,
-      self.frame_count,
-    ) = self.decoder.w, self.decoder.h, self.decoder.frame_count
+    self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count
     self.pix_fmt = pix_fmt
 
     self.it: Iterator[tuple[int, np.ndarray]] | None = None
     self.fidx = -1
 
-  def get(self, fidx: int):
+  def get(self, fidx:int):
     if fidx in self._cache:  # If frame is cached, return it
       return self._cache[fidx]
     read_start = self.decoder.get_gop_start(fidx)

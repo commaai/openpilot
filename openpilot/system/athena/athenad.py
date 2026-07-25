@@ -21,7 +21,8 @@ from collections.abc import Callable
 
 import requests
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
-from websocket import ABNF, WebSocket, WebSocketException, WebSocketTimeoutException, create_connection
+from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
+                       create_connection)
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
@@ -41,9 +42,7 @@ from openpilot.system.athena.rpc import dispatcher, dumps_call, handle, is_call,
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
-LOCAL_PORT_WHITELIST = {
-  22,
-}  # SSH
+LOCAL_PORT_WHITELIST = {22, }  # SSH
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -112,7 +111,8 @@ class UploadItem:
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadItem:
-    return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"], d["progress"], d["allow_cellular"], d["priority"])
+    return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
+               d["progress"], d["allow_cellular"], d["priority"])
 
   def __lt__(self, other):
     if not isinstance(other, UploadItem):
@@ -135,11 +135,9 @@ cancelled_uploads: set[str] = set()
 cur_upload_items: dict[int, UploadItem | None] = {}
 
 send_seq = itertools.count()
-
-
 def send_queue_push(data: str, priority: int) -> None:
   assert priority is not None, "send queue priority must be specified"
-  send_queue.put_nowait((priority, next(send_seq), data))  # tie-break with a monotonic counter
+  send_queue.put_nowait((priority, next(send_seq), data)) # tie-break with a monotonic counter
 
 
 def strip_zst_extension(fn: str) -> str:
@@ -153,6 +151,7 @@ class AbortTransferException(Exception):
 
 
 class UploadQueueCache:
+
   @staticmethod
   def initialize(upload_queue: Queue[UploadItem]) -> None:
     try:
@@ -185,7 +184,10 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler3'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler4'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
-  ] + [threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}') for x in range(HANDLER_THREADS)]
+  ] + [
+    threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
+    for x in range(HANDLER_THREADS)
+  ]
 
   for thread in threads:
     thread.start()
@@ -227,7 +229,12 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
   if item is not None and item.retry_count < MAX_RETRY_COUNT:
     new_retry_count = item.retry_count + 1 if increase_count else item.retry_count
 
-    item = replace(item, retry_count=new_retry_count, progress=0, current=False)
+    item = replace(
+      item,
+      retry_count=new_retry_count,
+      progress=0,
+      current=False
+    )
     upload_queue.put_nowait(item)
     UploadQueueCache.cache(upload_queue)
 
@@ -324,12 +331,10 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
   stream = None
   try:
     stream, content_length = get_upload_stream(path, compress)
-    response = UPLOAD_SESS.put(
-      upload_item.url,
-      data=CallbackReader(stream, callback, content_length) if callback else stream,
-      headers={**upload_item.headers, 'Content-Length': str(content_length)},
-      timeout=30,
-    )
+    response = UPLOAD_SESS.put(upload_item.url,
+                               data=CallbackReader(stream, callback, content_length) if callback else stream,
+                               headers={**upload_item.headers, 'Content-Length': str(content_length)},
+                               timeout=30)
     return response
   finally:
     if stream:
@@ -385,7 +390,6 @@ def scan_dir(path: str, prefix: str) -> list[str]:
           files.append(rel_path)
   return files
 
-
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> list[str]:
   return scan_dir(Paths.log_root(), prefix)
@@ -394,15 +398,11 @@ def listDataDirectory(prefix='') -> list[str]:
 @dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: dict[str, str]) -> UploadFilesToUrlResponse:
   # this is because mypy doesn't understand that the decorator doesn't change the return type
-  response: UploadFilesToUrlResponse = uploadFilesToUrls(
-    [
-      {
-        "fn": fn,
-        "url": url,
-        "headers": headers,
-      }
-    ]
-  )
+  response: UploadFilesToUrlResponse = uploadFilesToUrls([{
+    "fn": fn,
+    "url": url,
+    "headers": headers,
+  }])
   return response
 
 
@@ -470,7 +470,6 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
-
 @dispatcher.add_method
 def setRouteViewed(route: str) -> dict[str, int | str]:
   # maintain a list of the last 10 routes viewed in connect
@@ -500,7 +499,9 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
     dongle_id = Params().get("DongleId")
     identity_token = Api(dongle_id).get_token()
-    ws = create_connection(remote_ws_uri, cookie="jwt=" + identity_token, enable_multithread=True)
+    ws = create_connection(remote_ws_uri,
+                           cookie="jwt=" + identity_token,
+                           enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
     ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, SSH_TOS)
@@ -513,7 +514,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     proxy_end_event = threading.Event()
     threads = [
       threading.Thread(target=ws_proxy_recv, args=(ws, local_sock, ssock, proxy_end_event, global_end_event)),
-      threading.Thread(target=ws_proxy_send, args=(ws, local_sock, csock, proxy_end_event)),
+      threading.Thread(target=ws_proxy_send, args=(ws, local_sock, csock, proxy_end_event))
     ]
     for thread in threads:
       thread.start()
@@ -569,7 +570,6 @@ def getNetworkMetered() -> bool:
 @dispatcher.add_method
 def startStream(sdp: str, enabled: bool) -> dict:
   from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
-
   params = Params()
   bridge_services_in = []
 
@@ -580,7 +580,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
   else:
-    raise Exception("failed to get CarParamsPersistent")
+      raise Exception("failed to get CarParamsPersistent")
 
   if params.get_bool("IsOffroad"):
     # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
@@ -617,7 +617,7 @@ def log_handler(end_event: threading.Event) -> None:
     return
 
   log_files = []
-  last_scan = 0.0
+  last_scan = 0.
   while not end_event.is_set():
     try:
       curr_scan = time.monotonic()
@@ -628,7 +628,7 @@ def log_handler(end_event: threading.Event) -> None:
       # send one log
       curr_log = None
       if len(log_files) > 0:
-        log_entry = log_files.pop()  # newest log file
+        log_entry = log_files.pop() # newest log file
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
           curr_time = int(time.time())  # noqa: TID251
@@ -745,7 +745,7 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
     try:
       _, _, data = send_queue.get(timeout=1)
       for i in range(0, len(data), WS_FRAME_SIZE):
-        frame = data[i : i + WS_FRAME_SIZE]
+        frame = data[i:i+WS_FRAME_SIZE]
         last = i + WS_FRAME_SIZE >= len(data)
         opcode = ABNF.OPCODE_TEXT if i == 0 else ABNF.OPCODE_CONT
         ws.send_frame(ABNF.create_frame(frame, opcode, last))
@@ -783,7 +783,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
 
 
 def backoff(retries: int) -> int:
-  return random.randrange(0, min(128, int(2**retries)))
+  return random.randrange(0, min(128, int(2 ** retries)))
 
 
 def main(exit_event: threading.Event | None = None):
@@ -807,8 +807,12 @@ def main(exit_event: threading.Event | None = None):
         conn_start = time.monotonic()
 
       cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
-      ws = create_connection(ws_uri, cookie="jwt=" + api.get_token(), enable_multithread=True, timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries, duration=time.monotonic() - conn_start)
+      ws = create_connection(ws_uri,
+                             cookie="jwt=" + api.get_token(),
+                             enable_multithread=True,
+                             timeout=30.0)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
+                     duration=time.monotonic() - conn_start)
       conn_start = None
 
       conn_retries = 0
