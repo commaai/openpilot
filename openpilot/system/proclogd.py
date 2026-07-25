@@ -5,6 +5,7 @@ from typing import NoReturn, TypedDict
 from openpilot.cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.safe import read_file
 
 JIFFY = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
 PAGE_SIZE = os.sysconf(os.sysconf_names['SC_PAGE_SIZE'])
@@ -183,11 +184,7 @@ def _get_proc_extra(pid: int, name: str) -> ProcExtra:
       exe = os.readlink(f'/proc/{pid}/exe')
     except OSError:
       pass
-    try:
-      with open(f'/proc/{pid}/cmdline', 'rb') as f:
-        cmdline = [c.decode('utf-8', errors='replace') for c in f.read().split(b'\0') if c]
-    except OSError:
-      pass
+    cmdline = [c.decode('utf-8', errors='replace') for c in read_file(f'/proc/{pid}/cmdline', b'').split(b'\0') if c]
     cache = {'pid': pid, 'name': name, 'exe': exe, 'cmdline': cmdline}
     _proc_cache[pid] = cache
   return cache

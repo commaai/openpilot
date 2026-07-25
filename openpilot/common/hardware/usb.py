@@ -1,17 +1,10 @@
 from pathlib import Path
 
-from openpilot.common.safe import read_text
+from openpilot.common.safe import read_int, read_text
 
 CHESTNUT_VENDOR_ID = 0xADD1
 CHESTNUT_PRODUCT_ID = 0x0001
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
-
-
-def read_int(path: Path, base: int = 10) -> int:
-  try:
-    return int(read_text(path, ""), base)
-  except ValueError:
-    return 0
 
 
 def usb_devices() -> list[Path]:
@@ -32,8 +25,8 @@ def controller(device: Path) -> Path | None:
 def get_usb_state() -> list[dict]:
   devices = []
   for device in usb_devices():
-    vendor_id = read_int(device / "idVendor", 16)
-    product_id = read_int(device / "idProduct", 16)
+    vendor_id = read_int(device / "idVendor", base=16)
+    product_id = read_int(device / "idProduct", base=16)
     ctrl = controller(device)
     devices.append({
       "busnum": read_int(device / "busnum"),
@@ -43,7 +36,7 @@ def get_usb_state() -> list[dict]:
       "speedMbps": read_int(device / "speed"),
       "manufacturer": read_text(device / "manufacturer", "").strip(),
       "product": read_text(device / "product", "").strip(),
-      "linkErrorCount": read_int(ctrl / "portli", 0) & 0xFFFF if ctrl is not None else 0,
+      "linkErrorCount": read_int(ctrl / "portli", base=0) & 0xFFFF if ctrl is not None else 0,
     })
   return devices
 

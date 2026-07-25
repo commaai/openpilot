@@ -1,6 +1,7 @@
 import json
 import os
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.safe import read_json
 
 
 class MissingAuthConfigError(Exception):
@@ -8,12 +9,8 @@ class MissingAuthConfigError(Exception):
 
 
 def get_token():
-  try:
-    with open(os.path.join(Paths.config_root(), 'auth.json')) as f:
-      auth = json.load(f)
-      return auth['access_token']
-  except Exception:
-    return None
+  auth = read_json(os.path.join(Paths.config_root(), 'auth.json'), {})
+  return auth.get('access_token') if isinstance(auth, dict) else None
 
 
 def set_token(token):

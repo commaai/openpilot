@@ -1,5 +1,4 @@
 import configparser
-import json
 import os
 import socket
 import subprocess
@@ -8,7 +7,7 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from openpilot.cereal import log
-from openpilot.common.safe import check_output
+from openpilot.common.safe import check_output, read_int, read_json
 from openpilot.common.utils import sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
@@ -67,11 +66,7 @@ class Tici(HardwareBase):
     return Amplifier()
 
   def get_modem_state(self) -> dict:
-    try:
-      with open(MODEM_STATE_PATH) as f:
-        return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-      return {}
+    return read_json(MODEM_STATE_PATH, {})
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -236,10 +231,10 @@ class Tici(HardwareBase):
     return self.get_modem_state().get('temperatures', [])
 
   def get_current_power_draw(self):
-    return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
+    return read_int("/sys/class/hwmon/hwmon1/power1_input") / 1e6
 
   def get_som_power_draw(self):
-    return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
+    return read_int("/sys/class/power_supply/bms/voltage_now") * read_int("/sys/class/power_supply/bms/current_now") / 1e12
 
   def shutdown(self):
     subprocess.run("sudo poweroff", shell=True)
