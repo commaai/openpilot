@@ -1,4 +1,5 @@
 #include "tools/cabana/messageswidget.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <limits>
 #include <utility>
@@ -43,8 +44,8 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
   QObject::connect(header, &MessageViewHeader::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::dbcModified);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &MessageListModel::dbcModified);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, model, &MessageListModel::dbcModified);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, model, &MessageListModel::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
@@ -211,7 +212,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   return {};
 }
 
-void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
+void MessageListModel::setFilterStrings(const std::map<int, QString> &filters) {
   filters_ = filters;
   filterAndSort();
 }
@@ -264,14 +265,14 @@ static bool parseRange(const QString &filter, uint32_t value, int base = 10) {
 }
 
 bool MessageListModel::match(const MessageListModel::Item &item) {
-  if (filters_.isEmpty())
+  if (filters_.empty())
     return true;
 
   bool match = true;
   const auto &data = can->lastMessage(item.id);
   for (auto it = filters_.cbegin(); it != filters_.cend() && match; ++it) {
-    const QString &txt = it.value();
-    switch (it.key()) {
+    const QString &txt = it->second;
+    switch (it->first) {
       case Column::NAME: {
         match = item.name.contains(txt, Qt::CaseInsensitive);
         if (!match) {
@@ -387,10 +388,13 @@ void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option,
   painter->setPen(oldPen);
 }
 
-void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles) {
+void MessageView::setModel(QAbstractItemModel *model) {
+  QTreeView::setModel(model);
   // Bypass the slow call to QTreeView::dataChanged.
   // QTreeView::dataChanged will invalidate the height cache and that's what we don't need in MessageView.
-  QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+  QObject::disconnect(model, &QAbstractItemModel::dataChanged, this, nullptr);
+  QObject::connect(model, &QAbstractItemModel::dataChanged, this,
+                   [this](const QModelIndex &tl, const QModelIndex &br, const auto &roles) { QAbstractItemView::dataChanged(tl, br, roles); });
 }
 
 void MessageView::updateBytesSectionSize() {
@@ -421,9 +425,9 @@ MessageViewHeader::MessageViewHeader(QWidget *parent) : QHeaderView(Qt::Horizont
 }
 
 void MessageViewHeader::updateFilters() {
-  QMap<int, QString> filters;
-  for (int i = 0; i < count(); i++) {
-    if (editors[i] && !editors[i]->text().isEmpty()) {
+  std::map<int, QString> filters;
+  for (int i = 0; i < (int)editors.size(); i++) {
+    if (!editors[i]->text().isEmpty()) {
       filters[i] = editors[i]->text();
     }
   }
@@ -432,27 +436,24 @@ void MessageViewHeader::updateFilters() {
 
 void MessageViewHeader::updateHeaderPositions() {
   QSize sz = QHeaderView::sizeHint();
-  for (int i = 0; i < count(); i++) {
-    if (editors[i]) {
-      int h = editors[i]->sizeHint().height();
-      editors[i]->setGeometry(sectionViewportPosition(i), sz.height(), sectionSize(i), h);
-      editors[i]->setHidden(isSectionHidden(i));
-    }
+  for (int i = 0; i < (int)editors.size(); i++) {
+    int h = editors[i]->sizeHint().height();
+    editors[i]->setGeometry(sectionViewportPosition(i), sz.height(), sectionSize(i), h);
+    editors[i]->setHidden(isSectionHidden(i));
   }
 }
 
 void MessageViewHeader::updateGeometries() {
-  for (int i = 0; i < count(); i++) {
-    if (!editors[i]) {
-      QString column_name = model()->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-      editors[i] = new QLineEdit(this);
-      editors[i]->setClearButtonEnabled(true);
-      editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
+  for (int i = (int)editors.size(); i < count(); i++) {
+    QString column_name = model()->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+    auto edit = new QLineEdit(this);
+    edit->setClearButtonEnabled(true);
+    edit->setPlaceholderText(tr("Filter %1").arg(column_name));
 
-      QObject::connect(editors[i], &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
-    }
+    QObject::connect(edit, &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
+    editors.push_back(edit);
   }
-  setViewportMargins(0, 0, 0, editors[0] ? editors[0]->sizeHint().height() : 0);
+  setViewportMargins(0, 0, 0, !editors.empty() ? editors[0]->sizeHint().height() : 0);
 
   QHeaderView::updateGeometries();
   updateHeaderPositions();
@@ -460,5 +461,5 @@ void MessageViewHeader::updateGeometries() {
 
 QSize MessageViewHeader::sizeHint() const {
   QSize sz = QHeaderView::sizeHint();
-  return editors[0] ? QSize(sz.width(), sz.height() + editors[0]->height() + 1) : sz;
+  return !editors.empty() ? QSize(sz.width(), sz.height() + editors[0]->height() + 1) : sz;
 }

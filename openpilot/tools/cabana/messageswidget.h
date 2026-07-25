@@ -1,6 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdint>
+#include <map>
 #include <optional>
 #include <set>
 #include <vector>
@@ -35,7 +37,7 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return items_.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
-  void setFilterStrings(const QMap<int, QString> &filters);
+  void setFilterStrings(const std::map<int, QString> &filters);
   void showInactiveMessages(bool show);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   bool filterAndSort();
@@ -56,7 +58,7 @@ private:
   void sortItems(std::vector<MessageListModel::Item> &items);
   bool match(const MessageListModel::Item &id);
 
-  QMap<int, QString> filters_;
+  std::map<int, QString> filters_;
   std::set<MessageId> dbc_messages_;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
@@ -68,11 +70,11 @@ class MessageView : public QTreeView {
 public:
   MessageView(QWidget *parent) : QTreeView(parent) {}
   void updateBytesSectionSize();
+  void setModel(QAbstractItemModel *model) override;
 
 protected:
   void drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override {}
-  void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
   void wheelEvent(QWheelEvent *event) override;
 };
 
@@ -86,7 +88,7 @@ public:
   QSize sizeHint() const override;
   void updateFilters();
 
-  QMap<int, QLineEdit *> editors;
+  std::vector<QLineEdit *> editors;
 };
 
 class MessagesWidget : public QWidget {
@@ -95,8 +97,13 @@ class MessagesWidget : public QWidget {
 public:
   MessagesWidget(QWidget *parent);
   void selectMessage(const MessageId &message_id);
-  QByteArray saveHeaderState() const { return view->header()->saveState(); }
-  bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
+  std::vector<uint8_t> saveHeaderState() const {
+    const auto state = view->header()->saveState();
+    return {state.begin(), state.end()};
+  }
+  bool restoreHeaderState(const std::vector<uint8_t> &state) const {
+    return view->header()->restoreState({(const char *)state.data(), (int)state.size()});
+  }
   void suppressHighlighted();
 
 signals:

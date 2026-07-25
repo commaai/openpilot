@@ -1,18 +1,25 @@
 #include "tools/cabana/streams/devicestream.h"
 
+#include <cerrno>
+#include <chrono>
+#include <csignal>
+#include <cstring>
+#include <fcntl.h>
+#include <filesystem>
 #include <memory>
 #include <string>
+#include <thread>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include "openpilot/cereal/services.h"
 
 #include <QButtonGroup>
-#include <QFileInfo>
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QRadioButton>
-#include <QRegularExpression>
-#include <QRegularExpressionValidator>
-#include <QThread>
+
+#include "tools/cabana/utils/util.h"
 
 // DeviceStream
 
@@ -20,26 +27,76 @@ DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(addre
 }
 
 DeviceStream::~DeviceStream() {
-  if (!bridge_process)
-    return;
+  stop();
+  stopBridge();
+}
 
-  bridge_process->terminate();
-  if (!bridge_process->waitForFinished(3000)) {
-    bridge_process->kill();
-    bridge_process->waitForFinished();
+void DeviceStream::stopBridge() {
+  if (bridge_pid <= 0) return;
+
+  ::kill(bridge_pid, SIGTERM);
+  for (int i = 0; i < 30; ++i) {
+    int status = 0;
+    pid_t r = ::waitpid(bridge_pid, &status, WNOHANG);
+    if (r == bridge_pid || (r < 0 && errno == ECHILD)) {
+      bridge_pid = -1;
+      return;
+    }
+    usleep(100000);  // 100ms, up to ~3s
   }
+  ::kill(bridge_pid, SIGKILL);
+  ::waitpid(bridge_pid, nullptr, 0);
+  bridge_pid = -1;
 }
 
 void DeviceStream::start() {
   if (!zmq_address.isEmpty()) {
-    bridge_process = new QProcess(this);
-    QString bridge_path = QCoreApplication::applicationDirPath() + "/../../openpilot/cereal/messaging/bridge";
-    bridge_process->start(QFileInfo(bridge_path).absoluteFilePath(), QStringList { zmq_address, "/\"can/\"" });
+    stopBridge();
+    const std::string path = (std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) /
+                              "../../openpilot/cereal/messaging/bridge").lexically_normal().string();
+    const std::string addr = zmq_address.toStdString();
+    const char *can_filter = "/\"can/\"";
 
-    if (!bridge_process->waitForStarted()) {
-      QMessageBox::warning(nullptr, tr("Error"), tr("Failed to start bridge: %1").arg(bridge_process->errorString()));
+    // Self-pipe: write end is CLOEXEC so it closes on successful exec. If exec
+    // fails, the child writes errno and the parent aborts stream start.
+    int err_pipe[2] = {-1, -1};
+    if (::pipe(err_pipe) != 0) {
+      QMessageBox::warning(nullptr, tr("Error"),
+                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
       return;
     }
+
+    pid_t pid = ::fork();
+    if (pid == 0) {
+      ::close(err_pipe[0]);
+      ::fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
+      execl(path.c_str(), path.c_str(), addr.c_str(), can_filter, static_cast<char *>(nullptr));
+      const int err = errno;
+      (void)!::write(err_pipe[1], &err, sizeof(err));
+      _exit(127);
+    }
+
+    ::close(err_pipe[1]);
+    if (pid < 0) {
+      ::close(err_pipe[0]);
+      QMessageBox::warning(nullptr, tr("Error"),
+                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      return;
+    }
+
+    int exec_errno = 0;
+    const ssize_t n = ::read(err_pipe[0], &exec_errno, sizeof(exec_errno));
+    ::close(err_pipe[0]);
+    if (n == static_cast<ssize_t>(sizeof(exec_errno))) {
+      // Child failed to exec; reap and surface the error.
+      int status = 0;
+      ::waitpid(pid, &status, 0);
+      QMessageBox::warning(nullptr, tr("Error"),
+                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(exec_errno))));
+      return;
+    }
+
+    bridge_pid = pid;
   }
 
   LiveStream::start();
@@ -52,10 +109,10 @@ void DeviceStream::streamThread() {
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", "127.0.0.1", false, true, services.at("can").queue_size));
   assert(sock != NULL);
   // run as fast as messages come in
-  while (!QThread::currentThread()->isInterruptionRequested()) {
+  while (!exit_) {
     std::unique_ptr<Message> msg(sock->receive(true));
     if (!msg) {
-      QThread::msleep(50);
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
       continue;
     }
     handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
@@ -69,10 +126,7 @@ OpenDeviceWidget::OpenDeviceWidget(QWidget *parent) : AbstractOpenStreamWidget(p
   QRadioButton *zmq = new QRadioButton(tr("ZMQ"));
   ip_address = new QLineEdit(this);
   ip_address->setPlaceholderText(tr("Enter device Ip Address"));
-  QString ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
-  QString pattern("^" + ip_range + "\\." + ip_range + "\\." + ip_range + "\\." + ip_range + "$");
-  QRegularExpression re(pattern);
-  ip_address->setValidator(new QRegularExpressionValidator(re, this));
+  ip_address->setValidator(new IpAddressValidator(this));
 
   group = new QButtonGroup(this);
   group->addButton(msgq, 0);

@@ -44,7 +44,7 @@ function install_linux_deps() {
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
     $SUDO apt-get update
-    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git
+    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard
   elif command -v dnf > /dev/null 2>&1; then
     $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
   elif command -v yum > /dev/null 2>&1; then

@@ -37,13 +37,13 @@ def sudo_write(val: str, path: str) -> None:
     with open(path, 'w') as f:
       f.write(str(val))
   except PermissionError:
-    os.system(f"sudo chmod a+w {path}")
+    subprocess.run(f"sudo chmod a+w {path}", shell=True)
     try:
       with open(path, 'w') as f:
         f.write(str(val))
     except PermissionError:
       # fallback for debugfs files
-      os.system(f"sudo su -c 'echo {val} > {path}'")
+      subprocess.run(f"sudo su -c 'echo {val} > {path}'", shell=True)
 
 
 def sudo_read(path: str) -> str:

@@ -1,7 +1,30 @@
 import select
-from serial import Serial
-from crcmod import mkCrcFun
 from struct import pack, unpack_from, calcsize
+
+from openpilot.common.serial import Serial
+
+
+def _gen_crc16_reflected_table(poly: int) -> list[int]:
+  # poly is the reflected form (e.g. 0x8408 for CRC-16 poly 0x1021)
+  table = []
+  for i in range(256):
+    crc = i
+    for _ in range(8):
+      if crc & 1:
+        crc = (crc >> 1) ^ poly
+      else:
+        crc >>= 1
+    table.append(crc)
+  return table
+
+# CRC-16/IBM-SDLC (aka X-25 / ISO-HDLC): poly 0x1021, refin/refout, init/xor 0xFFFF
+_CRC16_X25_TABLE = _gen_crc16_reflected_table(0x8408)
+
+def crc16_x25(data: bytes) -> int:
+  crc = 0xFFFF
+  for b in data:
+    crc = _CRC16_X25_TABLE[(crc ^ b) & 0xFF] ^ (crc >> 8)
+  return crc ^ 0xFFFF
 
 class ModemDiag:
   def __init__(self):
@@ -15,12 +38,11 @@ class ModemDiag:
     serial.reset_output_buffer()
     return serial
 
-  ccitt_crc16 = mkCrcFun(0x11021, initCrc=0, xorOut=0xffff)
   ESCAPE_CHAR = b'\x7d'
   TRAILER_CHAR = b'\x7e'
 
   def hdlc_encapsulate(self, payload):
-    payload += pack('<H', ModemDiag.ccitt_crc16(payload))
+    payload += pack('<H', crc16_x25(payload))
     payload = payload.replace(self.ESCAPE_CHAR, bytes([self.ESCAPE_CHAR[0], self.ESCAPE_CHAR[0] ^ 0x20]))
     payload = payload.replace(self.TRAILER_CHAR, bytes([self.ESCAPE_CHAR[0], self.TRAILER_CHAR[0] ^ 0x20]))
     payload += self.TRAILER_CHAR
@@ -32,7 +54,7 @@ class ModemDiag:
     payload = payload[:-1]
     payload = payload.replace(bytes([self.ESCAPE_CHAR[0], self.TRAILER_CHAR[0] ^ 0x20]), self.TRAILER_CHAR)
     payload = payload.replace(bytes([self.ESCAPE_CHAR[0], self.ESCAPE_CHAR[0] ^ 0x20]), self.ESCAPE_CHAR)
-    assert payload[-2:] == pack('<H', ModemDiag.ccitt_crc16(payload[:-2]))
+    assert payload[-2:] == pack('<H', crc16_x25(payload[:-2]))
     return payload[:-2]
 
   def recv(self):

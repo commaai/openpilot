@@ -1,4 +1,4 @@
-import os
+import subprocess
 import time
 import datetime
 from openpilot.common.time_helpers import system_time_valid
@@ -158,12 +158,12 @@ class SoftwareLayout(Widget):
       # Start checking for updates
       self._waiting_for_updater = True
       self._waiting_start_ts = time.monotonic()
-      os.system("pkill -SIGUSR1 -f openpilot.system.updated.updated")
+      subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
     else:
       # Start downloading
       self._waiting_for_updater = True
       self._waiting_start_ts = time.monotonic()
-      os.system("pkill -SIGHUP -f openpilot.system.updated.updated")
+      subprocess.run("pkill -SIGHUP -f openpilot.system.updated.updated", shell=True)
 
   def _on_uninstall(self):
     def handle_uninstall_confirmation(result: DialogResult):
@@ -197,7 +197,7 @@ class SoftwareLayout(Widget):
         selection = self._branch_dialog.selection
         ui_state.params.put("UpdaterTargetBranch", selection, block=True)
         self._branch_btn.action_item.set_value(selection)
-        os.system("pkill -SIGUSR1 -f openpilot.system.updated.updated")
+        subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
       self._branch_dialog = None
 
     self._branch_dialog = MultiOptionDialog(tr("Select a branch"), branches, current_target, callback=handle_selection)

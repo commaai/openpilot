@@ -12,9 +12,9 @@ POT_FILE = os.path.join(str(TRANSLATIONS_DIR), "app.pot")
 def update_translations():
   files = []
   for root, _, filenames in chain(os.walk(SYSTEM_UI_DIR),
-                                  os.walk(os.path.join(UI_DIR, "widgets")),
-                                  os.walk(os.path.join(UI_DIR, "layouts")),
-                                  os.walk(os.path.join(UI_DIR, "onroad"))):
+                                  os.walk(os.path.join(str(UI_DIR), "widgets")),
+                                  os.walk(os.path.join(str(UI_DIR), "layouts")),
+                                  os.walk(os.path.join(str(UI_DIR), "onroad"))):
     for filename in filenames:
       if filename.endswith(".py"):
         files.append(os.path.relpath(os.path.join(root, filename), BASEDIR))
@@ -25,7 +25,7 @@ def update_translations():
 
   # Generate/update translation files for each language
   for name in multilang.languages.values():
-    po_file = os.path.join(TRANSLATIONS_DIR, f"app_{name}.po")
+    po_file = os.path.join(str(TRANSLATIONS_DIR), f"app_{name}.po")
     if os.path.exists(po_file):
       merge_po(po_file, POT_FILE)
     else:

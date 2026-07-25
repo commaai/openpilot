@@ -87,11 +87,6 @@ def manager_init() -> None:
                        dirty=build_metadata.openpilot.is_dirty,
                        device=HARDWARE.get_device_type())
 
-  # preimport all processes
-  for p in managed_processes.values():
-    p.prepare()
-
-
 def manager_cleanup() -> None:
   # send signals to kill all procs
   for p in managed_processes.values():

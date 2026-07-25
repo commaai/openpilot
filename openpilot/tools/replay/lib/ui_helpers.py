@@ -5,6 +5,7 @@ import numpy as np
 import pyray as rl
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.artist import Artist
 from matplotlib.offsetbox import AnchoredOffsetbox, HPacker, TextArea
 
 from openpilot.common.transformations.camera import get_view_frame_from_calib_frame
@@ -119,11 +120,11 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       idxs.append(name_to_arr_idx[item])
       plot_select.append(i)
     # Build colored title: each label colored to match its plot line
-    title_texts = []
+    title_texts: list[Artist] = []
     for j2, (nm, cl) in enumerate(zip(pl_list, plot_colors[i], strict=False)):
       if j2 > 0:
-        title_texts.append(TextArea(", ", textprops=dict(color="white", fontsize=10)))
-      title_texts.append(TextArea(nm, textprops=dict(color=label_palette[cl], fontsize=10)))
+        title_texts.append(TextArea(", ", textprops={"color": "white", "fontsize": 10}))
+      title_texts.append(TextArea(nm, textprops={"color": label_palette[cl], "fontsize": 10}))
     packed = HPacker(children=title_texts, pad=0, sep=0)
     ab = AnchoredOffsetbox(loc='lower center', child=packed, bbox_to_anchor=(0.5, 1.0),
                            bbox_transform=axs[i].transAxes, frameon=False, pad=0)
@@ -187,7 +188,7 @@ def plot_model(m, img, calibration, top_down):
 
 def plot_lead(rs, top_down):
   for lead in [rs.leadOne, rs.leadTwo]:
-    if not lead.status:
+    if not lead.present:
       continue
 
     x = lead.dRel
@@ -201,7 +202,7 @@ def maybe_update_radar_points(lt, lid_overlay):
   if lt is not None:
     ar_pts = {}
     for track in lt:
-      ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel, track.aRel]
+      ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel]
   for pt in ar_pts.values():
     # negative here since radar is left positive
     px, py = to_topdown_pt(pt[0], -pt[1])

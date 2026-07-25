@@ -15,6 +15,13 @@ a.out
 .cache/
 bin/
 
+# created at launch for TICI PYTHONPATH (PC uses editable installs via pyproject.toml)
+/msgq
+/opendbc
+/rednose
+/teleoprtc
+/tinygrad
+
 *.mp4
 *.dylib
 *.DSYM

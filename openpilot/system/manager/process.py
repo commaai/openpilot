@@ -72,10 +72,6 @@ class ManagerProcess(ABC):
   restart_if_crash = False
 
   @abstractmethod
-  def prepare(self) -> None:
-    pass
-
-  @abstractmethod
   def start(self) -> None:
     pass
 
@@ -151,9 +147,6 @@ class NativeProcess(ManagerProcess):
     self.sigkill = sigkill
     self.launcher = nativelauncher
 
-  def prepare(self) -> None:
-    pass
-
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
     if self.shutting_down:
@@ -178,14 +171,6 @@ class PythonProcess(ManagerProcess):
     self.sigkill = sigkill
     self.launcher = launcher
     self.restart_if_crash = restart_if_crash
-
-  def prepare(self) -> None:
-    # pre-importing is only a copy-on-write optimization for the "fork" start method.
-    # with "spawn" (the default on macOS) every child re-imports anyway, and pre-importing
-    # some modules (e.g. the UI, which initializes Cocoa) in the manager breaks on macOS.
-    if self.enabled and multiprocessing.get_start_method() == "fork":
-      cloudlog.info(f"preimporting {self.module}")
-      importlib.import_module(self.module)
 
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
@@ -214,9 +199,6 @@ class DaemonProcess(ManagerProcess):
   @staticmethod
   def should_run(started, params, CP):
     return True
-
-  def prepare(self) -> None:
-    pass
 
   def start(self) -> None:
     if self.params is None:
@@ -247,7 +229,7 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params: Params, CP: car.CarParams,
                    not_run: list[str] | None=None) -> list[ManagerProcess]:
   if not_run is None:
     not_run = []

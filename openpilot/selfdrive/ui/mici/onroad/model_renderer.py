@@ -44,8 +44,8 @@ class ModelPoints:
 
 @dataclass
 class LeadVehicle:
-  glow: list[float] = field(default_factory=list)
-  chevron: list[float] = field(default_factory=list)
+  glow: list[tuple[float, float]] = field(default_factory=list)
+  chevron: list[tuple[float, float]] = field(default_factory=list)
   fill_alpha: int = 0
 
 
@@ -166,7 +166,7 @@ class ModelRenderer(Widget):
     leads = [radar_state.leadOne, radar_state.leadTwo]
 
     for i, lead_data in enumerate(leads):
-      if lead_data and lead_data.status:
+      if lead_data and lead_data.present:
         d_rel, y_rel, v_rel = lead_data.dRel, lead_data.yRel, lead_data.vRel
         idx = self._get_path_length_idx(path_x_array, d_rel)
 
@@ -195,7 +195,7 @@ class ModelRenderer(Widget):
       road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, line_width_factor, 0.0, max_idx)
 
     # Update path using raw points
-    if lead and lead.status:
+    if lead and lead.present:
       lead_d = lead.dRel * 2.0
       max_distance = np.clip(lead_d - min(lead_d * 0.35, 10.0), 0.0, max_distance)
 

@@ -1,6 +1,5 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-  <file alias="bootstrap-icons.svg">@BOOTSTRAP_ICONS_SVG@</file>
   <file>cabana-icon.png</file>
 </qresource>
 </RCC>

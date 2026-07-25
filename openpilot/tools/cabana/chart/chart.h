@@ -1,18 +1,11 @@
 #pragma once
 
+#include <functional>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 #include <QMenu>
-#include <QGraphicsPixmapItem>
-#include <QGraphicsProxyWidget>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLegendMarker>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QScatterSeries>
-#include <QtCharts/QValueAxis>
-using namespace QtCharts;
 
 #include "tools/cabana/chart/tiplabel.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -25,7 +18,7 @@ enum class SeriesType {
 };
 
 class ChartsWidget;
-class ChartView : public QChartView {
+class ChartView : public QWidget {
   Q_OBJECT
 
 public:
@@ -38,13 +31,15 @@ public:
   void updatePlotArea(int left, bool force = false);
   void showTip(double sec);
   void hideTip();
-  void startAnimation();
-  double secondsAtPoint(const QPointF &pt) const { return chart()->mapToValue(pt).x(); }
+  double secondsAtPoint(const QPointF &pt) const {
+    return x_min + (pt.x() - plot_area.left()) * (x_max - x_min) / std::max(plot_area.width(), 1);
+  }
 
   struct SigItem {
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
-    QXYSeries *series = nullptr;
+    QColor color;
+    bool visible = true;
     std::vector<QPointF> vals;
     std::vector<QPointF> step_vals;
     QPointF track_pt{};
@@ -59,7 +54,6 @@ signals:
 private slots:
   void signalUpdated(const cabana::Signal *sig);
   void manageSignals();
-  void handleMarkerClicked();
   void msgUpdated(MessageId id);
   void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
@@ -68,52 +62,65 @@ private:
   void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
                        std::vector<QPointF> &vals, std::vector<QPointF> &step_vals);
   void createToolButtons();
-  void addSeries(QXYSeries *series);
   void contextMenuEvent(QContextMenuEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *ev) override;
-  void dragEnterEvent(QDragEnterEvent *event) override;
-  void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator(false); }
-  void dragMoveEvent(QDragMoveEvent *event) override;
-  void dropEvent(QDropEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   QSize sizeHint() const override;
   void updateAxisY();
   void updateTitle();
   void resetChartCache();
-  void setTheme(QChart::ChartTheme theme);
   void paintEvent(QPaintEvent *event) override;
-  void drawForeground(QPainter *painter, const QRectF &rect) override;
-  void drawBackground(QPainter *painter, const QRectF &rect) override;
-  void drawDropIndicator(bool draw) { if (std::exchange(can_drop, draw) != can_drop) viewport()->update(); }
+  void drawStaticLayer(QPainter *painter);
+  void drawAxes(QPainter *painter);
+  void drawLegend(QPainter *painter);
+  void drawSeries(QPainter *painter);
+  void drawForeground(QPainter *painter);
   void drawSignalValue(QPainter *painter);
   void drawTimeline(QPainter *painter);
   void drawRubberBandTimeRange(QPainter *painter);
+  int xAxisPrecision() const;
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
-  QXYSeries *createSeries(SeriesType type, QColor color);
-  void setSeriesColor(QXYSeries *, QColor color);
-  void updateSeriesPoints();
+  QColor uniqueColor(QColor color, const cabana::Signal *exclude = nullptr) const;
   void removeIf(std::function<bool(const SigItem &)> predicate);
+  void takeSignalsFrom(ChartView *source);
+  void setDropHighlight(bool highlight) { if (std::exchange(can_drop, highlight) != highlight) update(); }
   inline void clearTrackPoints() { for (auto &s : sigs) s.track_pt = {}; }
+  inline qreal xPos(double sec) const { return plot_area.left() + (sec - x_min) / (x_max - x_min) * plot_area.width(); }
+  inline qreal yPos(double val) const { return plot_area.bottom() - (val - y_min) / (y_max - y_min) * plot_area.height(); }
 
+  // layout
+  QRect plot_area;
+  QRect move_icon_rect;
+  std::vector<QRect> legend_rects;
+  // axes
+  double x_min;
+  double x_max;
+  double y_min = 0;
+  double y_max = 1;
+  int y_tick_count = 3;
+  int y_precision = 0;
+  QString y_unit;
   int y_label_width = 0;
   int align_to = 0;
-  QValueAxis *axis_x;
-  QValueAxis *axis_y;
+  // interaction
+  enum class MouseMode { None, Rubber, Scrub };
+  MouseMode mouse_mode = MouseMode::None;
+  QPoint press_pos;
+  QRect rubber_rect;
+  bool resume_after_scrub = false;
+
   QMenu *menu;
   QAction *split_chart_act;
   QAction *close_act;
-  QGraphicsPixmapItem *move_icon;
-  QGraphicsProxyWidget *close_btn_proxy;
-  QGraphicsProxyWidget *manage_btn_proxy;
+  ToolButton *manage_btn;
+  ToolButton *close_btn;
   TipLabel *tip_label;
   std::vector<SigItem> sigs;
   double cur_sec = 0;
   SeriesType series_type = SeriesType::Line;
-  bool is_scrubbing = false;
-  bool resume_after_scrub = false;
   QPixmap chart_pixmap;
   bool can_drop = false;
   double tooltip_x = -1;
