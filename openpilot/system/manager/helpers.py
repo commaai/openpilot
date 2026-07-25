@@ -2,15 +2,13 @@ import errno
 import fcntl
 import os
 import sys
-import pathlib
 import shutil
 import signal
-import subprocess
 import tempfile
 import threading
 
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+from openpilot.system.loggerd.bootlog import create_bootlog
 
 def unblock_stdout() -> None:
   # get a non-blocking stdout
@@ -47,15 +45,13 @@ def unblock_stdout() -> None:
 def save_bootlog():
   # copy current params
   tmp = tempfile.mkdtemp()
-  params_dirname = pathlib.Path(Params().get_param_path()).name
-  params_dir = os.path.join(tmp, params_dirname)
-  shutil.copytree(Params().get_param_path(), params_dir, dirs_exist_ok=True)
+  params_path = Params().get_param_path()
+  shutil.copytree(params_path, os.path.join(tmp, os.path.basename(params_path)), dirs_exist_ok=True)
 
-  def fn(tmpdir):
-    env = os.environ.copy()
-    env['PARAMS_COPY_PATH'] = tmpdir
-    subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "openpilot/system/loggerd"), env=env)
-    shutil.rmtree(tmpdir)
-  t = threading.Thread(target=fn, args=(tmp, ))
-  t.daemon = True
-  t.start()
+  def run_bootlog(tmpdir):
+    try:
+      create_bootlog(tmpdir)
+    finally:
+      shutil.rmtree(tmpdir)
+
+  threading.Thread(target=run_bootlog, args=(tmp, ), daemon=True).start()

@@ -1,6 +1,7 @@
 import sys
 import json
 import ctypes
+import functools
 import weakref
 import builtins
 import datetime
@@ -15,6 +16,7 @@ class ParamKeyFlag(IntFlag):
   CLEAR_ON_MANAGER_START = 0x04
   CLEAR_ON_ONROAD_TRANSITION = 0x08
   CLEAR_ON_OFFROAD_TRANSITION = 0x10
+  DONT_LOG = 0x20
   DEVELOPMENT_ONLY = 0x40
   CLEAR_ON_IGNITION_ON = 0x80
   ALL = 0xFFFFFFFF
@@ -76,6 +78,12 @@ params_remove = _bind("params_remove", [ParamsHandle, ctypes.c_char_p], ctypes.c
 params_get_path = _bind("params_get_path", [ParamsHandle, ctypes.c_char_p, ctypes.c_size_t], ParamsBuffer)
 params_keys_size = _bind("params_keys_size", [ParamsHandle], ctypes.c_size_t)
 params_key_at = _bind("params_key_at", [ParamsHandle, ctypes.c_size_t], ParamsBuffer)
+
+
+@functools.cache
+def _params_get_key_flag():
+  return _bind("params_get_key_flag", [ParamsHandle, ctypes.c_char_p], ctypes.c_uint)
+
 
 PYTHON_2_CPP = {
   (str, ParamKeyType.STRING): lambda v: v,
@@ -184,6 +192,9 @@ class Params:
 
   def get_type(self, key):
     return ParamKeyType(params_get_key_type(self.p, self.check_key(key)))
+
+  def get_flag(self, key):
+    return ParamKeyFlag(_params_get_key_flag()(self.p, self.check_key(key)))
 
   def all_keys(self):
     keys = []

@@ -14,11 +14,10 @@ from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.common.timeout import Timeout
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.hardware import TICI
+from openpilot.system.loggerd.bootlog import create_bootlog
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.system.manager.process_config import managed_processes
@@ -45,25 +44,6 @@ class TestLoggerd(OpenpilotTestCase):
         if path.is_dir():
           return path
     return None
-
-  def _get_log_fn(self, x):
-    for l in x.splitlines():
-      for p in l.split(' '):
-        path = Path(p.strip())
-        if path.is_file():
-          return path
-    return None
-
-  def _gen_bootlog(self):
-    with Timeout(5):
-      out = subprocess.check_output("./bootlog", cwd=os.path.join(BASEDIR, "openpilot/system/loggerd"), encoding='utf-8')
-
-    log_fn = self._get_log_fn(out)
-
-    # check existence
-    assert log_fn is not None
-
-    return log_fn
 
   def _check_init_data(self, msgs):
     msg = msgs[0]
@@ -172,7 +152,7 @@ class TestLoggerd(OpenpilotTestCase):
       params.put(k, v, block=True)
     params.put("AccessToken", "abc", block=True)
 
-    lr = list(LogReader(str(self._gen_bootlog())))
+    lr = list(LogReader(str(create_bootlog())))
     initData = lr[0].initData
 
     assert initData.dirty != bool(os.environ["CLEAN"])
@@ -217,7 +197,7 @@ class TestLoggerd(OpenpilotTestCase):
     with open("/tmp/launch_log", "w") as f:
       f.write(launch_log)
 
-    bootlog_path = self._gen_bootlog()
+    bootlog_path = create_bootlog()
     lr = list(LogReader(str(bootlog_path)))
 
     # check length
@@ -247,7 +227,7 @@ class TestLoggerd(OpenpilotTestCase):
 
     # next one should increment by one
     bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)
-    bl2 = re.match(RE.LOG_ID_V2, self._gen_bootlog().name)
+    bl2 = re.match(RE.LOG_ID_V2, create_bootlog().name)
     assert bl1.group('uid') != bl2.group('uid')
     assert int(bl1.group('count')) == 0 and int(bl2.group('count')) == 1
 

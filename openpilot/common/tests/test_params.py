@@ -144,3 +144,7 @@ class TestParams(OpenpilotTestCase):
     now = datetime.datetime.now(datetime.UTC)
     self.params.put("InstallDate", now, block=True)
     assert self.params.get("InstallDate") == now
+
+  def test_params_get_flag(self):
+    assert self.params.get_flag("AccessToken") & ParamKeyFlag.DONT_LOG
+    assert not self.params.get_flag("DongleId") & ParamKeyFlag.DONT_LOG

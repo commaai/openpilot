@@ -8,6 +8,7 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from openpilot.cereal import log
+from openpilot.common import safe
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
@@ -78,6 +79,23 @@ class Tici(HardwareBase):
 
   def get_device_type(self):
     return get_device_type()
+
+  def get_init_logs(self) -> dict[str, bytes]:
+    logs = {
+      "/BUILD": safe.read_file("/BUILD", b""),
+      "lsblk": safe.check_output(["lsblk", "-o", "NAME,SIZE,STATE,VENDOR,MODEL,REV,SERIAL"], b""),
+      "SOM ID": safe.read_file("/sys/devices/platform/vendor/vendor:gpio-som-id/som_id", b""),
+    }
+
+    logs["boot slot"] = safe.check_output(["abctl", "--boot_slot"], b"").split(b"\n", 1)[0]
+    logs["boot temp"] = safe.read_file("/dev/disk/by-partlabel/ssd", b"").rstrip(b"\0\r\n")
+
+    for part in ("xbl", "abl", "aop", "devcfg", "xbl_config"):
+      for slot in ("a", "b"):
+        partition = f"{part}_{slot}"
+        logs[partition] = safe.check_output(["sha256sum", f"/dev/disk/by-partlabel/{partition}"], b"").split(b" ", 1)[0]
+
+    return logs
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
