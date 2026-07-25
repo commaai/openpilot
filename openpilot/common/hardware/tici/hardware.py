@@ -8,7 +8,8 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from openpilot.cereal import log
-from openpilot.common.utils import sudo_read, sudo_write
+from openpilot.common.safe import check_output
+from openpilot.common.utils import sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
@@ -209,7 +210,7 @@ class Tici(HardwareBase):
 
           nm_dirs = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")
           for fpath in (p for d in nm_dirs for p in Path(d).glob("*.nmconnection")):
-            raw = sudo_read(str(fpath))
+            raw = check_output(["sudo", "cat", "--", str(fpath)], b"").decode().strip()
             if not raw:
               continue
             cp = configparser.ConfigParser(interpolation=None)
@@ -407,7 +408,7 @@ class Tici(HardwareBase):
 
   def booted(self):
     # this normally boots within 8s, but on rare occasions takes 30+s
-    encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
+    encoder_state = check_output(["sudo", "cat", "--", "/sys/kernel/debug/msm_vidc/core0/info"], b"").decode().strip()
     if "Core state: 0" in encoder_state and (time.monotonic() < 60*2):
       return False
     return True

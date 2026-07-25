@@ -1,21 +1,16 @@
 from pathlib import Path
 
+from openpilot.common.safe import read_text
+
 CHESTNUT_VENDOR_ID = 0xADD1
 CHESTNUT_PRODUCT_ID = 0x0001
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
 
 
-def read(path: Path) -> str | None:
-  try:
-    return path.read_text().strip()
-  except OSError:
-    return None
-
-
 def read_int(path: Path, base: int = 10) -> int:
   try:
-    return int(path.read_text(), base)
-  except (OSError, ValueError):
+    return int(read_text(path, ""), base)
+  except ValueError:
     return 0
 
 
@@ -46,8 +41,8 @@ def get_usb_state() -> list[dict]:
       "vendorId": vendor_id,
       "productId": product_id,
       "speedMbps": read_int(device / "speed"),
-      "manufacturer": read(device / "manufacturer") or "",
-      "product": read(device / "product") or "",
+      "manufacturer": read_text(device / "manufacturer", "").strip(),
+      "product": read_text(device / "product", "").strip(),
       "linkErrorCount": read_int(ctrl / "portli", 0) & 0xFFFF if ctrl is not None else 0,
     })
   return devices

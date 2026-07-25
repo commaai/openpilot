@@ -46,13 +46,6 @@ def sudo_write(val: str, path: str) -> None:
       subprocess.run(f"sudo su -c 'echo {val} > {path}'", shell=True)
 
 
-def sudo_read(path: str) -> str:
-  try:
-    return subprocess.check_output(["sudo", "cat", "--", path], encoding='utf8').strip()
-  except Exception:
-    return ""
-
-
 class MovingAverage:
   def __init__(self, window_size: int):
     self.window_size: int = window_size
@@ -144,13 +137,6 @@ def strip_deprecated_keys(d):
 
 def run_cmd(cmd: list[str], cwd=None, env=None) -> str:
   return subprocess.check_output(cmd, encoding='utf8', cwd=cwd, env=env).strip()
-
-
-def run_cmd_default(cmd: list[str], default: str = "", cwd=None, env=None) -> str:
-  try:
-    return run_cmd(cmd, cwd=cwd, env=env)
-  except subprocess.CalledProcessError:
-    return default
 
 
 @contextlib.contextmanager
