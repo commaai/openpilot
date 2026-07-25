@@ -1,5 +1,4 @@
-import numpy as np
-
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.selfdrive.monitoring.policy import DriverMonitoring, DRIVER_MONITOR_SETTINGS
@@ -48,16 +47,16 @@ always_distracted = [msg_DISTRACTED] * int(TEST_TIMESPAN / DT_DMON)
 always_true = [True] * int(TEST_TIMESPAN / DT_DMON)
 always_false = [False] * int(TEST_TIMESPAN / DT_DMON)
 
-class TestMonitoring:
-  def _run_seq(self, msgs, interaction, engaged, standstill):
+class TestMonitoring(OpenpilotTestCase):
+  def _run_seq(self, msgs, interaction, engaged, lowspeed):
     DM = DriverMonitoring()
     alert_lvls = []
     for idx in range(len(msgs)):
-      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx], standstill[idx])
+      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx], lowspeed[idx])
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0)
+      DM._update_events(interaction[idx], engaged[idx], lowspeed[idx], 0)
       alert_lvls.append(DM.alert_level)
     assert len(alert_lvls) == len(msgs), f"got {len(alert_lvls)} for {len(msgs)} driverState input msgs"
     return alert_lvls, DM
@@ -81,6 +80,21 @@ class TestMonitoring:
     assert alert_lvls[int((s._VISION_POLICY_ALERT_3_TIMEOUT + \
                     (TEST_TIMESPAN - 10 - s._VISION_POLICY_ALERT_3_TIMEOUT) / 2) / DT_DMON)] == 3
     assert isinstance(d_status.awareness, float)
+
+  # engaged, distracted past red and beyond the no-response window -> unavailability response + lockout
+  def test_distracted_lockout(self):
+    alert_lvls, d_status = self._run_seq(always_distracted, always_false, always_true, always_false)
+    assert alert_lvls[int(DISTRACTED_SECONDS_TO_RED / DT_DMON)] == 3
+    assert d_status.lockout_active
+    assert d_status.lockout_time_elapsed > 0
+    assert d_status.lockout_count >= 1
+
+  # no face -> wheeltouch red, sustained past the no-response timeout -> unavailability response + lockout
+  def test_invisible_lockout(self):
+    _, d_status = self._run_seq(always_no_face, always_false, always_true, always_false)
+    assert d_status.active_policy == log.DriverMonitoringState.MonitoringPolicy.wheeltouch
+    assert d_status.lockout_active
+    assert d_status.lockout_count >= 1
 
   # engaged, no face detected the whole time, no action
   def test_fully_invisible_driver(self):
@@ -137,22 +151,22 @@ class TestMonitoring:
   # engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
   #  - both actions should clear the alert, but momentary appearance should not
   def test_sometimes_transparent_commuter(self):
-    _visible_time = np.random.choice([0.5, 10])
-    ds_vector = always_no_face[:]*2
-    interaction_vector = always_false[:]*2
-    ds_vector[int((2*INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON):int((2*INVISIBLE_SECONDS_TO_ORANGE+1+_visible_time)/DT_DMON)] = \
-                                                                                             [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
-    interaction_vector[int((INVISIBLE_SECONDS_TO_ORANGE)/DT_DMON):int((INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON)] = [True] * int(1/DT_DMON)
-    alert_lvls, _ = self._run_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)
-    assert alert_lvls[int(INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)] == 0
-    assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)] == 2
-    assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)] == 0
-    if _visible_time == 0.5:
-      assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)] == 2
-      assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)] == 1
-    elif _visible_time == 10:
-      assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)] == 2
-      assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)] == 0
+    for _visible_time in (0.5, 10):
+      ds_vector = always_no_face[:]*2
+      interaction_vector = always_false[:]*2
+      ds_vector[int((2*INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON):int((2*INVISIBLE_SECONDS_TO_ORANGE+1+_visible_time)/DT_DMON)] = \
+                                                                                               [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
+      interaction_vector[int((INVISIBLE_SECONDS_TO_ORANGE)/DT_DMON):int((INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON)] = [True] * int(1/DT_DMON)
+      alert_lvls, _ = self._run_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)
+      assert alert_lvls[int(dm_settings._WHEELTOUCH_POLICY_ALERT_1_TIMEOUT/2/DT_DMON)] == 0
+      assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)] == 2
+      assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)] == 0
+      if _visible_time == 0.5:
+        assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)] == 2
+        assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)] == 2
+      elif _visible_time == 10:
+        assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)] == 2
+        assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)] == 0
 
   # engaged, invisible driver, down to red, driver appears and then touches wheel, then disengages/reengages
   #  - only disengage will clear the alert
@@ -165,7 +179,7 @@ class TestMonitoring:
     interaction_vector[int((INVISIBLE_SECONDS_TO_RED+_visible_time)/DT_DMON):int((INVISIBLE_SECONDS_TO_RED+_visible_time+1)/DT_DMON)] = [True] * int(1/DT_DMON)
     op_vector[int((INVISIBLE_SECONDS_TO_RED+_visible_time+1)/DT_DMON):int((INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)] = [False] * int(0.5/DT_DMON)
     alert_lvls, _ = self._run_seq(ds_vector, interaction_vector, op_vector, always_false)
-    assert alert_lvls[int(INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)] == 0
+    assert alert_lvls[int(dm_settings._WHEELTOUCH_POLICY_ALERT_1_TIMEOUT/2/DT_DMON)] == 0
     assert alert_lvls[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)] == 2
     assert alert_lvls[int((INVISIBLE_SECONDS_TO_RED-0.1)/DT_DMON)] == 3
     assert alert_lvls[int((INVISIBLE_SECONDS_TO_RED+0.5*_visible_time)/DT_DMON)] == 3
@@ -182,9 +196,9 @@ class TestMonitoring:
   #  - should only reach green when stopped, but continues counting down on launch
   def test_long_traffic_light_victim(self):
     _redlight_time = 60  # seconds
-    standstill_vector = always_true[:]
-    standstill_vector[int(_redlight_time/DT_DMON):] = [False] * int((TEST_TIMESPAN-_redlight_time)/DT_DMON)
-    alert_lvls, d_status = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
+    lowspeed_vector = always_true[:]
+    lowspeed_vector[int(_redlight_time/DT_DMON):] = [False] * int((TEST_TIMESPAN-_redlight_time)/DT_DMON)
+    alert_lvls, d_status = self._run_seq(always_distracted, always_false, always_true, lowspeed_vector)
     s = d_status.settings
     assert alert_lvls[int((_redlight_time-0.1)/DT_DMON)] == 0
     _alert_1_to_2 = s._VISION_POLICY_ALERT_2_TIMEOUT - s._VISION_POLICY_ALERT_1_TIMEOUT
@@ -192,12 +206,12 @@ class TestMonitoring:
     assert alert_lvls[int((_redlight_time+_alert_1_to_2+0.5)/DT_DMON)] == 2
 
   # engaged, distracted while moving, then car stops after reaching orange
-  #  - should reset timer to pre green at standstill
+  #  - should reset timer to pre green at low speed
   def test_distracted_then_stops(self):
     _stop_time = DISTRACTED_SECONDS_TO_ORANGE + 1  # stop 1 second after reaching orange
-    standstill_vector = always_false[:]
-    standstill_vector[int(_stop_time/DT_DMON):] = [True] * int((TEST_TIMESPAN-_stop_time)/DT_DMON)
-    alert_lvls, _ = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
+    lowspeed_vector = always_false[:]
+    lowspeed_vector[int(_stop_time/DT_DMON):] = [True] * int((TEST_TIMESPAN-_stop_time)/DT_DMON)
+    alert_lvls, _ = self._run_seq(always_distracted, always_false, always_true, lowspeed_vector)
     # just before and briefly after stopping: orange alert; goes away quickly after stopped
     assert alert_lvls[int((_stop_time+0.1)/DT_DMON)] == 2
     assert alert_lvls[int((_stop_time+0.5)/DT_DMON)] == 0

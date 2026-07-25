@@ -7,7 +7,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
 #include "implot.h"
-#include "libyuv.h"
+#include "common/yuv.h"
 #include "msgq_repo/msgq/ipc.h"
 #include "tools/replay/framereader.h"
 
@@ -1173,14 +1173,14 @@ struct CameraFeedView::Impl {
       result.width = reader->width;
       result.height = reader->height;
       result.rgba.resize(static_cast<size_t>(result.width) * static_cast<size_t>(result.height) * 4U, 0);
-      libyuv::NV12ToABGR(decode_buffer.y,
-                         static_cast<int>(decode_buffer.stride),
-                         decode_buffer.uv,
-                         static_cast<int>(decode_buffer.stride),
-                         result.rgba.data(),
-                         result.width * 4,
-                         result.width,
-                         result.height);
+      yuv::nv12_to_rgba(decode_buffer.y,
+                        static_cast<int>(decode_buffer.stride),
+                        decode_buffer.uv,
+                        static_cast<int>(decode_buffer.stride),
+                        result.rgba.data(),
+                        result.width * 4,
+                        result.width,
+                        result.height);
       result.success = true;
       result.decode_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - decode_begin).count();
       publish_result(*request, std::move(result));
@@ -1203,14 +1203,14 @@ struct CameraFeedView::Impl {
           .height = reader->height,
         };
         prefetched.rgba.resize(static_cast<size_t>(prefetched.width) * static_cast<size_t>(prefetched.height) * 4U, 0);
-        libyuv::NV12ToABGR(decode_buffer.y,
-                           static_cast<int>(decode_buffer.stride),
-                           decode_buffer.uv,
-                           static_cast<int>(decode_buffer.stride),
-                           prefetched.rgba.data(),
-                           prefetched.width * 4,
-                           prefetched.width,
-                           prefetched.height);
+        yuv::nv12_to_rgba(decode_buffer.y,
+                          static_cast<int>(decode_buffer.stride),
+                          decode_buffer.uv,
+                          static_cast<int>(decode_buffer.stride),
+                          prefetched.rgba.data(),
+                          prefetched.width * 4,
+                          prefetched.width,
+                          prefetched.height);
         remember_cached_result(prefetched);
       }
     }

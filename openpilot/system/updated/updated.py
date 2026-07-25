@@ -3,7 +3,6 @@ import os
 import re
 import datetime
 import subprocess
-import psutil
 import shutil
 import signal
 import fcntl
@@ -358,7 +357,7 @@ class Updater:
     setup_git_options(OVERLAY_MERGED)
     output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
 
-    self.branches = defaultdict(lambda: None)
+    self.branches.clear()
     for line in output.split('\n'):
       ls_remotes_re = r'(?P<commit_sha>\b[0-9a-f]{5,40}\b)(\s+)(refs\/heads\/)(?P<branch_name>.*$)'
       x = re.fullmatch(ls_remotes_re, line.strip())
@@ -426,11 +425,6 @@ def main() -> None:
       fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError as e:
       raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
-
-    # Set low io priority
-    proc = psutil.Process()
-    if psutil.LINUX:
-      proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
     # Check if we just performed an update
     if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():

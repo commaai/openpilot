@@ -1,6 +1,5 @@
 import pyray as rl
 from openpilot.cereal import log, messaging
-from opendbc.car.structs import car
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
@@ -105,8 +104,9 @@ class BaseDriverCameraDialog(Widget):
     if self._pm is None:
       return
 
-    AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+    AudibleAlert = log.SelfdriveState.AudibleAlert
     ALERT_SOUNDS = {
+      'one': AudibleAlert.preAlert,
       'two': AudibleAlert.promptDistracted,
       'three': AudibleAlert.warningImmediate,
     }

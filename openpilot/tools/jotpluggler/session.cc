@@ -19,6 +19,9 @@ void sync_camera_feeds(AppSession *session) {
       session->pane_camera_feeds[i]->setCameraIndex(session->route_data.*(kCameraViewSpecs[i].route_member), kCameraViewSpecs[i].view);
     }
   }
+  if (session->thumbnail_view) {
+    session->thumbnail_view->setThumbnails(session->route_data.thumbnails);
+  }
 }
 
 void apply_route_data(AppSession *session, UiState *state, RouteData route_data) {

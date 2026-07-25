@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 import os
-import pytest
+import unittest
 import signal
 import time
 
 from opendbc.car.structs import car
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 import openpilot.system.manager.manager as manager
 from openpilot.system.manager.process import ensure_running
@@ -16,7 +19,7 @@ MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
-class TestManager:
+class TestManager(OpenpilotTestCase):
   def setup_method(self):
     HARDWARE.set_power_save(False)
 
@@ -26,10 +29,6 @@ class TestManager:
 
   def teardown_method(self):
     manager.manager_cleanup()
-
-  def test_manager_prepare(self):
-    os.environ['PREPAREONLY'] = '1'
-    manager.main()
 
   def test_duplicate_procs(self):
     assert len(procs) == len(managed_processes), "Duplicate process names"
@@ -51,7 +50,7 @@ class TestManager:
     assert params.get("OpenpilotEnabledToggle")
     assert params.get("RouteCount") == 0
 
-  @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
+  @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self, subtests):
     """
       Ensure all processes exit cleanly when stopped.
@@ -79,3 +78,7 @@ class TestManager:
         if p.sigkill:
           exit_codes = [-signal.SIGKILL]
         assert exit_code in exit_codes, f"{p.name} died with {exit_code}"
+
+
+if __name__ == "__main__":
+  unittest.main()

@@ -4,6 +4,7 @@ import os
 import random
 from PIL import Image, ImageDraw, ImageFont
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.messaging import SubMaster
@@ -24,7 +25,7 @@ for event_types in EVENTS.values():
     ALERTS.append(alert)
 
 
-class TestAlerts:
+class TestAlerts(OpenpilotTestCase):
 
   @classmethod
   def setup_class(cls):

@@ -1,13 +1,14 @@
 
-#undef INFO
-#include <QDir>
+#include <filesystem>
+#include <sstream>
 
-#include "catch2/catch.hpp"
+#include "common/tests/native_test.h"
+#include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
-TEST_CASE("DBCFile::generateDBC") {
+void test_generate_dbc() {
   std::string fn = std::string(OPENDBC_FILE_PATH) + "/tesla_can.dbc";
   DBCFile dbc_origin(fn);
   DBCFile dbc_from_generated("", dbc_origin.generateDBC());
@@ -28,7 +29,7 @@ TEST_CASE("DBCFile::generateDBC") {
   }
 }
 
-TEST_CASE("DBCFile::generateDBC - comment order") {
+void test_comment_order() {
   // Ensure that message comments are followed by signal comments and in the correct order
   std::string content = R"(BO_ 160 message_1: 8 EON
  SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
@@ -45,7 +46,7 @@ CM_ SG_ 162 signal_2 "signal comment";
   REQUIRE(dbc.generateDBC() == content);
 }
 
-TEST_CASE("DBCFile::generateDBC -- preserve original header") {
+void test_preserve_original_header() {
   std::string content = R"(VERSION "1.0"
 
 NS_ :
@@ -65,7 +66,7 @@ CM_ SG_ 160 signal_1 "signal comment";
   REQUIRE(dbc.generateDBC() == content);
 }
 
-TEST_CASE("DBCFile::generateDBC - escaped quotes") {
+void test_escaped_quotes() {
   std::string content = R"(BO_ 160 message_1: 8 EON
  SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
 
@@ -76,7 +77,7 @@ CM_ SG_ 160 signal_1 "signal comment with \"escaped quotes\"";
   REQUIRE(dbc.generateDBC() == content);
 }
 
-TEST_CASE("parse_dbc") {
+void test_parse_dbc() {
   std::string content = R"(
 BO_ 160 message_1: 8 EON
   SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit"  XXX
@@ -142,16 +143,59 @@ CM_ SG_ 162 signal_1 "signal comment with \"escaped quotes\"";
   REQUIRE(msg->sigs[0]->comment == "signal comment with \"escaped quotes\"");
 }
 
-TEST_CASE("parse_opendbc") {
-  QDir dir(OPENDBC_FILE_PATH);
-  QStringList errors;
-  for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+void test_parse_opendbc() {
+  std::vector<std::string> errors;
+  for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH)) {
+    if (!entry.is_regular_file() || entry.path().extension() != ".dbc") continue;
     try {
-      auto dbc = DBCFile(dir.filePath(fn).toStdString());
+      auto dbc = DBCFile(entry.path().string());
     } catch (std::exception &e) {
       errors.push_back(e.what());
     }
   }
-  INFO(errors.join("\n").toStdString());
+  std::ostringstream details;
+  for (const auto &error : errors) details << error << '\n';
+  if (!errors.empty()) std::cerr << details.str();
   REQUIRE(errors.empty());
+}
+
+void test_dbc_manager() {
+  DBCManager manager;
+  int files_changed = 0;
+  int signals_added = 0;
+  int masks_updated = 0;
+  manager.setCallbacks({
+    .signal_added = [&](MessageId, const cabana::Signal *) { ++signals_added; },
+    .file_changed = [&]() { ++files_changed; },
+    .mask_updated = [&]() { ++masks_updated; },
+  });
+
+  std::string error;
+  REQUIRE(manager.open(SOURCE_ALL, "test", "BO_ 160 message: 8 XXX\n", &error));
+  REQUIRE(error.empty());
+  REQUIRE(files_changed == 1);
+
+  cabana::Signal signal{};
+  signal.name = "speed";
+  signal.start_bit = 0;
+  signal.size = 8;
+  signal.is_little_endian = true;
+  manager.addSignal({.source = 0, .address = 160}, signal);
+  REQUIRE(signals_added == 1);
+  REQUIRE(masks_updated == 1);
+  REQUIRE(manager.msg({.source = 0, .address = 160})->sig("speed") != nullptr);
+}
+
+void test_cabana_core() {
+  test_generate_dbc();
+  test_comment_order();
+  test_preserve_original_header();
+  test_escaped_quotes();
+  test_parse_dbc();
+  test_parse_opendbc();
+  test_dbc_manager();
+}
+
+int main() {
+  return run_native_test(test_cabana_core);
 }

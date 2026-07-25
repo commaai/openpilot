@@ -7,8 +7,6 @@ import threading
 import time
 from collections import OrderedDict, namedtuple
 
-import psutil
-
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
@@ -18,6 +16,8 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import HARDWARE, TICI, PC
+from openpilot.common.hardware.usb import get_usb_state, set_usb_state
+from openpilot.common.linux import LinuxSystemStats
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.power_monitoring import PowerMonitoring
@@ -36,7 +36,7 @@ ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycl
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
-                                             'network_metered', 'modem_temps'])
+                                             'network_metered', 'modem_temps', 'usb_state'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -124,6 +124,7 @@ def hw_state_thread(end_event, hw_queue):
           network_stats={'wwanTx': tx, 'wwanRx': rx},
           network_metered=HARDWARE.get_network_metered(network_type),
           modem_temps=modem_temps,
+          usb_state=get_usb_state(),
         )
 
         try:
@@ -140,6 +141,7 @@ def hw_state_thread(end_event, hw_queue):
 
 
 def hardware_thread(end_event, hw_queue) -> None:
+  system_stats = LinuxSystemStats()
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates"], poll="pandaStates")
 
@@ -166,6 +168,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     network_strength=NetworkStrength.unknown,
     network_stats={'wwanTx': -1, 'wwanRx': -1},
     modem_temps=[],
+    usb_state=[],
   )
 
   all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
@@ -229,9 +232,9 @@ def hardware_thread(end_event, hw_queue) -> None:
       pass
 
     msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
-    msg.deviceState.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
+    msg.deviceState.memoryUsagePercent = int(round(system_stats.memory_usage_percent()))
     msg.deviceState.gpuUsagePercent = int(round(HARDWARE.get_gpu_usage_percent()))
-    online_cpu_usage = [int(round(n)) for n in psutil.cpu_percent(percpu=True)]
+    online_cpu_usage = [int(round(n)) for n in system_stats.cpu_usage_percent()]
     offline_cpu_usage = [0., ] * (len(msg.deviceState.cpuTempC) - len(online_cpu_usage))
     msg.deviceState.cpuUsagePercent = online_cpu_usage + offline_cpu_usage
 
@@ -245,6 +248,8 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.modemTempC = last_hw_state.modem_temps
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
+
+    set_usb_state(msg.deviceState, last_hw_state.usb_state)
 
     # this subset is only used for offroad
     temp_sources = [
@@ -285,7 +290,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
-    startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
 
     # must be at an engageable thermal band to go onroad
     startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.overheated

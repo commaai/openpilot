@@ -27,6 +27,8 @@ class Api:
     return api_get(endpoint, method=method, timeout=timeout, access_token=access_token, **params)
 
   def get_token(self, payload_extra=None, expiry_hours=1):
+    if self.private_key is None:
+      raise RuntimeError("private key is not configured")
     now = datetime.now(UTC).replace(tzinfo=None)
     payload = {
       'identity': self.dongle_id,

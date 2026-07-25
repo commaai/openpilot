@@ -75,7 +75,6 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     driverUnresponsive2 @37;
     driverUnresponsive3 @38;
     belowSteerSpeed @39;
-    lowBattery @40;
     accFaulted @41;
     sensorDataInvalid @42;
     commIssue @43;
@@ -107,14 +106,12 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     noGps @68;
     wrongCruiseMode @69;
     modeldLagging @70;
-    deviceFalling @71;
     fanMalfunction @72;
     cameraMalfunction @73;
     cameraFrameRate @74;
     processNotRunning @75;
     dashcamMode @76;
     selfdriveInitializing @77;
-    usbError @78;
     cruiseMismatch @79;
     canBusMissing @80;
     selfdrivedLagging @81;
@@ -131,9 +128,14 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     aeb @92;
     userBookmark @95;
     excessiveActuation @96;
-    audioFeedback @97;
+    bigModelLoading @100;
+    bigModelReady @101;
 
+    lowBatteryDEPRECATED @40;
     soundsUnavailableDEPRECATED @47;
+    deviceFallingDEPRECATED @71;
+    usbErrorDEPRECATED @78;
+    audioFeedbackDEPRECATED @97;
   }
 }
 
@@ -414,6 +416,10 @@ struct CanData {
 struct DeviceState @0xa4d8b5af2aa492eb {
   deviceType @45 :InitData.DeviceType;
 
+  # usb
+  chestnutPresent @51 :Bool;
+  usbState @52 :UsbState;
+
   networkType @22 :NetworkType;
   networkInfo @31 :NetworkInfo;
   networkStrength @24 :NetworkStrength;
@@ -684,33 +690,47 @@ struct PeripheralState {
   }
 }
 
+struct UsbState {
+  devices @0 :List(Device);
+
+  struct Device {
+    busnum @0 :UInt8;
+    devnum @1 :UInt8;
+    vendorId @2 :UInt16;
+    productId @3 :UInt16;
+    speedMbps @4 :UInt16;
+    manufacturer @6 :Text;
+    product @5 :Text;
+    linkErrorCount @7 :UInt16;
+  }
+}
+
 struct RadarState @0x9a185389d6fdd05f {
-  mdMonoTime @6 :UInt64;
-  carStateMonoTime @11 :UInt64;
+  mdMonoTime @6 :UInt64;  # for debugging
   radarErrors @13 :Car.RadarData.Error;
 
   leadOne @3 :LeadData;
   leadTwo @4 :LeadData;
 
   struct LeadData {
-    dRel @0 :Float32;
-    yRel @1 :Float32;
-    vRel @2 :Float32;
-    aRel @3 :Float32;
-    vLead @4 :Float32;
-    dPath @6 :Float32;
-    vLat @7 :Float32;
-    vLeadK @8 :Float32;
-    aLeadK @9 :Float32;
-    fcw @10 :Bool;
-    status @11 :Bool;
-    aLeadTau @12 :Float32;
-    modelProb @13 :Float32;
-    radar @14 :Bool;
-    radarTrackId @15 :Int32 = -1;
+    dRel @0 :Float32;  # m from the front bumper of the car
+    yRel @1 :Float32;  # m in car frame, left positive
+    vRel @2 :Float32;  # m/s relative longitudinal speed
+    vLead @4 :Float32;  # m/s absolute lead speed
+    vLeadK @8 :Float32;  # kalman-filtered lead speed
+    aLeadK @9 :Float32;  # kalman-filtered lead accel
+    present @11 :Bool;  # true if a lead is present
+    aLeadTau @12 :Float32;  # lead accel time constant
+    modelProb @13 :Float32;  # vision model lead probability
+    radar @14 :Bool;  # true if lead is radar-matched (vs vision-only)
+    radarTrackId @15 :Int32 = -1;  # for debugging
 
     deprecated :group {
+      aRel @3 :Float32;
       aLead @5 :Float32;
+      dPath @6 :Float32;
+      vLat @7 :Float32;
+      fcw @10 :Bool;
     }
   }
 
@@ -723,6 +743,7 @@ struct RadarState @0x9a185389d6fdd05f {
     calPerc @9 :Int8;
     canMonoTimes @10 :List(UInt64);
     cumLagMs @5 :Float32;
+    carStateMonoTime @11 :UInt64;
     radarErrors @12 :List(Car.RadarData.ErrorDEPRECATED);
   }
 }
@@ -771,12 +792,30 @@ struct SelfdriveState {
   alertStatus @5 :AlertStatus;
   alertSize @6 :AlertSize;
   alertType @7 :Text;
-  alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
+  alertSound @13 :AudibleAlert;
   alertHudVisual @12 :Car.CarControl.HUDControl.VisualAlert;
 
   # configurable driving settings
   experimentalMode @10 :Bool;
   personality @11 :LongitudinalPersonality;
+
+  enum AudibleAlert {
+    none @0;
+
+    engage @1;
+    disengage @2;
+    refuse @3;
+
+    warningSoft @4;
+    warningImmediate @5;
+
+    prompt @6;
+    promptRepeat @7;
+    promptDistracted @8;
+
+    preAlert @9;
+    complete @10;
+  }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
     disabled @0;
@@ -797,6 +836,10 @@ struct SelfdriveState {
     small @1;
     mid @2;
     full @3;
+  }
+
+  deprecated :group {
+    alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
   }
 }
 
@@ -918,7 +961,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     alertStatus @38 :SelfdriveState.AlertStatus;
     alertSize @39 :SelfdriveState.AlertSize;
     alertType @44 :Text;
-    alertSound2 @56 :Car.CarControl.HUDControl.AudibleAlert;
+    alertSound2 @56 :SelfdriveState.AudibleAlert;
     engageable @41 :Bool;  # can OP be engaged?
     state @31 :SelfdriveState.OpenpilotState;
     enabled @19 :Bool;
@@ -1001,7 +1044,6 @@ struct ModelDataV2 {
   roadEdgeStds @14 :List(Float32);
 
   # predicted lead cars
-  leads @11 :List(LeadDataV2);
   leadsV3 @18 :List(LeadDataV3);
 
   meta @12 :MetaData;
@@ -1011,8 +1053,9 @@ struct ModelDataV2 {
   action @26: Action;
 
   lateralPlannerSolutionDEPRECATED @25: Deprecated.LateralPlannerSolution;
+  leadsDEPRECATED @11 :List(LeadDataV2DEPRECATED);
 
-  struct LeadDataV2 {
+  struct LeadDataV2DEPRECATED {
     prob @0 :Float32; # probability that car is your lead at time t
     t @1 :Float32;
 
@@ -2120,8 +2163,11 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
 
 struct DriverMonitoringState {
   lockout @0 :Bool;
-  alertCountLockoutPercent @1 :Int8;
-  alertTimeLockoutPercent @2 :Int8;
+  lockoutCount @15 :Int8;
+  lockoutMinutesRemaining @11 :Int8;
+  alert3Count @12 :Int8;
+  noResponseCount @13 :Int8;
+  noResponseForceDecel @14 :Bool;
 
   alwaysOn @3 :Bool;
   alwaysOnLockout @4 :Bool;
@@ -2184,6 +2230,11 @@ struct DriverMonitoringState {
   struct CalibrationState {
     calibratedPercent @0 :Int8;
     offset @1 :Float32;
+  }
+
+  deprecated :group {
+    alertCountLockoutPercent @1 :Int8;
+    alertTimeLockoutPercent @2 :Int8;
   }
 }
 
@@ -2436,11 +2487,6 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
-struct AudioFeedback {
-  audio @0 :AudioData;
-  blockNum @1 :UInt16;
-}
-
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2534,7 +2580,6 @@ struct Event {
     # driving feedback
     userBookmark @93 :UserBookmark;
     bookmarkButton @148 :UserBookmark;
-    audioFeedback @149 :AudioFeedback;
 
     lateralManeuverPlan @150 :LateralManeuverPlan;
 
@@ -2584,6 +2629,7 @@ struct Event {
 
     # *********** legacy + deprecated ***********
     model @9 :Deprecated.ModelData; # TODO: rename modelV2 and mark this as deprecated
+    audioFeedbackDEPRECATED @149 :Deprecated.AudioFeedbackDEPRECATED;
     liveMpcDEPRECATED @36 :Deprecated.LiveMpcData;
     liveLongitudinalMpcDEPRECATED @37 :Deprecated.LiveLongitudinalMpcData;
     liveLocationKalmanDeprecatedDEPRECATED @51 :Deprecated.LiveLocationData;

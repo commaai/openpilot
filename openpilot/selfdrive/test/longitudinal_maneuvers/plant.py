@@ -89,14 +89,14 @@ class Plant:
     lead.dRel = float(d_rel)
     lead.yRel = 0.0
     lead.vRel = float(v_rel)
-    lead.aRel = float(a_lead - self.acceleration)
     lead.vLead = float(v_lead)
     lead.vLeadK = float(v_lead)
     lead.aLeadK = float(a_lead)
     # TODO use real radard logic for this
     lead.aLeadTau = float(_LEAD_ACCEL_TAU)
-    lead.status = status
+    lead.present = status
     lead.modelProb = float(prob_lead)
+    lead.radar = True
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
@@ -107,7 +107,7 @@ class Plant:
     position = log.XYZTData.new_message()
     position.x = [float(x) for x in (self.speed + 0.5) * np.array(ModelConstants.T_IDXS)]
     model.modelV2.position = position
-    model.modelV2.action.desiredAcceleration = float(self.acceleration + 0.1)
+    model.modelV2.action.desiredAcceleration = float(self.acceleration + 0.5)
     velocity = log.XYZTData.new_message()
     velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
     velocity.x[0] = float(self.speed) # always start at current speed

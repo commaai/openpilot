@@ -3,15 +3,16 @@
 Tests the state machine in isolation by constructing a WifiManager with mocked
 DBus, then calling _handle_state_change directly with NM state transitions.
 """
-import pytest
+import unittest
 from jeepney.low_level import MessageType
-from pytest_mock import MockerFixture
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import Mocker, OpenpilotTestCase
 from openpilot.system.ui.lib.networkmanager import NMDeviceState, NMDeviceStateReason
 from openpilot.system.ui.lib.wifi_manager import WifiManager, WifiState, ConnectStatus
 
 
-def _make_wm(mocker: MockerFixture, connections=None):
+def _make_wm(mocker: Mocker, connections=None):
   """Create a WifiManager with only the fields _handle_state_change touches."""
   mocker.patch.object(WifiManager, '_initialize')
   wm = WifiManager.__new__(WifiManager)
@@ -50,7 +51,7 @@ def fire_wpa_connect(wm: WifiManager) -> None:
 # Basic transitions
 # ---------------------------------------------------------------------------
 
-class TestDisconnected:
+class TestDisconnected(OpenpilotTestCase):
   def test_generic_disconnect_clears_state(self, mocker):
     wm = _make_wm(mocker)
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
@@ -92,7 +93,7 @@ class TestDisconnected:
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
 
 
-class TestDeactivating:
+class TestDeactivating(OpenpilotTestCase):
   def test_deactivating_noop_for_non_connection_removed(self, mocker):
     """DEACTIVATING with non-CONNECTION_REMOVED reason is a no-op."""
     wm = _make_wm(mocker)
@@ -103,10 +104,10 @@ class TestDeactivating:
     assert wm._wifi_state.ssid == "Net"
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
 
-  @pytest.mark.parametrize("status, expected_clears", [
+  @parameterized.expand([
     (ConnectStatus.CONNECTED, True),
     (ConnectStatus.CONNECTING, False),
-  ])
+  ], names=("status", "expected_clears"))
   def test_deactivating_connection_removed(self, mocker, status, expected_clears):
     """DEACTIVATING(CONNECTION_REMOVED) clears CONNECTED but preserves CONNECTING.
 
@@ -130,7 +131,7 @@ class TestDeactivating:
       assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
 
-class TestPrepareConfig:
+class TestPrepareConfig(OpenpilotTestCase):
   def test_user_initiated_skips_dbus_lookup(self, mocker):
     """User called _set_connecting('B') — PREPARE must not overwrite via DBus.
 
@@ -148,7 +149,7 @@ class TestPrepareConfig:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
     wm._get_active_wifi_connection.assert_not_called()
 
-  @pytest.mark.parametrize("state", [NMDeviceState.PREPARE, NMDeviceState.CONFIG])
+  @parameterized.expand([NMDeviceState.PREPARE, NMDeviceState.CONFIG], names=("state",))
   def test_auto_connect_looks_up_ssid(self, mocker, state):
     """Auto-connection (ssid=None): PREPARE and CONFIG must look up ssid from NM."""
     wm = _make_wm(mocker, connections={"AutoNet": "/path/auto"})
@@ -179,7 +180,7 @@ class TestPrepareConfig:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
 
-class TestNeedAuth:
+class TestNeedAuth(OpenpilotTestCase):
   def test_wrong_password_fires_callback(self, mocker):
     """NEED_AUTH+SUPPLICANT_DISCONNECT from CONFIG = real wrong password."""
     wm = _make_wm(mocker)
@@ -272,16 +273,16 @@ class TestNeedAuth:
     assert len(wm._callback_queue) == 0
 
 
-class TestPassthroughStates:
+class TestPassthroughStates(OpenpilotTestCase):
   """NEED_AUTH (generic), IP_CONFIG, IP_CHECK, SECONDARIES, FAILED (generic) are no-ops."""
 
-  @pytest.mark.parametrize("state", [
+  @parameterized.expand([
     NMDeviceState.NEED_AUTH,
     NMDeviceState.IP_CONFIG,
     NMDeviceState.IP_CHECK,
     NMDeviceState.SECONDARIES,
     NMDeviceState.FAILED,
-  ])
+  ], names=("state",))
   def test_passthrough_is_noop(self, mocker, state):
     wm = _make_wm(mocker)
     wm._set_connecting("Net")
@@ -293,7 +294,7 @@ class TestPassthroughStates:
     assert len(wm._callback_queue) == 0
 
 
-class TestActivated:
+class TestActivated(OpenpilotTestCase):
   def test_sets_connected(self, mocker):
     """ACTIVATED sets status to CONNECTED and fires callback."""
     wm = _make_wm(mocker, connections={"MyNet": "/path/mynet"})
@@ -344,7 +345,7 @@ class TestActivated:
 # guard) shrink these race windows significantly. The epoch counter closes the
 # remaining gaps.
 
-class TestThreadRaces:
+class TestThreadRaces(OpenpilotTestCase):
   def test_prepare_race_user_tap_during_dbus(self, mocker):
     """User taps B while PREPARE's DBus call is in flight for auto-connect.
 
@@ -416,7 +417,7 @@ class TestThreadRaces:
 # Full sequences (NM signal order from real devices)
 # ---------------------------------------------------------------------------
 
-class TestFullSequences:
+class TestFullSequences(OpenpilotTestCase):
   def test_normal_connect(self, mocker):
     """User connects to saved network: full happy path.
 
@@ -771,7 +772,7 @@ class TestFullSequences:
     wm.process_callbacks()
     cb.assert_called_once_with("Hotspot")
 
-  @pytest.mark.xfail(reason="TODO: FAILED(SSID_NOT_FOUND) should emit error for UI")
+  @unittest.expectedFailure  # "TODO: FAILED(SSID_NOT_FOUND) should emit error for UI"
   def test_ssid_not_found(self, mocker):
     """Network drops off while connected — hotspot turned off.
 
@@ -843,7 +844,7 @@ class TestFullSequences:
 # Verified on device: when ActivateConnection returns UnknownConnection error,
 # NM emits no state signals. The worker error path is the only recovery point.
 
-class TestWorkerErrorRecovery:
+class TestWorkerErrorRecovery(OpenpilotTestCase):
   """Worker threads re-sync with NM via _init_wifi_state on DBus errors,
   preserving actual NM state instead of blindly clearing to DISCONNECTED."""
 

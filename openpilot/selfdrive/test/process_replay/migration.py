@@ -15,7 +15,7 @@ from opendbc.car.gm.values import GMSafetyFlags
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, should_stop
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 
@@ -127,8 +127,10 @@ def migrate_longitudinalPlan(msgs):
     if msg.which() != 'longitudinalPlan':
       continue
     new_msg = msg.as_builder()
-    a_target, should_stop = get_accel_from_plan(msg.longitudinalPlan.speeds, msg.longitudinalPlan.accels, ModelConstants.T_IDXS[:CONTROL_N])
-    new_msg.longitudinalPlan.aTarget, new_msg.longitudinalPlan.shouldStop = float(a_target), bool(should_stop)
+    a_target = get_accel_from_plan(msg.longitudinalPlan.speeds, msg.longitudinalPlan.accels, ModelConstants.T_IDXS[:CONTROL_N])
+    v_now = msg.longitudinalPlan.speeds[0] if len(msg.longitudinalPlan.speeds) == CONTROL_N else 0.0
+    stop = should_stop(v_now, a_target)
+    new_msg.longitudinalPlan.aTarget, new_msg.longitudinalPlan.shouldStop = float(a_target), bool(stop)
     ops.append((index, as_reader(new_msg)))
   return ops, [], []
 
@@ -175,8 +177,6 @@ def migrate_liveTracks(msgs):
       pt.dRel = track.dRel
       pt.yRel = track.yRel
       pt.vRel = track.vRel
-      pt.aRel = track.aRel
-      pt.measured = True
       pts.append(pt)
 
     new_msg.liveTracks.points = pts
@@ -297,7 +297,7 @@ def migrate_carOutput(msgs):
     co = messaging.new_message('carOutput')
     co.valid = msg.valid
     co.logMonoTime = msg.logMonoTime
-    co.carOutput.actuatorsOutput = msg.carControl.actuatorsOutputDEPRECATED
+    co.carOutput.actuatorsOutput = msg.carControl.deprecated.actuatorsOutput
     add_ops.append(as_reader(co))
   return [], add_ops, []
 
@@ -323,10 +323,10 @@ def migrate_pandaStates(msgs):
     safety_param = safety_param_migration[fingerprint].value
   elif len(CP.safetyConfigs):
     safety_param = CP.safetyConfigs[0].safetyParam
-    if CP.safetyConfigs[0].safetyParamDEPRECATED != 0:
-      safety_param = CP.safetyConfigs[0].safetyParamDEPRECATED
+    if CP.safetyConfigs[0].deprecated.safetyParam != 0:
+      safety_param = CP.safetyConfigs[0].deprecated.safetyParam
   else:
-    safety_param = CP.safetyParamDEPRECATED
+    safety_param = CP.deprecated.safetyParam
 
   ops = []
   for index, msg in msgs:

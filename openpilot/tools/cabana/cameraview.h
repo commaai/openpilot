@@ -1,23 +1,21 @@
 #pragma once
 
-#include <memory>
+#include <atomic>
 #include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 
-#include <QOpenGLFunctions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLWidget>
-#include <QThread>
+#include <QImage>
+#include <QWidget>
 
 #include "msgq/visionipc/visionipc_client.h"
 
-class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
+class CameraWidget : public QWidget {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraWidget();
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
@@ -26,37 +24,30 @@ public:
 
 signals:
   void clicked();
-  void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType>);
 
 protected:
-  void paintGL() override;
-  void initializeGL() override;
+  void paintEvent(QPaintEvent *event) override;
   void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override { stopVipcThread(); }
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   void vipcThread();
   void clearFrames();
 
-  GLuint frame_vao, frame_vbo, frame_ibo;
-  GLuint textures[2];
-  std::unique_ptr<QOpenGLShaderProgram> shader_program_;
   QColor bg = Qt::black;
+  QImage rgb_frame;   // written by vipc thread, drawn by GUI thread; guarded by frame_lock
+  QImage rgb_back;    // vipc thread only
 
   std::string stream_name;
-  int stream_width = 0;
-  int stream_height = 0;
-  int stream_stride = 0;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
   std::set<VisionStreamType> available_streams;
-  QThread *vipc_thread = nullptr;
-  std::recursive_mutex frame_lock;
-  VisionBuf* current_frame_ = nullptr;
-  VisionIpcBufExtra frame_meta_ = {};
+  std::thread vipc_thread;
+  std::atomic<bool> vipc_exit = false;
+  std::mutex frame_lock;
 
 protected slots:
-  void vipcConnected(VisionIpcClient *vipc_client);
   void vipcFrameReceived();
   void availableStreamsUpdated(std::set<VisionStreamType> streams);
 };

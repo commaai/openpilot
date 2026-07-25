@@ -1,56 +1,28 @@
 #pragma once
 
-#include <QByteArray>
+#include <cstdint>
+#include <vector>
+
 #include <QComboBox>
 #include <QDialog>
 #include <QGroupBox>
 #include <QLineEdit>
 #include <QSpinBox>
 
-#define LIGHT_THEME 1
-#define DARK_THEME 2
+#include "tools/cabana/core/settings.h"
 
-class Settings : public QObject {
+class Settings : public QObject, public CabanaSettingsState {
   Q_OBJECT
 
 public:
-  enum DragDirection {
-    MsbFirst,
-    LsbFirst,
-    AlwaysLE,
-    AlwaysBE,
-  };
-
   Settings();
-  ~Settings();
+  void save();
 
-  bool absolute_time = false;
-  int fps = 10;
-  int max_cached_minutes = 30;
-  int chart_height = 200;
-  int chart_column_count = 1;
-  int chart_range = 3 * 60; // 3 minutes
-  int chart_series_type = 0;
-  int theme = 0;
-  int sparkline_range = 15; // 15 seconds
-  bool multiple_lines_hex = false;
-  bool log_livestream = true;
-  bool suppress_defined_signals = false;
-  QString log_path;
-  QString last_dir;
-  QString last_route_dir;
-  QByteArray geometry;
-  QByteArray video_splitter_state;
-  QByteArray window_state;
-  QStringList recent_files;
-  QByteArray message_header_state;
-  DragDirection drag_direction = MsbFirst;
-
-  // session data
-  QString recent_dbc_file;
-  QString active_msg_id;
-  QStringList selected_msg_ids;
-  QStringList active_charts;
+  // Qt frontend layout state. This intentionally stays outside CabanaSettingsState.
+  std::vector<uint8_t> geometry;
+  std::vector<uint8_t> video_splitter_state;
+  std::vector<uint8_t> window_state;
+  std::vector<uint8_t> message_header_state;
 
 signals:
   void changed();
