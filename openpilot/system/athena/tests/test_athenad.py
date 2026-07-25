@@ -49,7 +49,7 @@ def with_upload_handler(func):
   return wrapper
 
 def mock_create_connection(mocker):
-    return mocker.patch('openpilot.system.athena.athenad.create_connection')
+  return mocker.patch('openpilot.system.athena.athenad.create_connection')
 
 def host():
   with http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server) as (host, port):
