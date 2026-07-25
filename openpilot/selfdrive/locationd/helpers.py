@@ -9,29 +9,29 @@ from openpilot.common.transformations.orientation import rot_from_euler, euler_f
 
 @cache
 def fft_next_good_size(n: int) -> int:
-    """
-    smallest composite of 2, 3, 5, 7, 11 that is >= n
-    inspired by pocketfft
-    """
-    if n <= 6:
-      return n
-    best, f2 = 2 * n, 1
-    while f2 < best:
-        f23 = f2
-        while f23 < best:
-            f235 = f23
-            while f235 < best:
-                f2357 = f235
-                while f2357 < best:
-                    f235711 = f2357
-                    while f235711 < best:
-                        best = f235711 if f235711 >= n else best
-                        f235711 *= 11
-                    f2357 *= 7
-                f235 *= 5
-            f23 *= 3
-        f2 *= 2
-    return best
+  """
+  smallest composite of 2, 3, 5, 7, 11 that is >= n
+  inspired by pocketfft
+  """
+  if n <= 6:
+    return n
+  best, f2 = 2 * n, 1
+  while f2 < best:
+    f23 = f2
+    while f23 < best:
+      f235 = f23
+      while f235 < best:
+        f2357 = f235
+        while f2357 < best:
+          f235711 = f2357
+          while f235711 < best:
+            best = f235711 if f235711 >= n else best
+            f235711 *= 11
+          f2357 *= 7
+        f235 *= 5
+      f23 *= 3
+    f2 *= 2
+  return best
 
 
 def parabolic_peak_interp(R, max_index):
@@ -86,8 +86,7 @@ class PointBuckets:
 
   def get_valid_percent(self) -> int:
     total_points_perc = min(self.__len__() / self.min_points_total * 100, 100)
-    individual_buckets_perc = min(min(len(v) / min_pts * 100 for v, min_pts in
-                                      zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)), 100)
+    individual_buckets_perc = min(min(len(v) / min_pts * 100 for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)), 100)
     return int((total_points_perc + individual_buckets_perc) / 2)
 
   def is_calculable(self) -> bool:
@@ -108,7 +107,8 @@ class PointBuckets:
 
 
 class ParameterEstimator:
-  """ Base class for parameter estimators """
+  """Base class for parameter estimators"""
+
   def reset(self) -> None:
     raise NotImplementedError
 
@@ -131,10 +131,7 @@ class Measurement:
 
   @classmethod
   def from_measurement_xyz(cls, measurement: log.LivePose.XYZMeasurement) -> 'Measurement':
-    return cls(
-      xyz=np.array([measurement.x, measurement.y, measurement.z]),
-      xyz_std=np.array([measurement.xStd, measurement.yStd, measurement.zStd])
-    )
+    return cls(xyz=np.array([measurement.x, measurement.y, measurement.z]), xyz_std=np.array([measurement.xStd, measurement.yStd, measurement.zStd]))
 
 
 class Pose:
@@ -150,7 +147,7 @@ class Pose:
       orientation=Measurement.from_measurement_xyz(live_pose.orientationNED),
       velocity=Measurement.from_measurement_xyz(live_pose.velocityDevice),
       acceleration=Measurement.from_measurement_xyz(live_pose.accelerationDevice),
-      angular_velocity=Measurement.from_measurement_xyz(live_pose.angularVelocityDevice)
+      angular_velocity=Measurement.from_measurement_xyz(live_pose.angularVelocityDevice),
     )
 
 

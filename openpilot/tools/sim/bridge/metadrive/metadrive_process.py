@@ -17,19 +17,20 @@ from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
 
 C3_POSITION = Vec3(0.0, 0, 1.22)
-C3_HPR = Vec3(0, 0,0)
+C3_HPR = Vec3(0, 0, 0)
 
 
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
 metadrive_vehicle_state = namedtuple("metadrive_vehicle_state", ["velocity", "position", "bearing", "steering_angle"])
 
+
 def apply_metadrive_patches(arrive_dest_done=True):
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
   def add_image_sensor_patched(self, name: str, cls, args):
-    if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
-        sensor = cls(*args, self, cuda=True)
+    if self.global_config["image_on_cuda"]:  # and name == self.global_config["vehicle_config"]["image_source"]:
+      sensor = cls(*args, self, cuda=True)
     else:
-        sensor = cls(*args, self, cuda=False)
+      sensor = cls(*args, self, cuda=False)
     assert isinstance(sensor, ImageBuffer), "This API is for adding image sensor"
     self.sensors[name] = sensor
 
@@ -48,9 +49,21 @@ def apply_metadrive_patches(arrive_dest_done=True):
   if not arrive_dest_done:
     MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
-def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
-                      controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
-                      exit_event, op_engaged, test_duration, test_run):
+
+def metadrive_process(
+  dual_camera: bool,
+  config: dict,
+  camera_array,
+  wide_camera_array,
+  image_lock,
+  controls_recv: Connection,
+  simulation_state_send: Connection,
+  vehicle_state_send: Connection,
+  exit_event,
+  op_engaged,
+  test_duration,
+  test_run,
+):
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -90,20 +103,20 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     cam.get_cam().setHpr(C3_HPR)
     img = cam.perceive(to_float=False)
     if not isinstance(img, np.ndarray):
-      img = img.get() # convert cupy array to numpy
+      img = img.get()  # convert cupy array to numpy
     return img
 
   rk = Ratekeeper(100, None)
 
   steer_ratio = 8
-  vc = [0,0]
+  vc = [0, 0]
 
   while not exit_event.is_set():
     vehicle_state = metadrive_vehicle_state(
       velocity=vec3(x=float(env.vehicle.velocity[0]), y=float(env.vehicle.velocity[1]), z=0),
       position=env.vehicle.position,
       bearing=float(math.degrees(env.vehicle.heading_theta)),
-      steering_angle=env.vehicle.steering * env.vehicle.MAX_STEERING
+      steering_angle=env.vehicle.steering * env.vehicle.MAX_STEERING,
     )
     vehicle_state_send.send(vehicle_state)
 
@@ -135,9 +148,9 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         if terminated:
           done_result = env.done_function("default_agent")
         elif out_of_lane:
-          done_result = (True, {"out_of_lane" : True})
+          done_result = (True, {"out_of_lane": True})
         elif timeout:
-          done_result = (True, {"timeout" : True})
+          done_result = (True, {"timeout": True})
 
         simulation_state = metadrive_simulation_state(
           running=False,

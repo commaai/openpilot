@@ -35,6 +35,7 @@ def seed_athena_server(host, port):
       except requests.exceptions.ConnectionError:
         time.sleep(0.1)
 
+
 def with_upload_handler(func):
   @wraps(func)
   def wrapper(*args, **kwargs):
@@ -46,14 +47,18 @@ def with_upload_handler(func):
     finally:
       end_event.set()
       thread.join()
+
   return wrapper
 
+
 def mock_create_connection(mocker):
-    return mocker.patch('openpilot.system.athena.athenad.create_connection')
+  return mocker.patch('openpilot.system.athena.athenad.create_connection')
+
 
 def host():
   with http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server) as (host, port):
     yield f"http://{host}:{port}"
+
 
 class TestAthenadMethods(OpenpilotTestCase):
   @classmethod
@@ -65,7 +70,7 @@ class TestAthenadMethods(OpenpilotTestCase):
   def setup_method(self):
     self.default_params = {
       "DongleId": "0000000000000000",
-      "GithubSshKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
+      "GithubSshKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private",  # noqa: E501
       "GithubUsername": "commaci",
       "AthenadUploadQueue": [],
     }
@@ -102,7 +107,6 @@ class TestAthenadMethods(OpenpilotTestCase):
     with open(fn, 'wb') as f:
       f.write(data)
     return fn
-
 
   # *** test cases ***
 
@@ -189,11 +193,11 @@ class TestAthenadMethods(OpenpilotTestCase):
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
     upload_fn = fn + ('.zst' if compress else '')
-    item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
+    item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time() * 1000), id='')  # noqa: TID251
     with self.assertRaises(requests.exceptions.ConnectionError):
       athenad._do_upload(item)
 
-    item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
+    item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time() * 1000), id='')  # noqa: TID251
     resp = athenad._do_upload(item)
     assert resp.status_code == 201
 
@@ -225,7 +229,7 @@ class TestAthenadMethods(OpenpilotTestCase):
   @with_upload_handler
   def test_upload_handler(self, host):
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time() * 1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
     self._wait_for_upload()
@@ -235,13 +239,13 @@ class TestAthenadMethods(OpenpilotTestCase):
     # TODO: also check that end_event and metered network raises AbortTransferException
     assert athenad.upload_queue.qsize() == 0
 
-  @parameterized.expand([(500,True), (412,False)], names=("status", "retry"))
+  @parameterized.expand([(500, True), (412, False)], names=("status", "retry"))
   @with_upload_handler
   def test_upload_handler_retry(self, mocker, host, status, retry):
     mock_put = mocker.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put')
     mock_put.return_value.__enter__.return_value.status_code = status
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time() * 1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
     self._wait_for_upload()
@@ -256,7 +260,7 @@ class TestAthenadMethods(OpenpilotTestCase):
   def test_upload_handler_timeout(self):
     """When an upload times out or fails to connect it should be placed back in the queue"""
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.zst", headers={}, created_at=int(time.time() * 1000), id='', allow_cellular=True)  # noqa: TID251
     item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
 
     athenad.upload_queue.put_nowait(item_no_retry)
@@ -276,8 +280,9 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   @with_upload_handler
   def test_cancel_upload(self):
-    item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(
+      path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={}, created_at=int(time.time() * 1000), id='id', allow_cellular=True  # noqa: TID251
+    )
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
@@ -311,7 +316,7 @@ class TestAthenadMethods(OpenpilotTestCase):
   @with_upload_handler
   def test_list_upload_queue_current(self, host: str):
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time() * 1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
     self._wait_for_upload()
@@ -330,10 +335,10 @@ class TestAthenadMethods(OpenpilotTestCase):
         path=fp,
         url=f"http://localhost:44444/{fn}",
         headers={},
-        created_at=int(time.time()*1000),  # noqa: TID251
+        created_at=int(time.time() * 1000),  # noqa: TID251
         id='',
         allow_cellular=True,
-        priority=i
+        priority=i,
       )
       athenad.upload_queue.put_nowait(item)
 
@@ -341,8 +346,9 @@ class TestAthenadMethods(OpenpilotTestCase):
       assert athenad.upload_queue.get_nowait().priority == i
 
   def test_list_upload_queue(self):
-    item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(
+      path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={}, created_at=int(time.time() * 1000), id='id', allow_cellular=True  # noqa: TID251
+    )
     athenad.upload_queue.put_nowait(item)
 
     items = dispatcher["listUploadQueue"]()
