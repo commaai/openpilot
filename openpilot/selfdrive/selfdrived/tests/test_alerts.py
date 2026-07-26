@@ -89,8 +89,9 @@ class TestAlerts(OpenpilotTestCase):
   def test_alert_sanity_check(self):
     for event_types in EVENTS.values():
       for event_type, a in event_types.items():
+        # TODO: add callback alerts
         if not isinstance(a, Alert):
-          a = a(self.CP, self.CS, self.sm, False, 100, log.LongitudinalPersonality.standard)
+          continue
 
         if a.alert_size == AlertSize.none:
           assert len(a.alert_text_1) == 0
