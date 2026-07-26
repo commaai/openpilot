@@ -931,6 +931,14 @@ static inline uint32_t premultiply(uint32_t color) {
          (((g * a + 127) / 255) << 8) | ((b * a + 127) / 255);
 }
 
+// Runtime switch used by matched benchmarks. This deliberately remains
+// independent of architecture-specific SIMD paths.
+static int opacity_culling = 1;
+
+void sr_set_opacity_culling(int enabled) {
+  opacity_culling = enabled;
+}
+
 #if defined(__aarch64__)
 static int neon_raster_enabled = -1;
 
@@ -1022,7 +1030,6 @@ static inline void blend_solid_span_neon(uint32_t *dst, int count, uint32_t src)
   for (; x < count; ++x) dst[x] = blend(dst[x], src);
 }
 #endif
-
 void sr_set_clip(Surface *s, int x, int y, int width, int height) {
   s->clip_x0 = x < 0 ? 0 : (x > s->width ? s->width : x);
   s->clip_y0 = y < 0 ? 0 : (y > s->height ? s->height : y);
@@ -1047,6 +1054,7 @@ void sr_clear(Surface *s, uint32_t color) {
 }
 
 void sr_rect(Surface *s, int x, int y, int w, int h, uint32_t color) {
+  if (opacity_culling && (color >> 24) == 0) return;
   const int x0 = x < s->clip_x0 ? s->clip_x0 : x;
   const int y0 = y < s->clip_y0 ? s->clip_y0 : y;
   const int x1 = x + w > s->clip_x1 ? s->clip_x1 : x + w;
@@ -1070,6 +1078,7 @@ void sr_rect(Surface *s, int x, int y, int w, int h, uint32_t color) {
 }
 
 void sr_gradient_v(Surface *s, int x, int y, int w, int h, uint32_t top, uint32_t bottom) {
+  if (opacity_culling && ((top | bottom) >> 24) == 0) return;
   if (h <= 0) return;
   for (int py = 0; py < h; ++py) {
     const int t = h == 1 ? 0 : (py * 256) / (h - 1);
@@ -1086,6 +1095,7 @@ void sr_gradient_v(Surface *s, int x, int y, int w, int h, uint32_t top, uint32_
 void sr_gradient_4(Surface *s, int x, int y, int width, int height,
                    uint32_t top_left, uint32_t bottom_left,
                    uint32_t top_right, uint32_t bottom_right) {
+  if (opacity_culling && ((top_left | bottom_left | top_right | bottom_right) >> 24) == 0) return;
   if (width <= 0 || height <= 0) return;
   const int x0 = x < s->clip_x0 ? s->clip_x0 : x;
   const int y0 = y < s->clip_y0 ? s->clip_y0 : y;
@@ -1109,6 +1119,7 @@ void sr_gradient_4(Surface *s, int x, int y, int width, int height,
 
 void sr_rounded_rect(Surface *s, int x, int y, int width, int height,
                      float radius, float thickness, uint32_t color) {
+  if (opacity_culling && (color >> 24) == 0) return;
   if (width <= 0 || height <= 0) return;
   radius = fmaxf(0, fminf(radius, fminf(width, height) * .5f));
   const int x0 = x < s->clip_x0 ? s->clip_x0 : x;
@@ -1131,6 +1142,7 @@ void sr_rounded_rect(Surface *s, int x, int y, int width, int height,
 }
 
 void sr_circle(Surface *s, int cx, int cy, int radius, uint32_t color) {
+  if (opacity_culling && (color >> 24) == 0) return;
   if (radius <= 0) return;
   const uint32_t src = premultiply(color);
   for (int dy = -radius; dy <= radius; ++dy) {
@@ -1154,6 +1166,7 @@ void sr_circle(Surface *s, int cx, int cy, int radius, uint32_t color) {
 
 void sr_ring_arc(Surface *s, int cx, int cy, int inner_radius, int outer_radius,
                  float start_angle, float end_angle, uint32_t color) {
+  if (opacity_culling && (color >> 24) == 0) return;
   if (outer_radius <= 0 || inner_radius >= outer_radius) return;
   const uint32_t src = premultiply(color);
   const int inner2 = inner_radius * inner_radius;
@@ -1185,6 +1198,7 @@ void sr_ring(Surface *s, int cx, int cy, int inner_radius, int outer_radius, uin
 }
 
 void sr_circle_gradient(Surface *s, int cx, int cy, int radius, uint32_t inner, uint32_t outer) {
+  if (opacity_culling && ((inner | outer) >> 24) == 0) return;
   if (radius <= 0) return;
   uint32_t colors[256];
   for (int index = 0; index < 256; ++index) {
@@ -1215,6 +1229,7 @@ void sr_circle_gradient(Surface *s, int cx, int cy, int radius, uint32_t inner, 
 }
 
 void sr_line(Surface *s, float x0, float y0, float x1, float y1, float thickness, uint32_t color) {
+  if (opacity_culling && (color >> 24) == 0) return;
   if (thickness <= 1.1f) {
     int ax = (int)roundf(x0), ay = (int)roundf(y0);
     const int bx = (int)roundf(x1), by = (int)roundf(y1);
@@ -1259,6 +1274,7 @@ static inline float edge(Point a, Point b, float x, float y) {
 }
 
 void sr_triangle(Surface *s, Point a, Point b, Point c, uint32_t color) {
+  if (opacity_culling && (color >> 24) == 0) return;
   int x0 = (int)floorf(fminf(a.x, fminf(b.x, c.x)));
   int y0 = (int)floorf(fminf(a.y, fminf(b.y, c.y)));
   int x1 = (int)ceilf(fmaxf(a.x, fmaxf(b.x, c.x)));
@@ -1315,6 +1331,14 @@ void sr_ribbon(Surface *s, const Point *perimeter, int count,
                float start_x, float start_y, float end_x, float end_y,
                const uint32_t *colors, const float *stops, int color_count) {
   if (!perimeter || count < 3) return;
+  if (opacity_culling) {
+    if (color_count <= 0 && (solid_color >> 24) == 0) return;
+    if (color_count > 0) {
+      uint32_t combined_alpha = 0;
+      for (int index = 0; index < color_count; ++index) combined_alpha |= colors[index] >> 24;
+      if (combined_alpha == 0) return;
+    }
+  }
   count &= ~1;
   uint32_t gradient_lut[256];
   float gradient_dx = 0, gradient_dy = 0, gradient_inv_length2 = 0;
@@ -1368,6 +1392,7 @@ void sr_ribbon(Surface *s, const Point *perimeter, int count,
 }
 
 void sr_blit(Surface *dst, const Surface *src, int dx, int dy, uint8_t opacity) {
+  if (opacity_culling && opacity == 0) return;
   int sx = 0, sy = 0;
   int w = src->width, h = src->height;
   if (dx < dst->clip_x0) { sx = dst->clip_x0 - dx; w -= sx; dx = dst->clip_x0; }
@@ -1437,6 +1462,7 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
   const uint32_t tr = (tint >> 16) & 255;
   const uint32_t tg = (tint >> 8) & 255;
   const uint32_t tb = tint & 255;
+  if (opacity_culling && ta == 0) return;
   if (!flip_x && !flip_y &&
       fabsf(src_w - dst_w) < .001f && fabsf(src_h - dst_h) < .001f &&
       fabsf(src_x - roundf(src_x)) < .001f && fabsf(src_y - roundf(src_y)) < .001f) {
@@ -1465,6 +1491,10 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
 #endif
       for (int x = 0; x < width; ++x) {
         uint32_t p = in[sx + x];
+        // Most glyph and icon textures are sparse. Avoid both a redundant
+        // framebuffer store and all tint/blend arithmetic for transparent
+        // source pixels.
+        if (opacity_culling && (p >> 24) == 0) continue;
         if (tint != 0xffffffffU) {
           if (tr == 255 && tg == 255 && tb == 255) {
             const uint32_t a = ((p >> 24) * ta + 127) / 255;
@@ -1485,15 +1515,22 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
     return;
   }
   const int bilinear = smooth && (fabsf(src_w - dst_w) > .001f || fabsf(src_h - dst_h) > .001f);
-  for (int y = 0; y < dst_h; ++y) {
+  int start_y = dst->clip_y0 - dst_y;
+  int end_y = dst->clip_y1 - dst_y;
+  int start_x = dst->clip_x0 - dst_x;
+  int end_x = dst->clip_x1 - dst_x;
+  if (start_y < 0) start_y = 0;
+  if (end_y > dst_h) end_y = dst_h;
+  if (start_x < 0) start_x = 0;
+  if (end_x > dst_w) end_x = dst_w;
+  if (start_x >= end_x || start_y >= end_y) return;
+  for (int y = start_y; y < end_y; ++y) {
     const int py = dst_y + y;
-    if (py < dst->clip_y0 || py >= dst->clip_y1) continue;
     float v = (y + .5f) / dst_h;
     if (flip_y) v = 1.0f - v;
     uint32_t *d = (uint32_t *)(dst->pixels + py * dst->stride);
-    for (int x = 0; x < dst_w; ++x) {
+    for (int x = start_x; x < end_x; ++x) {
       const int px = dst_x + x;
-      if (px < dst->clip_x0 || px >= dst->clip_x1) continue;
       float u = (x + .5f) / dst_w;
       if (flip_x) u = 1.0f - u;
       uint32_t p;
@@ -1531,6 +1568,7 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
           p |= (uint32_t)((top * (256 - fy) + bottom * fy + 32768) >> 16) << shift;
         }
       }
+      if (opacity_culling && (p >> 24) == 0) continue;
       const uint32_t a = ((p >> 24) * ta + 127) / 255;
       const uint32_t r = (((p >> 16) & 255) * tr * ta + 32512) / 65025;
       const uint32_t g = (((p >> 8) & 255) * tg * ta + 32512) / 65025;
@@ -1593,6 +1631,7 @@ void sr_blit_transform(Surface *dst, const Surface *src, float src_x, float src_
   const uint32_t tr = (tint >> 16) & 255;
   const uint32_t tg = (tint >> 8) & 255;
   const uint32_t tb = tint & 255;
+  if (opacity_culling && ta == 0) return;
   for (int y = y0; y < y1; ++y) {
     uint32_t *out = (uint32_t *)(dst->pixels + y * dst->stride);
     for (int x = x0; x < x1; ++x) {
@@ -1627,6 +1666,7 @@ void sr_blit_transform(Surface *dst, const Surface *src, float src_x, float src_
         const int bottom = ((p01 >> shift) & 255) * (256 - fx) + ((p11 >> shift) & 255) * fx;
         p |= (uint32_t)((top * (256 - fy) + bottom * fy + 32768) >> 16) << shift;
       }
+      if (opacity_culling && (p >> 24) == 0) continue;
       const uint32_t a = ((p >> 24) * ta + 127) / 255;
       const uint32_t r = (((p >> 16) & 255) * tr * ta + 32512) / 65025;
       const uint32_t g = (((p >> 8) & 255) * tg * ta + 32512) / 65025;

@@ -78,6 +78,7 @@ def _build_native() -> tuple[ctypes.CDLL, tempfile.TemporaryDirectory | None]:
   lib = ctypes.CDLL(str(library))
   sp = ctypes.POINTER(_Surface)
   lib.sr_clear.argtypes = [sp, ctypes.c_uint32]
+  lib.sr_set_opacity_culling.argtypes = [ctypes.c_int]
   lib.sr_set_clip.argtypes = [sp, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
   lib.sr_reset_clip.argtypes = [sp]
   lib.sr_rect.argtypes = [sp, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint32]
@@ -217,6 +218,8 @@ class _State:
     self.transform = (1.0, 1.0, 0.0, 0.0)
     self.transform_stack: list[tuple[float, float, float, float]] = []
     self.profile_enabled = os.getenv("CPU_RENDER_PROFILE") == "1"
+    self.opacity_culling = os.getenv("CPU_RENDER_OPACITY_CULLING", "1") != "0"
+    self.lib.sr_set_opacity_culling(int(self.opacity_culling))
     self.profile: dict[str, list[float]] = {}
     self.next_shader_id = 1
     self.shader_effects: dict[int, str] = {}
