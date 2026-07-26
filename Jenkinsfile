@@ -1,3 +1,18 @@
+import groovy.transform.NonCPS
+import org.jenkins.plugins.lockableresources.LockableResourcesManager
+
+@NonCPS
+def reserveResource(String name, String owner) {
+  def manager = LockableResourcesManager.get()
+  def resource = manager.fromName(name)
+  if (resource == null) {
+    throw new Exception("Unknown lockable resource: ${name}")
+  }
+  if (!resource.reserved) {
+    manager.reserve([resource], owner)
+  }
+}
+
 def retryWithDelay(int maxRetries, int delay, Closure body) {
   for (int i = 0; i < maxRetries; i++) {
     try {
@@ -179,6 +194,12 @@ node {
   }
 
   try {
+    if (env.BRANCH_NAME == 'tmp-jenkins-38461') {
+      stage("reserve offline MICI") {
+        reserveResource("comma-bb16a196", "mici-display-recovery")
+      }
+    }
+
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
         step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/tools/release/build_release.sh"),
