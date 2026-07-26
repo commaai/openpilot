@@ -206,19 +206,10 @@ node {
           echo "GPT attributes:"
           sudo sgdisk -i 11 /dev/sde 2>/dev/null || true
           sudo sgdisk -i 28 /dev/sde 2>/dev/null || true
-          echo "installing matched landscape XBL + kernel into inactive slot A"
-          test "\$(getslotsuffix)" = "_b"
-          echo "58908da69903949b4995b761f34cc8f9f95b9b2159d13c25815d6ad918c91159  .ci_artifacts/mici_rotation/boot.img" | sha256sum -c -
-          echo "20edb24244e18f1f73f3d1ae60494ddbb736cb1a394525d27f09bbc88378e996  .ci_artifacts/mici_rotation/xbl.elf" | sha256sum -c -
-          sudo mkdir -p /data/tmp/mici_rotation_stock
-          sudo dd if=/dev/disk/by-partlabel/boot_a of=/data/tmp/mici_rotation_stock/boot_a.img bs=4M status=none
-          sudo dd if=/dev/disk/by-partlabel/xbl_a of=/data/tmp/mici_rotation_stock/xbl_a.img bs=4M status=none
-          sudo dd if=.ci_artifacts/mici_rotation/boot.img of=/dev/disk/by-partlabel/boot_a bs=4M conv=fsync status=none
-          sudo dd if=.ci_artifacts/mici_rotation/xbl.elf of=/dev/disk/by-partlabel/xbl_a bs=4M conv=fsync status=none
-          sudo cmp -n "\$(stat -c %s .ci_artifacts/mici_rotation/boot.img)" .ci_artifacts/mici_rotation/boot.img /dev/disk/by-partlabel/boot_a
-          sudo cmp -n "\$(stat -c %s .ci_artifacts/mici_rotation/xbl.elf)" .ci_artifacts/mici_rotation/xbl.elf /dev/disk/by-partlabel/xbl_a
-          sudo abctl --set_active 0
-          sudo systemd-run --on-active=10s --unit=mici-rotation-reboot /usr/sbin/reboot
+          echo "slot implementation strings:"
+          strings /usr/sbin/abctl /usr/lib/aarch64-linux-gnu/libabctl.so.0.0.0 | grep -Ei 'xbl|slot|boot[_-]partition|primary|secondary' | sort -u
+          echo "all partition labels:"
+          ls -1 /dev/disk/by-partlabel | sort
         """),
       ])
     }
