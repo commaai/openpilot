@@ -569,9 +569,7 @@ requires-dist = [
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "cpplint", marker = "extra == 'testing'" },
     { name = "gcovr", marker = "extra == 'testing'" },
-    { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs", marker = "extra == 'examples'" },
-    { name = "jinja2", marker = "extra == 'docs'" },
     { name = "lefthook", marker = "extra == 'testing'" },
     { name = "numpy" },
     { name = "pycapnp" },
@@ -584,7 +582,7 @@ requires-dist = [
     { name = "unittest-parallel", marker = "extra == 'testing'" },
     { name = "zstandard", marker = "extra == 'testing'" },
 ]
-provides-extras = ["testing", "docs", "examples"]
+provides-extras = ["testing", "examples"]
 
 [package.metadata.requires-dev]
 testing = [
