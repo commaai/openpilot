@@ -18,9 +18,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;
   font-size: 15px;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -45,7 +42,7 @@ header.site .social a:hover { color: var(--accent); }
 header.site .social svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
 header.site .social a[aria-label="Discord"] svg { transform: scale(1.15); }
 
-.layout { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; flex: 1; }
+.layout { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; }
 
 nav.sidebar {
   width: 14rem; flex-shrink: 0;
@@ -54,7 +51,6 @@ nav.sidebar {
   max-height: calc(100vh - 3rem); overflow-y: auto;
 }
 nav.sidebar .nav-section { font-weight: 600; margin: 1.15rem 0.8rem 0.45rem; }
-nav.sidebar .nav-section:first-child { margin-top: 0; }
 nav.sidebar a {
   display: block; padding: 0.28rem 0.8rem; border-radius: 0.45rem;
   color: var(--fg); line-height: 1.35;
@@ -84,7 +80,7 @@ main.content hr { border: none; border-top: 1px solid var(--border); margin: 2re
 .headerlink { margin-left: 0.25rem; opacity: 0; font-size: 0.7em; }
 h1:hover .headerlink, h2:hover .headerlink, h3:hover .headerlink { opacity: 1; }
 
-.edit-link { margin-top: 3rem; font-size: 0.85rem; color: var(--fg-dim); }
+.edit-link { margin-top: 3rem; font-size: 0.85rem; }
 
 .copy-btn {
   position: absolute; top: 0.4rem; right: 0.4rem;
@@ -97,13 +93,12 @@ main.content pre:hover .copy-btn { opacity: 1; }
 
 @media (max-width: 48rem) {
   nav.sidebar { display: none; }
-  main.content { width: 100%; padding: 2rem 1.25rem 4rem; }
+  main.content { padding: 2rem 1.25rem 4rem; }
 }
 
 .glossary-term {
   position: relative;
   color: inherit;
-  text-decoration: none;
 }
 
 .glossary-term__label {

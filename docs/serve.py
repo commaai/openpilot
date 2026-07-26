@@ -357,7 +357,7 @@ def copy_assets() -> None:
     rel = src.relative_to(DOCS_DIR)
     if any(part in EXCLUDE_DIRS for part in rel.parts):
       continue
-    if src.suffix == ".md":
+    if src.suffix == ".md" or src == Path(__file__).resolve():
       continue
     dest = SITE_DIR / rel
     dest.parent.mkdir(parents=True, exist_ok=True)
