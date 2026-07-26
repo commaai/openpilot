@@ -582,10 +582,10 @@ def startStream(sdp: str, enabled: bool) -> dict:
   else:
       raise Exception("failed to get CarParamsPersistent")
 
+  # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
+  # webrtcd clears IsLiveStreaming when the session ends
+  params.put_bool("IsLiveStreaming", True)
   if params.get_bool("IsOffroad"):
-    # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
-    # webrtcd clears IsLiveStreaming when the session ends
-    params.put_bool("IsLiveStreaming", True)
     # wait for webrtcd end points to wake up
     wait_for_webrtcd()
 
