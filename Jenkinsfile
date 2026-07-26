@@ -1,18 +1,3 @@
-import com.cloudbees.groovy.cps.NonCPS
-import org.jenkins.plugins.lockableresources.LockableResourcesManager
-
-@NonCPS
-def reserveResource(String name, String owner) {
-  def manager = LockableResourcesManager.get()
-  def resource = manager.fromName(name)
-  if (resource == null) {
-    throw new Exception("Unknown lockable resource: ${name}")
-  }
-  if (!resource.reserved) {
-    manager.reserve([resource], owner)
-  }
-}
-
 def retryWithDelay(int maxRetries, int delay, Closure body) {
   for (int i = 0; i < maxRetries; i++) {
     try {
@@ -196,7 +181,9 @@ node {
   try {
     if (env.BRANCH_NAME == 'tmp-jenkins-38461') {
       stage("reserve offline MICI") {
-        reserveResource("comma-bb16a196", "mici-display-recovery")
+        lock(resource: "comma-bb16a196") {
+          input message: "comma-bb16a196 reserved for MICI display recovery"
+        }
       }
     }
 
