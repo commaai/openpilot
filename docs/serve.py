@@ -17,8 +17,7 @@ import markdown
 from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DOCS_DIR = REPO_ROOT / "docs"
+DOCS_DIR = Path(__file__).resolve().parent
 SITE_DIR = DOCS_DIR / "_site"
 
 # Pages whose source lives under docs/ but should not be emitted as pages.
@@ -81,7 +80,7 @@ SOCIAL_HTML = """
 
 GlossaryTerm = tuple[str, re.Pattern[str], str]
 
-GLOSSARY = {
+GLOSSARY_DESCRIPTIONS = {
   "onroad": "openpilot's system state while ignition is on.",
   "offroad": "openpilot's system state while ignition is off.",
   "route": "A route is a recording of an onroad session.",
@@ -92,22 +91,7 @@ GLOSSARY = {
 }
 GLOSSARY_PAGE = "concepts/glossary.md"
 GLOSSARY_ROUTE = GLOSSARY_PAGE.removesuffix(".md")
-GLOSSARY_PLACEHOLDER = "{{GLOSSARY_DEFINITIONS}}"
-GLOSSARY_SKIP_TAGS = {
-  "a",
-  "code",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "kbd",
-  "pre",
-  "script",
-  "style",
-}
-
+GLOSSARY_SKIP_TAGS = {"a", "code", "h1", "h2", "h3", "h4", "h5", "h6", "kbd", "pre", "script", "style"}
 
 # ---------------------------------------------------------------------------
 # Markdown
@@ -180,16 +164,18 @@ def clean_tooltip(description: str) -> str:
   return re.sub(r"\s+", " ", text).strip()
 
 
-@functools.cache
-def load_glossary() -> tuple[list[GlossaryTerm], str]:
-  glossary: list[GlossaryTerm] = []
-  rendered = []
-  for label, description in GLOSSARY.items():
-    slug = label.replace(" ", "-").replace("_", "-").lower()
-    glossary.append((slug, re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE), clean_tooltip(description)))
-    rendered.append(f'* <span id="{slug}"></span>**{label}**: {description}')
+def glossary_slug(label: str) -> str:
+  return label.replace(" ", "-").replace("_", "-").lower()
 
-  return glossary, "\n".join(rendered)
+
+GLOSSARY_TERMS = [
+  (glossary_slug(label), re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE), clean_tooltip(description))
+  for label, description in GLOSSARY_DESCRIPTIONS.items()
+]
+GLOSSARY_DEFINITIONS = "\n".join(
+  f'* <span id="{glossary_slug(label)}"></span>**{label}**: {description}'
+  for label, description in GLOSSARY_DESCRIPTIONS.items()
+)
 
 
 class GlossaryTreeprocessor(Treeprocessor):
@@ -314,9 +300,8 @@ def render_markdown(text: str, page_path: str) -> str:
   )
   md.preprocessors.register(RawHtmlLinksPreprocessor(md, page_path), "raw-html-links", 21)
   md.treeprocessors.register(RelLinksTreeprocessor(md, page_path), "relative-links", 1)
-  glossary, definitions = load_glossary()
-  md.treeprocessors.register(GlossaryTreeprocessor(md, glossary, page_path), "glossary-links", 0)
-  return md.convert(text.replace(GLOSSARY_PLACEHOLDER, definitions))
+  md.treeprocessors.register(GlossaryTreeprocessor(md, GLOSSARY_TERMS, page_path), "glossary-links", 0)
+  return md.convert(text)
 
 
 # ---------------------------------------------------------------------------
@@ -330,8 +315,7 @@ def page_title(source: str) -> str:
   return SITE_NAME
 
 
-def write_html_redirect(src: Path) -> None:
-  rel = src.relative_to(DOCS_DIR)
+def write_html_redirect(rel: Path) -> None:
   if rel.name == "index.md":
     return
   target = f"{rel.stem}/"
@@ -390,7 +374,7 @@ TEMPLATE = string.Template("""
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>$title · $site_name</title>
   <link rel="icon" href="${root}assets/favicon.svg">
-  <link rel="stylesheet" href="${root}stylesheets/extra.css">
+  <link rel="stylesheet" href="${root}style.css">
 </head>
 <body>
   <header class="site">
@@ -438,10 +422,12 @@ def render_nav_html(current_page: str) -> str:
 
 def build() -> None:
   pages = [
-    path for path in sorted(DOCS_DIR.rglob("*.md"))
+    (path.relative_to(DOCS_DIR), path.read_text()) for path in sorted(DOCS_DIR.rglob("*.md"))
     if path != DOCS_DIR / "README.md"
     and not any(part in EXCLUDE_DIRS for part in path.relative_to(DOCS_DIR).parts)
   ]
+  pages.append((Path(GLOSSARY_PAGE), f"# openpilot glossary\n\n{GLOSSARY_DEFINITIONS}"))
+  pages.sort()
 
   if SITE_DIR.exists():
     shutil.rmtree(SITE_DIR)
@@ -449,14 +435,14 @@ def build() -> None:
 
   copy_assets()
 
-  for src in pages:
-    rel = src.relative_to(DOCS_DIR).as_posix()
-    source = src.read_text()
+  for rel_path, source in pages:
+    rel = rel_path.as_posix()
     body = render_markdown(source, rel)
     title = page_title(source)
     route = page_route(rel)
     root = "../" * (0 if route == "." else len(route.split("/")))
-    edit_url = f"{REPO_URL}blob/master/docs/{rel}"
+    edit_path = "serve.py" if rel == GLOSSARY_PAGE else rel
+    edit_url = f"{REPO_URL}blob/master/docs/{edit_path}"
     page_html = TEMPLATE.substitute(
       title=html.escape(title),
       site_name=html.escape(SITE_NAME),
@@ -472,7 +458,7 @@ def build() -> None:
     out = SITE_DIR / ("" if route == "." else route) / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page_html)
-    write_html_redirect(src)
+    write_html_redirect(rel_path)
 
   print(f"docs: built {len(pages)} pages into {SITE_DIR}")
 
