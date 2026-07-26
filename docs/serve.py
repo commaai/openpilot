@@ -9,7 +9,6 @@ import shutil
 import string
 import threading
 import time
-import tomllib
 import urllib.parse
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -20,10 +19,10 @@ from markdown.treeprocessors import Treeprocessor
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
-SITE_DIR = REPO_ROOT / "docs_site"
+SITE_DIR = DOCS_DIR / "_site"
 
 # Pages whose source lives under docs/ but should not be emitted as pages.
-EXCLUDE_DIRS = {"ext"}
+EXCLUDE_DIRS = {"_site"}
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +81,15 @@ SOCIAL_HTML = """
 
 GlossaryTerm = tuple[str, re.Pattern[str], str]
 
-GLOSSARY_FILE = DOCS_DIR / "ext" / "glossary.toml"
+GLOSSARY = {
+  "onroad": "openpilot's system state while ignition is on.",
+  "offroad": "openpilot's system state while ignition is off.",
+  "route": "A route is a recording of an onroad session.",
+  "segment": "Routes are split into one minute chunks called segments.",
+  "comma connect": "The web viewer for all your routes; check it out at [connect.comma.ai](https://connect.comma.ai).",
+  "panda": "The secondary processor on the device that implements the functional safety and directly talks to the car over CAN. See the [panda repo](https://github.com/commaai/panda).",
+  "comma four": "The latest hardware by comma.ai for running openpilot. More info at [comma.ai/shop/comma-four](https://www.comma.ai/shop/comma-four).",
+}
 GLOSSARY_PAGE = "concepts/glossary.md"
 GLOSSARY_ROUTE = GLOSSARY_PAGE.removesuffix(".md")
 GLOSSARY_PLACEHOLDER = "{{GLOSSARY_DEFINITIONS}}"
@@ -175,17 +182,9 @@ def clean_tooltip(description: str) -> str:
 
 @functools.cache
 def load_glossary() -> tuple[list[GlossaryTerm], str]:
-  with GLOSSARY_FILE.open("rb") as f:
-    glossary_data = tomllib.load(f).get("glossary", {})
-
   glossary: list[GlossaryTerm] = []
   rendered = []
-  for key, value in glossary_data.items():
-    label = str(key).strip().replace("_", " ")
-    description = str(value).strip()
-    if not description:
-      continue
-
+  for label, description in GLOSSARY.items():
     slug = label.replace(" ", "-").replace("_", "-").lower()
     glossary.append((slug, re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE), clean_tooltip(description)))
     rendered.append(f'* <span id="{slug}"></span>**{label}**: {description}')

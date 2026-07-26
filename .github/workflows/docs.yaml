@@ -57,7 +57,7 @@ jobs:
         git rm -rf .
 
         # copy over docs
-        cp -r ../docs_site/ docs/
+        cp -r ../docs/_site/ docs/
 
         # GitHub pages config
         touch docs/.nojekyll
