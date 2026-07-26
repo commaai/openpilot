@@ -13,6 +13,8 @@ from __future__ import annotations
 import functools
 import html
 import http.server
+import posixpath
+import re
 import shutil
 import signal
 import string
@@ -25,6 +27,7 @@ from xml.etree import ElementTree as ET
 
 import markdown
 from markdown.extensions import Extension
+from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -82,10 +85,35 @@ SOCIAL = [
 # Markdown
 # ---------------------------------------------------------------------------
 
+def page_route(path: str) -> str:
+  path = path.removesuffix(".md")
+  return posixpath.dirname(path) or "." if posixpath.basename(path) == "index" else path
+
+
+def page_href(current_page: str, target_page: str) -> str:
+  route = posixpath.relpath(page_route(target_page), page_route(current_page))
+  return ("." if route == "." else route) + "/"
+
+
+def rewrite_relative_url(value: str, page: str) -> str | None:
+  url = urllib.parse.urlparse(value)
+  if value.startswith(("#", "/")) or url.scheme or url.netloc or not url.path:
+    return None
+  target = posixpath.normpath(posixpath.join(posixpath.dirname(page), url.path))
+  if target == ".." or target.startswith("../"):
+    return None
+  path = page_href(page, target) if target.endswith(".md") else posixpath.relpath(target, page_route(page))
+  return url._replace(path=path).geturl()
+
+
 class RelLinksTreeprocessor(Treeprocessor):
-  """Rewrite relative .md links to .html."""
+  """Rebase relative links for directory-style page URLs."""
 
   name = "rellinks"
+
+  def __init__(self, md, path: str):
+    super().__init__(md)
+    self.path = path
 
   def run(self, root: ET.Element) -> None:
     for el in root.iter():
@@ -98,21 +126,40 @@ class RelLinksTreeprocessor(Treeprocessor):
           el.set(key, rewritten)
 
   def _rewrite(self, value: str) -> str | None:
-    if value.startswith(("#", "/")) or "://" in value:
-      return None
-    url = urllib.parse.urlparse(value)
-    if not url.path.endswith(".md"):
-      return None
-    return url._replace(path=url.path[:-3] + ".html").geturl()
+    return rewrite_relative_url(value, self.path)
+
+
+class RawHtmlLinksPreprocessor(Preprocessor):
+  pattern = re.compile(r"""(?P<prefix>\b(?:href|src)=(?P<quote>["']))(?P<url>.*?)(?P=quote)""")
+
+  def __init__(self, md, path: str):
+    super().__init__(md)
+    self.path = path
+
+  def run(self, lines: list[str]) -> list[str]:
+    def replace(match: re.Match[str]) -> str:
+      value = match.group("url")
+      rewritten = rewrite_relative_url(value, self.path)
+      return match.group(0) if rewritten is None else f'{match.group("prefix")}{rewritten}{match.group("quote")}'
+
+    return [self.pattern.sub(replace, line) for line in lines]
 
 
 class RelLinksExtension(Extension):
+  def __init__(self, path: str):
+    self.path = path
+
   def extendMarkdown(self, md) -> None:
     md.registerExtension(self)
     md.treeprocessors.register(
-      RelLinksTreeprocessor(md),
+      RelLinksTreeprocessor(md, self.path),
       RelLinksTreeprocessor.name,
       0,
+    )
+    md.preprocessors.register(
+      RawHtmlLinksPreprocessor(md, self.path),
+      "rellinks-raw-html",
+      21,
     )
 
 
@@ -126,7 +173,7 @@ def make_extensions(page_path: str) -> list[str | Extension]:
     "admonition",
     "fenced_code",
     "md_in_html",
-    RelLinksExtension(),
+    RelLinksExtension(page_path),
     GlossaryExtension(page_path),
   ]
 
@@ -161,8 +208,8 @@ def page_title(source: str) -> str:
 
 
 def output_html_path(src: Path) -> Path:
-  rel = src.relative_to(DOCS_DIR).with_suffix(".html")
-  return SITE_DIR / rel
+  route = page_route(src.relative_to(DOCS_DIR).as_posix())
+  return SITE_DIR / ("" if route == "." else route) / "index.html"
 
 
 # ---------------------------------------------------------------------------
@@ -317,7 +364,7 @@ TEMPLATE = string.Template("""
 </head>
 <body>
   <header class="site">
-    <a href="${root}index.html"><img src="${root}${logo}" alt="logo"></a>
+    <a href="$home_href"><img src="${root}${logo}" alt="logo"></a>
     <span class="site-name">$site_name</span>
     <span class="spacer"></span>
     <a class="repo" href="$repo_url">GitHub</a>
@@ -349,22 +396,21 @@ TEMPLATE = string.Template("""
 """)
 
 
-def render_nav_html(current_page: str, root: str) -> str:
+def render_nav_html(current_page: str) -> str:
   parts: list[str] = []
   for title, target in NAV:
     if target is None:
       parts.append(f'<div class="nav-section">{html.escape(title)}</div>')
     else:
-      parts.append(_nav_link(title, target, current_page, root))
+      parts.append(_nav_link(title, target, current_page))
   return "\n".join(parts)
 
 
-def _nav_link(title: str, target: str, current_page: str, root: str) -> str:
+def _nav_link(title: str, target: str, current_page: str) -> str:
   if target.startswith(("http://", "https://")):
     return f'<a href="{html.escape(target)}">{html.escape(title)}</a>'
   active = ' class="active"' if target == current_page else ""
-  href = target[:-3] + ".html" if target.endswith(".md") else target
-  return f'<a href="{html.escape(root + href)}"{active}>{html.escape(title)}</a>'
+  return f'<a href="{html.escape(page_href(current_page, target))}"{active}>{html.escape(title)}</a>'
 
 
 def social_html() -> str:
@@ -389,16 +435,18 @@ def build() -> None:
     source = src.read_text()
     body = render_markdown(source, rel)
     title = page_title(source)
-    root = "../" * (len(src.relative_to(DOCS_DIR).parts) - 1)
+    route = page_route(rel)
+    root = "../" * (0 if route == "." else len(route.split("/")))
     edit_url = f"{REPO_URL}blob/master/docs/{rel}"
     page_html = TEMPLATE.substitute(
       title=html.escape(title),
       site_name=html.escape(SITE_NAME),
       root=root,
+      home_href=page_href(rel, "index.md"),
       logo=LOGO,
       repo_url=html.escape(REPO_URL),
       social_html=social_html(),
-      nav_html=render_nav_html(rel, root),
+      nav_html=render_nav_html(rel),
       body=body,
       edit_url=html.escape(edit_url),
       copy_js=COPY_JS,

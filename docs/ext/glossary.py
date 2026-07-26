@@ -12,7 +12,7 @@ GlossaryTerm = tuple[str, re.Pattern[str], str]
 
 GLOSSARY_FILE = Path(__file__).with_name("glossary.toml")
 GLOSSARY_PAGE = "concepts/glossary.md"
-GLOSSARY_HREF = GLOSSARY_PAGE.removesuffix(".md") + ".html"
+GLOSSARY_ROUTE = GLOSSARY_PAGE.removesuffix(".md")
 GLOSSARY_PLACEHOLDER = "{{GLOSSARY_DEFINITIONS}}"
 
 SKIP_TAGS = {
@@ -80,7 +80,8 @@ class GlossaryTreeprocessor(Treeprocessor):
       return
 
     self.seen.clear()
-    glossary_href = f"{posixpath.relpath(GLOSSARY_HREF, posixpath.dirname(self.path) or '.')}#"
+    current_route = "." if self.path == "index.md" else self.path.removesuffix(".md")
+    glossary_href = f"{posixpath.relpath(GLOSSARY_ROUTE, current_route)}/#"
     self._walk(root, glossary_href)
 
   def _walk(self, element: ET.Element, glossary_href: str) -> None:
