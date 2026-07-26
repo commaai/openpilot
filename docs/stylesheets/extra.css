@@ -35,9 +35,15 @@ header.site {
   position: sticky; top: 0; z-index: 10;
 }
 header.site img { display: block; height: 24px; filter: invert(1); }
+header.site .brand { display: flex; align-items: center; gap: 0.75rem; color: var(--fg); }
+header.site .brand:hover { text-decoration: none; }
 header.site .site-name { font-weight: 600; font-size: 1.05rem; }
 header.site .spacer { flex: 1; }
-header.site a.repo { color: var(--fg); font-size: 0.8rem; }
+header.site .social { display: flex; gap: 1rem; }
+header.site .social a { display: flex; color: var(--fg); }
+header.site .social a:hover { color: var(--accent); }
+header.site .social svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
+header.site .social a[aria-label="Discord"] svg { transform: scale(1.15); }
 
 .layout { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; flex: 1; }
 
@@ -79,13 +85,6 @@ main.content hr { border: none; border-top: 1px solid var(--border); margin: 2re
 h1:hover .headerlink, h2:hover .headerlink, h3:hover .headerlink { opacity: 1; }
 
 .edit-link { margin-top: 3rem; font-size: 0.85rem; color: var(--fg-dim); }
-
-footer.site {
-  display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between;
-  min-height: 4rem; padding: 1rem max(1.25rem, calc((100% - var(--max-width)) / 2));
-  background: var(--bg-elev); color: var(--fg-dim);
-}
-footer.site .social { display: flex; gap: 1rem; }
 
 .copy-btn {
   position: absolute; top: 0.4rem; right: 0.4rem;

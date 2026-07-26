@@ -59,9 +59,25 @@ NAV: list[tuple[str, str | None]] = [
 ]
 
 SOCIAL_HTML = """
-<a href="https://github.com/commaai">github</a>
-<a href="https://discord.comma.ai">discord</a>
-<a href="https://x.com/comma_ai">x-twitter</a>
+<a href="https://github.com/commaai" aria-label="GitHub">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="
+    M12 .7A11.5 11.5 0 0 0 8.4 23c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7
+    1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1
+    -.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.8 6 16.8 6.3 16.8 6.3c.6 1.5.2 2.8.1 3.1
+    .8.8 1.2 1.8 1.2 3.1 0 4.4-2.8 5.4-5.5 5.7.4.4.8 1.1.8 2.2v2.1c0 .3.2.6.8.5A11.5 11.5 0 0 0 12 .7Z"/></svg>
+</a>
+<a href="https://discord.comma.ai" aria-label="Discord">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="
+    M20.3 4.4A16 16 0 0 0 16.3 3l-.5 1.1a15 15 0 0 0-7.6 0L7.7 3a16 16 0 0 0-4 1.4C1.1 8.2.4 11.9.8 15.5
+    a16 16 0 0 0 4.9 2.6l1.2-1.7-1.8-.9.4-.3c3.5 1.6 9.4 1.6 13 0l.4.3-1.8.9 1.2 1.7a16 16 0 0 0 4.9-2.6
+    c.5-4.2-.8-7.8-2.9-11.1ZM8.3 13.3c-1.1 0-1.9-1-1.9-2.2 0-1.3.8-2.3 1.9-2.3s2 1 1.9 2.3c0 1.2-.8 2.2-1.9 2.2Z
+    m7.4 0c-1.1 0-1.9-1-1.9-2.2 0-1.3.8-2.3 1.9-2.3s2 1 1.9 2.3c0 1.2-.8 2.2-1.9 2.2Z"/></svg>
+</a>
+<a href="https://x.com/comma_ai" aria-label="X">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="
+    M18.2 2.3h3.3l-7.2 8.3 8.5 11.2h-6.7l-5.2-6.8-6 6.8H1.6l7.8-8.9L1.2 2.3h6.8l4.7 6.2 5.5-6.2Z
+    m-1.2 17.5h1.8L7 4.2H5Z"/></svg>
+</a>
 """.strip()
 
 GlossaryTerm = tuple[str, re.Pattern[str], str]
@@ -374,15 +390,19 @@ TEMPLATE = string.Template("""
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>$title · $site_name</title>
-  <link rel="icon" href="${root}${logo}">
+  <link rel="icon" href="${root}assets/favicon.svg">
   <link rel="stylesheet" href="${root}stylesheets/extra.css">
 </head>
 <body>
   <header class="site">
-    <a href="$home_href"><img src="${root}${logo}" alt="logo"></a>
-    <span class="site-name">$site_name</span>
+    <a class="brand" href="$home_href">
+      <img src="${root}${logo}" alt="">
+      <span class="site-name">$site_name</span>
+    </a>
     <span class="spacer"></span>
-    <a class="repo" href="$repo_url">GitHub</a>
+    <div class="social">
+      $social_html
+    </div>
   </header>
 
   <div class="layout">
@@ -397,13 +417,6 @@ TEMPLATE = string.Template("""
       </div>
     </main>
   </div>
-
-  <footer class="site">
-    <div class="social">
-      $social_html
-    </div>
-    <div>$site_name</div>
-  </footer>
 
   <script>$copy_js</script>
 </body>
@@ -427,7 +440,8 @@ def render_nav_html(current_page: str) -> str:
 def build() -> None:
   pages = [
     path for path in sorted(DOCS_DIR.rglob("*.md"))
-    if not any(part in EXCLUDE_DIRS for part in path.relative_to(DOCS_DIR).parts)
+    if path != DOCS_DIR / "README.md"
+    and not any(part in EXCLUDE_DIRS for part in path.relative_to(DOCS_DIR).parts)
   ]
 
   if SITE_DIR.exists():
@@ -450,7 +464,6 @@ def build() -> None:
       root=root,
       home_href=page_href(rel, "index.md"),
       logo=LOGO,
-      repo_url=html.escape(REPO_URL),
       social_html=SOCIAL_HTML,
       nav_html=render_nav_html(rel),
       body=body,
