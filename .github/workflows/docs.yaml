@@ -36,7 +36,7 @@ jobs:
       run: |
         git lfs pull
         pip install markdown
-        python scripts/docs.py build
+        python scripts/docs.py --build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v7

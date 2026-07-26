@@ -1,15 +1,4 @@
-"""
-openpilot docs builder.
-
-A small static site generator for docs/ — Markdown -> HTML with a sidebar nav,
-code blocks, and the glossary extension.
-
-Usage:
-  python scripts/docs.py build   # write the site to site_dir
-  python scripts/docs.py serve   # rebuild on change and serve on a free port
-"""
-from __future__ import annotations
-
+import argparse
 import functools
 import html
 import http.server
@@ -17,27 +6,21 @@ import json
 import posixpath
 import re
 import shutil
-import signal
 import string
-import sys
 import threading
 import time
+import tomllib
 import urllib.parse
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import markdown
-from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
 SITE_DIR = REPO_ROOT / "docs_site"
-
-# Local docs build helpers live under docs/ so they stay near the content
-# source. They are excluded from docs_site/ during the build.
-sys.path.insert(0, str(DOCS_DIR))
 
 # Pages whose source lives under docs/ but should not be emitted as pages.
 EXCLUDE_DIRS = {"ext"}
@@ -75,11 +58,32 @@ NAV: list[tuple[str, str | None]] = [
   ("X →", "https://x.com/comma_ai"),
 ]
 
-SOCIAL = [
-  ("github", "https://github.com/commaai"),
-  ("discord", "https://discord.comma.ai"),
-  ("x-twitter", "https://x.com/comma_ai"),
-]
+SOCIAL_HTML = """
+<a href="https://github.com/commaai">github</a>
+<a href="https://discord.comma.ai">discord</a>
+<a href="https://x.com/comma_ai">x-twitter</a>
+""".strip()
+
+GlossaryTerm = tuple[str, re.Pattern[str], str]
+
+GLOSSARY_FILE = DOCS_DIR / "ext" / "glossary.toml"
+GLOSSARY_PAGE = "concepts/glossary.md"
+GLOSSARY_ROUTE = GLOSSARY_PAGE.removesuffix(".md")
+GLOSSARY_PLACEHOLDER = "{{GLOSSARY_DEFINITIONS}}"
+GLOSSARY_SKIP_TAGS = {
+  "a",
+  "code",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "kbd",
+  "pre",
+  "script",
+  "style",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -146,71 +150,169 @@ class RawHtmlLinksPreprocessor(Preprocessor):
     return [self.pattern.sub(replace, line) for line in lines]
 
 
-class RelLinksExtension(Extension):
-  def __init__(self, path: str):
+def clean_tooltip(description: str) -> str:
+  text = re.sub(r"\[([^\]]+)]\([^)]+\)", r"\1", description)
+  text = re.sub(r"`([^`]+)`", r"\1", text)
+  text = re.sub(r"[*_~]", "", text)
+  return re.sub(r"\s+", " ", text).strip()
+
+
+@functools.cache
+def load_glossary() -> tuple[list[GlossaryTerm], str]:
+  with GLOSSARY_FILE.open("rb") as f:
+    glossary_data = tomllib.load(f).get("glossary", {})
+
+  glossary: list[GlossaryTerm] = []
+  rendered = []
+  for key, value in glossary_data.items():
+    label = str(key).strip().replace("_", " ")
+    description = str(value).strip()
+    if not description:
+      continue
+
+    slug = label.replace(" ", "-").replace("_", "-").lower()
+    glossary.append((slug, re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE), clean_tooltip(description)))
+    rendered.append(f'* <span id="{slug}"></span>**{label}**: {description}')
+
+  return glossary, "\n".join(rendered)
+
+
+class GlossaryTreeprocessor(Treeprocessor):
+  def __init__(self, md, glossary: list[GlossaryTerm], path: str):
+    super().__init__(md)
+    self.glossary = glossary
     self.path = path
+    self.seen: set[str] = set()
 
-  def extendMarkdown(self, md) -> None:
-    md.registerExtension(self)
-    md.treeprocessors.register(
-      RelLinksTreeprocessor(md, self.path),
-      RelLinksTreeprocessor.name,
-      0,
-    )
-    md.preprocessors.register(
-      RawHtmlLinksPreprocessor(md, self.path),
-      "rellinks-raw-html",
-      21,
-    )
+  def run(self, root: ET.Element) -> None:
+    if self.path == GLOSSARY_PAGE:
+      return
 
+    self.seen.clear()
+    current_route = "." if self.path == "index.md" else self.path.removesuffix(".md")
+    glossary_href = f"{posixpath.relpath(GLOSSARY_ROUTE, current_route)}/#"
+    self._walk(root, glossary_href)
 
-def make_extensions(page_path: str) -> list[str | Extension]:
-  from ext.glossary import GlossaryExtension
+  def _walk(self, element: ET.Element, glossary_href: str) -> None:
+    if element.tag in GLOSSARY_SKIP_TAGS or element.attrib.get("data-glossary-skip") is not None:
+      return
 
-  return [
-    "tables",
-    "toc",
-    "attr_list",
-    "admonition",
-    "fenced_code",
-    "md_in_html",
-    RelLinksExtension(page_path),
-    GlossaryExtension(page_path),
-  ]
+    self._replace(element, glossary_href)
+
+    idx = 0
+    while idx < len(element):
+      child = element[idx]
+      self._walk(child, glossary_href)
+      idx = self._replace(element, glossary_href, idx) + 1
+
+  def _replace(self, parent: ET.Element, glossary_href: str, index: int | None = None) -> int:
+    child = None if index is None else parent[index]
+    text = parent.text if child is None else child.tail
+    pieces = self._pieces(text or "", glossary_href)
+    if not pieces:
+      return -1 if index is None else index
+
+    if child is None:
+      parent.text = pieces[0] if isinstance(pieces[0], str) else ""
+      insert_at = -1
+    else:
+      assert index is not None
+      child.tail = pieces[0] if isinstance(pieces[0], str) else ""
+      insert_at = index
+
+    start = 1 if isinstance(pieces[0], str) else 0
+    previous = child
+
+    for piece in pieces[start:]:
+      if isinstance(piece, str):
+        assert previous is not None
+        previous.tail = (previous.tail or "") + piece
+        continue
+
+      insert_at += 1
+      parent.insert(insert_at, piece)
+      previous = piece
+
+    return insert_at
+
+  def _pieces(self, text: str, glossary_href: str) -> list[str | ET.Element]:
+    if not text.strip():
+      return []
+
+    pieces: list[str | ET.Element] = []
+    cursor = 0
+
+    while True:
+      best = None
+      for order, (slug, pattern, tooltip) in enumerate(self.glossary):
+        if slug in self.seen:
+          continue
+
+        found = pattern.search(text, cursor)
+        if found is None:
+          continue
+
+        candidate = (found.start(), found.start() - found.end(), order, slug, tooltip, found.end())
+        if best is None or candidate[:3] < best[:3]:
+          best = candidate
+
+      if best is None:
+        break
+
+      start, _, _, slug, tooltip, end = best
+      if start > cursor:
+        pieces.append(text[cursor:start])
+
+      link = ET.Element(
+        "a",
+        {
+          "class": "glossary-term",
+          "data-glossary-term": "",
+          "href": f"{glossary_href}{slug}",
+        },
+      )
+      ET.SubElement(link, "span", {"class": "glossary-term__label"}).text = text[start:end]
+      ET.SubElement(
+        link,
+        "span",
+        {
+          "class": "glossary-term__tooltip",
+          "data-search-exclude": "",
+        },
+      ).text = tooltip
+      pieces.append(link)
+      self.seen.add(slug)
+      cursor = end
+
+    if not pieces:
+      return []
+    if cursor < len(text):
+      pieces.append(text[cursor:])
+    return pieces
 
 
 def render_markdown(text: str, page_path: str) -> str:
   md = markdown.Markdown(
-    extensions=make_extensions(page_path),
-    extension_configs={
-      "toc": {"permalink": "#"},
-    },
+    extensions=["tables", "toc", "attr_list", "admonition", "fenced_code", "md_in_html"],
+    extension_configs={"toc": {"permalink": "#"}},
     output_format="html5",
   )
-  return md.convert(text)
+  md.preprocessors.register(RawHtmlLinksPreprocessor(md, page_path), "raw-html-links", 21)
+  md.treeprocessors.register(RelLinksTreeprocessor(md, page_path), "relative-links", 1)
+  glossary, definitions = load_glossary()
+  md.treeprocessors.register(GlossaryTreeprocessor(md, glossary, page_path), "glossary-links", 0)
+  return md.convert(text.replace(GLOSSARY_PLACEHOLDER, definitions))
 
 
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
 
-def source_pages() -> list[Path]:
-  return [
-    path for path in sorted(DOCS_DIR.rglob("*.md"))
-    if not any(part in EXCLUDE_DIRS for part in path.relative_to(DOCS_DIR).parts)
-  ]
-
-
 def page_title(source: str) -> str:
   for line in source.splitlines():
     if line.startswith("# "):
       return line[2:].strip()
   return SITE_NAME
-
-
-def output_html_path(src: Path) -> Path:
-  route = page_route(src.relative_to(DOCS_DIR).as_posix())
-  return SITE_DIR / ("" if route == "." else route) / "index.html"
 
 
 def write_html_redirect(src: Path) -> None:
@@ -246,109 +348,6 @@ def copy_assets() -> None:
     shutil.copy2(src, dest)
 
 
-# ---------------------------------------------------------------------------
-# Build
-# ---------------------------------------------------------------------------
-
-BASE_CSS = """
-:root {
-  --bg: #fff;
-  --bg-elev: #f5f5f5;
-  --bg-hover: #eef0ff;
-  --fg: #262626;
-  --fg-dim: #666;
-  --accent: #4051b5;
-  --border: #e5e5e5;
-  --max-width: 76rem;
-}
-* { box-sizing: border-box; }
-html { scrollbar-gutter: stable; }
-html, body { margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.6;
-  font-size: 15px;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
-
-header.site {
-  display: flex; align-items: center; gap: 0.75rem;
-  min-height: 3rem;
-  padding: 0.5rem max(1.25rem, calc((100% - var(--max-width)) / 2));
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 10;
-}
-header.site img { display: block; height: 24px; filter: invert(1); }
-header.site .site-name { font-weight: 600; font-size: 1.05rem; }
-header.site .spacer { flex: 1; }
-header.site a.repo { color: var(--fg); font-size: 0.8rem; }
-
-.layout { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; flex: 1; }
-
-nav.sidebar {
-  width: 14rem; flex-shrink: 0;
-  padding: 3.3rem 1.25rem 2rem 0;
-  position: sticky; top: 3rem; align-self: start;
-  max-height: calc(100vh - 3rem); overflow-y: auto;
-}
-nav.sidebar .nav-section { font-weight: 600; margin: 1.15rem 0.8rem 0.45rem; }
-nav.sidebar .nav-section:first-child { margin-top: 0; }
-nav.sidebar a {
-  display: block; padding: 0.28rem 0.8rem; border-radius: 0.45rem;
-  color: var(--fg); line-height: 1.35;
-}
-nav.sidebar a:hover { background: var(--bg-hover); text-decoration: none; }
-nav.sidebar a.active { background: var(--bg-hover); color: var(--accent); font-weight: 600; }
-
-main.content { width: min(100%, 46.5rem); min-width: 0; padding: 2.7rem 2rem 5rem; }
-main.content h1, main.content h2, main.content h3 { line-height: 1.25; margin-top: 1.8rem; }
-main.content h1 { margin-top: 0; }
-main.content img { max-width: 100%; }
-main.content table { border-collapse: collapse; display: block; overflow-x: auto; }
-main.content th, main.content td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
-main.content th { background: var(--bg-elev); }
-main.content pre { background: var(--bg-elev); padding: 0.9rem 1rem; border-radius: 0.25rem; overflow-x: auto; }
-main.content code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-main.content :not(pre) > code { background: var(--bg-elev); padding: 0.1rem 0.35rem; border-radius: 0.2rem; font-size: 0.88em; }
-main.content blockquote { border-left: 3px solid var(--border); margin: 1rem 0; padding: 0.2rem 1rem; color: var(--fg-dim); }
-main.content details { margin: 0.5rem 0; }
-main.content hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
-.headerlink { margin-left: 0.25rem; opacity: 0; font-size: 0.7em; }
-h1:hover .headerlink, h2:hover .headerlink, h3:hover .headerlink { opacity: 1; }
-
-.edit-link { margin-top: 3rem; font-size: 0.85rem; color: var(--fg-dim); }
-
-footer.site {
-  display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between;
-  min-height: 4rem; padding: 1rem max(1.25rem, calc((100% - var(--max-width)) / 2));
-  background: var(--bg-elev); color: var(--fg-dim);
-}
-footer.site .social { display: flex; gap: 1rem; }
-
-/* code copy buttons */
-main.content pre { position: relative; }
-.copy-btn {
-  position: absolute; top: 0.4rem; right: 0.4rem;
-  background: var(--bg); color: var(--fg-dim);
-  border: 1px solid var(--border); border-radius: 0.35rem;
-  padding: 0.2rem 0.5rem; font-size: 0.78rem; cursor: pointer;
-  opacity: 0; transition: opacity 120ms;
-}
-main.content pre:hover .copy-btn { opacity: 1; }
-
-@media (max-width: 48rem) {
-  nav.sidebar { display: none; }
-  main.content { width: 100%; padding: 2rem 1.25rem 4rem; }
-}
-"""
-
 COPY_JS = """
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('pre').forEach(function (el) {
@@ -376,7 +375,6 @@ TEMPLATE = string.Template("""
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>$title · $site_name</title>
   <link rel="icon" href="${root}${logo}">
-  <link rel="stylesheet" href="${root}stylesheets/base.css">
   <link rel="stylesheet" href="${root}stylesheets/extra.css">
 </head>
 <body>
@@ -418,34 +416,25 @@ def render_nav_html(current_page: str) -> str:
   for title, target in NAV:
     if target is None:
       parts.append(f'<div class="nav-section">{html.escape(title)}</div>')
+    elif target.startswith(("http://", "https://")):
+      parts.append(f'<a href="{html.escape(target)}">{html.escape(title)}</a>')
     else:
-      parts.append(_nav_link(title, target, current_page))
+      active = ' class="active"' if target == current_page else ""
+      parts.append(f'<a href="{html.escape(page_href(current_page, target))}"{active}>{html.escape(title)}</a>')
   return "\n".join(parts)
 
 
-def _nav_link(title: str, target: str, current_page: str) -> str:
-  if target.startswith(("http://", "https://")):
-    return f'<a href="{html.escape(target)}">{html.escape(title)}</a>'
-  active = ' class="active"' if target == current_page else ""
-  return f'<a href="{html.escape(page_href(current_page, target))}"{active}>{html.escape(title)}</a>'
-
-
-def social_html() -> str:
-  return "\n".join(
-    f'<a href="{html.escape(link)}">{html.escape(icon)}</a>'
-    for icon, link in SOCIAL
-  )
-
-
 def build() -> None:
-  pages = source_pages()
+  pages = [
+    path for path in sorted(DOCS_DIR.rglob("*.md"))
+    if not any(part in EXCLUDE_DIRS for part in path.relative_to(DOCS_DIR).parts)
+  ]
 
   if SITE_DIR.exists():
     shutil.rmtree(SITE_DIR)
   SITE_DIR.mkdir(parents=True)
 
   copy_assets()
-  (SITE_DIR / "stylesheets" / "base.css").write_text(BASE_CSS)
 
   for src in pages:
     rel = src.relative_to(DOCS_DIR).as_posix()
@@ -462,13 +451,13 @@ def build() -> None:
       home_href=page_href(rel, "index.md"),
       logo=LOGO,
       repo_url=html.escape(REPO_URL),
-      social_html=social_html(),
+      social_html=SOCIAL_HTML,
       nav_html=render_nav_html(rel),
       body=body,
       edit_url=html.escape(edit_url),
       copy_js=COPY_JS,
     )
-    out = output_html_path(src)
+    out = SITE_DIR / ("" if route == "." else route) / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page_html)
     write_html_redirect(src)
@@ -480,12 +469,7 @@ def build() -> None:
 # Serve
 # ---------------------------------------------------------------------------
 
-def _raise_interrupt(*_):
-  raise KeyboardInterrupt
-
-
 def serve() -> None:
-  signal.signal(signal.SIGTERM, _raise_interrupt)
   build()
   mtimes = {p: p.stat().st_mtime for p in DOCS_DIR.rglob("*") if p.is_file()}
   handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(SITE_DIR))
@@ -509,16 +493,12 @@ def serve() -> None:
     httpd.shutdown()
 
 
-def main() -> None:
-  cmd = sys.argv[1] if len(sys.argv) > 1 else "serve"
-  if cmd == "build":
-    build()
-  elif cmd == "serve":
-    serve()
-  else:
-    print(f"unknown command: {cmd}", file=sys.stderr)
-    sys.exit(2)
-
-
 if __name__ == "__main__":
-  main()
+  parser = argparse.ArgumentParser(description="Build or serve the openpilot documentation site.")
+  parser.add_argument("--build", action="store_true", help="Build the site and exit.")
+  args = parser.parse_args()
+
+  if args.build:
+    build()
+  else:
+    serve()

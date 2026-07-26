@@ -12,10 +12,10 @@ uv pip install .[docs]
 
 **2. Build the new site**
 ``` bash
-python scripts/docs.py build
+python scripts/docs.py --build
 ```
 
 **3. Run the new site locally**
 ``` bash
-python scripts/docs.py serve
+python scripts/docs.py
 ```
