@@ -179,14 +179,6 @@ node {
   }
 
   try {
-    if (env.BRANCH_NAME == 'tmp-jenkins-38461') {
-      stage("reserve offline MICI") {
-        lock(resource: "comma-bb16a196") {
-          input message: "comma-bb16a196 reserved for MICI display recovery"
-        }
-      }
-    }
-
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
         step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/tools/release/build_release.sh"),
