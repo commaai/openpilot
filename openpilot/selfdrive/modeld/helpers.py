@@ -6,6 +6,8 @@ import struct
 import tempfile
 from pathlib import Path
 
+from openpilot.common.file_chunker import get_manifest_path
+
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
 TG_INPUT_DEVICES_PATH = MODELS_DIR / 'tg_input_devices.json'
 USBGPU_VID = 0xADD1
@@ -38,14 +40,10 @@ def dump_oob(obj, f):
 def load_oob(f):
   opcodes = f.read(struct.unpack('<q', f.read(8))[0])
   def buffers():
-    prev = None
     while (h := f.read(8)):
-      if prev is not None:
-        prev.release()
-      buf = bytearray(struct.unpack('<q', h)[0])
-      f.readinto(buf)
-      prev = pickle.PickleBuffer(buf)
-      yield prev
+      pb = pickle.PickleBuffer(bytearray(struct.unpack('<q', h)[0]))
+      f.readinto(pb)
+      yield pb
   return pickle.load(io.BytesIO(opcodes), buffers=buffers())
 
 def usbgpu_present() -> bool:
@@ -57,3 +55,6 @@ def usbgpu_present() -> bool:
     except Exception:
       pass
   return False
+
+def usbgpu_compiled() -> bool:
+  return Path(get_manifest_path(modeld_pkl_path(usbgpu=True))).is_file()

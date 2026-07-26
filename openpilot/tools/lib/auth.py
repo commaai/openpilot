@@ -54,7 +54,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
     self.end_headers()
     self.wfile.write(b'Return to the CLI to continue')
 
-  def log_message(self, *args):
+  def log_message(self, format: str, *args: object) -> None:  # noqa: A002  # stdlib override
     pass  # this prevent http server from dumping messages to stdout
 
 

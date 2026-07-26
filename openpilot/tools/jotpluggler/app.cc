@@ -3,6 +3,7 @@
 #include "tools/jotpluggler/common.h"
 #include "tools/jotpluggler/internal.h"
 #include "tools/jotpluggler/map.h"
+#include "tools/jotpluggler/thumbnail.h"
 #include "common/hardware/hw.h"
 #include "imgui_impl_glfw.h"
 
@@ -1033,10 +1034,12 @@ bool apply_special_item_to_pane(WorkspaceTab *tab, TabUiState *tab_state, int pa
     if (pane.title == UNTITLED_PANE_TITLE || previous_kind != PaneKind::Plot) {
       pane.title = spec->label;
     }
-  } else {
+  } else if (spec->kind == PaneKind::Camera) {
     pane.title = spec->label;
     resize_tab_pane_state(tab_state, tab->panes.size());
     tab_state->camera_panes[static_cast<size_t>(pane_index)].fit_to_pane = true;
+  } else {
+    pane.title = spec->label;
   }
   tab_state->active_pane_index = pane_index;
   return true;
@@ -1565,6 +1568,8 @@ void draw_pane_windows(AppSession *session, UiState *state) {
       }
       if (pane.kind == PaneKind::Map) {
         draw_map_pane(session, state, &pane, static_cast<int>(i));
+      } else if (pane.kind == PaneKind::Thumbnail) {
+        draw_thumbnail_pane(session, state);
       } else if (pane.kind == PaneKind::Camera) {
         draw_camera_pane(session, state, tab_state, static_cast<int>(i), pane);
       } else {
@@ -1847,6 +1852,7 @@ int run(const Options &options) {
   for (std::unique_ptr<CameraFeedView> &feed : session.pane_camera_feeds) {
     feed = std::make_unique<CameraFeedView>();
   }
+  session.thumbnail_view = std::make_unique<ThumbnailView>();
   sync_camera_feeds(&session);
 
   if (session.async_route_loading) {
@@ -1892,6 +1898,7 @@ int run(const Options &options) {
   for (std::unique_ptr<CameraFeedView> &feed : session.pane_camera_feeds) {
     feed.reset();
   }
+  session.thumbnail_view.reset();
   return 0;
   } catch (const std::exception &err) {
     std::cerr << err.what() << "\n";

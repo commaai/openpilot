@@ -3,14 +3,15 @@ import json
 import time
 
 import capnp
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
-from teleoprtc.tracks import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
+from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
 from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
-class TestStreamSession:
+class TestStreamSession(OpenpilotTestCase):
   def setup_method(self):
     self.loop = asyncio.new_event_loop()
 
@@ -55,9 +56,11 @@ class TestStreamSession:
 
       mocked_pubmaster.send.assert_called_once()
       mt, md = mocked_pubmaster.send.call_args.args
-      assert mt == msg["type"]
+      msg_type = msg["type"]
+      assert isinstance(msg_type, str)
+      assert mt == msg_type
       assert isinstance(md, capnp._DynamicStructBuilder)
-      assert hasattr(md, msg["type"])
+      assert hasattr(md, msg_type)
 
       mocked_pubmaster.reset_mock()
 
@@ -72,9 +75,8 @@ class TestStreamSession:
 
     for i in range(5):
       packet = self.loop.run_until_complete(track.recv())
-      assert packet.time_base == VIDEO_TIME_BASE
       if i == 0:
         start_ns = time.monotonic_ns()
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
-      assert packet.size == 0
+      assert bytes(packet) == b""

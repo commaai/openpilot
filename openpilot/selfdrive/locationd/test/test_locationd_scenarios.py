@@ -1,7 +1,11 @@
+import fcntl
 import numpy as np
+import os
+import tempfile
 from collections import defaultdict
 from enum import Enum
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.locationd.lagd import masked_symmetric_moving_average
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -37,9 +41,9 @@ def get_select_fields_data(logs):
   def sig_smooth(signal):
     return masked_symmetric_moving_average(signal, np.ones_like(signal), 5, 1.0)
   def get_nested_keys(msg, keys):
-    val = None
+    val = msg
     for key in keys:
-      val = getattr(msg if val is None else val, key) if isinstance(key, str) else val[key]
+      val = getattr(val, key) if isinstance(key, str) else val[key]
     return val
   lp = [x.livePose for x in logs if x.which() == 'livePose']
   data = defaultdict(list)
@@ -96,7 +100,7 @@ def run_scenarios(scenario, logs):
   return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
 
 
-class TestLocationdScenarios:
+class TestLocationdScenarios(OpenpilotTestCase):
   """
   Test locationd with different scenarios. In all these scenarios, we expect the following:
     - locationd kalman filter should never go unstable (we care mostly about yaw_rate, roll, gpsOK, inputsOK, sensorsOK)
@@ -105,7 +109,20 @@ class TestLocationdScenarios:
 
   @classmethod
   def setup_class(cls):
-    cls.logs = migrate_all(LogReader(TEST_ROUTE))
+    # xdist can initialize this class in several workers at once. URLFile's
+    # cache writes are atomic, but cache misses are not locked, so every worker
+    # otherwise downloads the same route concurrently.
+    lock_path = os.path.join(tempfile.gettempdir(), "openpilot-locationd-scenarios.lock")
+    ready_path = f"{lock_path}.ready"
+    logs = None
+    with open(lock_path, "w") as lock:
+      fcntl.flock(lock, fcntl.LOCK_EX)
+      if not os.path.exists(ready_path):
+        logs = list(LogReader(TEST_ROUTE))
+        open(ready_path, "w").close()
+    if logs is None:
+      logs = list(LogReader(TEST_ROUTE))
+    cls.logs = migrate_all(logs)
 
   def test_base(self):
     """

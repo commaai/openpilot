@@ -1,13 +1,16 @@
+#!/usr/bin/env python3
+
 import math
 import os
-import pytest
 import shutil
 import subprocess
 import time
+import unittest
 from pathlib import Path
 
 from tqdm import trange
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.common.hardware import TICI
@@ -29,8 +32,8 @@ CAMERAS = [
 FILE_SIZE_TOLERANCE = 0.7
 
 
-@pytest.mark.tici # TODO: all of loggerd should work on PC
-class TestEncoder:
+class TestEncoder(OpenpilotTestCase):
+  TICI_TEST = True
 
   def setup_method(self):
     self._clear_logs()
@@ -144,3 +147,7 @@ class TestEncoder:
       managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
+
+
+if __name__ == "__main__":
+  unittest.main()
