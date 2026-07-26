@@ -179,7 +179,7 @@ node {
   }
 
   try {
-    if (env.BRANCH_NAME == 'ui_on_the_cpu') {
+    if (env.BRANCH_NAME == 'ui_on_the_cpu' || env.BRANCH_NAME == 'tmp-jenkins-38461') {
       deviceStage("MICI display probe", "tici-os04c10", [], [
         step("identify display target", """
           echo "markers:"
