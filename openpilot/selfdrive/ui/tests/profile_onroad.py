@@ -133,6 +133,7 @@ if __name__ == "__main__":
   frame_timestamps = []
   frame_kinds = []
   run_start = time.monotonic()
+  process_cpu_start = time.process_time()
   with profiler as pr:
     for frame, (_, _, cpu_time) in enumerate(gui_app.render()):
       frame_timestamps.append(time.monotonic())
@@ -155,22 +156,23 @@ if __name__ == "__main__":
     if not args.no_profile:
       pr.dump_stats(f'{args.output}_deterministic.stats')
   run_elapsed = time.monotonic() - run_start
+  process_cpu_elapsed = time.process_time() - process_cpu_start
 
   if args.screenshot and rl.using_cpu_backend():
     from PIL import Image
     from openpilot.system.ui.lib.cpu_backend import framebuffer
-    Image.fromarray(framebuffer()[:, :, [2, 1, 0, 3]], "RGBA").save(args.screenshot)
+    Image.fromarray(framebuffer(), "RGBA").save(args.screenshot)
 
-  # Tear down VisionIPC while its client and the UI backend are still alive.
-  # Relying on interpreter shutdown makes destruction order nondeterministic,
-  # which is especially visible when the DRM broker connection is also closing.
+  # Remove the camera plane before releasing the VisionIPC DMA-BUFs that may
+  # still be referenced by the inline rotator.
+  gui_app.close()
   main_layout._car_onroad_layout.close()
   vipc = None
   gc.collect()
-  gui_app.close()
   measured = np.asarray(render_times[min(30, len(render_times)):])
   if run_elapsed > 0:
     print(f"  cadence: frames={len(render_times)} elapsed={run_elapsed:.2f}s rate={len(render_times) / run_elapsed:.2f} FPS")
+    print(f"  process CPU: {process_cpu_elapsed:.2f}s ({process_cpu_elapsed / run_elapsed * 100:.1f}% of one core)")
   cadence_warmup = min(30, max(0, len(frame_timestamps) - 2))
   if len(frame_timestamps) - cadence_warmup > 1:
     steady_elapsed = frame_timestamps[-1] - frame_timestamps[cadence_warmup]

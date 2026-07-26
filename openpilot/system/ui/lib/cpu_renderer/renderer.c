@@ -19,6 +19,7 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 #include <drm_fourcc.h>
+#include <msm_drm.h>
 #endif
 
 typedef struct {
@@ -58,6 +59,8 @@ typedef struct {
   uint64_t size;
   uint32_t fb_id;
   uint8_t *map;
+  int cached;
+  int cpu_prepared;
 } DrmBuffer;
 
 // camerad currently publishes 18 VisionIPC buffers. Leave a little headroom
@@ -123,10 +126,12 @@ typedef struct {
   int camera_flip_x;
   int camera_alpha;
   int camera_engaged;
+  int direct_render;
   int color_correction;
   float color_contribution[3][3][256];
   uint8_t color_gamma[4096];
   double last_copy_ms;
+  struct timespec present_deadline;
 } DrmState;
 
 static DrmState drm_state = { .fd = -1, .server_sock = -1 };
@@ -187,7 +192,8 @@ static int find_atomic_planes(int fd, uint32_t crtc_id) {
     uint64_t type = 0, assigned_crtc = 0;
     get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "type", &type);
     get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_ID", &assigned_crtc);
-    if (!primary_found && type == DRM_PLANE_TYPE_PRIMARY && assigned_crtc == crtc_id) {
+    if (!primary_found && type == DRM_PLANE_TYPE_PRIMARY &&
+        (assigned_crtc == crtc_id || assigned_crtc == 0)) {
       drm_state.primary_plane_id = plane->plane_id;
       drm_state.plane_fb_id_prop = get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "FB_ID", NULL);
       drm_state.plane_crtc_id_prop = get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_ID", NULL);
@@ -349,7 +355,7 @@ static int init_color_correction(void) {
 
 static inline uint32_t correct_display_color(uint32_t pixel) {
   if (!drm_state.color_correction) return pixel;
-  const int input[3] = {(pixel >> 16) & 255, (pixel >> 8) & 255, pixel & 255};
+  const int input[3] = {pixel & 255, (pixel >> 8) & 255, (pixel >> 16) & 255};
   int output[3];
   for (int channel = 0; channel < 3; ++channel) {
     float linear = drm_state.color_contribution[0][channel][input[0]] +
@@ -360,8 +366,8 @@ static inline uint32_t correct_display_color(uint32_t pixel) {
     if (index > 4095) index = 4095;
     output[channel] = drm_state.color_gamma[index];
   }
-  return (pixel & 0xff000000U) | ((uint32_t)output[0] << 16) |
-         ((uint32_t)output[1] << 8) | (uint32_t)output[2];
+  return (pixel & 0xff000000U) | ((uint32_t)output[2] << 16) |
+         ((uint32_t)output[1] << 8) | (uint32_t)output[0];
 }
 
 static int recv_fd(int sock) {
@@ -402,23 +408,60 @@ static int get_drm_fd(void) {
   return fd;
 }
 
-static int create_dumb_buffer(int fd, uint32_t width, uint32_t height, DrmBuffer *buffer) {
-  struct drm_mode_create_dumb create = { .width = width, .height = height, .bpp = 32 };
-  if (ioctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &create) < 0) return -1;
-  buffer->handle = create.handle;
-  buffer->pitch = create.pitch;
-  buffer->size = create.size;
+static int create_scanout_buffer(int fd, uint32_t width, uint32_t height,
+                                 uint32_t format, int cached, DrmBuffer *buffer) {
+  uint64_t map_offset;
+  if (cached) {
+    buffer->pitch = (width * 4 + 63) & ~63U;
+    buffer->size = (buffer->pitch * height + 4095) & ~4095ULL;
+    struct drm_msm_gem_new create = {
+      .size = buffer->size,
+      .flags = MSM_BO_SCANOUT | MSM_BO_CACHED,
+    };
+    if (ioctl(fd, DRM_IOCTL_MSM_GEM_NEW, &create) < 0) return -1;
+    buffer->handle = create.handle;
+    struct drm_msm_gem_info info = {.handle = buffer->handle};
+    if (ioctl(fd, DRM_IOCTL_MSM_GEM_INFO, &info) < 0) return -1;
+    map_offset = info.offset;
+    buffer->cached = 1;
+  } else {
+    struct drm_mode_create_dumb create = { .width = width, .height = height, .bpp = 32 };
+    if (ioctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &create) < 0) return -1;
+    buffer->handle = create.handle;
+    buffer->pitch = create.pitch;
+    buffer->size = create.size;
+    struct drm_mode_map_dumb map = { .handle = buffer->handle };
+    if (ioctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &map) < 0) return -1;
+    map_offset = map.offset;
+  }
   uint32_t handles[4] = { buffer->handle };
   uint32_t pitches[4] = { buffer->pitch };
   uint32_t offsets[4] = { 0 };
-  // Match the format used by the existing comma GBM/EGL backend. The display
-  // controller accepts ABGR8888 directly; XRGB8888 is rejected on MICI.
-  if (drmModeAddFB2(fd, width, height, DRM_FORMAT_ABGR8888, handles, pitches, offsets, &buffer->fb_id, 0) != 0) return -1;
-  struct drm_mode_map_dumb map = { .handle = buffer->handle };
-  if (ioctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &map) < 0) return -1;
-  buffer->map = mmap(NULL, buffer->size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, map.offset);
+  if (drmModeAddFB2(fd, width, height, format, handles, pitches, offsets,
+                    &buffer->fb_id, 0) != 0) return -1;
+  buffer->map = mmap(NULL, buffer->size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, map_offset);
   if (buffer->map == MAP_FAILED) return -1;
   memset(buffer->map, 0, buffer->size);
+  return 0;
+}
+
+static int prepare_cpu_buffer(DrmBuffer *buffer) {
+  if (!buffer->cached || buffer->cpu_prepared) return 0;
+  struct drm_msm_gem_cpu_prep prep = {
+    .handle = buffer->handle,
+    .op = MSM_PREP_WRITE,
+    .timeout = {.tv_sec = 1},
+  };
+  if (ioctl(drm_state.fd, DRM_IOCTL_MSM_GEM_CPU_PREP, &prep) < 0) return -errno;
+  buffer->cpu_prepared = 1;
+  return 0;
+}
+
+static int finish_cpu_buffer(DrmBuffer *buffer) {
+  if (!buffer->cached || !buffer->cpu_prepared) return 0;
+  struct drm_msm_gem_cpu_fini fini = {.handle = buffer->handle};
+  if (ioctl(drm_state.fd, DRM_IOCTL_MSM_GEM_CPU_FINI, &fini) < 0) return -errno;
+  buffer->cpu_prepared = 0;
   return 0;
 }
 
@@ -454,8 +497,13 @@ int sr_drm_init(void) {
       drm_state.mdp_ui ? drm_state.mode.vdisplay : drm_state.mode.hdisplay;
   const uint32_t buffer_height =
       drm_state.mdp_ui ? drm_state.mode.hdisplay : drm_state.mode.vdisplay;
-  if (create_dumb_buffer(drm_state.fd, buffer_width, buffer_height, &drm_state.buffers[0]) ||
-      create_dumb_buffer(drm_state.fd, buffer_width, buffer_height, &drm_state.buffers[1])) return -1;
+  // The software renderer's native RGBA byte order maps directly to
+  // DRM ABGR8888, a format supported by MICI's inline SDE rotator.
+  const uint32_t buffer_format = DRM_FORMAT_ABGR8888;
+  if (create_scanout_buffer(drm_state.fd, buffer_width, buffer_height,
+                            buffer_format, drm_state.mdp_ui, &drm_state.buffers[0]) ||
+      create_scanout_buffer(drm_state.fd, buffer_width, buffer_height,
+                            buffer_format, drm_state.mdp_ui, &drm_state.buffers[1])) return -1;
   FILE *origin = fopen("/sys/devices/platform/vendor/vendor:gpio-som-id/som_id", "r");
   int canonical_zero = 0;
   if (origin) {
@@ -464,9 +512,20 @@ int sr_drm_init(void) {
   }
   drm_state.clockwise = !canonical_zero;
   if (!canonical_zero) init_color_correction();
+  const char *direct_render = getenv("CPU_DIRECT_KMS");
+  drm_state.direct_render = !direct_render || strcmp(direct_render, "0") != 0;
   drm_state.front = 0;
   drm_state.initialized = 1;
   return 0;
+}
+
+uint8_t *sr_drm_back_buffer(int *stride) {
+  if (!drm_state.initialized || !drm_state.mdp_ui || !drm_state.direct_render ||
+      drm_state.color_correction) return NULL;
+  DrmBuffer *next = &drm_state.buffers[1 - drm_state.front];
+  if (prepare_cpu_buffer(next) != 0) return NULL;
+  if (stride) *stride = (int)next->pitch;
+  return next->map;
 }
 
 void sr_drm_camera_begin_frame(void) {
@@ -590,16 +649,19 @@ int sr_drm_present(const Surface *surface) {
       (size_t)surface->height * next->pitch <= next->size;
   if (!direct_copy &&
       (surface->width != physical_height || surface->height != physical_width)) return -EINVAL;
+  int buffer_result = prepare_cpu_buffer(next);
+  if (buffer_result != 0) return buffer_result;
   struct timespec copy_start, copy_end;
   clock_gettime(CLOCK_MONOTONIC, &copy_start);
-  if (direct_copy) {
+  if (surface->pixels == next->map && surface->stride == (int)next->pitch) {
+    // The renderer drew directly into the next KMS buffer.
+  } else if (direct_copy) {
     for (int y = 0; y < surface->height; ++y) {
       const uint32_t *src = (const uint32_t *)(surface->pixels + y * surface->stride);
       uint32_t *dst = (uint32_t *)(next->map + y * next->pitch);
       for (int x = 0; x < surface->width; ++x) {
         const uint32_t p = correct_display_color(src[x]);
-        dst[x] = (p & 0xff000000U) | ((p & 0x000000ffU) << 16) |
-                 (p & 0x0000ff00U) | ((p & 0x00ff0000U) >> 16);
+        dst[x] = p;
       }
     }
   } else {
@@ -616,14 +678,15 @@ int sr_drm_present(const Surface *surface) {
             const uint32_t *src = (const uint32_t *)(surface->pixels + sy * surface->stride);
             const int dx = drm_state.clockwise ? surface->height - 1 - sy : sy;
             const uint32_t p = correct_display_color(src[sx]);
-            dst[dx] = (p & 0xff000000U) | ((p & 0x000000ffU) << 16) |
-                      (p & 0x0000ff00U) | ((p & 0x00ff0000U) >> 16);
+            dst[dx] = p;
           }
         }
       }
     }
   }
   clock_gettime(CLOCK_MONOTONIC, &copy_end);
+  buffer_result = finish_cpu_buffer(next);
+  if (buffer_result != 0) return buffer_result;
   drm_state.last_copy_ms = (copy_end.tv_sec - copy_start.tv_sec) * 1000.0 +
                            (copy_end.tv_nsec - copy_start.tv_nsec) / 1000000.0;
   int ret;
@@ -721,6 +784,21 @@ int sr_drm_present(const Surface *surface) {
     } else {
       drm_state.displayed_camera_fb_id =
           drm_state.camera_active ? drm_state.camera_fb_id : 0;
+      // Inline-rotator commits complete before the 60 Hz panel scanout and
+      // this downstream driver exposes neither a usable output fence nor a
+      // reliable page-flip event for the path. Use an absolute deadline to
+      // avoid redrawing buffers at 200+ FPS and drifting over time.
+      struct timespec now;
+      clock_gettime(CLOCK_MONOTONIC, &now);
+      int64_t deadline_ns = (int64_t)drm_state.present_deadline.tv_sec * 1000000000LL +
+                            drm_state.present_deadline.tv_nsec;
+      const int64_t now_ns = (int64_t)now.tv_sec * 1000000000LL + now.tv_nsec;
+      if (deadline_ns == 0 || now_ns > deadline_ns + 4 * 16666667LL) deadline_ns = now_ns;
+      deadline_ns += 16666667LL;
+      drm_state.present_deadline.tv_sec = deadline_ns / 1000000000LL;
+      drm_state.present_deadline.tv_nsec = deadline_ns % 1000000000LL;
+      while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME,
+                             &drm_state.present_deadline, NULL) == EINTR) {}
     }
   } else if (!drm_state.presented) {
     ret = drmModeSetCrtc(drm_state.fd, drm_state.crtc_id, next->fb_id, 0, 0,
@@ -783,7 +861,10 @@ void sr_drm_close(void) {
     DrmBuffer *buffer = &drm_state.buffers[i];
     if (buffer->map && buffer->map != MAP_FAILED) munmap(buffer->map, buffer->size);
     if (buffer->fb_id) drmModeRmFB(drm_state.fd, buffer->fb_id);
-    if (buffer->handle) {
+    if (buffer->handle && buffer->cached) {
+      struct drm_gem_close close_args = {.handle = buffer->handle};
+      ioctl(drm_state.fd, DRM_IOCTL_GEM_CLOSE, &close_args);
+    } else if (buffer->handle) {
       struct drm_mode_destroy_dumb destroy = { .handle = buffer->handle };
       ioctl(drm_state.fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy);
     }
@@ -798,6 +879,7 @@ void sr_drm_close(void) {
 int sr_drm_init(void) { return -1; }
 int sr_drm_present(const Surface *surface) { (void)surface; return -1; }
 double sr_drm_last_copy_ms(void) { return 0; }
+uint8_t *sr_drm_back_buffer(int *stride) { (void)stride; return NULL; }
 void sr_drm_camera_begin_frame(void) {}
 int sr_drm_set_camera(int dma_fd, int width, int height, int stride, int uv_offset,
                       float source_x, float source_y, float source_width, float source_height,
@@ -1226,12 +1308,12 @@ void sr_burn_in_filter(Surface *surface, int x, int y, int width, int height) {
     for (int px = x0; px < x1; ++px) {
       const uint32_t sampled = row[px];
       const uint32_t alpha = sampled >> 24;
-      const uint32_t intensity = sampled & 255;
+      const uint32_t intensity = (sampled >> 16) & 255;
       // Match application.py's diagnostic shader: blue maps linearly from
       // green through yellow to red while preserving the sampled alpha.
       const uint32_t red = intensity < 128 ? intensity * 2 : 255;
       const uint32_t green = intensity < 128 ? 255 : (255 - intensity) * 2;
-      row[px] = (alpha << 24) | (red << 16) | (green << 8);
+      row[px] = (alpha << 24) | (green << 8) | red;
     }
   }
 }
@@ -1505,7 +1587,7 @@ void sr_draw_nv12_crop(Surface *dst, const uint8_t *data, int frame_width, int f
         g = driver_enhance_lut[g];
         b = driver_enhance_lut[b];
       }
-      out[px] = 0xff000000U | ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
+      out[px] = 0xff000000U | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
     }
   }
 }

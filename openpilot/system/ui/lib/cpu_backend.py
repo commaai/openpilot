@@ -140,6 +140,8 @@ def _build_native() -> tuple[ctypes.CDLL, tempfile.TemporaryDirectory | None]:
   ]
   lib.sr_drm_init.argtypes = []
   lib.sr_drm_init.restype = ctypes.c_int
+  lib.sr_drm_back_buffer.argtypes = [ctypes.POINTER(ctypes.c_int)]
+  lib.sr_drm_back_buffer.restype = ctypes.POINTER(ctypes.c_uint8)
   lib.sr_drm_present.argtypes = [sp]
   lib.sr_drm_present.restype = ctypes.c_int
   lib.sr_drm_last_copy_ms.argtypes = []
@@ -182,6 +184,7 @@ class _State:
     self.width = 0
     self.height = 0
     self.framebuffer: np.ndarray | None = None
+    self.drm_buffer_owner = None
     self.surface: _Surface | None = None
     self.ready = False
     self.start = time.monotonic()
@@ -246,7 +249,8 @@ def _pack(color) -> int:
     r, g, b, a = color.r, color.g, color.b, color.a
   else:
     r, g, b, a = color
-  return (int(a) << 24) | (int(r) << 16) | (int(g) << 8) | int(b)
+  # Native RGBA byte order, which is DRM ABGR8888 on little-endian CPUs.
+  return (int(a) << 24) | (int(b) << 16) | (int(g) << 8) | int(r)
 
 
 def _rect(rect) -> tuple[int, int, int, int]:
@@ -267,13 +271,27 @@ def _transform_rect(x: float, y: float, width: float, height: float) -> tuple[fl
   return px, py, width * state.transform[0], height * state.transform[1]
 
 
+def _activate_drm_back_buffer() -> bool:
+  if not state.drm:
+    return False
+  stride = ctypes.c_int()
+  pixels = state.lib.sr_drm_back_buffer(ctypes.byref(stride))
+  if not pixels:
+    return False
+  size = stride.value * state.height
+  owner = (ctypes.c_uint8 * size).from_address(ctypes.addressof(pixels.contents))
+  state.drm_buffer_owner = owner
+  state.framebuffer = np.ndarray((state.height, state.width, 4), dtype=np.uint8,
+                                 buffer=owner, strides=(stride.value, 4, 1))
+  state.surface = state.make_surface(state.framebuffer)
+  return True
+
+
 def init_window(width: int, height: int, title: str) -> None:
   del title
   if state.ready:
     close_window()
   state.width, state.height = width, height
-  state.framebuffer = np.zeros((height, width, 4), dtype=np.uint8)
-  state.surface = state.make_surface(state.framebuffer)
   state.transform = (1.0, 1.0, 0.0, 0.0)
   state.transform_stack.clear()
   state.start = state.last_frame = time.monotonic()
@@ -281,6 +299,9 @@ def init_window(width: int, height: int, title: str) -> None:
     if state.lib.sr_drm_init() != 0:
       raise RuntimeError("CPU backend failed to initialize DRM/KMS")
     state.drm = True
+  if not _activate_drm_back_buffer():
+    state.framebuffer = np.zeros((height, width, 4), dtype=np.uint8)
+    state.surface = state.make_surface(state.framebuffer)
   if pathlib.Path("/TICI").exists():
     try:
       state.touch_fd = os.open("/dev/input/event2", os.O_RDONLY | os.O_NONBLOCK)
@@ -315,6 +336,7 @@ def close_window() -> None:
   state.gui_font = None
   state.surface = None
   state.framebuffer = None
+  state.drm_buffer_owner = None
   state.ready = False
 
 
@@ -341,6 +363,7 @@ def begin_drawing() -> None:
   state.frame_time = now - state.last_frame
   state.last_frame = now
   if state.drm:
+    _activate_drm_back_buffer()
     state.lib.sr_drm_camera_begin_frame()
 
 
@@ -580,12 +603,15 @@ def load_image(path: str):
 
 
 def gen_image_color(width: int, height: int, color):
-  packed = _pack(color)
+  if hasattr(color, "a"):
+    red, green, blue, alpha = color.r, color.g, color.b, color.a
+  else:
+    red, green, blue, alpha = color
   pixels = np.empty((height, width, 4), dtype=np.uint8)
-  pixels[:, :, 0] = (packed >> 16) & 255
-  pixels[:, :, 1] = (packed >> 8) & 255
-  pixels[:, :, 2] = packed & 255
-  pixels[:, :, 3] = packed >> 24
+  pixels[:, :, 0] = red
+  pixels[:, :, 1] = green
+  pixels[:, :, 2] = blue
+  pixels[:, :, 3] = alpha
   buf = ffi.new("unsigned char[]", pixels.tobytes())
   state.image_buffers[int(ffi.cast("uintptr_t", buf))] = buf
   return gpu.Image(ffi.cast("void *", buf), width, height, 1,
@@ -647,10 +673,10 @@ def load_texture_from_image(image):
   rgba = _rgba_image(image).astype(np.uint16)
   if int(ffi.cast("uintptr_t", image.data)) not in state.image_premultiplied:
     rgba[:, :, :3] = (rgba[:, :, :3] * rgba[:, :, 3:4] + 127) // 255
-  bgra = np.ascontiguousarray(rgba[:, :, [2, 1, 0, 3]], dtype=np.uint8)
+  rgba = np.ascontiguousarray(rgba, dtype=np.uint8)
   texture_id = state.next_texture_id
   state.next_texture_id += 1
-  state.textures[texture_id] = _TextureData(bgra, state.make_surface(bgra))
+  state.textures[texture_id] = _TextureData(rgba, state.make_surface(rgba))
   return gpu.Texture(texture_id, int(image.width), int(image.height), 1,
                      gpu.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
 
@@ -676,7 +702,7 @@ def update_texture(texture, pixels) -> None:
     raw = np.frombuffer(ffi.buffer(pixels, width * height * 4), dtype=np.uint8).reshape(height, width, 4)
     rgba = raw.astype(np.uint16)
     rgba[:, :, :3] = (rgba[:, :, :3] * rgba[:, :, 3:4] + 127) // 255
-    data.pixels[:] = rgba[:, :, [2, 1, 0, 3]].astype(np.uint8)
+    data.pixels[:] = rgba.astype(np.uint8)
   elif pixel_format == int(gpu.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE):
     gray = np.frombuffer(ffi.buffer(pixels, width * height), dtype=np.uint8).reshape(height, width)
     data.pixels[:, :, :3] = gray[:, :, None]
@@ -729,7 +755,7 @@ def load_image_from_texture(texture):
   if data is None:
     return gpu.Image()
   pixels = data.pixels[::-1] if int(texture.id) in state.render_targets else data.pixels
-  rgba = np.ascontiguousarray(pixels[:, :, [2, 1, 0, 3]])
+  rgba = np.ascontiguousarray(pixels)
   buf = ffi.new("unsigned char[]", rgba.tobytes())
   state.image_buffers[int(ffi.cast("uintptr_t", buf))] = buf
   return gpu.Image(ffi.cast("void *", buf), rgba.shape[1], rgba.shape[0], 1,

@@ -5,6 +5,8 @@ import time
 from openpilot.cereal import messaging
 from openpilot.common.hardware import TICI
 from openpilot.common.realtime import Priority, config_realtime_process, set_core_affinity
+from openpilot.common.utils import sudo_write
+from openpilot.system.ui.lib import raylib as rl
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -33,6 +35,8 @@ def main():
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:
         try:
+          if rl.using_cpu_backend():
+            sudo_write("1", "/sys/devices/system/cpu/cpu5/online")
           set_core_affinity(list(cores))
         except OSError:
           pass

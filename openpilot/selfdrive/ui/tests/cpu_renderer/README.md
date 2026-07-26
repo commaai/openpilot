@@ -14,14 +14,19 @@ python openpilot/selfdrive/ui/tests/cpu_renderer/prototype.py \
 ```
 
 The prototype builds `openpilot/system/ui/lib/cpu_renderer/renderer.c` and
-renders a representative 536x240 overlay into a premultiplied BGRA
+renders a representative 536x240 overlay into a premultiplied RGBA
 framebuffer. The integrated backend additionally provides the raylib-compatible
 shape, texture, text, camera, input, render-target, shader-effect, and lifecycle
 surface used by the UI. On MICI it renders directly into landscape
-double-buffered DRM dumb buffers and uses SDM845's inline MDP rotator to scan
+double-buffered cached MSM GEM buffers and uses SDM845's inline MDP rotator to scan
 them out through the panel's native portrait DSI mode. It retains the
 `/tmp/drmfd.sock` control connection for the complete window lifetime. The
-default MICI path also imports road-camera NV12 DMA-BUFs as a second atomic KMS
+MICI kernel must expose `SDE_PIX_FMT_RGBA_8888` and its tiled output in the
+inline SBUF format tables; the stock table otherwise limits inline rotation to
+YUV inputs. The renderer uses cached MSM GEM scanout buffers with explicit CPU
+prepare/finalize synchronization so rasterization stays cacheable without a
+full-frame copy. The default MICI path also imports road-camera NV12 DMA-BUFs
+as a second atomic KMS
 plane. The VIG rotator performs rotation and integral 2x downscale, then the
 QSEED/CSC path finishes scaling, color conversion, and composition under the
 transparent CPU overlay. Set `CPU_MDP_CAMERA=0` to force the CPU

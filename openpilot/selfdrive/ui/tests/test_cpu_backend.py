@@ -21,7 +21,7 @@ def test_cpu_backend_api():
     rl.draw_rectangle(0, 0, 64, 48, rl.RED)
     rl.end_scissor_mode()
     assert tuple(framebuffer()[4, 4]) == (0, 0, 0, 255)
-    assert tuple(framebuffer()[12, 12]) == (rl.RED[2], rl.RED[1], rl.RED[0], rl.RED[3])
+    assert tuple(framebuffer()[12, 12]) == tuple(rl.RED)
 
     target = rl.load_render_texture(12, 10)
     rl.begin_texture_mode(target)
@@ -54,7 +54,7 @@ def test_cpu_backend_api():
     rl.draw_texture_pro(burn_target.texture, rl.Rectangle(0, 0, 4, -1),
                         rl.Rectangle(24, 1, 4, 1), rl.Vector2(0, 0), 0, rl.WHITE)
     rl.end_shader_mode()
-    assert tuple(framebuffer()[1, 24]) == (0, 126, 255, 255)
+    assert tuple(framebuffer()[1, 24]) == (255, 126, 0, 255)
     rl.unload_render_texture(burn_target)
     rl.unload_shader(burn_shader)
 
@@ -98,7 +98,7 @@ def test_cpu_backend_api():
     rl.close_window()
     rl.init_window(8, 8, "cpu-reinit")
     rl.clear_background(rl.GREEN)
-    assert tuple(framebuffer()[0, 0]) == (rl.GREEN[2], rl.GREEN[1], rl.GREEN[0], rl.GREEN[3])
+    assert tuple(framebuffer()[0, 0]) == tuple(rl.GREEN)
     rl.close_window()
   """)
   env = os.environ.copy()
