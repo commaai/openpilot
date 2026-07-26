@@ -219,7 +219,7 @@ class CameraView(Widget):
       [0.0, 0.0, 1.0]
     ])
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle, /):
     if self._switching:
       self._handle_switch()
 
@@ -383,12 +383,12 @@ class CameraView(Widget):
     self._initialize_textures()
 
   def _initialize_textures(self):
-      self._clear_textures()
-      if not TICI:
-        self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
-          int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
-        self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
-          int(self.client.height // 2), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
+    self._clear_textures()
+    if not TICI:
+      self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
+        int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
+      self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
+        int(self.client.height // 2), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
 
   def _clear_textures(self):
     if self.texture_y and self.texture_y.id:

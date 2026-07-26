@@ -4,6 +4,7 @@ import os
 import random
 from fontTools.ttLib import TTFont
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.messaging import SubMaster
@@ -17,25 +18,21 @@ AlertSize = log.SelfdriveState.AlertSize
 
 OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "openpilot/selfdrive/selfdrived/alerts_offroad.json")
 
-# TODO: add callback alerts
 ALERTS = []
 for event_types in EVENTS.values():
   for alert in event_types.values():
     ALERTS.append(alert)
 
-
 def _load_font(path, size):
   font = TTFont(path)
   return font.getBestCmap(), font["hmtx"], font["head"].unitsPerEm, size
-
 
 def _text_width(font, text):
   cmap, hmtx, upem, size = font
   advance = sum(hmtx[cmap.get(ord(ch), ".notdef")][0] for ch in text)
   return advance * size / upem
 
-
-class TestAlerts:
+class TestAlerts(OpenpilotTestCase):
 
   @classmethod
   def setup_class(cls):
@@ -92,9 +89,8 @@ class TestAlerts:
   def test_alert_sanity_check(self):
     for event_types in EVENTS.values():
       for event_type, a in event_types.items():
-        # TODO: add callback alerts
         if not isinstance(a, Alert):
-          continue
+          a = a(self.CP, self.CS, self.sm, False, 100, log.LongitudinalPersonality.standard)
 
         if a.alert_size == AlertSize.none:
           assert len(a.alert_text_1) == 0

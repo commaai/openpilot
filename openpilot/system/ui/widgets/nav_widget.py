@@ -78,7 +78,7 @@ class NavWidget(Widget, abc.ABC):
     # the top of a vertical scroll panel to prevent erroneous swipes
     return True
 
-  def set_back_callback(self, callback: Callable[[], None]) -> None:
+  def set_back_callback(self, callback: Callable[[], None] | None) -> None:
     self._back_callback = callback
 
   def set_shown_callback(self, callback: Callable[[], None] | None) -> None:

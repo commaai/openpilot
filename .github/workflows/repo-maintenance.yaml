@@ -9,6 +9,9 @@ on:
 
 env:
   PYTHONPATH: ${{ github.workspace }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
 
 jobs:
   package_updates:
@@ -88,6 +91,14 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const upstream = `${owner}/${repo}`;
+
+            const closed = context.payload.pull_request;
+            if (closed) {
+              if (closed.head.repo?.full_name === upstream) {
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${closed.head.ref}` }).catch(console.log);
+              }
+              return;
+            }
 
             for await (const response of github.paginate.iterator(github.rest.pulls.list, {
               owner,

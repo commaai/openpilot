@@ -54,7 +54,7 @@ compare_runtime*.html
 openpilot/selfdrive/modeld/models/tg_input_devices.json
 
 # build artifacts
-docs_site/
+docs/_site/
 openpilot/selfdrive/pandad/pandad
 openpilot/cereal/services.h
 openpilot/cereal/gen

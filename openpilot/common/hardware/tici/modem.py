@@ -52,7 +52,7 @@ PPPD_CMD = [
   "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
   "user", '""', "password", '""',
 ]
-INITIAL_STATE = {
+INITIAL_STATE: dict[str, object] = {
   "seconds_since_boot": 0,
   "state": "INITIALIZING",
   "connected": False, "ip_address": "",

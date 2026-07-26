@@ -1,8 +1,9 @@
 import pyray as rl
+from collections.abc import Sequence
 
 
 class GuiStyleContext:
-  def __init__(self, styles: list[tuple[int, int, int]]):
+  def __init__(self, styles: Sequence[tuple[int, int, int]]):
     """styles is a list of tuples (control, prop, new_value)"""
     self.styles = styles
     self.prev_styles: list[tuple[int, int, int]] = []

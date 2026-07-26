@@ -15,16 +15,6 @@ from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
 
-# These are only used for AdvancedNetworkSettings, standalone apps just need WifiManagerUI
-try:
-  from openpilot.common.params import Params
-  from openpilot.selfdrive.ui.ui_state import ui_state
-  from openpilot.selfdrive.ui.lib.prime_state import PrimeType
-except Exception:
-  Params = None
-  ui_state = None
-  PrimeType = None
-
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 64
@@ -105,10 +95,16 @@ class NetworkUI(Widget):
 
 class AdvancedNetworkSettings(Widget):
   def __init__(self, wifi_manager: WifiManager):
+    # AdvancedNetworkSettings needs the full openpilot environment, standalone apps just use WifiManagerUI
+    from openpilot.common.params import Params
+    from openpilot.selfdrive.ui.ui_state import ui_state
+    from openpilot.selfdrive.ui.lib.prime_state import PrimeType
     super().__init__()
     self._wifi_manager = wifi_manager
     self._wifi_manager.add_callbacks(networks_updated=self._on_network_updated)
     self._params = Params()
+    self._prime_state = ui_state.prime_state
+    self._cell_prime_types = (PrimeType.NONE, PrimeType.LITE)
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
@@ -253,7 +249,7 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_manager.process_callbacks()
 
     # If not using prime SIM, show GSM settings and enable IPv4 forwarding
-    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    show_cell_settings = self._prime_state.get_type() in self._cell_prime_types
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)

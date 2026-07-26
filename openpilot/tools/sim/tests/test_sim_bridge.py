@@ -1,21 +1,23 @@
 import os
 import subprocess
 import time
-import pytest
+import unittest
 
 from multiprocessing import Queue
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
 
-class TestSimBridgeBase:
+class TestSimBridgeBase(OpenpilotTestCase):
+  SLOW_TEST = True
   @classmethod
   def setup_class(cls):
     if cls is TestSimBridgeBase:
-      raise pytest.skip("Don't run this base class, run test_metadrive_bridge.py instead")
+      raise unittest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
 
   def setup_method(self):
     self.processes = []

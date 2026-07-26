@@ -46,11 +46,11 @@ const char *special_item_label(std::string_view item_id) {
 }
 
 bool pane_kind_is_special(PaneKind kind) {
-  return kind == PaneKind::Map || kind == PaneKind::Camera;
+  return kind == PaneKind::Map || kind == PaneKind::Thumbnail || kind == PaneKind::Camera;
 }
 
 bool is_default_special_title(std::string_view title) {
-  if (title == "Map") return true;
+  if (title == "Map" || title == "Thumbnail") return true;
   return std::any_of(kCameraViewSpecs.begin(), kCameraViewSpecs.end(), [&](const CameraViewSpec &spec) {
     return title == spec.label;
   });

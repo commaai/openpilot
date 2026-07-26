@@ -1,10 +1,13 @@
+#!/usr/bin/env python3
+
 import os
 import subprocess
-import pytest
 import time
+import unittest
 import numpy as np
 from collections import namedtuple, defaultdict
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
@@ -20,7 +23,7 @@ SENSOR_CONFIGS = (
 )
 SENSOR_CONFIGS_BY_MEASUREMENT = {config.measurement: config for config in SENSOR_CONFIGS}
 
-def get_irq_count(irq: int):
+def get_irq_count(irq: str):
   with open(f"/sys/kernel/irq/{irq}/per_cpu_count") as f:
     per_cpu = map(int, f.read().split(","))
     return sum(per_cpu)
@@ -54,8 +57,8 @@ def iter_measurements(events):
     for measurement in msgs:
       yield measurement, getattr(measurement, measurement.which())
 
-@pytest.mark.tici
-class TestSensord:
+class TestSensord(OpenpilotTestCase):
+  TICI_TEST = True
   @classmethod
   def setup_class(cls):
     # enable LSM self test
@@ -183,3 +186,7 @@ class TestSensord:
     time.sleep(1)
     state_two = get_irq_count(self.sensord_irq)
     assert state_one == state_two, "Interrupts received after sensord stop!"
+
+
+if __name__ == "__main__":
+  unittest.main()

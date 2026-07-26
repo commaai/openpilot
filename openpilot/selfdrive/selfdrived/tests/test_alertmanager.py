@@ -1,10 +1,11 @@
 import random
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.selfdrived.events import Alert, EmptyAlert, EVENTS
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager
 
 
-class TestAlertManager:
+class TestAlertManager(OpenpilotTestCase):
 
   def test_duration(self):
     """

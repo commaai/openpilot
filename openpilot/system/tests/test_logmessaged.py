@@ -2,13 +2,14 @@ import glob
 import os
 import time
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog, ipchandler
 
 
-class TestLogmessaged:
+class TestLogmessaged(OpenpilotTestCase):
   def setup_method(self):
     # clear the IPC buffer in case some other tests used cloudlog and filled it
     ipchandler.close()
@@ -52,4 +53,3 @@ class TestLogmessaged:
 
     logsize = sum([os.path.getsize(f) for f in self._get_log_files()])
     assert (n*len(msg)) < logsize < (n*(len(msg)+1024))
-
