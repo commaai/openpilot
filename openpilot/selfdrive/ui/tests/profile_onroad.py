@@ -80,6 +80,8 @@ if __name__ == "__main__":
                       help='Disable cProfile to measure undistorted frame latency')
   parser.add_argument('--camera-every', type=int, default=3,
                       help='Send a new synthetic camera frame every N UI frames; 0 disables camera frames')
+  parser.add_argument('--camera-buffers', type=int, default=5,
+                      help='Number of synthetic VisionIPC camera buffers (default: 5)')
   args = parser.parse_args()
 
   print(f"Loading log from {args.route}...")
@@ -121,7 +123,7 @@ if __name__ == "__main__":
 
   W, H = 2048, 1216
   vipc = VisionIpcServer("camerad")
-  vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, W, H)
+  vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, args.camera_buffers, W, H)
   vipc.start_listener()
   yuv_buffer_size = W * H + (W // 2) * (H // 2) * 2
   yuv_data = np.random.default_rng(0).integers(0, 256, yuv_buffer_size, dtype=np.uint8).tobytes()
@@ -144,7 +146,7 @@ if __name__ == "__main__":
       if ui_state.sm.frame >= len(message_chunks):
         break
       if args.camera_every > 0 and ui_state.sm.frame % args.camera_every == 0:
-        buffer_index = ui_state.sm.frame % 3
+        buffer_index = ui_state.sm.frame % args.camera_buffers
         eof = int(buffer_index * 0.05 * 1e9)
         vipc.send(VisionStreamType.VISION_STREAM_ROAD, yuv_data, buffer_index, eof, eof)
       update_start = time.monotonic()

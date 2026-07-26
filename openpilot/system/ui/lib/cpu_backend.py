@@ -144,6 +144,17 @@ def _build_native() -> tuple[ctypes.CDLL, tempfile.TemporaryDirectory | None]:
   lib.sr_drm_present.restype = ctypes.c_int
   lib.sr_drm_last_copy_ms.argtypes = []
   lib.sr_drm_last_copy_ms.restype = ctypes.c_double
+  lib.sr_drm_camera_begin_frame.argtypes = []
+  lib.sr_drm_set_camera.argtypes = [
+    ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+    ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,
+    ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+    ctypes.c_int, ctypes.c_int, ctypes.c_int,
+  ]
+  lib.sr_drm_set_camera.restype = ctypes.c_int
+  lib.sr_clear_transparent.argtypes = [
+    sp, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+  ]
   lib.sr_drm_close.argtypes = []
   return lib, build_dir
 
@@ -329,6 +340,8 @@ def begin_drawing() -> None:
   now = time.monotonic()
   state.frame_time = now - state.last_frame
   state.last_frame = now
+  if state.drm:
+    state.lib.sr_drm_camera_begin_frame()
 
 
 def end_drawing() -> None:
@@ -1094,6 +1107,18 @@ def draw_nv12(frame, dest, engaged: bool, enhance_driver: bool, flip_x: bool = F
     description += f"raw_destination={dest.width}x{dest.height} transform={state.transform}"
     print(f"CPU NV12 shape: {description}")
     state.profile["nv12_shape"] = []
+  if state.drm:
+    mdp_started = time.perf_counter_ns()
+    result = state.lib.sr_drm_set_camera(
+      int(frame.fd), int(frame.width), int(frame.height), int(frame.stride), int(frame.uv_offset),
+      source_x, source_y, source_width, source_height,
+      visible_x, visible_y, width, height, int(flip_x), int(engaged), int(enhance_driver),
+    )
+    if result == 0:
+      state.lib.sr_clear_transparent(ctypes.byref(state.surface), visible_x, visible_y, width, height)
+      if state.profile_enabled:
+        state.profile.setdefault("mdp_camera_setup", []).append((time.perf_counter_ns() - mdp_started) / 1e6)
+      return
   entry = state.nv12_cache.get(cache_key)
   if entry is None or entry.settings != settings:
     front_pixels = np.empty((height, width, 4), dtype=np.uint8)
