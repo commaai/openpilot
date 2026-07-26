@@ -41,7 +41,6 @@ dependencies = [
   "sentry-sdk",
   "setproctitle",
   "jeepney",
-  "pillow",
   "zstandard",  # this can go once we're on Python 3.14+
 
   # ui
