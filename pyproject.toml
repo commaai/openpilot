@@ -50,10 +50,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs = [
-  "markdown",
-]
-
 testing = [
   "coverage",   # line coverage
   "ty",         # type checking

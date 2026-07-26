@@ -10,23 +10,11 @@ import threading
 import time
 import urllib.parse
 from pathlib import Path
-from xml.etree import ElementTree as ET
-
-import markdown
-from markdown.preprocessors import Preprocessor
-from markdown.treeprocessors import Treeprocessor
 
 DOCS_DIR = Path(__file__).resolve().parent
 SITE_DIR = DOCS_DIR / "_site"
 TEMPLATE_FILE = DOCS_DIR / "template.html"
-
-# Pages whose source lives under docs/ but should not be emitted as pages.
 EXCLUDE_DIRS = {"_site"}
-
-
-# ---------------------------------------------------------------------------
-# Config
-# ---------------------------------------------------------------------------
 
 REPO_URL = "https://github.com/commaai/openpilot/"
 
@@ -54,8 +42,6 @@ NAV: list[tuple[str, str | None]] = [
   ("X →", "https://x.com/comma_ai"),
 ]
 
-GlossaryTerm = tuple[str, re.Pattern[str], str]
-
 GLOSSARY_DESCRIPTIONS = {
   "onroad": "openpilot's system state while ignition is on.",
   "offroad": "openpilot's system state while ignition is off.",
@@ -67,21 +53,22 @@ GLOSSARY_DESCRIPTIONS = {
 }
 GLOSSARY_PAGE = "concepts/glossary.md"
 GLOSSARY_ROUTE = GLOSSARY_PAGE.removesuffix(".md")
-GLOSSARY_SKIP_TAGS = {"a", "code", "h1", "h2", "h3", "h4", "h5", "h6", "kbd", "pre", "script", "style"}
+GLOSSARY_SKIP = frozenset("a code h1 h2 h3 h4 h5 h6 kbd pre script style".split())
 
-# ---------------------------------------------------------------------------
-# Markdown
-# ---------------------------------------------------------------------------
+_ENTITY = re.compile(r"&(?:#x?[0-9a-fA-F]+|[a-zA-Z]+);")
+_LIST = re.compile(r"^(\s*)([*+-]|\d+\.)\s+(.*)$")
+_HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
+_HR = re.compile(r"^(-{3,}|\*{3,}|_{3,})$")
+_ATTR_URL = re.compile(r"""(?P<pre>\b(?:href|src)=(?P<q>["']))(?P<url>.*?)(?P=q)""")
+_VOID = frozenset("br img hr meta link input".split())
 
 def page_route(path: str) -> str:
   path = path.removesuffix(".md")
   return posixpath.dirname(path) or "." if posixpath.basename(path) == "index" else path
 
-
-def page_href(current_page: str, target_page: str) -> str:
-  route = posixpath.relpath(page_route(target_page), page_route(current_page))
+def page_href(current: str, target: str) -> str:
+  route = posixpath.relpath(page_route(target), page_route(current))
   return ("." if route == "." else route) + "/"
-
 
 def rewrite_relative_url(value: str, page: str) -> str | None:
   url = urllib.parse.urlparse(value)
@@ -93,203 +80,259 @@ def rewrite_relative_url(value: str, page: str) -> str | None:
   path = page_href(page, target) if target.endswith(".md") else posixpath.relpath(target, page_route(page))
   return url._replace(path=path).geturl()
 
+def rewrite_html_urls(fragment: str, page: str) -> str:
+  def repl(m: re.Match[str]) -> str:
+    r = rewrite_relative_url(m.group("url"), page)
+    return m.group(0) if r is None else f'{m.group("pre")}{r}{m.group("q")}'
+  return _ATTR_URL.sub(repl, fragment)
 
-class RelLinksTreeprocessor(Treeprocessor):
-  """Rebase relative links for directory-style page URLs."""
-
-  name = "rellinks"
-
-  def __init__(self, md, path: str):
-    super().__init__(md)
-    self.path = path
-
-  def run(self, root: ET.Element) -> None:
-    for el in root.iter():
-      for key in ("href", "src"):
-        value = el.get(key)
-        if not value:
-          continue
-        rewritten = self._rewrite(value)
-        if rewritten is not None:
-          el.set(key, rewritten)
-
-  def _rewrite(self, value: str) -> str | None:
-    return rewrite_relative_url(value, self.path)
-
-
-class RawHtmlLinksPreprocessor(Preprocessor):
-  pattern = re.compile(r"""(?P<prefix>\b(?:href|src)=(?P<quote>["']))(?P<url>.*?)(?P=quote)""")
-
-  def __init__(self, md, path: str):
-    super().__init__(md)
-    self.path = path
-
-  def run(self, lines: list[str]) -> list[str]:
-    def replace(match: re.Match[str]) -> str:
-      value = match.group("url")
-      rewritten = rewrite_relative_url(value, self.path)
-      return match.group(0) if rewritten is None else f'{match.group("prefix")}{rewritten}{match.group("quote")}'
-
-    return [self.pattern.sub(replace, line) for line in lines]
-
+def esc(text: str, attr: bool = False) -> str:
+  held: list[str] = []
+  def hold(m: re.Match[str]) -> str:
+    held.append(m.group(0))
+    return f"\0{len(held) - 1}\0"
+  return re.sub(r"\0(\d+)\0", lambda m: held[int(m.group(1))], html.escape(_ENTITY.sub(hold, text), quote=attr))
 
 def clean_tooltip(description: str) -> str:
   text = re.sub(r"\[([^\]]+)]\([^)]+\)", r"\1", description)
-  text = re.sub(r"`([^`]+)`", r"\1", text)
-  text = re.sub(r"[*_~]", "", text)
-  return re.sub(r"\s+", " ", text).strip()
-
+  return re.sub(r"\s+", " ", re.sub(r"[*_~]", "", re.sub(r"`([^`]+)`", r"\1", text))).strip()
 
 def glossary_slug(label: str) -> str:
   return label.replace(" ", "-").replace("_", "-").lower()
 
-
 GLOSSARY_TERMS = [
-  (glossary_slug(label), re.compile(rf"(?<!\w){re.escape(label)}(?!\w)", re.IGNORECASE), clean_tooltip(description))
-  for label, description in GLOSSARY_DESCRIPTIONS.items()
+  (glossary_slug(l), re.compile(rf"(?<!\w){re.escape(l)}(?!\w)", re.I), clean_tooltip(d))
+  for l, d in GLOSSARY_DESCRIPTIONS.items()
 ]
 GLOSSARY_DEFINITIONS = "\n".join(
-  f'* <span id="{glossary_slug(label)}"></span>**{label}**: {description}'
-  for label, description in GLOSSARY_DESCRIPTIONS.items()
+  f'* <span id="{glossary_slug(l)}"></span>**{l}**: {d}' for l, d in GLOSSARY_DESCRIPTIONS.items()
 )
 
-
-class GlossaryTreeprocessor(Treeprocessor):
-  def __init__(self, md, glossary: list[GlossaryTerm], path: str):
-    super().__init__(md)
-    self.glossary = glossary
-    self.path = path
-    self.seen: set[str] = set()
-
-  def run(self, root: ET.Element) -> None:
-    if self.path == GLOSSARY_PAGE:
-      return
-
-    self.seen.clear()
-    current_route = "." if self.path == "index.md" else self.path.removesuffix(".md")
-    glossary_href = f"{posixpath.relpath(GLOSSARY_ROUTE, current_route)}/#"
-    self._walk(root, glossary_href)
-
-  def _walk(self, element: ET.Element, glossary_href: str) -> None:
-    if element.tag in GLOSSARY_SKIP_TAGS or element.attrib.get("data-glossary-skip") is not None:
-      return
-
-    self._replace(element, glossary_href)
-
-    idx = 0
-    while idx < len(element):
-      child = element[idx]
-      self._walk(child, glossary_href)
-      idx = self._replace(element, glossary_href, idx) + 1
-
-  def _replace(self, parent: ET.Element, glossary_href: str, index: int | None = None) -> int:
-    child = None if index is None else parent[index]
-    text = parent.text if child is None else child.tail
-    pieces = self._pieces(text or "", glossary_href)
-    if not pieces:
-      return -1 if index is None else index
-
-    if child is None:
-      parent.text = pieces[0] if isinstance(pieces[0], str) else ""
-      insert_at = -1
-    else:
-      assert index is not None
-      child.tail = pieces[0] if isinstance(pieces[0], str) else ""
-      insert_at = index
-
-    start = 1 if isinstance(pieces[0], str) else 0
-    previous = child
-
-    for piece in pieces[start:]:
-      if isinstance(piece, str):
-        assert previous is not None
-        previous.tail = (previous.tail or "") + piece
+def inject_glossary(body: str, page: str) -> str:
+  if page == GLOSSARY_PAGE:
+    return body
+  route = "." if page == "index.md" else page.removesuffix(".md")
+  base, seen, out, skip, depth = f"{posixpath.relpath(GLOSSARY_ROUTE, route)}/#", set(), [], None, 0
+  for part in re.split(r"(<[^>]+>)", body):
+    if not part:
+      continue
+    if part.startswith("<"):
+      out.append(part)
+      if part.startswith("<!") or not (m := re.match(r"</?\s*([a-zA-Z0-9]+)", part)):
         continue
-
-      insert_at += 1
-      parent.insert(insert_at, piece)
-      previous = piece
-
-    return insert_at
-
-  def _pieces(self, text: str, glossary_href: str) -> list[str | ET.Element]:
-    if not text.strip():
-      return []
-
-    pieces: list[str | ET.Element] = []
-    cursor = 0
-
+      tag = m.group(1).lower()
+      if tag not in GLOSSARY_SKIP:
+        continue
+      closing, void = part.startswith("</"), part.endswith("/>") or tag in _VOID
+      if closing and skip == tag and depth:
+        depth -= 1
+        skip = None if not depth else skip
+      elif not closing and not void:
+        skip, depth = (tag, 1) if skip is None else (skip, depth + (skip == tag))
+      continue
+    if depth:
+      out.append(part); continue
+    cur, text = 0, part
     while True:
       best = None
-      for order, (slug, pattern, tooltip) in enumerate(self.glossary):
-        if slug in self.seen:
+      for order, (slug, pat, tip) in enumerate(GLOSSARY_TERMS):
+        if slug in seen or (found := pat.search(text, cur)) is None:
           continue
-
-        found = pattern.search(text, cursor)
-        if found is None:
-          continue
-
-        candidate = (found.start(), found.start() - found.end(), order, slug, tooltip, found.end())
-        if best is None or candidate[:3] < best[:3]:
-          best = candidate
-
+        cand = (found.start(), found.start() - found.end(), order, slug, tip, found.end(), found.group(0))
+        if best is None or cand[:3] < best[:3]:
+          best = cand
       if best is None:
-        break
-
-      start, _, _, slug, tooltip, end = best
-      if start > cursor:
-        pieces.append(text[cursor:start])
-
-      link = ET.Element(
-        "a",
-        {
-          "class": "glossary-term",
-          "data-glossary-term": "",
-          "href": f"{glossary_href}{slug}",
-        },
+        out.append(text[cur:]); break
+      start, _, _, slug, tip, end, matched = best
+      out.append(text[cur:start])
+      out.append(
+        f'<a class="glossary-term" data-glossary-term="" href="{base}{slug}">'
+        f'<span class="glossary-term__label">{matched}</span>'
+        f'<span class="glossary-term__tooltip" data-search-exclude="">{esc(tip)}</span></a>'
       )
-      ET.SubElement(link, "span", {"class": "glossary-term__label"}).text = text[start:end]
-      ET.SubElement(
-        link,
-        "span",
-        {
-          "class": "glossary-term__tooltip",
-          "data-search-exclude": "",
-        },
-      ).text = tooltip
-      pieces.append(link)
-      self.seen.add(slug)
-      cursor = end
+      seen.add(slug); cur = end
+  return "".join(out)
 
-    if not pieces:
-      return []
-    if cursor < len(text):
-      pieces.append(text[cursor:])
-    return pieces
+def slugify(text: str) -> str:
+  text = html.unescape(re.sub(r"<[^>]+>", "", text)).lower()
+  return re.sub(r"[-\s]+", "-", re.sub(r"[^\w\s-]", "", text, flags=re.UNICODE)).strip("-")
 
+def _parse_link(text: str, start: int) -> tuple[str, str, int] | None:
+  if start >= len(text) or text[start] != "[":
+    return None
+  depth, i = 0, start
+  while i < len(text):
+    depth += (text[i] == "[") - (text[i] == "]")
+    if text[i] == "]" and depth == 0:
+      label = text[start + 1:i]
+      if i + 1 >= len(text) or text[i + 1] != "(":
+        return None
+      j, dp = i + 2, 1
+      while j < len(text) and dp:
+        dp += (text[j] == "(") - (text[j] == ")"); j += 1
+      return None if dp else (label, text[i + 2:j - 1], j)
+    i += 1
+  return None
 
-def render_markdown(text: str, page_path: str) -> str:
-  md = markdown.Markdown(
-    extensions=["tables", "toc", "attr_list", "admonition", "fenced_code", "md_in_html"],
-    extension_configs={"toc": {"permalink": "#"}},
-    output_format="html5",
-  )
-  md.preprocessors.register(RawHtmlLinksPreprocessor(md, page_path), "raw-html-links", 21)
-  md.treeprocessors.register(RelLinksTreeprocessor(md, page_path), "relative-links", 1)
-  md.treeprocessors.register(GlossaryTreeprocessor(md, GLOSSARY_TERMS, page_path), "glossary-links", 0)
-  return md.convert(text)
+def render_inline(text: str, page: str) -> str:
+  out, i, n = [], 0, len(text)
+  while i < n:
+    if text[i] == "\n" and i >= 2 and text[i-2:i] == "  " and out and out[-1].endswith("  "):
+      out[-1] = out[-1][:-2]; out.append("<br>\n"); i += 1; continue
+    if text[i] == "`" and (end := text.find("`", i + 1)) != -1:
+      out.append(f"<code>{esc(text[i+1:end])}</code>"); i = end + 1; continue
+    if text[i] == "!" and i + 1 < n and text[i+1] == "[" and (p := _parse_link(text, i + 1)):
+      label, url, end = p
+      src = rewrite_relative_url(url, page) or url
+      out.append(f'<img alt="{esc(label, True)}" src="{esc(src, True)}">'); i = end; continue
+    if text[i] == "[" and (p := _parse_link(text, i)):
+      label, url, end = p
+      href = rewrite_relative_url(url, page) or url
+      out.append(f'<a href="{esc(href, True)}">{render_inline(label, page)}</a>'); i = end; continue
+    if text[i] == "<":
+      if text.startswith("<!--", i):
+        end = text.find("-->", i + 4); end = n if end < 0 else end + 3
+        out.append(rewrite_html_urls(text[i:end], page)); i = end; continue
+      if m := re.match(r"<[^>]+>", text[i:]):
+        out.append(rewrite_html_urls(m.group(0), page)); i += len(m.group(0)); continue
+    if (text.startswith("**", i) or text.startswith("__", i)) and (end := text.find(text[i:i+2], i+2)) != -1:
+      out.append(f"<strong>{render_inline(text[i+2:end], page)}</strong>"); i = end + 2; continue
+    if text[i] in "*_" and i + 1 < n and text[i+1] not in " \t\n" and (end := text.find(text[i], i+1)) > i + 1:
+      out.append(f"<em>{render_inline(text[i+1:end], page)}</em>"); i = end + 1; continue
+    j = i + 1
+    while j < n and text[j] not in "`[<!*_":
+      j += 1
+    out.append(esc(text[i:j])); i = j
+  return "".join(out)
 
+def _trow(line: str) -> list[str]:
+  return [c.strip() for c in line.strip().removeprefix("|").removesuffix("|").split("|")]
 
-# ---------------------------------------------------------------------------
-# Pages
-# ---------------------------------------------------------------------------
+def _is_sep(line: str) -> bool:
+  return "|" in line and all(re.fullmatch(r":?-{3,}:?", c.strip()) for c in _trow(line))
+
+def _align(sep: str) -> str:
+  s = sep.strip()
+  if s.startswith(":") and s.endswith(":"): return ' style="text-align: center;"'
+  if s.endswith(":"): return ' style="text-align: right;"'
+  if s.startswith(":"): return ' style="text-align: left;"'
+  return ""
+
+def _list_info(line: str) -> tuple[int, str, str] | None:
+  m = _LIST.match(line)
+  return None if not m else (len(m.group(1)) // 4, "ol" if m.group(2)[-1] == "." else "ul", m.group(3))
+
+def render_markdown(text: str, page: str) -> str:
+  lines, out, i, n = text.splitlines(), [], 0, 0
+  n = len(lines)
+  while i < n:
+    line, s = lines[i], lines[i].strip()
+    if not s:
+      i += 1; continue
+
+    if s.startswith("```"):
+      lang, body = s[3:].strip(), []
+      i += 1
+      while i < n and not lines[i].strip().startswith("```"):
+        body.append(lines[i]); i += 1
+      if i < n: i += 1
+      code, cls = html.escape("\n".join(body) + ("\n" if body else "")), (f' class="language-{html.escape(lang)}"' if lang else "")
+      out.append(f"<pre><code{cls}>{code}</code></pre>"); continue
+
+    if m := _HEADING.match(s):
+      content, level = m.group(2).rstrip("#").strip(), len(m.group(1))
+      sid = slugify(content)
+      out.append(f'<h{level} id="{sid}">{render_inline(content, page)}<a class="headerlink" href="#{sid}" title="Permanent link">#</a></h{level}>')
+      i += 1; continue
+
+    if _HR.fullmatch(s):
+      out.append("<hr>"); i += 1; continue
+
+    if "|" in line and i + 1 < n and _is_sep(lines[i + 1]):
+      headers, aligns = _trow(line), [_align(c) for c in _trow(lines[i + 1])]
+      i += 2; rows = []
+      while i < n and "|" in lines[i] and lines[i].strip():
+        rows.append(_trow(lines[i])); i += 1
+      parts = ["<table>", "<thead>", "<tr>"] + [
+        f"<th{aligns[j] if j < len(aligns) else ''}>{render_inline(h, page)}</th>" for j, h in enumerate(headers)
+      ] + ["</tr>", "</thead>", "<tbody>"]
+      for row in rows:
+        parts.append("<tr>")
+        for j in range(len(headers)):
+          parts.append(f"<td{aligns[j] if j < len(aligns) else ''}>{render_inline(row[j] if j < len(row) else '', page)}</td>")
+        parts.append("</tr>")
+      out.append("\n".join(parts + ["</tbody>", "</table>"])); continue
+
+    if _list_info(line):
+      items: list[tuple[int, str, list[str]]] = []
+      while i < n:
+        if not lines[i].strip():
+          if i + 1 < n and _list_info(lines[i + 1]):
+            i += 1; continue
+          break
+        info = _list_info(lines[i])
+        if not info: break
+        level, kind, body = info
+        chunk = [body]; i += 1
+        while i < n and lines[i].strip() and _list_info(lines[i]) is None:
+          t = lines[i].strip()
+          if t.startswith("```") or _HEADING.match(t) or _HR.fullmatch(t): break
+          chunk.append(lines[i]); i += 1
+        items.append((level, kind, chunk))
+
+      def render_list(start: int, min_level: int) -> tuple[str, int]:
+        if start >= len(items) or items[start][0] < min_level:
+          return "", start
+        kind, chunks, idx = items[start][1], [f"<{items[start][1]}>"], start
+        while idx < len(items) and items[idx][0] >= min_level:
+          level, ikind, body_lines = items[idx]
+          if level > min_level:
+            nested, idx = render_list(idx, level)
+            chunks[-1] = (chunks[-1][:-5] + nested + "</li>") if chunks[-1].endswith("</li>") else chunks[-1] + nested
+            continue
+          if ikind != kind:
+            chunks += [f"</{kind}>", f"<{ikind}>"]; kind = ikind
+          idx += 1
+          body = render_inline("\n".join(body_lines), page)
+          nested = ""
+          if idx < len(items) and items[idx][0] > min_level:
+            nested, idx = render_list(idx, min_level + 1)
+          chunks.append(f"<li>{body}{nested}\n</li>" if nested else f"<li>{body}</li>")
+        chunks.append(f"</{kind}>")
+        return "\n".join(chunks), idx
+
+      out.append(render_list(0, items[0][0])[0]); continue
+
+    if s.startswith(">"):
+      q = []
+      while i < n and lines[i].strip().startswith(">"):
+        q.append(re.sub(r"^>\s?", "", lines[i].strip())); i += 1
+      out.append(f"<blockquote>\n<p>{render_inline(chr(10).join(q), page)}</p>\n</blockquote>"); continue
+
+    if s.startswith("<!--") or s.startswith("<!---"):
+      out.append(rewrite_html_urls(line, page)); i += 1
+      # Preserve a blank line after HTML comments (python-markdown does).
+      if i < n and not lines[i].strip():
+        out.append("")
+        while i < n and not lines[i].strip():
+          i += 1
+      continue
+
+    buf = [line]; i += 1
+    while i < n and lines[i].strip():
+      t = lines[i].strip()
+      if t.startswith("```") or _HEADING.match(t) or _HR.fullmatch(t) or t.startswith(">"): break
+      if "|" in lines[i] and i + 1 < n and _is_sep(lines[i + 1]): break
+      buf.append(lines[i]); i += 1
+    out.append(f"<p>{render_inline(chr(10).join(buf), page)}</p>")
+
+  return inject_glossary("\n".join(out), page)
 
 def page_title(source: str) -> str:
   for line in source.splitlines():
     if line.startswith("# "):
       return line[2:].strip()
   return "openpilot docs"
-
 
 def write_html_redirect(rel: Path) -> None:
   if rel.name == "index.md":
@@ -304,11 +347,6 @@ def write_html_redirect(rel: Path) -> None:
     f"<script>location.replace({json.dumps(target)} + location.search + location.hash)</script>",
   ]))
 
-
-# ---------------------------------------------------------------------------
-# Assets
-# ---------------------------------------------------------------------------
-
 def copy_assets() -> None:
   for src in DOCS_DIR.rglob("*"):
     if not src.is_file():
@@ -322,7 +360,6 @@ def copy_assets() -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dest)
 
-
 def render_nav_html(current_page: str) -> str:
   parts: list[str] = []
   for title, target in NAV:
@@ -334,7 +371,6 @@ def render_nav_html(current_page: str) -> str:
       active = ' class="active"' if target == current_page else ""
       parts.append(f'<a href="{html.escape(page_href(current_page, target))}"{active}>{html.escape(title)}</a>')
   return "\n".join(parts)
-
 
 def build() -> None:
   template = TEMPLATE_FILE.read_text()
@@ -349,7 +385,6 @@ def build() -> None:
   if SITE_DIR.exists():
     shutil.rmtree(SITE_DIR)
   SITE_DIR.mkdir(parents=True)
-
   copy_assets()
 
   for rel_path, source in pages:
@@ -359,7 +394,6 @@ def build() -> None:
     route = page_route(rel)
     root = "../" * (0 if route == "." else len(route.split("/")))
     edit_path = "serve.py" if rel == GLOSSARY_PAGE else rel
-    edit_url = f"{REPO_URL}blob/master/docs/{edit_path}"
     page_html = template
     for name, value in {
       "TITLE": html.escape(title),
@@ -367,7 +401,7 @@ def build() -> None:
       "HOME_HREF": page_href(rel, "index.md"),
       "NAV": render_nav_html(rel),
       "BODY": body,
-      "EDIT_URL": html.escape(edit_url),
+      "EDIT_URL": html.escape(f"{REPO_URL}blob/master/docs/{edit_path}"),
     }.items():
       page_html = page_html.replace(f"{{{{{name}}}}}", value)
     out = SITE_DIR / ("" if route == "." else route) / "index.html"
@@ -376,11 +410,6 @@ def build() -> None:
     write_html_redirect(rel_path)
 
   print(f"docs: built {len(pages)} pages into {SITE_DIR}")
-
-
-# ---------------------------------------------------------------------------
-# Serve
-# ---------------------------------------------------------------------------
 
 def serve() -> None:
   build()
@@ -405,12 +434,10 @@ def serve() -> None:
   finally:
     httpd.shutdown()
 
-
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Build or serve the openpilot documentation site.")
   parser.add_argument("--build", action="store_true", help="Build the site and exit.")
   args = parser.parse_args()
-
   if args.build:
     build()
   else:

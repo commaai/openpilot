@@ -3,19 +3,15 @@
 The `docs/` tree is the source for [docs.comma.ai](https://docs.comma.ai).
 The site is updated on pushes to master by this [workflow](../.github/workflows/docs.yaml).
 
-Those commands must be run in the root directory of openpilot, **not /docs**
+Those commands must be run in the root directory of openpilot, **not /docs**.
+No extra dependencies — `docs/serve.py` is stdlib-only.
 
-**1. Install the docs dependencies**
-``` bash
-uv pip install .[docs]
-```
-
-**2. Build the new site**
+**1. Build the site**
 ``` bash
 python docs/serve.py --build
 ```
 
-**3. Run the new site locally**
+**2. Run the site locally** (rebuilds on change)
 ``` bash
 python docs/serve.py
 ```

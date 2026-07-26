@@ -35,7 +35,6 @@ jobs:
     - name: Build docs
       run: |
         git lfs pull
-        pip install markdown
         python docs/serve.py --build
 
     # Push to docs.comma.ai
