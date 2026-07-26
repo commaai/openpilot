@@ -179,6 +179,25 @@ node {
   }
 
   try {
+    if (env.BRANCH_NAME == 'ui_on_the_cpu') {
+      deviceStage("MICI display probe", "tici-os04c10", [], [
+        step("identify display target", """
+          echo "markers:"
+          ls -l /TICI /MICI 2>/dev/null || true
+          echo "model:"
+          tr '\\0' '\\n' </proc/device-tree/model 2>/dev/null || true
+          echo "compatible:"
+          tr '\\0' '\\n' </proc/device-tree/compatible 2>/dev/null || true
+          echo "display mode:"
+          for f in /sys/class/drm/card*-DSI-*/modes; do
+            test -e "\$f" && echo "\$f: \$(cat "\$f")"
+          done
+          echo "boot partitions:"
+          ls -l /dev/disk/by-partlabel/boot* /dev/disk/by-partlabel/xbl* 2>/dev/null || true
+        """),
+      ])
+    }
+
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
         step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/tools/release/build_release.sh"),
