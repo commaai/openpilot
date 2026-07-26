@@ -18,6 +18,7 @@ AlertSize = log.SelfdriveState.AlertSize
 
 OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "openpilot/selfdrive/selfdrived/alerts_offroad.json")
 
+# TODO: add callback alerts
 ALERTS = []
 for event_types in EVENTS.values():
   for alert in event_types.values():
@@ -31,6 +32,7 @@ def _text_width(font, text):
   cmap, hmtx, upem, size = font
   advance = sum(hmtx[cmap.get(ord(ch), ".notdef")][0] for ch in text)
   return advance * size / upem
+
 
 class TestAlerts(OpenpilotTestCase):
 
