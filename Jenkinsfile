@@ -194,6 +194,16 @@ node {
           done
           echo "boot partitions:"
           ls -l /dev/disk/by-partlabel/boot* /dev/disk/by-partlabel/xbl* 2>/dev/null || true
+          echo "active slot:"
+          cat /proc/cmdline
+          echo "slot tools:"
+          for c in bootctl abctl qbootctl fastboot cgpt; do
+            command -v "\$c" || true
+          done
+          find /usr /bin /sbin -maxdepth 3 -type f \\( -iname '*boot*ctl*' -o -iname '*abctl*' -o -iname '*slot*' \\) 2>/dev/null | head -100
+          echo "GPT attributes:"
+          sudo sgdisk -i 11 /dev/sde 2>/dev/null || true
+          sudo sgdisk -i 28 /dev/sde 2>/dev/null || true
         """),
       ])
     }
