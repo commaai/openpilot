@@ -1,4 +1,4 @@
-import groovy.transform.NonCPS
+import com.cloudbees.groovy.cps.NonCPS
 import org.jenkins.plugins.lockableresources.LockableResourcesManager
 
 @NonCPS
