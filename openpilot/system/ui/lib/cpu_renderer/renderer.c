@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(__aarch64__)
+#include <arm_neon.h>
+#endif
+
 #ifdef __linux__
 #include <errno.h>
 #include <fcntl.h>
@@ -927,6 +931,98 @@ static inline uint32_t premultiply(uint32_t color) {
          (((g * a + 127) / 255) << 8) | ((b * a + 127) / 255);
 }
 
+#if defined(__aarch64__)
+static int neon_raster_enabled = -1;
+
+static inline int use_neon_raster(void) {
+  if (neon_raster_enabled < 0) {
+    const char *setting = getenv("CPU_NEON_RASTER");
+    neon_raster_enabled = !setting || strcmp(setting, "0") != 0;
+  }
+  return neon_raster_enabled;
+}
+
+// Four premultiplied RGBA pixels at a time. MICI's CPU backend stores pixels
+// as uint32_t RGBA (R in bits 16..23, A in bits 24..31), so each pixel's alpha
+// is byte 3 in memory on little-endian ARM.
+static inline uint8x16_t blend4_neon(uint8x16_t dst, uint8x16_t src) {
+  static const uint8_t alpha_indices[16] = {
+    3, 3, 3, 3, 7, 7, 7, 7, 11, 11, 11, 11, 15, 15, 15, 15,
+  };
+  const uint8x16_t alpha = vqtbl1q_u8(src, vld1q_u8(alpha_indices));
+  const uint8x16_t inverse_alpha = vsubq_u8(vdupq_n_u8(255), alpha);
+  uint16x8_t low = vmull_u8(vget_low_u8(dst), vget_low_u8(inverse_alpha));
+  uint16x8_t high = vmull_high_u8(dst, inverse_alpha);
+  // Exact integer equivalent of (value + 127) / 255 for value <= 65025.
+  low = vaddq_u16(low, vdupq_n_u16(128));
+  high = vaddq_u16(high, vdupq_n_u16(128));
+  low = vaddq_u16(low, vshrq_n_u16(low, 8));
+  high = vaddq_u16(high, vshrq_n_u16(high, 8));
+  const uint8x16_t scaled_dst = vcombine_u8(vshrn_n_u16(low, 8), vshrn_n_u16(high, 8));
+  return vqaddq_u8(src, scaled_dst);
+}
+
+static inline uint8x16_t scale_white_tint4_neon(uint8x16_t src, uint8_t opacity) {
+  const uint8x16_t multiplier = vdupq_n_u8(opacity);
+  uint16x8_t low = vmull_u8(vget_low_u8(src), vget_low_u8(multiplier));
+  uint16x8_t high = vmull_high_u8(src, multiplier);
+
+  // Match the existing packed RGB tint calculation, which rounds a /256
+  // scale, while alpha uses an exact rounded /255 scale.
+  const uint8x16_t rgb = vcombine_u8(
+    vshrn_n_u16(vaddq_u16(low, vdupq_n_u16(128)), 8),
+    vshrn_n_u16(vaddq_u16(high, vdupq_n_u16(128)), 8));
+  low = vaddq_u16(low, vdupq_n_u16(128));
+  high = vaddq_u16(high, vdupq_n_u16(128));
+  low = vaddq_u16(low, vshrq_n_u16(low, 8));
+  high = vaddq_u16(high, vshrq_n_u16(high, 8));
+  const uint8x16_t alpha = vcombine_u8(vshrn_n_u16(low, 8), vshrn_n_u16(high, 8));
+  static const uint8_t alpha_mask_bytes[16] = {
+    0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
+  };
+  return vbslq_u8(vld1q_u8(alpha_mask_bytes), alpha, rgb);
+}
+
+static inline void blend_span_neon(uint32_t *dst, const uint32_t *src, int count) {
+  int x = 0;
+  for (; x + 4 <= count; x += 4) {
+    const uint8x16_t source = vld1q_u8((const uint8_t *)(src + x));
+    const uint8x16_t destination = vld1q_u8((const uint8_t *)(dst + x));
+    vst1q_u8((uint8_t *)(dst + x), blend4_neon(destination, source));
+  }
+  for (; x < count; ++x) dst[x] = blend(dst[x], src[x]);
+}
+
+static inline void blend_white_tint_span_neon(uint32_t *dst, const uint32_t *src,
+                                               int count, uint8_t opacity) {
+  int x = 0;
+  for (; x + 4 <= count; x += 4) {
+    uint8x16_t source = vld1q_u8((const uint8_t *)(src + x));
+    source = scale_white_tint4_neon(source, opacity);
+    const uint8x16_t destination = vld1q_u8((const uint8_t *)(dst + x));
+    vst1q_u8((uint8_t *)(dst + x), blend4_neon(destination, source));
+  }
+  for (; x < count; ++x) {
+    uint32_t p = src[x];
+    const uint32_t a = ((p >> 24) * opacity + 127) / 255;
+    const uint32_t rb = (((p & 0x00ff00ffU) * opacity) + 0x00800080U) >> 8;
+    const uint32_t g = (((p & 0x0000ff00U) * opacity) + 0x00008000U) >> 8;
+    p = (a << 24) | (rb & 0x00ff00ffU) | (g & 0x0000ff00U);
+    dst[x] = blend(dst[x], p);
+  }
+}
+
+static inline void blend_solid_span_neon(uint32_t *dst, int count, uint32_t src) {
+  const uint8x16_t source = vreinterpretq_u8_u32(vdupq_n_u32(src));
+  int x = 0;
+  for (; x + 4 <= count; x += 4) {
+    const uint8x16_t destination = vld1q_u8((const uint8_t *)(dst + x));
+    vst1q_u8((uint8_t *)(dst + x), blend4_neon(destination, source));
+  }
+  for (; x < count; ++x) dst[x] = blend(dst[x], src);
+}
+#endif
+
 void sr_set_clip(Surface *s, int x, int y, int width, int height) {
   s->clip_x0 = x < 0 ? 0 : (x > s->width ? s->width : x);
   s->clip_y0 = y < 0 ? 0 : (y > s->height ? s->height : y);
@@ -962,6 +1058,12 @@ void sr_rect(Surface *s, int x, int y, int w, int h, uint32_t color) {
     if ((src >> 24) == 255) {
       for (int px = x0; px < x1; ++px) row[px] = src;
     } else {
+#if defined(__aarch64__)
+      if (use_neon_raster()) {
+        blend_solid_span_neon(row + x0, x1 - x0, src);
+        continue;
+      }
+#endif
       for (int px = x0; px < x1; ++px) row[px] = blend(row[px], src);
     }
   }
@@ -1040,6 +1142,12 @@ void sr_circle(Surface *s, int cx, int cy, int radius, uint32_t color) {
     if (x0 < s->clip_x0) x0 = s->clip_x0;
     if (x1 > s->clip_x1) x1 = s->clip_x1;
     uint32_t *row = (uint32_t *)(s->pixels + py * s->stride);
+#if defined(__aarch64__)
+    if (use_neon_raster()) {
+      blend_solid_span_neon(row + x0, x1 - x0, src);
+      continue;
+    }
+#endif
     for (int px = x0; px < x1; ++px) row[px] = blend(row[px], src);
   }
 }
@@ -1345,6 +1453,16 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
     for (int y = 0; y < height; ++y) {
       uint32_t *out = (uint32_t *)(dst->pixels + (dy + y) * dst->stride);
       const uint32_t *in = (const uint32_t *)(src->pixels + (sy + y) * src->stride);
+#if defined(__aarch64__)
+      if (tint == 0xffffffffU && use_neon_raster()) {
+        blend_span_neon(out + dx, in + sx, width);
+        continue;
+      }
+      if (tr == 255 && tg == 255 && tb == 255 && use_neon_raster()) {
+        blend_white_tint_span_neon(out + dx, in + sx, width, ta);
+        continue;
+      }
+#endif
       for (int x = 0; x < width; ++x) {
         uint32_t p = in[sx + x];
         if (tint != 0xffffffffU) {
