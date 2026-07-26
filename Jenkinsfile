@@ -200,6 +200,8 @@ node {
           for c in bootctl abctl qbootctl fastboot cgpt; do
             command -v "\$c" || true
           done
+          sudo abctl --help 2>&1 || sudo abctl 2>&1 || true
+          getslotsuffix || true
           find /usr /bin /sbin -maxdepth 3 -type f \\( -iname '*boot*ctl*' -o -iname '*abctl*' -o -iname '*slot*' \\) 2>/dev/null | head -100
           echo "GPT attributes:"
           sudo sgdisk -i 11 /dev/sde 2>/dev/null || true
