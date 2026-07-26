@@ -317,7 +317,8 @@ def migrate_pandaStates(msgs):
 
   # Migrate safety param base on carParams
   CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
-  assert CP is not None, "carParams message not found"
+  if CP is None:
+    return [], [], []
   fingerprint = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
   if fingerprint in safety_param_migration:
     safety_param = safety_param_migration[fingerprint].value
@@ -339,6 +340,8 @@ def migrate_pandaStates(msgs):
       ops.append((index, as_reader(new_msg)))
     elif msg.which() == 'pandaStates':
       new_msg = msg.as_builder()
+      if len(new_msg.pandaStates) == 0:
+        continue
       new_msg.pandaStates[-1].safetyParam = safety_param
       # Clear DISABLE_DISENGAGE_ON_GAS bit to fix controls mismatch
       new_msg.pandaStates[-1].alternativeExperience &= ~1

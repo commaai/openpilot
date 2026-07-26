@@ -339,6 +339,13 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
   rc.wait_for_next_recv(True)
 
+  # If a fingerprint is provided (e.g. fuzzy replay), skip CAN fingerprinting
+  # and seed CarParams directly from the known platform.
+  if fingerprint:
+    CarInterface = interfaces[fingerprint]
+    CP = CarInterface.get_non_essential_params(fingerprint)
+    params.put("CarParams", CP.to_bytes(), block=True)
+
   # fingerprinting is done, when CarParams is set
   while params.get("CarParams") is None:
     if len(canmsgs) == 0:

@@ -180,6 +180,11 @@ class PoseCalibrator:
 
   def feed_live_calib(self, live_calib: log.LiveCalibrationData):
     calib_rpy = np.array(live_calib.rpyCalib)
+    if calib_rpy.size != 3:
+      # Uncalibrated or malformed calibration: keep identity transform
+      self.calib_from_device = np.eye(3)
+      self.calib_valid = False
+      return
     device_from_calib = rot_from_euler(calib_rpy)
     self.calib_from_device = device_from_calib.T
     self.calib_valid = live_calib.calStatus == log.LiveCalibrationData.Status.calibrated
