@@ -13,6 +13,7 @@ from __future__ import annotations
 import functools
 import html
 import http.server
+import json
 import posixpath
 import re
 import shutil
@@ -212,6 +213,21 @@ def output_html_path(src: Path) -> Path:
   return SITE_DIR / ("" if route == "." else route) / "index.html"
 
 
+def write_html_redirect(src: Path) -> None:
+  rel = src.relative_to(DOCS_DIR)
+  if rel.name == "index.md":
+    return
+  target = f"{rel.stem}/"
+  out = SITE_DIR / rel.with_suffix(".html")
+  out.parent.mkdir(parents=True, exist_ok=True)
+  out.write_text("\n".join([
+    "<!doctype html>",
+    f'<meta http-equiv="refresh" content="0; url={html.escape(target)}">',
+    f'<link rel="canonical" href="{html.escape(target)}">',
+    f"<script>location.replace({json.dumps(target)} + location.search + location.hash)</script>",
+  ]))
+
+
 # ---------------------------------------------------------------------------
 # Assets
 # ---------------------------------------------------------------------------
@@ -359,6 +375,7 @@ TEMPLATE = string.Template("""
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>$title · $site_name</title>
+  <link rel="icon" href="${root}${logo}">
   <link rel="stylesheet" href="${root}stylesheets/base.css">
   <link rel="stylesheet" href="${root}stylesheets/extra.css">
 </head>
@@ -454,6 +471,7 @@ def build() -> None:
     out = output_html_path(src)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page_html)
+    write_html_redirect(src)
 
   print(f"docs: built {len(pages)} pages into {SITE_DIR}")
 
