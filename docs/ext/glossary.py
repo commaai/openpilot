@@ -8,12 +8,11 @@ from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 
-from zensical.extensions.links import LinksTreeprocessor
-
 GlossaryTerm = tuple[str, re.Pattern[str], str]
 
 GLOSSARY_FILE = Path(__file__).with_name("glossary.toml")
 GLOSSARY_PAGE = "concepts/glossary.md"
+GLOSSARY_HREF = GLOSSARY_PAGE.removesuffix(".md") + ".html"
 GLOSSARY_PLACEHOLDER = "{{GLOSSARY_DEFINITIONS}}"
 
 SKIP_TAGS = {
@@ -70,21 +69,18 @@ class GlossaryPreprocessor(Preprocessor):
 
 
 class GlossaryTreeprocessor(Treeprocessor):
-  def __init__(self, md, glossary: list[GlossaryTerm]):
+  def __init__(self, md, glossary: list[GlossaryTerm], path: str):
     super().__init__(md)
     self.glossary = glossary
+    self.path = path
     self.seen: set[str] = set()
 
   def run(self, root: ET.Element) -> None:
-    at = self.md.treeprocessors.get_index_for_name("zrelpath")
-    processor = self.md.treeprocessors[at]
-    if not isinstance(processor, LinksTreeprocessor):
-      raise TypeError("Links processor not registered")
-    if processor.path == GLOSSARY_PAGE:
+    if self.path == GLOSSARY_PAGE:
       return
 
     self.seen.clear()
-    glossary_href = f"{posixpath.relpath(GLOSSARY_PAGE, posixpath.dirname(processor.path) or '.')}#"
+    glossary_href = f"{posixpath.relpath(GLOSSARY_HREF, posixpath.dirname(self.path) or '.')}#"
     self._walk(root, glossary_href)
 
   def _walk(self, element: ET.Element, glossary_href: str) -> None:
@@ -120,6 +116,7 @@ class GlossaryTreeprocessor(Treeprocessor):
 
     for piece in pieces[start:]:
       if isinstance(piece, str):
+        assert previous is not None
         previous.tail = (previous.tail or "") + piece
         continue
 
@@ -196,6 +193,9 @@ class GlossaryTreeprocessor(Treeprocessor):
 
 
 class GlossaryExtension(Extension):
+  def __init__(self, path: str) -> None:
+    self.path = path
+
   def extendMarkdown(self, md) -> None:
     md.registerExtension(self)
     glossary, rendered = load_glossary()
@@ -206,7 +206,7 @@ class GlossaryExtension(Extension):
       27,
     )
     md.treeprocessors.register(
-      GlossaryTreeprocessor(md, glossary),
+      GlossaryTreeprocessor(md, glossary, self.path),
       "docs-ext-glossary-treeprocessor",
       0,
     )
