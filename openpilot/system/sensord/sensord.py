@@ -18,6 +18,7 @@ from openpilot.system.sensord.sensors.lsm6ds3_gyro import LSM6DS3_Gyro
 from openpilot.system.sensord.sensors.lsm6ds3_temp import LSM6DS3_Temp
 
 I2C_BUS_IMU = 1
+SENSOR_IRQ_TIMEOUT_S = 2.0
 
 def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
   pm = messaging.PubMaster([service for sensor, service, interrupt in sensors if interrupt])
@@ -42,15 +43,19 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
 
   poller = select.poll()
   poller.register(fd, select.POLLIN | select.POLLPRI)
+  last_irq_time = time.monotonic()
   while not event.is_set():
     events = poller.poll(100)
     if not events:
-      cloudlog.error("poll timed out")
+      if time.monotonic() - last_irq_time >= SENSOR_IRQ_TIMEOUT_S:
+        cloudlog.error(f"sensor IRQ timed out for {SENSOR_IRQ_TIMEOUT_S:.1f}s")
+        return
       continue
     if not (events[0][1] & (select.POLLIN | select.POLLPRI)):
       cloudlog.error("no poll events set")
       continue
 
+    last_irq_time = time.monotonic()
     dat = os.read(fd, ctypes.sizeof(gpioevent_data)*16)
     evd = gpioevent_data.from_buffer_copy(dat)
 
@@ -110,7 +115,7 @@ def main() -> None:
   # Initialize sensors
   exit_event = threading.Event()
   threads = [
-    threading.Thread(target=interrupt_loop, args=(sensors_cfg, exit_event), daemon=True)
+    threading.Thread(target=interrupt_loop, args=(sensors_cfg, exit_event), name="sensor_interrupt", daemon=True)
   ]
   for sensor, service, interrupt in sensors_cfg:
     try:
@@ -120,6 +125,7 @@ def main() -> None:
         threads.append(threading.Thread(
           target=polling_loop,
           args=(sensor, service, exit_event),
+          name=f"{service}_poll",
           daemon=True
         ))
     except Exception:
@@ -128,8 +134,11 @@ def main() -> None:
   try:
     for t in threads:
       t.start()
-    while any(t.is_alive() for t in threads):
+    while all(t.is_alive() for t in threads):
       time.sleep(1)
+    if not exit_event.is_set():
+      dead_threads = [t.name for t in threads if not t.is_alive()]
+      raise RuntimeError(f"Sensor thread exited unexpectedly: {dead_threads}")
   except KeyboardInterrupt:
     pass
   finally:
