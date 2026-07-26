@@ -47,7 +47,6 @@ dependencies = [
   # ui
   "comma-deps-raylib",
   "qrcode",
-  "fonttools",
 ]
 
 [project.optional-dependencies]
