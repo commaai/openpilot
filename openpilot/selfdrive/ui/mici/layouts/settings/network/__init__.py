@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton

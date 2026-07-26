@@ -8,7 +8,7 @@ import urllib.error
 from urllib.parse import urlparse
 from enum import IntEnum
 
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.cereal import log
 from openpilot.common.hardware import HARDWARE

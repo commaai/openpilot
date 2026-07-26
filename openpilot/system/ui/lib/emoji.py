@@ -4,7 +4,7 @@ import functools
 from importlib.resources import as_file
 
 from PIL import Image, ImageDraw, ImageFont
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.system.ui.lib.application import FONT_DIR
 

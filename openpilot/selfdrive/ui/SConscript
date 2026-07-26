@@ -3,6 +3,18 @@ import importlib.util
 
 Import('env', 'arch', 'common')
 
+# Native core for the GPU-free MICI UI backend. It deliberately has no GL/EGL
+# dependencies and is built on Linux hosts so PC parity tests exercise the same
+# code that runs on device.
+if arch != "Darwin":
+  cpu_renderer_env = env.Clone()
+  cpu_renderer_env["CPPPATH"] += ["/usr/include/libdrm"]
+  cpu_renderer_env.SharedLibrary(
+    "#openpilot/system/ui/lib/cpu_renderer/libraylib_cpu",
+    ["#openpilot/system/ui/lib/cpu_renderer/renderer.c"],
+    LIBS=["m", "drm"],
+  )
+
 # build the fonts
 generator = File("#openpilot/selfdrive/assets/fonts/process.py")
 source_files = Glob("#openpilot/selfdrive/assets/fonts/*.ttf") + Glob("#openpilot/selfdrive/assets/fonts/*.otf")

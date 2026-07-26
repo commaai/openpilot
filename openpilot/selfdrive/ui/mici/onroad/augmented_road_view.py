@@ -1,5 +1,5 @@
 import numpy as np
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from openpilot.cereal import log
 from opendbc.car.structs import car
 from msgq.visionipc import VisionStreamType

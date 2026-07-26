@@ -2,7 +2,7 @@ from enum import IntEnum
 from functools import partial
 from typing import cast
 
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel

@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from openpilot.cereal import log, messaging
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView

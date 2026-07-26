@@ -3,7 +3,7 @@ import time
 from typing import Literal
 from collections.abc import Callable
 
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr

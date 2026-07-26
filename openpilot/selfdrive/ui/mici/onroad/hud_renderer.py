@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar

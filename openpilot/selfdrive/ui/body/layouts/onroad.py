@@ -1,5 +1,5 @@
 import time
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget

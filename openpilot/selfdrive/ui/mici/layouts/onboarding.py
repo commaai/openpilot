@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import qrcode
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from collections.abc import Callable
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import FontWeight, gui_app

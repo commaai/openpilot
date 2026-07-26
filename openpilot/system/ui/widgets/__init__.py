@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from enum import IntEnum
 from typing import Protocol, TypeVar
 from collections.abc import Callable

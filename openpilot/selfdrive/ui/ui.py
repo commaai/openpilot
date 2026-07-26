@@ -6,8 +6,6 @@ from openpilot.cereal import messaging
 from openpilot.common.hardware import TICI
 from openpilot.common.realtime import Priority, config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.selfdrive.ui.layouts.main import MainLayout
-from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 BIG_UI = gui_app.big_ui()
@@ -20,8 +18,10 @@ def main():
 
   gui_app.init_window("UI")
   if BIG_UI:
+    from openpilot.selfdrive.ui.layouts.main import MainLayout
     MainLayout()
   else:
+    from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
     MiciMainLayout()
 
   pm = messaging.PubMaster(['uiDebug'])

@@ -2,7 +2,7 @@
 import sys
 import subprocess
 import threading
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.hardware import HARDWARE, TICI
