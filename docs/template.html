@@ -84,6 +84,21 @@ main.content pre {
 main.content code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 main.content :not(pre) > code { background: var(--bg-elev); padding: 0.1rem 0.35rem; border-radius: 0.2rem; font-size: 0.88em; }
 main.content blockquote { border-left: 3px solid var(--border); margin: 1rem 0; padding: 0.2rem 1rem; color: var(--fg-dim); }
+main.content .admonition {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-radius: 0.3rem; border-left: 3px solid var(--border);
+  background: var(--bg-elev);
+}
+main.content .admonition .admonition-title { margin: 0.2rem 0 0.4rem; font-weight: 600; }
+main.content .admonition.note { border-left-color: #0969da; }
+main.content .admonition.note .admonition-title { color: #0969da; }
+main.content .admonition.tip { border-left-color: #1a7f37; }
+main.content .admonition.tip .admonition-title { color: #1a7f37; }
+main.content .admonition.important { border-left-color: #8250df; }
+main.content .admonition.important .admonition-title { color: #8250df; }
+main.content .admonition.warning { border-left-color: #9a6700; }
+main.content .admonition.warning .admonition-title { color: #9a6700; }
+main.content .admonition.caution { border-left-color: #cf222e; }
+main.content .admonition.caution .admonition-title { color: #cf222e; }
 main.content details { margin: 0.5rem 0; }
 main.content hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 .headerlink { margin-left: 0.25rem; opacity: 0; font-size: 0.7em; }
