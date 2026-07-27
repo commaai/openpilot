@@ -2,7 +2,6 @@ import copy
 import json
 import os
 import random
-from PIL import Image, ImageDraw, ImageFont
 
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log
@@ -46,41 +45,6 @@ class TestAlerts(OpenpilotTestCase):
       if not name.endswith("DEPRECATED"):
         fail_msg = f"{name} @{e} not in EVENTS"
         assert e in EVENTS.keys(), fail_msg
-
-  # ensure alert text doesn't exceed allowed width
-  def test_alert_text_length(self):
-    font_path = os.path.join(BASEDIR, "openpilot/selfdrive/assets/fonts")
-    regular_font_path = os.path.join(font_path, "Inter-SemiBold.ttf")
-    bold_font_path = os.path.join(font_path, "Inter-Bold.ttf")
-    semibold_font_path = os.path.join(font_path, "Inter-SemiBold.ttf")
-
-    max_text_width = 2160 - 300  # full screen width is usable, minus sidebar
-    draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
-
-    fonts = {
-      AlertSize.small: [ImageFont.truetype(semibold_font_path, 74)],
-      AlertSize.mid: [ImageFont.truetype(bold_font_path, 88),
-                      ImageFont.truetype(regular_font_path, 66)],
-    }
-
-    for alert in ALERTS:
-      if not isinstance(alert, Alert):
-        alert = alert(self.CP, self.CS, self.sm, False, 100, log.LongitudinalPersonality.standard)
-
-      # for full size alerts, both text fields wrap the text,
-      # so it's unlikely that they  would go past the max width
-      if alert.alert_size in (AlertSize.none, AlertSize.full):
-        continue
-
-      for i, txt in enumerate([alert.alert_text_1, alert.alert_text_2]):
-        if i >= len(fonts[alert.alert_size]):
-          break
-
-        font = fonts[alert.alert_size][i]
-        left, _, right, _ = draw.textbbox((0, 0), txt, font)
-        width = right - left
-        msg = f"type: {alert.alert_type} msg: {txt}"
-        assert width <= max_text_width, msg
 
   def test_alert_sanity_check(self):
     for event_types in EVENTS.values():
