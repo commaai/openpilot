@@ -238,18 +238,6 @@ def run_parallel(batches, workers, warning_action, capture_output):
         yield [make_record(futures[future][0], "error", traceback.format_exc())]
 
 
-def show_result(item, verbose, column):
-  mark, code = STATUS_MARKS[item["status"]]
-  if verbose:
-    print(f"{paint(mark, code)} {item['id']} {item['time']:.2f}s")
-    return 0
-  print(paint(mark, code), end="", flush=True)
-  if column == 79:
-    print()
-    return 0
-  return column + 1
-
-
 def report(records, errors, duration_count, elapsed):
   width = min(100, os.get_terminal_size().columns if sys.stdout.isatty() else 80)
   for index, error in enumerate(errors, 1):
@@ -307,10 +295,9 @@ def main():
   tests, errors = collect(args.targets, args.k)
   batches = make_batches(tests, args.jobs)
   workers = min(args.jobs, len(batches))
-  print(
-    f"collected {len(tests)} test{'s' if len(tests) != 1 else ''} in {time.monotonic() - started:.2f}s "
-    f"• {workers} worker{'s' if workers != 1 else ''}"
-  )
+  summary = f"collected {len(tests)} test{'s' if len(tests) != 1 else ''} in {time.monotonic() - started:.2f}s "
+  summary += f"• {workers} worker{'s' if workers != 1 else ''}"
+  print(summary)
   records = []
   column = 0
   try:
@@ -321,7 +308,15 @@ def main():
     for batch in streams:
       records.extend(batch)
       for item in batch:
-        column = show_result(item, args.verbose, column)
+        mark, code = STATUS_MARKS[item["status"]]
+        if args.verbose:
+          print(f"{paint(mark, code)} {item['id']} {item['time']:.2f}s")
+        else:
+          print(paint(mark, code), end="", flush=True)
+          column += 1
+          if column == 80:
+            print()
+            column = 0
   except KeyboardInterrupt:
     print(paint("\ninterrupted", 31))
     return 2
