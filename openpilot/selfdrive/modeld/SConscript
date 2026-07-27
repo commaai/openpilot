@@ -24,7 +24,9 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
 def estimate_pickle_max_size(onnx_size):
-  return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
+  # QCOM programs for models with spatial recurrent features can approach 2x
+  # the ONNX size. Overestimating only adds an empty trailing chunk.
+  return 2.0 * onnx_size + 10 * 1024 * 1024
 
 # get fastest TG config
 # probe in subprocess so usbgpu locks gets released on process exit
