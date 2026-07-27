@@ -49,13 +49,13 @@ def test_cpu_backend_api():
       width = height = stride = 4
       uv_offset = 16
       fd = -1
-      data = bytes([128] * 24)
 
-    camera_rect = rl.Rectangle(0, 0, 4, 4)
-    rl.draw_nv12(Frame(), camera_rect, False, False, cache_key=1)
-    state.nv12_cache[1].future.result()
-    rl.draw_nv12(Frame(), camera_rect, False, False, cache_key=1, needs_update=False)
-    assert tuple(framebuffer[1, 1]) == (108, 108, 108, 255)
+    try:
+      rl.draw_nv12(Frame(), rl.Rectangle(0, 0, 4, 4), False)
+    except RuntimeError as exc:
+      assert "MDP" in str(exc)
+    else:
+      raise AssertionError("CPU camera rendering must not fall back without MDP")
 
     # Full and quarter rings use the optimized horizontal-span rasterizer.
     # Check every pixel against the same inclusive radius/axis semantics as

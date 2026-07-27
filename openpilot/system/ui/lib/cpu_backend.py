@@ -12,7 +12,6 @@ import pathlib
 import re
 import struct
 import time
-from concurrent.futures import Future, ThreadPoolExecutor
 from collections import OrderedDict
 from dataclasses import dataclass
 
@@ -95,19 +94,11 @@ def _load_native() -> ctypes.CDLL:
     sp, sp, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,
     ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint32,
   ]
-  lib.sr_blit_opaque.argtypes = [sp, sp, ctypes.c_int, ctypes.c_int]
   lib.sr_blit_many.argtypes = [sp, ctypes.POINTER(_BlitItem), ctypes.c_int, ctypes.c_uint32]
   lib.sr_blit_transform.argtypes = [
     sp, sp, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,
     ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,
     ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint32,
-  ]
-  lib.sr_draw_nv12_crop.argtypes = [
-    sp, ctypes.POINTER(ctypes.c_uint8),
-    ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-    ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,
-    ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-    ctypes.c_int, ctypes.c_int, ctypes.c_int,
   ]
   lib.sr_drm_init.argtypes = []
   lib.sr_drm_init.restype = ctypes.c_int
@@ -120,7 +111,7 @@ def _load_native() -> ctypes.CDLL:
     ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
     ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,
     ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-    ctypes.c_int, ctypes.c_int, ctypes.c_int,
+    ctypes.c_int, ctypes.c_int,
   ]
   lib.sr_drm_set_camera.restype = ctypes.c_int
   lib.sr_clear_transparent.argtypes = [
@@ -130,8 +121,8 @@ def _load_native() -> ctypes.CDLL:
   for name in (
     "sr_clear", "sr_set_clip", "sr_reset_clip", "sr_rect", "sr_gradient_v", "sr_gradient_4",
     "sr_rounded_rect", "sr_circle", "sr_circle_gradient", "sr_ring_arc", "sr_line",
-    "sr_triangle", "sr_ribbon", "sr_blit_scaled", "sr_blit_opaque", "sr_blit_many",
-    "sr_blit_transform", "sr_draw_nv12_crop", "sr_drm_camera_begin_frame",
+    "sr_triangle", "sr_ribbon", "sr_blit_scaled", "sr_blit_many",
+    "sr_blit_transform", "sr_drm_camera_begin_frame",
     "sr_clear_transparent", "sr_drm_close",
   ):
     getattr(lib, name).restype = None
@@ -143,16 +134,6 @@ class _TextureData:
   pixels: np.ndarray
   surface: _Surface
   filter_mode: int = 0
-
-
-@dataclass
-class _Nv12Data:
-  front: _TextureData
-  back: _TextureData
-  source: np.ndarray
-  settings: tuple[object, ...]
-  future: Future | None = None
-  has_front: bool = False
 
 
 class _State:
@@ -172,8 +153,6 @@ class _State:
     self.scaled_textures: OrderedDict[tuple[object, ...], _TextureData] = OrderedDict()
     self.render_targets: dict[int, _TextureData] = {}
     self.surface_stack: list[_Surface] = []
-    self.nv12_cache: dict[int, _Nv12Data] = {}
-    self.nv12_executor: ThreadPoolExecutor | None = None
     self.image_premultiplied: set[int] = set()
     self.font_storage: dict[int, tuple[object, object]] = {}
     self.font_maps: dict[int, dict[int, int]] = {}
@@ -200,18 +179,6 @@ class _State:
 
 
 state = _State()
-
-
-def _camera_worker_init() -> None:
-  if not _TICI:
-    return
-  try:
-    # ui.py runs FIFO on core 5. A worker created from that thread inherits
-    # both settings, which would serialize conversion with rasterization.
-    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
-    os.sched_setaffinity(0, {4})
-  except OSError:
-    pass
 
 
 def _pack(color) -> int:
@@ -298,10 +265,6 @@ def close_window() -> None:
   if state.touch_fd >= 0:
     os.close(state.touch_fd)
     state.touch_fd = -1
-  if state.nv12_executor is not None:
-    state.nv12_executor.shutdown(wait=True, cancel_futures=True)
-    state.nv12_executor = None
-  state.nv12_cache.clear()
   state.scaled_textures.clear()
   state.render_targets.clear()
   state.textures.clear()
@@ -922,20 +885,10 @@ def draw_texture_v(texture, position, tint) -> None:
   draw_texture_ex(texture, position, 0, 1, tint)
 
 
-def _convert_nv12(entry: _Nv12Data, frame_width: int, frame_height: int, stride: int, uv_offset: int,
-                  source_rect: tuple[float, float, float, float], flip_x: bool,
-                  engaged: bool, enhance_driver: bool) -> None:
-  source_x, source_y, source_width, source_height = source_rect
-  state.lib.sr_draw_nv12_crop(
-    ctypes.byref(entry.back.surface), entry.source.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-    frame_width, frame_height, stride, uv_offset, source_x, source_y, source_width, source_height,
-    0, 0, entry.back.surface.width, entry.back.surface.height,
-    int(flip_x), int(engaged), int(enhance_driver),
-  )
+def draw_nv12(frame, dest, engaged: bool, flip_x: bool = False) -> None:
+  if not state.drm:
+    raise RuntimeError("CPU camera rendering requires the MICI MDP display path")
 
-
-def draw_nv12(frame, dest, engaged: bool, enhance_driver: bool, flip_x: bool = False,
-              cache_key: int = 0, needs_update: bool = True) -> None:
   dx, dy, dw, dh = _transform_rect(dest.x, dest.y, dest.width, dest.height)
   full_x, full_y = round(dx), round(dy)
   full_width, full_height = max(1, round(dw)), max(1, round(dh))
@@ -950,49 +903,14 @@ def draw_nv12(frame, dest, engaged: bool, enhance_driver: bool, flip_x: bool = F
   source_y = (visible_y - full_y) * int(frame.height) / full_height
   source_width = width * int(frame.width) / full_width
   source_height = height * int(frame.height) / full_height
-  settings = (width, height, visible_x, visible_y, source_x, source_y, source_width, source_height,
-              int(frame.width), int(frame.height), int(frame.stride), int(frame.uv_offset),
-              int(flip_x), int(engaged), int(enhance_driver))
-  source_size = int(frame.uv_offset) + int(frame.stride) * ((int(frame.height) + 1) // 2)
-  if state.drm:
-    result = state.lib.sr_drm_set_camera(
-      int(frame.fd), int(frame.width), int(frame.height), int(frame.stride), int(frame.uv_offset),
-      source_x, source_y, source_width, source_height,
-      visible_x, visible_y, width, height, int(flip_x), int(engaged), int(enhance_driver),
-    )
-    if result == 0:
-      state.lib.sr_clear_transparent(ctypes.byref(state.surface), visible_x, visible_y, width, height)
-      return
-  entry = state.nv12_cache.get(cache_key)
-  if entry is None or entry.settings != settings:
-    front_pixels = np.empty((height, width, 4), dtype=np.uint8)
-    back_pixels = np.empty((height, width, 4), dtype=np.uint8)
-    entry = _Nv12Data(
-      _TextureData(front_pixels, state.make_surface(front_pixels)),
-      _TextureData(back_pixels, state.make_surface(back_pixels)),
-      np.empty(source_size, dtype=np.uint8), settings,
-    )
-    state.nv12_cache[cache_key] = entry
-    needs_update = True
-
-  if entry.future is not None and entry.future.done():
-    entry.future.result()
-    entry.front, entry.back = entry.back, entry.front
-    entry.has_front = True
-    entry.future = None
-
-  if needs_update and entry.future is None:
-    np.copyto(entry.source, np.frombuffer(frame.data, dtype=np.uint8, count=source_size))
-    if state.nv12_executor is None:
-      state.nv12_executor = ThreadPoolExecutor(
-        max_workers=1, thread_name_prefix="cpu-camera", initializer=_camera_worker_init,
-      )
-    entry.future = state.nv12_executor.submit(
-      _convert_nv12, entry, int(frame.width), int(frame.height), int(frame.stride), int(frame.uv_offset),
-      (source_x, source_y, source_width, source_height), flip_x, engaged, enhance_driver,
-    )
-  if entry.has_front:
-    state.lib.sr_blit_opaque(ctypes.byref(state.surface), ctypes.byref(entry.front.surface), visible_x, visible_y)
+  result = state.lib.sr_drm_set_camera(
+    int(frame.fd), int(frame.width), int(frame.height), int(frame.stride), int(frame.uv_offset),
+    source_x, source_y, source_width, source_height,
+    visible_x, visible_y, width, height, int(flip_x), int(engaged),
+  )
+  if result != 0:
+    raise RuntimeError(f"MDP camera plane setup failed: errno {-result}")
+  state.lib.sr_clear_transparent(ctypes.byref(state.surface), visible_x, visible_y, width, height)
 
 
 def set_target_fps(fps: int) -> None:

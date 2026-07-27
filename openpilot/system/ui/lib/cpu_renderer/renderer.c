@@ -560,13 +560,9 @@ static void release_camera_buffer(CameraBuffer *buffer) {
 int sr_drm_set_camera(int dma_fd, int width, int height, int stride, int uv_offset,
                       float source_x, float source_y, float source_width, float source_height,
                       int destination_x, int destination_y, int destination_width,
-                      int destination_height, int flip_x, int engaged, int enhance_driver) {
+                      int destination_height, int flip_x, int engaged) {
   if (!drm_state.mdp_camera || dma_fd < 0 || width <= 0 || height <= 0 ||
       stride <= 0 || uv_offset <= 0) return -ENOTSUP;
-  // The driver-camera shader uses a nonlinear smoothstep/gamma curve that the
-  // VIG plane cannot reproduce. Keep that infrequent view on the exact CPU
-  // path instead of silently changing its appearance.
-  if (enhance_driver) return -ENOTSUP;
   struct stat metadata;
   if (fstat(dma_fd, &metadata) != 0) return -errno;
   CameraBuffer *buffer = NULL;
@@ -701,96 +697,86 @@ int sr_drm_present(const Surface *surface) {
   if (buffer_result != 0) return buffer_result;
   int ret;
   if (drm_state.mdp_ui || drm_state.mdp_camera) {
-    int camera_failed = 0;
-    for (;;) {
-      drmModeAtomicReq *request = drmModeAtomicAlloc();
-      if (!request) return -ENOMEM;
+    drmModeAtomicReq *request = drmModeAtomicAlloc();
+    if (!request) return -ENOMEM;
 #define ADD_ATOMIC(object, property, value) \
-      do { if (drmModeAtomicAddProperty(request, (object), (property), (value)) < 0) { \
-        drmModeAtomicFree(request); return -errno; \
-      } } while (0)
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_fb_id_prop, next->fb_id);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_x_prop, 0);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_y_prop, 0);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_w_prop, physical_width);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_h_prop, physical_height);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_x_prop, 0);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_y_prop, 0);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_w_prop, (uint64_t)surface->width << 16);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_h_prop, (uint64_t)surface->height << 16);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rotation_prop,
-                 drm_state.mdp_ui ?
-                   (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90) :
-                   DRM_MODE_ROTATE_0);
-      if (drm_state.mdp_ui) {
-        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_x_prop, 0);
-        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_y_prop, 0);
-        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_w_prop,
-                   (uint64_t)physical_width << 16);
-        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_h_prop,
-                   (uint64_t)physical_height << 16);
-      }
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_zpos_prop, 1);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_blend_prop, 2);  // premultiplied
-      if (drm_state.camera_active) {
-        const int camera_x = drm_state.mdp_ui ? drm_state.camera_dst_x : drm_state.clockwise ?
-            surface->height - drm_state.camera_dst_y - drm_state.camera_dst_h :
-            drm_state.camera_dst_y;
-        const int camera_y = drm_state.mdp_ui ? drm_state.camera_dst_y : drm_state.clockwise ?
-            drm_state.camera_dst_x :
-            surface->width - drm_state.camera_dst_x - drm_state.camera_dst_w;
-        const int camera_w = drm_state.mdp_ui ? drm_state.camera_dst_w : drm_state.camera_dst_h;
-        const int camera_h = drm_state.mdp_ui ? drm_state.camera_dst_h : drm_state.camera_dst_w;
-        const uint64_t rotation =
-            (drm_state.mdp_ui ? DRM_MODE_ROTATE_0 :
-             (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90)) |
-            (drm_state.camera_flip_x ? DRM_MODE_REFLECT_X : 0);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, drm_state.camera_fb_id);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_x_prop, camera_x);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_y_prop, camera_y);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_w_prop, camera_w);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_h_prop, camera_h);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_x_prop, (uint64_t)drm_state.camera_src_x << 16);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_y_prop, (uint64_t)drm_state.camera_src_y << 16);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_w_prop, (uint64_t)drm_state.camera_src_w << 16);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_h_prop, (uint64_t)drm_state.camera_src_h << 16);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rotation_prop, rotation);
-        // MICI uses a video-mode DSI panel. The SDE driver rejects >=1.1x
-        // QSEED downscale following inline rotation, but the rotator itself can
-        // downscale NV12 by an integral 2x. Its tiled output is then modestly
-        // upscaled by QSEED to the display rectangle.
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_x_prop, 0);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_y_prop, 0);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_w_prop,
-                   (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_w : drm_state.camera_src_h) / 2) << 16);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_h_prop,
-                   (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_h : drm_state.camera_src_w) / 2) << 16);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_zpos_prop, 0);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_alpha_prop, drm_state.camera_alpha);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_csc_prop,
-                   drm_state.camera_engaged ? (uint64_t)(uintptr_t)&engaged_camera_csc : 0);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_blend_prop, 1);  // opaque
-      } else if (drm_state.mdp_camera) {
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, 0);
-        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, 0);
-      }
-#undef ADD_ATOMIC
-      // The downstream SDE driver completes blocking atomic commits at vblank
-      // but does not reliably emit a generic DRM page-flip event for them.
-      ret = drmModeAtomicCommit(drm_state.fd, request, 0, NULL);
-      const int commit_errno = errno;
-      drmModeAtomicFree(request);
-      if (ret == 0) break;
-      if (!drm_state.camera_active) return -commit_errno;
-
-      // Retry without the camera plane and use CPU conversion on later frames.
-      fprintf(stderr, "CPU DRM camera plane failed: %s\n", strerror(commit_errno));
-      drm_state.camera_active = 0;
-      camera_failed = 1;
+    do { if (drmModeAtomicAddProperty(request, (object), (property), (value)) < 0) { \
+      drmModeAtomicFree(request); return -errno; \
+    } } while (0)
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_fb_id_prop, next->fb_id);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_x_prop, 0);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_y_prop, 0);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_w_prop, physical_width);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_h_prop, physical_height);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_x_prop, 0);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_y_prop, 0);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_w_prop, (uint64_t)surface->width << 16);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_h_prop, (uint64_t)surface->height << 16);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rotation_prop,
+               drm_state.mdp_ui ?
+                 (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90) :
+                 DRM_MODE_ROTATE_0);
+    if (drm_state.mdp_ui) {
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_x_prop, 0);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_y_prop, 0);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_w_prop,
+                 (uint64_t)physical_width << 16);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_h_prop,
+                 (uint64_t)physical_height << 16);
     }
-    if (camera_failed) drm_state.mdp_camera = 0;
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_zpos_prop, 1);
+    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_blend_prop, 2);  // premultiplied
+    if (drm_state.camera_active) {
+      const int camera_x = drm_state.mdp_ui ? drm_state.camera_dst_x : drm_state.clockwise ?
+          surface->height - drm_state.camera_dst_y - drm_state.camera_dst_h :
+          drm_state.camera_dst_y;
+      const int camera_y = drm_state.mdp_ui ? drm_state.camera_dst_y : drm_state.clockwise ?
+          drm_state.camera_dst_x :
+          surface->width - drm_state.camera_dst_x - drm_state.camera_dst_w;
+      const int camera_w = drm_state.mdp_ui ? drm_state.camera_dst_w : drm_state.camera_dst_h;
+      const int camera_h = drm_state.mdp_ui ? drm_state.camera_dst_h : drm_state.camera_dst_w;
+      const uint64_t rotation =
+          (drm_state.mdp_ui ? DRM_MODE_ROTATE_0 :
+           (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90)) |
+          (drm_state.camera_flip_x ? DRM_MODE_REFLECT_X : 0);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, drm_state.camera_fb_id);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_x_prop, camera_x);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_y_prop, camera_y);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_w_prop, camera_w);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_h_prop, camera_h);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_x_prop, (uint64_t)drm_state.camera_src_x << 16);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_y_prop, (uint64_t)drm_state.camera_src_y << 16);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_w_prop, (uint64_t)drm_state.camera_src_w << 16);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_h_prop, (uint64_t)drm_state.camera_src_h << 16);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rotation_prop, rotation);
+      // MICI uses a video-mode DSI panel. The SDE driver rejects >=1.1x
+      // QSEED downscale following inline rotation, but the rotator itself can
+      // downscale NV12 by an integral 2x. Its tiled output is then modestly
+      // upscaled by QSEED to the display rectangle.
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_x_prop, 0);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_y_prop, 0);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_w_prop,
+                 (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_w : drm_state.camera_src_h) / 2) << 16);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_h_prop,
+                 (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_h : drm_state.camera_src_w) / 2) << 16);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_zpos_prop, 0);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_alpha_prop, drm_state.camera_alpha);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_csc_prop,
+                 drm_state.camera_engaged ? (uint64_t)(uintptr_t)&engaged_camera_csc : 0);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_blend_prop, 1);  // opaque
+    } else if (drm_state.mdp_camera) {
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, 0);
+      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, 0);
+    }
+#undef ADD_ATOMIC
+    // The downstream SDE driver completes blocking atomic commits at vblank
+    // but does not reliably emit a generic DRM page-flip event for them.
+    ret = drmModeAtomicCommit(drm_state.fd, request, 0, NULL);
+    const int commit_errno = errno;
+    drmModeAtomicFree(request);
+    if (ret != 0) return -commit_errno;
     drm_state.displayed_camera_fb_id =
         drm_state.camera_active ? drm_state.camera_fb_id : 0;
     // Inline-rotator commits complete before the 60 Hz panel scanout and
@@ -885,11 +871,11 @@ void sr_drm_camera_begin_frame(void) {}
 int sr_drm_set_camera(int dma_fd, int width, int height, int stride, int uv_offset,
                       float source_x, float source_y, float source_width, float source_height,
                       int destination_x, int destination_y, int destination_width,
-                      int destination_height, int flip_x, int engaged, int enhance_driver) {
+                      int destination_height, int flip_x, int engaged) {
   (void)dma_fd; (void)width; (void)height; (void)stride; (void)uv_offset;
   (void)source_x; (void)source_y; (void)source_width; (void)source_height;
   (void)destination_x; (void)destination_y; (void)destination_width;
-  (void)destination_height; (void)flip_x; (void)engaged; (void)enhance_driver;
+  (void)destination_height; (void)flip_x; (void)engaged;
   return -1;
 }
 void sr_clear_transparent(Surface *surface, int x, int y, int width, int height) {
@@ -1398,21 +1384,6 @@ void sr_ribbon(Surface *s, const Point *perimeter, int count,
   }
 }
 
-void sr_blit_opaque(Surface *dst, const Surface *src, int dx, int dy) {
-  int sx = 0, sy = 0;
-  int width = src->width, height = src->height;
-  if (dx < dst->clip_x0) { sx = dst->clip_x0 - dx; width -= sx; dx = dst->clip_x0; }
-  if (dy < dst->clip_y0) { sy = dst->clip_y0 - dy; height -= sy; dy = dst->clip_y0; }
-  if (dx + width > dst->clip_x1) width = dst->clip_x1 - dx;
-  if (dy + height > dst->clip_y1) height = dst->clip_y1 - dy;
-  if (width <= 0 || height <= 0) return;
-  for (int y = 0; y < height; ++y) {
-    void *out = dst->pixels + (dy + y) * dst->stride + dx * 4;
-    const void *in = src->pixels + (sy + y) * src->stride + sx * 4;
-    memcpy(out, in, (size_t)width * 4);
-  }
-}
-
 static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, float src_y, float src_w, float src_h,
                                 int dst_x, int dst_y, int dst_w, int dst_h, uint32_t tint) {
   if (dst_w <= 0 || dst_h <= 0 || src_w == 0 || src_h == 0) return;
@@ -1629,80 +1600,6 @@ void sr_blit_transform(Surface *dst, const Surface *src, float src_x, float src_
       const uint32_t g = (((p >> 8) & 255) * tg * ta + 32512) / 65025;
       const uint32_t b = ((p & 255) * tb * ta + 32512) / 65025;
       out[x] = blend(out[x], (a << 24) | (r << 16) | (g << 8) | b);
-    }
-  }
-}
-
-static inline uint8_t clamp_u8(int value) {
-  return value < 0 ? 0 : (value > 255 ? 255 : (uint8_t)value);
-}
-
-static uint8_t engaged_gamma_lut[256];
-static uint8_t driver_enhance_lut[256];
-static int camera_luts_initialized = 0;
-
-static void init_camera_luts(void) {
-  if (camera_luts_initialized) return;
-  for (int value = 0; value < 256; ++value) {
-    engaged_gamma_lut[value] = clamp_u8((int)roundf(powf(value / 255.0f, 1.0f / 1.28f) * 255));
-    float enhanced = fminf(fmaxf(value / 255.0f + .15f, 0), 1);
-    enhanced = fminf(fmaxf((enhanced - .5f) * .88f + .5f, 0), 1);
-    enhanced = enhanced * enhanced * (3 - 2 * enhanced);
-    driver_enhance_lut[value] = clamp_u8((int)roundf(powf(enhanced, .8f) * 255));
-  }
-  camera_luts_initialized = 1;
-}
-
-void sr_draw_nv12_crop(Surface *dst, const uint8_t *data, int frame_width, int frame_height,
-                       int stride, int uv_offset, float source_x, float source_y,
-                       float source_width, float source_height,
-                       int dx, int dy, int dw, int dh, int flip_x, int engaged, int enhance_driver) {
-  if (!data || dw <= 0 || dh <= 0) return;
-  init_camera_luts();
-  for (int y = 0; y < dh; ++y) {
-    const int py = dy + y;
-    if (py < dst->clip_y0 || py >= dst->clip_y1) continue;
-    int sy = (int)(source_y + ((y + .5f) * source_height) / dh);
-    if (sy < 0) sy = 0;
-    if (sy >= frame_height) sy = frame_height - 1;
-    uint32_t *out = (uint32_t *)(dst->pixels + py * dst->stride);
-    for (int x = 0; x < dw; ++x) {
-      const int px = dx + x;
-      if (px < dst->clip_x0 || px >= dst->clip_x1) continue;
-      int sx = (int)(source_x + ((x + .5f) * source_width) / dw);
-      if (sx < 0) sx = 0;
-      if (sx >= frame_width) sx = frame_width - 1;
-      if (flip_x) sx = frame_width - 1 - sx;
-      const int yy = data[sy * stride + sx];
-      const int uv_index = uv_offset + (sy / 2) * stride + (sx & ~1);
-      const int u = (int)data[uv_index] - 128;
-      const int v = (int)data[uv_index + 1] - 128;
-      int r = yy + ((359 * v) >> 8);
-      int g = yy - ((88 * u + 183 * v) >> 8);
-      int b = yy + ((454 * u) >> 8);
-      r = clamp_u8(r); g = clamp_u8(g); b = clamp_u8(b);
-      if (engaged) {
-        const int gray = (77 * r + 150 * g + 29 * b) >> 8;
-        r = (gray * 4 + r) / 5;
-        g = (gray * 4 + g) / 5;
-        b = (gray * 4 + b) / 5;
-        r = clamp_u8(((r - 128) * 307 >> 8) + 128);
-        g = clamp_u8(((g - 128) * 307 >> 8) + 128);
-        b = clamp_u8(((b - 128) * 307 >> 8) + 128);
-        r = engaged_gamma_lut[r];
-        g = engaged_gamma_lut[g];
-        b = engaged_gamma_lut[b];
-      } else {
-        r = r * 217 / 255;
-        g = g * 217 / 255;
-        b = b * 217 / 255;
-      }
-      if (enhance_driver) {
-        r = driver_enhance_lut[r];
-        g = driver_enhance_lut[g];
-        b = driver_enhance_lut[b];
-      }
-      out[px] = 0xff000000U | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
     }
   }
 }

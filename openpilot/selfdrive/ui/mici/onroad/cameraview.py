@@ -264,10 +264,7 @@ class CameraView(Widget):
     # Render with appropriate method
     if rl.using_cpu_backend():
       rl.draw_nv12(self.frame, dst_rect, ui_state.status != UIStatus.DISENGAGED,
-                   self._stream_type == VisionStreamType.VISION_STREAM_DRIVER,
-                   self._stream_type == VisionStreamType.VISION_STREAM_DRIVER,
-                   id(self), self._texture_needs_update)
-      self._texture_needs_update = False
+                   self._stream_type == VisionStreamType.VISION_STREAM_DRIVER)
     elif TICI:
       self._render_egl(src_rect, dst_rect)
     else:
