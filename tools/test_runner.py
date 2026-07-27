@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Fast, friendly, parallel unittest runner."""
-
 import argparse
 from collections import Counter
 from concurrent.futures import as_completed, ProcessPoolExecutor
@@ -39,8 +37,6 @@ def paint(text, code):
 
 
 class Capture:
-  """Capture Python, native, and subprocess writes to stdout/stderr."""
-
   def __init__(self, enabled):
     self.enabled = enabled
 
