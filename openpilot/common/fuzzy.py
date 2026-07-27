@@ -26,7 +26,7 @@ _INTEGER_RANGES = {
 }
 
 # One seed is shared by the whole test process. Individual tests derive their seed
-# from their unittest ID, so FUZZ_SEED is reproducible under pytest-xdist too.
+# from their unittest ID, so FUZZ_SEED is reproducible under the parallel runner too.
 FUZZ_SEED = int(os.environ.get("FUZZ_SEED", secrets.randbits(64)))
 
 

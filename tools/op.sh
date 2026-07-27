@@ -325,7 +325,7 @@ function op_lint() {
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest -n logical --dist worksteal "$@"
+  op_run_command tools/test_runner.py "$@"
 }
 
 function op_replay() {
