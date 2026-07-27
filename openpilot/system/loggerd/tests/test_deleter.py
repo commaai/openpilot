@@ -9,6 +9,7 @@ Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 
 
 class TestDeleter(UploaderTestCase):
+  # Deletion behavior is independent of file size; use smaller files to keep these tests fast.
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .001, lock: bool = False,
                           upload_xattr: bytes | None = None, preserve_xattr: bytes | None = None) -> Path:
     return super().make_file_with_data(f_dir, fn, size_mb, lock, upload_xattr, preserve_xattr)
