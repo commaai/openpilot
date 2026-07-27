@@ -604,9 +604,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-dev = [
-    { name = "matplotlib" },
-]
 submodules = [
     { name = "msgq" },
     { name = "opendbc" },
@@ -626,6 +623,7 @@ tools = [
     { name = "comma-deps-imgui" },
     { name = "comma-deps-libusb" },
     { name = "comma-deps-ncurses" },
+    { name = "matplotlib" },
 ]
 
 [package.dev-dependencies]
@@ -652,7 +650,7 @@ requires-dist = [
     { name = "coverage", marker = "extra == 'testing'" },
     { name = "inputs" },
     { name = "jeepney" },
-    { name = "matplotlib", marker = "extra == 'dev'" },
+    { name = "matplotlib", marker = "extra == 'tools'" },
     { name = "msgq", marker = "extra == 'submodules'", editable = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
@@ -675,7 +673,7 @@ requires-dist = [
     { name = "websocket-client" },
     { name = "zstandard" },
 ]
-provides-extras = ["testing", "dev", "tools", "submodules"]
+provides-extras = ["testing", "tools", "submodules"]
 
 [package.metadata.requires-dev]
 standalone = [{ name = "openpilot", extras = ["submodules"] }]

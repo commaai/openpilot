@@ -56,11 +56,9 @@ testing = [
   "codespell",  # spellcheck
 ]
 
-dev = [
-  "matplotlib",
-]
-
 tools = [
+  "matplotlib",
+
   "comma-deps-imgui",
   "comma-deps-bootstrap-icons",
   "comma-deps-libusb",
