@@ -6,7 +6,7 @@ from openpilot.cereal import messaging
 from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
-from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
+from openpilot.cereal.migration import migrate, migrate_carParams
 from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader
 

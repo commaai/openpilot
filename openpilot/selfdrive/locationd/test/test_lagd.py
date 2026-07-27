@@ -8,7 +8,7 @@ from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
                                                BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC, VERSION, MIN_LAG, MAX_LAG
-from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
+from openpilot.cereal.migration import migrate, migrate_carParams
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
 from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader

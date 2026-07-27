@@ -14,7 +14,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.cabana.dbc.generate_dbc_json import generate_dbc_dict
 from openpilot.tools.lib.logreader import LogReader, ReadMode, save_log
-from openpilot.selfdrive.test.process_replay.migration import migrate_all
+from openpilot.cereal.migration import migrate_all
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 

@@ -19,7 +19,7 @@ from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.framereader import FrameReader, ffprobe
-from openpilot.selfdrive.test.process_replay.migration import migrate_all
+from openpilot.cereal.migration import migrate_all
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.utils import Timer
 from msgq.visionipc import VisionIpcServer, VisionStreamType
