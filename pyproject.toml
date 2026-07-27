@@ -54,10 +54,6 @@ testing = [
   "ty",         # type checking
   "ruff",       # linting
   "codespell",  # spellcheck
-
-  # TODO: replace these with our own nice simple test runner
-  "pytest",
-  "pytest-xdist",
 ]
 
 dev = [
@@ -102,14 +98,6 @@ packages = [
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-Werror --strict-config --durations=10"
-python_files = "test_*.py"
-testpaths = [
-  "openpilot",
-]
 
 [tool.codespell]
 quiet-level = 3
