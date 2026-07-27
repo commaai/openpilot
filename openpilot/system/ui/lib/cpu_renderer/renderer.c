@@ -1171,6 +1171,46 @@ void sr_ring_arc(Surface *s, int cx, int cy, int inner_radius, int outer_radius,
   const uint32_t src = premultiply(color);
   const int inner2 = inner_radius * inner_radius;
   const int outer2 = outer_radius * outer_radius;
+
+  // The on-road UI's rounded camera border is four exact quarter-rings, and
+  // the confidence ball is a full ring. Rasterize those as horizontal spans
+  // instead of evaluating atan2/fmod for every pixel in the outer square.
+  const int full = start_angle == 0.0f && end_angle == 360.0f;
+  const int quadrant =
+    start_angle == 180.0f && end_angle == 270.0f ? 0 :
+    start_angle == 270.0f && end_angle == 360.0f ? 1 :
+    start_angle == 0.0f && end_angle == 90.0f ? 2 :
+    start_angle == 90.0f && end_angle == 180.0f ? 3 : -1;
+  if (full || quadrant >= 0) {
+    for (int y = -outer_radius; y <= outer_radius; ++y) {
+      if ((quadrant <= 1 && quadrant >= 0 && y > 0) || (quadrant >= 2 && y < 0)) continue;
+      const int py = cy + y;
+      if (py < s->clip_y0 || py >= s->clip_y1) continue;
+      const int outer_half = (int)sqrtf((float)(outer2 - y * y));
+      const int inner_remaining = inner2 - y * y;
+      const int inner_min = inner_remaining <= 0 ? 0 : (int)ceilf(sqrtf((float)inner_remaining));
+      uint32_t *row = (uint32_t *)(s->pixels + py * s->stride);
+      for (int side = 0; side < 2; ++side) {
+        if (full && inner_min == 0 && side == 1) continue;
+        if (quadrant >= 0 && side != (quadrant == 0 || quadrant == 3 ? 0 : 1)) continue;
+        int x0 = side == 0 ? cx - outer_half : cx + inner_min;
+        int x1 = side == 0 ? (full && inner_min == 0 ? cx + outer_half + 1 : cx - inner_min + 1)
+                           : cx + outer_half + 1;
+        if (x0 < s->clip_x0) x0 = s->clip_x0;
+        if (x1 > s->clip_x1) x1 = s->clip_x1;
+        if (x0 >= x1) continue;
+#if defined(__aarch64__)
+        if (use_neon_raster()) {
+          blend_solid_span_neon(row + x0, x1 - x0, src);
+          continue;
+        }
+#endif
+        for (int x = x0; x < x1; ++x) row[x] = blend(row[x], src);
+      }
+    }
+    return;
+  }
+
   for (int y = -outer_radius; y <= outer_radius; ++y) {
     const int py = cy + y;
     if (py < s->clip_y0 || py >= s->clip_y1) continue;

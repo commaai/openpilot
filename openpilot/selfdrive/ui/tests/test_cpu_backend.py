@@ -45,6 +45,27 @@ def test_cpu_backend_api():
     rl.draw_line_ex((2, 45), (20, 30), 3, rl.WHITE)
     rl.draw_spline_linear([(1, 1), (10, 4), (20, 1)], 3, 2, rl.WHITE)
 
+    # Full and quarter rings use the optimized horizontal-span rasterizer.
+    # Check every pixel against the same inclusive radius/axis semantics as
+    # the generic arc path.
+    ring_cases = (
+      (0, 360, lambda x, y: True),
+      (180, 270, lambda x, y: x <= 0 and y <= 0),
+      (270, 360, lambda x, y: x >= 0 and y <= 0),
+      (0, 90, lambda x, y: x >= 0 and y >= 0),
+      (90, 180, lambda x, y: x <= 0 and y >= 0),
+    )
+    center_x, center_y, inner, outer = 32, 24, 5, 10
+    for start, end, in_quadrant in ring_cases:
+      rl.clear_background(rl.BLANK)
+      rl.draw_ring((center_x, center_y), inner, outer, start, end, 16, rl.WHITE)
+      alpha = framebuffer()[:, :, 3]
+      for y in range(48):
+        for x in range(64):
+          dx, dy = x - center_x, y - center_y
+          expected = inner * inner <= dx * dx + dy * dy <= outer * outer and in_quadrant(dx, dy)
+          assert (alpha[y, x] == 255) == expected, (start, end, x, y)
+
     burn_shader = rl.load_shader_from_memory("", "// highlight burn-in risk")
     burn_target = rl.load_render_texture(4, 1)
     rl.begin_texture_mode(burn_target)
