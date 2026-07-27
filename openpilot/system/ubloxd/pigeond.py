@@ -3,7 +3,7 @@ import sys
 import time
 import signal
 import struct
-import requests
+from openpilot.common import http
 import urllib.parse
 from datetime import datetime, UTC
 
@@ -44,7 +44,7 @@ def add_ubx_checksum(msg: bytes) -> bytes:
 def get_assistnow_messages(token: str) -> list[bytes]:
   # make request
   # TODO: implement adding the last known location
-  r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
+  r = http.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
     'token': token,
     'gnss': 'gps,glo',
     'datatype': 'eph,alm,aux',

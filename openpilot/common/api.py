@@ -1,7 +1,8 @@
 import jwt
 import os
-import requests
 from datetime import datetime, timedelta, UTC
+
+from openpilot.common import http
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.version import get_version
 
@@ -52,7 +53,7 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, session=Non
   headers['User-Agent'] = "openpilot-" + get_version()
 
   # TODO: add session to Api
-  req = requests if session is None else session
+  req = http if session is None else session
   return req.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
 
 

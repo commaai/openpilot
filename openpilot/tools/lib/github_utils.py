@@ -1,6 +1,7 @@
 import base64
-import requests
-from http import HTTPMethod
+from http import HTTPMethod as StdlibHTTPMethod
+
+from openpilot.common import http
 
 class GithubUtils:
   def __init__(self, api_token, data_token, owner='commaai', api_repo='openpilot', data_repo='ci-artifacts'):
@@ -18,7 +19,7 @@ class GithubUtils:
   def DATA_ROUTE(self):
     return f"https://api.github.com/repos/{self.OWNER}/{self.DATA_REPO}"
 
-  def api_call(self, path, data="", method=HTTPMethod.GET, accept="", data_call=False, raise_on_failure=True):
+  def api_call(self, path, data="", method=StdlibHTTPMethod.GET, accept="", data_call=False, raise_on_failure=True):
     token = self.DATA_TOKEN if data_call else self.API_TOKEN
     if token:
       headers = {"Authorization": f"Bearer {self.DATA_TOKEN if data_call else self.API_TOKEN}", \
@@ -26,7 +27,7 @@ class GithubUtils:
     else:
       headers = {}
     path = f'{self.DATA_ROUTE if data_call else self.API_ROUTE}/{path}'
-    r = requests.request(method, path, headers=headers, data=data)
+    r = http.request(method, path, headers=headers, data=data)
     if not r.ok and raise_on_failure:
       raise Exception(f"Call to {path} failed with {r.status_code}")
     else:
@@ -46,7 +47,7 @@ class GithubUtils:
                     {sha} \
                     "content":"{encoded}"}}'
       github_path = f"contents/{file_name}"
-      self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True)
+      self.api_call(github_path, data=data, method=StdlibHTTPMethod.PUT, data_call=True)
 
   def upload_files(self, bucket, files):
     self.create_bucket(bucket)
@@ -59,7 +60,7 @@ class GithubUtils:
     master_sha = self.get_bucket_sha('master')
     github_path = "git/refs"
     data = f'{{"ref":"refs/heads/{bucket}", "sha":"{master_sha}"}}'
-    self.api_call(github_path, data=data, method=HTTPMethod.POST, data_call=True)
+    self.api_call(github_path, data=data, method=StdlibHTTPMethod.POST, data_call=True)
 
   def get_bucket_sha(self, bucket):
     github_path = f"git/ref/heads/{bucket}"
@@ -93,10 +94,10 @@ class GithubUtils:
       comments = [x['id'] for x in r.json() if x['user']['login'] == commenter]
       if comments:
         github_path = f'issues/comments/{comments[0]}'
-        self.api_call(github_path, data=data, method=HTTPMethod.PATCH)
+        self.api_call(github_path, data=data, method=StdlibHTTPMethod.PATCH)
         return
 
-    self.api_call(github_path, data=data, method=HTTPMethod.POST)
+    self.api_call(github_path, data=data, method=StdlibHTTPMethod.POST)
 
   # upload files to github and comment them on the pr
   def comment_images_on_pr(self, title, commenter, pr_branch, bucket, images):

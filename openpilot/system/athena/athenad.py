@@ -19,8 +19,7 @@ from queue import Queue
 from typing import cast
 from collections.abc import Callable
 
-import requests
-from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
+from openpilot.common import http
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
 
@@ -71,15 +70,7 @@ UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
 
-class UploadTOSAdapter(HTTPAdapter):
-  def init_poolmanager(self, connections, maxsize, block=DEFAULT_POOLBLOCK, **pool_kwargs):
-    pool_kwargs["socket_options"] = [(socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)]
-    super().init_poolmanager(connections, maxsize, block, **pool_kwargs)
-
-
-UPLOAD_SESS = requests.Session()
-UPLOAD_SESS.mount("http://", UploadTOSAdapter())
-UPLOAD_SESS.mount("https://", UploadTOSAdapter())
+UPLOAD_SESS = http.Session(socket_options=[(socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)])
 
 
 @dataclass
@@ -306,7 +297,7 @@ def upload_handler(end_event: threading.Event) -> None:
             cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
 
         UploadQueueCache.cache(upload_queue)
-      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
+      except (http.Timeout, http.ConnectionError, http.SSLError):
         cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type, metered=metered)
         retry_upload(tid, end_event)
       except AbortTransferException:
@@ -319,7 +310,7 @@ def upload_handler(end_event: threading.Event) -> None:
       cloudlog.exception("athena.upload_handler.exception")
 
 
-def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> requests.Response:
+def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> http.Response:
   path = upload_item.path
   compress = False
 

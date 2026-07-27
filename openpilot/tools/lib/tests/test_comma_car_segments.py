@@ -1,5 +1,5 @@
 import unittest
-import requests
+from openpilot.common import http
 from opendbc.car.fingerprints import MIGRATION
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.tools.lib.comma_car_segments import get_comma_car_segments_database, get_url
@@ -27,7 +27,7 @@ class TestCommaCarSegments(OpenpilotTestCase):
 
     url = get_url(sr.route_name, sr.slice)
 
-    resp = requests.get(url)
+    resp = http.get(url)
     assert resp.status_code == 200
 
     lr = LogReader(url)

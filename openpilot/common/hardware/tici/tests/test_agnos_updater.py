@@ -1,6 +1,7 @@
 import json
 import os
-import requests
+
+from openpilot.common import http
 
 TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST = os.path.join(TEST_DIR, "../agnos.json")
@@ -14,7 +15,7 @@ class TestAgnosUpdater(OpenpilotTestCase):
       m = json.load(f)
 
     for img in m:
-      r = requests.head(img['url'], timeout=10)
+      r = http.head(img['url'], timeout=10)
       r.raise_for_status()
       assert r.headers['Content-Type'] == "application/x-xz"
       if not img['sparse']:

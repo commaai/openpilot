@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import requests
+from openpilot.common import http
 from openpilot.common.params import Params
 import sys
 
@@ -11,7 +11,7 @@ if __name__ == "__main__":
     exit(1)
 
   username = sys.argv[1]
-  keys = requests.get(f"https://github.com/{username}.keys", timeout=10)
+  keys = http.get(f"https://github.com/{username}.keys", timeout=10)
 
   if keys.status_code == 200:
     params = Params()

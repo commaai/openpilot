@@ -11,7 +11,7 @@ authors = [
 dependencies = [
   # multiple users
   "sounddevice",  # micd + soundd
-  "requests",     # many one-off uses
+  "urllib3",      # HTTP
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
   # core

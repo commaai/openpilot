@@ -8,7 +8,7 @@ import subprocess
 import time
 from collections.abc import Generator
 
-import requests
+from openpilot.common import http
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
@@ -19,7 +19,7 @@ class StreamingDecompressor:
   def __init__(self, url: str) -> None:
     self.buf = b""
 
-    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': 'identity'}, timeout=60)
+    self.req = http.get(url, stream=True, headers={'Accept-Encoding': 'identity'}, timeout=60)
     self.it = self.req.iter_content(chunk_size=1024 * 1024)
     self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
     self.eof = False
@@ -239,7 +239,7 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, st
         success = True
         break
 
-      except requests.exceptions.RequestException:
+      except http.RequestException:
         cloudlog.exception("Failed")
         cloudlog.info(f"Failed to download {partition['name']}, retrying ({retries})")
         time.sleep(10)

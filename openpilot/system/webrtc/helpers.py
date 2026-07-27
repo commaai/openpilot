@@ -1,5 +1,5 @@
 import time
-import requests
+from openpilot.common import http
 from dataclasses import asdict, dataclass, field
 
 
@@ -17,14 +17,14 @@ class StreamRequestBody:
 def post_stream_request(body: StreamRequestBody) -> dict:
   t_start = time.monotonic()
   try:
-    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
+    resp = http.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
     t_end = time.monotonic()
     ret = resp.json()
     ret["time"] = (t_end - t_start) * 1000
     return ret
-  except requests.ConnectTimeout as e:
+  except http.ConnectTimeout as e:
     raise Exception("webrtc took too long to respond.") from e
-  except requests.ConnectionError as e:
+  except http.ConnectionError as e:
     raise Exception("webrtc server on device is not running.") from e
 
 
@@ -32,9 +32,9 @@ def wait_for_webrtcd(max_retries: float = 10) -> None:
   attempts = 0
   while attempts < max_retries:
     try:
-      if requests.get(f"http://localhost:{WEBRTCD_PORT}/schema", timeout=1).ok:
+      if http.get(f"http://localhost:{WEBRTCD_PORT}/schema", timeout=1).ok:
         return
-    except requests.ConnectionError:
+    except http.ConnectionError:
       attempts += 1
       time.sleep(0.5)
   raise TimeoutError("webrtcd did not initialize in time.")

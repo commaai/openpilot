@@ -2,7 +2,7 @@
 import json
 import os
 import random
-import requests
+from openpilot.common import http
 import threading
 import time
 import traceback
@@ -153,8 +153,8 @@ class Uploader:
     stream = None
     try:
       compress = key.endswith('.zst') and not fn.endswith('.zst')
-      stream, _ = get_upload_stream(fn, compress)
-      response = requests.put(url, data=stream, headers=headers, timeout=10)
+      stream, content_length = get_upload_stream(fn, compress)
+      response = http.put(url, data=stream, headers={**headers, "Content-Length": str(content_length)}, timeout=10)
       return response
     finally:
       if stream:

@@ -1,5 +1,5 @@
 import pyray as rl
-import requests
+from openpilot.common import http
 import threading
 from collections.abc import Callable
 from enum import Enum
@@ -53,15 +53,15 @@ class SshKeyFetcher:
 
   def _fetch_thread(self, username: str):
     try:
-      response = requests.get(f"https://github.com/{username}.keys", timeout=self.HTTP_TIMEOUT)
+      response = http.get(f"https://github.com/{username}.keys", timeout=self.HTTP_TIMEOUT)
       response.raise_for_status()
       keys = response.text.strip()
       if not keys:
-        raise requests.exceptions.HTTPError("No SSH keys found")
+        raise http.HTTPError("No SSH keys found")
 
       self._params.put("GithubUsername", username, block=True)
       self._params.put("GithubSshKeys", keys, block=True)
-    except requests.exceptions.Timeout:
+    except http.Timeout:
       self._error = tr("Request timed out")
     except Exception:
       self._error = tr("No SSH keys found for user '{}'").format(username)

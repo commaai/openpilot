@@ -1,6 +1,6 @@
 import os
 import re
-import requests
+from openpilot.common import http
 from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
@@ -195,7 +195,7 @@ class Segment:
   def events(self):
     if not self._events:
       try:
-        resp = requests.get(f'{self.url}/events.json')
+        resp = http.get(f'{self.url}/events.json')
         resp.raise_for_status()
         self._events = resp.json()
       except Exception as e:

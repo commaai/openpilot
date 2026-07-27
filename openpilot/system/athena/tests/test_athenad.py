@@ -2,7 +2,7 @@ from functools import wraps
 import json
 import multiprocessing
 import os
-import requests
+from openpilot.common import http
 import shutil
 import time
 import threading
@@ -32,7 +32,7 @@ def seed_athena_server(host, port):
       try:
         UPLOAD_SESS.put(f'http://{host}:{port}/qlog.zst', data='', timeout=10)
         break
-      except requests.exceptions.ConnectionError:
+      except http.ConnectionError:
         time.sleep(0.1)
 
 def with_upload_handler(func):
@@ -190,7 +190,7 @@ class TestAthenadMethods(OpenpilotTestCase):
 
     upload_fn = fn + ('.zst' if compress else '')
     item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
-    with self.assertRaises(requests.exceptions.ConnectionError):
+    with self.assertRaises(http.ConnectionError):
       athenad._do_upload(item)
 
     item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251

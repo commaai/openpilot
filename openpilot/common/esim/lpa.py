@@ -5,7 +5,6 @@ import base64
 import fcntl
 import hashlib
 import os
-import requests
 import subprocess
 import sys
 import termios
@@ -14,9 +13,9 @@ import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from typing import Any
-
 from pathlib import Path
 
+from openpilot.common import http
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.esim.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 from openpilot.common.serial import Serial, SerialException
@@ -411,11 +410,11 @@ def set_profile_nickname(client: AtClient, iccid: str, nickname: str) -> None:
 
 # --- ES9P HTTP ---
 
-def es9p_request(smdp_address: str, endpoint: str, payload: dict, error_prefix: str = "Request", session: requests.Session | None = None) -> dict:
+def es9p_request(smdp_address: str, endpoint: str, payload: dict, error_prefix: str = "Request", session: http.Session | None = None) -> dict:
   url = f"https://{smdp_address}/gsma/rsp2/es9plus/{endpoint}"
   headers = {"User-Agent": "gsma-rsp-lpad", "X-Admin-Protocol": "gsma/rsp/v2.3.0", "Content-Type": "application/json"}
-  http = session or requests
-  resp = http.post(url, json=payload, headers=headers, timeout=HTTP_TIMEOUT, verify=GSMA_CI_BUNDLE)
+  http_client = session or http
+  resp = http_client.post(url, json=payload, headers=headers, timeout=HTTP_TIMEOUT, verify=GSMA_CI_BUNDLE)
   resp.raise_for_status()
   if not resp.content:
     return {}
@@ -622,7 +621,7 @@ def _b64_field(data: dict, key: str) -> str:
   return base64_trim(data[key])
 
 
-def _cancel_session_safe(client: AtClient, smdp: str, tx_id: str, session: requests.Session) -> None:
+def _cancel_session_safe(client: AtClient, smdp: str, tx_id: str, session: http.Session) -> None:
   b64_cancel = ""
   try:
     b64_cancel = cancel_session(client, b64d(tx_id))
@@ -640,7 +639,7 @@ def download_profile(client: AtClient, activation_code: str) -> str:
     raise RuntimeError("System time is not set; TLS certificate validation requires a valid clock")
   smdp, matching_id = parse_lpa_activation_code(activation_code)
   challenge, euicc_info = get_challenge_and_info(client)
-  session = requests.Session()
+  session = http.Session()
   tx_id = None
 
   try:

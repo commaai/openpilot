@@ -1,19 +1,15 @@
 import os
-import requests
-from requests.adapters import HTTPAdapter, Retry
+from openpilot.common import http
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
 # TODO: this should be merged into common.api
 
 class CommaApi:
   def __init__(self, token=None):
-    self.session = requests.Session()
+    self.session = http.Session(retries=5, backoff_factor=1, retry_statuses=[500, 502, 503, 504])
     self.session.headers['User-agent'] = 'OpenpilotTools'
     if token:
       self.session.headers['Authorization'] = 'JWT ' + token
-
-    retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
-    self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
   def request(self, method, endpoint, **kwargs):
     with self.session.request(method, API_HOST + '/' + endpoint, **kwargs) as resp:

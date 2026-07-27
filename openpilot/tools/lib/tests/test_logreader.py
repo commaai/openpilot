@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import os
 import unittest
-import requests
+from openpilot.common import http
 
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
@@ -100,7 +100,7 @@ class TestLogReader(OpenpilotTestCase):
       os.environ["DISABLE_FILEREADER_CACHE"] = "1"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
-    with requests.get(QLOG_FILE, stream=True) as r:
+    with http.get(QLOG_FILE, stream=True) as r:
       with qlog as f:
         shutil.copyfileobj(r.raw, f)
 
