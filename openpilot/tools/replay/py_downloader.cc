@@ -152,6 +152,10 @@ std::string download(const std::string &url, bool use_cache, std::atomic<bool> *
   return runPython(args, abort);
 }
 
+std::string decompress(const std::string &path, std::atomic<bool> *abort) {
+  return runPython({"decompress", path}, abort);
+}
+
 std::string getRouteFiles(const std::string &route) {
   return runPython({"route-files", route});
 }

@@ -94,7 +94,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
     """)
 
   @abstractmethod
-  def spawn_world(self, q: Queue) -> World:
+  def spawn_world(self, q: Queue, /) -> World:
     pass
 
   def _run(self, q: Queue):

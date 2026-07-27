@@ -1,3 +1,4 @@
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log, messaging
 from openpilot.cereal.messaging import SubMaster, PubMaster
 from openpilot.selfdrive.ui.soundd import SELFDRIVE_STATE_TIMEOUT, check_selfdrive_timeout_alert
@@ -7,7 +8,7 @@ import time
 AudibleAlert = log.SelfdriveState.AudibleAlert
 
 
-class TestSoundd:
+class TestSoundd(OpenpilotTestCase):
   def test_check_selfdrive_timeout_alert(self):
     sm = SubMaster(['selfdriveState'])
     pm = PubMaster(['selfdriveState'])
@@ -31,4 +32,3 @@ class TestSoundd:
     assert check_selfdrive_timeout_alert(sm)
 
   # TODO: add test with micd for checking that soundd actually outputs sounds
-

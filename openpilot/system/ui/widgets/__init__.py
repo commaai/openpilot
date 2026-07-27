@@ -3,16 +3,25 @@ from __future__ import annotations
 import abc
 import pyray as rl
 from enum import IntEnum
-from typing import TypeVar
+from typing import Protocol, TypeVar
 from collections.abc import Callable
 from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS, MouseEvent
 
-try:
-  from openpilot.selfdrive.ui.ui_state import device
-except ImportError:
-  class Device:
-    awake = True
-  device = Device()
+class DeviceLike(Protocol):
+  awake: bool
+
+
+def _get_device() -> DeviceLike:
+  try:
+    from openpilot.selfdrive.ui.ui_state import device
+    return device
+  except ImportError:
+    class Device:
+      awake = True
+    return Device()
+
+
+device = _get_device()
 
 W = TypeVar('W', bound='Widget')
 
@@ -185,16 +194,16 @@ class Widget(abc.ABC):
     """Optionally update the widget's non-layout state. This is called before rendering."""
 
   @abc.abstractmethod
-  def _render(self, rect: rl.Rectangle) -> bool | int | None:
+  def _render(self, rect: rl.Rectangle, /) -> bool | int | None:
     """Render the widget within the given rectangle."""
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
 
-  def _handle_mouse_press(self, mouse_pos: MousePos) -> None:
+  def _handle_mouse_press(self, mouse_pos: MousePos, /) -> None:
     """Optionally handle mouse press events."""
 
-  def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
+  def _handle_mouse_release(self, mouse_pos: MousePos, /) -> None:
     """Optionally handle mouse release events."""
     if self._click_delay is not None:
       self._click_release_time = rl.get_time() + self._click_delay

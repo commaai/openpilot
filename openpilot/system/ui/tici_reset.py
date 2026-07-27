@@ -37,7 +37,11 @@ class Reset(Widget):
     self._reset_state = ResetState.NONE
     self._cancel_button = Button("Cancel", gui_app.request_close)
     self._confirm_button = Button("Confirm", self._confirm, button_style=ButtonStyle.PRIMARY)
-    self._reboot_button = Button("Reboot", lambda: subprocess.run("sudo reboot", shell=True))
+    self._reboot_button = Button("Reboot", self._reboot)
+
+  @staticmethod
+  def _reboot() -> None:
+    subprocess.run("sudo reboot", shell=True)
 
   def _do_erase(self):
     if PC:

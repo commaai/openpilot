@@ -1,10 +1,11 @@
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 
 from opendbc.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.test.process_replay import replay_process_with_name
 
 
-class TestLeads:
+class TestLeads(OpenpilotTestCase):
   def test_radar_fault(self):
     # if there's no radar-related can traffic, radard should either not respond or respond with an error
     # this is tightly coupled with underlying car radar_interface implementation, but it's a good sanity check

@@ -583,7 +583,7 @@ def startStream(sdp: str, enabled: bool, cameras: list[str] | None) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
   else:
-      raise Exception("failed to get CarParamsPersistent")
+    raise Exception("failed to get CarParamsPersistent")
 
   if params.get_bool("IsOffroad"):
     # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
@@ -672,7 +672,10 @@ def log_handler(end_event: threading.Event) -> None:
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
-      r = select.select((ws.sock,), (), (), 30)
+      sock = ws.sock
+      if sock is None:
+        return
+      r = select.select((sock,), (), (), 30)
       if r[0]:
         data = ws.recv()
         if isinstance(data, str):

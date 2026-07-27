@@ -23,6 +23,7 @@ from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from openpilot.cereal import messaging, log
 
+SESSION_TIMEOUT_SECONDS = 300
 
 # socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
 # return the source interfaces IP which is the default interface of the device
@@ -236,6 +237,8 @@ class StreamSession:
       builder.add_video_stream(camera, track)
     self.stream = builder.stream()
 
+    self.is_body = "testJoystick" in body.bridge_services_in
+
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = body.bridge_services_in
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
@@ -303,12 +306,25 @@ class StreamSession:
             for track in self.video_tracks:
               track.timing_sei_enabled = bool(payload["data"]["enabled"])
           case _:
-            if payload.get("type") not in self.incoming_bridge_services:
+            if msg_type not in self.incoming_bridge_services:
               return
             if self.incoming_bridge is not None:
               self.incoming_bridge.send(message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
+
+  async def run_normal_session(self):
+    try:
+      await asyncio.wait_for(self.stream.wait_for_disconnection(), timeout=SESSION_TIMEOUT_SECONDS)
+    except TimeoutError:
+      self.logger.warning("Stream session (%s) timed out after %d s", self.identifier, SESSION_TIMEOUT_SECONDS)
+      try:
+        self.stream.get_messaging_channel().send(json.dumps({"type": "disconnect", "data": "Session timed out"}))
+      except Exception:
+        pass
+
+  async def run_body_session(self):
+    await self.stream.wait_for_disconnection()
 
   async def run(self):
     try:
@@ -326,7 +342,10 @@ class StreamSession:
         self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
-      await self.stream.wait_for_disconnection()
+      if self.is_body:
+        await self.run_body_session()
+      else:
+        await self.run_normal_session()
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
@@ -524,7 +543,7 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
   def do_OPTIONS(self) -> None:
     self._dispatch_request()
 
-  def log_message(self, fmt, *args) -> None:
+  def log_message(self, format: str, *args: object) -> None:  # noqa: A002  # stdlib override
     # silence default access logging; errors are logged explicitly in _dispatch_request
     pass
 
@@ -552,7 +571,7 @@ def prewarm_stream_session_imports() -> None:
 
 
 def webrtcd_thread(host: str, port: int):
-  logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
+  logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
   prewarm_start = time.monotonic()
   prewarm_stream_session_imports()
   prewarm_end = time.monotonic()
@@ -571,13 +590,14 @@ def webrtcd_thread(host: str, port: int):
   http_thread.start()
 
   shutting_down = False
+  shutdown_task = None
 
   def request_shutdown() -> None:
-    nonlocal shutting_down
+    nonlocal shutting_down, shutdown_task
     if shutting_down:
       return
     shutting_down = True
-    loop.create_task(_shutdown(server, state, loop))
+    shutdown_task = loop.create_task(_shutdown(server, state, loop))
 
   for sig in (signal.SIGINT, signal.SIGTERM):
     loop.add_signal_handler(sig, request_shutdown)

@@ -12,6 +12,9 @@ blacklist = [
 
   "matlab.*.md",
 
+  # skip big model for now
+  "openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx",
+
   # no LFS or submodules in release
   ".lfsconfig",
   ".gitattributes",

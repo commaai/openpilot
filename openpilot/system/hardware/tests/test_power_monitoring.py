@@ -1,5 +1,5 @@
-import pytest
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 from openpilot.system.hardware.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                 CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
@@ -22,20 +22,16 @@ def pm_patch(mocker, name, value, constant=False):
     mocker.patch(f"openpilot.system.hardware.power_monitoring.{name}", return_value=value)
 
 
-@pytest.fixture(autouse=True)
-def mock_time(mocker):
-  mocker.patch("time.monotonic", mock_time_monotonic)
-
-
-class TestPowerMonitoring:
+class TestPowerMonitoring(OpenpilotTestCase):
   def setup_method(self):
+    self._fixture("mocker").patch("time.monotonic", mock_time_monotonic)
     self.params = Params()
 
   # Test to see that it doesn't do anything when pandaState is None
   def test_panda_state_present(self):
     pm = PowerMonitoring()
     for _ in range(10):
-      pm.calculate(None, None)
+      pm.calculate(None, False)
     assert pm.get_power_used() == 0
     assert pm.get_car_battery_capacity() == (CAR_BATTERY_CAPACITY_uWh / 10)
 

@@ -339,7 +339,7 @@ class Tici(HardwareBase):
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
     gpio_init(GPIO.SOM_ST_IO, True)
-    gpio_set(GPIO.SOM_ST_IO, 1)
+    gpio_set(GPIO.SOM_ST_IO, True)
 
     # *** IRQ config ***
 
@@ -389,21 +389,21 @@ class Tici(HardwareBase):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
 
-    gpio_set(GPIO.STM_RST_N, 1)
-    gpio_set(GPIO.STM_BOOT0, 0)
+    gpio_set(GPIO.STM_RST_N, True)
+    gpio_set(GPIO.STM_BOOT0, False)
     time.sleep(0.01)
-    gpio_set(GPIO.STM_RST_N, 0)
+    gpio_set(GPIO.STM_RST_N, False)
 
   def recover_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
 
-    gpio_set(GPIO.STM_RST_N, 1)
-    gpio_set(GPIO.STM_BOOT0, 1)
+    gpio_set(GPIO.STM_RST_N, True)
+    gpio_set(GPIO.STM_BOOT0, True)
     time.sleep(0.01)
-    gpio_set(GPIO.STM_RST_N, 0)
+    gpio_set(GPIO.STM_RST_N, False)
     time.sleep(0.01)
-    gpio_set(GPIO.STM_BOOT0, 0)
+    gpio_set(GPIO.STM_BOOT0, False)
 
   def booted(self):
     # this normally boots within 8s, but on rare occasions takes 30+s

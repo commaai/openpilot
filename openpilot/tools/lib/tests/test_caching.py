@@ -3,8 +3,9 @@ import os
 import shutil
 import socket
 import tempfile
-import pytest
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile, prune_cache
@@ -16,7 +17,7 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
 
   def do_GET(self):
     if self.FILE_EXISTS:
-      self.send_response(206 if "Range" in self.headers else 200, b'1234')
+      self.send_response(206 if "Range" in self.headers else 200, '1234')
     else:
       self.send_response(404)
     self.end_headers()
@@ -30,12 +31,11 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
     self.end_headers()
 
 
-@pytest.fixture
 def host():
   with http_server_context(handler=CachingTestRequestHandler) as (host, port):
     yield f"http://{host}:{port}"
 
-class TestFileDownload:
+class TestFileDownload(OpenpilotTestCase):
 
   def test_pipeline_defaults(self, host):
     # TODO: parameterize the defaults so we don't rely on hard-coded values in xx
@@ -59,7 +59,7 @@ class TestFileDownload:
     # ensure caching on by default and cache dir gets created
     os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     if os.path.exists(Paths.download_cache_root()):
-      shutil.rmtree(Paths.download_cache_root())
+      shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
     URLFile(f"{host}/test.txt").get_length()
     URLFile(f"{host}/test.txt").read()
     assert os.path.exists(Paths.download_cache_root())
@@ -117,7 +117,7 @@ class TestFileDownload:
     self.compare_loads(large_file_url, length - 100, 100)
     self.compare_loads(large_file_url)
 
-  @pytest.mark.parametrize("cache_enabled", [True, False])
+  @parameterized.expand([True, False], names=("cache_enabled",))
   def test_recover_from_missing_file(self, host, cache_enabled):
     if cache_enabled:
       os.environ.pop("DISABLE_FILEREADER_CACHE", None)
@@ -135,7 +135,7 @@ class TestFileDownload:
     assert length == 4
 
 
-class TestCache:
+class TestCache(OpenpilotTestCase):
   def test_prune_cache(self, monkeypatch):
     with tempfile.TemporaryDirectory() as tmpdir:
       monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))

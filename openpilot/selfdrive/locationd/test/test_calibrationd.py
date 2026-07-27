@@ -2,6 +2,7 @@ import random
 
 import numpy as np
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.common.params import Params
@@ -29,7 +30,7 @@ def process_messages(c, cam_odo_calib, cycles,
                         [0.0, 0.0, HEIGHT_INIT.item()],
                         [cam_odo_height_std, cam_odo_height_std, cam_odo_height_std])
 
-class TestCalibrationd:
+class TestCalibrationd(OpenpilotTestCase):
 
   def test_read_saved_params(self):
     msg = messaging.new_message('liveCalibration')
