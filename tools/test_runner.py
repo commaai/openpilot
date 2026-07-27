@@ -16,7 +16,6 @@ import unittest
 import warnings
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
 IGNORED = (
   ROOT / "openpilot/selfdrive/test/process_replay/test_processes.py",
   ROOT / "openpilot/selfdrive/test/process_replay/test_regen.py",
@@ -31,19 +30,22 @@ STATUS_MARKS = {
   "error": ("E", 31),
   "xpassed": ("X", 31),
 }
-CAPTURE_OUTPUT = True
-USE_COLOR = False
 
 
 def paint(text, code):
-  return f"\033[{code}m{text}\033[0m" if USE_COLOR else text
+  if sys.stdout.isatty() and "NO_COLOR" not in os.environ:
+    return f"\033[{code}m{text}\033[0m"
+  return text
 
 
 class Capture:
   """Capture Python, native, and subprocess writes to stdout/stderr."""
 
+  def __init__(self, enabled):
+    self.enabled = enabled
+
   def start(self):
-    if not CAPTURE_OUTPUT:
+    if not self.enabled:
       return
     for stream in (sys.stdout, sys.stderr):
       stream.flush()
@@ -53,7 +55,7 @@ class Capture:
       os.dup2(file.fileno(), fd)
 
   def stop(self, keep=True):
-    if not CAPTURE_OUTPUT:
+    if not self.enabled:
       return "", ""
     for stream in (sys.stdout, sys.stderr):
       stream.flush()
@@ -74,11 +76,11 @@ def make_record(test_id, status="passed", detail=""):
 
 
 class Result(unittest.TestResult):
-  def __init__(self):
+  def __init__(self, capture_output):
     super().__init__()
     self.records = []
     self.current = None
-    self.capture = Capture()
+    self.capture = Capture(capture_output)
 
   def startTest(self, test):
     self.current = make_record(test.id())
@@ -202,9 +204,9 @@ def make_batches(tests, workers):
   return sorted(batches, key=len, reverse=True)
 
 
-def run_batch(test_ids):
-  result = Result()
-  outside = Capture()
+def run_batch(test_ids, capture_output):
+  result = Result(capture_output)
+  outside = Capture(capture_output)
   os.chdir(ROOT)
   outside.start()
   try:
@@ -218,19 +220,9 @@ def run_batch(test_ids):
   return result.records
 
 
-def init_worker(warning_action, capture_output):
-  global CAPTURE_OUTPUT
-  CAPTURE_OUTPUT = capture_output
-  warnings.simplefilter(warning_action)
-
-
 def run_parallel(batches, workers, warning_action, capture_output):
-  with ProcessPoolExecutor(
-    max_workers=workers,
-    initializer=init_worker,
-    initargs=(warning_action, capture_output),
-  ) as pool:
-    futures = {pool.submit(run_batch, batch): batch for batch in batches}
+  with ProcessPoolExecutor(max_workers=workers, initializer=warnings.simplefilter, initargs=(warning_action,)) as pool:
+    futures = {pool.submit(run_batch, batch, capture_output): batch for batch in batches}
     for future in as_completed(futures):
       try:
         yield future.result()
@@ -282,13 +274,8 @@ def main():
   parser.add_argument("--durations", type=int, default=10, metavar="N", help="show N slowest tests; 0 shows all")
   parser.add_argument("-W", "--warnings", choices=("error", "default", "always", "ignore"), default="error")
   args = parser.parse_args()
-  if args.jobs < 1:
-    parser.error("--jobs must be positive")
-  if args.durations < 0:
-    parser.error("--durations must be non-negative")
-  global CAPTURE_OUTPUT, USE_COLOR
-  CAPTURE_OUTPUT = not args.no_capture
-  USE_COLOR = sys.stdout.isatty() and "NO_COLOR" not in os.environ
+
+  capture_output = not args.no_capture
   os.chdir(ROOT)
   warnings.simplefilter(args.warnings)
   started = time.monotonic()
@@ -302,9 +289,9 @@ def main():
   column = 0
   try:
     if workers < 2:
-      streams = map(run_batch, batches)
+      streams = (run_batch(batch, capture_output) for batch in batches)
     else:
-      streams = run_parallel(batches, workers, args.warnings, CAPTURE_OUTPUT)
+      streams = run_parallel(batches, workers, args.warnings, capture_output)
     for batch in streams:
       records.extend(batch)
       for item in batch:
