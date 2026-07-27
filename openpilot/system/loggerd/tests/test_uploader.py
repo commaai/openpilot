@@ -163,9 +163,18 @@ class TestUploader(UploaderTestCase):
     upload_candidates = {candidate[2] for candidate in uploader.list_upload_files(metered=False)}
     assert upload_candidates.isdisjoint(map(str, f_paths)), "Uploaded file selected again"
 
-  def test_clear_locks_on_startup(self):
+  def test_clear_locks_on_startup(self, mocker):
     f_paths = self.gen_files(lock=True, boot=False)
-    clear_locks(Paths.log_root())
+    locks_cleared = threading.Event()
+
+    def clear_locks_and_signal(root):
+      clear_locks(root)
+      locks_cleared.set()
+
+    mocker.patch("openpilot.system.loggerd.uploader.clear_locks", side_effect=clear_locks_and_signal)
+    self.start_thread()
+    assert locks_cleared.wait(timeout=1), "Uploader did not clear locks on startup"
+    self.join_thread()
 
     for f_path in f_paths:
       lock_path = f_path.with_suffix(f_path.suffix + ".lock")
