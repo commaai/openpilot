@@ -5,7 +5,7 @@ import threading
 import time
 from enum import IntEnum
 
-from openpilot.system.ui.lib import raylib as rl
+import pyray as rl
 
 from openpilot.common.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE

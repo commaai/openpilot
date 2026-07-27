@@ -109,10 +109,14 @@ typedef struct {
   uint32_t plane_alpha_prop;
   uint32_t plane_blend_prop;
   uint32_t plane_csc_prop;
-  uint32_t plane_rot_dst_x_prop;
-  uint32_t plane_rot_dst_y_prop;
-  uint32_t plane_rot_dst_w_prop;
-  uint32_t plane_rot_dst_h_prop;
+  uint32_t primary_rot_dst_x_prop;
+  uint32_t primary_rot_dst_y_prop;
+  uint32_t primary_rot_dst_w_prop;
+  uint32_t primary_rot_dst_h_prop;
+  uint32_t camera_rot_dst_x_prop;
+  uint32_t camera_rot_dst_y_prop;
+  uint32_t camera_rot_dst_w_prop;
+  uint32_t camera_rot_dst_h_prop;
   CameraBuffer camera_buffers[MAX_CAMERA_BUFFERS];
   int camera_buffer_count;
   uint64_t camera_frame;
@@ -130,11 +134,9 @@ typedef struct {
   int camera_flip_x;
   int camera_alpha;
   int camera_engaged;
-  int direct_render;
   int color_correction;
   float color_contribution[3][3][256];
   uint8_t color_gamma[4096];
-  double last_copy_ms;
   struct timespec present_deadline;
 } DrmState;
 
@@ -183,16 +185,20 @@ static uint32_t get_object_property(int fd, uint32_t object_id, uint32_t object_
   return property_id;
 }
 
-static int find_atomic_planes(int fd, uint32_t crtc_id) {
+static int find_atomic_planes(int fd, uint32_t crtc_id, uint32_t crtc_mask) {
   if (drmSetClientCap(fd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1) != 0 ||
-      drmSetClientCap(fd, DRM_CLIENT_CAP_ATOMIC, 1) != 0) return -1;
+      drmSetClientCap(fd, DRM_CLIENT_CAP_ATOMIC, 1) != 0) return 0;
   drmModePlaneRes *planes = drmModeGetPlaneResources(fd);
-  if (!planes) return -1;
+  if (!planes) return 0;
   int primary_found = 0;
   int camera_found = 0;
   for (uint32_t index = 0; index < planes->count_planes; ++index) {
     drmModePlane *plane = drmModeGetPlane(fd, planes->planes[index]);
     if (!plane) continue;
+    if (!(plane->possible_crtcs & crtc_mask)) {
+      drmModeFreePlane(plane);
+      continue;
+    }
     uint64_t type = 0, assigned_crtc = 0;
     get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "type", &type);
     get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_ID", &assigned_crtc);
@@ -213,13 +219,23 @@ static int find_atomic_planes(int fd, uint32_t crtc_id) {
       drm_state.plane_zpos_prop = get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "zpos", NULL);
       drm_state.plane_alpha_prop = get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "alpha", NULL);
       drm_state.plane_blend_prop = get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "blend_op", NULL);
+      drm_state.primary_rot_dst_x_prop =
+          get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_x", NULL);
+      drm_state.primary_rot_dst_y_prop =
+          get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_y", NULL);
+      drm_state.primary_rot_dst_w_prop =
+          get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_w", NULL);
+      drm_state.primary_rot_dst_h_prop =
+          get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_h", NULL);
       primary_found = drm_state.plane_fb_id_prop && drm_state.plane_crtc_id_prop &&
                       drm_state.plane_crtc_x_prop && drm_state.plane_crtc_y_prop &&
                       drm_state.plane_crtc_w_prop && drm_state.plane_crtc_h_prop &&
                       drm_state.plane_src_x_prop && drm_state.plane_src_y_prop &&
                       drm_state.plane_src_w_prop && drm_state.plane_src_h_prop &&
                       drm_state.plane_rotation_prop && drm_state.plane_zpos_prop &&
-                      drm_state.plane_alpha_prop && drm_state.plane_blend_prop;
+                      drm_state.plane_alpha_prop && drm_state.plane_blend_prop &&
+                      drm_state.primary_rot_dst_x_prop && drm_state.primary_rot_dst_y_prop &&
+                      drm_state.primary_rot_dst_w_prop && drm_state.primary_rot_dst_h_prop;
     } else if (!camera_found && assigned_crtc == 0) {
       int supports_nv12 = 0;
       for (uint32_t format_index = 0; format_index < plane->count_formats; ++format_index) {
@@ -228,26 +244,31 @@ static int find_atomic_planes(int fd, uint32_t crtc_id) {
       // rot_dst_w is only installed on planes backed by the inline SBUF rotator.
       if (supports_nv12 &&
           get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_w", NULL)) {
-        drm_state.camera_plane_id = plane->plane_id;
-        drm_state.plane_rot_dst_x_prop =
+        const uint32_t rot_dst_x =
             get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_x", NULL);
-        drm_state.plane_rot_dst_y_prop =
+        const uint32_t rot_dst_y =
             get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_y", NULL);
-        drm_state.plane_rot_dst_w_prop =
+        const uint32_t rot_dst_w =
             get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_w", NULL);
-        drm_state.plane_rot_dst_h_prop =
+        const uint32_t rot_dst_h =
             get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "rot_dst_h", NULL);
-        drm_state.plane_csc_prop =
+        const uint32_t csc =
             get_object_property(fd, plane->plane_id, DRM_MODE_OBJECT_PLANE, "csc_v1", NULL);
-        camera_found = drm_state.plane_rot_dst_x_prop && drm_state.plane_rot_dst_y_prop &&
-                       drm_state.plane_rot_dst_w_prop && drm_state.plane_rot_dst_h_prop &&
-                       drm_state.plane_csc_prop;
+        if (rot_dst_x && rot_dst_y && rot_dst_w && rot_dst_h && csc) {
+          drm_state.camera_plane_id = plane->plane_id;
+          drm_state.camera_rot_dst_x_prop = rot_dst_x;
+          drm_state.camera_rot_dst_y_prop = rot_dst_y;
+          drm_state.camera_rot_dst_w_prop = rot_dst_w;
+          drm_state.camera_rot_dst_h_prop = rot_dst_h;
+          drm_state.plane_csc_prop = csc;
+          camera_found = 1;
+        }
       }
     }
     drmModeFreePlane(plane);
   }
   drmModeFreePlaneResources(planes);
-  return primary_found && camera_found ? 0 : -1;
+  return primary_found | (camera_found << 1);
 }
 
 static void page_flip_handler(int fd, unsigned int sequence, unsigned int tv_sec,
@@ -308,9 +329,7 @@ static float decode_float16(uint16_t value) {
 }
 
 static int init_color_correction(void) {
-  if (getenv("DISABLE_COLOR_CORRECTION")) return 0;
   const char *paths[] = {
-    getenv("COLOR_CORRECTION_PATH"),
     "/data/misc/display/color_cal/color_cal",
     "/sys/devices/platform/soc/894000.i2c/i2c-2/2-0017/color_cal",
     "/persist/comma/color_cal",
@@ -318,7 +337,6 @@ static int init_color_correction(void) {
   ColorCorrectionValues values;
   int loaded = 0;
   for (size_t index = 0; index < sizeof(paths) / sizeof(paths[0]); ++index) {
-    if (!paths[index]) continue;
     FILE *file = fopen(paths[index], "rb");
     if (!file) continue;
     loaded = fread(&values, sizeof(values), 1, file) == 1;
@@ -391,12 +409,9 @@ static int recv_fd(int sock) {
 }
 
 static int get_drm_fd(void) {
-  const char *fd_env = getenv("DRM_FD");
-  if (fd_env) return atoi(fd_env);
   int sock = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sock < 0) return -1;
-  struct sockaddr_un addr = { .sun_family = AF_UNIX };
-  snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", "/tmp/drmfd.sock");
+  struct sockaddr_un addr = { .sun_family = AF_UNIX, .sun_path = "/tmp/drmfd.sock" };
   if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     close(sock);
     return -1;
@@ -493,10 +508,9 @@ int sr_drm_init(void) {
   drm_state.mode = connector->modes[0];
   drmModeFreeConnector(connector);
   drmModeFreeResources(resources);
-  const char *mdp_camera = getenv("CPU_MDP_CAMERA");
-  const int atomic_planes = find_atomic_planes(drm_state.fd, drm_state.crtc_id) == 0;
-  drm_state.mdp_ui = atomic_planes && drm_state.mode.vdisplay > drm_state.mode.hdisplay;
-  drm_state.mdp_camera = atomic_planes && (!mdp_camera || strcmp(mdp_camera, "0") != 0);
+  const int atomic_planes = find_atomic_planes(drm_state.fd, drm_state.crtc_id, 1);
+  drm_state.mdp_ui = (atomic_planes & 1) && drm_state.mode.vdisplay > drm_state.mode.hdisplay;
+  drm_state.mdp_camera = atomic_planes == 3;
   const uint32_t buffer_width =
       drm_state.mdp_ui ? drm_state.mode.vdisplay : drm_state.mode.hdisplay;
   const uint32_t buffer_height =
@@ -516,16 +530,13 @@ int sr_drm_init(void) {
   }
   drm_state.clockwise = !canonical_zero;
   if (!canonical_zero) init_color_correction();
-  const char *direct_render = getenv("CPU_DIRECT_KMS");
-  drm_state.direct_render = !direct_render || strcmp(direct_render, "0") != 0;
   drm_state.front = 0;
   drm_state.initialized = 1;
   return 0;
 }
 
 uint8_t *sr_drm_back_buffer(int *stride) {
-  if (!drm_state.initialized || !drm_state.mdp_ui || !drm_state.direct_render ||
-      drm_state.color_correction) return NULL;
+  if (!drm_state.initialized || !drm_state.mdp_ui || drm_state.color_correction) return NULL;
   DrmBuffer *next = &drm_state.buffers[1 - drm_state.front];
   if (prepare_cpu_buffer(next) != 0) return NULL;
   if (stride) *stride = (int)next->pitch;
@@ -655,8 +666,6 @@ int sr_drm_present(const Surface *surface) {
       (surface->width != physical_height || surface->height != physical_width)) return -EINVAL;
   int buffer_result = prepare_cpu_buffer(next);
   if (buffer_result != 0) return buffer_result;
-  struct timespec copy_start, copy_end;
-  clock_gettime(CLOCK_MONOTONIC, &copy_start);
   if (surface->pixels == next->map && surface->stride == (int)next->pitch) {
     // The renderer drew directly into the next KMS buffer.
   } else if (direct_copy) {
@@ -688,122 +697,117 @@ int sr_drm_present(const Surface *surface) {
       }
     }
   }
-  clock_gettime(CLOCK_MONOTONIC, &copy_end);
   buffer_result = finish_cpu_buffer(next);
   if (buffer_result != 0) return buffer_result;
-  drm_state.last_copy_ms = (copy_end.tv_sec - copy_start.tv_sec) * 1000.0 +
-                           (copy_end.tv_nsec - copy_start.tv_nsec) / 1000000.0;
   int ret;
   if (drm_state.mdp_ui || drm_state.mdp_camera) {
-    drmModeAtomicReq *request = drmModeAtomicAlloc();
-    if (!request) return -ENOMEM;
+    int camera_failed = 0;
+    for (;;) {
+      drmModeAtomicReq *request = drmModeAtomicAlloc();
+      if (!request) return -ENOMEM;
 #define ADD_ATOMIC(object, property, value) \
-    do { if (drmModeAtomicAddProperty(request, (object), (property), (value)) < 0) { \
-      drmModeAtomicFree(request); return -errno; \
-    } } while (0)
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_fb_id_prop, next->fb_id);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_x_prop, 0);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_y_prop, 0);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_w_prop, physical_width);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_h_prop, physical_height);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_x_prop, 0);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_y_prop, 0);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_w_prop, (uint64_t)surface->width << 16);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_h_prop, (uint64_t)surface->height << 16);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rotation_prop,
-               drm_state.mdp_ui ?
-                 (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90) :
-                 DRM_MODE_ROTATE_0);
-    if (drm_state.mdp_ui) {
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rot_dst_x_prop, 0);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rot_dst_y_prop, 0);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rot_dst_w_prop,
-                 (uint64_t)physical_width << 16);
-      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rot_dst_h_prop,
-                 (uint64_t)physical_height << 16);
-    }
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_zpos_prop, 1);
-    ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_blend_prop, 2);  // premultiplied
-    if (drm_state.camera_active) {
-      const int camera_x = drm_state.mdp_ui ? drm_state.camera_dst_x : drm_state.clockwise ?
-          surface->height - drm_state.camera_dst_y - drm_state.camera_dst_h :
-          drm_state.camera_dst_y;
-      const int camera_y = drm_state.mdp_ui ? drm_state.camera_dst_y : drm_state.clockwise ?
-          drm_state.camera_dst_x :
-          surface->width - drm_state.camera_dst_x - drm_state.camera_dst_w;
-      const int camera_w = drm_state.mdp_ui ? drm_state.camera_dst_w : drm_state.camera_dst_h;
-      const int camera_h = drm_state.mdp_ui ? drm_state.camera_dst_h : drm_state.camera_dst_w;
-      const uint64_t rotation =
-          (drm_state.mdp_ui ? DRM_MODE_ROTATE_0 :
-           (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90)) |
-          (drm_state.camera_flip_x ? DRM_MODE_REFLECT_X : 0);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, drm_state.camera_fb_id);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_x_prop, camera_x);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_y_prop, camera_y);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_w_prop, camera_w);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_h_prop, camera_h);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_x_prop, (uint64_t)drm_state.camera_src_x << 16);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_y_prop, (uint64_t)drm_state.camera_src_y << 16);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_w_prop, (uint64_t)drm_state.camera_src_w << 16);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_h_prop, (uint64_t)drm_state.camera_src_h << 16);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rotation_prop, rotation);
-      // MICI uses a video-mode DSI panel. The SDE driver rejects >=1.1x
-      // QSEED downscale following inline rotation, but the rotator itself can
-      // downscale NV12 by an integral 2x. Its tiled output is then modestly
-      // upscaled by QSEED to the display rectangle.
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rot_dst_x_prop, 0);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rot_dst_y_prop, 0);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rot_dst_w_prop,
-                 (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_w : drm_state.camera_src_h) / 2) << 16);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rot_dst_h_prop,
-                 (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_h : drm_state.camera_src_w) / 2) << 16);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_zpos_prop, 0);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_alpha_prop, drm_state.camera_alpha);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_csc_prop,
-                 drm_state.camera_engaged ? (uint64_t)(uintptr_t)&engaged_camera_csc : 0);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_blend_prop, 1);  // opaque
-    } else {
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, 0);
-      ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, 0);
-    }
+      do { if (drmModeAtomicAddProperty(request, (object), (property), (value)) < 0) { \
+        drmModeAtomicFree(request); return -errno; \
+      } } while (0)
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_fb_id_prop, next->fb_id);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_x_prop, 0);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_y_prop, 0);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_w_prop, physical_width);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_crtc_h_prop, physical_height);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_x_prop, 0);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_y_prop, 0);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_w_prop, (uint64_t)surface->width << 16);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_src_h_prop, (uint64_t)surface->height << 16);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_rotation_prop,
+                 drm_state.mdp_ui ?
+                   (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90) :
+                   DRM_MODE_ROTATE_0);
+      if (drm_state.mdp_ui) {
+        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_x_prop, 0);
+        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_y_prop, 0);
+        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_w_prop,
+                   (uint64_t)physical_width << 16);
+        ADD_ATOMIC(drm_state.primary_plane_id, drm_state.primary_rot_dst_h_prop,
+                   (uint64_t)physical_height << 16);
+      }
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_zpos_prop, 1);
+      ADD_ATOMIC(drm_state.primary_plane_id, drm_state.plane_blend_prop, 2);  // premultiplied
+      if (drm_state.camera_active) {
+        const int camera_x = drm_state.mdp_ui ? drm_state.camera_dst_x : drm_state.clockwise ?
+            surface->height - drm_state.camera_dst_y - drm_state.camera_dst_h :
+            drm_state.camera_dst_y;
+        const int camera_y = drm_state.mdp_ui ? drm_state.camera_dst_y : drm_state.clockwise ?
+            drm_state.camera_dst_x :
+            surface->width - drm_state.camera_dst_x - drm_state.camera_dst_w;
+        const int camera_w = drm_state.mdp_ui ? drm_state.camera_dst_w : drm_state.camera_dst_h;
+        const int camera_h = drm_state.mdp_ui ? drm_state.camera_dst_h : drm_state.camera_dst_w;
+        const uint64_t rotation =
+            (drm_state.mdp_ui ? DRM_MODE_ROTATE_0 :
+             (drm_state.clockwise ? DRM_MODE_ROTATE_270 : DRM_MODE_ROTATE_90)) |
+            (drm_state.camera_flip_x ? DRM_MODE_REFLECT_X : 0);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, drm_state.camera_fb_id);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, drm_state.crtc_id);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_x_prop, camera_x);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_y_prop, camera_y);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_w_prop, camera_w);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_h_prop, camera_h);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_x_prop, (uint64_t)drm_state.camera_src_x << 16);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_y_prop, (uint64_t)drm_state.camera_src_y << 16);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_w_prop, (uint64_t)drm_state.camera_src_w << 16);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_src_h_prop, (uint64_t)drm_state.camera_src_h << 16);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_rotation_prop, rotation);
+        // MICI uses a video-mode DSI panel. The SDE driver rejects >=1.1x
+        // QSEED downscale following inline rotation, but the rotator itself can
+        // downscale NV12 by an integral 2x. Its tiled output is then modestly
+        // upscaled by QSEED to the display rectangle.
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_x_prop, 0);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_y_prop, 0);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_w_prop,
+                   (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_w : drm_state.camera_src_h) / 2) << 16);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.camera_rot_dst_h_prop,
+                   (uint64_t)((drm_state.mdp_ui ? drm_state.camera_src_h : drm_state.camera_src_w) / 2) << 16);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_zpos_prop, 0);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_alpha_prop, drm_state.camera_alpha);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_csc_prop,
+                   drm_state.camera_engaged ? (uint64_t)(uintptr_t)&engaged_camera_csc : 0);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_blend_prop, 1);  // opaque
+      } else if (drm_state.mdp_camera) {
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_fb_id_prop, 0);
+        ADD_ATOMIC(drm_state.camera_plane_id, drm_state.plane_crtc_id_prop, 0);
+      }
 #undef ADD_ATOMIC
-    // The downstream SDE driver completes blocking atomic commits at vblank
-    // but does not reliably emit a generic DRM page-flip event for them.
-    ret = drmModeAtomicCommit(drm_state.fd, request, 0, NULL);
-    drmModeAtomicFree(request);
-    if (ret != 0) {
-      fprintf(stderr, "CPU DRM MDP camera commit failed: %s\n", strerror(errno));
-      // Permanently fall back to the proven legacy KMS path. The current
-      // frame may contain a transparent camera rectangle, but the next frame
-      // will use CPU conversion and normal opaque scanout.
-      drmModeSetPlane(drm_state.fd, drm_state.camera_plane_id, drm_state.crtc_id,
-                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-      drm_state.displayed_camera_fb_id = 0;
-      drm_state.mdp_camera = 0;
-      ret = drmModeSetCrtc(drm_state.fd, drm_state.crtc_id, next->fb_id, 0, 0,
-                           &drm_state.connector_id, 1, &drm_state.mode);
-      if (ret != 0) return -errno;
-    } else {
-      drm_state.displayed_camera_fb_id =
-          drm_state.camera_active ? drm_state.camera_fb_id : 0;
-      // Inline-rotator commits complete before the 60 Hz panel scanout and
-      // this downstream driver exposes neither a usable output fence nor a
-      // reliable page-flip event for the path. Use an absolute deadline to
-      // avoid redrawing buffers at 200+ FPS and drifting over time.
-      struct timespec now;
-      clock_gettime(CLOCK_MONOTONIC, &now);
-      int64_t deadline_ns = (int64_t)drm_state.present_deadline.tv_sec * 1000000000LL +
-                            drm_state.present_deadline.tv_nsec;
-      const int64_t now_ns = (int64_t)now.tv_sec * 1000000000LL + now.tv_nsec;
-      if (deadline_ns == 0 || now_ns > deadline_ns + 4 * 16666667LL) deadline_ns = now_ns;
-      deadline_ns += 16666667LL;
-      drm_state.present_deadline.tv_sec = deadline_ns / 1000000000LL;
-      drm_state.present_deadline.tv_nsec = deadline_ns % 1000000000LL;
-      while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME,
-                             &drm_state.present_deadline, NULL) == EINTR) {}
+      // The downstream SDE driver completes blocking atomic commits at vblank
+      // but does not reliably emit a generic DRM page-flip event for them.
+      ret = drmModeAtomicCommit(drm_state.fd, request, 0, NULL);
+      const int commit_errno = errno;
+      drmModeAtomicFree(request);
+      if (ret == 0) break;
+      if (!drm_state.camera_active) return -commit_errno;
+
+      // Retry without the camera plane and use CPU conversion on later frames.
+      fprintf(stderr, "CPU DRM camera plane failed: %s\n", strerror(commit_errno));
+      drm_state.camera_active = 0;
+      camera_failed = 1;
     }
+    if (camera_failed) drm_state.mdp_camera = 0;
+    drm_state.displayed_camera_fb_id =
+        drm_state.camera_active ? drm_state.camera_fb_id : 0;
+    // Inline-rotator commits complete before the 60 Hz panel scanout and
+    // this downstream driver exposes neither a usable output fence nor a
+    // reliable page-flip event for the path. Use an absolute deadline to
+    // avoid redrawing buffers at 200+ FPS and drifting over time.
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    int64_t deadline_ns = (int64_t)drm_state.present_deadline.tv_sec * 1000000000LL +
+                          drm_state.present_deadline.tv_nsec;
+    const int64_t now_ns = (int64_t)now.tv_sec * 1000000000LL + now.tv_nsec;
+    if (deadline_ns == 0 || now_ns > deadline_ns + 4 * 16666667LL) deadline_ns = now_ns;
+    deadline_ns += 16666667LL;
+    drm_state.present_deadline.tv_sec = deadline_ns / 1000000000LL;
+    drm_state.present_deadline.tv_nsec = deadline_ns % 1000000000LL;
+    while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME,
+                           &drm_state.present_deadline, NULL) == EINTR) {}
   } else if (!drm_state.presented) {
     ret = drmModeSetCrtc(drm_state.fd, drm_state.crtc_id, next->fb_id, 0, 0,
                          &drm_state.connector_id, 1, &drm_state.mode);
@@ -811,14 +815,12 @@ int sr_drm_present(const Surface *surface) {
       fprintf(stderr, "CPU DRM modeset failed: %s\n", strerror(errno));
       return -errno;
     }
-    if (ret == 0) {
-      drmVBlank vblank = {0};
-      vblank.request.type = DRM_VBLANK_RELATIVE;
-      vblank.request.sequence = 1;
-      if (drmWaitVBlank(drm_state.fd, &vblank) != 0) {
-        fprintf(stderr, "CPU DRM initial vblank failed: %s\n", strerror(errno));
-        return -errno;
-      }
+    drmVBlank vblank = {0};
+    vblank.request.type = DRM_VBLANK_RELATIVE;
+    vblank.request.sequence = 1;
+    if (drmWaitVBlank(drm_state.fd, &vblank) != 0) {
+      fprintf(stderr, "CPU DRM initial vblank failed: %s\n", strerror(errno));
+      return -errno;
     }
   } else {
     int waiting = 1;
@@ -837,10 +839,6 @@ int sr_drm_present(const Surface *surface) {
   drm_state.presented = 1;
   drm_state.front = 1 - drm_state.front;
   return 0;
-}
-
-double sr_drm_last_copy_ms(void) {
-  return drm_state.last_copy_ms;
 }
 
 void sr_drm_close(void) {
@@ -882,7 +880,6 @@ void sr_drm_close(void) {
 #else
 int sr_drm_init(void) { return -1; }
 int sr_drm_present(const Surface *surface) { (void)surface; return -1; }
-double sr_drm_last_copy_ms(void) { return 0; }
 uint8_t *sr_drm_back_buffer(int *stride) { (void)stride; return NULL; }
 void sr_drm_camera_begin_frame(void) {}
 int sr_drm_set_camera(int dma_fd, int width, int height, int stride, int uv_offset,
@@ -931,28 +928,9 @@ static inline uint32_t premultiply(uint32_t color) {
          (((g * a + 127) / 255) << 8) | ((b * a + 127) / 255);
 }
 
-// Runtime switch used by matched benchmarks. This deliberately remains
-// independent of architecture-specific SIMD paths.
-static int opacity_culling = 1;
-
-void sr_set_opacity_culling(int enabled) {
-  opacity_culling = enabled;
-}
-
 #if defined(__aarch64__)
-static int neon_raster_enabled = -1;
-
-static inline int use_neon_raster(void) {
-  if (neon_raster_enabled < 0) {
-    const char *setting = getenv("CPU_NEON_RASTER");
-    neon_raster_enabled = !setting || strcmp(setting, "0") != 0;
-  }
-  return neon_raster_enabled;
-}
-
-// Four premultiplied RGBA pixels at a time. MICI's CPU backend stores pixels
-// as uint32_t RGBA (R in bits 16..23, A in bits 24..31), so each pixel's alpha
-// is byte 3 in memory on little-endian ARM.
+// Four premultiplied pixels at a time. The framebuffer uses native RGBA bytes,
+// so each pixel's alpha is byte 3 on little-endian ARM.
 static inline uint8x16_t blend4_neon(uint8x16_t dst, uint8x16_t src) {
   static const uint8_t alpha_indices[16] = {
     3, 3, 3, 3, 7, 7, 7, 7, 11, 11, 11, 11, 15, 15, 15, 15,
@@ -1030,6 +1008,7 @@ static inline void blend_solid_span_neon(uint32_t *dst, int count, uint32_t src)
   for (; x < count; ++x) dst[x] = blend(dst[x], src);
 }
 #endif
+
 void sr_set_clip(Surface *s, int x, int y, int width, int height) {
   s->clip_x0 = x < 0 ? 0 : (x > s->width ? s->width : x);
   s->clip_y0 = y < 0 ? 0 : (y > s->height ? s->height : y);
@@ -1054,7 +1033,7 @@ void sr_clear(Surface *s, uint32_t color) {
 }
 
 void sr_rect(Surface *s, int x, int y, int w, int h, uint32_t color) {
-  if (opacity_culling && (color >> 24) == 0) return;
+  if ((color >> 24) == 0) return;
   const int x0 = x < s->clip_x0 ? s->clip_x0 : x;
   const int y0 = y < s->clip_y0 ? s->clip_y0 : y;
   const int x1 = x + w > s->clip_x1 ? s->clip_x1 : x + w;
@@ -1067,10 +1046,8 @@ void sr_rect(Surface *s, int x, int y, int w, int h, uint32_t color) {
       for (int px = x0; px < x1; ++px) row[px] = src;
     } else {
 #if defined(__aarch64__)
-      if (use_neon_raster()) {
-        blend_solid_span_neon(row + x0, x1 - x0, src);
-        continue;
-      }
+      blend_solid_span_neon(row + x0, x1 - x0, src);
+      continue;
 #endif
       for (int px = x0; px < x1; ++px) row[px] = blend(row[px], src);
     }
@@ -1078,7 +1055,7 @@ void sr_rect(Surface *s, int x, int y, int w, int h, uint32_t color) {
 }
 
 void sr_gradient_v(Surface *s, int x, int y, int w, int h, uint32_t top, uint32_t bottom) {
-  if (opacity_culling && ((top | bottom) >> 24) == 0) return;
+  if (((top | bottom) >> 24) == 0) return;
   if (h <= 0) return;
   for (int py = 0; py < h; ++py) {
     const int t = h == 1 ? 0 : (py * 256) / (h - 1);
@@ -1095,7 +1072,7 @@ void sr_gradient_v(Surface *s, int x, int y, int w, int h, uint32_t top, uint32_
 void sr_gradient_4(Surface *s, int x, int y, int width, int height,
                    uint32_t top_left, uint32_t bottom_left,
                    uint32_t top_right, uint32_t bottom_right) {
-  if (opacity_culling && ((top_left | bottom_left | top_right | bottom_right) >> 24) == 0) return;
+  if (((top_left | bottom_left | top_right | bottom_right) >> 24) == 0) return;
   if (width <= 0 || height <= 0) return;
   const int x0 = x < s->clip_x0 ? s->clip_x0 : x;
   const int y0 = y < s->clip_y0 ? s->clip_y0 : y;
@@ -1119,7 +1096,7 @@ void sr_gradient_4(Surface *s, int x, int y, int width, int height,
 
 void sr_rounded_rect(Surface *s, int x, int y, int width, int height,
                      float radius, float thickness, uint32_t color) {
-  if (opacity_culling && (color >> 24) == 0) return;
+  if ((color >> 24) == 0) return;
   if (width <= 0 || height <= 0) return;
   radius = fmaxf(0, fminf(radius, fminf(width, height) * .5f));
   const int x0 = x < s->clip_x0 ? s->clip_x0 : x;
@@ -1142,7 +1119,7 @@ void sr_rounded_rect(Surface *s, int x, int y, int width, int height,
 }
 
 void sr_circle(Surface *s, int cx, int cy, int radius, uint32_t color) {
-  if (opacity_culling && (color >> 24) == 0) return;
+  if ((color >> 24) == 0) return;
   if (radius <= 0) return;
   const uint32_t src = premultiply(color);
   for (int dy = -radius; dy <= radius; ++dy) {
@@ -1155,10 +1132,8 @@ void sr_circle(Surface *s, int cx, int cy, int radius, uint32_t color) {
     if (x1 > s->clip_x1) x1 = s->clip_x1;
     uint32_t *row = (uint32_t *)(s->pixels + py * s->stride);
 #if defined(__aarch64__)
-    if (use_neon_raster()) {
-      blend_solid_span_neon(row + x0, x1 - x0, src);
-      continue;
-    }
+    blend_solid_span_neon(row + x0, x1 - x0, src);
+    continue;
 #endif
     for (int px = x0; px < x1; ++px) row[px] = blend(row[px], src);
   }
@@ -1166,7 +1141,7 @@ void sr_circle(Surface *s, int cx, int cy, int radius, uint32_t color) {
 
 void sr_ring_arc(Surface *s, int cx, int cy, int inner_radius, int outer_radius,
                  float start_angle, float end_angle, uint32_t color) {
-  if (opacity_culling && (color >> 24) == 0) return;
+  if ((color >> 24) == 0) return;
   if (outer_radius <= 0 || inner_radius >= outer_radius) return;
   const uint32_t src = premultiply(color);
   const int inner2 = inner_radius * inner_radius;
@@ -1200,10 +1175,8 @@ void sr_ring_arc(Surface *s, int cx, int cy, int inner_radius, int outer_radius,
         if (x1 > s->clip_x1) x1 = s->clip_x1;
         if (x0 >= x1) continue;
 #if defined(__aarch64__)
-        if (use_neon_raster()) {
-          blend_solid_span_neon(row + x0, x1 - x0, src);
-          continue;
-        }
+        blend_solid_span_neon(row + x0, x1 - x0, src);
+        continue;
 #endif
         for (int x = x0; x < x1; ++x) row[x] = blend(row[x], src);
       }
@@ -1233,12 +1206,8 @@ void sr_ring_arc(Surface *s, int cx, int cy, int inner_radius, int outer_radius,
   }
 }
 
-void sr_ring(Surface *s, int cx, int cy, int inner_radius, int outer_radius, uint32_t color) {
-  sr_ring_arc(s, cx, cy, inner_radius, outer_radius, 0, 360, color);
-}
-
 void sr_circle_gradient(Surface *s, int cx, int cy, int radius, uint32_t inner, uint32_t outer) {
-  if (opacity_culling && ((inner | outer) >> 24) == 0) return;
+  if (((inner | outer) >> 24) == 0) return;
   if (radius <= 0) return;
   uint32_t colors[256];
   for (int index = 0; index < 256; ++index) {
@@ -1269,7 +1238,7 @@ void sr_circle_gradient(Surface *s, int cx, int cy, int radius, uint32_t inner, 
 }
 
 void sr_line(Surface *s, float x0, float y0, float x1, float y1, float thickness, uint32_t color) {
-  if (opacity_culling && (color >> 24) == 0) return;
+  if ((color >> 24) == 0) return;
   if (thickness <= 1.1f) {
     int ax = (int)roundf(x0), ay = (int)roundf(y0);
     const int bx = (int)roundf(x1), by = (int)roundf(y1);
@@ -1314,7 +1283,7 @@ static inline float edge(Point a, Point b, float x, float y) {
 }
 
 void sr_triangle(Surface *s, Point a, Point b, Point c, uint32_t color) {
-  if (opacity_culling && (color >> 24) == 0) return;
+  if ((color >> 24) == 0) return;
   int x0 = (int)floorf(fminf(a.x, fminf(b.x, c.x)));
   int y0 = (int)floorf(fminf(a.y, fminf(b.y, c.y)));
   int x1 = (int)ceilf(fmaxf(a.x, fmaxf(b.x, c.x)));
@@ -1371,13 +1340,11 @@ void sr_ribbon(Surface *s, const Point *perimeter, int count,
                float start_x, float start_y, float end_x, float end_y,
                const uint32_t *colors, const float *stops, int color_count) {
   if (!perimeter || count < 3) return;
-  if (opacity_culling) {
-    if (color_count <= 0 && (solid_color >> 24) == 0) return;
-    if (color_count > 0) {
-      uint32_t combined_alpha = 0;
-      for (int index = 0; index < color_count; ++index) combined_alpha |= colors[index] >> 24;
-      if (combined_alpha == 0) return;
-    }
+  if (color_count <= 0 && (solid_color >> 24) == 0) return;
+  if (color_count > 0) {
+    uint32_t combined_alpha = 0;
+    for (int index = 0; index < color_count; ++index) combined_alpha |= colors[index] >> 24;
+    if (combined_alpha == 0) return;
   }
   count &= ~1;
   uint32_t gradient_lut[256];
@@ -1431,31 +1398,6 @@ void sr_ribbon(Surface *s, const Point *perimeter, int count,
   }
 }
 
-void sr_blit(Surface *dst, const Surface *src, int dx, int dy, uint8_t opacity) {
-  if (opacity_culling && opacity == 0) return;
-  int sx = 0, sy = 0;
-  int w = src->width, h = src->height;
-  if (dx < dst->clip_x0) { sx = dst->clip_x0 - dx; w -= sx; dx = dst->clip_x0; }
-  if (dy < dst->clip_y0) { sy = dst->clip_y0 - dy; h -= sy; dy = dst->clip_y0; }
-  if (dx + w > dst->clip_x1) w = dst->clip_x1 - dx;
-  if (dy + h > dst->clip_y1) h = dst->clip_y1 - dy;
-  if (w <= 0 || h <= 0) return;
-  for (int y = 0; y < h; ++y) {
-    uint32_t *d = (uint32_t *)(dst->pixels + (dy + y) * dst->stride);
-    const uint32_t *sp = (const uint32_t *)(src->pixels + (sy + y) * src->stride);
-    for (int x = 0; x < w; ++x) {
-      uint32_t p = sp[sx + x];
-      if (opacity != 255) {
-        const uint32_t a = ((p >> 24) * opacity + 127) / 255;
-        const uint32_t rb = (((p & 0x00ff00ffU) * opacity) + 0x00800080U) >> 8;
-        const uint32_t g = (((p & 0x0000ff00U) * opacity) + 0x00008000U) >> 8;
-        p = (a << 24) | (rb & 0x00ff00ffU) | (g & 0x0000ff00U);
-      }
-      d[dx + x] = blend(d[dx + x], p);
-    }
-  }
-}
-
 void sr_blit_opaque(Surface *dst, const Surface *src, int dx, int dy) {
   int sx = 0, sy = 0;
   int width = src->width, height = src->height;
@@ -1471,28 +1413,8 @@ void sr_blit_opaque(Surface *dst, const Surface *src, int dx, int dy) {
   }
 }
 
-void sr_burn_in_filter(Surface *surface, int x, int y, int width, int height) {
-  const int x0 = x > surface->clip_x0 ? x : surface->clip_x0;
-  const int y0 = y > surface->clip_y0 ? y : surface->clip_y0;
-  const int x1 = x + width < surface->clip_x1 ? x + width : surface->clip_x1;
-  const int y1 = y + height < surface->clip_y1 ? y + height : surface->clip_y1;
-  for (int py = y0; py < y1; ++py) {
-    uint32_t *row = (uint32_t *)(surface->pixels + py * surface->stride);
-    for (int px = x0; px < x1; ++px) {
-      const uint32_t sampled = row[px];
-      const uint32_t alpha = sampled >> 24;
-      const uint32_t intensity = (sampled >> 16) & 255;
-      // Match application.py's diagnostic shader: blue maps linearly from
-      // green through yellow to red while preserving the sampled alpha.
-      const uint32_t red = intensity < 128 ? intensity * 2 : 255;
-      const uint32_t green = intensity < 128 ? 255 : (255 - intensity) * 2;
-      row[px] = (alpha << 24) | (green << 8) | red;
-    }
-  }
-}
-
 static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, float src_y, float src_w, float src_h,
-                                int dst_x, int dst_y, int dst_w, int dst_h, uint32_t tint, int smooth) {
+                                int dst_x, int dst_y, int dst_w, int dst_h, uint32_t tint) {
   if (dst_w <= 0 || dst_h <= 0 || src_w == 0 || src_h == 0) return;
   const int flip_x = src_w < 0;
   const int flip_y = src_h < 0;
@@ -1502,7 +1424,7 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
   const uint32_t tr = (tint >> 16) & 255;
   const uint32_t tg = (tint >> 8) & 255;
   const uint32_t tb = tint & 255;
-  if (opacity_culling && ta == 0) return;
+  if (ta == 0) return;
   if (!flip_x && !flip_y &&
       fabsf(src_w - dst_w) < .001f && fabsf(src_h - dst_h) < .001f &&
       fabsf(src_x - roundf(src_x)) < .001f && fabsf(src_y - roundf(src_y)) < .001f) {
@@ -1520,11 +1442,11 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
       uint32_t *out = (uint32_t *)(dst->pixels + (dy + y) * dst->stride);
       const uint32_t *in = (const uint32_t *)(src->pixels + (sy + y) * src->stride);
 #if defined(__aarch64__)
-      if (tint == 0xffffffffU && use_neon_raster()) {
+      if (tint == 0xffffffffU) {
         blend_span_neon(out + dx, in + sx, width);
         continue;
       }
-      if (tr == 255 && tg == 255 && tb == 255 && use_neon_raster()) {
+      if (tr == 255 && tg == 255 && tb == 255) {
         blend_white_tint_span_neon(out + dx, in + sx, width, ta);
         continue;
       }
@@ -1534,7 +1456,7 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
         // Most glyph and icon textures are sparse. Avoid both a redundant
         // framebuffer store and all tint/blend arithmetic for transparent
         // source pixels.
-        if (opacity_culling && (p >> 24) == 0) continue;
+        if ((p >> 24) == 0) continue;
         if (tint != 0xffffffffU) {
           if (tr == 255 && tg == 255 && tb == 255) {
             const uint32_t a = ((p >> 24) * ta + 127) / 255;
@@ -1554,7 +1476,7 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
     }
     return;
   }
-  const int bilinear = smooth && (fabsf(src_w - dst_w) > .001f || fabsf(src_h - dst_h) > .001f);
+  const int bilinear = fabsf(src_w - dst_w) > .001f || fabsf(src_h - dst_h) > .001f;
   int start_y = dst->clip_y0 - dst_y;
   int end_y = dst->clip_y1 - dst_y;
   int start_x = dst->clip_x0 - dst_x;
@@ -1608,7 +1530,7 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
           p |= (uint32_t)((top * (256 - fy) + bottom * fy + 32768) >> 16) << shift;
         }
       }
-      if (opacity_culling && (p >> 24) == 0) continue;
+      if ((p >> 24) == 0) continue;
       const uint32_t a = ((p >> 24) * ta + 127) / 255;
       const uint32_t r = (((p >> 16) & 255) * tr * ta + 32512) / 65025;
       const uint32_t g = (((p >> 8) & 255) * tg * ta + 32512) / 65025;
@@ -1620,12 +1542,7 @@ static void sr_blit_scaled_impl(Surface *dst, const Surface *src, float src_x, f
 
 void sr_blit_scaled(Surface *dst, const Surface *src, float src_x, float src_y, float src_w, float src_h,
                     int dst_x, int dst_y, int dst_w, int dst_h, uint32_t tint) {
-  sr_blit_scaled_impl(dst, src, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, tint, 1);
-}
-
-void sr_blit_scaled_nearest(Surface *dst, const Surface *src, float src_x, float src_y, float src_w, float src_h,
-                            int dst_x, int dst_y, int dst_w, int dst_h, uint32_t tint) {
-  sr_blit_scaled_impl(dst, src, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, tint, 0);
+  sr_blit_scaled_impl(dst, src, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, tint);
 }
 
 void sr_blit_many(Surface *dst, const BlitItem *items, int count, uint32_t tint) {
@@ -1635,7 +1552,7 @@ void sr_blit_many(Surface *dst, const BlitItem *items, int count, uint32_t tint)
       dst, item->surface,
       item->source_x, item->source_y, item->source_width, item->source_height,
       item->destination_x, item->destination_y,
-      item->destination_width, item->destination_height, tint, 1);
+      item->destination_width, item->destination_height, tint);
   }
 }
 
@@ -1671,7 +1588,7 @@ void sr_blit_transform(Surface *dst, const Surface *src, float src_x, float src_
   const uint32_t tr = (tint >> 16) & 255;
   const uint32_t tg = (tint >> 8) & 255;
   const uint32_t tb = tint & 255;
-  if (opacity_culling && ta == 0) return;
+  if (ta == 0) return;
   for (int y = y0; y < y1; ++y) {
     uint32_t *out = (uint32_t *)(dst->pixels + y * dst->stride);
     for (int x = x0; x < x1; ++x) {
@@ -1706,7 +1623,7 @@ void sr_blit_transform(Surface *dst, const Surface *src, float src_x, float src_
         const int bottom = ((p01 >> shift) & 255) * (256 - fx) + ((p11 >> shift) & 255) * fx;
         p |= (uint32_t)((top * (256 - fy) + bottom * fy + 32768) >> 16) << shift;
       }
-      if (opacity_culling && (p >> 24) == 0) continue;
+      if ((p >> 24) == 0) continue;
       const uint32_t a = ((p >> 24) * ta + 127) / 255;
       const uint32_t r = (((p >> 16) & 255) * tr * ta + 32512) / 65025;
       const uint32_t g = (((p >> 8) & 255) * tg * ta + 32512) / 65025;
@@ -1788,32 +1705,4 @@ void sr_draw_nv12_crop(Surface *dst, const uint8_t *data, int frame_width, int f
       out[px] = 0xff000000U | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
     }
   }
-}
-
-void sr_draw_nv12(Surface *dst, const uint8_t *data, int frame_width, int frame_height,
-                  int stride, int uv_offset, int dx, int dy, int dw, int dh,
-                  int flip_x, int engaged, int enhance_driver) {
-  sr_draw_nv12_crop(dst, data, frame_width, frame_height, stride, uv_offset,
-                    0, 0, frame_width, frame_height, dx, dy, dw, dh,
-                    flip_x, engaged, enhance_driver);
-}
-
-// Representative on-road overlay submitted in one call, avoiding per-primitive
-// Python/C transitions in the benchmark and in the intended production design.
-void sr_demo_frame(Surface *s, int frame) {
-  sr_clear(s, 0xff101820U);
-  sr_gradient_v(s, 0, 120, s->width, 120, 0x00101820U, 0xd0000000U);
-
-  Point lane_l[] = {{185, 240}, {235, 95}, {247, 95}, {222, 240}};
-  Point lane_r[] = {{314, 240}, {279, 95}, {291, 95}, {351, 240}};
-  sr_triangle(s, lane_l[0], lane_l[1], lane_l[2], 0xb000d090U);
-  sr_triangle(s, lane_l[0], lane_l[2], lane_l[3], 0xb000d090U);
-  sr_triangle(s, lane_r[0], lane_r[1], lane_r[2], 0xb000d090U);
-  sr_triangle(s, lane_r[0], lane_r[2], lane_r[3], 0xb000d090U);
-
-  const int pulse = frame % 20;
-  sr_circle(s, 472, 34, 18 + pulse / 8, 0xe020c060U);
-  sr_rect(s, 12, 12, 92, 54, 0xd0181818U);
-  sr_rect(s, 20, 22, 55 + pulse, 8, 0xfff0f0f0U);
-  sr_rect(s, 20, 40, 34, 8, 0xffa0a0a0U);
 }

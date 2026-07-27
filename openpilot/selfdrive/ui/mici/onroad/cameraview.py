@@ -120,12 +120,14 @@ class CameraView(Widget):
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
-    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
-    self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
-    self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
-    self._engaged_val = rl.ffi.new("int[1]", [1])
-    self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
-    self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 0])
+    self.shader = rl.Shader()
+    if not rl.using_cpu_backend():
+      self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
+      self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
+      self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
+      self._engaged_val = rl.ffi.new("int[1]", [1])
+      self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
+      self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 0])
 
     self.frame: VisionBuf | None = None
     self.texture_y: rl.Texture | None = None
@@ -190,7 +192,7 @@ class CameraView(Widget):
       self.egl_texture = None
 
     # Clean up shader
-    if self.shader and self.shader.id:
+    if self.shader.id:
       rl.unload_shader(self.shader)
       self.shader.id = 0
 
