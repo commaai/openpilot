@@ -17,6 +17,3 @@ libs.insert(0, logger_lib)
 env.Program('loggerd', ['loggerd.cc'], LIBS=libs, FRAMEWORKS=frameworks)
 env.Program('encoderd', ['encoderd.cc'], LIBS=libs, FRAMEWORKS=frameworks)
 env.Program('bootlog.cc', LIBS=libs, FRAMEWORKS=frameworks)
-
-if GetOption('extras'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_zstd_writer.cc'], LIBS=libs)

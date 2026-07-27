@@ -18,7 +18,8 @@ class SetupWidget(Widget):
     self._pair_device_btn = Button(lambda: tr("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
     self._open_settings_btn = Button(lambda: tr("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label(lambda: tr("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
+    self._firehose_label = Label(lambda: tr("Firehose Mode"), font_weight=FontWeight.MEDIUM, font_size=64)
+    self._fire_icon = gui_app.texture("icons/fire.png", 64, 64)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
@@ -67,6 +68,8 @@ class SetupWidget(Widget):
 
     # Title with fire emojis
     self._firehose_label.render(rl.Rectangle(rect.x, y, rect.width, 64))
+    rl.draw_texture_ex(self._fire_icon, rl.Vector2(x, y), 0.0, 1.0, rl.WHITE)
+    rl.draw_texture_ex(self._fire_icon, rl.Vector2(x + w - 64, y), 0.0, 1.0, rl.WHITE)
     y += 64 + spacing
 
     # Description

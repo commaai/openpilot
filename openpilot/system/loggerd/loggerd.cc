@@ -246,7 +246,7 @@ void loggerd_thread() {
         .counter = 0,
         .freq = it.decimation,
         .encoder = encoder,
-        .preserve_segment = (it.name == "userBookmark") || (it.name == "audioFeedback"),
+        .preserve_segment = it.name == "userBookmark",
         .record_audio = record_audio,
       };
     }

@@ -27,9 +27,9 @@ def apply_metadrive_patches(arrive_dest_done=True):
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
   def add_image_sensor_patched(self, name: str, cls, args):
     if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
-        sensor = cls(*args, self, cuda=True)
+      sensor = cls(*args, self, cuda=True)
     else:
-        sensor = cls(*args, self, cuda=False)
+      sensor = cls(*args, self, cuda=False)
     assert isinstance(sensor, ImageBuffer), "This API is for adding image sensor"
     self.sensors[name] = sensor
 

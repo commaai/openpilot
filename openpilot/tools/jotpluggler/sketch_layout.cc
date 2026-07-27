@@ -926,7 +926,9 @@ void append_scalar_point(RouteSeries *series,
   series->values.push_back(value);
 }
 
-void append_fixed_scalar_point(RouteSeries *series, double tm, double value) {
+// This has thousands of generated call sites. Inlining it duplicates vector
+// growth logic throughout the extractor and is slower both to compile and run.
+__attribute__((noinline)) void append_fixed_scalar_point(RouteSeries *series, double tm, double value) {
   series->times.push_back(tm);
   series->values.push_back(value);
 }

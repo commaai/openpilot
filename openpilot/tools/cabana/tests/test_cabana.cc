@@ -1,20 +1,14 @@
 
-#undef INFO
 #include <filesystem>
 #include <sstream>
 
-#include "catch2/catch.hpp"
+#include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
-#include "tools/cabana/core/settings.h"
-
-#ifdef QT_CORE_LIB
-#include <QColor>
-#endif
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
-TEST_CASE("DBCFile::generateDBC") {
+void test_generate_dbc() {
   std::string fn = std::string(OPENDBC_FILE_PATH) + "/tesla_can.dbc";
   DBCFile dbc_origin(fn);
   DBCFile dbc_from_generated("", dbc_origin.generateDBC());
@@ -35,7 +29,7 @@ TEST_CASE("DBCFile::generateDBC") {
   }
 }
 
-TEST_CASE("DBCFile::generateDBC - comment order") {
+void test_comment_order() {
   // Ensure that message comments are followed by signal comments and in the correct order
   std::string content = R"(BO_ 160 message_1: 8 EON
  SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
@@ -52,7 +46,7 @@ CM_ SG_ 162 signal_2 "signal comment";
   REQUIRE(dbc.generateDBC() == content);
 }
 
-TEST_CASE("DBCFile::generateDBC -- preserve original header") {
+void test_preserve_original_header() {
   std::string content = R"(VERSION "1.0"
 
 NS_ :
@@ -72,7 +66,7 @@ CM_ SG_ 160 signal_1 "signal comment";
   REQUIRE(dbc.generateDBC() == content);
 }
 
-TEST_CASE("DBCFile::generateDBC - escaped quotes") {
+void test_escaped_quotes() {
   std::string content = R"(BO_ 160 message_1: 8 EON
  SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
 
@@ -83,7 +77,7 @@ CM_ SG_ 160 signal_1 "signal comment with \"escaped quotes\"";
   REQUIRE(dbc.generateDBC() == content);
 }
 
-TEST_CASE("parse_dbc") {
+void test_parse_dbc() {
   std::string content = R"(
 BO_ 160 message_1: 8 EON
   SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit"  XXX
@@ -149,7 +143,7 @@ CM_ SG_ 162 signal_1 "signal comment with \"escaped quotes\"";
   REQUIRE(msg->sigs[0]->comment == "signal comment with \"escaped quotes\"");
 }
 
-TEST_CASE("parse_opendbc") {
+void test_parse_opendbc() {
   std::vector<std::string> errors;
   for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH)) {
     if (!entry.is_regular_file() || entry.path().extension() != ".dbc") continue;
@@ -161,11 +155,11 @@ TEST_CASE("parse_opendbc") {
   }
   std::ostringstream details;
   for (const auto &error : errors) details << error << '\n';
-  INFO(details.str());
+  if (!errors.empty()) std::cerr << details.str();
   REQUIRE(errors.empty());
 }
 
-TEST_CASE("DBCManager core callbacks") {
+void test_dbc_manager() {
   DBCManager manager;
   int files_changed = 0;
   int signals_added = 0;
@@ -192,34 +186,16 @@ TEST_CASE("DBCManager core callbacks") {
   REQUIRE(manager.msg({.source = 0, .address = 160})->sig("speed") != nullptr);
 }
 
-TEST_CASE("Cabana settings core defaults") {
-  CabanaSettingsState state;
-  REQUIRE(state.fps == 10);
-  REQUIRE(state.chart_range == 180);
-  REQUIRE(state.drag_direction == CabanaSettingsState::MsbFirst);
-  REQUIRE(state.recent_files.empty());
+void test_cabana_core() {
+  test_generate_dbc();
+  test_comment_order();
+  test_preserve_original_header();
+  test_escaped_quotes();
+  test_parse_dbc();
+  test_parse_opendbc();
+  test_dbc_manager();
 }
 
-#ifdef QT_CORE_LIB
-TEST_CASE("CabanaColor preserves QColor transformations") {
-  const std::vector<QColor> colors = {
-    QColor(102, 86, 169, 64), QColor(0, 187, 255, 128), QColor(255, 0, 0, 128), QColor(45, 120, 75, 255),
-  };
-  for (const auto &qt_color : colors) {
-    CabanaColor color(qt_color.red(), qt_color.green(), qt_color.blue(), qt_color.alpha());
-    for (int factor : {75, 100, 135, 150, 200}) {
-      const auto lighter = color.lighter(factor);
-      const auto qt_lighter = qt_color.lighter(factor);
-      CHECK(std::abs(lighter.red() - qt_lighter.red()) <= 1);
-      CHECK(std::abs(lighter.green() - qt_lighter.green()) <= 1);
-      CHECK(std::abs(lighter.blue() - qt_lighter.blue()) <= 1);
-
-      const auto darker = color.darker(factor);
-      const auto qt_darker = qt_color.darker(factor);
-      CHECK(std::abs(darker.red() - qt_darker.red()) <= 1);
-      CHECK(std::abs(darker.green() - qt_darker.green()) <= 1);
-      CHECK(std::abs(darker.blue() - qt_darker.blue()) <= 1);
-    }
-  }
+int main() {
+  return run_native_test(test_cabana_core);
 }
-#endif

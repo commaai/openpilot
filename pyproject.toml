@@ -17,12 +17,10 @@ dependencies = [
   # core
   "scons",
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
-  "Cython",
   "numpy >=2.0",
 
   # vendored native dependencies
   "comma-deps-capnproto",
-  "comma-deps-catch2",
   "comma-deps-acados",
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
@@ -30,10 +28,6 @@ dependencies = [
   "comma-deps-json11",
   "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
-
-  # logging
-  "pyzmq",
-  "sentry-sdk",
 
   # athena
   "PyJWT[crypto]",
@@ -43,40 +37,29 @@ dependencies = [
   "inputs",
 
   # these should be removed
+  "pyzmq",
+  "sentry-sdk",
   "setproctitle",
-
-  # logreader
-  "zstandard",
+  "jeepney",
+  "zstandard",  # this can go once we're on Python 3.14+
 
   # ui
   "comma-deps-raylib",
   "qrcode",
-  "jeepney",
-  "pillow",
 ]
 
 [project.optional-dependencies]
-docs = [
-  "zensical",
-]
-
 testing = [
-  "coverage",
-  "hypothesis ==6.47.*",
-  "ty",
-  "pytest",
-  "pytest-xdist",
-  "ruff",
-  "codespell",
-]
-
-dev = [
-  "matplotlib",
+  "coverage",   # line coverage
+  "ty",         # type checking
+  "ruff",       # linting
+  "codespell",  # spellcheck
 ]
 
 tools = [
+  "matplotlib",
+
   "comma-deps-imgui",
-  "comma-deps-bzip2",
   "comma-deps-bootstrap-icons",
   "comma-deps-libusb",
   "comma-deps-ncurses",
@@ -114,14 +97,6 @@ packages = [
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-Werror --strict-config --durations=10"
-python_files = "test_*.py"
-testpaths = [
-  "openpilot",
-]
-
 [tool.codespell]
 quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
@@ -154,11 +129,7 @@ line-length = 160
 lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-"pytest".msg = "Use unittest"
-"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
-"time.time".msg = "Use time.monotonic"  # time.time can skip due to its reference clock, you probably want a monotonic clock
-
-# raylib banned APIs
+"time.time".msg = "Use time.monotonic. time.time can skip due to its reference clock, you probably want a monotonic clock"
 "pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
 "pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
 "pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"

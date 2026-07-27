@@ -1,6 +1,6 @@
 import math
 import pyray as rl
-from typing import Union
+from typing import TYPE_CHECKING, Union
 from enum import Enum
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
@@ -9,10 +9,13 @@ from openpilot.system.ui.widgets.scroller import DO_ZOOM
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.common.filter_simple import BounceFilter
 
-try:
+if TYPE_CHECKING:
   from openpilot.common.params import Params
-except ImportError:
-  Params = None
+else:
+  try:
+    from openpilot.common.params import Params
+  except (ImportError, OSError):
+    Params = None
 
 SCROLLING_SPEED_PX_S = 50
 COMPLICATION_SIZE    = 36

@@ -31,8 +31,7 @@ class OpenpilotTestCase(unittest.TestCase):
 
   def __init_subclass__(cls, **kwargs):
     super().__init_subclass__(**kwargs)
-    # Hide legacy pytest xunit hook names from pytest. unittest invokes the
-    # preserved hooks inside the OpenpilotPrefix boundary below.
+    # Preserve legacy xunit hooks and invoke them inside the prefix below.
     for name in ("setup_method", "teardown_method"):
       hook = cls.__dict__.get(name)
       if hook is not None:
