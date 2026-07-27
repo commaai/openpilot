@@ -38,7 +38,8 @@ from tinygrad.engine.jit import TinyJit
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 WARP_INPUTS = ['tfm', 'big_tfm']
-POLICY_INPUTS = ['img_q', 'big_img_q', 'feat_q', 'desire_q', 'packed_npy_inputs']
+POLICY_INPUTS = ['img_q', 'big_img_q', 'feat_q', 'desire_q', 'packed_npy_inputs',
+                 'off_policy_cache', 'on_policy_cache']
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -139,16 +140,16 @@ def get_policy_npy_shapes(input_shapes):
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
   tc = input_shapes['traffic_convention']  # (1, 2)
   at = input_shapes['action_t']  # (1, 2)
-  fb = input_shapes['features_buffer']  # (1, 24, 512)
-  # TODO prev_feat shouldn't exist and be handled inside the JIT, but corrupt on QCOM for now
-  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], fb[2])}
+  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at)}
+  if (fb := input_shapes.get('features_buffer')) is not None:
+    # TODO prev_feat shouldn't exist and be handled inside the JIT, but corrupt on QCOM for now
+    shapes['prev_feat'] = (fb[0], fb[2])
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
 def make_input_queues(input_shapes, frame_skip, device):
   input_queues, npy = make_warp_input_queues(input_shapes, frame_skip, device)
 
-  fb = input_shapes['features_buffer']  # (1, 24, 512), past features only; the model appends the current frame's feature
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
 
   shapes, sizes = get_policy_npy_shapes(input_shapes)
@@ -156,10 +157,18 @@ def make_input_queues(input_shapes, frame_skip, device):
   # views into the packed inputs, to be refilled at runtime
   npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)})
   input_queues.update({
-    'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
     'packed_npy_inputs': Tensor(packed_npy_inputs, device='NPY').realize(),
   })
+  if (fb := input_shapes.get('features_buffer')) is not None:
+    input_queues['feat_q'] = Tensor(
+      np.zeros((frame_skip * fb[1], fb[0], fb[2]), dtype=np.float32),
+      device=device).contiguous().realize()
+  for name in ('off_policy_cache', 'on_policy_cache'):
+    if name in input_shapes:
+      input_queues[name] = Tensor(
+        np.zeros(input_shapes[name], dtype=np.float16),
+        device=device).contiguous().realize()
   return input_queues, npy
 
 
@@ -196,7 +205,8 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['input_shapes'])
 
-  def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
+  def run_policy(warped, img_q, big_img_q, desire_q, packed_npy_inputs,
+                 feat_q=None, off_policy_cache=None, on_policy_cache=None):
     packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
     warped = warped.to(Device.DEFAULT)
     Tensor.realize(packed_npy_inputs, warped)
@@ -204,19 +214,42 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
     img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
 
-    desire, traffic_convention, action_t, prev_feat = (t.reshape(s) for t, s in zip(packed_npy_inputs.split(npy_sizes), npy_shapes.values(), strict=True))
+    packed_values = {
+      name: value.reshape(shape)
+      for (name, shape), value in zip(npy_shapes.items(), packed_npy_inputs.split(npy_sizes), strict=True)
+    }
+    desire = packed_values['desire']
+    traffic_convention = packed_values['traffic_convention']
+    action_t = packed_values['action_t']
     desire_buf = shift_and_sample(desire_q, desire.reshape(1, 1, -1), sample_desire_fn)
-    feat_buf = shift_and_sample(feat_q, prev_feat.reshape(1, 1, -1), sample_skip_fn)
 
     inputs = {
       'img': img,
       'big_img': big_img,
-      'features_buffer': feat_buf,
       'desire_pulse': desire_buf,
       'traffic_convention': traffic_convention,
       'action_t': action_t,
     }
-    out = next(iter(model_runner(inputs).values())).cast('float32')
+    if 'features_buffer' in model_metadata['input_shapes']:
+      assert feat_q is not None
+      inputs['features_buffer'] = shift_and_sample(
+        feat_q, packed_values['prev_feat'].reshape(1, 1, -1), sample_skip_fn)
+    caches = {
+      'off_policy_cache': off_policy_cache,
+      'on_policy_cache': on_policy_cache,
+    }
+    for name, cache in caches.items():
+      if name in model_metadata['input_shapes']:
+        assert cache is not None
+        inputs[name] = cache
+
+    model_outputs = model_runner(inputs)
+    out = model_outputs.get('outputs', next(iter(model_outputs.values()))).cast('float32')
+    cache_updates = []
+    for name, cache in caches.items():
+      if name in model_metadata['input_shapes']:
+        cache_updates.append(cache.assign(model_outputs[f'{name}_out'].cast(cache.dtype).contiguous()))
+    Tensor.realize(out, *cache_updates)
     return out,
   return run_policy
 
@@ -237,7 +270,7 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
       Device.default.synchronize()
       random_inputs = make_random_inputs()
       st = time.perf_counter()
-      outs = fn(**{k: input_queues[k] for k in input_keys}, **random_inputs)
+      outs = fn(**{k: input_queues[k] for k in input_keys if k in input_queues}, **random_inputs)
       mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
