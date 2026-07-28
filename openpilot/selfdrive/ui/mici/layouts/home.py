@@ -2,7 +2,7 @@ import datetime
 import time
 
 from openpilot.cereal import log
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout

@@ -1,5 +1,5 @@
 import os
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from collections.abc import Callable
 
 from openpilot.common.basedir import BASEDIR

@@ -2,7 +2,7 @@ import math
 from enum import IntEnum
 from collections.abc import Callable
 from typing import Union
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
 from openpilot.system.ui.widgets import Widget

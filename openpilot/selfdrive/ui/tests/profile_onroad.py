@@ -2,7 +2,7 @@
 import os
 import time
 import cProfile
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 import numpy as np
 
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -76,7 +76,7 @@ if __name__ == "__main__":
   if args.max_seconds:
     message_chunks = message_chunks[:int(args.max_seconds * FPS)]
 
-  print("Initializing UI with GPU rendering...")
+  print(f"Initializing UI with {'CPU' if rl.using_cpu_backend() else 'GPU'} rendering...")
 
   if args.headless:
     os.environ['SDL_VIDEODRIVER'] = 'dummy'

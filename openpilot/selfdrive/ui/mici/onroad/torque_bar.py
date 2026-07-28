@@ -4,7 +4,7 @@ from functools import wraps
 from collections import OrderedDict
 
 import numpy as np
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus

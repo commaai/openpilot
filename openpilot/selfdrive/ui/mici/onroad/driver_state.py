@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 import numpy as np
 import math
 from openpilot.cereal import log

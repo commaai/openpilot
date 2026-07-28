@@ -1,6 +1,6 @@
 import platform
 import numpy as np
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
@@ -120,12 +120,14 @@ class CameraView(Widget):
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
-    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
-    self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
-    self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
-    self._engaged_val = rl.ffi.new("int[1]", [1])
-    self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
-    self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 0])
+    self.shader = rl.Shader()
+    if not rl.using_cpu_backend():
+      self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
+      self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
+      self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
+      self._engaged_val = rl.ffi.new("int[1]", [1])
+      self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
+      self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 0])
 
     self.frame: VisionBuf | None = None
     self.texture_y: rl.Texture | None = None
@@ -138,7 +140,7 @@ class CameraView(Widget):
     self._placeholder_color: rl.Color | None = None
 
     # Initialize EGL for zero-copy rendering on TICI
-    if TICI:
+    if TICI and not rl.using_cpu_backend():
       if not init_egl():
         raise RuntimeError("Failed to initialize EGL")
 
@@ -185,12 +187,12 @@ class CameraView(Widget):
     self._clear_textures()
 
     # Clean up EGL texture
-    if TICI and self.egl_texture:
+    if TICI and not rl.using_cpu_backend() and self.egl_texture:
       rl.unload_texture(self.egl_texture)
       self.egl_texture = None
 
     # Clean up shader
-    if self.shader and self.shader.id:
+    if self.shader.id:
       rl.unload_shader(self.shader)
       self.shader.id = 0
 
@@ -260,7 +262,10 @@ class CameraView(Widget):
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
     # Render with appropriate method
-    if TICI:
+    if rl.using_cpu_backend():
+      rl.draw_nv12(self.frame, dst_rect, ui_state.status != UIStatus.DISENGAGED,
+                   self._stream_type == VisionStreamType.VISION_STREAM_DRIVER)
+    elif TICI:
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
@@ -384,6 +389,8 @@ class CameraView(Widget):
 
   def _initialize_textures(self):
     self._clear_textures()
+    if rl.using_cpu_backend():
+      return
     if not TICI:
       self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
         int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
@@ -400,7 +407,7 @@ class CameraView(Widget):
       self.texture_uv = None
 
     # Clean up EGL resources
-    if TICI:
+    if TICI and not rl.using_cpu_backend():
       for data in self.egl_images.values():
         destroy_egl_image(data)
       self.egl_images = {}

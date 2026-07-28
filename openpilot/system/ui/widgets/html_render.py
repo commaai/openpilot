@@ -1,5 +1,5 @@
 import re
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any

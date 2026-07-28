@@ -1,5 +1,5 @@
 import math
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from typing import TYPE_CHECKING, Union
 from enum import Enum
 from collections.abc import Callable
