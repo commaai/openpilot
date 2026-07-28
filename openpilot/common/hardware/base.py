@@ -81,6 +81,9 @@ class HardwareBase(ABC):
   def get_os_version(self):
     return None
 
+  def get_init_logs(self) -> dict[str, bytes]:
+    return {}
+
   @abstractmethod
   def get_device_type(self):
     pass
