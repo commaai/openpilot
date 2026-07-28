@@ -27,7 +27,6 @@ class OpenpilotTestCase(unittest.TestCase):
   TICI_TEST = False
   SKIP_TICI_SETUP = False
   SHARED_DOWNLOAD_CACHE = False
-  SLOW_TEST = False
 
   def __init_subclass__(cls, **kwargs):
     super().__init_subclass__(**kwargs)
@@ -63,8 +62,7 @@ class OpenpilotTestCase(unittest.TestCase):
   def run(self, result=None):
     # This boundary cannot live in setUp/tearDown: existing unittest classes
     # are allowed to override those hooks without calling super().
-    if ((self.SLOW_TEST and os.environ.get("SKIP_SLOW")) or
-        (self.TICI_TEST and not TICI) or getattr(type(self), "__unittest_skip__", False)):
+    if (self.TICI_TEST and not TICI) or getattr(type(self), "__unittest_skip__", False):
       return super().run(result)
     test_env = clean_env()
     test_env.__enter__()
@@ -83,8 +81,6 @@ class OpenpilotTestCase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    if cls.SLOW_TEST and os.environ.get("SKIP_SLOW"):
-      raise unittest.SkipTest("slow test")
     if cls.TICI_TEST and not TICI:
       raise unittest.SkipTest("Skipping tici test on PC")
     cls._class_env = clean_env()

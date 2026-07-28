@@ -109,7 +109,7 @@ jobs:
       env:
         RAYLIB_BACKEND: headless
       run: |
-        MAX_EXAMPLES=1 SKIP_SLOW=1 tools/test_runner.py --durations=0
+        MAX_EXAMPLES=1 tools/test_runner.py --durations=0
 
   process_replay:
     name: process replay
