@@ -414,10 +414,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: NormalPermanentAlert("Big Model Loading"),
   },
 
-  EventName.bigModelReady: {
-    ET.PERMANENT: EngagementAlert(AudibleAlert.complete),
-  },
-
   EventName.bigModelFailed: {
     ET.PERMANENT: NormalPermanentAlert("Big Model Failed ", "Restart the car to retry,\nnow driving on small model", duration=30.),
   },
