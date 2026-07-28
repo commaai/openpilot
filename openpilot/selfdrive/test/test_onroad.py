@@ -106,7 +106,6 @@ def cputime_total(ct):
 
 class TestOnroad(OpenpilotTestCase):
   TICI_TEST = True
-  SKIP_TICI_SETUP = True
 
   @classmethod
   def setup_class(cls):

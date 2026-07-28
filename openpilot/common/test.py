@@ -22,10 +22,9 @@ def clean_env():
 
 
 class OpenpilotTestCase(unittest.TestCase):
-  """TestCase with openpilot's per-test isolation and legacy hook support."""
+  """TestCase with openpilot's per-test isolation."""
 
   TICI_TEST = False
-  SKIP_TICI_SETUP = False
   SHARED_DOWNLOAD_CACHE = False
 
   def __init_subclass__(cls, **kwargs):
@@ -104,7 +103,7 @@ class OpenpilotTestCase(unittest.TestCase):
     if self.TICI_TEST and not TICI:
       self.skipTest("Skipping tici test on PC")
 
-    if self.TICI_TEST and not self.SKIP_TICI_SETUP:
+    if self.TICI_TEST:
       HARDWARE.initialize_hardware()
       HARDWARE.set_power_save(False)
       subprocess.run(["pkill", "-9", "-f", "athena"], check=False)
