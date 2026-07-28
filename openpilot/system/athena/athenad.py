@@ -568,7 +568,7 @@ def getNetworkMetered() -> bool:
 
 
 @dispatcher.add_method
-def startStream(sdp: str, enabled: bool, cameras: list[str] | None) -> dict:
+def startStream(sdp: str, enabled: bool, cameras: list[str] | None = None) -> dict:
   from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
   params = Params()
   bridge_services_in = []
