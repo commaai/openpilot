@@ -60,12 +60,12 @@ class TestSubMaster(OpenpilotTestCase):
   def test_update_timeout(self):
     sock = random_sock()
     sm = messaging.SubMaster([sock,])
-    timeout = random.randrange(1000, 3000)
+    timeout = random.randrange(10, 30)
     start_time = time.monotonic()
     sm.update(timeout)
     t = time.monotonic() - start_time
     assert t >= timeout/1000.
-    assert t < 3
+    assert t < 0.1
     assert not any(sm.updated.values())
 
   def test_avg_frequency_checks(self):
@@ -98,12 +98,14 @@ class TestSubMaster(OpenpilotTestCase):
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
 
+    pub_sock.send(messaging.new_message(sock).to_bytes())
+    sm.update(1000)  # synchronize the PUB/SUB connection
+
     n = 10
     for i in range(n+1):
       msg = messaging.new_message(sock)
       msg.carState.vEgo = i
       pub_sock.send(msg.to_bytes())
-      time.sleep(0.01)
     sm.update(1000)
     assert sm[sock].vEgo == n
 

@@ -1,5 +1,4 @@
 import os
-import time
 import threading
 import logging
 import json
@@ -7,7 +6,7 @@ from pathlib import Path
 from openpilot.common.hardware.hw import Paths
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.loggerd.uploader import main, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
+from openpilot.system.loggerd.uploader import clear_locks, main, Uploader, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
@@ -15,21 +14,30 @@ from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 class FakeLogHandler(logging.Handler):
   def __init__(self):
     logging.Handler.__init__(self)
+    self.condition = threading.Condition()
     self.reset()
 
   def reset(self):
-    self.upload_order = []
-    self.upload_ignored = []
+    with self.condition:
+      self.upload_order = []
+      self.upload_ignored = []
 
   def emit(self, record):
     try:
       j = json.loads(record.getMessage())
-      if j["event"] == "upload_success":
-        self.upload_order.append(j["key"])
-      if j["event"] == "upload_ignored":
-        self.upload_ignored.append(j["key"])
+      with self.condition:
+        if j["event"] == "upload_success":
+          self.upload_order.append(j["key"])
+        if j["event"] == "upload_ignored":
+          self.upload_ignored.append(j["key"])
+        self.condition.notify_all()
     except Exception:
       pass
+
+  def wait_for_uploads(self, count: int, ignored: bool = False):
+    uploads = self.upload_ignored if ignored else self.upload_order
+    with self.condition:
+      assert self.condition.wait_for(lambda: len(uploads) >= count, timeout=1), "Uploader did not process all files"
 
 log_handler = FakeLogHandler()
 cloudlog.addHandler(log_handler)
@@ -70,13 +78,11 @@ class TestUploader(UploaderTestCase):
 
   def test_upload(self):
     self.gen_files(lock=False)
+    exp_order = self.gen_order([self.seg_num], [])
 
     self.start_thread()
-    # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(1)
+    log_handler.wait_for_uploads(len(exp_order))
     self.join_thread()
-
-    exp_order = self.gen_order([self.seg_num], [])
 
     assert len(log_handler.upload_ignored) == 0, "Some files were ignored"
     assert not len(log_handler.upload_order) < len(exp_order), "Some files failed to upload"
@@ -88,13 +94,11 @@ class TestUploader(UploaderTestCase):
 
   def test_upload_with_wrong_xattr(self):
     self.gen_files(lock=False, xattr=b'0')
+    exp_order = self.gen_order([self.seg_num], [])
 
     self.start_thread()
-    # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(1)
+    log_handler.wait_for_uploads(len(exp_order))
     self.join_thread()
-
-    exp_order = self.gen_order([self.seg_num], [])
 
     assert len(log_handler.upload_ignored) == 0, "Some files were ignored"
     assert not len(log_handler.upload_order) < len(exp_order), "Some files failed to upload"
@@ -107,13 +111,11 @@ class TestUploader(UploaderTestCase):
   def test_upload_ignored(self):
     self.set_ignore()
     self.gen_files(lock=False)
+    exp_order = self.gen_order([self.seg_num], [])
 
     self.start_thread()
-    # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(1)
+    log_handler.wait_for_uploads(len(exp_order), ignored=True)
     self.join_thread()
-
-    exp_order = self.gen_order([self.seg_num], [])
 
     assert len(log_handler.upload_order) == 0, "Some files were not ignored"
     assert not len(log_handler.upload_ignored) < len(exp_order), "Some files failed to ignore"
@@ -136,8 +138,7 @@ class TestUploader(UploaderTestCase):
     exp_order = self.gen_order(seg1_nums, seg2_nums, boot=False)
 
     self.start_thread()
-    # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(1)
+    log_handler.wait_for_uploads(len(exp_order))
     self.join_thread()
 
     assert len(log_handler.upload_ignored) == 0, "Some files were ignored"
@@ -149,34 +150,30 @@ class TestUploader(UploaderTestCase):
     assert log_handler.upload_order == exp_order, "Files uploaded in wrong order"
 
   def test_no_upload_with_lock_file(self):
-    self.start_thread()
-
-    time.sleep(0.25)
     f_paths = self.gen_files(lock=True, boot=False)
-
-    # allow enough time that files should have been uploaded if they would be uploaded
-    time.sleep(1)
-    self.join_thread()
+    uploader = Uploader("0000000000000000", Paths.log_root())
 
     for f_path in f_paths:
       fn = f_path.with_suffix(f_path.suffix.replace(".zst", ""))
-      uploaded = UPLOAD_ATTR_NAME in os.listxattr(fn) and os.getxattr(fn, UPLOAD_ATTR_NAME) == UPLOAD_ATTR_VALUE
-      assert not uploaded, "File upload when locked"
+      assert all(candidate[2] != str(fn) for candidate in uploader.list_upload_files(metered=False)), "Locked file selected for upload"
 
   def test_no_upload_with_xattr(self):
-    self.gen_files(lock=False, xattr=UPLOAD_ATTR_VALUE)
+    f_paths = self.gen_files(lock=False, xattr=UPLOAD_ATTR_VALUE)
+    uploader = Uploader("0000000000000000", Paths.log_root())
+    upload_candidates = {candidate[2] for candidate in uploader.list_upload_files(metered=False)}
+    assert upload_candidates.isdisjoint(map(str, f_paths)), "Uploaded file selected again"
 
-    self.start_thread()
-    # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(1)
-    self.join_thread()
-
-    assert len(log_handler.upload_order) == 0, "File uploaded again"
-
-  def test_clear_locks_on_startup(self):
+  def test_clear_locks_on_startup(self, mocker):
     f_paths = self.gen_files(lock=True, boot=False)
+    locks_cleared = threading.Event()
+
+    def clear_locks_and_signal(root):
+      clear_locks(root)
+      locks_cleared.set()
+
+    mocker.patch("openpilot.system.loggerd.uploader.clear_locks", side_effect=clear_locks_and_signal)
     self.start_thread()
-    time.sleep(0.25)
+    assert locks_cleared.wait(timeout=1), "Uploader did not clear locks on startup"
     self.join_thread()
 
     for f_path in f_paths:

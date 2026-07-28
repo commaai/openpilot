@@ -2,6 +2,7 @@ import random
 import numpy as np
 import time
 import unittest
+from functools import cache
 
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
@@ -17,6 +18,12 @@ from openpilot.common.hardware import PC
 MAX_ERR_FRAMES = 1
 DT = 0.05
 LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES = int(round(MIN_LAG / DT)), int(round(MAX_LAG / DT))
+
+
+@cache
+def get_test_car_params():
+  lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
+  return next(m for m in lr if m.which() == "carParams").carParams
 
 
 def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_threshold=0.0):
@@ -50,8 +57,7 @@ class TestLagd(OpenpilotTestCase):
   def test_read_saved_params(self):
     params = Params()
 
-    lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
-    CP = next(m for m in lr if m.which() == "carParams").carParams
+    CP = get_test_car_params()
 
     msg = messaging.new_message('liveDelay')
     msg.liveDelay.lateralDelayEstimate = random.random()
@@ -70,8 +76,7 @@ class TestLagd(OpenpilotTestCase):
   def test_read_invalid_saved_params(self, subtests):
     params = Params()
 
-    lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
-    CP = next(m for m in lr if m.which() == "carParams").carParams
+    CP = get_test_car_params()
 
     for msg_dict in [{'version': 0}, {'status': 'invalid'}, {'validBlocks': 100}]:
       with subtests.test(msg=f"liveDelay={msg_dict}"):
