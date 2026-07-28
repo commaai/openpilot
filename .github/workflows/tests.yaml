@@ -108,7 +108,7 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       env:
         RAYLIB_BACKEND: headless
-      run: tools/op.sh test --durations=0
+      run: tools/op.sh test
 
   process_replay:
     name: process replay
