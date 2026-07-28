@@ -108,8 +108,7 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       env:
         RAYLIB_BACKEND: headless
-      run: |
-        MAX_EXAMPLES=1 SKIP_SLOW=1 tools/test_runner.py --durations=0
+      run: tools/op.sh test
 
   process_replay:
     name: process replay

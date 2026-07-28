@@ -39,6 +39,8 @@ bin/
 *.os-*
 *.so
 *.a
+st[0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z]
+*.unchunked
 *.clb
 *.class
 *.pyxbldc

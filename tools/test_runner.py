@@ -173,8 +173,6 @@ def collect(targets, keyword):
         continue
       if getattr(cls, "__unittest_skip_why__", "") == "parameterized base class":
         continue
-      if os.environ.get("SKIP_SLOW") and getattr(cls, "SLOW_TEST", False):
-        continue
       if not keyword or keyword.lower() in test.id().lower():
         tests.append(test)
   return list({test.id(): test for test in tests}.values()), errors

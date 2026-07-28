@@ -418,6 +418,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: EngagementAlert(AudibleAlert.complete),
   },
 
+  EventName.bigModelFailed: {
+    ET.PERMANENT: NormalPermanentAlert("Big Model Failed ", "Restart the car to retry,\nnow driving on small model", duration=30.),
+  },
+
   EventName.lateralManeuver: {
     ET.WARNING: longitudinal_maneuver_alert,
     ET.PERMANENT: NormalPermanentAlert("Lateral Maneuver Mode"),
