@@ -31,12 +31,8 @@ for name, port in sorted(ports):
 PY
 )
 
-# Forward SSH port, finding a free local port if 2222 is taken.
-SSH_PORT=2222
-while ss -tln | grep -q ":${SSH_PORT} "; do
-  SSH_PORT=$((SSH_PORT + 1))
-done
-adb forward tcp:${SSH_PORT} tcp:22
+# Forward SSH on a free local port.
+SSH_PORT=$(adb forward tcp:0 tcp:22)
 
 # SSH!
 ssh comma@localhost -p ${SSH_PORT} "$@"
