@@ -160,9 +160,7 @@ class SelfdriveD:
     loading = self.params.get_bool("UsbGpuLoading")
     if self.big_model_loading and not loading:
       self.big_model_ready_t = time.monotonic()
-      if self.params.get_bool("UsbGpuActive"):
-        self.events.add(EventName.bigModelReady)
-      else:
+      if not self.params.get_bool("UsbGpuActive"):
         self.events.add(EventName.bigModelFailed)
     self.big_model_loading = loading
     if self.big_model_loading:
