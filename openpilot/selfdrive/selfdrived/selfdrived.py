@@ -333,6 +333,8 @@ class SelfdriveD:
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
+      if log.PandaState.FaultType.stockEcuDetected in pandaState.faults:
+        self.events.add(EventName.canError)
 
     # Handle HW and system malfunctions
     # Order is very intentional here. Be careful when modifying this.
