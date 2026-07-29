@@ -133,6 +133,8 @@ class CarSpecificEvents:
       events.add(EventName.parkBrake)
     if CS.accFaulted:
       events.add(EventName.accFaulted)
+    if CS.carNotReady:
+      events.add(EventName.carNotReady)
     if CS.steeringPressed:
       events.add(EventName.steerOverride)
     if CS.steeringDisengage and not CS_prev.steeringDisengage:
