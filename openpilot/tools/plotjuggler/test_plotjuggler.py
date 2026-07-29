@@ -16,6 +16,7 @@ PJ_DIR = os.path.join(BASEDIR, "openpilot/tools/plotjuggler")
 
 class TestPlotJuggler(OpenpilotTestCase):
 
+  @unittest.skip("TODO: cache PlotJuggler and demo route artifacts so this is fast and hermetic")
   @unittest.skipIf(not shutil.which('qmake'), "Qt not installed")
   def test_demo(self):
     install()

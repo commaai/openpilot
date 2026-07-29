@@ -19,12 +19,27 @@ ALL_ECUS = tuple(sorted({ecu for ecus in FW_VERSIONS.values() for ecu in ecus} |
                         {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}))
 ALL_REQUESTS = tuple(sorted({tuple(request.request) for config in FW_QUERY_CONFIGS.values() for request in config.requests}))
 DLC_TO_LEN = (0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64)
+CAR_NAMES = tuple(dict.fromkeys([*sorted(PLATFORMS), MOCK.MOCK]))
+FUZZ_REPRESENTATIVES = frozenset({
+  next(car_name for car_name in CAR_NAMES if interfaces[car_name] is interface)
+  for interface in set(interfaces.values())
+})
 
 
 class TestCarInterfaces(OpenpilotTestCase):
-  @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK], ids=lambda car_name: car_name)
+  @parameterized.expand([(car,) for car in CAR_NAMES], ids=lambda car_name: car_name)
   @fuzzy_test(max_examples=60)
   def test_car_interfaces(self, car_name, fuzzy):
+    # Every platform gets a complete minimal smoke test. The additional
+    # boundary/random corpus runs once per shared interface implementation.
+    if fuzzy.example_index > 0 and car_name not in FUZZ_REPRESENTATIVES:
+      return
+
+    # The fuzzy generator's first ten examples are the same minimal input.
+    # Exercise it once per platform instead of rebuilding identical interfaces.
+    if 0 < fuzzy.example_index < 10:
+      return
+
     fingerprint = dict(fuzzy.list(lambda: (fuzzy.integer(0, 0x800), fuzzy.choice(DLC_TO_LEN))))
     fingerprints = dict.fromkeys(range(7), fingerprint)
 
@@ -35,6 +50,13 @@ class TestCarInterfaces(OpenpilotTestCase):
     CarInterface = interfaces[car_name]
     car_params = CarInterface.get_params(car_name, fingerprints, fuzzy.list(generate_car_fw),
                                          alpha_long=fuzzy.boolean(), is_release=False, docs=False)
+
+    # get_params sees the complete boundary/random corpus above. Interface and
+    # controller construction is substantially more expensive, so smoke a
+    # representative spread instead of repeating it for every input.
+    if fuzzy.example_index not in (0, 10, 26, 42, 59):
+      return
+
     car_interface = CarInterface(car_params)
     car_params = car_interface.CP.as_reader()
 

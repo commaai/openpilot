@@ -204,11 +204,11 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
       thread.join()
 
 
-def jsonrpc_handler(end_event: threading.Event) -> None:
+def jsonrpc_handler(end_event: threading.Event, poll_interval: float = 1.0) -> None:
   dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
   while not end_event.is_set():
     try:
-      data = recv_queue.get(timeout=1)
+      data = recv_queue.get(timeout=poll_interval)
       msg = loads(data)
       if is_call(msg):
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
@@ -241,8 +241,7 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
     cur_upload_items[tid] = None
 
     for _ in range(RETRY_DELAY):
-      time.sleep(1)
-      if end_event.is_set():
+      if end_event.wait(1):
         break
 
 
@@ -261,7 +260,7 @@ def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
 
 
-def upload_handler(end_event: threading.Event) -> None:
+def upload_handler(end_event: threading.Event, poll_interval: float = 1.0) -> None:
   sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
 
@@ -269,7 +268,7 @@ def upload_handler(end_event: threading.Event) -> None:
     cur_upload_items[tid] = None
 
     try:
-      cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
+      cur_upload_items[tid] = item = replace(upload_queue.get(timeout=poll_interval), current=True)
 
       if item.id in cancelled_uploads:
         cancelled_uploads.remove(item.id)

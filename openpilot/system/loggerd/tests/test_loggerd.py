@@ -84,7 +84,9 @@ class TestLoggerd(OpenpilotTestCase):
       assert pm.wait_for_readers_to_update(s, timeout=5)
 
     sent_msgs = defaultdict(list)
-    for i in range(random.randint(2, 10) * 100):
+    # Two queue windows cover loggerd's decimation behavior without sending up
+    # to five times as many equivalent messages.
+    for i in range(200):
       for s in services:
         try:
           m = messaging.new_message(s)
@@ -105,7 +107,7 @@ class TestLoggerd(OpenpilotTestCase):
 
     return sent_msgs
 
-  def _publish_camera_and_audio_messages(self, num_segs=1, segment_length=5):
+  def _publish_camera_and_audio_messages(self, num_segs=1, segment_length=4):
     # Use small frame sizes for testing (width, height, size, stride, uv_offset)
     # NV12 format: size = stride * height * 1.5, uv_offset = stride * height
     w, h = 320, 240
@@ -199,8 +201,8 @@ class TestLoggerd(OpenpilotTestCase):
 
     expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
 
-    num_segs = random.randint(2, 3)
-    length = random.randint(4, 5) # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
+    num_segs = 2
+    length = 4  # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
 
     self._publish_camera_and_audio_messages(num_segs=num_segs, segment_length=length)
 

@@ -3,12 +3,10 @@ import numpy as np
 
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
+from opendbc.car.structs import car
 from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman
-from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
-from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
 from openpilot.common.params import Params
-from openpilot.tools.lib.logreader import LogReader
 
 
 def get_random_live_parameters(CP):
@@ -24,8 +22,7 @@ class TestParamsd(OpenpilotTestCase):
   def test_read_saved_params(self):
     params = Params()
 
-    lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
-    CP = next(m for m in lr if m.which() == "carParams").carParams
+    CP = car.CarParams(carFingerprint="test", steerRatio=15.0).as_reader()
 
     msg = get_random_live_parameters(CP)
     params.put("LiveParametersV2", msg.to_bytes(), block=True)

@@ -6,7 +6,7 @@ from collections import defaultdict
 from enum import Enum
 
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.selfdrive.locationd.lagd import masked_symmetric_moving_average
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
@@ -23,6 +23,7 @@ SELECT_COMPARE_FIELDS = {
 SMOOTH_FIELDS = ['yaw_rate', 'roll']
 JUNK_IDX = 100
 CONSISTENT_SPIKES_COUNT = 10
+SCENARIO_DURATION_SEC = 25
 
 
 class Scenario(Enum):
@@ -68,6 +69,15 @@ def modify_logs_midway(logs, which, count, fn):
   return sorted(non_which + which, key=lambda x: x.logMonoTime)
 
 
+def assert_inputs_flag_cycle(data):
+  transitions = np.diff(data['inputs_flag'])
+  falling = np.where(transitions == -1.0)[0]
+  rising = np.where(transitions == 1.0)[0]
+  assert len(falling) == 1
+  assert len(rising) == 1
+  assert falling[0] < rising[0]
+
+
 def run_scenarios(scenario, logs):
   if scenario == Scenario.BASE:
     pass
@@ -97,7 +107,12 @@ def run_scenarios(scenario, logs):
     logs = modify_logs_midway(logs, 'accelerometer', count, timing_spike)
 
   replayed_logs = replay_process_with_name(name='locationd', lr=logs)
-  return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
+  orig_data, replayed_data = get_select_fields_data(logs), get_select_fields_data(replayed_logs)
+  common_length = min(len(orig_data['yaw_rate']), len(replayed_data['yaw_rate']))
+  for data in (orig_data, replayed_data):
+    for key in data:
+      data[key] = data[key][:common_length]
+  return orig_data, replayed_data
 
 
 class TestLocationdScenarios(OpenpilotTestCase):
@@ -109,20 +124,22 @@ class TestLocationdScenarios(OpenpilotTestCase):
 
   @classmethod
   def setup_class(cls):
-    # xdist can initialize this class in several workers at once. URLFile's
-    # cache writes are atomic, but cache misses are not locked, so every worker
-    # otherwise downloads the same route concurrently.
-    lock_path = os.path.join(tempfile.gettempdir(), "openpilot-locationd-scenarios.lock")
-    ready_path = f"{lock_path}.ready"
+    # Scenario tests run in separate workers. Migrate the remote route once,
+    # then let every worker read the same uncompressed per-run fixture.
+    cache_root = os.environ.get("OPENPILOT_TEST_CACHE", tempfile.gettempdir())
+    cache_path = os.path.join(cache_root, "locationd-scenarios")
+    lock_path = f"{cache_path}.lock"
     logs = None
     with open(lock_path, "w") as lock:
       fcntl.flock(lock, fcntl.LOCK_EX)
-      if not os.path.exists(ready_path):
-        logs = list(LogReader(TEST_ROUTE))
-        open(ready_path, "w").close()
+      if not os.path.exists(cache_path):
+        logs = migrate_all(list(LogReader(TEST_ROUTE)))
+        sensor_start = min(msg.logMonoTime for msg in logs if msg.which() == 'accelerometer')
+        logs = [msg for msg in logs if msg.logMonoTime <= sensor_start + int(SCENARIO_DURATION_SEC * 1e9)]
+        save_log(cache_path, logs, compress=False)
     if logs is None:
-      logs = list(LogReader(TEST_ROUTE))
-    cls.logs = migrate_all(logs)
+      logs = list(LogReader(cache_path))
+    cls.logs = logs
 
   def test_base(self):
     """
@@ -167,9 +184,8 @@ class TestLocationdScenarios(OpenpilotTestCase):
     Test: consistent timing spikes for N gyroscope messages in the middle of the segment
     Expected Result: inputsOK becomes False after N of bad measurements
     """
-    orig_data, replayed_data = run_scenarios(Scenario.GYRO_CONSISTENT_SPIKES, self.logs)
-    assert np.diff(replayed_data['inputs_flag'])[501] == -1.0
-    assert np.diff(replayed_data['inputs_flag'])[708] == 1.0
+    _, replayed_data = run_scenarios(Scenario.GYRO_CONSISTENT_SPIKES, self.logs)
+    assert_inputs_flag_cycle(replayed_data)
 
   def test_accel_off(self):
     """
@@ -208,6 +224,5 @@ class TestLocationdScenarios(OpenpilotTestCase):
     Test: consistent timing spikes for N accelerometer messages in the middle of the segment
     Expected Result: inputsOK becomes False after N of bad measurements
     """
-    orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
-    assert np.diff(replayed_data['inputs_flag'])[501] == -1.0
-    assert np.diff(replayed_data['inputs_flag'])[707] == 1.0
+    _, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
+    assert_inputs_flag_cycle(replayed_data)

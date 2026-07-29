@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from functools import wraps
 import json
 import multiprocessing
@@ -39,7 +40,7 @@ def with_upload_handler(func):
   @wraps(func)
   def wrapper(*args, **kwargs):
     end_event = threading.Event()
-    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
+    thread = threading.Thread(target=athenad.upload_handler, args=(end_event, 0.01))
     thread.start()
     try:
       return func(*args, **kwargs)
@@ -90,10 +91,13 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   @staticmethod
   def _wait_for_upload():
+    initial_items = tuple(id(item) for item in athenad.upload_queue.queue)
     now = time.monotonic()
     while time.monotonic() - now < 5:
-      if athenad.upload_queue.qsize() == 0:
+      queued_items = tuple(id(item) for item in athenad.upload_queue.queue)
+      if not queued_items or queued_items != initial_items:
         break
+      time.sleep(0.001)
 
   @staticmethod
   def _create_file(file: str, parent: str | None = None, data: bytes = b'') -> str:
@@ -111,7 +115,7 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   def test_get_message(self):
     with self.assertRaises(TimeoutError) as _:
-      dispatcher["getMessage"]("controlsState")
+      dispatcher["getMessage"]("controlsState", timeout=1)
 
     end_event = multiprocessing.Event()
 
@@ -237,11 +241,11 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   @parameterized.expand([(500,True), (412,False)], names=("status", "retry"))
   @with_upload_handler
-  def test_upload_handler_retry(self, mocker, host, status, retry):
+  def test_upload_handler_retry(self, mocker, status, retry):
     mock_put = mocker.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put')
     mock_put.return_value.__enter__.return_value.status_code = status
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(path=fn, url="http://unused/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
     self._wait_for_upload()
@@ -309,16 +313,28 @@ class TestAthenadMethods(OpenpilotTestCase):
     assert len(items) == 0
 
   @with_upload_handler
-  def test_list_upload_queue_current(self, host: str):
+  def test_list_upload_queue_current(self, mocker):
+    upload_started = threading.Event()
+    finish_upload = threading.Event()
+
+    @contextmanager
+    def blocked_upload(*args, **kwargs):
+      upload_started.set()
+      assert finish_upload.wait(1)
+      yield type("Response", (), {"status_code": 200})()
+
+    mocker.patch("openpilot.system.athena.athenad._do_upload", side_effect=blocked_upload)
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
+    item = athenad.UploadItem(path=fn, url="http://unused/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
-    self._wait_for_upload()
-
-    items = dispatcher["listUploadQueue"]()
-    assert len(items) == 1
-    assert items[0]['current']
+    try:
+      assert upload_started.wait(1)
+      items = dispatcher["listUploadQueue"]()
+      assert len(items) == 1
+      assert items[0]['current']
+    finally:
+      finish_upload.set()
 
   def test_list_upload_queue_priority(self):
     priorities = (25, 50, 99, 75, 0)
@@ -417,7 +433,7 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   def test_jsonrpc_handler(self):
     end_event = threading.Event()
-    thread = threading.Thread(target=athenad.jsonrpc_handler, args=(end_event,))
+    thread = threading.Thread(target=athenad.jsonrpc_handler, args=(end_event, 0.01))
     thread.daemon = True
     thread.start()
     try:

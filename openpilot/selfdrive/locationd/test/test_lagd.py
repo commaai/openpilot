@@ -2,28 +2,25 @@ import random
 import numpy as np
 import time
 import unittest
-from functools import cache
 
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
-                                               BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC, VERSION, MIN_LAG, MAX_LAG
-from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
-from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
+                                               VERSION, MIN_LAG, MAX_LAG
 from openpilot.common.params import Params
-from openpilot.tools.lib.logreader import LogReader
 from openpilot.common.hardware import PC
 
 MAX_ERR_FRAMES = 1
 DT = 0.05
 LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES = int(round(MIN_LAG / DT)), int(round(MAX_LAG / DT))
+TEST_OKAY_WINDOW_SEC = 5.0
+TEST_BLOCK_SIZE = 10
+TEST_BLOCK_NUM_NEEDED = 2
 
 
-@cache
 def get_test_car_params():
-  lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
-  return next(m for m in lr if m.which() == "carParams").carParams
+  return car.CarParams(carFingerprint="test").as_reader()
 
 
 def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_threshold=0.0):
@@ -124,20 +121,22 @@ class TestLagd(OpenpilotTestCase):
     for lag_frames in range(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1):
       with subtests.test(msg=f"lag_frames={lag_frames}"):
         mocked_CP = car.CarParams(steerActuatorDelay=0.5)
-        estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
-        process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
+        estimator = LateralLagEstimator(mocked_CP, DT, block_size=TEST_BLOCK_SIZE, min_valid_block_count=TEST_BLOCK_NUM_NEEDED,
+                                        okay_window_sec=TEST_OKAY_WINDOW_SEC, min_recovery_buffer_sec=0.0, min_yr=0.0)
+        process_messages(estimator, lag_frames, int(TEST_OKAY_WINDOW_SEC / DT) + TEST_BLOCK_NUM_NEEDED * TEST_BLOCK_SIZE)
         msg = estimator.get_msg(True)
         assert msg.liveDelay.status == 'estimated'
         assert np.allclose(msg.liveDelay.lateralDelay, lag_frames * DT, atol=0.01)
         assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
         assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
-        assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
+        assert msg.liveDelay.validBlocks == TEST_BLOCK_NUM_NEEDED
         assert msg.liveDelay.calPerc == 100
 
   def test_estimator_masking(self):
     mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.5), random.randint(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1)
-    estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
-    process_messages(estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
+    estimator = LateralLagEstimator(mocked_CP, DT, block_size=TEST_BLOCK_SIZE, min_valid_block_count=1,
+                                    okay_window_sec=TEST_OKAY_WINDOW_SEC, min_recovery_buffer_sec=0.0, min_yr=0.0)
+    process_messages(estimator, lag_frames, (int(TEST_OKAY_WINDOW_SEC / DT) + TEST_BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
     assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)

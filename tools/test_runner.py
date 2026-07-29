@@ -2,7 +2,6 @@
 import argparse
 from collections import Counter
 from concurrent.futures import as_completed, ProcessPoolExecutor
-from itertools import batched
 import math
 import os
 from pathlib import Path
@@ -179,6 +178,8 @@ def collect(targets, keyword):
 
 
 def make_batches(tests, workers):
+  from openpilot.common.hardware import PC
+
   fixture_groups = {}
   parallel = []
   for test in tests:
@@ -188,13 +189,18 @@ def make_batches(tests, workers):
       key = cls.__module__
     elif "setUpClass" in cls.__dict__ or "tearDownClass" in cls.__dict__:
       key = f"{cls.__module__}.{cls.__qualname__}"
+    elif PC and getattr(cls, "TICI_TEST", False):
+      # A skipped hardware class should produce one fixture skip record, not
+      # one for every striped worker batch containing one of its tests.
+      key = f"{cls.__module__}.{cls.__qualname__}"
     else:
       parallel.append(test.id())
       continue
     fixture_groups.setdefault(key, []).append(test.id())
   size = max(1, math.ceil(len(tests) / (workers * 4)))
   batches = list(fixture_groups.values())
-  batches.extend(list(batch) for batch in batched(parallel, size))
+  batch_count = math.ceil(len(parallel) / size)
+  batches.extend(parallel[i::batch_count] for i in range(batch_count))
   return sorted(batches, key=len, reverse=True)
 
 
@@ -281,6 +287,9 @@ def main():
   print(summary)
   records = []
   column = 0
+  original_test_cache = os.environ.get("OPENPILOT_TEST_CACHE")
+  test_cache = tempfile.TemporaryDirectory(prefix="openpilot-tests-")
+  os.environ["OPENPILOT_TEST_CACHE"] = test_cache.name
   try:
     if workers < 2:
       streams = (run_batch(batch, capture_output) for batch in batches)
@@ -301,6 +310,12 @@ def main():
   except KeyboardInterrupt:
     print(paint("\ninterrupted", 31))
     return 2
+  finally:
+    test_cache.cleanup()
+    if original_test_cache is None:
+      os.environ.pop("OPENPILOT_TEST_CACHE", None)
+    else:
+      os.environ["OPENPILOT_TEST_CACHE"] = original_test_cache
   if column:
     print()
   return report(records, errors, args.durations, time.monotonic() - started)
