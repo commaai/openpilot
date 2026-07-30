@@ -50,6 +50,9 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   lpa = HARDWARE.get_sim_lpa()
+  if not lpa.is_euicc():
+    raise SystemExit("no eUICC detected")
+
   if args.cmd == 'switch':
     lpa.switch_profile(resolve_iccid(lpa, args.profile))
   elif args.cmd == 'delete':
