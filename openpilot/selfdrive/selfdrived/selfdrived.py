@@ -170,7 +170,7 @@ class SelfdriveD:
     big_failed = big_active is False or (self.big_model_active and not usbgpu_present)
     if big_failed and not self.big_model_failed:
       self.events.add(EventName.bigModelFailed)
-    self.big_model_failed |= big_failed
+    self.big_model_failed = big_failed
 
     # soft disable if the big model fails
     if big_active:
