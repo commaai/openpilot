@@ -167,8 +167,7 @@ class SelfdriveD:
 
     big_active = self.params.get("UsbGpuActive")
     usbgpu_present = self.sm['deviceState'].chestnutPresent
-    big_failed = big_active is False or (self.big_model_active and not usbgpu_present) or \
-                 (big_active is None and not loading and usbgpu_present and self.sm.recv_frame['modelV2'] > 0)
+    big_failed = big_active is False or (self.big_model_active and not usbgpu_present)
     if big_failed and not self.big_model_failed:
       self.events.add(EventName.bigModelFailed)
     self.big_model_failed |= big_failed
