@@ -41,6 +41,10 @@ class DeviceCameraConfig:
   dcam: CameraConfig
   ecam: CameraConfig
 
+  @property
+  def has_wide_camera(self) -> bool:
+    return not isinstance(self.ecam, _NoneCameraConfig)
+
   def all_cams(self):
     for cam in ['fcam', 'dcam', 'ecam']:
       if not isinstance(getattr(self, cam), _NoneCameraConfig):
@@ -69,6 +73,11 @@ DEVICE_CAMERAS = {
 }
 prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', _ar_ox_config), ('ox03c10', _ar_ox_config), ('os04c10', _os_config)))
 DEVICE_CAMERAS.update({(d, c[0]): c[1] for d, c in prods})
+
+
+def get_camera_config(device_type: str, sensor: str) -> DeviceCameraConfig:
+  return DEVICE_CAMERAS[(device_type, sensor)]
+
 
 # device/mesh : x->forward, y-> right, z->down
 # view : x->right, y->down, z->forward

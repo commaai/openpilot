@@ -9,7 +9,7 @@ from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.stat_live import RunningStatFilter
-from openpilot.common.transformations.camera import DEVICE_CAMERAS
+from openpilot.common.transformations.camera import get_camera_config
 
 AlertLevel = log.DriverMonitoringState.AlertLevel
 MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
@@ -107,7 +107,7 @@ class DriverBlink:
     self.right = 0.
 
 # model output refers to center of undistorted+leveled image
-ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].dcam
+ref_undistorted_cam = get_camera_config("tici", "ar0231").dcam
 dcam_undistorted_FL = 598.0
 dcam_undistorted_W, dcam_undistorted_H = (ref_undistorted_cam.width, ref_undistorted_cam.height)
 

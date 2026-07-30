@@ -8,7 +8,7 @@ import pyray as rl
 
 import openpilot.cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.transformations.camera import DEVICE_CAMERAS
+from openpilot.common.transformations.camera import get_camera_config
 from openpilot.tools.replay.lib.ui_helpers import (
   UP,
   BLACK,
@@ -152,7 +152,7 @@ def ui_thread(addr):
 
     sm.update(0)
 
-    camera = DEVICE_CAMERAS[("tici", str(sm['roadCameraState'].sensor))]
+    camera = get_camera_config("tici", str(sm['roadCameraState'].sensor))
     calib_scale = camera.fcam.width / 640.0
 
     if camera_view.frame:

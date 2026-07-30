@@ -15,7 +15,7 @@ from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, M
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter
-from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
+from openpilot.common.transformations.camera import DeviceCameraConfig, get_camera_config, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
 
@@ -23,7 +23,7 @@ OpState = log.SelfdriveState.OpenpilotState
 CALIBRATED = log.LiveCalibrationData.Status.calibrated
 ROAD_CAM = VisionStreamType.VISION_STREAM_ROAD
 WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
-DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
+DEFAULT_DEVICE_CAMERA = get_camera_config("tici", "ar0231")
 
 
 class BookmarkState(IntEnum):
@@ -264,7 +264,7 @@ class AugmentedRoadView(CameraView):
     # Update device camera if not already set
     sm = ui_state.sm
     if not self.device_camera and sm.seen['roadCameraState'] and sm.seen['deviceState']:
-      self.device_camera = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
+      self.device_camera = get_camera_config(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))
 
     # Check if live calibration data is available and valid
     if not (sm.updated["liveCalibration"] and sm.valid['liveCalibration']):
