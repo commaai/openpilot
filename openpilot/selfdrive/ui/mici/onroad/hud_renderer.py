@@ -162,7 +162,8 @@ class HudRenderer(Widget):
       controls_state.deprecated.vCruise if v_cruise_cluster == 0.0 else v_cruise_cluster
     )
     engaged = sm['selfdriveState'].enabled
-    if engaged and not self._engaged and not ui_state.usbgpu_loading and not ui_state.usbgpu_active:
+    if (engaged and not self._engaged and not ui_state.usbgpu_loading and ui_state.usbgpu_active is not True and
+        ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame):
       self._small_model_engaged = True
     if (set_speed != self.set_speed and engaged) or (engaged and not self._engaged):
       self._set_speed_changed_time = rl.get_time()
@@ -194,9 +195,10 @@ class HudRenderer(Widget):
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
       return
 
-    big_failed = not ui_state.usbgpu_loading and not ui_state.usbgpu_active and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame
+    big_failed = (ui_state.usbgpu_active is False or not ui_state.sm['deviceState'].chestnutPresent or
+                  (ui_state.usbgpu_active is None and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame))
     self._small_model_engaged &= big_failed
-    if ui_state.usbgpu_loading:
+    if ui_state.usbgpu_loading or (ui_state.usbgpu_active is None and not big_failed):
       pulse = 0.5 - 0.5 * math.cos(rl.get_time() * 6.0)
       icon = self._txt_egpu
       opacity = 0.35 + 0.65 * pulse

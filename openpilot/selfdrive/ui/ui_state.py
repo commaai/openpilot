@@ -78,7 +78,7 @@ class UIState:
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
     self.usbgpu: bool = False
     self.usbgpu_compiled: bool = usbgpu_compiled()
-    self.usbgpu_active: bool = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_active: bool | None = self.params.get("UsbGpuActive")
     self.usbgpu_loading: bool = self.params.get_bool("UsbGpuLoading")
     self.started: bool = False
     self.ignition: bool = False
@@ -210,7 +210,7 @@ class UIState:
     self.usbgpu = self.sm["deviceState"].chestnutPresent or (self.usbgpu and self.started)
     if not self.usbgpu_compiled:
       self.usbgpu_compiled = usbgpu_compiled()
-    self.usbgpu_active = self.params.get_bool("UsbGpuActive")
+    self.usbgpu_active = self.params.get("UsbGpuActive")
     self.usbgpu_loading = self.params.get_bool("UsbGpuLoading")
 
 
