@@ -162,6 +162,8 @@ class HudRenderer(Widget):
       controls_state.deprecated.vCruise if v_cruise_cluster == 0.0 else v_cruise_cluster
     )
     engaged = sm['selfdriveState'].enabled
+    if engaged and not self._engaged and not ui_state.usbgpu_loading and not ui_state.usbgpu_active:
+      self._small_model_engaged = True
     if (set_speed != self.set_speed and engaged) or (engaged and not self._engaged):
       self._set_speed_changed_time = rl.get_time()
     self._engaged = engaged
@@ -193,22 +195,21 @@ class HudRenderer(Widget):
       return
 
     big_failed = not ui_state.usbgpu_loading and not ui_state.usbgpu_active and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame
-    soft_disabling = ui_state.sm['selfdriveState'].state == log.SelfdriveState.OpenpilotState.softDisabling
-    self._small_model_engaged = big_failed and (self._small_model_engaged or (self._engaged and not soft_disabling))
+    self._small_model_engaged &= big_failed
     if ui_state.usbgpu_loading:
       pulse = 0.5 - 0.5 * math.cos(rl.get_time() * 6.0)
       icon = self._txt_egpu
-      color = rl.Color(255, 255, 255, int(255 * (0.35 + 0.65 * pulse)))
+      opacity = 0.35 + 0.65 * pulse
     elif big_failed:
       icon = self._txt_egpu_crossed if self._small_model_engaged else self._txt_egpu_orange
-      color = rl.WHITE
+      opacity = 1.0
     else:
       icon = self._txt_egpu_green
-      color = rl.WHITE
+      opacity = 1.0
 
     pos = rl.Vector2(rect.x + rect.width - 10 - icon.width,
                      rect.y + rect.height - 14 - (self._txt_wheel.height + icon.height) / 2)
-    rl.draw_texture_ex(icon, pos, 0.0, 1.0, color)
+    rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
