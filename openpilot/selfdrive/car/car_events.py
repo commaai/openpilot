@@ -13,7 +13,7 @@ EventName = log.OnroadEvent.EventName
 NetworkLocation = structs.CarParams.NetworkLocation
 
 
-class CarSpecificEvents:
+class CarEvents:
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
 
