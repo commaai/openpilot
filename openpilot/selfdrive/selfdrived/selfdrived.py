@@ -166,14 +166,17 @@ class SelfdriveD:
       self.events.add(EventName.bigModelLoading)
 
     big_active = self.params.get("UsbGpuActive")
-    if big_active is False and not self.big_model_failed:
+    usbgpu_present = self.sm['deviceState'].chestnutPresent
+    big_failed = big_active is False or (self.big_model_active and not usbgpu_present) or \
+                 (big_active is None and not loading and usbgpu_present and self.sm.recv_frame['modelV2'] > 0)
+    if big_failed and not self.big_model_failed:
       self.events.add(EventName.bigModelFailed)
-    self.big_model_failed = big_active is False
+    self.big_model_failed |= big_failed
 
     # soft disable if the big model fails
     if big_active:
       self.big_model_active = True
-    if self.enabled and self.big_model_active and not big_active:
+    if self.enabled and self.big_model_active and (not big_active or not usbgpu_present):
       self.events.add(EventName.modeldLagging)
     if not self.enabled:
       self.big_model_active = False
