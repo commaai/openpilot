@@ -113,6 +113,15 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
     frame->data[1] = cu;
     frame->data[2] = cv;
   }
+
+  if (encoder_info.vflip) {
+    frame->data[0] += (frame->height - 1) * frame->linesize[0];
+    frame->data[1] += (frame->height / 2 - 1) * frame->linesize[1];
+    frame->data[2] += (frame->height / 2 - 1) * frame->linesize[2];
+    frame->linesize[0] = -frame->linesize[0];
+    frame->linesize[1] = -frame->linesize[1];
+    frame->linesize[2] = -frame->linesize[2];
+  }
   frame->pts = counter*50*1000; // 50ms per frame
 
   int ret = counter;
@@ -152,5 +161,14 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
     counter++;
   }
   av_packet_unref(&pkt);
+
+  if (encoder_info.vflip) {
+    frame->linesize[0] = -frame->linesize[0];
+    frame->linesize[1] = -frame->linesize[1];
+    frame->linesize[2] = -frame->linesize[2];
+    frame->data[0] -= (frame->height - 1) * frame->linesize[0];
+    frame->data[1] -= (frame->height / 2 - 1) * frame->linesize[1];
+    frame->data[2] -= (frame->height / 2 - 1) * frame->linesize[2];
+  }
   return ret;
 }

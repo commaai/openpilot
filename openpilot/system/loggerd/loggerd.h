@@ -60,6 +60,7 @@ public:
   bool record = true;
   bool include_audio = false;
   bool is_live = false;
+  bool vflip = false;
   int frame_width = -1;
   int frame_height = -1;
   int fps = MAIN_FPS;
@@ -106,6 +107,7 @@ const EncoderInfo stream_road_encoder_info = {
   //.thumbnail_name = "thumbnail",
   .record = false,
   .is_live = true,
+  .vflip = true,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
 };

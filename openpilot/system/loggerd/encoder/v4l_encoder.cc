@@ -282,10 +282,33 @@ int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   // reserve buffer
   int buffer_in = free_buf_in.pop();
 
+  VisionBuf *encoder_buf = buf;
+  if (encoder_info.vflip) {
+    VisionBuf &flipped = buf_in[buffer_in];
+    if (flipped.addr == nullptr) {
+      flipped.allocate(buf->len);
+      flipped.init_yuv(buf->width, buf->height, buf->stride, buf->uv_offset);
+    }
+
+    buf->sync(VISIONBUF_SYNC_FROM_DEVICE);
+    for (size_t row = 0; row < buf->height; ++row) {
+      memcpy(flipped.y + row * buf->stride,
+             buf->y + (buf->height - 1 - row) * buf->stride,
+             buf->stride);
+    }
+    for (size_t row = 0; row < buf->height / 2; ++row) {
+      memcpy(flipped.uv + row * buf->stride,
+             buf->uv + (buf->height / 2 - 1 - row) * buf->stride,
+             buf->stride);
+    }
+    flipped.sync(VISIONBUF_SYNC_TO_DEVICE);
+    encoder_buf = &flipped;
+  }
+
   // push buffer
   extras.push(*extra);
   //buf->sync(VISIONBUF_SYNC_TO_DEVICE);
-  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
+  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, encoder_buf, timestamp);
 
   return this->counter++;
 }
@@ -345,6 +368,11 @@ V4LEncoder::~V4LEncoder() {
   request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0);
   close(fd);
 
+  for (int i = 0; i < BUF_IN_COUNT; i++) {
+    if (buf_in[i].addr != nullptr && buf_in[i].free() != 0) {
+      LOGE("Failed to free input buffer");
+    }
+  }
   for (int i = 0; i < BUF_OUT_COUNT; i++) {
     if (buf_out[i].free() != 0) {
       LOGE("Failed to free buffer");
