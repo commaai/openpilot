@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import subprocess
 import sys
 import sysconfig
@@ -9,6 +10,8 @@ import numpy as np
 
 import SCons.Errors
 from SCons.Defaults import _stripixes
+
+from tools.check_system_libraries import check_system_libraries
 
 TICI = os.path.isfile('/TICI')
 
@@ -79,13 +82,9 @@ acados_include_dirs = [
   os.path.join(acados.INCLUDE_DIR, "hpipm", "include"),
 ]
 
-
-# ***** enforce a whitelist of system libraries *****
-# this prevents silently relying on a 3rd party package,
-# e.g. apt-installed libusb. all libraries should either
-# be distributed with all Linux distros and macOS, or
-# vendored in commaai/dependencies.
-allowed_system_libs = {
+# The ELF dependency check below replaces this link-time check on Linux. Keep it
+# on macOS until the checker also understands Mach-O load commands.
+allowed_link_libraries = {
   "EGL", "GLESv2", "GL",
   "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
   "dl", "drm", "gbm", "m", "pthread",
@@ -98,7 +97,7 @@ def _resolve_lib(env, name):
       f = File(os.path.join(p, f'lib{name}{ext}'))
       if f.exists() or f.has_builder():
         return name
-  if name in allowed_system_libs:
+  if name in allowed_link_libraries:
     return name
   raise SCons.Errors.UserError(f"Unexpected non-vendored library '{name}'")
 
@@ -117,6 +116,7 @@ def _libflags(target, source, env, for_signature):
       libs.append(lib)
   return _stripixes(env['LIBLINKPREFIX'], libs, env['LIBLINKSUFFIX'],
                     env['LIBPREFIXES'], env['LIBSUFFIXES'], env, env['LIBLITERALPREFIX'])
+
 
 env = Environment(
   ENV={
@@ -172,9 +172,7 @@ if arch == "Darwin":
   env["RPATHPREFIX"] = "-Wl,-rpath,"
   env["RPATHSUFFIX"] = ""
   env["_RPATH"] = "${_concat(RPATHPREFIX, RPATH, RPATHSUFFIX, __env__)}"
-if arch != "larch64":
-  env['_LIBFLAGS'] = _libflags
-
+  env["_LIBFLAGS"] = _libflags
 # Arch-specific flags and paths
 if arch == "larch64":
   env["CC"] = "clang"
@@ -339,6 +337,68 @@ def progress_function(node):
 
 Progress(progress_function, interval=progress_interval)
 AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
+
+allowed_system_libs = {
+  "ld-linux-aarch64.so.1",
+  "ld-linux-x86-64.so.2",
+  "libatomic.so.1",
+  "libbsd.so.0",
+  "libc.so.6",
+  "libdl.so.2",
+  "libgcc_s.so.1",
+  "libGL.so.1",
+  "libGLdispatch.so.0",
+  "libGLX.so.0",
+  "libm.so.6",
+  "libmd.so.0",
+  "libpthread.so.0",
+  "libresolv.so.2",
+  "librt.so.1",
+  "libstdc++.so.6",
+  "libutil.so.1",
+  "libX11.so.6",
+  "libXau.so.6",
+  "libxcb.so.1",
+  "libXdmcp.so.6",
+  "libXext.so.6",
+  "libz.so.1",
+}
+if arch == "larch64":
+  allowed_system_libs |= {
+    "libdrm.so.2",
+    "libEGL.so.1",
+    "libgbm.so.1",
+    "libGLESv2.so.2",
+  }
+
+def check_system_library_dependencies(target, source, env):
+  if arch != "Darwin":
+    system_library_dirs = {
+      Path(path).resolve()
+      for path in ("/lib", "/lib64", "/usr/lib", "/usr/lib64", "/usr/local/lib", "/usr/local/lib64")
+    }
+    dependency_roots = {Path(Dir("#").abspath).resolve()}
+    for directory in env.Flatten(env.get("LIBPATH", [])):
+      path = Path(Dir(str(directory)).abspath).resolve()
+      if path.exists() and not any(path.is_relative_to(system_dir) for system_dir in system_library_dirs):
+        dependency_roots.add(path)
+    try:
+      check_system_libraries(dependency_roots, allowed_system_libs)
+    except RuntimeError as e:
+      raise SCons.Errors.UserError(str(e)) from None
+
+requested_targets = list(BUILD_TARGETS) or [Dir('.')]
+system_library_check = env.Alias(
+  "check-system-libraries",
+  [],
+  Action(check_system_library_dependencies, "  [CHECK] system libraries"),
+)
+Requires(system_library_check, requested_targets)
+AlwaysBuild(system_library_check)
+if BUILD_TARGETS:
+  BUILD_TARGETS[:] = system_library_check
+else:
+  Default(system_library_check)
 
 def check_build_product_size(target, source, env):
   limit = 50 * 1024 * 1024  # GitHub max size
