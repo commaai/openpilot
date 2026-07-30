@@ -160,14 +160,15 @@ class SelfdriveD:
     loading = self.params.get_bool("UsbGpuLoading")
     if self.big_model_loading and not loading:
       self.big_model_ready_t = time.monotonic()
-      if not self.params.get_bool("UsbGpuActive"):
-        self.events.add(EventName.bigModelFailed)
     self.big_model_loading = loading
     if self.big_model_loading:
       self.events.add(EventName.bigModelLoading)
 
+    big_active = self.params.get("UsbGpuActive")
+    if big_active is False:
+      self.events.add(EventName.bigModelFailed)
+
     # soft disable if the big model fails
-    big_active = self.params.get_bool("UsbGpuActive")
     if big_active:
       self.big_model_active = True
     if self.enabled and self.big_model_active and not big_active:

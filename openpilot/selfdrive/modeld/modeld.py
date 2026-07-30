@@ -151,7 +151,7 @@ def main(demo=False):
   USBGPU = usbgpu_present() and usbgpu_compiled()
   params = Params()
   params.put_bool("UsbGpuLoading", USBGPU)
-  params.put_bool("UsbGpuActive", False)
+  params.remove("UsbGpuActive")
 
   config_realtime_process(7, 54)
 
