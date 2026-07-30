@@ -754,6 +754,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Press Set to Engage"),
   },
 
+  EventName.carNotReady: {
+    ET.NO_ENTRY: NoEntryAlert("Car Not Ready"),
+  },
+
   EventName.wrongCruiseMode: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
     ET.NO_ENTRY: NoEntryAlert("Adaptive Cruise Disabled"),
