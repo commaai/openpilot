@@ -67,6 +67,7 @@ class SelfdriveD:
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
     self.big_model_loading = False
     self.big_model_active = False
+    self.big_model_failed = False
     self.big_model_ready_t = 0.
 
     # Setup sockets
@@ -165,8 +166,9 @@ class SelfdriveD:
       self.events.add(EventName.bigModelLoading)
 
     big_active = self.params.get("UsbGpuActive")
-    if big_active is False:
+    if big_active is False and not self.big_model_failed:
       self.events.add(EventName.bigModelFailed)
+    self.big_model_failed = big_active is False
 
     # soft disable if the big model fails
     if big_active:
