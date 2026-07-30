@@ -200,8 +200,11 @@ class HudRenderer(Widget):
       pulse = 0.5 - 0.5 * math.cos(rl.get_time() * 6.0)
       icon = self._txt_egpu
       opacity = 0.35 + 0.65 * pulse
+    elif self._small_model_engaged:
+      icon = self._txt_egpu_crossed
+      opacity = 0.65
     elif big_failed:
-      icon = self._txt_egpu_crossed if self._small_model_engaged else self._txt_egpu_orange
+      icon = self._txt_egpu_orange
       opacity = 1.0
     else:
       icon = self._txt_egpu_green
