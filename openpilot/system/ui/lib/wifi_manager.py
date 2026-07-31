@@ -515,8 +515,11 @@ class WifiManager:
   def _get_adapter(self, adapter_type: int) -> str | None:
     # Return the first NetworkManager device path matching adapter_type
     try:
-      device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
-      for device_path in device_paths:
+      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices'))
+      if reply.header.message_type == MessageType.error:
+        # NetworkManager is not available, body holds an error string instead of device paths
+        return None
+      for device_path in reply.body[0]:
         dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
         dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
         if dev_type == adapter_type:
