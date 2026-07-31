@@ -102,6 +102,8 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
+    # stock GitHub runners lack the GLES/EGL libraries the headless raylib backend links against
+    - run: sudo apt-get install -y --no-install-recommends libegl1 libgles2 libegl-mesa0 libgl1-mesa-dri
     - name: Build openpilot
       run: scons
     - name: Run unit tests
@@ -212,6 +214,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: ./tools/op.sh setup
+      # stock GitHub runners lack the GLES/EGL libraries the headless raylib backend links against
+      - run: sudo apt-get install -y --no-install-recommends libegl1 libgles2 libegl-mesa0 libgl1-mesa-dri
       - name: Build openpilot
         run: scons
       - name: Create UI Report
