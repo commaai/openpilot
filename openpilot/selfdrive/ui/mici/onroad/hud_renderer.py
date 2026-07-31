@@ -196,6 +196,8 @@ class HudRenderer(Widget):
       return
 
     big_failed = (ui_state.usbgpu_active is False or not ui_state.sm['deviceState'].chestnutPresent or
+                  (ui_state.usbgpu_active is True and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame and
+                   not ui_state.sm.alive['modelV2']) or
                   (ui_state.usbgpu_active is None and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame))
     self._small_model_engaged &= big_failed
     if ui_state.usbgpu_loading or (ui_state.usbgpu_active is None and not big_failed):
