@@ -10,7 +10,6 @@ import queue
 import random
 import re
 import select
-import shutil
 import socket
 import subprocess
 import sys
@@ -747,8 +746,7 @@ def getClipsState(routes: list[str]) -> dict:
   route_names = [_video_clip_route_name(route) for route in routes]
   with video_clip_lock:
     _load_video_clip_manifest()
-    all_jobs = [asdict(job) for job in video_clip_jobs.values()]
-    jobs = [job for job in all_jobs if job["route"] in route_names]
+    jobs = [asdict(job) for job in video_clip_jobs.values() if job.route in route_names]
   route_state = {
     route: {
       "cameras": {camera: {"available_ranges": _video_clip_available_ranges(route, camera)} for camera in VIDEO_CLIP_CAMERAS},
@@ -756,14 +754,12 @@ def getClipsState(routes: list[str]) -> dict:
     }
     for route in route_names
   }
-  usage = shutil.disk_usage(Paths.log_root())
   return {
     "version": VIDEO_CLIP_MANIFEST_VERSION,
     "capabilities": {
       "cameras": list(VIDEO_CLIP_CAMERAS), "bitrates": list(VIDEO_CLIP_BITRATES),
       "speedups": list(VIDEO_CLIP_SPEEDUPS), "max_duration": VIDEO_CLIP_MAX_DURATION,
     },
-    "cache": {"bytes_used": sum(job.get("size") or 0 for job in all_jobs), "bytes_free": usage.free},
     "routes": route_state,
   }
 
