@@ -73,6 +73,9 @@ class TestEncoder(OpenpilotTestCase):
         except Exception:
           time.sleep(0.1)
 
+    clip_input = "/tmp/encoderd-clip-input.hevc"
+    clip_output = "/tmp/encoderd-clip-output.mp4"
+
     def check_seg(i):
       # check each camera file size
       counts = []
@@ -82,6 +85,8 @@ class TestEncoder(OpenpilotTestCase):
 
         # check file exists
         assert os.path.exists(file_path), f"segment #{i}: '{file_path}' missing"
+        if i == 0 and camera == "fcamera.hevc":
+          shutil.copyfile(file_path, clip_input)
 
         # TODO: this ffprobe call is really slow
         # get width and check frame count
@@ -147,6 +152,17 @@ class TestEncoder(OpenpilotTestCase):
       managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
+
+    if TICI:
+      subprocess.run([
+        "./openpilot/system/loggerd/encoderd", "--clip", clip_output,
+        "0.25", "1.0", clip_input,
+      ], check=True, timeout=30)
+      probe = subprocess.check_output([
+        "ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets",
+        "-show_entries", "stream=codec_name,nb_read_packets", "-of", "csv=p=0", clip_output,
+      ], encoding="utf8", env={**os.environ, "LD_LIBRARY_PATH": "/usr/local/lib"}).strip().split(",")
+      assert probe == ["h264", "20"]
 
 
 if __name__ == "__main__":

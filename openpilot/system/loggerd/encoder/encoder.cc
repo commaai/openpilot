@@ -1,16 +1,24 @@
 #include "system/loggerd/encoder/encoder.h"
 
-VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
-    : encoder_info(encoder_info), in_width(in_width), in_height(in_height) {
+VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback)
+    : encoder_info(encoder_info), in_width(in_width), in_height(in_height), packet_callback(std::move(packet_callback)) {
 
   out_width = encoder_info.frame_width > 0 ? encoder_info.frame_width : in_width;
   out_height = encoder_info.frame_height > 0 ? encoder_info.frame_height : in_height;
 
-  pm.reset(new PubMaster(std::vector{encoder_info.publish_name}));
+  if (!this->packet_callback) pm.reset(new PubMaster(std::vector{encoder_info.publish_name}));
 }
 
 void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
                                      unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat) {
+  if (packet_callback) {
+    if (!packet_header_sent && header.size() > 0) {
+      packet_callback(header.begin(), header.size(), extra.timestamp_eof / 1000, true, false);
+      packet_header_sent = true;
+    }
+    packet_callback(dat.begin(), dat.size(), extra.timestamp_eof / 1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    return;
+  }
   MessageBuilder msg;
   auto event = msg.initEvent(true);
   auto edat = (event.*(encoder_info.init_encode_data_func))();

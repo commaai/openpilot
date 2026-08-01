@@ -213,7 +213,7 @@ node {
         deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
           step("build", "cd openpilot/system/manager && ./build.py"),
           step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
-          step("test encoder", "./openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/"]]),
+          step("test encoder", "./openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/", "openpilot/system/athena/athenad.py", "openpilot/tools/clip/"]]),
           step("test manager", "./openpilot/system/manager/test/test_manager.py"),
         ])
       },
