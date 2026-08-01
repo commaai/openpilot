@@ -216,6 +216,7 @@ class UploadQueueCache:
 
 def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
   end_event = threading.Event()
+  _resume_video_clip_jobs()
 
   threads = [
     threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
@@ -568,18 +569,29 @@ def _load_video_clip_manifest() -> None:
   if video_clip_jobs or not os.path.isfile(_video_clip_manifest_path()):
     return
   try:
+    for filename in os.listdir(_video_clip_cache_path()):
+      if filename.startswith((".clip-", ".manifest-")):
+        try:
+          os.unlink(os.path.join(_video_clip_cache_path(), filename))
+        except FileNotFoundError:
+          pass
     with open(_video_clip_manifest_path()) as f:
       manifest = json.load(f)
     if manifest.get("version") != VIDEO_CLIP_MANIFEST_VERSION:
       return
+    resumed = False
     for item in manifest.get("clips", []):
       job = VideoClipJob(**item)
       if job.status in ("queued", "encoding"):
-        job = replace(job, status="failed", error="device restarted while creating clip")
+        job = replace(job, status="queued", progress=0.0, error=None)
+        video_clip_queue.put_nowait(job.id)
+        resumed = True
       elif job.status == "ready" and (job.fn is None or not os.path.isfile(os.path.join(Paths.log_root(), job.fn))):
         continue
       video_clip_jobs[job.id] = job
       video_clip_requests.setdefault(job.request_id, []).append(job.id)
+    if resumed:
+      _write_video_clip_manifest()
   except Exception:
     cloudlog.exception("athena.video_clip.load_manifest_failed")
 
@@ -646,11 +658,21 @@ def _video_clip_worker() -> None:
 
 def _start_video_clip_worker() -> None:
   global video_clip_worker_running
+  if not PC and not Params().get_bool("IsOffroad"):
+    return
   with video_clip_lock:
     if video_clip_worker_running:
       return
     video_clip_worker_running = True
   threading.Thread(target=_video_clip_worker, name="video_clip", daemon=True).start()
+
+
+def _resume_video_clip_jobs() -> None:
+  with video_clip_lock:
+    _load_video_clip_manifest()
+    has_queued_jobs = not video_clip_queue.empty()
+  if has_queued_jobs:
+    _start_video_clip_worker()
 
 
 def _video_clip_available_ranges(route: str, camera: str) -> list[list[int]]:
@@ -693,10 +715,20 @@ def createClips(request_id: str, route: str, source_start_time: float, source_en
     raise ValueError("request_id must be a non-empty string")
   if not clips:
     raise ValueError("clips must contain at least one clip")
+  existing_response = None
+  has_queued_jobs = False
   with video_clip_lock:
     _load_video_clip_manifest()
     if request_id in video_clip_requests:
-      return {"request_id": request_id, "clips": [asdict(video_clip_jobs[i]) for i in video_clip_requests[request_id]]}
+      existing_response = {
+        "request_id": request_id,
+        "clips": [asdict(video_clip_jobs[i]) for i in video_clip_requests[request_id]],
+      }
+      has_queued_jobs = not video_clip_queue.empty()
+  if existing_response is not None:
+    if has_queued_jobs:
+      _start_video_clip_worker()
+    return existing_response
 
   route_name = _video_clip_route_name(route)
   _validate_video_clip_range(source_start_time, source_end_time)
@@ -747,6 +779,9 @@ def getClipsState(routes: list[str]) -> dict:
   with video_clip_lock:
     _load_video_clip_manifest()
     jobs = [asdict(job) for job in video_clip_jobs.values() if job.route in route_names]
+    has_queued_jobs = not video_clip_queue.empty()
+  if has_queued_jobs:
+    _start_video_clip_worker()
   route_state = {
     route: {
       "cameras": {camera: {"available_ranges": _video_clip_available_ranges(route, camera)} for camera in VIDEO_CLIP_CAMERAS},
