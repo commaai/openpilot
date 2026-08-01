@@ -778,14 +778,13 @@ def getClipsState(routes: list[str]) -> dict:
   route_names = [_video_clip_route_name(route) for route in routes]
   with video_clip_lock:
     _load_video_clip_manifest()
-    jobs = [asdict(job) for job in video_clip_jobs.values() if job.route in route_names]
+    jobs = [asdict(job) for job in video_clip_jobs.values()]
     has_queued_jobs = not video_clip_queue.empty()
   if has_queued_jobs:
     _start_video_clip_worker()
   route_state = {
     route: {
       "cameras": {camera: {"available_ranges": _video_clip_available_ranges(route, camera)} for camera in VIDEO_CLIP_CAMERAS},
-      "clips": sorted((job for job in jobs if job["route"] == route), key=lambda job: job["created_at"], reverse=True),
     }
     for route in route_names
   }
@@ -795,6 +794,7 @@ def getClipsState(routes: list[str]) -> dict:
       "cameras": list(VIDEO_CLIP_CAMERAS), "bitrates": list(VIDEO_CLIP_BITRATES),
       "speedups": list(VIDEO_CLIP_SPEEDUPS), "max_duration": VIDEO_CLIP_MAX_DURATION,
     },
+    "clips": sorted(jobs, key=lambda job: job["created_at"], reverse=True),
     "routes": route_state,
   }
 
