@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
-#include <functional>
 #include <thread>
 #include <vector>
 
@@ -22,9 +21,7 @@
 
 class VideoEncoder {
 public:
-  using PacketCallback = std::function<void(uint8_t *, size_t, int64_t, bool, bool)>;
-
-  VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback = {});
+  VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   virtual ~VideoEncoder() {}
   virtual int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) = 0;
   virtual void encoder_open() = 0;
@@ -38,8 +35,6 @@ protected:
   int in_width, in_height;
   int out_width, out_height;
   const EncoderInfo encoder_info;
-  PacketCallback packet_callback;
-  bool packet_header_sent = false;
 
 private:
   // total frames encoded

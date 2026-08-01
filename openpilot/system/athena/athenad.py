@@ -34,7 +34,6 @@ from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
@@ -459,14 +458,6 @@ def _video_clip_inputs(route: str, camera: str, start_time: float, end_time: flo
 
 def _encode_video_clip(inputs: list[str], output_path: str, start_time: float, duration: float,
                        progress_callback: Callable[[float], None]) -> None:
-  if not PC:
-    command = [
-      os.path.join(BASEDIR, "openpilot/system/loggerd/encoderd"),
-      "--clip", output_path, str(start_time), str(duration), *inputs,
-    ]
-    _run_video_clip_encoder(command, duration, progress_callback)
-    return
-
   with tempfile.NamedTemporaryFile(mode="w", suffix=".ffconcat", delete=False) as manifest:
     manifest.write("ffconcat version 1.0\n")
     for path in inputs:
@@ -501,31 +492,27 @@ def _encode_video_clip(inputs: list[str], output_path: str, start_time: float, d
       output_path,
     ]
 
-    _run_video_clip_encoder(command, duration, progress_callback)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    assert process.stdout is not None
+    output_tail: list[str] = []
+    for raw_line in process.stdout:
+      line = raw_line.strip()
+      if line.startswith("out_time_us="):
+        try:
+          encoded_time = int(line.split("=", 1)[1]) / 1e6
+          progress_callback(min(encoded_time / duration, 0.99))
+        except ValueError:
+          pass
+      elif line:
+        output_tail.append(line)
+        output_tail = output_tail[-20:]
+
+    returncode = process.wait()
+    if returncode != 0:
+      detail = "\n".join(output_tail)
+      raise RuntimeError(f"ffmpeg exited with code {returncode}" + (f":\n{detail}" if detail else ""))
   finally:
     os.unlink(manifest_path)
-
-
-def _run_video_clip_encoder(command: list[str], duration: float, progress_callback: Callable[[float], None]) -> None:
-  process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-  assert process.stdout is not None
-  output_tail: list[str] = []
-  for raw_line in process.stdout:
-    line = raw_line.strip()
-    if line.startswith("out_time_us="):
-      try:
-        encoded_time = int(line.split("=", 1)[1]) / 1e6
-        progress_callback(min(encoded_time / duration, 0.99))
-      except ValueError:
-        pass
-    elif line:
-      output_tail.append(line)
-      output_tail = output_tail[-20:]
-
-  returncode = process.wait()
-  if returncode != 0:
-    detail = "\n".join(output_tail)
-    raise RuntimeError(f"video encoder exited with code {returncode}" + (f":\n{detail}" if detail else ""))
 
 
 def _set_video_clip_job(job_id: str, **changes) -> None:

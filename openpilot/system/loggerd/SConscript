@@ -5,7 +5,7 @@ frameworks = []
 
 src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch == "larch64":
-  src += ['encoder/v4l_encoder.cc', 'clip_encoder.cc', '#openpilot/tools/replay/qcom_decoder.cc']
+  src += ['encoder/v4l_encoder.cc']
 else:
   src += ['encoder/ffmpeg_encoder.cc']
   if arch == "Darwin":

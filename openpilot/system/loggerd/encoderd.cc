@@ -2,7 +2,6 @@
 
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/jpeg_encoder.h"
-#include "system/loggerd/clip_encoder.h"
 
 #ifdef __TICI__
 #include "system/loggerd/encoder/v4l_encoder.h"
@@ -172,19 +171,6 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc > 1 && std::string(argv[1]) == "--clip") {
-#ifdef __TICI__
-    if (argc < 6) {
-      fprintf(stderr, "usage: encoderd --clip OUTPUT START DURATION INPUT [INPUT ...]\n");
-      return 2;
-    }
-    std::vector<std::string> inputs(argv + 5, argv + argc);
-    return encode_clip(inputs, argv[2], std::stod(argv[3]), std::stod(argv[4]));
-#else
-    fprintf(stderr, "encoderd --clip requires tici hardware\n");
-    return 2;
-#endif
-  }
   if (!Hardware::PC()) {
     int ret;
     ret = util::set_realtime_priority(52);

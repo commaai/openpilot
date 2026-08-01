@@ -16,7 +16,7 @@ extern "C" {
 
 class FfmpegEncoder : public VideoEncoder {
 public:
-  FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback = {});
+  FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   ~FfmpegEncoder();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open();

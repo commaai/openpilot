@@ -21,8 +21,8 @@ extern "C" {
 
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
-FfmpegEncoder::FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback)
-    : VideoEncoder(encoder_info, in_width, in_height, std::move(packet_callback)) {
+FfmpegEncoder::FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
+    : VideoEncoder(encoder_info, in_width, in_height) {
   frame = av_frame_alloc();
   assert(frame);
   frame->format = AV_PIX_FMT_YUV420P;
