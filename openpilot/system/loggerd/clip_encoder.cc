@@ -9,6 +9,7 @@ extern "C" {
 }
 
 #include "common/swaglog.h"
+#include "system/camerad/cameras/nv12_info.h"
 #include "system/loggerd/encoder/v4l_encoder.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
@@ -54,8 +55,13 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   const int height = codec->height;
   avformat_close_input(&first_ctx);
 
+  auto [stride, y_height, uv_height, buffer_size] = get_nv12_info(width, height);
+  VisionBuf decoded;
+  decoded.allocate(buffer_size);
+  decoded.init_yuv(width, height, stride, stride * y_height);
+
   MsmVidc decoder;
-  if (!decoder.init(VIDEO_DEVICE, width, height, V4L2_PIX_FMT_HEVC, true, V4L2_PIX_FMT_NV12)) return 1;
+  if (!decoder.init(VIDEO_DEVICE, width, height, V4L2_PIX_FMT_HEVC)) return 1;
 
   std::filesystem::path output_path(output);
   const std::string output_dir = output_path.has_parent_path() ? output_path.parent_path() : ".";
@@ -64,7 +70,7 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   V4LEncoder encoder(clip_encoder_info, width, height,
     [&writer](uint8_t *data, size_t size, int64_t timestamp, bool config, bool keyframe) {
       writer.write(data, size, timestamp, config, keyframe);
-    }, V4L2_PIX_FMT_NV12, [&decoder](VisionBuf *buf) { decoder.releaseFrame(buf); }, true);
+    });
   encoder.encoder_open();
 
   const int64_t first_frame = std::floor(start_time * CLIP_FPS);
@@ -86,16 +92,13 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
         av_packet_unref(packet);
         continue;
       }
-      VisionBuf *frame = decoder.decodeFrameDirect(packet);
+      VisionBuf *frame = decoder.decodeFrame(packet, &decoded);
       av_packet_unref(packet);
       if (!frame) {
         failed = true;
         break;
       }
-      if (input_frame++ < first_frame) {
-        decoder.releaseFrame(frame);
-        continue;
-      }
+      if (input_frame++ < first_frame) continue;
 
       VisionIpcBufExtra extra = {};
       extra.frame_id = output_frame;
@@ -115,6 +118,7 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   }
 
   encoder.encoder_close();
+  decoded.free();
   if (failed || input_frame < end_frame) {
     LOGE("clip ended before requested duration");
     return 1;

@@ -8,8 +8,6 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
-constexpr int OFFLINE_CORE_PLACEMENT_RATE = 80 << 16;
-
 // echo "0xFFFF" > /sys/kernel/debug/msm_vidc/debug_level
 
 static void copyBuffer(VisionBuf *src_buf, VisionBuf *dst_buf) {
@@ -34,13 +32,10 @@ MsmVidc::~MsmVidc() {
   }
 }
 
-bool MsmVidc::init(const char* dev, size_t width, size_t height, uint64_t codec,
-                   bool direct_mode, uint32_t capture_fourcc) {
+bool MsmVidc::init(const char* dev, size_t width, size_t height, uint64_t codec) {
   LOG("Initializing msm_vidc device %s", dev);
   this->w = width;
   this->h = height;
-  this->direct = direct_mode;
-  this->capture_format = capture_fourcc;
   this->fd = open(dev, O_RDWR, 0);
   if (fd < 0) {
     LOGE("failed to open video device %s", dev);
@@ -50,16 +45,6 @@ bool MsmVidc::init(const char* dev, size_t width, size_t height, uint64_t codec,
   v4l2_buf_type out_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
   setPlaneFormat(out_type, V4L2_PIX_FMT_HEVC); // Also allocates the output buffer
   setFPS(FPS);
-  if (direct) {
-    struct v4l2_control ctrls[] = {
-      // A finite real-time load lets the driver place decode and encode on separate cores.
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE, .value = OFFLINE_CORE_PLACEMENT_RATE },
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_ENABLE },
-    };
-    for (auto ctrl : ctrls) {
-      util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL offline decode failed");
-    }
-  }
   request_buffers(fd, out_type, OUTPUT_BUFFER_COUNT);
   util::safe_ioctl(fd, VIDIOC_STREAMON, &out_type, "VIDIOC_STREAMON OUTPUT failed");
   restartCapture();
@@ -70,11 +55,10 @@ bool MsmVidc::init(const char* dev, size_t width, size_t height, uint64_t codec,
 }
 
 VisionBuf* MsmVidc::decodeFrame(AVPacket *pkt, VisionBuf *buf) {
-  assert(initialized && (pkt != nullptr) && (direct || buf != nullptr));
+  assert(initialized && (pkt != nullptr) && (buf != nullptr));
 
   this->frame_ready = false;
   this->current_output_buf = buf;
-  this->current_capture_buf = nullptr;
   bool sent_packet = false;
 
   while (!this->frame_ready) {
@@ -97,17 +81,7 @@ VisionBuf* MsmVidc::decodeFrame(AVPacket *pkt, VisionBuf *buf) {
     }
   }
 
-  return direct ? current_capture_buf : buf;
-}
-
-VisionBuf* MsmVidc::decodeFrameDirect(AVPacket *pkt) {
-  assert(direct);
-  return decodeFrame(pkt, nullptr);
-}
-
-void MsmVidc::releaseFrame(VisionBuf *buf) {
-  assert(direct && buf >= cap_bufs && buf < cap_bufs + CAPTURE_BUFFER_COUNT);
-  queueCaptureBuffer(buf - cap_bufs);
+  return buf;
 }
 
 VisionBuf* MsmVidc::processEvents() {
@@ -118,7 +92,7 @@ VisionBuf* MsmVidc::processEvents() {
     if (idx == ev[EV_VIDEO]) {
       if (revents & (POLLIN | POLLRDNORM)) {
         VisionBuf *result = handleCapture();
-        if (result && (direct || result == this->current_output_buf)) {
+        if (result == this->current_output_buf) {
           this->frame_ready = true;
         }
       }
@@ -148,14 +122,9 @@ VisionBuf* MsmVidc::handleCapture() {
     return nullptr;
   }
 
-  if (direct) {
-    current_capture_buf = &cap_bufs[buf.index];
-    return current_capture_buf;
-  } else {
-    copyBuffer(&cap_bufs[buf.index], this->current_output_buf);
-    queueCaptureBuffer(buf.index);
-    return this->current_output_buf;
-  }
+  copyBuffer(&cap_bufs[buf.index], this->current_output_buf);
+  queueCaptureBuffer(buf.index);
+  return this->current_output_buf;
 }
 
 bool MsmVidc::subscribeEvents() {
@@ -222,30 +191,17 @@ bool MsmVidc::restartCapture() {
     util::safe_ioctl(this->fd, VIDIOC_REQBUFS, &reqbuf, "VIDIOC_REQBUFS failed");
     for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; ++i) {
       this->cap_bufs[i].free();
+      this->cap_buf_flag[i] = false; // mark as not queued
       cap_bufs[i].~VisionBuf();
       new (&cap_bufs[i]) VisionBuf();
     }
   }
   // setup, start and queue capture buffers
   setDBP();
-  setPlaneFormat(type, capture_format);
-  if (direct) {
-    struct v4l2_control ctrl = {
-      .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
-      .value = OFFLINE_CORE_PLACEMENT_RATE,
-    };
-    util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL placement decode failed");
-  }
+  setPlaneFormat(type, V4L2_PIX_FMT_NV12);
   util::safe_ioctl(this->fd, VIDIOC_STREAMON, &type, "VIDIOC_STREAMON CAPTURE failed");
   for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; ++i) {
     queueCaptureBuffer(i);
-  }
-  if (direct) {
-    struct v4l2_control ctrl = {
-      .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
-      .value = INT_MAX,
-    };
-    util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL turbo decode failed");
   }
 
   return true;
@@ -268,6 +224,7 @@ bool MsmVidc::queueCaptureBuffer(int i) {
   planes[0].bytesused     = this->cap_bufs[i].len;
   planes[0].data_offset   = 0;
   util::safe_ioctl(this->fd, VIDIOC_QBUF, &buf, "VIDIOC_QBUF failed");
+  this->cap_buf_flag[i] = true; // mark as queued
   return true;
 }
 
