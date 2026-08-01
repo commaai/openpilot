@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
+os.environ['DEV'] = 'QCOM:IR3' # tmp: we shouldn't be compiling anything at runtime
 from tinygrad.tensor import Tensor
 import threading
 import time
