@@ -16,7 +16,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import HARDWARE, TICI, PC
-from openpilot.common.hardware.usb import get_usb_state, set_usb_state
+from openpilot.common.hardware.usb import get_usb_state, get_usb_topology, set_usb_state
 from openpilot.common.linux import LinuxSystemStats
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
@@ -105,10 +105,15 @@ def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
   count = 0
   prev_hw_state = None
+  prev_usb_topology = set()
 
   while not end_event.is_set():
-    # these are expensive calls. update every 10s
-    if (count % int(10. / DT_HW)) == 0:
+    usb_topology = get_usb_topology()
+    usb_changed = usb_topology != prev_usb_topology
+
+    # these are expensive calls. update every 10s or when USB devices change
+    if (count % int(10. / DT_HW)) == 0 or usb_changed:
+      prev_usb_topology = usb_topology
       try:
         network_type = HARDWARE.get_network_type()
         modem_temps = HARDWARE.get_modem_temperatures()

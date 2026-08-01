@@ -22,7 +22,7 @@ DLC_TO_LEN = (0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64)
 
 
 class TestCarInterfaces(OpenpilotTestCase):
-  @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK])
+  @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK], ids=lambda car_name: car_name)
   @fuzzy_test(max_examples=60)
   def test_car_interfaces(self, car_name, fuzzy):
     fingerprint = dict(fuzzy.list(lambda: (fuzzy.integer(0, 0x800), fuzzy.choice(DLC_TO_LEN))))

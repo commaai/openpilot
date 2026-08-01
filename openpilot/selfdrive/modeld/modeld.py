@@ -19,20 +19,19 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
+from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
-from openpilot.selfdrive.modeld.usbgpu_link import wait_usbgpu_link
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 LAT_SMOOTH_SECONDS = 0.1
-LONG_SMOOTH_SECONDS = 0.1
+LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
 
@@ -41,10 +40,10 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                           lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
   if 'action' not in model_output:
     plan = model_output['plan'][0]
-    desired_accel, should_stop = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0],
-                                                     plan[:,Plan.ACCELERATION][:,0],
-                                                     ModelConstants.T_IDXS,
-                                                     action_t=long_action_t)
+    desired_accel = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0],
+                                        plan[:,Plan.ACCELERATION][:,0],
+                                        ModelConstants.T_IDXS,
+                                        action_t=long_action_t)
     desired_curvature = get_curvature_from_plan(plan[:,Plan.T_FROM_CURRENT_EULER][:,2],
                                                 plan[:,Plan.ORIENTATION_RATE][:,2],
                                                 ModelConstants.T_IDXS,
@@ -53,7 +52,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
   else:
     desired_accel = model_output['action'][0,1]
     desired_curvature = model_output['action'][0,0] / (max(1.0, v_ego))**2
-    should_stop = (v_ego < 0.3 and desired_accel < 0.1)
+  stop = should_stop(v_ego, desired_accel)
   desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
   if v_ego > MIN_LAT_CONTROL_SPEED:
     desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, LAT_SMOOTH_SECONDS)
@@ -62,7 +61,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
 
   return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
                                 desiredAcceleration=float(desired_accel),
-                                shouldStop=bool(should_stop))
+                                shouldStop=bool(stop))
 
 
 class FrameMeta:
@@ -152,7 +151,7 @@ def main(demo=False):
   USBGPU = usbgpu_present() and usbgpu_compiled()
   params = Params()
   params.put_bool("UsbGpuLoading", USBGPU)
-  params.put_bool("UsbGpuActive", False)
+  params.remove("UsbGpuActive")
 
   config_realtime_process(7, 54)
 
@@ -187,7 +186,6 @@ def main(demo=False):
     def load_big():
       nonlocal big_model
       try:
-        wait_usbgpu_link()
         m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
         m.warmup()
         big_model = m

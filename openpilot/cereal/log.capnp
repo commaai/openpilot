@@ -116,6 +116,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     canBusMissing @80;
     selfdrivedLagging @81;
     resumeBlocked @82;
+    carNotReady @103;
     steerTimeLimit @83;
     vehicleSensorsInvalid @84;
     locationdTemporaryError @85;
@@ -129,13 +130,14 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     userBookmark @95;
     excessiveActuation @96;
     bigModelLoading @100;
-    bigModelReady @101;
+    bigModelFailed @102;
 
     lowBatteryDEPRECATED @40;
     soundsUnavailableDEPRECATED @47;
     deviceFallingDEPRECATED @71;
     usbErrorDEPRECATED @78;
     audioFeedbackDEPRECATED @97;
+    bigModelReadyDEPRECATED @101;
   }
 }
 

@@ -1,8 +1,16 @@
+import os
 from pathlib import Path
 
 CHESTNUT_VENDOR_ID = 0xADD1
 CHESTNUT_PRODUCT_ID = 0x0001
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
+
+
+def get_usb_topology() -> set[str]:
+  try:
+    return set(os.listdir(USB_DEVICES_PATH))
+  except OSError:
+    return set()
 
 
 def read(path: Path) -> str | None:

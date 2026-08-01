@@ -1,6 +1,6 @@
-from opendbc.car.docs import generate_cars_md, get_all_car_docs
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.selfdrive.car.docs import CARS_MD_TEMPLATE
+from openpilot.selfdrive.car.docs import CARS_MD_TEMPLATE, generate_cars_md
+from opendbc.car.docs import get_all_car_docs
 
 
 class TestCarDocs(OpenpilotTestCase):
