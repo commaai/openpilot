@@ -1,5 +1,8 @@
 #pragma once
 
+#include <atomic>
+#include <functional>
+
 #include "common/queue.h"
 #include "system/loggerd/encoder/encoder.h"
 
@@ -8,7 +11,9 @@
 
 class V4LEncoder : public VideoEncoder {
 public:
-  V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback = {});
+  using InputDoneCallback = std::function<void(VisionBuf *)>;
+  V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback = {},
+             uint32_t input_format = V4L2_PIX_FMT_NV12, InputDoneCallback input_done_callback = {}, bool turbo = false);
   ~V4LEncoder();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open();
@@ -25,10 +30,12 @@ private:
   int current_bitrate = -1;
 
   SafeQueue<VisionIpcBufExtra> extras;
+  InputDoneCallback input_done_callback;
 
   static void dequeue_handler(V4LEncoder *e);
   std::thread dequeue_handler_thread;
 
   VisionBuf buf_out[BUF_OUT_COUNT];
+  std::atomic<VisionBuf *> input_bufs[BUF_IN_COUNT] = {};
   SafeQueue<unsigned int> free_buf_in;
 };

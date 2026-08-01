@@ -32,8 +32,11 @@ public:
   MsmVidc() = default;
   ~MsmVidc();
 
-  bool init(const char* dev, size_t width, size_t height, uint64_t codec);
+  bool init(const char* dev, size_t width, size_t height, uint64_t codec,
+            bool direct_mode = false, uint32_t capture_fourcc = V4L2_PIX_FMT_NV12);
   VisionBuf* decodeFrame(AVPacket* pkt, VisionBuf* buf);
+  VisionBuf* decodeFrameDirect(AVPacket *pkt);
+  void releaseFrame(VisionBuf *buf);
 
   AVFormatContext* avctx = nullptr;
   int fd = 0;
@@ -42,8 +45,11 @@ private:
   bool initialized = false;
   bool reconfigure_pending = false;
   bool frame_ready = false;
+  bool direct = false;
+  uint32_t capture_format = V4L2_PIX_FMT_NV12;
 
   VisionBuf* current_output_buf = nullptr;
+  VisionBuf* current_capture_buf = nullptr;
   VisionBuf out_buf;                          // Single input buffer
   VisionBuf cap_bufs[CAPTURE_BUFFER_COUNT];   // Capture (output) buffers
 
@@ -55,8 +61,6 @@ private:
 
   size_t cap_plane_off[CAPTURE_BUFFER_COUNT] = {0};
   size_t cap_plane_stride[CAPTURE_BUFFER_COUNT] = {0};
-  bool cap_buf_flag[CAPTURE_BUFFER_COUNT] = {false};
-
   size_t out_buf_off[OUTPUT_BUFFER_COUNT] = {0};
   void* out_buf_addr[OUTPUT_BUFFER_COUNT] = {0};
   bool out_buf_flag[OUTPUT_BUFFER_COUNT] = {false};

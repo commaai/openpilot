@@ -22,6 +22,7 @@
   echo 0xff > /sys/devices/platform/soc/aa00000.qcom,vidc/video4linux/video33/dev_debug
 */
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
+constexpr int OFFLINE_CORE_PLACEMENT_RATE = 80 << 16;
 
 static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
   v4l2_plane plane = {0};
@@ -138,13 +139,17 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     if (pfd.revents & POLLOUT) {
       unsigned int index;
       dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
+      VisionBuf *input_buf = e->input_bufs[index].exchange(nullptr);
+      if (e->input_done_callback) e->input_done_callback(input_buf);
       e->free_buf_in.push(index);
     }
   }
 }
 
-V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback)
-    : VideoEncoder(encoder_info, in_width, in_height, std::move(packet_callback)) {
+V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, PacketCallback packet_callback,
+                       uint32_t input_format, InputDoneCallback input_done_callback, bool turbo)
+    : VideoEncoder(encoder_info, in_width, in_height, std::move(packet_callback)),
+      input_done_callback(std::move(input_done_callback)) {
   fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK));
   assert(fd >= 0);
 
@@ -193,7 +198,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
       .pix_mp = {
         .width = (unsigned int)in_width,
         .height = (unsigned int)in_height,
-        .pixelformat = V4L2_PIX_FMT_NV12,
+        .pixelformat = input_format,
         .field = V4L2_FIELD_ANY,
         .colorspace = V4L2_COLORSPACE_470_SYSTEM_BG,
       }
@@ -218,6 +223,16 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
     };
     for (auto ctrl : ctrls) {
       util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL failed");
+    }
+  }
+  if (turbo) {
+    struct v4l2_control ctrls[] = {
+      // Account this session during initial core placement, then switch to turbo after STREAMON.
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE, .value = OFFLINE_CORE_PLACEMENT_RATE },
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_ENABLE },
+    };
+    for (auto ctrl : ctrls) {
+      util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL offline encode failed");
     }
   }
 
@@ -255,6 +270,13 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
   util::safe_ioctl(fd, VIDIOC_STREAMON, &buf_type, "VIDIOC_STREAMON failed");
   buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
   util::safe_ioctl(fd, VIDIOC_STREAMON, &buf_type, "VIDIOC_STREAMON failed");
+  if (turbo) {
+    struct v4l2_control ctrl = {
+      .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
+      .value = INT_MAX,
+    };
+    util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL turbo encode failed");
+  }
 
   // queue up output buffers
   for (unsigned int i = 0; i < BUF_OUT_COUNT; i++) {
@@ -281,6 +303,7 @@ int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
 
   // reserve buffer
   int buffer_in = free_buf_in.pop();
+  input_bufs[buffer_in].store(buf);
 
   // push buffer
   extras.push(*extra);
