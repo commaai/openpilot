@@ -1,5 +1,11 @@
 #include <cassert>
+#ifdef __TICI__
+#include <exception>
+#endif
 
+#ifdef __TICI__
+#include "system/loggerd/clip_encoder.h"
+#endif
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/jpeg_encoder.h"
 
@@ -171,6 +177,21 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
 }
 
 int main(int argc, char* argv[]) {
+#ifdef __TICI__
+  if (argc > 1 && std::string(argv[1]) == "--clip") {
+    if (argc < 6) {
+      fprintf(stderr, "usage: encoderd --clip OUTPUT START DURATION SEGMENT [SEGMENT ...]\n");
+      return 2;
+    }
+    try {
+      std::vector<std::string> inputs(argv + 5, argv + argc);
+      return encode_clip(inputs, argv[2], std::stod(argv[3]), std::stod(argv[4]));
+    } catch (const std::exception &e) {
+      fprintf(stderr, "clip encoding failed: %s\n", e.what());
+      return 1;
+    }
+  }
+#endif
   if (!Hardware::PC()) {
     int ret;
     ret = util::set_realtime_priority(52);
