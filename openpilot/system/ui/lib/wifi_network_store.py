@@ -126,6 +126,14 @@ def _normalize_keyfile_sections(cp: configparser.ConfigParser):
       cp[alias] = dict(cp[canonical])
 
 
+def _keyfile_section(cp: configparser.ConfigParser, alias: str, canonical: str) -> str | None:
+  if cp.has_section(alias):
+    return alias
+  if cp.has_section(canonical):
+    return canonical
+  return None
+
+
 class NetworkStore:
   """Persistent storage for saved WiFi networks using .nmconnection files."""
 
@@ -173,14 +181,18 @@ class NetworkStore:
       return None
     pattern = re.compile(rf"^\s*uuid\s*:\s*['\"]?{re.escape(file_uuid)}['\"]?\s*(?:#.*)?$", re.MULTILINE)
     yaml_filenames = [fname for fname in filenames if fname.endswith(".yaml")]
+    read_failed = False
     for fname in yaml_filenames:
       try:
         raw = sudo_read(os.path.join(self._netplan_directory, fname))
       except OSError:
+        read_failed = True
         continue
-      if raw and pattern.search(raw):
+      if not raw:
+        read_failed = True
+      elif pattern.search(raw):
         return fname
-    return expected if yaml_filenames else None
+    return expected if read_failed else None
 
   def _load_keyfile(self, directory: str, fname: str, imported: bool, persistent_ssids: set[str]):
     if not fname.endswith(".nmconnection"):
@@ -203,7 +215,7 @@ class NetworkStore:
         return
       if not imported:
         persistent_ssids.add(ssid)
-      if set(cp.options("wifi")) - _SUPPORTED_WIFI_OPTIONS:
+      if {key for key, value in cp.items("wifi") if value} - _SUPPORTED_WIFI_OPTIONS:
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported Wi-Fi options")
         return
       file_uuid = cp.get("connection", "uuid", fallback="")
@@ -231,7 +243,7 @@ class NetworkStore:
         if key_mgmt == "none" and any(cp.has_option("wifi-security", k) for k in wep_keys):
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} (WEP profile, unsupported)")
           return
-        unsupported_security_options = set(cp.options("wifi-security")) - _SUPPORTED_SECURITY_OPTIONS
+        unsupported_security_options = {key for key, value in cp.items("wifi-security") if value} - _SUPPORTED_SECURITY_OPTIONS
         auth_alg = cp.get("wifi-security", "auth-alg", fallback="").lower()
         psk_flags = cp.getint("wifi-security", "psk-flags", fallback=0)
         if unsupported_security_options or auth_alg not in ("", "open") or psk_flags != 0:
@@ -255,10 +267,10 @@ class NetworkStore:
       ipv6 = dict(cp["ipv6"]) if cp.has_section("ipv6") else {"method": "auto"}
       ipv4_method = ipv4.get("method", "auto").lower()
       ipv6_method = ipv6.get("method", "auto").lower()
-      unsupported_ipv4_options = set(ipv4) - _SUPPORTED_IPV4_OPTIONS
-      unsupported_ipv6_options = set(ipv6) - _SUPPORTED_IPV6_OPTIONS
-      ipv4_dns_priority = ipv4.get("dns-priority")
-      ipv6_addr_gen_mode = ipv6.get("addr-gen-mode", "default").lower()
+      unsupported_ipv4_options = {key for key, value in ipv4.items() if value} - _SUPPORTED_IPV4_OPTIONS
+      unsupported_ipv6_options = {key for key, value in ipv6.items() if value} - _SUPPORTED_IPV6_OPTIONS
+      ipv4_dns_priority = ipv4.get("dns-priority") or None
+      ipv6_addr_gen_mode = (ipv6.get("addr-gen-mode") or "default").lower()
       if (ipv4_method not in _SUPPORTED_IPV4_METHODS
           or ipv6_method not in _SUPPORTED_IPV6_METHODS
           or unsupported_ipv4_options
@@ -291,6 +303,21 @@ class NetworkStore:
     except (configparser.Error, ValueError):
       return
 
+  def _install_keyfile(self, cp: configparser.ConfigParser, path: str):
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+      cp.write(f)
+      temp_path = f.name
+
+    try:
+      os.chmod(temp_path, 0o600)
+      subprocess.run(["sudo", "install", "-d", "-m", "755", self._directory], check=True)
+      subprocess.run(["sudo", "install", "-o", "root", "-g", "root", "-m", "600", temp_path, path], check=True)
+    finally:
+      try:
+        os.unlink(temp_path)
+      except FileNotFoundError:
+        pass
+
   def _render_nmconnection(self, ssid: str, entry: dict) -> tuple[str, dict]:
     file_uuid = entry.get("uuid")
     if not file_uuid:
@@ -304,6 +331,7 @@ class NetworkStore:
 
     canonical_fname = _canonical_filename(file_uuid, ssid)
     canonical_path = os.path.join(self._directory, canonical_fname)
+    canonical_existed = os.path.exists(canonical_path)
     stored_fname = entry.get("_filename")
     entry["_filename"] = canonical_fname
 
@@ -337,19 +365,36 @@ class NetworkStore:
     cp["ipv4"] = ipv4
     cp["ipv6"] = entry.get("_ipv6", {"method": "auto"})
 
-    with tempfile.NamedTemporaryFile(mode="w", dir="/tmp", delete=False) as f:
-      cp.write(f)
-      temp_path = f.name
+    self._install_keyfile(cp, canonical_path)
 
-    try:
-      os.chmod(temp_path, 0o600)
-      subprocess.run(["sudo", "install", "-d", "-m", "755", self._directory], check=True)
-      subprocess.run(["sudo", "install", "-o", "root", "-g", "root", "-m", "600", temp_path, canonical_path], check=True)
-    finally:
-      try:
-        os.unlink(temp_path)
-      except FileNotFoundError:
-        pass
+    def cleanup_canonical_after_failure() -> bool:
+      if canonical_existed:
+        return True
+      return subprocess.run(["sudo", "rm", "-f", canonical_path], check=False).returncode == 0
+
+    runtime_filename = entry.get("_runtime_filename")
+    if self._runtime_directory is not None and runtime_filename:
+      runtime_path = os.path.join(self._runtime_directory, runtime_filename)
+      result = subprocess.run(["sudo", "rm", "-f", runtime_path], check=False)
+      if result.returncode != 0:
+        if not cleanup_canonical_after_failure():
+          raise OSError(f"failed to remove {runtime_path} and roll back {canonical_path}")
+        raise OSError(f"failed to remove {runtime_path}")
+      entry["_runtime_filename"] = None
+
+    netplan_filename = entry.get("_netplan_filename")
+    if self._netplan_directory is not None and netplan_filename:
+      netplan_path = os.path.join(self._netplan_directory, netplan_filename)
+      if not os.path.exists(netplan_path):
+        if not cleanup_canonical_after_failure():
+          raise OSError(f"failed to find {netplan_path} and roll back {canonical_path}")
+        raise OSError(f"failed to find {netplan_path}")
+      result = subprocess.run(["sudo", "rm", "-f", netplan_path], check=False)
+      if result.returncode != 0:
+        if not cleanup_canonical_after_failure():
+          raise OSError(f"failed to remove {netplan_path} and roll back {canonical_path}")
+        raise OSError(f"failed to remove {netplan_path}")
+      entry["_netplan_filename"] = None
 
     # Keep one canonical filename even when the tracked profile uses another name.
     if stored_fname and stored_fname != canonical_fname:
@@ -365,33 +410,6 @@ class NetworkStore:
         except Exception:
           cloudlog.exception("NetworkStore: failed to mirror keyfile to noncanonical path")
         entry["_filename"] = stored_fname
-
-    runtime_filename = entry.get("_runtime_filename")
-    if self._runtime_directory is not None and runtime_filename:
-      runtime_path = os.path.join(self._runtime_directory, runtime_filename)
-      result = subprocess.run(["sudo", "rm", "-f", runtime_path], check=False)
-      if result.returncode != 0:
-        cleanup_result = subprocess.run(["sudo", "rm", "-f", canonical_path], check=False)
-        if cleanup_result.returncode != 0:
-          raise OSError(f"failed to remove {runtime_path} and roll back {canonical_path}")
-        raise OSError(f"failed to remove {runtime_path}")
-      entry["_runtime_filename"] = None
-
-    netplan_filename = entry.get("_netplan_filename")
-    if self._netplan_directory is not None and netplan_filename:
-      netplan_path = os.path.join(self._netplan_directory, netplan_filename)
-      if not os.path.exists(netplan_path):
-        cleanup_result = subprocess.run(["sudo", "rm", "-f", canonical_path], check=False)
-        if cleanup_result.returncode != 0:
-          raise OSError(f"failed to find {netplan_path} and roll back {canonical_path}")
-        raise OSError(f"failed to find {netplan_path}")
-      result = subprocess.run(["sudo", "rm", "-f", netplan_path], check=False)
-      if result.returncode != 0:
-        cleanup_result = subprocess.run(["sudo", "rm", "-f", canonical_path], check=False)
-        if cleanup_result.returncode != 0:
-          raise OSError(f"failed to remove {netplan_path} and roll back {canonical_path}")
-        raise OSError(f"failed to remove {netplan_path}")
-      entry["_netplan_filename"] = None
 
     return file_uuid, entry
 
@@ -413,6 +431,16 @@ class NetworkStore:
       return dict(entry) if entry else None
 
   def get_tethering_password(self, ssid: str) -> str | None:
+    for cp, _, _, _ in self._tethering_profiles(ssid):
+      security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")
+      assert security_section is not None
+      password = _decode_keyfile_string(cp.get(security_section, "psk", fallback=""))
+      if password:
+        return password
+    return None
+
+  def _tethering_profiles(self, ssid: str) -> list[tuple[configparser.ConfigParser, str, str, str]]:
+    profiles = []
     directories = [self._directory]
     if self._runtime_directory is not None:
       directories.append(self._runtime_directory)
@@ -431,18 +459,63 @@ class NetworkStore:
             continue
           cp = configparser.ConfigParser(interpolation=None)
           cp.read_string(raw)
-          _normalize_keyfile_sections(cp)
-          profile_ssid = _decode_keyfile_ssid(cp.get("wifi", "ssid", fallback=""))
-          if cp.get("wifi", "mode", fallback="infrastructure") != "ap" or profile_ssid != ssid:
+          wifi_section = _keyfile_section(cp, "wifi", "802-11-wireless")
+          security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")
+          if wifi_section is None or security_section is None:
             continue
-          if cp.get("wifi-security", "key-mgmt", fallback="").lower() != "wpa-psk":
+          profile_ssid = _decode_keyfile_ssid(cp.get(wifi_section, "ssid", fallback=""))
+          if cp.get(wifi_section, "mode", fallback="infrastructure") != "ap" or profile_ssid != ssid:
             continue
-          password = _decode_keyfile_string(cp.get("wifi-security", "psk", fallback=""))
-          if password:
-            return password
+          if cp.get(security_section, "key-mgmt", fallback="").lower() != "wpa-psk":
+            continue
+          profiles.append((cp, directory, fname, cp.get("connection", "uuid", fallback="")))
         except (configparser.Error, OSError, ValueError):
           continue
-    return None
+    return profiles
+
+  def set_tethering_password(self, ssid: str, password: str) -> bool:
+    with self._mutation_lock:
+      profiles = self._tethering_profiles(ssid)
+      if not profiles:
+        return False
+
+      cp, source_directory, source_filename, file_uuid = profiles[0]
+      security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")
+      assert security_section is not None
+      cp[security_section]["psk"] = _encode_keyfile_string(password)
+
+      if source_directory == self._directory:
+        target_path = os.path.join(self._directory, source_filename)
+      else:
+        if not file_uuid:
+          return False
+        target_path = os.path.join(self._directory, _canonical_filename(file_uuid, ssid))
+      target_existed = os.path.exists(target_path)
+
+      runtime_profile = next((profile for profile in profiles
+                              if profile[1] == self._runtime_directory and profile[3] == file_uuid), None)
+      runtime_path = os.path.join(self._runtime_directory, runtime_profile[2]) if self._runtime_directory is not None and runtime_profile is not None else None
+      netplan_filename = self._find_netplan_filename(file_uuid) if runtime_path is not None else None
+      netplan_path = os.path.join(self._netplan_directory, netplan_filename) if self._netplan_directory is not None and netplan_filename else None
+      if netplan_path is not None and not os.path.exists(netplan_path):
+        return False
+
+      self._install_keyfile(cp, target_path)
+
+      def cleanup_target_after_failure() -> bool:
+        if target_existed:
+          return True
+        return subprocess.run(["sudo", "rm", "-f", target_path], check=False).returncode == 0
+
+      for source_path in (runtime_path, netplan_path):
+        if source_path is None:
+          continue
+        result = subprocess.run(["sudo", "rm", "-f", source_path], check=False)
+        if result.returncode != 0:
+          if not cleanup_target_after_failure():
+            raise OSError(f"failed to remove {source_path} and roll back {target_path}")
+          raise OSError(f"failed to remove {source_path}")
+      return True
 
   def save_network(self, ssid: str, psk: str | None = None, metered: int | None = None, hidden: bool | None = None):
     with self._mutation_lock:

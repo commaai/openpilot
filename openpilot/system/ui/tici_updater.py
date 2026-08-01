@@ -43,7 +43,8 @@ class Updater(Widget):
     self.show_reboot_button = False
     self.process = None
     self.update_thread = None
-    self.wifi_manager_ui = WifiManagerUI(WifiManager())
+    self.wifi_manager = WifiManager()
+    self.wifi_manager_ui = WifiManagerUI(self.wifi_manager)
 
     # Buttons
     self._wifi_button = Button("Connect to Wi-Fi", click_callback=lambda: self.set_current_screen(Screen.WIFI))
@@ -53,6 +54,7 @@ class Updater(Widget):
 
   def set_current_screen(self, screen: Screen):
     self.current_screen = screen
+    self.wifi_manager.set_active(screen == Screen.WIFI)
 
   def install_update(self):
     self.set_current_screen(Screen.PROGRESS)
