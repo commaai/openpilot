@@ -651,35 +651,15 @@ def getClipsState(routes: list[str]) -> dict:
 
 
 @dispatcher.add_method
-def deleteClips(clip_ids: list[str]) -> dict:
-  if (not isinstance(clip_ids, list) or len(clip_ids) > 100
-      or not all(isinstance(clip_id, str) and re.fullmatch(r"[a-f0-9]{32}", clip_id) for clip_id in clip_ids)):
-    raise ValueError("clip_ids must be a list of at most 100 clip IDs")
-
-  deleted = []
-  failed = []
+def deleteClips(clip_ids: list[str]) -> None:
   with video_clip_lock:
-    for clip_id in dict.fromkeys(clip_ids):
-      job = video_clip_jobs.get(clip_id)
+    for clip_id in clip_ids:
+      video_clip_jobs.pop(clip_id, None)
       output_path = os.path.join(Paths.log_root(), "clips", f"{clip_id}.mp4")
-      exists = os.path.isfile(output_path)
-      if job is None and not exists:
-        failed.append(clip_id)
-        continue
-      if job is not None:
-        del video_clip_jobs[clip_id]
-        if active_video_clip is not None and active_video_clip[0] == clip_id:
-          active_video_clip[1].terminate()
-      try:
+      if active_video_clip is not None and active_video_clip[0] == clip_id:
+        active_video_clip[1].terminate()
+      if os.path.exists(output_path):
         os.unlink(output_path)
-      except FileNotFoundError:
-        pass
-      except OSError:
-        cloudlog.exception("athena.video_clip.delete_failed")
-        failed.append(clip_id)
-        continue
-      deleted.append(clip_id)
-  return {"deleted": deleted, "failed": failed}
 
 
 @dispatcher.add_method
