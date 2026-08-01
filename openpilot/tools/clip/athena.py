@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 import time
+import uuid
 from typing import Any
 
 import requests
@@ -121,8 +122,11 @@ def _print_progress(label: str, progress: float, last_percent: int) -> int:
 def wait_for_clip(client: AthenaClient, clip_id: str, poll_interval: float) -> dict[str, Any]:
   last_percent = -1
   while True:
-    job = client.call("getVideoClip", {"clip_id": clip_id})
-    if job["status"] == "encoding":
+    state = client.call("getClipsState", {"routes": []})
+    job = next((clip for clip in state["clips"] if clip["id"] == clip_id), None)
+    if job is None:
+      raise AthenaError("clip disappeared from the device")
+    if job["status"] in ("queued", "encoding"):
       last_percent = _print_progress("Encoding", job["progress"], last_percent)
       time.sleep(poll_interval)
       continue
@@ -131,7 +135,7 @@ def wait_for_clip(client: AthenaClient, clip_id: str, poll_interval: float) -> d
       if last_percent >= 0:
         print()
       raise AthenaError(job["error"] or "video encoding failed")
-    if job["status"] != "done" or not job.get("fn"):
+    if job["status"] != "ready" or not job.get("fn"):
       if last_percent >= 0:
         print()
       raise AthenaError(f"invalid video clip status: {job}")
@@ -153,17 +157,20 @@ def wait_for_upload(client: AthenaClient, upload_id: str, poll_interval: float) 
     time.sleep(poll_interval)
 
 
-def create_clip(client: AthenaClient, route: str, camera: str, start_time: float, end_time: float, poll_interval: float) -> dict[str, Any]:
-  job = client.call(
-    "createVideoClip",
+def create_clip(
+  client: AthenaClient, route: str, camera: str, start_time: float, end_time: float, bitrate: int, speedup: int, filename: str, poll_interval: float
+) -> dict[str, Any]:
+  response = client.call(
+    "createClips",
     {
+      "request_id": uuid.uuid4().hex,
       "route": route,
-      "camera": camera,
-      "start_time": start_time,
-      "end_time": end_time,
+      "source_start_time": start_time,
+      "source_end_time": end_time,
+      "clips": [{"camera": camera, "bitrate": bitrate, "speedup": speedup, "filename": filename}],
     },
   )
-  return wait_for_clip(client, job["id"], poll_interval)
+  return wait_for_clip(client, response["clips"][0]["id"], poll_interval)
 
 
 def parse_args() -> argparse.Namespace:
@@ -172,6 +179,9 @@ def parse_args() -> argparse.Namespace:
   parser.add_argument("start", nargs="?", type=float, help="start time in seconds from the beginning of the route")
   parser.add_argument("end", nargs="?", type=float, help="end time in seconds from the beginning of the route")
   parser.add_argument("--camera", choices=("fcamera", "ecamera", "dcamera"), default="fcamera")
+  parser.add_argument("--bitrate", choices=(5, 8, 12), type=int, default=5, help="output bitrate in Mbps")
+  parser.add_argument("--speedup", choices=(1, 2, 5, 10), type=int, default=1)
+  parser.add_argument("--filename", default="")
   parser.add_argument("--demo", action="store_true", help=f"use {DEMO_ROUTE}, {DEMO_START}s-{DEMO_END}s")
   parser.add_argument("--local", action="store_true", help="call the local Athena dispatcher using this computer's realdata")
   parser.add_argument("-o", "--output", help="copy the completed clip here (local mode only)")
@@ -210,7 +220,7 @@ def main() -> int:
     else:
       client = RemoteAthenaClient(_dongle_id(args.route), args.token, args.athena_host)
 
-    job = create_clip(client, args.route, args.camera, args.start, args.end, args.poll_interval)
+    job = create_clip(client, args.route, args.camera, args.start, args.end, args.bitrate, args.speedup, args.filename, args.poll_interval)
     fn = job["fn"]
     print(f"Created {fn}")
 

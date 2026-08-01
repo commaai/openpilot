@@ -175,6 +175,7 @@ video_clip_jobs: dict[str, VideoClipJob] = {}
 video_clip_requests: dict[str, list[str]] = {}
 video_clip_queue: Queue[str] = queue.Queue()
 video_clip_worker_running = False
+cancelled_video_clips: set[str] = set()
 
 send_seq = itertools.count()
 def send_queue_push(data: str, priority: int) -> None:
@@ -479,8 +480,21 @@ def _validate_video_clip_range(start_time: float, end_time: float) -> None:
     raise ValueError("end_time must be a finite number greater than start_time")
 
 
-def _encode_video_clip(inputs: list[str], output_path: str, start_time: float, duration: float, bitrate: int, speedup: int,
-                       metadata: str, progress_callback: Callable[[float], None]) -> None:
+class VideoClipCancelled(Exception):
+  pass
+
+
+def _encode_video_clip(
+  inputs: list[str],
+  output_path: str,
+  start_time: float,
+  duration: float,
+  bitrate: int,
+  speedup: int,
+  metadata: str,
+  progress_callback: Callable[[float], None],
+  cancel_callback: Callable[[], bool],
+) -> None:
   with tempfile.NamedTemporaryFile(mode="w", suffix=".ffconcat", delete=False) as manifest:
     manifest.write("ffconcat version 1.0\n")
     for path in inputs:
@@ -518,24 +532,37 @@ def _encode_video_clip(inputs: list[str], output_path: str, start_time: float, d
     ]
 
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    assert process.stdout is not None
-    output_tail: list[str] = []
-    for raw_line in process.stdout:
-      line = raw_line.strip()
-      if line.startswith("out_time_us="):
-        try:
-          encoded_time = int(line.split("=", 1)[1]) / 1e6
-          progress_callback(min(encoded_time * speedup / duration, 0.99))
-        except ValueError:
-          pass
-      elif line:
-        output_tail.append(line)
-        output_tail = output_tail[-20:]
+    try:
+      assert process.stdout is not None
+      output_tail: list[str] = []
+      for raw_line in process.stdout:
+        if cancel_callback():
+          raise VideoClipCancelled
+        line = raw_line.strip()
+        if line.startswith("out_time_us="):
+          try:
+            encoded_time = int(line.split("=", 1)[1]) / 1e6
+            progress_callback(min(encoded_time * speedup / duration, 0.99))
+          except ValueError:
+            pass
+        elif line:
+          output_tail.append(line)
+          output_tail = output_tail[-20:]
 
-    returncode = process.wait()
-    if returncode != 0:
-      detail = "\n".join(output_tail)
-      raise RuntimeError(f"ffmpeg exited with code {returncode}" + (f":\n{detail}" if detail else ""))
+      if cancel_callback():
+        raise VideoClipCancelled
+      returncode = process.wait()
+      if returncode != 0:
+        detail = "\n".join(output_tail)
+        raise RuntimeError(f"ffmpeg exited with code {returncode}" + (f":\n{detail}" if detail else ""))
+    finally:
+      if process.poll() is None:
+        process.terminate()
+        try:
+          process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+          process.kill()
+          process.wait()
   finally:
     os.unlink(manifest_path)
 
@@ -607,6 +634,11 @@ def _set_video_clip_job(job_id: str, **changes) -> None:
         _write_video_clip_manifest()
 
 
+def _video_clip_is_cancelled(job_id: str) -> bool:
+  with video_clip_lock:
+    return job_id in cancelled_video_clips
+
+
 def _video_clip_worker() -> None:
   global video_clip_worker_running
   while True:
@@ -622,28 +654,56 @@ def _video_clip_worker() -> None:
     temporary_path = ""
     try:
       with video_clip_lock:
-        job = video_clip_jobs[job_id]
+        job = video_clip_jobs.get(job_id)
+        if job is None:
+          continue
         video_clip_jobs[job_id] = replace(job, status="encoding")
         _write_video_clip_manifest()
 
       inputs, relative_start, duration = _video_clip_inputs(
-        job.route, job.camera, job.source_start_time, job.source_end_time,
+        job.route,
+        job.camera,
+        job.source_start_time,
+        job.source_end_time,
       )
       cache_path = _video_clip_cache_path()
       os.makedirs(cache_path, exist_ok=True)
       fd, temporary_path = tempfile.mkstemp(prefix=".clip-", suffix=".mp4", dir=cache_path)
       os.close(fd)
       output_path = os.path.join(cache_path, f"{job.id}.mp4")
-      metadata = json.dumps({
-        "version": 1, "clip_id": job.id, "route": job.route, "camera": job.camera,
-        "source_start_time": job.source_start_time, "source_end_time": job.source_end_time,
-        "bitrate": job.bitrate, "speedup": job.speedup,
-      }, separators=(",", ":"))
-      _encode_video_clip(inputs, temporary_path, relative_start, duration, job.bitrate, job.speedup, metadata,
-                         lambda progress, clip_id=job.id: _set_video_clip_job(clip_id, progress=progress))
-      os.replace(temporary_path, output_path)
-      fn = os.path.relpath(output_path, Paths.log_root())
-      _set_video_clip_job(job.id, status="ready", progress=1.0, fn=fn, size=os.path.getsize(output_path))
+      metadata = json.dumps(
+        {
+          "version": 1,
+          "clip_id": job.id,
+          "route": job.route,
+          "camera": job.camera,
+          "source_start_time": job.source_start_time,
+          "source_end_time": job.source_end_time,
+          "bitrate": job.bitrate,
+          "speedup": job.speedup,
+        },
+        separators=(",", ":"),
+      )
+      _encode_video_clip(
+        inputs,
+        temporary_path,
+        relative_start,
+        duration,
+        job.bitrate,
+        job.speedup,
+        metadata,
+        lambda progress, clip_id=job.id: _set_video_clip_job(clip_id, progress=progress),
+        lambda clip_id=job.id: _video_clip_is_cancelled(clip_id),
+      )
+      with video_clip_lock:
+        if job.id in cancelled_video_clips or job.id not in video_clip_jobs:
+          raise VideoClipCancelled
+        os.replace(temporary_path, output_path)
+        fn = os.path.relpath(output_path, Paths.log_root())
+        video_clip_jobs[job.id] = replace(video_clip_jobs[job.id], status="ready", progress=1.0, fn=fn, size=os.path.getsize(output_path))
+        _write_video_clip_manifest()
+    except VideoClipCancelled:
+      pass
     except Exception as e:
       cloudlog.exception("athena.video_clip.failed")
       _set_video_clip_job(job_id, status="failed", error=str(e))
@@ -653,6 +713,8 @@ def _video_clip_worker() -> None:
           os.unlink(temporary_path)
         except FileNotFoundError:
           pass
+      with video_clip_lock:
+        cancelled_video_clips.discard(job_id)
       video_clip_queue.task_done()
 
 
@@ -797,6 +859,45 @@ def getClipsState(routes: list[str]) -> dict:
     "clips": sorted(jobs, key=lambda job: job["created_at"], reverse=True),
     "routes": route_state,
   }
+
+
+@dispatcher.add_method
+def deleteClips(clip_ids: list[str]) -> dict:
+  if not isinstance(clip_ids, list) or len(clip_ids) > 100 or not all(isinstance(clip_id, str) for clip_id in clip_ids):
+    raise ValueError("clip_ids must be a list of at most 100 strings")
+
+  deleted = []
+  failed = []
+  with video_clip_lock:
+    _load_video_clip_manifest()
+    for clip_id in dict.fromkeys(clip_ids):
+      job = video_clip_jobs.get(clip_id)
+      if job is None:
+        failed.append(clip_id)
+        continue
+
+      if job.fn is not None:
+        try:
+          os.unlink(os.path.join(_video_clip_cache_path(), f"{job.id}.mp4"))
+        except FileNotFoundError:
+          pass
+        except OSError:
+          cloudlog.exception("athena.video_clip.delete_failed")
+          failed.append(clip_id)
+          continue
+      if job.status in ("queued", "encoding"):
+        cancelled_video_clips.add(clip_id)
+
+      del video_clip_jobs[clip_id]
+      request_clips = video_clip_requests[job.request_id]
+      request_clips.remove(clip_id)
+      if not request_clips:
+        del video_clip_requests[job.request_id]
+      deleted.append(clip_id)
+
+    if deleted:
+      _write_video_clip_manifest()
+  return {"deleted": deleted, "failed": failed}
 
 
 @dispatcher.add_method
