@@ -14,8 +14,9 @@ from openpilot.system.ui.lib.wifi_manager import (
 
 
 def build_tethering_manager() -> WifiManager:
+  store = MagicMock()
   with (
-    patch.object(wifi_manager_module, "NetworkStore", return_value=MagicMock()),
+    patch.object(wifi_manager_module, "NetworkStore", return_value=store),
     patch.object(wifi_manager_module, "DhcpClient", return_value=MagicMock()),
     patch.object(wifi_manager_module, "Params", None),
     patch.object(WifiManager, "_initialize"),
@@ -23,6 +24,7 @@ def build_tethering_manager() -> WifiManager:
   ):
     manager = WifiManager()
 
+  manager._store = store
   manager._exit = True
   manager._tethering_ssid = "weedle-test"
   manager._tethering_psk = "hotspot-psk-1234"
@@ -53,6 +55,15 @@ def tethering_side_effects(manager: WifiManager, mode: str = "AP"):
 
 
 class TestTetheringFirewall(TestCase):
+  def test_start_owns_tethering_active_state(self):
+    manager = build_tethering_manager()
+    manager._tethering_active = False
+
+    with tethering_side_effects(manager):
+      manager._start_tethering()
+
+    assert manager.is_tethering_active()
+
   def test_selects_xtables_backend(self):
     for discovered, expected in (("/usr/sbin/iptables-legacy", "iptables-legacy"), (None, "iptables")):
       with self.subTest(discovered=discovered), patch.object(wifi_manager_module.shutil, "which", return_value=discovered):

@@ -11,6 +11,7 @@ from enum import IntEnum
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import sudo_read
+from openpilot.system.ui.lib.wpa_ctrl import is_valid_psk
 
 
 NM_CONNECTIONS_DIR = "/data/etc/NetworkManager/system-connections"
@@ -253,8 +254,8 @@ class NetworkStore:
         # NM agent-managed secrets (psk-flags=1) live outside the keyfile. We can't
         # drive them via wpa_supplicant, and loading with psk="" would render as
         # key_mgmt=NONE, silently demoting a secure profile to open and inviting spoofs.
-        if key_mgmt == "wpa-psk" and not psk:
-          cloudlog.warning(f"NetworkStore: skipping {ssid!r} (wpa-psk with no inline secret)")
+        if key_mgmt == "wpa-psk" and not is_valid_psk(psk):
+          cloudlog.warning(f"NetworkStore: skipping {ssid!r} (wpa-psk with invalid inline secret)")
           return
 
       # connection.autoconnect=false is user/provisioning intent. Do not load it

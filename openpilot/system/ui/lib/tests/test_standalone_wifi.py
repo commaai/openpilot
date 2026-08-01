@@ -12,6 +12,7 @@ try:
     pyray_available = False
   else:
     pyray_available = True
+    from openpilot.system.ui.widgets import network as network_module
     from openpilot.system.ui.widgets.network import UIState, WifiManagerUI
 finally:
   if previous_scale is None:
@@ -25,10 +26,43 @@ class TestStandaloneWifi(TestCase):
   def test_forget_failure_releases_wifi_controls(self):
     wifi_ui = WifiManagerUI.__new__(WifiManagerUI)
     wifi_ui.state = UIState.FORGETTING
+    dialog = MagicMock()
 
-    wifi_ui._on_forget_failed("SavedNet")
+    with (
+      patch.object(network_module, "alert_dialog", return_value=dialog),
+      patch.object(network_module.gui_app, "push_widget") as push_widget,
+    ):
+      wifi_ui._on_forget_failed("SavedNet")
 
     assert wifi_ui.state == UIState.IDLE
+    push_widget.assert_called_once_with(dialog)
+
+  def test_mici_forget_failure_restores_button_and_opens_dialog(self):
+    try:
+      from openpilot.selfdrive.ui.mici.layouts.settings.network import wifi_ui as wifi_ui_module
+      from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
+    except ImportError as e:
+      raise SkipTest("mici UI dependencies are unavailable") from e
+
+    class WifiButton:
+      def __init__(self):
+        self.network = MagicMock(ssid="SavedNet")
+        self.on_forgotten = MagicMock()
+
+    button = WifiButton()
+    wifi_ui = WifiUIMici.__new__(WifiUIMici)
+    wifi_ui._scroller = MagicMock(items=[button])
+    dialog = MagicMock()
+
+    with (
+      patch.object(wifi_ui_module, "WifiButton", WifiButton),
+      patch.object(wifi_ui_module, "BigDialog", return_value=dialog),
+      patch.object(wifi_ui_module.gui_app, "push_widget") as push_widget,
+    ):
+      wifi_ui._on_forget_failed("SavedNet")
+
+    button.on_forgotten.assert_called_once()
+    push_widget.assert_called_once_with(dialog)
 
   def test_mici_wrong_password_opens_password_dialog(self):
     try:

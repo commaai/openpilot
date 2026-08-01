@@ -30,6 +30,7 @@ def build_wifi_manager() -> WifiManager:
   ):
     manager = WifiManager()
 
+  manager._store = store
   manager._exit = True
   manager._ctrl = MagicMock()
   manager._ipv4_forward = True
@@ -548,6 +549,20 @@ class TestConnectionState(TestCase):
     self.manager._dhcp.stop.assert_called_once()
     disconnected.assert_called_once()
 
+  def test_network_not_found_ends_scanning_after_reconciliation_deferred(self):
+    self.manager._set_connecting("MissingNet")
+    self.manager._set_pending_connection("MissingNet", "password123", True)
+    self.manager._ctrl.request.return_value = "wpa_state=SCANNING\n"
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+
+    self.manager._reconcile_connecting_state()
+    self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+    self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._pending_connection is None
+
   def test_delayed_network_not_found_does_not_bind_to_fresh_attempt(self):
     self.manager._set_connecting("PreviousNet")
     self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
@@ -1018,7 +1033,7 @@ class TestStartupAdoption(TestCase):
 class TestLifecycle(TestCase):
   def test_manager_starts_inactive_until_ui_is_shown(self):
     with (
-      patch.object(wifi_manager_module, "NetworkStore"),
+      patch.object(wifi_manager_module, "NetworkStore") as network_store,
       patch.object(wifi_manager_module, "DhcpClient"),
       patch.object(wifi_manager_module, "Params", None),
       patch.object(WifiManager, "_initialize"),
@@ -1026,6 +1041,32 @@ class TestLifecycle(TestCase):
       manager = WifiManager()
 
     assert not manager._active
+    assert manager._store is None
+    network_store.assert_not_called()
+
+  def test_initialization_loads_network_store_in_worker(self):
+    manager = build_wifi_manager()
+    manager._store = None
+    manager._scan_thread = MagicMock()
+    manager._state_thread = MagicMock()
+    store = MagicMock()
+    store.get_tethering_password.return_value = "custom-password"
+
+    with (
+      patch.object(wifi_manager_module, "NetworkStore", return_value=store) as network_store,
+      patch("builtins.open", side_effect=FileNotFoundError),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(manager, "_ensure_wpa_supplicant"),
+      patch.object(manager, "_update_networks"),
+      patch.object(manager, "_init_wifi_state"),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager._initialize()
+      thread.call_args.kwargs["target"]()
+
+    network_store.assert_called_once()
+    assert manager._store is store
+    assert manager.tethering_password == "custom-password"
 
   def test_initial_config_failure_recovers_without_restart(self):
     manager = build_wifi_manager()
@@ -1095,18 +1136,32 @@ class TestLifecycle(TestCase):
     manager._ctrl = None
     sleeps = []
 
-    def sleep(duration):
+    def wait(duration):
       sleeps.append(duration)
       manager._exit = True
 
     with (
       patch.object(wifi_manager_module, "wpa_supplicant_running", return_value=False),
       patch.object(manager, "_ensure_wpa_supplicant"),
-      patch.object(wifi_manager_module.time, "sleep", side_effect=sleep),
+      patch.object(manager._exit_event, "wait", side_effect=wait),
     ):
       manager._monitor_state()
 
     assert sleeps == [SCAN_PERIOD_SECONDS]
+
+  def test_monitor_exit_skips_retry_sleep(self):
+    manager = build_wifi_manager()
+    manager._exit = False
+    monitor = MagicMock()
+    monitor.recv.side_effect = lambda **_: setattr(manager, "_exit", True)
+
+    with (
+      patch.object(wifi_manager_module, "WpaCtrlMonitor", return_value=monitor),
+      patch.object(wifi_manager_module.time, "sleep") as sleep,
+    ):
+      manager._monitor_state()
+
+    sleep.assert_not_called()
 
   def test_disconnected_reconciliation_is_rate_limited(self):
     manager = build_wifi_manager()
@@ -1144,6 +1199,7 @@ class TestLifecycle(TestCase):
       manager.stop()
 
     assert manager._exit
+    assert manager._exit_event.is_set()
     assert ctrl is not None
     ctrl.interrupt.assert_called_once()
     ctrl.close.assert_called_once()
@@ -1379,19 +1435,55 @@ class TestTetheringPassword(TestCase):
 
     assert manager.tethering_password == "second-password"
     password_file.write.assert_called_once_with("second-password")
+    manager._store.set_tethering_password.assert_called_once_with("Hotspot", "second-password")
 
   def test_startup_falls_back_to_existing_hotspot_password(self):
     manager = build_wifi_manager()
     manager._tethering_ssid = "weedle"
-    manager._store.get_tethering_password.return_value = "custom-password"
+    store = manager._store
+    assert store is not None
+    store.get_tethering_password.return_value = "custom-password"
+    manager._scan_thread = MagicMock()
+    manager._state_thread = MagicMock()
 
     with (
+      patch.object(wifi_manager_module, "NetworkStore", return_value=store),
       patch("builtins.open", side_effect=FileNotFoundError),
-      patch.object(wifi_manager_module.threading, "Thread"),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(manager, "_ensure_wpa_supplicant"),
+      patch.object(manager, "_update_networks"),
+      patch.object(manager, "_init_wifi_state"),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
     ):
       manager._initialize()
+      thread.call_args.kwargs["target"]()
 
     assert manager.tethering_password == "custom-password"
+
+  def test_startup_falls_back_when_password_file_is_unreadable(self):
+    for error in (PermissionError("denied"), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid")):
+      with self.subTest(error=type(error).__name__):
+        manager = build_wifi_manager()
+        manager._tethering_ssid = "weedle"
+        store = manager._store
+        assert store is not None
+        store.get_tethering_password.return_value = "custom-password"
+        manager._scan_thread = MagicMock()
+        manager._state_thread = MagicMock()
+
+        with (
+          patch.object(wifi_manager_module, "NetworkStore", return_value=store),
+          patch("builtins.open", side_effect=error),
+          patch.object(wifi_manager_module, "generate_wpa_conf"),
+          patch.object(manager, "_ensure_wpa_supplicant"),
+          patch.object(manager, "_update_networks"),
+          patch.object(manager, "_init_wifi_state"),
+          patch.object(wifi_manager_module.threading, "Thread") as thread,
+        ):
+          manager._initialize()
+          thread.call_args.kwargs["target"]()
+
+        assert manager.tethering_password == "custom-password"
 
   def test_persist_failure_reenables_active_tethering_controls(self):
     manager = build_wifi_manager()
