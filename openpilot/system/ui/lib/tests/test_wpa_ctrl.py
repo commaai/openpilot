@@ -440,6 +440,7 @@ class TestSupplicantBringup(TestCase):
 
   def test_unreachable_hotspot_falls_back_to_station_bringup(self):
     ctrl = MagicMock()
+    abandoned_ap = MagicMock()
     ap_running = True
     station_running = False
 
@@ -473,9 +474,10 @@ class TestSupplicantBringup(TestCase):
       patch.object(wpa_ctrl_module.time, "sleep"),
       patch.object(wpa_ctrl_module.subprocess, "run", side_effect=run),
     ):
-      result = wpa_ctrl_module.ensure_wpa_supplicant(lambda: False)
+      result = wpa_ctrl_module.ensure_wpa_supplicant(lambda: False, on_abandoned_ap=abandoned_ap)
 
     assert result is ctrl
+    abandoned_ap.assert_called_once()
     assert call(wpa_ctrl_module.WPA_AP_CONF) in kill.call_args_list
     assert call(wpa_ctrl_module.WPA_SUPPLICANT_CONF) in kill.call_args_list
 

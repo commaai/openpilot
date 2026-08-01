@@ -462,7 +462,8 @@ def _unmanage_wlan0() -> bool:
   return result.returncode == 0
 
 
-def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured: Callable[[str], None] | None = None) -> WpaCtrl | None:
+def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured: Callable[[str], None] | None = None,
+                          on_abandoned_ap: Callable[[], None] | None = None) -> WpaCtrl | None:
   """Attach to a wpa_supplicant we own, or spawn one. Never attach to NM's daemon.
   Returns the attached WpaCtrl, or None if ownership cannot be acquired."""
   # Wait for wlan0 on cold boot; _unmanage_wlan0 below silently fails if it's missing.
@@ -490,6 +491,11 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
     # via tethering toggle since `_start_tethering` only kills STA-config daemons.
     cloudlog.warning("AP daemon present but ctrl attach failed; killing it so STA spawn can recover")
     stop_wpa_supplicant(WPA_AP_CONF)
+    if on_abandoned_ap is not None:
+      try:
+        on_abandoned_ap()
+      except Exception:
+        cloudlog.exception("Failed to clean up abandoned AP services")
 
   # Our own STA daemon is still alive, so attach without disturbing NM.
   if wpa_supplicant_running(WPA_SUPPLICANT_CONF):
