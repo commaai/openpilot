@@ -62,7 +62,7 @@ DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 VIDEO_CLIP_FPS = 20
 VIDEO_CLIP_CACHE_DIR = "clips"
-VIDEO_CLIP_MANIFEST_VERSION = 1
+VIDEO_CLIP_VERSION = 1
 VIDEO_CLIP_CAMERAS = {
   "fcamera": "fcamera.hevc",
   "ecamera": "ecamera.hevc",
@@ -150,11 +150,7 @@ class VideoClipJob:
   speedup: int
   filename: str
   status: str
-  progress: float
-  fn: str | None = None
-  size: int | None = None
   created_at: float = 0
-  error: str | None = None
 
 
 dispatcher["echo"] = lambda s: s
@@ -167,10 +163,12 @@ cancelled_uploads: set[str] = set()
 cur_upload_items: dict[int, UploadItem | None] = {}
 video_clip_lock = threading.Lock()
 video_clip_jobs: dict[str, VideoClipJob] = {}
-video_clip_requests: dict[str, list[str]] = {}
 video_clip_queue: Queue[str] = queue.Queue()
-video_clip_worker_running = False
+video_clip_worker_started = False
 cancelled_video_clips: set[str] = set()
+active_video_clip_id: str | None = None
+active_video_clip_process: subprocess.Popen | None = None
+video_clips_initialized = False
 
 send_seq = itertools.count()
 def send_queue_push(data: str, priority: int) -> None:
@@ -212,7 +210,7 @@ class UploadQueueCache:
 
 def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
   end_event = threading.Event()
-  _resume_video_clip_jobs()
+  _init_video_clips()
 
   threads = [
     threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
@@ -465,6 +463,7 @@ class VideoClipCancelled(Exception):
 
 
 def _encode_video_clip(
+  job_id: str,
   inputs: list[str],
   output_path: str,
   start_time: float,
@@ -472,9 +471,8 @@ def _encode_video_clip(
   bitrate: int,
   speedup: int,
   metadata: str,
-  progress_callback: Callable[[float], None],
-  cancel_callback: Callable[[], bool],
 ) -> None:
+  global active_video_clip_id, active_video_clip_process
   with tempfile.NamedTemporaryFile(mode="w", suffix=".ffconcat", delete=False) as manifest:
     manifest.write("ffconcat version 1.0\n")
     for path in inputs:
@@ -507,35 +505,22 @@ def _encode_video_clip(
       "-pix_fmt", "yuv420p",
       "-movflags", "+faststart+use_metadata_tags",
       "-metadata", f"com.comma.clip.settings={metadata}",
-      "-progress", "pipe:1",
-      "-nostats",
       output_path,
     ]
 
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    with video_clip_lock:
+      active_video_clip_id = job_id
+      active_video_clip_process = process
+      if job_id in cancelled_video_clips:
+        process.terminate()
     try:
-      assert process.stdout is not None
-      output_tail: list[str] = []
-      for raw_line in process.stdout:
-        if cancel_callback():
-          raise VideoClipCancelled
-        line = raw_line.strip()
-        if line.startswith("out_time_us="):
-          try:
-            encoded_time = int(line.split("=", 1)[1]) / 1e6
-            progress_callback(min(encoded_time * speedup / duration, 0.99))
-          except ValueError:
-            pass
-        elif line:
-          output_tail.append(line)
-          output_tail = output_tail[-20:]
-
-      if cancel_callback():
+      output, _ = process.communicate()
+      if job_id in cancelled_video_clips:
         raise VideoClipCancelled
-      returncode = process.wait()
-      if returncode != 0:
-        detail = "\n".join(output_tail)
-        raise RuntimeError(f"ffmpeg exited with code {returncode}" + (f":\n{detail}" if detail else ""))
+      if process.returncode != 0:
+        detail = "\n".join(output.splitlines()[-20:])
+        raise RuntimeError(f"ffmpeg exited with code {process.returncode}" + (f":\n{detail}" if detail else ""))
     finally:
       if process.poll() is None:
         process.terminate()
@@ -544,6 +529,10 @@ def _encode_video_clip(
         except subprocess.TimeoutExpired:
           process.kill()
           process.wait()
+      with video_clip_lock:
+        if active_video_clip_id == job_id:
+          active_video_clip_id = None
+          active_video_clip_process = None
   finally:
     os.unlink(manifest_path)
 
@@ -552,77 +541,56 @@ def _video_clip_cache_path() -> str:
   return os.path.join(Paths.log_root(), VIDEO_CLIP_CACHE_DIR)
 
 
-def _write_video_clip_manifest() -> None:
-  cache_path = _video_clip_cache_path()
-  os.makedirs(cache_path, exist_ok=True)
-  fd, temporary_path = tempfile.mkstemp(prefix=".manifest-", suffix=".json", dir=cache_path)
-  try:
-    with os.fdopen(fd, "w") as f:
-      json.dump({"version": VIDEO_CLIP_MANIFEST_VERSION, "clips": [asdict(j) for j in video_clip_jobs.values()]}, f)
-      f.flush()
-      os.fsync(f.fileno())
-    os.replace(temporary_path, os.path.join(cache_path, "manifest.json"))
-  finally:
-    try:
-      os.unlink(temporary_path)
-    except FileNotFoundError:
-      pass
-
-
-def _load_video_clip_manifest() -> None:
-  manifest_path = os.path.join(_video_clip_cache_path(), "manifest.json")
-  if video_clip_jobs or not os.path.isfile(manifest_path):
-    return
-  try:
-    for filename in os.listdir(_video_clip_cache_path()):
-      if filename.startswith((".clip-", ".manifest-")):
+def _init_video_clips() -> None:
+  global video_clips_initialized
+  with video_clip_lock:
+    if video_clips_initialized:
+      return
+    cache_path = _video_clip_cache_path()
+    os.makedirs(cache_path, exist_ok=True)
+    for filename in os.listdir(cache_path):
+      if filename.startswith(".clip-"):
         try:
-          os.unlink(os.path.join(_video_clip_cache_path(), filename))
+          os.unlink(os.path.join(cache_path, filename))
         except FileNotFoundError:
           pass
-    with open(manifest_path) as f:
-      manifest = json.load(f)
-    if manifest.get("version") != VIDEO_CLIP_MANIFEST_VERSION:
-      return
-    resumed = False
-    for item in manifest.get("clips", []):
-      job = VideoClipJob(**item)
-      if job.status in ("queued", "encoding"):
-        job = replace(job, status="queued", progress=0.0, error=None)
-        video_clip_queue.put_nowait(job.id)
-        resumed = True
-      elif job.status == "ready" and (job.fn is None or not os.path.isfile(os.path.join(Paths.log_root(), job.fn))):
+    video_clips_initialized = True
+
+
+def _video_clips_on_disk() -> dict[str, dict]:
+  clips = {}
+  try:
+    entries = os.scandir(_video_clip_cache_path())
+  except FileNotFoundError:
+    return clips
+
+  with entries:
+    for entry in entries:
+      if not entry.is_file() or not entry.name.endswith(".mp4"):
         continue
-      video_clip_jobs[job.id] = job
-      video_clip_requests.setdefault(job.request_id, []).append(job.id)
-    if resumed:
-      _write_video_clip_manifest()
-  except Exception:
-    cloudlog.exception("athena.video_clip.load_manifest_failed")
-
-
-def _set_video_clip_job(job_id: str, **changes) -> None:
-  with video_clip_lock:
-    if job_id in video_clip_jobs:
-      old_job = video_clip_jobs[job_id]
-      new_job = replace(old_job, **changes)
-      video_clip_jobs[job_id] = new_job
-      if (old_job.status != new_job.status or old_job.fn != new_job.fn or old_job.error != new_job.error
-          or new_job.progress - old_job.progress >= 0.01):
-        _write_video_clip_manifest()
+      try:
+        probe = subprocess.run([
+          "ffprobe", "-v", "error", "-show_entries", "format_tags=com.comma.clip.settings",
+          "-of", "json", entry.path,
+        ], capture_output=True, text=True, check=True)
+        metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["com.comma.clip.settings"])
+        metadata.pop("version", None)
+        clip_id = metadata["id"]
+        clips[clip_id] = {
+          **metadata,
+          "status": "ready",
+          "fn": os.path.relpath(entry.path, Paths.log_root()),
+          "size": entry.stat().st_size,
+        }
+      except (KeyError, TypeError, ValueError, json.JSONDecodeError, subprocess.CalledProcessError):
+        cloudlog.exception("athena.video_clip.invalid_file", filename=entry.name)
+  return clips
 
 
 def _video_clip_worker() -> None:
-  global video_clip_worker_running
+  global active_video_clip_id, active_video_clip_process
   while True:
-    try:
-      job_id = video_clip_queue.get_nowait()
-    except queue.Empty:
-      with video_clip_lock:
-        if video_clip_queue.empty():
-          video_clip_worker_running = False
-          return
-      continue
+    job_id = video_clip_queue.get()
 
     temporary_path = ""
     try:
@@ -631,7 +599,6 @@ def _video_clip_worker() -> None:
         if job is None:
           continue
         video_clip_jobs[job_id] = replace(job, status="encoding")
-        _write_video_clip_manifest()
 
       inputs, relative_start, duration = _video_clip_inputs(
         job.route,
@@ -644,20 +611,10 @@ def _video_clip_worker() -> None:
       fd, temporary_path = tempfile.mkstemp(prefix=".clip-", suffix=".mp4", dir=cache_path)
       os.close(fd)
       output_path = os.path.join(cache_path, f"{job.id}.mp4")
-      metadata = json.dumps(
-        {
-          "version": 1,
-          "clip_id": job.id,
-          "route": job.route,
-          "camera": job.camera,
-          "source_start_time": job.source_start_time,
-          "source_end_time": job.source_end_time,
-          "bitrate": job.bitrate,
-          "speedup": job.speedup,
-        },
-        separators=(",", ":"),
-      )
+      metadata = json.dumps({"version": VIDEO_CLIP_VERSION, **asdict(job), "status": "ready"}, separators=(",", ":"))
+
       _encode_video_clip(
+        job.id,
         inputs,
         temporary_path,
         relative_start,
@@ -665,21 +622,18 @@ def _video_clip_worker() -> None:
         job.bitrate,
         job.speedup,
         metadata,
-        lambda progress, clip_id=job.id: _set_video_clip_job(clip_id, progress=progress),
-        lambda clip_id=job.id: clip_id in cancelled_video_clips,
       )
       with video_clip_lock:
         if job.id in cancelled_video_clips or job.id not in video_clip_jobs:
           raise VideoClipCancelled
         os.replace(temporary_path, output_path)
-        fn = os.path.relpath(output_path, Paths.log_root())
-        video_clip_jobs[job.id] = replace(video_clip_jobs[job.id], status="ready", progress=1.0, fn=fn, size=os.path.getsize(output_path))
-        _write_video_clip_manifest()
+        del video_clip_jobs[job.id]
     except VideoClipCancelled:
       pass
-    except Exception as e:
+    except Exception:
       cloudlog.exception("athena.video_clip.failed")
-      _set_video_clip_job(job_id, status="failed", error=str(e))
+      with video_clip_lock:
+        video_clip_jobs.pop(job_id, None)
     finally:
       if temporary_path:
         try:
@@ -687,27 +641,22 @@ def _video_clip_worker() -> None:
         except FileNotFoundError:
           pass
       with video_clip_lock:
+        if active_video_clip_id == job_id:
+          active_video_clip_id = None
+          active_video_clip_process = None
         cancelled_video_clips.discard(job_id)
       video_clip_queue.task_done()
 
 
 def _start_video_clip_worker() -> None:
-  global video_clip_worker_running
+  global video_clip_worker_started
   if not PC and not Params().get_bool("IsOffroad"):
     return
   with video_clip_lock:
-    if video_clip_worker_running:
+    if video_clip_worker_started:
       return
-    video_clip_worker_running = True
+    video_clip_worker_started = True
   threading.Thread(target=_video_clip_worker, name="video_clip", daemon=True).start()
-
-
-def _resume_video_clip_jobs() -> None:
-  with video_clip_lock:
-    _load_video_clip_manifest()
-    has_queued_jobs = not video_clip_queue.empty()
-  if has_queued_jobs:
-    _start_video_clip_worker()
 
 
 def _video_clip_available_ranges(route: str, camera: str) -> list[list[int]]:
@@ -733,67 +682,34 @@ def _video_clip_available_ranges(route: str, camera: str) -> list[list[int]]:
   return ranges
 
 
-def _validate_video_clip_filename(filename: str, clip_id: str) -> str:
-  if not filename:
-    return f"clip-{clip_id}.mp4"
-  if filename != os.path.basename(filename) or filename in (".", "..") or "\x00" in filename:
-    raise ValueError("filename must be a plain file name")
-  return filename if filename.lower().endswith(".mp4") else f"{filename}.mp4"
-
-
 @dispatcher.add_method
 def createClips(request_id: str, route: str, source_start_time: float, source_end_time: float, clips: list[dict]) -> dict:
+  _init_video_clips()
   if not PC and not Params().get_bool("IsOffroad"):
     raise RuntimeError("video clips can only be created while offroad")
   if not isinstance(request_id, str) or not request_id or len(request_id) > 128:
     raise ValueError("request_id must be a non-empty string")
   if not clips:
     raise ValueError("clips must contain at least one clip")
-  existing_response = None
-  has_queued_jobs = False
-  with video_clip_lock:
-    _load_video_clip_manifest()
-    if request_id in video_clip_requests:
-      existing_response = {
-        "request_id": request_id,
-        "clips": [asdict(video_clip_jobs[i]) for i in video_clip_requests[request_id]],
-      }
-      has_queued_jobs = not video_clip_queue.empty()
-  if existing_response is not None:
-    if has_queued_jobs:
-      _start_video_clip_worker()
-    return existing_response
 
   route_match = re.fullmatch(fr"(?:{RE.DONGLE_ID}[|/])?{RE.LOG_ID}", route)
   if route_match is None:
     raise ValueError(f"invalid route: {route}")
   route_name = route_match.group("log_id")
-  _validate_video_clip_range(source_start_time, source_end_time)
   pending: list[VideoClipJob] = []
   for settings in clips:
     camera = settings.get("camera")
     bitrate = settings.get("bitrate")
     speedup = settings.get("speedup", 1)
-    if not isinstance(camera, str) or camera not in VIDEO_CLIP_CAMERAS:
-      raise ValueError(f"invalid camera: {camera}")
-    _video_clip_inputs(route_name, camera, source_start_time, source_end_time)
     clip_id = uuid.uuid4().hex
-    requested_filename = settings.get("filename", "")
-    if not isinstance(requested_filename, str):
-      raise ValueError("filename must be a string")
-    filename = _validate_video_clip_filename(requested_filename, clip_id)
+    filename = settings.get("filename") or f"clip-{clip_id}.mp4"
     pending.append(VideoClipJob(
       clip_id, request_id, route_name, camera, source_start_time, source_end_time, bitrate, speedup, filename,
-      "queued", 0.0, created_at=datetime.now().timestamp(),
+      "queued", created_at=datetime.now().timestamp(),
     ))
 
   with video_clip_lock:
-    _load_video_clip_manifest()
-    if request_id in video_clip_requests:
-      return {"request_id": request_id, "clips": [asdict(video_clip_jobs[i]) for i in video_clip_requests[request_id]]}
-    video_clip_requests[request_id] = [job.id for job in pending]
     video_clip_jobs.update((job.id, job) for job in pending)
-    _write_video_clip_manifest()
     for job in pending:
       video_clip_queue.put_nowait(job.id)
 
@@ -803,6 +719,7 @@ def createClips(request_id: str, route: str, source_start_time: float, source_en
 
 @dispatcher.add_method
 def getClipsState(routes: list[str]) -> dict:
+  _init_video_clips()
   if not isinstance(routes, list) or len(routes) > 100:
     raise ValueError("routes must be a list of at most 100 routes")
   route_matches = [re.fullmatch(fr"(?:{RE.DONGLE_ID}[|/])?{RE.LOG_ID}", route) for route in routes]
@@ -810,11 +727,8 @@ def getClipsState(routes: list[str]) -> dict:
     raise ValueError("invalid route")
   route_names = [match.group("log_id") for match in route_matches if match is not None]
   with video_clip_lock:
-    _load_video_clip_manifest()
     jobs = [asdict(job) for job in video_clip_jobs.values()]
-    has_queued_jobs = not video_clip_queue.empty()
-  if has_queued_jobs:
-    _start_video_clip_worker()
+  jobs.extend(_video_clips_on_disk().values())
   route_state = {
     route: {
       "cameras": {camera: {"available_ranges": _video_clip_available_ranges(route, camera)} for camera in VIDEO_CLIP_CAMERAS},
@@ -822,7 +736,7 @@ def getClipsState(routes: list[str]) -> dict:
     for route in route_names
   }
   return {
-    "version": VIDEO_CLIP_MANIFEST_VERSION,
+    "version": VIDEO_CLIP_VERSION,
     "capabilities": {"cameras": list(VIDEO_CLIP_CAMERAS)},
     "clips": sorted(jobs, key=lambda job: job["created_at"], reverse=True),
     "routes": route_state,
@@ -831,40 +745,35 @@ def getClipsState(routes: list[str]) -> dict:
 
 @dispatcher.add_method
 def deleteClips(clip_ids: list[str]) -> dict:
-  if not isinstance(clip_ids, list) or len(clip_ids) > 100 or not all(isinstance(clip_id, str) for clip_id in clip_ids):
-    raise ValueError("clip_ids must be a list of at most 100 strings")
+  _init_video_clips()
+  if (not isinstance(clip_ids, list) or len(clip_ids) > 100
+      or not all(isinstance(clip_id, str) and re.fullmatch(r"[a-f0-9]{32}", clip_id) for clip_id in clip_ids)):
+    raise ValueError("clip_ids must be a list of at most 100 clip IDs")
 
   deleted = []
   failed = []
   with video_clip_lock:
-    _load_video_clip_manifest()
     for clip_id in dict.fromkeys(clip_ids):
       job = video_clip_jobs.get(clip_id)
-      if job is None:
+      output_path = os.path.join(_video_clip_cache_path(), f"{clip_id}.mp4")
+      exists = os.path.isfile(output_path)
+      if job is None and not exists:
         failed.append(clip_id)
         continue
-
-      if job.fn is not None:
-        try:
-          os.unlink(os.path.join(_video_clip_cache_path(), f"{job.id}.mp4"))
-        except FileNotFoundError:
-          pass
-        except OSError:
-          cloudlog.exception("athena.video_clip.delete_failed")
-          failed.append(clip_id)
-          continue
-      if job.status in ("queued", "encoding"):
+      if job is not None:
         cancelled_video_clips.add(clip_id)
-
-      del video_clip_jobs[clip_id]
-      request_clips = video_clip_requests[job.request_id]
-      request_clips.remove(clip_id)
-      if not request_clips:
-        del video_clip_requests[job.request_id]
+        del video_clip_jobs[clip_id]
+        if active_video_clip_id == clip_id and active_video_clip_process is not None:
+          active_video_clip_process.terminate()
+      try:
+        os.unlink(output_path)
+      except FileNotFoundError:
+        pass
+      except OSError:
+        cloudlog.exception("athena.video_clip.delete_failed")
+        failed.append(clip_id)
+        continue
       deleted.append(clip_id)
-
-    if deleted:
-      _write_video_clip_manifest()
   return {"deleted": deleted, "failed": failed}
 
 
