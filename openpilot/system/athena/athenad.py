@@ -39,6 +39,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.tools.lib.helpers import RE
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
@@ -60,9 +61,6 @@ WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 VIDEO_CLIP_FPS = 20
-VIDEO_CLIP_MAX_DURATION = 30 * 60
-VIDEO_CLIP_BITRATES = (5, 8, 12)
-VIDEO_CLIP_SPEEDUPS = (1, 2, 5, 10)
 VIDEO_CLIP_CACHE_DIR = "clips"
 VIDEO_CLIP_MANIFEST_VERSION = 1
 VIDEO_CLIP_CAMERAS = {
@@ -70,9 +68,6 @@ VIDEO_CLIP_CAMERAS = {
   "ecamera": "ecamera.hevc",
   "dcamera": "dcamera.hevc",
 }
-VIDEO_CLIP_ROUTE_RE = re.compile(r"(?:[0-9]{4}(?:-[0-9]{2}){2}--(?:[0-9]{2}-){2}[0-9]{2}|[a-f0-9]{8}--[a-z0-9]{10})")
-VIDEO_CLIP_DONGLE_ID_RE = re.compile(r"[a-f0-9]{16}")
-
 SEND_PRIORITY_HIGH = 0
 SEND_PRIORITY_LOW = 1
 
@@ -439,31 +434,16 @@ def listDataDirectory(prefix='') -> list[str]:
   return scan_dir(Paths.log_root(), prefix)
 
 
-def _video_clip_route_name(route: str) -> str:
-  parts = re.split(r"[|/]", route)
-  if len(parts) == 1:
-    route_name = parts[0]
-  elif len(parts) == 2 and VIDEO_CLIP_DONGLE_ID_RE.fullmatch(parts[0]):
-    route_name = parts[1]
-  else:
-    raise ValueError(f"invalid route: {route}")
-
-  if not VIDEO_CLIP_ROUTE_RE.fullmatch(route_name):
-    raise ValueError(f"invalid route: {route}")
-  return route_name
-
-
 def _video_clip_inputs(route: str, camera: str, start_time: float, end_time: float) -> tuple[list[str], float, float]:
   if camera not in VIDEO_CLIP_CAMERAS:
     raise ValueError(f"invalid camera: {camera}")
   _validate_video_clip_range(start_time, end_time)
 
-  route_name = _video_clip_route_name(route)
   first_segment = math.floor(start_time / 60)
   last_segment = math.ceil(end_time / 60) - 1
   filename = VIDEO_CLIP_CAMERAS[camera]
   inputs = [
-    os.path.join(Paths.log_root(), f"{route_name}--{segment}", filename)
+    os.path.join(Paths.log_root(), f"{route}--{segment}", filename)
     for segment in range(first_segment, last_segment + 1)
   ]
   missing = [os.path.relpath(path, Paths.log_root()) for path in inputs if not os.path.isfile(path)]
@@ -572,10 +552,6 @@ def _video_clip_cache_path() -> str:
   return os.path.join(Paths.log_root(), VIDEO_CLIP_CACHE_DIR)
 
 
-def _video_clip_manifest_path() -> str:
-  return os.path.join(_video_clip_cache_path(), "manifest.json")
-
-
 def _write_video_clip_manifest() -> None:
   cache_path = _video_clip_cache_path()
   os.makedirs(cache_path, exist_ok=True)
@@ -585,7 +561,7 @@ def _write_video_clip_manifest() -> None:
       json.dump({"version": VIDEO_CLIP_MANIFEST_VERSION, "clips": [asdict(j) for j in video_clip_jobs.values()]}, f)
       f.flush()
       os.fsync(f.fileno())
-    os.replace(temporary_path, _video_clip_manifest_path())
+    os.replace(temporary_path, os.path.join(cache_path, "manifest.json"))
   finally:
     try:
       os.unlink(temporary_path)
@@ -594,7 +570,8 @@ def _write_video_clip_manifest() -> None:
 
 
 def _load_video_clip_manifest() -> None:
-  if video_clip_jobs or not os.path.isfile(_video_clip_manifest_path()):
+  manifest_path = os.path.join(_video_clip_cache_path(), "manifest.json")
+  if video_clip_jobs or not os.path.isfile(manifest_path):
     return
   try:
     for filename in os.listdir(_video_clip_cache_path()):
@@ -603,7 +580,7 @@ def _load_video_clip_manifest() -> None:
           os.unlink(os.path.join(_video_clip_cache_path(), filename))
         except FileNotFoundError:
           pass
-    with open(_video_clip_manifest_path()) as f:
+    with open(manifest_path) as f:
       manifest = json.load(f)
     if manifest.get("version") != VIDEO_CLIP_MANIFEST_VERSION:
       return
@@ -633,11 +610,6 @@ def _set_video_clip_job(job_id: str, **changes) -> None:
       if (old_job.status != new_job.status or old_job.fn != new_job.fn or old_job.error != new_job.error
           or new_job.progress - old_job.progress >= 0.01):
         _write_video_clip_manifest()
-
-
-def _video_clip_is_cancelled(job_id: str) -> bool:
-  with video_clip_lock:
-    return job_id in cancelled_video_clips
 
 
 def _video_clip_worker() -> None:
@@ -694,7 +666,7 @@ def _video_clip_worker() -> None:
         job.speedup,
         metadata,
         lambda progress, clip_id=job.id: _set_video_clip_job(clip_id, progress=progress),
-        lambda clip_id=job.id: _video_clip_is_cancelled(clip_id),
+        lambda clip_id=job.id: clip_id in cancelled_video_clips,
       )
       with video_clip_lock:
         if job.id in cancelled_video_clips or job.id not in video_clip_jobs:
@@ -739,12 +711,11 @@ def _resume_video_clip_jobs() -> None:
 
 
 def _video_clip_available_ranges(route: str, camera: str) -> list[list[int]]:
-  route_name = _video_clip_route_name(route)
   filename = VIDEO_CLIP_CAMERAS[camera]
   segments = []
   try:
     for entry in os.scandir(Paths.log_root()):
-      prefix = f"{route_name}--"
+      prefix = f"{route}--"
       if entry.is_dir() and entry.name.startswith(prefix) and os.path.isfile(os.path.join(entry.path, filename)):
         try:
           segments.append(int(entry.name[len(prefix):]))
@@ -793,11 +764,11 @@ def createClips(request_id: str, route: str, source_start_time: float, source_en
       _start_video_clip_worker()
     return existing_response
 
-  route_name = _video_clip_route_name(route)
+  route_match = re.fullmatch(fr"(?:{RE.DONGLE_ID}[|/])?{RE.LOG_ID}", route)
+  if route_match is None:
+    raise ValueError(f"invalid route: {route}")
+  route_name = route_match.group("log_id")
   _validate_video_clip_range(source_start_time, source_end_time)
-  if source_end_time - source_start_time > VIDEO_CLIP_MAX_DURATION:
-    raise ValueError(f"clip duration cannot exceed {VIDEO_CLIP_MAX_DURATION} seconds")
-
   pending: list[VideoClipJob] = []
   for settings in clips:
     camera = settings.get("camera")
@@ -805,10 +776,6 @@ def createClips(request_id: str, route: str, source_start_time: float, source_en
     speedup = settings.get("speedup", 1)
     if not isinstance(camera, str) or camera not in VIDEO_CLIP_CAMERAS:
       raise ValueError(f"invalid camera: {camera}")
-    if isinstance(bitrate, bool) or not isinstance(bitrate, int) or bitrate not in VIDEO_CLIP_BITRATES:
-      raise ValueError(f"bitrate must be one of {VIDEO_CLIP_BITRATES}")
-    if isinstance(speedup, bool) or not isinstance(speedup, int) or speedup not in VIDEO_CLIP_SPEEDUPS:
-      raise ValueError(f"speedup must be one of {VIDEO_CLIP_SPEEDUPS}")
     _video_clip_inputs(route_name, camera, source_start_time, source_end_time)
     clip_id = uuid.uuid4().hex
     requested_filename = settings.get("filename", "")
@@ -838,7 +805,10 @@ def createClips(request_id: str, route: str, source_start_time: float, source_en
 def getClipsState(routes: list[str]) -> dict:
   if not isinstance(routes, list) or len(routes) > 100:
     raise ValueError("routes must be a list of at most 100 routes")
-  route_names = [_video_clip_route_name(route) for route in routes]
+  route_matches = [re.fullmatch(fr"(?:{RE.DONGLE_ID}[|/])?{RE.LOG_ID}", route) for route in routes]
+  if any(match is None for match in route_matches):
+    raise ValueError("invalid route")
+  route_names = [match.group("log_id") for match in route_matches if match is not None]
   with video_clip_lock:
     _load_video_clip_manifest()
     jobs = [asdict(job) for job in video_clip_jobs.values()]
@@ -853,10 +823,7 @@ def getClipsState(routes: list[str]) -> dict:
   }
   return {
     "version": VIDEO_CLIP_MANIFEST_VERSION,
-    "capabilities": {
-      "cameras": list(VIDEO_CLIP_CAMERAS), "bitrates": list(VIDEO_CLIP_BITRATES),
-      "speedups": list(VIDEO_CLIP_SPEEDUPS), "max_duration": VIDEO_CLIP_MAX_DURATION,
-    },
+    "capabilities": {"cameras": list(VIDEO_CLIP_CAMERAS)},
     "clips": sorted(jobs, key=lambda job: job["created_at"], reverse=True),
     "routes": route_state,
   }
