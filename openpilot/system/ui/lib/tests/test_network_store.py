@@ -181,6 +181,18 @@ method=ignore
     assert store.get("Oversized") is None
     assert require_entry(store, "Raw")["psk"] == "a" * 64
 
+  def test_enforces_ssid_byte_limit(self):
+    valid_ssid = "é" * 16
+    oversized_ssid = "é" * 17
+    write_profile(self.persistent, "valid.nmconnection", valid_ssid)
+    write_profile(self.persistent, "oversized.nmconnection", oversized_ssid)
+
+    with self.patch_reads():
+      store = self.make_store()
+
+    assert require_entry(store, valid_ssid)["psk"] == "password123"
+    assert store.get(oversized_ssid) is None
+
   def test_loads_autoconnect_priority(self):
     write_profile(self.persistent, "preferred.nmconnection", "Preferred", autoconnect_priority=42)
 
