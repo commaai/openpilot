@@ -10,6 +10,7 @@ import uuid
 from enum import IntEnum
 
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.nm_keyfile import decode_nm_keyfile_ssid, decode_nm_keyfile_string
 from openpilot.common.utils import sudo_read
 from openpilot.system.ui.lib.wpa_ctrl import is_valid_psk, is_valid_ssid
 
@@ -35,15 +36,6 @@ _SUPPORTED_IPV6_OPTIONS = {"method", "addr-gen-mode"}
 # NetworkManager-backed openpilot profiles use this DNS priority. The direct
 # stack does not consume it, but retaining it keeps the keyfile rollback-safe.
 _OPENPILOT_DNS_PRIORITY = "600"
-_KEYFILE_ESCAPES = {
-  "\\": "\\",
-  "n": "\n",
-  "r": "\r",
-  "s": " ",
-  "t": "\t",
-}
-
-
 class MeteredType(IntEnum):
   UNKNOWN = 0
   YES = 1
@@ -63,22 +55,6 @@ def _parse_uuid(value: str) -> str | None:
     return str(uuid.UUID(value))
   except ValueError:
     return None
-
-
-def _decode_keyfile_string(value: str) -> str:
-  """Decode GLib keyfile string escapes."""
-  decoded = []
-  i = 0
-  while i < len(value):
-    if value[i] == "\\" and i + 1 < len(value):
-      escaped = _KEYFILE_ESCAPES.get(value[i + 1])
-      if escaped is not None:
-        decoded.append(escaped)
-        i += 2
-        continue
-    decoded.append(value[i])
-    i += 1
-  return "".join(decoded)
 
 
 def _encode_keyfile_string(value: str) -> str:
@@ -106,26 +82,6 @@ def _encode_keyfile_ssid(ssid: str) -> str:
   if not ssid:
     return ""
   return ";".join(str(b) for b in ssid.encode("utf-8", errors="surrogateescape")) + ";"
-
-
-def _decode_keyfile_ssid(ssid: str) -> str:
-  """Decode NM keyfile byte-list SSIDs and escaped literal semicolons."""
-  ssid = _decode_keyfile_string(ssid)
-  if r"\;" in ssid:
-    return ssid.replace(r"\;", ";")
-  if not ssid.endswith(";"):
-    return ssid
-
-  try:
-    ssid_bytes = bytes(int(p) for p in ssid[:-1].split(";"))
-  except ValueError:
-    return ssid
-
-  if not ssid_bytes:
-    return ssid
-  if all(b == 0 for b in ssid_bytes):
-    return ""
-  return ssid_bytes.decode("utf-8", errors="surrogateescape")
 
 
 def _normalize_keyfile_sections(cp: configparser.ConfigParser):
@@ -220,7 +176,7 @@ class NetworkStore:
       _normalize_keyfile_sections(cp)
       if not cp.has_section("wifi"):
         return
-      ssid = _decode_keyfile_ssid(cp.get("wifi", "ssid", fallback=""))
+      ssid = decode_nm_keyfile_ssid(cp.get("wifi", "ssid", fallback=""))
       mode = cp.get("wifi", "mode", fallback="infrastructure")
       if not is_valid_ssid(ssid) or mode != "infrastructure":
         return
@@ -278,7 +234,7 @@ class NetworkStore:
         if unsupported_security_options or auth_alg not in ("", "open") or psk_flags != 0:
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported security constraints")
           return
-        psk = _decode_keyfile_string(cp.get("wifi-security", "psk", fallback=""))
+        psk = decode_nm_keyfile_string(cp.get("wifi-security", "psk", fallback=""))
         # NM agent-managed secrets (psk-flags=1) live outside the keyfile. We can't
         # drive them via wpa_supplicant, and loading with psk="" would render as
         # key_mgmt=NONE, silently demoting a secure profile to open and inviting spoofs.
@@ -466,7 +422,7 @@ class NetworkStore:
     for cp, _, _, _ in self._tethering_profiles(ssid):
       security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")
       assert security_section is not None
-      password = _decode_keyfile_string(cp.get(security_section, "psk", fallback=""))
+      password = decode_nm_keyfile_string(cp.get(security_section, "psk", fallback=""))
       if password:
         return password
     return None
@@ -495,7 +451,7 @@ class NetworkStore:
           security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")
           if wifi_section is None or security_section is None:
             continue
-          profile_ssid = _decode_keyfile_ssid(cp.get(wifi_section, "ssid", fallback=""))
+          profile_ssid = decode_nm_keyfile_ssid(cp.get(wifi_section, "ssid", fallback=""))
           if cp.get(wifi_section, "mode", fallback="infrastructure") != "ap" or profile_ssid != ssid:
             continue
           if cp.get(security_section, "key-mgmt", fallback="").lower() != "wpa-psk":

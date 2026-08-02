@@ -22,3 +22,19 @@ ssid=TestNet
       patch.object(hardware_module, "sudo_read", return_value=profile),
     ):
       assert HardwareComma().get_network_metered(NetworkType.wifi)
+
+  def test_escaped_wifi_profile_metered(self):
+    profile = """\
+[connection]
+metered=1
+
+[wifi]
+ssid=\\sGuest\\s
+"""
+
+    with (
+      patch.object(hardware_module, "wpa_supplicant_cmd", return_value={"ssid": " Guest "}),
+      patch.object(Path, "glob", return_value=[Path("profile.nmconnection")]),
+      patch.object(hardware_module, "sudo_read", return_value=profile),
+    ):
+      assert HardwareComma().get_network_metered(NetworkType.wifi)
