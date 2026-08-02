@@ -438,6 +438,8 @@ def generate_wpa_conf(store, path: str = WPA_SUPPLICANT_CONF):
       lines.append("  scan_ssid=1")
     if bssid:
       lines.append(f"  bssid={bssid}")
+    if profile_uuid := entry.get("uuid"):
+      lines.append(f'  id_str="{sanitize_for_conf(profile_uuid)}"')
     lines.append(f"  priority={priority}")
     lines.append("}")
     lines.append("")

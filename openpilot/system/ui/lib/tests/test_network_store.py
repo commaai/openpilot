@@ -447,6 +447,15 @@ method=ignore
       raw = Path(self.persistent, f"{file_uuid}-Duplicate.nmconnection").read_text()
       assert "metered = 1" in raw
 
+  def test_gets_metering_from_selected_profile(self):
+    write_profile(self.persistent, "first.nmconnection", "Duplicate", file_uuid="first-uuid", extra_connection="metered=1")
+    write_profile(self.persistent, "second.nmconnection", "Duplicate", file_uuid="second-uuid", extra_connection="metered=2")
+
+    with self.patch_reads():
+      store = self.make_store()
+
+    assert store.get_metered("Duplicate", profile_uuid("second-uuid")) == store_module.MeteredType.NO
+
   def test_replacement_psk_preserves_other_profile_credentials(self):
     write_profile(
       self.persistent,

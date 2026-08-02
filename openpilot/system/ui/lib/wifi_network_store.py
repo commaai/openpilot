@@ -715,9 +715,12 @@ class NetworkStore:
         self._profiles[ssid] = updated_profiles
         self._networks[ssid] = updated_primary or updated_profiles[0]
 
-  def get_metered(self, ssid: str) -> MeteredType:
+  def get_metered(self, ssid: str, profile_uuid: str | None = None) -> MeteredType:
     with self._lock:
-      entry = self._networks.get(ssid)
+      if profile_uuid is None:
+        entry = self._networks.get(ssid)
+      else:
+        entry = next((profile for profile in self._profiles.get(ssid, []) if profile.get("uuid") == profile_uuid), None)
       if entry:
         m = entry.get("metered", 0)
         if m == MeteredType.YES:

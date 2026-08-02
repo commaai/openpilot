@@ -283,8 +283,8 @@ class TestConnectionState(TestCase):
 
   def test_activate_restores_every_saved_profile(self):
     profiles = (
-      {"psk": "first-password", "hidden": False, "priority": 1, "bssid": "00:11:22:33:44:55"},
-      {"psk": "second-password", "hidden": True, "priority": 2, "bssid": "66:77:88:99:aa:bb"},
+      {"psk": "first-password", "hidden": False, "priority": 1, "bssid": "00:11:22:33:44:55", "uuid": "first-uuid"},
+      {"psk": "second-password", "hidden": True, "priority": 2, "bssid": "66:77:88:99:aa:bb", "uuid": "second-uuid"},
     )
     self.manager._store.get_profiles.return_value = [("Pinned", profile) for profile in profiles]
 
@@ -296,8 +296,8 @@ class TestConnectionState(TestCase):
       self.manager.activate_connection("Pinned", block=True)
 
     assert add_and_select_network.call_args_list == [
-      call("Pinned", "first-password", False, 1, bssid="00:11:22:33:44:55"),
-      call("Pinned", "second-password", True, 2, bssid="66:77:88:99:aa:bb"),
+      call("Pinned", "first-password", False, 1, bssid="00:11:22:33:44:55", profile_uuid="first-uuid"),
+      call("Pinned", "second-password", True, 2, bssid="66:77:88:99:aa:bb", profile_uuid="second-uuid"),
     ]
     select_network_ids.assert_called_once_with(["1", "2"])
 
@@ -329,10 +329,20 @@ class TestConnectionState(TestCase):
     exception.assert_called_once_with("Failed to update metered state for TestNet")
     assert self.manager.current_network_metered == MeteredType.NO
 
+  def test_active_profile_sets_metered_state(self):
+    self.manager._wifi_state = WifiState("Duplicate", ConnectStatus.CONNECTED)
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=Duplicate\nid_str=second-uuid\nip_address=192.168.1.20\n"
+    self.manager._store.get_metered.return_value = MeteredType.NO
+
+    WifiManager._update_active_connection_info(self.manager)
+
+    self.manager._store.get_metered.assert_called_once_with("Duplicate", "second-uuid")
+    assert self.manager.current_network_metered == MeteredType.NO
+
   def test_activate_restores_saved_profile_constraints(self):
     cases = (
-      ("Preferred", {"psk": "password123", "hidden": False, "priority": 42}, 42, None),
-      ("Pinned", {"psk": "password123", "hidden": False, "bssid": "00:11:22:33:44:55"}, 0, "00:11:22:33:44:55"),
+      ("Preferred", {"psk": "password123", "hidden": False, "priority": 42, "uuid": "preferred-uuid"}, 42, None),
+      ("Pinned", {"psk": "password123", "hidden": False, "bssid": "00:11:22:33:44:55", "uuid": "pinned-uuid"}, 0, "00:11:22:33:44:55"),
     )
     for ssid, profile, priority, bssid in cases:
       with self.subTest(ssid=ssid):
@@ -345,7 +355,7 @@ class TestConnectionState(TestCase):
         ):
           manager.activate_connection(ssid, block=True)
 
-        add_and_select_network.assert_called_once_with(ssid, "password123", False, priority, bssid=bssid)
+        add_and_select_network.assert_called_once_with(ssid, "password123", False, priority, bssid=bssid, profile_uuid=profile["uuid"])
 
   def test_connect_defers_dhcp_cleanup_to_worker(self):
     self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
@@ -402,6 +412,13 @@ class TestConnectionState(TestCase):
 
     ssid_hex = b"Line\nBreak\r".hex()
     assert call(f"SET_NETWORK 0 ssid {ssid_hex}") in self.manager._ctrl.request.call_args_list
+
+  def test_runtime_network_sets_saved_profile_identifier(self):
+    self.manager._ctrl.request.side_effect = ["0", "OK", "OK", "OK", "OK", "OK"]
+
+    self.manager._add_and_select_network("TestNet", profile_uuid="profile-uuid")
+
+    assert call('SET_NETWORK 0 id_str "profile-uuid"') in self.manager._ctrl.request.call_args_list
 
   def test_scan_only_reselects_when_disconnected(self):
     cases = (

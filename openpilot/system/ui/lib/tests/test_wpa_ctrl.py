@@ -203,6 +203,11 @@ class TestWpaConfig(TestCase):
   def test_emits_saved_network_priority(self):
     assert "  priority=42\n" in self.generate("Preferred", {"psk": "password123", "hidden": False, "priority": 42})
 
+  def test_emits_saved_profile_identifier(self):
+    assert '  id_str="11111111-1111-1111-1111-111111111111"\n' in self.generate(
+      "Preferred", {"psk": "password123", "uuid": "11111111-1111-1111-1111-111111111111"},
+    )
+
   def test_grants_control_access_to_netdev_group(self):
     assert "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n" in self.generate("Test", {"psk": "password123"})
 
