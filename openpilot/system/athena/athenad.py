@@ -399,7 +399,6 @@ def listDataDirectory(prefix='') -> list[str]:
 
 class VideoClips:
   CAMERAS = {"fcamera": "fcamera.hevc", "ecamera": "ecamera.hevc", "dcamera": "dcamera.hevc"}
-  SPEEDUPS = (1, 2, 4, 5, 10)
 
   @dataclass
   class Job:
@@ -413,6 +412,7 @@ class VideoClips:
     created_at: float
 
   def __init__(self):
+    self.clip_path = os.path.join(Paths.log_root(), "clips")
     self.lock = threading.Lock()
     self.jobs: dict[str, VideoClips.Job] = {}
     self.queue: Queue[VideoClips.Job] = queue.Queue()
@@ -463,10 +463,9 @@ class VideoClips:
           os.path.join(Paths.log_root(), f"{job.route}--{segment}", self.CAMERAS[job.camera])
           for segment in range(first_segment, math.ceil(job.source_end_time / SEGMENT_LENGTH))
         ]
-        cache_path = os.path.join(Paths.log_root(), "clips")
-        os.makedirs(cache_path, exist_ok=True)
-        temporary_path = os.path.join(cache_path, f".{job.filename}")
-        output_path = os.path.join(cache_path, job.filename)
+        os.makedirs(self.clip_path, exist_ok=True)
+        temporary_path = os.path.join(self.clip_path, f".{job.filename}")
+        output_path = os.path.join(self.clip_path, job.filename)
         self._encode(job, inputs, temporary_path, job.source_start_time - first_segment * SEGMENT_LENGTH,
                      job.source_end_time - job.source_start_time)
         with self.lock:
@@ -488,7 +487,7 @@ class VideoClips:
   def _on_disk(self) -> dict[str, dict]:
     clips = {}
     try:
-      entries = os.scandir(os.path.join(Paths.log_root(), "clips"))
+      entries = os.scandir(self.clip_path)
     except FileNotFoundError:
       return clips
     with entries:
@@ -510,20 +509,28 @@ class VideoClips:
                              "fn": os.path.relpath(entry.path, Paths.log_root()), "size": size}
     return clips
 
-  def _available_ranges(self, route: str, camera: str) -> list[list[int]]:
-    segments = []
-    prefix = f"{route}--"
+  def _available_ranges(self, routes: list[str]) -> dict:
+    segments = {route: {camera: [] for camera in self.CAMERAS} for route in routes}
     for entry in os.scandir(Paths.log_root()):
-      segment = entry.name.removeprefix(prefix)
-      if entry.is_dir() and entry.name.startswith(prefix) and segment.isdigit() and os.path.isfile(os.path.join(entry.path, self.CAMERAS[camera])):
-        segments.append(int(segment))
-    ranges: list[list[int]] = []
-    for segment in sorted(set(segments)):
-      if ranges and ranges[-1][1] == segment * SEGMENT_LENGTH:
-        ranges[-1][1] += SEGMENT_LENGTH
-      else:
-        ranges.append([segment * SEGMENT_LENGTH, (segment + 1) * SEGMENT_LENGTH])
-    return ranges
+      route, _, segment = entry.name.rpartition("--")
+      if route not in segments or not segment.isdigit() or not entry.is_dir():
+        continue
+      for camera, filename in self.CAMERAS.items():
+        if os.path.isfile(os.path.join(entry.path, filename)):
+          segments[route][camera].append(int(segment))
+
+    route_state = {}
+    for route, cameras in segments.items():
+      route_state[route] = {"cameras": {}}
+      for camera, camera_segments in cameras.items():
+        ranges: list[list[int]] = []
+        for segment in sorted(camera_segments):
+          if ranges and ranges[-1][1] == segment * SEGMENT_LENGTH:
+            ranges[-1][1] += SEGMENT_LENGTH
+          else:
+            ranges.append([segment * SEGMENT_LENGTH, (segment + 1) * SEGMENT_LENGTH])
+        route_state[route]["cameras"][camera] = {"available_ranges": ranges}
+    return route_state
 
   def createClips(self, route: str, source_start_time: float, source_end_time: float, clips: list[dict]) -> list[str]:
     if not PC and not Params().get_bool("IsOffroad"):
@@ -531,10 +538,7 @@ class VideoClips:
     route_name = route.replace("|", "/").rsplit("/", 1)[-1]
     pending = []
     for settings in clips:
-      speedup = settings.get("speedup", 1)
-      if speedup not in self.SPEEDUPS:
-        raise ValueError(f"speedup must be one of {self.SPEEDUPS}")
-      pending.append(self.Job(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], speedup,
+      pending.append(self.Job(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], settings["speedup"],
                               settings["filename"], datetime.now().timestamp()))
     with self.lock:
       self.jobs.update((job.filename, job) for job in pending)
@@ -550,15 +554,13 @@ class VideoClips:
                      for job in self.jobs.values()}
     jobs = self._on_disk()
     jobs.update(active_jobs)
-    route_state = {route: {"cameras": {camera: {"available_ranges": self._available_ranges(route, camera)} for camera in self.CAMERAS}}
-                   for route in route_names}
-    return {"clips": sorted(jobs.values(), key=lambda job: job["created_at"], reverse=True), "routes": route_state}
+    return {"clips": sorted(jobs.values(), key=lambda job: job["created_at"], reverse=True), "routes": self._available_ranges(route_names)}
 
   def deleteClips(self, filenames: list[str]) -> None:
     with self.lock:
       for filename in filenames:
         self.jobs.pop(filename, None)
-        output_path = os.path.join(Paths.log_root(), "clips", filename)
+        output_path = os.path.join(self.clip_path, filename)
         if self.active is not None and self.active[0] == filename:
           self.active[1].terminate()
         if os.path.exists(output_path):
