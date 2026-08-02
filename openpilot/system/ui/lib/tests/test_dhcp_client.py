@@ -31,14 +31,12 @@ class TestDhcpClient(TestCase):
   def test_start_detaches_udhcpc_from_ui_session(self):
     client = DhcpClient()
     with (
-      patch.object(client, "stop") as stop,
       patch.object(dhcp_client_module.subprocess, "run") as run,
       patch.object(dhcp_client_module.subprocess, "Popen") as popen,
       patch.object(dhcp_client_module.threading, "Thread") as thread,
     ):
       client.start()
 
-      stop.assert_called_once()
       assert [call.args[0] for call in run.call_args_list] == [
         ["sudo", "pkill", "-f", "^udhcpc -i wlan0( |$)"],
         ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
@@ -82,7 +80,6 @@ class TestDhcpClient(TestCase):
     client = DhcpClient()
     events = []
     with (
-      patch.object(client, "stop"),
       patch.object(dhcp_client_module.subprocess, "run"),
       patch.object(client, "_flush_address", side_effect=lambda: events.append("flush")),
       patch.object(client, "_spawn", side_effect=lambda: events.append("spawn") or True),
@@ -151,6 +148,17 @@ class TestDhcpClient(TestCase):
         ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
         ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
       ]
+
+  def test_stop_cleans_surviving_client_without_process_handle(self):
+    client = DhcpClient()
+    with patch.object(dhcp_client_module.subprocess, "run") as run:
+      client.stop()
+
+    assert [call.args[0] for call in run.call_args_list] == [
+      ["sudo", "pkill", "-f", "^udhcpc -i wlan0( |$)"],
+      ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
+      ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
+    ]
 
   def test_clear_ipv6_state_cleans_global_addresses_and_routes(self):
     client = DhcpClient()
