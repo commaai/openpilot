@@ -15,6 +15,7 @@ import subprocess
 import sys
 import threading
 import time
+from contextlib import suppress
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
@@ -59,6 +60,7 @@ MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
+
 SEND_PRIORITY_HIGH = 0
 SEND_PRIORITY_LOW = 1
 
@@ -409,13 +411,13 @@ class VideoClips:
     bitrate: int
     speedup: int
     filename: str
-    created_at: float
+    requested_at: float
 
   def __init__(self):
     self.clip_path = os.path.join(Paths.log_root(), "clips")
     self.lock = threading.Condition()
     self.clips: dict[str, VideoClips.Clip] = {}
-    self.active: tuple[str, subprocess.Popen] | None = None
+    self.transcode_proc: tuple[str, subprocess.Popen] | None = None
     threading.Thread(target=self._worker, name="video_clip", daemon=True).start()
 
   def _encode(self, clip: Clip, inputs: list[str], output_path: str, start_time: float, duration: float) -> None:
@@ -423,20 +425,21 @@ class VideoClips:
     for path in inputs:
       escaped_path = path.replace("'", "'\\''")
       concat_input += f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n"
+    # TODO: use hardware accelerated decoding and encoding
     command = [
       "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
       "-r", str(CAMERA_FPS * clip.speedup), "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
       "-i", "pipe:0", "-ss", str(start_time / clip.speedup), "-t", str(duration / clip.speedup),
       "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
       "-b:v", f"{clip.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
-      "-metadata", f"com.comma.clip.settings={json.dumps(asdict(clip), separators=(',', ':'))}", output_path,
+      "-metadata", f"ai.comma.clip.settings={json.dumps(asdict(clip), separators=(',', ':'))}", output_path,
     ]
 
     with self.lock:
       if self.clips.get(clip.filename) is not clip:
         return
       process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
-      self.active = (clip.filename, process)
+      self.transcode_proc = (clip.filename, process)
     try:
       process.communicate(concat_input)
       if process.returncode != 0:
@@ -446,8 +449,8 @@ class VideoClips:
         process.terminate()
         process.wait()
       with self.lock:
-        if self.active is not None and self.active[0] == clip.filename:
-          self.active = None
+        if self.transcode_proc is not None and self.transcode_proc[0] == clip.filename:
+          self.transcode_proc = None
 
   def _worker(self) -> None:
     while True:
@@ -482,8 +485,9 @@ class VideoClips:
         if failed:
           cloudlog.exception("athena.video_clip.failed")
       finally:
-        if temporary_path and os.path.exists(temporary_path):
-          os.unlink(temporary_path)
+        with suppress(OSError):
+          if temporary_path:
+            os.unlink(temporary_path)
 
   def _on_disk(self) -> dict[str, dict]:
     clips = {}
@@ -495,16 +499,16 @@ class VideoClips:
       for entry in entries:
         if entry.name.startswith(".") or not entry.is_file():
           continue
-        probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format_tags=com.comma.clip.settings",
+        probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format_tags=ai.comma.clip.settings",
                                 "-of", "json", entry.path], capture_output=True, text=True)
         if probe.returncode != 0:
           continue
         try:
-          metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["com.comma.clip.settings"])
+          metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["ai.comma.clip.settings"])
           size = entry.stat().st_size
         except (FileNotFoundError, KeyError, TypeError, json.JSONDecodeError):
           continue
-        if not isinstance(metadata, dict):
+        if not isinstance(metadata, dict) or not isinstance(metadata.get("requested_at"), (int, float)):
           continue
         clips[entry.name] = {**metadata, "filename": entry.name, "status": "ready",
                              "fn": os.path.relpath(entry.path, Paths.log_root()), "size": size}
@@ -512,14 +516,18 @@ class VideoClips:
 
   def _available_ranges(self, route: str) -> dict:
     cameras: dict[str, list[int]] = {}
-    for entry in os.scandir(Paths.log_root()):
-      entry_route, _, segment = entry.name.rpartition("--")
-      if entry_route != route or not segment.isdigit() or not entry.is_dir():
-        continue
-      with os.scandir(entry.path) as files:
-        for camera in files:
-          if camera.is_file() and camera.name.endswith("camera.hevc"):
-            cameras.setdefault(camera.name, []).append(int(segment))
+    try:
+      with os.scandir(Paths.log_root()) as entries:
+        for entry in entries:
+          entry_route, _, segment = entry.name.rpartition("--")
+          if entry_route != route or not segment.isdigit() or not entry.is_dir():
+            continue
+          with os.scandir(entry.path) as files:
+            for camera in files:
+              if camera.is_file() and camera.name.endswith("camera.hevc"):
+                cameras.setdefault(camera.name, []).append(int(segment))
+    except OSError:
+      return {}
 
     available = {}
     for camera, camera_segments in cameras.items():
@@ -550,12 +558,12 @@ class VideoClips:
   def getClipState(self, route: str | None = None) -> dict:
     route_match = re.search(RE.ROUTE_NAME, route or "")
     with self.lock:
-      active_filename = self.active[0] if self.active is not None else None
-      active_clips = {clip.filename: {**asdict(clip), "status": "encoding" if clip.filename == active_filename else "queued"}
+      transcode_filename = self.transcode_proc[0] if self.transcode_proc is not None else None
+      active_clips = {clip.filename: {**asdict(clip), "status": "encoding" if clip.filename == transcode_filename else "queued"}
                       for clip in self.clips.values()}
     clips = self._on_disk()
     clips.update(active_clips)
-    state = {"clips": sorted(clips.values(), key=lambda clip: clip["created_at"], reverse=True)}
+    state = {"clips": sorted(clips.values(), key=lambda clip: clip["requested_at"], reverse=True)}
     if route_match is not None:
       route_name = route_match.group("log_id")
       state.update({"route": route_name, "cameras": self._available_ranges(route_name)})
@@ -566,8 +574,8 @@ class VideoClips:
     with self.lock:
       self.clips.pop(filename, None)
       output_path = os.path.join(self.clip_path, filename)
-      if self.active is not None and self.active[0] == filename:
-        self.active[1].terminate()
+      if self.transcode_proc is not None and self.transcode_proc[0] == filename:
+        self.transcode_proc[1].terminate()
       if os.path.exists(output_path):
         os.unlink(output_path)
 
