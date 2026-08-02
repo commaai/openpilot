@@ -554,8 +554,8 @@ def createClips(route: str, source_start_time: float, source_end_time: float, cl
   route_name = route.replace("|", "/").rsplit("/", 1)[-1]
   pending: list[VideoClipJob] = []
   for settings in clips:
-    camera = settings.get("camera")
-    bitrate = settings.get("bitrate")
+    camera = settings["camera"]
+    bitrate = settings["bitrate"]
     speedup = settings.get("speedup", 1)
     clip_id = uuid.uuid4().hex
     filename = settings.get("filename") or f"clip-{clip_id}.mp4"
