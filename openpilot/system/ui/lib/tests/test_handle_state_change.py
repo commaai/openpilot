@@ -803,7 +803,7 @@ class TestConnectionState(TestCase):
     assert call("DISCONNECT") not in self.manager._ctrl.request.call_args_list
     assert call("REASSOCIATE") not in self.manager._ctrl.request.call_args_list
 
-  def test_forget_withholds_callback_when_runtime_removal_fails(self):
+  def test_forget_reports_persistent_success_when_runtime_removal_fails(self):
     forgotten = MagicMock()
     forget_failed = MagicMock()
     self.manager.add_callbacks(forgotten=forgotten, forget_failed=forget_failed)
@@ -822,8 +822,24 @@ class TestConnectionState(TestCase):
       self.manager.forget_connection("SavedNet", block=True)
 
     self.manager.process_callbacks()
-    forgotten.assert_not_called()
-    forget_failed.assert_called_once_with("SavedNet")
+    forgotten.assert_called_once_with("SavedNet")
+    forget_failed.assert_not_called()
+
+  def test_forget_removes_runtime_when_config_generation_fails(self):
+    forgotten = MagicMock()
+    self.manager.add_callbacks(forgotten=forgotten)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+
+    with (
+      patch.object(wifi_manager_module, "generate_wpa_conf", side_effect=OSError("read-only")),
+      patch.object(self.manager, "_remove_wpa_network") as remove_wpa_network,
+    ):
+      self.manager.forget_connection("SavedNet", block=True)
+
+    self.manager.process_callbacks()
+    remove_wpa_network.assert_called_once_with("SavedNet")
+    forgotten.assert_called_once_with("SavedNet")
 
   def test_forget_allows_fallback_connection_after_disconnect_event(self):
     self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
