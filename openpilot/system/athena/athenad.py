@@ -431,11 +431,11 @@ class VideoClips:
       "-metadata", f"com.comma.clip.settings={json.dumps(asdict(clip), separators=(',', ':'))}", output_path,
     ]
 
-    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
     with self.lock:
+      if self.clips.get(clip.filename) is not clip:
+        return
+      process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
       self.active = (clip.filename, process)
-      if clip.filename not in self.clips:
-        process.terminate()
     try:
       process.communicate(concat_input)
       if process.returncode != 0:
@@ -507,72 +507,67 @@ class VideoClips:
                              "fn": os.path.relpath(entry.path, Paths.log_root()), "size": size}
     return clips
 
-  def _available_ranges(self, routes: list[str]) -> dict:
-    segments: dict[str, dict[str, list[int]]] = {route: {} for route in routes}
+  def _available_ranges(self, route: str) -> dict:
+    cameras: dict[str, list[int]] = {}
     for entry in os.scandir(Paths.log_root()):
-      route, _, segment = entry.name.rpartition("--")
-      if route not in segments or not segment.isdigit() or not entry.is_dir():
+      entry_route, _, segment = entry.name.rpartition("--")
+      if entry_route != route or not segment.isdigit() or not entry.is_dir():
         continue
       with os.scandir(entry.path) as files:
         for camera in files:
           if camera.is_file() and camera.name.endswith("camera.hevc"):
-            segments[route].setdefault(camera.name, []).append(int(segment))
+            cameras.setdefault(camera.name, []).append(int(segment))
 
-    route_state = {}
-    for route, cameras in segments.items():
-      route_state[route] = {"cameras": {}}
-      for camera, camera_segments in cameras.items():
-        ranges: list[list[int]] = []
-        for segment in sorted(camera_segments):
-          if ranges and ranges[-1][1] == segment * SEGMENT_LENGTH:
-            ranges[-1][1] += SEGMENT_LENGTH
-          else:
-            ranges.append([segment * SEGMENT_LENGTH, (segment + 1) * SEGMENT_LENGTH])
-        route_state[route]["cameras"][camera] = {"available_ranges": ranges}
-    return route_state
+    available = {}
+    for camera, camera_segments in cameras.items():
+      ranges: list[list[int]] = []
+      for segment in sorted(camera_segments):
+        if ranges and ranges[-1][1] == segment * SEGMENT_LENGTH:
+          ranges[-1][1] += SEGMENT_LENGTH
+        else:
+          ranges.append([segment * SEGMENT_LENGTH, (segment + 1) * SEGMENT_LENGTH])
+      available[camera] = {"available_ranges": ranges}
+    return available
 
-  def createClips(self, route: str, source_start_time: float, source_end_time: float, clips: list[dict]) -> list[str]:
+  def createClip(self, route: str, source_start_time: float, source_end_time: float, clip: dict) -> str:
     if not PC and not Params().get_bool("IsOffroad"):
       raise RuntimeError("video clips can only be created while offroad")
     route_name = route.replace("|", "/").rsplit("/", 1)[-1]
-    pending = []
-    for settings in clips:
-      camera = settings["camera"]
-      if os.path.basename(camera) != camera or not camera.endswith("camera.hevc"):
-        raise ValueError("invalid camera filename")
-      pending.append(self.Clip(route_name, camera, source_start_time, source_end_time, settings["bitrate"], settings["speedup"],
-                              settings["filename"], datetime.now().timestamp()))
+    camera = clip["camera"]
+    if os.path.basename(camera) != camera or not camera.endswith("camera.hevc"):
+      raise ValueError("invalid camera filename")
+    pending = self.Clip(route_name, camera, source_start_time, source_end_time, clip["bitrate"], clip["speedup"],
+                        clip["filename"], datetime.now().timestamp())
     with self.lock:
-      self.clips.update((clip.filename, clip) for clip in pending)
-      for clip in pending:
-        self.queue.put_nowait(clip)
-    return [clip.filename for clip in pending]
+      self.clips[pending.filename] = pending
+      self.queue.put_nowait(pending)
+    return pending.filename
 
-  def getClipsState(self, routes: list[str]) -> dict:
-    route_names = [route.replace("|", "/").rsplit("/", 1)[-1] for route in routes]
+  def getClipState(self, route: str) -> dict:
+    route_name = route.replace("|", "/").rsplit("/", 1)[-1]
     with self.lock:
       active_filename = self.active[0] if self.active is not None else None
       active_clips = {clip.filename: {**asdict(clip), "status": "encoding" if clip.filename == active_filename else "queued"}
                       for clip in self.clips.values()}
     clips = self._on_disk()
     clips.update(active_clips)
-    return {"clips": sorted(clips.values(), key=lambda clip: clip["created_at"], reverse=True), "routes": self._available_ranges(route_names)}
+    return {"clips": sorted(clips.values(), key=lambda clip: clip["created_at"], reverse=True),
+            "route": route_name, "cameras": self._available_ranges(route_name)}
 
-  def deleteClips(self, filenames: list[str]) -> None:
+  def deleteClip(self, filename: str) -> None:
     with self.lock:
-      for filename in filenames:
-        self.clips.pop(filename, None)
-        output_path = os.path.join(self.clip_path, filename)
-        if self.active is not None and self.active[0] == filename:
-          self.active[1].terminate()
-        if os.path.exists(output_path):
-          os.unlink(output_path)
+      self.clips.pop(filename, None)
+      output_path = os.path.join(self.clip_path, filename)
+      if self.active is not None and self.active[0] == filename:
+        self.active[1].terminate()
+      if os.path.exists(output_path):
+        os.unlink(output_path)
 
 
 video_clips = VideoClips()
-dispatcher.add_method(video_clips.createClips)
-dispatcher.add_method(video_clips.getClipsState)
-dispatcher.add_method(video_clips.deleteClips)
+dispatcher.add_method(video_clips.createClip)
+dispatcher.add_method(video_clips.getClipState)
+dispatcher.add_method(video_clips.deleteClip)
 
 
 @dispatcher.add_method
