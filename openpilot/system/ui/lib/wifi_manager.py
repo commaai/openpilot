@@ -1026,12 +1026,14 @@ class WifiManager:
   def _update_active_connection_info(self):
     ipv4_address = ""
     metered = MeteredType.UNKNOWN
+    profile_uuid = None
 
     if self._wifi_state.status == ConnectStatus.CONNECTED:
       if self._ctrl:
         try:
           status = parse_status(self._request("STATUS"))
           ipv4_address = status.get("ip_address", "")
+          profile_uuid = status.get("id_str")
         except Exception:
           pass
 
@@ -1050,7 +1052,7 @@ class WifiManager:
 
       ssid = self._wifi_state.ssid
       if ssid and self._store is not None:
-        metered = self._store.get_metered(ssid)
+        metered = self._store.get_metered(ssid, profile_uuid)
 
     self._ipv4_address = ipv4_address
     self._current_network_metered = metered
@@ -1230,6 +1232,7 @@ class WifiManager:
                   entry.get("hidden", False),
                   entry.get("priority", 0),
                   bssid=entry.get("bssid") or None,
+                  profile_uuid=entry.get("uuid"),
                 )
                 for entry in profiles
               ]
@@ -1256,7 +1259,7 @@ class WifiManager:
         raise RuntimeError(f"{command} failed: {resp}")
 
   def _add_and_select_network(self, ssid: str, psk: str = "", hidden: bool = False,
-                              priority: int = 0, bssid: str | None = None) -> str:
+                              priority: int = 0, bssid: str | None = None, profile_uuid: str | None = None) -> str:
     """Add a network and select it. Every SET_NETWORK is checked so a bad PSK/key_mgmt
     surfaces an immediate error instead of a delayed WRONG_KEY; orphans get REMOVE_NETWORK'd."""
     net_id = self._request("ADD_NETWORK").strip()
@@ -1273,6 +1276,8 @@ class WifiManager:
         self._wpa_set_network(net_id, "scan_ssid", "1")
       if bssid:
         self._wpa_set_network(net_id, "bssid", bssid)
+      if profile_uuid:
+        self._wpa_set_network(net_id, "id_str", f'"{sanitize_for_conf(profile_uuid)}"')
       self._wpa_set_network(net_id, "priority", str(priority))
       resp = self._request(f"SELECT_NETWORK {net_id}").strip()
       if not resp.startswith("OK"):
