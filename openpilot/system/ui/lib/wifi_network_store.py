@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 import threading
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from enum import IntEnum
 
 from openpilot.common.swaglog import cloudlog
@@ -304,6 +306,64 @@ class NetworkStore:
       except FileNotFoundError:
         pass
 
+  @contextmanager
+  def _profile_update(self, ssid: str, profiles: list[dict]) -> Iterator[None]:
+    if len(profiles) < 2:
+      yield
+      return
+
+    paths: set[str] = set()
+    for profile in profiles:
+      file_uuid = profile.get("uuid")
+      if file_uuid:
+        paths.add(os.path.join(self._directory, _canonical_filename(file_uuid, ssid)))
+      filename = profile.get("_filename")
+      if filename:
+        paths.add(os.path.join(self._directory, filename))
+      runtime_filename = profile.get("_runtime_filename")
+      if self._runtime_directory is not None and runtime_filename:
+        paths.add(os.path.join(self._runtime_directory, runtime_filename))
+      netplan_filename = profile.get("_netplan_filename")
+      if self._netplan_directory is not None and netplan_filename:
+        paths.add(os.path.join(self._netplan_directory, netplan_filename))
+
+    original_paths = {path for path in paths if os.path.exists(path)}
+    token = uuid.uuid4().hex
+    backups: dict[str, str] = {}
+    try:
+      for path in sorted(original_paths):
+        backup_path = f"{path}.openpilot-update-{token}"
+        result = subprocess.run([
+          "sudo", "install", "-o", "root", "-g", "root", "-m", "600", path, backup_path,
+        ], check=False)
+        if result.returncode != 0:
+          raise OSError(f"failed to back up {path}")
+        backups[path] = backup_path
+    except Exception as e:
+      cleanup_failed = False
+      for backup_path in backups.values():
+        cleanup_failed |= subprocess.run(["sudo", "rm", "-f", backup_path], check=False).returncode != 0
+      if cleanup_failed:
+        raise OSError(f"failed to clean up profile backups for {ssid}") from e
+      raise
+
+    try:
+      yield
+    except Exception as e:
+      rollback_failed = False
+      for path in sorted(paths - original_paths):
+        rollback_failed |= subprocess.run(["sudo", "rm", "-f", path], check=False).returncode != 0
+      for path, backup_path in backups.items():
+        rollback_failed |= subprocess.run(["sudo", "mv", "-f", backup_path, path], check=False).returncode != 0
+      if rollback_failed:
+        raise OSError(f"failed to roll back profile update for {ssid}") from e
+      raise
+    else:
+      for backup_path in backups.values():
+        result = subprocess.run(["sudo", "rm", "-f", backup_path], check=False)
+        if result.returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to clean up profile backup {backup_path} (rc={result.returncode})")
+
   def _render_nmconnection(self, ssid: str, entry: dict) -> tuple[str, dict]:
     file_uuid = entry.get("uuid")
     if not file_uuid:
@@ -548,28 +608,29 @@ class NetworkStore:
         elif "hidden" not in existing:
           existing["hidden"] = False
 
-      file_uuid, updated = self._render_nmconnection(ssid, existing)
-      updated["uuid"] = file_uuid
-      if current is None:
-        profiles.append(updated)
-      else:
-        updated_profiles = []
-        replaced_primary = False
-        for profile in profiles:
-          if profile is current:
+      with self._profile_update(ssid, profiles):
+        file_uuid, updated = self._render_nmconnection(ssid, existing)
+        updated["uuid"] = file_uuid
+        if current is None:
+          profiles.append(updated)
+        else:
+          updated_profiles = []
+          replaced_primary = False
+          for profile in profiles:
+            if profile is current:
+              updated_profiles.append(updated)
+              replaced_primary = True
+            elif psk is not None and not profile.get("bssid"):
+              duplicate = dict(profile)
+              duplicate["psk"] = psk
+              duplicate_uuid, duplicate = self._render_nmconnection(ssid, duplicate)
+              duplicate["uuid"] = duplicate_uuid
+              updated_profiles.append(duplicate)
+            else:
+              updated_profiles.append(profile)
+          if not replaced_primary:
             updated_profiles.append(updated)
-            replaced_primary = True
-          elif psk is not None and not profile.get("bssid"):
-            duplicate = dict(profile)
-            duplicate["psk"] = psk
-            duplicate_uuid, duplicate = self._render_nmconnection(ssid, duplicate)
-            duplicate["uuid"] = duplicate_uuid
-            updated_profiles.append(duplicate)
-          else:
-            updated_profiles.append(profile)
-        if not replaced_primary:
-          updated_profiles.append(updated)
-        profiles = updated_profiles
+          profiles = updated_profiles
       with self._lock:
         self._profiles[ssid] = profiles
         self._networks[ssid] = updated
@@ -639,16 +700,17 @@ class NetworkStore:
         if not profiles:
           return
         primary = self._networks.get(ssid)
-      updated_profiles = []
-      updated_primary = None
-      for current in profiles:
-        updated = dict(current)
-        updated["metered"] = metered
-        file_uuid, updated = self._render_nmconnection(ssid, updated)
-        updated["uuid"] = file_uuid
-        updated_profiles.append(updated)
-        if current is primary:
-          updated_primary = updated
+      with self._profile_update(ssid, profiles):
+        updated_profiles = []
+        updated_primary = None
+        for current in profiles:
+          updated = dict(current)
+          updated["metered"] = metered
+          file_uuid, updated = self._render_nmconnection(ssid, updated)
+          updated["uuid"] = file_uuid
+          updated_profiles.append(updated)
+          if current is primary:
+            updated_primary = updated
       with self._lock:
         self._profiles[ssid] = updated_profiles
         self._networks[ssid] = updated_primary or updated_profiles[0]
