@@ -96,9 +96,6 @@ class DhcpClient:
 
   def start(self):
     self.stop()
-    # Replace any unadopted client so a fresh association gets a fresh lease.
-    subprocess.run(["sudo", "pkill", "-f", f"^udhcpc -i {self._iface}( |$)"], check=False)
-    self._flush_lease()
     self._spawn()
     self._start_client_thread()
 
@@ -107,7 +104,6 @@ class DhcpClient:
     if self._client_thread is not None:
       self._client_thread.join(timeout=self.DISCOVER_TIMEOUT_SECONDS)
       self._client_thread = None
-    had_client = self._proc is not None or self._adopted
     if self._proc is not None:
       try:
         self._proc.terminate()
@@ -120,7 +116,6 @@ class DhcpClient:
           pass
       self._proc = None
     self._adopted = False
-    if had_client:
-      # Kill orphaned udhcpc children before flushing their lease state.
-      subprocess.run(["sudo", "pkill", "-f", f"^udhcpc -i {self._iface}( |$)"], check=False)
-      self._flush_lease()
+    # Kill orphaned udhcpc children before flushing their lease state.
+    subprocess.run(["sudo", "pkill", "-f", f"^udhcpc -i {self._iface}( |$)"], check=False)
+    self._flush_lease()

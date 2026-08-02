@@ -308,6 +308,11 @@ class WifiManager:
       else:
         if connection_status == ConnectStatus.CONNECTING and self._last_connecting_at == 0.0:
           self._last_connecting_at = time.monotonic()
+        elif connection_status == ConnectStatus.DISCONNECTED:
+          self._dhcp_adoption_ssid = None
+          self._clear_station_state()
+          if self._user_epoch != epoch:
+            return
         self._wifi_state = WifiState(ssid=ssid, status=connection_status)
 
     if block:

@@ -937,6 +937,17 @@ class TestStartupAdoption(TestCase):
     self.manager._ctrl.request.assert_not_called()
     assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
 
+  def test_disconnected_startup_cleans_station_state(self):
+    self.manager._dhcp_adoption_ssid = "TestNet"
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\nmode=station\n"
+
+    self.manager._init_wifi_state()
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._dhcp_adoption_ssid is None
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
   def test_hotspot_adopts_with_dhcp_and_nat(self):
     self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=Hotspot\n"
 
