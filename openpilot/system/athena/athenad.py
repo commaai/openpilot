@@ -399,6 +399,7 @@ def listDataDirectory(prefix='') -> list[str]:
 
 class VideoClips:
   CAMERAS = {"fcamera": "fcamera.hevc", "ecamera": "ecamera.hevc", "dcamera": "dcamera.hevc"}
+  SPEEDUPS = tuple(speedup for speedup in range(1, CAMERA_FPS + 1) if CAMERA_FPS % speedup == 0)
 
   @dataclass
   class Job:
@@ -520,8 +521,13 @@ class VideoClips:
     if not PC and not Params().get_bool("IsOffroad"):
       raise RuntimeError("video clips can only be created while offroad")
     route_name = route.replace("|", "/").rsplit("/", 1)[-1]
-    pending = [self.Job(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], settings.get("speedup", 1),
-                        settings["filename"], datetime.now().timestamp()) for settings in clips]
+    pending = []
+    for settings in clips:
+      speedup = settings.get("speedup", 1)
+      if speedup not in self.SPEEDUPS:
+        raise ValueError(f"speedup must be one of {self.SPEEDUPS}")
+      pending.append(self.Job(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], speedup,
+                              settings["filename"], datetime.now().timestamp()))
     with self.lock:
       self.jobs.update((job.filename, job) for job in pending)
       for job in pending:
@@ -530,10 +536,10 @@ class VideoClips:
 
   def getClipsState(self, routes: list[str]) -> dict:
     route_names = [route.replace("|", "/").rsplit("/", 1)[-1] for route in routes]
+    jobs = self._on_disk()
     with self.lock:
       active_filename = self.active[0] if self.active is not None else None
-      jobs = {job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"} for job in self.jobs.values()}
-    jobs.update(self._on_disk())
+      jobs.update({job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"} for job in self.jobs.values()})
     route_state = {route: {"cameras": {camera: {"available_ranges": self._available_ranges(route, camera)} for camera in self.CAMERAS}}
                    for route in route_names}
     return {"clips": sorted(jobs.values(), key=lambda job: job["created_at"], reverse=True), "routes": route_state}
