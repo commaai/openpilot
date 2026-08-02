@@ -398,8 +398,6 @@ def listDataDirectory(prefix='') -> list[str]:
 
 
 class VideoClips:
-  CAMERAS = {"fcamera": "fcamera.hevc", "ecamera": "ecamera.hevc", "dcamera": "dcamera.hevc"}
-
   @dataclass
   class Clip:
     route: str
@@ -460,7 +458,7 @@ class VideoClips:
             continue
         first_segment = math.floor(clip.source_start_time / SEGMENT_LENGTH)
         inputs = [
-          os.path.join(Paths.log_root(), f"{clip.route}--{segment}", self.CAMERAS[clip.camera])
+          os.path.join(Paths.log_root(), f"{clip.route}--{segment}", clip.camera)
           for segment in range(first_segment, math.ceil(clip.source_end_time / SEGMENT_LENGTH))
         ]
         os.makedirs(self.clip_path, exist_ok=True)
@@ -510,14 +508,15 @@ class VideoClips:
     return clips
 
   def _available_ranges(self, routes: list[str]) -> dict:
-    segments = {route: {camera: [] for camera in self.CAMERAS} for route in routes}
+    segments: dict[str, dict[str, list[int]]] = {route: {} for route in routes}
     for entry in os.scandir(Paths.log_root()):
       route, _, segment = entry.name.rpartition("--")
       if route not in segments or not segment.isdigit() or not entry.is_dir():
         continue
-      for camera, filename in self.CAMERAS.items():
-        if os.path.isfile(os.path.join(entry.path, filename)):
-          segments[route][camera].append(int(segment))
+      with os.scandir(entry.path) as files:
+        for camera in files:
+          if camera.is_file() and camera.name.endswith("camera.hevc"):
+            segments[route].setdefault(camera.name, []).append(int(segment))
 
     route_state = {}
     for route, cameras in segments.items():
@@ -538,7 +537,10 @@ class VideoClips:
     route_name = route.replace("|", "/").rsplit("/", 1)[-1]
     pending = []
     for settings in clips:
-      pending.append(self.Clip(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], settings["speedup"],
+      camera = settings["camera"]
+      if os.path.basename(camera) != camera or not camera.endswith("camera.hevc"):
+        raise ValueError("invalid camera filename")
+      pending.append(self.Clip(route_name, camera, source_start_time, source_end_time, settings["bitrate"], settings["speedup"],
                               settings["filename"], datetime.now().timestamp()))
     with self.lock:
       self.clips.update((clip.filename, clip) for clip in pending)
