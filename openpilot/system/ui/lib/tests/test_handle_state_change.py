@@ -633,6 +633,35 @@ class TestConnectionState(TestCase):
     assert call("ENABLE_NETWORK all") in self.manager._ctrl.request.call_args_list
     assert self.manager.wifi_state == WifiState()
 
+  def test_reconcile_rechecks_epoch_before_cancelling_stale_connection(self):
+    self.manager._set_connecting("PreviousNet")
+    self.manager._set_pending_connection("PreviousNet", "password123", False)
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\n"
+    contains_started = threading.Event()
+    release_contains = threading.Event()
+
+    def contains(_ssid):
+      contains_started.set()
+      assert release_contains.wait(1)
+      return False
+
+    self.manager._store.contains.side_effect = contains
+    worker = threading.Thread(target=self.manager._reconcile_connecting_state)
+    worker.start()
+    assert contains_started.wait(1)
+
+    with patch.object(wifi_manager_module.threading.Thread, "start"):
+      self.manager.connect_to_network("NextNet", "next-password")
+    release_contains.set()
+    worker.join(1)
+
+    assert not worker.is_alive()
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.ssid == "NextNet"
+    self.manager._dhcp.stop.assert_not_called()
+
   def test_reconcile_times_out_stalled_handshake(self):
     for wpa_state in ("AUTHENTICATING", "ASSOCIATING", "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
       with self.subTest(wpa_state=wpa_state):
