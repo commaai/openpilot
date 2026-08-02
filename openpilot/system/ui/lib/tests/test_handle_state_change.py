@@ -194,6 +194,7 @@ class TestConnectionState(TestCase):
 
     assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTED)
     self.manager._dhcp.adopt.assert_not_called()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
     self.manager._dhcp.start.assert_called_once()
 
   def test_disconnected_event_cleans_station_after_timeout(self):
@@ -889,12 +890,12 @@ class TestStartupAdoption(TestCase):
 
   def test_station_dhcp_adoption(self):
     cases = (
-      ("connected", "TestNet", True, True, False),
-      ("missing-client", "TestNet", False, True, True),
-      ("reconnecting", "TestNet", True, True, False),
-      ("different-network", "PreviousNet", False, False, True),
+      ("connected", "TestNet", True, True, False, False),
+      ("missing-client", "TestNet", False, True, True, False),
+      ("reconnecting", "TestNet", True, True, False, False),
+      ("different-network", "PreviousNet", False, False, True, True),
     )
-    for state, adoption_ssid, adoption_result, expect_adopt, expect_start in cases:
+    for state, adoption_ssid, adoption_result, expect_adopt, expect_start, expect_clear_ipv6 in cases:
       with self.subTest(state=state):
         manager = build_wifi_manager()
         manager._dhcp_adoption_ssid = adoption_ssid
@@ -915,6 +916,7 @@ class TestStartupAdoption(TestCase):
         assert manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
         assert bool(manager._dhcp.adopt.call_count) == expect_adopt
         assert bool(manager._dhcp.start.call_count) == expect_start
+        assert bool(manager._dhcp.clear_ipv6_state.call_count) == expect_clear_ipv6
 
   def test_mid_association_adoption_starts_fresh_timeout(self):
     self.manager._dhcp_adoption_ssid = "TestNet"

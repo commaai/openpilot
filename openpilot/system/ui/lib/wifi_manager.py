@@ -237,6 +237,13 @@ class WifiManager:
     if ctrl is not None:
       self._ctrl = ctrl
 
+  def _consume_dhcp_adoption(self, ssid: str) -> bool:
+    adoption_ssid = self._dhcp_adoption_ssid
+    self._dhcp_adoption_ssid = None
+    if adoption_ssid is not None and adoption_ssid != ssid:
+      self._dhcp.clear_ipv6_state()
+    return adoption_ssid == ssid
+
   def _request(self, cmd: str) -> str:
     ctrl = self._ctrl
     if ctrl is None:
@@ -296,8 +303,7 @@ class WifiManager:
         return
 
       if connection_status == ConnectStatus.CONNECTED and ssid is not None:
-        adopt_dhcp = self._dhcp_adoption_ssid == ssid
-        self._dhcp_adoption_ssid = None
+        adopt_dhcp = self._consume_dhcp_adoption(ssid)
         self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch)
       else:
         if connection_status == ConnectStatus.CONNECTING and self._last_connecting_at == 0.0:
@@ -645,8 +651,7 @@ class WifiManager:
 
       ssid = status.get("ssid")
       if ssid:
-        adopt_dhcp = self._dhcp_adoption_ssid == ssid
-        self._dhcp_adoption_ssid = None
+        adopt_dhcp = self._consume_dhcp_adoption(ssid)
         self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch)
 
     elif "CTRL-EVENT-DISCONNECTED" in event:
