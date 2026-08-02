@@ -754,6 +754,7 @@ method=ignore
     persistent_path = Path(write_profile(
       self.persistent, f"{profile_uuid('shared-uuid')}-Duplicate.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="original-password",
     ))
+    original = persistent_path.read_text()
     runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="shared-uuid"))
 
     def run(command, **kwargs):
@@ -767,7 +768,7 @@ method=ignore
       with self.assertRaises(OSError):
         store.save_network("Duplicate", psk="replacement-password")
 
-    assert persistent_path.exists()
+    assert persistent_path.read_text() == original
 
   def test_runtime_cleanup_failure_preserves_noncanonical_persistent_profile(self):
     persistent_path = Path(write_profile(
