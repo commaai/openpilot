@@ -138,6 +138,7 @@ class WifiManager:
     self._tethering_psk = DEFAULT_TETHERING_PASSWORD
     self._dnsmasq_proc: subprocess.Popen | None = None
     self._pending_connection: PendingConnection | None = None
+    self._requested_ssid: str | None = None
     self._network_not_found_epoch: int | None = None
     self._network_not_found_events = 0
 
@@ -359,10 +360,11 @@ class WifiManager:
   def tethering_password(self) -> str:
     return self._tethering_psk
 
-  def _set_connecting(self, ssid: str | None):
+  def _set_connecting(self, ssid: str | None, requested: bool = True):
     with self._state_lock:
       self._dhcp_adoption_ssid = None
       self._user_epoch += 1
+      self._requested_ssid = ssid if requested else None
       self._network_not_found_epoch = None
       self._network_not_found_events = 0
       self._last_connecting_at = time.monotonic() if ssid is not None else 0.0
@@ -578,13 +580,12 @@ class WifiManager:
       with self._state_lock:
         if expected_epoch is not None and self._user_epoch != expected_epoch:
           return
-        if (self._wifi_state.status == ConnectStatus.CONNECTING
-            and self._wifi_state.ssid is not None
-            and self._wifi_state.ssid != ssid):
+        if self._requested_ssid is not None and self._requested_ssid != ssid:
           return
         already_connected = self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
         transition_epoch = self._user_epoch
         if not already_connected:
+          self._requested_ssid = None
           self._last_connecting_at = 0.0
           self._last_scanning_recheck = 0.0
           self._network_not_found_epoch = None
@@ -1406,7 +1407,7 @@ class WifiManager:
 
   def _start_tethering(self):
     self._tethering_active = True
-    self._set_connecting(self._tethering_ssid)
+    self._set_connecting(self._tethering_ssid, requested=False)
 
     psk = self._tethering_psk
 
