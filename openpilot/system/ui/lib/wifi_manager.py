@@ -157,6 +157,7 @@ class WifiManager:
     self._tethering_lock = threading.RLock()
     self._tethering_epoch = 0
     self._tethering_transition_pending = False
+    self._tethering_started = False
     self._tethering_password_epoch = 0
     # Coalesced so an undrained queue (user on another tab) can't grow unboundedly.
     self._networks_updated_pending = False
@@ -572,6 +573,7 @@ class WifiManager:
           return False
       with self._callback_lock:
         self._tethering_active = True
+        self._tethering_started = True
         self._wifi_state = WifiState(ssid=ssid or self._tethering_ssid, status=ConnectStatus.CONNECTED)
         self._ipv4_address = TETHERING_IP_ADDRESS
         self._callback_queue.extend(self._activated)
@@ -1398,6 +1400,10 @@ class WifiManager:
             self._wifi_state = WifiState()
             self._enqueue_callbacks(self._disconnected)
       else:
+        if not self._tethering_started:
+          self._tethering_active = False
+          self._enqueue_callbacks(self._disconnected)
+          return
         try:
           self._stop_tethering()
         except Exception:
@@ -1436,6 +1442,7 @@ class WifiManager:
 
   def _start_tethering(self):
     self._tethering_active = True
+    self._tethering_started = True
     self._set_connecting(self._tethering_ssid, requested=False)
 
     psk = self._tethering_psk
@@ -1556,6 +1563,7 @@ class WifiManager:
     self._ensure_wpa_supplicant()
 
     self._tethering_active = False
+    self._tethering_started = False
     self._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
     self._ipv4_address = ""
     self._enqueue_callbacks(self._disconnected)

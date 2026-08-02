@@ -1487,6 +1487,7 @@ class TestTetheringTransitions(TestCase):
     stop_entered = threading.Event()
 
     def start_tethering():
+      manager._tethering_started = True
       start_entered.set()
       assert release_start.wait(1)
 
@@ -1506,7 +1507,12 @@ class TestTetheringTransitions(TestCase):
 
   def test_latest_tethering_request_wins(self):
     manager = build_wifi_manager()
+    manager._wifi_state = WifiState("Station", ConnectStatus.CONNECTED)
+    manager._ipv4_address = "192.168.1.20"
+    station_ctrl = manager._ctrl
     transitions = []
+    disconnected = MagicMock()
+    manager.add_callbacks(disconnected=disconnected)
 
     def start_tethering():
       transitions.append(True)
@@ -1528,12 +1534,18 @@ class TestTetheringTransitions(TestCase):
       workers[1]()
       workers[0]()
 
-    assert transitions == [False]
+    manager.process_callbacks()
+    assert transitions == []
     assert not manager.is_tethering_active()
+    assert manager.wifi_state == WifiState("Station", ConnectStatus.CONNECTED)
+    assert manager.ipv4_address == "192.168.1.20"
+    assert manager._ctrl is station_ctrl
+    disconnected.assert_called_once()
 
   def test_failed_tethering_stop_notifies_disconnected(self):
     manager = build_wifi_manager()
     manager._tethering_active = True
+    manager._tethering_started = True
     disconnected = MagicMock()
     manager.add_callbacks(disconnected=disconnected)
 
