@@ -21,9 +21,20 @@ from typing import Any
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
+from openpilot.common.hardware.hw import Paths
 from openpilot.cereal import messaging, log
 
 SESSION_TIMEOUT_SECONDS = 300
+CLIP_CHUNK_SIZE = 64 * 1024
+CLIP_BUFFER_LIMIT = 4 * 1024 * 1024
+
+
+def _open_clip(path: str):
+  return open(path, "rb")
+
+
+def _clip_size(path: str) -> int:
+  return os.path.getsize(path)
 
 # socket trick: route lookup for 8.8.8.8 (nothing is sent or actually connected to)
 # return the source interfaces IP which is the default interface of the device
@@ -243,6 +254,8 @@ class StreamSession:
     self.incoming_bridge_services = body.bridge_services_in
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
     self.bitrate_controller: LivestreamBitrateController | None = None
+    self.clip_transfer_tasks: dict[str, asyncio.Task] = {}
+    self.loop: asyncio.AbstractEventLoop | None = None
     if len(body.bridge_services_in) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
@@ -259,7 +272,45 @@ class StreamSession:
     )
 
   def start(self):
+    self.loop = asyncio.get_running_loop()
     self.run_task = asyncio.create_task(self.run())
+
+  def _start_clip_transfer(self, transfer_id: str, filename: str):
+    if transfer_id in self.clip_transfer_tasks:
+      return
+    task = asyncio.create_task(self.send_clip(transfer_id, filename))
+    self.clip_transfer_tasks[transfer_id] = task
+    task.add_done_callback(lambda _: self.clip_transfer_tasks.pop(transfer_id, None))
+
+  async def send_clip(self, transfer_id: str, filename: str):
+    channel = self.stream.get_messaging_channel()
+    try:
+      assert len(transfer_id) == 32 and all(c in "0123456789abcdef" for c in transfer_id), "invalid transfer id"
+      assert filename == os.path.basename(filename) and not filename.startswith("."), "invalid filename"
+      path = os.path.join(Paths.log_root(), "clips", filename)
+      size = await asyncio.to_thread(_clip_size, path)
+      channel.send(json.dumps({"type": "clipTransferStart", "data": {"id": transfer_id, "size": size}}))
+      header = b"\x01" + transfer_id.encode()
+      buffer_low = asyncio.Event()
+      channel.set_buffered_amount_low_threshold(CLIP_BUFFER_LIMIT // 2)
+      channel.on_buffered_amount_low(lambda: self.loop.call_soon_threadsafe(buffer_low.set) if self.loop is not None else None)
+      f = await asyncio.to_thread(_open_clip, path)
+      try:
+        while chunk := await asyncio.to_thread(f.read, CLIP_CHUNK_SIZE):
+          while channel.buffered_amount() > CLIP_BUFFER_LIMIT:
+            await buffer_low.wait()
+            buffer_low.clear()
+          channel.send(header + chunk)
+          await asyncio.sleep(0)
+      finally:
+        await asyncio.to_thread(f.close)
+      channel.send(json.dumps({"type": "clipTransferEnd", "data": {"id": transfer_id}}))
+    except asyncio.CancelledError:
+      raise
+    except Exception as e:
+      self.logger.exception("Clip transfer failed")
+      if channel.is_open():
+        channel.send(json.dumps({"type": "clipTransferError", "data": {"id": transfer_id, "message": str(e)}}))
 
   async def stop(self):
     if self.run_task is not None and not self.run_task.done() and self.run_task is not asyncio.current_task():
@@ -305,6 +356,9 @@ class StreamSession:
           case "enableTimingSei":
             for track in self.video_tracks:
               track.timing_sei_enabled = bool(payload["data"]["enabled"])
+          case "clipTransferStart":
+            if self.loop is not None:
+              self.loop.call_soon_threadsafe(self._start_clip_transfer, payload["data"]["id"], payload["data"]["filename"])
           case _:
             if msg_type not in self.incoming_bridge_services:
               return
@@ -360,6 +414,11 @@ class StreamSession:
       self.params.put("LivestreamRequestKeyframe", False)
       if self.bitrate_controller is not None:
         await self.bitrate_controller.stop()
+      for task in self.clip_transfer_tasks.values():
+        task.cancel()
+      if self.clip_transfer_tasks:
+        await asyncio.gather(*self.clip_transfer_tasks.values(), return_exceptions=True)
+      self.clip_transfer_tasks.clear()
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       for track in self.video_tracks:

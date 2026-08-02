@@ -585,7 +585,6 @@ class VideoClips:
       if os.path.exists(output_path):
         os.unlink(output_path)
 
-
 video_clips = VideoClips()
 dispatcher.add_method(video_clips.createClip)
 dispatcher.add_method(video_clips.getClipState)
