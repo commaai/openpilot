@@ -16,7 +16,7 @@ from openpilot.system.ui.lib.wpa_ctrl import (WpaCtrl, WpaCtrlMonitor, SecurityT
                                                WPA_SUPPLICANT_CONF, WPA_AP_CONF,
                                                WPA_CTRL_INTERFACE,
                                                stop_wpa_supplicant, wpa_supplicant_running,
-                                               sanitize_for_conf, format_psk_value, format_ssid_value, is_valid_psk,
+                                               sanitize_for_conf, format_psk_value, format_ssid_value, is_valid_psk, is_valid_ssid,
                                                generate_wpa_conf, parse_event_network_id, parse_event_ssid,
                                                parse_scan_results, flags_to_security_type,
                                                parse_status, dbm_to_percent, decode_ssid,
@@ -1055,6 +1055,9 @@ class WifiManager:
     # Backend guard: non-UI entry points (hidden-network dialog, automation) can still reach here.
     if self._tethering_active:
       cloudlog.warning(f"Ignoring connect to {ssid!r} while tethering is active")
+      return
+    if not is_valid_ssid(ssid):
+      cloudlog.warning(f"Ignoring connect to invalid SSID {ssid!r}")
       return
     if password and not is_valid_psk(password):
       cloudlog.warning(f"Ignoring connect to {ssid!r} with invalid passphrase")

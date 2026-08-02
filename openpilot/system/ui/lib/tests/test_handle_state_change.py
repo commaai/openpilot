@@ -536,6 +536,16 @@ class TestConnectionState(TestCase):
         assert manager._pending_connection is None
         need_auth.assert_called_once_with("TestNet")
 
+  def test_connect_rejects_oversized_hidden_ssid(self):
+    ssid = "é" * 17
+
+    with patch.object(wifi_manager_module.threading.Thread, "start") as start:
+      self.manager.connect_to_network(ssid, "password123", hidden=True)
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._pending_connection is None
+    start.assert_not_called()
+
   def test_network_not_found_clears_connecting_state_after_reconciliation(self):
     disconnected = MagicMock()
     self.manager.add_callbacks(disconnected=disconnected)
