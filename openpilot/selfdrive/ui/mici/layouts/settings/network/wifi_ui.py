@@ -300,13 +300,11 @@ class WifiUIMici(NavScroller):
   def show_event(self):
     # Re-sort scroller items and update from latest scan results
     super().show_event()
-    self._wifi_manager.set_active(True)
     self._networks = {n.ssid: n for n in self._wifi_manager.networks}
     self._update_buttons(re_sort=True)
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_manager.set_active(False)
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}

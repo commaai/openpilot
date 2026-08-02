@@ -90,3 +90,23 @@ class TestStandaloneWifi(TestCase):
 
     button.set_wrong_password.assert_called_once()
     push_widget.assert_called_once_with(dialog)
+
+  def test_mici_wifi_page_leaves_manager_active_for_parent(self):
+    try:
+      from openpilot.selfdrive.ui.mici.layouts.settings.network import wifi_ui as wifi_ui_module
+      from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
+    except ImportError as e:
+      raise SkipTest("mici UI dependencies are unavailable") from e
+
+    wifi_ui = WifiUIMici.__new__(WifiUIMici)
+    wifi_ui._wifi_manager = MagicMock(networks=[])
+    wifi_ui._update_buttons = MagicMock()
+
+    with (
+      patch.object(wifi_ui_module.NavScroller, "show_event"),
+      patch.object(wifi_ui_module.NavScroller, "hide_event"),
+    ):
+      wifi_ui.show_event()
+      wifi_ui.hide_event()
+
+    wifi_ui._wifi_manager.set_active.assert_not_called()
