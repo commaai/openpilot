@@ -14,7 +14,6 @@ import subprocess
 import sys
 import threading
 import time
-import uuid
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
@@ -135,7 +134,6 @@ class UploadItem:
 
 @dataclass
 class VideoClipJob:
-  id: str
   route: str
   camera: str
   source_start_time: float
@@ -420,7 +418,7 @@ def listDataDirectory(prefix='') -> list[str]:
   return scan_dir(Paths.log_root(), prefix)
 
 
-def _encode_video_clip(job_id: str, inputs: list[str], output_path: str, start_time: float, duration: float, bitrate: int, speedup: int, metadata: str) -> None:
+def _encode_video_clip(fn: str, inputs: list[str], output_path: str, start_time: float, duration: float, bitrate: int, speedup: int, metadata: str) -> None:
   global active_video_clip
   concat_input = "ffconcat version 1.0\n"
   for path in inputs:
@@ -437,8 +435,8 @@ def _encode_video_clip(job_id: str, inputs: list[str], output_path: str, start_t
 
   process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
   with video_clip_lock:
-    active_video_clip = (job_id, process)
-    if job_id not in video_clip_jobs:
+    active_video_clip = (fn, process)
+    if fn not in video_clip_jobs:
       process.terminate()
   try:
     process.communicate(concat_input)
@@ -449,7 +447,7 @@ def _encode_video_clip(job_id: str, inputs: list[str], output_path: str, start_t
       process.terminate()
       process.wait()
     with video_clip_lock:
-      if active_video_clip is not None and active_video_clip[0] == job_id:
+      if active_video_clip is not None and active_video_clip[0] == fn:
         active_video_clip = None
 
 
@@ -462,17 +460,16 @@ def _video_clips_on_disk() -> dict[str, dict]:
 
   with entries:
     for entry in entries:
-      if entry.name.startswith(".") or not entry.is_file() or not entry.name.endswith(".mp4"):
+      if entry.name.startswith(".") or not entry.is_file():
         continue
       probe = subprocess.run([
         "ffprobe", "-v", "error", "-show_entries", "format_tags=com.comma.clip.settings",
         "-of", "json", entry.path,
       ], capture_output=True, text=True, check=True)
       metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["com.comma.clip.settings"])
-      clip_id = entry.name.removesuffix(".mp4")
-      clips[clip_id] = {
+      clips[entry.name] = {
         **metadata,
-        "id": clip_id,
+        "filename": entry.name,
         "status": "ready",
         "fn": os.path.relpath(entry.path, Paths.log_root()),
         "size": entry.stat().st_size,
@@ -487,7 +484,7 @@ def _video_clip_worker() -> None:
     temporary_path = ""
     try:
       with video_clip_lock:
-        if job.id not in video_clip_jobs:
+        if video_clip_jobs.get(job.filename) is not job:
           continue
 
       first_segment = math.floor(job.source_start_time / SEGMENT_LENGTH)
@@ -497,12 +494,12 @@ def _video_clip_worker() -> None:
       ]
       cache_path = os.path.join(Paths.log_root(), "clips")
       os.makedirs(cache_path, exist_ok=True)
-      temporary_path = os.path.join(cache_path, f".{job.id}.mp4")
-      output_path = os.path.join(cache_path, f"{job.id}.mp4")
+      temporary_path = os.path.join(cache_path, f".{job.filename}")
+      output_path = os.path.join(cache_path, job.filename)
       metadata = json.dumps(asdict(job), separators=(",", ":"))
 
       _encode_video_clip(
-        job.id,
+        job.filename,
         inputs,
         temporary_path,
         job.source_start_time - first_segment * SEGMENT_LENGTH,
@@ -512,12 +509,12 @@ def _video_clip_worker() -> None:
         metadata,
       )
       with video_clip_lock:
-        if job.id in video_clip_jobs:
+        if video_clip_jobs.get(job.filename) is job:
           os.replace(temporary_path, output_path)
-          del video_clip_jobs[job.id]
+          del video_clip_jobs[job.filename]
     except Exception:
       with video_clip_lock:
-        failed = video_clip_jobs.pop(job.id, None) is not None
+        failed = video_clip_jobs.pop(job.filename, None) is job
       if failed:
         cloudlog.exception("athena.video_clip.failed")
     finally:
@@ -557,27 +554,26 @@ def createClips(route: str, source_start_time: float, source_end_time: float, cl
     camera = settings["camera"]
     bitrate = settings["bitrate"]
     speedup = settings.get("speedup", 1)
-    clip_id = uuid.uuid4().hex
-    filename = settings.get("filename") or f"clip-{clip_id}.mp4"
+    filename = settings["filename"]
     pending.append(VideoClipJob(
-      clip_id, route_name, camera, source_start_time, source_end_time, bitrate, speedup, filename,
+      route_name, camera, source_start_time, source_end_time, bitrate, speedup, filename,
       created_at=datetime.now().timestamp(),
     ))
 
   with video_clip_lock:
-    video_clip_jobs.update((job.id, job) for job in pending)
+    video_clip_jobs.update((job.filename, job) for job in pending)
     for job in pending:
       video_clip_queue.put_nowait(job)
 
-  return [job.id for job in pending]
+  return [job.filename for job in pending]
 
 
 @dispatcher.add_method
 def getClipsState(routes: list[str]) -> dict:
   route_names = [route.replace("|", "/").rsplit("/", 1)[-1] for route in routes]
   with video_clip_lock:
-    active_id = active_video_clip[0] if active_video_clip is not None else None
-    jobs = {job.id: {**asdict(job), "status": "encoding" if job.id == active_id else "queued"} for job in video_clip_jobs.values()}
+    active_filename = active_video_clip[0] if active_video_clip is not None else None
+    jobs = {job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"} for job in video_clip_jobs.values()}
   jobs.update(_video_clips_on_disk())
   route_state = {
     route: {
@@ -589,12 +585,12 @@ def getClipsState(routes: list[str]) -> dict:
 
 
 @dispatcher.add_method
-def deleteClips(clip_ids: list[str]) -> None:
+def deleteClips(filenames: list[str]) -> None:
   with video_clip_lock:
-    for clip_id in clip_ids:
-      video_clip_jobs.pop(clip_id, None)
-      output_path = os.path.join(Paths.log_root(), "clips", f"{clip_id}.mp4")
-      if active_video_clip is not None and active_video_clip[0] == clip_id:
+    for filename in filenames:
+      video_clip_jobs.pop(filename, None)
+      output_path = os.path.join(Paths.log_root(), "clips", filename)
+      if active_video_clip is not None and active_video_clip[0] == filename:
         active_video_clip[1].terminate()
       if os.path.exists(output_path):
         os.unlink(output_path)
