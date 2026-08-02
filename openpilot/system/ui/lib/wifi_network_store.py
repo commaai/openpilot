@@ -624,12 +624,32 @@ class NetworkStore:
           cloudlog.warning(f"NetworkStore: failed to find netplan source {p}")
           return False
       paths.update(netplan_paths)
-      for p in paths:
-        result = subprocess.run(["sudo", "rm", "-f", p], check=False)
-        # Keep the in-memory entry when disk removal fails.
-        if result.returncode != 0:
-          cloudlog.warning(f"NetworkStore: failed to remove {p} (rc={result.returncode})")
-          return False
+      existing_paths = sorted(p for p in paths if os.path.exists(p))
+      if len(existing_paths) > 1:
+        token = uuid.uuid4().hex
+        staged_paths = []
+        for p in existing_paths:
+          staged_path = f"{p}.openpilot-forget-{token}"
+          result = subprocess.run(["sudo", "mv", "-f", p, staged_path], check=False)
+          if result.returncode != 0:
+            cloudlog.warning(f"NetworkStore: failed to stage {p} for removal (rc={result.returncode})")
+            for original_path, rollback_path in reversed(staged_paths):
+              rollback = subprocess.run(["sudo", "mv", "-f", rollback_path, original_path], check=False)
+              if rollback.returncode != 0:
+                cloudlog.warning(f"NetworkStore: failed to roll back {original_path} (rc={rollback.returncode})")
+            return False
+          staged_paths.append((p, staged_path))
+        for _, staged_path in staged_paths:
+          result = subprocess.run(["sudo", "rm", "-f", staged_path], check=False)
+          if result.returncode != 0:
+            cloudlog.warning(f"NetworkStore: failed to clean up staged profile {staged_path} (rc={result.returncode})")
+      else:
+        for p in existing_paths:
+          result = subprocess.run(["sudo", "rm", "-f", p], check=False)
+          # Keep the in-memory entry when disk removal fails.
+          if result.returncode != 0:
+            cloudlog.warning(f"NetworkStore: failed to remove {p} (rc={result.returncode})")
+            return False
       with self._lock:
         self._networks.pop(ssid, None)
         self._profiles.pop(ssid, None)
