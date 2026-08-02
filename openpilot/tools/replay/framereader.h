@@ -7,7 +7,7 @@
 #include "tools/replay/util.h"
 
 #ifndef __APPLE__
-#include "tools/replay/qcom_decoder.h"
+#include "system/loggerd/encoder/v4l_decoder.h"
 #endif
 
 extern "C" {
@@ -67,14 +67,14 @@ private:
 };
 
 #ifndef __APPLE__
-class QcomVideoDecoder : public VideoDecoder {
+class V4LVideoDecoder : public VideoDecoder {
 public:
-  QcomVideoDecoder() {};
-  ~QcomVideoDecoder() override {};
+  V4LVideoDecoder() {};
+  ~V4LVideoDecoder() override {};
   bool open(AVCodecParameters *codecpar, bool hw_decoder) override;
   bool decode(FrameReader *reader, int idx, VisionBuf *buf) override;
 
 private:
-  MsmVidc msm_vidc = MsmVidc();
+  V4LDecoder v4l_decoder;
 };
 #endif

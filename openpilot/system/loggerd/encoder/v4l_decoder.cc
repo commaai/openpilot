@@ -1,4 +1,4 @@
-#include "qcom_decoder.h"
+#include "system/loggerd/encoder/v4l_decoder.h"
 
 #include <assert.h>
 #include <linux/v4l2-controls.h>
@@ -26,13 +26,13 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
   util::safe_ioctl(fd, VIDIOC_REQBUFS, &reqbuf, "VIDIOC_REQBUFS failed");
 }
 
-MsmVidc::~MsmVidc() {
+V4LDecoder::~V4LDecoder() {
   if (fd > 0) {
     close(fd);
   }
 }
 
-bool MsmVidc::init(const char* dev, size_t width, size_t height, uint64_t codec) {
+bool V4LDecoder::init(const char* dev, size_t width, size_t height, uint64_t codec) {
   LOG("Initializing msm_vidc device %s", dev);
   this->w = width;
   this->h = height;
@@ -54,7 +54,7 @@ bool MsmVidc::init(const char* dev, size_t width, size_t height, uint64_t codec)
   return true;
 }
 
-VisionBuf* MsmVidc::decodeFrame(AVPacket *pkt, VisionBuf *buf) {
+VisionBuf* V4LDecoder::decodeFrame(AVPacket *pkt, VisionBuf *buf) {
   assert(initialized && (pkt != nullptr) && (buf != nullptr));
 
   this->frame_ready = false;
@@ -84,7 +84,7 @@ VisionBuf* MsmVidc::decodeFrame(AVPacket *pkt, VisionBuf *buf) {
   return buf;
 }
 
-VisionBuf* MsmVidc::processEvents() {
+VisionBuf* V4LDecoder::processEvents() {
   for (int idx = 0; idx < nfds; idx++) {
     short revents = pfd[idx].revents;
     if (!revents) continue;
@@ -109,7 +109,7 @@ VisionBuf* MsmVidc::processEvents() {
   return nullptr;
 }
 
-VisionBuf* MsmVidc::handleCapture() {
+VisionBuf* V4LDecoder::handleCapture() {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[1] = {0};
   buf.type          = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
@@ -127,7 +127,7 @@ VisionBuf* MsmVidc::handleCapture() {
   return this->current_output_buf;
 }
 
-bool MsmVidc::subscribeEvents() {
+bool V4LDecoder::subscribeEvents() {
   for (uint32_t event : subscriptions) {
     struct v4l2_event_subscription sub = { .type = event};
     util::safe_ioctl(fd, VIDIOC_SUBSCRIBE_EVENT, &sub, "VIDIOC_SUBSCRIBE_EVENT failed");
@@ -135,7 +135,7 @@ bool MsmVidc::subscribeEvents() {
   return true;
 }
 
-bool MsmVidc::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
+bool V4LDecoder::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
   struct v4l2_format fmt = {.type = type};
   struct v4l2_pix_format_mplane *pix = &fmt.fmt.pix_mp;
   *pix = {
@@ -172,7 +172,7 @@ bool MsmVidc::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
   return true;
 }
 
-bool MsmVidc::setFPS(uint32_t fps) {
+bool V4LDecoder::setFPS(uint32_t fps) {
   struct v4l2_streamparm streamparam = {
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
   };
@@ -181,7 +181,7 @@ bool MsmVidc::setFPS(uint32_t fps) {
   return true;
 }
 
-bool MsmVidc::restartCapture() {
+bool V4LDecoder::restartCapture() {
   // stop if already initialized
   enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   if (this->initialized) {
@@ -207,7 +207,7 @@ bool MsmVidc::restartCapture() {
   return true;
 }
 
-bool MsmVidc::queueCaptureBuffer(int i) {
+bool V4LDecoder::queueCaptureBuffer(int i) {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[1] = {0};
 
@@ -228,7 +228,7 @@ bool MsmVidc::queueCaptureBuffer(int i) {
   return true;
 }
 
-bool MsmVidc::queueOutputBuffer(int i, size_t size) {
+bool V4LDecoder::queueOutputBuffer(int i, size_t size) {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[1] = {0};
 
@@ -252,7 +252,7 @@ bool MsmVidc::queueOutputBuffer(int i, size_t size) {
   return true;
 }
 
-bool MsmVidc::setDBP() {
+bool V4LDecoder::setDBP() {
   struct v4l2_ext_control control[2] = {0};
   struct v4l2_ext_controls controls = {0};
   control[0].id           = V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_MODE;
@@ -266,7 +266,7 @@ bool MsmVidc::setDBP() {
   return true;
 }
 
-bool MsmVidc::setupPolling() {
+bool V4LDecoder::setupPolling() {
   // Initialize poll array
   pfd[EV_VIDEO] = {fd, POLLIN | POLLOUT | POLLWRNORM | POLLRDNORM | POLLPRI, 0};
   ev[EV_VIDEO] = EV_VIDEO;
@@ -274,7 +274,7 @@ bool MsmVidc::setupPolling() {
   return true;
 }
 
-bool MsmVidc::sendPacket(int buf_index, AVPacket *pkt) {
+bool V4LDecoder::sendPacket(int buf_index, AVPacket *pkt) {
   assert(buf_index >= 0 && buf_index < out_buf_cnt);
   assert(pkt != nullptr && pkt->data != nullptr && pkt->size > 0);
   // Prepare output buffer
@@ -285,7 +285,7 @@ bool MsmVidc::sendPacket(int buf_index, AVPacket *pkt) {
   return true;
 }
 
-int MsmVidc::getBufferUnlocked() {
+int V4LDecoder::getBufferUnlocked() {
   for (int i = 0; i < this->out_buf_cnt; i++) {
     if (!out_buf_flag[i]) {
       return i;
@@ -295,7 +295,7 @@ int MsmVidc::getBufferUnlocked() {
 }
 
 
-bool MsmVidc::handleOutput() {
+bool V4LDecoder::handleOutput() {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[1];
   buf.type      = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
@@ -307,7 +307,7 @@ bool MsmVidc::handleOutput() {
   return true;
 }
 
-bool MsmVidc::handleEvent() {
+bool V4LDecoder::handleEvent() {
   // dequeue event
   struct v4l2_event event = {0};
   util::safe_ioctl(this->fd, VIDIOC_DQEVENT, &event, "VIDIOC_DQEVENT failed");

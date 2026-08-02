@@ -77,9 +77,10 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   uint32_t idx = -1;
   bool exit = false;
 
-  // POLLIN is capture, POLLOUT is frame
+  // POLLIN is capture, POLLOUT is frame. Qualcomm's reference client also
+  // requests the corresponding normal-data bits.
   struct pollfd pfd;
-  pfd.events = POLLIN | POLLOUT;
+  pfd.events = POLLIN | POLLRDNORM | POLLOUT | POLLWRNORM;
   pfd.fd = e->fd;
 
   // save the header
@@ -104,7 +105,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     }
 
     int frame_id = -1;
-    if (pfd.revents & POLLIN) {
+    if (pfd.revents & (POLLIN | POLLRDNORM)) {
       unsigned int bytesused, flags, index;
       struct timeval timestamp;
       dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
@@ -135,7 +136,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
     }
 
-    if (pfd.revents & POLLOUT) {
+    if (pfd.revents & (POLLOUT | POLLWRNORM)) {
       unsigned int index;
       dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
       e->free_buf_in.push(index);
@@ -236,7 +237,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
       { .id = V4L2_CID_MPEG_VIDEO_H264_LEVEL, .value = V4L2_MPEG_VIDEO_H264_LEVEL_UNKNOWN},
       { .id = V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE, .value = V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_H264_CABAC_MODEL, .value = V4L2_CID_MPEG_VIDC_VIDEO_H264_CABAC_MODEL_0},
-      { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_MODE, .value = 0},
+      { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_MODE, .value = V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_ENABLED},
       { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_ALPHA, .value = 0},
       { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_BETA, .value = 0},
       { .id = V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE, .value = 0},
