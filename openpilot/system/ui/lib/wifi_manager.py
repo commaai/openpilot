@@ -957,9 +957,7 @@ class WifiManager:
           return
         self._clear_pending_connection(ssid)
         self._set_connecting(None)
-      self._dhcp.stop()
-      self._ipv4_address = ""
-      self._current_network_metered = MeteredType.UNKNOWN
+      self._clear_station_state()
       self._enqueue_callbacks(self._disconnected)
 
   def _update_networks(self, block: bool = True):
