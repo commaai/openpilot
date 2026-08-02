@@ -349,6 +349,19 @@ method=ignore
     assert str(runtime_path) in removed
     assert str(netplan_path) in removed
 
+  def test_edit_persistent_profile_preserves_runtime_profile_with_different_uuid(self):
+    write_profile(self.persistent, "persistent.nmconnection", "Duplicate", file_uuid="persistent-uuid", psk="persistent")
+    runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="runtime-uuid", psk="runtime"))
+    netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('runtime-uuid')}.yaml")
+    netplan_path.write_text("network:\n  version: 2\n")
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      store.set_metered("Duplicate", 1)
+
+    assert runtime_path.exists()
+    assert netplan_path.exists()
+
   def test_failed_noncanonical_cleanup_keeps_profile_copies_equivalent(self):
     stored_path = Path(write_profile(self.persistent, "stored.nmconnection", "Stored", file_uuid="stored-uuid"))
 

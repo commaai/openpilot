@@ -248,7 +248,7 @@ class NetworkStore:
       # copies, including unsupported or disabled persistent profiles.
       if imported and ssid in persistent_ssids:
         primary = self._networks.get(ssid)
-        if primary is not None and primary.get("_runtime_filename") is None:
+        if primary is not None and file_uuid == primary.get("uuid") and primary.get("_runtime_filename") is None:
           primary["_runtime_filename"] = fname
           primary["_netplan_filename"] = self._find_netplan_filename(file_uuid)
         return
