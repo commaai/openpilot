@@ -536,10 +536,12 @@ class VideoClips:
 
   def getClipsState(self, routes: list[str]) -> dict:
     route_names = [route.replace("|", "/").rsplit("/", 1)[-1] for route in routes]
-    jobs = self._on_disk()
     with self.lock:
       active_filename = self.active[0] if self.active is not None else None
-      jobs.update({job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"} for job in self.jobs.values()})
+      active_jobs = {job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"}
+                     for job in self.jobs.values()}
+    jobs = self._on_disk()
+    jobs.update(active_jobs)
     route_state = {route: {"cameras": {camera: {"available_ranges": self._available_ranges(route, camera)} for camera in self.CAMERAS}}
                    for route in route_names}
     return {"clips": sorted(jobs.values(), key=lambda job: job["created_at"], reverse=True), "routes": route_state}
