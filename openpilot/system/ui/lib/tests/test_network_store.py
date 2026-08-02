@@ -21,7 +21,7 @@ def write_profile(directory: str, filename: str, ssid: str, *,
                   key_mgmt: str = "wpa-psk", mode: str = "infrastructure",
                   autoconnect: bool = True, autoconnect_priority: int = 0,
                   bssid: str | None = None, extra_wifi: str = "",
-                  extra_security: str = "", valid_uuid: bool = True) -> str:
+                  extra_security: str = "", extra_connection: str = "", valid_uuid: bool = True) -> str:
   file_uuid = file_uuid or ssid
   if valid_uuid:
     file_uuid = profile_uuid(file_uuid)
@@ -40,6 +40,7 @@ uuid={file_uuid}
 type=wifi
 autoconnect={str(autoconnect).lower()}
 autoconnect-priority={autoconnect_priority}
+{extra_connection}
 
 [wifi]
 ssid={ssid}
@@ -151,6 +152,18 @@ method=ignore
 
     assert store.get("Station") is None
     assert store.get_tethering_password("weedle") is None
+
+  def test_enforces_connection_interface_constraint(self):
+    write_profile(self.persistent, "wlan0.nmconnection", "Wlan0", extra_connection="interface-name=wlan0")
+    write_profile(self.persistent, "wlan1.nmconnection", "Wlan1", extra_connection="interface-name=wlan1")
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      store.set_metered("Wlan0", 1)
+
+    assert store.get("Wlan1") is None
+    raw = Path(self.persistent, f"{profile_uuid('Wlan0')}-Wlan0.nmconnection").read_text()
+    assert "interface-name = wlan0" in raw
 
   def test_skips_profiles_with_invalid_psks(self):
     write_profile(self.persistent, "short.nmconnection", "Short", psk="short")
