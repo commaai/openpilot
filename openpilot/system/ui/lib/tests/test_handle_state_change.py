@@ -185,6 +185,17 @@ class TestConnectionState(TestCase):
     self.manager._dhcp.stop.assert_not_called()
     self.manager._dhcp.start.assert_not_called()
 
+  def test_disconnected_event_allows_fallback_to_different_saved_network(self):
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=NextNet\n"
+    self.manager._handle_event("CTRL-EVENT-CONNECTED")
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTED)
+    self.manager._dhcp.adopt.assert_not_called()
+    self.manager._dhcp.start.assert_called_once()
+
   def test_disconnected_event_cleans_station_after_timeout(self):
     self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
     self.manager._ipv4_address = "192.168.1.20"
