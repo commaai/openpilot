@@ -1146,6 +1146,9 @@ class WifiManager:
       with self._connect_lock:
         try:
           generate_wpa_conf(store)
+        except Exception:
+          cloudlog.exception(f"Failed to regenerate configuration after forgetting {ssid}")
+        try:
           if self._ctrl:
             with self._state_lock:
               was_connected = self._wifi_state.ssid == ssid and self._wifi_state.status == ConnectStatus.CONNECTED
@@ -1163,9 +1166,7 @@ class WifiManager:
             if was_connected:
               self._request("REASSOCIATE")
         except Exception:
-          cloudlog.exception(f"Failed to reconfigure after forgetting {ssid}")
-          self._enqueue_callbacks(self._forget_failed, ssid)
-          return
+          cloudlog.exception(f"Failed to remove runtime connection after forgetting {ssid}")
 
       self._enqueue_callbacks(self._forgotten, ssid)
 
