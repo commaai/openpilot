@@ -933,15 +933,17 @@ class WifiManager:
       self._last_scanning_recheck = time.monotonic()
     elif wpa_state in ("DISCONNECTED", "INACTIVE", "SCANNING", "AUTHENTICATING", "ASSOCIATING",
                       "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
-      ssid = current_state.ssid
-      pending = self._pending_connection
+      with self._state_lock:
+        if self._user_epoch != epoch:
+          return
+        ssid = current_state.ssid
+        pending = self._pending_connection
       temporary_ssid = ssid if (
         pending is not None
         and ssid is not None
         and pending.ssid == ssid
         and not self._require_store().contains(ssid)
       ) else None
-      self._clear_pending_connection(ssid)
       # Drop the unsaved runtime network so ENABLE_NETWORK all doesn't re-arm
       # the failed credential for another retry.
       try:
@@ -950,7 +952,11 @@ class WifiManager:
         self._request("ENABLE_NETWORK all")
       except Exception:
         cloudlog.exception("Failed to re-enable saved networks after stale CONNECTING")
-      self._set_connecting(None)
+      with self._state_lock:
+        if self._user_epoch != epoch:
+          return
+        self._clear_pending_connection(ssid)
+        self._set_connecting(None)
       self._dhcp.stop()
       self._ipv4_address = ""
       self._current_network_metered = MeteredType.UNKNOWN
