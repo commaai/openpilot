@@ -52,7 +52,14 @@ void remove_file(const std::string &path) {
 }
 
 int encode_clip_worker(const std::vector<std::string> &inputs, int width, int height,
-                       double start_time, double duration, V4LEncoder::PacketCallback packet_callback) try {
+                       double start_time, double duration, int bitrate, int speedup,
+                       int64_t frame_offset, int64_t *encoded_frames,
+                       V4LEncoder::PacketCallback packet_callback) try {
+  EncoderInfo encoder_info = clip_encoder_info;
+  encoder_info.get_settings = [bitrate](int) {
+    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
+                           .bitrate = bitrate, .gop_size = 5};
+  };
   V4LDecoder decoder;
   V4LEncoder::Options options = {
     .packet_callback = std::move(packet_callback),
@@ -60,12 +67,16 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
     .input_done_callback = [&decoder](VisionBuf *buf) { decoder.releaseFrame(buf); },
     .max_performance = true,
   };
-  V4LEncoder encoder(clip_encoder_info, width, height, std::move(options));
+  V4LEncoder encoder(encoder_info, width, height, std::move(options));
   encoder.encoder_open();
   if (!decoder.init(V4LDecoder::DEVICE, width, height, V4L2_PIX_FMT_HEVC, true, V4L2_PIX_FMT_NV12_UBWC)) return 1;
 
   const int64_t first_frame = std::floor(start_time * CLIP_FPS);
   const int64_t end_frame = std::ceil((start_time + duration) * CLIP_FPS);
+  const int64_t source_frames = end_frame - first_frame;
+  const int64_t first_output_frame = (speedup - frame_offset % speedup) % speedup;
+  const int64_t expected_output_frames = first_output_frame < source_frames ?
+    1 + (source_frames - first_output_frame - 1) / speedup : 0;
   int64_t input_frame = 0;
   int64_t output_frame = 0;
   int64_t received_frames = 0;
@@ -77,6 +88,10 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
     ++received_frames;
     const int64_t source_frame = (int64_t)frame.token - 1;
     if (source_frame < first_frame) {
+      decoder.releaseFrame(frame.buf);
+      return true;
+    }
+    if ((frame_offset + source_frame - first_frame) % speedup != 0) {
       decoder.releaseFrame(frame.buf);
       return true;
     }
@@ -138,12 +153,13 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
   }
 
   encoder.encoder_close();
-  if (failed || input_frame < end_frame || output_frame != end_frame - first_frame) {
+  if (failed || input_frame < end_frame || output_frame != expected_output_frames) {
     LOGE("clip failed: input=%lld/%lld decoded=%lld encoded=%lld/%lld",
          (long long)input_frame, (long long)end_frame, (long long)received_frames,
-         (long long)output_frame, (long long)(end_frame - first_frame));
+         (long long)output_frame, (long long)expected_output_frames);
     return 1;
   }
+  *encoded_frames = output_frame;
   return 0;
 } catch (const std::exception &e) {
   LOGE("clip worker failed: %s", e.what());
@@ -159,9 +175,10 @@ struct SpoolPacket {
 }  // namespace
 
 int encode_clip(const std::vector<std::string> &inputs, const std::string &output,
-                double start_time, double duration) {
+                double start_time, double duration, int bitrate, int speedup,
+                const std::string &metadata) {
   if (inputs.empty() || !std::isfinite(start_time) || !std::isfinite(duration) ||
-      start_time < 0 || duration <= 0) {
+      start_time < 0 || duration <= 0 || bitrate <= 0 || speedup <= 0) {
     return 1;
   }
 
@@ -186,14 +203,16 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   const std::string output_dir = output_path.has_parent_path() ? output_path.parent_path() : ".";
   VideoWriter writer(output_dir.c_str(), output_path.filename().c_str(), true,
                      width, height, CLIP_FPS, cereal::EncodeIndex::Type::QCAMERA_H264);
+  if (!metadata.empty()) writer.set_metadata("ai.comma.clip.settings", metadata.c_str());
   V4LEncoder::PacketCallback write_packet = [&writer](uint8_t *data, size_t size, int64_t timestamp,
                                                       bool config, bool keyframe) {
     writer.write(data, size, timestamp, config, keyframe);
   };
 
   if (clip_inputs.size() < 2 || duration < PARALLEL_CLIP_MIN_DURATION) {
+    int64_t encoded_frames = 0;
     const bool success = encode_clip_worker(clip_inputs, width, height, local_start, duration,
-                                            write_packet) == 0;
+                                            bitrate, speedup, 0, &encoded_frames, write_packet) == 0;
     if (!success) remove_file(output);
     return success ? 0 : 1;
   }
@@ -224,11 +243,16 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
     spool_ok &= fwrite(&packet, sizeof(packet), 1, spool) == 1 && fwrite(data, 1, size, spool) == size;
   };
   std::array<int, 2> results = {1, 1};
+  std::array<int64_t, 2> encoded_frames = {};
+  const std::array<int64_t, 2> frame_offsets = {
+    0, (int64_t)std::llround(split_time * CLIP_FPS) - (int64_t)std::floor(local_start * CLIP_FPS),
+  };
   std::array<std::thread, 2> workers;
 
   for (size_t i = 0; i < workers.size(); ++i) {
     workers[i] = std::thread([&, i]() {
       results[i] = encode_clip_worker(shard_inputs[i], width, height, shard_starts[i], shard_durations[i],
+                                      bitrate, speedup, frame_offsets[i], &encoded_frames[i],
                                       i == 0 ? write_packet : spool_packet);
     });
   }
@@ -237,8 +261,7 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   rewind(spool);
   SpoolPacket packet;
   std::vector<uint8_t> data;
-  const int64_t timestamp_offset = (split * SEGMENT_DURATION * CLIP_FPS -
-                                    std::floor(local_start * CLIP_FPS)) * 1000000 / CLIP_FPS;
+  const int64_t timestamp_offset = encoded_frames[0] * 1000000 / CLIP_FPS;
   while (spool_ok && fread(&packet, sizeof(packet), 1, spool) == 1) {
     data.resize(packet.size);
     spool_ok = fread(data.data(), 1, data.size(), spool) == data.size();

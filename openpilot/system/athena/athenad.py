@@ -34,6 +34,7 @@ from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
@@ -423,32 +424,40 @@ class VideoClips:
     threading.Thread(target=self._worker, name="video_clip", daemon=True).start()
 
   def _encode(self, clip: Clip, inputs: Iterable[str], output_path: str, start_time: float, duration: float) -> None:
-    # TODO: use hardware accelerated decoding and encoding
-    command = [
-      "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
-      "-r", str(CAMERA_FPS * clip.speedup), "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
-      "-i", "pipe:0", "-ss", str(start_time / clip.speedup), "-t", str(duration / clip.speedup),
-      "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
-      "-b:v", f"{clip.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
-      "-metadata", f"ai.comma.clip.settings={json.dumps(asdict(clip), separators=(',', ':'))}", output_path,
-    ]
+    inputs = list(inputs)
+    metadata = json.dumps(asdict(clip), separators=(',', ':'))
+    if PC:
+      command = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+        "-r", str(CAMERA_FPS * clip.speedup), "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
+        "-i", "pipe:0", "-ss", str(start_time / clip.speedup), "-t", str(duration / clip.speedup),
+        "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
+        "-b:v", f"{clip.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
+        "-metadata", f"ai.comma.clip.settings={metadata}", output_path,
+      ]
+    else:
+      command = [os.path.join(BASEDIR, "openpilot/system/loggerd/encoderd"), "--clip", output_path,
+                 str(start_time), str(duration), "--bitrate", str(clip.bitrate * 1_000_000),
+                 "--speedup", str(clip.speedup), "--metadata", metadata, "--", *inputs]
 
     with self.lock:
       if self.clips.get(clip.filename) is not clip:
         return
-      process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+      process = subprocess.Popen(command, stdin=subprocess.PIPE if PC else subprocess.DEVNULL,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
       self.transcode_proc = (clip.filename, process)
     try:
-      if process.stdin is None:
-        raise RuntimeError("ffmpeg stdin is unavailable")
-      process.stdin.write("ffconcat version 1.0\n")
-      for path in inputs:
-        escaped_path = path.replace("'", "'\\''")
-        process.stdin.write(f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n")
-      process.stdin.close()
+      if PC:
+        if process.stdin is None:
+          raise RuntimeError("ffmpeg stdin is unavailable")
+        process.stdin.write("ffconcat version 1.0\n")
+        for path in inputs:
+          escaped_path = path.replace("'", "'\\''")
+          process.stdin.write(f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n")
+        process.stdin.close()
       process.wait()
       if process.returncode != 0:
-        raise RuntimeError(f"ffmpeg exited with code {process.returncode}")
+        raise RuntimeError(f"clip encoder exited with code {process.returncode}")
     finally:
       with suppress(OSError):
         if process.stdin is not None:

@@ -1,6 +1,7 @@
 #include <cassert>
 #ifdef __TICI__
 #include <exception>
+#include <stdexcept>
 #endif
 
 #ifdef __TICI__
@@ -180,12 +181,28 @@ int main(int argc, char* argv[]) {
 #ifdef __TICI__
   if (argc > 1 && std::string(argv[1]) == "--clip") {
     if (argc < 6) {
-      fprintf(stderr, "usage: encoderd --clip OUTPUT START DURATION SEGMENT [SEGMENT ...]\n");
+      fprintf(stderr, "usage: encoderd --clip OUTPUT START DURATION [--bitrate BPS] [--speedup N] "
+                      "[--metadata JSON] SEGMENT [SEGMENT ...]\n");
       return 2;
     }
     try {
-      std::vector<std::string> inputs(argv + 5, argv + argc);
-      return encode_clip(inputs, argv[2], std::stod(argv[3]), std::stod(argv[4]));
+      int bitrate = 5'000'000;
+      int speedup = 1;
+      std::string metadata;
+      int input_arg = 5;
+      while (input_arg < argc && std::string(argv[input_arg]).rfind("--", 0) == 0) {
+        const std::string option = argv[input_arg++];
+        if (option == "--") break;
+        if (input_arg == argc) throw std::invalid_argument("missing clip option value");
+        if (option == "--bitrate") bitrate = std::stoi(argv[input_arg++]);
+        else if (option == "--speedup") speedup = std::stoi(argv[input_arg++]);
+        else if (option == "--metadata") metadata = argv[input_arg++];
+        else throw std::invalid_argument("unknown clip option: " + option);
+      }
+      if (input_arg == argc) throw std::invalid_argument("missing clip input");
+      std::vector<std::string> inputs(argv + input_arg, argv + argc);
+      return encode_clip(inputs, argv[2], std::stod(argv[3]), std::stod(argv[4]),
+                         bitrate, speedup, metadata);
     } catch (const std::exception &e) {
       fprintf(stderr, "clip encoding failed: %s\n", e.what());
       return 1;
