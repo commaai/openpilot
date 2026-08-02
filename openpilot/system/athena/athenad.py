@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import hashlib
 import itertools
 import json
@@ -60,6 +61,7 @@ MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
+CLIP_CHUNK_SIZE = 512 * 1024
 
 SEND_PRIORITY_HIGH = 0
 SEND_PRIORITY_LOW = 1
@@ -585,11 +587,23 @@ class VideoClips:
       if os.path.exists(output_path):
         os.unlink(output_path)
 
+  def getClipChunk(self, filename: str, offset: int) -> dict:
+    assert filename == os.path.basename(filename) and not filename.startswith("."), "invalid filename"
+    assert isinstance(offset, int) and offset >= 0, "invalid offset"
+    path = os.path.join(self.clip_path, filename)
+    size = os.path.getsize(path)
+    assert offset <= size, "offset past end of file"
+    with open(path, "rb") as f:
+      f.seek(offset)
+      data = f.read(CLIP_CHUNK_SIZE)
+    return {"data": base64.b64encode(data).decode(), "offset": offset, "size": size}
+
 
 video_clips = VideoClips()
 dispatcher.add_method(video_clips.createClip)
 dispatcher.add_method(video_clips.getClipState)
 dispatcher.add_method(video_clips.deleteClip)
+dispatcher.add_method(video_clips.getClipChunk)
 
 
 @dispatcher.add_method
