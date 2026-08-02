@@ -21,7 +21,7 @@ from datetime import datetime
 from functools import partial, total_ordering
 from queue import Queue
 from typing import cast
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 import requests
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
@@ -420,11 +420,7 @@ class VideoClips:
     self.transcode_proc: tuple[str, subprocess.Popen] | None = None
     threading.Thread(target=self._worker, name="video_clip", daemon=True).start()
 
-  def _encode(self, clip: Clip, inputs: list[str], output_path: str, start_time: float, duration: float) -> None:
-    concat_input = "ffconcat version 1.0\n"
-    for path in inputs:
-      escaped_path = path.replace("'", "'\\''")
-      concat_input += f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n"
+  def _encode(self, clip: Clip, inputs: Iterable[str], output_path: str, start_time: float, duration: float) -> None:
     # TODO: use hardware accelerated decoding and encoding
     command = [
       "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
@@ -441,10 +437,20 @@ class VideoClips:
       process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
       self.transcode_proc = (clip.filename, process)
     try:
-      process.communicate(concat_input)
+      if process.stdin is None:
+        raise RuntimeError("ffmpeg stdin is unavailable")
+      process.stdin.write("ffconcat version 1.0\n")
+      for path in inputs:
+        escaped_path = path.replace("'", "'\\''")
+        process.stdin.write(f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n")
+      process.stdin.close()
+      process.wait()
       if process.returncode != 0:
         raise RuntimeError(f"ffmpeg exited with code {process.returncode}")
     finally:
+      with suppress(OSError):
+        if process.stdin is not None:
+          process.stdin.close()
       if process.poll() is None:
         process.terminate()
         process.wait()
@@ -464,10 +470,10 @@ class VideoClips:
           if self.clips.get(clip.filename) is not clip:
             continue
         first_segment = math.floor(clip.source_start_time / SEGMENT_LENGTH)
-        inputs = [
+        inputs = (
           os.path.join(Paths.log_root(), f"{clip.route}--{segment}", clip.camera)
           for segment in range(first_segment, math.ceil(clip.source_end_time / SEGMENT_LENGTH))
-        ]
+        )
         os.makedirs(self.clip_path, exist_ok=True)
         temporary_path = os.path.join(self.clip_path, f".{clip.filename}")
         output_path = os.path.join(self.clip_path, clip.filename)
