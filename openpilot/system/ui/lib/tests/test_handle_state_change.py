@@ -211,6 +211,7 @@ class TestConnectionState(TestCase):
     assert self.manager.ipv4_address == ""
     assert self.manager.current_network_metered == MeteredType.UNKNOWN
     self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
 
   def test_disconnected_event_does_not_override_user_connection(self):
     self.manager._set_connecting("NextNet")
