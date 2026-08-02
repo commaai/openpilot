@@ -55,6 +55,13 @@ def _canonical_filename(file_uuid: str, ssid: str) -> str:
   return f"{file_uuid}-{ssid_safe}.nmconnection"
 
 
+def _parse_uuid(value: str) -> str | None:
+  try:
+    return str(uuid.UUID(value))
+  except ValueError:
+    return None
+
+
 def _decode_keyfile_string(value: str) -> str:
   """Decode GLib keyfile string escapes."""
   decoded = []
@@ -219,7 +226,11 @@ class NetworkStore:
       if {key for key, value in cp.items("wifi") if value} - _SUPPORTED_WIFI_OPTIONS:
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported Wi-Fi options")
         return
-      file_uuid = cp.get("connection", "uuid", fallback="")
+      raw_uuid = cp.get("connection", "uuid", fallback="")
+      file_uuid = _parse_uuid(raw_uuid)
+      if file_uuid is None:
+        cloudlog.warning(f"NetworkStore: skipping {ssid!r} with invalid uuid={raw_uuid!r}")
+        return
       # Persistent /data profiles are authoritative over netplan's runtime
       # copies, including unsupported or disabled persistent profiles.
       if imported and ssid in persistent_ssids:
@@ -469,7 +480,10 @@ class NetworkStore:
             continue
           if cp.get(security_section, "key-mgmt", fallback="").lower() != "wpa-psk":
             continue
-          profiles.append((cp, directory, fname, cp.get("connection", "uuid", fallback="")))
+          file_uuid = _parse_uuid(cp.get("connection", "uuid", fallback=""))
+          if file_uuid is None:
+            continue
+          profiles.append((cp, directory, fname, file_uuid))
         except (configparser.Error, OSError, ValueError):
           continue
     return profiles

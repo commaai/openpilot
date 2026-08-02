@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import threading
+import uuid
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
@@ -11,12 +12,19 @@ from openpilot.system.ui.lib.wifi_network_store import NetworkStore
 from openpilot.system.ui.lib.wpa_ctrl import generate_wpa_conf
 
 
+def profile_uuid(name: str) -> str:
+  return str(uuid.uuid5(uuid.NAMESPACE_DNS, name))
+
+
 def write_profile(directory: str, filename: str, ssid: str, *,
                   file_uuid: str | None = None, psk: str | None = "password123",
                   key_mgmt: str = "wpa-psk", mode: str = "infrastructure",
                   autoconnect: bool = True, autoconnect_priority: int = 0,
                   bssid: str | None = None, extra_wifi: str = "",
-                  extra_security: str = "") -> str:
+                  extra_security: str = "", valid_uuid: bool = True) -> str:
+  file_uuid = file_uuid or ssid
+  if valid_uuid:
+    file_uuid = profile_uuid(file_uuid)
   security = ""
   if psk is not None or extra_security:
     security = f"""
@@ -28,7 +36,7 @@ key-mgmt={key_mgmt}
   content = f"""\
 [connection]
 id={ssid}
-uuid={file_uuid or ssid.lower() + "-uuid"}
+uuid={file_uuid}
 type=wifi
 autoconnect={str(autoconnect).lower()}
 autoconnect-priority={autoconnect_priority}
@@ -97,10 +105,10 @@ class TestNetworkStore(TestCase):
     assert require_entry(store, "Canonical")["psk"] == "password123"
 
   def test_loads_current_networkmanager_profile_defaults(self):
-    Path(self.persistent, "saved.nmconnection").write_text("""\
+    Path(self.persistent, "saved.nmconnection").write_text(f"""\
 [connection]
 id=openpilot connection SavedNet
-uuid=saved-uuid
+uuid={profile_uuid("SavedNet")}
 type=wifi
 autoconnect-retries=0
 timestamp=1775127802
@@ -134,6 +142,16 @@ method=ignore
 
     assert require_entry(store, "SavedNet")["psk"] == "password123"
 
+  def test_skips_profiles_with_invalid_uuids(self):
+    write_profile(self.persistent, "station.nmconnection", "Station", file_uuid="../../station", valid_uuid=False)
+    write_profile(self.runtime, "hotspot.nmconnection", "weedle", file_uuid="/tmp/hotspot", mode="ap", valid_uuid=False)
+
+    with self.patch_reads():
+      store = self.make_store()
+
+    assert store.get("Station") is None
+    assert store.get_tethering_password("weedle") is None
+
   def test_skips_profiles_with_invalid_psks(self):
     write_profile(self.persistent, "short.nmconnection", "Short", psk="short")
     write_profile(self.persistent, "nonhex.nmconnection", "NonHex", psk="x" * 64)
@@ -156,7 +174,7 @@ method=ignore
       store.set_metered("Preferred", 1)
 
     assert require_entry(store, "Preferred")["priority"] == 42
-    raw = Path(self.persistent, "preferred-uuid-Preferred.nmconnection").read_text()
+    raw = Path(self.persistent, f"{profile_uuid('Preferred')}-Preferred.nmconnection").read_text()
     assert "autoconnect-priority = 42" in raw
 
   def test_preserves_bssid_restriction(self):
@@ -167,7 +185,7 @@ method=ignore
       store.set_metered("Pinned", 1)
 
     assert require_entry(store, "Pinned")["bssid"] == "00:11:22:33:44:55"
-    raw = Path(self.persistent, "pinned-uuid-Pinned.nmconnection").read_text()
+    raw = Path(self.persistent, f"{profile_uuid('Pinned')}-Pinned.nmconnection").read_text()
     assert "bssid = 00:11:22:33:44:55" in raw
 
   def test_loads_printable_decimal_list_ssid(self):
@@ -265,14 +283,15 @@ method=ignore
     runtime_path = Path(write_profile(
       self.runtime, "netplan-hotspot.nmconnection", "weedle", file_uuid="hotspot-uuid", psk="old-password", mode="ap",
     ))
-    netplan_path = Path(self.netplan, "90-NM-hotspot-uuid.yaml")
-    netplan_path.write_text("network:\n  version: 2\n  networkmanager:\n    uuid: hotspot-uuid\n")
+    hotspot_uuid = profile_uuid("hotspot-uuid")
+    netplan_path = Path(self.netplan, f"90-NM-{hotspot_uuid}.yaml")
+    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {hotspot_uuid}\n")
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
       store = self.make_store()
       assert store.set_tethering_password("weedle", "new-password")
 
-    persistent_path = Path(self.persistent, "hotspot-uuid-weedle.nmconnection")
+    persistent_path = Path(self.persistent, f"{hotspot_uuid}-weedle.nmconnection")
     assert "psk = new-password" in persistent_path.read_text()
     assert not runtime_path.exists()
     assert not netplan_path.exists()
@@ -301,7 +320,7 @@ method=ignore
   def test_edit_persistent_profile_removes_shadowed_runtime_copy(self):
     write_profile(self.persistent, "persistent.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="persistent")
     runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="runtime"))
-    netplan_path = Path(self.netplan, "90-NM-shared-uuid.yaml")
+    netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('shared-uuid')}.yaml")
     netplan_path.write_text("network:\n  version: 2\n")
 
     with (
@@ -329,7 +348,7 @@ method=ignore
       store = self.make_store()
       store.set_metered("Stored", 1)
 
-    canonical_path = Path(self.persistent, "stored-uuid-Stored.nmconnection")
+    canonical_path = Path(self.persistent, f"{profile_uuid('stored-uuid')}-Stored.nmconnection")
     assert canonical_path.read_text() == stored_path.read_text()
     assert require_entry(store, "Stored")["_filename"] == "stored.nmconnection"
 
@@ -371,7 +390,7 @@ method=ignore
     profiles = [entry for ssid, entry in store.get_profiles() if ssid == "Duplicate"]
     assert len(profiles) == 2
     assert all(entry["metered"] == 1 for entry in profiles)
-    for file_uuid in ("first-uuid", "second-uuid"):
+    for file_uuid in (profile_uuid("first-uuid"), profile_uuid("second-uuid")):
       raw = Path(self.persistent, f"{file_uuid}-Duplicate.nmconnection").read_text()
       assert "metered = 1" in raw
 
@@ -404,7 +423,7 @@ method=ignore
       "00:11:22:33:44:55": "replacement-password",
       "66:77:88:99:aa:bb": "alternate-password",
     }
-    assert "psk = replacement-password" in Path(self.persistent, "first-uuid-Duplicate.nmconnection").read_text()
+    assert "psk = replacement-password" in Path(self.persistent, f"{profile_uuid('first-uuid')}-Duplicate.nmconnection").read_text()
     assert "psk=alternate-password" in Path(self.persistent, "second.nmconnection").read_text()
 
   def test_replacement_psk_updates_every_unpinned_profile(self):
@@ -418,7 +437,7 @@ method=ignore
     profiles = [entry for ssid, entry in store.get_profiles() if ssid == "Duplicate"]
     assert len(profiles) == 2
     assert all(entry["psk"] == "replacement-password" for entry in profiles)
-    for file_uuid in ("first-uuid", "second-uuid"):
+    for file_uuid in (profile_uuid("first-uuid"), profile_uuid("second-uuid")):
       raw = Path(self.persistent, f"{file_uuid}-Duplicate.nmconnection").read_text()
       assert "psk = replacement-password" in raw
 
@@ -472,7 +491,7 @@ method=ignore
 
   def test_forget_runtime_profile_removes_netplan_source(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
-    netplan_path = Path(self.netplan, "90-NM-runtime-uuid.yaml")
+    netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('runtime-uuid')}.yaml")
     netplan_path.write_text("network:\n  version: 2\n")
 
     with (
@@ -496,7 +515,7 @@ method=ignore
       store.save_network("Runtime", psk="replacement-password")
 
     assert not Path(self.runtime, "runtime.nmconnection").exists()
-    assert Path(self.persistent, "runtime-uuid-Runtime.nmconnection").exists()
+    assert Path(self.persistent, f"{profile_uuid('runtime-uuid')}-Runtime.nmconnection").exists()
     assert require_entry(store, "Runtime")["_netplan_filename"] is None
 
   def test_forget_runtime_profile_without_netplan_source(self):
@@ -512,7 +531,7 @@ method=ignore
   def test_forget_finds_renamed_netplan_source_by_uuid(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
     netplan_path = Path(self.netplan, "provisioned-wifi.yaml")
-    netplan_path.write_text("network:\n  version: 2\n  networkmanager:\n    uuid: runtime-uuid\n")
+    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {profile_uuid('runtime-uuid')}\n")
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
       store = self.make_store()
@@ -554,8 +573,8 @@ method=ignore
     write_profile(self.runtime, "first.nmconnection", "Duplicate", file_uuid="first-uuid")
     write_profile(self.runtime, "second.nmconnection", "Duplicate", file_uuid="second-uuid")
     netplan_paths = {
-      Path(self.netplan, "90-NM-first-uuid.yaml"),
-      Path(self.netplan, "90-NM-second-uuid.yaml"),
+      Path(self.netplan, f"90-NM-{profile_uuid('first-uuid')}.yaml"),
+      Path(self.netplan, f"90-NM-{profile_uuid('second-uuid')}.yaml"),
     }
     for path in netplan_paths:
       path.write_text("network:\n  version: 2\n")
@@ -604,7 +623,7 @@ method=ignore
 
   def test_edit_runtime_profile_installs_keyfile_before_removing_netplan(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
-    netplan_path = Path(self.netplan, "90-NM-runtime-uuid.yaml")
+    netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('runtime-uuid')}.yaml")
     netplan_path.write_text("network:\n  version: 2\n")
 
     with (
@@ -617,7 +636,7 @@ method=ignore
 
       commands = [item.args[0] for item in run.call_args_list]
       install_index = next(i for i, command in enumerate(commands)
-                           if command[:2] == ["sudo", "install"] and command[-1].endswith("runtime-uuid-Runtime.nmconnection"))
+                           if command[:2] == ["sudo", "install"] and command[-1].endswith(f"{profile_uuid('runtime-uuid')}-Runtime.nmconnection"))
       runtime_remove_index = next(i for i, command in enumerate(commands)
                                   if command[:3] == ["sudo", "rm", "-f"] and command[-1] == str(Path(self.runtime, "netplan.nmconnection")))
       remove_index = next(i for i, command in enumerate(commands)
@@ -629,7 +648,7 @@ method=ignore
 
   def test_edit_runtime_profile_rolls_back_when_runtime_remove_fails(self):
     runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
-    netplan_path = Path(self.netplan, "90-NM-runtime-uuid.yaml")
+    netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('runtime-uuid')}.yaml")
     netplan_path.write_text("network:\n  version: 2\n")
 
     def run(command, **_):
@@ -637,7 +656,7 @@ method=ignore
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run) as process:
       store = self.make_store()
-      keyfile_path = os.path.join(self.persistent, "runtime-uuid-Runtime.nmconnection")
+      keyfile_path = os.path.join(self.persistent, f"{profile_uuid('runtime-uuid')}-Runtime.nmconnection")
 
       with self.assertRaises(OSError):
         store.set_metered("Runtime", 1)
@@ -650,7 +669,7 @@ method=ignore
 
   def test_runtime_cleanup_failure_preserves_existing_persistent_profile(self):
     persistent_path = Path(write_profile(
-      self.persistent, "shared-uuid-Duplicate.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="original-password",
+      self.persistent, f"{profile_uuid('shared-uuid')}-Duplicate.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="original-password",
     ))
     runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="shared-uuid"))
 
@@ -688,7 +707,7 @@ method=ignore
 
   def test_edit_runtime_profile_rolls_back_when_netplan_remove_fails(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
-    netplan_path = Path(self.netplan, "90-NM-runtime-uuid.yaml")
+    netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('runtime-uuid')}.yaml")
     netplan_path.write_text("network:\n  version: 2\n")
 
     def run(command, **_):
@@ -696,7 +715,7 @@ method=ignore
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run) as process:
       store = self.make_store()
-      keyfile_path = os.path.join(self.persistent, "runtime-uuid-Runtime.nmconnection")
+      keyfile_path = os.path.join(self.persistent, f"{profile_uuid('runtime-uuid')}-Runtime.nmconnection")
 
       with self.assertRaises(OSError):
         store.save_network("Runtime", psk="replacement")
@@ -704,7 +723,7 @@ method=ignore
       commands = [item.args[0] for item in process.call_args_list]
       assert ["sudo", "rm", "-f", keyfile_path] in commands
       assert require_entry(store, "Runtime")["psk"] == "password123"
-      assert require_entry(store, "Runtime")["_netplan_filename"] == "90-NM-runtime-uuid.yaml"
+      assert require_entry(store, "Runtime")["_netplan_filename"] == f"90-NM-{profile_uuid('runtime-uuid')}.yaml"
 
   def test_accepts_only_networkmanager_dns_priority(self):
     rollback_path = write_profile(self.persistent, "rollback.nmconnection", "Rollback")
