@@ -148,7 +148,7 @@ class NetworkStore:
       filenames = sorted(os.listdir(self._netplan_directory))
     except OSError:
       return None
-    pattern = re.compile(rf"^\s*uuid\s*:\s*['\"]?{re.escape(file_uuid)}['\"]?\s*(?:#.*)?$", re.MULTILINE)
+    pattern = re.compile(r"^\s*uuid\s*:\s*['\"]?([^'\"\s#]+)['\"]?\s*(?:#.*)?$", re.MULTILINE)
     yaml_filenames = [fname for fname in filenames if fname.endswith(".yaml")]
     read_failed = False
     for fname in yaml_filenames:
@@ -159,7 +159,7 @@ class NetworkStore:
         continue
       if not raw:
         read_failed = True
-      elif pattern.search(raw):
+      elif {_parse_uuid(value) for value in pattern.findall(raw)} == {file_uuid}:
         return fname
     return expected if read_failed else None
 
