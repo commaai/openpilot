@@ -1216,16 +1216,20 @@ class WifiManager:
           if ids:
             self._select_network_ids(ids)
           else:
-            # Network not in wpa_supplicant's runtime list, so add it from the store.
-            entry = self._require_store().get(ssid)
-            if entry:
-              self._add_and_select_network(
-                ssid,
-                entry.get("psk", ""),
-                entry.get("hidden", False),
-                entry.get("priority", 0),
-                bssid=entry.get("bssid") or None,
-              )
+            profiles = [entry for profile_ssid, entry in self._require_store().get_profiles() if profile_ssid == ssid]
+            if profiles:
+              ids = [
+                self._add_and_select_network(
+                  ssid,
+                  entry.get("psk", ""),
+                  entry.get("hidden", False),
+                  entry.get("priority", 0),
+                  bssid=entry.get("bssid") or None,
+                )
+                for entry in profiles
+              ]
+              if len(ids) > 1:
+                self._select_network_ids(ids)
             else:
               cloudlog.warning(f"Network {ssid} not found for activation")
               reset_to_disconnected()
