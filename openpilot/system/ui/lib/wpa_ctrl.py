@@ -281,9 +281,7 @@ def flags_to_security_type(flags: str) -> SecurityType:
   flags_upper = flags.upper()
   flag_groups = re.findall(r"\[([^\]]+)\]", flags_upper)
 
-  # Enterprise / 802.1X / WEP → unsupported
-  if "EAP" in flags_upper or "802.1X" in flags_upper:
-    return SecurityType.UNSUPPORTED
+  # WEP → unsupported
   if "WEP" in flags_upper:
     return SecurityType.UNSUPPORTED
 
@@ -291,6 +289,9 @@ def flags_to_security_type(flags: str) -> SecurityType:
   # and connects via WPA-PSK. Pure WPA3-Personal (SAE-only) falls through below.
   if any(re.search(r"(?:^|\+)(?:(?:WPA2|RSN|WPA)-)?PSK(?!-SHA256)(?:[-+]|$)", group) for group in flag_groups):
     return SecurityType.WPA
+  # Enterprise / 802.1X without a usable PSK suite → unsupported
+  if "EAP" in flags_upper or "802.1X" in flags_upper:
+    return SecurityType.UNSUPPORTED
   # SAE-only: would need key_mgmt=SAE, which the current AGNOS kernel + wpa_supplicant
   # build doesn't support. Mark unsupported so the UI doesn't prompt for a password
   # only to fail the handshake. Becomes connectable on vamOS + mainline kernel.
