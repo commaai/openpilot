@@ -8,6 +8,7 @@ import math
 import os
 import queue
 import random
+import re
 import select
 import socket
 import subprocess
@@ -37,6 +38,7 @@ from openpilot.common.realtime import set_core_affinity
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.loggerd.config import CAMERA_FPS, SEGMENT_LENGTH
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.tools.lib.helpers import RE
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
@@ -532,19 +534,24 @@ class VideoClips:
   def createClip(self, route: str, source_start_time: float, source_end_time: float, clip: dict) -> str:
     if not PC and not Params().get_bool("IsOffroad"):
       raise RuntimeError("video clips can only be created while offroad")
-    route_name = route.replace("|", "/").rsplit("/", 1)[-1]
+    route_match = re.fullmatch(RE.ROUTE_NAME, route)
+    assert route_match is not None, "invalid route"
+    route_name = route_match.group("log_id")
     camera = clip["camera"]
-    if os.path.basename(camera) != camera or not camera.endswith("camera.hevc"):
-      raise ValueError("invalid camera filename")
+    filename = clip["filename"]
+    assert camera == os.path.basename(camera) and camera.endswith("camera.hevc"), "invalid camera filename"
+    assert filename == os.path.basename(filename), "invalid filename"
     pending = self.Clip(route_name, camera, source_start_time, source_end_time, clip["bitrate"], clip["speedup"],
-                        clip["filename"], datetime.now().timestamp())
+                        filename, datetime.now().timestamp())
     with self.lock:
       self.clips[pending.filename] = pending
       self.queue.put_nowait(pending)
     return pending.filename
 
   def getClipState(self, route: str) -> dict:
-    route_name = route.replace("|", "/").rsplit("/", 1)[-1]
+    route_match = re.fullmatch(RE.ROUTE_NAME, route)
+    assert route_match is not None, "invalid route"
+    route_name = route_match.group("log_id")
     with self.lock:
       active_filename = self.active[0] if self.active is not None else None
       active_clips = {clip.filename: {**asdict(clip), "status": "encoding" if clip.filename == active_filename else "queued"}
@@ -555,6 +562,7 @@ class VideoClips:
             "route": route_name, "cameras": self._available_ranges(route_name)}
 
   def deleteClip(self, filename: str) -> None:
+    assert filename == os.path.basename(filename), "invalid filename"
     with self.lock:
       self.clips.pop(filename, None)
       output_path = os.path.join(self.clip_path, filename)
