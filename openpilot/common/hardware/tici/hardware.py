@@ -215,7 +215,8 @@ class Tici(HardwareBase):
             cp = configparser.ConfigParser(interpolation=None)
             try:
               cp.read_string(raw)
-              keyfile_ssid = cp.get("wifi", "ssid", fallback="")
+              wifi_section = "wifi" if cp.has_section("wifi") else "802-11-wireless"
+              keyfile_ssid = cp.get(wifi_section, "ssid", fallback="")
               if keyfile_ssid != ssid and keyfile_ssid != ssid_keyfile_list:
                 continue
               metered = cp.getint("connection", "metered", fallback=0)
