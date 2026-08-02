@@ -377,6 +377,7 @@ def getVersion() -> dict[str, str]:
     "remote": build_metadata.openpilot.git_normalized_origin,
     "branch": build_metadata.channel,
     "commit": build_metadata.openpilot.git_commit,
+    "commit_date": build_metadata.openpilot.git_commit_date.strip("'").split()[0],
   }
 
 
