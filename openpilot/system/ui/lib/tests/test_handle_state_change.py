@@ -916,6 +916,25 @@ class TestStartupAdoption(TestCase):
         assert bool(manager._dhcp.adopt.call_count) == expect_adopt
         assert bool(manager._dhcp.start.call_count) == expect_start
 
+  def test_mid_association_adoption_starts_fresh_timeout(self):
+    self.manager._dhcp_adoption_ssid = "TestNet"
+    self.manager._last_connecting_at = 0.0
+    self.manager._ctrl.request.return_value = "wpa_state=ASSOCIATING\nmode=station\nssid=TestNet\n"
+
+    with patch.object(wifi_manager_module.time, "monotonic", return_value=100.0):
+      self.manager._init_wifi_state()
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    assert self.manager._last_connecting_at == 100.0
+    assert self.manager._dhcp_adoption_ssid == "TestNet"
+
+    self.manager._ctrl.request.reset_mock()
+    with patch.object(wifi_manager_module.time, "monotonic", return_value=104.0):
+      self.manager._reconcile_connecting_state()
+
+    self.manager._ctrl.request.assert_not_called()
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+
   def test_hotspot_adopts_with_dhcp_and_nat(self):
     self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=Hotspot\n"
 

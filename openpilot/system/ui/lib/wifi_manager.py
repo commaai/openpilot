@@ -300,6 +300,8 @@ class WifiManager:
         self._dhcp_adoption_ssid = None
         self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch)
       else:
+        if connection_status == ConnectStatus.CONNECTING and self._last_connecting_at == 0.0:
+          self._last_connecting_at = time.monotonic()
         self._wifi_state = WifiState(ssid=ssid, status=connection_status)
 
     if block:
