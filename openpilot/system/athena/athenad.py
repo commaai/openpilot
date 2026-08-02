@@ -413,9 +413,8 @@ class VideoClips:
 
   def __init__(self):
     self.clip_path = os.path.join(Paths.log_root(), "clips")
-    self.lock = threading.Lock()
+    self.lock = threading.Condition()
     self.clips: dict[str, VideoClips.Clip] = {}
-    self.queue: Queue[VideoClips.Clip] = queue.Queue()
     self.active: tuple[str, subprocess.Popen] | None = None
     threading.Thread(target=self._worker, name="video_clip", daemon=True).start()
 
@@ -452,7 +451,10 @@ class VideoClips:
 
   def _worker(self) -> None:
     while True:
-      clip = self.queue.get()
+      with self.lock:
+        while not self.clips:
+          self.lock.wait()
+        clip = next(iter(self.clips.values()))
       temporary_path = ""
       try:
         with self.lock:
@@ -482,7 +484,6 @@ class VideoClips:
       finally:
         if temporary_path and os.path.exists(temporary_path):
           os.unlink(temporary_path)
-        self.queue.task_done()
 
   def _on_disk(self) -> dict[str, dict]:
     clips = {}
@@ -531,7 +532,7 @@ class VideoClips:
       available[camera] = {"available_ranges": ranges}
     return available
 
-  def createClip(self, route: str, source_start_time: float, source_end_time: float, clip: dict) -> str:
+  def createClip(self, route: str, source_start_time: float, source_end_time: float, clip: dict):
     if not PC and not Params().get_bool("IsOffroad"):
       raise RuntimeError("video clips can only be created while offroad")
     route_match = re.fullmatch(RE.ROUTE_NAME, route)
@@ -541,25 +542,24 @@ class VideoClips:
     filename = clip["filename"]
     assert camera == os.path.basename(camera) and camera.endswith("camera.hevc"), "invalid camera filename"
     assert filename == os.path.basename(filename), "invalid filename"
-    pending = self.Clip(route_name, camera, source_start_time, source_end_time, clip["bitrate"], clip["speedup"],
-                        filename, datetime.now().timestamp())
     with self.lock:
-      self.clips[pending.filename] = pending
-      self.queue.put_nowait(pending)
-    return pending.filename
+      self.clips[filename] = self.Clip(route_name, camera, source_start_time, source_end_time, clip["bitrate"], clip["speedup"],
+                                        filename, datetime.now().timestamp())
+      self.lock.notify()
 
-  def getClipState(self, route: str) -> dict:
-    route_match = re.fullmatch(RE.ROUTE_NAME, route)
-    assert route_match is not None, "invalid route"
-    route_name = route_match.group("log_id")
+  def getClipState(self, route: str | None = None) -> dict:
+    route_match = re.search(RE.ROUTE_NAME, route or "")
     with self.lock:
       active_filename = self.active[0] if self.active is not None else None
       active_clips = {clip.filename: {**asdict(clip), "status": "encoding" if clip.filename == active_filename else "queued"}
                       for clip in self.clips.values()}
     clips = self._on_disk()
     clips.update(active_clips)
-    return {"clips": sorted(clips.values(), key=lambda clip: clip["created_at"], reverse=True),
-            "route": route_name, "cameras": self._available_ranges(route_name)}
+    state = {"clips": sorted(clips.values(), key=lambda clip: clip["created_at"], reverse=True)}
+    if route_match is not None:
+      route_name = route_match.group("log_id")
+      state.update({"route": route_name, "cameras": self._available_ranges(route_name)})
+    return state
 
   def deleteClip(self, filename: str) -> None:
     assert filename == os.path.basename(filename), "invalid filename"
