@@ -201,6 +201,19 @@ method=ignore
     raw = Path(self.persistent, f"{profile_uuid('Pinned')}-Pinned.nmconnection").read_text()
     assert "bssid = 00:11:22:33:44:55" in raw
 
+  def test_skips_profile_with_invalid_bssid(self):
+    write_profile(self.persistent, "valid.nmconnection", "Valid")
+    write_profile(self.persistent, "invalid.nmconnection", "Invalid", bssid="not-a-mac")
+
+    with self.patch_reads():
+      store = self.make_store()
+
+    config_path = os.path.join(self.root, "wpa_supplicant.conf")
+    generate_wpa_conf(store, config_path)
+
+    assert store.get("Invalid") is None
+    assert "ssid=56616c6964" in Path(config_path).read_text()
+
   def test_loads_printable_decimal_list_ssid(self):
     path = write_profile(self.persistent, "decimal.nmconnection", "placeholder")
     raw = Path(path).read_text().replace("ssid=placeholder", "ssid=65;66;67;")
