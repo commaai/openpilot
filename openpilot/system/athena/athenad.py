@@ -399,7 +399,7 @@ def listDataDirectory(prefix='') -> list[str]:
 
 class VideoClips:
   CAMERAS = {"fcamera": "fcamera.hevc", "ecamera": "ecamera.hevc", "dcamera": "dcamera.hevc"}
-  SPEEDUPS = tuple(speedup for speedup in range(1, CAMERA_FPS + 1) if CAMERA_FPS % speedup == 0)
+  SPEEDUPS = (1, 2, 4, 5, 10)
 
   @dataclass
   class Job:
