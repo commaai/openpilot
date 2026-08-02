@@ -16,6 +16,7 @@ from openpilot.common.utils import atomic_write
 
 
 RECV_BUF_SIZE = 32768
+IEEE80211_MAX_SSID_BYTES = 32
 
 WPA_SUPPLICANT_CONF = "/tmp/wpa_supplicant.conf"
 WPA_AP_CONF = "/tmp/wpa_supplicant_ap.conf"
@@ -379,6 +380,13 @@ def sanitize_for_conf(value: str) -> str:
 def format_ssid_value(ssid: str) -> str:
   """Render an SSID as hexadecimal bytes for lossless wpa_supplicant parsing."""
   return ssid.encode("utf-8", errors="surrogateescape").hex()
+
+
+def is_valid_ssid(ssid: str) -> bool:
+  try:
+    return 0 < len(ssid.encode("utf-8", errors="surrogateescape")) <= IEEE80211_MAX_SSID_BYTES
+  except UnicodeEncodeError:
+    return False
 
 
 def _is_raw_psk(psk: str) -> bool:

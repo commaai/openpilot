@@ -11,13 +11,12 @@ from enum import IntEnum
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import sudo_read
-from openpilot.system.ui.lib.wpa_ctrl import is_valid_psk
+from openpilot.system.ui.lib.wpa_ctrl import is_valid_psk, is_valid_ssid
 
 
 NM_CONNECTIONS_DIR = "/data/etc/NetworkManager/system-connections"
 RUNTIME_CONNECTIONS_DIR = "/run/NetworkManager/system-connections"
 NETPLAN_CONNECTIONS_DIR = "/data/etc/netplan"
-IEEE80211_MAX_SSID_BYTES = 32
 
 # Only key-mgmt values we can actually drive via wpa_supplicant. Anything else
 # (wpa-eap, sae, ieee8021x, ...) gets skipped on load. Coercing those to
@@ -223,7 +222,7 @@ class NetworkStore:
         return
       ssid = _decode_keyfile_ssid(cp.get("wifi", "ssid", fallback=""))
       mode = cp.get("wifi", "mode", fallback="infrastructure")
-      if not ssid or len(ssid.encode("utf-8", errors="surrogateescape")) > IEEE80211_MAX_SSID_BYTES or mode != "infrastructure":
+      if not is_valid_ssid(ssid) or mode != "infrastructure":
         return
       if not imported:
         persistent_ssids.add(ssid)
