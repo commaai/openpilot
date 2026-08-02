@@ -57,11 +57,6 @@ MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
-VIDEO_CLIP_CAMERAS = {
-  "fcamera": "fcamera.hevc",
-  "ecamera": "ecamera.hevc",
-  "dcamera": "dcamera.hevc",
-}
 SEND_PRIORITY_HIGH = 0
 SEND_PRIORITY_LOW = 1
 
@@ -132,18 +127,6 @@ class UploadItem:
     return self.priority == other.priority
 
 
-@dataclass
-class VideoClipJob:
-  route: str
-  camera: str
-  source_start_time: float
-  source_end_time: float
-  bitrate: int
-  speedup: int
-  filename: str
-  created_at: float
-
-
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[tuple[int, int, str]] = queue.PriorityQueue()
@@ -152,10 +135,6 @@ log_recv_queue: Queue[str] = queue.Queue()
 cancelled_uploads: set[str] = set()
 
 cur_upload_items: dict[int, UploadItem | None] = {}
-video_clip_lock = threading.Lock()
-video_clip_jobs: dict[str, VideoClipJob] = {}
-video_clip_queue: Queue[VideoClipJob] = queue.Queue()
-active_video_clip: tuple[str, subprocess.Popen] | None = None
 
 send_seq = itertools.count()
 def send_queue_push(data: str, priority: int) -> None:
@@ -418,182 +397,162 @@ def listDataDirectory(prefix='') -> list[str]:
   return scan_dir(Paths.log_root(), prefix)
 
 
-def _encode_video_clip(fn: str, inputs: list[str], output_path: str, start_time: float, duration: float, bitrate: int, speedup: int, metadata: str) -> None:
-  global active_video_clip
-  concat_input = "ffconcat version 1.0\n"
-  for path in inputs:
-    escaped_path = path.replace("'", "'\\''")
-    concat_input += f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n"
-  command = [
-    "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
-    "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
-    "-itsscale", str(1 / speedup), "-i", "pipe:0", "-ss", str(start_time / speedup), "-t", str(duration / speedup),
-    "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
-    "-b:v", f"{bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
-    "-metadata", f"com.comma.clip.settings={metadata}", output_path,
-  ]
+class VideoClips:
+  CAMERAS = {"fcamera": "fcamera.hevc", "ecamera": "ecamera.hevc", "dcamera": "dcamera.hevc"}
 
-  process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
-  with video_clip_lock:
-    active_video_clip = (fn, process)
-    if fn not in video_clip_jobs:
-      process.terminate()
-  try:
-    process.communicate(concat_input)
-    if process.returncode != 0:
-      raise RuntimeError(f"ffmpeg exited with code {process.returncode}")
-  finally:
-    if process.poll() is None:
-      process.terminate()
-      process.wait()
-    with video_clip_lock:
-      if active_video_clip is not None and active_video_clip[0] == fn:
-        active_video_clip = None
+  @dataclass
+  class Job:
+    route: str
+    camera: str
+    source_start_time: float
+    source_end_time: float
+    bitrate: int
+    speedup: int
+    filename: str
+    created_at: float
 
+  def __init__(self):
+    self.lock = threading.Lock()
+    self.jobs: dict[str, VideoClips.Job] = {}
+    self.queue: Queue[VideoClips.Job] = queue.Queue()
+    self.active: tuple[str, subprocess.Popen] | None = None
+    threading.Thread(target=self._worker, name="video_clip", daemon=True).start()
 
-def _video_clips_on_disk() -> dict[str, dict]:
-  clips = {}
-  try:
-    entries = os.scandir(os.path.join(Paths.log_root(), "clips"))
-  except FileNotFoundError:
+  def _encode(self, job: Job, inputs: list[str], output_path: str, start_time: float, duration: float) -> None:
+    concat_input = "ffconcat version 1.0\n"
+    for path in inputs:
+      escaped_path = path.replace("'", "'\\''")
+      concat_input += f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n"
+    command = [
+      "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+      "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
+      "-itsscale", str(1 / job.speedup), "-i", "pipe:0", "-ss", str(start_time / job.speedup), "-t", str(duration / job.speedup),
+      "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
+      "-b:v", f"{job.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
+      "-metadata", f"com.comma.clip.settings={json.dumps(asdict(job), separators=(',', ':'))}", output_path,
+    ]
+
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+    with self.lock:
+      self.active = (job.filename, process)
+      if job.filename not in self.jobs:
+        process.terminate()
+    try:
+      process.communicate(concat_input)
+      if process.returncode != 0:
+        raise RuntimeError(f"ffmpeg exited with code {process.returncode}")
+    finally:
+      if process.poll() is None:
+        process.terminate()
+        process.wait()
+      with self.lock:
+        if self.active is not None and self.active[0] == job.filename:
+          self.active = None
+
+  def _worker(self) -> None:
+    while True:
+      job = self.queue.get()
+      temporary_path = ""
+      try:
+        with self.lock:
+          if self.jobs.get(job.filename) is not job:
+            continue
+        first_segment = math.floor(job.source_start_time / SEGMENT_LENGTH)
+        inputs = [
+          os.path.join(Paths.log_root(), f"{job.route}--{segment}", self.CAMERAS[job.camera])
+          for segment in range(first_segment, math.ceil(job.source_end_time / SEGMENT_LENGTH))
+        ]
+        cache_path = os.path.join(Paths.log_root(), "clips")
+        os.makedirs(cache_path, exist_ok=True)
+        temporary_path = os.path.join(cache_path, f".{job.filename}")
+        output_path = os.path.join(cache_path, job.filename)
+        self._encode(job, inputs, temporary_path, job.source_start_time - first_segment * SEGMENT_LENGTH,
+                     job.source_end_time - job.source_start_time)
+        with self.lock:
+          if self.jobs.get(job.filename) is job:
+            os.replace(temporary_path, output_path)
+            del self.jobs[job.filename]
+      except Exception:
+        with self.lock:
+          failed = self.jobs.get(job.filename) is job
+          if failed:
+            del self.jobs[job.filename]
+        if failed:
+          cloudlog.exception("athena.video_clip.failed")
+      finally:
+        if temporary_path and os.path.exists(temporary_path):
+          os.unlink(temporary_path)
+        self.queue.task_done()
+
+  def _on_disk(self) -> dict[str, dict]:
+    clips = {}
+    try:
+      entries = os.scandir(os.path.join(Paths.log_root(), "clips"))
+    except FileNotFoundError:
+      return clips
+    with entries:
+      for entry in entries:
+        if entry.name.startswith(".") or not entry.is_file():
+          continue
+        probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format_tags=com.comma.clip.settings",
+                                "-of", "json", entry.path], capture_output=True, text=True, check=True)
+        metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["com.comma.clip.settings"])
+        clips[entry.name] = {**metadata, "filename": entry.name, "status": "ready",
+                             "fn": os.path.relpath(entry.path, Paths.log_root()), "size": entry.stat().st_size}
     return clips
 
-  with entries:
-    for entry in entries:
-      if entry.name.startswith(".") or not entry.is_file():
-        continue
-      probe = subprocess.run([
-        "ffprobe", "-v", "error", "-show_entries", "format_tags=com.comma.clip.settings",
-        "-of", "json", entry.path,
-      ], capture_output=True, text=True, check=True)
-      metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["com.comma.clip.settings"])
-      clips[entry.name] = {
-        **metadata,
-        "filename": entry.name,
-        "status": "ready",
-        "fn": os.path.relpath(entry.path, Paths.log_root()),
-        "size": entry.stat().st_size,
-      }
-  return clips
+  def _available_ranges(self, route: str, camera: str) -> list[list[int]]:
+    segments = []
+    prefix = f"{route}--"
+    for entry in os.scandir(Paths.log_root()):
+      segment = entry.name.removeprefix(prefix)
+      if entry.is_dir() and entry.name.startswith(prefix) and segment.isdigit() and os.path.isfile(os.path.join(entry.path, self.CAMERAS[camera])):
+        segments.append(int(segment))
+    ranges: list[list[int]] = []
+    for segment in sorted(set(segments)):
+      if ranges and ranges[-1][1] == segment * SEGMENT_LENGTH:
+        ranges[-1][1] += SEGMENT_LENGTH
+      else:
+        ranges.append([segment * SEGMENT_LENGTH, (segment + 1) * SEGMENT_LENGTH])
+    return ranges
+
+  def createClips(self, route: str, source_start_time: float, source_end_time: float, clips: list[dict]) -> list[str]:
+    if not PC and not Params().get_bool("IsOffroad"):
+      raise RuntimeError("video clips can only be created while offroad")
+    route_name = route.replace("|", "/").rsplit("/", 1)[-1]
+    pending = [self.Job(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], settings.get("speedup", 1),
+                        settings["filename"], datetime.now().timestamp()) for settings in clips]
+    with self.lock:
+      self.jobs.update((job.filename, job) for job in pending)
+      for job in pending:
+        self.queue.put_nowait(job)
+    return [job.filename for job in pending]
+
+  def getClipsState(self, routes: list[str]) -> dict:
+    route_names = [route.replace("|", "/").rsplit("/", 1)[-1] for route in routes]
+    with self.lock:
+      active_filename = self.active[0] if self.active is not None else None
+      jobs = {job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"} for job in self.jobs.values()}
+    jobs.update(self._on_disk())
+    route_state = {route: {"cameras": {camera: {"available_ranges": self._available_ranges(route, camera)} for camera in self.CAMERAS}}
+                   for route in route_names}
+    return {"clips": sorted(jobs.values(), key=lambda job: job["created_at"], reverse=True), "routes": route_state}
+
+  def deleteClips(self, filenames: list[str]) -> None:
+    with self.lock:
+      for filename in filenames:
+        self.jobs.pop(filename, None)
+        output_path = os.path.join(Paths.log_root(), "clips", filename)
+        if self.active is not None and self.active[0] == filename:
+          self.active[1].terminate()
+        if os.path.exists(output_path):
+          os.unlink(output_path)
 
 
-def _video_clip_worker() -> None:
-  while True:
-    job = video_clip_queue.get()
-
-    temporary_path = ""
-    try:
-      with video_clip_lock:
-        if video_clip_jobs.get(job.filename) is not job:
-          continue
-
-      first_segment = math.floor(job.source_start_time / SEGMENT_LENGTH)
-      inputs = [
-        os.path.join(Paths.log_root(), f"{job.route}--{segment}", VIDEO_CLIP_CAMERAS[job.camera])
-        for segment in range(first_segment, math.ceil(job.source_end_time / SEGMENT_LENGTH))
-      ]
-      cache_path = os.path.join(Paths.log_root(), "clips")
-      os.makedirs(cache_path, exist_ok=True)
-      temporary_path = os.path.join(cache_path, f".{job.filename}")
-      output_path = os.path.join(cache_path, job.filename)
-      metadata = json.dumps(asdict(job), separators=(",", ":"))
-
-      _encode_video_clip(
-        job.filename,
-        inputs,
-        temporary_path,
-        job.source_start_time - first_segment * SEGMENT_LENGTH,
-        job.source_end_time - job.source_start_time,
-        job.bitrate,
-        job.speedup,
-        metadata,
-      )
-      with video_clip_lock:
-        if video_clip_jobs.get(job.filename) is job:
-          os.replace(temporary_path, output_path)
-          del video_clip_jobs[job.filename]
-    except Exception:
-      with video_clip_lock:
-        failed = video_clip_jobs.pop(job.filename, None) is job
-      if failed:
-        cloudlog.exception("athena.video_clip.failed")
-    finally:
-      if temporary_path and os.path.exists(temporary_path):
-        os.unlink(temporary_path)
-      video_clip_queue.task_done()
-
-
-threading.Thread(target=_video_clip_worker, name="video_clip", daemon=True).start()
-
-
-def _video_clip_available_ranges(route: str, camera: str) -> list[list[int]]:
-  filename = VIDEO_CLIP_CAMERAS[camera]
-  segments = []
-  prefix = f"{route}--"
-  for entry in os.scandir(Paths.log_root()):
-    segment = entry.name.removeprefix(prefix)
-    if entry.is_dir() and entry.name.startswith(prefix) and segment.isdigit() and os.path.isfile(os.path.join(entry.path, filename)):
-      segments.append(int(segment))
-
-  ranges: list[list[int]] = []
-  for segment in sorted(set(segments)):
-    if ranges and ranges[-1][1] == segment * SEGMENT_LENGTH:
-      ranges[-1][1] += SEGMENT_LENGTH
-    else:
-      ranges.append([segment * SEGMENT_LENGTH, (segment + 1) * SEGMENT_LENGTH])
-  return ranges
-
-
-@dispatcher.add_method
-def createClips(route: str, source_start_time: float, source_end_time: float, clips: list[dict]) -> list[str]:
-  if not PC and not Params().get_bool("IsOffroad"):
-    raise RuntimeError("video clips can only be created while offroad")
-  route_name = route.replace("|", "/").rsplit("/", 1)[-1]
-  pending: list[VideoClipJob] = []
-  for settings in clips:
-    camera = settings["camera"]
-    bitrate = settings["bitrate"]
-    speedup = settings.get("speedup", 1)
-    filename = settings["filename"]
-    pending.append(VideoClipJob(
-      route_name, camera, source_start_time, source_end_time, bitrate, speedup, filename,
-      created_at=datetime.now().timestamp(),
-    ))
-
-  with video_clip_lock:
-    video_clip_jobs.update((job.filename, job) for job in pending)
-    for job in pending:
-      video_clip_queue.put_nowait(job)
-
-  return [job.filename for job in pending]
-
-
-@dispatcher.add_method
-def getClipsState(routes: list[str]) -> dict:
-  route_names = [route.replace("|", "/").rsplit("/", 1)[-1] for route in routes]
-  with video_clip_lock:
-    active_filename = active_video_clip[0] if active_video_clip is not None else None
-    jobs = {job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"} for job in video_clip_jobs.values()}
-  jobs.update(_video_clips_on_disk())
-  route_state = {
-    route: {
-      "cameras": {camera: {"available_ranges": _video_clip_available_ranges(route, camera)} for camera in VIDEO_CLIP_CAMERAS},
-    }
-    for route in route_names
-  }
-  return {"clips": sorted(jobs.values(), key=lambda job: job["created_at"], reverse=True), "routes": route_state}
-
-
-@dispatcher.add_method
-def deleteClips(filenames: list[str]) -> None:
-  with video_clip_lock:
-    for filename in filenames:
-      video_clip_jobs.pop(filename, None)
-      output_path = os.path.join(Paths.log_root(), "clips", filename)
-      if active_video_clip is not None and active_video_clip[0] == filename:
-        active_video_clip[1].terminate()
-      if os.path.exists(output_path):
-        os.unlink(output_path)
+video_clips = VideoClips()
+dispatcher.add_method(video_clips.createClips)
+dispatcher.add_method(video_clips.getClipsState)
+dispatcher.add_method(video_clips.deleteClips)
 
 
 @dispatcher.add_method
