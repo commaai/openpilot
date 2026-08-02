@@ -353,12 +353,26 @@ class NetworkStore:
     cp["ipv4"] = ipv4
     cp["ipv6"] = entry.get("_ipv6", {"method": "auto"})
 
-    self._install_keyfile(cp, canonical_path)
+    backup_path = None
+    if canonical_existed:
+      backup_path = f"{canonical_path}.openpilot-update-{uuid.uuid4().hex}"
+      result = subprocess.run([
+        "sudo", "install", "-o", "root", "-g", "root", "-m", "600", canonical_path, backup_path,
+      ], check=False)
+      if result.returncode != 0:
+        raise OSError(f"failed to back up {canonical_path}")
 
     def cleanup_canonical_after_failure() -> bool:
-      if canonical_existed:
-        return True
+      if backup_path is not None:
+        return subprocess.run(["sudo", "mv", "-f", backup_path, canonical_path], check=False).returncode == 0
       return subprocess.run(["sudo", "rm", "-f", canonical_path], check=False).returncode == 0
+
+    try:
+      self._install_keyfile(cp, canonical_path)
+    except Exception as e:
+      if not cleanup_canonical_after_failure():
+        raise OSError(f"failed to install and roll back {canonical_path}") from e
+      raise
 
     runtime_filename = entry.get("_runtime_filename")
     if self._runtime_directory is not None and runtime_filename:
@@ -398,6 +412,13 @@ class NetworkStore:
         except Exception:
           cloudlog.exception("NetworkStore: failed to mirror keyfile to noncanonical path")
         entry["_filename"] = stored_fname
+
+    if backup_path is not None:
+      result = subprocess.run(["sudo", "rm", "-f", backup_path], check=False)
+      if result.returncode != 0:
+        if not cleanup_canonical_after_failure():
+          raise OSError(f"failed to clean up {backup_path} and roll back {canonical_path}")
+        raise OSError(f"failed to clean up {backup_path}")
 
     return file_uuid, entry
 
