@@ -81,6 +81,8 @@ class TestNetworkStore(TestCase):
   def run_file_command(self, command, **_):
     if command[:2] == ["sudo", "install"] and "-d" not in command:
       shutil.copyfile(command[-2], command[-1])
+    elif command[:3] == ["sudo", "mv", "-f"]:
+      Path(command[-2]).replace(command[-1])
     elif command[:3] == ["sudo", "rm", "-f"]:
       Path(command[-1]).unlink(missing_ok=True)
     return MagicMock(returncode=0)
@@ -541,9 +543,9 @@ method=ignore
 
       assert store.remove("Runtime")
 
-      removed = [args.args[0][-1] for args in run.call_args_list if args.args[0][:3] == ["sudo", "rm", "-f"]]
-      assert str(netplan_path) in removed
-      assert str(Path(self.runtime, "netplan.nmconnection")) in removed
+      staged = [args.args[0][-2] for args in run.call_args_list if args.args[0][:3] == ["sudo", "mv", "-f"]]
+      assert str(netplan_path) in staged
+      assert str(Path(self.runtime, "netplan.nmconnection")) in staged
       assert store.get("Runtime") is None
 
   def test_edit_runtime_profile_without_netplan_source(self):
@@ -625,9 +627,9 @@ method=ignore
       store = self.make_store()
       assert store.remove("Duplicate")
 
-    removed = {Path(item.args[0][-1]) for item in run.call_args_list
-               if item.args[0][:3] == ["sudo", "rm", "-f"]}
-    assert netplan_paths <= removed
+    staged = {Path(item.args[0][-2]) for item in run.call_args_list
+              if item.args[0][:3] == ["sudo", "mv", "-f"]}
+    assert netplan_paths <= staged
 
   def test_forget_preserves_unsupported_profile_with_same_ssid(self):
     unsupported = Path(write_profile(
@@ -659,6 +661,36 @@ method=ignore
 
       assert not store.remove("Runtime")
       assert store.get("Runtime") is not None
+
+  def test_forget_rolls_back_earlier_removals(self):
+    first_path = Path(write_profile(self.persistent, "a.nmconnection", "Duplicate", file_uuid="first-uuid"))
+    second_path = Path(write_profile(self.persistent, "b.nmconnection", "Duplicate", file_uuid="second-uuid"))
+    originals = {first_path, second_path}
+    mutations = 0
+
+    def run(command, **kwargs):
+      nonlocal mutations
+      if command[:3] == ["sudo", "rm", "-f"] and Path(command[-1]) in originals:
+        if mutations == 1:
+          return MagicMock(returncode=1)
+        mutations += 1
+      if command[:3] == ["sudo", "mv", "-f"]:
+        source = Path(command[-2])
+        if source in originals:
+          if mutations == 1:
+            return MagicMock(returncode=1)
+          mutations += 1
+        source.replace(command[-1])
+        return MagicMock(returncode=0)
+      return self.run_file_command(command, **kwargs)
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run):
+      store = self.make_store()
+      assert not store.remove("Duplicate")
+
+    assert first_path.exists()
+    assert second_path.exists()
+    assert store.contains("Duplicate")
 
   def test_edit_runtime_profile_installs_keyfile_before_removing_netplan(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
