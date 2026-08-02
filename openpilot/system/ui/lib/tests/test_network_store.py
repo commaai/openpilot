@@ -592,6 +592,29 @@ method=ignore
 
     assert not netplan_path.exists()
 
+  def test_forget_preserves_shared_renamed_netplan_source(self):
+    runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
+    netplan_path = Path(self.netplan, "provisioned-wifi.yaml")
+    netplan_path.write_text(f"""\
+network:
+  version: 2
+  wifis:
+    first:
+      networkmanager:
+        uuid: {profile_uuid('runtime-uuid')}
+    second:
+      networkmanager:
+        uuid: {profile_uuid('other-uuid')}
+""")
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      assert store.remove("Runtime")
+
+    assert not runtime_path.exists()
+    assert netplan_path.exists()
+    assert not store.contains("Runtime")
+
   def test_forget_ignores_unrelated_netplan_source(self):
     runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
     netplan_path = Path(self.netplan, "provisioned-wifi.yaml")
