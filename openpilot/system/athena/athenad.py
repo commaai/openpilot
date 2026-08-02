@@ -401,7 +401,7 @@ class VideoClips:
   CAMERAS = {"fcamera": "fcamera.hevc", "ecamera": "ecamera.hevc", "dcamera": "dcamera.hevc"}
 
   @dataclass
-  class Job:
+  class Clip:
     route: str
     camera: str
     source_start_time: float
@@ -414,29 +414,29 @@ class VideoClips:
   def __init__(self):
     self.clip_path = os.path.join(Paths.log_root(), "clips")
     self.lock = threading.Lock()
-    self.jobs: dict[str, VideoClips.Job] = {}
-    self.queue: Queue[VideoClips.Job] = queue.Queue()
+    self.clips: dict[str, VideoClips.Clip] = {}
+    self.queue: Queue[VideoClips.Clip] = queue.Queue()
     self.active: tuple[str, subprocess.Popen] | None = None
     threading.Thread(target=self._worker, name="video_clip", daemon=True).start()
 
-  def _encode(self, job: Job, inputs: list[str], output_path: str, start_time: float, duration: float) -> None:
+  def _encode(self, clip: Clip, inputs: list[str], output_path: str, start_time: float, duration: float) -> None:
     concat_input = "ffconcat version 1.0\n"
     for path in inputs:
       escaped_path = path.replace("'", "'\\''")
       concat_input += f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n"
     command = [
       "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
-      "-r", str(CAMERA_FPS * job.speedup), "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
-      "-i", "pipe:0", "-ss", str(start_time / job.speedup), "-t", str(duration / job.speedup),
+      "-r", str(CAMERA_FPS * clip.speedup), "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
+      "-i", "pipe:0", "-ss", str(start_time / clip.speedup), "-t", str(duration / clip.speedup),
       "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
-      "-b:v", f"{job.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
-      "-metadata", f"com.comma.clip.settings={json.dumps(asdict(job), separators=(',', ':'))}", output_path,
+      "-b:v", f"{clip.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
+      "-metadata", f"com.comma.clip.settings={json.dumps(asdict(clip), separators=(',', ':'))}", output_path,
     ]
 
     process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
     with self.lock:
-      self.active = (job.filename, process)
-      if job.filename not in self.jobs:
+      self.active = (clip.filename, process)
+      if clip.filename not in self.clips:
         process.terminate()
     try:
       process.communicate(concat_input)
@@ -447,36 +447,36 @@ class VideoClips:
         process.terminate()
         process.wait()
       with self.lock:
-        if self.active is not None and self.active[0] == job.filename:
+        if self.active is not None and self.active[0] == clip.filename:
           self.active = None
 
   def _worker(self) -> None:
     while True:
-      job = self.queue.get()
+      clip = self.queue.get()
       temporary_path = ""
       try:
         with self.lock:
-          if self.jobs.get(job.filename) is not job:
+          if self.clips.get(clip.filename) is not clip:
             continue
-        first_segment = math.floor(job.source_start_time / SEGMENT_LENGTH)
+        first_segment = math.floor(clip.source_start_time / SEGMENT_LENGTH)
         inputs = [
-          os.path.join(Paths.log_root(), f"{job.route}--{segment}", self.CAMERAS[job.camera])
-          for segment in range(first_segment, math.ceil(job.source_end_time / SEGMENT_LENGTH))
+          os.path.join(Paths.log_root(), f"{clip.route}--{segment}", self.CAMERAS[clip.camera])
+          for segment in range(first_segment, math.ceil(clip.source_end_time / SEGMENT_LENGTH))
         ]
         os.makedirs(self.clip_path, exist_ok=True)
-        temporary_path = os.path.join(self.clip_path, f".{job.filename}")
-        output_path = os.path.join(self.clip_path, job.filename)
-        self._encode(job, inputs, temporary_path, job.source_start_time - first_segment * SEGMENT_LENGTH,
-                     job.source_end_time - job.source_start_time)
+        temporary_path = os.path.join(self.clip_path, f".{clip.filename}")
+        output_path = os.path.join(self.clip_path, clip.filename)
+        self._encode(clip, inputs, temporary_path, clip.source_start_time - first_segment * SEGMENT_LENGTH,
+                     clip.source_end_time - clip.source_start_time)
         with self.lock:
-          if self.jobs.get(job.filename) is job:
+          if self.clips.get(clip.filename) is clip:
             os.replace(temporary_path, output_path)
-            del self.jobs[job.filename]
+            del self.clips[clip.filename]
       except Exception:
         with self.lock:
-          failed = self.jobs.get(job.filename) is job
+          failed = self.clips.get(clip.filename) is clip
           if failed:
-            del self.jobs[job.filename]
+            del self.clips[clip.filename]
         if failed:
           cloudlog.exception("athena.video_clip.failed")
       finally:
@@ -538,28 +538,28 @@ class VideoClips:
     route_name = route.replace("|", "/").rsplit("/", 1)[-1]
     pending = []
     for settings in clips:
-      pending.append(self.Job(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], settings["speedup"],
+      pending.append(self.Clip(route_name, settings["camera"], source_start_time, source_end_time, settings["bitrate"], settings["speedup"],
                               settings["filename"], datetime.now().timestamp()))
     with self.lock:
-      self.jobs.update((job.filename, job) for job in pending)
-      for job in pending:
-        self.queue.put_nowait(job)
-    return [job.filename for job in pending]
+      self.clips.update((clip.filename, clip) for clip in pending)
+      for clip in pending:
+        self.queue.put_nowait(clip)
+    return [clip.filename for clip in pending]
 
   def getClipsState(self, routes: list[str]) -> dict:
     route_names = [route.replace("|", "/").rsplit("/", 1)[-1] for route in routes]
     with self.lock:
       active_filename = self.active[0] if self.active is not None else None
-      active_jobs = {job.filename: {**asdict(job), "status": "encoding" if job.filename == active_filename else "queued"}
-                     for job in self.jobs.values()}
-    jobs = self._on_disk()
-    jobs.update(active_jobs)
-    return {"clips": sorted(jobs.values(), key=lambda job: job["created_at"], reverse=True), "routes": self._available_ranges(route_names)}
+      active_clips = {clip.filename: {**asdict(clip), "status": "encoding" if clip.filename == active_filename else "queued"}
+                      for clip in self.clips.values()}
+    clips = self._on_disk()
+    clips.update(active_clips)
+    return {"clips": sorted(clips.values(), key=lambda clip: clip["created_at"], reverse=True), "routes": self._available_ranges(route_names)}
 
   def deleteClips(self, filenames: list[str]) -> None:
     with self.lock:
       for filename in filenames:
-        self.jobs.pop(filename, None)
+        self.clips.pop(filename, None)
         output_path = os.path.join(self.clip_path, filename)
         if self.active is not None and self.active[0] == filename:
           self.active[1].terminate()
