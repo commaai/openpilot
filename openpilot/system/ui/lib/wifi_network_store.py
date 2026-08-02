@@ -23,6 +23,9 @@ NETPLAN_CONNECTIONS_DIR = "/data/etc/netplan"
 # psk="" would render as key_mgmt=NONE in wpa_supplicant.conf, silently turning
 # a secure profile into an open one for the same SSID and inviting open spoofing.
 _SUPPORTED_KEY_MGMT = {"wpa-psk", "none"}
+_SUPPORTED_CONNECTION_OPTIONS = {
+  "id", "uuid", "type", "autoconnect", "autoconnect-priority", "autoconnect-retries", "timestamp", "metered", "interface-name",
+}
 _SUPPORTED_WIFI_OPTIONS = {"ssid", "mode", "hidden", "bssid"}
 _SUPPORTED_SECURITY_OPTIONS = {"key-mgmt", "psk", "psk-flags", "auth-alg"}
 _SUPPORTED_IPV4_METHODS = {"auto"}
@@ -231,6 +234,16 @@ class NetworkStore:
       if file_uuid is None:
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with invalid uuid={raw_uuid!r}")
         return
+      connection = dict(cp["connection"])
+      connection_type = connection.get("type", "wifi").lower()
+      interface_name = connection.get("interface-name", "")
+      unsupported_connection_options = {key for key, value in connection.items() if value} - _SUPPORTED_CONNECTION_OPTIONS
+      if (connection_type not in ("wifi", "802-11-wireless")
+          or interface_name not in ("", "wlan0")
+          or cp.getint("connection", "autoconnect-retries", fallback=0) != 0
+          or unsupported_connection_options):
+        cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported connection constraints")
+        return
       # Persistent /data profiles are authoritative over netplan's runtime
       # copies, including unsupported or disabled persistent profiles.
       if imported and ssid in persistent_ssids:
@@ -300,6 +313,7 @@ class NetworkStore:
         "hidden": cp.getboolean("wifi", "hidden", fallback=False),
         "bssid": cp.get("wifi", "bssid", fallback=""),
         "uuid": file_uuid,
+        "_connection": connection,
         "_ipv4": ipv4,
         "_ipv6": ipv6,
         # Remember the on-disk filename so save/remove stay consistent with noncanonical files.
@@ -349,13 +363,15 @@ class NetworkStore:
 
     cp = configparser.ConfigParser(interpolation=None)
     connection_id = ssid.encode("utf-8", errors="surrogateescape").decode("utf-8", errors="replace")
-    cp["connection"] = {
+    connection = dict(entry.get("_connection", {}))
+    connection.update({
       "id": _encode_keyfile_string(connection_id),
       "uuid": file_uuid,
       "type": "wifi",
       "metered": str(entry.get("metered", 0)),
       "autoconnect-priority": str(entry.get("priority", 0)),
-    }
+    })
+    cp["connection"] = connection
     wifi = {
       "ssid": _encode_keyfile_ssid(ssid),
       "mode": "infrastructure",
