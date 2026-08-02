@@ -496,10 +496,18 @@ class VideoClips:
         if entry.name.startswith(".") or not entry.is_file():
           continue
         probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format_tags=com.comma.clip.settings",
-                                "-of", "json", entry.path], capture_output=True, text=True, check=True)
-        metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["com.comma.clip.settings"])
+                                "-of", "json", entry.path], capture_output=True, text=True)
+        if probe.returncode != 0:
+          continue
+        try:
+          metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["com.comma.clip.settings"])
+          size = entry.stat().st_size
+        except (FileNotFoundError, KeyError, TypeError, json.JSONDecodeError):
+          continue
+        if not isinstance(metadata, dict):
+          continue
         clips[entry.name] = {**metadata, "filename": entry.name, "status": "ready",
-                             "fn": os.path.relpath(entry.path, Paths.log_root()), "size": entry.stat().st_size}
+                             "fn": os.path.relpath(entry.path, Paths.log_root()), "size": size}
     return clips
 
   def _available_ranges(self, route: str, camera: str) -> list[list[int]]:
