@@ -467,7 +467,7 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   def test_get_version(self):
     resp = dispatcher["getVersion"]()
-    keys = ["version", "remote", "branch", "commit"]
+    keys = ["version", "remote", "branch", "commit", "commit_date"]
     assert list(resp.keys()) == keys
     for k in keys:
       assert isinstance(resp[k], str), f"{k} is not a string"
