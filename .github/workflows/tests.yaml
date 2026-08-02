@@ -102,6 +102,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
+    - run: sudo apt-get install -y --no-install-recommends libegl1 libgles2
     - name: Build openpilot
       run: scons
     - name: Run unit tests
@@ -212,6 +213,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: ./tools/op.sh setup
+      - run: sudo apt-get install -y --no-install-recommends libegl1 libgles2
       - name: Build openpilot
         run: scons
       - name: Create UI Report
