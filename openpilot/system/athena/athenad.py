@@ -426,8 +426,8 @@ class VideoClips:
       concat_input += f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n"
     command = [
       "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
-      "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
-      "-itsscale", str(1 / job.speedup), "-i", "pipe:0", "-ss", str(start_time / job.speedup), "-t", str(duration / job.speedup),
+      "-r", str(CAMERA_FPS * job.speedup), "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
+      "-i", "pipe:0", "-ss", str(start_time / job.speedup), "-t", str(duration / job.speedup),
       "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
       "-b:v", f"{job.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
       "-metadata", f"com.comma.clip.settings={json.dumps(asdict(job), separators=(',', ':'))}", output_path,
