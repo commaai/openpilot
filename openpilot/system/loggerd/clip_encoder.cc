@@ -5,6 +5,7 @@
 #include <cmath>
 #include <exception>
 #include <filesystem>
+#include <memory>
 #include <thread>
 #include <unistd.h>
 #include <utility>
@@ -73,10 +74,6 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
 
   const int64_t first_frame = std::floor(start_time * CLIP_FPS);
   const int64_t end_frame = std::ceil((start_time + duration) * CLIP_FPS);
-  const int64_t source_frames = end_frame - first_frame;
-  const int64_t first_output_frame = (speedup - frame_offset % speedup) % speedup;
-  const int64_t expected_output_frames = first_output_frame < source_frames ?
-    1 + (source_frames - first_output_frame - 1) / speedup : 0;
   int64_t input_frame = 0;
   int64_t output_frame = 0;
   int64_t received_frames = 0;
@@ -109,7 +106,9 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
     return true;
   };
 
-  for (const std::string &input : inputs) {
+  for (size_t input_index = 0; input_index < inputs.size(); ++input_index) {
+    const std::string &input = inputs[input_index];
+    const int64_t segment_start_frame = input_frame;
     AVFormatContext *ctx = nullptr;
     int stream_index = -1;
     if (!open_input(input, &ctx, &stream_index)) { failed = true; break; }
@@ -141,6 +140,12 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
     }
     av_packet_unref(&packet);
     avformat_close_input(&ctx);
+    // Only the final loggerd segment may be shorter than SEGMENT_DURATION. A
+    // short intermediate segment would silently close a gap in the source.
+    if (!failed && input_frame < end_frame && input_index + 1 < inputs.size() &&
+        input_frame - segment_start_frame < static_cast<int64_t>(SEGMENT_DURATION * CLIP_FPS)) {
+      failed = true;
+    }
     if (failed || input_frame >= end_frame) break;
   }
 
@@ -153,7 +158,11 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
   }
 
   encoder.encoder_close();
-  if (failed || input_frame < end_frame || output_frame != expected_output_frames) {
+  const int64_t source_frames = std::max<int64_t>(0, std::min(input_frame, end_frame) - first_frame);
+  const int64_t first_output_frame = (speedup - frame_offset % speedup) % speedup;
+  const int64_t expected_output_frames = first_output_frame < source_frames ?
+    1 + (source_frames - first_output_frame - 1) / speedup : 0;
+  if (failed || source_frames == 0 || output_frame != expected_output_frames) {
     LOGE("clip failed: input=%lld/%lld decoded=%lld encoded=%lld/%lld",
          (long long)input_frame, (long long)end_frame, (long long)received_frames,
          (long long)output_frame, (long long)expected_output_frames);
@@ -201,19 +210,22 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
 
   std::filesystem::path output_path(output);
   const std::string output_dir = output_path.has_parent_path() ? output_path.parent_path() : ".";
-  VideoWriter writer(output_dir.c_str(), output_path.filename().c_str(), true,
-                     width, height, CLIP_FPS, cereal::EncodeIndex::Type::QCAMERA_H264);
-  if (!metadata.empty()) writer.set_metadata("ai.comma.clip.settings", metadata.c_str());
+  auto writer = std::make_unique<VideoWriter>(output_dir.c_str(), output_path.filename().c_str(), true,
+                                              width, height, CLIP_FPS, cereal::EncodeIndex::Type::QCAMERA_H264);
+  if (!metadata.empty()) writer->set_metadata("ai.comma.clip.settings", metadata.c_str());
   V4LEncoder::PacketCallback write_packet = [&writer](uint8_t *data, size_t size, int64_t timestamp,
                                                       bool config, bool keyframe) {
-    writer.write(data, size, timestamp, config, keyframe);
+    writer->write(data, size, timestamp, config, keyframe);
   };
 
   if (clip_inputs.size() < 2 || duration < PARALLEL_CLIP_MIN_DURATION) {
     int64_t encoded_frames = 0;
     const bool success = encode_clip_worker(clip_inputs, width, height, local_start, duration,
                                             bitrate, speedup, 0, &encoded_frames, write_packet) == 0;
-    if (!success) remove_file(output);
+    if (!success) {
+      writer.reset();
+      remove_file(output);
+    }
     return success ? 0 : 1;
   }
 
@@ -231,6 +243,7 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   const std::string spool_path = output + ".encoderd-" + std::to_string(getpid()) + ".tmp";
   FILE *spool = fopen(spool_path.c_str(), "w+b");
   if (!spool) {
+    writer.reset();
     remove_file(output);
     return 1;
   }
@@ -265,10 +278,13 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   while (spool_ok && fread(&packet, sizeof(packet), 1, spool) == 1) {
     data.resize(packet.size);
     spool_ok = fread(data.data(), 1, data.size(), spool) == data.size();
-    if (spool_ok) writer.write(data.data(), data.size(), packet.timestamp + timestamp_offset, false, packet.keyframe);
+    if (spool_ok) writer->write(data.data(), data.size(), packet.timestamp + timestamp_offset, false, packet.keyframe);
   }
   fclose(spool);
   bool success = results[0] == 0 && results[1] == 0 && spool_ok;
-  if (!success) remove_file(output);
+  if (!success) {
+    writer.reset();
+    remove_file(output);
+  }
   return success ? 0 : 1;
 }
