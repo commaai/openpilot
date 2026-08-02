@@ -229,6 +229,10 @@ class NetworkStore:
       if {key for key, value in cp.items("wifi") if value} - _SUPPORTED_WIFI_OPTIONS:
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported Wi-Fi options")
         return
+      bssid = cp.get("wifi", "bssid", fallback="")
+      if bssid and re.fullmatch(r"(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}", bssid) is None:
+        cloudlog.warning(f"NetworkStore: skipping {ssid!r} with invalid bssid={bssid!r}")
+        return
       raw_uuid = cp.get("connection", "uuid", fallback="")
       file_uuid = _parse_uuid(raw_uuid)
       if file_uuid is None:
@@ -311,7 +315,7 @@ class NetworkStore:
         "metered": cp.getint("connection", "metered", fallback=0),
         "priority": cp.getint("connection", "autoconnect-priority", fallback=0),
         "hidden": cp.getboolean("wifi", "hidden", fallback=False),
-        "bssid": cp.get("wifi", "bssid", fallback=""),
+        "bssid": bssid,
         "uuid": file_uuid,
         "_connection": connection,
         "_ipv4": ipv4,
