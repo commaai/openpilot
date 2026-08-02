@@ -280,6 +280,26 @@ class TestConnectionState(TestCase):
       call("REASSOCIATE"),
     ]
 
+  def test_activate_restores_every_saved_profile(self):
+    profiles = (
+      {"psk": "first-password", "hidden": False, "priority": 1, "bssid": "00:11:22:33:44:55"},
+      {"psk": "second-password", "hidden": True, "priority": 2, "bssid": "66:77:88:99:aa:bb"},
+    )
+    self.manager._store.get_profiles.return_value = [("Pinned", profile) for profile in profiles]
+
+    with (
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_add_and_select_network", side_effect=["1", "2"]) as add_and_select_network,
+      patch.object(self.manager, "_select_network_ids") as select_network_ids,
+    ):
+      self.manager.activate_connection("Pinned", block=True)
+
+    assert add_and_select_network.call_args_list == [
+      call("Pinned", "first-password", False, 1, bssid="00:11:22:33:44:55"),
+      call("Pinned", "second-password", True, 2, bssid="66:77:88:99:aa:bb"),
+    ]
+    select_network_ids.assert_called_once_with(["1", "2"])
+
   def test_metered_worker_updates_requested_network_only(self):
     self.manager._wifi_state = WifiState("FirstNet", ConnectStatus.CONNECTED)
     self.manager._current_network_metered = MeteredType.NO
@@ -316,7 +336,7 @@ class TestConnectionState(TestCase):
     for ssid, profile, priority, bssid in cases:
       with self.subTest(ssid=ssid):
         manager = build_wifi_manager()
-        manager._store.get.return_value = profile
+        manager._store.get_profiles.return_value = [(ssid, profile)]
 
         with (
           patch.object(manager, "_list_network_ids", return_value=[]),
