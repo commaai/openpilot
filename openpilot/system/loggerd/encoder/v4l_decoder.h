@@ -19,16 +19,17 @@ extern "C" {
 #define V4L2_QCOM_CMD_FLUSH_CAPTURE (1 << 1)
 #define V4L2_QCOM_CMD_FLUSH (4)
 
-#define VIDEO_DEVICE "/dev/video32"
 #define OUTPUT_BUFFER_COUNT 	8
 #define CAPTURE_BUFFER_COUNT 	8
 #define FPS 									20
 
 
-class MsmVidc {
+class V4LDecoder {
 public:
-  MsmVidc() = default;
-  ~MsmVidc();
+  static constexpr const char *DEVICE = "/dev/video32";
+
+  V4LDecoder() = default;
+  ~V4LDecoder();
 
   bool init(const char* dev, size_t width, size_t height, uint64_t codec);
   VisionBuf* decodeFrame(AVPacket* pkt, VisionBuf* buf);
