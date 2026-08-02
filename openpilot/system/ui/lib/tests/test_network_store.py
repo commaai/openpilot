@@ -770,6 +770,26 @@ method=ignore
 
     assert persistent_path.read_text() == original
 
+  def test_multi_profile_password_update_rolls_back_earlier_profiles(self):
+    first_path = Path(write_profile(self.persistent, "a.nmconnection", "Duplicate", file_uuid="first-uuid", psk="first-password"))
+    second_path = Path(write_profile(self.persistent, "b.nmconnection", "Duplicate", file_uuid="second-uuid", psk="second-password"))
+    originals = {path: path.read_text() for path in (first_path, second_path)}
+    second_canonical = Path(self.persistent, f"{profile_uuid('second-uuid')}-Duplicate.nmconnection")
+
+    def run(command, **kwargs):
+      if command[:2] == ["sudo", "install"] and command[-1] == str(second_canonical):
+        raise OSError("write failed")
+      return self.run_file_command(command, **kwargs)
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run):
+      store = self.make_store()
+
+      with self.assertRaises(OSError):
+        store.save_network("Duplicate", psk="replacement-password")
+
+    assert {path: path.read_text() for path in (first_path, second_path)} == originals
+    assert {entry["psk"] for ssid, entry in store.get_profiles() if ssid == "Duplicate"} == {"first-password", "second-password"}
+
   def test_runtime_cleanup_failure_preserves_noncanonical_persistent_profile(self):
     persistent_path = Path(write_profile(
       self.persistent, "saved.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="original-password",
