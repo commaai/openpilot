@@ -22,7 +22,7 @@ def read(path: Path) -> str | None:
 def read_int(path: Path, base: int = 10) -> int:
   try:
     return int(path.read_text(), base)
-  except (OSError, ValueError):
+  except (OSError, ValueError, TypeError):
     return 0
 
 
