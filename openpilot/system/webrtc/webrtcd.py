@@ -280,9 +280,8 @@ class StreamSession:
 
         match msg_type:
           case "livestreamCameraSwitch":
-            # only needed for 1 track stream
-            if len(self.video_tracks) == 1:
-              self.video_tracks[0].switch_camera(payload["data"]["camera"])
+            # camera switch only applies to first track or only track
+            self.video_tracks[0].switch_camera(payload["data"]["camera"])
           case "livestreamSettings":
             if self.bitrate_controller is not None:
               self.bitrate_controller.set_quality(payload["data"]["quality"])
