@@ -1,0 +1,17 @@
+BO_ 404 STEERING_CONTROL: 4 EON
+ SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
+ SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
+ SG_ COUNTER : 29|2@0+ (1,0) [0|15] "" EPS
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EPS
+ SG_ STEER_TORQUE : 7|16@0- (-1,0) [-32767|32767] "" EPS
+
+BO_ 399 STEER_STATUS: 7 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|16@0- (-1,0) [-2985|2985] "tbd" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (-0.1,0) [-31000|31000] "deg/s" EON
+ SG_ STEER_STATUS : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ STEER_CONTROL_ACTIVE : 35|1@0+ (1,0) [0|1] "" EON
+ SG_ STEER_CONFIG_INDEX : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+
+VAL_ 399 STEER_STATUS 7 "permanent_fault" 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 1 "driver_steering" 0 "normal" ;

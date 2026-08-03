@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.driverkit</key>
+	<true/>
+	<key>com.apple.developer.driverkit.transport.pci</key>
+	<array>
+		<dict>
+			<key>IOPCIPrimaryMatch</key>
+			<string>0xFFFFFFFF&amp;0x00000000</string>
+		</dict>
+	</array>
+	<key>com.apple.developer.driverkit.allow-any-userclient-access</key>
+	<true/>
+</dict>
+</plist>
