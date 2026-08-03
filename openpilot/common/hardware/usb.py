@@ -1,8 +1,7 @@
 import os
 from pathlib import Path
 
-CHESTNUT_VENDOR_ID = 0xADD1
-CHESTNUT_PRODUCT_ID = 0x0001
+CHESTNUT_USB_IDS = ((0xADD1, 0x0001), (0x3801, 0x0001))
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
 
 
@@ -75,7 +74,7 @@ def set_usb_state(device_state, devices: list[dict]) -> None:
     entry.product = device["product"]
     entry.linkErrorCount = device["linkErrorCount"]
 
-    if (entry.vendorId, entry.productId) == (CHESTNUT_VENDOR_ID, CHESTNUT_PRODUCT_ID):
+    if (entry.vendorId, entry.productId) in CHESTNUT_USB_IDS:
       chestnut_present = True
 
   device_state.chestnutPresent = chestnut_present
