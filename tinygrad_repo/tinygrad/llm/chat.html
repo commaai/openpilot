@@ -1,0 +1,38 @@
+<!DOCTYPE html><html><head><title>tinygrad chat</title><style>
+  * { margin: 0 }
+  body { background: #212121; color: #e3e3e3; font-family: system-ui;
+         height: 100vh; display: flex; flex-direction: column }
+  #chat { flex: 1; overflow-y: auto; padding: 20px }
+  .msg { padding: 10px 16px; margin: 8px 0; white-space: pre-wrap; border-radius: 18px }
+  .user { background: #2f2f2f; margin-left: auto; width: fit-content; max-width: 70% }
+  #input { max-width: 768px; width: 100%; margin: 20px auto; padding: 14px 20px;
+           background: #2f2f2f; color: inherit; font: inherit;
+           border: none; outline: none; resize: none; border-radius: 24px; field-sizing: content }
+</style></head><body><div id="chat"></div>
+<textarea id="input" rows="1" placeholder="Ask anything" autofocus></textarea>
+<script>
+  input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } }
+  const msgs = [];
+  async function send() {
+    if (!input.value.trim()) return;
+    msgs.push({role: 'user', content: input.value.trim()});
+    chat.innerHTML += '<div class="msg user">' + input.value.trim().replace(/</g, '&lt;') + '</div>';
+    input.value = '';
+    const d = document.createElement('div'); d.className = 'msg'; chat.appendChild(d);
+    const r = await fetch('/v1/chat/completions', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'llama', messages: msgs, stream: true, temperature: 0.7})});
+    let buf = '';
+    for (const rd = r.body.getReader(), dec = new TextDecoder();;) {
+      const {done, value} = await rd.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const ln of lines)
+        if (ln.startsWith('data: ') && !ln.includes('[DONE]'))
+          try { d.textContent += JSON.parse(ln.slice(6)).choices[0]?.delta?.content || '' } catch {}
+      chat.scrollTop = chat.scrollHeight;
+    }
+    msgs.push({role: 'assistant', content: d.textContent});
+  }
+</script></body></html>
