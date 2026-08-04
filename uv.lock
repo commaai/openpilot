@@ -1,6 +1,10 @@
 version = 1
 revision = 3
 requires-python = ">=3.12.3, <3.13"
+resolution-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "platform_machine != 'x86_64' or sys_platform != 'linux'",
+]
 
 [manifest]
 overrides = [{ name = "opendbc", editable = "opendbc_repo" }]
@@ -192,14 +196,34 @@ wheels = [
 name = "comma-deps-raylib"
 version = "6.0.0.1.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "platform_machine != 'x86_64' or sys_platform != 'linux'",
+]
 dependencies = [
-    { name = "cffi" },
+    { name = "cffi", marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9c/21/59509b2758e3612c63336df5534ea3b36e472e06c18a50f0b96c32e8e3e0/comma_deps_raylib-6.0.0.1.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:838a6115f508ee4ca0e4c84975c0892d67c10f94b11dd2bc0e023ad65138d010", size = 2004199, upload-time = "2026-07-23T17:03:17.648Z" },
     { url = "https://files.pythonhosted.org/packages/c2/f5/84e135ac611a6dfe8b95ff989097c200770907907afba78455d4c863981e/comma_deps_raylib-6.0.0.1.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:9347fe18799c209dd1af746a44a94433bae69d4644de10e11dcc307aecd87fb1", size = 7203023, upload-time = "2026-07-23T17:03:21.525Z" },
     { url = "https://files.pythonhosted.org/packages/fe/1b/ae0959dac622f7169de230ec98c6555870ae0ad4f61e7b8d32922fa960ed/comma_deps_raylib-6.0.0.1.post98-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:f9fd393fbaf1f16d7785be0b2252ef3b14a953c93d89296ed9a67bc7063de882", size = 5055448, upload-time = "2026-07-23T17:03:25.737Z" },
 ]
+
+[[package]]
+name = "comma-deps-raylib"
+version = "6.0.0.1.post100"
+source = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" }
+resolution-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "cffi", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+]
+wheels = [
+    { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:fd7816be5038d8918b53301e1d1624a404bd40879e9cd65a0bd3d8721cae9742" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cffi", specifier = ">=1.17.1" }]
 
 [[package]]
 name = "comma-deps-zeromq"
@@ -579,7 +603,8 @@ dependencies = [
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
-    { name = "comma-deps-raylib" },
+    { name = "comma-deps-raylib", version = "6.0.0.1.post98", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
+    { name = "comma-deps-raylib", version = "6.0.0.1.post100", source = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
     { name = "inputs" },
@@ -640,7 +665,8 @@ requires-dist = [
     { name = "comma-deps-json11" },
     { name = "comma-deps-libusb", marker = "extra == 'tools'" },
     { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
-    { name = "comma-deps-raylib" },
+    { name = "comma-deps-raylib", marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
+    { name = "comma-deps-raylib", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
     { name = "coverage", marker = "extra == 'testing'" },
