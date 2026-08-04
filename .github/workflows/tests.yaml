@@ -91,8 +91,8 @@ jobs:
       timeout-minutes: 1
       run: scripts/lint/lint.sh
 
-  raylib_headless_runtime:
-    name: raylib headless runtime (${{ matrix.runner }})
+  raylib_headless_rendering:
+    name: raylib headless rendering (${{ matrix.runner }})
     strategy:
       fail-fast: false
       matrix:
