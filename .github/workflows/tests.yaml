@@ -91,6 +91,28 @@ jobs:
       timeout-minutes: 1
       run: scripts/lint/lint.sh
 
+  raylib_headless_runtime:
+    name: raylib headless runtime (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{
+          (github.repository == 'commaai/openpilot') &&
+          ((github.event_name != 'pull_request') ||
+          (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
+          && fromJSON('["namespace-profile-amd64-8x16", "ubuntu-24.04"]')
+          || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: recursive
+    - run: tools/setup_dependencies.sh
+    - name: Test raylib package
+      env:
+        RAYLIB_BACKEND: headless
+      run: .venv/bin/python -c "import raylib; raylib.smoketest()"
+
   unit_tests:
     name: unit tests
     runs-on: ${{
