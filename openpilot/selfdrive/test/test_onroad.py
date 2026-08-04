@@ -107,6 +107,10 @@ def cputime_total(ct):
 class TestOnroad(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
 
+  def setUp(self):
+    # Hardware setup is handled once for the full onroad test in setup_class.
+    unittest.TestCase.setUp(self)
+
   @classmethod
   def setup_class(cls):
     if "DEBUG" in os.environ:
