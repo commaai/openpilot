@@ -19,12 +19,12 @@ function agnos_init {
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
-    AGNOS_PY="$DIR/system/hardware/tici/agnos.py"
-    MANIFEST="$DIR/system/hardware/tici/agnos.json"
+    AGNOS_PY="$DIR/openpilot/common/hardware/tici/agnos.py"
+    MANIFEST="$DIR/openpilot/system/hardware/tici/agnos.json"
     if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
-    $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
+    $DIR/openpilot/common/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 
@@ -70,6 +70,14 @@ function launch {
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
 
+  # submodule package symlinks for PYTHONPATH imports on device.
+  # on PC these come from editable installs via pyproject.toml / uv.
+  ln -sfn msgq_repo/msgq msgq
+  ln -sfn opendbc_repo/opendbc opendbc
+  ln -sfn rednose_repo/rednose rednose
+  ln -sfn teleoprtc_repo/teleoprtc teleoprtc
+  ln -sfn tinygrad_repo/tinygrad tinygrad
+
   # hardware specific init
   if [ -f /AGNOS ]; then
     agnos_init
@@ -79,7 +87,7 @@ function launch {
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
-  cd system/manager
+  cd openpilot/system/manager
   if [ ! -f $DIR/prebuilt ]; then
     ./build.py
   fi

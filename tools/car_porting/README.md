@@ -6,13 +6,13 @@ Check out [this blog post](https://blog.comma.ai/how-to-write-a-car-port-for-ope
 
 Testing car ports in your car is very time-consuming. Check out these utilities to do basic checks on your work before running it in your car.
 
-### [Cabana](/tools/cabana/README.md)
+### [Cabana](/openpilot/tools/cabana/README.md)
 
 View your car's CAN signals through DBC files, which openpilot uses to parse and create messages that talk to the car.
 
 Example:
 ```bash
-> tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
+> openpilot/tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
 ```
 
 ### [tools/car_porting/auto_fingerprint.py](/tools/car_porting/auto_fingerprint.py)
@@ -25,17 +25,17 @@ Example:
 Attempting to add fw version for:  OUTBACK
 ```
 
-### [selfdrive/car/tests/test_car_interfaces.py](/selfdrive/car/tests/test_car_interfaces.py)
+### [openpilot/selfdrive/car/tests/test_car_interfaces.py](/openpilot/selfdrive/car/tests/test_car_interfaces.py)
 
 Finds common bugs for car interfaces, without even requiring a route.
 
 
 #### Example: Typo in signal name
 ```bash
-> pytest selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
+> tools/test_runner.py openpilot/selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
 
 =====================================================================
-FAILED selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
+FAILED openpilot/selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
 
 ```
 
@@ -52,9 +52,9 @@ FAIL: test_panda_safety_carstate (__main__.CarModelTestCase.test_panda_safety_ca
 Assert that panda safety matches openpilot's carState
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/batman/xx/openpilot/openpilot/selfdrive/car/tests/test_models.py", line 380, in test_panda_safety_carstate
-    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
-AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'gasPressed': 116}
+  File "/home/batman/openpilot/opendbc_repo/opendbc/car/tests/test_models.py", line 440, in test_panda_safety_carstate
+    self.assertFalse(failed_checks, f"panda safety doesn't agree with CarState: {failed_checks}")
+AssertionError: {'gasPressed': 116} is not false : panda safety doesn't agree with CarState: {'gasPressed': 116}
 ```
 
 ## Jupyter notebooks

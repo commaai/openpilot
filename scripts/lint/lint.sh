@@ -13,9 +13,6 @@ cd $ROOT
 
 FAILED=0
 
-IGNORED_FILES="uv\.lock|docs\/CARS.md"
-IGNORED_DIRS="^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^cereal.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
-
 function run() {
   shopt -s extglob
   case $1 in
@@ -48,14 +45,15 @@ function run_tests() {
   ALL_FILES=$1
   PYTHON_FILES=$2
 
-  run "ruff" ruff check $ROOT --quiet
-  run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
-  run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
+  run "ruff" ruff check openpilot --quiet
+  run "check_indentation" $DIR/check_indentation.py $PYTHON_FILES
+  run "check_added_large_files" $DIR/check_added_large_files.py --maxkb=120 $ALL_FILES
+  run "check_shebang_scripts_are_executable" $DIR/check_shebang_scripts_are_executable.py $ALL_FILES
   run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
   run "check_nomerge_comments" $DIR/check_nomerge_comments.sh $ALL_FILES
 
   if [[ -z "$FAST" ]]; then
-    run "ty" ty check
+    run "ty" ty check openpilot
     run "codespell" codespell $ALL_FILES
   fi
 
@@ -69,6 +67,7 @@ function help() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Tests:${NC}"
   echo -e "  ${BOLD}ruff${NC}"
+  echo -e "  ${BOLD}check_indentation${NC}"
   echo -e "  ${BOLD}ty${NC}"
   echo -e "  ${BOLD}codespell${NC}"
   echo -e "  ${BOLD}check_added_large_files${NC}"
@@ -105,7 +104,7 @@ done
 RUN=$([ -z "$RUN" ] && echo "" || echo "!($(echo $RUN | sed 's/ /|/g'))")
 SKIP="@($(echo $SKIP | sed 's/ /|/g'))"
 
-GIT_FILES="$(git ls-files | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")"
+GIT_FILES="$(git ls-files openpilot)"
 ALL_FILES=""
 for f in $GIT_FILES; do
   if [[ -f $f ]]; then

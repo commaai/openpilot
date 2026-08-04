@@ -17,10 +17,5 @@
     "**/.git",
     "**/.venv",
     "**/__pycache__",
-    // exclude directories that should be using the symlinked version
-    "common/**",
-    "selfdrive/**",
-    "system/**",
-    "tools/**",
   ]
 }
