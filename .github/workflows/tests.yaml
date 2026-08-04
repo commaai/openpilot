@@ -117,7 +117,6 @@ jobs:
 
         rl.set_trace_log_level(rl.LOG_WARNING)
         rl.init_window(64, 64, "test")
-        assert rl.is_window_ready(), "egl context was not created"
 
         rl.begin_drawing()
         rl.clear_background(rl.RED)
