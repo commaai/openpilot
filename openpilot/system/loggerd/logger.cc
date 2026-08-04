@@ -39,6 +39,14 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setKernelVersion(util::read_file("/proc/version"));
   init.setOsVersion(util::read_file("/VERSION"));
 
+  if (auto health = Hardware::get_ufs_health()) {
+    auto ufs_health = init.initUfsHealth();
+    ufs_health.setPreEolInfo(health->pre_eol_info);
+    ufs_health.setLifeTimeEstimateA(health->life_time_estimate_a);
+    ufs_health.setLifeTimeEstimateB(health->life_time_estimate_b);
+    ufs_health.setVendorHealthReport(capnp::Data::Reader(health->vendor_health_report.data(), health->vendor_health_report.size()));
+  }
+
   // log params
   Params params(util::getenv("PARAMS_COPY_PATH", ""));
   std::map<std::string, std::string> params_map = params.readAll();

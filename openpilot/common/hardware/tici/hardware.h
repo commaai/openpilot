@@ -1,16 +1,62 @@
 #pragma once
 
 #include <cassert>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <fcntl.h>
 #include <fstream>
 #include <map>
 #include <string>
 #include <algorithm>  // for std::clamp
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include "common/util.h"
 #include "common/hardware/base.h"
 
 class HardwareTici : public HardwareNone {
 public:
+  static std::optional<UfsHealth> get_ufs_health() {
+    constexpr unsigned long UFS_IOCTL_QUERY = 0x5388;
+    constexpr uint32_t UPIU_QUERY_OPCODE_READ_DESC = 0x1;
+    constexpr uint8_t QUERY_DESC_IDN_HEALTH = 0x9;
+    constexpr uint16_t QUERY_DESC_HEALTH_SIZE = 0x25;
+
+    struct UfsQuery {
+      uint32_t opcode;
+      uint8_t idn;
+      uint8_t reserved;
+      uint16_t buf_size;
+      std::array<uint8_t, QUERY_DESC_HEALTH_SIZE> buffer;
+    };
+    static_assert(offsetof(UfsQuery, buffer) == 8);
+
+    UfsQuery query = {};
+    query.opcode = UPIU_QUERY_OPCODE_READ_DESC;
+    query.idn = QUERY_DESC_IDN_HEALTH;
+    query.buf_size = QUERY_DESC_HEALTH_SIZE;
+
+    int fd = open("/dev/sda", O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+      return std::nullopt;
+    }
+
+    int ret = ioctl(fd, UFS_IOCTL_QUERY, &query);
+    close(fd);
+    if (ret != 0 || query.buf_size < 5 || query.buf_size > query.buffer.size() ||
+        query.buffer[0] != query.buf_size || query.buffer[1] != QUERY_DESC_IDN_HEALTH) {
+      return std::nullopt;
+    }
+
+    return UfsHealth{
+      query.buffer[2],
+      query.buffer[3],
+      query.buffer[4],
+      std::vector<uint8_t>(query.buffer.begin() + 5, query.buffer.begin() + query.buf_size),
+    };
+  }
+
   static std::string get_name() {
     static const std::string name = []() {
       std::string model = util::read_file("/sys/firmware/devicetree/base/model");

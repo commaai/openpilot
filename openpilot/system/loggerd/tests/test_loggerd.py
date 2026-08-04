@@ -178,6 +178,15 @@ class TestLoggerd(OpenpilotTestCase):
     assert initData.dirty != bool(os.environ["CLEAN"])
     assert initData.version == get_version()
 
+    if TICI:
+      assert initData._has("ufsHealth")
+      assert initData.ufsHealth.preEolInfo in (1, 2, 3)
+      assert 1 <= initData.ufsHealth.lifeTimeEstimateA <= 11
+      assert 1 <= initData.ufsHealth.lifeTimeEstimateB <= 11
+      assert len(initData.ufsHealth.vendorHealthReport) == 32
+    else:
+      assert not initData._has("ufsHealth")
+
     if os.path.isfile("/proc/cmdline"):
       with open("/proc/cmdline") as f:
         assert list(initData.kernelArgs) == f.read().strip().split(" ")
