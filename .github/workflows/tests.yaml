@@ -108,10 +108,26 @@ jobs:
       with:
         submodules: recursive
     - run: tools/setup_dependencies.sh
-    - name: Test raylib package
+    - name: Test raylib rendering
       env:
         RAYLIB_BACKEND: headless
-      run: .venv/bin/python -c "import raylib; raylib.smoketest()"
+      run: |
+        .venv/bin/python - <<'PY'
+        import pyray as rl
+
+        rl.set_trace_log_level(rl.LOG_WARNING)
+        rl.init_window(64, 64, "test")
+        assert rl.is_window_ready(), "egl context was not created"
+
+        rl.begin_drawing()
+        rl.clear_background(rl.RED)
+        rl.end_drawing()
+
+        pixel = rl.get_image_color(rl.load_image_from_screen(), 0, 0)
+        rl.close_window()
+
+        assert (pixel.r, pixel.g, pixel.b) == rl.RED[:3], f"expected red, got {pixel.r},{pixel.g},{pixel.b}"
+        PY
 
   unit_tests:
     name: unit tests
