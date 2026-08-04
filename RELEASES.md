@@ -1,13 +1,11 @@
-Version 0.11.2 (2026-07-24)
+Version 0.11.2 (2026-08-11)
 =======================
 * New driving model
   * Big model with 880M parameters
-* New driver monitoring model
-  * Reduced false positives
-  * Improved face detection on comma four
 * Support for big models running on an external GPU
 * Live stream cameras from comma connect
-* Remote control for comma body
+* Generate dashcam clips from comma connect
+* Remote comma body control from comma connect
 * New alert sounds
 * Volkswagen ID.4 2021-2025 support thanks to DaHansi!
 
