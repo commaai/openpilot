@@ -49,7 +49,7 @@ def usbgpu_present() -> bool:
   for d in USB_DEVICES_PATH.glob("*"):
     try:
       usb_id = (int((d / "idVendor").read_text(), 16), int((d / "idProduct").read_text(), 16))
-      if usb_id in CHESTNUT_USB_IDS and int((d / "bcdDevice").read_text(), 16) == CHESTNUT_FW_VERSION:
+      if usb_id in CHESTNUT_USB_IDS and (d / "product").read_text().strip() == CHESTNUT_FW_VERSION:
         return True
     except Exception:
       pass
