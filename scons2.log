@@ -1,0 +1,52 @@
+scons: Reading SConscript files ...
+kj/filesystem-disk-unix.c++:1734: warning: PWD environment variable doesn't match current directory; pwd = /home/jpli/Project/openpilot-thermal
+scons: done reading SConscript files.
+scons: Building targets ...
+progress: 4.5
+progress: 9.1
+  [CXX] msgq_repo/msgq/ipc.os
+  [CXX] msgq_repo/msgq/event.os
+progress: 13.6
+  [CXX] msgq_repo/msgq/impl_msgq.os
+  [CXX] msgq_repo/msgq/impl_fake.os
+progress: 18.2
+  [CXX] msgq_repo/msgq/msgq.os
+progress: 22.7
+  [CXX] msgq_repo/msgq/visionipc/visionipc.os
+progress: 27.3
+  [CXX] msgq_repo/msgq/visionipc/visionipc_server.os
+  [CXX] msgq_repo/msgq/visionipc/visionipc_client.os
+progress: 31.8
+  [CXX] msgq_repo/msgq/visionipc/visionbuf.os
+progress: 36.4
+progress: 40.9
+progress: 45.5
+cythonize msgq_repo/msgq/ipc_pyx.pyx
+progress: 50.0
+progress: 54.5
+progress: 59.1
+progress: 63.6
+progress: 68.2
+progress: 72.7
+progress: 77.3
+progress: 81.8
+progress: 86.4
+progress: 90.9
+progress: 95.5
+  [CXX] msgq_repo/msgq/msgq_tests.o
+progress: 100.0
+cythonize msgq_repo/msgq/visionipc/visionipc_pyx.pyx
+  [AR] msgq_repo/libmsgq.a
+  [RANLIB] msgq_repo/libmsgq.a
+  [LINK] msgq_repo/msgq/test_runner
+Compiling /home/jpli/Project/openpilot-thermal/msgq_repo/msgq/ipc_pyx.pyx because it changed.
+[1/1] Cythonizing /home/jpli/Project/openpilot-thermal/msgq_repo/msgq/ipc_pyx.pyx
+  [AR] msgq_repo/libvisionipc.a
+  [RANLIB] msgq_repo/libvisionipc.a
+  [CXX] msgq_repo/msgq/ipc_pyx.o
+Compiling /home/jpli/Project/openpilot-thermal/msgq_repo/msgq/visionipc/visionipc_pyx.pyx because it changed.
+[1/1] Cythonizing /home/jpli/Project/openpilot-thermal/msgq_repo/msgq/visionipc/visionipc_pyx.pyx
+  [CXX] msgq_repo/msgq/visionipc/visionipc_pyx.o
+  [LINK] msgq_repo/msgq/ipc_pyx.so
+  [LINK] msgq_repo/msgq/visionipc/visionipc_pyx.so
+scons: done building targets.

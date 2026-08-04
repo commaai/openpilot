@@ -1,0 +1,24 @@
+scons: Reading SConscript files ...
+kj/filesystem-disk-unix.c++:1734: warning: PWD environment variable doesn't match current directory; pwd = /home/jpli/Project/openpilot-thermal
+scons: done reading SConscript files.
+scons: Building targets ...
+progress: 9.6
+progress: 19.2
+progress: 28.8
+progress: 38.5
+progress: 48.1
+progress: 57.7
+progress: 67.3
+capnpc --src-prefix=openpilot/cereal --src-prefix=opendbc_repo/opendbc/car --import-path=opendbc_repo/opendbc/car openpilot/cereal/log.capnp openpilot/cereal/deprecated.capnp openpilot/cereal/custom.capnp opendbc_repo/opendbc/car/car.capnp -o c++:openpilot/cereal/gen/cpp/
+progress: 76.9
+progress: 86.5
+progress: 96.2
+progress: 100.0
+  [CXX] openpilot/common/swaglog.o
+  [CXX] openpilot/common/tests/test_swaglog.o
+  [CXX] openpilot/common/params.o
+  [AR] openpilot/common/libcommon.a
+  [RANLIB] openpilot/common/libcommon.a
+  [LINK] openpilot/common/tests/test_swaglog
+  [LINK] openpilot/common/libparams_c.so
+scons: done building targets.

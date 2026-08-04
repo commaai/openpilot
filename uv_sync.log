@@ -1,0 +1,129 @@
+   Building openpilot @ file:///home/jpli/Project/openpilot-thermal
+   Building msgq @ file:///home/jpli/Project/openpilot-thermal/msgq_repo
+   Building opendbc @ file:///home/jpli/Project/openpilot-thermal/opendbc_repo
+   Building pandacan @ file:///home/jpli/Project/openpilot-thermal/panda
+   Building rednose @ file:///home/jpli/Project/openpilot-thermal/rednose_repo
+   Building teleoprtc @ file:///home/jpli/Project/openpilot-thermal/teleoprtc_repo
+   Building tinygrad @ file:///home/jpli/Project/openpilot-thermal/tinygrad_repo
+Downloading cryptography (4.5MiB)
+Downloading comma-deps-acados (12.5MiB)
+Downloading kiwisolver (1.4MiB)
+Downloading pycryptodome (2.2MiB)
+Downloading fonttools (4.8MiB)
+Downloading zstandard (5.3MiB)
+Downloading ty (12.0MiB)
+Downloading pillow (6.6MiB)
+Downloading matplotlib (9.6MiB)
+Downloading pycapnp (5.1MiB)
+Downloading comma-deps-imgui (2.5MiB)
+Downloading libdatachannel-py (1.7MiB)
+Downloading comma-deps-eigen (2.2MiB)
+Downloading ruff (10.9MiB)
+Downloading cython (3.2MiB)
+Downloading numpy (15.9MiB)
+Downloading comma-deps-ffmpeg (4.5MiB)
+Downloading comma-deps-gcc-arm-none-eabi (16.2MiB)
+Downloading scons (3.9MiB)
+Downloading comma-deps-capnproto (2.5MiB)
+Downloading comma-deps-git-lfs (4.7MiB)
+Downloading comma-deps-raylib (4.8MiB)
+   Building spidev==3.8
+      Built rednose @ file:///home/jpli/Project/openpilot-thermal/rednose_repo
+      Built pandacan @ file:///home/jpli/Project/openpilot-thermal/panda
+      Built msgq @ file:///home/jpli/Project/openpilot-thermal/msgq_repo
+      Built teleoprtc @ file:///home/jpli/Project/openpilot-thermal/teleoprtc_repo
+      Built openpilot @ file:///home/jpli/Project/openpilot-thermal
+      Built tinygrad @ file:///home/jpli/Project/openpilot-thermal/tinygrad_repo
+      Built opendbc @ file:///home/jpli/Project/openpilot-thermal/opendbc_repo
+ Downloading kiwisolver
+ Downloading libdatachannel-py
+      Built spidev==3.8
+ Downloading pycryptodome
+ Downloading comma-deps-imgui
+ Downloading comma-deps-capnproto
+ Downloading comma-deps-eigen
+ Downloading cython
+ Downloading scons
+ Downloading cryptography
+ Downloading comma-deps-ffmpeg
+ Downloading fonttools
+ Downloading pycapnp
+ Downloading zstandard
+ Downloading comma-deps-git-lfs
+ Downloading pillow
+ Downloading matplotlib
+ Downloading ruff
+ Downloading ty
+ Downloading comma-deps-acados
+ Downloading numpy
+ Downloading comma-deps-gcc-arm-none-eabi
+ Downloading comma-deps-raylib
+Prepared 63 packages in 3.55s
+Installed 67 packages in 115ms
+ + certifi==2026.7.22
+ + cffi==2.1.0
+ + charset-normalizer==3.4.9
+ + codespell==2.4.3
+ + comma-deps-acados==0.2.2.post98
+ + comma-deps-bootstrap-icons==1.10.5.0.post98
+ + comma-deps-capnproto==1.0.1.post98
+ + comma-deps-eigen==3.4.0.post98
+ + comma-deps-ffmpeg==7.1.0.post98
+ + comma-deps-gcc-arm-none-eabi==13.2.1.post98
+ + comma-deps-git-lfs==3.6.1.post98
+ + comma-deps-imgui==1.92.7.post98
+ + comma-deps-json11==20170411.0.post98
+ + comma-deps-libusb==1.0.29.post98
+ + comma-deps-ncurses==6.5.post98
+ + comma-deps-raylib==6.0.0.1.post98
+ + comma-deps-zeromq==4.3.5.post98
+ + comma-deps-zstd==1.5.6.post98
+ + contourpy==1.3.3
+ + coverage==7.15.3
+ + cryptography==50.0.0
+ + cycler==0.12.1
+ + cython==3.2.9
+ + fonttools==4.63.0
+ + idna==3.18
+ + importlib-resources==7.1.0
+ + inputs==0.5
+ + jeepney==0.9.0
+ + kiwisolver==1.5.0
+ + libdatachannel-py==2026.1.0.dev2
+ + libusb-package==1.0.30.0
+ + libusb1==3.4.0
+ + matplotlib==3.11.1
+ + mpmath==1.3.0
+ + msgq==0.0.1 (from file:///home/jpli/Project/openpilot-thermal/msgq_repo)
+ + numpy==2.5.1
+ + opendbc==0.3.1 (from file:///home/jpli/Project/openpilot-thermal/opendbc_repo)
+ + openpilot==0.1.0 (from file:///home/jpli/Project/openpilot-thermal)
+ + packaging==26.2
+ + pandacan==0.0.10 (from file:///home/jpli/Project/openpilot-thermal/panda)
+ + pillow==12.3.0
+ + pycapnp==2.1.0
+ + pycparser==3.0
+ + pycryptodome==3.23.0
+ + pyjwt==2.13.0
+ + pyparsing==3.3.2
+ + python-dateutil==2.9.0.post0
+ + pyzmq==27.1.0
+ + qrcode==8.2
+ + rednose==0.0.1 (from file:///home/jpli/Project/openpilot-thermal/rednose_repo)
+ + requests==2.34.2
+ + ruff==0.16.1
+ + scons==4.10.1
+ + sentry-sdk==2.66.1
+ + setproctitle==1.3.7
+ + setuptools==83.0.0
+ + six==1.17.0
+ + sounddevice==0.5.5
+ + spidev==3.8
+ + sympy==1.14.0
+ + teleoprtc==1.0.1 (from file:///home/jpli/Project/openpilot-thermal/teleoprtc_repo)
+ + tinygrad==0.13.0 (from file:///home/jpli/Project/openpilot-thermal/tinygrad_repo)
+ + tqdm==4.70.0
+ + ty==0.0.65
+ + urllib3==2.7.0
+ + websocket-client==1.9.0
+ + zstandard==0.25.0

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import fcntl
+import math
 import os
 import queue
 import struct
@@ -55,6 +56,19 @@ else:
 
 # Override to highest thermal band when offroad and above this temp
 OFFROAD_DANGER_TEMP = 85 if HARDWARE.get_device_type() == "mici" else 75
+
+# how long we tolerate zero valid thermal readings before treating the
+# thermal state as unknown (sensor reads can fail transiently, e.g. EIO)
+THERMAL_READINGS_STALE_TIMEOUT = 10.
+
+
+def max_valid_temp(temps) -> float:
+  # empty means the platform doesn't have these sensors; all-NaN means the
+  # reads are failing and the failure must propagate, not read as 0
+  if len(temps) == 0:
+    return 0.
+  valid = [t for t in temps if not math.isnan(t)]
+  return max(valid) if valid else float("nan")
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
@@ -178,6 +192,8 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
   offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
+  last_valid_temp_ts = time.monotonic()
+  thermal_readings_stale = False
   should_start_prev = False
   in_car = False
   engaged_prev = False
@@ -256,17 +272,32 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     set_usb_state(msg.deviceState, last_hw_state.usb_state)
 
-    # this subset is only used for offroad
+    # this subset is only used for offroad. sensor reads can fail (NaN);
+    # aggregate over the valid readings and never let NaN into the filters
     temp_sources = [
       msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC, default=0.),
-      max(msg.deviceState.gpuTempC, default=0.),
+      max_valid_temp(msg.deviceState.cpuTempC),
+      max_valid_temp(msg.deviceState.gpuTempC),
     ]
-    offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
+    valid_sources = [t for t in temp_sources if not math.isnan(t)]
+    if len(valid_sources) > 0:
+      offroad_comp_temp = offroad_temp_filter.update(max(valid_sources))
+    else:
+      offroad_comp_temp = offroad_temp_filter.x
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
-    all_comp_temp = all_temp_filter.update(max(temp_sources))
+    temp_sources.append(max_valid_temp(msg.deviceState.pmicTempC))
+    valid_sources = [t for t in temp_sources if not math.isnan(t)]
+    if len(valid_sources) > 0:
+      all_comp_temp = all_temp_filter.update(max(valid_sources))
+      last_valid_temp_ts = time.monotonic()
+    else:
+      all_comp_temp = all_temp_filter.x
+
+    stale_prev = thermal_readings_stale
+    thermal_readings_stale = time.monotonic() - last_valid_temp_ts > THERMAL_READINGS_STALE_TIMEOUT
+    if thermal_readings_stale and not stale_prev:
+      cloudlog.error("thermal readings stale, no valid sensor for %.0fs", THERMAL_READINGS_STALE_TIMEOUT)
     msg.deviceState.maxTempC = all_comp_temp
 
     msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
@@ -296,8 +327,11 @@ def hardware_thread(end_event, hw_queue) -> None:
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
 
-    # must be at an engageable thermal band to go onroad
-    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.overheated
+    # must be at an engageable thermal band to go onroad; if we can't verify
+    # the device is cool (prolonged sensor failure), don't start a drive.
+    # while already onroad, stale readings hold the last band and log instead
+    # of forcing a disengagement over a sensor failure.
+    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.overheated and not thermal_readings_stale
 
     # ensure device is fully booted
     startup_conditions["device_booted"] = startup_conditions.get("device_booted", False) or HARDWARE.booted()
