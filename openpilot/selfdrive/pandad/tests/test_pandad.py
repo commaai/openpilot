@@ -18,6 +18,13 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 class TestPandad(OpenpilotTestCase):
   TICI_TEST = True
+
+  def setUp(self):
+    super().setUp()
+    managed_processes['pandad'].stop()
+    if not Panda.list():
+      self._run_test()
+
   def teardown_method(self):
     managed_processes['pandad'].stop()
 

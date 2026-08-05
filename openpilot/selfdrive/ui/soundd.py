@@ -165,6 +165,7 @@ class Soundd:
   def soundd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
+    micd.patch_sounddevice(sd)
 
     sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
 
