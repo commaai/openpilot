@@ -67,34 +67,40 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
 
 
 class ChestnutState:
-  # only modeld has access to chestnut
+  # only modeld can access chestnut
   def __init__(self, pm: PubMaster):
     self.pm = pm
     self.interval = 1. / SERVICE_LIST['chestnutState'].frequency
     self.last_read = 0.
-    self.logged = False
+    self.error_logged = False
 
   def update(self) -> None:
-    if time.monotonic() - self.last_read < self.interval:
+    now = time.monotonic()
+    if now - self.last_read < self.interval:
       return
+    self.last_read = now
 
-    self.last_read = time.monotonic()
-    temp, power = 0., 0.
+    cs = log.ChestnutState.new_message()
+    valid = False
     try:
-      dev = Device["AMD"]
-      smu = dev.iface.dev_impl.smu
-      power = float(smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True))
-      if dev.arch == "gfx1200":
-        metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.SMU_TABLE_SMU_METRICS)
-        temp = float(metrics.SmuMetrics.MovingAverageVclk0Frequency)
+      smu = Device["AMD"].iface.dev_impl.smu
+      metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+      cs.tempC = max(metrics.AvgTemperature[:smu.smu_mod.TEMP_COUNT])
+      cs.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
+      cs.powerW = metrics.AverageSocketPower
+      cs.powerTargetW = smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
+      cs.gpuUsagePercent = metrics.AverageGfxActivity
+      cs.gpuClockMhz = metrics.CurrClock[smu.smu_mod.PPCLK_GFXCLK]
+      cs.fanRpm = metrics.AvgFanRpm
+      valid = True
+      self.error_logged = False
     except Exception:
-      if not self.logged:
-        cloudlog.exception("chestnut state read failed")
-        self.logged = True
+      if not self.error_logged:
+        cloudlog.exception("Chestnut metrics read failed")
+        self.error_logged = True
 
-    msg = messaging.new_message('chestnutState', valid=temp > 0.)
-    msg.chestnutState.tempC = temp
-    msg.chestnutState.powerTargetW = power
+    msg = messaging.new_message('chestnutState', valid=valid)
+    msg.chestnutState = cs
     self.pm.send('chestnutState', msg)
 
 
