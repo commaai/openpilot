@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from functools import cache
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
@@ -66,6 +67,12 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                 shouldStop=bool(stop))
 
 
+@cache
+def get_chestnut_power_limit() -> int:
+  smu = Device["AMD"].iface.dev_impl.smu
+  return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
+
+
 def send_chestnut_state(pm: PubMaster) -> None:
   # only modeld can access chestnut
   msg = messaging.new_message('chestnutState', valid=True)
@@ -76,7 +83,7 @@ def send_chestnut_state(pm: PubMaster) -> None:
     state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
     state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
     state.powerDrawW = metrics.AverageSocketPower
-    state.powerLimitW = smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
+    state.powerLimitW = get_chestnut_power_limit()
     state.gpuUsagePercent = metrics.AverageGfxActivity
     state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
     state.fanSpeedRpm = metrics.AvgFanRpm
