@@ -100,6 +100,10 @@ packages = [
   "openpilot",
 ]
 
+artifacts = [
+  "/openpilot/**/*.so",
+]
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
