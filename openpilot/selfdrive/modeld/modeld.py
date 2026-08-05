@@ -73,12 +73,12 @@ def send_chestnut_state(pm: PubMaster) -> None:
   try:
     smu = Device["AMD"].iface.dev_impl.smu
     metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
-    state.tempC = max(metrics.AvgTemperature[:smu.smu_mod.TEMP_COUNT])
+    state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
     state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
     state.powerDrawW = metrics.AverageSocketPower
     state.powerLimitW = smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
     state.gpuUsagePercent = metrics.AverageGfxActivity
-    state.gpuClockMhz = metrics.CurrClock[smu.smu_mod.PPCLK_GFXCLK]
+    state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
     state.fanSpeedRpm = metrics.AvgFanRpm
   except Exception:
     msg.valid = False
