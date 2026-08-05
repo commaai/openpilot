@@ -157,7 +157,7 @@ override-dependencies = [
 ]
 
 [tool.uv.sources]
-comma-deps-raylib = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post101-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" }
+comma-deps-raylib = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post102-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" }
 msgq = { path = "msgq_repo", editable = true }
 opendbc = { path = "opendbc_repo", editable = true }
 pandacan = { path = "panda", editable = true }
