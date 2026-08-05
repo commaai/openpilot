@@ -707,6 +707,11 @@ struct UsbState {
   }
 }
 
+struct ChestnutState {
+  tempC @0 :Float32;
+  powerTargetW @1 :Float32;
+}
+
 struct RadarState @0x9a185389d6fdd05f {
   mdMonoTime @6 :UInt64;  # for debugging
   radarErrors @13 :Car.RadarData.Error;
@@ -2570,6 +2575,7 @@ struct Event {
     procLog @33 :ProcLog;
     clocks @35 :Clocks;
     deviceState @6 :DeviceState;
+    chestnutState @152 :ChestnutState;
     logMessage @18 :Text;
     errorLogMessage @85 :Text;
 

@@ -2,6 +2,7 @@
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
+from tinygrad.device import Device
 import threading
 import time
 import numpy as np
@@ -9,6 +10,7 @@ import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.messaging import PubMaster, SubMaster
+from openpilot.cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
@@ -62,6 +64,38 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
   return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
                                 desiredAcceleration=float(desired_accel),
                                 shouldStop=bool(stop))
+
+
+class ChestnutState:
+  # only modeld has access to chestnut
+  def __init__(self, pm: PubMaster):
+    self.pm = pm
+    self.interval = 1. / SERVICE_LIST['chestnutState'].frequency
+    self.last_read = 0.
+    self.logged = False
+
+  def update(self) -> None:
+    if time.monotonic() - self.last_read < self.interval:
+      return
+
+    self.last_read = time.monotonic()
+    temp, power = 0., 0.
+    try:
+      dev = Device["AMD"]
+      smu = dev.iface.dev_impl.smu
+      power = float(smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True))
+      if dev.arch == "gfx1200":
+        metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.SMU_TABLE_SMU_METRICS)
+        temp = float(metrics.SmuMetrics.MovingAverageVclk0Frequency)
+    except Exception:
+      if not self.logged:
+        cloudlog.exception("chestnut state read failed")
+        self.logged = True
+
+    msg = messaging.new_message('chestnutState', valid=temp > 0.)
+    msg.chestnutState.tempC = temp
+    msg.chestnutState.powerTargetW = power
+    self.pm.send('chestnutState', msg)
 
 
 class FrameMeta:
@@ -204,11 +238,13 @@ def main(demo=False):
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
-  pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
+  pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutState"] if USBGPU else [])
+  pm = PubMaster(pub_socks)
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
   params = Params()
+  chestnut_state = ChestnutState(pm) if USBGPU else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -326,6 +362,9 @@ def main(demo=False):
       model_output = None
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
+
+    if chestnut_state is not None:
+      chestnut_state.update()
 
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')
