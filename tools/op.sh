@@ -366,8 +366,12 @@ function op_check_agnos_update() {
   if read -r -p "Install it now? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
     op_run_command "$OPENPILOT_ROOT/openpilot/common/hardware/tici/agnos.py" --swap \
       "$OPENPILOT_ROOT/openpilot/common/hardware/tici/agnos.json"
-    op_run_command sudo reboot
-    exit 0
+
+    if read -r -p "Reboot now to apply the update? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+      op_run_command sudo reboot
+    else
+      echo "Reboot before starting openpilot to apply the AGNOS update."
+    fi
   fi
 }
 
