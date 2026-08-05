@@ -88,6 +88,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_compile(target, source, env, command=cmd, pkl=target_pkl_path, chunks=chunk_targets):
+    # if chestnut enumerates, check power and PCIe link before building the big model
     probe_cmd = [sys.executable, '-c', 'from openpilot.selfdrive.modeld.compile_modeld import Device; Device[Device.DEFAULT]']
     probe_env = {**env['ENV'], 'DEV': 'USB+AMD'}
     ready = False
