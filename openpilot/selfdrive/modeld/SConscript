@@ -90,13 +90,14 @@ for usbgpu in [False, True] if USBGPU else [False]:
   def do_compile(target, source, env, command=cmd, pkl=target_pkl_path, chunks=chunk_targets):
     probe_cmd = [sys.executable, '-c', 'from openpilot.selfdrive.modeld.compile_modeld import Device; Device[Device.DEFAULT]']
     probe_env = {**env['ENV'], 'DEV': 'USB+AMD'}
-    try:
-      for attempt in range(3):
-        if attempt: time.sleep(1)
+    ready = False
+    for attempt in range(3):
+      if attempt: time.sleep(1)
+      try:
         ready = subprocess.run(probe_cmd, env=probe_env, capture_output=True, timeout=10).returncode == 0
-        if ready: break
-    except subprocess.TimeoutExpired:
-      ready = False
+      except subprocess.TimeoutExpired:
+        pass
+      if ready: break
     if not ready:
       print("Chestnut not ready, skipping big model build")
       return
@@ -105,9 +106,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
     chunk_file(pkl, chunks)
   def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
-  actions = [cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
-  if usbgpu:
-    actions = Action(do_compile, "  [USBGPU] $TARGET")
+  actions = Action(do_compile, "  [USBGPU] $TARGET") if usbgpu else [cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
   node = lenv.Command(
     chunk_targets,
     tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file],
