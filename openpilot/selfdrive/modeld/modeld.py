@@ -66,42 +66,25 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                 shouldStop=bool(stop))
 
 
-class ChestnutState:
+def send_chestnut_state(pm: PubMaster) -> None:
   # only modeld can access chestnut
-  def __init__(self, pm: PubMaster):
-    self.pm = pm
-    self.interval = 1. / SERVICE_LIST['chestnutState'].frequency
-    self.last_read = 0.
-    self.error_logged = False
+  msg = messaging.new_message('chestnutState', valid=True)
+  state = msg.chestnutState
+  try:
+    smu = Device["AMD"].iface.dev_impl.smu
+    metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+    state.tempC = max(metrics.AvgTemperature[:smu.smu_mod.TEMP_COUNT])
+    state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
+    state.powerDrawW = metrics.AverageSocketPower
+    state.powerLimitW = smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
+    state.gpuUsagePercent = metrics.AverageGfxActivity
+    state.gpuClockMhz = metrics.CurrClock[smu.smu_mod.PPCLK_GFXCLK]
+    state.fanSpeedRpm = metrics.AvgFanRpm
+  except Exception:
+    msg.valid = False
+    cloudlog.exception("chestnut state read failed")
 
-  def update(self) -> None:
-    now = time.monotonic()
-    if now - self.last_read < self.interval:
-      return
-    self.last_read = now
-
-    cs = log.ChestnutState.new_message()
-    valid = False
-    try:
-      smu = Device["AMD"].iface.dev_impl.smu
-      metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
-      cs.tempC = max(metrics.AvgTemperature[:smu.smu_mod.TEMP_COUNT])
-      cs.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
-      cs.powerW = metrics.AverageSocketPower
-      cs.powerTargetW = smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
-      cs.gpuUsagePercent = metrics.AverageGfxActivity
-      cs.gpuClockMhz = metrics.CurrClock[smu.smu_mod.PPCLK_GFXCLK]
-      cs.fanRpm = metrics.AvgFanRpm
-      valid = True
-      self.error_logged = False
-    except Exception:
-      if not self.error_logged:
-        cloudlog.exception("Chestnut metrics read failed")
-        self.error_logged = True
-
-    msg = messaging.new_message('chestnutState', valid=valid)
-    msg.chestnutState = cs
-    self.pm.send('chestnutState', msg)
+  pm.send('chestnutState', msg)
 
 
 class FrameMeta:
@@ -250,7 +233,6 @@ def main(demo=False):
 
   publish_state = PublishState()
   params = Params()
-  chestnut_state = ChestnutState(pm) if USBGPU else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -369,9 +351,6 @@ def main(demo=False):
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
-    if chestnut_state is not None:
-      chestnut_state.update()
-
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')
       drivingdata_send = messaging.new_message('drivingModelData')
@@ -397,6 +376,9 @@ def main(demo=False):
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
+
+    if USBGPU and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:
+      send_chestnut_state(pm)
 
 
 if __name__ == "__main__":
