@@ -73,25 +73,33 @@ def get_chestnut_power_limit() -> int:
   return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
 
 
-def send_chestnut_state(pm: PubMaster) -> None:
+class ChestnutState:
   # only modeld can access chestnut
-  msg = messaging.new_message('chestnutState', valid=True)
-  state = msg.chestnutState
-  try:
-    smu = Device["AMD"].iface.dev_impl.smu
-    metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
-    state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
-    state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
-    state.powerDrawW = metrics.AverageSocketPower
-    state.powerLimitW = get_chestnut_power_limit()
-    state.gpuUsagePercent = metrics.AverageGfxActivity
-    state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
-    state.fanSpeedRpm = metrics.AvgFanRpm
-  except Exception:
-    msg.valid = False
-    cloudlog.exception("chestnut state read failed")
+  def __init__(self, pm: PubMaster):
+    self.pm = pm
+    self.valid = True
 
-  pm.send('chestnutState', msg)
+  def send(self) -> None:
+    msg = messaging.new_message('chestnutState')
+    state = msg.chestnutState
+    try:
+      smu = Device["AMD"].iface.dev_impl.smu
+      metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+      state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
+      state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
+      state.powerDrawW = metrics.AverageSocketPower
+      state.powerLimitW = get_chestnut_power_limit()
+      state.gpuUsagePercent = metrics.AverageGfxActivity
+      state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
+      state.fanSpeedRpm = metrics.AvgFanRpm
+      self.valid = True
+    except Exception:
+      if self.valid:
+        cloudlog.exception("chestnut state read failed")
+      self.valid = False
+
+    msg.valid = self.valid
+    self.pm.send('chestnutState', msg)
 
 
 class FrameMeta:
@@ -240,6 +248,7 @@ def main(demo=False):
 
   publish_state = PublishState()
   params = Params()
+  chestnut_state = ChestnutState(pm) if USBGPU else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -384,8 +393,8 @@ def main(demo=False):
       pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
 
-    if USBGPU and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:
-      send_chestnut_state(pm)
+    if chestnut_state is not None and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:
+      chestnut_state.send()
 
 
 if __name__ == "__main__":
