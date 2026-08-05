@@ -365,7 +365,7 @@ function op_check_agnos_update() {
   echo -e "${BOLD}AGNOS update available:${NC} $current_version → $target_version"
   if read -r -p "Install it now? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
     op_run_command "$OPENPILOT_ROOT/openpilot/common/hardware/tici/agnos.py" --swap \
-      "$OPENPILOT_ROOT/openpilot/system/hardware/tici/agnos.json"
+      "$OPENPILOT_ROOT/openpilot/common/hardware/tici/agnos.json"
     op_run_command sudo reboot
     exit 0
   fi
