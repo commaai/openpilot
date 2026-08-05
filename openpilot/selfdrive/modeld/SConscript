@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import sys, subprocess
+import time
 from SCons.Script import Action, Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
@@ -48,6 +49,18 @@ if USBGPU:
   usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
+
+  probe_env = {**env['ENV'], 'DEV': 'USB+AMD'}
+  try:
+    for i in range(3):
+      if i: time.sleep(1)
+      USBGPU = subprocess.run([sys.executable, '-c', 'from tinygrad import Device; Device[Device.DEFAULT]'], env=probe_env,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5).returncode == 0
+      if USBGPU: break
+  except subprocess.TimeoutExpired:
+    USBGPU = False
+  if not USBGPU:
+    print("Chestnut not ready, skipping big model build")
 
 def write_tg_devices(target, source, env):
   with open(str(target[0]), "w") as f:
