@@ -50,18 +50,6 @@ if USBGPU:
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
 
-  probe_env = {**env['ENV'], 'DEV': 'USB+AMD'}
-  try:
-    for i in range(3):
-      if i: time.sleep(1)
-      USBGPU = subprocess.run([sys.executable, '-c', 'from tinygrad import Device; Device[Device.DEFAULT]'], env=probe_env,
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5).returncode == 0
-      if USBGPU: break
-  except subprocess.TimeoutExpired:
-    USBGPU = False
-  if not USBGPU:
-    print("Chestnut not ready, skipping big model build")
-
 def write_tg_devices(target, source, env):
   with open(str(target[0]), "w") as f:
     json.dump(tg_devices, f)
@@ -99,12 +87,29 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
-  def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
+  def do_compile(target, source, env, command=cmd):
+    probe_env = {**env['ENV'], 'DEV': 'USB+AMD'}
+    try:
+      for attempt in range(3):
+        if attempt: time.sleep(1)
+        ready = subprocess.run([sys.executable, '-c', 'from tinygrad import Device; Device[Device.DEFAULT]'], env=probe_env,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5).returncode == 0
+        if ready: break
+    except subprocess.TimeoutExpired:
+      ready = False
+    if not ready:
+      print("Chestnut not ready, skipping big model build")
+      return None
+    return env.Execute(command)
+  def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets, optional=usbgpu):
+    if optional and not os.path.isfile(pkl):
+      return
     chunk_file(pkl, chunks)
+  actions = [Action(do_compile, "  [USBGPU] $TARGET") if usbgpu else cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
   node = lenv.Command(
     chunk_targets,
     tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file],
-    [cmd, Action(do_chunk, "  [CHUNK] $TARGET")],
+    actions,
   )
   if usbgpu:
     lenv.SideEffect(usbgpu_lock, node)
