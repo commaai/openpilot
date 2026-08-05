@@ -238,7 +238,7 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
   return ret;
 }
 
-int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, unsigned int length) {
+int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, unsigned int length, uint16_t delay_usecs) {
   double start_millis = millis_since_boot();
   if (timeout == 0) {
     timeout = SPI_ACK_TIMEOUT;
@@ -249,6 +249,7 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
     .tx_buf = (uint64_t)tx_buf,
     .rx_buf = (uint64_t)rx_buf,
     .len = length,
+    .delay_usecs = delay_usecs,
   };
   memset(tx_buf, tx, length);
 
@@ -343,7 +344,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Wait for (N)ACK
-  ret = wait_for_ack(SPI_HACK, 0x11, timeout, 1);
+  ret = wait_for_ack(SPI_HACK, 0x11, timeout, 1, 200);
   if (ret < 0) {
     goto fail;
   }
@@ -375,6 +376,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
 
   transfer.len = rx_data_len + 1;
   transfer.rx_buf = (uint64_t)(rx_buf + 2 + 1);
+  transfer.delay_usecs = 200;
   ret = lltransfer(transfer);
   if (ret < 0) {
     SPILOG(LOGE, "SPI: failed to read rx data");
