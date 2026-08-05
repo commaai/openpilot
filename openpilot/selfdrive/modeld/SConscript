@@ -93,7 +93,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
     try:
       for attempt in range(3):
         if attempt: time.sleep(1)
-        ready = subprocess.run(probe_cmd, env=probe_env, capture_output=True, timeout=5).returncode == 0
+        ready = subprocess.run(probe_cmd, env=probe_env, capture_output=True, timeout=10).returncode == 0
         if ready: break
     except subprocess.TimeoutExpired:
       ready = False
