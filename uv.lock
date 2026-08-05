@@ -210,8 +210,8 @@ wheels = [
 
 [[package]]
 name = "comma-deps-raylib"
-version = "6.0.0.1.post100"
-source = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" }
+version = "6.0.0.1.post101"
+source = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.2/comma_deps_raylib-6.0.0.2.post101-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" }
 resolution-markers = [
     "platform_machine == 'x86_64' and sys_platform == 'linux'",
 ]
@@ -219,7 +219,7 @@ dependencies = [
     { name = "cffi", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 wheels = [
-    { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:fd7816be5038d8918b53301e1d1624a404bd40879e9cd65a0bd3d8721cae9742" },
+    { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.2/comma_deps_raylib-6.0.0.2.post101-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a8f15ef3dcb05063ddbf1b124d14a42af2ef7e7a43238f4e3f82f192f4401248" },
 ]
 
 [package.metadata]
@@ -604,7 +604,7 @@ dependencies = [
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-raylib", version = "6.0.0.1.post98", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
-    { name = "comma-deps-raylib", version = "6.0.0.1.post100", source = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "comma-deps-raylib", version = "6.0.0.1.post101", source = { url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.2/comma_deps_raylib-6.0.0.2.post101-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
     { name = "inputs" },
@@ -666,7 +666,7 @@ requires-dist = [
     { name = "comma-deps-libusb", marker = "extra == 'tools'" },
     { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
     { name = "comma-deps-raylib", marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
-    { name = "comma-deps-raylib", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.1/comma_deps_raylib-6.0.0.1.post100-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" },
+    { name = "comma-deps-raylib", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/therepanic/comma_dependencies/releases/download/raylib%2Fv6.0.0.2/comma_deps_raylib-6.0.0.2.post101-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" },
     { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
     { name = "coverage", marker = "extra == 'testing'" },
