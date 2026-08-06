@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import time
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.spinner import Spinner
 from openpilot.common.text_window import TextWindow
 from openpilot.common.hardware import HARDWARE, AGNOS
+
+PHASE_TIMEOUT = 30.  # keep a long action's message up this long after its last output
 
 def build() -> None:
   spinner = Spinner()
@@ -24,6 +27,7 @@ def build() -> None:
       assert scons.stderr is not None
 
       # Read progress from stderr and update spinner
+      phase_deadline = 0.
       while scons.poll() is None:
         try:
           line = scons.stderr.readline()
@@ -32,10 +36,19 @@ def build() -> None:
           line = line.rstrip()
 
           prefix = b'progress: '
-          if line.startswith(prefix):
-            progress = float(line[len(prefix):])
-            spinner.update_progress(100 * min(1., progress / 100.), 100.)
+          text_prefix = b'spinner: '
+          now = time.monotonic()
+          if line.startswith(text_prefix):
+            # a long action took over the spinner, keep its message up while it's still logging
+            spinner.update(line[len(text_prefix):].decode('utf8', 'replace'))
+            phase_deadline = now + PHASE_TIMEOUT
+          elif line.startswith(prefix):
+            if now > phase_deadline:
+              progress = float(line[len(prefix):])
+              spinner.update_progress(100 * min(1., progress / 100.), 100.)
           elif len(line):
+            if now < phase_deadline:
+              phase_deadline = now + PHASE_TIMEOUT
             compile_output.append(line)
             print(line.decode('utf8', 'replace'))
         except Exception:
