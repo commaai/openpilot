@@ -264,7 +264,11 @@ int SpectraCamera::clear_req_queue() {
   req_mgr_flush_request.link_hdl = link_handle;
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
-  LOGD("flushed all req: %d", ret);  // returns a "time until timeout" on clearing the workq
+  if (ret <= 0) {
+    LOGE("camera %d CRM flush failed or timed out: %d", cc.camera_num, ret);
+    return ret;
+  }
+  LOGD("flushed all req: %d", ret);  // positive time remaining before the workq timeout
 
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
@@ -1443,9 +1447,13 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   // check if the request ID is even valid. this happens after queued
   // requests are cleared. unclear if it happens any other time.
   if (request_id == 0) {
-    if (invalid_request_count++ > ife_buf_depth+2) {
+    if (!skip_expected && invalid_request_count++ > ife_buf_depth+2) {
       LOGE("camera %d reset after half second of invalid requests", cc.camera_num);
-      clearAndRequeue(last_valid_request_id + 1);
+      uint64_t next_request_id = last_valid_request_id + 1;
+      if (ife_frame_id > last_valid_ife_frame_id) {
+        next_request_id += ife_frame_id - last_valid_ife_frame_id;
+      }
+      clearAndRequeue(next_request_id);
       invalid_request_count = 0;
     }
     return false;
@@ -1472,12 +1480,12 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
 void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
   // clear everything, then queue up a fresh set of frames
   LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, from_request_id);
-  clear_req_queue();
+  skip_expected = true;
+  if (clear_req_queue() <= 0) return;
   last_requeue_ts = nanos_since_boot();
   for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
     enqueue_frame(id);
   }
-  skip_expected = true;
 }
 
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
