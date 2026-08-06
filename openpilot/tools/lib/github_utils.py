@@ -2,6 +2,16 @@ import base64
 import requests
 from http import HTTPMethod
 
+from openpilot.common.utils import retry
+
+
+@retry(attempts=3, delay=1.0)
+def _request(method, path, headers, data):
+  response = requests.request(method, path, headers=headers, data=data, timeout=30)
+  if response.status_code >= 500:
+    response.raise_for_status()
+  return response
+
 class GithubUtils:
   def __init__(self, api_token, data_token, owner='commaai', api_repo='openpilot', data_repo='ci-artifacts'):
     self.OWNER = owner
@@ -26,7 +36,8 @@ class GithubUtils:
     else:
       headers = {}
     path = f'{self.DATA_ROUTE if data_call else self.API_ROUTE}/{path}'
-    r = requests.request(method, path, headers=headers, data=data)
+    r = _request(method, path, headers, data)
+
     if not r.ok and raise_on_failure:
       raise Exception(f"Call to {path} failed with {r.status_code}")
     else:

@@ -157,7 +157,11 @@ class NativeProcess(ManagerProcess):
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info(f"starting process {self.name}")
     self.proc = Process(name=self.name, target=self.launcher, args=(self.cmdline, cwd, self.name))
-    self.proc.start()
+    try:
+      self.proc.start()
+    except Exception:
+      self.proc = None
+      raise
     self.shutting_down = False
 
 
@@ -181,7 +185,11 @@ class PythonProcess(ManagerProcess):
 
     cloudlog.info(f"starting python {self.module}")
     self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
-    self.proc.start()
+    try:
+      self.proc.start()
+    except Exception:
+      self.proc = None
+      raise
     self.shutting_down = False
 
 
