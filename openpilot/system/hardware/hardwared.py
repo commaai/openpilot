@@ -38,7 +38,7 @@ PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
 
 class Chestnut:
-  # flash offroad only, modeld ignores the chestnut until the product string matches
+  # flash offroad, modeld ignores chestnut until the product string matches
   MAX_ATTEMPTS = 3
 
   def __init__(self):

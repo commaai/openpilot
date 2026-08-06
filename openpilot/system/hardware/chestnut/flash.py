@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Chestnut (ASM2464) SPI flasher using only data-USB EP0 control transfers."""
+"""chestnut (ASM2464) SPI flasher using only data-USB EP0 control transfers."""
 import argparse
 import ctypes
 import errno
@@ -404,7 +404,7 @@ def vbus_cycle():
 
 
 def activate(serial):
-  # vbus cycle only resets the ASIC when Chestnut is bus-powered, report honestly otherwise
+  # vbus cycle only resets the ASIC when chestnut is bus-powered, report honestly otherwise
   if not os.path.exists(VBUS_PATH):
     print(f"[{serial}] no VBUS control, firmware activates on the next Chestnut power cycle", flush=True)
     return
