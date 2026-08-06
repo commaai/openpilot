@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+CHESTNUT_FW_VERSION = "bef953a4"
 CHESTNUT_USB_IDS = ((0xADD1, 0x0001), (0x3801, 0x0001))
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
 
