@@ -8,6 +8,12 @@ authors = [
   {name = "Vehicle Researcher", email="user@comma.ai"}
 ]
 
+# ------------------------------------------
+# > this dependencies list *only* goes down.
+# ------------------------------------------
+# Linux and Python is all we need, otherwise
+# we write and own the lines ourselves.
+# ------------------------------------------
 dependencies = [
   # multiple users
   "sounddevice",  # micd + soundd

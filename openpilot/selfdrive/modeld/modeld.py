@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
+from tinygrad.device import Device
 import threading
 import time
 import numpy as np
@@ -9,6 +11,7 @@ import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.messaging import PubMaster, SubMaster
+from openpilot.cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
@@ -30,7 +33,7 @@ from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-LAT_SMOOTH_SECONDS = 0.1
+LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
@@ -62,6 +65,40 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
   return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
                                 desiredAcceleration=float(desired_accel),
                                 shouldStop=bool(stop))
+
+
+class ChestnutState:
+  # only modeld can access chestnut
+  def __init__(self, pm: PubMaster):
+    self.pm = pm
+    self.valid = True
+
+  @cached_property
+  def power_limit(self) -> int:
+    smu = Device["AMD"].iface.dev_impl.smu
+    return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
+
+  def send(self) -> None:
+    msg = messaging.new_message('chestnutState')
+    state = msg.chestnutState
+    try:
+      smu = Device["AMD"].iface.dev_impl.smu
+      metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+      state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
+      state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
+      state.powerDrawW = metrics.AverageSocketPower
+      state.powerLimitW = self.power_limit
+      state.gpuUsagePercent = metrics.AverageGfxActivity
+      state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
+      state.fanSpeedRpm = metrics.AvgFanRpm
+      self.valid = True
+    except Exception:
+      if self.valid:
+        cloudlog.exception("chestnut state read failed")
+      self.valid = False
+
+    msg.valid = self.valid
+    self.pm.send('chestnutState', msg)
 
 
 class FrameMeta:
@@ -204,11 +241,13 @@ def main(demo=False):
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
-  pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
+  pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutState"] if USBGPU else [])
+  pm = PubMaster(pub_socks)
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
   params = Params()
+  chestnut_state = ChestnutState(pm) if USBGPU else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -352,6 +391,9 @@ def main(demo=False):
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
+
+    if chestnut_state is not None and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:
+      chestnut_state.send()
 
 
 if __name__ == "__main__":
