@@ -144,7 +144,7 @@ public:
   void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
-  void enqueue_frame(uint64_t request_id);
+  void enqueue_frame();
 
   int sensors_init();
   void sensors_start();
@@ -205,7 +205,7 @@ public:
   int buf_handle_raw[MAX_IFE_BUFS] = {};
   int sync_objs_ife[MAX_IFE_BUFS] = {};
   int sync_objs_bps[MAX_IFE_BUFS] = {};
-  uint64_t last_valid_request_id = 0;
+  uint64_t next_request_id = 1;
   uint64_t last_requeue_ts = 0;
   uint64_t last_valid_ife_frame_id = 0;
   int invalid_request_count = 0;
@@ -215,7 +215,7 @@ public:
   SpectraMaster *m;
 
 private:
-  void clearAndRequeue(uint64_t from_request_id);
+  void clearAndRequeue();
   bool validateEvent(uint64_t request_id, uint64_t ife_frame_id);
   bool waitForFrameReady(uint64_t request_id);
   bool processFrame(int buf_idx, uint64_t request_id, uint64_t ife_frame_id, uint64_t timestamp);
