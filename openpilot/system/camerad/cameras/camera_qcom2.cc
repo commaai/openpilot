@@ -294,7 +294,9 @@ void camerad_thread() {
         for (auto &cam : cams) {
           if (event_data->session_hdl == cam->camera.session_handle) {
             if (cam->camera.handle_camera_event(event_data)) {
+              assert(cam->camera.buf.cur_frame_data.request_id == cam->camera.next_request_id - cam->camera.ife_buf_depth);
               cam->sendState();
+              cam->camera.enqueue_frame();
             }
             break;
           }

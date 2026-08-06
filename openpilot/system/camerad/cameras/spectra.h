@@ -229,10 +229,12 @@ private:
 
   // a mode for stressing edge cases: realignment, sync failures, etc.
   inline bool stress_test(std::string log) {
-    static double last_trigger = 0;
+    static double last_trigger = millis_since_boot();
     static double prob = std::stod(util::getenv("SPECTRA_ERROR_PROB", "-1"));
     static double dt = std::stod(util::getenv("SPECTRA_ERROR_DT", "1"));
-    bool triggered = (prob > 0) && \
+    static std::string filter = util::getenv("SPECTRA_ERROR_FILTER");
+    static int camera = std::stoi(util::getenv("SPECTRA_ERROR_CAMERA", "-1"));
+    bool triggered = (camera < 0 || camera == cc.camera_num) && (filter.empty() || filter == log) && (prob > 0) && \
                      ((static_cast<double>(rand()) / RAND_MAX) < prob) && \
                      (millis_since_boot() - last_trigger) > dt;
     if (triggered) {

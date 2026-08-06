@@ -3,8 +3,10 @@
 import os
 import time
 import unittest
+from unittest.mock import patch
 import numpy as np
 
+from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.parameterized import parameterized
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal.services import SERVICE_LIST
@@ -17,6 +19,14 @@ CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
 MAX_TEST_TIME = 25
+PATTERN_PERIOD = 328
+PATTERN_STEP = 8
+STRESS_ERRORS = (
+  ("skip_sof", "skipping SOF event"),
+  ("processing_delay", "sync sleep time"),
+  ("ife_timeout", "IFE sync"),
+  ("bps_timeout", "BPS sync"),
+)
 
 
 def _numpy_rgb2gray(im):
@@ -36,6 +46,36 @@ def _exposure_stable(results):
     len(v) >= EXPOSURE_STABLE_COUNT and all(_in_range(*s) for s in v[-EXPOSURE_STABLE_COUNT:])
     for v in results.values()
   )
+
+def _pattern_sample(client):
+  buf = client.recv(1000)
+  if buf is None:
+    return None
+  y = np.asarray(buf.data[:buf.uv_offset], dtype=np.uint8).reshape((-1, buf.stride))[:buf.height:4, :buf.width:4]
+  profile = y.mean(1)
+  padded = np.pad(profile, (4, 4), mode="edge")
+  neighbors = [padded[i:i + len(profile)] for i in range(9) if i != 4]
+  residual = profile - np.median(neighbors, axis=0)
+  position = int(np.argmax(residual))
+  return client.frame_id, position, residual[position]
+
+def _sanity_checks(ts):
+  for camera in CAMERAS:
+    assert camera in ts
+    assert len(ts[camera]['t']) > 20
+    assert 0 not in ts[camera]['requestId']
+
+    frame_steps = np.diff(ts[camera]['frameId'])
+    assert np.all(frame_steps > 0)
+    assert np.all(np.diff(ts[camera]['requestId']) > 0)
+    # Skipped frame IDs must account for the same number of frame periods in SOF time.
+    expected_sof_steps = frame_steps * 1e9 / SERVICE_LIST[camera].frequency
+    assert np.all(np.abs(np.diff(ts[camera]['timestampSof']) - expected_sof_steps) < 1e6)
+
+    assert np.all((ts[camera]['timestampEof'] - ts[camera]['timestampSof']) > 0)
+    assert np.all((ts[camera]['t'] - ts[camera]['timestampSof']/1e9) > 1e-7)
+    assert np.mean((ts[camera]['t'] - ts[camera]['timestampEof']/1e9) > 1e-7) > 0.7
+    assert np.all((ts[camera]['t'] - ts[camera]['timestampEof']/1e9) > -0.10)
 
 
 def run_and_log(procs, services, duration):
@@ -124,43 +164,58 @@ class TestCamerad(OpenpilotTestCase):
       assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {i}: {offset_ms:.1f}ms (expected ~25ms)"
 
   def test_sanity_checks(self):
-    self._sanity_checks(self.logs)
+    _sanity_checks(self.logs)
 
-  def _sanity_checks(self, ts):
-    for c in CAMERAS:
-      assert c in ts
-      assert len(ts[c]['t']) > 20
 
-      # not a valid request id
-      assert 0 not in ts[c]['requestId']
+class TestCameradStress(OpenpilotTestCase):
+  TICI_TEST = True
 
-      # should monotonically increase
-      assert np.all(np.diff(ts[c]['frameId']) >= 1)
-      assert np.all(np.diff(ts[c]['requestId']) >= 1)
-
-      # EOF > SOF
-      assert np.all((ts[c]['timestampEof'] - ts[c]['timestampSof']) > 0)
-
-      # logMonoTime > SOF
-      assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 1e-7)
-
-      # logMonoTime > EOF, needs some tolerance since EOF is (SOF + readout time) but there is noise in the SOF timestamping (done via IRQ)
-      assert np.mean((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 1e-7) > 0.7  # should be mostly logMonoTime > EOF
-      assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > -0.10)        # when EOF > logMonoTime, it should never be more than two frames
-
-  def test_stress_test(self):
-    os.environ['SPECTRA_ERROR_PROB'] = '0.008'
-    try:
-      logs = run_and_log(["camerad", ], CAMERAS, 10)
-    finally:
-      del os.environ['SPECTRA_ERROR_PROB']
+  @parameterized.expand(STRESS_ERRORS, ids=lambda name, _: name)
+  def test_stress_test(self, _, error):
+    env = {'SPECTRA_ERROR_FILTER': error, 'SPECTRA_ERROR_PROB': '1', 'SPECTRA_ERROR_DT': '2000'}
+    with patch.dict(os.environ, env):
+      logs = run_and_log(["camerad"], CAMERAS, 6)
     ts = msgs_to_time_series(logs)
 
-    # we should see some jumps from introduced errors
-    assert np.max([ np.max(np.diff(ts[c]['frameId'])) for c in CAMERAS ]) > 1
-    assert np.max([ np.max(np.diff(ts[c]['requestId'])) for c in CAMERAS ]) > 1
+    assert max(np.max(np.diff(ts[c]['frameId'])) for c in CAMERAS) > 1
+    assert max(np.max(np.diff(ts[c]['requestId'])) for c in CAMERAS) > 1
+    _sanity_checks(ts)
 
-    self._sanity_checks(ts)
+  def test_frame_data_alignment(self):
+    env = {'SPECTRA_TEST_PATTERN': '1', 'SPECTRA_ERROR_FILTER': 'publish delay', 'SPECTRA_ERROR_CAMERA': '1',
+           'SPECTRA_ERROR_PROB': '1', 'SPECTRA_ERROR_DT': '6000'}
+    samples = {'road': [], 'wide': []}
+    with patch.dict(os.environ, env):
+      with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
+        clients = {
+          'road': VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True),
+          'wide': VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True),
+        }
+        for client in clients.values():
+          client.connect(True)
+        end = time.monotonic() + 10
+        while time.monotonic() < end:
+          for camera, client in clients.items():
+            sample = _pattern_sample(client)
+            if sample is not None:
+              samples[camera].append(sample)
+
+    with lock:
+      ts = msgs_to_time_series(raw_logs)
+    positions = {camera: {frame_id: position for frame_id, position, confidence in camera_samples if confidence > 10}
+                 for camera, camera_samples in samples.items()}
+    common_frames = set.intersection(*(set(camera_positions) for camera_positions in positions.values()))
+    assert len(common_frames) > 20
+    offsets = {frame_id: (positions['road'][frame_id] - positions['wide'][frame_id]) % PATTERN_PERIOD for frame_id in common_frames}
+    counts = np.bincount(list(offsets.values()), minlength=PATTERN_PERIOD)
+    # Independent sensor phases permit three adjacent offsets in the half-rate rolling pattern.
+    expected_offset = int(np.argmax(counts + np.roll(counts, -PATTERN_STEP) + np.roll(counts, -2 * PATTERN_STEP)))
+    expected_offsets = {(expected_offset + i * PATTERN_STEP) % PATTERN_PERIOD for i in range(3)}
+    unexpected = {frame_id: offset for frame_id, offset in offsets.items() if offset not in expected_offsets}
+    assert not unexpected, f"road/wide pixels disagree for shared frame IDs: {unexpected}"
+
+    assert max(np.max(np.diff(ts[c]['frameId'])) for c in CAMERAS) > 1
+    _sanity_checks(ts)
 
 
 if __name__ == "__main__":

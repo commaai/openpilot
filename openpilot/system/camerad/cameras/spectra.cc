@@ -1435,7 +1435,8 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   int buf_idx = request_id % ife_buf_depth;
   bool ret = processFrame(buf_idx, request_id, ife_frame_id, timestamp);
   destroySyncObjectAt(buf_idx);
-  enqueue_frame();  // request next frame for this slot
+  if (!ret) enqueue_frame();
+  if (stress_test("publish delay")) util::sleep_for(1200);
   return ret;
 }
 
@@ -1488,10 +1489,11 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   }
 
   auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
+    if (stress_test(sync_type)) return false;
     double st = millis_since_boot();
     struct cam_sync_wait sync_wait = {};
     sync_wait.sync_obj = sync_obj;
-    sync_wait.timeout_ms = stress_test(sync_type) ? 1 : timeout_ms;
+    sync_wait.timeout_ms = timeout_ms;
     bool ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait)) == 0;
     double et = millis_since_boot();
     if (!ret) LOGE("camera %d %s failed after %.2fms", cc.camera_num, sync_type, et-st);
