@@ -4,6 +4,7 @@ import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
+import struct
 import threading
 import time
 import numpy as np
@@ -91,6 +92,9 @@ class ChestnutState:
       state.gpuUsagePercent = metrics.AverageGfxActivity
       state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
       state.fanSpeedRpm = metrics.AvgFanRpm
+      asm = Device["AMD"].iface.pci_dev.usb
+      state.pcieLtssm = asm.read(0xB450, 1)[0]
+      state.supplyVoltage, state.supplyCurrent = struct.unpack('<Hh', bytes(asm.usb.control_read(0xC0, 5))[:4])
       self.valid = True
     except Exception:
       if self.valid:
