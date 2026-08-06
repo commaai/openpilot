@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import time
+import typing
 from collections import OrderedDict, namedtuple
 
 import openpilot.cereal.messaging as messaging
@@ -36,6 +37,7 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
+FLASH_LOG = "/tmp/chestnut_flash.log"
 
 class Chestnut:
   # flash offroad, modeld ignores chestnut until the product string matches
@@ -43,6 +45,7 @@ class Chestnut:
 
   def __init__(self):
     self.proc: subprocess.Popen | None = None
+    self.log: typing.IO | None = None
     self.attempts = 0
     self.flashed = False
 
@@ -50,7 +53,9 @@ class Chestnut:
     if self.proc is not None:
       if self.proc.poll() is None:
         return
-      cloudlog.event("chestnut flash finished", returncode=self.proc.returncode, error=self.proc.returncode != 0)
+      self.log.seek(0)
+      cloudlog.event("chestnut flash finished", returncode=self.proc.returncode, output=self.log.read()[-1000:], error=self.proc.returncode != 0)
+      self.log.close()
       self.flashed = self.proc.returncode == 0
       self.proc = None
     mismatch = any((d["vendorId"], d["productId"]) in CHESTNUT_USB_IDS and d["product"] != f"custom {CHESTNUT_FW_VERSION}-CLEAN" for d in usb_state)
@@ -60,7 +65,9 @@ class Chestnut:
       return
     self.attempts += 1
     cloudlog.warning(f"chestnut firmware mismatch, flashing (attempt {self.attempts})")
-    self.proc = subprocess.Popen(["sudo", sys.executable, os.path.join(BASEDIR, "openpilot/system/hardware/chestnut/flash.py"), CHESTNUT_FW_VERSION])
+    self.log = open(FLASH_LOG, "w+")
+    self.proc = subprocess.Popen(["sudo", sys.executable, os.path.join(BASEDIR, "openpilot/system/hardware/chestnut/flash.py"), CHESTNUT_FW_VERSION],
+                                 stdout=self.log, stderr=subprocess.STDOUT)
 
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
