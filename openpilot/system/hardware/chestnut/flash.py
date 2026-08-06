@@ -253,7 +253,7 @@ def reconnect(flash):
       flash.init()
       return
     except (OSError, TimeoutError, RuntimeError) as e:
-      print(f"  waiting for chestnut (attempt {attempt}): {e}", flush=True)
+      print(f"waiting for chestnut (attempt {attempt}): {e}", flush=True)
       time.sleep(1)
 
 
@@ -268,7 +268,7 @@ def stable_read(flash, addr, length, count=2):
       return reads[0]
     except (OSError, TimeoutError, RuntimeError) as e:
       check_budget()
-      print(f"  read 0x{addr:05x} attempt {attempt}: {e}", flush=True)
+      print(f"read 0x{addr:05x} attempt {attempt}: {e}", flush=True)
       reconnect(flash)
 
 
@@ -291,7 +291,7 @@ def program_sector(flash, addr, target):
       raise RuntimeError("sector verification failed")
     except (OSError, TimeoutError, RuntimeError) as e:
       check_budget()
-      print(f"  sector 0x{addr:05x} attempt {attempt}: {e}", flush=True)
+      print(f"sector 0x{addr:05x} attempt {attempt}: {e}", flush=True)
       reconnect(flash)
 
 
@@ -304,7 +304,7 @@ def backed_up_config(path, data):
     if len(backup) != 0x100:
       raise RuntimeError(f"invalid config backup: {path}") from e
     if backup != data:
-      print(f"  restoring config from {path}", flush=True)
+      print(f"restoring config from {path}", flush=True)
     return backup
   with os.fdopen(fd, "wb") as f:
     f.write(data)
@@ -313,7 +313,7 @@ def backed_up_config(path, data):
   return data
 
 
-def stock_recover(serial, image, config):
+def stock_recover(image, config):
   # the ROM bootloader only speaks BOT, and needs a port reset before it accepts bulk transfers
   path, _, _ = installed_chestnut()
   unbind_drivers(path)
@@ -353,7 +353,7 @@ def stock_recover(serial, image, config):
     if csw[:4] != b"USBS" or csw[12] != 0:
       raise RuntimeError(f"stock flash command {cdb[0]:02x} {cdb[1]:02x} failed")
 
-  print(f"[{serial}] recovering from the ROM bootloader", flush=True)
+  print("recovering from the ROM bootloader", flush=True)
   try:
     cmd(struct.pack(">BBB12x", 0xE1, 0x50, 0), config[:0x80])
     cmd(struct.pack(">BBB12x", 0xE1, 0x50, 1), config[0x80:])
@@ -363,7 +363,7 @@ def stock_recover(serial, image, config):
     cmd(struct.pack(">BB13x", 0xE8, 0x51))
   finally:
     os.close(fd)
-  print(f"[{serial}] recovery flash done", flush=True)
+  print("recovery flash done", flush=True)
 
 
 def vbus_write(value):
@@ -382,11 +382,11 @@ def vbus_cycle():
     time.sleep(5)
 
 
-def activate(serial, expected_product):
+def activate(expected_product):
   if not os.path.exists(VBUS_PATH):
-    print(f"[{serial}] no VBUS control, firmware activates on the next chestnut power cycle", flush=True)
+    print("no VBUS control, firmware activates on the next chestnut power cycle", flush=True)
     return
-  print(f"[{serial}] power-cycling chestnut VBUS", flush=True)
+  print("power-cycling chestnut VBUS", flush=True)
   vbus_write("0")
   disconnected = False
   deadline = time.monotonic() + 5.0
@@ -398,19 +398,19 @@ def activate(serial, expected_product):
   time.sleep(1)
   vbus_write("1")
   if not disconnected:
-    print(f"[{serial}] chestnut is externally powered, firmware activates on its next power cycle", flush=True)
+    print("chestnut is externally powered, firmware activates on its next power cycle", flush=True)
     return
   deadline = time.monotonic() + 15.0
   while time.monotonic() < deadline:
     product = installed_chestnut()[2]
     if product is not None:
       if product == expected_product:
-        print(f"[{serial}] activated {expected_product}", flush=True)
+        print(f"activated {expected_product}", flush=True)
       else:
-        print(f"[{serial}] chestnut re-enumerated with {product!r}, firmware activates on its next power cycle", flush=True)
+        print(f"chestnut re-enumerated with {product!r}, firmware activates on its next power cycle", flush=True)
       return
     time.sleep(0.2)
-  print(f"[{serial}] chestnut did not re-enumerate, firmware activates on its next power cycle", flush=True)
+  print("chestnut did not re-enumerate, firmware activates on its next power cycle", flush=True)
 
 
 def flash_chestnut(expected_version=None, force=False):
@@ -425,10 +425,10 @@ def flash_chestnut(expected_version=None, force=False):
 
   path, vid_pid, product = installed_chestnut()
   if path is None:
-    print(f"[{serial}] no chestnut connected", flush=True)
+    print("no chestnut connected", flush=True)
     return
   if product == expected_product and not force:
-    print(f"[{serial}] chestnut firmware is up to date ({expected_product})", flush=True)
+    print(f"chestnut firmware is up to date ({expected_product})", flush=True)
     return
 
   _deadline = time.monotonic() + FLASH_BUDGET
@@ -448,29 +448,29 @@ def flash_chestnut(expected_version=None, force=False):
       path, vid_pid, product = installed_chestnut()
       if path is None:
         if committed:
-          print(f"[{serial}] chestnut is offline, recovered firmware boots on its next power cycle", flush=True)
+          print("chestnut is offline, recovered firmware boots on its next power cycle", flush=True)
           return
         vbus_cycle()
         continue
       if not is_stock(vid_pid, product):
         break
       if committed:
-        print(f"[{serial}] chestnut is externally powered, recovered firmware boots on its next power cycle", flush=True)
+        print("chestnut is externally powered, recovered firmware boots on its next power cycle", flush=True)
         return
       try:
-        stock_recover(serial, image, config)
+        stock_recover(image, config)
         committed = True
       except (OSError, TimeoutError, RuntimeError) as e:
-        print(f"  stock recovery failed, retrying: {e}", flush=True)
+        print(f"stock recovery failed, retrying: {e}", flush=True)
         vbus_cycle()
         continue
-      activate(serial, expected_product)
+      activate(expected_product)
     force = True  # firmware is back, fall through to verify
 
   if force:
-    print(f"[{serial}] forced reflash of {expected_product}", flush=True)
+    print(f"forced reflash of {expected_product}", flush=True)
   else:
-    print(f"[{serial}] chestnut firmware mismatch: {product!r}; expected {expected_product!r}", flush=True)
+    print(f"chestnut firmware mismatch: {product!r}; expected {expected_product!r}", flush=True)
 
   flash = Flash()
   prev_handlers = {}
@@ -490,7 +490,7 @@ def flash_chestnut(expected_version=None, force=False):
     target[:len(config)] = config
     target[IMAGE_OFFSET - first_sector:image_end - first_sector] = image
     target = bytes(target)
-    print(f"[{serial}] target {len(image)} bytes at 0x{IMAGE_OFFSET:05x}, sha256={hashlib.sha256(image).hexdigest()}", flush=True)
+    print(f"target {len(image)} bytes at 0x{IMAGE_OFFSET:05x}, sha256={hashlib.sha256(image).hexdigest()}", flush=True)
 
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
       prev_handlers[sig] = signal.signal(sig, finish_safely)
@@ -499,21 +499,21 @@ def flash_chestnut(expected_version=None, force=False):
       off = addr - first_sector
       wanted = target[off:off + SECTOR]
       if current[off:off + SECTOR] == wanted:
-        print(f"  sector 0x{addr:05x}: unchanged", flush=True)
+        print(f"sector 0x{addr:05x}: unchanged", flush=True)
       else:
-        print(f"  sector 0x{addr:05x}: programming", flush=True)
+        print(f"sector 0x{addr:05x}: programming", flush=True)
         program_sector(flash, addr, wanted)
 
     verified = stable_read(flash, first_sector, span - first_sector, 3)
     if verified != target:
       raise RuntimeError("final full-image verification failed")
-    print(f"[{serial}] verified sha256={hashlib.sha256(verified).hexdigest()}", flush=True)
+    print(f"verified sha256={hashlib.sha256(verified).hexdigest()}", flush=True)
   finally:
     flash.close()
     for sig, handler in prev_handlers.items():
       signal.signal(sig, handler)
 
-  activate(serial, expected_product)
+  activate(expected_product)
 
 
 def main():
