@@ -1044,6 +1044,7 @@ struct ModelDataV2 {
   timestampEof @3 :UInt64;
   modelExecutionTime @15 :Float32;
   rawPredictions @16 :Data;
+  big @27 :Bool;  # ran on the usbgpu
 
   # predicted future position, orientation, etc..
   position @4 :XYZTData;
