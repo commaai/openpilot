@@ -1422,9 +1422,7 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   }
 
   // Update tracking variables
-  if (request_id == next_request_id - ife_buf_depth) {
-    skip_expected = false;
-  }
+  skip_frame_id_check = false;
   last_valid_ife_frame_id = ife_frame_id;
 
   // Wait until frame's fully read out and processed
@@ -1455,20 +1453,17 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   }
   invalid_request_count = 0;
 
-  // check for skips in frame_id or request_id
-  if (!skip_expected) {
-    if (ife_frame_id != last_valid_ife_frame_id + 1) {
-      LOGE("camera %d frame ID skipped, %lu -> %lu", cc.camera_num, last_valid_ife_frame_id, ife_frame_id);
-      clearAndRequeue();
-      return false;
-    }
+  uint64_t expected_request_id = next_request_id - ife_buf_depth;
+  if (request_id != expected_request_id) {
+    LOGE("camera %d request ID mismatch, expected %lu, got %lu", cc.camera_num, expected_request_id, request_id);
+    clearAndRequeue();
+    return false;
+  }
 
-    uint64_t expected_request_id = next_request_id - ife_buf_depth;
-    if (request_id != expected_request_id) {
-      LOGE("camera %d request ID mismatch, expected %lu, got %lu", cc.camera_num, expected_request_id, request_id);
-      clearAndRequeue();
-      return false;
-    }
+  if (!skip_frame_id_check && ife_frame_id != last_valid_ife_frame_id + 1) {
+    LOGE("camera %d frame ID skipped, %lu -> %lu", cc.camera_num, last_valid_ife_frame_id, ife_frame_id);
+    clearAndRequeue();
+    return false;
   }
   return true;
 }
@@ -1481,7 +1476,7 @@ void SpectraCamera::clearAndRequeue() {
   for (int i = 0; i < ife_buf_depth; ++i) {
     enqueue_frame();
   }
-  skip_expected = true;
+  skip_frame_id_check = true;
 }
 
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {

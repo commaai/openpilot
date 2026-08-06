@@ -209,7 +209,7 @@ public:
   uint64_t last_requeue_ts = 0;
   uint64_t last_valid_ife_frame_id = 0;
   int invalid_request_count = 0;
-  bool skip_expected = true;
+  bool skip_frame_id_check = true;
 
   CameraBuf buf;
   SpectraMaster *m;
