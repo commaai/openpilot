@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""chestnut (ASM2464) SPI flasher using only data-USB EP0 control transfers."""
+"""chestnut (ASM2464) SPI flasher using data-USB EP0 control transfers."""
 import argparse
 import ctypes
 import errno
@@ -7,21 +7,20 @@ import fcntl
 import glob
 import hashlib
 import os
-from pathlib import Path
+import re
 import signal
 import struct
 import sys
 import time
 import zlib
+from pathlib import Path
 
 VID_PIDS = (("add1", "0001"), ("3801", "0001"))
 STOCK_VID_PIDS = (("174c", "2464"), ("174c", "2463"))
 STOCK_PRODUCT = "USB 3.2 PCIe TinyEnclosure"
-EXPECTED_VERSION = "bef953a4"
-EXPECTED_PRODUCT = f"custom {EXPECTED_VERSION}-CLEAN"
 FIRMWARE_PATH = Path(__file__).with_name("firmware_wrapped.bin")
-FIRMWARE_SHA256 = "88a4c169234cd858ca70d268a2bb7bab68cba87c07f88685d11c3bfcb49c43d0"
 BACKUP_DIR = "/data/asm_flash_backups"
+PM_PATHS = ("/sys/bus/platform/devices/a600000.ssusb", "/sys/bus/usb/devices/usb4")
 VBUS_PATH = "/sys/kernel/debug/regulator/smb2-vbus/enable"
 IMAGE_OFFSET = 0x100
 SECTOR, PAGE = 4096, 128
@@ -55,6 +54,41 @@ class Bulk(ctypes.Structure):
               ("timeout", ctypes.c_uint), ("data", ctypes.c_void_p)]
 
 
+class StockFallback(Exception):
+  pass
+
+
+def installed_chestnut():
+  found = []
+  for d in glob.glob("/sys/bus/usb/devices/*"):
+    try:
+      vid_pid = (open(d + "/idVendor").read().strip(), open(d + "/idProduct").read().strip())
+      if vid_pid in VID_PIDS + STOCK_VID_PIDS:
+        found.append((d, vid_pid, open(d + "/product").read().strip()))
+    except OSError:
+      pass
+  if len(found) > 1:
+    raise RuntimeError(f"expected one chestnut, found {len(found)}")
+  return found[0] if found else (None, None, None)
+
+
+def is_stock(vid_pid, product):
+  # the ROM bootloader shows config-page strings (TinyEnclosure) when a config exists, AS2462/174c without one
+  return vid_pid in STOCK_VID_PIDS or product == STOCK_PRODUCT or (product or "").startswith("AS2462")
+
+
+def disable_runtime_pm(path):
+  control = os.path.join(path, "power/control")
+  with open(control, "w") as f:
+    f.write("on\n")
+  if open(control).read().strip() != "on":
+    raise RuntimeError(f"could not disable USB runtime PM: {control}")
+  delay = os.path.join(path, "power/autosuspend_delay_ms")
+  if os.path.exists(delay):
+    with open(delay, "w") as f:
+      f.write("-1\n")
+
+
 def unbind_drivers(path):
   for interface in glob.glob(path + ":*"):
     driver = interface + "/driver"
@@ -65,7 +99,7 @@ def unbind_drivers(path):
 
 def claim_device(path, setup=False):
   # unbind kernel drivers (usb-storage in stock mode) and claim interface 0
-  pin_runtime_power(path)
+  disable_runtime_pm(path)
   unbind_drivers(path)
   bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
   fd = os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
@@ -78,67 +112,9 @@ def claim_device(path, setup=False):
   except OSError as e:
     os.close(fd)
     if e.errno == errno.EBUSY:
-      raise RuntimeError("Chestnut is in use, stop modeld/GPU processes before flashing") from e
+      raise RuntimeError("chestnut is in use, stop modeld/GPU processes before flashing") from e
     raise
   return fd
-
-
-def stock_recover(serial, image, config):
-  # interrupted flashing falls back to the ROM bootloader, which only speaks the BOT vendor protocol
-  # and needs a fresh link train (port reset) before it accepts bulk transfers on this xHCI
-  path, _, _ = installed_chestnut()
-  unbind_drivers(path)
-  bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
-  fd = os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
-  try:
-    fcntl.ioctl(fd, USBDEVFS_RESET)
-  finally:
-    os.close(fd)
-  time.sleep(3)
-  path, _, _ = installed_chestnut()
-  if path is None:
-    raise RuntimeError("Chestnut did not re-enumerate after reset")
-  fd = claim_device(path, setup=True)
-  for ep in (0x02, 0x81):
-    fcntl.ioctl(fd, USBDEVFS_CLEAR_HALT, struct.pack("I", ep))
-  tag = 0
-
-  def bulk(ep, payload, timeout):
-    buf = ctypes.create_string_buffer(bytes(payload), len(payload))
-    fcntl.ioctl(fd, USBDEVFS_BULK, Bulk(ep, len(payload), timeout, ctypes.cast(buf, ctypes.c_void_p)))
-    return buf.raw
-
-  def cmd(cdb, data=b"", timeout=30000):
-    nonlocal tag
-    tag += 1
-    bulk(0x02, struct.pack("<IIIBBB16s", 0x43425355, tag, len(data), 0, 0, len(cdb), cdb), timeout)
-    if data:
-      bulk(0x02, data, timeout)
-    try:
-      csw = bulk(0x81, bytes(13), timeout)
-    except OSError as e:
-      if e.errno != errno.EPIPE:
-        raise
-      fcntl.ioctl(fd, USBDEVFS_CLEAR_HALT, struct.pack("I", 0x81))
-      csw = bulk(0x81, bytes(13), timeout)
-    if csw[:4] != b"USBS" or csw[12] != 0:
-      raise RuntimeError(f"stock flash command {cdb[0]:02x} {cdb[1]:02x} failed")
-
-  print(f"[{serial}] recovering from stock bootloader mode", flush=True)
-  try:
-    cmd(struct.pack(">BBB12x", 0xE1, 0x50, 0), config[:0x80])
-    cmd(struct.pack(">BBB12x", 0xE1, 0x50, 1), config[0x80:])
-    cmd(struct.pack(">BBI", 0xE3, 0x50, min(len(image), 0xFF00)), image[:0xFF00])
-    if len(image) > 0xFF00:
-      cmd(struct.pack(">BBI", 0xE3, 0xD0, len(image) - 0xFF00), image[0xFF00:])
-    cmd(struct.pack(">BB13x", 0xE8, 0x51))
-  finally:
-    os.close(fd)
-  print(f"[{serial}] stock recovery flash complete", flush=True)
-
-
-class StockFallback(Exception):
-  pass
 
 
 class Flash:
@@ -156,12 +132,12 @@ class Flash:
     while time.monotonic() < deadline:
       path, vid_pid, product = installed_chestnut()
       if is_stock(vid_pid, product):
-        raise StockFallback("Chestnut fell back to the stock bootloader")
+        raise StockFallback("chestnut fell back to the stock bootloader")
       if path is not None:
         self.fd = claim_device(path)
         return
       time.sleep(0.1)
-    raise RuntimeError(f"Chestnut did not enumerate within {timeout:g}s")
+    raise RuntimeError(f"chestnut did not enumerate within {timeout:g}s")
 
   def wr(self, addr, value):
     fcntl.ioctl(self.fd, USBDEVFS_CONTROL,
@@ -185,28 +161,17 @@ class Flash:
     raise TimeoutError("flash controller timeout")
 
   def transaction(self, command, addr=0, length=0, addr_len=0x07, mode=0):
-    self.wr(0xC8AD, mode)
-    self.wr(0xC8AE, 0)
-    self.wr(0xC8AF, 0)
-    self.wr(0xC8AA, command)
-    self.wr(0xC8AC, addr_len)
-    self.wr(0xC8A1, addr & 0xFF)
-    self.wr(0xC8A2, (addr >> 8) & 0xFF)
-    self.wr(0xC8AB, (addr >> 16) & 0xFF)
-    self.wr(0xC8A3, (length >> 8) & 0xFF)
-    self.wr(0xC8A4, length & 0xFF)
+    for reg, value in ((0xC8AD, mode), (0xC8AE, 0), (0xC8AF, 0), (0xC8AA, command), (0xC8AC, addr_len),
+                       (0xC8A1, addr), (0xC8A2, addr >> 8), (0xC8AB, addr >> 16), (0xC8A3, length >> 8), (0xC8A4, length)):
+      self.wr(reg, value & 0xFF)
     self.wr(0xC8A9, 1)
     self.wait_csr()
     for _ in range(4):
       self.wr(0xC8AD, 0)
 
   def wren(self):
-    self.wr(0xC8AD, 0)
-    self.wr(0xC8AA, 0x06)
-    self.wr(0xC8AC, 0x04)
-    self.wr(0xC8A3, 0)
-    self.wr(0xC8A4, 0)
-    self.wr(0xC8A9, 1)
+    for reg, value in ((0xC8AD, 0), (0xC8AA, 0x06), (0xC8AC, 0x04), (0xC8A3, 0), (0xC8A4, 0), (0xC8A9, 1)):
+      self.wr(reg, value)
     self.wait_csr()
 
   def status(self):
@@ -271,6 +236,13 @@ def validate_wrapped(data):
     raise ValueError("invalid wrapped firmware CRC")
 
 
+def image_product(image):
+  match = re.search(rb"custom [0-9a-f]{8}-CLEAN", image)
+  if match is None:
+    raise ValueError("no product string in wrapped firmware")
+  return match.group().decode()
+
+
 def reconnect(flash):
   attempt = 0
   while True:
@@ -281,7 +253,7 @@ def reconnect(flash):
       flash.init()
       return
     except (OSError, TimeoutError, RuntimeError) as e:
-      print(f"  waiting for Chestnut (attempt {attempt}): {e}", flush=True)
+      print(f"  waiting for chestnut (attempt {attempt}): {e}", flush=True)
       time.sleep(1)
 
 
@@ -341,152 +313,151 @@ def backed_up_config(path, data):
   return data
 
 
-def pin_runtime_power(path):
-  control = os.path.join(path, "power/control")
-  if not os.path.exists(control):
-    raise RuntimeError(f"USB power policy missing: {control}")
-  with open(control, "w") as f:
-    f.write("on\n")
-  if open(control).read().strip() != "on":
-    raise RuntimeError(f"could not disable USB runtime PM: {control}")
-  delay = os.path.join(path, "power/autosuspend_delay_ms")
-  if os.path.exists(delay):
-    with open(delay, "w") as f:
-      f.write("-1\n")
+def stock_recover(serial, image, config):
+  # interrupted flashing falls back to the ROM bootloader, which only speaks the BOT vendor protocol
+  # and needs a fresh link train (port reset) before it accepts bulk transfers on this xHCI
+  path, _, _ = installed_chestnut()
+  unbind_drivers(path)
+  bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
+  fd = os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
+  try:
+    fcntl.ioctl(fd, USBDEVFS_RESET)
+  finally:
+    os.close(fd)
+  time.sleep(3)
+  path, _, _ = installed_chestnut()
+  if path is None:
+    raise RuntimeError("chestnut did not re-enumerate after reset")
+  fd = claim_device(path, setup=True)
+  for ep in (0x02, 0x81):
+    fcntl.ioctl(fd, USBDEVFS_CLEAR_HALT, struct.pack("I", ep))
+  tag = 0
 
+  def bulk(ep, payload, timeout):
+    buf = ctypes.create_string_buffer(bytes(payload), len(payload))
+    fcntl.ioctl(fd, USBDEVFS_BULK, Bulk(ep, len(payload), timeout, ctypes.cast(buf, ctypes.c_void_p)))
+    return buf.raw
 
-def disable_usb_runtime_pm():
-  for path in [
-    "/sys/bus/platform/devices/a600000.ssusb/power/control",
-    "/sys/bus/usb/devices/usb4/power/control",
-  ]:
-    if not os.path.exists(path):
-      raise RuntimeError(f"USB power policy missing: {path}")
-    with open(path, "w") as f:
-      f.write("on\n")
-    if open(path).read().strip() != "on":
-      raise RuntimeError(f"could not disable USB runtime PM: {path}")
-
-
-def installed_chestnut():
-  found = []
-  for d in glob.glob("/sys/bus/usb/devices/*"):
+  def cmd(cdb, data=b"", timeout=30000):
+    nonlocal tag
+    tag += 1
+    bulk(0x02, struct.pack("<IIIBBB16s", 0x43425355, tag, len(data), 0, 0, len(cdb), cdb), timeout)
+    if data:
+      bulk(0x02, data, timeout)
     try:
-      vid_pid = (open(d + "/idVendor").read().strip(), open(d + "/idProduct").read().strip())
-      if vid_pid in VID_PIDS + STOCK_VID_PIDS:
-        found.append((d, vid_pid, open(d + "/product").read().strip()))
-    except OSError:
-      pass
-  if len(found) > 1:
-    raise RuntimeError(f"expected one Chestnut, found {len(found)}")
-  return found[0] if found else (None, None, None)
+      csw = bulk(0x81, bytes(13), timeout)
+    except OSError as e:
+      if e.errno != errno.EPIPE:
+        raise
+      fcntl.ioctl(fd, USBDEVFS_CLEAR_HALT, struct.pack("I", 0x81))
+      csw = bulk(0x81, bytes(13), timeout)
+    if csw[:4] != b"USBS" or csw[12] != 0:
+      raise RuntimeError(f"stock flash command {cdb[0]:02x} {cdb[1]:02x} failed")
+
+  print(f"[{serial}] recovering from stock bootloader mode", flush=True)
+  try:
+    cmd(struct.pack(">BBB12x", 0xE1, 0x50, 0), config[:0x80])
+    cmd(struct.pack(">BBB12x", 0xE1, 0x50, 1), config[0x80:])
+    cmd(struct.pack(">BBI", 0xE3, 0x50, min(len(image), 0xFF00)), image[:0xFF00])
+    if len(image) > 0xFF00:
+      cmd(struct.pack(">BBI", 0xE3, 0xD0, len(image) - 0xFF00), image[0xFF00:])
+    cmd(struct.pack(">BB13x", 0xE8, 0x51))
+  finally:
+    os.close(fd)
+  print(f"[{serial}] stock recovery flash complete", flush=True)
 
 
-def installed_product():
-  return installed_chestnut()[2]
-
-
-def is_stock(vid_pid, product):
-  # the ROM bootloader shows config-page strings (TinyEnclosure) when a config exists, AS2462/174c without one
-  return vid_pid in STOCK_VID_PIDS or product == STOCK_PRODUCT or (product or "").startswith("AS2462")
+def vbus_write(value):
+  try:
+    with open(VBUS_PATH, "w") as f:
+      f.write(value + "\n")
+  except OSError:
+    pass
 
 
 def vbus_cycle():
-  if not os.path.exists(VBUS_PATH):
-    return
-  for value, delay in (("0", 2.0), ("1", 5.0)):
-    try:
-      with open(VBUS_PATH, "w") as f:
-        f.write(value + "\n")
-    except OSError:
-      pass
-    time.sleep(delay)
+  if os.path.exists(VBUS_PATH):
+    vbus_write("0")
+    time.sleep(2)
+    vbus_write("1")
+    time.sleep(5)
 
 
-def activate(serial):
+def activate(serial, expected_product):
   # vbus cycle only resets the ASIC when chestnut is bus-powered, report honestly otherwise
   if not os.path.exists(VBUS_PATH):
-    print(f"[{serial}] no VBUS control, firmware activates on the next Chestnut power cycle", flush=True)
+    print(f"[{serial}] no VBUS control, firmware activates on the next chestnut power cycle", flush=True)
     return
-  print(f"[{serial}] power-cycling Chestnut VBUS", flush=True)
-  try:
-    with open(VBUS_PATH, "w") as f:
-      f.write("0\n")
-  except OSError:
-    pass
+  print(f"[{serial}] power-cycling chestnut VBUS", flush=True)
+  vbus_write("0")
   disconnected = False
   deadline = time.monotonic() + 5.0
   while time.monotonic() < deadline:
-    if installed_product() is None:
+    if installed_chestnut()[0] is None:
       disconnected = True
       break
     time.sleep(0.2)
   time.sleep(1)
-  try:
-    with open(VBUS_PATH, "w") as f:
-      f.write("1\n")
-  except OSError:
-    pass
+  vbus_write("1")
   if not disconnected:
-    print(f"[{serial}] Chestnut is externally powered, firmware activates on its next power cycle", flush=True)
+    print(f"[{serial}] chestnut is externally powered, firmware activates on its next power cycle", flush=True)
     return
   deadline = time.monotonic() + 15.0
   while time.monotonic() < deadline:
-    product = installed_product()
+    product = installed_chestnut()[2]
     if product is not None:
-      if product == EXPECTED_PRODUCT:
-        print(f"[{serial}] ACTIVATED {EXPECTED_PRODUCT}", flush=True)
+      if product == expected_product:
+        print(f"[{serial}] ACTIVATED {expected_product}", flush=True)
       else:
-        print(f"[{serial}] Chestnut re-enumerated with {product!r}, firmware activates on its next power cycle", flush=True)
+        print(f"[{serial}] chestnut re-enumerated with {product!r}, firmware activates on its next power cycle", flush=True)
       return
     time.sleep(0.2)
-  print(f"[{serial}] Chestnut did not re-enumerate, firmware activates on its next power cycle", flush=True)
+  print(f"[{serial}] chestnut did not re-enumerate, firmware activates on its next power cycle", flush=True)
 
 
-def flash_chestnut(dry_run=False, force=False):
+def flash_chestnut(expected_version=None, force=False):
   global _deadline
   serial = os.uname().nodename
 
   image = FIRMWARE_PATH.read_bytes()
-  if hashlib.sha256(image).hexdigest() != FIRMWARE_SHA256:
-    raise RuntimeError("bundled Chestnut firmware checksum mismatch")
   validate_wrapped(image)
+  expected_product = image_product(image)
+  if expected_version is not None and expected_product != f"custom {expected_version}-CLEAN":
+    raise RuntimeError(f"bundled firmware is {expected_product!r}, expected version {expected_version}")
 
   path, vid_pid, product = installed_chestnut()
   if path is None:
-    print(f"[{serial}] no Chestnut connected", flush=True)
+    print(f"[{serial}] no chestnut connected", flush=True)
     return
-  if product == EXPECTED_PRODUCT and not force:
-    print(f"[{serial}] Chestnut firmware is up to date ({EXPECTED_PRODUCT})", flush=True)
+  if product == expected_product and not force:
+    print(f"[{serial}] chestnut firmware is up to date ({expected_product})", flush=True)
     return
 
   _deadline = time.monotonic() + FLASH_BUDGET
+  for pm_path in PM_PATHS:
+    disable_runtime_pm(pm_path)
 
   if is_stock(vid_pid, product):
-    if dry_run:
-      print(f"[{serial}] DRY RUN: would recover from stock bootloader mode", flush=True)
-      return
     backup = os.path.join(BACKUP_DIR, f"{serial}.config.bin")
     if not os.path.isfile(backup):
       raise RuntimeError(f"cannot recover from stock mode without a config backup at {backup}")
     config = open(backup, "rb").read()
     if len(config) != 0x100:
       raise RuntimeError(f"invalid config backup: {backup}")
-    disable_usb_runtime_pm()
     committed = False
     while True:
       check_budget()
       path, vid_pid, product = installed_chestnut()
       if path is None:
         if committed:
-          print(f"[{serial}] Chestnut is offline, recovered firmware boots on its next power cycle", flush=True)
+          print(f"[{serial}] chestnut is offline, recovered firmware boots on its next power cycle", flush=True)
           return
         vbus_cycle()
         continue
       if not is_stock(vid_pid, product):
         break
       if committed:
-        print(f"[{serial}] Chestnut is externally powered, recovered firmware boots on its next power cycle", flush=True)
+        print(f"[{serial}] chestnut is externally powered, recovered firmware boots on its next power cycle", flush=True)
         return
       try:
         stock_recover(serial, image, config)
@@ -495,15 +466,14 @@ def flash_chestnut(dry_run=False, force=False):
         print(f"  stock recovery failed, retrying: {e}", flush=True)
         vbus_cycle()
         continue
-      activate(serial)
+      activate(serial, expected_product)
     force = True  # firmware is running again, fall through for a full readback verification
 
   if force:
-    print(f"[{serial}] forced reflash of {EXPECTED_PRODUCT}", flush=True)
+    print(f"[{serial}] forced reflash of {expected_product}", flush=True)
   else:
-    print(f"[{serial}] Chestnut firmware mismatch: {product!r}; expected {EXPECTED_PRODUCT!r}", flush=True)
+    print(f"[{serial}] chestnut firmware mismatch: {product!r}; expected {expected_product!r}", flush=True)
 
-  disable_usb_runtime_pm()
   flash = Flash()
   prev_handlers = {}
 
@@ -522,7 +492,7 @@ def flash_chestnut(dry_run=False, force=False):
     target[:len(config)] = config
     target[IMAGE_OFFSET - first_sector:image_end - first_sector] = image
     target = bytes(target)
-    print(f"[{serial}] target {len(image)} bytes at 0x{IMAGE_OFFSET:05x}, sha256={FIRMWARE_SHA256}", flush=True)
+    print(f"[{serial}] target {len(image)} bytes at 0x{IMAGE_OFFSET:05x}, sha256={hashlib.sha256(image).hexdigest()}", flush=True)
 
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
       prev_handlers[sig] = signal.signal(sig, finish_safely)
@@ -532,17 +502,10 @@ def flash_chestnut(dry_run=False, force=False):
       wanted = target[off:off + SECTOR]
       if current[off:off + SECTOR] == wanted:
         print(f"  sector 0x{addr:05x}: unchanged", flush=True)
-        continue
-      if dry_run:
-        changed = sum(a != b for a, b in zip(current[off:off + SECTOR], wanted, strict=True))
-        print(f"  sector 0x{addr:05x}: would program ({changed} bytes differ)", flush=True)
-        continue
-      print(f"  sector 0x{addr:05x}: programming", flush=True)
-      program_sector(flash, addr, wanted)
+      else:
+        print(f"  sector 0x{addr:05x}: programming", flush=True)
+        program_sector(flash, addr, wanted)
 
-    if dry_run:
-      print(f"[{serial}] DRY RUN OK", flush=True)
-      return
     verified = stable_read(flash, first_sector, span - first_sector, 3)
     if verified != target:
       raise RuntimeError("final full-image verification failed")
@@ -552,17 +515,17 @@ def flash_chestnut(dry_run=False, force=False):
     for sig, handler in prev_handlers.items():
       signal.signal(sig, handler)
 
-  activate(serial)
+  activate(serial, expected_product)
 
 
 def main():
-  parser = argparse.ArgumentParser(description="Check and flash the bundled Chestnut firmware")
-  parser.add_argument("--dry-run", action="store_true", help="validate and compare without erasing or programming")
+  parser = argparse.ArgumentParser(description="check and flash the bundled chestnut firmware")
+  parser.add_argument("version", nargs="?", help="expected firmware version hash")
   parser.add_argument("--force", action="store_true", help="verify/reflash even when the version matches")
   args = parser.parse_args()
   if os.geteuid() != 0:
     os.execvp("sudo", ["sudo", sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
-  flash_chestnut(dry_run=args.dry_run, force=args.force)
+  flash_chestnut(expected_version=args.version, force=args.force)
 
 
 if __name__ == "__main__":
