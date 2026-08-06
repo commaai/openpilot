@@ -73,7 +73,7 @@ def installed_chestnut():
 
 
 def is_stock(vid_pid, product):
-  # the ROM bootloader shows config-page strings (TinyEnclosure) when a config exists, AS2462/174c without one
+  # the ROM bootloader keeps the config page strings, or its own without a config
   return vid_pid in STOCK_VID_PIDS or product == STOCK_PRODUCT or (product or "").startswith("AS2462")
 
 
@@ -98,7 +98,7 @@ def unbind_drivers(path):
 
 
 def claim_device(path, setup=False):
-  # the ROM bootloader binds usb-storage, unbind it before claiming the interface
+  # unbind usb-storage, the ROM bootloader binds it
   disable_runtime_pm(path)
   unbind_drivers(path)
   bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
@@ -314,8 +314,7 @@ def backed_up_config(path, data):
 
 
 def stock_recover(serial, image, config):
-  # interrupted flashing falls back to the ROM bootloader, which only speaks the BOT vendor protocol
-  # and needs a fresh link train (port reset) before it accepts bulk transfers on this xHCI
+  # the ROM bootloader only speaks BOT, and needs a port reset before it accepts bulk transfers
   path, _, _ = installed_chestnut()
   unbind_drivers(path)
   bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
@@ -354,7 +353,7 @@ def stock_recover(serial, image, config):
     if csw[:4] != b"USBS" or csw[12] != 0:
       raise RuntimeError(f"stock flash command {cdb[0]:02x} {cdb[1]:02x} failed")
 
-  print(f"[{serial}] recovering from stock bootloader mode", flush=True)
+  print(f"[{serial}] recovering from the ROM bootloader", flush=True)
   try:
     cmd(struct.pack(">BBB12x", 0xE1, 0x50, 0), config[:0x80])
     cmd(struct.pack(">BBB12x", 0xE1, 0x50, 1), config[0x80:])
@@ -364,7 +363,7 @@ def stock_recover(serial, image, config):
     cmd(struct.pack(">BB13x", 0xE8, 0x51))
   finally:
     os.close(fd)
-  print(f"[{serial}] stock recovery flash complete", flush=True)
+  print(f"[{serial}] recovery flash done", flush=True)
 
 
 def vbus_write(value):
@@ -406,7 +405,7 @@ def activate(serial, expected_product):
     product = installed_chestnut()[2]
     if product is not None:
       if product == expected_product:
-        print(f"[{serial}] ACTIVATED {expected_product}", flush=True)
+        print(f"[{serial}] activated {expected_product}", flush=True)
       else:
         print(f"[{serial}] chestnut re-enumerated with {product!r}, firmware activates on its next power cycle", flush=True)
       return
@@ -466,7 +465,7 @@ def flash_chestnut(expected_version=None, force=False):
         vbus_cycle()
         continue
       activate(serial, expected_product)
-    force = True  # firmware is running again, fall through for a full readback verification
+    force = True  # firmware is back, fall through to verify
 
   if force:
     print(f"[{serial}] forced reflash of {expected_product}", flush=True)
@@ -508,7 +507,7 @@ def flash_chestnut(expected_version=None, force=False):
     verified = stable_read(flash, first_sector, span - first_sector, 3)
     if verified != target:
       raise RuntimeError("final full-image verification failed")
-    print(f"[{serial}] VERIFY OK sha256={hashlib.sha256(verified).hexdigest()}", flush=True)
+    print(f"[{serial}] verified sha256={hashlib.sha256(verified).hexdigest()}", flush=True)
   finally:
     flash.close()
     for sig, handler in prev_handlers.items():

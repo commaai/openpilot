@@ -59,7 +59,7 @@ class Chestnut:
     if not offroad or not mismatch or self.flashed or self.attempts >= self.MAX_ATTEMPTS or (self.thread is not None and self.thread.is_alive()):
       return
     self.attempts += 1
-    cloudlog.warning(f"chestnut firmware mismatch, flashing (attempt {self.attempts})")
+    cloudlog.warning(f"chestnut firmware out of date, flashing (attempt {self.attempts})")
     self.thread = threading.Thread(target=self.flash, daemon=True)
     self.thread.start()
 
