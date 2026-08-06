@@ -7,8 +7,6 @@ import subprocess
 import sys
 import threading
 import time
-import tempfile
-import typing
 from collections import OrderedDict, namedtuple
 
 import openpilot.cereal.messaging as messaging
@@ -44,30 +42,26 @@ class Chestnut:
   MAX_ATTEMPTS = 3
 
   def __init__(self):
-    self.proc: subprocess.Popen | None = None
-    self.log: typing.IO | None = None
+    self.thread: threading.Thread | None = None
     self.attempts = 0
     self.flashed = False
 
+  def flash(self) -> None:
+    ret = subprocess.run(["sudo", sys.executable, os.path.join(BASEDIR, "openpilot/system/hardware/chestnut/flash.py"), CHESTNUT_FW_VERSION],
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
+    cloudlog.event("chestnut flash finished", returncode=ret.returncode, output=ret.stdout[-1000:], error=ret.returncode != 0)
+    self.flashed = ret.returncode == 0
+
   def update(self, offroad: bool, usb_state: list[dict]) -> None:
-    if self.proc is not None:
-      if self.proc.poll() is None:
-        return
-      self.log.seek(0)
-      cloudlog.event("chestnut flash finished", returncode=self.proc.returncode, output=self.log.read()[-1000:], error=self.proc.returncode != 0)
-      self.log.close()
-      self.flashed = self.proc.returncode == 0
-      self.proc = None
     mismatch = any((d["vendorId"], d["productId"]) in CHESTNUT_USB_IDS and d["product"] != f"custom {CHESTNUT_FW_VERSION}-CLEAN" for d in usb_state)
     if not mismatch:
       self.flashed = False
-    if not offroad or not mismatch or self.flashed or self.attempts >= self.MAX_ATTEMPTS:
+    if not offroad or not mismatch or self.flashed or self.attempts >= self.MAX_ATTEMPTS or (self.thread is not None and self.thread.is_alive()):
       return
     self.attempts += 1
     cloudlog.warning(f"chestnut firmware mismatch, flashing (attempt {self.attempts})")
-    self.log = tempfile.TemporaryFile()
-    self.proc = subprocess.Popen(["sudo", sys.executable, os.path.join(BASEDIR, "openpilot/system/hardware/chestnut/flash.py"), CHESTNUT_FW_VERSION],
-                                 stdout=self.log, stderr=subprocess.STDOUT)
+    self.thread = threading.Thread(target=self.flash, daemon=True)
+    self.thread.start()
 
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
