@@ -1398,14 +1398,14 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   */
 
   uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the camera request manager
-  uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
+  uint64_t ife_frame_id = event_data->u.frame_msg.frame_id;  // kernel counter incremented on each IFE SOF event
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
-  //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+  //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, ife_frame_id);
 
   // if there's a lag, some more frames could have already come in before
   // we cleared the queue, so we'll still get them with valid (> 0) request IDs.
   if (timestamp < last_requeue_ts) {
-    LOGD("skipping frame: ts before requeue / cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+    LOGD("skipping frame: ts before requeue / cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, ife_frame_id);
     return false;
   }
 
@@ -1413,39 +1413,39 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     return false;
   }
 
-  if (!validateEvent(request_id, frame_id_raw)) {
+  if (!validateEvent(request_id, ife_frame_id)) {
     return false;
   }
 
   // Update tracking variables
-  if (request_id == request_id_last + 1) {
+  if (request_id == last_valid_request_id + 1) {
     skip_expected = false;
   }
-  frame_id_raw_last = frame_id_raw;
-  request_id_last = request_id;
+  last_valid_ife_frame_id = ife_frame_id;
+  last_valid_request_id = request_id;
 
   // Wait until frame's fully read out and processed
   if (!waitForFrameReady(request_id)) {
     // Reset queue on sync failure to prevent frame tearing
-    LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, frame_id_raw);
+    LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, ife_frame_id);
     clearAndRequeue(request_id + 1);
     return false;
   }
 
   int buf_idx = request_id % ife_buf_depth;
-  bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+  bool ret = processFrame(buf_idx, request_id, ife_frame_id, timestamp);
   destroySyncObjectAt(buf_idx);
   enqueue_frame(request_id + ife_buf_depth);  // request next frame for this slot
   return ret;
 }
 
-bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
+bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   // check if the request ID is even valid. this happens after queued
   // requests are cleared. unclear if it happens any other time.
   if (request_id == 0) {
     if (invalid_request_count++ > ife_buf_depth+2) {
       LOGE("camera %d reset after half second of invalid requests", cc.camera_num);
-      clearAndRequeue(request_id_last + 1);
+      clearAndRequeue(last_valid_request_id + 1);
       invalid_request_count = 0;
     }
     return false;
@@ -1454,14 +1454,14 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
 
   // check for skips in frame_id or request_id
   if (!skip_expected) {
-    if (frame_id_raw != frame_id_raw_last + 1) {
-      LOGE("camera %d frame ID skipped, %lu -> %lu", cc.camera_num, frame_id_raw_last, frame_id_raw);
+    if (ife_frame_id != last_valid_ife_frame_id + 1) {
+      LOGE("camera %d frame ID skipped, %lu -> %lu", cc.camera_num, last_valid_ife_frame_id, ife_frame_id);
       clearAndRequeue(request_id + 1);
       return false;
     }
 
-    if (request_id != request_id_last + 1) {
-      LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, request_id_last, request_id);
+    if (request_id != last_valid_request_id + 1) {
+      LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, last_valid_request_id, request_id);
       clearAndRequeue(request_id + 1);
       return false;
     }
@@ -1512,8 +1512,8 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   return success;
 }
 
-bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
-  if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp, cc.staggered_sof)) {
+bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t ife_frame_id, uint64_t timestamp) {
+  if (!syncFirstFrame(cc.camera_num, request_id, ife_frame_id, timestamp, cc.staggered_sof)) {
     return false;
   }
 
@@ -1523,7 +1523,7 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t fram
   // Update buffer and frame data
   buf.cur_buf_idx = buf_idx;
   buf.cur_frame_data = {
-    .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
+    .frame_id = (uint32_t)(ife_frame_id - camera_sync_data[cc.camera_num].frame_id_offset),
     .request_id = (uint32_t)request_id,
     .timestamp_sof = timestamp,
     .timestamp_eof = timestamp_eof,
@@ -1532,11 +1532,11 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t fram
   return true;
 }
 
-bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp, bool staggered) {
+bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t ife_frame_id, uint64_t timestamp, bool staggered) {
   if (first_frame_synced) return true;
 
   // Store the frame data for this camera
-  camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1, staggered};
+  camera_sync_data[camera_id] = SyncData{timestamp, ife_frame_id + 1, staggered};
 
   // Ensure all cameras are up
   int enabled_camera_count = std::count_if(std::begin(ALL_CAMERA_CONFIGS), std::end(ALL_CAMERA_CONFIGS),
@@ -1569,7 +1569,7 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t 
   }
 
   // Timeout in case the timestamps never line up
-  if (raw_id > 40) {
+  if (ife_frame_id > 40) {
     LOGE("camera first frame sync timed out");
     first_frame_synced = true;
   }
