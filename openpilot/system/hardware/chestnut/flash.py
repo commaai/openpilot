@@ -98,7 +98,7 @@ def unbind_drivers(path):
 
 
 def claim_device(path, setup=False):
-  # unbind kernel drivers (usb-storage in stock mode) and claim interface 0
+  # the ROM bootloader binds usb-storage, unbind it before claiming the interface
   disable_runtime_pm(path)
   unbind_drivers(path)
   bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
@@ -384,7 +384,6 @@ def vbus_cycle():
 
 
 def activate(serial, expected_product):
-  # vbus cycle only resets the ASIC when chestnut is bus-powered, report honestly otherwise
   if not os.path.exists(VBUS_PATH):
     print(f"[{serial}] no VBUS control, firmware activates on the next chestnut power cycle", flush=True)
     return
@@ -521,7 +520,7 @@ def flash_chestnut(expected_version=None, force=False):
 def main():
   parser = argparse.ArgumentParser(description="check and flash the bundled chestnut firmware")
   parser.add_argument("version", nargs="?", help="expected firmware version hash")
-  parser.add_argument("--force", action="store_true", help="verify/reflash even when the version matches")
+  parser.add_argument("--force", action="store_true", help="reflash even when the version matches")
   args = parser.parse_args()
   if os.geteuid() != 0:
     os.execvp("sudo", ["sudo", sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
