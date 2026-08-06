@@ -3,8 +3,11 @@ import fcntl
 import os
 import queue
 import struct
+import subprocess
+import sys
 import threading
 import time
+import typing
 from collections import OrderedDict, namedtuple
 
 import openpilot.cereal.messaging as messaging
@@ -16,7 +19,8 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import HARDWARE, TICI, PC
-from openpilot.common.hardware.usb import get_usb_state, get_usb_topology, set_usb_state
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_USB_IDS, get_usb_state, get_usb_topology, set_usb_state
 from openpilot.common.linux import LinuxSystemStats
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
@@ -33,6 +37,38 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
+FLASH_LOG = "/tmp/chestnut_flash.log"
+
+class Chestnut:
+  # flash offroad, modeld ignores chestnut until the product string matches
+  MAX_ATTEMPTS = 3
+
+  def __init__(self):
+    self.proc: subprocess.Popen | None = None
+    self.log: typing.IO | None = None
+    self.attempts = 0
+    self.flashed = False
+
+  def update(self, offroad: bool, usb_state: list[dict]) -> None:
+    if self.proc is not None:
+      if self.proc.poll() is None:
+        return
+      self.log.seek(0)
+      cloudlog.event("chestnut flash finished", returncode=self.proc.returncode, output=self.log.read()[-1000:], error=self.proc.returncode != 0)
+      self.log.close()
+      self.flashed = self.proc.returncode == 0
+      self.proc = None
+    mismatch = any((d["vendorId"], d["productId"]) in CHESTNUT_USB_IDS and d["product"] != f"custom {CHESTNUT_FW_VERSION}-CLEAN" for d in usb_state)
+    if not mismatch:
+      self.flashed = False
+    if not offroad or not mismatch or self.flashed or self.attempts >= self.MAX_ATTEMPTS:
+      return
+    self.attempts += 1
+    cloudlog.warning(f"chestnut firmware mismatch, flashing (attempt {self.attempts})")
+    self.log = open(FLASH_LOG, "w+")
+    self.proc = subprocess.Popen(["sudo", sys.executable, os.path.join(BASEDIR, "openpilot/system/hardware/chestnut/flash.py"), CHESTNUT_FW_VERSION],
+                                 stdout=self.log, stderr=subprocess.STDOUT)
+
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -195,6 +231,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   thermal_config = HARDWARE.get_thermal_config()
 
   fan_controller = FanController(int(1./DT_HW))
+  chestnut = Chestnut()
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
@@ -255,6 +292,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
 
     set_usb_state(msg.deviceState, last_hw_state.usb_state)
+    chestnut.update(started_ts is None, last_hw_state.usb_state)
 
     # this subset is only used for offroad
     temp_sources = [
