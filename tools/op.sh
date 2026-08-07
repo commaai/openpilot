@@ -349,6 +349,32 @@ function op_clip() {
   op_run_command openpilot/tools/clip/run.py "$@"
 }
 
+function op_check_agnos_update() {
+  if [[ ! -f "/AGNOS" ]]; then
+    return 0
+  fi
+
+  local choice current_version target_version
+  current_version="$(< /VERSION)"
+  target_version="$(unset AGNOS_VERSION; source "$OPENPILOT_ROOT/launch_env.sh"; echo "$AGNOS_VERSION")"
+
+  if [[ "$current_version" == "$target_version" ]]; then
+    return 0
+  fi
+
+  echo -e "${BOLD}AGNOS update available:${NC} $current_version → $target_version"
+  if read -r -p "Install it now? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+    op_run_command "$OPENPILOT_ROOT/openpilot/common/hardware/tici/agnos.py" --swap \
+      "$OPENPILOT_ROOT/openpilot/common/hardware/tici/agnos.json"
+
+    if read -r -p "Reboot now to apply the update? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+      op_run_command sudo reboot
+    else
+      echo "Reboot before starting openpilot to apply the AGNOS update."
+    fi
+  fi
+}
+
 function op_switch() {
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
@@ -376,11 +402,14 @@ function op_switch() {
 
   # remove openpilot update flag if present
   rm -f .overlay_init
+
+  op_check_agnos_update
 }
 
 function op_start() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
+    op_check_agnos_update
     op_run_command sudo systemctl restart comma $@
   fi
 }
