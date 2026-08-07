@@ -17,7 +17,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_l
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, should_stop
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.tools.lib.logreader import LogIterable
+from openpilot.tools.lib.logreader import LogIterable, LogReader, save_log
 
 MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
 MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
@@ -527,3 +527,15 @@ def migrate_driverMonitoringState(msgs):
     ops.append((index, as_reader(new_msg)))
 
   return ops, [], []
+
+
+if __name__ == '__main__':
+  import argparse, sys
+  parser = argparse.ArgumentParser(description="Migrate logs")
+  parser.add_argument("input_path", help="Segment identifier or path to file")
+  parser.add_argument("output_path", help="Path to file (required unless --stdout)")
+  args = parser.parse_args()
+
+  mlr = migrate_all(LogReader(args.input_path))
+  print(f"Saving migrated log to {args.output_path}")
+  save_log(args.output_path, mlr)
