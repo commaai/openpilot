@@ -79,6 +79,8 @@ def is_stock(vid_pid, product):
 
 def disable_runtime_pm(path):
   control = os.path.join(path, "power/control")
+  if not os.path.exists(control):
+    return
   with open(control, "w") as f:
     f.write("on\n")
   if open(control).read().strip() != "on":
@@ -97,12 +99,16 @@ def unbind_drivers(path):
         f.write(os.path.basename(interface))
 
 
+def device_fd(path):
+  bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
+  return os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
+
+
 def claim_device(path, setup=False):
   # unbind usb-storage, the ROM bootloader binds it
   disable_runtime_pm(path)
   unbind_drivers(path)
-  bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
-  fd = os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
+  fd = device_fd(path)
   try:
     if setup:
       fcntl.ioctl(fd, USBDEVFS_SETCONFIGURATION, struct.pack("I", 1))
@@ -257,42 +263,46 @@ def reconnect(flash):
       time.sleep(1)
 
 
-def stable_read(flash, addr, length, count=2):
+def retrying(flash, label, operation):
+  # any USB hiccup means reconnecting and starting the operation over
   attempt = 0
   while True:
     attempt += 1
     try:
-      reads = [flash.read(addr, length) for _ in range(count)]
-      if any(x != reads[0] for x in reads[1:]):
-        raise RuntimeError(f"unstable flash read at 0x{addr:05x}")
-      return reads[0]
+      return operation()
     except (OSError, TimeoutError, RuntimeError) as e:
       check_budget()
-      print(f"read 0x{addr:05x} attempt {attempt}: {e}", flush=True)
+      print(f"{label} attempt {attempt}: {e}", flush=True)
       reconnect(flash)
+
+
+def stable_read(flash, addr, length, count=2):
+  def read():
+    reads = [flash.read(addr, length) for _ in range(count)]
+    if any(x != reads[0] for x in reads[1:]):
+      raise RuntimeError(f"unstable flash read at 0x{addr:05x}")
+    return reads[0]
+  return retrying(flash, f"read 0x{addr:05x}", read)
 
 
 def program_sector(flash, addr, target):
-  attempt = 0
-  while True:
-    attempt += 1
-    try:
-      flash.erase_sector(addr)
-      if flash.read(addr, SECTOR) != bytes([0xFF]) * SECTOR:
-        raise RuntimeError("sector erase verification failed")
-      for off in range(0, SECTOR, PAGE):
-        chunk = target[off:off + PAGE]
-        if chunk != bytes([0xFF]) * len(chunk):
-          flash.program(addr + off, chunk)
-          if flash.read(addr + off, len(chunk)) != chunk:
-            raise RuntimeError(f"page verify failed at 0x{addr + off:05x}")
-      if flash.read(addr, SECTOR) == target:
-        return
+  def program():
+    flash.erase_sector(addr)
+    if flash.read(addr, SECTOR) != bytes([0xFF]) * SECTOR:
+      raise RuntimeError("sector erase verification failed")
+    for off in range(0, SECTOR, PAGE):
+      chunk = target[off:off + PAGE]
+      if chunk != bytes([0xFF]) * len(chunk):
+        flash.program(addr + off, chunk)
+        if flash.read(addr + off, len(chunk)) != chunk:
+          raise RuntimeError(f"page verify failed at 0x{addr + off:05x}")
+    if flash.read(addr, SECTOR) != target:
       raise RuntimeError("sector verification failed")
-    except (OSError, TimeoutError, RuntimeError) as e:
-      check_budget()
-      print(f"sector 0x{addr:05x} attempt {attempt}: {e}", flush=True)
-      reconnect(flash)
+  retrying(flash, f"sector 0x{addr:05x}", program)
+
+
+def backup_path():
+  return os.path.join(BACKUP_DIR, f"{os.uname().nodename}.config.bin")
 
 
 def backed_up_config(path, data):
@@ -316,9 +326,10 @@ def backed_up_config(path, data):
 def stock_recover(image, config):
   # the ROM bootloader only speaks BOT, and needs a port reset before it accepts bulk transfers
   path, _, _ = installed_chestnut()
+  if path is None:
+    raise RuntimeError("chestnut disappeared before recovery")
   unbind_drivers(path)
-  bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
-  fd = os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
+  fd = device_fd(path)
   try:
     fcntl.ioctl(fd, USBDEVFS_RESET)
   finally:
@@ -398,7 +409,7 @@ def activate(expected_product):
   time.sleep(1)
   vbus_write("1")
   if not disconnected:
-    print("chestnut is externally powered, firmware activates on its next power cycle", flush=True)
+    print("chestnut stayed powered, firmware activates on its next power cycle", flush=True)
     return
   deadline = time.monotonic() + 15.0
   while time.monotonic() < deadline:
@@ -413,9 +424,13 @@ def activate(expected_product):
   print("chestnut did not re-enumerate, firmware activates on its next power cycle", flush=True)
 
 
+def defer_signal(signum, _frame):
+  # writing from a handler must not reenter a print already in progress
+  os.write(1, f"signal {signum} deferred until the chestnut is powered back up\n".encode())
+
+
 def flash_chestnut(expected_version=None, force=False):
   global _deadline
-  serial = os.uname().nodename
 
   image = FIRMWARE_PATH.read_bytes()
   validate_wrapped(image)
@@ -435,53 +450,64 @@ def flash_chestnut(expected_version=None, force=False):
   for pm_path in PM_PATHS:
     disable_runtime_pm(pm_path)
 
-  if is_stock(vid_pid, product):
-    backup = os.path.join(BACKUP_DIR, f"{serial}.config.bin")
-    if not os.path.isfile(backup):
-      raise RuntimeError(f"cannot recover from stock mode without a config backup at {backup}")
-    config = open(backup, "rb").read()
-    if len(config) != 0x100:
-      raise RuntimeError(f"invalid config backup: {backup}")
-    committed = False
-    while True:
-      check_budget()
-      path, vid_pid, product = installed_chestnut()
-      if path is None:
-        if committed:
-          print("chestnut is offline, recovered firmware boots on its next power cycle", flush=True)
-          return
-        vbus_cycle()
-        continue
-      if not is_stock(vid_pid, product):
-        break
-      if committed:
-        print("chestnut is externally powered, recovered firmware boots on its next power cycle", flush=True)
+  previous = {sig: signal.signal(sig, defer_signal) for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
+  try:
+    if is_stock(vid_pid, product):
+      if not recover_from_stock(image, expected_product):
         return
-      try:
-        stock_recover(image, config)
-        committed = True
-      except (OSError, TimeoutError, RuntimeError) as e:
-        print(f"stock recovery failed, retrying: {e}", flush=True)
-        vbus_cycle()
-        continue
-      activate(expected_product)
-    force = True  # firmware is back, fall through to verify
+      # firmware is back, verify it against the bundled image
+      force, product = True, None
+    write_image(image, expected_product, product, force)
+  finally:
+    for sig, handler in previous.items():
+      signal.signal(sig, handler)
 
+
+def recover_from_stock(image, expected_product):
+  # returns whether the chestnut came back on custom firmware
+  backup = backup_path()
+  if not os.path.isfile(backup):
+    raise RuntimeError(f"cannot recover from stock mode without a config backup at {backup}")
+  config = open(backup, "rb").read()
+  if len(config) != 0x100:
+    raise RuntimeError(f"invalid config backup: {backup}")
+
+  committed = False
+  while True:
+    check_budget()
+    path, vid_pid, product = installed_chestnut()
+    if path is None:
+      if committed:
+        print("chestnut is offline, recovered firmware boots on its next power cycle", flush=True)
+        return False
+      vbus_cycle()
+      continue
+    if not is_stock(vid_pid, product):
+      return True
+    if committed:
+      print("chestnut stayed powered, recovered firmware boots on its next power cycle", flush=True)
+      return False
+    try:
+      stock_recover(image, config)
+      committed = True
+    except (OSError, TimeoutError, RuntimeError) as e:
+      print(f"stock recovery failed, retrying: {e}", flush=True)
+      vbus_cycle()
+      continue
+    activate(expected_product)
+
+
+def write_image(image, expected_product, product, force):
   if force:
     print(f"forced reflash of {expected_product}", flush=True)
   else:
     print(f"chestnut firmware mismatch: {product!r}; expected {expected_product!r}", flush=True)
 
   flash = Flash()
-  prev_handlers = {}
-
-  def finish_safely(signum, _frame):
-    print(f"signal {signum} deferred until flashing and verification complete", flush=True)
-
   try:
     reconnect(flash)
     config = stable_read(flash, 0, 0x100, 3)
-    config = backed_up_config(os.path.join(BACKUP_DIR, f"{serial}.config.bin"), config)
+    config = backed_up_config(backup_path(), config)
     image_end = IMAGE_OFFSET + len(image)
     first_sector = IMAGE_OFFSET & ~(SECTOR - 1)
     span = (image_end + SECTOR - 1) & ~(SECTOR - 1)
@@ -491,9 +517,6 @@ def flash_chestnut(expected_version=None, force=False):
     target[IMAGE_OFFSET - first_sector:image_end - first_sector] = image
     target = bytes(target)
     print(f"target {len(image)} bytes at 0x{IMAGE_OFFSET:05x}, sha256={hashlib.sha256(image).hexdigest()}", flush=True)
-
-    for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
-      prev_handlers[sig] = signal.signal(sig, finish_safely)
 
     for addr in range(first_sector, span, SECTOR):
       off = addr - first_sector
@@ -510,8 +533,6 @@ def flash_chestnut(expected_version=None, force=False):
     print(f"verified sha256={hashlib.sha256(verified).hexdigest()}", flush=True)
   finally:
     flash.close()
-    for sig, handler in prev_handlers.items():
-      signal.signal(sig, handler)
 
   activate(expected_product)
 
@@ -522,7 +543,7 @@ def main():
   parser.add_argument("--force", action="store_true", help="reflash even when the version matches")
   args = parser.parse_args()
   if os.geteuid() != 0:
-    os.execvp("sudo", ["sudo", sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
+    raise RuntimeError("flash.py must run as root")
   flash_chestnut(expected_version=args.version, force=args.force)
 
 
