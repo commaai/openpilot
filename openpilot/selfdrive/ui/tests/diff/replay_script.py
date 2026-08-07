@@ -138,6 +138,10 @@ def setup_update_available(available: bool = True) -> None:
     params.remove("UpdaterTargetBranch")
 
 
+def set_updater_state(state: str) -> None:
+  Params().put("UpdaterState", state, block=True)
+
+
 def setup_calibration_params() -> None:
   params = Params()
   # live calibration
@@ -479,6 +483,9 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   # === Settings - Software ===
   script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available
   script.click(278, 720)  # software
+  script.setup(lambda: set_updater_state("checking..."))  # updater mid-check
+  script.setup(lambda: set_updater_state("downloading..."))  # updater mid-download
+  script.setup(lambda: set_updater_state("idle"), wait_after=0)
   for _ in range(2):
     script.click(720, 120)  # toggle current release notes
   script.setup(setup_update_available)  # set update available

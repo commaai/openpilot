@@ -411,11 +411,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.bigModelLoading: {
     ET.NO_ENTRY: NoEntryAlert("Big Model Loading"),
-    ET.PERMANENT: NormalPermanentAlert("Big Model Loading"),
   },
 
-  EventName.bigModelReady: {
-    ET.PERMANENT: EngagementAlert(AudibleAlert.complete),
+  EventName.bigModelFailed: {
+    ET.PERMANENT: NormalPermanentAlert("Big Model Failed ", "Restart the car to retry,\nnow driving on small model", duration=20.),
   },
 
   EventName.lateralManeuver: {
@@ -753,6 +752,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.resumeBlocked: {
     ET.NO_ENTRY: NoEntryAlert("Press Set to Engage"),
+  },
+
+  EventName.carNotReady: {
+    ET.NO_ENTRY: NoEntryAlert("Car Not Ready"),
   },
 
   EventName.wrongCruiseMode: {

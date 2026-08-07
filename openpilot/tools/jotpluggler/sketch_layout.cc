@@ -262,7 +262,8 @@ RouteSelection parse_route_selection(std::string route_name) {
     if (separator == "/") {
       size_t pos = range_str.find(':');
       int begin_segment = 0;
-      if (!parse_segment_number(range_str.substr(0, pos), &begin_segment)) {
+      const std::string begin_str = range_str.substr(0, pos);
+      if (!begin_str.empty() && !parse_segment_number(begin_str, &begin_segment)) {
         return {};
       }
       route.begin_segment = begin_segment;

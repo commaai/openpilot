@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import sys, subprocess
+import time
 from SCons.Script import Action, Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
@@ -45,7 +46,7 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 USBGPU = usbgpu_present()
 if USBGPU:
-  usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0'
+  usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
 
@@ -86,12 +87,31 @@ for usbgpu in [False, True] if USBGPU else [False]:
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
+  def do_compile(target, source, env, command=cmd, pkl=target_pkl_path, chunks=chunk_targets):
+    # chestnut can enumerate before its PCIe link is up due to varying 12V power behavior across cars
+    probe_cmd = [sys.executable, '-c', 'from openpilot.selfdrive.modeld.compile_modeld import Device; Device[Device.DEFAULT]']
+    probe_env = {**env['ENV'], 'DEV': 'USB+AMD'}
+    ready = False
+    for attempt in range(3):
+      if attempt: time.sleep(1)
+      try:
+        ready = subprocess.run(probe_cmd, env=probe_env, capture_output=True, timeout=10).returncode == 0
+      except subprocess.TimeoutExpired:
+        pass
+      if ready: break
+    if not ready:
+      print("Chestnut not ready, skipping big model build")
+      return
+    if ret := env.Execute(command):
+      return ret
+    chunk_file(pkl, chunks)
   def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
+  actions = Action(do_compile, "  [USBGPU] $TARGET") if usbgpu else [cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
   node = lenv.Command(
     chunk_targets,
     tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file],
-    [cmd, Action(do_chunk, "  [CHUNK] $TARGET")],
+    actions,
   )
   if usbgpu:
     lenv.SideEffect(usbgpu_lock, node)

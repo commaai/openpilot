@@ -38,7 +38,11 @@ function install_linux_deps() {
     fi
   done
 
-  # normal stuff, this mostly for bare docker images
+  # ------------------------------------------------
+  # dependencies should never be added to this list.
+  # these are only for inflating bare docker images
+  # to their desktop equivalents.
+  # ------------------------------------------------
   if [[ "$missing_linux_deps" -eq 0 ]]; then
     # the native package managers are slow, so skip if we can
     echo "[ ] system packages already installed t=$SECONDS"

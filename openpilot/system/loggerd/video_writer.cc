@@ -49,6 +49,11 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
   }
 }
 
+void VideoWriter::set_metadata(const char *key, const char *value) {
+  assert(remuxing && !header_written);
+  av_dict_set(&ofmt_ctx->metadata, key, value, 0);
+}
+
 void VideoWriter::initialize_audio(int sample_rate) {
   assert(this->ofmt_ctx->oformat->audio_codec != AV_CODEC_ID_NONE); // check output format supports audio streams
   const AVCodec *audio_avcodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
@@ -106,7 +111,10 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
       int err = avcodec_parameters_from_context(out_stream->codecpar, codec_ctx);
       assert(err >= 0);
       // if there is an audio stream, it must be initialized before this point
-      err = avformat_write_header(ofmt_ctx, NULL);
+      AVDictionary *options = nullptr;
+      if (ofmt_ctx->metadata) av_dict_set(&options, "movflags", "+faststart+use_metadata_tags", 0);
+      err = avformat_write_header(ofmt_ctx, &options);
+      av_dict_free(&options);
       assert(err >= 0);
       header_written = true;
     } else {

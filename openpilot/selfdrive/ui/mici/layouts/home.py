@@ -139,7 +139,7 @@ class MiciHomeLayout(Widget):
     self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
-    self._egpu_icon = IconWidget("icons_mici/egpu.png", (50, 37))
+    self._egpu_icon = IconWidget("icons_mici/egpu_green.png", (50, 37))
     self._egpu_icon_gray = IconWidget("icons_mici/egpu_gray.png", (50, 37))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
     self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
@@ -174,7 +174,7 @@ class MiciHomeLayout(Widget):
     if self._mouse_down_t is not None:
       if time.monotonic() - self._mouse_down_t > 0.5:
         # long gating for experimental mode - only allow toggle if longitudinal control is available
-        if ui_state.has_longitudinal_control:
+        if ui_state.has_longitudinal_control and ui_state.experimental_mode_confirmed:
           ui_state.experimental_mode = not ui_state.experimental_mode
           ui_state.params.put("ExperimentalMode", ui_state.experimental_mode, block=True)
         self._mouse_down_t = None
@@ -248,8 +248,8 @@ class MiciHomeLayout(Widget):
 
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(ui_state.experimental_mode)
-    self._egpu_icon.set_visible(ui_state.usbgpu and ui_state.usbgpu_compiled)
-    self._egpu_icon_gray.set_visible(ui_state.usbgpu and not ui_state.usbgpu_compiled)
+    self._egpu_icon.set_visible(ui_state.sm["deviceState"].chestnutPresent and ui_state.usbgpu_compiled)
+    self._egpu_icon_gray.set_visible(ui_state.sm["deviceState"].chestnutPresent and not ui_state.usbgpu_compiled)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(bool(ui_state.is_body))
 

@@ -129,11 +129,11 @@ private:
       // update widget geometries in QTreeView::rowsInserted
       QTreeView::rowsInserted(parent, start, end);
     }
-    void setModel(QAbstractItemModel *model) override {
-      QTreeView::setModel(model);
+    void setModel(QAbstractItemModel *m) override {
+      QTreeView::setModel(m);
       // Bypass the slow call to QTreeView::dataChanged.
-      QObject::disconnect(model, &QAbstractItemModel::dataChanged, this, nullptr);
-      QObject::connect(model, &QAbstractItemModel::dataChanged, this,
+      QObject::disconnect(m, &QAbstractItemModel::dataChanged, this, nullptr);
+      QObject::connect(m, &QAbstractItemModel::dataChanged, this,
                        [this](const QModelIndex &tl, const QModelIndex &br, const auto &roles) { QAbstractItemView::dataChanged(tl, br, roles); });
     }
     void leaveEvent(QEvent *event) override {

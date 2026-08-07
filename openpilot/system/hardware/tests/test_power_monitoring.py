@@ -11,6 +11,10 @@ def mock_time_monotonic():
   ssb += 1.
   return ssb
 
+def set_mock_time(value):
+  global ssb
+  ssb = value
+
 TEST_DURATION_S = 50
 GOOD_VOLTAGE = 12 * 1e3
 VOLTAGE_BELOW_PAUSE_CHARGING = (VBATT_PAUSE_CHARGING - 1) * 1e3
@@ -106,10 +110,9 @@ class TestPowerMonitoring(OpenpilotTestCase):
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     start_time = ssb
     ignition = False
-    while ssb <= start_time + MOCKED_MAX_OFFROAD_TIME:
-      pm.calculate(GOOD_VOLTAGE, ignition)
-      if (ssb - start_time) % 1000 == 0 and ssb < start_time + MOCKED_MAX_OFFROAD_TIME:
-        assert not pm.should_shutdown(ignition, True, start_time, False)
+    set_mock_time(start_time + MOCKED_MAX_OFFROAD_TIME - 1)
+    assert not pm.should_shutdown(ignition, True, start_time, False)
+    set_mock_time(start_time + MOCKED_MAX_OFFROAD_TIME)
     assert pm.should_shutdown(ignition, True, start_time, False)
 
   def test_car_voltage(self, mocker):
@@ -184,11 +187,10 @@ class TestPowerMonitoring(OpenpilotTestCase):
     started_seen = True
     pm.calculate(VOLTAGE_BELOW_PAUSE_CHARGING, ignition)
 
-    while ssb < offroad_timestamp + DELAY_SHUTDOWN_TIME_S:
-      assert not pm.should_shutdown(ignition, in_car,
-                                          offroad_timestamp,
-                                          started_seen), \
-                       f"Should not shutdown before {DELAY_SHUTDOWN_TIME_S} seconds offroad time"
+    set_mock_time(offroad_timestamp + DELAY_SHUTDOWN_TIME_S - 1)
+    assert not pm.should_shutdown(ignition, in_car, offroad_timestamp, started_seen), \
+                     f"Should not shutdown before {DELAY_SHUTDOWN_TIME_S} seconds offroad time"
+    set_mock_time(offroad_timestamp + DELAY_SHUTDOWN_TIME_S)
     assert pm.should_shutdown(ignition, in_car,
                                        offroad_timestamp,
                                        started_seen), \

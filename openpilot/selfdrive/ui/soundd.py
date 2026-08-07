@@ -44,7 +44,6 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
   AudibleAlert.promptDistracted: ("dm_warning.wav", None, MAX_VOLUME),
 
   AudibleAlert.preAlert: ("pre_alert.wav", 1, MAX_VOLUME),
-  AudibleAlert.complete: ("complete.wav", 1, MAX_VOLUME),
 
   AudibleAlert.warningSoft: ("critical.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("dm_critical.wav", None, MAX_VOLUME),
@@ -166,6 +165,7 @@ class Soundd:
   def soundd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
+    micd.patch_sounddevice(sd)
 
     sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
 

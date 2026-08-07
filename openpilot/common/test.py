@@ -22,17 +22,14 @@ def clean_env():
 
 
 class OpenpilotTestCase(unittest.TestCase):
-  """TestCase with openpilot's per-test isolation and legacy hook support."""
+  """TestCase with openpilot's per-test isolation."""
 
   TICI_TEST = False
-  SKIP_TICI_SETUP = False
   SHARED_DOWNLOAD_CACHE = False
-  SLOW_TEST = False
 
   def __init_subclass__(cls, **kwargs):
     super().__init_subclass__(**kwargs)
-    # Hide legacy pytest xunit hook names from pytest. unittest invokes the
-    # preserved hooks inside the OpenpilotPrefix boundary below.
+    # Preserve legacy xunit hooks and invoke them inside the prefix below.
     for name in ("setup_method", "teardown_method"):
       hook = cls.__dict__.get(name)
       if hook is not None:
@@ -64,8 +61,7 @@ class OpenpilotTestCase(unittest.TestCase):
   def run(self, result=None):
     # This boundary cannot live in setUp/tearDown: existing unittest classes
     # are allowed to override those hooks without calling super().
-    if ((self.SLOW_TEST and os.environ.get("SKIP_SLOW")) or
-        (self.TICI_TEST and not TICI) or getattr(type(self), "__unittest_skip__", False)):
+    if (self.TICI_TEST and not TICI) or getattr(type(self), "__unittest_skip__", False):
       return super().run(result)
     test_env = clean_env()
     test_env.__enter__()
@@ -84,8 +80,6 @@ class OpenpilotTestCase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    if cls.SLOW_TEST and os.environ.get("SKIP_SLOW"):
-      raise unittest.SkipTest("slow test")
     if cls.TICI_TEST and not TICI:
       raise unittest.SkipTest("Skipping tici test on PC")
     cls._class_env = clean_env()
@@ -109,7 +103,7 @@ class OpenpilotTestCase(unittest.TestCase):
     if self.TICI_TEST and not TICI:
       self.skipTest("Skipping tici test on PC")
 
-    if self.TICI_TEST and not self.SKIP_TICI_SETUP:
+    if self.TICI_TEST:
       HARDWARE.initialize_hardware()
       HARDWARE.set_power_save(False)
       subprocess.run(["pkill", "-9", "-f", "athena"], check=False)

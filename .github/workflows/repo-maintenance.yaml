@@ -80,7 +80,7 @@ jobs:
         labels: bot
 
   cleanup_closed_branches:
-    if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'commaai/openpilot' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write

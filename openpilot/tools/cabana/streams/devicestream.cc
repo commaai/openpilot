@@ -53,7 +53,7 @@ void DeviceStream::start() {
   if (!zmq_address.isEmpty()) {
     stopBridge();
     const std::string path = (std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) /
-                              "../../openpilot/cereal/messaging/bridge").lexically_normal().string();
+                              "../../cereal/messaging/bridge").lexically_normal().string();
     const std::string addr = zmq_address.toStdString();
     const char *can_filter = "/\"can/\"";
 
