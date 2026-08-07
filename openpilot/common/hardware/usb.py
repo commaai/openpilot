@@ -4,7 +4,13 @@ from pathlib import Path
 CHESTNUT_FW_VERSION = "1d368808"
 CHESTNUT_USB_IDS = ((0xADD1, 0x0001), (0x3801, 0x0001))
 CHESTNUT_ROM_USB_IDS = ((0x174C, 0x2464), (0x174C, 0x2463))
+CHESTNUT_ROM_PRODUCT = "USB 3.2 PCIe TinyEnclosure"
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
+
+
+def is_chestnut_rom(vendor_id: int, product_id: int, product: str) -> bool:
+  # stock ASM2464 enclosures share the ROM ids, so also require the ROM product strings
+  return (vendor_id, product_id) in CHESTNUT_ROM_USB_IDS and (product == CHESTNUT_ROM_PRODUCT or product.startswith("AS2462"))
 
 
 def get_usb_topology() -> set[str]:
