@@ -55,7 +55,9 @@ def _pattern_sample(client):
   neighbors = [padded[i:i + len(profile)] for i in range(9) if i != 4]
   residual = profile - np.median(neighbors, axis=0)
   position = int(np.argmax(residual))
-  return client.frame_id, position, len(profile), residual[position]
+  if residual[position] <= 10:
+    return None
+  return client.timestamp_sof, client.frame_id, position / len(profile)
 
 def _sanity_checks(ts):
   for camera in CAMERAS:
@@ -184,45 +186,34 @@ class TestCameradStress(OpenpilotTestCase):
     env = {'SPECTRA_TEST_PATTERN': '1', 'SPECTRA_ERROR_FILTER': 'publish delay', 'SPECTRA_ERROR_CAMERA': '1',
            'SPECTRA_ERROR_PROB': '1', 'SPECTRA_ERROR_DT': '6000'}
     samples = {'road': [], 'wide': []}
-    with patch.dict(os.environ, env):
-      with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
-        clients = {
-          'road': VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True),
-          'wide': VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True),
-        }
-        for client in clients.values():
-          client.connect(True)
-        end = time.monotonic() + 10
-        while time.monotonic() < end:
-          for camera, client in clients.items():
-            sample = _pattern_sample(client)
-            if sample is not None:
-              samples[camera].append(sample)
+    with patch.dict(os.environ, env), processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
+      clients = {
+        'road': VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True),
+        'wide': VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True),
+      }
+      for client in clients.values():
+        client.connect(True)
+      end = time.monotonic() + 10
+      while time.monotonic() < end:
+        for camera, client in clients.items():
+          sample = _pattern_sample(client)
+          if sample is not None:
+            samples[camera].append(sample)
 
     with lock:
       ts = msgs_to_time_series(raw_logs)
-    positions = {camera: {frame_id: (position, period) for frame_id, position, period, confidence in camera_samples if confidence > 10}
-                 for camera, camera_samples in samples.items()}
-    periods = {period for camera_positions in positions.values() for _, period in camera_positions.values()}
-    assert len(periods) == 1
-    period = periods.pop()
-    services = {'road': 'roadCameraState', 'wide': 'wideRoadCameraState'}
-    sofs = {camera: dict(zip(ts[service]['frameId'], ts[service]['timestampSof'], strict=True))
-            for camera, service in services.items()}
-    wide_frames = positions['wide'].keys() & sofs['wide'].keys()
-    assert wide_frames
+    assert all(samples.values())
     offsets = []
-    for frame_id in positions['road'].keys() & sofs['road'].keys():
-      wide_frame_id = min(wide_frames, key=lambda f: abs(sofs['wide'][f] - sofs['road'][frame_id]))
-      if abs(sofs['wide'][wide_frame_id] - sofs['road'][frame_id]) < 1.1e6:
-        offsets.append((sofs['road'][frame_id], frame_id, (positions['road'][frame_id][0] - positions['wide'][wide_frame_id][0]) % period))
-    offsets.sort()
+    for timestamp, frame_id, phase in samples['road']:
+      wide = min(samples['wide'], key=lambda sample: abs(sample[0] - timestamp))
+      if abs(wide[0] - timestamp) < 1.1e6:
+        offsets.append((frame_id, (phase - wide[2]) % 1))
     assert len(offsets) > 20
-    expected_offsets = {offset for _, _, offset in offsets[:len(offsets) // 2]}
+    expected_offsets = {offset for _, offset in offsets[:len(offsets) // 2]}
     # Allow small sensor-specific phase jitter while rejecting a substituted frame.
-    tolerance = period // 32
-    unexpected = {frame_id: offset for _, frame_id, offset in offsets[len(offsets) // 2:]
-                  if min(min((offset - expected) % period, (expected - offset) % period) for expected in expected_offsets) > tolerance}
+    tolerance = 1 / 32
+    unexpected = {frame_id: offset for frame_id, offset in offsets[len(offsets) // 2:]
+                  if all(abs((offset - expected + .5) % 1 - .5) > tolerance for expected in expected_offsets)}
     assert not unexpected, f"road/wide pixels disagree for synchronized frames: {unexpected}"
 
     assert max(np.max(np.diff(ts[c]['frameId'])) for c in CAMERAS) > 1
