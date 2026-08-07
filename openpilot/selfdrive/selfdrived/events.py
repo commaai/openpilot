@@ -449,6 +449,13 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
                                        priority=Priority.HIGH),
   },
 
+  EventName.secOcKeyMissing: {
+    ET.PERMANENT: NormalPermanentAlert("Steering Unavailable",
+                                       "Security Key Not Available",
+                                       priority=Priority.HIGH),
+    ET.NO_ENTRY: NoEntryAlert("Steering Unavailable: Security Key Not Available"),
+  },
+
   EventName.dashcamMode: {
     ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
                                        priority=Priority.LOWEST),

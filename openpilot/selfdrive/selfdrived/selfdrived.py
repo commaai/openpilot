@@ -149,6 +149,11 @@ class SelfdriveD:
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
 
+    if self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
+      # Car will reject our messages and fault, let the user know they
+      # need to recover the SecOC security key to re-enable openpilot
+      self.events.add(EventName.secOcKeyMissing, static=True)
+
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
 
