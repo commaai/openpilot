@@ -505,7 +505,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="locationd",
     pubs=[
-      "cameraOdometry", "accelerometer", "gyroscope", "liveCalibration", "carState"
+      "cameraOdometry", "accelerometer", "gyroscope", "temperatureSensor", "liveCalibration", "carState"
     ],
     subs=["livePose"],
     ignore=["logMonoTime"],

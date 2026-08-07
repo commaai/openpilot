@@ -61,6 +61,8 @@ class LocationEstimator:
     self.car_speed = 0.0
     self.camodo_yawrate_distribution = np.array([0.0, 10.0])  # mean, std
     self.device_from_calib = np.eye(3)
+    self.accelerometer_source = None
+    self.temperature_reference = None
 
     obs_kinds = [ObservationKind.PHONE_ACCEL, ObservationKind.PHONE_GYRO, ObservationKind.CAMERA_ODO_ROTATION, ObservationKind.CAMERA_ODO_TRANSLATION]
     self.observations = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
@@ -107,6 +109,7 @@ class LocationEstimator:
 
       if not self._validate_sensor_source(msg.source):
         return HandleLogResult.SENSOR_SOURCE_INVALID
+      self.accelerometer_source = msg.source
 
       v = msg.acceleration.v
       meas = np.array([-v[2], -v[1], -v[0]])
@@ -118,6 +121,12 @@ class LocationEstimator:
         _, new_x, _, new_P, _, _, (acc_err,), _, _ = acc_res
         self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(acc_err)
         self.observations[ObservationKind.PHONE_ACCEL] = meas
+
+    elif which == "temperatureSensor" and msg.which() == "temperature":
+      if msg.source == self.accelerometer_source and 0.0 < msg.temperature < 100.0:
+        if self.temperature_reference is None:
+          self.temperature_reference = msg.temperature
+        self.kf.set_temperature_delta(msg.temperature - self.temperature_reference)
 
     elif which == "gyroscope" and msg.which() == "gyroUncalibrated":
       sensor_time = msg.timestamp * 1e-9
@@ -270,7 +279,7 @@ def main():
   pm = messaging.PubMaster(['livePose'])
   sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
   # separate sensor sockets for efficiency
-  sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
+  sensor_sockets = {which: messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope', 'temperatureSensor']}
   sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)
 
   params = Params()
@@ -289,18 +298,21 @@ def main():
   if initial_pose_data is not None:
     with log.Event.from_bytes(initial_pose_data) as lp_msg:
       filter_state = lp_msg.livePose.debugFilterState
-      x_initial = np.array(filter_state.value, dtype=np.float64) if len(filter_state.value) != 0 else PoseKalman.initial_x
-      P_initial = np.diag(np.array(filter_state.std, dtype=np.float64)) if len(filter_state.std) != 0 else PoseKalman.initial_P
+      x_initial, P_initial = PoseKalman.initial_x.copy(), PoseKalman.initial_P.copy()
+      state_len = min(len(filter_state.value), len(x_initial))
+      std_len = min(len(filter_state.std), len(x_initial))
+      x_initial[:state_len] = np.array(filter_state.value[:state_len], dtype=np.float64)
+      P_initial[:std_len, :std_len] = np.diag(np.array(filter_state.std[:std_len], dtype=np.float64))
       estimator.reset(None, x_initial, P_initial)
 
   while True:
     sm.update()
 
-    acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
+    acc_msgs, gyro_msgs, temp_msgs = (messaging.drain_sock(sensor_sockets[which]) for which in sensor_sockets)
 
     if filter_initialized:
       msgs = []
-      for msg in acc_msgs + gyro_msgs:
+      for msg in acc_msgs + gyro_msgs + temp_msgs:
         t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
         msgs.append((t, valid, which, data))
       for which, updated in sm.updated.items():
