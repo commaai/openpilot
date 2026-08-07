@@ -4,6 +4,8 @@ from typing import cast
 import capnp
 import functools
 import traceback
+import sys
+import argparse
 
 from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
@@ -387,7 +389,7 @@ def migrate_cameraStates(msgs):
 
     encode_id = frame_to_encode_id[msg.which()].get(camera_state.frameId)
     if encode_id is None:
-      print(f"Missing encoded frame for camera feed {msg.which()} with frameId: {camera_state.frameId}")
+      print(f"Missing encoded frame for camera feed {msg.which()} with frameId: {camera_state.frameId}", file=sys.stderr)
       if len(frame_to_encode_id[msg.which()]) != 0:
         del_ops.append(index)
         continue
@@ -395,7 +397,7 @@ def migrate_cameraStates(msgs):
       # fallback mechanism for logs without encodeIdx (e.g. logs from before 2022 with dcamera recording disabled)
       # try to fake encode_id by subtracting lowest frameId
       encode_id = camera_state.frameId - min_frame_id[msg.which()]
-      print(f"Faking encodeId to {encode_id} for camera feed {msg.which()} with frameId: {camera_state.frameId}")
+      print(f"Faking encodeId to {encode_id} for camera feed {msg.which()} with frameId: {camera_state.frameId}", file=sys.stderr)
 
     new_msg = messaging.new_message(msg.which())
     new_camera_state = getattr(new_msg, new_msg.which())
@@ -530,12 +532,11 @@ def migrate_driverMonitoringState(msgs):
 
 
 if __name__ == '__main__':
-  import argparse, sys
   parser = argparse.ArgumentParser(description="Migrate logs")
   parser.add_argument("input_path", help="Segment identifier or path to file")
-  parser.add_argument("output_path", help="Path to file (required unless --stdout)")
+  parser.add_argument("output_path", help="Path to output file")
   args = parser.parse_args()
 
   mlr = migrate_all(LogReader(args.input_path))
-  print(f"Saving migrated log to {args.output_path}")
+  print(f"Saving migrated log to {args.output_path}", file=sys.stderr)
   save_log(args.output_path, mlr)
