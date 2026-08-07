@@ -19,7 +19,7 @@ UI_DIR = files("openpilot.selfdrive.ui")
 TRANSLATIONS_DIR = UI_DIR.joinpath("translations")
 LANGUAGES_FILE = TRANSLATIONS_DIR.joinpath("languages.json")
 
-UNIFONT_LANGUAGES = [
+FONT_FALLBACK_LANGUAGES = [
   "th",
   "zh-CHT",
   "zh-CHS",
@@ -164,9 +164,8 @@ class Multilang:
   def language(self) -> str:
     return self._language
 
-  def requires_unifont(self) -> bool:
-    """Certain languages require unifont to render their glyphs."""
-    return self._language in UNIFONT_LANGUAGES
+  def requires_font_fallback(self) -> bool:
+    return self._language in FONT_FALLBACK_LANGUAGES
 
   def setup(self):
     try:
