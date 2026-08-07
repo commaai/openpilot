@@ -19,7 +19,7 @@ VID_PIDS = (("add1", "0001"), ("3801", "0001"))
 STOCK_VID_PIDS = (("174c", "2464"), ("174c", "2463"))
 STOCK_PRODUCT = "USB 3.2 PCIe TinyEnclosure"
 FIRMWARE_PATH = Path(__file__).with_name("firmware_wrapped.bin")
-BACKUP_DIR = "/data/asm_flash_backups"
+CONFIG_DIR = "/data/chestnut_config"
 PM_PATHS = ("/sys/bus/platform/devices/a600000.ssusb", "/sys/bus/usb/devices/usb4")
 VBUS_PATH = "/sys/kernel/debug/regulator/smb2-vbus/enable"
 IMAGE_OFFSET = 0x100
@@ -301,8 +301,8 @@ def program_sector(flash, addr, target):
   retrying(flash, f"sector 0x{addr:05x}", program)
 
 
-def backup_path():
-  return os.path.join(BACKUP_DIR, f"{os.uname().nodename}.config.bin")
+def config_path():
+  return os.path.join(CONFIG_DIR, f"{os.uname().nodename}.bin")
 
 
 def backed_up_config(path, data):
@@ -465,7 +465,7 @@ def flash_chestnut(expected_version=None, force=False):
 
 def recover_from_stock(image, expected_product):
   # returns whether the chestnut came back on custom firmware
-  backup = backup_path()
+  backup = config_path()
   if not os.path.isfile(backup):
     raise RuntimeError(f"cannot recover from stock mode without a config backup at {backup}")
   config = open(backup, "rb").read()
@@ -507,7 +507,7 @@ def write_image(image, expected_product, product, force):
   try:
     reconnect(flash)
     config = stable_read(flash, 0, 0x100, 3)
-    config = backed_up_config(backup_path(), config)
+    config = backed_up_config(config_path(), config)
     image_end = IMAGE_OFFSET + len(image)
     first_sector = IMAGE_OFFSET & ~(SECTOR - 1)
     span = (image_end + SECTOR - 1) & ~(SECTOR - 1)
