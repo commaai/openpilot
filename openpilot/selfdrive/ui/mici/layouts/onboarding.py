@@ -1,9 +1,9 @@
 import math
 import numpy as np
-import qrcode
 import pyray as rl
 from collections.abc import Callable
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.qrcode import make_texture
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
@@ -284,21 +284,7 @@ class QRCodeWidget(Widget):
     self._generate_qr(url)
 
   def _generate_qr(self, url: str):
-    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=0)
-    qr.add_data(url)
-    qr.make(fit=True)
-
-    pil_img = qr.make_image(fill_color="white", back_color="black").convert('RGBA')
-    img_array = np.array(pil_img, dtype=np.uint8)
-
-    rl_image = rl.Image()
-    rl_image.data = rl.ffi.cast("void *", img_array.ctypes.data)
-    rl_image.width = pil_img.width
-    rl_image.height = pil_img.height
-    rl_image.mipmaps = 1
-    rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
-
-    self._qr_texture = rl.load_texture_from_image(rl_image)
+    self._qr_texture = make_texture(url, inverted=True)
 
   def _render(self, _):
     if self._qr_texture:
