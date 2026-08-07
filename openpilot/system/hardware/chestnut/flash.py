@@ -307,19 +307,25 @@ def config_path():
 
 def saved_config(path, data):
   os.makedirs(os.path.dirname(path), exist_ok=True)
-  try:
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-  except FileExistsError as e:
+  if os.path.isfile(path):
     backup = open(path, "rb").read()
-    if len(backup) != 0x100:
-      raise RuntimeError(f"invalid config backup: {path}") from e
-    if backup != data:
-      print(f"restoring config from {path}", flush=True)
-    return backup
+    if len(backup) == 0x100:
+      if backup != data:
+        print(f"restoring config from {path}", flush=True)
+      return backup
+    # rewrite a truncated backup from the freshly read config
+    print(f"replacing invalid config backup: {path}", flush=True)
+  fd = os.open(path + ".tmp", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
   with os.fdopen(fd, "wb") as f:
     f.write(data)
     f.flush()
     os.fsync(f.fileno())
+  os.rename(path + ".tmp", path)
+  dir_fd = os.open(os.path.dirname(path), os.O_RDONLY)
+  try:
+    os.fsync(dir_fd)
+  finally:
+    os.close(dir_fd)
   return data
 
 
