@@ -54,7 +54,7 @@ class Bulk(ctypes.Structure):
               ("timeout", ctypes.c_uint), ("data", ctypes.c_void_p)]
 
 
-class RomFallback(Exception):  # not a RuntimeError, this has to escape the retry loops
+class RomFallback(Exception):
   pass
 
 
@@ -104,7 +104,7 @@ def open_device(path):
   return os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
 
 
-def claim_device(path, setup=False):
+def claim_interface(path, setup=False):
   # unbind usb-storage, which binds to the ROM bootloader
   disable_runtime_pm(path)
   unbind_drivers(path)
@@ -140,7 +140,7 @@ class Flash:
       if in_rom_bootloader(vid_pid, product):
         raise RomFallback("chestnut fell back to the ROM bootloader")
       if path is not None:
-        self.fd = claim_device(path)
+        self.fd = claim_interface(path)
         return
       time.sleep(0.1)
     raise RuntimeError(f"chestnut did not enumerate within {timeout:g}s")
@@ -338,7 +338,7 @@ def rom_write(image, config):
   path, _, _ = find_chestnut()
   if path is None:
     raise RuntimeError("chestnut did not re-enumerate after reset")
-  fd = claim_device(path, setup=True)
+  fd = claim_interface(path, setup=True)
   for ep in (0x02, 0x81):
     fcntl.ioctl(fd, USBDEVFS_CLEAR_HALT, struct.pack("I", ep))
   tag = 0
