@@ -40,7 +40,7 @@ ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycl
 class Chestnut:
   # flash offroad, modeld ignores chestnut until the product string matches
   MAX_ATTEMPTS = 3
-  RETRY_INTERVAL = 20.  # measured: a flash takes ~6s, a bootloader recovery ~11s
+  RETRY_INTERVAL = 20.
 
   def __init__(self):
     self.thread: threading.Thread | None = None

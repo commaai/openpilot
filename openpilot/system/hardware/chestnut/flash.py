@@ -73,7 +73,7 @@ def installed_chestnut():
 
 
 def is_stock(vid_pid, product):
-  # the ROM bootloader keeps the config page strings, or its own without a config
+  # the ROM bootloader reports the config page strings, or its own when the config page is lost
   return vid_pid in STOCK_VID_PIDS or product == STOCK_PRODUCT or (product or "").startswith("AS2462")
 
 
@@ -105,7 +105,7 @@ def device_fd(path):
 
 
 def claim_device(path, setup=False):
-  # unbind usb-storage, the ROM bootloader binds it
+  # unbind usb-storage, which binds to the ROM bootloader
   disable_runtime_pm(path)
   unbind_drivers(path)
   fd = device_fd(path)
@@ -264,7 +264,7 @@ def reconnect(flash):
 
 
 def retrying(flash, label, operation):
-  # any USB hiccup means reconnecting and starting the operation over
+  # on any transfer error, reconnect and restart the operation
   attempt = 0
   while True:
     attempt += 1
@@ -324,7 +324,7 @@ def backed_up_config(path, data):
 
 
 def stock_recover(image, config):
-  # the ROM bootloader only speaks BOT, and needs a port reset before it accepts bulk transfers
+  # the ROM bootloader implements only the BOT protocol, and requires a port reset before bulk transfers
   path, _, _ = installed_chestnut()
   if path is None:
     raise RuntimeError("chestnut disappeared before recovery")
