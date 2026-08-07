@@ -1,6 +1,7 @@
 """Small QR encoder for the UI's byte-mode, error-correction-level-L codes."""
 
 import numpy as np
+import pyray as rl
 
 
 # Indexes are QR versions. These are the only two Reed-Solomon parameters needed
@@ -145,6 +146,8 @@ class _Qr:
       for x in positions:
         if not ((x == 6 and y in (6, self.size - 7)) or (x == self.size - 7 and y == 6)):
           self._alignment(x, y)
+    # reserve the format-info modules before the data is placed; the real
+    # values are written by the second _format call after masking
     self._format(0)
     if self.version >= 7:
       value = self.version
@@ -188,8 +191,9 @@ class _Qr:
       upward = not upward
       right -= 2
 
-def make_image(data: str, inverted: bool = False) -> np.ndarray:
-  """Render a URL as the RGBA QR image used by the UI."""
+def make_texture(data: str, inverted: bool = False) -> rl.Texture:
+  """Render a URL as the RGBA QR texture used by the UI. The texture upload
+  copies the pixels, so the intermediate image/array don't need to outlive it."""
   raw = data.encode()
   for version in range(1, 21):
     count_bits = 8 if version <= 9 else 16
@@ -200,4 +204,12 @@ def make_image(data: str, inverted: bool = False) -> np.ndarray:
   modules = np.pad(_Qr(version, raw).modules, 0 if inverted else 4)
   modules = np.repeat(np.repeat(modules, 10, axis=0), 10, axis=1)
   colors = ((255, 255, 255, 255), (0, 0, 0, 255)) if inverted else ((0, 0, 0, 255), (255, 255, 255, 255))
-  return np.where(modules[..., None], *colors).astype(np.uint8)
+  img_array = np.where(modules[..., None], *colors).astype(np.uint8)
+
+  rl_image = rl.Image()
+  rl_image.data = rl.ffi.cast("void *", img_array.ctypes.data)
+  rl_image.width = img_array.shape[1]
+  rl_image.height = img_array.shape[0]
+  rl_image.mipmaps = 1
+  rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+  return rl.load_texture_from_image(rl_image)

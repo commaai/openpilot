@@ -2,7 +2,7 @@ import pyray as rl
 import time
 
 from openpilot.common.api import Api
-from openpilot.common.qrcode import make_image
+from openpilot.common.qrcode import make_texture
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -36,19 +36,9 @@ class PairingDialog(NavWidget):
 
   def _generate_qr_code(self) -> None:
     try:
-      img_array = make_image(self._get_pairing_url(), inverted=True)
-
       if self._qr_texture and self._qr_texture.id != 0:
         rl.unload_texture(self._qr_texture)
-
-      rl_image = rl.Image()
-      rl_image.data = rl.ffi.cast("void *", img_array.ctypes.data)
-      rl_image.width = img_array.shape[1]
-      rl_image.height = img_array.shape[0]
-      rl_image.mipmaps = 1
-      rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
-
-      self._qr_texture = rl.load_texture_from_image(rl_image)
+      self._qr_texture = make_texture(self._get_pairing_url(), inverted=True)
     except Exception as e:
       cloudlog.warning(f"QR code generation failed: {e}")
       self._qr_texture = None
