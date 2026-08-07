@@ -52,6 +52,8 @@ dependencies = [
   # ui
   "comma-deps-raylib",
   "qrcode",
+  "av>=18.0.0",
+  "pywebrtc-audio>=0.1.0",
 ]
 
 [project.optional-dependencies]

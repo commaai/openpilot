@@ -810,7 +810,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
     # wait for webrtcd end points to wake up
     wait_for_webrtcd()
 
-  return post_stream_request(StreamRequestBody(sdp, ["wideRoad"], enabled, bridge_services_in, ["carState", "deviceState"]))
+  return post_stream_request(StreamRequestBody(sdp, ["wideRoad", "road"], enabled, bridge_services_in, ["carState", "deviceState"]))
 
 
 def get_logs_to_send_sorted() -> list[str]:

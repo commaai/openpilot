@@ -2489,6 +2489,10 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
+struct SpeakerVolume {
+  volume @0 :UInt8;
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2563,6 +2567,9 @@ struct Event {
     # microphone data
     soundPressure @103 :SoundPressure;
     rawAudioData @147 :AudioData;
+    webRtcAudioData @152 :AudioData;
+    speakerVolume @153 :SpeakerVolume;
+    webRtcAudioReference @154 :AudioData;
 
     # systems stuff
     operatingSystemLog @20 :OperatingSystemLogEntry;

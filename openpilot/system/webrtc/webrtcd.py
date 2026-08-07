@@ -14,6 +14,7 @@ import uuid
 import logging
 import signal
 import threading
+import av
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import Any
@@ -143,6 +144,39 @@ class DynamicPubMaster(messaging.PubMaster):
           self.sock[service] = messaging.pub_sock(service)
 
 
+class IncomingAudioPlayer(AsyncTaskRunner):
+  """Decode an incoming Opus track and forward mono PCM to soundd."""
+  def __init__(self, track):
+    super().__init__()
+    self.track = track
+    self.pm = messaging.PubMaster(["webRtcAudioData"])
+    self.decoder = av.CodecContext.create("opus", "r")
+    self.resampler = av.AudioResampler(format="s16", layout="mono", rate=48000)
+
+  async def run(self):
+    while True:
+      packet = self.track.receive()
+      if packet is None:
+        await asyncio.sleep(0.005)
+        continue
+
+      try:
+        for decoded in self.decoder.decode(av.Packet(bytes(packet))):
+          frames = self.resampler.resample(decoded)
+          if frames is None:
+            continue
+          if not isinstance(frames, list):
+            frames = [frames]
+          for frame in frames:
+            pcm = frame.to_ndarray().reshape(-1)
+            msg = messaging.new_message("webRtcAudioData", valid=True)
+            msg.webRtcAudioData.data = pcm.tobytes()
+            msg.webRtcAudioData.sampleRate = frame.sample_rate
+            self.pm.send("webRtcAudioData", msg)
+      except av.FFmpegError:
+        self.logger.exception("Failed to decode incoming WebRTC audio")
+
+
 class LivestreamBitrateController(AsyncTaskRunner):
   bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
   label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
@@ -223,11 +257,21 @@ class StreamSession:
 
   def __init__(self, body: StreamRequestBody):
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+    from openpilot.system.webrtc.device.audio import FarEndAudioBuffer, LiveStreamAudioTrack
     from teleoprtc.builder import WebRTCAnswerBuilder
+    from teleoprtc.info import parse_info_from_offer
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
     builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
+    audio_info = parse_info_from_offer(body.sdp)
+    self.far_end_audio = FarEndAudioBuffer()
+    self.audio_track: LiveStreamAudioTrack | None = None
+    if audio_info.incoming_audio_track:
+      builder.offer_to_receive_audio_stream()
+    if audio_info.expected_audio_track:
+      self.audio_track = LiveStreamAudioTrack(self.far_end_audio)
+      builder.add_audio_stream(self.audio_track)
 
     self.enabled = body.enabled
     self.video_tracks = []
@@ -242,7 +286,9 @@ class StreamSession:
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = body.bridge_services_in
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
+    self.speaker_volume_pm = messaging.PubMaster(["speakerVolume"])
     self.bitrate_controller: LivestreamBitrateController | None = None
+    self.audio_player: IncomingAudioPlayer | None = None
     if len(body.bridge_services_in) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
@@ -305,6 +351,13 @@ class StreamSession:
           case "enableTimingSei":
             for track in self.video_tracks:
               track.timing_sei_enabled = bool(payload["data"]["enabled"])
+          case "speakerVolume":
+            volume = payload["data"]["volume"]
+            if type(volume) is not int or not 0 <= volume <= 100:
+              raise ValueError("speaker volume must be an integer from 0 to 100")
+            msg = messaging.new_message("speakerVolume", valid=True)
+            msg.speakerVolume.volume = volume
+            self.speaker_volume_pm.send("speakerVolume", msg)
           case _:
             if msg_type not in self.incoming_bridge_services:
               return
@@ -332,16 +385,19 @@ class StreamSession:
       await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
       if self.stream.has_messaging_channel():
         self.stream.set_message_handler(self.message_handler)
+        channel = self.stream.get_messaging_channel()
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
         if self.outgoing_bridge is not None:
-          channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
           self.outgoing_bridge.start()
       if self.bitrate_controller is not None:
         self.bitrate_controller.start()
 
       self.logger.info("Stream session (%s) connected", self.identifier)
+      if self.stream.has_incoming_audio_track():
+        self.audio_player = IncomingAudioPlayer(self.stream.get_incoming_audio_track())
+        self.audio_player.start()
       if self.is_body:
         await self.run_body_session()
       else:
@@ -360,10 +416,15 @@ class StreamSession:
       self.params.put("LivestreamRequestKeyframe", False)
       if self.bitrate_controller is not None:
         await self.bitrate_controller.stop()
+      if self.audio_player is not None:
+        await self.audio_player.stop()
+        self.audio_player = None
       if self.outgoing_bridge is not None:
         await self.outgoing_bridge.stop()
       for track in self.video_tracks:
         track.stop()
+      if self.audio_track is not None:
+        self.audio_track.stop()
       self.video_tracks.clear()
       await self.stream.stop()
 

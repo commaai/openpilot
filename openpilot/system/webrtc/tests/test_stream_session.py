@@ -7,7 +7,7 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
 from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
-from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
+from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy, StreamSession
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
@@ -63,6 +63,37 @@ class TestStreamSession(OpenpilotTestCase):
       assert hasattr(md, msg_type)
 
       mocked_pubmaster.reset_mock()
+
+  def test_speaker_volume(self, mocker):
+    session = StreamSession.__new__(StreamSession)
+    session.logger = mocker.Mock()
+    session.incoming_bridge_services = []
+    session.incoming_bridge = None
+    session.speaker_volume_pm = mocker.Mock()
+
+    for volume in (0, 42, 100):
+      session.message_handler(json.dumps({"type": "speakerVolume", "data": {"volume": volume}}).encode())
+
+    assert session.speaker_volume_pm.send.call_count == 3
+    for expected, call in zip((0, 42, 100), session.speaker_volume_pm.send.call_args_list, strict=True):
+      service, msg = call.args
+      assert service == "speakerVolume"
+      assert msg.speakerVolume.volume == expected
+
+  def test_speaker_volume_validation(self, mocker):
+    session = StreamSession.__new__(StreamSession)
+    session.logger = mocker.Mock()
+    session.incoming_bridge_services = []
+    session.incoming_bridge = None
+    session.speaker_volume_pm = mocker.Mock()
+
+    for volume in (-1, 101, 50.0, True):
+      session.message_handler(json.dumps({"type": "speakerVolume", "data": {"volume": volume}}).encode())
+
+    session.message_handler(json.dumps({"type": "speakerVolume", "data": 50}).encode())
+
+    session.speaker_volume_pm.send.assert_not_called()
+    assert session.logger.exception.call_count == 5
 
   def test_livestream_track(self, mocker):
     fake_msg = messaging.new_message("livestreamDriverEncodeData")
