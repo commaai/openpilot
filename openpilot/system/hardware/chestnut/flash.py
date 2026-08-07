@@ -58,7 +58,7 @@ class RomFallback(Exception):  # not a RuntimeError, this has to escape the retr
   pass
 
 
-def installed_chestnut():
+def find_chestnut():
   found = []
   for d in glob.glob("/sys/bus/usb/devices/*"):
     try:
@@ -136,7 +136,7 @@ class Flash:
     self.close()
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-      path, vid_pid, product = installed_chestnut()
+      path, vid_pid, product = find_chestnut()
       if in_rom_bootloader(vid_pid, product):
         raise RomFallback("chestnut fell back to the ROM bootloader")
       if path is not None:
@@ -325,7 +325,7 @@ def backed_up_config(path, data):
 
 def rom_write(image, config):
   # the ROM bootloader implements only the BOT protocol, and requires a port reset before bulk transfers
-  path, _, _ = installed_chestnut()
+  path, _, _ = find_chestnut()
   if path is None:
     raise RuntimeError("chestnut disappeared before recovery")
   unbind_drivers(path)
@@ -335,7 +335,7 @@ def rom_write(image, config):
   finally:
     os.close(fd)
   time.sleep(3)
-  path, _, _ = installed_chestnut()
+  path, _, _ = find_chestnut()
   if path is None:
     raise RuntimeError("chestnut did not re-enumerate after reset")
   fd = claim_device(path, setup=True)
@@ -402,7 +402,7 @@ def activate(expected_product):
   disconnected = False
   deadline = time.monotonic() + 5.0
   while time.monotonic() < deadline:
-    if installed_chestnut()[0] is None:
+    if find_chestnut()[0] is None:
       disconnected = True
       break
     time.sleep(0.2)
@@ -413,7 +413,7 @@ def activate(expected_product):
     return
   deadline = time.monotonic() + 15.0
   while time.monotonic() < deadline:
-    product = installed_chestnut()[2]
+    product = find_chestnut()[2]
     if product is not None:
       if product == expected_product:
         print(f"activated {expected_product}", flush=True)
@@ -438,7 +438,7 @@ def flash_chestnut(expected_version=None, force=False):
   if expected_version is not None and expected_product != f"custom {expected_version}-CLEAN":
     raise RuntimeError(f"bundled firmware is {expected_product!r}, expected version {expected_version}")
 
-  path, vid_pid, product = installed_chestnut()
+  path, vid_pid, product = find_chestnut()
   if path is None:
     print("no chestnut connected", flush=True)
     return
@@ -475,7 +475,7 @@ def recover_from_rom(image, expected_product):
   committed = False
   while True:
     check_budget()
-    path, vid_pid, product = installed_chestnut()
+    path, vid_pid, product = find_chestnut()
     if path is None:
       if committed:
         print("chestnut is offline, recovered firmware boots on its next power cycle", flush=True)
