@@ -985,6 +985,7 @@ void SpectraCamera::enqueue_frame() {
   // submit request to IFE and BPS
   config_ife(i, request_id);
   if (cc.output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
+  requests_in_flight++;
 }
 
 void SpectraCamera::destroySyncObjectAt(int index) {
@@ -1420,6 +1421,8 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   if (!validateEvent(request_id, ife_frame_id)) {
     return false;
   }
+  assert(requests_in_flight > 0);
+  requests_in_flight--;
 
   // Update tracking variables
   last_valid_ife_frame_id = ife_frame_id;
@@ -1453,7 +1456,7 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   }
   invalid_request_count = 0;
 
-  uint64_t expected_request_id = next_request_id - ife_buf_depth;
+  uint64_t expected_request_id = next_request_id - requests_in_flight;
   if (request_id != expected_request_id) {
     LOGE("camera %d request ID mismatch, expected %lu, got %lu", cc.camera_num, expected_request_id, request_id);
     clearAndRequeue();
@@ -1472,8 +1475,13 @@ void SpectraCamera::clearAndRequeue() {
   // clear everything, then queue up a fresh set of frames
   LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, next_request_id);
   clear_req_queue();
+  requests_in_flight = 0;
   last_requeue_ts = nanos_since_boot();
-  for (int i = 0; i < ife_buf_depth; ++i) {
+  if (held_buf_idx >= 0) {
+    assert(next_request_id % ife_buf_depth == held_buf_idx);
+    next_request_id++;  // keep the last published buffer out of the hardware queue
+  }
+  for (int i = 0; i < ife_buf_depth - (held_buf_idx >= 0); ++i) {
     enqueue_frame();
   }
   last_valid_ife_frame_id = 0;  // accept any IFE frame ID after requeue

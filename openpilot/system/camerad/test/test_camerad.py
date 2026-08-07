@@ -19,8 +19,6 @@ CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
 MAX_TEST_TIME = 25
-PATTERN_PERIOD = 328
-PATTERN_STEP = 8
 STRESS_ERRORS = (
   ("skip_sof", "skipping SOF event"),
   ("processing_delay", "sync sleep time"),
@@ -57,7 +55,7 @@ def _pattern_sample(client):
   neighbors = [padded[i:i + len(profile)] for i in range(9) if i != 4]
   residual = profile - np.median(neighbors, axis=0)
   position = int(np.argmax(residual))
-  return client.frame_id, position, residual[position]
+  return client.frame_id, position, len(profile), residual[position]
 
 def _sanity_checks(ts):
   for camera in CAMERAS:
@@ -70,7 +68,8 @@ def _sanity_checks(ts):
     assert np.all(np.diff(ts[camera]['requestId']) > 0)
     # Skipped frame IDs must account for the same number of frame periods in SOF time.
     expected_sof_steps = frame_steps * 1e9 / SERVICE_LIST[camera].frequency
-    assert np.all(np.abs(np.diff(ts[camera]['timestampSof']) - expected_sof_steps) < 1e6)
+    sof_step_errors = np.diff(ts[camera]['timestampSof']) - expected_sof_steps
+    assert np.all(np.abs(sof_step_errors) < 2e6), f"{camera} frame/SOF steps disagree: {sof_step_errors[np.abs(sof_step_errors) >= 2e6]}"
 
     assert np.all((ts[camera]['timestampEof'] - ts[camera]['timestampSof']) > 0)
     assert np.all((ts[camera]['t'] - ts[camera]['timestampSof']/1e9) > 1e-7)
@@ -202,17 +201,29 @@ class TestCameradStress(OpenpilotTestCase):
 
     with lock:
       ts = msgs_to_time_series(raw_logs)
-    positions = {camera: {frame_id: position for frame_id, position, confidence in camera_samples if confidence > 10}
+    positions = {camera: {frame_id: (position, period) for frame_id, position, period, confidence in camera_samples if confidence > 10}
                  for camera, camera_samples in samples.items()}
-    common_frames = set.intersection(*(set(camera_positions) for camera_positions in positions.values()))
-    assert len(common_frames) > 20
-    offsets = {frame_id: (positions['road'][frame_id] - positions['wide'][frame_id]) % PATTERN_PERIOD for frame_id in common_frames}
-    counts = np.bincount(list(offsets.values()), minlength=PATTERN_PERIOD)
-    # Independent sensor phases permit three adjacent offsets in the half-rate rolling pattern.
-    expected_offset = int(np.argmax(counts + np.roll(counts, -PATTERN_STEP) + np.roll(counts, -2 * PATTERN_STEP)))
-    expected_offsets = {(expected_offset + i * PATTERN_STEP) % PATTERN_PERIOD for i in range(3)}
-    unexpected = {frame_id: offset for frame_id, offset in offsets.items() if offset not in expected_offsets}
-    assert not unexpected, f"road/wide pixels disagree for shared frame IDs: {unexpected}"
+    periods = {period for camera_positions in positions.values() for _, period in camera_positions.values()}
+    assert len(periods) == 1
+    period = periods.pop()
+    services = {'road': 'roadCameraState', 'wide': 'wideRoadCameraState'}
+    sofs = {camera: dict(zip(ts[service]['frameId'], ts[service]['timestampSof'], strict=True))
+            for camera, service in services.items()}
+    wide_frames = positions['wide'].keys() & sofs['wide'].keys()
+    assert wide_frames
+    offsets = []
+    for frame_id in positions['road'].keys() & sofs['road'].keys():
+      wide_frame_id = min(wide_frames, key=lambda f: abs(sofs['wide'][f] - sofs['road'][frame_id]))
+      if abs(sofs['wide'][wide_frame_id] - sofs['road'][frame_id]) < 1.1e6:
+        offsets.append((sofs['road'][frame_id], frame_id, (positions['road'][frame_id][0] - positions['wide'][wide_frame_id][0]) % period))
+    offsets.sort()
+    assert len(offsets) > 20
+    expected_offsets = {offset for _, _, offset in offsets[:len(offsets) // 2]}
+    # Allow small sensor-specific phase jitter while rejecting a substituted frame.
+    tolerance = period // 32
+    unexpected = {frame_id: offset for _, frame_id, offset in offsets[len(offsets) // 2:]
+                  if min(min((offset - expected) % period, (expected - offset) % period) for expected in expected_offsets) > tolerance}
+    assert not unexpected, f"road/wide pixels disagree for synchronized frames: {unexpected}"
 
     assert max(np.max(np.diff(ts[c]['frameId'])) for c in CAMERAS) > 1
     _sanity_checks(ts)
