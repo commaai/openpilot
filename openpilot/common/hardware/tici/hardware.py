@@ -8,6 +8,7 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from openpilot.cereal import log
+from openpilot.common.nm_keyfile import decode_nm_keyfile_ssid
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
@@ -203,9 +204,8 @@ class Tici(HardwareBase):
       if network_type == NetworkType.wifi:
         ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
         if ssid:
-          # wpa_supplicant escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
+          # wpa_supplicant escapes non-printable bytes as \xNN.
           ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
-          ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
 
           nm_dirs = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")
           for fpath in (p for d in nm_dirs for p in Path(d).glob("*.nmconnection")):
@@ -215,8 +215,9 @@ class Tici(HardwareBase):
             cp = configparser.ConfigParser(interpolation=None)
             try:
               cp.read_string(raw)
-              keyfile_ssid = cp.get("wifi", "ssid", fallback="")
-              if keyfile_ssid != ssid and keyfile_ssid != ssid_keyfile_list:
+              wifi_section = "wifi" if cp.has_section("wifi") else "802-11-wireless"
+              keyfile_ssid = decode_nm_keyfile_ssid(cp.get(wifi_section, "ssid", fallback=""))
+              if keyfile_ssid.encode("utf-8", errors="surrogateescape") != ssid_bytes:
                 continue
               metered = cp.getint("connection", "metered", fallback=0)
             except (configparser.Error, ValueError):

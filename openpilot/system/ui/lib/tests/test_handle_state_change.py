@@ -1,907 +1,1681 @@
-"""Tests for WifiManager._handle_state_change.
-
-Tests the state machine in isolation by constructing a WifiManager with mocked
-DBus, then calling _handle_state_change directly with NM state transitions.
-"""
-import unittest
-from jeepney.low_level import MessageType
-
-from openpilot.common.parameterized import parameterized
-from openpilot.common.test import Mocker, OpenpilotTestCase
-from openpilot.system.ui.lib.networkmanager import NMDeviceState, NMDeviceStateReason
-from openpilot.system.ui.lib.wifi_manager import WifiManager, WifiState, ConnectStatus
-
-
-def _make_wm(mocker: Mocker, connections=None):
-  """Create a WifiManager with only the fields _handle_state_change touches."""
-  mocker.patch.object(WifiManager, '_initialize')
-  wm = WifiManager.__new__(WifiManager)
-  wm._exit = True  # prevent stop() from doing anything in __del__
-  wm._conn_monitor = mocker.MagicMock()
-  wm._connections = dict(connections or {})
-  wm._wifi_state = WifiState()
-  wm._user_epoch = 0
-  wm._callback_queue = []
-  wm._need_auth = []
-  wm._activated = []
-  wm._update_networks = mocker.MagicMock()
-  wm._update_active_connection_info = mocker.MagicMock()
-  wm._get_active_wifi_connection = mocker.MagicMock(return_value=(None, None))
-  return wm
-
-
-def fire(wm: WifiManager, new_state: int, prev_state: int = NMDeviceState.UNKNOWN,
-         reason: int = NMDeviceStateReason.NONE) -> None:
-  """Feed a state change into the handler."""
-  wm._handle_state_change(new_state, prev_state, reason)
-
-
-def fire_wpa_connect(wm: WifiManager) -> None:
-  """WPA handshake then IP negotiation through ACTIVATED, as seen on device."""
-  fire(wm, NMDeviceState.NEED_AUTH)
-  fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-  fire(wm, NMDeviceState.CONFIG)
-  fire(wm, NMDeviceState.IP_CONFIG)
-  fire(wm, NMDeviceState.IP_CHECK)
-  fire(wm, NMDeviceState.SECONDARIES)
-  fire(wm, NMDeviceState.ACTIVATED)
-
-
-# ---------------------------------------------------------------------------
-# Basic transitions
-# ---------------------------------------------------------------------------
-
-class TestDisconnected(OpenpilotTestCase):
-  def test_generic_disconnect_clears_state(self, mocker):
-    wm = _make_wm(mocker)
-    wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
-
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.UNKNOWN)
-
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-    wm._update_networks.assert_not_called()
-
-  def test_new_activation_is_noop(self, mocker):
-    """NEW_ACTIVATION means NM is about to connect to another network — don't clear."""
-    wm = _make_wm(mocker)
-    wm._wifi_state = WifiState(ssid="OldNet", status=ConnectStatus.CONNECTED)
-
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NEW_ACTIVATION)
-
-    assert wm._wifi_state.ssid == "OldNet"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-
-  def test_connection_removed_keeps_other_connecting(self, mocker):
-    """Forget A while connecting to B: CONNECTION_REMOVED for A must not clear B."""
-    wm = _make_wm(mocker, connections={"B": "/path/B"})
-    wm._set_connecting("B")
-
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
-
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-  def test_connection_removed_clears_when_forgotten(self, mocker):
-    """Forget A: A is no longer in _connections, so state should clear."""
-    wm = _make_wm(mocker, connections={})
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
-
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-
-class TestDeactivating(OpenpilotTestCase):
-  def test_deactivating_noop_for_non_connection_removed(self, mocker):
-    """DEACTIVATING with non-CONNECTION_REMOVED reason is a no-op."""
-    wm = _make_wm(mocker)
-    wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
-
-    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.USER_REQUESTED)
-
-    assert wm._wifi_state.ssid == "Net"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-
-  @parameterized.expand([
-    (ConnectStatus.CONNECTED, True),
-    (ConnectStatus.CONNECTING, False),
-  ], names=("status", "expected_clears"))
-  def test_deactivating_connection_removed(self, mocker, status, expected_clears):
-    """DEACTIVATING(CONNECTION_REMOVED) clears CONNECTED but preserves CONNECTING.
-
-    CONNECTED: forgetting the current network. The forgotten callback fires between
-    DEACTIVATING and DISCONNECTED — must clear here so the UI doesn't flash "connected"
-    after the eager _network_forgetting flag resets.
-
-    CONNECTING: forget A while connecting to B. DEACTIVATING fires for A's removal,
-    but B's CONNECTING state must be preserved.
-    """
-    wm = _make_wm(mocker, connections={"B": "/path/B"})
-    wm._wifi_state = WifiState(ssid="B" if status == ConnectStatus.CONNECTING else "A", status=status)
-
-    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.CONNECTION_REMOVED)
-
-    if expected_clears:
-      assert wm._wifi_state.ssid is None
-      assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-    else:
-      assert wm._wifi_state.ssid == "B"
-      assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-
-class TestPrepareConfig(OpenpilotTestCase):
-  def test_user_initiated_skips_dbus_lookup(self, mocker):
-    """User called _set_connecting('B') — PREPARE must not overwrite via DBus.
-
-    Reproduced on device: rapidly tap A then B. PREPARE's DBus lookup returns A's
-    stale conn_path, overwriting ssid to A for 1-2 frames. UI shows the "connecting"
-    indicator briefly jump to the wrong network row then back.
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    wm._set_connecting("B")
-    wm._get_active_wifi_connection.return_value = ("/path/A", {})
-
-    fire(wm, NMDeviceState.PREPARE)
-
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-    wm._get_active_wifi_connection.assert_not_called()
-
-  @parameterized.expand([NMDeviceState.PREPARE, NMDeviceState.CONFIG], names=("state",))
-  def test_auto_connect_looks_up_ssid(self, mocker, state):
-    """Auto-connection (ssid=None): PREPARE and CONFIG must look up ssid from NM."""
-    wm = _make_wm(mocker, connections={"AutoNet": "/path/auto"})
-    wm._get_active_wifi_connection.return_value = ("/path/auto", {})
-
-    fire(wm, state)
-
-    assert wm._wifi_state.ssid == "AutoNet"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-  def test_auto_connect_dbus_fails(self, mocker):
-    """Auto-connection but DBus returns None: ssid stays None, status CONNECTING."""
-    wm = _make_wm(mocker)
-
-    fire(wm, NMDeviceState.PREPARE)
-
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-  def test_auto_connect_conn_path_not_in_connections(self, mocker):
-    """DBus returns a conn_path that doesn't match any known connection."""
-    wm = _make_wm(mocker, connections={"Other": "/path/other"})
-    wm._get_active_wifi_connection.return_value = ("/path/unknown", {})
-
-    fire(wm, NMDeviceState.PREPARE)
-
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-
-class TestNeedAuth(OpenpilotTestCase):
-  def test_wrong_password_fires_callback(self, mocker):
-    """NEED_AUTH+SUPPLICANT_DISCONNECT from CONFIG = real wrong password."""
-    wm = _make_wm(mocker)
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("SecNet")
-
-    fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
-         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-    assert len(wm._callback_queue) == 1
-    wm.process_callbacks()
-    cb.assert_called_once_with("SecNet")
-
-  def test_failed_no_secrets_fires_callback(self, mocker):
-    """FAILED+NO_SECRETS = wrong password (weak/gone network).
-
-    Confirmed on device: also fires when a hotspot turns off during connection.
-    NM can't complete the WPA handshake (AP vanished) and reports NO_SECRETS
-    rather than SSID_NOT_FOUND. The need_auth callback fires, so the UI shows
-    "wrong password" — a false positive, but same signal path.
-
-    Real device sequence (new connection, hotspot turned off immediately):
-      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
-      → NEED_AUTH(CONFIG, NONE) → FAILED(NEED_AUTH, NO_SECRETS) → DISCONNECTED(FAILED, NONE)
-    """
-    wm = _make_wm(mocker)
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("WeakNet")
-
-    fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NO_SECRETS)
-
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-    assert len(wm._callback_queue) == 1
-    wm.process_callbacks()
-    cb.assert_called_once_with("WeakNet")
-
-  def test_need_auth_then_failed_no_double_fire(self, mocker):
-    """Real device sends NEED_AUTH(SUPPLICANT_DISCONNECT) then FAILED(NO_SECRETS) back-to-back.
-
-    The first clears ssid, so the second must not fire a duplicate callback.
-    Real device sequence: NEED_AUTH(CONFIG, SUPPLICANT_DISCONNECT) → FAILED(NEED_AUTH, NO_SECRETS)
-    """
-    wm = _make_wm(mocker)
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("BadPass")
-
-    fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
-         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-    assert len(wm._callback_queue) == 1
-
-    fire(wm, NMDeviceState.FAILED, prev_state=NMDeviceState.NEED_AUTH,
-         reason=NMDeviceStateReason.NO_SECRETS)
-    assert len(wm._callback_queue) == 1  # no duplicate
-
-    wm.process_callbacks()
-    cb.assert_called_once_with("BadPass")
-
-  def test_no_ssid_no_callback(self, mocker):
-    """If ssid is None when NEED_AUTH fires, no callback enqueued."""
-    wm = _make_wm(mocker)
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-
-    fire(wm, NMDeviceState.NEED_AUTH, reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-
-    assert len(wm._callback_queue) == 0
-
-  def test_interrupted_auth_ignored(self, mocker):
-    """Switching A->B: NEED_AUTH from A (prev=DISCONNECTED) must not fire callback.
-
-    Reproduced on device: rapidly switching between two saved networks can trigger a
-    rare false "wrong password" dialog for the previous network, even though both have
-    correct passwords. The stale NEED_AUTH has prev_state=DISCONNECTED (not CONFIG).
-    """
-    wm = _make_wm(mocker)
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("A")
-    wm._set_connecting("B")
-
-    fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
-         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-    assert len(wm._callback_queue) == 0
-
-
-class TestPassthroughStates(OpenpilotTestCase):
-  """NEED_AUTH (generic), IP_CONFIG, IP_CHECK, SECONDARIES, FAILED (generic) are no-ops."""
-
-  @parameterized.expand([
-    NMDeviceState.NEED_AUTH,
-    NMDeviceState.IP_CONFIG,
-    NMDeviceState.IP_CHECK,
-    NMDeviceState.SECONDARIES,
-    NMDeviceState.FAILED,
-  ], names=("state",))
-  def test_passthrough_is_noop(self, mocker, state):
-    wm = _make_wm(mocker)
-    wm._set_connecting("Net")
-
-    fire(wm, state, reason=NMDeviceStateReason.NONE)
-
-    assert wm._wifi_state.ssid == "Net"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-    assert len(wm._callback_queue) == 0
-
-
-class TestActivated(OpenpilotTestCase):
-  def test_sets_connected(self, mocker):
-    """ACTIVATED sets status to CONNECTED and fires callback."""
-    wm = _make_wm(mocker, connections={"MyNet": "/path/mynet"})
-    cb = mocker.MagicMock()
-    wm.add_callbacks(activated=cb)
-    wm._set_connecting("MyNet")
-    wm._get_active_wifi_connection.return_value = ("/path/mynet", {})
-
-    fire(wm, NMDeviceState.ACTIVATED)
-
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "MyNet"
-    assert len(wm._callback_queue) == 1
-    wm.process_callbacks()
-    cb.assert_called_once()
-
-  def test_conn_path_none_still_connected(self, mocker):
-    """ACTIVATED but DBus returns None: status CONNECTED, ssid unchanged."""
-    wm = _make_wm(mocker)
-    wm._set_connecting("MyNet")
-
-    fire(wm, NMDeviceState.ACTIVATED)
-
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "MyNet"
-
-  def test_activated_side_effects(self, mocker):
-    """ACTIVATED persists the volatile connection to disk and updates active connection info."""
-    wm = _make_wm(mocker, connections={"Net": "/path/net"})
-    wm._set_connecting("Net")
-    wm._get_active_wifi_connection.return_value = ("/path/net", {})
-
-    fire(wm, NMDeviceState.ACTIVATED)
-
-    wm._conn_monitor.send_and_get_reply.assert_called_once()
-    wm._update_active_connection_info.assert_called_once()
-    wm._update_networks.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# Thread races: _set_connecting on main thread vs _handle_state_change on monitor thread.
-# Uses side_effect on the DBus mock to simulate _set_connecting running mid-handler.
-# The epoch counter detects that a user action occurred during the slow DBus call
-# and discards the stale update.
-# ---------------------------------------------------------------------------
-# The deterministic fixes (skip DBus lookup when ssid already set, prev_state guard
-# on NEED_AUTH, DEACTIVATING clears CONNECTED on CONNECTION_REMOVED, CONNECTION_REMOVED
-# guard) shrink these race windows significantly. The epoch counter closes the
-# remaining gaps.
-
-class TestThreadRaces(OpenpilotTestCase):
-  def test_prepare_race_user_tap_during_dbus(self, mocker):
-    """User taps B while PREPARE's DBus call is in flight for auto-connect.
-
-    Monitor thread reads wifi_state (ssid=None), starts DBus call.
-    Main thread: _set_connecting("B"). Monitor thread writes back stale ssid from DBus.
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-
-    def user_taps_b_during_dbus(*args, **kwargs):
-      wm._set_connecting("B")
-      return ("/path/A", {})
-
-    wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
-
-    fire(wm, NMDeviceState.PREPARE)
-
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-  def test_activated_race_user_tap_during_dbus(self, mocker):
-    """User taps B right as A finishes connecting (ACTIVATED handler running).
-
-    Monitor thread reads wifi_state (A, CONNECTING), starts DBus call.
-    Main thread: _set_connecting("B"). Monitor thread writes (A, CONNECTED), losing B.
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    wm._set_connecting("A")
-
-    def user_taps_b_during_dbus(*args, **kwargs):
-      wm._set_connecting("B")
-      return ("/path/A", {})
-
-    wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
-
-    fire(wm, NMDeviceState.ACTIVATED)
-
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-  def test_init_wifi_state_race_user_tap_during_dbus(self, mocker):
-    """User taps B while _init_wifi_state's DBus calls are in flight.
-
-    _init_wifi_state runs from set_active(True) or worker error paths. It does
-    2 DBus calls (device State property + _get_active_wifi_connection) then
-    unconditionally writes _wifi_state. If the user taps a network during those
-    calls, _set_connecting("B") is overwritten with stale NM ground truth.
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    wm._wifi_device = "/dev/wifi0"
-    wm._router_main = mocker.MagicMock()
-
-    state_reply = mocker.MagicMock()
-    state_reply.body = [('u', NMDeviceState.ACTIVATED)]
-    wm._router_main.send_and_get_reply.return_value = state_reply
-
-    def user_taps_b_during_dbus(*args, **kwargs):
-      wm._set_connecting("B")
-      return ("/path/A", {})
-
-    wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
-
-    wm._init_wifi_state()
-
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-
-# ---------------------------------------------------------------------------
-# Full sequences (NM signal order from real devices)
-# ---------------------------------------------------------------------------
-
-class TestFullSequences(OpenpilotTestCase):
-  def test_normal_connect(self, mocker):
-    """User connects to saved network: full happy path.
-
-    Real device sequence (switching from another connected network):
-      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
-      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH, NONE) → CONFIG
-      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED
-    """
-    wm = _make_wm(mocker, connections={"Home": "/path/home"})
-    wm._get_active_wifi_connection.return_value = ("/path/home", {})
-
-    wm._set_connecting("Home")
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    fire(wm, NMDeviceState.IP_CONFIG)
-    fire(wm, NMDeviceState.IP_CHECK)
-    fire(wm, NMDeviceState.SECONDARIES)
-    fire(wm, NMDeviceState.ACTIVATED)
-
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "Home"
-
-  def test_wrong_password_then_retry(self, mocker):
-    """Wrong password → NEED_AUTH → FAILED → NM auto-reconnects to saved network.
-
-    Confirmed on device: wrong password for Shane's iPhone, NM auto-connected to unifi.
-
-    Real device sequence (switching from a connected network):
-      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
-      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE)              ← WPA handshake
-      → PREPARE(NEED_AUTH, NONE) → CONFIG
-      → NEED_AUTH(CONFIG, SUPPLICANT_DISCONNECT)                 ← wrong password
-      → FAILED(NEED_AUTH, NO_SECRETS)                            ← NM gives up
-      → DISCONNECTED(FAILED, NONE)
-      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
-      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED          ← auto-reconnect to other saved network
-    """
-    wm = _make_wm(mocker, connections={"Sec": "/path/sec"})
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-
-    wm._set_connecting("Sec")
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-
-    fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
-         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-    assert len(wm._callback_queue) == 1
-
-    # FAILED(NO_SECRETS) follows but ssid is already cleared — no double-fire
-    fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NO_SECRETS)
-    assert len(wm._callback_queue) == 1
-
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.FAILED)
-
-    # Retry
-    wm._callback_queue.clear()
-    wm._set_connecting("Sec")
-    wm._get_active_wifi_connection.return_value = ("/path/sec", {})
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire_wpa_connect(wm)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-
-  def test_switch_saved_networks(self, mocker):
-    """Switch from A to B (both saved): NM signal sequence from real device.
-
-    Real device sequence:
-      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
-      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH, NONE) → CONFIG
-      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-    wm._get_active_wifi_connection.return_value = ("/path/B", {})
-
-    wm._set_connecting("B")
-
-    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-         reason=NMDeviceStateReason.NEW_ACTIVATION)
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-         reason=NMDeviceStateReason.NEW_ACTIVATION)
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire_wpa_connect(wm)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "B"
-
-  def test_rapid_switch_no_false_wrong_password(self, mocker):
-    """Switch A→B quickly: A's interrupted NEED_AUTH must NOT show wrong password.
-
-    NOTE: The late NEED_AUTH(DISCONNECTED, SUPPLICANT_DISCONNECT) is common when rapidly
-    switching between networks with wrong/new passwords. Less common when switching between
-    saved networks with correct passwords. Not guaranteed — some switches skip it and go
-    straight from DISCONNECTED to PREPARE. The prev_state is consistently DISCONNECTED
-    for stale signals, so the prev_state guard reliably distinguishes them.
-
-    Worst-case signal sequence this protects against:
-      DEACTIVATING(NEW_ACTIVATION) → DISCONNECTED(NEW_ACTIVATION)
-      → NEED_AUTH(DISCONNECTED, SUPPLICANT_DISCONNECT)  ← A's stale auth failure
-      → PREPARE → CONFIG → ... → ACTIVATED  ← B connects
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-    wm._get_active_wifi_connection.return_value = ("/path/B", {})
-
-    wm._set_connecting("B")
-
-    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-         reason=NMDeviceStateReason.NEW_ACTIVATION)
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-         reason=NMDeviceStateReason.NEW_ACTIVATION)
-    fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
-         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-    assert len(wm._callback_queue) == 0
-
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire_wpa_connect(wm)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-
-  def test_forget_while_connecting(self, mocker):
-    """Forget the network we're currently connecting to (not yet ACTIVATED).
-
-    Confirmed on device: connected to unifi, tapped Shane's iPhone, then forgot
-    Shane's iPhone while at CONFIG. NM auto-connected to unifi afterward.
-
-    Real device sequence (switching then forgetting mid-connection):
-      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
-      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
-      → DEACTIVATING(CONFIG, CONNECTION_REMOVED)                ← forget at CONFIG
-      → DISCONNECTED(DEACTIVATING, CONNECTION_REMOVED)
-      → PREPARE → CONFIG → ... → ACTIVATED                     ← NM auto-connects to other saved network
-
-    Note: DEACTIVATING fires from CONFIG (not ACTIVATED). wifi_state.status is
-    CONNECTING, so the DEACTIVATING handler is a no-op. DISCONNECTED clears state
-    (ssid removed from _connections by ConnectionRemoved), then PREPARE recovers
-    via DBus lookup for the auto-connect.
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "Other": "/path/other"})
-    wm._get_active_wifi_connection.return_value = ("/path/other", {})
-
-    wm._set_connecting("A")
-
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    assert wm._wifi_state.ssid == "A"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    # User forgets A: ConnectionRemoved processed first, then state changes
-    del wm._connections["A"]
-
-    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.CONFIG,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    assert wm._wifi_state.ssid == "A"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING  # DEACTIVATING preserves CONNECTING
-
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-    # NM auto-connects to another saved network
-    fire(wm, NMDeviceState.PREPARE)
-    assert wm._wifi_state.ssid == "Other"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    fire(wm, NMDeviceState.CONFIG)
-    fire_wpa_connect(wm)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "Other"
-
-  def test_forget_connected_network(self, mocker):
-    """Forget the currently connected network (not switching to another).
-
-    Real device sequence:
-      DEACTIVATING(ACTIVATED, CONNECTION_REMOVED) → DISCONNECTED(DEACTIVATING, CONNECTION_REMOVED)
-
-    ConnectionRemoved signal may or may not have been processed before state changes.
-    Either way, state must clear — we're forgetting what we're connected to, not switching.
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A"})
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-
-    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-    # DISCONNECTED follows — harmless since state is already cleared
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-  def test_forget_A_connect_B(self, mocker):
-    """Forget A while connecting to B: full signal sequence.
-
-    Real device sequence:
-      DEACTIVATING(ACTIVATED, CONNECTION_REMOVED) → DISCONNECTED(DEACTIVATING, CONNECTION_REMOVED)
-      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH, NONE) → CONFIG
-      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED
-
-    Signal order:
-      1. User: _set_connecting("B"), forget("A") removes A from _connections
-      2. NewConnection for B arrives → _connections["B"] = ...
-      3. DEACTIVATING(CONNECTION_REMOVED) — no-op
-      4. DISCONNECTED(CONNECTION_REMOVED) — B is in _connections, must not clear
-      5. PREPARE → CONFIG → NEED_AUTH → PREPARE → CONFIG → ... → ACTIVATED
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A"})
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-
-    wm._set_connecting("B")
-    del wm._connections["A"]
-    wm._connections["B"] = "/path/B"
-
-    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    wm._get_active_wifi_connection.return_value = ("/path/B", {})
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire_wpa_connect(wm)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "B"
-
-  def test_forget_A_connect_B_late_new_connection(self, mocker):
-    """Forget A, connect B: NewConnection for B arrives AFTER DISCONNECTED.
-
-    This is the worst-case race: B isn't in _connections when DISCONNECTED fires,
-    so the guard can't protect it and state clears. PREPARE must recover by doing
-    the DBus lookup (ssid is None at that point).
-
-    Signal order:
-      1. User: _set_connecting("B"), forget("A") removes A from _connections
-      2. DEACTIVATING(CONNECTION_REMOVED) — B NOT in _connections, should be no-op
-      3. DISCONNECTED(CONNECTION_REMOVED) — B STILL NOT in _connections, clears state
-      4. NewConnection for B arrives late → _connections["B"] = ...
-      5. PREPARE (ssid=None, so DBus lookup recovers) → CONFIG → ACTIVATED
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A"})
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-
-    wm._set_connecting("B")
-    del wm._connections["A"]
-
-    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-         reason=NMDeviceStateReason.CONNECTION_REMOVED)
-    # B not in _connections yet, so state clears — this is the known edge case
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-    # NewConnection arrives late
-    wm._connections["B"] = "/path/B"
-    wm._get_active_wifi_connection.return_value = ("/path/B", {})
-
-    # PREPARE recovers: ssid is None so it looks up from DBus
-    fire(wm, NMDeviceState.PREPARE)
-    assert wm._wifi_state.ssid == "B"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    fire(wm, NMDeviceState.CONFIG)
-    fire_wpa_connect(wm)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "B"
-
-  def test_auto_connect(self, mocker):
-    """NM auto-connects (no user action, ssid starts None)."""
-    wm = _make_wm(mocker, connections={"AutoNet": "/path/auto"})
-    wm._get_active_wifi_connection.return_value = ("/path/auto", {})
-
-    fire(wm, NMDeviceState.PREPARE)
-    assert wm._wifi_state.ssid == "AutoNet"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    fire(wm, NMDeviceState.CONFIG)
-    fire_wpa_connect(wm)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
-    assert wm._wifi_state.ssid == "AutoNet"
-
-  def test_network_lost_during_connection(self, mocker):
-    """Hotspot turned off while connecting (before ACTIVATED).
-
-    Confirmed on device: started new connection to Shane's iPhone, immediately
-    turned off the hotspot. NM can't complete WPA handshake and reports
-    FAILED(NO_SECRETS) — same signal as wrong password (false positive).
-
-    Real device sequence:
-      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
-      → NEED_AUTH(CONFIG, NONE) → FAILED(NEED_AUTH, NO_SECRETS) → DISCONNECTED(FAILED, NONE)
-
-    Note: no DEACTIVATING, no SUPPLICANT_DISCONNECT. The NEED_AUTH(CONFIG, NONE) is the
-    normal WPA handshake (not an error). NM gives up with NO_SECRETS because the AP
-    vanished mid-handshake.
-    """
-    wm = _make_wm(mocker, connections={"Hotspot": "/path/hs"})
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-
-    wm._set_connecting("Hotspot")
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    # Second NEED_AUTH(CONFIG, NONE) — NM retries handshake, AP vanishing
-    fire(wm, NMDeviceState.NEED_AUTH)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
-    # NM gives up — reports NO_SECRETS (same as wrong password)
-    fire(wm, NMDeviceState.FAILED, prev_state=NMDeviceState.NEED_AUTH,
-         reason=NMDeviceStateReason.NO_SECRETS)
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-    assert len(wm._callback_queue) == 1
-
-    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.FAILED)
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-    wm.process_callbacks()
-    cb.assert_called_once_with("Hotspot")
-
-  @unittest.expectedFailure  # "TODO: FAILED(SSID_NOT_FOUND) should emit error for UI"
-  def test_ssid_not_found(self, mocker):
-    """Network drops off while connected — hotspot turned off.
-
-    NM docs: SSID_NOT_FOUND (53) = "The WiFi network could not be found"
-
-    Confirmed on device: connected to Shane's iPhone, then turned off the hotspot.
-    No DEACTIVATING fires — NM goes straight from ACTIVATED to FAILED(SSID_NOT_FOUND).
-    NM retries connecting (PREPARE → CONFIG → ... → FAILED(CONFIG, SSID_NOT_FOUND))
-    before finally giving up with DISCONNECTED.
-
-    NOTE: turning off a hotspot during initial connection (before ACTIVATED) typically
-    produces FAILED(NO_SECRETS) instead of SSID_NOT_FOUND (see test_failed_no_secrets).
-
-    Real device sequence (hotspot turned off while connected):
-      FAILED(ACTIVATED, SSID_NOT_FOUND) → DISCONNECTED(FAILED, NONE)
-      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
-      → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
-      → FAILED(CONFIG, SSID_NOT_FOUND) → DISCONNECTED(FAILED, NONE)
-
-    The UI error callback mechanism is intentionally deferred — for now just clear state.
-    """
-    wm = _make_wm(mocker, connections={"GoneNet": "/path/gone"})
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-
-    wm._set_connecting("GoneNet")
-    fire(wm, NMDeviceState.PREPARE)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.SSID_NOT_FOUND)
-
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-    assert wm._wifi_state.ssid is None
-
-  def test_failed_then_disconnected_clears_state(self, mocker):
-    """After FAILED, NM always transitions to DISCONNECTED to clean up.
-
-    NM docs: FAILED (120) = "failed to connect, cleaning up the connection request"
-    Full sequence: ... → FAILED(reason) → DISCONNECTED(NONE)
-    """
-    wm = _make_wm(mocker)
-    wm._set_connecting("Net")
-
-    fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NONE)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING  # FAILED(NONE) is a no-op
-
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NONE)
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-  def test_user_requested_disconnect(self, mocker):
-    """User explicitly disconnects from the network.
-
-    NM docs: USER_REQUESTED (39) = "Device disconnected by user or client"
-    Expected sequence: DEACTIVATING(USER_REQUESTED) → DISCONNECTED(USER_REQUESTED)
-    """
-    wm = _make_wm(mocker)
-    wm._wifi_state = WifiState(ssid="MyNet", status=ConnectStatus.CONNECTED)
-
-    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.USER_REQUESTED)
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.USER_REQUESTED)
-
-    assert wm._wifi_state.ssid is None
-    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
-
-
-# ---------------------------------------------------------------------------
-# Worker error recovery: DBus errors in activate/connect re-sync with NM
-# ---------------------------------------------------------------------------
-# Verified on device: when ActivateConnection returns UnknownConnection error,
-# NM emits no state signals. The worker error path is the only recovery point.
-
-class TestWorkerErrorRecovery(OpenpilotTestCase):
-  """Worker threads re-sync with NM via _init_wifi_state on DBus errors,
-  preserving actual NM state instead of blindly clearing to DISCONNECTED."""
-
-  def _mock_init_restores(self, wm, mocker, ssid, status):
-    """Replace _init_wifi_state with a mock that simulates NM reporting the given state."""
-    mock = mocker.MagicMock(
-      side_effect=lambda: setattr(wm, '_wifi_state', WifiState(ssid=ssid, status=status))
+import threading
+import time
+from typing import cast
+from unittest import TestCase
+from unittest.mock import MagicMock, call, mock_open, patch
+
+from openpilot.system.ui.lib import wifi_manager as wifi_manager_module
+from openpilot.system.ui.lib.wifi_manager import (
+  CONNECTING_STALE_TIMEOUT_SECONDS,
+  ConnectStatus,
+  MeteredType,
+  SCAN_PERIOD_SECONDS,
+  SecurityType,
+  WifiManager,
+  WifiState,
+)
+
+
+def build_wifi_manager() -> WifiManager:
+  store = MagicMock()
+  store.get_metered.return_value = 0
+  store.contains.return_value = False
+  dhcp = MagicMock()
+  with (
+    patch.object(wifi_manager_module, "NetworkStore", return_value=store),
+    patch.object(wifi_manager_module, "DhcpClient", return_value=dhcp),
+    patch.object(wifi_manager_module, "Params", None),
+    patch.object(WifiManager, "_initialize"),
+    patch.object(wifi_manager_module.atexit, "register"),
+  ):
+    manager = WifiManager()
+
+  manager._store = store
+  manager._exit = True
+  manager._ctrl = MagicMock()
+  manager._ipv4_forward = True
+  manager._tethering_ssid = "Hotspot"
+  manager._tethering_psk = "hotspot-password"
+  manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+  manager._update_active_connection_info = MagicMock()
+  manager._poll_for_ip = MagicMock()
+  manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=TestNet\n"
+  return manager
+
+
+class TestConnectionState(TestCase):
+  def setUp(self):
+    self.manager = build_wifi_manager()
+
+  def test_connected_persists_after_auth_and_is_idempotent(self):
+    activated = MagicMock()
+    self.manager.add_callbacks(activated=activated)
+    self.manager._set_connecting("TestNet")
+    self.manager._set_pending_connection("TestNet", "password123", False)
+
+    with patch.object(wifi_manager_module, "generate_wpa_conf"):
+      self.manager._handle_connected("TestNet")
+      self.manager._handle_connected("TestNet")
+
+    self.manager.process_callbacks()
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._store.save_network.assert_called_once_with("TestNet", psk="password123", hidden=False)
+    self.manager._dhcp.start.assert_called_once()
+    activated.assert_called_once()
+    assert call("ENABLE_NETWORK all") in self.manager._ctrl.request.call_args_list
+
+  def test_connected_transitions_are_serialized(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._set_pending_connection("TestNet", "password123", False)
+    first_persist_started = threading.Event()
+    concurrent_persist_started = threading.Event()
+    release_persist = threading.Event()
+    active_persists = 0
+    active_persists_lock = threading.Lock()
+
+    def persist(_ssid):
+      nonlocal active_persists
+      with active_persists_lock:
+        active_persists += 1
+        if active_persists == 1:
+          first_persist_started.set()
+        else:
+          concurrent_persist_started.set()
+      assert release_persist.wait(1)
+      with active_persists_lock:
+        active_persists -= 1
+
+    with patch.object(self.manager, "_persist_pending_connection", side_effect=persist):
+      first = threading.Thread(target=self.manager._handle_connected, args=("TestNet",))
+      second = threading.Thread(target=self.manager._handle_connected, args=("TestNet",))
+      first.start()
+      assert first_persist_started.wait(1)
+      second.start()
+      try:
+        assert not concurrent_persist_started.wait(0.1)
+      finally:
+        release_persist.set()
+        first.join(1)
+        second.join(1)
+
+    assert not first.is_alive()
+    assert not second.is_alive()
+
+  def test_connect_tap_does_not_wait_for_connected_transition(self):
+    self.manager._set_connecting("CurrentNet")
+    self.manager._set_pending_connection("CurrentNet", "current-password", False)
+    current_epoch = self.manager._user_epoch
+    persist_started = threading.Event()
+    release_persist = threading.Event()
+    connect_returned = threading.Event()
+
+    def save_network(*_args, **_kwargs):
+      persist_started.set()
+      assert release_persist.wait(1)
+
+    self.manager._store.save_network.side_effect = save_network
+    connected = threading.Thread(target=self.manager._handle_connected, args=("CurrentNet",), kwargs={"expected_epoch": current_epoch})
+    connected.start()
+    assert persist_started.wait(1)
+
+    def connect():
+      self.manager.connect_to_network("NextNet", "next-password")
+      connect_returned.set()
+
+    thread_class = threading.Thread
+    connector = thread_class(target=connect)
+    with patch.object(wifi_manager_module.threading, "Thread"):
+      connector.start()
+      returned_during_persist = connect_returned.wait(0.1)
+      release_persist.set()
+      connector.join(1)
+      connected.join(1)
+
+    assert returned_during_persist
+    assert not connector.is_alive()
+    assert not connected.is_alive()
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.ssid == "NextNet"
+    self.manager._dhcp.start.assert_not_called()
+
+  def test_pending_persistence_is_retried_without_restarting_dhcp(self):
+    for retry in ("connected", "reconcile"):
+      with self.subTest(retry=retry):
+        manager = build_wifi_manager()
+        manager._set_connecting("TestNet")
+        manager._set_pending_connection("TestNet", "password123", False)
+        manager._store.save_network.side_effect = [OSError("read-only"), None]
+
+        with patch.object(wifi_manager_module, "generate_wpa_conf"):
+          manager._handle_connected("TestNet")
+          if retry == "connected":
+            manager._handle_connected("TestNet")
+          else:
+            manager._reconcile_connecting_state()
+
+        assert manager._store.save_network.call_count == 2
+        assert manager._pending_connection is None
+        manager._dhcp.start.assert_called_once()
+
+  def test_disconnected_event_defers_station_cleanup(self):
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._ipv4_address = "192.168.1.20"
+    self.manager._current_network_metered = MeteredType.YES
+
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    assert self.manager.ipv4_address == "192.168.1.20"
+    assert self.manager.current_network_metered == MeteredType.YES
+    self.manager._dhcp.stop.assert_not_called()
+
+  def test_reconnect_after_disconnected_event_adopts_dhcp(self):
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._ipv4_address = "192.168.1.20"
+    self.manager._dhcp.adopt.return_value = True
+
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=TestNet\n"
+    self.manager._handle_event("CTRL-EVENT-CONNECTED")
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    assert self.manager.ipv4_address == "192.168.1.20"
+    self.manager._dhcp.adopt.assert_called_once()
+    self.manager._dhcp.stop.assert_not_called()
+    self.manager._dhcp.start.assert_not_called()
+
+  def test_disconnected_event_allows_fallback_to_different_saved_network(self):
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=NextNet\n"
+    self.manager._handle_event("CTRL-EVENT-CONNECTED")
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTED)
+    self.manager._dhcp.adopt.assert_not_called()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+    self.manager._dhcp.start.assert_called_once()
+
+  def test_disconnected_event_cleans_station_after_timeout(self):
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._ipv4_address = "192.168.1.20"
+    self.manager._current_network_metered = MeteredType.YES
+
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\n"
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager.ipv4_address == ""
+    assert self.manager.current_network_metered == MeteredType.UNKNOWN
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
+  def test_disconnected_event_does_not_override_user_connection(self):
+    self.manager._set_connecting("NextNet")
+
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    self.manager._dhcp.stop.assert_not_called()
+
+  def test_connected_event_rejects_unconfirmed_or_previous_network(self):
+    cases = (
+      ("wpa_state=ASSOCIATING\nssid=NextNet\n", "wrong-password"),
+      ("wpa_state=COMPLETED\nssid=PreviousNet\n", "password123"),
     )
-    wm._init_wifi_state = mock
-    return mock
+    for status, password in cases:
+      with self.subTest(status=status):
+        manager = build_wifi_manager()
+        manager._set_connecting("NextNet")
+        manager._set_pending_connection("NextNet", password, False)
+        manager._ctrl.request.return_value = status
 
-  def test_activate_dbus_error_resyncs(self, mocker):
-    """ActivateConnection returns DBus error while A is connected.
-    NM rejects the request — no state signals emitted. Worker must re-read NM
-    state to discover A is still connected, not clear to DISCONNECTED.
-    """
-    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    wm._wifi_device = "/dev/wifi0"
-    wm._nm = mocker.MagicMock()
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-    wm._router_main = mocker.MagicMock()
+        manager._handle_event("CTRL-EVENT-CONNECTED")
 
-    error_reply = mocker.MagicMock()
-    error_reply.header.message_type = MessageType.error
-    wm._router_main.send_and_get_reply.return_value = error_reply
+        assert manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+        assert manager._pending_connection is not None
+        manager._store.save_network.assert_not_called()
+        manager._dhcp.start.assert_not_called()
 
-    mock_init = self._mock_init_restores(wm, mocker, "A", ConnectStatus.CONNECTED)
+  def test_connected_event_rechecks_epoch_inside_transition_lock(self):
+    self.manager._set_connecting("FirstNet")
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=FirstNet\n"
+    lock = threading.Lock()
+    waiting_for_lock = threading.Event()
+    lock.acquire()
 
-    wm.activate_connection("B", block=True)
+    class SignalingLock:
+      def __enter__(self):
+        waiting_for_lock.set()
+        lock.acquire()
 
-    mock_init.assert_called_once()
-    assert wm._wifi_state.ssid == "A"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
+      def __exit__(self, *_):
+        lock.release()
 
-  def test_connect_to_network_dbus_error_resyncs(self, mocker):
-    """AddAndActivateConnection2 returns DBus error while A is connected."""
-    wm = _make_wm(mocker, connections={"A": "/path/A"})
-    wm._wifi_device = "/dev/wifi0"
-    wm._nm = mocker.MagicMock()
-    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-    wm._router_main = mocker.MagicMock()
-    wm._forgotten = []
+    self.manager.__dict__["_connect_lock"] = SignalingLock()
+    worker = threading.Thread(target=self.manager._handle_event, args=("CTRL-EVENT-CONNECTED",))
+    worker.start()
+    assert waiting_for_lock.wait(1)
 
-    error_reply = mocker.MagicMock()
-    error_reply.header.message_type = MessageType.error
-    wm._router_main.send_and_get_reply.return_value = error_reply
+    self.manager._set_connecting("NextNet")
+    lock.release()
+    worker.join(1)
 
-    mock_init = self._mock_init_restores(wm, mocker, "A", ConnectStatus.CONNECTED)
+    assert not worker.is_alive()
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    self.manager._dhcp.start.assert_not_called()
 
-    # Run worker thread synchronously
-    workers = []
-    mocker.patch('openpilot.system.ui.lib.wifi_manager.threading.Thread',
-                 side_effect=lambda target, **kw: type('T', (), {'start': lambda self: workers.append(target)})())
+  def test_activate_enables_every_profile_sharing_ssid(self):
+    self.manager._ctrl.request.return_value = "OK"
 
-    wm.connect_to_network("B", "password123")
-    workers[-1]()
+    with patch.object(self.manager, "_list_network_ids", return_value=["1", "2"]):
+      self.manager.activate_connection("Pinned", block=True)
 
-    mock_init.assert_called_once()
-    assert wm._wifi_state.ssid == "A"
-    assert wm._wifi_state.status == ConnectStatus.CONNECTED
+    assert self.manager._ctrl.request.call_args_list == [
+      call("DISABLE_NETWORK all"),
+      call("ENABLE_NETWORK 1"),
+      call("ENABLE_NETWORK 2"),
+      call("REASSOCIATE"),
+    ]
+
+  def test_activate_restores_every_saved_profile(self):
+    profiles = (
+      {"psk": "first-password", "hidden": False, "priority": 1, "bssid": "00:11:22:33:44:55", "uuid": "first-uuid"},
+      {"psk": "second-password", "hidden": True, "priority": 2, "bssid": "66:77:88:99:aa:bb", "uuid": "second-uuid"},
+    )
+    self.manager._store.get_profiles.return_value = [("Pinned", profile) for profile in profiles]
+
+    with (
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_add_and_select_network", side_effect=["1", "2"]) as add_and_select_network,
+      patch.object(self.manager, "_select_network_ids") as select_network_ids,
+    ):
+      self.manager.activate_connection("Pinned", block=True)
+
+    assert add_and_select_network.call_args_list == [
+      call("Pinned", "first-password", False, 1, bssid="00:11:22:33:44:55", profile_uuid="first-uuid"),
+      call("Pinned", "second-password", True, 2, bssid="66:77:88:99:aa:bb", profile_uuid="second-uuid"),
+    ]
+    select_network_ids.assert_called_once_with(["1", "2"])
+
+  def test_metered_worker_updates_requested_network_only(self):
+    self.manager._wifi_state = WifiState("FirstNet", ConnectStatus.CONNECTED)
+    self.manager._current_network_metered = MeteredType.NO
+
+    with patch.object(wifi_manager_module.threading, "Thread") as thread:
+      self.manager.set_current_network_metered(MeteredType.YES)
+
+    self.manager._wifi_state = WifiState("NextNet", ConnectStatus.CONNECTED)
+    thread.call_args.kwargs["target"]()
+
+    self.manager._store.set_metered.assert_called_once_with("FirstNet", int(MeteredType.YES))
+    assert self.manager.current_network_metered == MeteredType.NO
+
+  def test_metered_worker_reports_persistence_failure(self):
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._current_network_metered = MeteredType.NO
+    self.manager._store.set_metered.side_effect = OSError("read-only")
+
+    with (
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+      patch.object(wifi_manager_module.cloudlog, "exception") as exception,
+    ):
+      self.manager.set_current_network_metered(MeteredType.YES)
+      thread.call_args.kwargs["target"]()
+
+    exception.assert_called_once_with("Failed to update metered state for TestNet")
+    assert self.manager.current_network_metered == MeteredType.NO
+
+  def test_active_profile_sets_metered_state(self):
+    self.manager._wifi_state = WifiState("Duplicate", ConnectStatus.CONNECTED)
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=Duplicate\nid_str=second-uuid\nip_address=192.168.1.20\n"
+    self.manager._store.get_metered.return_value = MeteredType.NO
+
+    WifiManager._update_active_connection_info(self.manager)
+
+    self.manager._store.get_metered.assert_called_once_with("Duplicate", "second-uuid")
+    assert self.manager.current_network_metered == MeteredType.NO
+
+  def test_activate_restores_saved_profile_constraints(self):
+    cases = (
+      ("Preferred", {"psk": "password123", "hidden": False, "priority": 42, "uuid": "preferred-uuid"}, 42, None),
+      ("Pinned", {"psk": "password123", "hidden": False, "bssid": "00:11:22:33:44:55", "uuid": "pinned-uuid"}, 0, "00:11:22:33:44:55"),
+    )
+    for ssid, profile, priority, bssid in cases:
+      with self.subTest(ssid=ssid):
+        manager = build_wifi_manager()
+        manager._store.get_profiles.return_value = [(ssid, profile)]
+
+        with (
+          patch.object(manager, "_list_network_ids", return_value=[]),
+          patch.object(manager, "_add_and_select_network") as add_and_select_network,
+        ):
+          manager.activate_connection(ssid, block=True)
+
+        add_and_select_network.assert_called_once_with(ssid, "password123", False, priority, bssid=bssid, profile_uuid=profile["uuid"])
+
+  def test_connect_defers_dhcp_cleanup_to_worker(self):
+    self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
+    with (
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_add_and_select_network"),
+    ):
+      self.manager.connect_to_network("NextNet", "password123")
+      self.manager._dhcp.stop.assert_not_called()
+      thread.call_args.kwargs["target"]()
+
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
+  def test_activate_defers_dhcp_cleanup_to_worker(self):
+    self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
+    with (
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+      patch.object(self.manager, "_list_network_ids", return_value=["1"]),
+      patch.object(self.manager, "_select_network_ids"),
+    ):
+      self.manager.activate_connection("NextNet")
+      self.manager._dhcp.stop.assert_not_called()
+      thread.call_args.kwargs["target"]()
+
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
+  def test_latest_connect_worker_owns_deferred_dhcp_cleanup(self):
+    self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
+    events = []
+    self.manager._dhcp.stop.side_effect = lambda: events.append("cleanup")
+
+    with (
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_add_and_select_network", side_effect=lambda *_: events.append("select") or "1"),
+    ):
+      self.manager.connect_to_network("FirstNet", "password123")
+      first_worker = thread.call_args.kwargs["target"]
+      self.manager.connect_to_network("NextNet", "password123")
+      second_worker = thread.call_args.kwargs["target"]
+
+      second_worker()
+      first_worker()
+
+    assert events == ["cleanup", "select"]
+
+  def test_runtime_network_encodes_control_characters_in_ssid(self):
+    self.manager._ctrl.request.side_effect = ["0", "OK", "OK", "OK", "OK"]
+
+    self.manager._add_and_select_network("Line\nBreak\r")
+
+    ssid_hex = b"Line\nBreak\r".hex()
+    assert call(f"SET_NETWORK 0 ssid {ssid_hex}") in self.manager._ctrl.request.call_args_list
+
+  def test_runtime_network_sets_saved_profile_identifier(self):
+    self.manager._ctrl.request.side_effect = ["0", "OK", "OK", "OK", "OK", "OK"]
+
+    self.manager._add_and_select_network("TestNet", profile_uuid="profile-uuid")
+
+    assert call('SET_NETWORK 0 id_str "profile-uuid"') in self.manager._ctrl.request.call_args_list
+
+  def test_scan_only_reselects_when_disconnected(self):
+    cases = (
+      (WifiState("TestNet", ConnectStatus.CONNECTED), "SCAN TYPE=ONLY"),
+      (WifiState(), "SCAN"),
+    )
+    for state, command in cases:
+      with self.subTest(state=state):
+        manager = build_wifi_manager()
+        manager._wifi_state = state
+
+        manager._request_scan()
+
+        manager._ctrl.request.assert_called_once_with(command)
+
+  def test_scan_rejects_conflicting_security_variants(self):
+    self.manager._ctrl.request.return_value = "\n".join((
+      "bssid / frequency / signal level / flags / ssid",
+      "00:11:22:33:44:55\t2437\t-40\t[ESS]\tMixed",
+      "66:77:88:99:aa:bb\t2437\t-60\t[WPA2-PSK-CCMP][ESS]\tMixed",
+    ))
+
+    self.manager._update_networks()
+
+    assert len(self.manager.networks) == 1
+    assert self.manager.networks[0].ssid == "Mixed"
+    assert self.manager.networks[0].security_type == SecurityType.UNSUPPORTED
+
+  def test_scan_accepts_psk_bss_among_unsupported_variants(self):
+    self.manager._ctrl.request.return_value = "\n".join((
+      "bssid / frequency / signal level / flags / ssid",
+      "00:11:22:33:44:55\t2437\t-40\t[RSN-SAE-CCMP][ESS]\tMixed",
+      "66:77:88:99:aa:bb\t2437\t-60\t[WPA2-PSK-CCMP][ESS]\tMixed",
+    ))
+
+    self.manager._update_networks()
+
+    assert len(self.manager.networks) == 1
+    assert self.manager.networks[0].ssid == "Mixed"
+    assert self.manager.networks[0].security_type == SecurityType.WPA
+
+  def test_wrong_key_removes_runtime_credentials_and_stops_dhcp(self):
+    need_auth = MagicMock()
+    self.manager.add_callbacks(need_auth=need_auth)
+    self.manager._set_connecting("TestNet")
+    self.manager._set_pending_connection("TestNet", "wrongpass", False)
+    self.manager._set_pending_network_id("0", self.manager._user_epoch)
+    self.manager._last_wrong_key_dispatch[("OldNet", None)] = 0.0
+    self.manager._ctrl.request.return_value = "OK"
+
+    with (
+      patch.object(self.manager, "_list_network_ids", return_value=["0"]),
+      patch.object(wifi_manager_module.time, "monotonic", return_value=100),
+    ):
+      self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="TestNet" reason=WRONG_KEY')
+
+    self.manager.process_callbacks()
+    assert self.manager._pending_connection is None
+    assert self.manager.wifi_state == WifiState()
+    assert call("REMOVE_NETWORK 0") in self.manager._ctrl.request.call_args_list
+    assert ("OldNet", None) not in self.manager._last_wrong_key_dispatch
+    self.manager._dhcp.stop.assert_called_once()
+    need_auth.assert_called_once_with("TestNet")
+
+  def test_wrong_key_ignores_same_ssid_event_for_other_profile(self):
+    need_auth = MagicMock()
+    self.manager.add_callbacks(need_auth=need_auth)
+    self.manager._set_connecting("TestNet")
+    self.manager._set_pending_connection("TestNet", "correct-password", False)
+    self.manager._set_pending_network_id("1", self.manager._user_epoch)
+
+    self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="TestNet" reason=WRONG_KEY')
+    self.manager.process_callbacks()
+
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.password == "correct-password"
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    self.manager._ctrl.request.assert_not_called()
+    self.manager._dhcp.stop.assert_not_called()
+    need_auth.assert_not_called()
+
+  def test_wrong_key_exhausts_same_ssid_profiles_before_auth_failure(self):
+    need_auth = MagicMock()
+    self.manager.add_callbacks(need_auth=need_auth)
+    self.manager._set_connecting("TestNet")
+
+    with (
+      patch.object(self.manager, "_list_network_ids", side_effect=[["0", "1"], ["1"]]),
+      patch.object(self.manager, "_remove_wpa_network_id") as remove_network,
+      patch.object(self.manager, "_select_network_ids") as select_networks,
+      patch.object(wifi_manager_module.time, "monotonic", return_value=100),
+    ):
+      self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="TestNet" reason=WRONG_KEY')
+      self.manager.process_callbacks()
+
+      assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+      select_networks.assert_called_once_with(["1"])
+      need_auth.assert_not_called()
+
+      self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=1 ssid="TestNet" reason=WRONG_KEY')
+
+    self.manager.process_callbacks()
+    assert remove_network.call_args_list == [call("0"), call("1")]
+    assert self.manager.wifi_state == WifiState()
+    self.manager._dhcp.stop.assert_called_once()
+    need_auth.assert_called_once_with("TestNet")
+
+  def test_connect_allocates_profile_before_removing_matching_ids(self):
+    requests = []
+
+    def request(command):
+      requests.append(command)
+      if command == "LIST_NETWORKS":
+        return "network id / ssid / bssid / flags\n0\tTestNet\tany\n"
+      if command == "ADD_NETWORK":
+        return "1"
+      return "OK"
+
+    self.manager._ctrl.request.side_effect = request
+    real_thread = threading.Thread
+    worker_threads = []
+
+    class CapturingThread:
+      def __init__(self, *args, **kwargs):
+        self.thread = real_thread(*args, **kwargs)
+        worker_threads.append(self.thread)
+
+      def start(self):
+        self.thread.start()
+
+    with patch.object(wifi_manager_module.threading, "Thread", CapturingThread):
+      self.manager.connect_to_network("TestNet", "correct-password")
+      worker_threads[0].join()
+
+    assert requests.index("ADD_NETWORK") < requests.index("REMOVE_NETWORK 0")
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.network_id == "1"
+
+  def test_connect_rejects_invalid_passphrases(self):
+    invalid_passwords = ("short", "x" * 64, "é" * 32)
+
+    for password in invalid_passwords:
+      with self.subTest(password=password):
+        manager = build_wifi_manager()
+        need_auth = MagicMock()
+        manager.add_callbacks(need_auth=need_auth)
+
+        with patch.object(wifi_manager_module.threading.Thread, "start"):
+          manager.connect_to_network("TestNet", password)
+
+        manager.process_callbacks()
+        assert manager.wifi_state == WifiState()
+        assert manager._pending_connection is None
+        need_auth.assert_called_once_with("TestNet")
+
+  def test_connect_rejects_oversized_hidden_ssid(self):
+    ssid = "é" * 17
+
+    with patch.object(wifi_manager_module.threading.Thread, "start") as start:
+      self.manager.connect_to_network(ssid, "password123", hidden=True)
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._pending_connection is None
+    start.assert_not_called()
+
+  def test_network_not_found_clears_connecting_state_after_reconciliation(self):
+    disconnected = MagicMock()
+    self.manager.add_callbacks(disconnected=disconnected)
+    self.manager._set_connecting("MissingNet")
+    self.manager._set_pending_connection("MissingNet", "password123", True)
+    self.manager._ctrl.request.return_value = "wpa_state=SCANNING\n"
+
+    with patch.object(self.manager, "_remove_wpa_network") as remove_wpa_network:
+      self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+      self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+      self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+      assert self.manager.wifi_state == WifiState("MissingNet", ConnectStatus.CONNECTING)
+      assert self.manager._pending_connection is not None
+      remove_wpa_network.assert_not_called()
+
+      self.manager._reconcile_connecting_state()
+
+    self.manager.process_callbacks()
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._pending_connection is None
+    remove_wpa_network.assert_called_once_with("MissingNet")
+    assert call("ENABLE_NETWORK all") in self.manager._ctrl.request.call_args_list
+    self.manager._dhcp.stop.assert_called_once()
+    disconnected.assert_called_once()
+
+  def test_network_not_found_ends_scanning_after_reconciliation_deferred(self):
+    self.manager._set_connecting("MissingNet")
+    self.manager._set_pending_connection("MissingNet", "password123", True)
+    self.manager._ctrl.request.return_value = "wpa_state=SCANNING\n"
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+
+    self.manager._reconcile_connecting_state()
+    self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+    self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._pending_connection is None
+
+  def test_delayed_network_not_found_does_not_bind_to_fresh_attempt(self):
+    self.manager._set_connecting("PreviousNet")
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._set_connecting("HiddenNet")
+    self.manager._set_pending_connection("HiddenNet", "password123", True)
+    self.manager._ctrl.request.return_value = "wpa_state=SCANNING\n"
+
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState("HiddenNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    self.manager._dhcp.stop.assert_not_called()
+
+  def test_reconcile_keeps_saved_runtime_network_after_transient_failure(self):
+    self.manager._store.contains.return_value = True
+    self.manager._set_connecting("SavedNet")
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\n"
+
+    with patch.object(self.manager, "_remove_wpa_network") as remove_wpa_network:
+      self.manager._reconcile_connecting_state()
+
+    remove_wpa_network.assert_not_called()
+    assert call("ENABLE_NETWORK all") in self.manager._ctrl.request.call_args_list
+    assert self.manager.wifi_state == WifiState()
+
+  def test_reconcile_rechecks_epoch_before_cancelling_stale_connection(self):
+    self.manager._set_connecting("PreviousNet")
+    self.manager._set_pending_connection("PreviousNet", "password123", False)
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\n"
+    contains_started = threading.Event()
+    release_contains = threading.Event()
+
+    def contains(_ssid):
+      contains_started.set()
+      assert release_contains.wait(1)
+      return False
+
+    self.manager._store.contains.side_effect = contains
+    worker = threading.Thread(target=self.manager._reconcile_connecting_state)
+    worker.start()
+    assert contains_started.wait(1)
+
+    with patch.object(wifi_manager_module.threading.Thread, "start"):
+      self.manager.connect_to_network("NextNet", "next-password")
+    release_contains.set()
+    worker.join(1)
+
+    assert not worker.is_alive()
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.ssid == "NextNet"
+    self.manager._dhcp.stop.assert_not_called()
+
+  def test_reconcile_times_out_stalled_handshake(self):
+    for wpa_state in ("AUTHENTICATING", "ASSOCIATING", "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
+      with self.subTest(wpa_state=wpa_state):
+        manager = build_wifi_manager()
+        manager._store.contains.return_value = True
+        manager._set_connecting("StalledNet")
+        manager._set_pending_connection("StalledNet", "password123", False)
+        manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+        manager._ctrl.request.return_value = f"wpa_state={wpa_state}\nssid=StalledNet\n"
+
+        manager._reconcile_connecting_state()
+
+        assert manager.wifi_state == WifiState()
+        assert manager._pending_connection is None
+        assert call("ENABLE_NETWORK all") in manager._ctrl.request.call_args_list
+        manager._dhcp.stop.assert_called_once()
+
+  def test_reconcile_does_not_report_generic_disconnect_as_auth_failure(self):
+    need_auth = MagicMock()
+    self.manager.add_callbacks(need_auth=need_auth)
+    self.manager._store.contains.return_value = True
+    self.manager._networks = [wifi_manager_module.Network("SavedNet", 100, SecurityType.WPA, False)]
+    self.manager._set_connecting("SavedNet")
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\n"
+
+    self.manager._reconcile_connecting_state()
+    self.manager.process_callbacks()
+
+    assert self.manager.wifi_state == WifiState()
+    need_auth.assert_not_called()
+
+  def test_reconcile_clears_ipv6_state_before_adopting_another_network(self):
+    previous_state = WifiState("PreviousNet", ConnectStatus.CONNECTED)
+    self.manager._wifi_state = previous_state
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=station\nssid=TestNet\n"
+    self.manager._dhcp.clear_ipv6_state.side_effect = lambda: self.assertEqual(self.manager.wifi_state, previous_state)
+
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+    self.manager._dhcp.start.assert_called_once()
+
+  def test_stale_network_not_found_does_not_clear_fresh_connection(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._set_pending_connection("TestNet", "password123", False)
+
+    with (
+      patch.object(self.manager, "_remove_wpa_network") as remove_wpa_network,
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+    ):
+      self.manager._handle_event("CTRL-EVENT-NETWORK-NOT-FOUND")
+      self.manager._handle_connected("TestNet")
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._store.save_network.assert_called_once_with("TestNet", psk="password123", hidden=False)
+    remove_wpa_network.assert_not_called()
+
+  def test_forget_cancels_in_flight_connection(self):
+    runtime_networks = set()
+    connect_started = threading.Event()
+    release_connect = threading.Event()
+    connect_added = threading.Event()
+    forget_removed = threading.Event()
+
+    def remove_network(ssid):
+      runtime_networks.discard(ssid)
+      if connect_added.is_set():
+        forget_removed.set()
+
+    def add_network(ssid, *_):
+      connect_started.set()
+      assert release_connect.wait(1)
+      runtime_networks.add(ssid)
+      connect_added.set()
+      return "1"
+
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+
+    with (
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_remove_wpa_network", side_effect=remove_network),
+      patch.object(self.manager, "_add_and_select_network", side_effect=add_network),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+    ):
+      self.manager.connect_to_network("TestNet", "password123")
+      assert connect_started.wait(1)
+
+      self.manager.forget_connection("TestNet")
+      assert self.manager.wifi_state == WifiState()
+
+      release_connect.set()
+      assert connect_added.wait(1)
+      assert forget_removed.wait(1)
+
+    assert runtime_networks == set()
+
+  def test_forget_does_not_disconnect_fresh_connection(self):
+    forget_removing = threading.Event()
+    release_forget = threading.Event()
+    new_network_selected = threading.Event()
+    forget_finished = threading.Event()
+
+    def remove_saved_network(ssid):
+      assert ssid == "TestNet"
+      forget_removing.set()
+      assert release_forget.wait(1)
+      return True
+
+    def select_network(*_):
+      new_network_selected.set()
+      return "1"
+
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.side_effect = remove_saved_network
+
+    with (
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_remove_wpa_network"),
+      patch.object(self.manager, "_add_and_select_network", side_effect=select_network),
+      patch.object(self.manager, "_enqueue_callbacks", side_effect=lambda *_: forget_finished.set()),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+    ):
+      self.manager.forget_connection("TestNet")
+      assert forget_removing.wait(1)
+
+      self.manager.connect_to_network("NextNet", "password123")
+      assert new_network_selected.wait(1)
+
+      release_forget.set()
+      assert forget_finished.wait(1)
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert call("ENABLE_NETWORK all") not in self.manager._ctrl.request.call_args_list
+    assert call("DISCONNECT") not in self.manager._ctrl.request.call_args_list
+    assert call("REASSOCIATE") not in self.manager._ctrl.request.call_args_list
+
+  def test_forget_reports_persistent_success_when_runtime_removal_fails(self):
+    forgotten = MagicMock()
+    forget_failed = MagicMock()
+    self.manager.add_callbacks(forgotten=forgotten, forget_failed=forget_failed)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+
+    def request(command):
+      if command == "LIST_NETWORKS":
+        return "network id / ssid / bssid / flags\n0\tSavedNet\tany\t\n"
+      if command == "REMOVE_NETWORK 0":
+        return "FAIL\n"
+      return "OK\n"
+
+    self.manager._ctrl.request.side_effect = request
+    with patch.object(wifi_manager_module, "generate_wpa_conf"):
+      self.manager.forget_connection("SavedNet", block=True)
+
+    self.manager.process_callbacks()
+    forgotten.assert_called_once_with("SavedNet")
+    forget_failed.assert_not_called()
+
+  def test_forget_removes_runtime_when_config_generation_fails(self):
+    forgotten = MagicMock()
+    self.manager.add_callbacks(forgotten=forgotten)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+
+    with (
+      patch.object(wifi_manager_module, "generate_wpa_conf", side_effect=OSError("read-only")),
+      patch.object(self.manager, "_remove_wpa_network") as remove_wpa_network,
+    ):
+      self.manager.forget_connection("SavedNet", block=True)
+
+    self.manager.process_callbacks()
+    remove_wpa_network.assert_called_once_with("SavedNet")
+    forgotten.assert_called_once_with("SavedNet")
+
+  def test_forget_allows_fallback_connection_after_disconnect_event(self):
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+
+    def request(command):
+      if command == "DISCONNECT":
+        self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+      return "OK"
+
+    self.manager._ctrl.request.side_effect = request
+    with (
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(self.manager, "_remove_wpa_network"),
+    ):
+      self.manager.forget_connection("TestNet", block=True)
+
+    self.manager._ctrl.request.side_effect = None
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=NextNet\n"
+    self.manager._handle_event("CTRL-EVENT-CONNECTED")
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTED)
+
+  def test_forget_failure_releases_caller_without_reporting_success(self):
+    forgotten = MagicMock()
+    forget_failed = MagicMock()
+    self.manager.add_callbacks(forgotten=forgotten, forget_failed=forget_failed)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = False
+
+    self.manager.forget_connection("SavedNet", block=True)
+    self.manager.process_callbacks()
+
+    forgotten.assert_not_called()
+    forget_failed.assert_called_once_with("SavedNet")
+
+  def test_failed_connect_worker_does_not_reset_fresh_selection(self):
+    real_thread = threading.Thread
+    worker_threads = []
+
+    class CapturingThread:
+      def __init__(self, *args, **kwargs):
+        self.thread = real_thread(*args, **kwargs)
+        worker_threads.append(self.thread)
+
+      def start(self):
+        self.thread.start()
+
+    def fail_after_fresh_selection(*_):
+      self.manager._set_connecting("NextNet")
+      self.manager._set_pending_connection("NextNet", "new-password", False)
+      raise OSError("stale request failed")
+
+    with (
+      patch.object(wifi_manager_module.threading, "Thread", CapturingThread),
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_remove_wpa_network"),
+      patch.object(self.manager, "_add_and_select_network", side_effect=fail_after_fresh_selection),
+    ):
+      self.manager.connect_to_network("OldNet", "old-password")
+      worker_threads[0].join()
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.ssid == "NextNet"
+
+  def test_failed_activate_worker_does_not_reset_fresh_selection(self):
+    def fail_after_fresh_selection(*_):
+      self.manager._set_connecting("NextNet")
+      raise OSError("stale request failed")
+
+    with patch.object(self.manager, "_list_network_ids", side_effect=fail_after_fresh_selection):
+      self.manager.activate_connection("OldNet", block=True)
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+
+  def test_failed_connect_reenables_saved_networks(self):
+    class ImmediateThread:
+      def __init__(self, target, **_):
+        self._target = target
+
+      def start(self):
+        self._target()
+
+    def request(command):
+      if command == "LIST_NETWORKS":
+        return "network id / ssid / bssid / flags\n1\tTestNet\tany\t\n"
+      if command == "ADD_NETWORK":
+        return "2"
+      if command == "REMOVE_NETWORK 1":
+        return "FAIL"
+      return "OK"
+
+    self.manager._ctrl.request.side_effect = request
+    with patch.object(wifi_manager_module.threading, "Thread", ImmediateThread):
+      self.manager.connect_to_network("TestNet", "password123")
+
+    assert call("ENABLE_NETWORK all") in self.manager._ctrl.request.call_args_list
+    assert self.manager.wifi_state == WifiState()
+
+  def test_failed_activate_reenables_saved_networks(self):
+    self.manager._ctrl.request.side_effect = lambda command: "FAIL" if command == "REASSOCIATE" else "OK"
+    with patch.object(self.manager, "_list_network_ids", return_value=["1"]):
+      self.manager.activate_connection("TestNet", block=True)
+
+    assert call("ENABLE_NETWORK all") in self.manager._ctrl.request.call_args_list
+    assert self.manager.wifi_state == WifiState()
+
+  def test_request_error_invalidates_control_socket(self):
+    self.manager._ctrl.request.side_effect = OSError("socket closed")
+    epoch = self.manager._monitor_epoch
+
+    with self.assertRaises(OSError):
+      self.manager._request("SCAN")
+
+    assert self.manager._ctrl is None
+    assert self.manager._monitor_epoch == epoch + 1
+
+
+class TestStartupAdoption(TestCase):
+  def setUp(self):
+    self.manager = build_wifi_manager()
+
+  def test_station_dhcp_adoption(self):
+    cases = (
+      ("connected", "TestNet", True, True, False, False),
+      ("missing-client", "TestNet", False, True, True, False),
+      ("reconnecting", "TestNet", True, True, False, False),
+      ("different-network", "PreviousNet", False, False, True, True),
+    )
+    for state, adoption_ssid, adoption_result, expect_adopt, expect_start, expect_clear_ipv6 in cases:
+      with self.subTest(state=state):
+        manager = build_wifi_manager()
+        manager._dhcp_adoption_ssid = adoption_ssid
+        manager._dhcp.adopt.return_value = adoption_result
+        if state in ("reconnecting", "different-network"):
+          manager._ctrl.request.side_effect = (
+            "wpa_state=ASSOCIATING\nmode=station\nssid=TestNet\n",
+            "wpa_state=COMPLETED\nmode=station\nssid=TestNet\n",
+            "OK",
+          )
+        else:
+          manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=station\nssid=TestNet\n"
+
+        manager._init_wifi_state()
+        if state in ("reconnecting", "different-network"):
+          manager._handle_event("CTRL-EVENT-CONNECTED")
+
+        assert manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+        assert bool(manager._dhcp.adopt.call_count) == expect_adopt
+        assert bool(manager._dhcp.start.call_count) == expect_start
+        assert bool(manager._dhcp.clear_ipv6_state.call_count) == expect_clear_ipv6
+
+  def test_mid_association_adoption_starts_fresh_timeout(self):
+    self.manager._dhcp_adoption_ssid = "TestNet"
+    self.manager._last_connecting_at = 0.0
+    self.manager._ctrl.request.return_value = "wpa_state=ASSOCIATING\nmode=station\nssid=TestNet\n"
+
+    with patch.object(wifi_manager_module.time, "monotonic", return_value=100.0):
+      self.manager._init_wifi_state()
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    assert self.manager._last_connecting_at == 100.0
+    assert self.manager._dhcp_adoption_ssid == "TestNet"
+
+    self.manager._ctrl.request.reset_mock()
+    with patch.object(wifi_manager_module.time, "monotonic", return_value=104.0):
+      self.manager._reconcile_connecting_state()
+
+    self.manager._ctrl.request.assert_not_called()
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+
+  def test_disconnected_startup_cleans_station_state(self):
+    self.manager._dhcp_adoption_ssid = "TestNet"
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\nmode=station\n"
+
+    self.manager._init_wifi_state()
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._dhcp_adoption_ssid is None
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
+  def test_hotspot_adopts_with_dhcp_and_nat(self):
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=Hotspot\n"
+
+    with (
+      patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
+      patch.object(wifi_manager_module, "_tethering_firewall_ready", return_value=True),
+      patch("builtins.open", mock_open(read_data='  psk="hotspot-password"\n')),
+    ):
+      self.manager._init_wifi_state()
+
+    assert self.manager.is_tethering_active()
+    assert self.manager.wifi_state == WifiState("Hotspot", ConnectStatus.CONNECTED)
+    assert self.manager.ipv4_address == "192.168.43.1"
+    self.manager._dhcp.start.assert_not_called()
+
+  def test_hotspot_adoption_notifies_callback_registered_after_startup(self):
+    with (
+      patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
+      patch.object(wifi_manager_module, "_tethering_firewall_ready", return_value=True),
+      patch("builtins.open", mock_open(read_data='  psk="hotspot-password"\n')),
+    ):
+      assert self.manager._adopt_ap_state("Hotspot")
+
+    activated = MagicMock()
+    self.manager.add_callbacks(activated=activated)
+    self.manager.process_callbacks()
+
+    activated.assert_called_once()
+
+  def test_hotspot_password_mismatch_rebuilds_ap(self):
+    with (
+      patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
+      patch.object(wifi_manager_module, "_tethering_firewall_ready", return_value=True),
+      patch("builtins.open", mock_open(read_data='  psk="old-password"\n')),
+      patch.object(self.manager, "_start_tethering") as start_tethering,
+    ):
+      assert self.manager._adopt_ap_state("Hotspot")
+
+    start_tethering.assert_called_once()
+    assert self.manager.is_tethering_active()
+
+  def test_incomplete_hotspot_is_removed(self):
+    for dnsmasq_running, nat_ready in ((False, True), (True, False)):
+      with self.subTest(dnsmasq_running=dnsmasq_running, nat_ready=nat_ready):
+        manager = build_wifi_manager()
+        manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=Hotspot\n"
+        with (
+          patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=dnsmasq_running),
+          patch.object(wifi_manager_module, "_tethering_firewall_ready", return_value=nat_ready),
+          patch.object(manager, "_stop_tethering") as stop_tethering,
+        ):
+          manager._init_wifi_state()
+
+        assert manager.wifi_state == WifiState()
+        assert not manager.is_tethering_active()
+        stop_tethering.assert_called_once()
+
+  def test_reconcile_adopts_missed_connection(self):
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=station\nssid=TestNet\n"
+
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._dhcp.start.assert_called_once()
+
+  def test_reconcile_stops_hotspot_without_responsive_control_socket(self):
+    for ctrl in ("unresponsive", None):
+      with self.subTest(ctrl=ctrl):
+        manager = build_wifi_manager()
+        manager._tethering_active = True
+        manager._wifi_state = WifiState("Hotspot", ConnectStatus.CONNECTED)
+        if ctrl is None:
+          manager._ctrl = None
+        else:
+          manager._ctrl.request.side_effect = OSError("socket closed")
+
+        with patch.object(manager, "_stop_tethering") as stop_tethering:
+          manager._reconcile_connecting_state()
+
+        stop_tethering.assert_called_once()
+
+  def test_reconcile_keeps_healthy_hotspot(self):
+    self.manager._tethering_active = True
+    self.manager._wifi_state = WifiState("Hotspot", ConnectStatus.CONNECTED)
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=Hotspot\n"
+
+    with (
+      patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
+      patch.object(wifi_manager_module, "_tethering_firewall_ready", return_value=True),
+      patch.object(self.manager, "_stop_tethering") as stop_tethering,
+    ):
+      self.manager._reconcile_connecting_state()
+
+    stop_tethering.assert_not_called()
+
+  def test_reconcile_stops_hotspot_without_nat(self):
+    self.manager._tethering_active = True
+    self.manager._wifi_state = WifiState("Hotspot", ConnectStatus.CONNECTED)
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nmode=AP\nssid=Hotspot\n"
+
+    with (
+      patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
+      patch.object(wifi_manager_module.subprocess, "run", return_value=MagicMock(returncode=1)),
+      patch.object(self.manager, "_stop_tethering") as stop_tethering,
+    ):
+      self.manager._reconcile_connecting_state()
+
+    stop_tethering.assert_called_once()
+
+  def test_reconcile_clears_state_when_hotspot_cleanup_fails(self):
+    self.manager._tethering_active = True
+    self.manager._wifi_state = WifiState("Hotspot", ConnectStatus.CONNECTED)
+    self.manager._ctrl.request.side_effect = OSError("socket closed")
+    disconnected = MagicMock()
+    self.manager.add_callbacks(disconnected=disconnected)
+
+    with patch.object(self.manager, "_stop_tethering", side_effect=OSError("cleanup failed")):
+      self.manager._reconcile_connecting_state()
+
+    self.manager.process_callbacks()
+    assert not self.manager.is_tethering_active()
+    assert self.manager.wifi_state == WifiState()
+    disconnected.assert_called_once()
+
+
+class TestLifecycle(TestCase):
+  def test_manager_starts_inactive_until_ui_is_shown(self):
+    with (
+      patch.object(wifi_manager_module, "NetworkStore") as network_store,
+      patch.object(wifi_manager_module, "DhcpClient"),
+      patch.object(wifi_manager_module, "Params", None),
+      patch.object(WifiManager, "_initialize"),
+    ):
+      manager = WifiManager()
+
+    assert not manager._active
+    assert manager._store is None
+    network_store.assert_not_called()
+
+  def test_initialization_loads_network_store_in_worker(self):
+    manager = build_wifi_manager()
+    manager._store = None
+    manager._scan_thread = MagicMock()
+    manager._state_thread = MagicMock()
+    store = MagicMock()
+    store.get_tethering_password.return_value = "custom-password"
+
+    with (
+      patch.object(wifi_manager_module, "NetworkStore", return_value=store) as network_store,
+      patch("builtins.open", side_effect=FileNotFoundError),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(manager, "_ensure_wpa_supplicant"),
+      patch.object(manager, "_update_networks"),
+      patch.object(manager, "_init_wifi_state"),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager._initialize()
+      thread.call_args.kwargs["target"]()
+
+    network_store.assert_called_once()
+    assert manager._store is store
+    assert manager.tethering_password == "custom-password"
+
+  def test_initial_config_failure_recovers_without_restart(self):
+    manager = build_wifi_manager()
+    manager._tethering_ssid = "weedle"
+    manager._scan_thread = MagicMock()
+    manager._state_thread = MagicMock()
+    ctrl = MagicMock()
+
+    with (
+      patch("builtins.open", side_effect=FileNotFoundError),
+      patch.object(wifi_manager_module, "generate_wpa_conf", side_effect=[OSError("read-only"), None]) as generate,
+      patch.object(wifi_manager_module, "wpa_supplicant_running", return_value=False),
+      patch.object(wifi_manager_module, "ensure_wpa_supplicant", return_value=ctrl) as ensure,
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager._initialize()
+      thread.call_args.kwargs["target"]()
+      manager._ensure_wpa_supplicant()
+
+    manager._scan_thread.start.assert_called_once()
+    manager._state_thread.start.assert_called_once()
+    assert generate.call_count == 2
+    ensure.assert_called_once()
+    assert manager._ctrl is ctrl
+
+  def test_station_recovery_cleans_abandoned_ap_services(self):
+    manager = build_wifi_manager()
+    ctrl = MagicMock()
+
+    def ensure(_should_exit, _station_reconfigured, on_abandoned_ap):
+      on_abandoned_ap()
+      return ctrl
+
+    with (
+      patch.object(wifi_manager_module, "wpa_supplicant_running", return_value=True),
+      patch.object(wifi_manager_module, "ensure_wpa_supplicant", side_effect=ensure),
+      patch.object(wifi_manager_module, "stop_tethering_dnsmasq") as stop_dnsmasq,
+      patch.object(wifi_manager_module, "_delete_tethering_firewall_rules") as delete_firewall,
+      patch.object(wifi_manager_module.subprocess, "run") as run,
+    ):
+      manager._ensure_wpa_supplicant()
+
+    run.assert_called_once_with(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=True)
+    stop_dnsmasq.assert_called_once()
+    delete_firewall.assert_called_once()
+    assert manager._ctrl is ctrl
+
+  def test_hidden_manager_reconciles_without_scanning(self):
+    manager = build_wifi_manager()
+    manager._exit = False
+    manager._active = False
+    manager._last_network_scan = 0.0
+
+    with (
+      patch.object(manager, "_reconcile_connecting_state") as reconcile,
+      patch.object(manager, "_request_scan") as request_scan,
+      patch.object(wifi_manager_module.time, "sleep", side_effect=lambda _: setattr(manager, "_exit", True)),
+    ):
+      manager._network_scanner()
+
+    reconcile.assert_called_once()
+    request_scan.assert_not_called()
+
+  def test_failed_station_bringup_uses_scan_period_retry(self):
+    manager = build_wifi_manager()
+    manager._exit = False
+    manager._ctrl = None
+    sleeps = []
+
+    def wait(duration):
+      sleeps.append(duration)
+      manager._exit = True
+
+    with (
+      patch.object(wifi_manager_module, "wpa_supplicant_running", return_value=False),
+      patch.object(manager, "_ensure_wpa_supplicant"),
+      patch.object(manager._exit_event, "wait", side_effect=wait),
+    ):
+      manager._monitor_state()
+
+    assert sleeps == [SCAN_PERIOD_SECONDS]
+
+  def test_monitor_exit_skips_retry_sleep(self):
+    manager = build_wifi_manager()
+    manager._exit = False
+    monitor = MagicMock()
+    monitor.recv.side_effect = lambda **_: setattr(manager, "_exit", True)
+
+    with (
+      patch.object(wifi_manager_module, "WpaCtrlMonitor", return_value=monitor),
+      patch.object(wifi_manager_module.time, "sleep") as sleep,
+    ):
+      manager._monitor_state()
+
+    sleep.assert_not_called()
+
+  def test_disconnected_reconciliation_is_rate_limited(self):
+    manager = build_wifi_manager()
+    manager._wifi_state = WifiState()
+    manager._last_connected_recheck = 0.0
+    manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\n"
+
+    with patch.object(wifi_manager_module.time, "monotonic", return_value=100.0):
+      manager._reconcile_connecting_state()
+      manager._reconcile_connecting_state()
+
+    manager._ctrl.request.assert_called_once_with("STATUS")
+
+  def test_activating_manager_refreshes_state_and_networks(self):
+    manager = build_wifi_manager()
+    manager._active = False
+
+    with (
+      patch.object(manager, "_init_wifi_state") as init_wifi_state,
+      patch.object(manager, "_update_networks") as update_networks,
+    ):
+      manager.set_active(True)
+
+    assert manager._active
+    init_wifi_state.assert_called_once_with(block=False)
+    update_networks.assert_called_once_with(block=False)
+
+  def test_stop_leaves_network_data_plane_running(self):
+    manager = build_wifi_manager()
+    manager._exit = False
+    manager._tethering_active = True
+    ctrl = manager._ctrl
+
+    with patch.object(manager, "_stop_tethering") as stop_tethering:
+      manager.stop()
+
+    assert manager._exit
+    assert manager._exit_event.is_set()
+    assert ctrl is not None
+    ctrl.interrupt.assert_called_once()
+    ctrl.close.assert_called_once()
+    manager._dhcp.stop.assert_not_called()
+    stop_tethering.assert_not_called()
+
+  def test_stop_interrupts_control_request_before_join(self):
+    manager = build_wifi_manager()
+    manager._exit = False
+    request_started = threading.Event()
+    interrupted = threading.Event()
+    request_finished = threading.Event()
+    closed = threading.Event()
+
+    class BlockingCtrl:
+      def request(self, _command):
+        request_started.set()
+        interrupted.wait(0.2)
+        request_finished.set()
+
+      def interrupt(self):
+        interrupted.set()
+
+      def close(self):
+        closed.set()
+
+    manager._ctrl = cast(wifi_manager_module.WpaCtrl, BlockingCtrl())
+    manager._scan_thread = threading.Thread(target=manager._ctrl.request, args=("STATUS",))
+    manager._state_thread = MagicMock()
+    manager._state_thread.is_alive.return_value = False
+    manager._scan_thread.start()
+    assert request_started.wait(1)
+
+    manager.stop()
+
+    assert interrupted.is_set()
+    assert request_finished.is_set()
+    assert closed.is_set()
+    assert not manager._scan_thread.is_alive()
+
+  def test_callbacks_coalesce_network_updates(self):
+    manager = build_wifi_manager()
+    updated = MagicMock()
+    manager.add_callbacks(networks_updated=updated)
+
+    for _ in range(100):
+      manager._mark_networks_updated()
+    manager.process_callbacks()
+
+    updated.assert_called_once_with(manager.networks)
+
+
+class TestTetheringTransitions(TestCase):
+  def test_hotspot_adoption_does_not_overlap_tethering_transition(self):
+    manager = build_wifi_manager()
+    start_entered = threading.Event()
+    release_start = threading.Event()
+    adoption_entered = threading.Event()
+    starts = 0
+
+    def start_tethering():
+      nonlocal starts
+      starts += 1
+      if starts == 1:
+        start_entered.set()
+        assert release_start.wait(1)
+      else:
+        adoption_entered.set()
+
+    with (
+      patch.object(manager, "_start_tethering", side_effect=start_tethering),
+      patch.object(manager, "_ap_config_matches_password", return_value=False),
+      patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
+      patch.object(wifi_manager_module, "_tethering_firewall_ready", return_value=True),
+    ):
+      manager.set_tethering_active(True)
+      assert start_entered.wait(1)
+
+      adoption = threading.Thread(target=manager._adopt_ap_state, args=("Hotspot",))
+      adoption.start()
+      try:
+        assert not adoption_entered.wait(0.1)
+      finally:
+        release_start.set()
+
+      adoption.join(1)
+      assert not adoption.is_alive()
+      assert adoption_entered.is_set()
+
+  def test_reconcile_waits_for_pending_tethering_start(self):
+    manager = build_wifi_manager()
+    manager._last_connected_recheck = 0.0
+
+    with (
+      patch.object(manager, "_start_tethering") as start_tethering,
+      patch.object(manager, "_stop_tethering") as stop_tethering,
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager.set_tethering_active(True)
+      manager._reconcile_tethering_state()
+
+      stop_tethering.assert_not_called()
+      thread.call_args.kwargs["target"]()
+
+    start_tethering.assert_called_once()
+    assert manager.is_tethering_active()
+
+  def test_startup_station_bringup_does_not_overlap_tethering(self):
+    manager = build_wifi_manager()
+    manager._tethering_ssid = "weedle"
+    station_entered = threading.Event()
+    release_station = threading.Event()
+    tethering_entered = threading.Event()
+
+    def ensure_station():
+      station_entered.set()
+      assert release_station.wait(1)
+
+    with (
+      patch("builtins.open", side_effect=FileNotFoundError),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(manager, "_ensure_wpa_supplicant", side_effect=ensure_station),
+      patch.object(manager, "_update_networks"),
+      patch.object(manager, "_init_wifi_state"),
+      patch.object(manager, "_start_tethering", side_effect=lambda: tethering_entered.set()),
+    ):
+      with patch.object(wifi_manager_module.threading, "Thread") as thread:
+        manager._initialize()
+      initialize = thread.call_args.kwargs["target"]
+
+      initialize_thread = threading.Thread(target=initialize)
+      initialize_thread.start()
+      assert station_entered.wait(1)
+
+      manager.set_tethering_active(True)
+      try:
+        assert not tethering_entered.wait(0.1)
+      finally:
+        release_station.set()
+
+      initialize_thread.join(1)
+      assert not initialize_thread.is_alive()
+      assert tethering_entered.wait(1)
+
+  def test_tethering_transitions_do_not_overlap(self):
+    manager = build_wifi_manager()
+    start_entered = threading.Event()
+    release_start = threading.Event()
+    stop_entered = threading.Event()
+
+    def start_tethering():
+      manager._tethering_started = True
+      start_entered.set()
+      assert release_start.wait(1)
+
+    with (
+      patch.object(manager, "_start_tethering", side_effect=start_tethering),
+      patch.object(manager, "_stop_tethering", side_effect=lambda: stop_entered.set()),
+    ):
+      manager.set_tethering_active(True)
+      assert start_entered.wait(1)
+
+      manager.set_tethering_active(False)
+      try:
+        assert not stop_entered.wait(0.1)
+      finally:
+        release_start.set()
+      assert stop_entered.wait(1)
+
+  def test_latest_tethering_request_wins(self):
+    manager = build_wifi_manager()
+    manager._wifi_state = WifiState("Station", ConnectStatus.CONNECTED)
+    manager._ipv4_address = "192.168.1.20"
+    station_ctrl = manager._ctrl
+    transitions = []
+    disconnected = MagicMock()
+    manager.add_callbacks(disconnected=disconnected)
+
+    def start_tethering():
+      transitions.append(True)
+      manager._tethering_active = True
+
+    def stop_tethering():
+      transitions.append(False)
+      manager._tethering_active = False
+
+    with (
+      patch.object(manager, "_start_tethering", side_effect=start_tethering),
+      patch.object(manager, "_stop_tethering", side_effect=stop_tethering),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager.set_tethering_active(True)
+      manager.set_tethering_active(False)
+
+      workers = [item.kwargs["target"] for item in thread.call_args_list]
+      workers[1]()
+      workers[0]()
+
+    manager.process_callbacks()
+    assert transitions == []
+    assert not manager.is_tethering_active()
+    assert manager.wifi_state == WifiState("Station", ConnectStatus.CONNECTED)
+    assert manager.ipv4_address == "192.168.1.20"
+    assert manager._ctrl is station_ctrl
+    disconnected.assert_called_once()
+
+  def test_failed_tethering_stop_notifies_disconnected(self):
+    manager = build_wifi_manager()
+    manager._tethering_active = True
+    manager._tethering_started = True
+    disconnected = MagicMock()
+    manager.add_callbacks(disconnected=disconnected)
+
+    with (
+      patch.object(manager, "_stop_tethering", side_effect=OSError("cleanup failed")),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager.set_tethering_active(False)
+      thread.call_args.kwargs["target"]()
+
+    manager.process_callbacks()
+    assert not manager.is_tethering_active()
+    assert manager.wifi_state == WifiState()
+    assert manager.ipv4_address == ""
+    disconnected.assert_called_once()
+
+
+class TestTetheringPassword(TestCase):
+  def test_latest_password_request_wins(self):
+    manager = build_wifi_manager()
+    password_file = MagicMock()
+    password_write = MagicMock()
+    password_write.__enter__.return_value = password_file
+
+    with (
+      patch.object(wifi_manager_module, "atomic_write", return_value=password_write),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager.set_tethering_password("first-password")
+      manager.set_tethering_password("second-password")
+
+      workers = [item.kwargs["target"] for item in thread.call_args_list]
+      workers[1]()
+      workers[0]()
+
+    assert manager.tethering_password == "second-password"
+    password_file.write.assert_called_once_with("second-password")
+    manager._store.set_tethering_password.assert_called_once_with("Hotspot", "second-password")
+
+  def test_startup_falls_back_to_existing_hotspot_password(self):
+    manager = build_wifi_manager()
+    manager._tethering_ssid = "weedle"
+    store = manager._store
+    assert store is not None
+    store.get_tethering_password.return_value = "custom-password"
+    manager._scan_thread = MagicMock()
+    manager._state_thread = MagicMock()
+
+    with (
+      patch.object(wifi_manager_module, "NetworkStore", return_value=store),
+      patch("builtins.open", side_effect=FileNotFoundError),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(manager, "_ensure_wpa_supplicant"),
+      patch.object(manager, "_update_networks"),
+      patch.object(manager, "_init_wifi_state"),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager._initialize()
+      thread.call_args.kwargs["target"]()
+
+    assert manager.tethering_password == "custom-password"
+
+  def test_startup_falls_back_when_password_file_is_unreadable(self):
+    for error in (PermissionError("denied"), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid")):
+      with self.subTest(error=type(error).__name__):
+        manager = build_wifi_manager()
+        manager._tethering_ssid = "weedle"
+        store = manager._store
+        assert store is not None
+        store.get_tethering_password.return_value = "custom-password"
+        manager._scan_thread = MagicMock()
+        manager._state_thread = MagicMock()
+
+        with (
+          patch.object(wifi_manager_module, "NetworkStore", return_value=store),
+          patch("builtins.open", side_effect=error),
+          patch.object(wifi_manager_module, "generate_wpa_conf"),
+          patch.object(manager, "_ensure_wpa_supplicant"),
+          patch.object(manager, "_update_networks"),
+          patch.object(manager, "_init_wifi_state"),
+          patch.object(wifi_manager_module.threading, "Thread") as thread,
+        ):
+          manager._initialize()
+          thread.call_args.kwargs["target"]()
+
+        assert manager.tethering_password == "custom-password"
+
+  def test_persist_failure_reenables_active_tethering_controls(self):
+    manager = build_wifi_manager()
+    manager._tethering_active = True
+    manager._tethering_psk = "old-password"
+    activated = MagicMock()
+    manager.add_callbacks(activated=activated)
+    manager.process_callbacks()
+    activated.reset_mock()
+
+    with (
+      patch.object(wifi_manager_module, "atomic_write", side_effect=OSError("read-only")),
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager.set_tethering_password("replacement-password")
+      thread.call_args.kwargs["target"]()
+
+    manager.process_callbacks()
+    assert manager.tethering_password == "old-password"
+    activated.assert_called_once()
+
+  def test_teardown_failure_reenables_active_tethering_controls(self):
+    manager = build_wifi_manager()
+    manager._tethering_active = True
+    manager._wifi_state = WifiState(manager._tethering_ssid, ConnectStatus.CONNECTED)
+    disconnected = MagicMock()
+    manager.add_callbacks(disconnected=disconnected)
+    password_file = MagicMock()
+    password_write = MagicMock()
+    password_write.__enter__.return_value = password_file
+
+    with (
+      patch.object(wifi_manager_module, "atomic_write", return_value=password_write),
+      patch.object(manager, "_stop_tethering", side_effect=OSError("cleanup failed")) as stop_tethering,
+      patch.object(manager, "_start_tethering") as start_tethering,
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager.set_tethering_password("replacement-password")
+      thread.call_args.kwargs["target"]()
+
+    manager.process_callbacks()
+    assert manager.tethering_password == "replacement-password"
+    assert not manager.is_tethering_active()
+    assert manager.wifi_state == WifiState()
+    assert stop_tethering.call_count == 2
+    start_tethering.assert_not_called()
+    disconnected.assert_called_once()

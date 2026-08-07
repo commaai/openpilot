@@ -1,0 +1,21 @@
+#!/bin/sh
+
+default_script=${UDHCPC_DEFAULT_SCRIPT:-/etc/udhcpc/default.script}
+# NetworkManager's default Wi-Fi route metric is 600; AGNOS LTE uses 1000.
+wifi_route_metric=600
+"$default_script" "$1"
+status=$?
+
+if [ "$status" -ne 0 ]; then
+  exit "$status"
+fi
+
+case "$1" in
+  bound|renew)
+    router=${router%% *}
+    if [ -n "$router" ]; then
+      ip -4 route replace default via "$router" dev "$interface" metric "$wifi_route_metric" &&
+        ip -4 route del default via "$router" dev "$interface" metric 0 2>/dev/null || true
+    fi
+    ;;
+esac
