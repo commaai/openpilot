@@ -140,8 +140,6 @@ class SelfdriveD:
       self.startup_event = EventName.startupNoCar
     elif car_recognized and self.CP.passive:
       self.startup_event = EventName.startupNoControl
-    elif self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
-      self.startup_event = EventName.startupNoSecOcKey
 
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
@@ -150,9 +148,9 @@ class SelfdriveD:
       self.events.add(EventName.dashcamMode, static=True)
 
     if self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
-      # Car will reject our messages and fault, let the user know they
-      # need to recover the SecOC security key to re-enable openpilot
-      self.events.add(EventName.secOcKeyMissing, static=True)
+      # instead of a one-shot startup alert, let the user know for the whole
+      # drive that they need to recover the SecOC security key to re-enable openpilot
+      self.events.add(EventName.startupNoSecOcKey, static=True)
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
