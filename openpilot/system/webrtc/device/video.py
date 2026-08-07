@@ -21,8 +21,8 @@ TIMING_SEI_UUID = bytes([
 ])
 _SEI_PREFIX = b'\x00\x00\x00\x01\x06\x05\x30' + TIMING_SEI_UUID
 
-H264_PROFILE_LEVEL_3_1 = "profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1"
-H264_PROFILE_LEVEL_4_0 = "profile-level-id=42e028;packetization-mode=1;level-asymmetry-allowed=1"
+H264_PROFILE_LEVEL_3_1 = "profile-level-id=64001f;packetization-mode=1;level-asymmetry-allowed=1"
+H264_PROFILE_LEVEL_4_0 = "profile-level-id=640028;packetization-mode=1;level-asymmetry-allowed=1"
 
 
 @dataclass(frozen=True)
@@ -42,6 +42,8 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   }
 
   def __init__(self, camera_type: str, video_enabled: bool = True):
+    # V4L2 encodes H.264 High profile. comma 4 (mici)'s 1344x760 stream fits
+    # Level 3.1, while comma 3X (tizi)'s 1928x1208 stream requires Level 4.0 at 20 fps.
     h264_profile = H264_PROFILE_LEVEL_4_0 if HARDWARE.get_device_type() == "tizi" else H264_PROFILE_LEVEL_3_1
     super().__init__(camera_type, DT_MDL, h264_profile=h264_profile)
 
