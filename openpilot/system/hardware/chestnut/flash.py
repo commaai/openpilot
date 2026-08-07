@@ -394,9 +394,10 @@ def vbus_cycle():
 
 
 def activate(expected_product):
+  # returns whether the chestnut lost power
   if not os.path.exists(VBUS_PATH):
     print("no VBUS control, firmware activates on the next chestnut power cycle", flush=True)
-    return
+    return False
   print("power-cycling chestnut VBUS", flush=True)
   vbus_write("0")
   disconnected = False
@@ -411,7 +412,7 @@ def activate(expected_product):
   vbus_write("1")
   if not disconnected:
     print("chestnut stayed powered, firmware activates on its next power cycle", flush=True)
-    return
+    return False
   deadline = time.monotonic() + 15.0
   while time.monotonic() < deadline:
     _, _, product = find_chestnut()
@@ -420,9 +421,10 @@ def activate(expected_product):
         print(f"activated {expected_product}", flush=True)
       else:
         print(f"chestnut re-enumerated with {product!r}, firmware activates on its next power cycle", flush=True)
-      return
+      return True
     time.sleep(0.2)
   print("chestnut did not re-enumerate, firmware activates on its next power cycle", flush=True)
+  return True
 
 
 def defer_signal(signum, _frame):
@@ -495,7 +497,9 @@ def recover_from_rom(image, expected_product):
       print(f"ROM recovery failed, retrying: {e}", flush=True)
       vbus_cycle()
       continue
-    activate(expected_product)
+    if activate(expected_product):
+      # power cycled, still booting the ROM means the commit did not take
+      committed = False
 
 
 def write_image(image, expected_product, product, force):
