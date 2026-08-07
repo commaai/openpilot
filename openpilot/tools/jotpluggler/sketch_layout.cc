@@ -1553,7 +1553,7 @@ SeriesAccumulator extract_segment_series(const std::vector<Event> &events,
 }
 
 std::string migrate_log(const std::string &log_path) {
-  return PyProcess::runModule("openpilot.selfdrive.test.process_replay.migration", {log_path, "/dev/stdout"}, nullptr, false);
+  return PyProcess::runModule("openpilot.selfdrive.test.process_replay.migration", {log_path, "-"}, nullptr, false);
 }
 
 LoadedRouteArtifacts load_route_series_parallel(

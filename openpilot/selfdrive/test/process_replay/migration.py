@@ -537,6 +537,7 @@ if __name__ == '__main__':
   parser.add_argument("output_path", help="Path to output file")
   args = parser.parse_args()
 
+  output_path = args.output_path if args.output_path != "-" else "/dev/stdout"
   mlr = migrate_all(LogReader(args.input_path))
-  print(f"Saving migrated log to {args.output_path}", file=sys.stderr)
-  save_log(args.output_path, mlr)
+  print(f"Saving migrated log to {output_path}", file=sys.stderr)
+  save_log(output_path, mlr)
