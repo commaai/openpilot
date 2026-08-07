@@ -16,8 +16,8 @@ import zlib
 from pathlib import Path
 
 VID_PIDS = (("add1", "0001"), ("3801", "0001"))
-STOCK_VID_PIDS = (("174c", "2464"), ("174c", "2463"))
-STOCK_PRODUCT = "USB 3.2 PCIe TinyEnclosure"
+ROM_VID_PIDS = (("174c", "2464"), ("174c", "2463"))
+ROM_PRODUCT = "USB 3.2 PCIe TinyEnclosure"
 FIRMWARE_PATH = Path(__file__).with_name("firmware_wrapped.bin")
 CONFIG_DIR = "/data/chestnut_config"
 PM_PATHS = ("/sys/bus/platform/devices/a600000.ssusb", "/sys/bus/usb/devices/usb4")
@@ -54,7 +54,7 @@ class Bulk(ctypes.Structure):
               ("timeout", ctypes.c_uint), ("data", ctypes.c_void_p)]
 
 
-class StockFallback(Exception):
+class RomFallback(Exception):  # not a RuntimeError, this has to escape the retry loops
   pass
 
 
@@ -63,7 +63,7 @@ def installed_chestnut():
   for d in glob.glob("/sys/bus/usb/devices/*"):
     try:
       vid_pid = (open(d + "/idVendor").read().strip(), open(d + "/idProduct").read().strip())
-      if vid_pid in VID_PIDS + STOCK_VID_PIDS:
+      if vid_pid in VID_PIDS + ROM_VID_PIDS:
         found.append((d, vid_pid, open(d + "/product").read().strip()))
     except OSError:
       pass
@@ -72,9 +72,9 @@ def installed_chestnut():
   return found[0] if found else (None, None, None)
 
 
-def is_stock(vid_pid, product):
+def in_rom_bootloader(vid_pid, product):
   # the ROM bootloader reports the config page strings, or its own when the config page is lost
-  return vid_pid in STOCK_VID_PIDS or product == STOCK_PRODUCT or (product or "").startswith("AS2462")
+  return vid_pid in ROM_VID_PIDS or product == ROM_PRODUCT or (product or "").startswith("AS2462")
 
 
 def disable_runtime_pm(path):
@@ -137,8 +137,8 @@ class Flash:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
       path, vid_pid, product = installed_chestnut()
-      if is_stock(vid_pid, product):
-        raise StockFallback("chestnut fell back to the stock bootloader")
+      if in_rom_bootloader(vid_pid, product):
+        raise RomFallback("chestnut fell back to the ROM bootloader")
       if path is not None:
         self.fd = claim_device(path)
         return
@@ -323,7 +323,7 @@ def backed_up_config(path, data):
   return data
 
 
-def stock_recover(image, config):
+def rom_write(image, config):
   # the ROM bootloader implements only the BOT protocol, and requires a port reset before bulk transfers
   path, _, _ = installed_chestnut()
   if path is None:
@@ -362,7 +362,7 @@ def stock_recover(image, config):
       fcntl.ioctl(fd, USBDEVFS_CLEAR_HALT, struct.pack("I", 0x81))
       csw = bulk(0x81, bytes(13), timeout)
     if csw[:4] != b"USBS" or csw[12] != 0:
-      raise RuntimeError(f"stock flash command {cdb[0]:02x} {cdb[1]:02x} failed")
+      raise RuntimeError(f"ROM flash command {cdb[0]:02x} {cdb[1]:02x} failed")
 
   print("recovering from the ROM bootloader", flush=True)
   try:
@@ -452,8 +452,8 @@ def flash_chestnut(expected_version=None, force=False):
 
   previous = {sig: signal.signal(sig, defer_signal) for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
   try:
-    if is_stock(vid_pid, product):
-      if not recover_from_stock(image, expected_product):
+    if in_rom_bootloader(vid_pid, product):
+      if not recover_from_rom(image, expected_product):
         return
       # firmware is back, verify it against the bundled image
       force, product = True, None
@@ -463,11 +463,11 @@ def flash_chestnut(expected_version=None, force=False):
       signal.signal(sig, handler)
 
 
-def recover_from_stock(image, expected_product):
+def recover_from_rom(image, expected_product):
   # returns whether the chestnut came back on custom firmware
   backup = config_path()
   if not os.path.isfile(backup):
-    raise RuntimeError(f"cannot recover from stock mode without a config backup at {backup}")
+    raise RuntimeError(f"cannot recover from the ROM bootloader without a config backup at {backup}")
   config = open(backup, "rb").read()
   if len(config) != 0x100:
     raise RuntimeError(f"invalid config backup: {backup}")
@@ -482,16 +482,16 @@ def recover_from_stock(image, expected_product):
         return False
       vbus_cycle()
       continue
-    if not is_stock(vid_pid, product):
+    if not in_rom_bootloader(vid_pid, product):
       return True
     if committed:
       print("chestnut stayed powered, recovered firmware boots on its next power cycle", flush=True)
       return False
     try:
-      stock_recover(image, config)
+      rom_write(image, config)
       committed = True
     except (OSError, TimeoutError, RuntimeError) as e:
-      print(f"stock recovery failed, retrying: {e}", flush=True)
+      print(f"ROM recovery failed, retrying: {e}", flush=True)
       vbus_cycle()
       continue
     activate(expected_product)
