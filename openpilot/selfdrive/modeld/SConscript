@@ -100,8 +100,10 @@ for usbgpu in [False, True] if USBGPU else [False]:
         pass
       if ready: break
     if not ready:
-      print("Chestnut not ready, skipping big model build")
+      print("Chestnut not ready, skipping big model build", file=sys.stderr, flush=True)
       return
+    # the compile takes minutes with no scons progress, tell the user what's happening
+    print("spinner: compiling model for chestnut", file=sys.stderr, flush=True)
     if ret := env.Execute(command):
       return ret
     chunk_file(pkl, chunks)
