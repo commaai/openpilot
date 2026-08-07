@@ -94,7 +94,7 @@
         ${LABELS.map((label, i) => `<td width='33.33%'>
           <h4>${label}</h4>
           <div class='video-box'>
-            <video id='v${i}' width='100%' muted playsinline preload='metadata'><source type='video/mp4'></video>
+            <video id='v${i}' width='100%' muted playsinline preload='metadata'></video>
             <div id='nv${i}' class='no-video'>No video</div>
           </div>
         </td>`).join('')}
@@ -162,8 +162,7 @@
       videos.forEach((v, vi) => {
         const src = srcs[vi];
         active[vi] = !!src;
-        const source = v.querySelector('source');
-        source.src = src || '';
+        v.src = src || '';
         v.load();
         v.style.display = src ? '' : 'none';
         if (src) v.play().catch(() => {});
