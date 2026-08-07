@@ -529,7 +529,7 @@ CONFIGS = [
     subs=["liveDelay"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("livePose"),
+    should_recv_callback=MessageBasedRcvCallback("carState"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -544,7 +544,7 @@ CONFIGS = [
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("livePose", True),
+    should_recv_callback=MessageBasedRcvCallback("carState", True),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
