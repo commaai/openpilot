@@ -1,5 +1,5 @@
-import pytest
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 from openpilot.system.hardware.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                 CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
@@ -10,6 +10,10 @@ def mock_time_monotonic():
   global ssb
   ssb += 1.
   return ssb
+
+def set_mock_time(value):
+  global ssb
+  ssb = value
 
 TEST_DURATION_S = 50
 GOOD_VOLTAGE = 12 * 1e3
@@ -22,20 +26,16 @@ def pm_patch(mocker, name, value, constant=False):
     mocker.patch(f"openpilot.system.hardware.power_monitoring.{name}", return_value=value)
 
 
-@pytest.fixture(autouse=True)
-def mock_time(mocker):
-  mocker.patch("time.monotonic", mock_time_monotonic)
-
-
-class TestPowerMonitoring:
+class TestPowerMonitoring(OpenpilotTestCase):
   def setup_method(self):
+    self._fixture("mocker").patch("time.monotonic", mock_time_monotonic)
     self.params = Params()
 
   # Test to see that it doesn't do anything when pandaState is None
   def test_panda_state_present(self):
     pm = PowerMonitoring()
     for _ in range(10):
-      pm.calculate(None, None)
+      pm.calculate(None, False)
     assert pm.get_power_used() == 0
     assert pm.get_car_battery_capacity() == (CAR_BATTERY_CAPACITY_uWh / 10)
 
@@ -110,10 +110,9 @@ class TestPowerMonitoring:
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     start_time = ssb
     ignition = False
-    while ssb <= start_time + MOCKED_MAX_OFFROAD_TIME:
-      pm.calculate(GOOD_VOLTAGE, ignition)
-      if (ssb - start_time) % 1000 == 0 and ssb < start_time + MOCKED_MAX_OFFROAD_TIME:
-        assert not pm.should_shutdown(ignition, True, start_time, False)
+    set_mock_time(start_time + MOCKED_MAX_OFFROAD_TIME - 1)
+    assert not pm.should_shutdown(ignition, True, start_time, False)
+    set_mock_time(start_time + MOCKED_MAX_OFFROAD_TIME)
     assert pm.should_shutdown(ignition, True, start_time, False)
 
   def test_car_voltage(self, mocker):
@@ -188,11 +187,10 @@ class TestPowerMonitoring:
     started_seen = True
     pm.calculate(VOLTAGE_BELOW_PAUSE_CHARGING, ignition)
 
-    while ssb < offroad_timestamp + DELAY_SHUTDOWN_TIME_S:
-      assert not pm.should_shutdown(ignition, in_car,
-                                          offroad_timestamp,
-                                          started_seen), \
-                       f"Should not shutdown before {DELAY_SHUTDOWN_TIME_S} seconds offroad time"
+    set_mock_time(offroad_timestamp + DELAY_SHUTDOWN_TIME_S - 1)
+    assert not pm.should_shutdown(ignition, in_car, offroad_timestamp, started_seen), \
+                     f"Should not shutdown before {DELAY_SHUTDOWN_TIME_S} seconds offroad time"
+    set_mock_time(offroad_timestamp + DELAY_SHUTDOWN_TIME_S)
     assert pm.should_shutdown(ignition, in_car,
                                        offroad_timestamp,
                                        started_seen), \

@@ -6,7 +6,7 @@ import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from enum import IntEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jeepney import DBusAddress, new_method_call
 from jeepney.bus_messages import MatchRule, message_bus
@@ -26,10 +26,13 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_DEVICE_TYPE_WIFI, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState, NMDeviceStateReason)
 
-try:
+if TYPE_CHECKING:
   from openpilot.common.params import Params
-except Exception:
-  Params = None
+else:
+  try:
+    from openpilot.common.params import Params
+  except (ImportError, OSError):
+    Params = None
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
@@ -257,7 +260,7 @@ class WifiManager:
 
   def add_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
-                    forgotten: Callable[[str], None] | None = None,
+                    forgotten: Callable[[str | None], None] | None = None,
                     networks_updated: Callable[[list[Network]], None] | None = None,
                     disconnected: Callable[[], None] | None = None):
     if need_auth is not None:
@@ -512,8 +515,11 @@ class WifiManager:
   def _get_adapter(self, adapter_type: int) -> str | None:
     # Return the first NetworkManager device path matching adapter_type
     try:
-      device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
-      for device_path in device_paths:
+      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices'))
+      if reply.header.message_type == MessageType.error:
+        # NetworkManager is not available, body holds an error string instead of device paths
+        return None
+      for device_path in reply.body[0]:
         dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
         dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
         if dev_type == adapter_type:

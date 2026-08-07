@@ -1,6 +1,13 @@
-Version 0.11.2 (2026-06-15)
-========================
-
+Version 0.11.2 (2026-08-11)
+=======================
+* New driving model
+  * Big model with 880M parameters
+* Support for big models running on an external GPU
+* Live stream cameras from comma connect
+* Generate dashcam clips from comma connect
+* Remote comma body control from comma connect
+* New alert sounds
+* Volkswagen ID.4 2021-2025 support thanks to DaHansi!
 
 Version 0.11.1 (2026-05-18)
 ========================

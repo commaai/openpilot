@@ -52,7 +52,7 @@ _ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fish
 _os_config = DeviceCameraConfig(CameraConfig(2688 // 2, 1520 // 2, 1522.0 * 3 / 4), _os_fisheye, _os_fisheye)
 _neo_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), _NoneCameraConfig())
 
-DEVICE_CAMERAS = {
+DEVICE_CAMERAS: dict[tuple[str, str], DeviceCameraConfig] = {
   # A "device camera" is defined by a device type and sensor
 
   # sensor type was never set on eon/neo/two
@@ -176,4 +176,3 @@ def img_from_device(pt_device):
 
   pt_img = pt_view/pt_view[:, 2:3]
   return pt_img.reshape(input_shape)[:, :2]
-

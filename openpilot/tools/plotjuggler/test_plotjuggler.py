@@ -5,17 +5,18 @@ import signal
 import subprocess
 import time
 
-import pytest
+import unittest
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE, install
 
 PJ_DIR = os.path.join(BASEDIR, "openpilot/tools/plotjuggler")
 
-class TestPlotJuggler:
+class TestPlotJuggler(OpenpilotTestCase):
 
-  @pytest.mark.skipif(not shutil.which('qmake'), reason="Qt not installed")
+  @unittest.skipIf(not shutil.which('qmake'), "Qt not installed")
   def test_demo(self):
     install()
 

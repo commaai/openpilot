@@ -15,6 +15,11 @@ concurrency:
   group: docs-tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
+env:
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
+
 jobs:
   docs:
     name: build docs
@@ -30,8 +35,7 @@ jobs:
     - name: Build docs
       run: |
         git lfs pull
-        pip install zensical
-        python scripts/docs.py build
+        python docs/serve.py --build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v7
@@ -52,7 +56,7 @@ jobs:
         git rm -rf .
 
         # copy over docs
-        cp -r ../docs_site/ docs/
+        cp -r ../docs/_site/ docs/
 
         # GitHub pages config
         touch docs/.nojekyll

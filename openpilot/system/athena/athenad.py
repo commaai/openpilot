@@ -1,23 +1,28 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import hashlib
 import itertools
 import json
+import math
 import os
 import queue
 import random
+import re
 import select
 import socket
+import subprocess
 import sys
 import threading
 import time
+from contextlib import suppress
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
 from queue import Queue
 from typing import cast
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 import requests
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
@@ -29,11 +34,14 @@ from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.api import Api, get_key_pair
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.common.hardware import HARDWARE, PC
+from openpilot.system.loggerd.config import CAMERA_FPS, SEGMENT_LENGTH
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.tools.lib.helpers import RE
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
@@ -54,6 +62,7 @@ MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
+CLIP_CHUNK_SIZE = 512 * 1024
 
 SEND_PRIORITY_HIGH = 0
 SEND_PRIORITY_LOW = 1
@@ -368,6 +377,7 @@ def getVersion() -> dict[str, str]:
     "remote": build_metadata.openpilot.git_normalized_origin,
     "branch": build_metadata.channel,
     "commit": build_metadata.openpilot.git_commit,
+    "commit_date": build_metadata.openpilot.git_commit_date.strip("'").split()[0],
   }
 
 
@@ -393,6 +403,217 @@ def scan_dir(path: str, prefix: str) -> list[str]:
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> list[str]:
   return scan_dir(Paths.log_root(), prefix)
+
+
+class VideoClips:
+  @dataclass
+  class Clip:
+    route: str
+    camera: str
+    source_start_time: float
+    source_end_time: float
+    bitrate: int
+    speedup: int
+    filename: str
+    requested_at: float
+
+  def __init__(self):
+    self.clip_path = os.path.join(Paths.log_root(), "clips")
+    self.lock = threading.Condition()
+    self.clips: dict[str, VideoClips.Clip] = {}
+    self.transcode_proc: tuple[str, subprocess.Popen] | None = None
+    threading.Thread(target=self._worker, name="video_clip", daemon=True).start()
+
+  def _encode(self, clip: Clip, inputs: Iterable[str], output_path: str, start_time: float, duration: float) -> None:
+    inputs = list(inputs)
+    metadata = json.dumps(asdict(clip), separators=(',', ':'))
+    if PC:
+      command = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+        "-r", str(CAMERA_FPS * clip.speedup), "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe", "-c:v", "hevc",
+        "-i", "pipe:0", "-ss", str(start_time / clip.speedup), "-t", str(duration / clip.speedup),
+        "-map", "0:v:0", "-an", "-r", str(CAMERA_FPS), "-c:v", "libx264", "-preset", "veryfast",
+        "-b:v", f"{clip.bitrate}M", "-pix_fmt", "yuv420p", "-movflags", "+faststart+use_metadata_tags",
+        "-metadata", f"ai.comma.clip.settings={metadata}", output_path,
+      ]
+    else:
+      command = [os.path.join(BASEDIR, "openpilot/system/loggerd/encoderd"), "--clip", output_path,
+                 str(start_time), str(duration), "--bitrate", str(clip.bitrate * 1_000_000),
+                 "--speedup", str(clip.speedup), "--metadata", metadata, "--", *inputs]
+
+    with self.lock:
+      if self.clips.get(clip.filename) is not clip:
+        return
+      process = subprocess.Popen(command, stdin=subprocess.PIPE if PC else subprocess.DEVNULL,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+      self.transcode_proc = (clip.filename, process)
+    try:
+      if PC:
+        if process.stdin is None:
+          raise RuntimeError("ffmpeg stdin is unavailable")
+        process.stdin.write("ffconcat version 1.0\n")
+        for path in inputs:
+          escaped_path = path.replace("'", "'\\''")
+          process.stdin.write(f"file 'file:{escaped_path}'\noption framerate {CAMERA_FPS}\nduration {SEGMENT_LENGTH}\n")
+        process.stdin.close()
+      process.wait()
+      if process.returncode != 0:
+        raise RuntimeError(f"clip encoder exited with code {process.returncode}")
+    finally:
+      with suppress(OSError):
+        if process.stdin is not None:
+          process.stdin.close()
+      if process.poll() is None:
+        process.terminate()
+        process.wait()
+      with self.lock:
+        if self.transcode_proc is not None and self.transcode_proc[0] == clip.filename:
+          self.transcode_proc = None
+
+  def _worker(self) -> None:
+    while True:
+      with self.lock:
+        while not self.clips:
+          self.lock.wait()
+        clip = next(iter(self.clips.values()))
+      temporary_path = ""
+      try:
+        with self.lock:
+          if self.clips.get(clip.filename) is not clip:
+            continue
+        first_segment = math.floor(clip.source_start_time / SEGMENT_LENGTH)
+        inputs = (
+          os.path.join(Paths.log_root(), f"{clip.route}--{segment}", clip.camera)
+          for segment in range(first_segment, math.ceil(clip.source_end_time / SEGMENT_LENGTH))
+        )
+        os.makedirs(self.clip_path, exist_ok=True)
+        temporary_path = os.path.join(self.clip_path, f".{clip.filename}")
+        output_path = os.path.join(self.clip_path, clip.filename)
+        self._encode(clip, inputs, temporary_path, clip.source_start_time - first_segment * SEGMENT_LENGTH,
+                     clip.source_end_time - clip.source_start_time)
+        with self.lock:
+          if self.clips.get(clip.filename) is clip:
+            os.replace(temporary_path, output_path)
+            del self.clips[clip.filename]
+      except Exception:
+        with self.lock:
+          failed = self.clips.get(clip.filename) is clip
+          if failed:
+            del self.clips[clip.filename]
+        if failed:
+          cloudlog.exception("athena.video_clip.failed")
+      finally:
+        with suppress(OSError):
+          if temporary_path:
+            os.unlink(temporary_path)
+
+  def _on_disk(self) -> dict[str, dict]:
+    clips = {}
+    try:
+      entries = os.scandir(self.clip_path)
+    except FileNotFoundError:
+      return clips
+    with entries:
+      for entry in entries:
+        if entry.name.startswith(".") or not entry.is_file():
+          continue
+        probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format_tags=ai.comma.clip.settings",
+                                "-of", "json", entry.path], capture_output=True, text=True)
+        if probe.returncode != 0:
+          continue
+        try:
+          metadata = json.loads(json.loads(probe.stdout)["format"]["tags"]["ai.comma.clip.settings"])
+          size = entry.stat().st_size
+        except (FileNotFoundError, KeyError, TypeError, json.JSONDecodeError):
+          continue
+        if not isinstance(metadata, dict) or not isinstance(metadata.get("requested_at"), (int, float)):
+          continue
+        clips[entry.name] = {**metadata, "filename": entry.name, "status": "ready",
+                             "fn": os.path.relpath(entry.path, Paths.log_root()), "size": size}
+    return clips
+
+  def _available_ranges(self, route: str) -> dict:
+    cameras: dict[str, list[int]] = {}
+    try:
+      with os.scandir(Paths.log_root()) as entries:
+        for entry in entries:
+          entry_route, _, segment = entry.name.rpartition("--")
+          if entry_route != route or not segment.isdigit() or not entry.is_dir():
+            continue
+          with os.scandir(entry.path) as files:
+            for camera in files:
+              if camera.is_file() and camera.name.endswith("camera.hevc"):
+                cameras.setdefault(camera.name, []).append(int(segment))
+    except OSError:
+      return {}
+
+    available = {}
+    for camera, camera_segments in cameras.items():
+      ranges: list[list[int]] = []
+      for segment in sorted(camera_segments):
+        if ranges and ranges[-1][1] == segment * SEGMENT_LENGTH:
+          ranges[-1][1] += SEGMENT_LENGTH
+        else:
+          ranges.append([segment * SEGMENT_LENGTH, (segment + 1) * SEGMENT_LENGTH])
+      available[camera] = {"available_ranges": ranges}
+    return available
+
+  def createClip(self, route: str, source_start_time: float, source_end_time: float, clip: dict):
+    if not PC and not Params().get_bool("IsOffroad"):
+      raise RuntimeError("video clips can only be created while offroad")
+    route_match = re.fullmatch(RE.ROUTE_NAME, route)
+    assert route_match is not None, "invalid route"
+    route_name = route_match.group("log_id")
+    camera = clip["camera"]
+    filename = clip["filename"]
+    assert camera == os.path.basename(camera) and camera.endswith("camera.hevc"), "invalid camera filename"
+    assert filename == os.path.basename(filename), "invalid filename"
+    with self.lock:
+      self.clips[filename] = self.Clip(route_name, camera, source_start_time, source_end_time, clip["bitrate"], clip["speedup"],
+                                        filename, datetime.now().timestamp())
+      self.lock.notify()
+
+  def getClipState(self, route: str | None = None) -> dict:
+    route_match = re.search(RE.ROUTE_NAME, route or "")
+    with self.lock:
+      transcode_filename = self.transcode_proc[0] if self.transcode_proc is not None else None
+      active_clips = {clip.filename: {**asdict(clip), "status": "encoding" if clip.filename == transcode_filename else "queued"}
+                      for clip in self.clips.values()}
+    clips = self._on_disk()
+    clips.update(active_clips)
+    state = {"clips": sorted(clips.values(), key=lambda clip: clip["requested_at"], reverse=True)}
+    if route_match is not None:
+      route_name = route_match.group("log_id")
+      state.update({"route": route_name, "cameras": self._available_ranges(route_name)})
+    return state
+
+  def deleteClip(self, filename: str) -> None:
+    assert filename == os.path.basename(filename), "invalid filename"
+    with self.lock:
+      self.clips.pop(filename, None)
+      output_path = os.path.join(self.clip_path, filename)
+      if self.transcode_proc is not None and self.transcode_proc[0] == filename:
+        self.transcode_proc[1].terminate()
+      if os.path.exists(output_path):
+        os.unlink(output_path)
+
+  def getClipChunk(self, filename: str, offset: int) -> dict:
+    assert filename == os.path.basename(filename) and not filename.startswith("."), "invalid filename"
+    assert isinstance(offset, int) and offset >= 0, "invalid offset"
+    path = os.path.join(self.clip_path, filename)
+    size = os.path.getsize(path)
+    assert offset <= size, "offset past end of file"
+    with open(path, "rb") as f:
+      f.seek(offset)
+      data = f.read(CLIP_CHUNK_SIZE)
+    return {"data": base64.b64encode(data).decode(), "offset": offset, "size": size}
+
+
+video_clips = VideoClips()
+dispatcher.add_method(video_clips.createClip)
+dispatcher.add_method(video_clips.getClipState)
+dispatcher.add_method(video_clips.deleteClip)
+dispatcher.add_method(video_clips.getClipChunk)
 
 
 @dispatcher.add_method
@@ -580,7 +801,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
   else:
-      raise Exception("failed to get CarParamsPersistent")
+    raise Exception("failed to get CarParamsPersistent")
 
   if params.get_bool("IsOffroad"):
     # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
@@ -589,7 +810,7 @@ def startStream(sdp: str, enabled: bool) -> dict:
     # wait for webrtcd end points to wake up
     wait_for_webrtcd()
 
-  return post_stream_request(StreamRequestBody(sdp, "wideRoad", enabled, bridge_services_in, ["carState", "deviceState"]))
+  return post_stream_request(StreamRequestBody(sdp, ["wideRoad"], enabled, bridge_services_in, ["carState", "deviceState"]))
 
 
 def get_logs_to_send_sorted() -> list[str]:
@@ -669,7 +890,10 @@ def log_handler(end_event: threading.Event) -> None:
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
-      r = select.select((ws.sock,), (), (), 30)
+      sock = ws.sock
+      if sock is None:
+        return
+      r = select.select((sock,), (), (), 30)
       if r[0]:
         data = ws.recv()
         if isinstance(data, str):

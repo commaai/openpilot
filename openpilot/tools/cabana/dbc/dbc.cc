@@ -1,8 +1,18 @@
 #include "tools/cabana/dbc/dbc.h"
 
 #include <algorithm>
+#include <cmath>
 
-#include "tools/cabana/utils/util.h"
+namespace {
+int numDecimals(double value) {
+  int decimals = 0;
+  while (decimals < 6 && std::fabs(value - std::round(value)) > 1e-9) {
+    value *= 10.0;
+    ++decimals;
+  }
+  return decimals;
+}
+}
 
 // cabana::Msg
 
@@ -135,8 +145,8 @@ void cabana::Signal::update() {
   float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
   float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
 
-  color = QColor::fromHsvF(h, s, v);
-  precision = std::max(num_decimals(factor), num_decimals(offset));
+  color = CabanaColor::fromHsv(h, s, v);
+  precision = std::max(numDecimals(factor), numDecimals(offset));
 }
 
 std::string cabana::Signal::formatValue(double value, bool with_unit) const {

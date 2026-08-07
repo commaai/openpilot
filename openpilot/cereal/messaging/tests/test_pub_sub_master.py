@@ -1,20 +1,16 @@
 import random
 import time
-from typing import Sized, cast
+from typing import cast
+from collections.abc import Sized
 
+from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
-                                                  random_bytes, random_carstate, assert_carstate, \
-                                                  zmq_sleep
+                                                  random_bytes, random_carstate, assert_carstate
 from openpilot.cereal.services import SERVICE_LIST
 
 
-class TestSubMaster:
-
-  def setup_method(self):
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep(3)
+class TestSubMaster(OpenpilotTestCase):
 
   def test_init(self):
     sm = messaging.SubMaster(events)
@@ -42,7 +38,6 @@ class TestSubMaster:
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
-    zmq_sleep()
 
     msg = random_carstate()
     pub_sock.send(msg.to_bytes())
@@ -54,7 +49,6 @@ class TestSubMaster:
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
-    zmq_sleep()
 
     for i in range(10):
       msg = messaging.new_message(sock)
@@ -66,12 +60,12 @@ class TestSubMaster:
   def test_update_timeout(self):
     sock = random_sock()
     sm = messaging.SubMaster([sock,])
-    timeout = random.randrange(1000, 3000)
+    timeout = random.randrange(10, 30)
     start_time = time.monotonic()
     sm.update(timeout)
     t = time.monotonic() - start_time
     assert t >= timeout/1000.
-    assert t < 3
+    assert t < 0.1
     assert not any(sm.updated.values())
 
   def test_avg_frequency_checks(self):
@@ -91,20 +85,12 @@ class TestSubMaster:
 
       for service, (max_freq, min_freq) in checks.items():
         if max_freq is not None:
+          assert min_freq is not None
           assert sm._check_avg_freq(service)
           assert sm.freq_tracker[service].max_freq == max_freq*1.2
           assert sm.freq_tracker[service].min_freq == min_freq*0.8
         else:
           assert not sm._check_avg_freq(service)
-
-  def test_alive(self):
-    pass
-
-  def test_ignore_alive(self):
-    pass
-
-  def test_valid(self):
-    pass
 
   # SubMaster should always conflate
   def test_conflate(self):
@@ -112,22 +98,19 @@ class TestSubMaster:
     pub_sock = messaging.pub_sock(sock)
     sm = messaging.SubMaster([sock,])
 
+    pub_sock.send(messaging.new_message(sock).to_bytes())
+    sm.update(1000)  # synchronize the PUB/SUB connection
+
     n = 10
     for i in range(n+1):
       msg = messaging.new_message(sock)
       msg.carState.vEgo = i
       pub_sock.send(msg.to_bytes())
-      time.sleep(0.01)
     sm.update(1000)
     assert sm[sock].vEgo == n
 
 
-class TestPubMaster:
-
-  def setup_method(self):
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep(3)
+class TestPubMaster(OpenpilotTestCase):
 
   def test_init(self):
     messaging.PubMaster(events)
@@ -136,7 +119,6 @@ class TestPubMaster:
     socks = random_socks()
     pm = messaging.PubMaster(socks)
     sub_socks = {s: messaging.sub_sock(s, conflate=True, timeout=1000) for s in socks}
-    zmq_sleep()
 
     # PubMaster accepts either a capnp msg builder or bytes
     for capnp in [True, False]:

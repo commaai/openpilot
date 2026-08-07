@@ -26,7 +26,9 @@ public:
   inline std::string carFingerprint() const override { return replay->carFingerprint(); }
   double minSeconds() const override { return replay->minSeconds(); }
   double maxSeconds() const { return replay->maxSeconds(); }
-  inline QDateTime beginDateTime() const { return QDateTime::fromSecsSinceEpoch(replay->routeDateTime()); }
+  inline std::chrono::system_clock::time_point beginDateTime() const override {
+    return std::chrono::system_clock::from_time_t(replay->routeDateTime());
+  }
   inline uint64_t beginMonoTime() const override { return replay->routeStartNanos(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
   inline float getSpeed() const { return replay->getSpeed(); }

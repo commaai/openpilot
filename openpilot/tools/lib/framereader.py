@@ -28,7 +28,7 @@ class LRUCache:
   def __setitem__(self, key, value):
     self._cache[key] = value
     if len(self._cache) > self.capacity:
-        self._cache.popitem(last=False)
+      self._cache.popitem(last=False)
 
   def __contains__(self, key):
     return key in self._cache

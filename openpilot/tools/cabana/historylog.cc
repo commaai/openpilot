@@ -1,4 +1,5 @@
 #include "tools/cabana/historylog.h"
+#include "tools/cabana/dbc/dbcqt.h"
 
 #include <functional>
 
@@ -54,7 +55,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       return unit.isEmpty() ? name : QString("%1 (%2)").arg(name, unit);
     } else if (role == Qt::BackgroundRole && section > 0 && !isHexMode()) {
       // Alpha-blend the signal color with the background to ensure contrast
-      QColor sigColor = sigs[section - 1]->color;
+      QColor sigColor = toQColor(sigs[section - 1]->color);
       sigColor.setAlpha(128);
       return QBrush(sigColor);
     }
@@ -207,8 +208,8 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(value_edit, &QLineEdit::textEdited, this, &LogsWidget::filterChanged);
   QObject::connect(export_btn, &QToolButton::clicked, this, &LogsWidget::exportToCSV);
   QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::reset);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &HistoryLogModel::reset);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &HistoryLogModel::reset);
+  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, model, &HistoryLogModel::reset);
+  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, model, &HistoryLogModel::reset);
   QObject::connect(model, &HistoryLogModel::modelReset, this, &LogsWidget::modelReset);
   QObject::connect(model, &HistoryLogModel::rowsInserted, [this]() { export_btn->setEnabled(true); });
 }
@@ -238,11 +239,11 @@ void LogsWidget::filterChanged() {
 }
 
 void LogsWidget::exportToCSV() {
-  QString dir = QString("%1/%2_%3.csv").arg(settings.last_dir).arg(QString::fromStdString(can->routeName())).arg(QString::fromStdString(msgName(model->msg_id)));
+  QString dir = QString("%1/%2_%3.csv").arg(QString::fromStdString(settings.last_dir)).arg(QString::fromStdString(can->routeName())).arg(QString::fromStdString(msgName(model->msg_id)));
   QString fn = QFileDialog::getSaveFileName(this, QString("Export %1 to CSV file").arg(QString::fromStdString(msgName(model->msg_id))),
                                             dir, tr("csv (*.csv)"));
   if (!fn.isEmpty()) {
-    model->isHexMode() ? utils::exportToCSV(fn, model->msg_id)
-                       : utils::exportSignalsToCSV(fn, model->msg_id);
+    model->isHexMode() ? utils::exportToCSV(fn.toStdString(), model->msg_id)
+                       : utils::exportSignalsToCSV(fn.toStdString(), model->msg_id);
   }
 }

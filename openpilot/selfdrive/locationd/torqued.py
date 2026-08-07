@@ -57,14 +57,14 @@ class TorqueEstimator(ParameterEstimator):
     self.lag = 0.0
     self.track_all_points = track_all_points  # for offline analysis, without max lateral accel or max steer torque filters
     if decimated:
-      self.min_bucket_points = MIN_BUCKET_POINTS / 10
+      self.min_bucket_points: list[float] = (MIN_BUCKET_POINTS / 10).tolist()
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
       self.fit_points = FIT_POINTS_TOTAL_QLOG
       self.factor_sanity = FACTOR_SANITY_QLOG
       self.friction_sanity = FRICTION_SANITY_QLOG
 
     else:
-      self.min_bucket_points = MIN_BUCKET_POINTS
+      self.min_bucket_points = MIN_BUCKET_POINTS.tolist()
       self.min_points_total = MIN_POINTS_TOTAL
       self.fit_points = FIT_POINTS_TOTAL
       self.factor_sanity = FACTOR_SANITY
@@ -112,9 +112,10 @@ class TorqueEstimator(ParameterEstimator):
               'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
               'frictionCoefficient': cache_ltp.frictionCoefficientFiltered
             }
-          initial_params['points'] = cache_ltp.points
+          cached_points: list[list[float]] = [list(point) for point in cache_ltp.points]
+          initial_params['points'] = cached_points
           self.decay = cache_ltp.decay
-          self.filtered_points.load_points(initial_params['points'])
+          self.filtered_points.load_points(cached_points)
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")

@@ -1,4 +1,3 @@
-import pytest
 from functools import wraps
 import json
 import multiprocessing
@@ -14,6 +13,8 @@ from datetime import datetime, timedelta
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
+from openpilot.common.parameterized import parameterized
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
 
 from openpilot.common.params import Params
@@ -47,20 +48,18 @@ def with_upload_handler(func):
       thread.join()
   return wrapper
 
-@pytest.fixture
 def mock_create_connection(mocker):
-    return mocker.patch('openpilot.system.athena.athenad.create_connection')
+  return mocker.patch('openpilot.system.athena.athenad.create_connection')
 
-@pytest.fixture
 def host():
   with http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server) as (host, port):
     yield f"http://{host}:{port}"
 
-class TestAthenadMethods:
+class TestAthenadMethods(OpenpilotTestCase):
   @classmethod
   def setup_class(cls):
     cls.SOCKET_PORT = 45454
-    athenad.Api = MockApi
+    athenad.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setup_method(self):
@@ -104,6 +103,14 @@ class TestAthenadMethods:
       f.write(data)
     return fn
 
+  @staticmethod
+  def _video_clips(clip):
+    clips = object.__new__(athenad.VideoClips)
+    clips.lock = threading.Condition()
+    clips.clips = {clip.filename: clip}
+    clips.transcode_proc = None
+    return clips
+
 
   # *** test cases ***
 
@@ -111,7 +118,7 @@ class TestAthenadMethods:
     assert dispatcher["echo"]("bob") == "bob"
 
   def test_get_message(self):
-    with pytest.raises(TimeoutError) as _:
+    with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState")
 
     end_event = multiprocessing.Event()
@@ -174,6 +181,56 @@ class TestAthenadMethods:
     assert resp, 'list empty!'
     assert len(resp) == len(expected)
 
+  def test_video_clip_hardware_encoder(self, mocker):
+    clip = athenad.VideoClips.Clip("route", "fcamera.hevc", 10, 130, 2, 4, "clip.mp4", 123)
+    clips = self._video_clips(clip)
+    process = mocker.Mock(stdin=None, returncode=0)
+    process.poll.return_value = 0
+    popen = mocker.patch("openpilot.system.athena.athenad.subprocess.Popen", return_value=process)
+    mocker.patch.object(athenad, "PC", False)
+
+    clips._encode(clip, ["segment0", "segment1"], "output.mp4", 10, 120)
+
+    metadata = json.dumps(asdict(clip), separators=(',', ':'))
+    assert popen.call_args.args[0] == [
+      os.path.join(athenad.BASEDIR, "openpilot/system/loggerd/encoderd"), "--clip", "output.mp4", "10", "120",
+      "--bitrate", "2000000", "--speedup", "4", "--metadata", metadata, "--", "segment0", "segment1",
+    ]
+    assert popen.call_args.kwargs["stdin"] == athenad.subprocess.DEVNULL
+    assert clips.transcode_proc is None
+
+  def test_video_clip_hardware_encoder_failure(self, mocker):
+    clip = athenad.VideoClips.Clip("route", "fcamera.hevc", 0, 60, 1, 1, "clip.mp4", 123)
+    clips = self._video_clips(clip)
+    process = mocker.Mock(stdin=None, returncode=1)
+    process.poll.return_value = 1
+    mocker.patch("openpilot.system.athena.athenad.subprocess.Popen", return_value=process)
+    mocker.patch.object(athenad, "PC", False)
+
+    with self.assertRaisesRegex(RuntimeError, "clip encoder exited with code 1"):
+      clips._encode(clip, ["segment"], "output.mp4", 0, 60)
+    assert clips.transcode_proc is None
+
+  def test_video_clip_software_fallback(self, mocker):
+    clip = athenad.VideoClips.Clip("route", "fcamera.hevc", 10, 30, 3, 2, "clip.mp4", 123)
+    clips = self._video_clips(clip)
+    stdin = mocker.Mock()
+    process = mocker.Mock(stdin=stdin, returncode=0)
+    process.poll.return_value = 0
+    popen = mocker.patch("openpilot.system.athena.athenad.subprocess.Popen", return_value=process)
+    mocker.patch.object(athenad, "PC", True)
+
+    clips._encode(clip, ["segment'0", "segment1"], "output.mp4", 10, 20)
+
+    command = popen.call_args.args[0]
+    assert ["-r", "40"] == command[command.index("-r"):command.index("-r") + 2]
+    assert ["-ss", "5.0"] == command[command.index("-ss"):command.index("-ss") + 2]
+    assert ["-t", "10.0"] == command[command.index("-t"):command.index("-t") + 2]
+    assert ["-b:v", "3M"] == command[command.index("-b:v"):command.index("-b:v") + 2]
+    writes = [call.args[0] for call in stdin.write.call_args_list]
+    assert "file 'file:segment'\\''0'\n" in writes[1]
+    assert writes[-1].startswith("file 'file:segment1'")
+
   def test_strip_extension(self):
     # any requested log file with an invalid extension won't return as existing
     fn = self._create_file('qlog.bz2')
@@ -184,14 +241,14 @@ class TestAthenadMethods:
     if fn.endswith('.zst'):
       assert athenad.strip_zst_extension(fn) == fn[:-4]
 
-  @pytest.mark.parametrize("compress", [True, False])
+  @parameterized.expand([True, False], names=("compress",))
   def test_do_upload(self, host, compress):
     # random bytes to ensure rather large object post-compression
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
     upload_fn = fn + ('.zst' if compress else '')
     item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
-    with pytest.raises(requests.exceptions.ConnectionError):
+    with self.assertRaises(requests.exceptions.ConnectionError):
       athenad._do_upload(item)
 
     item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
@@ -236,7 +293,7 @@ class TestAthenadMethods:
     # TODO: also check that end_event and metered network raises AbortTransferException
     assert athenad.upload_queue.qsize() == 0
 
-  @pytest.mark.parametrize("status,retry", [(500,True), (412,False)])
+  @parameterized.expand([(500,True), (412,False)], names=("status", "retry"))
   @with_upload_handler
   def test_upload_handler_retry(self, mocker, host, status, retry):
     mock_put = mocker.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put')
@@ -351,6 +408,7 @@ class TestAthenadMethods:
     assert items[0] == asdict(item)
     assert not items[0]['current']
 
+    assert item.id is not None
     athenad.cancelled_uploads.add(item.id)
     items = dispatcher["listUploadQueue"]()
     assert len(items) == 0
@@ -363,6 +421,7 @@ class TestAthenadMethods:
     athenad.upload_queue.put_nowait(item2)
 
     # Ensure canceled items are not persisted
+    assert item2.id is not None
     athenad.cancelled_uploads.add(item2.id)
 
     # serialize item
@@ -408,7 +467,7 @@ class TestAthenadMethods:
 
   def test_get_version(self):
     resp = dispatcher["getVersion"]()
-    keys = ["version", "remote", "branch", "commit"]
+    keys = ["version", "remote", "branch", "commit", "commit_date"]
     assert list(resp.keys()) == keys
     for k in keys:
       assert isinstance(resp[k], str), f"{k} is not a string"
@@ -437,7 +496,7 @@ class TestAthenadMethods:
       thread.join()
 
   def test_get_logs_to_send_sorted(self):
-    fl = list()
+    fl = []
     for i in range(10):
       file = f'swaglog.{i:010}'
       self._create_file(file, Paths.swaglog_root())

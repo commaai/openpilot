@@ -152,7 +152,7 @@ class ShaderState:
     self.initialized = False
 
 
-def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],
+def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # noqa: UP045  # rl.Color is a function, so `rl.Color | None` fails
                             gradient: Gradient | None, origin_rect: rl.Rectangle):
   assert (color is not None) != (gradient is not None), "Either color or gradient must be provided"
 
@@ -204,7 +204,7 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
-                 color: Optional[rl.Color] = None, gradient: Gradient | None = None):
+                 color: Optional[rl.Color] = None, gradient: Gradient | None = None):  # noqa: UP045  # rl.Color is a function, so `rl.Color | None` fails
 
   """
   Draw a ribbon polygon (two chains) with a triangle strip and gradient.

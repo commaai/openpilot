@@ -4,15 +4,16 @@ import io
 import shutil
 import tempfile
 import os
-import pytest
+import unittest
 import requests
 
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
-from openpilot.tools.lib.file_sources import comma_api_source, InternalUnavailableException
-from openpilot.tools.lib.route import SegmentRange
+from openpilot.tools.lib.logreader import _LogFileReader, LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
+from openpilot.tools.lib.file_sources import InternalUnavailableException
+from openpilot.tools.lib.route import FileName, SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 
 NUM_SEGS = 17  # number of segments in the test route
@@ -47,7 +48,46 @@ def setup_source_scenario(mocker, is_internal=False):
   yield
 
 
-class TestLogReader:
+class TestLogReader(OpenpilotTestCase):
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.tmpdir = tempfile.TemporaryDirectory()
+    cls.qlog_path = os.path.join(cls.tmpdir.name, "qlog")
+    cls.rlog_path = os.path.join(cls.tmpdir.name, "rlog")
+    cls._write_test_log(cls.qlog_path, 10, include_car_params=True)
+    cls._write_test_log(cls.rlog_path, 100)
+
+  @classmethod
+  def tearDownClass(cls):
+    cls.tmpdir.cleanup()
+    super().tearDownClass()
+
+  @staticmethod
+  def _write_test_log(path, count, include_car_params=False):
+    events = []
+    for i in range(count):
+      event = capnp_log.Event.new_message()
+      event.logMonoTime = count - i  # deliberately unsorted
+      if include_car_params and i == 0:
+        event.init("carParams")
+        event.carParams.carFingerprint = "SUBARU OUTBACK 6TH GEN"
+      else:
+        event.init("can", 0)
+      events.append(event.to_bytes())
+
+    with open(path, "wb") as f:
+      f.write(b"".join(events))
+
+  def local_source(self, sr, seg_idxs, fns):
+    path = self.qlog_path if fns == FileName.QLOG else self.rlog_path
+    return dict.fromkeys(seg_idxs, path)
+
+  def local_auto_source(self, sr, seg_idxs, fns):
+    if fns == FileName.RLOG:
+      return {}
+    return dict.fromkeys(seg_idxs, self.qlog_path)
+
   @parameterized.expand([
     (f"{TEST_ROUTE}", ALL_SEGS),
     (f"{TEST_ROUTE.replace('/', '|')}", ALL_SEGS),
@@ -72,7 +112,7 @@ class TestLogReader:
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '|')}", ALL_SEGS),
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '%7C')}", ALL_SEGS),
   ])
-  @pytest.mark.skip("this got flaky. internet tests are stupid.")
+  @unittest.skip("this got flaky. internet tests are stupid.")
   def test_indirect_parsing(self, identifier, expected):
     parsed = parse_indirect(identifier)
     sr = SegmentRange(parsed)
@@ -90,7 +130,7 @@ class TestLogReader:
     sr = SegmentRange(identifier)
     assert str(sr) == expected
 
-  @pytest.mark.parametrize("cache_enabled", [True, False])
+  @parameterized.expand([True, False], names=("cache_enabled",))
   def test_direct_parsing(self, mocker, cache_enabled):
     file_exists_mock = mocker.patch("openpilot.tools.lib.filereader.file_exists")
     if cache_enabled:
@@ -107,7 +147,7 @@ class TestLogReader:
       l = len(list(LogReader(f)))
       assert l > 100
 
-    with pytest.raises(URLFileException) if not cache_enabled else pytest.raises(AssertionError):
+    with self.assertRaises(URLFileException if not cache_enabled else AssertionError):
       l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
 
     # file_exists should not be called for direct files
@@ -126,47 +166,43 @@ class TestLogReader:
     (f"{TEST_ROUTE}--3a",),
   ])
   def test_bad_ranges(self, segment_range):
-    with pytest.raises(AssertionError):
+    with self.assertRaises(AssertionError):
       _ = SegmentRange(segment_range).seg_idxs
 
-  @pytest.mark.parametrize("segment_range, api_call", [
+  @parameterized.expand([
     (f"{TEST_ROUTE}/0", False),
     (f"{TEST_ROUTE}/:2", False),
     (f"{TEST_ROUTE}/0:", True),
     (f"{TEST_ROUTE}/-1", True),
     (f"{TEST_ROUTE}", True),
-  ])
+  ], names=("segment_range", "api_call"))
   def test_slicing_api_call(self, mocker, segment_range, api_call):
     max_seg_mock = mocker.patch("openpilot.tools.lib.route.get_max_seg_number_cached")
     max_seg_mock.return_value = NUM_SEGS
     _ = SegmentRange(segment_range).seg_idxs
     assert api_call == max_seg_mock.called
 
-  @pytest.mark.slow
   def test_modes(self):
-    qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
-    rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
+    qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.QLOG, sources=[self.local_source])))
+    rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.RLOG, sources=[self.local_source])))
 
     assert qlog_len * 6 < rlog_len
 
-  @pytest.mark.slow
   def test_modes_from_name(self):
-    qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
-    rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/r")))
+    qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q", sources=[self.local_source])))
+    rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/r", sources=[self.local_source])))
 
     assert qlog_len * 6 < rlog_len
 
-  @pytest.mark.slow
   def test_list(self):
-    qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
-    qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
+    qlog_len = len(list(LogReader(self.qlog_path)))
+    qlog_len_2 = len(list(LogReader([self.qlog_path, self.qlog_path])))
 
     assert qlog_len * 2 == qlog_len_2
 
-  @pytest.mark.slow
   def test_multiple_iterations(self, mocker):
-    init_mock = mocker.patch("openpilot.tools.lib.logreader._LogFileReader")
-    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    init_mock = mocker.patch("openpilot.tools.lib.logreader._LogFileReader", wraps=_LogFileReader)
+    lr = LogReader(self.qlog_path)
     qlog_len1 = len(list(lr))
     qlog_len2 = len(list(lr))
 
@@ -175,47 +211,37 @@ class TestLogReader:
 
     assert qlog_len1 == qlog_len2
 
-  @pytest.mark.slow
   def test_helpers(self):
-    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    lr = LogReader(self.qlog_path)
     assert lr.first("carParams").carFingerprint == "SUBARU OUTBACK 6TH GEN"
     assert 0 < len(list(lr.filter("carParams"))) < len(list(lr))
 
-  @parameterized.expand([(True,), (False,)])
-  @pytest.mark.slow
-  def test_run_across_segments(self, cache_enabled):
-    if cache_enabled:
-      os.environ.pop("DISABLE_FILEREADER_CACHE", None)
-    else:
-      os.environ["DISABLE_FILEREADER_CACHE"] = "1"
-    lr = LogReader(f"{TEST_ROUTE}/0:4")
+  def test_run_across_segments(self):
+    lr = LogReader([self.qlog_path] * 4)
     assert len(lr.run_across_segments(4, noop)) == len(list(lr))
 
-  @pytest.mark.slow
   def test_auto_mode(self, subtests, mocker):
-    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    lr = LogReader(self.qlog_path)
     qlog_len = len(list(lr))
-    log_paths_mock = mocker.patch("openpilot.tools.lib.route.Route.log_paths")
-    log_paths_mock.return_value = [None] * NUM_SEGS
     # Should fall back to qlogs since rlogs are not available
 
     with subtests.test("interactive_yes"):
       mocker.patch("sys.stdin", new=io.StringIO("y\n"))
-      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, sources=[comma_api_source])
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, sources=[self.local_auto_source])
       log_len = len(list(lr))
       assert qlog_len == log_len
 
     with subtests.test("interactive_no"):
       mocker.patch("sys.stdin", new=io.StringIO("n\n"))
-      with pytest.raises(LogsUnavailable):
-        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, sources=[comma_api_source])
+      with self.assertRaises(LogsUnavailable):
+        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, sources=[self.local_auto_source])
 
     with subtests.test("non_interactive"):
-      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, sources=[comma_api_source])
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, sources=[self.local_auto_source])
       log_len = len(list(lr))
       assert qlog_len == log_len
 
-  @pytest.mark.parametrize("is_internal", [True, False])
+  @parameterized.expand([True, False], names=("is_internal",))
   def test_auto_source_scenarios(self, mocker, is_internal):
     lr = LogReader(QLOG_FILE)
     qlog_len = len(list(lr))
@@ -225,12 +251,11 @@ class TestLogReader:
       log_len = len(list(lr))
       assert qlog_len == log_len
 
-  @pytest.mark.slow
   def test_sort_by_time(self):
-    msgs = list(LogReader(f"{TEST_ROUTE}/0/q"))
+    msgs = list(LogReader(self.qlog_path))
     assert msgs != sorted(msgs, key=lambda m: m.logMonoTime)
 
-    msgs = list(LogReader(f"{TEST_ROUTE}/0/q", sort_by_time=True))
+    msgs = list(LogReader(self.qlog_path, sort_by_time=True))
     assert msgs == sorted(msgs, key=lambda m: m.logMonoTime)
 
   def test_only_union_types(self):
@@ -254,7 +279,7 @@ class TestLogReader:
       # ensure new message is added, but is not a union type
       msgs = list(LogReader(qlog.name))
       assert len(msgs) == num_msgs + 1
-      with pytest.raises(capnp.KjException):
+      with self.assertRaises(capnp.KjException):
         [m.which() for m in msgs]
 
       # should not be added when only_union_types=True

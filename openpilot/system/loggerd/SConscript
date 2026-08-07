@@ -5,7 +5,7 @@ frameworks = []
 
 src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch == "larch64":
-  src += ['encoder/v4l_encoder.cc']
+  src += ['clip_encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/v4l_decoder.cc']
 else:
   src += ['encoder/ffmpeg_encoder.cc']
   if arch == "Darwin":
@@ -17,6 +17,3 @@ libs.insert(0, logger_lib)
 env.Program('loggerd', ['loggerd.cc'], LIBS=libs, FRAMEWORKS=frameworks)
 env.Program('encoderd', ['encoderd.cc'], LIBS=libs, FRAMEWORKS=frameworks)
 env.Program('bootlog.cc', LIBS=libs, FRAMEWORKS=frameworks)
-
-if GetOption('extras'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_zstd_writer.cc'], LIBS=libs)

@@ -41,7 +41,7 @@ class Parser:
     raw = outs[name]
     outs[name] = sigmoid(raw)
 
-  def parse_mdn(self, name, outs, in_N=0, out_N=1, out_shape=None):
+  def parse_mdn(self, name, outs, in_N=0, out_N=1, out_shape=()):
     if self.check_missing(outs, name):
       return
     raw = outs[name]

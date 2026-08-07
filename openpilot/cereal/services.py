@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from enum import IntEnum
-from typing import Optional
 
 
 # TODO: this should be automatically determined using the capnp schema
@@ -11,7 +10,7 @@ class QueueSize(IntEnum):
 
 
 class Service:
-  def __init__(self, should_log: bool, frequency: float, decimation: Optional[int] = None,
+  def __init__(self, should_log: bool, frequency: float, decimation: int | None = None,
                queue_size: QueueSize = QueueSize.SMALL):
     self.should_log = should_log
     self.frequency = frequency
@@ -26,6 +25,7 @@ _services: dict[str, tuple] = {
   "accelerometer": (True, 104., 104),
   "temperatureSensor": (True, 2., 200),
   "deviceState": (True, 2., 1),
+  "chestnutState": (True, 0.1, 1),
   "touch": (True, 20., 1),
   "can": (True, 100., 2053, QueueSize.BIG),  # decimation gives ~3 msgs in a full segment
   "controlsState": (True, 100., 10, QueueSize.MEDIUM),
@@ -76,7 +76,6 @@ _services: dict[str, tuple] = {
   "soundPressure": (True, 10., 10),
   "rawAudioData": (False, 20.),
   "bookmarkButton": (True, 0., 1),
-  "audioFeedback": (True, 0., 1),
   "roadEncodeData": (False, 20., None, QueueSize.BIG),
   "driverEncodeData": (False, 20., None, QueueSize.BIG),
   "wideRoadEncodeData": (False, 20., None, QueueSize.BIG),
@@ -112,8 +111,7 @@ def build_header():
   for k, v in SERVICE_LIST.items():
     should_log = "true" if v.should_log else "false"
     decimation = -1 if v.decimation is None else v.decimation
-    h += '  { "%s", {"%s", %s, %f, %d, %d}},\n' % \
-         (k, k, should_log, v.frequency, decimation, v.queue_size)
+    h += f'  {{ "{k}", {{"{k}", {should_log}, {v.frequency:f}, {decimation:d}, {v.queue_size:d}}}}},\n'
   h += "};\n"
 
   h += "#endif\n"

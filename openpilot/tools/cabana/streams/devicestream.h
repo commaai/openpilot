@@ -2,7 +2,7 @@
 
 #include "tools/cabana/streams/livestream.h"
 
-#include <QProcess>
+#include <sys/types.h>
 
 class DeviceStream : public LiveStream {
   Q_OBJECT
@@ -16,7 +16,8 @@ public:
 protected:
   void start() override;
   void streamThread() override;
-  QProcess *bridge_process = nullptr;
+  void stopBridge();
+  pid_t bridge_pid = -1;
   const QString zmq_address;
 };
 

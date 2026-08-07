@@ -1,3 +1,4 @@
+import math
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
@@ -106,6 +107,8 @@ class HudRenderer(Widget):
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
     self._engaged: bool = False
+    self._small_model_engaged: bool = False
+    self._egpu_fade_time: float = 0
 
     self._can_draw_top_icons = True
     self._show_wheel_critical = False
@@ -121,11 +124,17 @@ class HudRenderer(Widget):
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
     self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
     self._txt_exclamation_point: rl.Texture = gui_app.texture('icons_mici/exclamation_point.png', 9, 44)
+    self._txt_egpu: rl.Texture = gui_app.texture('icons_mici/egpu.png', 60, 44)
+    self._txt_egpu_green: rl.Texture = gui_app.texture('icons_mici/egpu_green.png', 60, 44)
+    self._txt_egpu_orange: rl.Texture = gui_app.texture('icons_mici/egpu_orange.png', 60, 44)
+    self._txt_egpu_crossed: rl.Texture = gui_app.texture('icons_mici/egpu_crossed.png', 60, 52)
+    self._egpu_icon: rl.Texture | None = None
 
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._egpu_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
@@ -156,6 +165,11 @@ class HudRenderer(Widget):
       controls_state.deprecated.vCruise if v_cruise_cluster == 0.0 else v_cruise_cluster
     )
     engaged = sm['selfdriveState'].enabled
+    if (engaged and not self._engaged and not ui_state.usbgpu_loading and ui_state.usbgpu_active is not True and
+        ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame):
+      self._small_model_engaged = True
+    if engaged and not self._engaged:
+      self._egpu_fade_time = rl.get_time()
     if (set_speed != self.set_speed and engaged) or (engaged and not self._engaged):
       self._set_speed_changed_time = rl.get_time()
     self._engaged = engaged
@@ -177,7 +191,45 @@ class HudRenderer(Widget):
     if self.is_cruise_set:
       self._draw_set_speed(rect)
 
+    if ui_state.usbgpu and ui_state.usbgpu_compiled:
+      self._draw_model_source(rect)
+
     self._draw_steering_wheel(rect)
+
+  def _draw_model_source(self, rect: rl.Rectangle) -> None:
+    if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
+      return
+
+    big_failed = (ui_state.usbgpu_active is False or not ui_state.sm['deviceState'].chestnutPresent or
+                  (ui_state.usbgpu_active is True and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame and
+                   not ui_state.sm.alive['modelV2']) or
+                  (ui_state.usbgpu_active is None and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame))
+    self._small_model_engaged &= big_failed
+    loading = ui_state.usbgpu_loading or (ui_state.usbgpu_active is None and not big_failed)
+    if loading:
+      pulse = 0.5 - 0.5 * math.cos(rl.get_time() * 6.0)
+      icon = self._txt_egpu
+      opacity = 0.35 + 0.65 * pulse
+    elif self._small_model_engaged:
+      icon = self._txt_egpu_crossed
+      opacity = 0.65
+    elif big_failed:
+      icon = self._txt_egpu_orange
+      opacity = 1.0
+    else:
+      icon = self._txt_egpu_green
+      opacity = 1.0
+
+    if icon is not self._egpu_icon:
+      self._egpu_fade_time = rl.get_time()
+      self._egpu_icon = icon
+    alpha = self._egpu_alpha_filter.update(loading or (0 < rl.get_time() - self._egpu_fade_time < SET_SPEED_PERSISTENCE and self._engaged))
+    if alpha < 1e-2:
+      return
+
+    pos = rl.Vector2(rect.x + rect.width - 10 - icon.width,
+                     rect.y + rect.height - 14 - (self._txt_wheel.height + icon.height) / 2)
+    rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel

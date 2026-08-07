@@ -12,7 +12,7 @@ Source = Callable[[SegmentRange, list[int], FileNames], dict[int, str]]
 InternalUnavailableException = Exception("Internal source not available")
 
 
-def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> dict[int, str]:
+def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, /) -> dict[int, str]:
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
@@ -22,7 +22,7 @@ def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> d
     return {seg: route.qlog_paths()[seg] for seg in seg_idxs if route.qlog_paths()[seg] is not None}
 
 
-def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, endpoint_url: str = DATA_ENDPOINT) -> dict[int, str]:
+def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, /, endpoint_url: str = DATA_ENDPOINT) -> dict[int, str]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
@@ -32,11 +32,11 @@ def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, endpo
   return eval_source({seg: [get_internal_url(sr, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
-def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> dict[int, str]:
+def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, /) -> dict[int, str]:
   return eval_source({seg: [get_url(sr.route_name, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
-def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> dict[int, str]:
+def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, /) -> dict[int, str]:
   return eval_source({seg: get_comma_segments_url(sr.route_name, seg) for seg in seg_idxs})
 
 
