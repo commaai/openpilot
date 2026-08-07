@@ -2,6 +2,7 @@
 
 from abc import abstractmethod
 from collections.abc import Callable
+import ipaddress
 import os
 import socket
 import time
@@ -221,13 +222,13 @@ class LivestreamBitrateController(AsyncTaskRunner):
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
-  def __init__(self, body: StreamRequestBody):
+  def __init__(self, body: StreamRequestBody, bind_address: str | None = None, use_stun: bool = True):
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc.builder import WebRTCAnswerBuilder
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
-    builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
+    builder = WebRTCAnswerBuilder(body.sdp, bind_address=bind_address or _default_route_ip(), use_stun=use_stun)
 
     self.enabled = body.enabled
     self.video_tracks = []
@@ -395,7 +396,8 @@ def _text_response(text: str, status: int = 200) -> tuple[int, bytes, str]:
   return (status, text.encode(), "text/plain; charset=utf-8")
 
 
-async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, bytes, str]:
+async def handle_get_stream(state: ServerState, raw_body: bytes,
+                            bind_address: str | None = None, use_stun: bool = True) -> tuple[int, bytes, str]:
   stream_dict = state.streams
   body = StreamRequestBody(**json.loads(raw_body))
 
@@ -415,7 +417,7 @@ async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, b
       await s.stop()
       stream_dict.pop(sid, None)
 
-    session = StreamSession(body)
+    session = StreamSession(body, bind_address=bind_address, use_stun=use_stun)
     stream_dict[session.identifier] = session
     try:
       answer = await asyncio.wait_for(session.get_answer(), timeout=30)
@@ -508,7 +510,16 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
         services = parse_qs(parsed.query).get("services", [""])[0]
         result = self._run(handle_get_schema(self.server.state, services))
       elif parsed.path == "/stream":
-        result = self._run(handle_get_stream(self.server.state, self._read_body()))
+        local_address = ipaddress.ip_address(self.connection.getsockname()[0])
+        peer_address = ipaddress.ip_address(self.client_address[0])
+        direct_lan = local_address.is_private and peer_address.is_private and not local_address.is_loopback
+        if direct_lan:
+          logging.getLogger("webrtcd").info("Using direct LAN ICE path %s -> %s", peer_address, local_address)
+        result = self._run(handle_get_stream(
+          self.server.state, self._read_body(),
+          bind_address=str(local_address) if direct_lan else None,
+          use_stun=not direct_lan,
+        ))
       else:  # /notify
         try:
           payload = json.loads(self._read_body())
