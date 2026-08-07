@@ -99,7 +99,7 @@ def unbind_drivers(path):
         f.write(os.path.basename(interface))
 
 
-def device_fd(path):
+def open_device(path):
   bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
   return os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
 
@@ -108,7 +108,7 @@ def claim_device(path, setup=False):
   # unbind usb-storage, which binds to the ROM bootloader
   disable_runtime_pm(path)
   unbind_drivers(path)
-  fd = device_fd(path)
+  fd = open_device(path)
   try:
     if setup:
       fcntl.ioctl(fd, USBDEVFS_SETCONFIGURATION, struct.pack("I", 1))
@@ -145,46 +145,46 @@ class Flash:
       time.sleep(0.1)
     raise RuntimeError(f"chestnut did not enumerate within {timeout:g}s")
 
-  def wr(self, addr, value):
+  def reg_write(self, addr, value):
     fcntl.ioctl(self.fd, USBDEVFS_CONTROL,
                 Ctrl(0x40, 0xE5, addr & 0xFFFF, value & 0xFFFF, 0, 2000, None))
 
-  def rd(self, addr, length=1):
+  def reg_read(self, addr, length=1):
     buf = (ctypes.c_ubyte * length)()
     fcntl.ioctl(self.fd, USBDEVFS_CONTROL,
                 Ctrl(0xC0, 0xE4, addr & 0xFFFF, 0, length, 2000, ctypes.cast(buf, ctypes.c_void_p)))
     return bytes(buf)
 
-  def wrbuf(self, data):
+  def write_buffer(self, data):
     for i, value in enumerate(data):
-      self.wr(0x7000 + i, value)
+      self.reg_write(0x7000 + i, value)
 
-  def wait_csr(self, timeout=2.0):
+  def wait_controller(self, timeout=2.0):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-      if not self.rd(0xC8A9)[0] & 1:
+      if not self.reg_read(0xC8A9)[0] & 1:
         return
     raise TimeoutError("flash controller timeout")
 
   def transaction(self, command, addr=0, length=0, addr_len=0x07, mode=0):
     for reg, value in ((0xC8AD, mode), (0xC8AE, 0), (0xC8AF, 0), (0xC8AA, command), (0xC8AC, addr_len),
                        (0xC8A1, addr), (0xC8A2, addr >> 8), (0xC8AB, addr >> 16), (0xC8A3, length >> 8), (0xC8A4, length)):
-      self.wr(reg, value & 0xFF)
-    self.wr(0xC8A9, 1)
-    self.wait_csr()
+      self.reg_write(reg, value & 0xFF)
+    self.reg_write(0xC8A9, 1)
+    self.wait_controller()
     for _ in range(4):
-      self.wr(0xC8AD, 0)
+      self.reg_write(0xC8AD, 0)
 
-  def wren(self):
+  def write_enable(self):
     for reg, value in ((0xC8AD, 0), (0xC8AA, 0x06), (0xC8AC, 0x04), (0xC8A3, 0), (0xC8A4, 0), (0xC8A9, 1)):
-      self.wr(reg, value)
-    self.wait_csr()
+      self.reg_write(reg, value)
+    self.wait_controller()
 
   def status(self):
     self.transaction(0x05, length=1, addr_len=0x04)
-    return self.rd(0x7000)[0]
+    return self.reg_read(0x7000)[0]
 
-  def wait_wip(self, timeout=10.0):
+  def wait_write_done(self, timeout=10.0):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
       if not self.status() & 1:
@@ -193,13 +193,13 @@ class Flash:
     raise TimeoutError("SPI flash WIP timeout")
 
   def init(self):
-    self.wr(0xCC33, 0x04)
-    self.wr(0xCA81, self.rd(0xCA81)[0] | 1)
-    self.wr(0xC805, 0x02)
-    self.wr(0xC8A6, 0x04)
+    self.reg_write(0xCC33, 0x04)
+    self.reg_write(0xCA81, self.reg_read(0xCA81)[0] | 1)
+    self.reg_write(0xC805, 0x02)
+    self.reg_write(0xC8A6, 0x04)
     for _ in range(5):
-      self.wren()
-      self.wrbuf(bytes(4))
+      self.write_enable()
+      self.write_buffer(bytes(4))
       self.transaction(0x01, length=1, addr_len=0x04, mode=1)
       time.sleep(0.01)
       if not self.status() & 0x1C:
@@ -212,22 +212,22 @@ class Flash:
       n = min(4096, length - len(out))
       self.transaction(0x03, addr + len(out), max(4096, n))
       for off in range(0, n, 255):
-        out += self.rd(0x7000 + off, min(255, n - off))
+        out += self.reg_read(0x7000 + off, min(255, n - off))
     return bytes(out)
 
   def erase_sector(self, addr):
-    self.wren()
+    self.write_enable()
     self.transaction(0x20, addr)
-    self.wait_wip()
+    self.wait_write_done()
 
   def program(self, addr, data):
-    self.wrbuf(data + bytes((-len(data)) % 4))
-    self.wren()
+    self.write_buffer(data + bytes((-len(data)) % 4))
+    self.write_enable()
     self.transaction(0x02, addr, len(data), mode=1)
-    self.wait_wip()
+    self.wait_write_done()
 
 
-def validate_wrapped(data):
+def validate_image(data):
   if len(data) < 10:
     raise ValueError("wrapped firmware is too short")
   body_len = int.from_bytes(data[:4], "little")
@@ -263,7 +263,7 @@ def reconnect(flash):
       time.sleep(1)
 
 
-def retrying(flash, label, operation):
+def with_retries(flash, label, operation):
   # on any transfer error, reconnect and restart the operation
   attempt = 0
   while True:
@@ -282,7 +282,7 @@ def stable_read(flash, addr, length, count=2):
     if any(x != reads[0] for x in reads[1:]):
       raise RuntimeError(f"unstable flash read at 0x{addr:05x}")
     return reads[0]
-  return retrying(flash, f"read 0x{addr:05x}", read)
+  return with_retries(flash, f"read 0x{addr:05x}", read)
 
 
 def program_sector(flash, addr, target):
@@ -298,14 +298,14 @@ def program_sector(flash, addr, target):
           raise RuntimeError(f"page verify failed at 0x{addr + off:05x}")
     if flash.read(addr, SECTOR) != target:
       raise RuntimeError("sector verification failed")
-  retrying(flash, f"sector 0x{addr:05x}", program)
+  with_retries(flash, f"sector 0x{addr:05x}", program)
 
 
 def config_path():
   return os.path.join(CONFIG_DIR, f"{os.uname().nodename}.bin")
 
 
-def backed_up_config(path, data):
+def saved_config(path, data):
   os.makedirs(os.path.dirname(path), exist_ok=True)
   try:
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -329,7 +329,7 @@ def rom_write(image, config):
   if path is None:
     raise RuntimeError("chestnut disappeared before recovery")
   unbind_drivers(path)
-  fd = device_fd(path)
+  fd = open_device(path)
   try:
     fcntl.ioctl(fd, USBDEVFS_RESET)
   finally:
@@ -402,7 +402,8 @@ def activate(expected_product):
   disconnected = False
   deadline = time.monotonic() + 5.0
   while time.monotonic() < deadline:
-    if find_chestnut()[0] is None:
+    path, _, _ = find_chestnut()
+    if path is None:
       disconnected = True
       break
     time.sleep(0.2)
@@ -413,7 +414,7 @@ def activate(expected_product):
     return
   deadline = time.monotonic() + 15.0
   while time.monotonic() < deadline:
-    product = find_chestnut()[2]
+    _, _, product = find_chestnut()
     if product is not None:
       if product == expected_product:
         print(f"activated {expected_product}", flush=True)
@@ -433,7 +434,7 @@ def flash_chestnut(expected_version=None, force=False):
   global _deadline
 
   image = FIRMWARE_PATH.read_bytes()
-  validate_wrapped(image)
+  validate_image(image)
   expected_product = image_product(image)
   if expected_version is not None and expected_product != f"custom {expected_version}-CLEAN":
     raise RuntimeError(f"bundled firmware is {expected_product!r}, expected version {expected_version}")
@@ -507,7 +508,7 @@ def write_image(image, expected_product, product, force):
   try:
     reconnect(flash)
     config = stable_read(flash, 0, 0x100, 3)
-    config = backed_up_config(config_path(), config)
+    config = saved_config(config_path(), config)
     image_end = IMAGE_OFFSET + len(image)
     first_sector = IMAGE_OFFSET & ~(SECTOR - 1)
     span = (image_end + SECTOR - 1) & ~(SECTOR - 1)
