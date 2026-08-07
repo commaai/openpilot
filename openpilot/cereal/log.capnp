@@ -178,6 +178,15 @@ struct InitData {
 
   wallTimeNanos @20 :UInt64;
 
+  ufsHealth @25 :UfsHealth;
+
+  struct UfsHealth {
+    preEolInfo @0 :UInt8;
+    lifeTimeEstimateA @1 :UInt8;
+    lifeTimeEstimateB @2 :UInt8;
+    vendorHealthReport @3 :Data;
+  }
+
   enum DeviceType {
     unknown @0;
     neo @1;
