@@ -63,7 +63,7 @@ class DiffChunk:
 def compute_diff_chunks(hashes1: list[str], hashes2: list[str]) -> list[DiffChunk]:
   """Use difflib to compute diff chunks from the two hash lists. Returns a list of DiffChunk objects."""
   matcher = difflib.SequenceMatcher(a=hashes1, b=hashes2, autojunk=False)
-  diff_ops: list[list] = [list(op) for op in matcher.get_opcodes() if op[0] != 'equal']  # filter out equal chunks
+  diff_ops = [op for op in matcher.get_opcodes() if op[0] != 'equal']  # filter out equal chunks
   chunks: list[DiffChunk] = []
   for tag, i1, i2, j1, j2 in diff_ops:
     chunks.append(DiffChunk(
