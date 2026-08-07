@@ -195,6 +195,8 @@ def main(demo=False):
   cloudlog.warning("modeld init")
 
   USBGPU = usbgpu_present() and usbgpu_compiled()
+  if USBGPU:
+    os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
   params.put_bool("UsbGpuLoading", USBGPU)
   params.remove("UsbGpuActive")
