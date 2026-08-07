@@ -19,7 +19,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import HARDWARE, PC
-from openpilot.system.ui.lib.multilang import multilang
+from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, UNIFONT_LANGUAGES, multilang
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
@@ -92,19 +92,20 @@ FONT_SCALE = 1.242 if BIG_UI else 1.16
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
+EXTRA_FONT_CHARS = "–‑✓×°§•X⚙✕◀▶✔⌫⇧␣○●↳çêüñ–‑✓×°§•€£¥"
 
 
 class FontWeight(StrEnum):
-  NORMAL = "Inter-Regular.fnt" if BIG_UI else "Inter-Medium.fnt"
-  MEDIUM = "Inter-Medium.fnt"
-  BOLD = "Inter-Bold.fnt"
-  SEMI_BOLD = "Inter-SemiBold.fnt"
-  UNIFONT = "unifont.fnt"
+  NORMAL = "Inter-Regular.ttf" if BIG_UI else "Inter-Medium.ttf"
+  MEDIUM = "Inter-Medium.ttf"
+  BOLD = "Inter-Bold.ttf"
+  SEMI_BOLD = "Inter-SemiBold.ttf"
+  UNIFONT = "unifont.otf"
 
   # Small UI fonts
-  DISPLAY_REGULAR = "Inter-Regular.fnt"
-  ROMAN = "Inter-Regular.fnt"
-  DISPLAY = "Inter-Bold.fnt"
+  DISPLAY_REGULAR = "Inter-Regular.ttf"
+  ROMAN = "Inter-Regular.ttf"
+  DISPLAY = "Inter-Bold.ttf"
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
@@ -684,10 +685,20 @@ class GuiApplication:
     return self._height
 
   def _load_fonts(self):
+    base_chars = set(map(chr, range(32, 127))) | set(EXTRA_FONT_CHARS)
+    unifont_chars = set(base_chars)
+    for language, code in multilang.languages.items():
+      unifont_chars.update(language)
+      chars = set(TRANSLATIONS_DIR.joinpath(f"app_{code}.po").read_text(encoding="utf-8"))
+      (unifont_chars if code in UNIFONT_LANGUAGES else base_chars).update(chars)
+
     for font_weight_file in FontWeight:
       with as_file(FONT_DIR) as fspath:
-        fnt_path = fspath / font_weight_file
-        font = rl.load_font(fnt_path.as_posix())
+        unifont = font_weight_file == FontWeight.UNIFONT
+        codepoints = sorted(map(ord, unifont_chars if unifont else base_chars))
+        codepoint_buffer = rl.ffi.new("int[]", codepoints)
+        font = rl.load_font_ex((fspath / font_weight_file).as_posix(), 16 if unifont else 200,
+                               rl.ffi.cast("int *", codepoint_buffer), len(codepoints))
         if font_weight_file != FontWeight.UNIFONT:
           rl.gen_texture_mipmaps(font.texture)
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
