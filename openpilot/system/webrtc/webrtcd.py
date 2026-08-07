@@ -79,15 +79,26 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
 
   def to_json(self, msg_content: Any):
     if isinstance(msg_content, capnp._DynamicStructReader):
-      msg_dict = msg_content.to_dict()
+      msg_content = msg_content.to_dict()
     elif isinstance(msg_content, capnp._DynamicListReader):
-      msg_dict = [self.to_json(msg) for msg in msg_content]
-    elif isinstance(msg_content, bytes):
-      msg_dict = msg_content.decode()
-    else:
-      msg_dict = msg_content
+      msg_content = list(msg_content)
 
-    return msg_dict
+    if isinstance(msg_content, dict):
+      return {
+        key: self.to_json(value)
+        for key, value in msg_content.items()
+        if not isinstance(value, bytes)
+      }
+    elif isinstance(msg_content, (list, tuple)):
+      return [
+        self.to_json(value)
+        for value in msg_content
+        if not isinstance(value, bytes)
+      ]
+    elif isinstance(msg_content, bytes):
+      return None
+
+    return msg_content
 
   def update(self):
     # this is blocking in async context...
