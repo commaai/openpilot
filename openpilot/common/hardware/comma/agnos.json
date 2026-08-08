@@ -1,7 +1,7 @@
 [
   {
     "name": "xbl",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/xbl-e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl-e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb.img.xz",
     "hash": "e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb",
     "hash_raw": "e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb",
     "size": 3282256,
@@ -12,7 +12,7 @@
   },
   {
     "name": "xbl_config",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/xbl_config-758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl_config-758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85.img.xz",
     "hash": "758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85",
     "hash_raw": "758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85",
     "size": 98124,
@@ -23,7 +23,7 @@
   },
   {
     "name": "abl",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/abl-b6fba807b9bcd66a31f2afb0eba5163ec239693ad32e2e4200f6c356adfe098c.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/abl-b6fba807b9bcd66a31f2afb0eba5163ec239693ad32e2e4200f6c356adfe098c.img.xz",
     "hash": "b6fba807b9bcd66a31f2afb0eba5163ec239693ad32e2e4200f6c356adfe098c",
     "hash_raw": "b6fba807b9bcd66a31f2afb0eba5163ec239693ad32e2e4200f6c356adfe098c",
     "size": 274432,
@@ -34,7 +34,7 @@
   },
   {
     "name": "aop",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/aop-78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/aop-78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1.img.xz",
     "hash": "78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1",
     "hash_raw": "78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1",
     "size": 184364,
@@ -45,7 +45,7 @@
   },
   {
     "name": "devcfg",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/devcfg-f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/devcfg-f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc.img.xz",
     "hash": "f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc",
     "hash_raw": "f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc",
     "size": 40336,
@@ -56,7 +56,7 @@
   },
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/boot-f716b81d557c274be707abc200276ba9e8320ad0386586f36f9065dd563fee94.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-f716b81d557c274be707abc200276ba9e8320ad0386586f36f9065dd563fee94.img.xz",
     "hash": "f716b81d557c274be707abc200276ba9e8320ad0386586f36f9065dd563fee94",
     "hash_raw": "f716b81d557c274be707abc200276ba9e8320ad0386586f36f9065dd563fee94",
     "size": 46897152,
@@ -67,7 +67,7 @@
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/system-7b3da36853ee71f7f43ff9eb0f59ca8c4e80a2ba96a9a4911731641a5d008ae2.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-7b3da36853ee71f7f43ff9eb0f59ca8c4e80a2ba96a9a4911731641a5d008ae2.img.xz",
     "hash": "414a9145d6ba13bc04760b31545507109e9a2509958dd44782dd1912b1cb96e9",
     "hash_raw": "7b3da36853ee71f7f43ff9eb0f59ca8c4e80a2ba96a9a4911731641a5d008ae2",
     "size": 4718592000,
@@ -77,7 +77,7 @@
     "ondevice_hash": "d4fadd9dfb4e20875650e60e37b9f8ccf2dc6c0fdc4f9a15912bee5ab8440a13",
     "alt": {
       "hash": "7b3da36853ee71f7f43ff9eb0f59ca8c4e80a2ba96a9a4911731641a5d008ae2",
-      "url": "https://commadist.azureedge.net/agnosupdate-staging/system-7b3da36853ee71f7f43ff9eb0f59ca8c4e80a2ba96a9a4911731641a5d008ae2.img",
+      "url": "https://commadist.azureedge.net/agnosupdate/system-7b3da36853ee71f7f43ff9eb0f59ca8c4e80a2ba96a9a4911731641a5d008ae2.img",
       "size": 4718592000
     }
   }
