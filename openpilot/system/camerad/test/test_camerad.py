@@ -73,7 +73,7 @@ def _camera_session():
   return ts, exposure
 
 class TestCamerad(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   @classmethod
   def setUpClass(cls):

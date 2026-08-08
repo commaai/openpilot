@@ -58,7 +58,7 @@ def iter_measurements(events):
       yield measurement, getattr(measurement, measurement.which())
 
 class TestSensord(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
   @classmethod
   def setup_class(cls):
     # enable LSM self test
