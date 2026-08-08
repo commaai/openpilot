@@ -89,6 +89,35 @@ class HardwareComma(HardwareBase):
   def get_device_type(self):
     return get_device_type()
 
+  def get_init_logs(self) -> dict[str, bytes]:
+    def read_file(path: str) -> bytes:
+      try:
+        return Path(path).read_bytes()
+      except OSError:
+        return b""
+
+    def check_output(command: list[str]) -> bytes:
+      try:
+        return subprocess.check_output(command)
+      except (OSError, subprocess.CalledProcessError):
+        return b""
+
+    logs = {
+      "/BUILD": read_file("/BUILD"),
+      "lsblk": check_output(["lsblk", "-o", "NAME,SIZE,STATE,VENDOR,MODEL,REV,SERIAL"]),
+      "SOM ID": read_file("/sys/devices/platform/vendor/vendor:gpio-som-id/som_id"),
+    }
+
+    logs["boot slot"] = check_output(["abctl", "--boot_slot"]).split(b"\n", 1)[0]
+    logs["boot temp"] = read_file("/dev/disk/by-partlabel/ssd").rstrip(b"\0\r\n")
+
+    for part in ("xbl", "abl", "aop", "devcfg", "xbl_config"):
+      for slot in ("a", "b"):
+        partition = f"{part}_{slot}"
+        logs[partition] = check_output(["sha256sum", f"/dev/disk/by-partlabel/{partition}"]).split(b" ", 1)[0]
+
+    return logs
+
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
 
