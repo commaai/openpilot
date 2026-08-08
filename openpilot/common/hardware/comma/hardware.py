@@ -64,6 +64,9 @@ class HardwareComma(HardwareBase):
     - tici = comma three
     - tizi = comma 3X
     - mici = comma four
+
+    We strictly use only the device codenames in this codebase for
+    consistency, though all user-facing UI should use the product names.
   """
 
   @cached_property

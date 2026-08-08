@@ -50,9 +50,9 @@ elif arch == "aarch64" and COMMA_HARDWARE:
   arch = "comma_arm64"
 assert arch in [
   "comma_arm64",  # linux comma hardware (AGNOS) arm64
-  "aarch64",  # linux pc arm64
-  "x86_64",   # linux pc x64
-  "Darwin",   # macOS arm64 (x86 not supported)
+  "aarch64",      # linux pc arm64
+  "x86_64",       # linux pc x64
+  "Darwin",       # macOS arm64 (x86 not supported)
 ]
 
 pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
