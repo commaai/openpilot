@@ -6,7 +6,7 @@
 #include "common/util.h"
 
 #if __TICI__
-#include "common/hardware/tici/hardware.h"
+#include "common/hardware/comma/hardware.h"
 #define Hardware HardwareTici
 #else
 #include "common/hardware/pc/hardware.h"
