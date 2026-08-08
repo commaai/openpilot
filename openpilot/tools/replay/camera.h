@@ -5,6 +5,7 @@
 #include <tuple>
 #include <utility>
 
+#include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "tools/replay/framereader.h"

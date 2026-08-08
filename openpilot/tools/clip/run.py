@@ -22,7 +22,8 @@ from openpilot.tools.lib.framereader import FrameReader, ffprobe
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.utils import Timer
-from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcServer
 
 FRAMERATE = 20
 DEMO_ROUTE, DEMO_START, DEMO_END = '5beb9b58bd12b691/0000010a--a51155e496', 90, 105

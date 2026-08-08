@@ -8,7 +8,8 @@ import numpy as np
 
 from openpilot.cereal import messaging
 from openpilot.cereal.messaging import PubMaster, SubMaster
-from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics

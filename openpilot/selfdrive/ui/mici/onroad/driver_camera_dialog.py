@@ -1,6 +1,6 @@
 import pyray as rl
 from openpilot.cereal import log, messaging
-from msgq.visionipc import VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state, device

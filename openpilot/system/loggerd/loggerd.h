@@ -5,6 +5,7 @@
 
 #include "openpilot/cereal/messaging/messaging.h"
 #include "openpilot/cereal/services.h"
+#include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_client.h"
 #include "common/hardware/hw.h"
 #include "common/params.h"

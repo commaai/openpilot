@@ -25,7 +25,8 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
-from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcServer
 
 SentinelType = log.Sentinel.SentinelType
 
