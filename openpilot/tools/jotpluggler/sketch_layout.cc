@@ -45,9 +45,9 @@ struct RouteSelection {
 struct SegmentLogs {
   std::string rlog;
   std::string qlog;
-  std::string fcamera;
-  std::string dcamera;
-  std::string ecamera;
+  std::string narrow_road;
+  std::string cabin;
+  std::string wide_road;
   std::string qcamera;
 };
 
@@ -295,11 +295,11 @@ void add_log_file_to_segments(std::map<int, SegmentLogs> *segments, int segment_
   } else if (name == "qlog.bz2" || name == "qlog.zst" || name == "qlog") {
     segment.qlog = file;
   } else if (name == "fcamera.hevc") {
-    segment.fcamera = file;
+    segment.narrow_road = file;
   } else if (name == "dcamera.hevc") {
-    segment.dcamera = file;
+    segment.cabin = file;
   } else if (name == "ecamera.hevc") {
-    segment.ecamera = file;
+    segment.wide_road = file;
   } else if (name == "qcamera.ts") {
     segment.qcamera = file;
   }
@@ -1886,10 +1886,10 @@ RouteData load_route_data(const std::string &route_name,
                                           metadata.car_fingerprint,
                                           resolved_dbc);
   route_data.route_id = make_route_identifier(route, segments);
-  build_camera_index(segments, route_data, &SegmentLogs::fcamera, "roadEncodeIdx", &route_data.road_camera);
-  build_camera_index(segments, route_data, &SegmentLogs::dcamera, "driverEncodeIdx", &route_data.driver_camera);
-  build_camera_index(segments, route_data, &SegmentLogs::ecamera, "wideRoadEncodeIdx", &route_data.wide_road_camera);
-  build_camera_index(segments, route_data, &SegmentLogs::qcamera, "qRoadEncodeIdx", &route_data.qroad_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::narrow_road, "narrowRoadEncodeIdx", &route_data.road_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::cabin, "cabinEncodeIdx", &route_data.cabin_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::wide_road, "wideRoadEncodeIdx", &route_data.wide_road_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::qcamera, "qNarrowRoadEncodeIdx", &route_data.qroad_camera);
   stats.load_end = LoadStats::Clock::now();
   stats.publish(RouteLoadStage::Finished, segments.size(), {});
   stats.print_summary(route_data.series.size());

@@ -16,10 +16,10 @@ from openpilot.common.version import terms_version, training_version
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
-from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import BaseDriverCameraDialog
+from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import BaseCabinCameraDialog
 
 
-class DriverCameraSetupDialog(BaseDriverCameraDialog):
+class CabinCameraSetupDialog(BaseCabinCameraDialog):
   def __init__(self):
     super().__init__()
     self.driver_state_renderer = DriverStateRenderer(inset=True)
@@ -104,7 +104,7 @@ class TrainingGuideDMTutorial(NavWidget):
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
-    self._dialog = DriverCameraSetupDialog()
+    self._dialog = CabinCameraSetupDialog()
     self._bad_face_page = DMBadFaceDetected()
 
     # Disable driver monitoring model when device times out for inactivity
@@ -231,7 +231,7 @@ class TrainingGuideRecordFront(NavScroller):
                                                        exit_on_confirm=False)
 
     self._scroller.add_widgets([
-      GreyBigButton("driver camera data", "do you want to share video data for training?",
+      GreyBigButton("cabin camera data", "do you want to share video data for training?",
                     gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
       GreyBigButton("", "Sharing your data with comma helps improve openpilot for everyone."),
       self._accept_button,

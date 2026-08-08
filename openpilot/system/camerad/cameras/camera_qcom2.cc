@@ -234,11 +234,11 @@ void CameraState::sendState() {
   framed.setSensor(camera.sensor->image_sensor);
 
   // Log raw frames for road camera
-  if (env_log_raw_frames && camera.cc.stream_type == VISION_STREAM_ROAD && meta.frame_id % 100 == 5) {  // no overlap with qlog decimation
+  if (env_log_raw_frames && camera.cc.stream_type == VISION_STREAM_NARROW_ROAD && meta.frame_id % 100 == 5) {  // no overlap with qlog decimation
     framed.setImage(get_raw_frame_image(&camera.buf));
   }
 
-  set_camera_exposure(calculate_exposure_value(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
+  set_camera_exposure(calculate_exposure_value(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_CABIN ? 2 : 4));
 
   // Send the message
   pm->send(camera.cc.publish_name, msg);

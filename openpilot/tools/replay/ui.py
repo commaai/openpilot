@@ -57,7 +57,7 @@ def ui_thread(addr):
   font_path = os.path.join(BASEDIR, "openpilot/selfdrive/assets/fonts/JetBrainsMono-Medium.ttf")
   font = rl.load_font_ex(font_path, 32, None, 0)
 
-  camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+  camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_NARROW_ROAD)
 
   # Overlay texture for model/lane line drawing
   overlay_img = np.zeros((480, 640, 4), dtype='uint8')
@@ -82,7 +82,7 @@ def ui_thread(addr):
       'liveTracks',
       'modelV2',
       'liveParameters',
-      'roadCameraState',
+      'narrowRoadCameraState',
     ],
     addr=addr,
   )
@@ -152,13 +152,13 @@ def ui_thread(addr):
 
     sm.update(0)
 
-    camera = DEVICE_CAMERAS[("tici", str(sm['roadCameraState'].sensor))]
-    calib_scale = camera.fcam.width / 640.0
+    camera = DEVICE_CAMERAS[("tici", str(sm['narrowRoadCameraState'].sensor))]
+    calib_scale = camera.narrow_road.width / 640.0
 
     if camera_view.frame:
       num_px = camera_view.frame.width * camera_view.frame.height
 
-    intrinsic_matrix = camera.fcam.intrinsics
+    intrinsic_matrix = camera.narrow_road.intrinsics
 
     w = sm['controlsState'].lateralControlState.which()
     if w == 'lqrStateDEPRECATED':

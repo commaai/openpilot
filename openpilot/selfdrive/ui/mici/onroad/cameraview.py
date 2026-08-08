@@ -126,7 +126,7 @@ class CameraView(Widget):
     self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
     self._engaged_val = rl.ffi.new("int[1]", [1])
     self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
-    self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 0])
+    self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_CABIN else 0])
 
     self.frame: VisionBuf | None = None
     self.texture_y: rl.Texture | None = None
@@ -243,8 +243,8 @@ class CameraView(Widget):
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
-    # Flip driver camera horizontally
-    if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+    # Flip cabin camera horizontally
+    if self._stream_type == VisionStreamType.VISION_STREAM_CABIN:
       src_rect.width = -src_rect.width
 
     # Calculate scale
@@ -410,6 +410,6 @@ class CameraView(Widget):
 
 if __name__ == "__main__":
   gui_app.init_window("camera view")
-  road = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+  road = CameraView("camerad", VisionStreamType.VISION_STREAM_NARROW_ROAD)
   for _ in gui_app.render():
     road.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))

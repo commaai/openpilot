@@ -8,7 +8,7 @@
 #include "openpilot/cereal/gen/cpp/log.capnp.h"
 #include "tools/replay/util.h"
 
-const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
+const CameraType ALL_CAMERAS[] = {NarrowRoadCam, CabinCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
 
 class Event {
