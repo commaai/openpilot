@@ -25,6 +25,8 @@ V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
 
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
 
+_TRACK_CLUSTER_THRESHOLD = 2.5
+
 
 class KalmanParams:
   def __init__(self, dt: float):
@@ -80,15 +82,22 @@ class Track:
 
     self.cnt += 1
 
-  def get_RadarState(self, model_prob: float = 0.0):
+  def set_accel(self, a_lead: float, a_lead_tau: float):
+    self.kf.set_x([[self.vLead], [a_lead]])
+    self.vLeadK = self.vLead
+    self.aLeadK = a_lead
+    self.aLeadTau.x = a_lead_tau
+
+  def get_RadarState(self, model_prob: float = 0.0, accel: tuple[float, float] | None = None):
+    a_lead, a_lead_tau = accel if accel is not None else (self.aLeadK, self.aLeadTau.x)
     return {
       "dRel": float(self.dRel),
       "yRel": float(self.yRel),
       "vRel": float(self.vRel),
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
-      "aLeadK": float(self.aLeadK),
-      "aLeadTau": float(self.aLeadTau.x),
+      "aLeadK": float(a_lead),
+      "aLeadTau": float(a_lead_tau),
       "present": True,
       "modelProb": model_prob,
       "radar": True,
@@ -103,6 +112,34 @@ class Track:
   def __str__(self):
     ret = f"x: {self.dRel:4.1f}  y: {self.yRel:4.1f}  v: {self.vRel:4.1f}  a: {self.aLeadK:4.1f}"
     return ret
+
+
+def cluster_track_accels(tracks: dict[int, Track]) -> dict[int, tuple[float, float]]:
+  """Average lead acceleration over nearby mature radar tracks."""
+  if not tracks:
+    return {}
+
+  track_list = list(tracks.values())
+  # Radar is less accurate laterally, so weigh y more when grouping tracks.
+  points = np.array([(track.dRel, track.yRel * 2, track.vRel) for track in track_list])
+  distance_sq = np.sum((points[:, None] - points[None, :]) ** 2, axis=2)
+  # New tracks start at zero acceleration and must not dilute the cluster estimate.
+  mature = np.array([track.cnt > 1 for track in track_list])
+  nearby_mature = (distance_sq < _TRACK_CLUSTER_THRESHOLD ** 2) & mature[None, :]
+  counts = np.sum(nearby_mature, axis=1)
+  weights = nearby_mature.astype(float)
+
+  track_accels = np.array([track.aLeadK for track in track_list])
+  track_taus = np.array([track.aLeadTau.x for track in track_list])
+  mean_accels = np.divide(weights @ track_accels, counts, out=track_accels.copy(), where=counts > 0)
+  mean_taus = np.divide(weights @ track_taus, counts, out=track_taus.copy(), where=counts > 0)
+
+  for track, a_lead, a_lead_tau, count in zip(track_list, mean_accels, mean_taus, counts, strict=True):
+    if track.cnt == 1 and count > 0:
+      track.set_accel(float(a_lead), float(a_lead_tau))
+
+  return {track.identifier: (float(a_lead), float(a_lead_tau))
+          for track, a_lead, a_lead_tau in zip(track_list, mean_accels, mean_taus, strict=True)}
 
 
 def laplacian_pdf(x: float, mu: float, b: float):
@@ -150,7 +187,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
+def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], cluster_accels: dict[int, tuple[float, float]], lead_msg: capnp._DynamicStructReader,
              model_v_ego: float, lead_prob: float, low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_prob > .5:
@@ -160,7 +197,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
 
   lead_dict = {'present': False}
   if track is not None:
-    lead_dict = track.get_RadarState(lead_prob)
+    lead_dict = track.get_RadarState(lead_prob, cluster_accels[track.identifier])
   elif (track is None) and ready and (lead_prob > .5):
     lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego, lead_prob)
 
@@ -171,7 +208,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
 
       # Only choose new track if it is actually closer than the previous one
       if (not lead_dict['present']) or (closest_track.dRel < lead_dict['dRel']):
-        lead_dict = closest_track.get_RadarState()
+        lead_dict = closest_track.get_RadarState(accel=cluster_accels[closest_track.identifier])
 
   return lead_dict
 
@@ -221,6 +258,8 @@ class RadarD:
         self.tracks[ids] = Track(ids, v_lead, self.kalman_params)
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead)
 
+    cluster_accels = cluster_track_accels(self.tracks)
+
     # *** publish radarState ***
     self.radar_state_valid = sm.all_checks()
     self.radar_state = log.RadarState.new_message()
@@ -241,8 +280,10 @@ class RadarD:
         else:
           self.lead_prob_filters[i].update(lead_prob)
 
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_prob_filters[0].x, low_speed_override=True)
-      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_prob_filters[1].x, low_speed_override=False)
+      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, cluster_accels, leads_v3[0], model_v_ego,
+                                          self.lead_prob_filters[0].x, low_speed_override=True)
+      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, cluster_accels, leads_v3[1], model_v_ego,
+                                          self.lead_prob_filters[1].x, low_speed_override=False)
 
   def publish(self, pm: messaging.PubMaster):
     assert self.radar_state is not None
