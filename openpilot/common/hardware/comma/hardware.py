@@ -59,6 +59,13 @@ def get_default_route_iface():
   return min(routes)[1] if routes else None
 
 class HardwareComma(HardwareBase):
+  """
+    This platform covers the Snapdragon 845-based comma devices:
+    - tici = comma three
+    - tizi = comma 3X
+    - mici = comma four
+  """
+
   @cached_property
   def amplifier(self):
     if self.get_device_type() == "mici":

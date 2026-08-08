@@ -47,9 +47,9 @@ arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
 elif arch == "aarch64" and COMMA_HARDWARE:
-  arch = "larch64"
+  arch = "comma_arm64"
 assert arch in [
-  "larch64",  # linux tici arm64
+  "comma_arm64",  # linux comma hardware (AGNOS) arm64
   "aarch64",  # linux pc arm64
   "x86_64",   # linux pc x64
   "Darwin",   # macOS arm64 (x86 not supported)
@@ -133,7 +133,7 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
-    "-Wshadow" if arch in ("Darwin", "larch64") else "-Wshadow=local",
+    "-Wshadow" if arch in ("Darwin", "comma_arm64") else "-Wshadow=local",
     "-Wno-unknown-warning-option",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
@@ -172,11 +172,11 @@ if arch == "Darwin":
   env["RPATHPREFIX"] = "-Wl,-rpath,"
   env["RPATHSUFFIX"] = ""
   env["_RPATH"] = "${_concat(RPATHPREFIX, RPATH, RPATHSUFFIX, __env__)}"
-if arch != "larch64":
+if arch != "comma_arm64":
   env['_LIBFLAGS'] = _libflags
 
 # Arch-specific flags and paths
-if arch == "larch64":
+if arch == "comma_arm64":
   env["CC"] = "clang"
   env["CXX"] = "clang++"
   env.Append(LIBPATH=[
@@ -234,7 +234,7 @@ Export('envCython', 'np_version')
 Export('env', 'arch', 'acados', 'ffmpeg_libs')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if arch == "comma_arm64" else '/tmp/scons_cache'
 cache_size_limit = 4e9 if "CI" in os.environ else 2e9
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
@@ -280,7 +280,7 @@ SConscript([
   'openpilot/system/loggerd/SConscript',
 ])
 
-if arch == "larch64":
+if arch == "comma_arm64":
   SConscript(['openpilot/system/camerad/SConscript'])
 
 # Build selfdrive
@@ -293,7 +293,7 @@ SConscript([
 ])
 
 # Build desktop-only tools
-if GetOption('extras') and arch != "larch64":
+if GetOption('extras') and arch != "comma_arm64":
   SConscript([
     'openpilot/tools/replay/SConscript',
     'openpilot/tools/cabana/SConscript',
