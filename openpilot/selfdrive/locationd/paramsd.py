@@ -5,7 +5,6 @@ import capnp
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
-from opendbc.car import VehicleDynamicsParams
 from opendbc.car.structs import car
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
@@ -37,7 +36,6 @@ class VehicleParamsLearner:
     self.P_initial = P_initial if P_initial is not None else CarKalman.P_initial
 
     self.kf.set_globals(
-      mass=VehicleDynamicsParams.MASS,
       rotational_inertia=CP.rotationalInertia,
       center_to_front=CP.centerToFront,
       center_to_rear=CP.wheelbase - CP.centerToFront,

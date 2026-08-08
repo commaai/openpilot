@@ -79,8 +79,9 @@ class CarKalman(KalmanFilter):
     ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
   }
 
+  # mass cancels from the bicycle model when tire stiffness and rotational inertia
+  # are mass-scaled, so globals are mass-normalized (stiffness in N/rad/kg, inertia in m^2)
   global_vars = [
-    'mass',
     'rotational_inertia',
     'center_to_front',
     'center_to_rear',
@@ -97,9 +98,9 @@ class CarKalman(KalmanFilter):
     # Massimo Guiggiani, The Science of Vehicle Dynamics: Handling, Braking, and Ride of Road and Race Cars
     # Springer Cham, 2023. doi: https://doi.org/10.1007/978-3-031-06461-6
 
-    # globals
+    # globals (mass-normalized)
     global_vars = [sp.Symbol(name) for name in CarKalman.global_vars]
-    m, j, aF, aR, cF_orig, cR_orig = global_vars
+    j, aF, aR, cF_orig, cR_orig = global_vars
 
     # make functions and jacobians with sympy
     # state variables
@@ -120,13 +121,13 @@ class CarKalman(KalmanFilter):
     r = state[States.YAW_RATE, :][0, 0]
 
     A = sp.Matrix(np.zeros((2, 2)))
-    A[0, 0] = -(cF + cR) / (m * u)
-    A[0, 1] = -(cF * aF - cR * aR) / (m * u) - u
+    A[0, 0] = -(cF + cR) / u
+    A[0, 1] = -(cF * aF - cR * aR) / u - u
     A[1, 0] = -(cF * aF - cR * aR) / (j * u)
     A[1, 1] = -(cF * aF**2 + cR * aR**2) / (j * u)
 
     B = sp.Matrix(np.zeros((2, 1)))
-    B[0, 0] = cF / m / sR
+    B[0, 0] = cF / sR
     B[1, 0] = (cF * aF) / j / sR
 
     C = sp.Matrix(np.zeros((2, 1)))
@@ -166,8 +167,7 @@ class CarKalman(KalmanFilter):
     self.filter = EKF_sym_pyx(generated_dir, CarKalman.name, CarKalman.Q, CarKalman.initial_x, CarKalman.P_initial,
                               dim_state, dim_state_err, global_vars=CarKalman.global_vars, logger=cloudlog)
 
-  def set_globals(self, mass, rotational_inertia, center_to_front, center_to_rear, stiffness_front, stiffness_rear):
-    self.filter.set_global("mass", mass)
+  def set_globals(self, rotational_inertia, center_to_front, center_to_rear, stiffness_front, stiffness_rear):
     self.filter.set_global("rotational_inertia", rotational_inertia)
     self.filter.set_global("center_to_front", center_to_front)
     self.filter.set_global("center_to_rear", center_to_rear)
