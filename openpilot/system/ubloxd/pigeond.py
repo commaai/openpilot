@@ -12,7 +12,7 @@ from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.serial import Serial
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.hardware import COMMA
+from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.common.hardware.comma.pins import GPIO
 
@@ -302,7 +302,7 @@ def run_receiving(duration: int = 0):
 
 
 def main():
-  assert COMMA, "unsupported hardware for pigeond"
+  assert COMMA_HARDWARE, "unsupported hardware for pigeond"
   run_receiving()
 
 if __name__ == "__main__":

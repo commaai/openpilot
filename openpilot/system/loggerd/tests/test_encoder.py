@@ -13,7 +13,7 @@ from tqdm import trange
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.common.hardware import COMMA
+from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.common.hardware.hw import Paths
@@ -86,7 +86,7 @@ class TestEncoder(OpenpilotTestCase):
         # TODO: this ffprobe call is really slow
         # get width and check frame count
         cmd = f"ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets,width -of csv=p=0 {file_path}"
-        if COMMA:
+        if COMMA_HARDWARE:
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
         expected_frames = fps * SEGMENT_LENGTH
@@ -130,7 +130,7 @@ class TestEncoder(OpenpilotTestCase):
 
       assert 1 == len(set(first_frames))
 
-      if COMMA:
+      if COMMA_HARDWARE:
         expected_frames = fps * SEGMENT_LENGTH
         assert min(counts) == expected_frames
       shutil.rmtree(f"{route_prefix_path}--{i}")

@@ -6,7 +6,7 @@ import subprocess
 import unittest
 from unittest import mock
 
-from openpilot.common.hardware import HARDWARE, COMMA
+from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
 
@@ -61,7 +61,7 @@ class OpenpilotTestCase(unittest.TestCase):
   def run(self, result=None):
     # This boundary cannot live in setUp/tearDown: existing unittest classes
     # are allowed to override those hooks without calling super().
-    if (self.COMMA_HARDWARE_TEST and not COMMA) or getattr(type(self), "__unittest_skip__", False):
+    if (self.COMMA_HARDWARE_TEST and not COMMA_HARDWARE) or getattr(type(self), "__unittest_skip__", False):
       return super().run(result)
     test_env = clean_env()
     test_env.__enter__()
@@ -80,7 +80,7 @@ class OpenpilotTestCase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    if cls.COMMA_HARDWARE_TEST and not COMMA:
+    if cls.COMMA_HARDWARE_TEST and not COMMA_HARDWARE:
       raise unittest.SkipTest("Skipping comma hardware test on PC")
     cls._class_env = clean_env()
     cls._class_env.__enter__()
@@ -100,7 +100,7 @@ class OpenpilotTestCase(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    if self.COMMA_HARDWARE_TEST and not COMMA:
+    if self.COMMA_HARDWARE_TEST and not COMMA_HARDWARE:
       self.skipTest("Skipping comma hardware test on PC")
 
     if self.COMMA_HARDWARE_TEST:
