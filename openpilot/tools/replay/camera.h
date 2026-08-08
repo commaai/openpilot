@@ -32,7 +32,7 @@ protected:
   VisionBuf *getFrame(Camera &cam, FrameReader *fr, int32_t segment_id, uint32_t frame_id);
 
   Camera cameras_[MAX_CAMERAS] = {
-      {.type = RoadCam, .stream_type = VISION_STREAM_ROAD},
+      {.type = NarrowRoadCam, .stream_type = VISION_STREAM_ROAD},
       {.type = DriverCam, .stream_type = VISION_STREAM_DRIVER},
       {.type = WideRoadCam, .stream_type = VISION_STREAM_WIDE_ROAD},
   };

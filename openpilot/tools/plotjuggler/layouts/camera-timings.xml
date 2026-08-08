@@ -13,8 +13,8 @@
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>
-       <curve color="#d62728" name="/roadEncodeIdx/timestampSof">
-        <transform name="Derivative" alias="/roadEncodeIdx/timestampSof[Derivative]">
+       <curve color="#d62728" name="/narrowRoadEncodeIdx/timestampSof">
+        <transform name="Derivative" alias="/narrowRoadEncodeIdx/timestampSof[Derivative]">
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>
@@ -34,8 +34,8 @@
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>
-       <curve color="#9467bd" name="/roadEncodeIdx/timestampEof">
-        <transform name="Derivative" alias="/roadEncodeIdx/timestampEof[Derivative]">
+       <curve color="#9467bd" name="/narrowRoadEncodeIdx/timestampEof">
+        <transform name="Derivative" alias="/narrowRoadEncodeIdx/timestampEof[Derivative]">
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>
@@ -77,7 +77,7 @@
        <range bottom="-0.100000" left="0.000000" top="0.100000" right="630.006367"/>
        <limitY/>
        <curve color="#bcbd22" name="/driverCameraState/sensor"/>
-       <curve color="#1f77b4" name="/roadCameraState/sensor"/>
+       <curve color="#1f77b4" name="/narrowRoadCameraState/sensor"/>
        <curve color="#d62728" name="/wideRoadCameraState/sensor"/>
       </plot>
      </DockArea>
@@ -96,8 +96,8 @@
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>
-       <curve color="#d62728" name="/roadCameraState/timestampSof">
-        <transform name="Derivative" alias="/roadCameraState/timestampSof[Derivative]">
+       <curve color="#d62728" name="/narrowRoadCameraState/timestampSof">
+        <transform name="Derivative" alias="/narrowRoadCameraState/timestampSof[Derivative]">
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>
@@ -117,8 +117,8 @@
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>
-       <curve color="#f14cc1" name="/roadCameraState/timestampEof">
-        <transform name="Derivative" alias="/roadCameraState/timestampEof[Derivative]">
+       <curve color="#f14cc1" name="/narrowRoadCameraState/timestampEof">
+        <transform name="Derivative" alias="/narrowRoadCameraState/timestampEof[Derivative]">
          <options lineEdit="1.0" radioChecked="radioCustom"/>
         </transform>
        </curve>

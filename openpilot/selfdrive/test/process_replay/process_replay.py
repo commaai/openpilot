@@ -396,7 +396,7 @@ class ModeldCameraSyncRcvCallback:
 
   def __call__(self, msg, cfg, frame):
     self.is_dual_camera = len(cfg.vision_pubs) == 2
-    if msg.which() == "roadCameraState":
+    if msg.which() == "narrowRoadCameraState":
       self.road_present = True
     elif msg.which() == "wideRoadCameraState":
       self.wide_road_present = True
@@ -434,7 +434,7 @@ CONFIGS = [
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "livePose", "liveDelay", "liveParameters", "radarState", "modelV2",
-      "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState", "liveTorqueParameters",
+      "driverCameraState", "narrowRoadCameraState", "wideRoadCameraState", "managerState", "liveTorqueParameters",
       "accelerometer", "gyroscope", "carOutput", "gpsLocationExternal", "gpsLocation", "controlsState",
       "carControl", "driverAssistance", "alertDebug",
     ],
@@ -549,14 +549,14 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="modeld",
-    pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "liveDelay", "driverMonitoringState", "carState", "carControl"],
+    pubs=["deviceState", "narrowRoadCameraState", "wideRoadCameraState", "liveCalibration", "liveDelay", "driverMonitoringState", "carState", "carControl"],
     subs=["modelV2", "drivingModelData", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
-    main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
-    vision_pubs=["roadCameraState", "wideRoadCameraState"],
+    main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("narrowRoadCameraState").stream),
+    vision_pubs=["narrowRoadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
     init_callback=get_car_params_callback,
   ),

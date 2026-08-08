@@ -42,7 +42,7 @@ def parse_args():
   parser.add_argument("-x", "--speed", type=int, default=1, help="Speed multiplier")
   parser.add_argument("--demo", action="store_true", help="Use demo route with default timing")
   parser.add_argument("--big", action="store_true", help="Use big UI (2160x1080)")
-  parser.add_argument("--qcam", action="store_true", help="Use qcamera instead of fcamera")
+  parser.add_argument("--qcam", action="store_true", help="Use qcamera instead of narrow_road")
   parser.add_argument("--windowed", action="store_true", help="Show window")
   parser.add_argument("--no-metadata", action="store_true", help="Disable metadata overlay")
   parser.add_argument("--no-time-overlay", action="store_true", help="Disable time overlay")
@@ -313,10 +313,10 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     camera_paths = route.qcamera_paths() if use_qcam else route.camera_paths()
     frame_queue = FrameQueue(camera_paths, start, end, fps=FRAMERATE, use_qcam=use_qcam)
 
-    ecamera_paths = route.ecamera_paths() if not use_qcam else []
+    wide_road_camera_paths = route.wide_road_camera_paths() if not use_qcam else []
     wide_frame_queue: FrameQueue | None = None
-    if any(p for p in ecamera_paths[seg_start:seg_end] if p):
-      wide_frame_queue = FrameQueue(ecamera_paths, start, end, fps=FRAMERATE)
+    if any(p for p in wide_road_camera_paths[seg_start:seg_end] if p):
+      wide_frame_queue = FrameQueue(wide_road_camera_paths, start, end, fps=FRAMERATE)
 
     vipc = VisionIpcServer("camerad")
     vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 4, frame_queue.frame_w, frame_queue.frame_h)

@@ -43,12 +43,12 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .staggered_sof = false,
 };
 
-const CameraConfig ROAD_CAMERA_CONFIG = {
+const CameraConfig NARROW_ROAD_CAMERA_CONFIG = {
   .camera_num = 1,
   .stream_type = VISION_STREAM_ROAD,
   .focal_len = 8.0,
-  .publish_name = "roadCameraState",
-  .init_camera_state = &cereal::Event::Builder::initRoadCameraState,
+  .publish_name = "narrowRoadCameraState",
+  .init_camera_state = &cereal::Event::Builder::initNarrowRoadCameraState,
   .enabled = !getenv("DISABLE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_1,
   .vignetting_correction = true,
@@ -69,4 +69,4 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .staggered_sof = true,
 };
 
-const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};
+const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, NARROW_ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};

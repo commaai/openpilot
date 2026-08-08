@@ -41,9 +41,9 @@ CameraType decoder_camera_type(CameraViewKind view) {
   switch (view) {
     case CameraViewKind::Driver: return DriverCam;
     case CameraViewKind::WideRoad: return WideRoadCam;
-    case CameraViewKind::QRoad: return RoadCam;
+    case CameraViewKind::QRoad: return NarrowRoadCam;
     case CameraViewKind::Road:
-    default: return RoadCam;
+    default: return NarrowRoadCam;
   }
 }
 
@@ -59,16 +59,16 @@ bool stream_batch_has_data(const StreamExtractBatch &batch) {
 
 bool should_subscribe_stream_service(const std::string &name) {
   static const std::array<std::string_view, 13> kSkippedServices = {{
-    "roadEncodeIdx",
+    "narrowRoadEncodeIdx",
     "driverEncodeIdx",
     "wideRoadEncodeIdx",
-    "qRoadEncodeIdx",
-    "roadEncodeData",
+    "qNarrowRoadEncodeIdx",
+    "narrowRoadEncodeData",
     "driverEncodeData",
     "wideRoadEncodeData",
-    "qRoadEncodeData",
+    "qNarrowRoadEncodeData",
     "livestreamWideRoadEncodeIdx",
-    "livestreamRoadEncodeIdx",
+    "livestreamNarrowRoadEncodeIdx",
     "livestreamDriverEncodeIdx",
     "thumbnail",
   }};

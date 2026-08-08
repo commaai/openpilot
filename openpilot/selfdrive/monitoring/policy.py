@@ -107,17 +107,17 @@ class DriverBlink:
     self.right = 0.
 
 # model output refers to center of undistorted+leveled image
-ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].dcam
-dcam_undistorted_FL = 598.0
-dcam_undistorted_W, dcam_undistorted_H = (ref_undistorted_cam.width, ref_undistorted_cam.height)
+ref_undistorted_cam = DEVICE_CAMERAS[("tici", "ar0231")].driver
+driver_undistorted_FL = 598.0
+driver_undistorted_W, driver_undistorted_H = (ref_undistorted_cam.width, ref_undistorted_cam.height)
 
 def face_orientation_from_model(orient_model, pos_model, rpy_calib):
   pitch_model = orient_model[0]
   yaw_model = orient_model[1]
 
-  face_pixel_position = ((pos_model[0]+0.5)*dcam_undistorted_W, (pos_model[1]+0.5)*dcam_undistorted_H)
-  yaw_focal_angle = atan2(face_pixel_position[0] - dcam_undistorted_W//2, dcam_undistorted_FL)
-  pitch_focal_angle = atan2(face_pixel_position[1] - dcam_undistorted_H//2, dcam_undistorted_FL)
+  face_pixel_position = ((pos_model[0]+0.5)*driver_undistorted_W, (pos_model[1]+0.5)*driver_undistorted_H)
+  yaw_focal_angle = atan2(face_pixel_position[0] - driver_undistorted_W//2, driver_undistorted_FL)
+  pitch_focal_angle = atan2(face_pixel_position[1] - driver_undistorted_H//2, driver_undistorted_FL)
 
   pitch = pitch_model + pitch_focal_angle
   yaw = -yaw_model + yaw_focal_angle

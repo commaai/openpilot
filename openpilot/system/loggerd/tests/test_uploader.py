@@ -60,7 +60,7 @@ class TestUploader(UploaderTestCase):
 
   def gen_files(self, lock=False, xattr: bytes | None = None, boot=True) -> list[Path]:
     f_paths = []
-    for t in ["qlog", "rlog", "dcamera.hevc", "fcamera.hevc"]:
+    for t in ["qlog", "rlog", "driver.hevc", "narrow_road.hevc"]:
       f_paths.append(self.make_file_with_data(self.seg_dir, t, 1, lock=lock, upload_xattr=xattr))
 
     if boot:

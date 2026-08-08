@@ -111,12 +111,12 @@ class TestLoggerd(OpenpilotTestCase):
     w, h = 320, 240
     frame_spec = (w, h, w * h * 3 // 2, w, w * h)
     streams = [
-      (VisionStreamType.VISION_STREAM_ROAD, frame_spec, "roadCameraState"),
+      (VisionStreamType.VISION_STREAM_ROAD, frame_spec, "narrowRoadCameraState"),
       (VisionStreamType.VISION_STREAM_DRIVER, frame_spec, "driverCameraState"),
       (VisionStreamType.VISION_STREAM_WIDE_ROAD, frame_spec, "wideRoadCameraState"),
     ]
 
-    sm = messaging.SubMaster(["roadEncodeData"])
+    sm = messaging.SubMaster(["narrowRoadEncodeData"])
     pm = messaging.PubMaster([s for _, _, s in streams] + ["rawAudioData"])
     vipc_server = VisionIpcServer("camerad")
     for stream_type, frame_spec, _ in streams:
@@ -127,7 +127,7 @@ class TestLoggerd(OpenpilotTestCase):
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(segment_length)
     managed_processes["loggerd"].start()
     managed_processes["encoderd"].start()
-    assert pm.wait_for_readers_to_update("roadCameraState", timeout=5)
+    assert pm.wait_for_readers_to_update("narrowRoadCameraState", timeout=5)
 
     fps = 20
     for n in range(1, int(num_segs * segment_length * fps) + 1):
@@ -197,7 +197,7 @@ class TestLoggerd(OpenpilotTestCase):
   def test_rotation(self):
     Params().put("RecordFront", True, block=True)
 
-    expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
+    expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "narrow_road.hevc", "driver.hevc", "wide_road.hevc"}
 
     num_segs = random.randint(2, 3)
     length = random.randint(4, 5) # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
@@ -321,8 +321,8 @@ class TestLoggerd(OpenpilotTestCase):
 
     self._publish_camera_and_audio_messages()
 
-    dcamera_hevc_exists = os.path.exists(os.path.join(self._get_latest_log_dir(), 'dcamera.hevc'))
-    assert dcamera_hevc_exists == record_front
+    driver_hevc_exists = os.path.exists(os.path.join(self._get_latest_log_dir(), 'driver.hevc'))
+    assert driver_hevc_exists == record_front
 
   @parameterized.expand([True, False])
   def test_record_audio(self, record_audio):

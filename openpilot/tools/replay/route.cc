@@ -179,11 +179,11 @@ void Route::addFileToSegment(int n, const std::string &file) {
     segments_[n].rlog = file;
   } else if (name == "qlog.bz2" || name == "qlog.zst" || name == "qlog") {
     segments_[n].qlog = file;
-  } else if (name == "fcamera.hevc") {
-    segments_[n].road_cam = file;
-  } else if (name == "dcamera.hevc") {
+  } else if (name == "narrow_road.hevc" || name == "fcamera.hevc") {
+    segments_[n].narrow_road_cam = file;
+  } else if (name == "driver.hevc" || name == "dcamera.hevc") {
     segments_[n].driver_cam = file;
-  } else if (name == "ecamera.hevc") {
+  } else if (name == "wide_road.hevc" || name == "ecamera.hevc") {
     segments_[n].wide_road_cam = file;
   } else if (name == "qcamera.ts") {
     segments_[n].qcamera = file;
@@ -195,11 +195,11 @@ void Route::addFileToSegment(int n, const std::string &file) {
 Segment::Segment(int n, const SegmentFile &files, uint32_t flags, const std::vector<bool> &filters,
                  std::function<void(int, bool)> callback)
     : seg_num(n), flags(flags), filters_(filters), on_load_finished_(callback) {
-  // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
+  // [NarrowRoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const std::array file_list = {
-      (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.empty() ? files.qcamera : files.road_cam,
-      flags & REPLAY_FLAG_DCAM ? files.driver_cam : "",
-      flags & REPLAY_FLAG_ECAM ? files.wide_road_cam : "",
+      (flags & REPLAY_FLAG_QCAMERA) || files.narrow_road_cam.empty() ? files.qcamera : files.narrow_road_cam,
+      flags & REPLAY_FLAG_DRIVER_CAMERA ? files.driver_cam : "",
+      flags & REPLAY_FLAG_WIDE_ROAD ? files.wide_road_cam : "",
       files.rlog.empty() ? files.qlog : files.rlog,
   };
   for (int i = 0; i < file_list.size(); ++i) {

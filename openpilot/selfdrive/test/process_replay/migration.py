@@ -361,7 +361,7 @@ def migrate_peripheralState(msgs):
   return [], add_ops, []
 
 
-@migration(inputs=["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "roadCameraState", "wideRoadCameraState", "driverCameraState"])
+@migration(inputs=["narrowRoadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "narrowRoadCameraState", "wideRoadCameraState", "driverCameraState"])
 def migrate_cameraStates(msgs):
   add_ops, del_ops = [], []
   frame_to_encode_id = defaultdict(dict)
@@ -369,7 +369,7 @@ def migrate_cameraStates(msgs):
   min_frame_id = defaultdict(lambda: float('inf'))
 
   for _, msg in msgs:
-    if msg.which() not in ["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
+    if msg.which() not in ["narrowRoadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
       continue
 
     encode_index = getattr(msg, msg.which())
@@ -379,7 +379,7 @@ def migrate_cameraStates(msgs):
     frame_to_encode_id[meta.camera_state][encode_index.frameId] = encode_index.segmentId
 
   for index, msg in msgs:
-    if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
+    if msg.which() not in ["narrowRoadCameraState", "wideRoadCameraState", "driverCameraState"]:
       continue
 
     camera_state = getattr(msg, msg.which())
@@ -392,7 +392,7 @@ def migrate_cameraStates(msgs):
         del_ops.append(index)
         continue
 
-      # fallback mechanism for logs without encodeIdx (e.g. logs from before 2022 with dcamera recording disabled)
+      # fallback mechanism for logs without encodeIdx (e.g. logs from before 2022 with driver recording disabled)
       # try to fake encode_id by subtracting lowest frameId
       encode_id = camera_state.frameId - min_frame_id[msg.which()]
       print(f"Faking encodeId to {encode_id} for camera feed {msg.which()} with frameId: {camera_state.frameId}")

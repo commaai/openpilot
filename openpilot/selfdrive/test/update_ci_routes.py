@@ -20,7 +20,7 @@ DEST = OpenpilotCIContainer
 
 def upload_route(path: str, exclude_patterns: Iterable[str] | None = None) -> None:
   if exclude_patterns is None:
-    exclude_patterns = [r'dcamera\.hevc']
+    exclude_patterns = [r'driver\.hevc']
 
   r, n = path.rsplit("--", 1)
   r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
@@ -51,7 +51,7 @@ def sync_to_ci_public(route: str) -> bool:
       f"{DEST.BASE_URL}{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
-      "--exclude-pattern=*/dcamera.hevc",
+      "--exclude-pattern=*/driver.hevc",
     ]
 
     try:

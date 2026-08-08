@@ -82,7 +82,7 @@ def ui_thread(addr):
       'liveTracks',
       'modelV2',
       'liveParameters',
-      'roadCameraState',
+      'narrowRoadCameraState',
     ],
     addr=addr,
   )
@@ -152,13 +152,13 @@ def ui_thread(addr):
 
     sm.update(0)
 
-    camera = DEVICE_CAMERAS[("tici", str(sm['roadCameraState'].sensor))]
-    calib_scale = camera.fcam.width / 640.0
+    camera = DEVICE_CAMERAS[("tici", str(sm['narrowRoadCameraState'].sensor))]
+    calib_scale = camera.narrow_road.width / 640.0
 
     if camera_view.frame:
       num_px = camera_view.frame.width * camera_view.frame.height
 
-    intrinsic_matrix = camera.fcam.intrinsics
+    intrinsic_matrix = camera.narrow_road.intrinsics
 
     w = sm['controlsState'].lateralControlState.which()
     if w == 'lqrStateDEPRECATED':
