@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestPandad(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   def setUp(self):
     super().setUp()

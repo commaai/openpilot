@@ -105,7 +105,7 @@ def cputime_total(ct):
 
 
 class TestOnroad(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   @classmethod
   def setup_class(cls):
