@@ -10,7 +10,7 @@ import numpy as np
 import SCons.Errors
 from SCons.Defaults import _stripixes
 
-COMMA = os.path.isfile('/TICI')
+COMMA = os.path.isfile('/AGNOS')
 
 SCons.Warnings.warningAsException(True)
 
