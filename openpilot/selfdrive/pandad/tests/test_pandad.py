@@ -11,13 +11,13 @@ from openpilot.common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware import HARDWARE
-from openpilot.common.hardware.tici.pins import GPIO
+from openpilot.common.hardware.comma.pins import GPIO
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestPandad(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   def setUp(self):
     super().setUp()

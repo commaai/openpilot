@@ -13,7 +13,7 @@ import pyray as rl
 
 from openpilot.cereal import log
 from openpilot.common.filter_simple import BounceFilter
-from openpilot.common.hardware import HARDWARE, TICI
+from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid
@@ -570,7 +570,7 @@ class Setup(Widget):
 def main():
   config_realtime_process(0, 51)
   # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
-  if TICI:
+  if COMMA_HARDWARE:
     try:
       set_core_affinity([5])
     except OSError:

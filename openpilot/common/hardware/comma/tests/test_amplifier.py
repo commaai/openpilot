@@ -7,11 +7,11 @@ import unittest
 from panda import Panda
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.hardware import HARDWARE
-from openpilot.common.hardware.tici.amplifier import Amplifier
+from openpilot.common.hardware.comma.amplifier import Amplifier
 
 
 class TestAmplifier(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   def setup_method(self):
     # clear dmesg

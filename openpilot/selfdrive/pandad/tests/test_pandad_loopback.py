@@ -73,7 +73,7 @@ def send_random_can_messages(sendcan, count):
 
 
 class TestBoarddLoopback(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
   @classmethod
   def setup_class(cls):
     os.environ['STARTED'] = '1'
