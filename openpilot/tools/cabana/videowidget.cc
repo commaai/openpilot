@@ -148,7 +148,7 @@ QWidget *VideoWidget::createCameraWidget() {
   camera_tab->setAutoHide(true);
   camera_tab->setExpanding(false);
 
-  l->addWidget(cam_widget = new StreamCameraView("camerad", VISION_STREAM_ROAD));
+  l->addWidget(cam_widget = new StreamCameraView("camerad", VISION_STREAM_NARROW_ROAD));
   cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
 

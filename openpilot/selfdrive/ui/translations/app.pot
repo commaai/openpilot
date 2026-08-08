@@ -381,7 +381,7 @@ msgid "ERROR"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
@@ -449,7 +449,7 @@ msgid "Serial"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
+msgid "Cabin Camera"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
@@ -704,7 +704,7 @@ msgid "Enable driver monitoring even when openpilot is not engaged."
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
@@ -748,7 +748,7 @@ msgid "Always-On Driver Monitoring"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
+msgid "Record and Upload Cabin Camera"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
@@ -779,10 +779,6 @@ msgstr ""
 msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 msgstr ""
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
-msgid "camera starting"
-msgstr ""
-
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "MAX"
 msgstr ""
@@ -793,6 +789,10 @@ msgstr ""
 
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "mph"
+msgstr ""
+
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
+msgid "camera starting"
 msgstr ""
 
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py

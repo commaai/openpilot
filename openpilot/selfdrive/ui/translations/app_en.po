@@ -126,6 +126,10 @@ msgstr "CONNECT"
 msgid "CONNECTING..."
 msgstr "CONNECTING..."
 
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
 #: openpilot/system/ui/widgets/confirm_dialog.py
 #: openpilot/system/ui/widgets/keyboard.py
 #: openpilot/system/ui/widgets/network.py
@@ -204,10 +208,6 @@ msgstr "Dongle ID"
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Download"
 msgstr "Download"
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "Driver Camera"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
@@ -466,8 +466,8 @@ msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "Prevent large data uploads when on a metered cellular connection"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -498,8 +498,8 @@ msgid "Reboot and Update"
 msgstr "Reboot and Update"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "Record and Upload Driver Camera"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -638,8 +638,8 @@ msgid "Upgrade Now"
 msgstr "Upgrade Now"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -685,7 +685,7 @@ msgstr "You must accept the Terms and Conditions in order to use openpilot."
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "camera starting"
 

@@ -104,9 +104,9 @@ Replaying processes that use VisionIPC (e.g. modeld, dmonitoringmodeld) require 
 from openpilot.tools.lib.framereader import FrameReader
 
 frs = {
-  'roadCameraState': FrameReader(...),
+  'narrowRoadCameraState': FrameReader(...),
   'wideRoadCameraState': FrameReader(...),
-  'driverCameraState': FrameReader(...),
+  'cabinCameraState': FrameReader(...),
 }
 
 output_logs = replay_process_with_name(['modeld', 'dmonitoringmodeld'], lr, frs=frs)

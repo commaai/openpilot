@@ -126,6 +126,10 @@ msgstr "连接"
 msgid "CONNECTING..."
 msgstr "连接中..."
 
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
 #: openpilot/system/ui/widgets/confirm_dialog.py
 #: openpilot/system/ui/widgets/keyboard.py
 #: openpilot/system/ui/widgets/network.py
@@ -204,10 +208,6 @@ msgstr "设备 ID"
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Download"
 msgstr "下载"
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "车内摄像头"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
@@ -466,8 +466,8 @@ msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "在计量制蜂窝网络时避免大量上传"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "预览车内摄像头以确保驾驶员监控视野良好。（车辆必须熄火）"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -498,8 +498,8 @@ msgid "Reboot and Update"
 msgstr "重启并更新"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "录制并上传车内摄像头"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -638,8 +638,8 @@ msgid "Upgrade Now"
 msgstr "立即升级"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "上传车内摄像头数据，帮助改进驾驶员监控算法。"
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -685,7 +685,7 @@ msgstr "您必须接受条款与条件才能使用 openpilot。"
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "您必须接受条款与条件才能使用 openpilot。继续前请阅读 https://comma.ai/terms 上的最新条款。"
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "相机启动中"
 

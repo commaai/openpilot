@@ -110,8 +110,8 @@ def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_t
 def main():
   config_realtime_process(7, 5)
 
-  cloudlog.warning("connecting to driver stream")
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
+  cloudlog.warning("connecting to cabin stream")
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_CABIN, True)
   while not vipc_client.connect(False):
     time.sleep(0.1)
   assert vipc_client.is_connected()

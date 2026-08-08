@@ -320,7 +320,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
       wide_frame_queue = FrameQueue(ecamera_paths, start, end, fps=FRAMERATE)
 
     vipc = VisionIpcServer("camerad")
-    vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 4, frame_queue.frame_w, frame_queue.frame_h)
+    vipc.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 4, frame_queue.frame_w, frame_queue.frame_h)
     if wide_frame_queue:
       vipc.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 4, wide_frame_queue.frame_w, wide_frame_queue.frame_h)
     vipc.start_listener()
@@ -339,7 +339,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
         if frame_idx >= len(message_chunks):
           break
         _, frame_bytes = frame_queue.get()
-        vipc.send(VisionStreamType.VISION_STREAM_ROAD, frame_bytes, frame_idx, int(frame_idx * 5e7), int(frame_idx * 5e7))
+        vipc.send(VisionStreamType.VISION_STREAM_NARROW_ROAD, frame_bytes, frame_idx, int(frame_idx * 5e7), int(frame_idx * 5e7))
         if wide_frame_queue:
           _, wide_bytes = wide_frame_queue.get()
           vipc.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, wide_bytes, frame_idx, int(frame_idx * 5e7), int(frame_idx * 5e7))

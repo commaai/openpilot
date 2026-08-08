@@ -9,8 +9,8 @@ from openpilot.common.realtime import DT_MDL
 
 
 VISION_STREAMS = {
-  "roadCameraState": VisionStreamType.VISION_STREAM_ROAD,
-  "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
+  "narrowRoadCameraState": VisionStreamType.VISION_STREAM_NARROW_ROAD,
+  "cabinCameraState": VisionStreamType.VISION_STREAM_CABIN,
   "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD,
 }
 
@@ -45,7 +45,7 @@ def extract_image(buf):
   return yuv_to_rgb(y, u, v)
 
 
-def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
+def get_snapshots(frame="narrowRoadCameraState", front_frame="cabinCameraState"):
   sockets = [s for s in (frame, front_frame) if s is not None]
   sm = messaging.SubMaster(sockets)
   vipc_clients = {s: VisionIpcClient("camerad", VISION_STREAMS[s], True) for s in sockets}
