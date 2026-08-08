@@ -44,7 +44,7 @@ def load_oob(f):
     def read_buffer():
       return pickle.PickleBuffer(f.read(struct.unpack('<q', h)[0])) if (h := f.read(8)) else None
     with ThreadPoolExecutor(max_workers=1) as pool:
-      pending = deque(pool.submit(read_buffer) for _ in range(2))
+      pending = deque(pool.submit(read_buffer) for _ in range(8))
       while (pb := pending.popleft().result()) is not None:
         pending.append(pool.submit(read_buffer))
         yield pb
