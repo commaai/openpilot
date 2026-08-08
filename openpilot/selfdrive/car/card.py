@@ -108,15 +108,7 @@ class Car:
       self.CI, self.CP = CI, CI.CP
       self.RI = RI
 
-    self.CP.alternativeExperience = 0
-    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
-    controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
-    self.CP.passive = not controller_available or self.CP.dashcamOnly
-    if self.CP.passive:
-      safety_config = structs.CarParams.SafetyConfig()
-      safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
-      self.CP.safetyConfigs = [safety_config]
-
+    secoc_key: bytes | None = None
     if self.CP.secOcRequired:
       # Copy user key if available
       try:
@@ -127,16 +119,31 @@ class Car:
       except Exception:
         pass
 
-      secoc_key = self.params.get("SecOCKey")
-      if secoc_key is not None:
-        saved_secoc_key = bytes.fromhex(secoc_key.strip())
-        if len(saved_secoc_key) == 16:
+      saved_secoc_key = self.params.get("SecOCKey")
+      if saved_secoc_key is not None:
+        secoc_key = bytes.fromhex(saved_secoc_key.strip())
+        if len(secoc_key) == 16:
           self.CP.secOcKeyAvailable = True
-          self.CI.CS.secoc_key = saved_secoc_key
-          if controller_available:
-            self.CI.CC.secoc_key = saved_secoc_key
+          self.CI.CS.secoc_key = secoc_key
         else:
           cloudlog.warning("Saved SecOC key is invalid")
+          secoc_key = None
+
+    self.CP.alternativeExperience = 0
+    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
+    controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
+    if self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
+      # without the key, our control messages get rejected and the car faults,
+      # fall back to dashcam mode and let the user know they need to recover the key
+      controller_available = False
+    if controller_available and secoc_key is not None and not self.CP.dashcamOnly:
+      self.CI.CC.secoc_key = secoc_key
+
+    self.CP.passive = not controller_available or self.CP.dashcamOnly
+    if self.CP.passive:
+      safety_config = structs.CarParams.SafetyConfig()
+      safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
+      self.CP.safetyConfigs = [safety_config]
 
     # Write previous route's CarParams
     prev_cp = self.params.get("CarParamsPersistent")
