@@ -26,6 +26,7 @@
 #include "json11/json11.hpp"
 #include "tools/replay/logreader.h"
 #include "tools/replay/py_downloader.h"
+#include "tools/replay/py_process.h"
 
 namespace fs = std::filesystem;
 
@@ -1551,12 +1552,17 @@ SeriesAccumulator extract_segment_series(const std::vector<Event> &events,
   return merged;
 }
 
+std::string migrate_log(const std::string &log_path) {
+  return PyProcess::runModule("openpilot.selfdrive.test.process_replay.migration", {log_path, "-"}, nullptr, false);
+}
+
 LoadedRouteArtifacts load_route_series_parallel(
     const std::map<int, SegmentLogs> &segments,
     const SchemaIndex &schema,
     const dbc::Database *can_dbc,
     LogSelector selector,
     bool skip_raw_can,
+    bool migrate,
     LoadStats *stats) {
   struct SegmentResult {
     SeriesAccumulator series;
@@ -1600,8 +1606,16 @@ LoadedRouteArtifacts load_route_series_parallel(
         continue;
       }
 
+      std::string migrated_data;
+      if (migrate) {
+        migrated_data = migrate_log(log_path);
+      }
+
       LogReader reader;
-      if (!reader.load(log_path, nullptr, true)) {
+      const bool loaded = !migrated_data.empty()
+        ? reader.load(migrated_data.data(), migrated_data.size())
+        : reader.load(log_path, nullptr, true);
+      if (!loaded) {
         segment_stats.failed = true;
         std::lock_guard<std::mutex> lock(error_mutex);
         if (first_error.empty()) {
@@ -1849,6 +1863,7 @@ SketchLayout load_sketch_layout(const fs::path &layout_path) {
 RouteData load_route_data(const std::string &route_name,
                           const std::string &data_dir,
                           const std::string &dbc_name,
+                          bool migrate,
                           const RouteLoadProgressCallback &progress) {
   if (route_name.empty()) return RouteData{};
 
@@ -1876,7 +1891,7 @@ RouteData load_route_data(const std::string &route_name,
 
   const SchemaIndex &schema = SchemaIndex::instance();
   LoadedRouteArtifacts artifacts = load_route_series_parallel(segments, schema, can_dbc ? &*can_dbc : nullptr,
-                                                             route.selector, can_dbc.has_value(), &stats);
+                                                             route.selector, can_dbc.has_value(), migrate, &stats);
   RouteData route_data = build_route_data(std::move(artifacts.series),
                                           std::move(artifacts.can_messages),
                                           std::move(artifacts.logs),

@@ -22,6 +22,7 @@ void print_usage(const char *argv0) {
       << "  --output <png>\n"
       << "  --show\n"
       << "  --sync-load\n"
+      << "  --no-migration\n"
       << "\n"
       << "Examples:\n"
       << "  " << argv0 << "\n"
@@ -94,6 +95,8 @@ int main(int argc, char *argv[]) {
       options.show = true;
     } else if (arg == "--sync-load") {
       options.sync_load = true;
+    } else if (arg == "--no-migration") {
+      options.migrate = false;
     } else if (arg == "--help" || arg == "-h") {
       print_usage(argv[0]);
       return 0;
