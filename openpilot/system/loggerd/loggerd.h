@@ -25,6 +25,22 @@ const auto MAIN_ENCODE_TYPE = Hardware::PC() ? cereal::EncodeIndex::Type::BIG_BO
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
+inline int livestream_width() {
+  switch (Hardware::get_device_type()) {
+    case cereal::InitData::DeviceType::TIZI: return 1152;
+    case cereal::InitData::DeviceType::MICI: return 1280;
+    default: return -1;
+  }
+}
+
+inline int livestream_height() {
+  switch (Hardware::get_device_type()) {
+    case cereal::InitData::DeviceType::TIZI:
+    case cereal::InitData::DeviceType::MICI: return 720;
+    default: return -1;
+  }
+}
+
 constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
 constexpr char PRESERVE_ATTR_VALUE = '1';
 
@@ -106,6 +122,8 @@ const EncoderInfo stream_road_encoder_info = {
   //.thumbnail_name = "thumbnail",
   .record = false,
   .is_live = true,
+  .frame_width = livestream_width(),
+  .frame_height = livestream_height(),
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
 };
@@ -114,6 +132,8 @@ const EncoderInfo stream_wide_road_encoder_info = {
   .publish_name = "livestreamWideRoadEncodeData",
   .record = false,
   .is_live = true,
+  .frame_width = livestream_width(),
+  .frame_height = livestream_height(),
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
@@ -122,6 +142,8 @@ const EncoderInfo stream_driver_encoder_info = {
   .publish_name = "livestreamDriverEncodeData",
   .record = false,
   .is_live = true,
+  .frame_width = livestream_width(),
+  .frame_height = livestream_height(),
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };
