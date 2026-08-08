@@ -4,7 +4,8 @@ import os
 import platform
 from collections import namedtuple
 
-from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcServer
 from openpilot.cereal import messaging
 
 from openpilot.system.camerad.webcam.camera import Camera

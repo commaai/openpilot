@@ -5,7 +5,8 @@ import cProfile
 import pyray as rl
 import numpy as np
 
-from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcServer
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.system.ui.lib.application import gui_app

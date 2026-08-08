@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import pyray as rl
 
-from msgq.visionipc import VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 

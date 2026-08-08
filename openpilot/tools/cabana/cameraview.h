@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QWidget>
 
+#include "common/visionstream.h"
 #include "msgq/visionipc/visionipc_client.h"
 
 class CameraWidget : public QWidget {

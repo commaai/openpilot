@@ -2,7 +2,8 @@ import platform
 import numpy as np
 import pyray as rl
 
-from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.system.ui.lib.application import gui_app
