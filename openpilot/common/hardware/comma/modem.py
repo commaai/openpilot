@@ -3,16 +3,18 @@ import fcntl
 import json
 import logging
 import os
+import select
 import signal
+import struct
 import subprocess
 import tempfile
+import termios
 import time
 
+from contextlib import contextmanager
 from ipaddress import IPv4Address, AddressValueError
 
 from enum import Enum
-
-from openpilot.common.serial import Serial
 
 logging.basicConfig(
   level=logging.INFO,
@@ -64,6 +66,39 @@ INITIAL_STATE: dict[str, object] = {
 }
 
 
+@contextmanager
+def _serial_port(port: str, baudrate: int):
+  fd = os.open(port, os.O_RDWR | os.O_NOCTTY)
+  try:
+    attrs = termios.tcgetattr(fd)
+    attrs[0] = 0
+    attrs[1] = 0
+    attrs[2] = termios.CLOCAL | termios.CREAD | termios.CS8
+    attrs[3] = 0
+    attrs[4] = attrs[5] = getattr(termios, f"B{baudrate}")
+    attrs[6][termios.VMIN] = 0
+    attrs[6][termios.VTIME] = 0
+    termios.tcsetattr(fd, termios.TCSANOW, attrs)
+    yield fd
+  finally:
+    os.close(fd)
+
+
+def _read_line(fd: int, timeout: float) -> bytes:
+  data = bytearray()
+  deadline = time.monotonic() + timeout
+  while True:
+    readable, _, _ = select.select([fd], [], [], max(0.0, deadline - time.monotonic()))
+    if not readable:
+      return bytes(data)
+    byte = os.read(fd, 1)
+    if not byte:
+      return bytes(data)
+    data.extend(byte)
+    if byte == b"\n":
+      return bytes(data)
+
+
 class State(Enum):
   INITIALIZING = "INITIALIZING"
   SEARCHING = "SEARCHING"
@@ -97,10 +132,11 @@ class PPPSession:
   def reset_data_port():
     """Drop DTR on PPP_PORT so the modem terminates any stuck PPP session."""
     try:
-      with Serial(PPP_PORT, baudrate=460800, timeout=1) as s:
-        s.dtr = False
+      with _serial_port(PPP_PORT, 460800) as fd:
+        dtr = struct.pack("I", termios.TIOCM_DTR)
+        fcntl.ioctl(fd, termios.TIOCMBIC, dtr)
         time.sleep(0.2)
-        s.dtr = True
+        fcntl.ioctl(fd, termios.TIOCMBIS, dtr)
     except Exception as e:
       logging.warning(f"data port reset failed: {e}")
 
@@ -221,12 +257,14 @@ class Modem:
       os.close(fd)
       return []
     try:
-      with Serial(AT_PORT, baudrate=9600, timeout=5) as ser:
-        ser.reset_input_buffer()
-        ser.write((cmd + "\r").encode())
+      with _serial_port(AT_PORT, 9600) as serial_fd:
+        termios.tcflush(serial_fd, termios.TCIFLUSH)
+        command = (cmd + "\r").encode()
+        while command:
+          command = command[os.write(serial_fd, command):]
         lines = []
         while True:
-          raw = ser.readline()
+          raw = _read_line(serial_fd, 5)
           if not raw:
             raise TimeoutError("AT timeout")
           line = raw.decode(errors="ignore").strip()

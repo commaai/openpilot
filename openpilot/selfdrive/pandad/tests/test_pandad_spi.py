@@ -16,7 +16,7 @@ from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, 
 JUNGLE_SPAM = "JUNGLE_SPAM" in os.environ
 
 class TestBoarddSpi(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
   @classmethod
   def setup_class(cls):
     os.environ['STARTED'] = '1'

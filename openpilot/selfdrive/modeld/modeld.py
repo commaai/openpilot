@@ -77,31 +77,38 @@ class ChestnutState:
   @cached_property
   def power_limit(self) -> int:
     smu = Device["AMD"].iface.dev_impl.smu
-    return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
+    return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True, timeout=100)
 
   def send(self) -> None:
     msg = messaging.new_message('chestnutState')
     state = msg.chestnutState
-    try:
-      smu = Device["AMD"].iface.dev_impl.smu
-      metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
-      state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
-      state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
-      state.powerDrawW = metrics.AverageSocketPower
-      state.powerLimitW = self.power_limit
-      state.gpuUsagePercent = metrics.AverageGfxActivity
-      state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
-      state.fanSpeedRpm = metrics.AvgFanRpm
-      asm = Device["AMD"].iface.pci_dev.usb
-      state.pcieLtssm = asm.read(0xB450, 1)[0]
-      state.supplyVoltage, state.supplyCurrent = struct.unpack('<Hh', bytes(asm.usb.control_read(0xC0, 5))[:4])
-      self.valid = True
-    except Exception:
-      if self.valid:
-        cloudlog.exception("chestnut state read failed")
-      self.valid = False
+    valid = False
+    if "AMD" in Device._opened_devices:
+      try:
+        smu = Device["AMD"].iface.dev_impl.smu
+        smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
+        metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+        state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
+        state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
+        state.powerDrawW = metrics.AverageSocketPower
+        state.powerLimitW = self.power_limit
+        state.gpuUsagePercent = metrics.AverageGfxActivity
+        state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
+        state.fanSpeedRpm = metrics.AvgFanRpm
+        valid = True
+      except Exception:
+        if self.valid:
+          cloudlog.exception("chestnut state read failed")
+      try:
+        # ASM runs on USB-C power, these still read without a gpu
+        asm = Device["AMD"].iface.pci_dev.usb
+        state.pcieLtssm = asm.read(0xB450, 1)[0]
+        state.supplyVoltage, state.supplyCurrent = struct.unpack('<Hh', bytes(asm.usb.control_read(0xC0, 5))[:4])
+      except Exception:
+        pass
 
-    msg.valid = self.valid
+    self.valid = valid
+    msg.valid = valid
     self.pm.send('chestnutState', msg)
 
 
@@ -195,6 +202,8 @@ def main(demo=False):
   cloudlog.warning("modeld init")
 
   USBGPU = usbgpu_present() and usbgpu_compiled()
+  if USBGPU:
+    os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
   params.put_bool("UsbGpuLoading", USBGPU)
   params.remove("UsbGpuActive")
