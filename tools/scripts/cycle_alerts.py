@@ -50,7 +50,7 @@ def cycle_alerts(duration=200, is_metric=False):
     (EventName.cameraFrameRate, ET.PERMANENT),
   ]
 
-  cameras = ['narrowRoadCameraState', 'wideRoadCameraState', 'driverCameraState']
+  cameras = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']
 
   CS = car.CarState.new_message()
   CP = CarInterface.get_non_essential_params("HONDA_CIVIC")

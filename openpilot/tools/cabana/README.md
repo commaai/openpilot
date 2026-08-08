@@ -55,7 +55,7 @@ Replace "5beb9b58bd12b691/0000010a--a51155e496" with your desired route identifi
 To run Cabana with multiple cameras, use the following command:
 
 ```shell
-cabana "5beb9b58bd12b691/0000010a--a51155e496" --driver --wide-road
+cabana "5beb9b58bd12b691/0000010a--a51155e496" --cabin --wide-road
 ```
 
 ### Streaming CAN Messages from a comma Device

@@ -26,7 +26,7 @@ Options:
                      internal, openpilotci, comma_api, car_segments, testing_closet
   -d, --data_dir     Local directory with routes
   -p, --prefix       Set OPENPILOT_PREFIX
-      --driver       Load driver camera (alias: --dcam)
+      --cabin        Load cabin camera (alias: --dcam)
       --wide-road    Load wide road camera (alias: --ecam)
       --no-loop      Stop at the end of the route
       --no-cache     Turn off local cache
@@ -62,7 +62,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"auto", no_argument, nullptr, 0},
       {"data_dir", required_argument, nullptr, 'd'},
       {"prefix", required_argument, nullptr, 'p'},
-      {"driver", no_argument, nullptr, 0},
+      {"cabin", no_argument, nullptr, 0},
       {"dcam", no_argument, nullptr, 0},  // deprecated alias
       {"wide-road", no_argument, nullptr, 0},
       {"ecam", no_argument, nullptr, 0},  // deprecated alias
@@ -78,8 +78,8 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
   };
 
   const std::map<std::string, REPLAY_FLAGS> flag_map = {
-      {"driver", REPLAY_FLAG_DRIVER_CAMERA},
-      {"dcam", REPLAY_FLAG_DRIVER_CAMERA},  // deprecated alias
+      {"cabin", REPLAY_FLAG_CABIN_CAMERA},
+      {"dcam", REPLAY_FLAG_CABIN_CAMERA},  // deprecated alias
       {"wide-road", REPLAY_FLAG_WIDE_ROAD},
       {"ecam", REPLAY_FLAG_WIDE_ROAD},  // deprecated alias
       {"no-loop", REPLAY_FLAG_NO_LOOP},

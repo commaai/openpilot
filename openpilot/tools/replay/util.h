@@ -11,7 +11,7 @@
 
 enum CameraType {
   NarrowRoadCam = 0,
-  DriverCam,
+  CabinCam,
   WideRoadCam
 };
 

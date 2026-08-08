@@ -46,7 +46,7 @@ struct SegmentLogs {
   std::string rlog;
   std::string qlog;
   std::string narrow_road;
-  std::string driver;
+  std::string cabin;
   std::string wide_road;
   std::string qcamera;
 };
@@ -296,8 +296,8 @@ void add_log_file_to_segments(std::map<int, SegmentLogs> *segments, int segment_
     segment.qlog = file;
   } else if (name == "narrow_road.hevc" || name == "fcamera.hevc") {
     segment.narrow_road = file;
-  } else if (name == "driver.hevc" || name == "dcamera.hevc") {
-    segment.driver = file;
+  } else if (name == "cabin.hevc" || name == "dcamera.hevc") {
+    segment.cabin = file;
   } else if (name == "wide_road.hevc" || name == "ecamera.hevc") {
     segment.wide_road = file;
   } else if (name == "qcamera.ts") {
@@ -1887,7 +1887,7 @@ RouteData load_route_data(const std::string &route_name,
                                           resolved_dbc);
   route_data.route_id = make_route_identifier(route, segments);
   build_camera_index(segments, route_data, &SegmentLogs::narrow_road, "narrowRoadEncodeIdx", &route_data.road_camera);
-  build_camera_index(segments, route_data, &SegmentLogs::driver, "driverEncodeIdx", &route_data.driver_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::cabin, "cabinEncodeIdx", &route_data.cabin_camera);
   build_camera_index(segments, route_data, &SegmentLogs::wide_road, "wideRoadEncodeIdx", &route_data.wide_road_camera);
   build_camera_index(segments, route_data, &SegmentLogs::qcamera, "qNarrowRoadEncodeIdx", &route_data.qroad_camera);
   stats.load_end = LoadStats::Clock::now();

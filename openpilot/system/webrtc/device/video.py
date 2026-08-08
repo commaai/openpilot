@@ -32,7 +32,7 @@ class EncodedVideoFrame:
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   camera_to_sock_mapping = {
-    "driver": "livestreamDriverEncodeData",
+    "driver": "livestreamCabinEncodeData",
     "wideRoad": "livestreamWideRoadEncodeData",
     "road": "livestreamNarrowRoadEncodeData",
   }

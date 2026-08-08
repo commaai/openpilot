@@ -361,7 +361,7 @@ def migrate_peripheralState(msgs):
   return [], add_ops, []
 
 
-@migration(inputs=["narrowRoadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "narrowRoadCameraState", "wideRoadCameraState", "driverCameraState"])
+@migration(inputs=["narrowRoadEncodeIdx", "wideRoadEncodeIdx", "cabinEncodeIdx", "narrowRoadCameraState", "wideRoadCameraState", "cabinCameraState"])
 def migrate_cameraStates(msgs):
   add_ops, del_ops = [], []
   frame_to_encode_id = defaultdict(dict)
@@ -369,7 +369,7 @@ def migrate_cameraStates(msgs):
   min_frame_id = defaultdict(lambda: float('inf'))
 
   for _, msg in msgs:
-    if msg.which() not in ["narrowRoadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
+    if msg.which() not in ["narrowRoadEncodeIdx", "wideRoadEncodeIdx", "cabinEncodeIdx"]:
       continue
 
     encode_index = getattr(msg, msg.which())
@@ -379,7 +379,7 @@ def migrate_cameraStates(msgs):
     frame_to_encode_id[meta.camera_state][encode_index.frameId] = encode_index.segmentId
 
   for index, msg in msgs:
-    if msg.which() not in ["narrowRoadCameraState", "wideRoadCameraState", "driverCameraState"]:
+    if msg.which() not in ["narrowRoadCameraState", "wideRoadCameraState", "cabinCameraState"]:
       continue
 
     camera_state = getattr(msg, msg.which())

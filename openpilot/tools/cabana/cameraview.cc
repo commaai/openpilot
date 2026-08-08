@@ -58,7 +58,7 @@ void CameraWidget::paintEvent(QPaintEvent *event) {
 
   p.setRenderHint(QPainter::SmoothPixmapTransform);
   if (active_stream_type == VISION_STREAM_DRIVER) {
-    // mirror driver camera horizontally
+    // mirror cabin camera horizontally
     const qreal cx = video_rect.x() + video_rect.width() / 2.0;
     p.translate(cx, 0);
     p.scale(-1, 1);

@@ -106,7 +106,7 @@ from openpilot.tools.lib.framereader import FrameReader
 frs = {
   'narrowRoadCameraState': FrameReader(...),
   'wideRoadCameraState': FrameReader(...),
-  'driverCameraState': FrameReader(...),
+  'cabinCameraState': FrameReader(...),
 }
 
 output_logs = replay_process_with_name(['modeld', 'dmonitoringmodeld'], lr, frs=frs)

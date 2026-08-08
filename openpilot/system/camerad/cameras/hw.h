@@ -56,12 +56,12 @@ const CameraConfig NARROW_ROAD_CAMERA_CONFIG = {
   .staggered_sof = false,
 };
 
-const CameraConfig DRIVER_CAMERA_CONFIG = {
+const CameraConfig CABIN_CAMERA_CONFIG = {
   .camera_num = 2,
   .stream_type = VISION_STREAM_DRIVER,
   .focal_len = 1.71,
-  .publish_name = "driverCameraState",
-  .init_camera_state = &cereal::Event::Builder::initDriverCameraState,
+  .publish_name = "cabinCameraState",
+  .init_camera_state = &cereal::Event::Builder::initCabinCameraState,
   .enabled = !getenv("DISABLE_DRIVER"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
@@ -69,4 +69,4 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .staggered_sof = true,
 };
 
-const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, NARROW_ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};
+const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, NARROW_ROAD_CAMERA_CONFIG, CABIN_CAMERA_CONFIG};

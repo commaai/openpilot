@@ -33,7 +33,7 @@ protected:
 
   Camera cameras_[MAX_CAMERAS] = {
       {.type = NarrowRoadCam, .stream_type = VISION_STREAM_ROAD},
-      {.type = DriverCam, .stream_type = VISION_STREAM_DRIVER},
+      {.type = CabinCam, .stream_type = VISION_STREAM_DRIVER},
       {.type = WideRoadCam, .stream_type = VISION_STREAM_WIDE_ROAD},
   };
   std::atomic<int> publishing_ = 0;

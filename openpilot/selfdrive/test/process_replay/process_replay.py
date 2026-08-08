@@ -434,7 +434,7 @@ CONFIGS = [
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "livePose", "liveDelay", "liveParameters", "radarState", "modelV2",
-      "driverCameraState", "narrowRoadCameraState", "wideRoadCameraState", "managerState", "liveTorqueParameters",
+      "cabinCameraState", "narrowRoadCameraState", "wideRoadCameraState", "managerState", "liveTorqueParameters",
       "accelerometer", "gyroscope", "carOutput", "gpsLocationExternal", "gpsLocation", "controlsState",
       "carControl", "driverAssistance", "alertDebug",
     ],
@@ -562,15 +562,15 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",
-    pubs=["liveCalibration", "driverCameraState"],
+    pubs=["liveCalibration", "cabinCameraState"],
     subs=["driverStateV2"],
     ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.gpuExecutionTime"],
-    should_recv_callback=MessageBasedRcvCallback("driverCameraState"),
+    should_recv_callback=MessageBasedRcvCallback("cabinCameraState"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
-    main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
-    vision_pubs=["driverCameraState"],
-    ignore_alive_pubs=["driverCameraState"],
+    main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("cabinCameraState").stream),
+    vision_pubs=["cabinCameraState"],
+    ignore_alive_pubs=["cabinCameraState"],
   ),
 ]
 

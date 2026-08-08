@@ -25,7 +25,7 @@ RouteInfoDlg::RouteInfoDlg(QWidget *parent) : QDialog(parent) {
     table->setItem(row, 1, new QTableWidgetItem(seg.rlog.empty() ? "--" : "Yes"));
     table->setItem(row, 2, new QTableWidgetItem(seg.narrow_road_cam.empty() ? "--" : "Yes"));
     table->setItem(row, 3, new QTableWidgetItem(seg.wide_road_cam.empty() ? "--" : "Yes"));
-    table->setItem(row, 4, new QTableWidgetItem(seg.driver_cam.empty() ? "--" : "Yes"));
+    table->setItem(row, 4, new QTableWidgetItem(seg.cabin_cam.empty() ? "--" : "Yes"));
     table->setItem(row, 5, new QTableWidgetItem(seg.qlog.empty() ? "--" : "Yes"));
     table->setItem(row, 6, new QTableWidgetItem(seg.qcamera.empty() ? "--" : "Yes"));
     ++row;

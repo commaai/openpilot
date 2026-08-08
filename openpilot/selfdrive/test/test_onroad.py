@@ -84,7 +84,7 @@ TIMINGS = {
   "longitudinalPlan": [2.5, 0.5],
   "driverAssistance": [2.5, 0.5],
   "narrowRoadCameraState": [2.5, 0.35],
-  "driverCameraState": [2.5, 0.35],
+  "cabinCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
   "livePose": [2.5, 0.35],
@@ -97,7 +97,7 @@ LOGS_SIZE = {  # MB per segment
   "rlog.zst": 8.1,
   "qcamera.ts": 2.3,
 }
-LOGS_SIZE.update(dict.fromkeys(['wide_road.hevc', 'narrow_road.hevc', 'driver.hevc'], 76.5))
+LOGS_SIZE.update(dict.fromkeys(['wide_road.hevc', 'narrow_road.hevc', 'cabin.hevc'], 76.5))
 
 
 def cputime_total(ct):
@@ -304,7 +304,7 @@ class TestOnroad(OpenpilotTestCase):
     result += "------------------------------------------------\n"
     result += "-----------------  SOF Timing ------------------\n"
     result += "------------------------------------------------\n"
-    for name in ['narrowRoadCameraState', 'wideRoadCameraState', 'driverCameraState']:
+    for name in ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']:
       ts = self.ts[name]['timestampSof']
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
@@ -317,8 +317,8 @@ class TestOnroad(OpenpilotTestCase):
     print(result)
 
   def test_camera_sync(self, subtests):
-    cam_states = ['narrowRoadCameraState', 'wideRoadCameraState', 'driverCameraState']
-    encode_cams = ['narrowRoadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
+    cam_states = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']
+    encode_cams = ['narrowRoadEncodeIdx', 'wideRoadEncodeIdx', 'cabinEncodeIdx']
     for cams in (cam_states, encode_cams):
       with subtests.test(cams=cams):
         # sanity checks within a single cam
@@ -349,15 +349,15 @@ class TestOnroad(OpenpilotTestCase):
           diff = (max(ts.values()) - min(ts.values()))
           assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
 
-          # driver camera should be staggered ~25ms from road camera
+          # cabin camera should be staggered ~25ms from road camera
           offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
-          assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
+          assert 20 < offset_ms < 30, f"cabin camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
 
   def test_camera_encoder_matches(self, subtests):
     # sanity check that the frame metadata is consistent with the encoded frames
     pairs = [('narrowRoadCameraState', 'narrowRoadEncodeIdx'),
              ('wideRoadCameraState', 'wideRoadEncodeIdx'),
-             ('driverCameraState', 'driverEncodeIdx')]
+             ('cabinCameraState', 'cabinEncodeIdx')]
     for cam, enc in pairs:
       with subtests.test(camera=cam, encoder=enc):
         cam_frames = {fid: (sof, eof) for fid, sof, eof in zip(

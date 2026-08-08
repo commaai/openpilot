@@ -93,12 +93,12 @@ const EncoderInfo main_wide_road_encoder_info = {
   INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
 
-const EncoderInfo main_driver_encoder_info = {
-  .publish_name = "driverEncodeData",
-  .filename = "driver.hevc",
+const EncoderInfo main_cabin_encoder_info = {
+  .publish_name = "cabinEncodeData",
+  .filename = "cabin.hevc",
   .record = Params().getBool("RecordFront"),
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
-  INIT_ENCODE_FUNCTIONS(DriverEncode),
+  INIT_ENCODE_FUNCTIONS(CabinEncode),
 };
 
 const EncoderInfo stream_road_encoder_info = {
@@ -118,12 +118,12 @@ const EncoderInfo stream_wide_road_encoder_info = {
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
 
-const EncoderInfo stream_driver_encoder_info = {
-  .publish_name = "livestreamDriverEncodeData",
+const EncoderInfo stream_cabin_encoder_info = {
+  .publish_name = "livestreamCabinEncodeData",
   .record = false,
   .is_live = true,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
-  INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
+  INIT_ENCODE_FUNCTIONS(LivestreamCabinEncode),
 };
 
 const EncoderInfo qcam_encoder_info = {
@@ -148,10 +148,10 @@ const LogCameraInfo wide_road_camera_info{
   .encoder_infos = {main_wide_road_encoder_info}
 };
 
-const LogCameraInfo driver_camera_info{
-  .thread_name = "driver_cam_encoder",
+const LogCameraInfo cabin_camera_info{
+  .thread_name = "cabin_cam_encoder",
   .stream_type = VISION_STREAM_DRIVER,
-  .encoder_infos = {main_driver_encoder_info}
+  .encoder_infos = {main_cabin_encoder_info}
 };
 
 const LogCameraInfo stream_road_camera_info{
@@ -166,11 +166,11 @@ const LogCameraInfo stream_wide_road_camera_info{
   .encoder_infos = {stream_wide_road_encoder_info},
 };
 
-const LogCameraInfo stream_driver_camera_info{
-  .thread_name = "driver_cam_encoder",
+const LogCameraInfo stream_cabin_camera_info{
+  .thread_name = "cabin_cam_encoder",
   .stream_type = VISION_STREAM_DRIVER,
-  .encoder_infos = {stream_driver_encoder_info},
+  .encoder_infos = {stream_cabin_encoder_info},
 };
 
-const LogCameraInfo cameras_logged[] = {narrow_road_camera_info, wide_road_camera_info, driver_camera_info};
-const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_driver_camera_info};
+const LogCameraInfo cameras_logged[] = {narrow_road_camera_info, wide_road_camera_info, cabin_camera_info};
+const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_cabin_camera_info};

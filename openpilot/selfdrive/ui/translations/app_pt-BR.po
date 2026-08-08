@@ -206,8 +206,8 @@ msgid "Download"
 msgstr "Baixar"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "Câmera do Motorista"
+msgid "Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
@@ -462,8 +462,8 @@ msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "Evitar uploads grandes de dados em conexões móveis limitadas"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "Pré-visualize a câmera voltada para o motorista para garantir que o monitoramento do motorista tenha boa visibilidade. (veículo deve estar desligado)"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -494,8 +494,8 @@ msgid "Reboot and Update"
 msgstr "Reiniciar e Atualizar"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "Gravar e Enviar Câmera do Motorista"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -634,8 +634,8 @@ msgid "Upgrade Now"
 msgstr "Atualizar Agora"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "Envie dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramento do motorista."
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -681,7 +681,7 @@ msgstr "Você deve aceitar os Termos e Condições para usar o openpilot."
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "Você deve aceitar os Termos e Condições para usar o openpilot. Leia os termos mais recentes em https://comma.ai/terms antes de continuar."
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "câmera iniciando"
 
@@ -822,4 +822,3 @@ msgstr "✓ ASSINADO"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "🔥 Firehose Mode 🔥"
 msgstr "🔥 Modo Firehose 🔥"
-

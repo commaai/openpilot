@@ -22,7 +22,7 @@ CAMERAS = [
 if WIDE_CAM:
   CAMERAS.append(CameraType("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD, WIDE_CAM))
 if DRIVER_CAM:
-  CAMERAS.append(CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, DRIVER_CAM))
+  CAMERAS.append(CameraType("cabinCameraState", VisionStreamType.VISION_STREAM_DRIVER, DRIVER_CAM))
 
 class Camerad:
   def __init__(self):

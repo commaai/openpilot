@@ -9,7 +9,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.label import gui_label
 
 
-class DriverCameraDialog(CameraView):
+class CabinCameraDialog(CameraView):
   def __init__(self):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
@@ -100,12 +100,12 @@ class DriverCameraDialog(CameraView):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("Driver Camera View")
+  gui_app.init_window("Cabin Camera View")
 
-  driver_camera_view = DriverCameraDialog()
-  gui_app.push_widget(driver_camera_view)
+  cabin_camera_view = CabinCameraDialog()
+  gui_app.push_widget(cabin_camera_view)
   try:
     for _ in gui_app.render():
       ui_state.update()
   finally:
-    driver_camera_view.close()
+    cabin_camera_view.close()

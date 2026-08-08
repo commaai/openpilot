@@ -145,7 +145,7 @@ class TestAthenadMethods(OpenpilotTestCase):
     route = '2021-03-29--13-32-47'
     segments = [0, 1, 2, 3, 11]
 
-    filenames = ['qlog.zst', 'qcamera.ts', 'rlog.zst', 'narrow_road.hevc', 'wide_road.hevc', 'driver.hevc']
+    filenames = ['qlog.zst', 'qcamera.ts', 'rlog.zst', 'narrow_road.hevc', 'wide_road.hevc', 'cabin.hevc']
     files = [f'{route}--{s}/{f}' for s in segments for f in filenames]
     for file in files:
       self._create_file(file)

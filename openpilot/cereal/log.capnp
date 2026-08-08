@@ -2563,16 +2563,16 @@ struct Event {
 
     # camera stuff, each camera state has a matching encode idx
     narrowRoadCameraState @2 :FrameData;
-    driverCameraState @70: FrameData;
+    cabinCameraState @70: FrameData;
     wideRoadCameraState @74: FrameData;
     narrowRoadEncodeIdx @15 :EncodeIndex;
-    driverEncodeIdx @76 :EncodeIndex;
+    cabinEncodeIdx @76 :EncodeIndex;
     wideRoadEncodeIdx @77 :EncodeIndex;
     qNarrowRoadEncodeIdx @90 :EncodeIndex;
 
     livestreamNarrowRoadEncodeIdx @117 :EncodeIndex;
     livestreamWideRoadEncodeIdx @118 :EncodeIndex;
-    livestreamDriverEncodeIdx @119 :EncodeIndex;
+    livestreamCabinEncodeIdx @119 :EncodeIndex;
 
     # microphone data
     soundPressure @103 :SoundPressure;
@@ -2603,14 +2603,14 @@ struct Event {
     # *********** debug ***********
     testJoystick @52 :Joystick;
     narrowRoadEncodeData @86 :EncodeData;
-    driverEncodeData @87 :EncodeData;
+    cabinEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
     qNarrowRoadEncodeData @89 :EncodeData;
     alertDebug @133 :DebugAlert;
 
     livestreamNarrowRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
-    livestreamDriverEncodeData @122 :EncodeData;
+    livestreamCabinEncodeData @122 :EncodeData;
 
     # *********** Custom: reserved for forks ***********
 

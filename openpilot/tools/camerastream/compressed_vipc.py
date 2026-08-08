@@ -19,7 +19,7 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 
 ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_ROAD: "narrowRoadEncodeData",
-  VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
+  VisionStreamType.VISION_STREAM_DRIVER: "cabinEncodeData",
   VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
 }
 

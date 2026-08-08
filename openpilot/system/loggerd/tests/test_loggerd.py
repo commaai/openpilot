@@ -112,7 +112,7 @@ class TestLoggerd(OpenpilotTestCase):
     frame_spec = (w, h, w * h * 3 // 2, w, w * h)
     streams = [
       (VisionStreamType.VISION_STREAM_ROAD, frame_spec, "narrowRoadCameraState"),
-      (VisionStreamType.VISION_STREAM_DRIVER, frame_spec, "driverCameraState"),
+      (VisionStreamType.VISION_STREAM_DRIVER, frame_spec, "cabinCameraState"),
       (VisionStreamType.VISION_STREAM_WIDE_ROAD, frame_spec, "wideRoadCameraState"),
     ]
 
@@ -197,7 +197,7 @@ class TestLoggerd(OpenpilotTestCase):
   def test_rotation(self):
     Params().put("RecordFront", True, block=True)
 
-    expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "narrow_road.hevc", "driver.hevc", "wide_road.hevc"}
+    expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "narrow_road.hevc", "cabin.hevc", "wide_road.hevc"}
 
     num_segs = random.randint(2, 3)
     length = random.randint(4, 5) # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
@@ -321,7 +321,7 @@ class TestLoggerd(OpenpilotTestCase):
 
     self._publish_camera_and_audio_messages()
 
-    driver_hevc_exists = os.path.exists(os.path.join(self._get_latest_log_dir(), 'driver.hevc'))
+    driver_hevc_exists = os.path.exists(os.path.join(self._get_latest_log_dir(), 'cabin.hevc'))
     assert driver_hevc_exists == record_front
 
   @parameterized.expand([True, False])

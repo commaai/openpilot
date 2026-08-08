@@ -242,7 +242,7 @@ class CameraView(Widget):
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
-    # Flip driver camera horizontally
+    # Flip cabin camera horizontally
     if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
       src_rect.width = -src_rect.width
 

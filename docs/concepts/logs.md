@@ -16,7 +16,7 @@ Each camera stream is H.265 encoded and written to its respective file.
 
 * `narrow_road.hevc` is the narrow road camera (the main forward camera)
 * `wide_road.hevc` is the wide road camera
-* `driver.hevc` is the driver camera
+* `cabin.hevc` is the cabin camera
 
 ## qlog.zst & qcamera.ts
 
