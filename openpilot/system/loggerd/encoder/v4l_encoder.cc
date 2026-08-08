@@ -284,14 +284,6 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
     }
   }
 
-  if (encoder_info.is_live && (in_width != out_width || in_height != out_height)) {
-    struct v4l2_control ctrl = {
-      .id = V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_MODE,
-      .value = V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_ENABLE,
-    };
-    util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL low latency failed");
-  }
-
   // allocate buffers
   request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, BUF_OUT_COUNT);
   request_buffers(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, BUF_IN_COUNT);
