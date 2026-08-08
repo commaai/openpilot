@@ -1,0 +1,57 @@
+CM_ "IMPORT _stellantis_common_ram_dt_generated.dbc";
+
+BO_ 53 PCM_2: 8 XXX
+ SG_ ENG_TORQUE_REQ : 3|12@0+ (1,0) [0|7] "" XXX
+ SG_ ENG_TORQUE_OUT : 19|12@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 133 TCM_1: 8 XXX
+ SG_ SHIFT_PENDING : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACTUAL_GEAR : 11|4@0+ (1,0) [0|15] "" XXX
+ SG_ DESIRED_GEAR : 15|4@0+ (1,0) [0|1] "" XXX
+ SG_ TC_LOCKED : 17|1@1+ (1,0) [0|0] ""  XXX
+ SG_ OUTPUT_SPEED : 31|16@0+ (1,0) [0|65534] "rpm" XXX
+ SG_ INPUT_SPEED : 47|16@0+ (1,0) [0|65534] "rpm"  XXX
+ SG_ OUTPUT_SPEED_SIGN : 57|2@0+ (1,0) [0|3] "" XXX
+ SG_ COUNTER : 61|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 135 ABS_2: 8 XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|1] "" XXX
+ SG_ DRIVER_BRAKE : 15|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 137 ESP_4: 8 XXX
+ SG_ Yaw_Rate : 7|16@0+ (0.01,-327.68) [-327.68|327.66] "deg/s" XXX
+ SG_ Acceleration : 32|8@1+ (0.08,-10.24) [-10.24|10.08] "m/s2" XXX
+
+BO_ 164 EPS_3: 8 XXX
+ SG_ DASM_FAULT : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ Activation_Status : 48|3@1+ (1,0) [0|1] "" XXX
+ SG_ Driver_Override : 35|1@0+ (1,0) [0|1] "" XXX
+ SG_ Hands_on_Wheel : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 166 LKAS_COMMAND: 8 XXX
+ SG_ STEERING_TORQUE : 10|11@0+ (1,-1024) [0|1] "" XXX
+ SG_ LKAS_CONTROL_BIT : 24|3@1+ (1,0) [0|1] "" XXX
+ SG_ DASM_FAULT : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 221 Center_Stack_1: 8 XXX
+ SG_ LKAS_Button : 53|1@1+ (1,0) [0|0] "" XXX
+ SG_ Traction_Button : 54|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 650 Center_Stack_2: 8 XXX
+ SG_ LKAS_Button : 57|1@1+ (1,0) [0|0] "" XXX
+
+
+CM_ SG_ 133 ACTUAL_GEAR "0xd = P, 0x1-8 = D (actual gear), 0xb = R or N?? TODO find R vs N";
+CM_ SG_ 153 ACC_Engaged "SENT BY FORWARD CAMERA 1 = ACTIVE, 3 = ENGAGED, 0 = DISENGAGED/OFF";
+CM_ SG_ 166 LKAS_CONTROL_BIT "0=IDLE, 1=HAS 2=LKAS 3=ABSD, 4=TJA, 7=SNA";
+CM_ SG_ 250 Auto_High_Beam "1 = HIGH BEAMS OK 0 = HIGH BEAMS OFF ";
+CM_ SG_ 250 LKAS_LANE_LINES "9 = LEFT CAUTION, 11 = VERY LEFT CAUTION 10 = RIGHT CAUTION, 14 = VERY RIGHT, 4 = NO LINES DETECTED, 3 = LINES DETECTED, SYSTEM ACTIVE";
+CM_ SG_ 464 Driver_Seatbelt_Status "1 unbuckled 0 buckled";
+CM_ SG_ 792 High_Beam_Lever_Status "1 is high beam, 0 reg";
