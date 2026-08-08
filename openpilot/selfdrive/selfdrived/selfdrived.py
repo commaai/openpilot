@@ -115,6 +115,7 @@ class SelfdriveD:
 
     self.initialized = False
     self.enabled = False
+    # i don't think we can keep selfdrived lat/long agnostic since it handles event state machine
     self.lat_active = False
     self.long_active = False
     self.mismatch_counter = 0
