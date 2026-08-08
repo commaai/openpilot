@@ -4,6 +4,7 @@ import pickle
 import shutil
 import struct
 import tempfile
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -43,9 +44,9 @@ def load_oob(f):
     def read_buffer():
       return pickle.PickleBuffer(f.read(struct.unpack('<q', h)[0])) if (h := f.read(8)) else None
     with ThreadPoolExecutor(max_workers=1) as pool:
-      next_buffer = pool.submit(read_buffer)
-      while (pb := next_buffer.result()) is not None:
-        next_buffer = pool.submit(read_buffer)
+      pending = deque(pool.submit(read_buffer) for _ in range(2))
+      while (pb := pending.popleft().result()) is not None:
+        pending.append(pool.submit(read_buffer))
         yield pb
   return pickle.load(io.BytesIO(opcodes), buffers=buffers())
 
