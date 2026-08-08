@@ -2,7 +2,7 @@
 
 #include "common/util.h"
 #include "openpilot/cereal/gen/cpp/log.capnp.h"
-#include "common/visionstream.h"
+#include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_server.h"
 
 #include "media/cam_isp_ife.h"

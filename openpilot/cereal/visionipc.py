@@ -1,8 +1,3 @@
-"""openpilot's camera streams, keyed by visionipc stream id.
-
-msgq's visionipc treats stream types as opaque ids; the mapping from
-stream id to camera lives here so msgq stays camera-agnostic.
-"""
 from enum import IntEnum
 
 
