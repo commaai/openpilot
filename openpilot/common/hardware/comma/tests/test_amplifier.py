@@ -11,7 +11,7 @@ from openpilot.common.hardware.comma.amplifier import Amplifier
 
 
 class TestAmplifier(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_TEST = True
 
   def setup_method(self):
     # clear dmesg

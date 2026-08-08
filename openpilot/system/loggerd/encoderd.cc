@@ -1,16 +1,16 @@
 #include <cassert>
-#ifdef __TICI__
+#ifdef __COMMA__
 #include <exception>
 #include <stdexcept>
 #endif
 
-#ifdef __TICI__
+#ifdef __COMMA__
 #include "system/loggerd/clip_encoder.h"
 #endif
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/jpeg_encoder.h"
 
-#ifdef __TICI__
+#ifdef __COMMA__
 #include "system/loggerd/encoder/v4l_encoder.h"
 #define Encoder V4LEncoder
 #else
@@ -178,7 +178,7 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef __TICI__
+#ifdef __COMMA__
   if (argc > 1 && std::string(argv[1]) == "--clip") {
     if (argc < 6) {
       fprintf(stderr, "usage: encoderd --clip OUTPUT START DURATION [--bitrate BPS] [--speedup N] "

@@ -11,7 +11,7 @@ from openpilot.common.hardware.comma.pins import GPIO
 
 # TODO: test TTFF when we have good A-GNSS
 class TestPigeond(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_TEST = True
 
   def teardown_method(self):
     managed_processes['pigeond'].stop()

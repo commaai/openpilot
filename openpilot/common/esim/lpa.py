@@ -682,7 +682,7 @@ def download_profile(client: AtClient, activation_code: str) -> str:
     session.close()
 
 
-class TiciLPA(LPABase):
+class CommaLPA(LPABase):
   def __init__(self):
     if hasattr(self, '_client'):
       return

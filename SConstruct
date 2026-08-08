@@ -10,7 +10,7 @@ import numpy as np
 import SCons.Errors
 from SCons.Defaults import _stripixes
 
-TICI = os.path.isfile('/TICI')
+COMMA = os.path.isfile('/TICI')
 
 SCons.Warnings.warningAsException(True)
 
@@ -24,7 +24,7 @@ release = not os.path.exists(File('#.gitattributes').abspath) # file absent on r
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=(not TICI and not release),
+          default=(not COMMA and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 submodule_python_paths = [
@@ -46,7 +46,7 @@ if external_pythonpath := os.environ.get("PYTHONPATH"):
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-elif arch == "aarch64" and TICI:
+elif arch == "aarch64" and COMMA:
   arch = "larch64"
 assert arch in [
   "larch64",  # linux tici arm64
@@ -61,7 +61,7 @@ acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
 # Shared package ships .so/.dylib; older device venvs still have static .a only.
 # Keep static link deps (x264/z/va/drm) when the installed package is static so
-# TICI CI works without upgrading the device venv yet.
+# COMMA CI works without upgrading the device venv yet.
 # TODO: drop the static fallback once device venvs have comma-deps-ffmpeg>=7.1.0.post94
 _ffmpeg_lib_names = os.listdir(ffmpeg.LIB_DIR) if os.path.isdir(ffmpeg.LIB_DIR) else []
 ffmpeg_shared = any(
@@ -182,7 +182,7 @@ if arch == "larch64":
   env.Append(LIBPATH=[
     "/usr/lib/aarch64-linux-gnu",
   ])
-  arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
+  arch_flags = ["-D__COMMA__", "-mcpu=cortex-a57"]
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
