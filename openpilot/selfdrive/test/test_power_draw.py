@@ -42,7 +42,7 @@ PROCS = [
 
 
 class TestPowerDraw(OpenpilotTestCase):
-  COMMA_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   def setup_method(self):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)

@@ -33,7 +33,7 @@ FILE_SIZE_TOLERANCE = 0.7
 
 
 class TestEncoder(OpenpilotTestCase):
-  COMMA_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   def setup_method(self):
     self._clear_logs()

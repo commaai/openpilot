@@ -182,7 +182,7 @@ if arch == "larch64":
   env.Append(LIBPATH=[
     "/usr/lib/aarch64-linux-gnu",
   ])
-  arch_flags = ["-D__COMMA__", "-mcpu=cortex-a57"]
+  arch_flags = ["-D__COMMA_HARDWARE__", "-mcpu=cortex-a57"]
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":

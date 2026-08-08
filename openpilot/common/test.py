@@ -24,7 +24,7 @@ def clean_env():
 class OpenpilotTestCase(unittest.TestCase):
   """TestCase with openpilot's per-test isolation."""
 
-  COMMA_TEST = False
+  COMMA_HARDWARE_TEST = False
   SHARED_DOWNLOAD_CACHE = False
 
   def __init_subclass__(cls, **kwargs):
@@ -61,7 +61,7 @@ class OpenpilotTestCase(unittest.TestCase):
   def run(self, result=None):
     # This boundary cannot live in setUp/tearDown: existing unittest classes
     # are allowed to override those hooks without calling super().
-    if (self.COMMA_TEST and not COMMA) or getattr(type(self), "__unittest_skip__", False):
+    if (self.COMMA_HARDWARE_TEST and not COMMA) or getattr(type(self), "__unittest_skip__", False):
       return super().run(result)
     test_env = clean_env()
     test_env.__enter__()
@@ -80,8 +80,8 @@ class OpenpilotTestCase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    if cls.COMMA_TEST and not COMMA:
-      raise unittest.SkipTest("Skipping comma test on PC")
+    if cls.COMMA_HARDWARE_TEST and not COMMA:
+      raise unittest.SkipTest("Skipping comma hardware test on PC")
     cls._class_env = clean_env()
     cls._class_env.__enter__()
     setup_class = getattr(cls, "setup_class", None)
@@ -100,10 +100,10 @@ class OpenpilotTestCase(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    if self.COMMA_TEST and not COMMA:
-      self.skipTest("Skipping comma test on PC")
+    if self.COMMA_HARDWARE_TEST and not COMMA:
+      self.skipTest("Skipping comma hardware test on PC")
 
-    if self.COMMA_TEST:
+    if self.COMMA_HARDWARE_TEST:
       HARDWARE.initialize_hardware()
       HARDWARE.set_power_save(False)
       subprocess.run(["pkill", "-9", "-f", "athena"], check=False)
