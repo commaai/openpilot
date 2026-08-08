@@ -14,7 +14,7 @@ from openpilot.common.serial import Serial
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import TICI
 from openpilot.common.gpio import gpio_init, gpio_set
-from openpilot.common.hardware.tici.pins import GPIO
+from openpilot.common.hardware.comma.pins import GPIO
 
 UBLOX_TTY = "/dev/ttyHS0"
 

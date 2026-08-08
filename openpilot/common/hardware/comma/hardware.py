@@ -13,8 +13,8 @@ from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.common.esim.lpa import TiciLPA
-from openpilot.common.hardware.tici.pins import GPIO
-from openpilot.common.hardware.tici.amplifier import Amplifier
+from openpilot.common.hardware.comma.pins import GPIO
+from openpilot.common.hardware.comma.amplifier import Amplifier
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 
