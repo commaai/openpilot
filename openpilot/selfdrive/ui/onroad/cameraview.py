@@ -72,7 +72,7 @@ class CameraView(Widget):
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
-    self._stream_type = stream_type
+    self._stream_type: VisionStreamType = stream_type
     self.available_streams: list[VisionStreamType] = []
 
     # Target stream for switching
@@ -324,6 +324,7 @@ class CameraView(Widget):
       del self.client
 
     # Switch to target
+    assert self._target_client is not None and self._target_stream_type is not None
     self.client = self._target_client
     self._stream_type = self._target_stream_type
     self._texture_needs_update = True
