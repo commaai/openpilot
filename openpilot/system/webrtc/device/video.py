@@ -20,9 +20,6 @@ TIMING_SEI_UUID = bytes([
 ])
 _SEI_PREFIX = b'\x00\x00\x00\x01\x06\x05\x30' + TIMING_SEI_UUID
 
-H264_PROFILE_LEVEL_3_1 = "profile-level-id=64001f;packetization-mode=1;level-asymmetry-allowed=1"
-
-
 @dataclass(frozen=True)
 class EncodedVideoFrame:
   data: bytes
@@ -40,7 +37,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   }
 
   def __init__(self, camera_type: str, video_enabled: bool = True):
-    super().__init__(camera_type, DT_MDL, h264_profile=H264_PROFILE_LEVEL_3_1)
+    super().__init__(camera_type, DT_MDL)
 
     self._sock = self._make_sock(camera_type)
     self._pts = 0

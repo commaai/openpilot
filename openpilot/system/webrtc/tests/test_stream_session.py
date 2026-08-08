@@ -8,7 +8,7 @@ from openpilot.cereal import messaging, log
 from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
 from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
-from openpilot.system.webrtc.device.video import H264_PROFILE_LEVEL_3_1, LiveStreamVideoStreamTrack
+from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
 class TestStreamSession(OpenpilotTestCase):
@@ -80,7 +80,3 @@ class TestStreamSession(OpenpilotTestCase):
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
       assert bytes(packet) == b""
-
-  def test_livestream_track_h264_profile(self, mocker):
-    mocker.patch.object(LiveStreamVideoStreamTrack, "_make_sock")
-    assert LiveStreamVideoStreamTrack("road").h264_profile == H264_PROFILE_LEVEL_3_1
