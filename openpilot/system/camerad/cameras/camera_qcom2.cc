@@ -294,7 +294,13 @@ void camerad_thread() {
         for (auto &cam : cams) {
           if (event_data->session_hdl == cam->camera.session_handle) {
             if (cam->camera.handle_camera_event(event_data)) {
+              assert(cam->camera.buf.cur_frame_data.request_id + 1 == cam->camera.next_request_id - cam->camera.requests_in_flight);
               cam->sendState();
+              if (cam->camera.held_buf_idx >= 0) {
+                assert(cam->camera.next_request_id % cam->camera.ife_buf_depth == cam->camera.held_buf_idx);
+                cam->camera.enqueue_frame();
+              }
+              cam->camera.held_buf_idx = cam->camera.buf.cur_buf_idx;
             }
             break;
           }
