@@ -8,6 +8,7 @@ SOFT_DISABLE_TIME = 3  # seconds
 ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
+
 class StateMachine:
   def __init__(self):
     self.current_alert_types = [ET.PERMANENT]
@@ -91,8 +92,8 @@ class StateMachine:
 
     # Check if openpilot is engaged and actuators are enabled
     enabled = self.state in ENABLED_STATES
-    active = self.state in ACTIVE_STATES
-    if active:
+    long_active = self.state in ACTIVE_STATES
+    if long_active:
       self.current_alert_types.append(ET.WARNING)
-    return enabled, active
+    return enabled, long_active
 
