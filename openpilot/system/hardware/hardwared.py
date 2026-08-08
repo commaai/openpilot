@@ -12,7 +12,7 @@ from collections import OrderedDict, namedtuple
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
-from openpilot.common.utils import strip_deprecated_keys
+from openpilot.common.utils import strip_deprecated_keys, sudo_read
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
@@ -233,6 +233,13 @@ def hardware_thread(end_event, hw_queue) -> None:
   last_uptime_ts: float = time.monotonic()
 
   HARDWARE.initialize_hardware()
+
+  if TICI:
+    # panic-on-display-error is disarmed in launch_chffrplus.sh. journald is only_onroad,
+    # so nothing else records the state during the offroad boot window where a heat-soaked
+    # panel faults - log the readback so that boot is diagnosable after the fact.
+    cloudlog.event("hardwared.sde_panic_on_err", value=sudo_read("/sys/kernel/debug/dri/0/debug/panic"))
+
   thermal_config = HARDWARE.get_thermal_config()
 
   fan_controller = FanController(int(1./DT_HW))
