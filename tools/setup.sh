@@ -33,6 +33,14 @@ cat << 'EOF'
 EOF
 }
 
+function check_platform() {
+  if [[ -f /AGNOS ]]; then
+    echo -e "[${RED}✗${NC}] This installer is for PCs only."
+    echo -e "    To install openpilot on a comma device, use the device's setup screen.\n"
+    return 1
+  fi
+}
+
 function check_stdin() {
   if [ -t 0 ]; then
     INTERACTIVE=1
@@ -135,6 +143,7 @@ function install_with_op() {
 }
 
 show_motd
+check_platform
 check_stdin
 ask_dir
 check_dir
