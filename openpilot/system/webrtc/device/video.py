@@ -20,6 +20,7 @@ TIMING_SEI_UUID = bytes([
 ])
 _SEI_PREFIX = b'\x00\x00\x00\x01\x06\x05\x30' + TIMING_SEI_UUID
 
+
 @dataclass(frozen=True)
 class EncodedVideoFrame:
   data: bytes
