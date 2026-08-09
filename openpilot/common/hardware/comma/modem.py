@@ -45,6 +45,13 @@ NETWORK_TYPE = {0: "gsm", 1: "gsm", 3: "gsm", 8: "gsm",
 DIAL_CID = 1
 WEBBING_ICCID_PREFIX = "8985235"
 
+# Some eSIMs (e.g. Webbing) autonomously switch back to their own profile when
+# in "automatic" mode, and this cannot be disabled on-card. If GsmPinnedIccid is
+# set, modemd re-enables that profile whenever the eUICC slips away from it.
+# The pinned iccid also lives in the SIM's SMS storage (see esim/sim_pin.py), so it
+# survives a factory reset; GsmPinnedIccid is just a cache of it.
+REVERT_BACKOFF_S = (0, 60, 300, 900, 3600)
+
 PPPD_CMD = [
   "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
   "nodefaultroute", "connect",
@@ -211,6 +218,9 @@ class Modem:
   def __init__(self):
     self._ppp = PPPSession()
     self._sim_change = False
+    self._revert_attempts = 0
+    self._last_revert = 0.0
+    self._pin_scanned = False  # whether we checked SIM storage for a pin this boot
     self._apn = ""  # blank = network-provided via PCO
     self._roaming_allowed = True
     self.running = True
@@ -333,6 +343,14 @@ class Modem:
 
     self._configure_modem(identity["modem_version"])
 
+    # eUICC may have autonomously reverted to the webbing profile while we were off;
+    # recover the pin (stored on the eUICC itself) and switch back if needed
+    if identity["iccid"].startswith(WEBBING_ICCID_PREFIX):
+      pinned = self._get_pinned_iccid()
+      if pinned and pinned != identity["iccid"] and time.monotonic() - self._last_revert >= REVERT_BACKOFF_S[self._revert_attempts]:
+        self._restore_pinned_profile(pinned)
+        return State.INITIALIZING  # re-read identity after the profile switch refresh
+
     self.S.update(identity)
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._is_roaming_allowed()
@@ -433,9 +451,58 @@ class Modem:
     if state in (State.INITIALIZING, State.DISCONNECTING) or not self.S["iccid"]:
       return
     iccid = (self._atv("AT+QCCID", "+QCCID:") or "").rstrip("F")
-    if iccid and iccid != self.S["iccid"]:
-      logging.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
-      self._sim_change = True
+    if not iccid or iccid == self.S["iccid"]:
+      return
+    logging.warning(f"iccid changed: {self.S['iccid']} -> {iccid}")
+    self._sim_change = True
+
+    pinned = self._get_pinned_iccid()
+    if iccid == pinned:
+      self._revert_attempts = 0  # pinned profile active again
+    elif pinned and time.monotonic() - self._last_revert >= REVERT_BACKOFF_S[self._revert_attempts]:
+      self._restore_pinned_profile(pinned)
+
+  def _get_pinned_iccid(self) -> str:
+    """Pinned profile iccid: param first, then the reset-proof copy in the SIM's SMS storage."""
+    pinned = self._read_param("GsmPinnedIccid")
+    if pinned or self._pin_scanned:
+      return pinned
+    self._pin_scanned = True  # scan at most once per boot
+    try:
+      from openpilot.common.esim import sim_pin
+      pinned = sim_pin.read_pin()
+      if pinned:
+        logging.info(f"recovered pinned profile from SIM storage: {pinned}")
+        self._write_param("GsmPinnedIccid", pinned)
+    except Exception as e:
+      logging.info(f"SIM pin scan failed: {e}")
+    return pinned
+
+  @staticmethod
+  def _write_param(key, value):
+    try:
+      with open(f"/data/params/d/{key}", "w") as f:
+        f.write(value)
+    except OSError as e:
+      logging.warning(f"failed to write param {key}: {e}")
+
+  def _restore_pinned_profile(self, iccid: str):
+    self._last_revert = time.monotonic()
+    self._revert_attempts = min(self._revert_attempts + 1, len(REVERT_BACKOFF_S) - 1)
+    logging.warning(f"re-enabling pinned profile {iccid} (attempt {self._revert_attempts})")
+    try:
+      # active profile is presumably the switching partner (e.g. webbing) right now;
+      # (re)seed the pin marker into its SIM SMS storage so it survives factory resets
+      from openpilot.common.esim import sim_pin
+      sim_pin.write_pin(iccid)
+    except Exception:
+      pass
+    try:
+      from openpilot.common.esim.lpa import TiciLPA
+      TiciLPA().switch_profile(iccid)
+      logging.info("pinned profile restored")
+    except Exception as e:
+      logging.warning(f"pinned profile restore failed: {e}")
 
   def _do_connected(self):
     if self._ppp.has_exited():

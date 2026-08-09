@@ -1,14 +1,52 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 import sys
 import time
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.esim.base import LPABase, Profile
+from openpilot.common.esim import sim_pin
 
 
 def sorted_profiles(lpa: LPABase) -> list[Profile]:
   return sorted(lpa.list_profiles(), key=lambda p: p.iccid)
+
+
+PINNED_ICCID_PATH = '/data/params/d/GsmPinnedIccid'
+
+
+def write_pinned_param(iccid: str) -> None:
+  try:
+    os.makedirs(os.path.dirname(PINNED_ICCID_PATH), exist_ok=True)
+    if iccid:
+      with open(PINNED_ICCID_PATH, 'w') as f:
+        f.write(iccid)
+    else:
+      os.remove(PINNED_ICCID_PATH)
+  except (FileNotFoundError, OSError) as e:
+    print(f'warning: failed to write pinned iccid param: {e}', file=sys.stderr)
+
+
+def set_pin(lpa: LPABase, iccid: str) -> None:
+  """Pin (or unpin, if iccid="") the active profile so modemd reverts autonomous switchbacks.
+
+  The pin is stored in the SIM's SMS storage on the eUICC itself, so it survives a
+  factory reset; the param is just a cache of it. Note the SMS copy lands in the
+  *currently active* profile's storage - if that's not the comma/webbing profile,
+  modemd re-seeds it the next time a switchback activates the webbing profile.
+  """
+  profiles = lpa.list_profiles()
+  anchor = next((p for p in profiles if p.is_comma), None)
+
+  # pinning the comma profile itself is pointless; autonomous switching already favors it
+  if anchor is not None and anchor.iccid == iccid:
+    iccid = ""
+
+  write_pinned_param(iccid)
+  if not sim_pin.write_pin(iccid):
+    print('warning: failed to store pin in SIM storage; pin will not survive a factory reset', file=sys.stderr)
+  print(f'pinned profile: {iccid or "<none>"}')
 
 
 def resolve_iccid(lpa: LPABase, ref: str) -> str:
@@ -46,8 +84,10 @@ if __name__ == '__main__':
 
   sub.add_parser('list', help='list profiles')
 
-  p_switch = sub.add_parser('switch', help='switch to profile')
+  p_switch = sub.add_parser('switch', help='switch to profile (and pin it against autonomous switchbacks)')
   p_switch.add_argument('profile', help='iccid or 1-based index from `list`')
+
+  sub.add_parser('unpin', help='clear the pinned profile (stop auto-reverting switchbacks)')
 
   p_delete = sub.add_parser('delete', help='delete profile (warning: this cannot be undone)')
   p_delete.add_argument('profile', help='iccid or 1-based index from `list`')
@@ -68,6 +108,9 @@ if __name__ == '__main__':
   if args.cmd == 'switch':
     iccid = resolve_iccid(lpa, args.profile)
     execute_and_process_notifications(lpa, lambda: lpa.switch_profile(iccid))
+    set_pin(lpa, iccid)
+  elif args.cmd == 'unpin':
+    set_pin(lpa, '')
   elif args.cmd == 'delete':
     iccid = resolve_iccid(lpa, args.profile)
     confirm = input(f'are you sure you want to delete profile {iccid}? (y/N) ')

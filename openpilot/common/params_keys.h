@@ -52,6 +52,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"GitRemote", {PERSISTENT, STRING}},
     {"GsmApn", {PERSISTENT, STRING}},
     {"GsmMetered", {PERSISTENT, BOOL, "1"}},
+    {"GsmPinnedIccid", {PERSISTENT, STRING}},
     {"GsmRoaming", {PERSISTENT, BOOL}},
     {"HardwareSerial", {PERSISTENT, STRING}},
     {"HasAcceptedTerms", {PERSISTENT, STRING, "0"}},
