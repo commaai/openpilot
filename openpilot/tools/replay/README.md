@@ -68,8 +68,8 @@ Options:
                          internal, openpilotci, comma_api, car_segments, testing_closet
   --data_dir <data_dir>  local directory with routes
   --prefix <prefix>      set OPENPILOT_PREFIX
-  --dcam                 load driver camera
-  --ecam                 load wide road camera
+  --cabin                  load cabin camera
+  --wide-road                 load wide road camera
   --no-loop              stop at the end of the route
   --no-cache             turn off local cache
   --qcam                 load qcamera
@@ -103,11 +103,11 @@ openpilot/tools/plotjuggler/juggle.py --stream
 
 watch all three cameras simultaneously from your comma three routes with watch3
 
-simply replay a route using the `--dcam` and `--ecam` flags:
+simply replay a route using the `--cabin` and `--wide-road` flags:
 
 ```bash
 # start a replay
-cd openpilot/tools/replay && ./replay --demo --dcam --ecam
+cd openpilot/tools/replay && ./replay --demo --cabin --wide-road
 
 # then start watch3
 cd openpilot/selfdrive/ui && ./watch3.py

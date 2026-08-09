@@ -8,7 +8,8 @@ from collections import deque
 
 
 import openpilot.cereal.messaging as messaging
-from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcServer
 from openpilot.tools.camerastream.ffmpeg_decoder import Decoder, FFmpegError
 
 V4L2_BUF_FLAG_KEYFRAME = 8
@@ -18,8 +19,8 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 # then run this "./compressed_vipc.py <ip>"
 
 ENCODE_SOCKETS = {
-  VisionStreamType.VISION_STREAM_ROAD: "roadEncodeData",
-  VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
+  VisionStreamType.VISION_STREAM_NARROW_ROAD: "narrowRoadEncodeData",
+  VisionStreamType.VISION_STREAM_CABIN: "cabinEncodeData",
   VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
 }
 
@@ -145,8 +146,8 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   vision_streams = [
-    VisionStreamType.VISION_STREAM_ROAD,
-    VisionStreamType.VISION_STREAM_DRIVER,
+    VisionStreamType.VISION_STREAM_NARROW_ROAD,
+    VisionStreamType.VISION_STREAM_CABIN,
     VisionStreamType.VISION_STREAM_WIDE_ROAD,
   ]
 

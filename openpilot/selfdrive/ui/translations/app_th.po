@@ -52,7 +52,7 @@ msgstr "<br><br>การปรับเทียบความล่าช้�
 msgid "ADD"
 msgstr "เพิ่ม"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "APN Setting"
 msgstr "การตั้งค่า APN"
 
@@ -60,7 +60,7 @@ msgstr "การตั้งค่า APN"
 msgid "Acknowledge Excessive Actuation"
 msgstr "รับทราบการดำเนินการที่มากเกินไป"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Advanced"
 msgstr "ขั้นสูง"
 
@@ -93,7 +93,7 @@ msgid "Are you sure you want to uninstall?"
 msgstr "คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง?"
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Back"
 msgstr "กลับ"
 
@@ -118,22 +118,26 @@ msgid "CHILL MODE ON"
 msgstr "เปิดโหมด Chill"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
 msgstr "เชื่อมต่อ"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECTING..."
 msgstr "กำลังเชื่อมต่อ..."
 
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/keyboard.py
-#: system/ui/widgets/network.py
-#: system/ui/widgets/option_dialog.py
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/keyboard.py
+#: openpilot/system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Cancel"
 msgstr "ยกเลิก"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Cellular Metered"
 msgstr "เซลล์วัดแสง"
 
@@ -205,15 +209,11 @@ msgstr "รหัสดองเกิล"
 msgid "Download"
 msgstr "ดาวน์โหลด"
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "กล้องไดร์เวอร์"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
 msgstr "บุคลิกภาพในการขับขี่"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "แก้ไข"
 
@@ -242,7 +242,7 @@ msgstr "เปิดใช้งาน ADB"
 msgid "Enable Lane Departure Warnings"
 msgstr "เปิดใช้งานคำเตือนการออกนอกเลน"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Roaming"
 msgstr "เปิดใช้งานโรมมิ่ง"
 
@@ -250,7 +250,7 @@ msgstr "เปิดใช้งานโรมมิ่ง"
 msgid "Enable SSH"
 msgstr "เปิดใช้งาน SSH"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Tethering"
 msgstr "เปิดใช้งานการปล่อยสัญญาณ"
 
@@ -266,19 +266,19 @@ msgstr "เปิดใช้งานโอเพ่นไพลอต"
 msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 msgstr "เปิดใช้งานการสลับการควบคุมตามยาวของ openpilot (อัลฟา) เพื่ออนุญาตโหมดการทดลอง"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "ป้อน APN"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter SSID"
 msgstr "ป้อน SSID"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter new tethering password"
 msgstr "ป้อนรหัสผ่านการปล่อยสัญญาณใหม่"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter password"
 msgstr "ใส่รหัสผ่าน"
 
@@ -286,7 +286,7 @@ msgstr "ใส่รหัสผ่าน"
 msgid "Enter your GitHub username"
 msgstr "ป้อนชื่อผู้ใช้ GitHub ของคุณ"
 
-#: system/ui/widgets/list_view.py
+#: openpilot/system/ui/widgets/list_view.py
 msgid "Error"
 msgstr "ข้อผิดพลาด"
 
@@ -298,7 +298,7 @@ msgstr "โหมดทดลอง"
 msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
 msgstr "ขณะนี้โหมดทดลองไม่สามารถใช้งานได้บนรถคันนี้ เนื่องจาก ACC ในสต็อกของรถใช้สำหรับการควบคุมตามยาว"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "กำลังลืม..."
 
@@ -311,14 +311,15 @@ msgid "Firehose"
 msgstr "สายดับเพลิง"
 
 #: openpilot/selfdrive/ui/layouts/settings/firehose.py
+#: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "โหมดสายดับเพลิง"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget"
 msgstr "ลืม"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget Wi-Fi Network \"{}\"?"
 msgstr "ลืมเครือข่าย Wi-Fi \"{}\" หรือไม่"
 
@@ -334,7 +335,7 @@ msgstr "ไปที่ https://connect.comma.ai บนโทรศัพท์�
 msgid "HIGH"
 msgstr "สูง"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Hidden Network"
 msgstr "เครือข่ายที่ซ่อนอยู่"
 
@@ -342,7 +343,7 @@ msgstr "เครือข่ายที่ซ่อนอยู่"
 msgid "INSTALL"
 msgstr "ติดตั้ง"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "ที่อยู่ IP"
 
@@ -361,6 +362,10 @@ msgstr "กำลังโหลด"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "LTE"
 msgstr "แอลทีที"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Lateral Maneuver Mode"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Longitudinal Maneuver Mode"
@@ -398,9 +403,8 @@ msgstr "ไม่มีบันทึกประจำรุ่น"
 msgid "OFFLINE"
 msgstr "ออฟไลน์"
 
-#: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/html_render.py
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/html_render.py
 msgid "OK"
 msgstr "ตกลง"
 
@@ -453,17 +457,17 @@ msgstr "โปรดเชื่อมต่อ Wi-Fi เพื่อทำก�
 msgid "Power Off"
 msgstr "ปิดเครื่อง"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
 msgstr "ป้องกันการอัปโหลดข้อมูลขนาดใหญ่เมื่อใช้การเชื่อมต่อ Wi-Fi แบบมิเตอร์"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "ป้องกันการอัพโหลดข้อมูลขนาดใหญ่เมื่อใช้การเชื่อมต่อมือถือแบบคิดค่าบริการตามปริมาณข้อมูล"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "ดูตัวอย่างกล้องที่หันหน้าไปทางคนขับเพื่อให้แน่ใจว่าการตรวจสอบผู้ขับขี่มีทัศนวิสัยที่ดี (รถจะต้องถูกปิด)"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -494,8 +498,8 @@ msgid "Reboot and Update"
 msgstr "รีบูตและอัปเดต"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "บันทึกและอัพโหลดกล้องไดร์เวอร์"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -549,11 +553,11 @@ msgstr "เลือก"
 msgid "SSH Keys"
 msgstr "คีย์ SSH"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Scanning Wi-Fi networks..."
 msgstr "กำลังสแกนเครือข่าย Wi-Fi..."
 
-#: system/ui/widgets/option_dialog.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Select"
 msgstr "เลือก"
 
@@ -597,7 +601,7 @@ msgstr "อุณหภูมิ"
 msgid "Target Branch"
 msgstr "สาขาเป้าหมาย"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Tethering Password"
 msgstr "รหัสผ่านการแชร์อินเทอร์เน็ต"
 
@@ -634,8 +638,8 @@ msgid "Upgrade Now"
 msgstr "อัพเกรดทันที"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "อัปโหลดข้อมูลจากกล้องที่หันเข้าหาคนขับและช่วยปรับปรุงอัลกอริธึมการตรวจสอบผู้ขับขี่"
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -665,11 +669,11 @@ msgstr "เมื่อเปิดใช้งาน การกดแป้�
 msgid "Wi-Fi"
 msgstr "อินเตอร์เน็ตไร้สาย"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wi-Fi Network Metered"
 msgstr "เครือข่าย Wi-Fi มีการตรวจวัด"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wrong password"
 msgstr "รหัสผ่านผิด"
 
@@ -681,7 +685,7 @@ msgstr "คุณต้องยอมรับข้อกำหนดและ
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้ openpilot อ่านข้อกำหนดล่าสุดได้ที่ https://comma.ai/terms ก่อนดำเนินการต่อ"
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "กำลังเริ่มกล้อง"
 
@@ -693,7 +697,7 @@ msgstr "กำลังตรวจสอบ..."
 msgid "comma prime"
 msgstr "เครื่องหมายลูกน้ำเฉพาะ"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "default"
 msgstr "ค่าเริ่มต้น"
 
@@ -713,7 +717,7 @@ msgstr "ไม่สามารถตรวจสอบการอัปเด
 msgid "finalizing update..."
 msgstr "กำลังสรุปการอัปเดต..."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "for \"{}\""
 msgstr "สำหรับ \"{}\""
 
@@ -721,7 +725,7 @@ msgstr "สำหรับ \"{}\""
 msgid "km/h"
 msgstr "กม./ชม"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "leave blank for automatic configuration"
 msgstr "เว้นว่างไว้เพื่อกำหนดค่าอัตโนมัติ"
 
@@ -729,7 +733,7 @@ msgstr "เว้นว่างไว้เพื่อกำหนดค่า
 msgid "left"
 msgstr "ซ้าย"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "metered"
 msgstr "คิดค่าบริการตามปริมาณ"
 
@@ -765,7 +769,7 @@ msgstr "openpilot ต้องติดตั้งอุปกรณ์ให�
 msgid "right"
 msgstr "ขวา"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "unmetered"
 msgstr "ไม่จำกัดปริมาณ"
 
@@ -805,16 +809,7 @@ msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "{} นาทีที่แล้ว"
 
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "ขณะนี้มีช่วงการขับขี่ของคุณ {} ช่วงอยู่ในชุดข้อมูลฝึกสอนแล้ว"
-
 #: openpilot/selfdrive/ui/widgets/prime.py
 msgid "✓ SUBSCRIBED"
 msgstr "✓ สมัครแล้ว"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 โหมด Firehose 🔥"
 

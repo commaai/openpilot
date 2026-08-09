@@ -1,6 +1,6 @@
 import pyray as rl
 from openpilot.cereal import log, messaging
-from msgq.visionipc import VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state, device
@@ -11,7 +11,7 @@ from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import gui_label
 
 
-class DriverCameraView(CameraView):
+class CabinCameraView(CameraView):
   def _calc_frame_matrix(self, rect: rl.Rectangle):
     base = super()._calc_frame_matrix(rect)
     driver_view_ratio = 1.5
@@ -20,11 +20,11 @@ class DriverCameraView(CameraView):
     return base
 
 
-class BaseDriverCameraDialog(Widget):
+class BaseCabinCameraDialog(Widget):
   # Not a NavWidget so training guide can use this without back navigation
   def __init__(self):
     super().__init__()
-    self._camera_view = DriverCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
+    self._camera_view = CabinCameraView("camerad", VisionStreamType.VISION_STREAM_CABIN)
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
@@ -229,7 +229,7 @@ class BaseDriverCameraDialog(Widget):
     rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
 
 
-class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
+class CabinCameraDialog(NavWidget, BaseCabinCameraDialog):
   def __init__(self):
     super().__init__()
     # TODO: this can grow unbounded, should be given some thought
@@ -237,12 +237,12 @@ class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("Driver Camera View (mici)")
+  gui_app.init_window("Cabin Camera View (mici)")
 
-  driver_camera_view = DriverCameraDialog()
-  gui_app.push_widget(driver_camera_view)
+  cabin_camera_view = CabinCameraDialog()
+  gui_app.push_widget(cabin_camera_view)
   try:
     for _ in gui_app.render():
       ui_state.update()
   finally:
-    driver_camera_view.close()
+    cabin_camera_view.close()

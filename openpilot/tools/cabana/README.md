@@ -15,7 +15,7 @@ Options:
   --auto                         Auto load the route from the best available source (no video):
                                  internal, openpilotci, comma_api, car_segments, testing_closet
   --qcam                         load qcamera
-  --ecam                         load wide road camera
+  --wide-road                         load wide road camera
   --msgq                         read can messages from msgq
   --panda                        read can messages from panda
   --panda-serial <panda-serial>  read can messages from panda with given serial
@@ -55,7 +55,7 @@ Replace "5beb9b58bd12b691/0000010a--a51155e496" with your desired route identifi
 To run Cabana with multiple cameras, use the following command:
 
 ```shell
-cabana "5beb9b58bd12b691/0000010a--a51155e496" --dcam --ecam
+cabana "5beb9b58bd12b691/0000010a--a51155e496" --cabin --wide-road
 ```
 
 ### Streaming CAN Messages from a comma Device

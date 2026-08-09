@@ -2,7 +2,8 @@ import platform
 import numpy as np
 import pyray as rl
 
-from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.system.ui.lib.application import gui_app
@@ -71,7 +72,7 @@ class CameraView(Widget):
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
-    self._stream_type = stream_type
+    self._stream_type: VisionStreamType = stream_type
     self.available_streams: list[VisionStreamType] = []
 
     # Target stream for switching
@@ -202,8 +203,8 @@ class CameraView(Widget):
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
-    # Flip driver camera horizontally
-    if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+    # Flip cabin camera horizontally
+    if self._stream_type == VisionStreamType.VISION_STREAM_CABIN:
       src_rect.width = -src_rect.width
 
     # Calculate scale
@@ -323,6 +324,7 @@ class CameraView(Widget):
       del self.client
 
     # Switch to target
+    assert self._target_client is not None and self._target_stream_type is not None
     self.client = self._target_client
     self._stream_type = self._target_stream_type
     self._texture_needs_update = True
@@ -361,6 +363,6 @@ class CameraView(Widget):
 
 if __name__ == "__main__":
   gui_app.init_window("camera view")
-  road = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+  road = CameraView("camerad", VisionStreamType.VISION_STREAM_NARROW_ROAD)
   for _ in gui_app.render():
     road.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))

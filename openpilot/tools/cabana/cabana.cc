@@ -19,8 +19,8 @@ struct CabanaArgs {
   bool demo = false;
   bool auto_source = false;
   bool qcam = false;
-  bool ecam = false;
-  bool dcam = false;
+  bool wide_road = false;
+  bool cabin = false;
   bool msgq = false;
   bool panda = false;
   bool no_vipc = false;
@@ -44,8 +44,8 @@ void printUsage(const char *argv0) {
           "  --auto                    Auto load the route from the best available source (no video):\n"
           "                            internal, openpilotci, comma_api, car_segments, testing_closet\n"
           "  --qcam                    load qcamera\n"
-          "  --ecam                    load wide road camera\n"
-          "  --dcam                    load driver camera\n"
+          "  --wide-road               load wide road camera (alias: --ecam)\n"
+          "  --cabin                   load cabin camera (alias: --dcam)\n"
           "  --msgq                    read can messages from the msgq\n"
           "  --panda                   read can messages from panda\n"
           "  --panda-serial <serial>   read can messages from panda with given serial\n"
@@ -83,10 +83,10 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
       args.auto_source = true;
     } else if (std::strcmp(a, "--qcam") == 0) {
       args.qcam = true;
-    } else if (std::strcmp(a, "--ecam") == 0) {
-      args.ecam = true;
-    } else if (std::strcmp(a, "--dcam") == 0) {
-      args.dcam = true;
+    } else if (std::strcmp(a, "--wide-road") == 0 || std::strcmp(a, "--ecam") == 0) {
+      args.wide_road = true;
+    } else if (std::strcmp(a, "--cabin") == 0 || std::strcmp(a, "--dcam") == 0) {
+      args.cabin = true;
     } else if (std::strcmp(a, "--msgq") == 0) {
       args.msgq = true;
     } else if (std::strcmp(a, "--panda") == 0) {
@@ -162,9 +162,9 @@ int main(int argc, char *argv[]) {
 #endif
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
-    if (args.ecam) replay_flags |= REPLAY_FLAG_ECAM;
+    if (args.wide_road) replay_flags |= REPLAY_FLAG_WIDE_ROAD;
     if (args.qcam) replay_flags |= REPLAY_FLAG_QCAMERA;
-    if (args.dcam) replay_flags |= REPLAY_FLAG_DCAM;
+    if (args.cabin) replay_flags |= REPLAY_FLAG_CABIN_CAMERA;
     if (args.no_vipc) replay_flags |= REPLAY_FLAG_NO_VIPC;
 
     QString route;
