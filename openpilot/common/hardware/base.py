@@ -1,5 +1,7 @@
+import math
 import os
 from abc import abstractmethod, ABC
+from collections.abc import Iterable
 from dataclasses import dataclass, fields
 
 from openpilot.cereal import log
@@ -7,6 +9,11 @@ from openpilot.common.esim.base import LPABase
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
+
+
+def max_valid_temperature(temperatures: Iterable[float]) -> float | None:
+  return max((temp for temp in temperatures if math.isfinite(temp)), default=None)
+
 
 @dataclass
 class ThermalZone:
@@ -16,20 +23,23 @@ class ThermalZone:
   zone_number = -1
 
   def read(self) -> float:
-    if self.zone_number < 0:
-      for n in os.listdir("/sys/devices/virtual/thermal"):
-        if not n.startswith("thermal_zone"):
-          continue
-        with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
-          if f.read().strip() == self.name:
-            self.zone_number = int(n.removeprefix("thermal_zone"))
-            break
-
     try:
+      if self.zone_number < 0:
+        for n in os.listdir("/sys/devices/virtual/thermal"):
+          if not n.startswith("thermal_zone"):
+            continue
+          with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
+            if f.read().strip() == self.name:
+              self.zone_number = int(n.removeprefix("thermal_zone"))
+              break
+
       with open(f"/sys/devices/virtual/thermal/thermal_zone{self.zone_number}/temp") as f:
         return int(f.read()) / self.scale
     except FileNotFoundError:
-      return 0
+      self.zone_number = -1
+      return math.nan
+    except (OSError, ValueError):
+      return math.nan
 
 @dataclass
 class ThermalConfig:

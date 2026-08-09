@@ -18,6 +18,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE, PC
+from openpilot.common.hardware.base import max_valid_temperature
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_ROM_USB_IDS, CHESTNUT_USB_IDS, get_usb_state, get_usb_topology, set_usb_state
 from openpilot.common.linux import LinuxSystemStats
@@ -99,6 +100,12 @@ OFFROAD_DANGER_TEMP = 85 if HARDWARE.get_device_type() == "mici" else 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
+
+def update_filtered_temperature(temp_filter: FirstOrderFilter, temperatures: list[float]) -> tuple[float, bool]:
+  max_temp = max_valid_temperature(temperatures)
+  if max_temp is None:
+    return float('inf'), False
+  return temp_filter.update(max_temp), True
 
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
@@ -300,22 +307,23 @@ def hardware_thread(end_event, hw_queue) -> None:
     chestnut.update(started_ts is None, last_hw_state.usb_state)
 
     # this subset is only used for offroad
-    temp_sources = [
+    offroad_temp_sources = [
       msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC, default=0.),
-      max(msg.deviceState.gpuTempC, default=0.),
+      *msg.deviceState.cpuTempC,
+      *msg.deviceState.gpuTempC,
     ]
-    offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
+    offroad_comp_temp, thermal_readings_valid = update_filtered_temperature(offroad_temp_filter, offroad_temp_sources)
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
-    all_comp_temp = all_temp_filter.update(max(temp_sources))
+    all_comp_temp, _ = update_filtered_temperature(all_temp_filter, [*offroad_temp_sources, *msg.deviceState.pmicTempC])
     msg.deviceState.maxTempC = all_comp_temp
 
-    msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
+    msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"]) if thermal_readings_valid else 100
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
-    if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
+    if not thermal_readings_valid:
+      thermal_status = ThermalStatus.critical
+    elif is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
       # if device is offroad and already hot without the extra onroad load,
       # we want to cool down first before increasing load
       thermal_status = ThermalStatus.critical
