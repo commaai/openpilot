@@ -1,24 +1,9 @@
-from pathlib import Path
 import importlib.util
+from pathlib import Path
 
 Import('env', 'arch', 'common')
 
-# build the fonts
-generator = File("#openpilot/selfdrive/assets/fonts/process.py")
-source_files = Glob("#openpilot/selfdrive/assets/fonts/*.ttf") + Glob("#openpilot/selfdrive/assets/fonts/*.otf")
-output_files = [
-  (f"#{Path(f.path).with_suffix('.fnt')}", f"#{Path(f.path).with_suffix('.png')}")
-  for f in source_files
-  if "NotoColor" not in f.name
-]
-env.Command(
-  target=output_files,
-  source=[generator, source_files],
-  action=f"python3 {generator}",
-)
-
-
-if GetOption('extras') and arch == "larch64":
+if GetOption('extras') and arch == "comma_arm64":
   # build installers
   raylib_dir = Path(importlib.util.find_spec("raylib").submodule_search_locations[0]) / "install"
   raylib_env = env.Clone()

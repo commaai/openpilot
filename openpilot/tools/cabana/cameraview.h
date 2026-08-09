@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QWidget>
 
+#include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_client.h"
 
 class CameraWidget : public QWidget {

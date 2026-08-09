@@ -4,6 +4,7 @@ import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
+import struct
 import threading
 import time
 import numpy as np
@@ -12,7 +13,8 @@ from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.messaging import PubMaster, SubMaster
 from openpilot.cereal.services import SERVICE_LIST
-from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
@@ -76,28 +78,38 @@ class ChestnutState:
   @cached_property
   def power_limit(self) -> int:
     smu = Device["AMD"].iface.dev_impl.smu
-    return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True)
+    return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True, timeout=100)
 
   def send(self) -> None:
     msg = messaging.new_message('chestnutState')
     state = msg.chestnutState
-    try:
-      smu = Device["AMD"].iface.dev_impl.smu
-      metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
-      state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
-      state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
-      state.powerDrawW = metrics.AverageSocketPower
-      state.powerLimitW = self.power_limit
-      state.gpuUsagePercent = metrics.AverageGfxActivity
-      state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
-      state.fanSpeedRpm = metrics.AvgFanRpm
-      self.valid = True
-    except Exception:
-      if self.valid:
-        cloudlog.exception("chestnut state read failed")
-      self.valid = False
+    valid = False
+    if "AMD" in Device._opened_devices:
+      try:
+        smu = Device["AMD"].iface.dev_impl.smu
+        smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
+        metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+        state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
+        state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
+        state.powerDrawW = metrics.AverageSocketPower
+        state.powerLimitW = self.power_limit
+        state.gpuUsagePercent = metrics.AverageGfxActivity
+        state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
+        state.fanSpeedRpm = metrics.AvgFanRpm
+        valid = True
+      except Exception:
+        if self.valid:
+          cloudlog.exception("chestnut state read failed")
+      try:
+        # ASM runs on USB-C power, these still read without a gpu
+        asm = Device["AMD"].iface.pci_dev.usb
+        state.pcieLtssm = asm.read(0xB450, 1)[0]
+        state.supplyVoltage, state.supplyCurrent = struct.unpack('<Hh', bytes(asm.usb.control_read(0xC0, 5))[:4])
+      except Exception:
+        pass
 
-    msg.valid = self.valid
+    self.valid = valid
+    msg.valid = valid
     self.pm.send('chestnutState', msg)
 
 
@@ -124,6 +136,7 @@ class ModelState:
     self.output_slices = metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
+    self.usbgpu = usbgpu
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
     self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
@@ -164,6 +177,10 @@ class ModelState:
       **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
     )
     model_output = outs.numpy()[0]
+    if self.usbgpu and not np.all(np.isfinite(model_output)):
+      # TODO remove with prev_feat
+      cloudlog.error("model output not finite, dropping frame")
+      return None
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
     self.npy['prev_feat'][:] = model_output[self.output_slices['hidden_state']]
 
@@ -186,6 +203,8 @@ def main(demo=False):
   cloudlog.warning("modeld init")
 
   USBGPU = usbgpu_present() and usbgpu_compiled()
+  if USBGPU:
+    os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
   params.put_bool("UsbGpuLoading", USBGPU)
   params.remove("UsbGpuActive")
@@ -196,12 +215,12 @@ def main(demo=False):
   while True:
     available_streams = VisionIpcClient.available_streams("camerad", block=False)
     if available_streams:
-      use_extra_client = VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams and VisionStreamType.VISION_STREAM_ROAD in available_streams
-      main_wide_camera = VisionStreamType.VISION_STREAM_ROAD not in available_streams
+      use_extra_client = VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams and VisionStreamType.VISION_STREAM_NARROW_ROAD in available_streams
+      main_wide_camera = VisionStreamType.VISION_STREAM_NARROW_ROAD not in available_streams
       break
     time.sleep(.1)
 
-  vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
+  vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_NARROW_ROAD
   vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True)
   vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False)
   cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
@@ -243,7 +262,7 @@ def main(demo=False):
   # messaging
   pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutState"] if USBGPU else [])
   pm = PubMaster(pub_socks)
-  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
+  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
   params = Params()
@@ -311,15 +330,17 @@ def main(demo=False):
     sm.update(0)
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
-    frame_id = sm["roadCameraState"].frameId
+    frame_id = sm["narrowRoadCameraState"].frameId
     v_ego = max(sm["carState"].vEgo, 0.)
     lat_delay = sm["liveDelay"].lateralDelay + LAT_SMOOTH_SECONDS
-    if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
+    if sm.updated["liveCalibration"] and sm.seen['narrowRoadCameraState'] and sm.seen['deviceState']:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
-      dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
-      model_transform_main = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics, False).astype(np.float32)
+      dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['narrowRoadCameraState'].sensor))]
+      main_intrinsics = dc.wide_road.intrinsics if main_wide_camera else dc.narrow_road.intrinsics
+      model_transform_main = get_warp_matrix(device_from_calib_euler, main_intrinsics, False).astype(np.float32)
       has_wide_camera = use_extra_client or main_wide_camera
-      model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if has_wide_camera else dc.fcam.intrinsics, True).astype(np.float32)
+      extra_intrinsics = dc.wide_road.intrinsics if has_wide_camera else dc.narrow_road.intrinsics
+      model_transform_extra = get_warp_matrix(device_from_calib_euler, extra_intrinsics, True).astype(np.float32)
       live_calib_seen = True
 
     traffic_convention = np.zeros(2)
@@ -376,6 +397,7 @@ def main(demo=False):
       fill_model_msg(modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
                      frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen)
+      modelv2_send.modelV2.big = model.usbgpu
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]

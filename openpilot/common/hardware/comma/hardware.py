@@ -12,9 +12,9 @@ from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
-from openpilot.common.esim.lpa import TiciLPA
-from openpilot.common.hardware.tici.pins import GPIO
-from openpilot.common.hardware.tici.amplifier import Amplifier
+from openpilot.common.esim.lpa import LPA
+from openpilot.common.hardware.comma.pins import GPIO
+from openpilot.common.hardware.comma.amplifier import Amplifier
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 
@@ -58,7 +58,17 @@ def get_default_route_iface():
     routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
   return min(routes)[1] if routes else None
 
-class Tici(HardwareBase):
+class HardwareComma(HardwareBase):
+  """
+    This platform covers the Snapdragon 845-based comma devices:
+    - tici = comma three
+    - tizi = comma 3X
+    - mici = comma four
+
+    We strictly use only the device codenames in this codebase for
+    consistency, though all user-facing UI should use the product names.
+  """
+
   @cached_property
   def amplifier(self):
     if self.get_device_type() == "mici":
@@ -145,7 +155,7 @@ class Tici(HardwareBase):
     }
 
   def get_sim_lpa(self) -> LPABase:
-    return TiciLPA()
+    return LPA()
 
   def get_imei(self):
     return self.get_modem_state().get('imei', '')
@@ -413,7 +423,7 @@ class Tici(HardwareBase):
     return True
 
 if __name__ == "__main__":
-  t = Tici()
+  t = HardwareComma()
   t.initialize_hardware()
   t.set_power_save(False)
   print(t.get_sim_info())

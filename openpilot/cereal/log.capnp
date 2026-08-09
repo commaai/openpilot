@@ -180,13 +180,13 @@ struct InitData {
 
   enum DeviceType {
     unknown @0;
-    neo @1;
+    neo @1;   # NEO, EON, & comma two
     chffrAndroid @2;
     chffrIos @3;
-    tici @4;
+    tici @4;  # comma three
     pc @5;
-    tizi @6;
-    mici @7;
+    tizi @6;  # comma 3X
+    mici @7;  # comma four
   }
 
   struct PandaInfo {
@@ -715,6 +715,9 @@ struct ChestnutState {
   gpuUsagePercent @4 :UInt8;
   gpuClockMhz @5 :UInt16;
   fanSpeedRpm @6 :UInt16;
+  pcieLtssm @7 :UInt8;
+  supplyVoltage @8 :UInt16;  # mV
+  supplyCurrent @9 :Int16;  # mA
 }
 
 struct RadarState @0x9a185389d6fdd05f {
@@ -1040,6 +1043,7 @@ struct ModelDataV2 {
   timestampEof @3 :UInt64;
   modelExecutionTime @15 :Float32;
   rawPredictions @16 :Data;
+  big @27 :Bool;
 
   # predicted future position, orientation, etc..
   position @4 :XYZTData;
@@ -2558,17 +2562,17 @@ struct Event {
     driverStateV2 @92 :DriverStateV2;
 
     # camera stuff, each camera state has a matching encode idx
-    roadCameraState @2 :FrameData;
-    driverCameraState @70: FrameData;
+    narrowRoadCameraState @2 :FrameData;
+    cabinCameraState @70: FrameData;
     wideRoadCameraState @74: FrameData;
-    roadEncodeIdx @15 :EncodeIndex;
-    driverEncodeIdx @76 :EncodeIndex;
+    narrowRoadEncodeIdx @15 :EncodeIndex;
+    cabinEncodeIdx @76 :EncodeIndex;
     wideRoadEncodeIdx @77 :EncodeIndex;
-    qRoadEncodeIdx @90 :EncodeIndex;
+    qNarrowRoadEncodeIdx @90 :EncodeIndex;
 
-    livestreamRoadEncodeIdx @117 :EncodeIndex;
+    livestreamNarrowRoadEncodeIdx @117 :EncodeIndex;
     livestreamWideRoadEncodeIdx @118 :EncodeIndex;
-    livestreamDriverEncodeIdx @119 :EncodeIndex;
+    livestreamCabinEncodeIdx @119 :EncodeIndex;
 
     # microphone data
     soundPressure @103 :SoundPressure;
@@ -2598,15 +2602,15 @@ struct Event {
 
     # *********** debug ***********
     testJoystick @52 :Joystick;
-    roadEncodeData @86 :EncodeData;
-    driverEncodeData @87 :EncodeData;
+    narrowRoadEncodeData @86 :EncodeData;
+    cabinEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
-    qRoadEncodeData @89 :EncodeData;
+    qNarrowRoadEncodeData @89 :EncodeData;
     alertDebug @133 :DebugAlert;
 
-    livestreamRoadEncodeData @120 :EncodeData;
+    livestreamNarrowRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
-    livestreamDriverEncodeData @122 :EncodeData;
+    livestreamCabinEncodeData @122 :EncodeData;
 
     # *********** Custom: reserved for forks ***********
 

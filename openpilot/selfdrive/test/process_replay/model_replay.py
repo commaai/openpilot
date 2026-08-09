@@ -146,9 +146,10 @@ def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
 
 def model_replay(lr, frs):
   # modeld is using frame pairs
-  modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"roadCameraState", "wideRoadCameraState"},
-                                                                         {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
-  dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"driverCameraState"}, {"driverEncodeIdx", "carParams", "can"})
+  camera_states = {"narrowRoadCameraState", "wideRoadCameraState"}
+  modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, camera_states,
+                          {"narrowRoadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
+  dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"cabinCameraState"}, {"cabinEncodeIdx", "carParams", "can"})
 
   if not SEND_EXTRA_INPUTS:
     modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
@@ -209,8 +210,8 @@ def get_frames():
       print(f"Failed to load frames from cache {cache_name}: {e}")
 
   frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'narrowRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'cabinCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
     'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
   }
   for fr in frs.values():

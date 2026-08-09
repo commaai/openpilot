@@ -32,9 +32,9 @@ class EncodedVideoFrame:
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   camera_to_sock_mapping = {
-    "driver": "livestreamDriverEncodeData",
+    "driver": "livestreamCabinEncodeData",
     "wideRoad": "livestreamWideRoadEncodeData",
-    "road": "livestreamRoadEncodeData",
+    "road": "livestreamNarrowRoadEncodeData",
   }
 
   def __init__(self, camera_type: str, video_enabled: bool = True):

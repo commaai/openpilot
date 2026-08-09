@@ -205,9 +205,9 @@ public:
   int buf_handle_raw[MAX_IFE_BUFS] = {};
   int sync_objs_ife[MAX_IFE_BUFS] = {};
   int sync_objs_bps[MAX_IFE_BUFS] = {};
-  uint64_t request_id_last = 0;
+  uint64_t last_valid_request_id = 0;
   uint64_t last_requeue_ts = 0;
-  uint64_t frame_id_raw_last = 0;
+  uint64_t last_valid_ife_frame_id = 0;
   int invalid_request_count = 0;
   bool skip_expected = true;
 
@@ -216,10 +216,10 @@ public:
 
 private:
   void clearAndRequeue(uint64_t from_request_id);
-  bool validateEvent(uint64_t request_id, uint64_t frame_id_raw);
+  bool validateEvent(uint64_t request_id, uint64_t ife_frame_id);
   bool waitForFrameReady(uint64_t request_id);
-  bool processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp);
-  static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp, bool staggered);
+  bool processFrame(int buf_idx, uint64_t request_id, uint64_t ife_frame_id, uint64_t timestamp);
+  static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t ife_frame_id, uint64_t timestamp, bool staggered);
   struct SyncData {
     uint64_t timestamp;
     uint64_t frame_id_offset = 0;

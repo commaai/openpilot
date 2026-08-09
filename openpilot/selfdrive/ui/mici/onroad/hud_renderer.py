@@ -168,8 +168,8 @@ class HudRenderer(Widget):
     if (engaged and not self._engaged and not ui_state.usbgpu_loading and ui_state.usbgpu_active is not True and
         ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame):
       self._small_model_engaged = True
-    if engaged and not self._engaged:
-      self._egpu_fade_time = rl.get_time()
+    if engaged != self._engaged:
+      self._egpu_fade_time = rl.get_time() if engaged else 0
     if (set_speed != self.set_speed and engaged) or (engaged and not self._engaged):
       self._set_speed_changed_time = rl.get_time()
     self._engaged = engaged
@@ -228,7 +228,7 @@ class HudRenderer(Widget):
       return
 
     pos = rl.Vector2(rect.x + rect.width - 10 - icon.width,
-                     rect.y + rect.height - 14 - (self._txt_wheel.height + icon.height) / 2 + (1 - alpha) * icon.height / 2)
+                     rect.y + rect.height - 14 - (self._txt_wheel.height + icon.height) / 2)
     rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:

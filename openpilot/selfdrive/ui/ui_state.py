@@ -48,7 +48,7 @@ class UIState:
         "driverMonitoringState",
         "carState",
         "driverStateV2",
-        "roadCameraState",
+        "narrowRoadCameraState",
         "wideRoadCameraState",
         "managerState",
         "selfdriveState",

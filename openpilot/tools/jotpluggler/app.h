@@ -87,7 +87,7 @@ enum class PaneKind : uint8_t {
 
 enum class CameraViewKind : uint8_t {
   Road,
-  Driver,
+  Cabin,
   WideRoad,
   QRoad,
 };
@@ -322,7 +322,7 @@ struct RouteData {
   std::vector<std::string> roots;
   std::vector<CanMessageData> can_messages;
   CameraFeedIndex road_camera;
-  CameraFeedIndex driver_camera;
+  CameraFeedIndex cabin_camera;
   CameraFeedIndex wide_road_camera;
   CameraFeedIndex qroad_camera;
   std::vector<ThumbnailFrame> thumbnails;

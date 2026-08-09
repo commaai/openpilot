@@ -9,7 +9,7 @@
 #include "common/util.h"
 #include "common/hardware/base.h"
 
-class HardwareTici : public HardwareNone {
+class HardwareComma : public HardwareNone {
 public:
   static std::string get_name() {
     static const std::string name = []() {
