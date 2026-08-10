@@ -51,7 +51,7 @@ def get_video_frame_hashes(video1: Path, video2: Path) -> tuple[list[str], list[
 @dataclass
 class DiffChunk:
   """Represents a contiguous chunk of differences between the two videos. Ranges (start-end) are inclusive."""
-  type: Literal['replace', 'insert', 'delete', 'equal']
+  type: Literal['replace', 'insert', 'delete']
   v1_start: int
   v1_end: int
   v1_count: int
@@ -63,9 +63,10 @@ class DiffChunk:
 def compute_diff_chunks(hashes1: list[str], hashes2: list[str]) -> list[DiffChunk]:
   """Use difflib to compute diff chunks from the two hash lists. Returns a list of DiffChunk objects."""
   matcher = difflib.SequenceMatcher(a=hashes1, b=hashes2, autojunk=False)
-  diff_ops = [op for op in matcher.get_opcodes() if op[0] != 'equal']  # filter out equal chunks
   chunks: list[DiffChunk] = []
-  for tag, i1, i2, j1, j2 in diff_ops:
+  for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+    if tag == 'equal':
+      continue
     chunks.append(DiffChunk(
       type=tag,
       v1_start=i1, v1_end=i2 - 1, v1_count=i2 - i1,
