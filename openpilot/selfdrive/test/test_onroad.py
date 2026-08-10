@@ -53,7 +53,7 @@ PROCS = {
   "openpilot.system.hardware.hardwared": 4.0,
   "openpilot.selfdrive.locationd.calibrationd": 2.0,
   "openpilot.selfdrive.locationd.locationd": 25.0,
-  "openpilot.selfdrive.locationd.estimatord": 25.0,
+  "openpilot.selfdrive.locationd.estimatord": 22.0,
   "openpilot.selfdrive.ui.soundd": 3.0,
   "openpilot.selfdrive.monitoring.dmonitoringd": 4.0,
   "openpilot.system.proclogd": 7.0,
