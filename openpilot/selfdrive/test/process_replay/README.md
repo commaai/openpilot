@@ -15,9 +15,8 @@ Currently the following processes are tested:
 * calibrationd
 * dmonitoringd
 * locationd
-* paramsd
+* estimatord
 * ubloxd
-* torqued
 
 ### Usage
 ```
@@ -79,9 +78,8 @@ Supported processes:
 * calibrationd
 * dmonitoringd
 * locationd
-* paramsd
+* estimatord
 * ubloxd
-* torqued
 * modeld
 * dmonitoringmodeld
 

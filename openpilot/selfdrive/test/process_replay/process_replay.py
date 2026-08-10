@@ -514,38 +514,10 @@ CONFIGS = [
     processing_time=0.01,
   ),
   ProcessConfig(
-    proc_name="paramsd",
-    pubs=["deviceMotion", "extrinsicsCalibration", "carState"],
-    subs=["vehicleParameters"],
-    ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("deviceMotion"),
-    tolerance=NUMPY_TOLERANCE,
-    processing_time=0.004,
-  ),
-  ProcessConfig(
-    proc_name="lagd",
-    pubs=["deviceMotion", "extrinsicsCalibration", "carState", "carControl", "controlsState"],
-    subs=["lateralDelay"],
-    ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("deviceMotion"),
-    tolerance=NUMPY_TOLERANCE,
-  ),
-  ProcessConfig(
     proc_name="ubloxd",
     pubs=["ubloxRaw"],
     subs=["ubloxGnss", "gpsLocationExternal"],
     ignore=["logMonoTime"],
-  ),
-  ProcessConfig(
-    proc_name="torqued",
-    pubs=["deviceMotion", "extrinsicsCalibration", "lateralDelay", "carState", "carControl", "carOutput"],
-    subs=["lateralTorqueParameters"],
-    ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("deviceMotion", True),
-    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="modeld",
@@ -586,7 +558,7 @@ def get_process_config(name: str) -> ProcessConfig:
 def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> dict[str, Any]:
   """
   Use this to get custom params dict based on provided logs.
-  Useful when replaying following processes: calibrationd, paramsd, torqued
+  Useful when replaying calibrationd.
   The params may be based on first or last message of given type (carParams, extrinsicsCalibration, vehicleParameters, lateralTorqueParameters) in the logs.
   """
 
