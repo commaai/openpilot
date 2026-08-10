@@ -453,12 +453,13 @@ class TestConnectionState(TestCase):
     assert self.manager.networks[0].ssid == "Mixed"
     assert self.manager.networks[0].security_type == SecurityType.WPA
 
-  def test_wrong_key_removes_runtime_credentials_and_stops_dhcp(self):
+  def test_wrong_key_removes_runtime_credentials_and_clears_station_state(self):
     need_auth = MagicMock()
     self.manager.add_callbacks(need_auth=need_auth)
     self.manager._set_connecting("TestNet")
     self.manager._set_pending_connection("TestNet", "wrongpass", False)
     self.manager._set_pending_network_id("0", self.manager._user_epoch)
+    self.manager._dhcp_adoption_ssid = "TestNet"
     self.manager._last_wrong_key_dispatch[("OldNet", None)] = 0.0
     self.manager._ctrl.request.return_value = "OK"
 
@@ -474,6 +475,7 @@ class TestConnectionState(TestCase):
     assert call("REMOVE_NETWORK 0") in self.manager._ctrl.request.call_args_list
     assert ("OldNet", None) not in self.manager._last_wrong_key_dispatch
     self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
     need_auth.assert_called_once_with("TestNet")
 
   def test_wrong_key_ignores_same_ssid_event_for_other_profile(self):

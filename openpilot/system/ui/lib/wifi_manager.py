@@ -752,9 +752,7 @@ class WifiManager:
           self._set_connecting(None)
           # CTRL-EVENT-DISCONNECTED is ignored while CONNECTING, so tear down
           # DHCP/IP/metered here ourselves in case it arrived before WRONG_KEY.
-          self._dhcp.stop()
-          self._ipv4_address = ""
-          self._current_network_metered = MeteredType.UNKNOWN
+          self._clear_station_state()
           self._enqueue_callbacks(self._disconnected)
 
     elif "CTRL-EVENT-NETWORK-NOT-FOUND" in event:
