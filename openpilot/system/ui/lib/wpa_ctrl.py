@@ -1,4 +1,3 @@
-"""wpa_supplicant control socket client and parsing helpers."""
 import os
 import re
 import shutil
@@ -131,8 +130,7 @@ class WpaCtrl(_WpaCtrlBase):
       return sock.recv(RECV_BUF_SIZE).decode("utf-8", "replace")
 
   def close(self):
-    # Serialize against request() so close() waits for in-flight send/recv
-    # instead of ripping the fd out from under a concurrent caller.
+    # Let in-flight requests finish before closing the socket
     with self._request_lock:
       super().close()
 
@@ -239,8 +237,7 @@ def decode_ssid(encoded: str) -> str:
           val = val * 8 + (ord(encoded[i]) - ord("0"))
           i += 1
       out.append(val & 0xff)
-    # else: unknown escape. The backslash is consumed and the char falls
-    # through to the next iteration and is appended as a literal.
+    # Unknown escapes consume only the backslash
 
   if not out or all(b == 0 for b in out):
     return ""
@@ -250,9 +247,7 @@ def decode_ssid(encoded: str) -> str:
 def parse_scan_results(raw: str) -> list[ScanResult]:
   """Parse wpa_supplicant SCAN_RESULTS output (tab-separated, first line is header)."""
   results = []
-  # Don't .strip() the whole payload: SSIDs may legally end with spaces and
-  # wpa_supplicant leaves printable spaces unescaped, so a global strip would
-  # clip the last line's trailing-space SSID.
+  # Preserve legal trailing spaces in the final SSID
   lines = raw.splitlines()
   if len(lines) < 2:
     return results
@@ -285,21 +280,16 @@ def flags_to_security_type(flags: str) -> SecurityType:
   if "WEP" in flags_upper:
     return SecurityType.UNSUPPORTED
 
-  # WPA2/WPA3 transitional networks advertise both PSK and SAE; PSK matches first
-  # and connects via WPA-PSK. Pure WPA3-Personal (SAE-only) falls through below.
+  # Transitional PSK+SAE networks remain usable through WPA-PSK
   if any(re.search(r"(?:^|\+)(?:(?:WPA2|RSN|WPA)-)?PSK(?!-SHA256)(?:[-+]|$)", group) for group in flag_groups):
     return SecurityType.WPA
   # Enterprise / 802.1X without a usable PSK suite → unsupported
   if "EAP" in flags_upper or "802.1X" in flags_upper:
     return SecurityType.UNSUPPORTED
-  # SAE-only: would need key_mgmt=SAE, which the current AGNOS kernel + wpa_supplicant
-  # build doesn't support. Mark unsupported so the UI doesn't prompt for a password
-  # only to fail the handshake. Becomes connectable on vamOS + mainline kernel.
+  # SAE-only is unsupported by the current AGNOS stack
   if "SAE" in flags_upper:
     return SecurityType.UNSUPPORTED
-  # These key-management modes are secured but do not use WPA-PSK. Treating
-  # them as open would configure key_mgmt=NONE and either fail or downgrade a
-  # transition network.
+  # Secured non-PSK modes must not fall through as open
   if any(mode in flags_upper for mode in ("OWE", "DPP", "OSEN", "FILS")):  # codespell:ignore fils
     return SecurityType.UNSUPPORTED
 
@@ -477,17 +467,13 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
                           on_abandoned_ap: Callable[[], None] | None = None) -> WpaCtrl | None:
   """Attach to a wpa_supplicant we own, or spawn one. Never attach to NM's daemon.
   Returns the attached WpaCtrl, or None if ownership cannot be acquired."""
-  # Wait for wlan0 on cold boot; _unmanage_wlan0 below silently fails if it's missing.
-  # If shutdown is requested while wlan0 is still absent, bail so stop() can't
-  # end up triggering _unmanage_wlan0 / pkill / ip flush after teardown.
+  # Wait for wlan0 without allowing teardown to mutate it afterward
   while not os.path.exists("/sys/class/net/wlan0"):
     if should_exit():
       return None
     time.sleep(0.5)
 
-  # AP adoption: a hotspot owned by another UI process is still up, and STA cleanup would tear it down.
-  # Retry on transient ctrl unavailability (UI just restarted, AP socket briefly unbound)
-  # rather than falling through to STA cleanup, which would kill dnsmasq and flush wlan0.
+  # Retry attaching to an adopted AP before tearing it down
   if wpa_supplicant_running(WPA_AP_CONF):
     for _ in range(3):
       if should_exit():
@@ -496,10 +482,7 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
       if ctrl is not None:
         return ctrl
       time.sleep(0.5)
-    # AP process is alive but its ctrl socket is unreachable (deleted/wedged). The
-    # hotspot is unmanageable from our side, so kill it and fall through to STA
-    # spawn. Otherwise we'd loop forever returning None and the user cannot recover
-    # via tethering toggle since `_start_tethering` only kills STA-config daemons.
+    # Replace an owned AP whose control socket remains unreachable
     cloudlog.warning("AP daemon present but ctrl attach failed; killing it so STA spawn can recover")
     stop_wpa_supplicant(WPA_AP_CONF)
     if on_abandoned_ap is not None:
@@ -508,7 +491,7 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
       except Exception:
         cloudlog.exception("Failed to clean up abandoned AP services")
 
-  # Our own STA daemon is still alive, so attach without disturbing NM.
+  # Reuse our station daemon without disturbing NetworkManager
   if wpa_supplicant_running(WPA_SUPPLICANT_CONF):
     if should_exit():
       return None
@@ -527,7 +510,7 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
         cloudlog.exception("Failed to reconcile running station configuration")
       ctrl.close()
 
-  # Honor cancellation before mutating NM / killing daemons / flushing IPs.
+  # Stop before mutating network state
   if should_exit():
     return None
 
@@ -535,8 +518,7 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
     cloudlog.warning("NetworkManager handoff failed; deferring station bringup")
     return None
 
-  # NM teardown is async (~800ms): wait for NM's ctrl socket to disappear before
-  # attaching or spawning, otherwise we bind to a socket NM is about to delete.
+  # Wait for NetworkManager's asynchronously removed control socket
   for _ in range(30):
     if should_exit():
       return None
@@ -544,10 +526,10 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
       break
     time.sleep(0.1)
   else:
-    # Socket still held by NM; the post-spawn pgrep gate below is the fallback.
+    # The post-spawn ownership check handles a lingering NetworkManager socket
     cloudlog.warning("/var/run/wpa_supplicant/wlan0 still present after NM unmanage; spawn will refuse to attach to foreign daemon")
 
-  # Target only OUR config so a system-managed daemon on another config survives.
+  # Stop only daemons using our config
   stop_wpa_supplicant(WPA_SUPPLICANT_CONF)
   stop_tethering_dnsmasq()
   subprocess.run(["sudo", "ip", "addr", "flush", "dev", "wlan0"], check=False)
@@ -555,8 +537,7 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
 
   subprocess.run(["sudo", "wpa_supplicant", "-B", "-i", "wlan0", "-c", WPA_SUPPLICANT_CONF, "-D", "nl80211"], check=False)
 
-  # Gate on pgrep matching OUR config so we refuse to attach to NM's daemon if its
-  # teardown didn't finish above.
+  # Never attach to a daemon not using our config
   for _ in range(30):
     if should_exit():
       return None

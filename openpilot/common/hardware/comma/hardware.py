@@ -214,7 +214,7 @@ class HardwareComma(HardwareBase):
       if network_type == NetworkType.wifi:
         ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
         if ssid:
-          # wpa_supplicant escapes non-printable bytes as \xNN.
+          # wpa_supplicant escapes non-printable bytes as \xNN
           ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
 
           nm_dirs = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")

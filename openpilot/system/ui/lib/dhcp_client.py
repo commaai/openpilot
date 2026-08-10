@@ -1,4 +1,3 @@
-"""udhcpc lifecycle for a single interface."""
 import os
 import re
 import subprocess
@@ -13,7 +12,7 @@ DHCP_DEFAULT_SCRIPT = "/etc/udhcpc/default.script"
 class DhcpClient:
   """Manage udhcpc for DHCP on wlan0."""
 
-  # Matches udhcpc's -T retry timeout below.
+  # Match udhcpc's -T retry timeout
   DISCOVER_TIMEOUT_SECONDS = 3
   DISCOVER_ATTEMPTS = 5
 
@@ -47,7 +46,7 @@ class DhcpClient:
     delete_default_route = ["sudo", "ip", "-6", "route", "del", "default", "dev", self._iface]
     for command in (
       ["sudo", "ip", "-6", "addr", "flush", "dev", self._iface, "scope", "global"],
-      # Router-advertised default routes require an explicit delete before the remaining routes can be flushed.
+      # Delete router-advertised defaults before flushing routes
       delete_default_route,
       ["sudo", "ip", "-6", "route", "flush", "dev", self._iface],
     ):
@@ -116,6 +115,6 @@ class DhcpClient:
           pass
       self._proc = None
     self._adopted = False
-    # Kill orphaned udhcpc children before flushing their lease state.
+    # Kill orphaned udhcpc children before flushing lease state
     subprocess.run(["sudo", "pkill", "-f", f"^udhcpc -i {self._iface}( |$)"], check=False)
     self._flush_lease()

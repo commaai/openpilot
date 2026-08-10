@@ -243,8 +243,7 @@ class AdvancedNetworkSettings(Widget):
 
       password = self._keyboard.text
       self._wifi_manager.set_tethering_password(password)
-      # Only debounce while tethering is actually bouncing. When tethering
-      # is off, set_tethering_password doesn't emit activated/disconnected.
+      # Debounce only while an active hotspot restarts
       if self._wifi_manager.is_tethering_active():
         self._tethering_password_action.set_enabled(False)
 

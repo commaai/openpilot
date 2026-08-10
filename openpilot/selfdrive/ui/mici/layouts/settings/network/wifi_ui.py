@@ -222,7 +222,7 @@ class WifiButton(BigButton):
       elif self._is_connected:
         self.set_value("tethering" if self._network.is_tethering else "connected")
       elif self._network_missing:
-        # after connecting/connected since wpa_supplicant will still attempt to connect/stay connected for a while
+        # wpa_supplicant may keep an out-of-range connection alive briefly
         self.set_value("not in range")
       else:
         self.set_value("unsupported")

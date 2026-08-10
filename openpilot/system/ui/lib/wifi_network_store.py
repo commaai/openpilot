@@ -1,5 +1,3 @@
-"""Persistent storage for saved WiFi networks, backed by .nmconnection files."""
-
 import configparser
 import os
 import re
@@ -21,10 +19,7 @@ NM_CONNECTIONS_DIR = "/data/etc/NetworkManager/system-connections"
 RUNTIME_CONNECTIONS_DIR = "/run/NetworkManager/system-connections"
 NETPLAN_CONNECTIONS_DIR = "/data/etc/netplan"
 
-# Only key-mgmt values we can actually drive via wpa_supplicant. Anything else
-# (wpa-eap, sae, ieee8021x, ...) gets skipped on load. Coercing those to
-# psk="" would render as key_mgmt=NONE in wpa_supplicant.conf, silently turning
-# a secure profile into an open one for the same SSID and inviting open spoofing.
+# Never reinterpret unsupported secured profiles as open
 _SUPPORTED_KEY_MGMT = {"wpa-psk", "none"}
 _SUPPORTED_CONNECTION_OPTIONS = {
   "id", "uuid", "type", "autoconnect", "autoconnect-priority", "autoconnect-retries", "timestamp", "metered", "interface-name",
@@ -35,8 +30,7 @@ _SUPPORTED_IPV4_METHODS = {"auto"}
 _SUPPORTED_IPV6_METHODS = {"auto", "ignore"}
 _SUPPORTED_IPV4_OPTIONS = {"method", "dns-priority"}
 _SUPPORTED_IPV6_OPTIONS = {"method", "addr-gen-mode"}
-# NetworkManager-backed openpilot profiles use this DNS priority. The direct
-# stack does not consume it, but retaining it keeps the keyfile rollback-safe.
+# Preserve NetworkManager's DNS priority for rollback compatibility
 _OPENPILOT_DNS_PRIORITY = "600"
 class MeteredType(IntEnum):
   UNKNOWN = 0
@@ -104,12 +98,9 @@ def _keyfile_section(cp: configparser.ConfigParser, alias: str, canonical: str) 
 
 
 class NetworkStore:
-  """Persistent storage for saved WiFi networks using .nmconnection files."""
-
   def __init__(self, directory: str = NM_CONNECTIONS_DIR, runtime_directory: str | None = None, netplan_directory: str | None = None):
     self._directory = directory
-    # Netplan exposes active keyfiles in /run without a persistent copy. Custom
-    # test stores remain isolated unless an explicit runtime directory is supplied.
+    # Import Netplan's runtime-only keyfiles on production stores
     self._runtime_directory = RUNTIME_CONNECTIONS_DIR if directory == NM_CONNECTIONS_DIR else None
     if runtime_directory is not None:
       self._runtime_directory = runtime_directory
@@ -206,8 +197,7 @@ class NetworkStore:
           or unsupported_connection_options):
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported connection constraints")
         return
-      # Persistent /data profiles are authoritative over netplan's runtime
-      # copies, including unsupported or disabled persistent profiles.
+      # Persistent profiles take precedence over Netplan runtime copies
       if imported and ssid in persistent_ssids:
         primary = self._networks.get(ssid)
         if primary is not None and file_uuid == primary.get("uuid") and primary.get("_runtime_filename") is None:
@@ -215,17 +205,14 @@ class NetworkStore:
           primary["_netplan_filename"] = self._find_netplan_filename(file_uuid)
         return
 
-      # An open profile has no [wifi-security] section. A secure profile with a
-      # key-mgmt we can't reproduce (wpa-eap, sae, ...) must be skipped entirely.
+      # Skip secured profiles that cannot be reproduced safely
       psk = ""
       if cp.has_section("wifi-security"):
         key_mgmt = cp.get("wifi-security", "key-mgmt", fallback="").lower()
         if key_mgmt not in _SUPPORTED_KEY_MGMT:
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported key-mgmt={key_mgmt!r}")
           return
-        # NM stores WEP as `key-mgmt=none` plus `wep-key*`/`wep-key-type`/`auth-alg=shared`.
-        # Loading those as open (psk="") would let generate_wpa_conf demote the secured
-        # SSID to key_mgmt=NONE, enabling auto-association to an open spoof of the same SSID.
+        # key-mgmt=none can still represent WEP; never import it as open
         wep_keys = ("wep-key0", "wep-key1", "wep-key2", "wep-key3", "wep-key-type", "auth-alg")
         if key_mgmt == "none" and any(cp.has_option("wifi-security", k) for k in wep_keys):
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} (WEP profile, unsupported)")
@@ -237,15 +224,12 @@ class NetworkStore:
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported security constraints")
           return
         psk = decode_nm_keyfile_string(cp.get("wifi-security", "psk", fallback=""))
-        # NM agent-managed secrets (psk-flags=1) live outside the keyfile. We can't
-        # drive them via wpa_supplicant, and loading with psk="" would render as
-        # key_mgmt=NONE, silently demoting a secure profile to open and inviting spoofs.
+        # Agent-managed secrets are unavailable to wpa_supplicant
         if key_mgmt == "wpa-psk" and not is_valid_psk(psk):
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} (wpa-psk with invalid inline secret)")
           return
 
-      # connection.autoconnect=false is user/provisioning intent. Do not load it
-      # only to have ENABLE_NETWORK all silently re-arm the auto-join.
+      # Respect disabled autoconnect profiles
       if not cp.getboolean("connection", "autoconnect", fallback=True):
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} (connection.autoconnect=false)")
         return
@@ -267,7 +251,7 @@ class NetworkStore:
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported addressing configuration")
         return
 
-      # getint/getboolean can raise ValueError on malformed values; skip the bad profile.
+      # Skip profiles with malformed integer or boolean values
       entry = {
         "psk": psk,
         "metered": cp.getint("connection", "metered", fallback=0),
@@ -278,7 +262,7 @@ class NetworkStore:
         "_connection": connection,
         "_ipv4": ipv4,
         "_ipv6": ipv6,
-        # Remember the on-disk filename so save/remove stay consistent with noncanonical files.
+        # Track the source filename for noncanonical profiles
         "_filename": None if imported else fname,
         "_runtime_filename": fname if imported else None,
         "_netplan_filename": self._find_netplan_filename(file_uuid) if imported else None,
@@ -458,13 +442,11 @@ class NetworkStore:
         raise OSError(f"failed to remove {netplan_path}")
       entry["_netplan_filename"] = None
 
-    # Keep one canonical filename even when the tracked profile uses another name.
+    # Keep one canonical filename for noncanonical profiles
     if stored_fname and stored_fname != canonical_fname:
       stored_path = os.path.join(self._directory, stored_fname)
       result = subprocess.run(["sudo", "rm", "-f", stored_path], check=False)
-      # If cleanup fails (FS read-only, etc.) both files survive. Make both files
-      # hold the same content so they remain one UUID-equivalent profile. Pin
-      # _filename to the stored name so each update retries the cleanup.
+      # Mirror failed noncanonical cleanup so both copies remain equivalent
       if result.returncode != 0:
         cloudlog.warning(f"NetworkStore: cleanup of noncanonical {stored_fname} failed; mirroring content to keep both files in sync")
         try:
@@ -643,7 +625,7 @@ class NetworkStore:
           return False
         profiles = list(self._profiles.get(ssid, [entry]))
 
-      # Remove every representation so a duplicate cannot restore the network.
+      # Remove every representation so duplicates cannot restore the network
       paths: set[str] = set()
       netplan_paths: set[str] = set()
       for profile in profiles:
@@ -684,7 +666,7 @@ class NetworkStore:
       else:
         for p in existing_paths:
           result = subprocess.run(["sudo", "rm", "-f", p], check=False)
-          # Keep the in-memory entry when disk removal fails.
+          # Keep the in-memory profile when disk removal fails
           if result.returncode != 0:
             cloudlog.warning(f"NetworkStore: failed to remove {p} (rc={result.returncode})")
             return False
