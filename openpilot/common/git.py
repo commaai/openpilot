@@ -31,12 +31,3 @@ def get_origin(cwd: str | None = None) -> str:
     return run_cmd(["git", "config", "remote." + tracking_remote + ".url"], cwd=cwd)
   except subprocess.CalledProcessError:  # Not on a branch, fallback
     return run_cmd_default(["git", "config", "--get", "remote.origin.url"], cwd=cwd)
-
-
-@cache
-def get_normalized_origin(cwd: str | None = None) -> str:
-  return get_origin(cwd) \
-    .replace("git@", "", 1) \
-    .replace(".git", "", 1) \
-    .replace("https://", "", 1) \
-    .replace(":", "/", 1)

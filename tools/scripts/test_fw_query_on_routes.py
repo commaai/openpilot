@@ -12,7 +12,6 @@ from openpilot.tools.lib.logreader import LogReader, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
 
-NO_API = "NO_API" in os.environ
 SUPPORTED_BRANDS = VERSIONS.keys()
 SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 UNKNOWN_BRAND = "unknown"
@@ -178,4 +177,3 @@ if __name__ == "__main__":
   print(f"Correct fuzzy matches:        {good_fuzzy}")
   print(f"Wrong fuzzy matches:          {wrong_fuzzy}")
   print()
-
