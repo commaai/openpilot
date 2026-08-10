@@ -15,7 +15,6 @@ Currently the following processes are tested:
 * calibrationd
 * dmonitoringd
 * locationd
-* estimatord
 * ubloxd
 
 ### Usage
@@ -78,7 +77,6 @@ Supported processes:
 * calibrationd
 * dmonitoringd
 * locationd
-* estimatord
 * ubloxd
 * modeld
 * dmonitoringmodeld
