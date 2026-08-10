@@ -1,4 +1,0 @@
-installer/installers/*
-
-tests/diff/report
-.coverage

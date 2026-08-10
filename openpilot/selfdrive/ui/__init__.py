@@ -1,1 +1,0 @@
-UI_BORDER_SIZE = 30

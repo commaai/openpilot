@@ -1,1 +1,0 @@
-../SAFETY.md
