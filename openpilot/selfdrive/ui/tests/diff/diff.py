@@ -51,7 +51,7 @@ def get_video_frame_hashes(video1: Path, video2: Path) -> tuple[list[str], list[
 @dataclass
 class DiffChunk:
   """Represents a contiguous chunk of differences between the two videos. Ranges (start-end) are inclusive."""
-  type: Literal['replace', 'insert', 'delete']
+  type: Literal['replace', 'insert', 'delete', 'equal']
   v1_start: int
   v1_end: int
   v1_count: int
