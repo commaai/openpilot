@@ -41,9 +41,9 @@ class ExcessiveActuationCheck:
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
         excessive_lat_actuation = True
 
-    # devicePose acceleration can be noisy due to bad mounting or aliased devicePose measurements
-    device_pose_valid = abs(CS.aEgo - accel_calibrated) < 2
-    self._excessive_counter = self._excessive_counter + 1 if device_pose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
+    # deviceMotion acceleration can be noisy due to bad mounting or aliased deviceMotion measurements
+    device_motion_valid = abs(CS.aEgo - accel_calibrated) < 2
+    self._excessive_counter = self._excessive_counter + 1 if device_motion_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
     excessive_type = None
     if self._excessive_counter > MIN_EXCESSIVE_ACTUATION_COUNT:

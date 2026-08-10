@@ -65,10 +65,10 @@ class VehicleParamsLearner:
     self.avg_angle_offset = self.angle_offset
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader):
-    if which == 'devicePose':
+    if which == 'deviceMotion':
       t = msg.timestamp * 1e-9
-      device_pose = Pose.from_device_pose(msg)
-      calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+      device_motion = Pose.from_device_motion(msg)
+      calibrated_pose = self.calibrator.build_calibrated_pose(device_motion)
 
       yaw_rate, yaw_rate_std = calibrated_pose.angular_velocity.z, calibrated_pose.angular_velocity.z_std
       yaw_rate_valid = msg.angularVelocityDevice.valid
@@ -79,7 +79,7 @@ class VehicleParamsLearner:
         yaw_rate, yaw_rate_std = 0.0, np.radians(10.0)
       self.observed_yaw_rate = yaw_rate
 
-      localizer_roll, localizer_roll_std = device_pose.orientation.x, device_pose.orientation.x_std
+      localizer_roll, localizer_roll_std = device_motion.orientation.x, device_motion.orientation.x_std
       localizer_roll_std = np.radians(1) if np.isnan(localizer_roll_std) else localizer_roll_std
       roll_valid = (localizer_roll_std < ROLL_STD_MAX) and (ROLL_MIN < localizer_roll < ROLL_MAX) and msg.sensorsOK
       if roll_valid:
@@ -113,8 +113,8 @@ class VehicleParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[stiffness]]))
         self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
 
-    elif which == 'cameraCalibration':
-      self.calibrator.feed_camera_calibration(msg)
+    elif which == 'extrinsicsCalibration':
+      self.calibrator.feed_extrinsics_calibration(msg)
 
     elif which == 'carState':
       steering_angle = msg.steeringAngleDeg
@@ -249,7 +249,7 @@ def main():
   REPLAY = bool(int(os.getenv("REPLAY", "0")))
 
   pm = messaging.PubMaster(['vehicleParameters'])
-  sm = messaging.SubMaster(['devicePose', 'cameraCalibration', 'carState'], poll='devicePose')
+  sm = messaging.SubMaster(['deviceMotion', 'extrinsicsCalibration', 'carState'], poll='deviceMotion')
 
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
@@ -265,7 +265,7 @@ def main():
           t = sm.logMonoTime[which] * 1e-9
           learner.handle_log(t, which, sm[which])
 
-    if sm.updated['devicePose']:
+    if sm.updated['deviceMotion']:
       msg = learner.get_msg(sm.all_checks(), debug=DEBUG)
 
       msg_dat = msg.to_bytes()

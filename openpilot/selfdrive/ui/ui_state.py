@@ -40,7 +40,7 @@ class UIState:
         "modelV2",
         "controlsState",
         "onroadEvents",
-        "cameraCalibration",
+        "extrinsicsCalibration",
         "radarState",
         "deviceState",
         "pandaStates",

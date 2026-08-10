@@ -64,7 +64,7 @@
        <curve name="/vehicleParameters/stiffnessFactor" color="#ff7f0e"/>
       </plot>
      </DockArea>
-     <DockArea name="live steering angle offsets for straight-ahead driving, large values here may indicate alignment problems">
+     <DockArea name="online-learned steering angle offsets for straight-ahead driving, large values here may indicate alignment problems">
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="-1.081041" bottom="-4.494133" right="1138.816328" left="0.000000"/>
        <limitY/>

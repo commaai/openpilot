@@ -43,9 +43,9 @@ def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_thres
       (t, "carControl", car.CarControl(latActive=not rejected)),
       (t, "carState", car.CarState(vEgo=vego, steeringPressed=False)),
       (t, "controlsState", log.ControlsState(desiredCurvature=desired_cuvature)),
-      (t, "devicePose", log.DevicePose(angularVelocityDevice=log.DevicePose.XYZMeasurement(z=actual_yr, valid=True),
+      (t, "deviceMotion", log.DeviceMotion(angularVelocityDevice=log.DeviceMotion.XYZMeasurement(z=actual_yr, valid=True),
                                    posenetOK=True, inputsOK=True)),
-      (t, "cameraCalibration", log.CameraCalibration(rpyCalib=[0, 0, 0], calStatus=log.CameraCalibration.Status.calibrated)),
+      (t, "extrinsicsCalibration", log.ExtrinsicsCalibration(rpyCalib=[0, 0, 0], calStatus=log.ExtrinsicsCalibration.Status.calibrated)),
     ]
     for t, w, m in msgs:
       estimator.handle_log(t, w, m)

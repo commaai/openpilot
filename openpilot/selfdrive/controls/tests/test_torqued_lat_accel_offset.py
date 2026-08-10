@@ -41,7 +41,7 @@ def simulate_straight_road_msgs(est):
   carControl = messaging.new_message('carControl').carControl
   carOutput = messaging.new_message('carOutput').carOutput
   carState = messaging.new_message('carState').carState
-  devicePose = messaging.new_message('devicePose').devicePose
+  deviceMotion = messaging.new_message('deviceMotion').deviceMotion
   carControl.latActive = True
   carState.vEgo = V_EGO
   carState.steeringPressed = False
@@ -50,11 +50,11 @@ def simulate_straight_road_msgs(est):
   lat_accels = TORQUE_TUNE.latAccelFactor * steer_torques
   for t, steer_torque, lat_accel in zip(ts, steer_torques, lat_accels, strict=True):
     carOutput.actuatorsOutput.torque = float(-steer_torque)
-    devicePose.orientationNED = {'x': float(np.deg2rad(ROLL_BIAS_DEG)), 'valid': True}
-    devicePose.angularVelocityDevice = {'z': float(lat_accel / V_EGO), 'valid': True}
-    devicePose.inputsOK, devicePose.sensorsOK, devicePose.posenetOK = True, True, True
-    devicePose.timestamp = int(t * 1e9)
-    for which, msg in (('carControl', carControl), ('carOutput', carOutput), ('carState', carState), ('devicePose', devicePose)):
+    deviceMotion.orientationNED = {'x': float(np.deg2rad(ROLL_BIAS_DEG)), 'valid': True}
+    deviceMotion.angularVelocityDevice = {'z': float(lat_accel / V_EGO), 'valid': True}
+    deviceMotion.inputsOK, deviceMotion.sensorsOK, deviceMotion.posenetOK = True, True, True
+    deviceMotion.timestamp = int(t * 1e9)
+    for which, msg in (('carControl', carControl), ('carOutput', carOutput), ('carState', carState), ('deviceMotion', deviceMotion)):
       est.handle_log(t, which, msg)
 
 class TestTorquedLatAccelOffset(OpenpilotTestCase):

@@ -76,7 +76,7 @@ def ui_thread(addr):
       'longitudinalPlan',
       'carControl',
       'radarState',
-      'cameraCalibration',
+      'extrinsicsCalibration',
       'controlsState',
       'selfdriveState',
       'radarTracks',
@@ -197,8 +197,8 @@ def ui_thread(addr):
     # draw all radar points
     maybe_update_radar_points(sm['radarTracks'].points, top_down[1])
 
-    if sm.updated['cameraCalibration'] and num_px:
-      rpyCalib = np.asarray(sm['cameraCalibration'].rpyCalib)
+    if sm.updated['extrinsicsCalibration'] and num_px:
+      rpyCalib = np.asarray(sm['extrinsicsCalibration'].rpyCalib)
       calibration = Calibration(num_px, rpyCalib, intrinsic_matrix, calib_scale)
 
     # Update overlay texture (RGB img -> RGBA with non-black pixels visible)

@@ -154,7 +154,7 @@ class TorqueEstimator(ParameterEstimator):
       _, spread = np.matmul(points[:, [0, 2]], slope2rot(slope)).T
       friction_coeff = np.std(spread) * FRICTION_FACTOR
     except np.linalg.LinAlgError as e:
-      cloudlog.exception(f"Error computing live torque params: {e}")
+      cloudlog.exception(f"Error computing lateral torque parameters: {e}")
       slope = offset = friction_coeff = np.nan
     return slope, offset, friction_coeff
 
@@ -176,21 +176,21 @@ class TorqueEstimator(ParameterEstimator):
       # TODO: check if high aEgo affects resulting lateral accel
       self.raw_points["vego"].append(msg.vEgo)
       self.raw_points["steer_override"].append(msg.steeringPressed)
-    elif which == "cameraCalibration":
-      self.calibrator.feed_camera_calibration(msg)
+    elif which == "extrinsicsCalibration":
+      self.calibrator.feed_extrinsics_calibration(msg)
     elif which == "lateralDelay":
       self.lag = msg.lateralDelay
     # calculate lateral accel from past steering torque
-    elif which == "devicePose":
+    elif which == "deviceMotion":
       is_valid = msg.angularVelocityDevice.valid and msg.orientationNED.valid and msg.inputsOK and msg.sensorsOK and msg.posenetOK
       if len(self.raw_points['steer_torque']) == self.hist_len and is_valid:
         t = msg.timestamp * 1e-9
-        device_pose = Pose.from_device_pose(msg)
-        calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+        device_motion = Pose.from_device_motion(msg)
+        calibrated_pose = self.calibrator.build_calibrated_pose(device_motion)
         angular_velocity_calibrated = calibrated_pose.angular_velocity
 
         yaw_rate = angular_velocity_calibrated.yaw
-        roll = device_pose.orientation.roll
+        roll = device_motion.orientation.roll
         # check lat active up to now (without lag compensation)
         lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t + self.lag, DT_MDL),
                                self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
@@ -222,7 +222,7 @@ class TorqueEstimator(ParameterEstimator):
 
       if self.filtered_points.is_valid():
         if any(val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, frictionCoeff]):
-          cloudlog.exception("Live torque parameters are invalid.")
+          cloudlog.exception("Lateral torque parameters are invalid.")
           lateralTorqueParameters.valid = False
           self.reset()
         else:
@@ -250,7 +250,7 @@ def main(demo=False):
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
   pm = messaging.PubMaster(['lateralTorqueParameters'])
-  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'cameraCalibration', 'devicePose', 'lateralDelay'], poll='devicePose')
+  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'extrinsicsCalibration', 'deviceMotion', 'lateralDelay'], poll='deviceMotion')
 
   params = Params()
   estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
@@ -263,7 +263,7 @@ def main(demo=False):
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
 
-    # 4Hz driven by devicePose
+    # 4Hz driven by deviceMotion
     if sm.frame % 5 == 0:
       pm.send('lateralTorqueParameters', estimator.get_msg(valid=sm.all_checks(), with_points=DEBUG))
 

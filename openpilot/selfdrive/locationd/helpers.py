@@ -130,7 +130,7 @@ class Measurement:
     self.xyz_std: np.ndarray = xyz_std
 
   @classmethod
-  def from_measurement_xyz(cls, measurement: log.DevicePose.XYZMeasurement) -> 'Measurement':
+  def from_measurement_xyz(cls, measurement: log.DeviceMotion.XYZMeasurement) -> 'Measurement':
     return cls(
       xyz=np.array([measurement.x, measurement.y, measurement.z]),
       xyz_std=np.array([measurement.xStd, measurement.yStd, measurement.zStd])
@@ -145,12 +145,12 @@ class Pose:
     self.angular_velocity = angular_velocity
 
   @classmethod
-  def from_device_pose(cls, device_pose: log.DevicePose) -> 'Pose':
+  def from_device_motion(cls, device_motion: log.DeviceMotion) -> 'Pose':
     return Pose(
-      orientation=Measurement.from_measurement_xyz(device_pose.orientationNED),
-      velocity=Measurement.from_measurement_xyz(device_pose.velocityDevice),
-      acceleration=Measurement.from_measurement_xyz(device_pose.accelerationDevice),
-      angular_velocity=Measurement.from_measurement_xyz(device_pose.angularVelocityDevice)
+      orientation=Measurement.from_measurement_xyz(device_motion.orientationNED),
+      velocity=Measurement.from_measurement_xyz(device_motion.velocityDevice),
+      acceleration=Measurement.from_measurement_xyz(device_motion.accelerationDevice),
+      angular_velocity=Measurement.from_measurement_xyz(device_motion.angularVelocityDevice)
     )
 
 
@@ -178,8 +178,8 @@ class PoseCalibrator:
 
     return Pose(ned_from_calib_euler, velocity_calib, acceleration_calib, angular_velocity_calib)
 
-  def feed_camera_calibration(self, camera_calibration: log.CameraCalibration):
-    calib_rpy = np.array(camera_calibration.rpyCalib)
+  def feed_extrinsics_calibration(self, extrinsics_calibration: log.ExtrinsicsCalibration):
+    calib_rpy = np.array(extrinsics_calibration.rpyCalib)
     device_from_calib = rot_from_euler(calib_rpy)
     self.calib_from_device = device_from_calib.T
-    self.calib_valid = camera_calibration.calStatus == log.CameraCalibration.Status.calibrated
+    self.calib_valid = extrinsics_calibration.calStatus == log.ExtrinsicsCalibration.Status.calibrated

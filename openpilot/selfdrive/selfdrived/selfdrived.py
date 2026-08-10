@@ -88,8 +88,8 @@ class SelfdriveD:
     if REPLAY:
       # no vipc in replay will make them ignored anyways
       ignore += ['narrowRoadCameraState', 'wideRoadCameraState']
-    self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'cameraCalibration',
-                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'devicePose', 'lateralDelay',
+    self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'extrinsicsCalibration',
+                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'deviceMotion', 'lateralDelay',
                                    'managerState', 'vehicleParameters', 'radarState', 'lateralTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark',
                                    'lateralManeuverPlan'] + \
@@ -270,11 +270,11 @@ class SelfdriveD:
         self.last_functional_fan_frame = self.sm.frame
 
     # Handle calibration status
-    cal_status = self.sm['cameraCalibration'].calStatus
-    if cal_status != log.CameraCalibration.Status.calibrated:
-      if cal_status == log.CameraCalibration.Status.uncalibrated:
+    cal_status = self.sm['extrinsicsCalibration'].calStatus
+    if cal_status != log.ExtrinsicsCalibration.Status.calibrated:
+      if cal_status == log.ExtrinsicsCalibration.Status.uncalibrated:
         self.events.add(EventName.calibrationIncomplete)
-      elif cal_status == log.CameraCalibration.Status.recalibrating:
+      elif cal_status == log.ExtrinsicsCalibration.Status.recalibrating:
         if not self.recalibrating_seen:
           set_offroad_alert("Offroad_Recalibration", True)
         self.recalibrating_seen = True
@@ -291,11 +291,11 @@ class SelfdriveD:
     #  NOTE: To fork maintainers.
     #  Disabling or nerfing safety features will get you and your users banned from our servers.
     #  We recommend that you do not change these numbers from the defaults.
-    if self.sm.updated['cameraCalibration']:
-      self.pose_calibrator.feed_camera_calibration(self.sm['cameraCalibration'])
-    if self.sm.updated['devicePose']:
-      device_pose = Pose.from_device_pose(self.sm['devicePose'])
-      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
+    if self.sm.updated['extrinsicsCalibration']:
+      self.pose_calibrator.feed_extrinsics_calibration(self.sm['extrinsicsCalibration'])
+    if self.sm.updated['deviceMotion']:
+      device_motion = Pose.from_device_motion(self.sm['deviceMotion'])
+      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_motion)
 
     if self.calibrated_pose is not None:
       excessive_actuation = self.excessive_actuation_check.update(self.sm, CS, self.calibrated_pose)
@@ -395,11 +395,11 @@ class SelfdriveD:
       self.logged_comm_issue = None
 
     if not self.CP.notCar and not big_model_settling:  # localization has nothing to work with during the load
-      if not self.sm['devicePose'].posenetOK:
+      if not self.sm['deviceMotion'].posenetOK:
         self.events.add(EventName.posenetInvalid)
-      if not self.sm['devicePose'].inputsOK:
+      if not self.sm['deviceMotion'].inputsOK:
         self.events.add(EventName.locationdTemporaryError)
-      if (not self.sm['vehicleParameters'].valid and cal_status == log.CameraCalibration.Status.calibrated and
+      if (not self.sm['vehicleParameters'].valid and cal_status == log.ExtrinsicsCalibration.Status.calibrated and
           not TESTING_CLOSET and (not SIMULATION or REPLAY)):
         self.events.add(EventName.paramsdTemporaryError)
 
@@ -439,7 +439,7 @@ class SelfdriveD:
 
     # GPS checks
     gps_ok = self.sm.recv_frame[self.gps_location_service] > 0 and (self.sm.frame - self.sm.recv_frame[self.gps_location_service]) * DT_CTRL < 2.0
-    if not gps_ok and self.sm['devicePose'].inputsOK and (self.distance_traveled > 1500):
+    if not gps_ok and self.sm['deviceMotion'].inputsOK and (self.distance_traveled > 1500):
       self.events.add(EventName.noGps)
     if gps_ok:
       self.distance_traveled = 0

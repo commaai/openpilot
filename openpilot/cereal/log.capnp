@@ -763,7 +763,7 @@ struct RadarState @0x9a185389d6fdd05f {
   }
 }
 
-struct CameraCalibration @0x96df70754d8390bc {
+struct ExtrinsicsCalibration @0x96df70754d8390bc {
   calStatus @11 :Status;
   calCycle @2 :Int32;
   calPerc @3 :Int8;
@@ -1384,7 +1384,7 @@ struct LiveLocationKalman {
 }
 
 
-struct DevicePose @0xc24ca2b57206b44d {
+struct DeviceMotion @0xc24ca2b57206b44d {
   # More info on reference frames:
   # https://github.com/commaai/openpilot/tree/master/openpilot/common/transformations
   orientationNED @0 :XYZMeasurement;
@@ -2537,7 +2537,7 @@ struct Event {
     radarState @13 :RadarState;
     radarTracks @131 :Car.RadarData;
     sendcan @17 :List(CanData);
-    cameraCalibration @19 :CameraCalibration;
+    extrinsicsCalibration @19 :ExtrinsicsCalibration;
     carState @22 :Car.CarState;
     carControl @23 :Car.CarControl;
     carOutput @127 :Car.CarOutput;
@@ -2556,7 +2556,7 @@ struct Event {
     onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
     driverMonitoringState @151 :DriverMonitoringState;
-    devicePose @129 :DevicePose;
+    deviceMotion @129 :DeviceMotion;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;

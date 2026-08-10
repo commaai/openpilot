@@ -171,7 +171,7 @@ class BlockAverage:
 
 
 class LateralLagEstimator:
-  inputs = {"carControl", "carState", "controlsState", "cameraCalibration", "devicePose"}
+  inputs = {"carControl", "carState", "controlsState", "extrinsicsCalibration", "deviceMotion"}
 
   def __init__(self, CP: car.CarParams, dt: float,
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
@@ -264,11 +264,11 @@ class LateralLagEstimator:
     elif which == "controlsState":
       self.steering_saturated = getattr(msg.lateralControlState, msg.lateralControlState.which()).saturated
       self.desired_curvature = msg.desiredCurvature
-    elif which == "cameraCalibration":
-      self.calibrator.feed_camera_calibration(msg)
-    elif which == "devicePose":
-      device_pose = Pose.from_device_pose(msg)
-      calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+    elif which == "extrinsicsCalibration":
+      self.calibrator.feed_extrinsics_calibration(msg)
+    elif which == "deviceMotion":
+      device_motion = Pose.from_device_motion(msg)
+      calibrated_pose = self.calibrator.build_calibrated_pose(device_motion)
       self.yaw_rate = calibrated_pose.angular_velocity.yaw
       self.yaw_rate_std = calibrated_pose.angular_velocity.yaw_std
       self.pose_valid = msg.angularVelocityDevice.valid and msg.posenetOK and msg.inputsOK
@@ -390,12 +390,12 @@ def main():
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
   pm = messaging.PubMaster(['lateralDelay'])
-  sm = messaging.SubMaster(['devicePose', 'cameraCalibration', 'carState', 'controlsState', 'carControl'], poll='devicePose')
+  sm = messaging.SubMaster(['deviceMotion', 'extrinsicsCalibration', 'carState', 'controlsState', 'carControl'], poll='deviceMotion')
 
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
-  lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['devicePose'].frequency)
+  lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['deviceMotion'].frequency)
   if (initial_lag_params := retrieve_initial_lag(params, CP)) is not None:
     lag, valid_blocks = initial_lag_params
     lag_learner.reset(lag, valid_blocks)
@@ -409,7 +409,7 @@ def main():
           lag_learner.handle_log(t, which, sm[which])
       lag_learner.update_points()
 
-    # 4Hz driven by devicePose
+    # 4Hz driven by deviceMotion
     if sm.frame % 5 == 0:
       lag_learner.update_estimate()
       lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)

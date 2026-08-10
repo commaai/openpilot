@@ -116,9 +116,9 @@ class DeviceLayout(Widget):
     calib_bytes = self._params.get("CalibrationParams")
     if calib_bytes:
       try:
-        calib = messaging.log_from_bytes(calib_bytes, log.Event).cameraCalibration
+        calib = messaging.log_from_bytes(calib_bytes, log.Event).extrinsicsCalibration
 
-        if calib.calStatus != log.CameraCalibration.Status.uncalibrated:
+        if calib.calStatus != log.ExtrinsicsCalibration.Status.uncalibrated:
           pitch = math.degrees(calib.rpyCalib[1])
           yaw = math.degrees(calib.rpyCalib[2])
           desc += tr(" Your device is pointed {:.1f}° {} and {:.1f}° {}.").format(abs(pitch), tr("down") if pitch > 0 else tr("up"),

@@ -40,7 +40,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
     migrate_controlsState,
     migrate_carState,
     migrate_liveLocationKalman,
-    migrate_devicePose,
+    migrate_deviceMotion,
     migrate_liveTracks,
     migrate_driverAssistance,
     migrate_drivingModelData,
@@ -184,37 +184,37 @@ def migrate_liveTracks(msgs):
   return ops, [], []
 
 
-@migration(inputs=["liveLocationKalmanDEPRECATED"], product="devicePose")
+@migration(inputs=["liveLocationKalmanDEPRECATED"], product="deviceMotion")
 def migrate_liveLocationKalman(msgs):
   nans = [float('nan')] * 3
   ops = []
   for index, msg in msgs:
-    m = messaging.new_message('devicePose')
+    m = messaging.new_message('deviceMotion')
     m.valid = msg.valid
     m.logMonoTime = msg.logMonoTime
-    m.devicePose.timestamp = msg.logMonoTime
+    m.deviceMotion.timestamp = msg.logMonoTime
     for field in ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]:
-      lp_field, llk_field = getattr(m.devicePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
+      lp_field, llk_field = getattr(m.deviceMotion, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
       lp_field.x, lp_field.y, lp_field.z = llk_field.value or nans
       lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std or nans
       lp_field.valid = llk_field.valid
     for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
-      setattr(m.devicePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
+      setattr(m.deviceMotion, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
     ops.append((index, as_reader(m)))
   return ops, [], []
 
 
-@migration(inputs=["devicePose"])
-def migrate_devicePose(msgs):
+@migration(inputs=["deviceMotion"])
+def migrate_deviceMotion(msgs):
   ops = []
-  needs_migration = all(msg.devicePose.timestamp == 0 for _, msg in msgs if msg.which() == 'devicePose')
+  needs_migration = all(msg.deviceMotion.timestamp == 0 for _, msg in msgs if msg.which() == 'deviceMotion')
   if not needs_migration:
     return [], [], []
 
   for index, msg in msgs:
-    if msg.which() == "devicePose":
+    if msg.which() == "deviceMotion":
       new_msg = msg.as_builder()
-      new_msg.devicePose.timestamp = msg.logMonoTime
+      new_msg.deviceMotion.timestamp = msg.logMonoTime
       ops.append((index, as_reader(new_msg)))
   return ops, [], []
 

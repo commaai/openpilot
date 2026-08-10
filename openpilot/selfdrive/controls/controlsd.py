@@ -39,7 +39,7 @@ class Controls:
     self.CI = interfaces[self.CP.carFingerprint](self.CP)
 
     self.sm = messaging.SubMaster(['lateralDelay', 'vehicleParameters', 'lateralTorqueParameters', 'modelV2', 'selfdriveState',
-                                   'cameraCalibration', 'devicePose', 'longitudinalPlan', 'lateralManeuverPlan', 'carState', 'carOutput',
+                                   'extrinsicsCalibration', 'deviceMotion', 'longitudinalPlan', 'lateralManeuverPlan', 'carState', 'carOutput',
                                    'driverMonitoringState', 'onroadEvents', 'driverAssistance'], poll='selfdriveState')
     self.pm = messaging.PubMaster(['carControl', 'controlsState'])
 
@@ -64,11 +64,11 @@ class Controls:
 
   def update(self):
     self.sm.update(15)
-    if self.sm.updated["cameraCalibration"]:
-      self.pose_calibrator.feed_camera_calibration(self.sm['cameraCalibration'])
-    if self.sm.updated["devicePose"]:
-      device_pose = Pose.from_device_pose(self.sm['devicePose'])
-      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
+    if self.sm.updated["extrinsicsCalibration"]:
+      self.pose_calibrator.feed_extrinsics_calibration(self.sm['extrinsicsCalibration'])
+    if self.sm.updated["deviceMotion"]:
+      device_motion = Pose.from_device_motion(self.sm['deviceMotion'])
+      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_motion)
 
   def state_control(self):
     CS = self.sm['carState']
