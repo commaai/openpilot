@@ -35,8 +35,7 @@ EOF
 
 function check_platform() {
   if [[ -f /AGNOS ]]; then
-    echo -e "[${RED}✗${NC}] This installer is for PCs only."
-    echo -e "    To install openpilot on a comma device, use the device's setup screen.\n"
+    echo -e "[${RED}✗${NC}] This installer is for PCs only. The environment is pre-configured in AGNOS."
     return 1
   fi
 }
