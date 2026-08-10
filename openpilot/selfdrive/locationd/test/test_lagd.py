@@ -43,9 +43,9 @@ def process_messages(estimator, lag_frames, n_frames, vego=25.0, rejection_thres
       (t, "carControl", car.CarControl(latActive=not rejected)),
       (t, "carState", car.CarState(vEgo=vego, steeringPressed=False)),
       (t, "controlsState", log.ControlsState(desiredCurvature=desired_cuvature)),
-      (t, "livePose", log.LivePose(angularVelocityDevice=log.LivePose.XYZMeasurement(z=actual_yr, valid=True),
+      (t, "deviceMotion", log.DeviceMotion(angularVelocityDevice=log.DeviceMotion.XYZMeasurement(z=actual_yr, valid=True),
                                    posenetOK=True, inputsOK=True)),
-      (t, "liveCalibration", log.LiveCalibrationData(rpyCalib=[0, 0, 0], calStatus=log.LiveCalibrationData.Status.calibrated)),
+      (t, "extrinsicsCalibration", log.ExtrinsicsCalibration(rpyCalib=[0, 0, 0], calStatus=log.ExtrinsicsCalibration.Status.calibrated)),
     ]
     for t, w, m in msgs:
       estimator.handle_log(t, w, m)
@@ -59,10 +59,10 @@ class TestLagd(OpenpilotTestCase):
 
     CP = get_test_car_params()
 
-    msg = messaging.new_message('liveDelay')
-    msg.liveDelay.lateralDelayEstimate = random.random()
-    msg.liveDelay.validBlocks = random.randint(1, 10)
-    msg.liveDelay.version = VERSION
+    msg = messaging.new_message('lateralDelay')
+    msg.lateralDelay.lateralDelayEstimate = random.random()
+    msg.lateralDelay.validBlocks = random.randint(1, 10)
+    msg.lateralDelay.version = VERSION
     params.put("LiveDelay", msg.to_bytes(), block=True)
     params.put("CarParamsPrevRoute", CP.as_builder().to_bytes(), block=True)
 
@@ -70,8 +70,8 @@ class TestLagd(OpenpilotTestCase):
     assert saved_lag_params is not None
 
     lag, valid_blocks = saved_lag_params
-    assert lag == msg.liveDelay.lateralDelayEstimate
-    assert valid_blocks == msg.liveDelay.validBlocks
+    assert lag == msg.lateralDelay.lateralDelayEstimate
+    assert valid_blocks == msg.lateralDelay.validBlocks
 
   def test_read_invalid_saved_params(self, subtests):
     params = Params()
@@ -79,9 +79,9 @@ class TestLagd(OpenpilotTestCase):
     CP = get_test_car_params()
 
     for msg_dict in [{'version': 0}, {'status': 'invalid'}, {'validBlocks': 100}]:
-      with subtests.test(msg=f"liveDelay={msg_dict}"):
-        msg = messaging.new_message('liveDelay')
-        msg.liveDelay = msg_dict
+      with subtests.test(msg=f"lateralDelay={msg_dict}"):
+        msg = messaging.new_message('lateralDelay')
+        msg.lateralDelay = msg_dict
         params.put("LiveDelay", msg.to_bytes(), block=True)
         params.put("CarParamsPrevRoute", CP.as_builder().to_bytes(), block=True)
         assert retrieve_initial_lag(params, CP) is None
@@ -114,11 +114,11 @@ class TestLagd(OpenpilotTestCase):
     mocked_CP = car.CarParams(steerActuatorDelay=0.5)
     estimator = LateralLagEstimator(mocked_CP, DT)
     msg = estimator.get_msg(True)
-    assert msg.liveDelay.status == 'unestimated'
-    assert np.allclose(msg.liveDelay.lateralDelay, estimator.initial_lag)
-    assert np.allclose(msg.liveDelay.lateralDelayEstimate, estimator.initial_lag)
-    assert msg.liveDelay.validBlocks == 0
-    assert msg.liveDelay.calPerc == 0
+    assert msg.lateralDelay.status == 'unestimated'
+    assert np.allclose(msg.lateralDelay.lateralDelay, estimator.initial_lag)
+    assert np.allclose(msg.lateralDelay.lateralDelayEstimate, estimator.initial_lag)
+    assert msg.lateralDelay.validBlocks == 0
+    assert msg.lateralDelay.calPerc == 0
 
   def test_estimator_basics(self, subtests):
     for lag_frames in range(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1):
@@ -127,21 +127,21 @@ class TestLagd(OpenpilotTestCase):
         estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
         process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
         msg = estimator.get_msg(True)
-        assert msg.liveDelay.status == 'estimated'
-        assert np.allclose(msg.liveDelay.lateralDelay, lag_frames * DT, atol=0.01)
-        assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
-        assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
-        assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
-        assert msg.liveDelay.calPerc == 100
+        assert msg.lateralDelay.status == 'estimated'
+        assert np.allclose(msg.lateralDelay.lateralDelay, lag_frames * DT, atol=0.01)
+        assert np.allclose(msg.lateralDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
+        assert np.allclose(msg.lateralDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
+        assert msg.lateralDelay.validBlocks == BLOCK_NUM_NEEDED
+        assert msg.lateralDelay.calPerc == 100
 
   def test_estimator_masking(self):
     mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.5), random.randint(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1)
     estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
     process_messages(estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)
-    assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
-    assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
-    assert msg.liveDelay.calPerc == 100
+    assert np.allclose(msg.lateralDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
+    assert np.allclose(msg.lateralDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
+    assert msg.lateralDelay.calPerc == 100
 
   @unittest.skipIf(PC, "only on device")
   def test_estimator_performance(self):

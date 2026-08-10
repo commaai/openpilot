@@ -40,7 +40,7 @@ class UIState:
         "modelV2",
         "controlsState",
         "onroadEvents",
-        "liveCalibration",
+        "extrinsicsCalibration",
         "radarState",
         "deviceState",
         "pandaStates",
@@ -56,7 +56,7 @@ class UIState:
         "gpsLocationExternal",
         "carOutput",
         "carControl",
-        "liveParameters",
+        "vehicleParameters",
         "testJoystick",
         "rawAudioData",
       ]

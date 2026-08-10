@@ -171,7 +171,7 @@ class BlockAverage:
 
 
 class LateralLagEstimator:
-  inputs = {"carControl", "carState", "controlsState", "liveCalibration", "livePose"}
+  inputs = {"carControl", "carState", "controlsState", "extrinsicsCalibration", "deviceMotion"}
 
   def __init__(self, CP: car.CarParams, dt: float,
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
@@ -219,39 +219,39 @@ class LateralLagEstimator:
     self.block_avg = BlockAverage(self.block_count, self.block_size, valid_blocks, initial_lag)
 
   def get_msg(self, valid: bool, debug: bool = False) -> capnp._DynamicStructBuilder:
-    msg = messaging.new_message('liveDelay')
+    msg = messaging.new_message('lateralDelay')
 
     msg.valid = valid
 
-    liveDelay = msg.liveDelay
+    lateralDelay = msg.lateralDelay
 
     valid_mean_lag, valid_std, current_mean_lag, current_std = self.block_avg.get()
     if self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag) and not np.isnan(valid_std):
       if valid_std > MAX_LAG_STD:
-        liveDelay.status = log.LiveDelayData.Status.invalid
+        lateralDelay.status = log.LateralDelay.Status.invalid
       else:
-        liveDelay.status = log.LiveDelayData.Status.estimated
+        lateralDelay.status = log.LateralDelay.Status.estimated
     else:
-      liveDelay.status = log.LiveDelayData.Status.unestimated
+      lateralDelay.status = log.LateralDelay.Status.unestimated
 
-    if liveDelay.status == log.LiveDelayData.Status.estimated:
-      liveDelay.lateralDelay = min(MAX_LAG, max(MIN_LAG, valid_mean_lag))
+    if lateralDelay.status == log.LateralDelay.Status.estimated:
+      lateralDelay.lateralDelay = min(MAX_LAG, max(MIN_LAG, valid_mean_lag))
     else:
-      liveDelay.lateralDelay = self.initial_lag
+      lateralDelay.lateralDelay = self.initial_lag
 
     if not np.isnan(current_mean_lag) and not np.isnan(current_std):
-      liveDelay.lateralDelayEstimate = current_mean_lag
-      liveDelay.lateralDelayEstimateStd = current_std
+      lateralDelay.lateralDelayEstimate = current_mean_lag
+      lateralDelay.lateralDelayEstimateStd = current_std
     else:
-      liveDelay.lateralDelayEstimate = self.initial_lag
-      liveDelay.lateralDelayEstimateStd = 0.0
+      lateralDelay.lateralDelayEstimate = self.initial_lag
+      lateralDelay.lateralDelayEstimateStd = 0.0
 
-    liveDelay.validBlocks = self.block_avg.valid_blocks
-    liveDelay.calPerc = min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) //
+    lateralDelay.validBlocks = self.block_avg.valid_blocks
+    lateralDelay.calPerc = min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) //
                             (self.min_valid_block_count * self.block_size), 100)
     if debug:
-      liveDelay.points = self.block_avg.values.flatten().tolist()
-    liveDelay.version = VERSION
+      lateralDelay.points = self.block_avg.values.flatten().tolist()
+    lateralDelay.version = VERSION
 
     return msg
 
@@ -264,11 +264,11 @@ class LateralLagEstimator:
     elif which == "controlsState":
       self.steering_saturated = getattr(msg.lateralControlState, msg.lateralControlState.which()).saturated
       self.desired_curvature = msg.desiredCurvature
-    elif which == "liveCalibration":
-      self.calibrator.feed_live_calib(msg)
-    elif which == "livePose":
-      device_pose = Pose.from_live_pose(msg)
-      calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+    elif which == "extrinsicsCalibration":
+      self.calibrator.feed_extrinsics_calibration(msg)
+    elif which == "deviceMotion":
+      device_motion = Pose.from_device_motion(msg)
+      calibrated_pose = self.calibrator.build_calibrated_pose(device_motion)
       self.yaw_rate = calibrated_pose.angular_velocity.yaw
       self.yaw_rate_std = calibrated_pose.angular_velocity.yaw_std
       self.pose_valid = msg.angularVelocityDevice.valid and msg.posenetOK and msg.inputsOK
@@ -368,13 +368,13 @@ def retrieve_initial_lag(params: Params, CP: car.CarParams):
   if last_lag_data is not None:
     try:
       with log.Event.from_bytes(last_lag_data) as last_lag_msg, car.CarParams.from_bytes(last_carparams_data) as last_CP:
-        ld = last_lag_msg.liveDelay
+        ld = last_lag_msg.lateralDelay
         if last_CP.carFingerprint != CP.carFingerprint:
           raise Exception("Car model mismatch")
 
         lag, valid_blocks, status, version = ld.lateralDelayEstimate, ld.validBlocks, ld.status, ld.version
         assert valid_blocks <= BLOCK_NUM, "Invalid number of valid blocks"
-        assert status != log.LiveDelayData.Status.invalid, "Lag estimate is invalid"
+        assert status != log.LateralDelay.Status.invalid, "Lag estimate is invalid"
         assert version == VERSION, f"Lag estimate is from a different version (got {version}, expected {VERSION})"
         return lag, valid_blocks
     except Exception as e:
@@ -389,13 +389,13 @@ def main():
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
-  pm = messaging.PubMaster(['liveDelay'])
-  sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carState', 'controlsState', 'carControl'], poll='livePose')
+  pm = messaging.PubMaster(['lateralDelay'])
+  sm = messaging.SubMaster(['deviceMotion', 'extrinsicsCalibration', 'carState', 'controlsState', 'carControl'], poll='deviceMotion')
 
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
-  lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency)
+  lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['deviceMotion'].frequency)
   if (initial_lag_params := retrieve_initial_lag(params, CP)) is not None:
     lag, valid_blocks = initial_lag_params
     lag_learner.reset(lag, valid_blocks)
@@ -409,12 +409,12 @@ def main():
           lag_learner.handle_log(t, which, sm[which])
       lag_learner.update_points()
 
-    # 4Hz driven by livePose
+    # 4Hz driven by deviceMotion
     if sm.frame % 5 == 0:
       lag_learner.update_estimate()
       lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)
       lag_msg_dat = lag_msg.to_bytes()
-      pm.send('liveDelay', lag_msg_dat)
+      pm.send('lateralDelay', lag_msg_dat)
 
       if sm.frame % 1200 == 0: # cache every 60 seconds
         params.put("LiveDelay", lag_msg_dat)

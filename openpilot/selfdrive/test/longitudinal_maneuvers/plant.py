@@ -64,7 +64,7 @@ class Plant:
     control = messaging.new_message('controlsState')
     ss = messaging.new_message('selfdriveState')
     car_state = messaging.new_message('carState')
-    lp = messaging.new_message('liveParameters')
+    lp = messaging.new_message('vehicleParameters')
     car_control = messaging.new_message('carControl')
     model = messaging.new_message('modelV2')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
@@ -132,7 +132,7 @@ class Plant:
           'carControl': car_control.carControl,
           'controlsState': control.controlsState,
           'selfdriveState': ss.selfdriveState,
-          'liveParameters': lp.liveParameters,
+          'vehicleParameters': lp.vehicleParameters,
           'modelV2': model.modelV2}
     self.planner.update(sm)
     self.acceleration = self.planner.output_a_target

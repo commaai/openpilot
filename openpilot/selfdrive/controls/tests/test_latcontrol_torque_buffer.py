@@ -27,7 +27,7 @@ class TestLatControlTorqueBuffer(OpenpilotTestCase):
     CS = car.CarState.new_message()
     CS.vEgo = 30
     CS.steeringPressed = False
-    params = log.LiveParametersData.new_message()
+    params = log.VehicleParameters.new_message()
 
     for _ in range(buffer_steps):
       controller.update(True, CS, VM, params, False, 0.001, False, 0.2)

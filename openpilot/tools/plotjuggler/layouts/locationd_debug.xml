@@ -8,7 +8,7 @@
       <plot flip_x="false" flip_y="false" style="Lines" mode="TimeSeries">
        <range right="2280.128382" left="0.000000" top="1.025000" bottom="-0.025000"/>
        <limitY/>
-       <curve color="#ff7f0e" name="/livePose/inputsOK"/>
+       <curve color="#ff7f0e" name="/deviceMotion/inputsOK"/>
       </plot>
      </DockArea>
      <DockArea name="...">
@@ -36,7 +36,7 @@
        <curve color="#17becf" name="/accelerometer/__valid"/>
        <curve color="#bcbd22" name="/gyroscope/__valid"/>
        <curve color="#f14cc1" name="/carState/__valid"/>
-       <curve color="#1ac938" name="/liveCalibration/__valid"/>
+       <curve color="#1ac938" name="/extrinsicsCalibration/__valid"/>
        <curve color="#9467bd" name="/cameraOdometry/__valid"/>
       </plot>
      </DockArea>
@@ -97,4 +97,3 @@
  <!-- - - - - - - - - - - - - - - -->
  <!-- - - - - - - - - - - - - - - -->
 </root>
-
