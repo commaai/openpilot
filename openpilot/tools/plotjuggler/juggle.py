@@ -9,6 +9,7 @@ import tempfile
 import requests
 import argparse
 from functools import partial
+import opendbc
 from opendbc.car.fingerprints import MIGRATION
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
@@ -95,8 +96,9 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, pl
       with open(os.path.join(tmp_cereal, schema), "w") as dst:
         dst.write(contents)
     os.symlink(os.path.join(BASEDIR, "openpilot", "cereal", "include"), os.path.join(tmp_cereal, "include"), target_is_directory=True)
-    os.symlink(os.path.join(BASEDIR, "opendbc_repo", "opendbc", "car", "car.capnp"), os.path.join(tmp_cereal, "car.capnp"))
-    os.symlink(os.path.join(BASEDIR, "opendbc_repo", "opendbc"), os.path.join(schema_root, "opendbc"), target_is_directory=True)
+    opendbc_root = os.path.dirname(opendbc.__file__)
+    os.symlink(os.path.join(opendbc_root, "car", "car.capnp"), os.path.join(tmp_cereal, "car.capnp"))
+    os.symlink(opendbc_root, os.path.join(schema_root, "opendbc"), target_is_directory=True)
     env["BASEDIR"] = schema_root
     subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 

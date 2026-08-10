@@ -8,7 +8,7 @@
 #include "imgui_impl_opengl3_loader.h"
 #include "implot.h"
 #include "common/yuv.h"
-#include "msgq_repo/msgq/ipc.h"
+#include "msgq/ipc.h"
 #include "tools/replay/framereader.h"
 
 #include <GLFW/glfw3.h>

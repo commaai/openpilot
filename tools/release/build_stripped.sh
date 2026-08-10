@@ -43,8 +43,6 @@ cd $SOURCE_DIR
 # in the directory
 cd $TARGET_DIR
 rm -rf .git/modules/
-rm -f panda/board/obj/panda.bin.signed
-
 find openpilot/selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 
 # include source commit hash and build date in commit

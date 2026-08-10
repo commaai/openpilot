@@ -11,7 +11,6 @@ cd $BASEDIR
 # helpful commands:
 # scons -Q --tree=derived
 
-cd $BASEDIR/opendbc_repo/
 scons --clean
 scons --no-cache --random
 if ! scons -q; then

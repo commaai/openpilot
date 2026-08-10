@@ -272,7 +272,7 @@ class StreamSession:
   async def get_answer(self):
     return await self.stream.start()
 
-  def message_handler(self, message: bytes):
+  def message_handler(self, message: bytes | str):
     try:
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
@@ -309,7 +309,7 @@ class StreamSession:
             if msg_type not in self.incoming_bridge_services:
               return
             if self.incoming_bridge is not None:
-              self.incoming_bridge.send(message)
+              self.incoming_bridge.send(message.encode() if isinstance(message, str) else message)
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 

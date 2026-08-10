@@ -11,7 +11,7 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "panda/board/comms_definitions.h"
+#include "panda/comms_definitions.h"
 #include "selfdrive/pandad/panda_comms.h"
 
 

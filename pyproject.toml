@@ -22,8 +22,16 @@ dependencies = [
 
   # core
   "scons",
+  "Cython",
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "numpy >=2.0",
+
+  # comma Python packages
+  "msgq",
+  "opendbc",
+  "panda",
+  "rednose",
+  "teleoprtc",
 
   # vendored native dependencies
   "comma-deps-capnproto",
@@ -73,12 +81,7 @@ tools = [
   #"metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 
-submodules = [
-  "msgq",
-  "opendbc",
-  "pandacan",
-  "rednose",
-  "teleoprtc",
+tinygrad = [
   "tinygrad",
 ]
 
@@ -87,7 +90,7 @@ Homepage = "https://github.com/commaai/openpilot"
 
 [dependency-groups]
 standalone = [
-  "openpilot[submodules]",
+  "openpilot[tinygrad]",
 ]
 
 [build-system]
@@ -152,13 +155,13 @@ unresolved-attribute = "ignore"  # many from capnp and Cython modules
 python-preference = "only-managed"
 default-groups = ["standalone"]
 override-dependencies = [
-  "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
+  "opendbc",  # panda pins opendbc independently; always use openpilot's pinned revision
 ]
 
 [tool.uv.sources]
-msgq = { path = "msgq_repo", editable = true }
-opendbc = { path = "opendbc_repo", editable = true }
-pandacan = { path = "panda", editable = true }
-rednose = { path = "rednose_repo", editable = true }
-teleoprtc = { path = "teleoprtc_repo", editable = true }
+msgq = { git = "https://github.com/commaai/msgq.git", rev = "e6a46fbf54769293faecb7dc50cb3068d7f46e5d" }
+opendbc = { git = "https://github.com/commaai/opendbc.git", rev = "b0685818f31df1e9d225ebc762087a8ebd563edb" }
+panda = { git = "https://github.com/commaai/panda.git", rev = "c34a13f45401c5de1b32f9a5eb4db54ec5672bcf" }
+rednose = { git = "https://github.com/commaai/rednose.git", rev = "9630580a2851e9d468a74a038779199d95b0dd4b" }
+teleoprtc = { git = "https://github.com/commaai/teleoprtc.git", rev = "31db236a9ef820d7051ccd53488153cfbc84d3b9" }
 tinygrad = { path = "tinygrad_repo", editable = true }

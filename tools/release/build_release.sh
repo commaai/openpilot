@@ -38,26 +38,14 @@ cp -pR --parents $(./tools/release/release_files.py) $BUILD_DIR/
 # in the directory
 cd $BUILD_DIR
 
-rm -f panda/board/obj/panda.bin.signed
-rm -f panda/board/obj/panda_h7.bin.signed
-
 VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git commit -a -m "openpilot v$VERSION release"
 
-# Build and test before launch_chffrplus.sh creates the on-device package
-# symlinks. SConstruct uses the same package roots for build subprocesses.
-export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
+# Build and test before launch_chffrplus.sh creates the on-device tinygrad symlink.
+export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/tinygrad_repo"
 scons
-
-if [ -z "$PANDA_DEBUG_BUILD" ]; then
-  # release panda fw
-  CERT=/data/pandaextra/certs/release RELEASE=1 scons panda/
-else
-  # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
-  scons panda/
-fi
 
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then

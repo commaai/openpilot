@@ -7,6 +7,11 @@ import shlex
 import importlib
 import numpy as np
 
+import msgq as msgq_package
+import opendbc
+import panda
+import rednose as rednose_package
+
 import SCons.Errors
 from SCons.Defaults import _stripixes
 
@@ -27,20 +32,16 @@ AddOption('--minimal',
           default=(not COMMA_HARDWARE and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
-submodule_python_paths = [
+python_paths = [
   Dir("#").abspath,
-  Dir("#msgq_repo").abspath,
-  Dir("#opendbc_repo").abspath,
-  Dir("#rednose_repo").abspath,
-  Dir("#teleoprtc_repo").abspath,
   Dir("#tinygrad_repo").abspath,
 ]
-for p in reversed(submodule_python_paths):
+for p in reversed(python_paths):
   if p not in sys.path:
     sys.path.insert(0, p)
 
 if external_pythonpath := os.environ.get("PYTHONPATH"):
-  submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
+  python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in python_paths]
 
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
@@ -121,7 +122,7 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": os.pathsep.join(submodule_python_paths),
+    "PYTHONPATH": os.pathsep.join(python_paths),
     "ACADOS_SOURCE_DIR": acados.DIR,
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
@@ -144,10 +145,11 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#openpilot",
-    "#msgq_repo",            # #include "msgq/..."
-    "#opendbc_repo",         # #include "opendbc/..."
-    "#rednose_repo",         # #include "rednose/..."
-    "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
+    msgq_package.INCLUDE_PATH,
+    opendbc.INCLUDE_PATH,
+    panda.INCLUDE_PATH,
+    rednose_package.INCLUDE_PATH,
+    os.path.dirname(rednose_package.__file__), # #include "logger/..."
     "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
@@ -155,17 +157,15 @@ env = Environment(
   ],
   LIBPATH=[
     "#openpilot/common",
-    "#msgq_repo",
     "#openpilot/selfdrive/pandad",
-    "#rednose_repo/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#rednose_repo",
+  REDNOSE_ROOT=rednose_package.INCLUDE_PATH,
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#msgq_repo/site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  toolpath=[rednose_package.SCONS_TOOL_PATH],
 )
 # SCons' Darwin linker tool doesn't define the variables used to expand RPATH.
 if arch == "Darwin":
@@ -256,24 +256,20 @@ Import('_common')
 common = [_common, 'json11', 'zmq']
 Export('common')
 
-# Build messaging (cereal + msgq + socketmaster + their dependencies)
-# Enable swaglog include in submodules
-env_swaglog = env.Clone()
-env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
-SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
+# Build messaging (cereal + installed msgq + socketmaster)
+msgq = File(msgq_package.LIB_PATH)
+visionipc = File(msgq_package.VISIONIPC_LIB_PATH)
+msgq_python = File(msgq_package.PYTHON_LIB_PATH)
+Export('msgq', 'visionipc', 'msgq_python')
 
 SConscript(['openpilot/cereal/SConscript'])
 
-Import('socketmaster', 'msgq')
+Import('socketmaster')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
 
-
-# Build other submodules
-SConscript(['panda/SConscript'])
-
-# Build rednose library
-SConscript(['rednose_repo/rednose/SConscript'])
+rednose = File(rednose_package.LIB_PATH)
+Export('rednose')
 
 # Build system services
 SConscript([

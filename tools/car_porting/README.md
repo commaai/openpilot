@@ -52,7 +52,7 @@ FAIL: test_panda_safety_carstate (__main__.CarModelTestCase.test_panda_safety_ca
 Assert that panda safety matches openpilot's carState
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/batman/openpilot/opendbc_repo/opendbc/car/tests/test_models.py", line 440, in test_panda_safety_carstate
+  File "/home/batman/openpilot/.venv/lib/python3.12/site-packages/opendbc/car/tests/test_models.py", line 440, in test_panda_safety_carstate
     self.assertFalse(failed_checks, f"panda safety doesn't agree with CarState: {failed_checks}")
 AssertionError: {'gasPressed': 116} is not false : panda safety doesn't agree with CarState: {'gasPressed': 116}
 ```

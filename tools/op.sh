@@ -197,16 +197,15 @@ EOF
   op_check_openpilot_dir
   op_check_os
 
-  # Submodules must be present before uv sync: pyproject path sources
-  # (pandacan, opendbc, msgq, ...) live in the submodule checkouts.
-  echo "Getting git submodules..."
+  # tinygrad remains a path dependency.
+  echo "Getting tinygrad..."
   st="$(date +%s)"
   if ! retry 3 git submodule update --jobs 4 --init --recursive; then
     echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
     return 1
   fi
   et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
+  echo -e " ↳ [${GREEN}✔${NC}] tinygrad installed successfully in $((et - st)) seconds."
 
   echo "Installing dependencies..."
   st="$(date +%s)"
