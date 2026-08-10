@@ -48,6 +48,7 @@ def build() -> None:
           compile_output.append(line)
 
     if scons.returncode == 0:
+      os.sync()
       break
 
   if scons.returncode != 0:
