@@ -708,6 +708,7 @@ struct UsbState {
 }
 
 struct ChestnutState {
+  # a metric we couldn't read is invalid: NaN for floats, the max of the type for ints
   tempC @0 :Float32;
   memoryTempC @1 :Float32;
   powerDrawW @2 :Float32;

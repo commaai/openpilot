@@ -71,6 +71,20 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
 
 class ChestnutState:
   # only modeld can access chestnut
+  # the gpu dying is exactly when we want the asm metrics, so send what we read and mark the rest invalid
+  INVALID = {
+    'tempC': float('nan'),
+    'memoryTempC': float('nan'),
+    'powerDrawW': float('nan'),
+    'powerLimitW': float('nan'),
+    'gpuUsagePercent': 0xFF,
+    'gpuClockMhz': 0xFFFF,
+    'fanSpeedRpm': 0xFFFF,
+    'pcieLtssm': 0xFF,
+    'supplyVoltage': 0xFFFF,
+    'supplyCurrent': 0x7FFF,
+  }
+
   def __init__(self, pm: PubMaster):
     self.pm = pm
     self.valid = True
@@ -83,6 +97,9 @@ class ChestnutState:
   def send(self) -> None:
     msg = messaging.new_message('chestnutState')
     state = msg.chestnutState
+    for field, invalid in self.INVALID.items():
+      setattr(state, field, invalid)
+
     valid = False
     if "AMD" in Device._opened_devices:
       try:
@@ -109,7 +126,7 @@ class ChestnutState:
         pass
 
     self.valid = valid
-    msg.valid = valid
+    msg.valid = True
     self.pm.send('chestnutState', msg)
 
 
