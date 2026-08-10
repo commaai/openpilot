@@ -36,7 +36,7 @@ class VehicleParamsLearner:
     self.P_initial = P_initial if P_initial is not None else CarKalman.P_initial
 
     self.kf.set_globals(
-      mass=CP.mass,
+      mass=CP.unitMass,
       rotational_inertia=CP.rotationalInertia,
       center_to_front=CP.centerToFront,
       center_to_rear=CP.wheelbase - CP.centerToFront,
