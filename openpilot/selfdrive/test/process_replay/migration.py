@@ -313,7 +313,7 @@ def migrate_pandaStates(msgs):
     "CHEVROLET_BOLT_EUV": GMSafetyFlags.EV | GMSafetyFlags.HW_CAM,
   }
   # TODO: get new Ford route
-  safety_param_migration |= dict.fromkeys((set(FORD) - FORD.with_flags(FordFlags.CANFD)), FordSafetyFlags.LONG_CONTROL)
+  safety_param_migration |= dict.fromkeys({p for p in FORD if not (p.config.flags & FordFlags.CANFD)}, FordSafetyFlags.LONG_CONTROL)
 
   # Migrate safety param base on carParams
   CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
