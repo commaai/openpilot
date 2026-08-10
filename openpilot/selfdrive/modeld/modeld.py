@@ -137,6 +137,7 @@ class ModelState:
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.usbgpu = usbgpu
+    self.nonfinite_count = 0
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
     self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
@@ -178,9 +179,16 @@ class ModelState:
     )
     model_output = outs.numpy()[0]
     if self.usbgpu and not np.all(np.isfinite(model_output)):
-      # TODO remove with prev_feat
-      cloudlog.error("model output not finite, dropping frame")
+      # a corrupted inference poisons the recurrent state through prev_feat, reset and retry from scratch
+      self.nonfinite_count += 1
+      cloudlog.error(f"model output not finite, resetting state ({self.nonfinite_count})")
+      self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+      self.prev_desire[:] = 0
+      self.full_frames.clear()
+      if self.nonfinite_count >= 5:
+        raise RuntimeError("model output not finite after state reset")
       return None
+    self.nonfinite_count = 0
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
     self.npy['prev_feat'][:] = model_output[self.output_slices['hidden_state']]
 
