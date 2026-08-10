@@ -116,9 +116,9 @@ class DeviceLayout(Widget):
     calib_bytes = self._params.get("CalibrationParams")
     if calib_bytes:
       try:
-        calib = messaging.log_from_bytes(calib_bytes, log.Event).liveCalibration
+        calib = messaging.log_from_bytes(calib_bytes, log.Event).cameraCalibration
 
-        if calib.calStatus != log.LiveCalibrationData.Status.uncalibrated:
+        if calib.calStatus != log.CameraCalibration.Status.uncalibrated:
           pitch = math.degrees(calib.rpyCalib[1])
           yaw = math.degrees(calib.rpyCalib[2])
           desc += tr(" Your device is pointed {:.1f}° {} and {:.1f}° {}.").format(abs(pitch), tr("down") if pitch > 0 else tr("up"),
@@ -130,7 +130,7 @@ class DeviceLayout(Widget):
     lag_bytes = self._params.get("LiveDelay")
     if lag_bytes:
       try:
-        lag_perc = messaging.log_from_bytes(lag_bytes, log.Event).liveDelay.calPerc
+        lag_perc = messaging.log_from_bytes(lag_bytes, log.Event).lateralDelay.calPerc
       except Exception:
         cloudlog.exception("invalid LiveDelay")
     if lag_perc < 100:
@@ -141,7 +141,7 @@ class DeviceLayout(Widget):
     torque_bytes = self._params.get("LiveTorqueParameters")
     if torque_bytes:
       try:
-        torque = messaging.log_from_bytes(torque_bytes, log.Event).liveTorqueParameters
+        torque = messaging.log_from_bytes(torque_bytes, log.Event).lateralTorqueParameters
         # don't add for non-torque cars
         if torque.useParams:
           torque_perc = torque.calPerc

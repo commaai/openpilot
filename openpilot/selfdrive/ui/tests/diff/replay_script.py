@@ -145,18 +145,18 @@ def set_updater_state(state: str) -> None:
 def setup_calibration_params() -> None:
   params = Params()
   # live calibration
-  calib = messaging.new_message('liveCalibration')
-  calib.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
-  calib.liveCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
+  calib = messaging.new_message('cameraCalibration')
+  calib.cameraCalibration.calStatus = log.CameraCalibration.Status.calibrated
+  calib.cameraCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
   params.put("CalibrationParams", calib.to_bytes(), block=True)
   # live delay
-  delay = messaging.new_message('liveDelay')
-  delay.liveDelay.calPerc = 75
+  delay = messaging.new_message('lateralDelay')
+  delay.lateralDelay.calPerc = 75
   params.put("LiveDelay", delay.to_bytes(), block=True)
   # live torque parameters
-  torque = messaging.new_message('liveTorqueParameters')
-  torque.liveTorqueParameters.useParams = True
-  torque.liveTorqueParameters.calPerc = 60
+  torque = messaging.new_message('lateralTorqueParameters')
+  torque.lateralTorqueParameters.useParams = True
+  torque.lateralTorqueParameters.calPerc = 60
   params.put("LiveTorqueParameters", torque.to_bytes(), block=True)
 
 

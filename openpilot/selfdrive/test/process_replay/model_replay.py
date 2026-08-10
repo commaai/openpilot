@@ -152,11 +152,11 @@ def model_replay(lr, frs):
   dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"cabinCameraState"}, {"cabinEncodeIdx", "carParams", "can"})
 
   if not SEND_EXTRA_INPUTS:
-    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
-    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'liveCalibration']
+    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'cameraCalibration']
+    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'cameraCalibration']
 
   # initial setup
-  for s in ('liveCalibration', 'deviceState'):
+  for s in ('cameraCalibration', 'deviceState'):
     msg = next(msg for msg in lr if msg.which() == s).as_builder()
     msg.logMonoTime = lr[0].logMonoTime
     modeld_logs.insert(1, msg.as_reader())

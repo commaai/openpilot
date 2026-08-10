@@ -20,7 +20,7 @@ from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
 
 OpState = log.SelfdriveState.OpenpilotState
-CALIBRATED = log.LiveCalibrationData.Status.calibrated
+CALIBRATED = log.CameraCalibration.Status.calibrated
 NARROW_ROAD_CAM = VisionStreamType.VISION_STREAM_NARROW_ROAD
 WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
@@ -267,10 +267,10 @@ class AugmentedRoadView(CameraView):
       self.device_camera = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['narrowRoadCameraState'].sensor))]
 
     # Check if live calibration data is available and valid
-    if not (sm.updated["liveCalibration"] and sm.valid['liveCalibration']):
+    if not (sm.updated["cameraCalibration"] and sm.valid['cameraCalibration']):
       return
 
-    calib = sm['liveCalibration']
+    calib = sm['cameraCalibration']
     if len(calib.rpyCalib) != 3 or calib.calStatus != CALIBRATED:
       return
 
@@ -285,7 +285,7 @@ class AugmentedRoadView(CameraView):
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     cache_key = (
-      ui_state.sm.recv_frame['liveCalibration'],
+      ui_state.sm.recv_frame['cameraCalibration'],
       int(self._content_rect.width),
       int(self._content_rect.height),
       self.stream_type,

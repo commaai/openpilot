@@ -148,7 +148,7 @@ class LocationEstimator:
     elif which == "carState":
       self.car_speed = abs(msg.vEgo)
 
-    elif which == "liveCalibration":
+    elif which == "cameraCalibration":
       # Note that we use this message during calibration
       if len(msg.rpyCalib) > 0:
         calib = np.array(msg.rpyCalib)
@@ -217,19 +217,19 @@ class LocationEstimator:
     angular_velocity_device, angular_velocity_device_std = state[States.ANGULAR_VELOCITY], std[States.ANGULAR_VELOCITY]
     acceleration_device, acceleration_device_std = state[States.ACCELERATION], std[States.ACCELERATION]
 
-    msg = messaging.new_message("livePose")
+    msg = messaging.new_message("devicePose")
     msg.valid = filter_valid
 
-    livePose = msg.livePose
-    init_xyz_measurement(livePose.orientationNED, orientation_ned, orientation_ned_std, filter_valid)
-    init_xyz_measurement(livePose.velocityDevice, velocity_device, velocity_device_std, filter_valid)
-    init_xyz_measurement(livePose.angularVelocityDevice, angular_velocity_device, angular_velocity_device_std, filter_valid)
-    init_xyz_measurement(livePose.accelerationDevice, acceleration_device, acceleration_device_std, filter_valid)
+    devicePose = msg.devicePose
+    init_xyz_measurement(devicePose.orientationNED, orientation_ned, orientation_ned_std, filter_valid)
+    init_xyz_measurement(devicePose.velocityDevice, velocity_device, velocity_device_std, filter_valid)
+    init_xyz_measurement(devicePose.angularVelocityDevice, angular_velocity_device, angular_velocity_device_std, filter_valid)
+    init_xyz_measurement(devicePose.accelerationDevice, acceleration_device, acceleration_device_std, filter_valid)
     if self.debug:
-      livePose.debugFilterState.value = state.tolist()
-      livePose.debugFilterState.std = std.tolist()
-      livePose.debugFilterState.valid = filter_valid
-      livePose.debugFilterState.observations = [
+      devicePose.debugFilterState.value = state.tolist()
+      devicePose.debugFilterState.std = std.tolist()
+      devicePose.debugFilterState.valid = filter_valid
+      devicePose.debugFilterState.observations = [
         {'kind': k, 'value': self.observations[k].tolist(), 'error': self.observation_errors[k].tolist()}
         for k in self.observations.keys()
       ]
@@ -238,10 +238,10 @@ class LocationEstimator:
     new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])
     std_spike = (new_mean / old_mean) > 4.0 and new_mean > 7.0
 
-    livePose.inputsOK = inputs_valid
-    livePose.posenetOK = not std_spike or self.car_speed <= 5.0
-    livePose.sensorsOK = sensors_valid
-    livePose.timestamp = int(np.nan_to_num(self.kf.t) * 1e9)
+    devicePose.inputsOK = inputs_valid
+    devicePose.posenetOK = not std_spike or self.car_speed <= 5.0
+    devicePose.sensorsOK = sensors_valid
+    devicePose.timestamp = int(np.nan_to_num(self.kf.t) * 1e9)
 
     return msg
 
@@ -267,8 +267,8 @@ def main():
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
   SIMULATION = bool(int(os.getenv("SIMULATION", "0")))
 
-  pm = messaging.PubMaster(['livePose'])
-  sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
+  pm = messaging.PubMaster(['devicePose'])
+  sm = messaging.SubMaster(['carState', 'cameraCalibration', 'cameraOdometry'], poll='cameraOdometry')
   # separate sensor sockets for efficiency
   sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
   sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)
@@ -288,7 +288,7 @@ def main():
   initial_pose_data = params.get("LocationFilterInitialState")
   if initial_pose_data is not None:
     with log.Event.from_bytes(initial_pose_data) as lp_msg:
-      filter_state = lp_msg.livePose.debugFilterState
+      filter_state = lp_msg.devicePose.debugFilterState
       x_initial = np.array(filter_state.value, dtype=np.float64) if len(filter_state.value) != 0 else PoseKalman.initial_x
       P_initial = np.diag(np.array(filter_state.std, dtype=np.float64)) if len(filter_state.std) != 0 else PoseKalman.initial_P
       estimator.reset(None, x_initial, P_initial)
@@ -333,7 +333,7 @@ def main():
       sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
-      pm.send("livePose", msg)
+      pm.send("devicePose", msg)
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
     migrate_controlsState,
     migrate_carState,
     migrate_liveLocationKalman,
-    migrate_livePose,
+    migrate_devicePose,
     migrate_liveTracks,
     migrate_driverAssistance,
     migrate_drivingModelData,
@@ -161,11 +161,11 @@ def migrate_drivingModelData(msgs):
   return [], add_ops, []
 
 
-@migration(inputs=["liveTracksDEPRECATED"], product="liveTracks")
+@migration(inputs=["liveTracksDEPRECATED"], product="radarTracks")
 def migrate_liveTracks(msgs):
   ops = []
   for index, msg in msgs:
-    new_msg = messaging.new_message('liveTracks')
+    new_msg = messaging.new_message('radarTracks')
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
 
@@ -179,42 +179,42 @@ def migrate_liveTracks(msgs):
       pt.vRel = track.vRel
       pts.append(pt)
 
-    new_msg.liveTracks.points = pts
+    new_msg.radarTracks.points = pts
     ops.append((index, as_reader(new_msg)))
   return ops, [], []
 
 
-@migration(inputs=["liveLocationKalmanDEPRECATED"], product="livePose")
+@migration(inputs=["liveLocationKalmanDEPRECATED"], product="devicePose")
 def migrate_liveLocationKalman(msgs):
   nans = [float('nan')] * 3
   ops = []
   for index, msg in msgs:
-    m = messaging.new_message('livePose')
+    m = messaging.new_message('devicePose')
     m.valid = msg.valid
     m.logMonoTime = msg.logMonoTime
-    m.livePose.timestamp = msg.logMonoTime
+    m.devicePose.timestamp = msg.logMonoTime
     for field in ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]:
-      lp_field, llk_field = getattr(m.livePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
+      lp_field, llk_field = getattr(m.devicePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
       lp_field.x, lp_field.y, lp_field.z = llk_field.value or nans
       lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std or nans
       lp_field.valid = llk_field.valid
     for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
-      setattr(m.livePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
+      setattr(m.devicePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
     ops.append((index, as_reader(m)))
   return ops, [], []
 
 
-@migration(inputs=["livePose"])
-def migrate_livePose(msgs):
+@migration(inputs=["devicePose"])
+def migrate_devicePose(msgs):
   ops = []
-  needs_migration = all(msg.livePose.timestamp == 0 for _, msg in msgs if msg.which() == 'livePose')
+  needs_migration = all(msg.devicePose.timestamp == 0 for _, msg in msgs if msg.which() == 'devicePose')
   if not needs_migration:
     return [], [], []
 
   for index, msg in msgs:
-    if msg.which() == "livePose":
+    if msg.which() == "devicePose":
       new_msg = msg.as_builder()
-      new_msg.livePose.timestamp = msg.logMonoTime
+      new_msg.devicePose.timestamp = msg.logMonoTime
       ops.append((index, as_reader(new_msg)))
   return ops, [], []
 

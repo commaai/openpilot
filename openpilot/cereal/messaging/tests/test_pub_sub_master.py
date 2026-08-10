@@ -70,7 +70,7 @@ class TestSubMaster(OpenpilotTestCase):
 
   def test_avg_frequency_checks(self):
     for poll in (True, False):
-      sm = messaging.SubMaster(["modelV2", "carParams", "carState", "cameraOdometry", "liveCalibration"],
+      sm = messaging.SubMaster(["modelV2", "carParams", "carState", "cameraOdometry", "cameraCalibration"],
                                poll=("modelV2" if poll else None),
                                frequency=(20. if not poll else None))
 
@@ -78,7 +78,7 @@ class TestSubMaster(OpenpilotTestCase):
         "carState": (20, 20),
         "modelV2": (20, 20 if poll else 10),
         "cameraOdometry": (20, 10),
-        "liveCalibration": (4, 4),
+        "cameraCalibration": (4, 4),
         "carParams": (None, None),
         "userBookmark": (None, None),
       }
