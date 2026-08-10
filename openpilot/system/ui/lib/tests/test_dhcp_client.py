@@ -28,11 +28,12 @@ class TestDhcpClient(TestCase):
       thread.assert_called_once_with(target=client._monitor_client, daemon=True)
       thread.return_value.start.assert_called_once()
 
-  def test_start_detaches_udhcpc_from_ui_session(self):
+  def test_start_flushes_stale_lease_and_detaches_udhcpc_from_ui_session(self):
     client = DhcpClient()
+    events = []
     with (
-      patch.object(dhcp_client_module.subprocess, "run") as run,
-      patch.object(dhcp_client_module.subprocess, "Popen") as popen,
+      patch.object(dhcp_client_module.subprocess, "run", side_effect=lambda command, **_: events.append(command)) as run,
+      patch.object(dhcp_client_module.subprocess, "Popen", side_effect=lambda *_, **__: events.append("spawn") or MagicMock()) as popen,
       patch.object(dhcp_client_module.threading, "Thread") as thread,
     ):
       client.start()
@@ -42,6 +43,7 @@ class TestDhcpClient(TestCase):
         ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
         ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
       ]
+      assert events == [*([call.args[0] for call in run.call_args_list]), "spawn"]
       popen.assert_called_once_with(
         ["sudo", "udhcpc", "-i", "wlan0", "-f", "-t", "5", "-T", "3", "-s", dhcp_client_module.DHCP_SCRIPT],
         stdout=subprocess.DEVNULL,
@@ -75,19 +77,6 @@ class TestDhcpClient(TestCase):
 
     error.assert_called_once_with(f"udhcpc default script is not executable: {dhcp_client_module.DHCP_DEFAULT_SCRIPT}")
     popen.assert_not_called()
-
-  def test_start_flushes_stale_lease_before_spawning_client(self):
-    client = DhcpClient()
-    events = []
-    with (
-      patch.object(dhcp_client_module.subprocess, "run"),
-      patch.object(client, "_flush_address", side_effect=lambda: events.append("flush")),
-      patch.object(client, "_spawn", side_effect=lambda: events.append("spawn") or True),
-      patch.object(client, "_start_client_thread"),
-    ):
-      client.start()
-
-    assert events == ["flush", "spawn"]
 
   def test_exited_client_is_restarted(self):
     client = DhcpClient()
@@ -136,29 +125,20 @@ class TestDhcpClient(TestCase):
         "ip -4 route del default via 192.168.1.1 dev wlan0 metric 0",
       ]
 
-  def test_stop_cleans_only_wlan_dhcp_routes_and_address(self):
-    client = DhcpClient()
-    client._proc = MagicMock()
-    with patch.object(dhcp_client_module.subprocess, "run") as run:
-      client.stop()
+  def test_stop_cleans_wlan_dhcp_state_with_or_without_process_handle(self):
+    for proc in (MagicMock(), None):
+      with self.subTest(has_process_handle=proc is not None):
+        client = DhcpClient()
+        client._proc = proc
+        with patch.object(dhcp_client_module.subprocess, "run") as run:
+          client.stop()
 
-      assert client._proc is None
-      assert [call.args[0] for call in run.call_args_list] == [
-        ["sudo", "pkill", "-f", "^udhcpc -i wlan0( |$)"],
-        ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
-        ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
-      ]
-
-  def test_stop_cleans_surviving_client_without_process_handle(self):
-    client = DhcpClient()
-    with patch.object(dhcp_client_module.subprocess, "run") as run:
-      client.stop()
-
-    assert [call.args[0] for call in run.call_args_list] == [
-      ["sudo", "pkill", "-f", "^udhcpc -i wlan0( |$)"],
-      ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
-      ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
-    ]
+        assert client._proc is None
+        assert [call.args[0] for call in run.call_args_list] == [
+          ["sudo", "pkill", "-f", "^udhcpc -i wlan0( |$)"],
+          ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
+          ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
+        ]
 
   def test_clear_ipv6_state_cleans_global_addresses_and_routes(self):
     client = DhcpClient()

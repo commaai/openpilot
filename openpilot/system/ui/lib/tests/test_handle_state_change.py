@@ -357,33 +357,26 @@ class TestConnectionState(TestCase):
 
         add_and_select_network.assert_called_once_with(ssid, "password123", False, priority, bssid=bssid, profile_uuid=profile["uuid"])
 
-  def test_connect_defers_dhcp_cleanup_to_worker(self):
-    self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
-    with (
-      patch.object(wifi_manager_module.threading, "Thread") as thread,
-      patch.object(self.manager, "_list_network_ids", return_value=[]),
-      patch.object(self.manager, "_add_and_select_network"),
-    ):
-      self.manager.connect_to_network("NextNet", "password123")
-      self.manager._dhcp.stop.assert_not_called()
-      thread.call_args.kwargs["target"]()
+  def test_connection_changes_defer_dhcp_cleanup_to_worker(self):
+    for action in ("connect", "activate"):
+      with self.subTest(action=action):
+        manager = build_wifi_manager()
+        manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
+        with (
+          patch.object(wifi_manager_module.threading, "Thread") as thread,
+          patch.object(manager, "_list_network_ids", return_value=["1"] if action == "activate" else []),
+          patch.object(manager, "_add_and_select_network"),
+          patch.object(manager, "_select_network_ids"),
+        ):
+          if action == "connect":
+            manager.connect_to_network("NextNet", "password123")
+          else:
+            manager.activate_connection("NextNet")
+          manager._dhcp.stop.assert_not_called()
+          thread.call_args.kwargs["target"]()
 
-    self.manager._dhcp.stop.assert_called_once()
-    self.manager._dhcp.clear_ipv6_state.assert_called_once()
-
-  def test_activate_defers_dhcp_cleanup_to_worker(self):
-    self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
-    with (
-      patch.object(wifi_manager_module.threading, "Thread") as thread,
-      patch.object(self.manager, "_list_network_ids", return_value=["1"]),
-      patch.object(self.manager, "_select_network_ids"),
-    ):
-      self.manager.activate_connection("NextNet")
-      self.manager._dhcp.stop.assert_not_called()
-      thread.call_args.kwargs["target"]()
-
-    self.manager._dhcp.stop.assert_called_once()
-    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+        manager._dhcp.stop.assert_called_once()
+        manager._dhcp.clear_ipv6_state.assert_called_once()
 
   def test_latest_connect_worker_owns_deferred_dhcp_cleanup(self):
     self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTED)
@@ -1585,31 +1578,13 @@ class TestTetheringPassword(TestCase):
     password_file.write.assert_called_once_with("second-password")
     manager._store.set_tethering_password.assert_called_once_with("Hotspot", "second-password")
 
-  def test_startup_falls_back_to_existing_hotspot_password(self):
-    manager = build_wifi_manager()
-    manager._tethering_ssid = "weedle"
-    store = manager._store
-    assert store is not None
-    store.get_tethering_password.return_value = "custom-password"
-    manager._scan_thread = MagicMock()
-    manager._state_thread = MagicMock()
-
-    with (
-      patch.object(wifi_manager_module, "NetworkStore", return_value=store),
-      patch("builtins.open", side_effect=FileNotFoundError),
-      patch.object(wifi_manager_module, "generate_wpa_conf"),
-      patch.object(manager, "_ensure_wpa_supplicant"),
-      patch.object(manager, "_update_networks"),
-      patch.object(manager, "_init_wifi_state"),
-      patch.object(wifi_manager_module.threading, "Thread") as thread,
-    ):
-      manager._initialize()
-      thread.call_args.kwargs["target"]()
-
-    assert manager.tethering_password == "custom-password"
-
-  def test_startup_falls_back_when_password_file_is_unreadable(self):
-    for error in (PermissionError("denied"), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid")):
+  def test_startup_falls_back_when_password_file_is_unavailable(self):
+    errors = (
+      FileNotFoundError(),
+      PermissionError("denied"),
+      UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid"),
+    )
+    for error in errors:
       with self.subTest(error=type(error).__name__):
         manager = build_wifi_manager()
         manager._tethering_ssid = "weedle"

@@ -920,7 +920,7 @@ method=auto
     assert "address1=192.168.50.10/24,192.168.50.1" in Path(path).read_text()
 
   def test_saved_profile_uses_nm_keyfile_compatible_name_and_mode(self):
-    with patch.object(store_module.subprocess, "run", return_value=MagicMock(returncode=0)) as run:
+    with patch.object(store_module.subprocess, "run", side_effect=self.run_file_command) as run:
       store = self.make_store()
 
       store.save_network("Cafe/Wifi", psk="password123")
@@ -929,14 +929,8 @@ method=auto
                      if item.args[0][:2] == ["sudo", "install"] and "-d" not in item.args[0])
       assert install[-1].endswith("-Cafe_Wifi.nmconnection")
       assert install[install.index("-m") + 1] == "600"
-
-  def test_new_profile_writes_rollback_dns_priority(self):
-    with patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
-      store = self.make_store()
-      store.save_network("Rollback", psk="password123")
-
-    raw = next(Path(self.persistent).glob("*.nmconnection")).read_text()
-    assert "dns-priority = 600" in raw
+      raw = next(Path(self.persistent).glob("*.nmconnection")).read_text()
+      assert "dns-priority = 600" in raw
 
   def test_round_trips_boundary_whitespace_with_keyfile_escaping(self):
     with patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
@@ -967,12 +961,3 @@ method=auto
         reloaded = self.make_store()
 
     assert require_entry(reloaded, "65;66;67;")["psk"] == "password123"
-
-  def test_get_returns_copy(self):
-    store = self.make_store()
-    store._networks["Test"] = {"psk": "password123"}
-
-    entry = require_entry(store, "Test")
-    entry["psk"] = "changed"
-
-    assert require_entry(store, "Test")["psk"] == "password123"

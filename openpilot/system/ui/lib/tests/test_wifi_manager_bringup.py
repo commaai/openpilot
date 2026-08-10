@@ -55,15 +55,6 @@ def tethering_side_effects(manager: WifiManager, mode: str = "AP"):
 
 
 class TestTetheringFirewall(TestCase):
-  def test_start_owns_tethering_active_state(self):
-    manager = build_tethering_manager()
-    manager._tethering_active = False
-
-    with tethering_side_effects(manager):
-      manager._start_tethering()
-
-    assert manager.is_tethering_active()
-
   def test_selects_xtables_backend(self):
     for discovered, expected in (("/usr/sbin/iptables-legacy", "iptables-legacy"), (None, "iptables")):
       with self.subTest(discovered=discovered), patch.object(wifi_manager_module.shutil, "which", return_value=discovered):
@@ -71,6 +62,7 @@ class TestTetheringFirewall(TestCase):
 
   def test_installs_uplink_independent_masquerade(self):
     manager = build_tethering_manager()
+    manager._tethering_active = False
     with (
       patch.object(wifi_manager_module.shutil, "which", return_value="/usr/sbin/iptables-legacy"),
       tethering_side_effects(manager) as (run, ctrl, _, _),
@@ -84,6 +76,7 @@ class TestTetheringFirewall(TestCase):
     assert "!" in nat_add and "-d" in nat_add
     assert "-o" not in nat_add
     assert TETHERING_NAT_COMMENT in nat_add
+    assert manager.is_tethering_active()
     assert manager._ctrl is ctrl
     assert manager._wifi_state == WifiState("weedle-test", ConnectStatus.CONNECTED)
 

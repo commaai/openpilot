@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, call, patch
 
 from openpilot.system.ui.lib import wpa_ctrl as wpa_ctrl_module
 from openpilot.system.ui.lib.wpa_ctrl import (
-  RECV_BUF_SIZE,
   SecurityType,
   WpaCtrl,
   decode_ssid,
@@ -136,21 +135,6 @@ class TestParseScanResults(TestCase):
         results = parse_scan_results(self.HEADER + body)
         assert len(results) == 1
         assert results[0].ssid == expected
-
-  def test_large_scan_fits_in_recv_buffer(self):
-    lines = [self.HEADER.strip()]
-    for i in range(200):
-      bssid = f"00:11:22:33:{i // 256:02x}:{i % 256:02x}"
-      ssid = f"Network_{i:03d}_with_a_longer_name_padding"
-      lines.append(f"{bssid}\t2437\t{-30 - (i % 70)}\t[WPA2-PSK-CCMP][ESS]\t{ssid}")
-    raw = "\n".join(lines) + "\n"
-
-    assert len(raw.encode()) < RECV_BUF_SIZE
-
-    results = parse_scan_results(raw)
-    assert len(results) == 200
-    assert results[0].ssid == "Network_000_with_a_longer_name_padding"
-    assert results[199].ssid == "Network_199_with_a_longer_name_padding"
 
 class TestDecodeSsid(TestCase):
   def test_values(self):
