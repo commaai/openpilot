@@ -841,13 +841,17 @@ network:
 
     assert persistent_path.exists()
 
-  def test_edit_runtime_profile_rolls_back_when_netplan_remove_fails(self):
-    write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
+  def test_edit_runtime_profile_restores_sources_when_netplan_remove_fails(self):
+    runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
+    original_runtime = runtime_path.read_text()
     netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('runtime-uuid')}.yaml")
     netplan_path.write_text("network:\n  version: 2\n")
+    original_netplan = netplan_path.read_text()
 
-    def run(command, **_):
-      return MagicMock(returncode=1 if command[-1] == str(netplan_path) else 0)
+    def run(command, **kwargs):
+      if command[:3] == ["sudo", "rm", "-f"] and command[-1] == str(netplan_path):
+        return MagicMock(returncode=1)
+      return self.run_file_command(command, **kwargs)
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run) as process:
       store = self.make_store()
@@ -856,10 +860,15 @@ network:
       with self.assertRaises(OSError):
         store.save_network("Runtime", psk="replacement")
 
-      commands = [item.args[0] for item in process.call_args_list]
-      assert ["sudo", "rm", "-f", keyfile_path] in commands
-      assert require_entry(store, "Runtime")["psk"] == "password123"
-      assert require_entry(store, "Runtime")["_netplan_filename"] == f"90-NM-{profile_uuid('runtime-uuid')}.yaml"
+    commands = [item.args[0] for item in process.call_args_list]
+    assert ["sudo", "rm", "-f", keyfile_path] in commands
+    assert runtime_path.read_text() == original_runtime
+    assert netplan_path.read_text() == original_netplan
+    assert not Path(keyfile_path).exists()
+    assert not list(Path(self.root).rglob("*.openpilot-update-*"))
+    assert require_entry(store, "Runtime")["psk"] == "password123"
+    assert require_entry(store, "Runtime")["_runtime_filename"] == "netplan.nmconnection"
+    assert require_entry(store, "Runtime")["_netplan_filename"] == f"90-NM-{profile_uuid('runtime-uuid')}.yaml"
 
   def test_accepts_only_networkmanager_dns_priority(self):
     rollback_path = write_profile(self.persistent, "rollback.nmconnection", "Rollback")

@@ -308,7 +308,7 @@ class NetworkStore:
 
   @contextmanager
   def _profile_update(self, ssid: str, profiles: list[dict]) -> Iterator[None]:
-    if len(profiles) < 2:
+    if not profiles:
       yield
       return
 
