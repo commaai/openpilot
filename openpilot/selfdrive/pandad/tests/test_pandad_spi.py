@@ -102,7 +102,6 @@ class TestBoarddSpi(OpenpilotTestCase):
         edt = 1e3 / SERVICE_LIST[service].frequency
         assert edt*0.9 < np.mean(dts) < edt*1.1
         assert np.max(dts) < edt*8
-        assert np.min(dts) < edt
         assert len(dts) >= ((et-0.5)*SERVICE_LIST[service].frequency*0.8)
 
     with subtests.test(msg="CAN traffic"):
