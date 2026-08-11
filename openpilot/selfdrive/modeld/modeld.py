@@ -75,6 +75,8 @@ class ChestnutState:
     self.pm = pm
     self.params = Params()
     self.valid = True
+    self.sends = 0
+    self.metrics = {}
 
   @cached_property
   def power_limit(self) -> int:
@@ -84,23 +86,28 @@ class ChestnutState:
   def send(self) -> None:
     msg = messaging.new_message('chestnutState')
     state = msg.chestnutState
-    valid = False
-    if self.params.get_bool("UsbGpuActive") and "AMD" in Device._opened_devices:
+    big = self.params.get_bool("UsbGpuActive")
+    self.sends += 1
+    if big and "AMD" in Device._opened_devices and self.sends % 10 == 1:
       try:
         smu = Device["AMD"].iface.dev_impl.smu
         smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
         metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
-        state.tempC = metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT]
-        state.memoryTempC = metrics.AvgTemperature[smu.smu_mod.TEMP_MEM]
-        state.powerDrawW = metrics.AverageSocketPower
-        state.powerLimitW = self.power_limit
-        state.gpuUsagePercent = metrics.AverageGfxActivity
-        state.gpuClockMhz = metrics.AverageGfxclkFrequencyPostDs
-        state.fanSpeedRpm = metrics.AvgFanRpm
-        valid = True
+        self.metrics = {'tempC': metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT],
+                        'memoryTempC': metrics.AvgTemperature[smu.smu_mod.TEMP_MEM],
+                        'powerDrawW': metrics.AverageSocketPower,
+                        'powerLimitW': self.power_limit,
+                        'gpuUsagePercent': metrics.AverageGfxActivity,
+                        'gpuClockMhz': metrics.AverageGfxclkFrequencyPostDs,
+                        'fanSpeedRpm': metrics.AvgFanRpm}
+        self.valid = True
       except Exception:
         if self.valid:
           cloudlog.exception("chestnut state read failed")
+        self.valid = False
+    if big:
+      for k, v in self.metrics.items():
+        setattr(state, k, v)
     if "AMD" in Device._opened_devices:
       try:
         # ASM runs on USB-C power, these still read without a gpu
@@ -110,8 +117,7 @@ class ChestnutState:
       except Exception:
         pass
 
-    self.valid = valid
-    msg.valid = valid
+    msg.valid = big and self.valid
     self.pm.send('chestnutState', msg)
 
 
