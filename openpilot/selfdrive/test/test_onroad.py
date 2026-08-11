@@ -87,8 +87,8 @@ TIMINGS = {
   "cabinCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
-  "livePose": [2.5, 0.35],
-  "liveParameters": [2.5, 0.35],
+  "deviceMotion": [2.5, 0.35],
+  "vehicleParameters": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
 

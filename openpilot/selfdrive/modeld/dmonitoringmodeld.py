@@ -120,7 +120,7 @@ def main():
   model = ModelState(vipc_client.width, vipc_client.height)
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
 
-  sm = SubMaster(["liveCalibration"])
+  sm = SubMaster(["extrinsicsCalibration"])
   pm = PubMaster(["driverStateV2"])
 
   calib = np.zeros(model.numpy_inputs['calib'].size, dtype=np.float32)
@@ -136,8 +136,8 @@ def main():
       model_transform = np.linalg.inv(np.dot(dmonitoringmodel_intrinsics, np.linalg.inv(cam.intrinsics))).astype(np.float32)
 
     sm.update(0)
-    if sm.updated["liveCalibration"]:
-      calib[:] = np.array(sm["liveCalibration"].rpyCalib)
+    if sm.updated["extrinsicsCalibration"]:
+      calib[:] = np.array(sm["extrinsicsCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)

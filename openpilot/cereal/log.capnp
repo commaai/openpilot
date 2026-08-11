@@ -763,7 +763,7 @@ struct RadarState @0x9a185389d6fdd05f {
   }
 }
 
-struct LiveCalibrationData {
+struct ExtrinsicsCalibration @0x96df70754d8390bc {
   calStatus @11 :Status;
   calCycle @2 :Int32;
   calPerc @3 :Int8;
@@ -1384,7 +1384,7 @@ struct LiveLocationKalman {
 }
 
 
-struct LivePose {
+struct DeviceMotion @0xc24ca2b57206b44d {
   # More info on reference frames:
   # https://github.com/commaai/openpilot/tree/master/openpilot/common/transformations
   orientationNED @0 :XYZMeasurement;
@@ -2266,7 +2266,7 @@ struct Boot {
   }
 }
 
-struct LiveParametersData {
+struct VehicleParameters @0xd9058dcb967c2753 {
   valid @0 :Bool;
   gyroBias @1 :Float32;
   angleOffsetDeg @2 :Float32;
@@ -2300,8 +2300,8 @@ struct LiveParametersData {
   }
 }
 
-struct LiveTorqueParametersData {
-  liveValid @0 :Bool;
+struct LateralTorqueParameters @0xe61690eb0b091692 {
+  valid @0 :Bool;
   latAccelFactorRaw @1 :Float32;
   latAccelOffsetRaw @2 :Float32;
   frictionCoefficientRaw @3 :Float32;
@@ -2317,7 +2317,7 @@ struct LiveTorqueParametersData {
   calPerc @13 :Int8;
 }
 
-struct LiveDelayData {
+struct LateralDelay @0x98dfdb22c44df8d4 {
   lateralDelay @0 :Float32;
   validBlocks @1 :Int32;
   status @2 :Status;
@@ -2535,9 +2535,9 @@ struct Event {
     pandaStates @81 :List(PandaState);
     peripheralState @80 :PeripheralState;
     radarState @13 :RadarState;
-    liveTracks @131 :Car.RadarData;
+    radarTracks @131 :Car.RadarData;
     sendcan @17 :List(CanData);
-    liveCalibration @19 :LiveCalibrationData;
+    extrinsicsCalibration @19 :ExtrinsicsCalibration;
     carState @22 :Car.CarState;
     carControl @23 :Car.CarControl;
     carOutput @127 :Car.CarOutput;
@@ -2548,15 +2548,15 @@ struct Event {
     qcomGnss @31 :QcomGnss;
     gpsLocationExternal @48 :GpsLocationData;
     gpsLocation @21 :GpsLocationData;
-    liveParameters @61 :LiveParametersData;
-    liveTorqueParameters @94 :LiveTorqueParametersData;
-    liveDelay @146 : LiveDelayData;
+    vehicleParameters @61 :VehicleParameters;
+    lateralTorqueParameters @94 :LateralTorqueParameters;
+    lateralDelay @146 : LateralDelay;
     cameraOdometry @63 :CameraOdometry;
     thumbnail @66: Thumbnail;
     onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
     driverMonitoringState @151 :DriverMonitoringState;
-    livePose @129 :LivePose;
+    deviceMotion @129 :DeviceMotion;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;

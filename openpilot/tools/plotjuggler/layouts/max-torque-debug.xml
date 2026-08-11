@@ -62,7 +62,7 @@ return 0</function>
    <linked_source>/controlsState/curvature</linked_source>
    <additional_sources>
     <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
+    <v2>/vehicleParameters/roll</v2>
     <v3>/carState/steeringPressed</v3>
     <v4>/carControl/latActive</v4>
    </additional_sources>
@@ -73,7 +73,7 @@ return 0</function>
    <linked_source>/controlsState/desiredCurvature</linked_source>
    <additional_sources>
     <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
+    <v2>/vehicleParameters/roll</v2>
    </additional_sources>
   </snippet>
   <snippet name="Actual lateral accel (roll compensated)">
@@ -82,11 +82,10 @@ return 0</function>
    <linked_source>/controlsState/curvature</linked_source>
    <additional_sources>
     <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
+    <v2>/vehicleParameters/roll</v2>
    </additional_sources>
   </snippet>
  </customMathEquations>
  <snippets/>
  <!-- - - - - - - - - - - - - - - -->
 </root>
-
