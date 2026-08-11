@@ -71,9 +71,9 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
 
 class ChestnutState:
   # only modeld can access chestnut
-  def __init__(self, pm: PubMaster):
+  def __init__(self, pm: PubMaster, big: bool):
     self.pm = pm
-    self.params = Params()
+    self.big = big
     self.valid = True
     self.sends = 0
     self.metrics = {}
@@ -86,9 +86,8 @@ class ChestnutState:
   def send(self) -> None:
     msg = messaging.new_message('chestnutState')
     state = msg.chestnutState
-    big = self.params.get_bool("UsbGpuActive")
     self.sends += 1
-    if big and "AMD" in Device._opened_devices and self.sends % 10 == 1:
+    if self.big and "AMD" in Device._opened_devices and self.sends % 100 == 1:
       try:
         smu = Device["AMD"].iface.dev_impl.smu
         smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
@@ -105,19 +104,23 @@ class ChestnutState:
         if self.valid:
           cloudlog.exception("chestnut state read failed")
         self.valid = False
-    if big:
+        self.metrics.clear()
+    if self.big:
       for k, v in self.metrics.items():
         setattr(state, k, v)
+
+    asm_valid = False
     if "AMD" in Device._opened_devices:
       try:
         # ASM runs on USB-C power, these still read without a gpu
         asm = Device["AMD"].iface.pci_dev.usb
         state.pcieLtssm = asm.read(0xB450, 1)[0]
         state.supplyVoltage, state.supplyCurrent = struct.unpack('<Hh', bytes(asm.usb.control_read(0xC0, 5))[:4])
+        asm_valid = True
       except Exception:
         pass
 
-    msg.valid = big and self.valid
+    msg.valid = asm_valid and (not self.big or self.valid)
     self.pm.send('chestnutState', msg)
 
 
@@ -274,7 +277,7 @@ def main(demo=False):
 
   publish_state = PublishState()
   params = Params()
-  chestnut_state = ChestnutState(pm) if USBGPU else None
+  chestnut_state = ChestnutState(pm, model.usbgpu) if USBGPU else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -390,6 +393,8 @@ def main(demo=False):
       cloudlog.exception("big model failed, fall back to small")
       params.put_bool("UsbGpuActive", False)
       model = small_model
+      if chestnut_state is not None:
+        chestnut_state.big = False
       run_count = 0
       model_output = None
     mt2 = time.perf_counter()
