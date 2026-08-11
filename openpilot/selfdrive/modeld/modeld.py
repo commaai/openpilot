@@ -73,6 +73,7 @@ class ChestnutState:
   # only modeld can access chestnut
   def __init__(self, pm: PubMaster):
     self.pm = pm
+    self.params = Params()
     self.valid = True
 
   @cached_property
@@ -84,7 +85,7 @@ class ChestnutState:
     msg = messaging.new_message('chestnutState')
     state = msg.chestnutState
     valid = False
-    if "AMD" in Device._opened_devices:
+    if self.params.get_bool("UsbGpuActive") and "AMD" in Device._opened_devices:
       try:
         smu = Device["AMD"].iface.dev_impl.smu
         smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
@@ -100,6 +101,7 @@ class ChestnutState:
       except Exception:
         if self.valid:
           cloudlog.exception("chestnut state read failed")
+    if "AMD" in Device._opened_devices:
       try:
         # ASM runs on USB-C power, these still read without a gpu
         asm = Device["AMD"].iface.pci_dev.usb
