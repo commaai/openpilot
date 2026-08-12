@@ -244,6 +244,17 @@ class AugmentedRoadView(CameraView):
 
     self._bookmark_icon.render(self.rect)
 
+    gps = ui_state.sm["gpsLocationExternal"]
+    gps_debug_text = (
+      f"GPS sats: {gps.satelliteCount}",
+      f"GPS fix: {gps.hasFix}",
+      f"GPS hacc: {gps.horizontalAccuracy:.1f} m",
+    )
+    font_size = 36
+    for i, text in enumerate(gps_debug_text):
+      rl.draw_text_ex(gui_app.font(FontWeight.SEMI_BOLD), text,
+                      rl.Vector2(self.rect.x + 10, self.rect.y + 10 + i * font_size), font_size, 0, rl.WHITE)
+
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
       v_ego = sm['carState'].vEgo
