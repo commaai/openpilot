@@ -80,15 +80,37 @@ def in_rom_bootloader(vid_pid, product):
 def disable_runtime_pm(path):
   control = os.path.join(path, "power/control")
   if not os.path.exists(control):
-    return
+    return None
+  delay = os.path.join(path, "power/autosuspend_delay_ms")
+  state = {
+    "control": open(control).read().strip(),
+    "delay": open(delay).read().strip() if os.path.exists(delay) else None,
+    "path": path,
+  }
   with open(control, "w") as f:
     f.write("on\n")
   if open(control).read().strip() != "on":
     raise RuntimeError(f"could not disable USB runtime PM: {control}")
-  delay = os.path.join(path, "power/autosuspend_delay_ms")
   if os.path.exists(delay):
     with open(delay, "w") as f:
       f.write("-1\n")
+  return state
+
+
+def restore_runtime_pm(state):
+  if state is None:
+    return
+  path = state["path"]
+  delay = os.path.join(path, "power/autosuspend_delay_ms")
+  control = os.path.join(path, "power/control")
+  # Restore the delay before allowing autosuspend so the device cannot suspend
+  # under the temporary -1 policy. Paths may disappear during USB re-enum.
+  if state["delay"] is not None and os.path.exists(delay):
+    with open(delay, "w") as f:
+      f.write(state["delay"] + "\n")
+  if os.path.exists(control):
+    with open(control, "w") as f:
+      f.write(state["control"] + "\n")
 
 
 def unbind_drivers(path):
@@ -468,11 +490,12 @@ def flash_chestnut(expected_version=None, force=False):
     return
 
   _deadline = time.monotonic() + FLASH_BUDGET
-  for pm_path in PM_PATHS:
-    disable_runtime_pm(pm_path)
-
-  previous = {sig: signal.signal(sig, defer_signal) for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
+  pm_states = []
+  previous = {}
   try:
+    for pm_path in PM_PATHS:
+      pm_states.append(disable_runtime_pm(pm_path))
+    previous = {sig: signal.signal(sig, defer_signal) for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
     if in_rom_bootloader(vid_pid, product):
       if not recover_from_rom(image, expected_product):
         return
@@ -482,6 +505,11 @@ def flash_chestnut(expected_version=None, force=False):
   finally:
     for sig, handler in previous.items():
       signal.signal(sig, handler)
+    for state in reversed(pm_states):
+      try:
+        restore_runtime_pm(state)
+      except OSError as e:
+        print(f"warning: could not restore USB runtime PM: {e}", flush=True)
 
 
 def recover_from_rom(image, expected_product):
