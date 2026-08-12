@@ -15,6 +15,7 @@ from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, M
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.hardware.usb import CHESTNUT_ROM_USB_IDS, CHESTNUT_USB_IDS
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
@@ -245,10 +246,17 @@ class AugmentedRoadView(CameraView):
     self._bookmark_icon.render(self.rect)
 
     gps = ui_state.sm["gpsLocationExternal"]
+    chestnut = next((device for device in ui_state.sm["deviceState"].usbState.devices
+                     if (device.vendorId, device.productId) in CHESTNUT_USB_IDS + CHESTNUT_ROM_USB_IDS), None)
+    usb3_debug_text = "NO USB3"
+    if chestnut is not None and chestnut.speedMbps >= 5000:
+      usb3_debug_text = f"USB3 lane: {str(chestnut.usb3Lane).upper()}"
+
     gps_debug_text = (
       f"GPS sats: {gps.satelliteCount}",
       f"GPS fix: {gps.hasFix}",
       f"GPS hacc: {gps.horizontalAccuracy:.1f} m",
+      usb3_debug_text,
     )
     font_size = 36
     for i, text in enumerate(gps_debug_text):
