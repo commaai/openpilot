@@ -5,6 +5,8 @@ CHESTNUT_FW_VERSION = "ed4e39b7"
 CHESTNUT_USB_IDS = ((0xADD1, 0x0001), (0x3801, 0x0001))
 CHESTNUT_ROM_USB_IDS = ((0x174C, 0x2464), (0x174C, 0x2463))
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
+TYPEC_CC_ORIENTATION_PATH = Path("/sys/class/power_supply/usb/typec_cc_orientation")
+PRIMARY_USB_CONTROLLER = "a600000.ssusb"
 
 
 def get_usb_topology() -> set[str]:
@@ -45,6 +47,7 @@ def controller(device: Path) -> Path | None:
 
 def get_usb_state() -> list[dict]:
   devices = []
+  typec_orientation = read_int(TYPEC_CC_ORIENTATION_PATH)
   for device in usb_devices():
     vendor_id = read_int(device / "idVendor", 16)
     product_id = read_int(device / "idProduct", 16)
@@ -58,6 +61,7 @@ def get_usb_state() -> list[dict]:
       "manufacturer": read(device / "manufacturer") or "",
       "product": read(device / "product") or "",
       "linkErrorCount": read_int(ctrl / "portli", 0) & 0xFFFF if ctrl is not None else 0,
+      "usb3Lane": {1: "a", 2: "b"}.get(typec_orientation, "unknown") if ctrl is not None and ctrl.name == PRIMARY_USB_CONTROLLER else "unknown",
     })
   return devices
 
@@ -75,6 +79,7 @@ def set_usb_state(device_state, devices: list[dict]) -> None:
     entry.manufacturer = device["manufacturer"]
     entry.product = device["product"]
     entry.linkErrorCount = device["linkErrorCount"]
+    entry.usb3Lane = device.get("usb3Lane", "unknown")
 
     if (entry.vendorId, entry.productId) in CHESTNUT_USB_IDS:
       chestnut_present = True
