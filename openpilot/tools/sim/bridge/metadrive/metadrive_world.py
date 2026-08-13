@@ -12,11 +12,16 @@ from openpilot.tools.sim.lib.common import SimulatorState, World
 from openpilot.tools.sim.lib.camerad import W, H
 
 
+def get_metadrive_process_context():
+  """Return a context that can safely initialize Panda3D on the host OS."""
+  return multiprocessing.get_context("spawn") if sys.platform == "darwin" else multiprocessing.get_context()
+
+
 class MetaDriveWorld(World):
   def __init__(self, status_q, config, test_duration, test_run, dual_camera=False):
     super().__init__(dual_camera)
     # MetaDrive/Panda3D must initialize Cocoa in a fresh process on macOS.
-    mp_ctx = multiprocessing.get_context("spawn") if sys.platform == "darwin" else multiprocessing.get_context()
+    mp_ctx = get_metadrive_process_context()
 
     self.status_q = status_q
     self.image_lock = mp_ctx.Semaphore(value=0)
