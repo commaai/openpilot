@@ -4,6 +4,7 @@ import shutil
 
 import bootstrap_icons
 import libusb
+import opendbc
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
 
@@ -74,7 +75,7 @@ cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR]
 cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
 cabana_libs = [cereal, messaging, visionipc, replay_lib] + ffmpeg_libs + ['usb-1.0'] + base_libs
-opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
+opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % opendbc.DBC_PATH
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
 # embed the bootstrap icons SVG into the binary
@@ -126,4 +127,4 @@ output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
                                   "python3 openpilot/tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
-cabana_env.Depends(generate_dbc, ["#openpilot/common", '#opendbc_repo', "#openpilot/cereal", "#msgq_repo"])
+cabana_env.Depends(generate_dbc, ["#openpilot/common", "#openpilot/cereal"])

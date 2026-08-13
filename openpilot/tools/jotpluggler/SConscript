@@ -3,6 +3,7 @@ import subprocess
 import bootstrap_icons
 import imgui
 import libusb
+import opendbc
 from opendbc import get_generated_dbcs
 from opendbc.car import Bus
 from opendbc.car.fingerprints import MIGRATION
@@ -17,6 +18,7 @@ jot_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 jot_env["CXXFLAGS"] += [
   "-DGLFW_INCLUDE_NONE",
   '-DJOTP_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
+  '-DOPENDBC_DBC_PATH=\'"%s"\'' % opendbc.DBC_PATH,
   '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
 ]
 
@@ -85,6 +87,7 @@ def generate_event_extractors(target, source, env):
     "python3",
     "openpilot/tools/jotpluggler/generate_event_extractors.py",
     os.path.realpath(BASEDIR),
+    os.path.dirname(opendbc.__file__),
     str(target[0]),
   ])
   return None
@@ -95,8 +98,8 @@ event_extractors = jot_env.Command("generated_event_extractors.h", [
     "generate_event_extractors.py",
     jot_env.Glob("#openpilot/cereal/*.capnp"),
     jot_env.Glob("#openpilot/cereal/include/*.capnp"),
-    "#opendbc_repo/opendbc/car/car.capnp",
-    "#opendbc_repo/opendbc/car/include/c++.capnp",
+    os.path.join(os.path.dirname(opendbc.__file__), "car", "car.capnp"),
+    os.path.join(os.path.dirname(opendbc.__file__), "car", "include", "c++.capnp"),
   ],
   generate_event_extractors,
 )

@@ -391,14 +391,15 @@ class Generator:
 
 
 if __name__ == "__main__":
-  if len(sys.argv) != 3:
-    print(f"usage: {sys.argv[0]} <repo-root> <output>", file=sys.stderr)
+  if len(sys.argv) != 4:
+    print(f"usage: {sys.argv[0]} <repo-root> <opendbc-root> <output>", file=sys.stderr)
     sys.exit(2)
 
   repo_root = Path(sys.argv[1]).resolve()
-  output = Path(sys.argv[2])
+  opendbc_root = Path(sys.argv[2]).resolve()
+  output = Path(sys.argv[3])
   capnp.remove_import_hook()
-  log = capnp.load(str(repo_root / "openpilot" / "cereal" / "log.capnp"), imports=[str(repo_root / "opendbc_repo" / "opendbc" / "car")])
+  log = capnp.load(str(repo_root / "openpilot" / "cereal" / "log.capnp"), imports=[str(opendbc_root / "car")])
   generated = Generator(log.Event.schema).generate()
   output.parent.mkdir(parents=True, exist_ok=True)
   output.write_text(generated)

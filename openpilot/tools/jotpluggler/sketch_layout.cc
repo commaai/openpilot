@@ -387,7 +387,7 @@ std::string detect_dbc_for_fingerprint(std::string_view car_fingerprint) {
 std::vector<std::string> available_dbc_names_impl() {
   std::set<std::string> names;
   for (const fs::path &dbc_dir : {
-         repo_root() / "opendbc_repo" / "opendbc" / "dbc",
+         fs::path(OPENDBC_DBC_PATH),
          repo_root() / "openpilot" / "tools" / "jotpluggler" / "generated_dbcs",
        }) {
     if (fs::exists(dbc_dir) && fs::is_directory(dbc_dir)) {
@@ -409,7 +409,7 @@ std::vector<std::string> available_dbc_names_impl() {
 
 fs::path resolve_dbc_path(const std::string &dbc_name) {
   for (const fs::path &candidate : {
-         repo_root() / "opendbc_repo" / "opendbc" / "dbc" / (dbc_name + ".dbc"),
+         fs::path(OPENDBC_DBC_PATH) / (dbc_name + ".dbc"),
          repo_root() / "openpilot" / "tools" / "jotpluggler" / "generated_dbcs" / (dbc_name + ".dbc"),
        }) {
     if (fs::exists(candidate)) return candidate;

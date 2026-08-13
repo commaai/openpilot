@@ -1,6 +1,9 @@
 Import('env', 'arch', 'common', 'messaging')
 
+import panda as panda_package
+
 if arch != "Darwin":
+  env.Append(CXXFLAGS=['-DPANDA_FW_PATH=\\"%s\\"' % panda_package.FW_PATH])
   libs = [common, messaging, 'pthread']
   panda = env.Library('panda', ['panda.cc', 'spi.cc'])
 
