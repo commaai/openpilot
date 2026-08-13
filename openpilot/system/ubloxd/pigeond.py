@@ -8,6 +8,7 @@ import urllib.parse
 from datetime import datetime, UTC
 
 from openpilot.cereal import messaging
+from openpilot.common.api import Api
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.serial import Serial
@@ -41,15 +42,24 @@ def add_ubx_checksum(msg: bytes) -> bytes:
     B = (B + A) % 256
   return msg + bytes([A, B])
 
-def get_assistnow_messages(token: str) -> list[bytes]:
-  # make request
-  # TODO: implement adding the last known location
-  r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
-    'token': token,
-    'gnss': 'gps,glo',
-    'datatype': 'eph,alm,aux',
-  }, safe=':,'), timeout=5)
-  assert r.status_code == 200, "Got invalid status code"
+def get_assistnow_messages() -> list[bytes]:
+  params = Params()
+  if token := params.get('AssistNowToken'):
+    cloudlog.warning("Downloading AssistNow data directly from u-blox")
+    # TODO: implement adding the last known location
+    r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
+      'token': token,
+      'gnss': 'gps,glo',
+      'datatype': 'eph,alm,aux',
+    }, safe=':,'), timeout=5)
+  elif dongle_id := params.get('DongleId'):
+    cloudlog.warning("Downloading AssistNow data from comma's AGPS proxy")
+    api = Api(dongle_id)
+    r = api.get(f"v1/{dongle_id}/assist", access_token=api.get_token(), timeout=5)
+  else:
+    raise RuntimeError("Neither AssistNowToken nor DongleId is configured")
+
+  r.raise_for_status()
   dat = r.content
 
   # split up messages
@@ -230,15 +240,13 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
         ))
         pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
 
-      # try getting AssistNow if we have a token
-      token = Params().get('AssistNowToken')
-      if token is not None:
-        try:
-          for msg in get_assistnow_messages(token):
-            pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
-          cloudlog.warning("AssistNow messages sent")
-        except Exception:
-          cloudlog.warning("failed to get AssistNow messages")
+      # A configured u-blox token takes precedence over comma's AGPS proxy.
+      try:
+        for msg in get_assistnow_messages():
+          pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+        cloudlog.warning("AssistNow messages sent")
+      except Exception:
+        cloudlog.warning("failed to get AssistNow messages")
 
       cloudlog.warning("Pigeon GPS on!")
       break
