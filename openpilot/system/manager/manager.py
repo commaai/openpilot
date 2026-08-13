@@ -204,7 +204,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  unblock_stdout()
+  # forkpty is unsafe before the MetaDrive child initializes Cocoa on macOS.
+  if not (sys.platform == "darwin" and os.getenv("SIMULATION") == "1"):
+    unblock_stdout()
 
   try:
     main()
