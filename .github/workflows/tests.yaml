@@ -103,7 +103,7 @@ jobs:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
     - name: Install Raylib headless runtime
-      run: sudo apt-get update && sudo apt-get install -y libgles2
+      run: sudo apt-get update && sudo apt-get install -y libegl1 libgles2
     - name: Build openpilot
       run: scons
     - name: Run unit tests
@@ -209,7 +209,7 @@ jobs:
       - uses: actions/checkout@v7
       - run: ./tools/op.sh setup
       - name: Install Raylib headless runtime
-        run: sudo apt-get update && sudo apt-get install -y libgles2
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgles2
       - name: Build openpilot
         run: scons
       - name: Create UI Report
