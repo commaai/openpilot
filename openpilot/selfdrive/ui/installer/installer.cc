@@ -1,4 +1,5 @@
 #include <array>
+#include <atomic>
 #include <cassert>
 #include <fstream>
 #include <map>
@@ -6,11 +7,13 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/hardware/hw.h"
+#include "json11/json11.hpp"
 #include "raylib.h"
 
 int freshClone();
 int cachedFetch(const std::string &cache);
 int executeGitCommand(const std::string &cmd);
+int downloadLfsFiles();
 
 std::string get_str(std::string const s) {
   std::string::size_type pos = s.find('?');
@@ -23,23 +26,26 @@ const std::string GIT_URL = get_str("https://github.com/commaai/openpilot.git" "
 const std::string BRANCH_STR = get_str(BRANCH "?                                                                ");
 
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
-#define CONTINUE_PATH "/data/continue.sh"
+#define CONTINUE_PATH "/tmp/continue.sh"
 
-const std::string INSTALL_PATH = "/data/openpilot";
-const std::string VALID_CACHE_PATH = "/data/.openpilot_cache";
+const std::string INSTALL_PATH = "/tmp/openpilot";
+const std::string VALID_CACHE_PATH = "/tmp/.openpilot_cache";
+const std::string LFS_PROGRESS_PATH = "/tmp/openpilot_lfs_progress";
 
-#define TMP_INSTALL_PATH "/data/tmppilot"
+#define TMP_INSTALL_PATH "/tmp/tmppilot"
 
 const int FONT_SIZE = 160;
 
-extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
-extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
-extern const uint8_t inter_ttf[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_start");
-extern const uint8_t inter_ttf_end[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_end");
-extern const uint8_t inter_light_ttf[] asm("_binary_selfdrive_assets_fonts_Inter_Light_ttf_start");
-extern const uint8_t inter_light_ttf_end[] asm("_binary_selfdrive_assets_fonts_Inter_Light_ttf_end");
-extern const uint8_t inter_bold_ttf[] asm("_binary_selfdrive_assets_fonts_Inter_Bold_ttf_start");
-extern const uint8_t inter_bold_ttf_end[] asm("_binary_selfdrive_assets_fonts_Inter_Bold_ttf_end");
+#define BINARY_SYMBOL(path) "_binary_openpilot_" path
+
+extern const uint8_t str_continue[] asm(BINARY_SYMBOL("selfdrive_ui_installer_continue_openpilot_sh_start"));
+extern const uint8_t str_continue_end[] asm(BINARY_SYMBOL("selfdrive_ui_installer_continue_openpilot_sh_end"));
+extern const uint8_t inter_ttf[] asm(BINARY_SYMBOL("selfdrive_ui_installer_inter_ascii_ttf_start"));
+extern const uint8_t inter_ttf_end[] asm(BINARY_SYMBOL("selfdrive_ui_installer_inter_ascii_ttf_end"));
+extern const uint8_t inter_light_ttf[] asm(BINARY_SYMBOL("selfdrive_assets_fonts_Inter_Light_ttf_start"));
+extern const uint8_t inter_light_ttf_end[] asm(BINARY_SYMBOL("selfdrive_assets_fonts_Inter_Light_ttf_end"));
+extern const uint8_t inter_bold_ttf[] asm(BINARY_SYMBOL("selfdrive_assets_fonts_Inter_Bold_ttf_start"));
+extern const uint8_t inter_bold_ttf_end[] asm(BINARY_SYMBOL("selfdrive_assets_fonts_Inter_Bold_ttf_end"));
 
 Font font_inter;
 Font font_roman;
@@ -135,7 +141,7 @@ int doInstall() {
 
 int freshClone() {
   LOGD("Doing fresh clone");
-  std::string cmd = util::string_format("git clone --progress %s -b %s --depth=1 --recurse-submodules %s 2>&1",
+  std::string cmd = util::string_format("GIT_LFS_SKIP_SMUDGE=1 git clone --progress %s -b %s --depth=1 %s 2>&1",
                                         GIT_URL.c_str(), migrated_branch.c_str(), TMP_INSTALL_PATH);
   return executeGitCommand(cmd);
 }
@@ -155,75 +161,188 @@ int cachedFetch(const std::string &cache) {
 int executeGitCommand(const std::string &cmd) {
   static const std::array stages = {
     // prefix, weight in percentage
-    std::pair{"Receiving objects: ", 91},
-    std::pair{"Resolving deltas: ", 2},
-    std::pair{"Updating files: ", 7},
+    std::pair{"Receiving objects: ", 1},
+    std::pair{"Resolving deltas: ", 0},
+    std::pair{"Updating files: ", 0},
   };
 
   FILE *pipe = popen(cmd.c_str(), "r");
-  if (!pipe) return -1;
+  if (!pipe) {
+    return -1;
+  }
 
-  char buffer[512];
-  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-    std::string line(buffer);
+  int installer_progress = 0;
+  auto process_line = [&](const std::string &line) {
+    size_t latest_stage_pos = std::string::npos;
+    int latest_stage_base = 0;
+    int latest_stage_weight = 0;
     int base = 0;
     for (const auto &[text, weight] : stages) {
-      if (line.find(text) != std::string::npos) {
-        size_t percentPos = line.find("%");
-        if (percentPos != std::string::npos && percentPos >= 3) {
-          int percent = std::stoi(line.substr(percentPos - 3, 3));
-          int progress = base + int(percent / 100. * weight);
-          renderProgress(progress);
-        }
-        break;
+      size_t stage_pos = line.rfind(text);
+      if (stage_pos != std::string::npos && (latest_stage_pos == std::string::npos || stage_pos > latest_stage_pos)) {
+        latest_stage_pos = stage_pos;
+        latest_stage_base = base;
+        latest_stage_weight = weight;
       }
       base += weight;
     }
+
+    if (latest_stage_pos != std::string::npos) {
+      size_t percent_pos = line.find("%", latest_stage_pos);
+      if (percent_pos != std::string::npos && percent_pos >= 3) {
+        int percent = std::stoi(line.substr(percent_pos - 3, 3));
+        installer_progress = latest_stage_base + int(percent / 100. * latest_stage_weight);
+        renderProgress(installer_progress);
+      }
+    }
+
+    printf("%s\n", line.c_str());
+    printf("Installer progress: %d%%\n\n", installer_progress);
+    fflush(stdout);
+  };
+
+  std::string line;
+  int character;
+  while ((character = fgetc(pipe)) != EOF) {
+    if (character == '\r' || character == '\n') {
+      if (!line.empty()) {
+        process_line(line);
+        line.clear();
+      }
+    } else {
+      line += character;
+    }
+  }
+  if (!line.empty()) {
+    process_line(line);
   }
   return pclose(pipe);
+}
+
+int downloadLfsFiles() {
+  std::string parse_error;
+  json11::Json lfs_files = json11::Json::parse(util::check_output("git lfs ls-files --json"), parse_error);
+  if (!parse_error.empty()) {
+    LOGE("Failed to parse git lfs ls-files: %s", parse_error.c_str());
+    return -1;
+  }
+
+  uint64_t total_bytes = 0;
+  std::map<std::string, uint64_t> downloaded_bytes;
+  for (const auto &file : lfs_files["files"].array_items()) {
+    const std::string name = file["name"].string_value();
+    const uint64_t size = file["size"].number_value();
+    total_bytes += size;
+    downloaded_bytes[name] = file["downloaded"].bool_value() ? size : 0;
+  }
+
+  int installer_progress = 1;
+  auto process_line = [&](const std::string &line) {
+    size_t direction_end = line.find(' ');
+    size_t file_count_end = line.find(' ', direction_end + 1);
+    size_t byte_count_end = line.find(' ', file_count_end + 1);
+    if (direction_end != std::string::npos && file_count_end != std::string::npos && byte_count_end != std::string::npos &&
+        line.substr(0, direction_end) == "download") {
+      const std::string byte_count = line.substr(file_count_end + 1, byte_count_end - file_count_end - 1);
+      size_t slash = byte_count.find('/');
+      if (slash != std::string::npos) {
+        const std::string name = line.substr(byte_count_end + 1);
+        downloaded_bytes[name] = std::stoull(byte_count.substr(0, slash));
+
+        uint64_t completed_bytes = 0;
+        for (const auto &[path, bytes] : downloaded_bytes) {
+          completed_bytes += bytes;
+        }
+        if (total_bytes > 0) {
+          int next_progress = 1 + int(98. * completed_bytes / total_bytes);
+          if (next_progress != installer_progress) {
+            installer_progress = next_progress;
+            renderProgress(installer_progress);
+            printf("%s\n", line.c_str());
+            printf("Installer progress: %d%%\n\n", installer_progress);
+            fflush(stdout);
+          }
+        }
+      }
+    }
+  };
+
+  unlink(LFS_PROGRESS_PATH.c_str());
+  std::atomic<bool> lfs_finished = false;
+  int lfs_result = -1;
+  std::thread lfs_thread([&]() {
+    lfs_result = std::system(("GIT_LFS_PROGRESS=" + LFS_PROGRESS_PATH + " git lfs pull").c_str());
+    lfs_finished = true;
+  });
+
+  std::ifstream progress_file;
+  auto read_progress = [&]() {
+    if (!progress_file.is_open()) {
+      progress_file.clear();
+      progress_file.open(LFS_PROGRESS_PATH);
+    }
+    if (progress_file.is_open()) {
+      std::string line;
+      while (std::getline(progress_file, line)) {
+        process_line(line);
+      }
+      progress_file.clear();
+    }
+  };
+
+  while (!lfs_finished) {
+    read_progress();
+    util::sleep_for(100);
+  }
+  lfs_thread.join();
+  read_progress();
+  unlink(LFS_PROGRESS_PATH.c_str());
+  return lfs_result;
 }
 
 void cloneFinished(int exitCode) {
   LOGD("git finished with %d", exitCode);
   assert(exitCode == 0);
 
-  renderProgress(100);
-
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
-  run(("git checkout " + migrated_branch).c_str());
-  run(("git reset --hard origin/" + migrated_branch).c_str());
-  run("git submodule update --init");
+  run(("GIT_LFS_SKIP_SMUDGE=1 git checkout " + migrated_branch).c_str());
+  run(("GIT_LFS_SKIP_SMUDGE=1 git reset --hard origin/" + migrated_branch).c_str());
+//   run("git submodule update --init");
+
+  int lfs_result = downloadLfsFiles();
+  assert(lfs_result == 0);
+  renderProgress(100);
 
   // move into place
   run(("rm -f " + VALID_CACHE_PATH).c_str());
   run(("rm -rf " + INSTALL_PATH).c_str());
   run(util::string_format("mv %s %s", TMP_INSTALL_PATH, INSTALL_PATH.c_str()).c_str());
 
-#ifdef INTERNAL
-  run("mkdir -p /data/params/d/");
-
-  // https://github.com/commaci2.keys
-  const std::string ssh_keys = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMX2kU8eBZyEWmbq0tjMPxksWWVuIV/5l64GabcYbdpI";
-  std::map<std::string, std::string> params = {
-    {"SshEnabled", "1"},
-    {"RecordFrontLock", "1"},
-    {"GithubSshKeys", ssh_keys},
-  };
-  for (const auto& [key, value] : params) {
-    std::ofstream param;
-    param.open("/data/params/d/" + key);
-    param << value;
-    param.close();
-  }
-  run(("cd " + INSTALL_PATH + " && "
-      "git remote set-url origin --push " GIT_SSH_URL " && "
-      "git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"").c_str());
-#endif
+// #ifdef INTERNAL
+//   run("mkdir -p /data/params/d/");
+//
+//   // https://github.com/commaci2.keys
+//   const std::string ssh_keys = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMX2kU8eBZyEWmbq0tjMPxksWWVuIV/5l64GabcYbdpI";
+//   std::map<std::string, std::string> params = {
+//     {"SshEnabled", "1"},
+//     {"RecordFrontLock", "1"},
+//     {"GithubSshKeys", ssh_keys},
+//   };
+//   for (const auto& [key, value] : params) {
+//     std::ofstream param;
+//     param.open("/data/params/d/" + key);
+//     param << value;
+//     param.close();
+//   }
+//   run(("cd " + INSTALL_PATH + " && "
+//       "git remote set-url origin --push " GIT_SSH_URL " && "
+//       "git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"").c_str());
+// #endif
 
   // write continue.sh
-  FILE *of = fopen("/data/continue.sh.new", "wb");
+  FILE *of = fopen("/tmp/continue.sh.new", "wb");
   assert(of != NULL);
 
   size_t num = str_continue_end - str_continue;
@@ -231,8 +350,8 @@ void cloneFinished(int exitCode) {
   assert(num == num_written);
   fclose(of);
 
-  run("chmod +x /data/continue.sh.new");
-  run("mv /data/continue.sh.new " CONTINUE_PATH);
+//   run("chmod +x /data/continue.sh.new");
+//   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
   // wait for the installed software's UI to take over
   finishInstall();

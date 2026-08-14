@@ -3,7 +3,7 @@ from pathlib import Path
 
 Import('env', 'arch', 'common')
 
-if GetOption('extras') and arch == "comma_arm64":
+if GetOption('extras'):# and arch == "comma_arm64":
   # build installers
   raylib_dir = Path(importlib.util.find_spec("raylib").submodule_search_locations[0]) / "install"
   raylib_env = env.Clone()
@@ -11,9 +11,12 @@ if GetOption('extras') and arch == "comma_arm64":
   raylib_env['LIBPATH'] += [str(raylib_dir / "lib")]
   raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
-  raylib_libs = common + ["raylib_comma", "GLESv2", "EGL", "gbm", "drm"]
+  if arch == "comma_arm64":
+    raylib_libs = common + ["raylib_comma", "GLESv2", "EGL", "gbm", "drm"]
+  else:
+    raylib_libs = common + ["raylib_desktop", "GL", "m", "pthread", "dl", "X11"]
 
-  release = "release3"
+  release = "master"
   installers = [
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
@@ -37,4 +40,5 @@ if GetOption('extras') and arch == "comma_arm64":
     obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
     f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, inter_light], LIBS=raylib_libs)
     # keep installers small
-    assert f[0].get_size() < 2500*1e3, f[0].get_size()
+    if arch == "comma_arm64":
+      assert f[0].get_size() < 2500*1e3, f[0].get_size()

@@ -88,7 +88,7 @@ acados_include_dirs = [
 allowed_system_libs = {
   "EGL", "GLESv2", "GL",
   "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
-  "dl", "drm", "gbm", "m", "pthread",
+  "X11", "dl", "drm", "gbm", "m", "pthread",
 }
 
 def _resolve_lib(env, name):
