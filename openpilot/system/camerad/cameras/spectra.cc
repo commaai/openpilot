@@ -297,7 +297,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v) {
   LOGD("camera init %d", cc.camera_num);
   buf.init(this, v, ife_buf_depth, cc.stream_type);
   camera_map_bufs();
-  clearAndRequeue();
+  clearAndRequeue(1);
 }
 
 void SpectraCamera::sensors_start() {
@@ -942,10 +942,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   assert(ret == 0);
 }
 
-void SpectraCamera::enqueue_frame() {
-  // The kernel reports only requests newer than reported_req_id, which a flush does not reset.
-  // https://github.com/commaai/agnos-kernel-sdm845/blob/93ddd472ce522ab8669456b11bf3924ad32e9882/drivers/media/platform/msm/camera/cam_isp/cam_isp_context.c#L609-L613
-  uint64_t request_id = next_request_id++;
+void SpectraCamera::enqueue_frame(uint64_t request_id) {
   int i = request_id % ife_buf_depth;
   assert(sync_objs_ife[i] == 0);
 
@@ -1431,14 +1428,14 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   if (!waitForFrameReady(request_id)) {
     // Reset queue on sync failure to prevent frame tearing
     LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, ife_frame_id);
-    clearAndRequeue();
+    clearAndRequeue(request_id + 1);
     return false;
   }
 
   int buf_idx = request_id % ife_buf_depth;
   bool ret = processFrame(buf_idx, request_id, ife_frame_id, timestamp);
   destroySyncObjectAt(buf_idx);
-  enqueue_frame();  // request next frame for this slot
+  enqueue_frame(request_id + ife_buf_depth);  // request next frame for this slot
   return ret;
 }
 
@@ -1448,7 +1445,7 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   if (request_id == 0) {
     if (invalid_request_count++ > ife_buf_depth+2) {
       LOGE("camera %d reset after half second of invalid requests", cc.camera_num);
-      clearAndRequeue();
+      clearAndRequeue(last_valid_request_id + 1);
       invalid_request_count = 0;
     }
     return false;
@@ -1459,26 +1456,26 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   if (!skip_expected) {
     if (ife_frame_id != last_valid_ife_frame_id + 1) {
       LOGE("camera %d frame ID skipped, %lu -> %lu", cc.camera_num, last_valid_ife_frame_id, ife_frame_id);
-      clearAndRequeue();
+      clearAndRequeue(request_id + 1);
       return false;
     }
 
     if (request_id != last_valid_request_id + 1) {
       LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, last_valid_request_id, request_id);
-      clearAndRequeue();
+      clearAndRequeue(request_id + 1);
       return false;
     }
   }
   return true;
 }
 
-void SpectraCamera::clearAndRequeue() {
+void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
   // clear everything, then queue up a fresh set of frames
-  LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, next_request_id);
+  LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, from_request_id);
   clear_req_queue();
   last_requeue_ts = nanos_since_boot();
-  for (int i = 0; i < ife_buf_depth; ++i) {
-    enqueue_frame();
+  for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
+    enqueue_frame(id);
   }
   skip_expected = true;
 }
