@@ -468,8 +468,10 @@ def main(demo=False):
     small_bufs = {name: buf_extra if 'big' in name else buf_main for name in small_model.vision_input_names}
     small_transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in small_model.vision_input_names}
 
-    big_bufs = ({name: buf_extra if 'big' in name else buf_main for name in big_model.vision_input_names} if big_model is not None else None)
-    big_transforms = ({name: model_transform_extra if 'big' in name else model_transform_main for name in big_model.vision_input_names} if big_model is not None else None)
+    big_bufs = ({name: buf_extra if 'big' in name else buf_main for name in big_model.vision_input_names}
+                if big_model is not None else None)
+    big_transforms = ({name: model_transform_extra if 'big' in name else model_transform_main for name in big_model.vision_input_names}
+                      if big_model is not None else None)
 
     frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
     action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
@@ -482,7 +484,12 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
-    big_model_job = big_model_runner.submit(big_bufs, big_transforms, inputs) if big_model_runner else None
+    if big_model_runner is not None:
+      assert big_bufs is not None
+      assert big_transforms is not None
+      big_model_job = big_model_runner.submit(big_bufs, big_transforms, inputs)
+    else:
+      big_model_runner = None
     model_output = small_model.run(small_bufs, small_transforms, inputs)
 
     if big_model_runner is not None and big_model_job is not None:
