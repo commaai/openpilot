@@ -338,25 +338,31 @@ class TestOnroad(OpenpilotTestCase):
         # TODO: loggerd doesn't start fast enough to be ready before the first frames come out
         first_fid = {min(self.ts[c]['frameId']) for c in cams}
         #assert len(first_fid) == 1, "Cameras don't start on same frame ID"
-        if cam.endswith('CameraState'):
+        if cams[0].endswith('CameraState'):
           # camerad guarantees that all cams start on frame ID 0
           # (note loggerd also needs to start up fast enough to catch it)
-          assert next(iter(first_fid)) < 100, "Cameras start on frame ID too high"
+          assert min(first_fid) < 100, "Cameras start on frame ID too high"
 
         # we don't do a full segment rotation, so these might not match exactly
         last_fid = {max(self.ts[c]['frameId']) for c in cams}
         assert max(last_fid) - min(last_fid) < 10
 
-        start, end = min(first_fid), min(last_fid)
-        for i in range(end-start):
+        timestamps = {
+          cam: dict(zip(self.ts[cam]['frameId'], self.ts[cam]['timestampSof'], strict=True))
+          for cam in cams
+        }
+        common_frame_ids = set.intersection(*(set(ts) for ts in timestamps.values()))
+        assert common_frame_ids, "Cameras have no overlapping frame IDs"
+
+        for frame_id in sorted(common_frame_ids):
           # road and wide cameras (first two) should be synced within 2ms
-          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams[:2]}
-          diff = (max(ts.values()) - min(ts.values()))
-          assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
+          ts = {cam: timestamps[cam][frame_id] / 1e6 for cam in cams[:2]}
+          diff = max(ts.values()) - min(ts.values())
+          assert diff < 2, f"Cameras not synced properly: {frame_id=}, {diff=:.1f}ms, {ts=}"
 
           # cabin camera should be staggered ~25ms from road camera
-          offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
-          assert 20 < offset_ms < 30, f"cabin camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
+          offset_ms = abs(timestamps[cams[2]][frame_id] - timestamps[cams[0]][frame_id]) / 1e6
+          assert 20 < offset_ms < 30, f"cabin camera stagger out of range at frame {frame_id}: {offset_ms:.1f}ms"
 
   def test_camera_encoder_matches(self, subtests):
     # sanity check that the frame metadata is consistent with the encoded frames
