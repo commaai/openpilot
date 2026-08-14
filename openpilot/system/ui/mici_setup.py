@@ -23,7 +23,7 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
+from openpilot.system.ui.widgets.scroller import Scroller, NavScroller
 from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
@@ -302,18 +302,8 @@ class NetworkSetupPageBase(Scroller):
     self._wifi_ui = WifiUIMici(self._wifi_manager)
 
     self._connect_button = GreyBigButton("connect to\ninternet", "swipe down to go back",
-                                         gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
+                                         gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True), size="small")
     self._connect_button.set_visible(not disable_connect_hint)
-
-    def on_continue_click():
-      # scroll to wifi button
-      offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
-      self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
-      # trigger grow when wifi button in view
-      self._pending_wifi_grow_animation = True
-
-    self._connect_button.set_click_callback(on_continue_click)
-    self._connect_button.set_touch_valid_callback(lambda: True)
 
     self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))

@@ -342,11 +342,11 @@ class GreyBigButton(BigButton):
 
   LABEL_HORIZONTAL_PADDING = 30
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args, size: str = "normal", **kwargs):
     super().__init__(*args, **kwargs)
     self.set_touch_valid_callback(lambda: False)
 
-    self._rect.width = 476
+    self._rect.width = 437 if size == "small" else 476
 
     self._label.set_font_size(36)
     self._label.set_font_weight(FontWeight.BOLD)
