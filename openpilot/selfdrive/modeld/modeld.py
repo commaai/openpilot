@@ -2,6 +2,7 @@
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
+import queue
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 import struct
@@ -46,33 +47,55 @@ GPU_POWER_MIN_MV = 9000
 
 
 class BigModelRunner:
+  class Job:
+    def __init__(self):
+      self.completion = threading.Event()
+      self.output: dict[str, np.ndarray] | None = None
+      self.exception: Exception | None = None
+
   def __init__(self, model: 'ModelState', supply_lost: threading.Event):
     self.model = model
     self.supply_lost = supply_lost
+    self._disabled = False
+    self._lock = threading.Lock()
+    self._jobs: queue.Queue[tuple[BigModelRunner.Job, dict[str, VisionBuf], dict[str, np.ndarray], dict[str, np.ndarray]]] = queue.Queue()
+    self._thread = threading.Thread(target=self._run, daemon=True, name="big_model_runner")
+    self._thread.start()
 
-  def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
-          inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    done = threading.Event()
-    result: list[dict[str, np.ndarray]] = []
-    errors: list[Exception] = []
-
-    def run_model() -> None:
+  def _run(self) -> None:
+    while True:
+      job, bufs, transforms, inputs = self._jobs.get()
       try:
-        result.append(self.model.run(bufs, transforms, inputs))
+        job.output = self.model.run(bufs, transforms, inputs)
       except Exception as e:
-        errors.append(e)
+        job.exception = e
       finally:
-        done.set()
+        job.completion.set()
 
-    threading.Thread(target=run_model, daemon=True, name="big_model_run").start()
-    while not done.is_set() and not self.supply_lost.is_set():
-      done.wait(GPU_POWER_POLL_INTERVAL)
+  def submit(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
+             inputs: dict[str, np.ndarray]) -> Job:
+    with self._lock:
+      if self._disabled:
+        raise RuntimeError("big model runner is disabled")
+      job = self.Job()
+      self._jobs.put_nowait((job, bufs, transforms, inputs))
+      return job
 
-    if not done.is_set():
-      raise RuntimeError("GPU supply lost during inference")
-    if errors:
-      raise errors[0]
-    return result[0]
+  def wait(self, job: Job) -> dict[str, np.ndarray]:
+    while not job.completion.wait(GPU_POWER_POLL_INTERVAL):
+      if self.supply_lost.is_set():
+        raise RuntimeError("GPU hardware failure during inference")
+
+    if self.supply_lost.is_set():
+      raise RuntimeError("GPU hardware failure during inference")
+    if job.exception is not None:
+      raise job.exception
+    assert job.output is not None
+    return job.output
+
+  def disable(self) -> None:
+    with self._lock:
+      self._disabled = True
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -136,6 +159,10 @@ class ChestnutState:
           # immediately signal power drop
           if supply[0] < GPU_POWER_MIN_MV:
             cloudlog.error(f"GPU supply lost: {supply[0]} mV")
+            self.supply_lost.set()
+          # immediately signal link lost
+          if pcie_ltssm != 0x78:
+            cloudlog.error(f"GPU PCIe link lost: LTSSM=0x{pcie_ltssm:02x}")
             self.supply_lost.set()
 
           self._stop.wait(GPU_POWER_POLL_INTERVAL)
@@ -233,9 +260,10 @@ class ModelState:
       self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
-    inputs['desire_pulse'][0] = 0
-    self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
-    self.prev_desire[:] = inputs['desire_pulse']
+    desire_pulse = inputs['desire_pulse'].copy()
+    desire_pulse[0] = 0
+    self.npy['desire'][:] = np.where(desire_pulse - self.prev_desire > .99, desire_pulse, 0)
+    self.prev_desire[:] = desire_pulse
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['action_t'][:] = inputs['action_t']
     self.npy['tfm'][:,:] = transforms['img'][:,:]
@@ -306,28 +334,32 @@ def main(demo=False):
 
   st = time.monotonic()
   cloudlog.warning("loading model")
-  model = None
+
+  small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False)
+  small_model.warmup()
+
+  big_model = None
   if USBGPU:
-    big_model = None
+    loaded_big_model = None
     def load_big():
-      nonlocal big_model
+      nonlocal loaded_big_model
       try:
         m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
         m.warmup()
-        big_model = m
+        loaded_big_model = m
       except Exception:
         cloudlog.exception("big model load failed")
     loader = threading.Thread(target=load_big, daemon=True)
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
-    model = big_model
-    params.put_bool("UsbGpuActive", model is not None)
 
-  small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or USBGPU else None
-  if small_model is not None:
-    small_model.warmup()
-  if model is None:
-    model = small_model
+    # don't let model mutate big_model if it loads after timeout
+    if loader.is_alive():
+      cloudlog.error(f"big model load timed out after {BIG_MODEL_TIMEOUT}s")
+    else:
+      big_model = loaded_big_model
+    params.put_bool("UsbGpuActive", big_model is not None)
+
   params.put_bool("UsbGpuLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
@@ -338,8 +370,8 @@ def main(demo=False):
 
   publish_state = PublishState()
   params = Params()
-  chestnut_state = ChestnutState(pm, model.usbgpu) if USBGPU else None
-  big_model_runner = BigModelRunner(model, chestnut_state.supply_lost) if model.usbgpu else None
+  chestnut_state = ChestnutState(pm, True if big_model else False) if USBGPU else None
+  big_model_runner = BigModelRunner(big_model, chestnut_state.supply_lost) if big_model else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -433,8 +465,12 @@ def main(demo=False):
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
 
-    bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
-    transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
+    small_bufs = {name: buf_extra if 'big' in name else buf_main for name in small_model.vision_input_names}
+    small_transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in small_model.vision_input_names}
+
+    big_bufs = ({name: buf_extra if 'big' in name else buf_main for name in big_model.vision_input_names} if big_model is not None else None)
+    big_transforms = ({name: model_transform_extra if 'big' in name else model_transform_main for name in big_model.vision_input_names} if big_model is not None else None)
+
     frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
     action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
     lat_action_t = lat_delay + frame_delay + action_delay
@@ -446,22 +482,21 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
-    try:
-      if model.usbgpu:
-        model_output = big_model_runner.run(bufs, transforms, inputs)
-      else:
-        model_output = model.run(bufs, transforms, inputs)
-    except Exception:
-      if not params.get_bool("UsbGpuActive"):
-        raise
-      # fallback to small model
-      cloudlog.exception("big model failed, fall back to small")
-      params.put_bool("UsbGpuActive", False)
-      model = small_model
-      if chestnut_state is not None:
-        chestnut_state.big = False
-      run_count = 0
-      model_output = None
+    big_model_job = big_model_runner.submit(big_bufs, big_transforms, inputs) if big_model_runner else None
+    model_output = small_model.run(small_bufs, small_transforms, inputs)
+
+    if big_model_runner is not None and big_model_job is not None:
+      try:
+        model_output = big_model_runner.wait(big_model_job)
+      except Exception:
+        cloudlog.exception("big model failed, fall back to small")
+        params.put_bool("UsbGpuActive", False)
+        big_model_runner.disable()
+        big_model_runner = None
+        big_model = None
+        if chestnut_state is not None:
+          chestnut_state.big = False
+        run_count = 0
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
@@ -475,7 +510,7 @@ def main(demo=False):
       fill_model_msg(modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
                      frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, extrinsics_calibration_seen)
-      modelv2_send.modelV2.big = model.usbgpu
+      modelv2_send.modelV2.big = True if big_model else False
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
