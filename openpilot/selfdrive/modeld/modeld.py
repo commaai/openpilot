@@ -452,8 +452,9 @@ def main(demo=False):
       else:
         model_output = model.run(bufs, transforms, inputs)
     except Exception:
-      if not model.usbgpu:
+      if not params.get_bool("UsbGpuActive"):
         raise
+      # fallback to small model
       cloudlog.exception("big model failed, fall back to small")
       params.put_bool("UsbGpuActive", False)
       model = small_model
@@ -493,6 +494,7 @@ def main(demo=False):
 
     if chestnut_state is not None and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:
       chestnut_state.send()
+
 
 if __name__ == "__main__":
   try:
