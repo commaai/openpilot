@@ -81,9 +81,9 @@ class NetworkConnectivityMonitor:
             self.recheck_event.clear()
             continue
 
-          self.network_connected.set()
-          if HARDWARE.get_network_type() == NetworkType.wifi:
-            self.wifi_connected.set()
+          # self.network_connected.set()
+          # if HARDWARE.get_network_type() == NetworkType.wifi:
+          #   self.wifi_connected.set()
         except urllib.error.URLError as e:
           if (isinstance(e.reason, ssl.SSLCertVerificationError) and
               not system_time_valid() and
@@ -305,6 +305,16 @@ class NetworkSetupPageBase(Scroller):
                                          gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
     self._connect_button.set_visible(not disable_connect_hint)
 
+    def on_continue_click():
+      # scroll to wifi button
+      offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
+      self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
+      # trigger grow when wifi button in view
+      self._pending_wifi_grow_animation = True
+
+    self._connect_button.set_click_callback(on_continue_click)
+    self._connect_button.set_touch_valid_callback(lambda: True)
+
     self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
@@ -417,9 +427,12 @@ class NetworkSetupPageBase(Scroller):
         self._pending_continue_grow_animation = False
         self._continue_button.trigger_grow_animation()
 
-    if self._pending_wifi_grow_animation and abs(self._wifi_button.rect.x - ITEM_SPACING) < 50:
-      self._pending_wifi_grow_animation = False
-      self._wifi_button.trigger_grow_animation()
+    if self._pending_wifi_grow_animation:
+      wifi_center = self._wifi_button.rect.x + self._wifi_button.rect.width / 2
+      viewport_center = self._rect.x + self._rect.width / 2
+      if abs(wifi_center - viewport_center) < 100:
+        self._pending_wifi_grow_animation = False
+        self._wifi_button.trigger_grow_animation()
 
 
 class NetworkSetupPage(NetworkSetupPageBase, NavScroller):
