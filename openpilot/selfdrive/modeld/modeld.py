@@ -67,15 +67,15 @@ class BigModelRunner:
 
   def wait(self) -> dict[str, np.ndarray]:
     while True:
-      if self.supply_lost.is_set():
-        raise RuntimeError("GPU hardware failure during inference")
       try:
         output, exception = self.results.get(timeout=GPU_POWER_POLL_INTERVAL)
         break
       except queue.Empty:
         pass
+
     if self.supply_lost.is_set():
       raise RuntimeError("GPU hardware failure during inference")
+
     if exception is not None:
       raise exception
     if output is None:
@@ -453,10 +453,9 @@ def main(demo=False):
     small_bufs = {name: buf_extra if 'big' in name else buf_main for name in small_model.vision_input_names}
     small_transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in small_model.vision_input_names}
 
-    big_bufs = ({name: buf_extra if 'big' in name else buf_main for name in big_model.vision_input_names}
-                if big_model is not None else None)
-    big_transforms = ({name: model_transform_extra if 'big' in name else model_transform_main for name in big_model.vision_input_names}
-                      if big_model is not None else None)
+    if big_model:
+      big_bufs = ({name: buf_extra if 'big' in name else buf_main for name in big_model.vision_input_names})
+      big_transforms = ({name: model_transform_extra if 'big' in name else model_transform_main for name in big_model.vision_input_names})
 
     frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
     action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
@@ -469,14 +468,16 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
-    if big_model_runner is not None:
-      assert big_bufs is not None
-      assert big_transforms is not None
+    if big_model:
+      assert big_model_runner and big_bufs and big_transforms
       big_model_runner.submit(big_bufs, big_transforms, inputs)
+
+    # always run the small model
     model_output = small_model.run(small_bufs, small_transforms, inputs)
 
-    if big_model_runner is not None:
+    if big_model:
       try:
+        assert big_model_runner
         model_output = big_model_runner.wait()
       except Exception:
         cloudlog.exception("big model failed, fall back to small")

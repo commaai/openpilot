@@ -16,27 +16,6 @@ MODELS_DIR = Path(__file__).resolve().parent / 'models'
 TG_INPUT_DEVICES_PATH = MODELS_DIR / 'tg_input_devices.json'
 
 
-@contextmanager
-def open_chestnut():
-  from tinygrad.device import Device
-
-  _, location = Device["AMD"].iface.pci_dev.pcibus.split(":", 1)
-  target_bus, target_address = (int(x) for x in location.split("-", 1))
-  context = usb1.USBContext()
-  handle = None
-  try:
-    device = next((d for d in context.getDeviceList(skip_on_error=True)
-                   if (d.getBusNumber(), d.getDeviceAddress()) == (target_bus, target_address)), None)
-    if device is None:
-      raise RuntimeError(f"Chestnut not found at USB {target_bus}-{target_address}")
-    handle = device.open()
-    yield handle
-  finally:
-    if handle is not None:
-      handle.close()
-    context.close()
-
-
 def get_tg_input_devices(process_name: str, usbgpu: bool):
   with open(TG_INPUT_DEVICES_PATH) as f:
     return json.load(f)[process_name]['default' if not usbgpu else 'usbgpu']
@@ -82,3 +61,23 @@ def usbgpu_present() -> bool:
 
 def usbgpu_compiled() -> bool:
   return Path(get_manifest_path(modeld_pkl_path(usbgpu=True))).is_file()
+
+@contextmanager
+def open_chestnut():
+  from tinygrad.device import Device
+
+  _, location = Device["AMD"].iface.pci_dev.pcibus.split(":", 1)
+  target_bus, target_address = (int(x) for x in location.split("-", 1))
+  context = usb1.USBContext()
+  handle = None
+  try:
+    device = next((d for d in context.getDeviceList(skip_on_error=True)
+                   if (d.getBusNumber(), d.getDeviceAddress()) == (target_bus, target_address)), None)
+    if device is None:
+      raise RuntimeError(f"Chestnut not found at USB {target_bus}-{target_address}")
+    handle = device.open()
+    yield handle
+  finally:
+    if handle is not None:
+      handle.close()
+    context.close()
