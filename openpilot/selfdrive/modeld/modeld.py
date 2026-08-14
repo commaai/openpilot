@@ -47,55 +47,40 @@ GPU_POWER_MIN_MV = 9000
 
 
 class BigModelRunner:
-  class Job:
-    def __init__(self):
-      self.completion = threading.Event()
-      self.output: dict[str, np.ndarray] | None = None
-      self.exception: Exception | None = None
-
   def __init__(self, model: 'ModelState', supply_lost: threading.Event):
-    self.model = model
     self.supply_lost = supply_lost
-    self._disabled = False
-    self._lock = threading.Lock()
-    self._jobs: queue.Queue[tuple[BigModelRunner.Job, dict[str, VisionBuf], dict[str, np.ndarray], dict[str, np.ndarray]]] = queue.Queue()
-    self._thread = threading.Thread(target=self._run, daemon=True, name="big_model_runner")
-    self._thread.start()
+    self.requests: queue.Queue[tuple[dict[str, VisionBuf], dict[str, np.ndarray], dict[str, np.ndarray]]] = queue.Queue()
+    self.results: queue.Queue[tuple[dict[str, np.ndarray] | None, Exception | None]] = queue.Queue()
+    threading.Thread(target=self._run, args=(model,), daemon=True, name="big_model_runner").start()
 
-  def _run(self) -> None:
+  def _run(self, model: 'ModelState') -> None:
     while True:
-      job, bufs, transforms, inputs = self._jobs.get()
+      bufs, transforms, inputs = self.requests.get()
       try:
-        job.output = self.model.run(bufs, transforms, inputs)
+        self.results.put((model.run(bufs, transforms, inputs), None))
       except Exception as e:
-        job.exception = e
-      finally:
-        job.completion.set()
+        self.results.put((None, e))
 
   def submit(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
-             inputs: dict[str, np.ndarray]) -> Job:
-    with self._lock:
-      if self._disabled:
-        raise RuntimeError("big model runner is disabled")
-      job = self.Job()
-      self._jobs.put_nowait((job, bufs, transforms, inputs))
-      return job
+             inputs: dict[str, np.ndarray]) -> None:
+    self.requests.put_nowait((bufs, transforms, inputs))
 
-  def wait(self, job: Job) -> dict[str, np.ndarray]:
-    while not job.completion.wait(GPU_POWER_POLL_INTERVAL):
+  def wait(self) -> dict[str, np.ndarray]:
+    while True:
       if self.supply_lost.is_set():
         raise RuntimeError("GPU hardware failure during inference")
-
+      try:
+        output, exception = self.results.get(timeout=GPU_POWER_POLL_INTERVAL)
+        break
+      except queue.Empty:
+        pass
     if self.supply_lost.is_set():
       raise RuntimeError("GPU hardware failure during inference")
-    if job.exception is not None:
-      raise job.exception
-    assert job.output is not None
-    return job.output
-
-  def disable(self) -> None:
-    with self._lock:
-      self._disabled = True
+    if exception is not None:
+      raise exception
+    if output is None:
+      raise RuntimeError("big model produced no output")
+    return output
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -487,18 +472,15 @@ def main(demo=False):
     if big_model_runner is not None:
       assert big_bufs is not None
       assert big_transforms is not None
-      big_model_job = big_model_runner.submit(big_bufs, big_transforms, inputs)
-    else:
-      big_model_runner = None
+      big_model_runner.submit(big_bufs, big_transforms, inputs)
     model_output = small_model.run(small_bufs, small_transforms, inputs)
 
-    if big_model_runner is not None and big_model_job is not None:
+    if big_model_runner is not None:
       try:
-        model_output = big_model_runner.wait(big_model_job)
+        model_output = big_model_runner.wait()
       except Exception:
         cloudlog.exception("big model failed, fall back to small")
         params.put_bool("UsbGpuActive", False)
-        big_model_runner.disable()
         big_model_runner = None
         big_model = None
         if chestnut_state is not None:
