@@ -23,7 +23,7 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import Scroller, NavScroller
+from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
@@ -81,9 +81,9 @@ class NetworkConnectivityMonitor:
             self.recheck_event.clear()
             continue
 
-          # self.network_connected.set()
-          # if HARDWARE.get_network_type() == NetworkType.wifi:
-          #   self.wifi_connected.set()
+          self.network_connected.set()
+          if HARDWARE.get_network_type() == NetworkType.wifi:
+            self.wifi_connected.set()
         except urllib.error.URLError as e:
           if (isinstance(e.reason, ssl.SSLCertVerificationError) and
               not system_time_valid() and
@@ -417,12 +417,9 @@ class NetworkSetupPageBase(Scroller):
         self._pending_continue_grow_animation = False
         self._continue_button.trigger_grow_animation()
 
-    if self._pending_wifi_grow_animation:
-      wifi_center = self._wifi_button.rect.x + self._wifi_button.rect.width / 2
-      viewport_center = self._rect.x + self._rect.width / 2
-      if abs(wifi_center - viewport_center) < 100:
-        self._pending_wifi_grow_animation = False
-        self._wifi_button.trigger_grow_animation()
+    if self._pending_wifi_grow_animation and abs(self._wifi_button.rect.x - ITEM_SPACING) < 50:
+      self._pending_wifi_grow_animation = False
+      self._wifi_button.trigger_grow_animation()
 
 
 class NetworkSetupPage(NetworkSetupPageBase, NavScroller):
