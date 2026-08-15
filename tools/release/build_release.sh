@@ -46,10 +46,21 @@ echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git commit -a -m "openpilot v$VERSION release"
 
+# use the full CPU available for speeding up the build.
+# openpilot resets the CPU frequencies when test_onroad.py runs below.
+for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+  [ -d "$policy" ] || continue
+  hardware_max="$(cat "$policy/cpuinfo_max_freq")"
+  echo "$hardware_max" | sudo tee "$policy/scaling_max_freq" >/dev/null
+done
+
 # Build and test before launch_chffrplus.sh creates the on-device package
 # symlinks. SConstruct uses the same package roots for build subprocesses.
 export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
 scons
+if [ -n "$INCLUDE_BIG_MODEL" ]; then
+  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
+fi
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
