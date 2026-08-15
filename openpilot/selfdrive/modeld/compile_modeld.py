@@ -44,6 +44,7 @@ UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
 WARP_DEV = os.getenv('WARP_DEV')
+FRAME_DEV = os.getenv('FRAME_DEV', WARP_DEV)
 
 
 def make_random_images(keys, shape, device=None):
@@ -182,7 +183,9 @@ def make_warp(nv12, model_w, model_h, frame_skip):
   def warp(tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(WARP_DEV)
     big_tfm = big_tfm.to(WARP_DEV)
-    Tensor.realize(tfm, big_tfm)
+    frame = frame.to(WARP_DEV)
+    big_frame = big_frame.to(WARP_DEV)
+    Tensor.realize(tfm, big_tfm, frame, big_frame)
 
     warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
     warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
@@ -309,7 +312,7 @@ if __name__ == "__main__":
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size, device=WARP_DEV)
+    make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size, device=FRAME_DEV)
     warp = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
     make_warp_queues = partial(make_warp_input_queues, out['metadata']['input_shapes'], args.frame_skip)
     out[(cam_w,cam_h)] = compile_jit(warp, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)

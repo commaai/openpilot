@@ -35,8 +35,8 @@ else:
 
 tg_devices = { # which device to put jit inputs to at runtime
   'openpilot.selfdrive.modeld.modeld': {
-    'default': {'WARP_DEV': tg_backend, 'QUEUE_DEV': tg_backend},
-    'usbgpu': {'WARP_DEV': tg_backend, 'QUEUE_DEV': 'AMD'}
+    'default': {'FRAME_DEV': tg_backend, 'WARP_DEV': tg_backend, 'QUEUE_DEV': tg_backend},
+    'usbgpu': {'FRAME_DEV': 'CPU', 'WARP_DEV': 'AMD', 'QUEUE_DEV': 'AMD'}
   },
   'openpilot.selfdrive.modeld.dmonitoringmodeld': {
     'default': {'DEV': tg_backend}
@@ -45,7 +45,7 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 USBGPU = usbgpu_present()
 if USBGPU:
-  usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
+  usbgpu_tg_flags = 'DEBUG=2 DEV=USB+AMD:LLVM FRAME_DEV=CPU WARP_DEV=AMD FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
 
