@@ -94,7 +94,7 @@ REFS=()
 for branch in ${RELEASE_BRANCH//,/ }; do
   REFS+=("$BUILD_BRANCH:$branch")
 done
-# release branches are rebuilt and force-pushed, so skip expensive pack optimization
+# uploading the larger pack is faster than spending CPU to optimize it
 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
 
 echo "[-] done T=$SECONDS"
