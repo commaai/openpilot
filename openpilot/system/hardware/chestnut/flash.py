@@ -33,7 +33,6 @@ USBDEVFS_SETCONFIGURATION = 0x80045505
 USBDEVFS_CLAIMINTERFACE = 0x8004550F
 USBDEVFS_RESET = 0x5514
 USBDEVFS_CLEAR_HALT = 0x80045515
-USB2_CONTROL_MAX_PACKET_SIZE = 64
 MAX_REGISTER_READ_SIZE = 255
 
 _deadline = float("inf")
@@ -165,7 +164,7 @@ class Flash:
       if path is not None:
         speed = int(open(path + "/speed").read())
         # USB2 firmware truncates larger reads to one full packet without a terminating ZLP.
-        self.max_register_read_size = USB2_CONTROL_MAX_PACKET_SIZE if speed < 5000 else MAX_REGISTER_READ_SIZE
+        self.max_register_read_size = 64 if speed < 5000 else MAX_REGISTER_READ_SIZE
         self.fd = claim_interface(path)
         return
       time.sleep(0.1)
