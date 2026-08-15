@@ -1,10 +1,12 @@
 import io
+import usb1
 import json
 import pickle
 import shutil
 import struct
 import tempfile
 from pathlib import Path
+from contextlib import contextmanager
 
 from openpilot.common.file_chunker import get_manifest_path
 from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_USB_IDS, USB_DEVICES_PATH
@@ -58,3 +60,23 @@ def usbgpu_present() -> bool:
 
 def usbgpu_compiled() -> bool:
   return Path(get_manifest_path(modeld_pkl_path(usbgpu=True))).is_file()
+
+@contextmanager
+def open_chestnut():
+  from tinygrad.device import Device
+
+  _, location = Device["AMD"].iface.pci_dev.pcibus.split(":", 1)
+  target_bus, target_address = (int(x) for x in location.split("-", 1))
+  context = usb1.USBContext()
+  handle = None
+  try:
+    device = next((d for d in context.getDeviceList(skip_on_error=True)
+                   if (d.getBusNumber(), d.getDeviceAddress()) == (target_bus, target_address)), None)
+    if device is None:
+      raise RuntimeError(f"Chestnut not found at USB {target_bus}-{target_address}")
+    handle = device.open()
+    yield handle
+  finally:
+    if handle is not None:
+      handle.close()
+    context.close()

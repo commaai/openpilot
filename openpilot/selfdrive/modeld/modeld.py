@@ -2,6 +2,7 @@
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
+import usb1
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 import struct
@@ -30,7 +31,7 @@ from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_IN
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
+from openpilot.selfdrive.modeld.helpers import open_chestnut, usbgpu_present, usbgpu_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -39,6 +40,39 @@ LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
+GPU_POWER_POLL_INTERVAL = 0.010
+GPU_POWER_READ_TIMEOUT_MS = 20
+GPU_POWER_MIN_MV = 9000
+
+
+class BigModelRunner:
+  def __init__(self, model: 'ModelState', supply_lost: threading.Event):
+    self.model = model
+    self.supply_lost = supply_lost
+
+  def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
+          inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    done = threading.Event()
+    result: list[dict[str, np.ndarray]] = []
+    errors: list[Exception] = []
+
+    def run_model() -> None:
+      try:
+        result.append(self.model.run(bufs, transforms, inputs))
+      except Exception as e:
+        errors.append(e)
+      finally:
+        done.set()
+
+    threading.Thread(target=run_model, daemon=True, name="big_model_run").start()
+    while not done.is_set() and not self.supply_lost.is_set():
+      done.wait(GPU_POWER_POLL_INTERVAL)
+
+    if not done.is_set():
+      raise RuntimeError("GPU hardware failure during inference")
+    if errors:
+      raise errors[0]
+    return result[0]
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -77,6 +111,41 @@ class ChestnutState:
     self.valid = True
     self.sends = 0
     self.metrics = {}
+    self.supply_lost = threading.Event()
+    self._stop = threading.Event()
+    self._usb_state: tuple[int, tuple[int, int]] | None = None
+    self._thread = threading.Thread(target=self._run, daemon=True, name="chestnut_state")
+    self._thread.start()
+
+  def start(self) -> None:
+    self._thread.start()
+
+  def stop(self) -> None:
+    self._stop.set()
+
+  def _run(self) -> None:
+    try:
+      with open_chestnut() as handle:
+        while not self._stop.is_set():
+          data = handle.controlRead(usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE | usb1.ENDPOINT_IN, 0xC0, 0, 0, 5, timeout=GPU_POWER_READ_TIMEOUT_MS)
+          supply = struct.unpack_from('<Hh', data)
+          data = handle.controlRead(usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE | usb1.ENDPOINT_IN, 0xE4, 0xB450, 0, 1, timeout=GPU_POWER_READ_TIMEOUT_MS)
+          pcie_ltssm = data[0]
+          self._usb_state = (pcie_ltssm, supply)
+
+          # immediately signal power drop
+          if supply[0] < GPU_POWER_MIN_MV:
+            cloudlog.error(f"GPU supply lost: {supply[0]} mV")
+            self.supply_lost.set()
+          # immediately signal link lost
+          if pcie_ltssm != 0x78:
+            cloudlog.error(f"GPU PCIe link lost: LTSSM=0x{pcie_ltssm:02x}")
+            self.supply_lost.set()
+
+          self._stop.wait(GPU_POWER_POLL_INTERVAL)
+    except Exception:
+      self._usb_state = None
+      cloudlog.exception("chestnut supply state thread failed")
 
   @cached_property
   def power_limit(self) -> int:
@@ -109,18 +178,12 @@ class ChestnutState:
       for k, v in self.metrics.items():
         setattr(state, k, v)
 
-    asm_valid = False
-    if "AMD" in Device._opened_devices:
-      try:
-        # ASM runs on USB-C power, these still read without a gpu
-        asm = Device["AMD"].iface.pci_dev.usb
-        state.pcieLtssm = asm.read(0xB450, 1)[0]
-        state.supplyVoltage, state.supplyCurrent = struct.unpack('<Hh', bytes(asm.usb.control_read(0xC0, 5))[:4])
-        asm_valid = True
-      except Exception:
-        pass
+    usb_state = self._usb_state
+    if usb_state is not None:
+      state.pcieLtssm = usb_state[0]
+      state.supplyVoltage, state.supplyCurrent = usb_state[1]
 
-    msg.valid = asm_valid and (not self.big or self.valid)
+    msg.valid = usb_state is not None and (not self.big or self.valid)
     self.pm.send('chestnutState', msg)
 
 
@@ -278,6 +341,7 @@ def main(demo=False):
   publish_state = PublishState()
   params = Params()
   chestnut_state = ChestnutState(pm, model.usbgpu) if USBGPU else None
+  big_model_runner = BigModelRunner(model, chestnut_state.supply_lost) if model.usbgpu else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -385,7 +449,10 @@ def main(demo=False):
 
     mt1 = time.perf_counter()
     try:
-      model_output = model.run(bufs, transforms, inputs)
+      if big_model_runner is not None:
+        model_output = big_model_runner.run(bufs, transforms, inputs)
+      else:
+        model_output = model.run(bufs, transforms, inputs)
     except Exception:
       if not params.get_bool("UsbGpuActive"):
         raise
@@ -393,6 +460,7 @@ def main(demo=False):
       cloudlog.exception("big model failed, fall back to small")
       params.put_bool("UsbGpuActive", False)
       model = small_model
+      big_model_runner = None
       if chestnut_state is not None:
         chestnut_state.big = False
       run_count = 0
