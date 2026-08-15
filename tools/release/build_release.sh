@@ -18,6 +18,33 @@ fi
 
 BUILD_BRANCH=release-mici-staging
 
+CPU_FREQ_STATE=""
+
+restore_cpu_freqs() {
+  if [ -n "$CPU_FREQ_STATE" ] && [ -f "$CPU_FREQ_STATE" ]; then
+    while read -r policy min_freq max_freq; do
+      echo "$min_freq" | sudo tee "$policy/scaling_min_freq" >/dev/null
+      echo "$max_freq" | sudo tee "$policy/scaling_max_freq" >/dev/null
+    done < "$CPU_FREQ_STATE"
+    rm -f "$CPU_FREQ_STATE"
+    CPU_FREQ_STATE=""
+  fi
+}
+
+unlock_cpu_freqs() {
+  CPU_FREQ_STATE="$(mktemp)"
+  for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+    [ -d "$policy" ] || continue
+    min_freq="$(cat "$policy/scaling_min_freq")"
+    max_freq="$(cat "$policy/scaling_max_freq")"
+    hardware_max="$(cat "$policy/cpuinfo_max_freq")"
+    echo "$policy $min_freq $max_freq" >> "$CPU_FREQ_STATE"
+    echo "$hardware_max" | sudo tee "$policy/scaling_max_freq" >/dev/null
+    echo "$hardware_max" | sudo tee "$policy/scaling_min_freq" >/dev/null
+  done
+}
+
+trap restore_cpu_freqs EXIT
 
 # set git identity
 source $DIR/identity.sh
@@ -49,7 +76,11 @@ git commit -a -m "openpilot v$VERSION release"
 # Build and test before launch_chffrplus.sh creates the on-device package
 # symlinks. SConstruct uses the same package roots for build subprocesses.
 export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
+unlock_cpu_freqs
 scons
+if [ "$INCLUDE_BIG_MODEL" = "1" ]; then
+  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
+fi
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
@@ -58,6 +89,7 @@ else
   # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
   scons panda/
 fi
+restore_cpu_freqs
 
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then
