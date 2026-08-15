@@ -58,7 +58,7 @@ done
 # symlinks. SConstruct uses the same package roots for build subprocesses.
 export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
 scons
-if [ "$INCLUDE_BIG_MODEL" = "1" ]; then
+if [ -n "$INCLUDE_BIG_MODEL" ]; then
   test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
 fi
 

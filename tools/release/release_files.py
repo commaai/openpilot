@@ -29,7 +29,7 @@ if __name__ == "__main__":
       continue
 
     rf = str(f.relative_to(ROOT))
-    if os.getenv("INCLUDE_BIG_MODEL") != "1" and rf.startswith("openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"):
+    if not os.getenv("INCLUDE_BIG_MODEL") and rf.startswith("openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"):
       continue
     blacklisted = any(re.search(p, rf) for p in blacklist)
     whitelisted = any(re.search(p, rf) for p in whitelist)
