@@ -52,7 +52,6 @@ for policy in /sys/devices/system/cpu/cpufreq/policy*; do
   [ -d "$policy" ] || continue
   hardware_max="$(cat "$policy/cpuinfo_max_freq")"
   echo "$hardware_max" | sudo tee "$policy/scaling_max_freq" >/dev/null
-  echo "$hardware_max" | sudo tee "$policy/scaling_min_freq" >/dev/null
 done
 
 # Build and test before launch_chffrplus.sh creates the on-device package
