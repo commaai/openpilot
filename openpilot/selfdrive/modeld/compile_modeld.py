@@ -274,8 +274,6 @@ def _parse_size(s):
 
 def read_file_chunked_to_disk(path):
   from openpilot.common.file_chunker import open_file_chunked
-  if os.path.isfile(path):
-    return path
   tmp_path = f'{path}.unchunked'
   with open(tmp_path, 'wb') as f, open_file_chunked(path) as src:
     shutil.copyfileobj(src, f)
