@@ -47,7 +47,7 @@ class SoftwareInfoLayoutMici(Widget):
 
     self._branch_label = UnifiedLabel("branch", 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
     self._branch_text_label = UnifiedLabel("", 32, max_width=max_width, text_color=subheader_color,
-                                           font_weight=FontWeight.ROMAN, wrap_text=False)
+                                           font_weight=FontWeight.ROMAN, wrap_text=False, scroll=True)
 
   def _update_state(self):
     desc = _split_description(ui_state.params.get("UpdaterCurrentDescription") or "")
