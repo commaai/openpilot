@@ -71,7 +71,8 @@ class BigModelRunner:
         output, exception = self.results.get(timeout=GPU_POWER_POLL_INTERVAL)
         break
       except queue.Empty:
-        pass
+        if self.supply_lost.is_set():
+          raise RuntimeError("GPU hardware failure during inference")
 
     if self.supply_lost.is_set():
       raise RuntimeError("GPU hardware failure during inference")
