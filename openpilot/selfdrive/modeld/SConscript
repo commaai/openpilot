@@ -79,7 +79,9 @@ for usbgpu in [False, True] if USBGPU else [False]:
   file_prefix, cmd_flags = ('big_', usbgpu_tg_flags) if usbgpu else ('big_' if os.getenv('BIG_INTO_SMALL') else '', tg_flags)
   driving_onnx_deps = get_existing_chunks(File(f"models/{file_prefix}driving_supercombo.onnx").abspath)
   camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
-  cmd = (f'{cmd_flags} {mac_brew_string} python3 {modeld_dir}/compile_modeld.py '
+  # CPU 7 is isolated with isolcpus on AGNOS, so explicitly pin the compiler to it.
+  taskset = 'taskset -c 7 ' if arch == 'comma_arm64' else ''
+  cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 {modeld_dir}/compile_modeld.py '
         f'--model-size {model_w}x{model_h} '
         f'--camera-resolutions {camera_res_args} '
         f'--onnx {File(f"models/{file_prefix}driving_supercombo.onnx").abspath} '
