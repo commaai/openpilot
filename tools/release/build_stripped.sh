@@ -83,6 +83,7 @@ fi
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
+  # release branches are rebuilt and force-pushed, so skip expensive pack optimization
   git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin tmp:$BRANCH
 fi
 
