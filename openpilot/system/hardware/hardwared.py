@@ -237,7 +237,8 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   fan_controller = FanController(int(1./DT_HW))
   chestnut = Chestnut()
-  big_model_available = os.path.isfile(os.path.join(BASEDIR, "openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"))
+  big_model_available = os.path.isfile(os.path.join(BASEDIR, "openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx")) or \
+                        os.path.isfile(os.path.join(BASEDIR, "openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest"))
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
