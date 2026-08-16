@@ -22,14 +22,23 @@ BUILD_BRANCH=release-mici-staging
 source $DIR/identity.sh
 
 echo "[-] Setting up repo T=$SECONDS"
-rm -rf $BUILD_DIR
-mkdir -p $BUILD_DIR
+if [ "$(git -C "$BUILD_DIR" config --bool release.buildRepo 2>/dev/null)" = "true" ]; then
+  git -C "$BUILD_DIR" rm -r -f --ignore-unmatch .
+  git -C "$BUILD_DIR" clean -dffx
+else
+  rm -rf $BUILD_DIR
+  mkdir -p $BUILD_DIR
+  git -C "$BUILD_DIR" init
+  git -C "$BUILD_DIR" config release.buildRepo true
+  git -C "$BUILD_DIR" remote add origin git@github.com:commaai/openpilot.git
+fi
 cd $BUILD_DIR
-git init
 # writing larger objects is faster than compressing them on-device
 git config core.compression 0
-git remote add origin git@github.com:commaai/openpilot.git
-git checkout --orphan $BUILD_BRANCH
+git config gc.auto 0
+git update-ref -d "refs/heads/$BUILD_BRANCH"
+git symbolic-ref HEAD "refs/heads/$BUILD_BRANCH"
+git read-tree --empty
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
