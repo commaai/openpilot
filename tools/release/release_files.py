@@ -8,12 +8,10 @@ ROOT = os.path.abspath(os.path.join(HERE, "../.."))
 
 blacklist = [
   ".git/",
+  ".venv/",
   ".github/workflows/",
 
   "matlab.*.md",
-
-  # skip big model for now
-  "openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx",
 
   # no LFS or submodules in release
   ".lfsconfig",
@@ -32,6 +30,8 @@ if __name__ == "__main__":
       continue
 
     rf = str(f.relative_to(ROOT))
+    if not os.getenv("INCLUDE_BIG_MODEL") and rf.startswith("openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"):
+      continue
     blacklisted = any(re.search(p, rf) for p in blacklist)
     whitelisted = any(re.search(p, rf) for p in whitelist)
     if blacklisted and not whitelisted:

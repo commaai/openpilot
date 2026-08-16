@@ -83,7 +83,8 @@ fi
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
-  git push -f origin tmp:$BRANCH
+  # uploading the larger pack is faster than spending CPU to optimize it
+  git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin tmp:$BRANCH
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"
