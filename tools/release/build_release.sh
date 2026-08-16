@@ -2,14 +2,13 @@
 set -e
 set -x
 
-# git diff --name-status origin/release3-staging | grep "^A" | less
-
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-
 cd $DIR
 
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
+
+export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
 
 if [ -z "$RELEASE_BRANCH" ]; then
   echo "RELEASE_BRANCH is not set"
@@ -23,28 +22,23 @@ BUILD_BRANCH=release-mici-staging
 source $DIR/identity.sh
 
 echo "[-] Setting up repo T=$SECONDS"
-rm -rf $BUILD_DIR
-mkdir -p $BUILD_DIR
+if ! git -C "$SOURCE_DIR" worktree remove --force "$BUILD_DIR" 2>/dev/null; then
+  rm -rf $BUILD_DIR
+fi
+git -C "$SOURCE_DIR" worktree prune
+git -C "$SOURCE_DIR" worktree add --detach --no-checkout "$BUILD_DIR"
 cd $BUILD_DIR
-git init
-git remote add origin git@github.com:commaai/openpilot.git
-git checkout --orphan $BUILD_BRANCH
+git update-ref -d "refs/heads/$BUILD_BRANCH"
+git symbolic-ref HEAD "refs/heads/$BUILD_BRANCH"
+git read-tree --empty
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-cp -pR --parents $(./tools/release/release_files.py) $BUILD_DIR/
+./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$BUILD_DIR" --
 
 # in the directory
 cd $BUILD_DIR
-
-rm -f panda/board/obj/panda.bin.signed
-rm -f panda/board/obj/panda_h7.bin.signed
-
-VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
-echo "[-] committing version $VERSION T=$SECONDS"
-git add -f .
-git commit -a -m "openpilot v$VERSION release"
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
@@ -54,9 +48,6 @@ for policy in /sys/devices/system/cpu/cpufreq/policy*; do
   echo "$hardware_max" | sudo tee "$policy/scaling_max_freq" >/dev/null
 done
 
-# Build and test before launch_chffrplus.sh creates the on-device package
-# symlinks. SConstruct uses the same package roots for build subprocesses.
-export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
 scons
 if [ -n "$INCLUDE_BIG_MODEL" ]; then
   test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
@@ -83,7 +74,6 @@ find . -name '*.a' -delete
 find . -name '*.o' -delete
 find . -name '*.os' -delete
 find . -name '*.pyc' -delete
-find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile tools/release/
 rm -f openpilot/selfdrive/modeld/models/*.onnx*
@@ -91,9 +81,11 @@ rm -f openpilot/selfdrive/modeld/models/*.onnx*
 # Mark as prebuilt release
 touch prebuilt
 
+VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # Add built files to git
-git add -f .
-git commit --amend -m "openpilot v$VERSION"
+# writing larger objects is faster than compressing them on-device
+git -c core.compression=0 add -f .
+git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
 
 # Run tests
 cd $BUILD_DIR
