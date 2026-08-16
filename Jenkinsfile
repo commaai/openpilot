@@ -168,6 +168,14 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
+  if (env.BRANCH_NAME == '__jenkins_loop_master_camera_start_probe_20260816') {
+    deviceStage("camera start probe", "tizi-needs-can", ["UNSAFE=1"], [
+      step("build openpilot", "cd openpilot/system/manager && ./build.py"),
+      step("camera start probe", "./openpilot/system/camerad/test/start_frame_probe.py", [timeout: 180]),
+    ])
+    return
+  }
+
   def excludeBranches = ['__nightly', 'devel', 'devel-staging',
                          'release-tizi', 'release-tizi-staging', 'release-mici', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
