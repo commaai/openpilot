@@ -7,7 +7,7 @@ import requests
 import urllib.parse
 from datetime import datetime, UTC
 
-from openpilot.cereal import messaging
+from openpilot.cereal import log, messaging
 from openpilot.common.api import Api
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
@@ -46,7 +46,6 @@ def get_assistnow_messages() -> list[bytes]:
   params = Params()
   if token := params.get('AssistNowToken'):
     cloudlog.warning("Downloading AssistNow data directly from u-blox")
-    # TODO: implement adding the last known location
     r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
       'token': token,
       'gnss': 'gps,glo',
@@ -157,6 +156,16 @@ def save_almanac(pigeon: TTYPigeon) -> None:
   except TimeoutError:
     pass
 
+def send_assistnow(pigeon: TTYPigeon) -> bool:
+  try:
+    for msg in get_assistnow_messages():
+      pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+    cloudlog.warning("AssistNow messages sent")
+    return True
+  except Exception:
+    cloudlog.warning("failed to get AssistNow messages")
+    return False
+
 def init_baudrate(pigeon: TTYPigeon):
   # ublox default setting on startup is 9600 baudrate
   pigeon.set_baud(9600)
@@ -240,14 +249,6 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
         ))
         pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
 
-      # A configured u-blox token takes precedence over comma's AGPS proxy.
-      try:
-        for msg in get_assistnow_messages():
-          pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
-        cloudlog.warning("AssistNow messages sent")
-      except Exception:
-        cloudlog.warning("failed to get AssistNow messages")
-
       cloudlog.warning("Pigeon GPS on!")
       break
     except TimeoutError:
@@ -281,18 +282,29 @@ def init(pigeon: TTYPigeon) -> None:
 
 def run_receiving(duration: int = 0):
   pm = messaging.PubMaster(['ubloxRaw'])
+  sm = messaging.SubMaster(['deviceState'])
 
   pigeon = TTYPigeon()
   init(pigeon)
 
   start_time = time.monotonic()
   last_almanac_save = time.monotonic()
+  last_assist_attempt = 0.
+  assist_sent = False
   while (duration == 0) or (time.monotonic() - start_time < duration):
+    sm.update(0)
+    has_internet = system_time_valid() and sm['deviceState'].networkType != log.DeviceState.NetworkType.none
+    if has_internet and not assist_sent and (time.monotonic() - last_assist_attempt) > 10.:
+      last_assist_attempt = time.monotonic()
+      assist_sent = send_assistnow(pigeon)
+
     dat = pigeon.receive()
     if len(dat) > 0:
       if dat[0] == 0x00:
         cloudlog.warning("received invalid data from ublox, re-initing!")
         init(pigeon)
+        assist_sent = False
+        last_assist_attempt = 0.
         continue
 
       # send out to socket
