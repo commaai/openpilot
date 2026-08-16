@@ -20,8 +20,6 @@ cp -r $SOURCE_DIR/.git $TARGET_DIR
 
 echo "[-] setting up stripped branch sync T=$SECONDS"
 cd $TARGET_DIR
-# writing larger objects is faster than compressing them on-device
-git config core.compression 0
 
 # tmp branch
 git checkout --orphan tmp
@@ -53,9 +51,10 @@ echo -n "$GIT_HASH" > git_src_commit
 echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
 
 echo "[-] committing version $VERSION T=$SECONDS"
-git add -f .
+# writing larger objects is faster than compressing them on-device
+git -c core.compression=0 add -f .
 git status
-git commit -a -m "openpilot v$VERSION release
+git -c core.compression=0 commit -a -m "openpilot v$VERSION release
 
 date: $DATETIME
 master commit: $GIT_HASH

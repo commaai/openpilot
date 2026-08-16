@@ -33,8 +33,6 @@ else
   git -C "$BUILD_DIR" remote add origin git@github.com:commaai/openpilot.git
 fi
 cd $BUILD_DIR
-# writing larger objects is faster than compressing them on-device
-git config core.compression 0
 git config gc.auto 0
 git update-ref -d "refs/heads/$BUILD_BRANCH"
 git symbolic-ref HEAD "refs/heads/$BUILD_BRANCH"
@@ -91,8 +89,9 @@ touch prebuilt
 
 VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # Add built files to git
-git add -f .
-git commit -m "openpilot v$VERSION"
+# writing larger objects is faster than compressing them on-device
+git -c core.compression=0 add -f .
+git -c core.compression=0 commit -m "openpilot v$VERSION"
 
 # Run tests
 cd $BUILD_DIR
