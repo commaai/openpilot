@@ -20,6 +20,8 @@ cp -r $SOURCE_DIR/.git $TARGET_DIR
 
 echo "[-] setting up stripped branch sync T=$SECONDS"
 cd $TARGET_DIR
+# writing larger objects is faster than compressing them on-device
+git config core.compression 0
 
 # tmp branch
 git checkout --orphan tmp
@@ -29,11 +31,6 @@ echo "[-] erasing old openpilot T=$SECONDS"
 git submodule deinit -f --all
 git rm -rf --cached .
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
-
-# cleanup before the copy
-cd $SOURCE_DIR
-git clean -xdff
-git submodule foreach --recursive git clean -xdff
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"

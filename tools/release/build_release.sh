@@ -26,6 +26,8 @@ rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
+# writing larger objects is faster than compressing them on-device
+git config core.compression 0
 git remote add origin git@github.com:commaai/openpilot.git
 git checkout --orphan $BUILD_BRANCH
 
