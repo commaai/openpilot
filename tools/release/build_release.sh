@@ -40,8 +40,10 @@ cd $SOURCE_DIR
 # in the directory
 cd $BUILD_DIR
 
-printf '%s' "$(git -C "$SOURCE_DIR" rev-parse HEAD)" > git_src_commit
-printf '%s' "$(git -C "$SOURCE_DIR" show --no-patch --format='%ct %ci' HEAD)" > git_src_commit_date
+GIT_HASH=$(git -C "$SOURCE_DIR" rev-parse HEAD)
+GIT_COMMIT_DATE=$(git -C "$SOURCE_DIR" show --no-patch --format='%ct %ci' HEAD)
+echo -n "$GIT_HASH" > git_src_commit
+echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
