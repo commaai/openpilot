@@ -38,12 +38,11 @@ git submodule foreach --recursive git clean -xdff
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-./tools/release/release_files.py | xargs -d '\n' cp -pR --parents -t "$TARGET_DIR"
+./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$TARGET_DIR" --
 
 # in the directory
 cd $TARGET_DIR
 rm -rf .git/modules/
-rm -f panda/board/obj/panda.bin.signed
 
 find openpilot/selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 

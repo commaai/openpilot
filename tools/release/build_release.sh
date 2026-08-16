@@ -2,14 +2,13 @@
 set -e
 set -x
 
-# git diff --name-status origin/release3-staging | grep "^A" | less
-
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-
 cd $DIR
 
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
+
+export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
 
 if [ -z "$RELEASE_BRANCH" ]; then
   echo "RELEASE_BRANCH is not set"
@@ -33,15 +32,10 @@ git checkout --orphan $BUILD_BRANCH
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-cp -pR --parents $(./tools/release/release_files.py) $BUILD_DIR/
+./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$BUILD_DIR" --
 
 # in the directory
 cd $BUILD_DIR
-
-rm -f panda/board/obj/panda.bin.signed
-rm -f panda/board/obj/panda_h7.bin.signed
-
-VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
@@ -51,9 +45,6 @@ for policy in /sys/devices/system/cpu/cpufreq/policy*; do
   echo "$hardware_max" | sudo tee "$policy/scaling_max_freq" >/dev/null
 done
 
-# Build and test before launch_chffrplus.sh creates the on-device package
-# symlinks. SConstruct uses the same package roots for build subprocesses.
-export PYTHONPATH="$BUILD_DIR:$BUILD_DIR/msgq_repo:$BUILD_DIR/opendbc_repo:$BUILD_DIR/rednose_repo:$BUILD_DIR/teleoprtc_repo:$BUILD_DIR/tinygrad_repo"
 scons
 if [ -n "$INCLUDE_BIG_MODEL" ]; then
   test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
@@ -80,7 +71,6 @@ find . -name '*.a' -delete
 find . -name '*.o' -delete
 find . -name '*.os' -delete
 find . -name '*.pyc' -delete
-find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile tools/release/
 rm -f openpilot/selfdrive/modeld/models/*.onnx*
@@ -88,6 +78,7 @@ rm -f openpilot/selfdrive/modeld/models/*.onnx*
 # Mark as prebuilt release
 touch prebuilt
 
+VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # Add built files to git
 git add -f .
 git commit -m "openpilot v$VERSION"
