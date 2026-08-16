@@ -22,17 +22,12 @@ BUILD_BRANCH=release-mici-staging
 source $DIR/identity.sh
 
 echo "[-] Setting up repo T=$SECONDS"
-if [ -d "$BUILD_DIR/.git" ]; then
-  git -C "$BUILD_DIR" rm -r -f --ignore-unmatch .
-  git -C "$BUILD_DIR" clean -dffx
-else
+if ! git -C "$SOURCE_DIR" worktree remove --force "$BUILD_DIR" 2>/dev/null; then
   rm -rf $BUILD_DIR
-  mkdir -p $BUILD_DIR
-  git -C "$BUILD_DIR" init
-  git -C "$BUILD_DIR" remote add origin git@github.com:commaai/openpilot.git
 fi
+git -C "$SOURCE_DIR" worktree prune
+git -C "$SOURCE_DIR" worktree add --detach --no-checkout "$BUILD_DIR"
 cd $BUILD_DIR
-git config gc.auto 0
 git update-ref -d "refs/heads/$BUILD_BRANCH"
 git symbolic-ref HEAD "refs/heads/$BUILD_BRANCH"
 git read-tree --empty
@@ -90,7 +85,7 @@ VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # Add built files to git
 # writing larger objects is faster than compressing them on-device
 git -c core.compression=0 add -f .
-git -c core.compression=0 commit -m "openpilot v$VERSION"
+git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
 
 # Run tests
 cd $BUILD_DIR
