@@ -3,6 +3,7 @@ import sys
 import time
 import signal
 import struct
+import threading
 import requests
 import urllib.parse
 from datetime import datetime, UTC
@@ -156,16 +157,6 @@ def save_almanac(pigeon: TTYPigeon) -> None:
   except TimeoutError:
     pass
 
-def send_assistnow(pigeon: TTYPigeon) -> bool:
-  try:
-    for msg in get_assistnow_messages():
-      pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
-    cloudlog.warning("AssistNow messages sent")
-    return True
-  except Exception:
-    cloudlog.warning("failed to get AssistNow messages")
-    return False
-
 def init_baudrate(pigeon: TTYPigeon):
   # ublox default setting on startup is 9600 baudrate
   pigeon.set_baud(9600)
@@ -282,29 +273,44 @@ def init(pigeon: TTYPigeon) -> None:
 
 def run_receiving(duration: int = 0):
   pm = messaging.PubMaster(['ubloxRaw'])
-  sm = messaging.SubMaster(['deviceState'])
 
   pigeon = TTYPigeon()
   init(pigeon)
 
   start_time = time.monotonic()
   last_almanac_save = time.monotonic()
-  last_assist_attempt = 0.
-  assist_sent = False
+  assist_attempted = False
+  assist_messages = None
+
+  def download_assistnow() -> None:
+    nonlocal assist_messages
+    sm = messaging.SubMaster(['deviceState'])
+    while assist_messages is None:
+      sm.update(1000)
+      if system_time_valid() and sm['deviceState'].networkType != log.DeviceState.NetworkType.none:
+        try:
+          assist_messages = get_assistnow_messages()
+        except Exception:
+          cloudlog.warning("failed to get AssistNow messages")
+      time.sleep(10.)
+  threading.Thread(target=download_assistnow, daemon=True).start()
+
   while (duration == 0) or (time.monotonic() - start_time < duration):
-    sm.update(0)
-    has_internet = system_time_valid() and sm['deviceState'].networkType != log.DeviceState.NetworkType.none
-    if has_internet and not assist_sent and (time.monotonic() - last_assist_attempt) > 10.:
-      last_assist_attempt = time.monotonic()
-      assist_sent = send_assistnow(pigeon)
+    if assist_messages is not None and not assist_attempted:
+      assist_attempted = True
+      try:
+        for msg in assist_messages:
+          pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+        cloudlog.warning("AssistNow messages sent")
+      except Exception:
+        cloudlog.warning("failed to send AssistNow messages")
 
     dat = pigeon.receive()
     if len(dat) > 0:
       if dat[0] == 0x00:
         cloudlog.warning("received invalid data from ublox, re-initing!")
         init(pigeon)
-        assist_sent = False
-        last_assist_attempt = 0.
+        assist_attempted = False
         continue
 
       # send out to socket
