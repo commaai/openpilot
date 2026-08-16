@@ -42,9 +42,6 @@ rm -f panda/board/obj/panda.bin.signed
 rm -f panda/board/obj/panda_h7.bin.signed
 
 VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
-echo "[-] committing version $VERSION T=$SECONDS"
-git add -f .
-git commit -a -m "openpilot v$VERSION release"
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
@@ -93,7 +90,7 @@ touch prebuilt
 
 # Add built files to git
 git add -f .
-git commit --amend -m "openpilot v$VERSION"
+git commit -m "openpilot v$VERSION"
 
 # Run tests
 cd $BUILD_DIR
