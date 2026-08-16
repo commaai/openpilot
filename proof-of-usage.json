@@ -1,0 +1,15 @@
+{
+  "pou": "1.0",
+  "work": "https://github.com/commaai/openpilot",
+  "record": {
+    "path": "PROOF_OF_USAGE.md",
+    "branch": "master",
+    "format": "markdown"
+  },
+  "transports": [
+    {
+      "type": "pull_request"
+    }
+  ],
+  "basis": "licence"
+}
