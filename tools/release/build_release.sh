@@ -22,14 +22,13 @@ BUILD_BRANCH=release-mici-staging
 source $DIR/identity.sh
 
 echo "[-] Setting up repo T=$SECONDS"
-if [ "$(git -C "$BUILD_DIR" config --bool release.buildRepo 2>/dev/null)" = "true" ]; then
+if [ -d "$BUILD_DIR/.git" ]; then
   git -C "$BUILD_DIR" rm -r -f --ignore-unmatch .
   git -C "$BUILD_DIR" clean -dffx
 else
   rm -rf $BUILD_DIR
   mkdir -p $BUILD_DIR
   git -C "$BUILD_DIR" init
-  git -C "$BUILD_DIR" config release.buildRepo true
   git -C "$BUILD_DIR" remote add origin git@github.com:commaai/openpilot.git
 fi
 cd $BUILD_DIR
