@@ -12,7 +12,7 @@
 #include "common/version.h"
 
 // ***** log metadata *****
-kj::Array<capnp::word> logger_build_init_data() {
+kj::Array<capnp::word> logger_build_init_data(bool route_log) {
   uint64_t wall_time = nanos_since_epoch();
 
   MessageBuilder msg;
@@ -70,7 +70,7 @@ kj::Array<capnp::word> logger_build_init_data() {
     "df -h",  // usage for all filesystems
   };
 
-  auto hw_logs = Hardware::get_init_logs();
+  auto hw_logs = Hardware::get_init_logs(route_log);
 
   auto commands = init.initCommands().initEntries(log_commands.size() + hw_logs.size());
   for (int i = 0; i < log_commands.size(); i++) {
@@ -164,7 +164,7 @@ static void log_sentinel(LoggerState *log, SentinelType type, int exit_signal = 
 LoggerState::LoggerState(const std::string &log_root) {
   route_name = logger_get_identifier("RouteCount");
   route_path = log_root + "/" + route_name;
-  init_data = logger_build_init_data();
+  init_data = logger_build_init_data(true);
 }
 
 LoggerState::~LoggerState() {
