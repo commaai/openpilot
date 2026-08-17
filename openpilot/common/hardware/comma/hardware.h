@@ -59,7 +59,7 @@ public:
     std::ofstream("/sys/class/leds/led:switch_2/brightness") << value << "\n";
   }
 
-  static std::map<std::string, std::string> get_init_logs() {
+  static std::map<std::string, std::string> get_init_logs(bool route_log = false) {
     std::map<std::string, std::string> ret = {
       {"/BUILD", util::read_file("/BUILD")},
       {"lsblk", util::check_output("lsblk -o NAME,SIZE,STATE,VENDOR,MODEL,REV,SERIAL")},
@@ -73,12 +73,14 @@ public:
     temp.erase(temp.find_last_not_of(std::string("\0\r\n", 3))+1);
     ret["boot temp"] = temp;
 
-    // TODO: log something from system and boot
-    for (std::string part : {"xbl", "abl", "aop", "devcfg", "xbl_config"}) {
-      for (std::string slot : {"a", "b"}) {
-        std::string partition = part + "_" + slot;
-        std::string hash = util::check_output("sha256sum /dev/disk/by-partlabel/" + partition);
-        ret[partition] = hash.substr(0, hash.find_first_of(" "));
+    // TODO: these are too slow to do on route log inits. need to do it async?
+    if (!route_log) {
+      for (std::string part : {"xbl", "abl", "aop", "devcfg", "xbl_config"}) {
+        for (std::string slot : {"a", "b"}) {
+          std::string partition = part + "_" + slot;
+          std::string hash = util::check_output("sha256sum /dev/disk/by-partlabel/" + partition);
+          ret[partition] = hash.substr(0, hash.find_first_of(" "));
+        }
       }
     }
 
