@@ -288,28 +288,20 @@ int PandaSpiHandle::lltransfer(spi_ioc_transfer &t) {
   if (err_prob > 0) {
     if ((static_cast<double>(rand()) / RAND_MAX) < err_prob) {
       printf("transfer len error\n");
-      t.len = rand() % SPI_BUF_SIZE;
+      t.len = rand() % (SPI_BUF_SIZE - 4);
     }
-    if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.tx_buf != (uint64_t)NULL) {
+    if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.tx_buf != (uint64_t)NULL && t.len > 0) {
       printf("corrupting TX\n");
-      for (int i = 0; i < t.len; i++) {
-        if ((static_cast<double>(rand()) / RAND_MAX) > 0.9) {
-          ((uint8_t*)t.tx_buf)[i] = (uint8_t)(rand() % 256);
-        }
-      }
+      ((uint8_t*)t.tx_buf)[rand() % t.len] ^= (uint8_t)(1 + (rand() % 255));
     }
   }
 
   int ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &t);
 
   if (err_prob > 0) {
-    if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.rx_buf != (uint64_t)NULL) {
+    if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.rx_buf != (uint64_t)NULL && t.len > 0) {
       printf("corrupting RX\n");
-      for (int i = 0; i < t.len; i++) {
-        if ((static_cast<double>(rand()) / RAND_MAX) > 0.9) {
-          ((uint8_t*)t.rx_buf)[i] = (uint8_t)(rand() % 256);
-        }
-      }
+      ((uint8_t*)t.rx_buf)[rand() % t.len] ^= (uint8_t)(1 + (rand() % 255));
     }
   }
 
@@ -376,9 +368,9 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Read data
-  rx_data_len = *(uint16_t *)(rx_buf+1);
-  if (rx_data_len >= SPI_BUF_SIZE) {
-    SPILOG(LOGE, "SPI: RX data len larger than buf size %d", rx_data_len);
+  memcpy(&rx_data_len, rx_buf + 1, sizeof(rx_data_len));
+  if (rx_data_len > SPI_BUF_SIZE - 4 || rx_data_len > max_rx_len) {
+    SPILOG(LOGE, "SPI: invalid RX data len %d", rx_data_len);
     goto fail;
   }
 
