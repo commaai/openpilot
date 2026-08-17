@@ -105,6 +105,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             def args = item[2]
             def diffPaths = args.diffPaths ?: []
             def cmdTimeout = args.timeout ?: 9999
+            def postDelay = args.postDelay ?: 0
+            def waitForDevice = args.waitForDevice ?: false
 
             if (branch != "master" && !branch.contains("__jenkins_loop_") && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
               println "Skipping ${name}: no changes in ${diffPaths}."
@@ -112,6 +114,14 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             } else {
               timeout(time: cmdTimeout, unit: 'SECONDS') {
                 device(device_ip, name, cmd)
+              }
+              if (postDelay > 0) {
+                sleep(time: postDelay, unit: 'SECONDS')
+              }
+              if (waitForDevice) {
+                retryWithDelay(6, 10) {
+                  device(device_ip, "wait for device", "true")
+                }
               }
             }
           }
@@ -205,6 +215,7 @@ node {
     parallel (
       'onroad tests': {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
+          step("reboot", "sudo systemd-run --on-active=1s /usr/sbin/reboot", [postDelay: 5, waitForDevice: true]),
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("check dirty", "tools/release/check-dirty.sh"),
           step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py", [timeout: 60]),
