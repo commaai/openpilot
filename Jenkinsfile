@@ -119,7 +119,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
                 sleep(time: postDelay, unit: 'SECONDS')
               }
               if (waitForDevice) {
-                retryWithDelay(6, 10) {
+                retry(6) {
+                  sleep(time: 10, unit: 'SECONDS')
                   device(device_ip, "wait for device", "true")
                 }
               }
