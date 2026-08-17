@@ -7,7 +7,7 @@ import traceback
 from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
-from opendbc.car.car_helpers import interface_names
+from opendbc.car.car_helpers import interface_names, interfaces
 from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
@@ -64,7 +64,8 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "body", "psa"]
+excluded_interfaces = {brand for brand, platforms in interface_names.items()
+                       if all(interfaces[platform].get_non_essential_params(platform).dashcamOnly for platform in platforms)} | {"body"}
 
 BASE_URL = "https://raw.githubusercontent.com/commaai/ci-artifacts/refs/heads/process-replay/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
