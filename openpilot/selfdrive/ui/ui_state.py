@@ -253,7 +253,17 @@ class Device:
     self._interaction_time = time.monotonic() + self.interactive_timeout
 
   def add_interactive_timeout_callback(self, callback: Callable):
-    self._interactive_timeout_callbacks.append(callback)
+    if callback not in self._interactive_timeout_callbacks:
+      self._interactive_timeout_callbacks.append(callback)
+
+  def remove_interactive_timeout_callback(self, callback: Callable):
+    if callback in self._interactive_timeout_callbacks:
+      self._interactive_timeout_callbacks.remove(callback)
+
+  def _run_interactive_timeout_callbacks(self):
+    # Callbacks can unregister themselves by hiding their owning widget.
+    for callback in self._interactive_timeout_callbacks.copy():
+      callback()
 
   def update(self):
     self._start_brightness_thread()  # start thread after manager forks ui
@@ -315,8 +325,7 @@ class Device:
 
     interaction_timeout = time.monotonic() > self._interaction_time
     if interaction_timeout and not self._prev_timed_out:
-      for callback in self._interactive_timeout_callbacks:
-        callback()
+      self._run_interactive_timeout_callbacks()
     self._prev_timed_out = interaction_timeout
 
     self._set_awake(ui_state.ignition or not interaction_timeout or PC)

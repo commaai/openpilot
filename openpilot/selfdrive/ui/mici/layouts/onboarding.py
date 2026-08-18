@@ -107,16 +107,19 @@ class TrainingGuideDMTutorial(NavWidget):
     self._dialog = CabinCameraSetupDialog()
     self._bad_face_page = DMBadFaceDetected()
 
-    # Disable driver monitoring model when device times out for inactivity
-    def inactivity_callback():
-      ui_state.params.put_bool("IsDriverViewEnabled", False)
-
-    device.add_interactive_timeout_callback(inactivity_callback)
-
   def show_event(self):
     super().show_event()
     self._dialog.show_event()
+    device.add_interactive_timeout_callback(self._on_inactivity)
     self._progress.x = 0.0
+
+  def hide_event(self):
+    device.remove_interactive_timeout_callback(self._on_inactivity)
+    self._dialog.hide_event()
+    super().hide_event()
+
+  def _on_inactivity(self):
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
 
   def _update_state(self):
     super()._update_state()
