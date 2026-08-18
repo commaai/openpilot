@@ -58,6 +58,19 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
+def reset_calibration_if_car_changed(params: Params, prev_cp: bytes | None, CP: car.CarParams) -> None:
+  if prev_cp is None:
+    return
+
+  try:
+    with car.CarParams.from_bytes(prev_cp) as previous_CP:
+      if previous_CP.carFingerprint != CP.carFingerprint:
+        cloudlog.info(f"car changed from {previous_CP.carFingerprint} to {CP.carFingerprint}, resetting calibration")
+        params.remove("CalibrationParams")
+  except Exception:
+    cloudlog.exception("Error comparing current and previous CarParams")
+
+
 class Car:
   CI: CarInterfaceBase
   RI: RadarInterfaceBase
@@ -142,6 +155,7 @@ class Car:
     prev_cp = self.params.get("CarParamsPersistent")
     if prev_cp is not None:
       self.params.put("CarParamsPrevRoute", prev_cp, block=True)
+    reset_calibration_if_car_changed(self.params, prev_cp, self.CP)
 
     # Write CarParams for controls and radard
     cp_bytes = self.CP.to_bytes()
