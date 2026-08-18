@@ -6,12 +6,15 @@ import select
 import subprocess
 import threading
 import time
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
+from pathlib import Path
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import atomic_write
+from openpilot.common.wifi import WPA_CTRL_DIR, WPA_CTRL_PATH, WPA_PID_FILE, decode_wpa_ssid
 
 
 RECV_BUF_SIZE = 32768
@@ -19,7 +22,7 @@ IEEE80211_MAX_SSID_BYTES = 32
 
 WPA_SUPPLICANT_CONF = "/tmp/wpa_supplicant.conf"
 WPA_AP_CONF = "/tmp/wpa_supplicant_ap.conf"
-WPA_CTRL_INTERFACE = "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev"
+WPA_CTRL_INTERFACE = f"ctrl_interface=DIR={WPA_CTRL_DIR} GROUP=netdev"
 TETHERING_DNSMASQ_PATTERN = r"^dnsmasq .*--dhcp-range=192\.168\.43\.2"
 
 
@@ -44,7 +47,7 @@ class _WpaCtrlBase:
   _counter = 0
   _counter_lock = threading.Lock()
 
-  def __init__(self, ctrl_path: str = "/var/run/wpa_supplicant/wlan0"):
+  def __init__(self, ctrl_path: str = WPA_CTRL_PATH):
     self._ctrl_path = ctrl_path
     self._sock: socket.socket | None = None
     self._local_path: str = ""
@@ -114,7 +117,7 @@ class _WpaCtrlBase:
 class WpaCtrl(_WpaCtrlBase):
   """Synchronous wpa_supplicant control socket command client."""
 
-  def __init__(self, ctrl_path: str = "/var/run/wpa_supplicant/wlan0"):
+  def __init__(self, ctrl_path: str = WPA_CTRL_PATH):
     super().__init__(ctrl_path)
     self._request_lock = threading.Lock()
 
@@ -178,70 +181,8 @@ class WpaCtrlMonitor(_WpaCtrlBase):
     super().close()
 
 
-_HEX = "0123456789abcdefABCDEF"
-
-
-def decode_ssid(encoded: str) -> str:
-  """Decode a wpa_supplicant printf_encode'd SSID (hostap common.c:526).
-  Escapes: \\\\, \\", \\e/n/r/t, \\xNN/\\xN, octal \\0..\\777.
-  Bytes are reinterpreted as UTF-8; all-null SSIDs (hidden APs) normalize to ""."""
-  out = bytearray()
-  i = 0
-  n = len(encoded)
-  while i < n:
-    c = encoded[i]
-    if c != "\\":
-      out.append(ord(c) & 0xff)
-      i += 1
-      continue
-
-    i += 1  # consume backslash
-    if i >= n:
-      break  # trailing backslash: dropped
-
-    nxt = encoded[i]
-    if nxt == "\\":
-      out.append(ord("\\"))
-      i += 1
-    elif nxt == '"':
-      out.append(ord('"'))
-      i += 1
-    elif nxt == "n":
-      out.append(ord("\n"))
-      i += 1
-    elif nxt == "r":
-      out.append(ord("\r"))
-      i += 1
-    elif nxt == "t":
-      out.append(ord("\t"))
-      i += 1
-    elif nxt == "e":
-      out.append(0x1b)
-      i += 1
-    elif nxt == "x":
-      i += 1  # consume 'x'
-      if i + 1 < n and encoded[i] in _HEX and encoded[i + 1] in _HEX:
-        out.append(int(encoded[i:i + 2], 16))
-        i += 2
-      elif i < n and encoded[i] in _HEX:
-        out.append(int(encoded[i], 16))
-        i += 1
-      # else: malformed \x, so drop the escape and continue parsing at i
-    elif "0" <= nxt <= "7":
-      val = ord(nxt) - ord("0")
-      i += 1
-      if i < n and "0" <= encoded[i] <= "7":
-        val = val * 8 + (ord(encoded[i]) - ord("0"))
-        i += 1
-        if i < n and "0" <= encoded[i] <= "7":
-          val = val * 8 + (ord(encoded[i]) - ord("0"))
-          i += 1
-      out.append(val & 0xff)
-    # Unknown escapes consume only the backslash
-
-  if not out or all(b == 0 for b in out):
-    return ""
-  return out.decode("utf-8", errors="surrogateescape")
+# Keep the public name while sharing one decoder with hardwared.
+decode_ssid = decode_wpa_ssid
 
 
 def parse_scan_results(raw: str) -> list[ScanResult]:
@@ -341,17 +282,47 @@ def parse_event_network_id(event: str) -> str | None:
   return match.group(1) if match is not None else None
 
 
+def _owned_wpa_pid(conf: str) -> int | None:
+  try:
+    pid = int(Path(WPA_PID_FILE).read_text().strip())
+    if pid <= 1:
+      return None
+    args = [os.fsdecode(arg) for arg in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0") if arg]
+  except (OSError, ValueError):
+    return None
+
+  def flag_value(flag: str) -> str | None:
+    try:
+      return args[args.index(flag) + 1]
+    except (ValueError, IndexError):
+      return None
+
+  if (
+    not args
+    or os.path.basename(args[0]) != "wpa_supplicant"
+    or flag_value("-i") != "wlan0"
+    or flag_value("-c") != conf
+    or flag_value("-P") != WPA_PID_FILE
+  ):
+    return None
+  return pid
+
+
 def wpa_supplicant_running(conf: str) -> bool:
-  """True if a wpa_supplicant running the given config exists. Narrow pgrep so
-  a system-managed daemon on another config isn't conflated with ours."""
-  pattern = rf"^wpa_supplicant .* -c {re.escape(conf)}( |$)"
-  return subprocess.run(["pgrep", "-f", pattern], capture_output=True).returncode == 0
+  return _owned_wpa_pid(conf) is not None
+
+
+def prepare_wpa_runtime() -> None:
+  subprocess.run(["sudo", "install", "-d", "-o", "root", "-g", "netdev", "-m", "775", WPA_CTRL_DIR], check=True)
+  subprocess.run(["sudo", "rm", "-f", WPA_PID_FILE, WPA_CTRL_PATH], check=False)
 
 
 def stop_wpa_supplicant(conf: str) -> None:
-  """Kill only wpa_supplicant processes running our config; a system-managed daemon survives."""
-  pattern = rf"^wpa_supplicant .* -c {re.escape(conf)}( |$)"
-  subprocess.run(["sudo", "pkill", "-f", pattern], check=False)
+  pid = _owned_wpa_pid(conf)
+  if pid is None:
+    return
+  subprocess.run(["sudo", "kill", str(pid)], check=False)
+  subprocess.run(["sudo", "rm", "-f", WPA_PID_FILE, WPA_CTRL_PATH], check=False)
 
 
 def tethering_dnsmasq_running() -> bool:
@@ -388,6 +359,8 @@ def _is_raw_psk(psk: str) -> bool:
 
 def is_valid_psk(psk: str) -> bool:
   try:
+    if any(unicodedata.category(char) == "Cc" for char in psk):
+      return False
     return 8 <= len(psk.encode("utf-8")) <= 63 or _is_raw_psk(psk)
   except UnicodeEncodeError:
     return False
@@ -411,6 +384,7 @@ def generate_wpa_conf(store, path: str = WPA_SUPPLICANT_CONF):
 
   for ssid, entry in store.get_profiles():
     psk = entry.get("psk", "")
+    security = entry.get("security", SecurityType.WPA if psk else SecurityType.OPEN)
     hidden = entry.get("hidden", False)
     priority = entry.get("priority", 0)
     bssid = entry.get("bssid", "")
@@ -419,7 +393,7 @@ def generate_wpa_conf(store, path: str = WPA_SUPPLICANT_CONF):
       continue
     lines.append("network={")
     lines.append(f"  ssid={ssid_value}")
-    if psk:
+    if security == SecurityType.WPA:
       lines.append(f'  psk={format_psk_value(psk)}')
       lines.append("  key_mgmt=WPA-PSK")
     else:
@@ -518,24 +492,16 @@ def ensure_wpa_supplicant(should_exit: Callable[[], bool], station_reconfigured:
     cloudlog.warning("NetworkManager handoff failed; deferring station bringup")
     return None
 
-  # Wait for NetworkManager's asynchronously removed control socket
-  for _ in range(30):
-    if should_exit():
-      return None
-    if not os.path.exists("/var/run/wpa_supplicant/wlan0"):
-      break
-    time.sleep(0.1)
-  else:
-    # The post-spawn ownership check handles a lingering NetworkManager socket
-    cloudlog.warning("/var/run/wpa_supplicant/wlan0 still present after NM unmanage; spawn will refuse to attach to foreign daemon")
-
-  # Stop only daemons using our config
   stop_wpa_supplicant(WPA_SUPPLICANT_CONF)
+  prepare_wpa_runtime()
   stop_tethering_dnsmasq()
   subprocess.run(["sudo", "ip", "addr", "flush", "dev", "wlan0"], check=False)
   time.sleep(0.5)
 
-  subprocess.run(["sudo", "wpa_supplicant", "-B", "-i", "wlan0", "-c", WPA_SUPPLICANT_CONF, "-D", "nl80211"], check=False)
+  subprocess.run([
+    "sudo", "wpa_supplicant", "-B", "-i", "wlan0",
+    "-c", WPA_SUPPLICANT_CONF, "-P", WPA_PID_FILE, "-D", "nl80211",
+  ], check=False)
 
   # Never attach to a daemon not using our config
   for _ in range(30):

@@ -13,9 +13,22 @@ fi
 case "$1" in
   bound|renew)
     router=${router%% *}
-    if [ -n "$router" ]; then
-      ip -4 route replace default via "$router" dev "$interface" metric "$wifi_route_metric" &&
-        ip -4 route del default via "$router" dev "$interface" metric 0 2>/dev/null || true
-    fi
+    [ -n "$router" ] || exit 1
+    ip -4 route flush default dev "$interface" || exit $?
+    ip -4 route replace default via "$router" dev "$interface" metric "$wifi_route_metric" || exit $?
+    defaults=$(ip -4 route show default dev "$interface") || exit $?
+    printf '%s\n' "$defaults" | awk -v iface="$interface" -v router="$router" -v target="$wifi_route_metric" '
+      NF {
+        count++
+        dev = via = metric = ""
+        for (i = 1; i <= NF; i++) {
+          if ($i == "dev" && i < NF) dev = $(i + 1)
+          if ($i == "via" && i < NF) via = $(i + 1)
+          if ($i == "metric" && i < NF) metric = $(i + 1)
+        }
+        if ($1 != "default" || dev != iface || via != router || metric != target) exit 1
+      }
+      END { if (count != 1) exit 1 }
+    ' || exit $?
     ;;
 esac

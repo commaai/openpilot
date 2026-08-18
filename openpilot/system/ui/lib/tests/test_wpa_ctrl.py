@@ -193,7 +193,7 @@ class TestWpaConfig(TestCase):
     )
 
   def test_grants_control_access_to_netdev_group(self):
-    assert "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n" in self.generate("Test", {"psk": "password123"})
+    assert "ctrl_interface=DIR=/run/openpilot-wpa GROUP=netdev\n" in self.generate("Test", {"psk": "password123"})
 
   def test_emits_saved_bssid_restriction(self):
     assert "  bssid=00:11:22:33:44:55\n" in self.generate(
@@ -202,6 +202,16 @@ class TestWpaConfig(TestCase):
 
   def test_encodes_control_characters_in_ssid_losslessly(self):
     assert f"  ssid={b'Line\nBreak\r'.hex()}\n" in self.generate("Line\nBreak\r", {"psk": "password123"})
+  def test_explicit_open_security_does_not_render_stale_psk(self):
+    config = self.generate("Open", {"security": SecurityType.OPEN, "psk": "stale-password"})
+    assert "  key_mgmt=NONE\n" in config
+    assert "  psk=" not in config
+
+  def test_rejects_control_characters_in_passphrases(self):
+    for password in ("password\n", "password\r", "password\x00", "pass\tword"):
+      with self.subTest(password=password):
+        assert not wpa_ctrl_module.is_valid_psk(password)
+
 
 
 class _RacySock:
@@ -322,17 +332,31 @@ class TestNetworkManagerCompatibility(TestCase):
 
 
 class TestTetheringDnsmasqOwnership(TestCase):
-  def test_process_patterns_do_not_match_sudo_parent(self):
-    assert wpa_ctrl_module.TETHERING_DNSMASQ_PATTERN.startswith("^dnsmasq ")
+  def test_pidfile_proves_exact_supplicant_ownership(self):
+    pid = 123
+    command = "\0".join((
+      "/usr/sbin/wpa_supplicant", "-B", "-i", "wlan0", "-c",
+      wpa_ctrl_module.WPA_SUPPLICANT_CONF, "-P", wpa_ctrl_module.WPA_PID_FILE, "",
+    )).encode()
 
-    with patch.object(wpa_ctrl_module.subprocess, "run", return_value=MagicMock(returncode=0)) as run:
+    with (
+      patch.object(Path, "read_text", return_value=str(pid)),
+      patch.object(Path, "read_bytes", return_value=command),
+    ):
       assert wpa_ctrl_module.wpa_supplicant_running(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
-      running_pattern = run.call_args.args[0][2]
-      wpa_ctrl_module.stop_wpa_supplicant(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
-      kill_pattern = run.call_args.args[0][-1]
+      assert not wpa_ctrl_module.wpa_supplicant_running(wpa_ctrl_module.WPA_AP_CONF)
 
-    assert running_pattern == kill_pattern
-    assert running_pattern.startswith("^wpa_supplicant ")
+  def test_stop_targets_only_pidfile_owned_supplicant(self):
+    with (
+      patch.object(wpa_ctrl_module, "_owned_wpa_pid", return_value=123),
+      patch.object(wpa_ctrl_module.subprocess, "run") as run,
+    ):
+      wpa_ctrl_module.stop_wpa_supplicant(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
+
+    assert [item.args[0] for item in run.call_args_list] == [
+      ["sudo", "kill", "123"],
+      ["sudo", "rm", "-f", wpa_ctrl_module.WPA_PID_FILE, wpa_ctrl_module.WPA_CTRL_PATH],
+    ]
 
   def test_stop_targets_only_openpilot_tethering(self):
     with patch.object(wpa_ctrl_module.subprocess, "run") as run:
@@ -406,7 +430,7 @@ class TestSupplicantBringup(TestCase):
     kill.assert_called_once_with(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
     assert [
       "sudo", "wpa_supplicant", "-B", "-i", "wlan0",
-      "-c", wpa_ctrl_module.WPA_SUPPLICANT_CONF, "-D", "nl80211",
+      "-c", wpa_ctrl_module.WPA_SUPPLICANT_CONF, "-P", wpa_ctrl_module.WPA_PID_FILE, "-D", "nl80211",
     ] in [item.args[0] for item in run.call_args_list]
 
   def test_attaches_existing_hotspot_before_station_cleanup(self):
@@ -502,7 +526,7 @@ class TestSupplicantBringup(TestCase):
       kill.assert_called_once_with(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
       assert [
         "sudo", "wpa_supplicant", "-B", "-i", "wlan0",
-        "-c", wpa_ctrl_module.WPA_SUPPLICANT_CONF, "-D", "nl80211",
+        "-c", wpa_ctrl_module.WPA_SUPPLICANT_CONF, "-P", wpa_ctrl_module.WPA_PID_FILE, "-D", "nl80211",
       ] in [item.args[0] for item in run.call_args_list]
 
   def test_failed_networkmanager_handoff_does_not_mutate_interface(self):
@@ -557,4 +581,4 @@ class TestSupplicantBringup(TestCase):
       assert result is None
       unmanage.assert_not_called()
       kill.assert_not_called()
-      assert all(item.args[0][0] == "pgrep" for item in run.call_args_list)
+      run.assert_not_called()

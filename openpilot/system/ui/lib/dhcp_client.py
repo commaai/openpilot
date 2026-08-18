@@ -1,5 +1,5 @@
 import os
-import re
+from pathlib import Path
 import subprocess
 import threading
 
@@ -7,6 +7,7 @@ from openpilot.common.swaglog import cloudlog
 
 DHCP_SCRIPT = os.path.join(os.path.dirname(__file__), "udhcpc.script")
 DHCP_DEFAULT_SCRIPT = "/etc/udhcpc/default.script"
+DHCP_RUNTIME_DIR = "/run/openpilot-wifi"
 
 
 class DhcpClient:
@@ -18,6 +19,7 @@ class DhcpClient:
 
   def __init__(self, iface: str = "wlan0"):
     self._iface = iface
+    self._pid_file = os.path.join(DHCP_RUNTIME_DIR, f"udhcpc-{iface}.pid")
     self._proc: subprocess.Popen | None = None
     self._adopted = False
     self._client_thread: threading.Thread | None = None
@@ -28,12 +30,39 @@ class DhcpClient:
     self._client_thread = threading.Thread(target=self._monitor_client, daemon=True)
     self._client_thread.start()
 
+  def _owned_pid(self) -> int | None:
+    try:
+      pid = int(Path(self._pid_file).read_text().strip())
+      if pid <= 1:
+        return None
+      args = [os.fsdecode(arg) for arg in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0") if arg]
+    except (OSError, ValueError):
+      return None
+
+    def flag_value(flag: str) -> str | None:
+      try:
+        return args[args.index(flag) + 1]
+      except (ValueError, IndexError):
+        return None
+
+    if (
+      not args
+      or os.path.basename(args[0]) != "udhcpc"
+      or flag_value("-i") != self._iface
+      or flag_value("-p") != self._pid_file
+      or flag_value("-s") != DHCP_SCRIPT
+    ):
+      return None
+    return pid
+
   def _client_running(self) -> bool:
     if self._proc is not None and self._proc.poll() is None:
       return True
-    script = re.escape(DHCP_SCRIPT)
-    result = subprocess.run(["pgrep", "-f", f"^udhcpc -i {self._iface}( |$).* -s {script}( |$)"], capture_output=True, check=False)
-    return result.returncode == 0
+    return self._owned_pid() is not None
+
+  def _prepare_runtime(self):
+    subprocess.run(["sudo", "install", "-d", "-o", "root", "-g", "root", "-m", "755", DHCP_RUNTIME_DIR], check=True)
+    subprocess.run(["sudo", "rm", "-f", self._pid_file], check=False)
 
   def _flush_address(self):
     subprocess.run(["sudo", "ip", "-4", "addr", "flush", "dev", self._iface], capture_output=True, check=False)
@@ -67,10 +96,11 @@ class DhcpClient:
       cloudlog.error(f"udhcpc default script is not executable: {DHCP_DEFAULT_SCRIPT}")
       return False
     try:
+      self._prepare_runtime()
       self._proc = subprocess.Popen(
         ["sudo", "udhcpc", "-i", self._iface, "-f",
          "-t", str(self.DISCOVER_ATTEMPTS), "-T", str(self.DISCOVER_TIMEOUT_SECONDS),
-         "-s", DHCP_SCRIPT],
+         "-p", self._pid_file, "-s", DHCP_SCRIPT],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         start_new_session=True,
       )
@@ -103,6 +133,7 @@ class DhcpClient:
     if self._client_thread is not None:
       self._client_thread.join(timeout=self.DISCOVER_TIMEOUT_SECONDS)
       self._client_thread = None
+    owned_pid = self._owned_pid()
     if self._proc is not None:
       try:
         self._proc.terminate()
@@ -114,7 +145,8 @@ class DhcpClient:
         except Exception:
           pass
       self._proc = None
+    if owned_pid is not None:
+      subprocess.run(["sudo", "kill", str(owned_pid)], check=False)
+    subprocess.run(["sudo", "rm", "-f", self._pid_file], check=False)
     self._adopted = False
-    # Kill orphaned udhcpc children before flushing lease state
-    subprocess.run(["sudo", "pkill", "-f", f"^udhcpc -i {self._iface}( |$)"], check=False)
     self._flush_lease()

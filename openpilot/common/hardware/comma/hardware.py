@@ -9,6 +9,7 @@ from pathlib import Path
 
 from openpilot.cereal import log
 from openpilot.common.nm_keyfile import decode_nm_keyfile_ssid
+from openpilot.common.wifi import WPA_CTRL_PATH, decode_wpa_ssid
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
@@ -42,7 +43,7 @@ def wpa_supplicant_cmd(cmd: str, timeout: float = 0.2) -> dict[str, str]:
   with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
     sock.settimeout(timeout)
     sock.bind(f"\0openpilot-wpa-{os.getpid()}-{time.monotonic_ns()}")
-    sock.connect("/run/wpa_supplicant/wlan0")
+    sock.connect(WPA_CTRL_PATH)
     sock.send(cmd.encode())
 
     while True:
@@ -212,23 +213,25 @@ class HardwareComma(HardwareBase):
       return Params().get_bool("GsmMetered")
     try:
       if network_type == NetworkType.wifi:
-        ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
-        if ssid:
-          # wpa_supplicant escapes non-printable bytes as \xNN
-          ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
-
-          nm_dirs = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")
-          for fpath in (p for d in nm_dirs for p in Path(d).glob("*.nmconnection")):
+        status = wpa_supplicant_cmd("STATUS")
+        profile_uuid = status.get("id_str", "").strip('"')
+        ssid = decode_wpa_ssid(status.get("ssid", ""))
+        if profile_uuid or ssid:
+          nm_dirs = ("/data/etc/NetworkManager/system-connections", "/run/NetworkManager/system-connections")
+          for fpath in (path for directory in nm_dirs for path in Path(directory).glob("*.nmconnection")):
             raw = sudo_read(str(fpath))
             if not raw:
               continue
             cp = configparser.ConfigParser(interpolation=None)
             try:
               cp.read_string(raw)
-              wifi_section = "wifi" if cp.has_section("wifi") else "802-11-wireless"
-              keyfile_ssid = decode_nm_keyfile_ssid(cp.get(wifi_section, "ssid", fallback=""))
-              if keyfile_ssid.encode("utf-8", errors="surrogateescape") != ssid_bytes:
-                continue
+              if profile_uuid:
+                if cp.get("connection", "uuid", fallback="") != profile_uuid:
+                  continue
+              else:
+                wifi_section = "wifi" if cp.has_section("wifi") else "802-11-wireless"
+                if decode_nm_keyfile_ssid(cp.get(wifi_section, "ssid", fallback="")) != ssid:
+                  continue
               metered = cp.getint("connection", "metered", fallback=0)
             except (configparser.Error, ValueError):
               continue

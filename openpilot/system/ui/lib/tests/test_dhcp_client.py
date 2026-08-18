@@ -16,17 +16,24 @@ class TestDhcpClient(TestCase):
   def test_adopt_existing_udhcpc_without_restarting_it(self):
     client = DhcpClient()
     with (
-      patch.object(dhcp_client_module.subprocess, "run", return_value=MagicMock(returncode=0)) as run,
+      patch.object(client, "_owned_pid", return_value=123),
       patch.object(dhcp_client_module.subprocess, "Popen") as popen,
       patch.object(dhcp_client_module.threading, "Thread") as thread,
     ):
       assert client.adopt()
 
-      script = dhcp_client_module.re.escape(dhcp_client_module.DHCP_SCRIPT)
-      run.assert_called_once_with(["pgrep", "-f", f"^udhcpc -i wlan0( |$).* -s {script}( |$)"], capture_output=True, check=False)
       popen.assert_not_called()
       thread.assert_called_once_with(target=client._monitor_client, daemon=True)
       thread.return_value.start.assert_called_once()
+
+  def test_pidfile_rejects_foreign_udhcpc_command(self):
+    client = DhcpClient()
+    command = b"udhcpc\0-i\0wlan1\0-p\0/run/foreign.pid\0-s\0/tmp/script\0"
+    with (
+      patch.object(Path, "read_text", return_value="123"),
+      patch.object(Path, "read_bytes", return_value=command),
+    ):
+      assert client._owned_pid() is None
 
   def test_start_flushes_stale_lease_and_detaches_udhcpc_from_ui_session(self):
     client = DhcpClient()
@@ -39,13 +46,18 @@ class TestDhcpClient(TestCase):
       client.start()
 
       assert [call.args[0] for call in run.call_args_list] == [
-        ["sudo", "pkill", "-f", "^udhcpc -i wlan0( |$)"],
+        ["sudo", "rm", "-f", client._pid_file],
         ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
         ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
+        ["sudo", "install", "-d", "-o", "root", "-g", "root", "-m", "755", dhcp_client_module.DHCP_RUNTIME_DIR],
+        ["sudo", "rm", "-f", client._pid_file],
       ]
       assert events == [*([call.args[0] for call in run.call_args_list]), "spawn"]
       popen.assert_called_once_with(
-        ["sudo", "udhcpc", "-i", "wlan0", "-f", "-t", "5", "-T", "3", "-s", dhcp_client_module.DHCP_SCRIPT],
+        [
+          "sudo", "udhcpc", "-i", "wlan0", "-f", "-t", "5", "-T", "3",
+          "-p", client._pid_file, "-s", dhcp_client_module.DHCP_SCRIPT,
+        ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
@@ -106,7 +118,11 @@ class TestDhcpClient(TestCase):
       default_script.write_text('#!/bin/sh\nprintf "default %s\\n" "$1" >> "$TRACE"\n')
       default_script.chmod(0o755)
       ip = root / "ip"
-      ip.write_text('#!/bin/sh\nprintf "ip %s\\n" "$*" >> "$TRACE"\n')
+      ip.write_text("""#!/bin/sh
+printf "ip %s\\n" "$*" >> "$TRACE"
+[ "$*" = "-4 route show default dev wlan0" ] && printf "default via 192.168.1.1 dev wlan0 metric 600\\n"
+exit 0
+""")
       ip.chmod(0o755)
       env = {
         **os.environ,
@@ -121,9 +137,55 @@ class TestDhcpClient(TestCase):
 
       assert trace.read_text().splitlines() == [
         "default renew",
+        "ip -4 route flush default dev wlan0",
         "ip -4 route replace default via 192.168.1.1 dev wlan0 metric 600",
-        "ip -4 route del default via 192.168.1.1 dev wlan0 metric 0",
+        "ip -4 route show default dev wlan0",
       ]
+  def test_dhcp_script_propagates_route_install_failure(self):
+    with tempfile.TemporaryDirectory() as temp_dir:
+      root = Path(temp_dir)
+      default_script = root / "default.script"
+      default_script.write_text("#!/bin/sh\nexit 0\n")
+      default_script.chmod(0o755)
+      ip = root / "ip"
+      ip.write_text("#!/bin/sh\nexit 1\n")
+      ip.chmod(0o755)
+      env = {
+        **os.environ,
+        "PATH": f"{root}:{os.environ['PATH']}",
+        "UDHCPC_DEFAULT_SCRIPT": str(default_script),
+        "interface": "wlan0",
+        "router": "192.168.1.1",
+      }
+
+      result = subprocess.run([dhcp_client_module.DHCP_SCRIPT, "bound"], env=env, check=False)
+      assert result.returncode != 0
+
+  def test_dhcp_script_rejects_noncanonical_default_routes(self):
+    with tempfile.TemporaryDirectory() as temp_dir:
+      root = Path(temp_dir)
+      default_script = root / "default.script"
+      default_script.write_text("#!/bin/sh\nexit 0\n")
+      default_script.chmod(0o755)
+      ip = root / "ip"
+      ip.write_text("""\
+#!/bin/sh
+if [ "$*" = "-4 route show default dev wlan0" ]; then
+  printf "default via 192.168.1.1 dev wlan0 metric 600\\ndefault via 192.168.1.2 dev wlan0 metric 0\\n"
+fi
+""")
+      ip.chmod(0o755)
+      env = {
+        **os.environ,
+        "PATH": f"{root}:{os.environ['PATH']}",
+        "UDHCPC_DEFAULT_SCRIPT": str(default_script),
+        "interface": "wlan0",
+        "router": "192.168.1.1",
+      }
+
+      result = subprocess.run([dhcp_client_module.DHCP_SCRIPT, "renew"], env=env, check=False)
+      assert result.returncode != 0
+
 
   def test_stop_cleans_wlan_dhcp_state_with_or_without_process_handle(self):
     for proc in (MagicMock(), None):
@@ -135,10 +197,25 @@ class TestDhcpClient(TestCase):
 
         assert client._proc is None
         assert [call.args[0] for call in run.call_args_list] == [
-          ["sudo", "pkill", "-f", "^udhcpc -i wlan0( |$)"],
+          ["sudo", "rm", "-f", client._pid_file],
           ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
           ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
         ]
+
+  def test_stop_kills_only_pidfile_owned_adopted_client(self):
+    client = DhcpClient()
+    with (
+      patch.object(client, "_owned_pid", return_value=123),
+      patch.object(dhcp_client_module.subprocess, "run") as run,
+    ):
+      client.stop()
+
+    assert [call.args[0] for call in run.call_args_list] == [
+      ["sudo", "kill", "123"],
+      ["sudo", "rm", "-f", client._pid_file],
+      ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
+      ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
+    ]
 
   def test_clear_ipv6_state_cleans_global_addresses_and_routes(self):
     client = DhcpClient()
