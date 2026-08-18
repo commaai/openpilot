@@ -47,9 +47,8 @@ def get_cruise_accel(e2e, v_cruise, v_ego, a_cruise_prev, angle_steers, CP, dt, 
       max_accel = min(max_accel, coast_limit)
 
   target_accel = np.clip(v_cruise - v_ego, A_CRUISE_MIN, max_accel)
-  if not e2e:
-    j_cruise = np.interp(v_ego, A_CRUISE_MAX_BP, J_CRUISE_VALS)
-    target_accel = float(np.clip(target_accel, a_cruise_prev - j_cruise * dt, a_cruise_prev + j_cruise * dt))
+  j_cruise = np.interp(v_ego, A_CRUISE_MAX_BP, J_CRUISE_VALS)
+  target_accel = float(np.clip(target_accel, a_cruise_prev - j_cruise * dt, a_cruise_prev + j_cruise * dt))
 
   return target_accel
 
@@ -101,6 +100,7 @@ class LongitudinalPlanner:
     if reset_state:
       self.v_desired_filter.x = v_ego
       self.a_desired = np.clip(sm['carState'].aEgo, ACCEL_MIN, ACCEL_MAX)
+      self.a_cruise = self.a_desired
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
