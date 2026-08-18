@@ -6,6 +6,9 @@ from unittest.mock import MagicMock, mock_open, patch
 from openpilot.system.ui.lib import wifi_manager as wifi_manager_module
 from openpilot.system.ui.lib.wifi_manager import (
   ConnectStatus,
+  TETHERING_FORWARD_CHAIN,
+  TETHERING_INPUT_CHAIN,
+  TETHERING_NAT_CHAIN,
   TETHERING_NAT_COMMENT,
   TETHERING_SUBNET,
   WifiManager,
@@ -50,8 +53,9 @@ def tethering_side_effects(manager: WifiManager, mode: str = "AP"):
     patch.object(wifi_manager_module, "WpaCtrl", return_value=ctrl),
     patch.object(wifi_manager_module.subprocess, "Popen", return_value=dnsmasq),
     patch.object(wifi_manager_module.subprocess, "run", return_value=MagicMock(returncode=1)) as run,
+    patch.object(manager, "_apply_ipv4_forward") as apply_ipv4_forward,
   ):
-    yield run, ctrl, ap_file, atomic_write
+    yield run, ctrl, ap_file, atomic_write, apply_ipv4_forward
 
 
 class TestTetheringFirewall(TestCase):
@@ -65,10 +69,11 @@ class TestTetheringFirewall(TestCase):
     manager._tethering_active = False
     with (
       patch.object(wifi_manager_module.shutil, "which", return_value="/usr/sbin/iptables-legacy"),
-      tethering_side_effects(manager) as (run, ctrl, _, _),
+      tethering_side_effects(manager) as (run, ctrl, _, _, apply_ipv4_forward),
     ):
       manager._start_tethering()
 
+    apply_ipv4_forward.assert_called_once_with(True)
     commands = [item.args[0] for item in run.call_args_list]
     nat_add = next(command for command in commands if "-A" in command and "MASQUERADE" in command)
     assert nat_add[:2] == ["sudo", "iptables-legacy"]
@@ -76,6 +81,7 @@ class TestTetheringFirewall(TestCase):
     assert "!" in nat_add and "-d" in nat_add
     assert "-o" not in nat_add
     assert TETHERING_NAT_COMMENT in nat_add
+    assert TETHERING_NAT_CHAIN in nat_add
     assert manager.is_tethering_active()
     assert manager._ctrl is ctrl
     assert manager._wifi_state == WifiState("weedle-test", ConnectStatus.CONNECTED)
@@ -84,22 +90,22 @@ class TestTetheringFirewall(TestCase):
     manager = build_tethering_manager()
     with (
       patch.object(wifi_manager_module.shutil, "which", return_value="/usr/sbin/iptables-legacy"),
-      tethering_side_effects(manager) as (run, _, _, _),
+      tethering_side_effects(manager) as (run, _, _, _, _),
     ):
       manager._start_tethering()
 
     commands = [item.args[0] for item in run.call_args_list]
     added = [command for command in commands if "-A" in command]
-    assert any("INPUT" in command and "udp" in command and "67" in command and "ACCEPT" in command for command in added)
-    assert any("INPUT" in command and "udp" in command and "53" in command and "ACCEPT" in command for command in added)
-    assert any("INPUT" in command and "tcp" in command and "53" in command and "ACCEPT" in command for command in added)
-    assert any("FORWARD" in command and "-i" in command and TETHERING_SUBNET in command and "ACCEPT" in command for command in added)
-    assert any("FORWARD" in command and "-o" in command and "ESTABLISHED,RELATED" in command and "ACCEPT" in command for command in added)
+    assert any(TETHERING_INPUT_CHAIN in command and "udp" in command and "67" in command and "ACCEPT" in command for command in added)
+    assert any(TETHERING_INPUT_CHAIN in command and "udp" in command and "53" in command and "ACCEPT" in command for command in added)
+    assert any(TETHERING_INPUT_CHAIN in command and "tcp" in command and "53" in command and "ACCEPT" in command for command in added)
+    assert any(TETHERING_FORWARD_CHAIN in command and "-i" in command and TETHERING_SUBNET in command and "ACCEPT" in command for command in added)
+    assert any(TETHERING_FORWARD_CHAIN in command and "-o" in command and "ESTABLISHED,RELATED" in command and "ACCEPT" in command for command in added)
     assert all(TETHERING_NAT_COMMENT in command for command in added)
 
   def test_start_preserves_untagged_masquerade_rules(self):
     manager = build_tethering_manager()
-    with tethering_side_effects(manager) as (run, _, _, _):
+    with tethering_side_effects(manager) as (run, _, _, _, _):
       manager._start_tethering()
 
     commands = [item.args[0] for item in run.call_args_list]
@@ -115,7 +121,7 @@ class TestTetheringFirewall(TestCase):
 
     with (
       patch.object(wifi_manager_module.shutil, "which", return_value="/usr/sbin/iptables-legacy"),
-      tethering_side_effects(manager) as (run, _, _, _),
+      tethering_side_effects(manager) as (run, _, _, _, _),
     ):
       run.side_effect = fail_nat_add
       with self.assertRaises(subprocess.CalledProcessError):
@@ -126,7 +132,7 @@ class TestTetheringFirewall(TestCase):
 
   def test_non_ap_daemon_aborts_bringup(self):
     manager = build_tethering_manager()
-    with tethering_side_effects(manager, mode="station") as (_, ctrl, _, _):
+    with tethering_side_effects(manager, mode="station") as (_, ctrl, _, _, _):
       with self.assertRaisesRegex(RuntimeError, "did not take over wlan0"):
         manager._start_tethering()
 
@@ -135,22 +141,47 @@ class TestTetheringFirewall(TestCase):
 
   def test_ap_config_uses_wpa2_with_ccmp(self):
     manager = build_tethering_manager()
-    with tethering_side_effects(manager) as (_, _, ap_file, _):
+    with tethering_side_effects(manager) as (_, _, ap_file, _, _):
       manager._start_tethering()
 
     config = ap_file().write.call_args.args[0]
-    assert "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n" in config
+    assert "ctrl_interface=DIR=/run/openpilot-wpa GROUP=netdev\n" in config
     assert "  proto=RSN\n" in config
     assert "  pairwise=CCMP\n" in config
     assert "  group=CCMP\n" in config
 
   def test_ap_config_is_written_atomically(self):
     manager = build_tethering_manager()
-    with tethering_side_effects(manager) as (_, _, ap_file, atomic_write):
+    with tethering_side_effects(manager) as (_, _, ap_file, atomic_write, _):
       manager._start_tethering()
 
     atomic_write.assert_called_once_with(wifi_manager_module.WPA_AP_CONF, overwrite=True)
     ap_file().write.assert_called_once()
+
+  def test_applies_ipv4_forwarding_changes_while_active(self):
+    manager = build_tethering_manager()
+    with patch.object(manager, "_apply_ipv4_forward") as apply_ipv4_forward:
+      manager.set_ipv4_forward(False)
+
+    assert not manager._ipv4_forward
+    apply_ipv4_forward.assert_called_once_with(False)
+
+  def test_ipv4_forwarding_write_has_kernel_postcondition(self):
+    manager = build_tethering_manager()
+    with (
+      patch.object(wifi_manager_module.subprocess, "run") as run,
+      patch.object(wifi_manager_module.Path, "read_text", return_value="0\n"),
+    ):
+      manager._apply_ipv4_forward(False)
+
+    run.assert_called_once_with(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=True)
+
+    with self.assertRaisesRegex(RuntimeError, "actual='1'"):
+      with (
+        patch.object(wifi_manager_module.subprocess, "run"),
+        patch.object(wifi_manager_module.Path, "read_text", return_value="1\n"),
+      ):
+        manager._apply_ipv4_forward(False)
 
   def test_stop_removes_nat_and_restores_station(self):
     manager = build_tethering_manager()
@@ -164,14 +195,20 @@ class TestTetheringFirewall(TestCase):
       patch.object(wifi_manager_module, "generate_wpa_conf"),
       patch.object(wifi_manager_module.time, "sleep"),
       patch.object(wifi_manager_module.subprocess, "run", return_value=MagicMock(returncode=1)) as run,
+      patch.object(manager, "_apply_ipv4_forward") as apply_ipv4_forward,
     ):
       manager._stop_tethering()
-      expected_rules = wifi_manager_module._tethering_firewall_rules("-D")
+      expected_cleanup = wifi_manager_module._tethering_firewall_jumps("-D")
+      for command, chain in wifi_manager_module._tethering_firewall_chains():
+        expected_cleanup.extend((
+          [*command, "-F", chain],
+          [*command, "-X", chain],
+        ))
 
     commands = [item.args[0] for item in run.call_args_list]
-    for rule in expected_rules:
-      assert rule in commands
-    assert ["sudo", "sysctl", "net.ipv4.ip_forward=0"] in commands
+    for command in expected_cleanup:
+      assert command in commands
+    apply_ipv4_forward.assert_called_once_with(False)
     ensure_wpa_supplicant.assert_called_once()
     assert not manager._tethering_active
     assert manager._wifi_state == WifiState()

@@ -3,9 +3,11 @@ import shutil
 import subprocess
 import threading
 import time
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from openpilot.common.swaglog import cloudlog
@@ -14,13 +16,13 @@ from openpilot.system.ui.lib.dhcp_client import DhcpClient
 from openpilot.system.ui.lib.wifi_network_store import MeteredType, NetworkStore
 from openpilot.system.ui.lib.wpa_ctrl import (WpaCtrl, WpaCtrlMonitor, SecurityType,
                                                WPA_SUPPLICANT_CONF, WPA_AP_CONF,
-                                               WPA_CTRL_INTERFACE,
+                                               WPA_CTRL_INTERFACE, WPA_PID_FILE,
                                                stop_wpa_supplicant, wpa_supplicant_running,
                                                sanitize_for_conf, format_psk_value, format_ssid_value, is_valid_psk, is_valid_ssid,
                                                generate_wpa_conf, parse_event_network_id, parse_event_ssid,
                                                parse_scan_results, flags_to_security_type,
                                                parse_status, dbm_to_percent, decode_ssid,
-                                               ensure_wpa_supplicant, try_attach_ctrl,
+                                               ensure_wpa_supplicant, prepare_wpa_runtime, try_attach_ctrl,
                                                stop_tethering_dnsmasq, tethering_dnsmasq_running)
 
 if TYPE_CHECKING:
@@ -34,6 +36,9 @@ else:
 TETHERING_IP_ADDRESS = "192.168.43.1"
 TETHERING_SUBNET = "192.168.43.0/24"
 TETHERING_NAT_COMMENT = "openpilot-tethering"
+TETHERING_NAT_CHAIN = "OPENPILOT_TETHERING_NAT"
+TETHERING_INPUT_CHAIN = "OPENPILOT_TETHERING_INPUT"
+TETHERING_FORWARD_CHAIN = "OPENPILOT_TETHERING_FORWARD"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 TETHERING_PASSWORD_FILE = "/data/tethering_password"
 SCAN_PERIOD_SECONDS = 5
@@ -68,12 +73,32 @@ class WifiState:
   status: ConnectStatus = ConnectStatus.DISCONNECTED
 
 
+class StationOperationKind(IntEnum):
+  CONNECT = 0
+  ACTIVATE = 1
+  ASSOCIATED = 2
+  FORGET = 3
+  AUTH_FAILURE = 4
+  TIMEOUT = 5
+
+
+@dataclass(frozen=True)
+class StationOperation:
+  epoch: int
+  kind: StationOperationKind
+  ssid: str | None
+  profile_uuid: str | None = None
+  runtime_network_id: str | None = None
+
+
 @dataclass(frozen=True)
 class PendingConnection:
   ssid: str
   password: str
   hidden: bool
+  security: SecurityType
   epoch: int
+  profile_uuid: str
   network_id: str | None = None
 
 
@@ -87,33 +112,71 @@ def _tethering_firewall_rules(op: str) -> list[list[str]]:
   command = ["sudo", _iptables_executable()]
   tagged = ["-m", "comment", "--comment", TETHERING_NAT_COMMENT]
   return [
-    [*command, "-t", "nat", op, "POSTROUTING",
+    [*command, "-t", "nat", op, TETHERING_NAT_CHAIN,
      "-s", TETHERING_SUBNET, "!", "-d", TETHERING_SUBNET,
      *tagged, "-j", "MASQUERADE"],
-    [*command, op, "INPUT", "-i", "wlan0", "-p", "udp", "--dport", "67", *tagged, "-j", "ACCEPT"],
-    [*command, op, "INPUT", "-i", "wlan0", "-p", "udp", "--dport", "53", *tagged, "-j", "ACCEPT"],
-    [*command, op, "INPUT", "-i", "wlan0", "-p", "tcp", "--dport", "53", *tagged, "-j", "ACCEPT"],
-    [*command, op, "FORWARD", "-i", "wlan0", "-s", TETHERING_SUBNET, *tagged, "-j", "ACCEPT"],
-    [*command, op, "FORWARD", "-o", "wlan0", "-d", TETHERING_SUBNET,
+    [*command, op, TETHERING_INPUT_CHAIN, "-i", "wlan0", "-p", "udp", "--dport", "67", *tagged, "-j", "ACCEPT"],
+    [*command, op, TETHERING_INPUT_CHAIN, "-i", "wlan0", "-p", "udp", "--dport", "53", *tagged, "-j", "ACCEPT"],
+    [*command, op, TETHERING_INPUT_CHAIN, "-i", "wlan0", "-p", "tcp", "--dport", "53", *tagged, "-j", "ACCEPT"],
+    [*command, op, TETHERING_FORWARD_CHAIN, "-i", "wlan0", "-s", TETHERING_SUBNET, *tagged, "-j", "ACCEPT"],
+    [*command, op, TETHERING_FORWARD_CHAIN, "-o", "wlan0", "-d", TETHERING_SUBNET,
      "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", *tagged, "-j", "ACCEPT"],
   ]
+def _tethering_firewall_chains() -> list[tuple[list[str], str]]:
+  command = ["sudo", _iptables_executable()]
+  return [
+    ([*command, "-t", "nat"], TETHERING_NAT_CHAIN),
+    (command, TETHERING_INPUT_CHAIN),
+    (command, TETHERING_FORWARD_CHAIN),
+  ]
+
+
+def _tethering_firewall_jumps(op: str) -> list[list[str]]:
+  command = ["sudo", _iptables_executable()]
+  tagged = ["-m", "comment", "--comment", TETHERING_NAT_COMMENT]
+  return [
+    [*command, "-t", "nat", op, "POSTROUTING", *tagged, "-j", TETHERING_NAT_CHAIN],
+    [*command, op, "INPUT", *tagged, "-j", TETHERING_INPUT_CHAIN],
+    [*command, op, "FORWARD", *tagged, "-j", TETHERING_FORWARD_CHAIN],
+  ]
+
+
+def _delete_firewall_jumps():
+  for jump in _tethering_firewall_jumps("-D"):
+    while subprocess.run(jump, capture_output=True, check=False).returncode == 0:
+      pass
+
+
+def _install_tethering_firewall_rules():
+  for command, chain in _tethering_firewall_chains():
+    subprocess.run([*command, "-N", chain], capture_output=True, check=False)
+    subprocess.run([*command, "-F", chain], check=True)
+  for rule in _tethering_firewall_rules("-A"):
+    subprocess.run(rule, check=True)
+
+  # Exactly one jump from each shared built-in chain into our owned chains.
+  _delete_firewall_jumps()
+  for jump in _tethering_firewall_jumps("-A"):
+    subprocess.run(jump, check=True)
+
+
 
 
 def _tethering_firewall_ready() -> bool:
   try:
+    checks = [*_tethering_firewall_rules("-C"), *_tethering_firewall_jumps("-C")]
     return all(subprocess.run(rule, capture_output=True, check=False).returncode == 0
-               for rule in _tethering_firewall_rules("-C"))
+               for rule in checks)
   except OSError:
     cloudlog.exception("Failed to verify tethering firewall rules")
     return False
 
 
 def _delete_tethering_firewall_rules():
-  for rule in _tethering_firewall_rules("-D"):
-    for _ in range(4):
-      result = subprocess.run(rule, capture_output=True, check=False)
-      if result.returncode != 0:
-        break
+  _delete_firewall_jumps()
+  for command, chain in _tethering_firewall_chains():
+    subprocess.run([*command, "-F", chain], capture_output=True, check=False)
+    subprocess.run([*command, "-X", chain], capture_output=True, check=False)
 
 
 class WifiManager:
@@ -130,12 +193,15 @@ class WifiManager:
     self._wifi_state: WifiState = WifiState()
     self._user_epoch: int = 0
     self._ipv4_address: str = ""
+    self._associated_ssid: str | None = None
+    self._associated_epoch: int | None = None
     self._dhcp_adoption_ssid: str | None = None
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._ipv4_forward = False
     self._tethering_active = False
     self._tethering_psk = DEFAULT_TETHERING_PASSWORD
     self._dnsmasq_proc: subprocess.Popen | None = None
+    self._station_operation: StationOperation | None = None
     self._pending_connection: PendingConnection | None = None
     self._requested_ssid: str | None = None
     self._network_not_found_epoch: int | None = None
@@ -149,8 +215,9 @@ class WifiManager:
     self._callback_queue: list[Callable] = []
     self._callback_lock = threading.Lock()
     self._state_lock = threading.RLock()
-    self._connect_lock = threading.Lock()
-    self._station_lock = threading.Lock()
+    # All wpa_supplicant and DHCP station mutations share one serialized owner.
+    self._station_lock = threading.RLock()
+    self._connect_lock = self._station_lock
     self._station_cleanup_pending = False
     self._tethering_lock = threading.RLock()
     self._tethering_epoch = 0
@@ -184,17 +251,27 @@ class WifiManager:
       try:
         store = NetworkStore()
         self._store = store
-        # WPA passphrases may legally include leading or trailing spaces, so only
-        # trim the file terminator.
-        try:
-          with open(TETHERING_PASSWORD_FILE) as f:
-            raw = f.read()
-          self._tethering_psk = raw[:-1] if raw.endswith("\n") else raw
-        except FileNotFoundError:
-          self._tethering_psk = store.get_tethering_password(self._tethering_ssid) or DEFAULT_TETHERING_PASSWORD
-        except (OSError, UnicodeError):
-          cloudlog.exception("Failed to read tethering password")
-          self._tethering_psk = store.get_tethering_password(self._tethering_ssid) or DEFAULT_TETHERING_PASSWORD
+        persisted_password = store.get_tethering_password(self._tethering_ssid)
+        if persisted_password is not None and is_valid_psk(persisted_password):
+          self._tethering_psk = persisted_password
+        else:
+          if persisted_password is not None:
+            cloudlog.warning("Ignoring invalid tethering password in NetworkManager profile")
+          # The standalone file is migration input only; the keyfile remains the
+          # durable source after a successful import.
+          try:
+            with open(TETHERING_PASSWORD_FILE) as f:
+              raw = f.read()
+            legacy_password = raw[:-1] if raw.endswith("\n") else raw
+            if is_valid_psk(legacy_password) and store.set_tethering_password(self._tethering_ssid, legacy_password):
+              self._tethering_psk = legacy_password
+            else:
+              self._tethering_psk = DEFAULT_TETHERING_PASSWORD
+          except FileNotFoundError:
+            self._tethering_psk = DEFAULT_TETHERING_PASSWORD
+          except (OSError, UnicodeError):
+            cloudlog.exception("Failed to migrate legacy tethering password")
+            self._tethering_psk = DEFAULT_TETHERING_PASSWORD
 
         with self._tethering_lock:
           self._ensure_wpa_supplicant()
@@ -366,7 +443,9 @@ class WifiManager:
   def tethering_password(self) -> str:
     return self._tethering_psk
 
-  def _set_connecting(self, ssid: str | None, requested: bool = True):
+  def _set_connecting(self, ssid: str | None, requested: bool = True,
+                      kind: StationOperationKind = StationOperationKind.CONNECT,
+                      operation_ssid: str | None = None):
     with self._state_lock:
       self._dhcp_adoption_ssid = None
       self._user_epoch += 1
@@ -375,6 +454,9 @@ class WifiManager:
       self._network_not_found_events = 0
       self._last_connecting_at = time.monotonic() if ssid is not None else 0.0
       self._last_scanning_recheck = 0.0
+      self._associated_ssid = None
+      self._associated_epoch = None
+      self._station_operation = StationOperation(self._user_epoch, kind, operation_ssid if operation_ssid is not None else ssid)
       self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
   def _clear_station_state(self):
@@ -382,6 +464,9 @@ class WifiManager:
     self._dhcp.clear_ipv6_state()
     self._ipv4_address = ""
     self._current_network_metered = MeteredType.UNKNOWN
+    with self._state_lock:
+      self._associated_ssid = None
+      self._associated_epoch = None
 
   def _prepare_connection(self, epoch: int) -> bool:
     with self._station_lock:
@@ -395,9 +480,25 @@ class WifiManager:
       with self._state_lock:
         return self._user_epoch == epoch
 
-  def _set_pending_connection(self, ssid: str, password: str, hidden: bool):
+  def _set_pending_connection(self, ssid: str, password: str, hidden: bool, security: SecurityType):
+    profile_uuid = None
+    if self._store is not None:
+      entry = self._store.get(ssid)
+      if isinstance(entry, dict):
+        profile_uuid = entry.get("uuid")
+    try:
+      profile_uuid = str(uuid.UUID(profile_uuid)) if profile_uuid is not None else str(uuid.uuid4())
+    except (AttributeError, TypeError, ValueError):
+      profile_uuid = str(uuid.uuid4())
+
     with self._state_lock:
-      self._pending_connection = PendingConnection(ssid=ssid, password=password, hidden=hidden, epoch=self._user_epoch)
+      epoch = self._user_epoch
+      self._pending_connection = PendingConnection(
+        ssid=ssid, password=password, hidden=hidden, security=security, epoch=epoch, profile_uuid=profile_uuid,
+      )
+      self._station_operation = StationOperation(
+        epoch, StationOperationKind.CONNECT, ssid, profile_uuid=profile_uuid,
+      )
 
   def _set_pending_network_id(self, net_id: str, epoch: int):
     with self._state_lock:
@@ -408,16 +509,50 @@ class WifiManager:
         ssid=pending.ssid,
         password=pending.password,
         hidden=pending.hidden,
+        security=pending.security,
         epoch=pending.epoch,
+        profile_uuid=pending.profile_uuid,
         network_id=net_id,
       )
+      self._station_operation = StationOperation(
+        epoch, StationOperationKind.CONNECT, pending.ssid, pending.profile_uuid, net_id,
+      )
 
-  def _clear_pending_connection(self, ssid: str | None = None):
+  def _clear_pending_connection(self, ssid: str | None = None, epoch: int | None = None):
     with self._state_lock:
-      if self._pending_connection is None:
+      pending = self._pending_connection
+      if pending is None:
         return
-      if ssid is None or self._pending_connection.ssid == ssid:
+      if epoch is not None and pending.epoch != epoch:
+        return
+      if ssid is None or pending.ssid == ssid:
         self._pending_connection = None
+
+  def _restore_station_runtime(self, selected_id: str | None, previous_ids: list[str], removed_ids: list[str]):
+    exact = True
+    if selected_id is not None:
+      try:
+        self._remove_wpa_network_id(selected_id)
+      except Exception:
+        exact = False
+        cloudlog.exception(f"Failed to remove selected runtime network {selected_id}")
+
+    if exact and not removed_ids and previous_ids:
+      try:
+        self._select_network_ids(previous_ids)
+        return
+      except Exception:
+        cloudlog.exception("Failed to restore previous runtime network selection")
+
+    try:
+      store = self._require_store()
+      generate_wpa_conf(store)
+      if self._ctrl is not None:
+        response = self._request("RECONFIGURE").strip()
+        if not response.startswith("OK"):
+          raise RuntimeError(f"RECONFIGURE failed: {response}")
+    except Exception:
+      cloudlog.exception("Failed to restore runtime networks from durable profiles")
 
   def _persist_pending_connection(self, ssid: str | None):
     with self._state_lock:
@@ -431,7 +566,13 @@ class WifiManager:
     # Retain credentials after transient persistence failures
     try:
       store = self._require_store()
-      store.save_network(ssid, psk=pending.password, hidden=pending.hidden)
+      store.save_network(
+        ssid,
+        psk=pending.password,
+        hidden=pending.hidden,
+        security=pending.security,
+        profile_uuid=pending.profile_uuid,
+      )
       generate_wpa_conf(store)
     except Exception:
       cloudlog.exception("Failed to persist pending connection for %s", ssid)
@@ -442,7 +583,25 @@ class WifiManager:
 
   def _connected_transition_is_current(self, ssid: str, epoch: int) -> bool:
     with self._state_lock:
-      return self._user_epoch == epoch and self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
+      return (
+        self._user_epoch == epoch
+        and self._associated_ssid == ssid
+        and self._associated_epoch == epoch
+      )
+
+  def _complete_station_connection(self, ssid: str, epoch: int):
+    with self._station_lock, self._state_lock:
+      if not self._ipv4_address or not self._connected_transition_is_current(ssid, epoch):
+        return
+      if self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED):
+        return
+      self._requested_ssid = None
+      self._last_connecting_at = 0.0
+      self._last_scanning_recheck = 0.0
+      self._network_not_found_epoch = None
+      self._network_not_found_events = 0
+      self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTED)
+      self._enqueue_callbacks(self._activated)
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     with self._callback_lock:
@@ -537,6 +696,13 @@ class WifiManager:
         cloudlog.warning("AP services are incomplete; refusing adoption and tearing down orphan AP")
         self._stop_tethering()
         return False
+      try:
+        self._apply_ipv4_forward(self._ipv4_forward)
+      except Exception:
+        cloudlog.exception("Failed to enforce IPv4 forwarding policy while adopting AP")
+        self._stop_tethering()
+        return False
+
       if not self._ap_config_matches_password():
         cloudlog.warning("Persisted tethering password differs from the running AP; rebuilding hotspot")
         self._tethering_active = True
@@ -572,49 +738,52 @@ class WifiManager:
       return False
 
   def _handle_connected(self, ssid: str, adopt_dhcp: bool = False, expected_epoch: int | None = None):
-    """Transition to CONNECTED. Idempotent on (ssid, CONNECTED) so the monitor and
-    reconcile paths can both call in without each one killing the previous udhcpc."""
-    with self._connect_lock:
+    """Handle L2 association. CONNECTED and activation remain IP-ready states."""
+    with self._station_lock:
       with self._state_lock:
         if expected_epoch is not None and self._user_epoch != expected_epoch:
           return
         if self._requested_ssid is not None and self._requested_ssid != ssid:
           return
-        already_connected = self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
         transition_epoch = self._user_epoch
-        if not already_connected:
-          self._requested_ssid = None
-          self._last_connecting_at = 0.0
-          self._last_scanning_recheck = 0.0
-          self._network_not_found_epoch = None
-          self._network_not_found_events = 0
-          self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTED)
+        already_associated = self._connected_transition_is_current(ssid, transition_epoch)
+        already_connected = self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
+        if not already_associated:
+          self._associated_ssid = ssid
+          self._associated_epoch = transition_epoch
+          pending = self._pending_connection
+          self._station_operation = StationOperation(
+            transition_epoch,
+            StationOperationKind.ASSOCIATED,
+            ssid,
+            profile_uuid=pending.profile_uuid if pending is not None and pending.ssid == ssid else None,
+            runtime_network_id=pending.network_id if pending is not None and pending.ssid == ssid else None,
+          )
+          self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
 
       if already_connected:
-        # Retry persistence after transient filesystem failures
-        with self._state_lock:
-          pending = self._pending_connection
+        # Retry persistence after transient filesystem failures.
+        pending = self._pending_connection
         if pending is not None and pending.ssid == ssid:
           self._persist_pending_connection(ssid)
         return
+
+      if not already_associated:
+        if not adopt_dhcp or not self._dhcp.adopt():
+          self._ipv4_address = ""
+          self._dhcp.start()
+        if not self._connected_transition_is_current(ssid, transition_epoch):
+          return
+
       self._persist_pending_connection(ssid)
-      if not self._connected_transition_is_current(ssid, transition_epoch):
-        return
-      # SELECT_NETWORK disables other profiles; re-enable them for roaming
-      if self._ctrl is not None:
+      if self._ctrl is not None and self._connected_transition_is_current(ssid, transition_epoch):
         try:
+          # SELECT_NETWORK disables other profiles; re-enable them for roaming.
           self._request("ENABLE_NETWORK all")
         except Exception:
           cloudlog.exception("Failed to re-enable saved networks for auto-roam")
-      if not self._connected_transition_is_current(ssid, transition_epoch):
-        return
-      if not adopt_dhcp or not self._dhcp.adopt():
-        self._ipv4_address = ""
-        self._dhcp.start()
-      if not self._connected_transition_is_current(ssid, transition_epoch):
-        return
-      self._enqueue_callbacks(self._activated)
-      self._poll_for_ip()
+      if self._connected_transition_is_current(ssid, transition_epoch):
+        self._poll_for_ip(ssid, transition_epoch)
 
   def _handle_event(self, event: str):
     if "CTRL-EVENT-SCAN-RESULTS" in event:
@@ -719,12 +888,12 @@ class WifiManager:
                 self._network_not_found_epoch = None
                 self._network_not_found_events = 0
                 return
-              self._request("ENABLE_NETWORK all")
+              self._restore_station_runtime(None, [], ["wrong-key"])
             except Exception:
               cloudlog.exception("Failed to re-enable saved networks after WRONG_KEY")
           self._clear_pending_connection(event_ssid)
           self._enqueue_callbacks(self._need_auth, event_ssid)
-          self._set_connecting(None)
+          self._set_connecting(None, kind=StationOperationKind.AUTH_FAILURE, operation_ssid=event_ssid)
           # DISCONNECTED may arrive while CONNECTING and skip cleanup
           self._clear_station_state()
           self._enqueue_callbacks(self._disconnected)
@@ -767,7 +936,8 @@ class WifiManager:
     if self._ctrl is None:
       return
     try:
-      self._request("SCAN TYPE=ONLY" if self._wifi_state.status == ConnectStatus.CONNECTED else "SCAN")
+      associated = self._associated_ssid is not None
+      self._request("SCAN TYPE=ONLY" if associated or self._wifi_state.status == ConnectStatus.CONNECTED else "SCAN")
     except Exception:
       cloudlog.exception("Failed to request scan")
 
@@ -782,6 +952,7 @@ class WifiManager:
         return
 
       try:
+        self._apply_ipv4_forward(self._ipv4_forward)
         status = parse_status(self._request("STATUS"))
         if (status.get("mode") == "AP" and status.get("wpa_state") == "COMPLETED"
             and tethering_dnsmasq_running() and _tethering_firewall_ready()):
@@ -894,31 +1065,31 @@ class WifiManager:
       self._last_scanning_recheck = time.monotonic()
     elif wpa_state in ("DISCONNECTED", "INACTIVE", "SCANNING", "AUTHENTICATING", "ASSOCIATING",
                       "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
-      with self._state_lock:
-        if self._user_epoch != epoch:
-          return
-        ssid = current_state.ssid
-        pending = self._pending_connection
-      temporary_ssid = ssid if (
-        pending is not None
-        and ssid is not None
-        and pending.ssid == ssid
-        and not self._require_store().contains(ssid)
-      ) else None
-      # Remove failed unsaved credentials before re-enabling profiles
-      try:
-        if temporary_ssid is not None:
-          self._remove_wpa_network(temporary_ssid)
-        self._request("ENABLE_NETWORK all")
-      except Exception:
-        cloudlog.exception("Failed to re-enable saved networks after stale CONNECTING")
-      with self._state_lock:
-        if self._user_epoch != epoch:
-          return
-        self._clear_pending_connection(ssid)
-        self._set_connecting(None)
-      self._clear_station_state()
-      self._enqueue_callbacks(self._disconnected)
+      with self._connect_lock:
+        with self._state_lock:
+          if self._user_epoch != epoch:
+            return
+          ssid = current_state.ssid
+          pending = self._pending_connection
+          pending_network_id = pending.network_id if (
+            pending is not None
+            and pending.epoch == epoch
+            and pending.ssid == ssid
+          ) else None
+
+        self._restore_station_runtime(
+          pending_network_id,
+          [],
+          [pending_network_id] if pending_network_id is not None else [],
+        )
+
+        with self._state_lock:
+          if self._user_epoch != epoch or self._pending_connection is not pending:
+            return
+          self._clear_pending_connection(ssid, epoch=epoch)
+          self._set_connecting(None, kind=StationOperationKind.TIMEOUT, operation_ssid=ssid)
+        self._clear_station_state()
+        self._enqueue_callbacks(self._disconnected)
 
   def _update_networks(self, block: bool = True):
     def worker():
@@ -966,15 +1137,17 @@ class WifiManager:
     else:
       threading.Thread(target=worker, daemon=True).start()
 
-  def _poll_for_ip(self):
-    epoch = self._user_epoch
+  def _poll_for_ip(self, ssid: str | None = None, epoch: int | None = None):
+    ssid = self._associated_ssid if ssid is None else ssid
+    epoch = self._user_epoch if epoch is None else epoch
 
     def worker():
       for _ in range(50):  # 10 seconds max
-        if self._wifi_state.status != ConnectStatus.CONNECTED or self._user_epoch != epoch:
+        if ssid is None or not self._connected_transition_is_current(ssid, epoch):
           return
         self._update_active_connection_info()
         if self._ipv4_address:
+          self._complete_station_connection(ssid, epoch)
           return
         time.sleep(0.2)
     threading.Thread(target=worker, daemon=True).start()
@@ -984,7 +1157,11 @@ class WifiManager:
     metered = MeteredType.UNKNOWN
     profile_uuid = None
 
-    if self._wifi_state.status == ConnectStatus.CONNECTED:
+    with self._state_lock:
+      station_ssid = self._associated_ssid
+      station_active = station_ssid is not None or self._wifi_state.status == ConnectStatus.CONNECTED
+
+    if station_active:
       if self._ctrl:
         try:
           status = parse_status(self._request("STATUS"))
@@ -1006,14 +1183,15 @@ class WifiManager:
         except Exception:
           pass
 
-      ssid = self._wifi_state.ssid
+      ssid = station_ssid or self._wifi_state.ssid
       if ssid and self._store is not None:
         metered = self._store.get_metered(ssid, profile_uuid)
 
     self._ipv4_address = ipv4_address
     self._current_network_metered = metered
 
-  def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
+  def connect_to_network(self, ssid: str, password: str, hidden: bool = False,
+                         security: SecurityType | None = None):
     # Guard non-UI callers while tethering
     if self._tethering_active:
       cloudlog.warning(f"Ignoring connect to {ssid!r} while tethering is active")
@@ -1021,14 +1199,21 @@ class WifiManager:
     if not is_valid_ssid(ssid):
       cloudlog.warning(f"Ignoring connect to invalid SSID {ssid!r}")
       return
-    if password and not is_valid_psk(password):
+    security = security if security is not None else (SecurityType.WPA if password else SecurityType.OPEN)
+    if security not in (SecurityType.OPEN, SecurityType.WPA):
+      cloudlog.warning(f"Ignoring connect to {ssid!r} with unsupported security")
+      return
+    if security == SecurityType.WPA and not is_valid_psk(password):
       cloudlog.warning(f"Ignoring connect to {ssid!r} with invalid passphrase")
       self._enqueue_callbacks(self._need_auth, ssid)
+      return
+    if security == SecurityType.OPEN and password:
+      cloudlog.warning(f"Ignoring open-network connect to {ssid!r} with a passphrase")
       return
     with self._state_lock:
       self._station_cleanup_pending |= self._wifi_state.status == ConnectStatus.CONNECTED or self._dhcp_adoption_ssid is not None
       self._set_connecting(ssid)
-      self._set_pending_connection(ssid, password, hidden)
+      self._set_pending_connection(ssid, password, hidden, security)
       epoch = self._user_epoch
 
     def worker():
@@ -1042,39 +1227,55 @@ class WifiManager:
             return
           self._clear_pending_connection(ssid)
           # Reset inline because _init_wifi_state ignores a missing control socket
-          self._set_connecting(None)
+          self._set_connecting(None, operation_ssid=ssid)
           self._enqueue_callbacks(self._disconnected)
           return
 
         # Serialize the epoch check with runtime-network replacement
         if self._user_epoch != epoch:
           return
+        existing_ids: list[str] = []
+        removed_ids: list[str] = []
+        net_id = None
         try:
           existing_ids = self._list_network_ids(ssid)
-          net_id = self._add_and_select_network(ssid, password, hidden)
+          with self._state_lock:
+            pending = self._pending_connection
+            profile_uuid = pending.profile_uuid if pending is not None and pending.epoch == epoch else None
+          if profile_uuid is None:
+            return
+          net_id = self._add_and_select_network(
+            ssid, password, hidden, profile_uuid=profile_uuid, security=security,
+          )
+          self._set_pending_network_id(net_id, epoch)
+          if self._user_epoch != epoch:
+            self._restore_station_runtime(net_id, existing_ids, removed_ids)
+            return
           for existing_id in existing_ids:
             self._remove_wpa_network_id(existing_id)
-          self._set_pending_network_id(net_id, epoch)
+            removed_ids.append(existing_id)
+            if self._user_epoch != epoch:
+              self._restore_station_runtime(net_id, existing_ids, removed_ids)
+              return
         except Exception:
           cloudlog.exception(f"Failed to connect to {ssid}")
+          if net_id is not None or removed_ids:
+            self._restore_station_runtime(net_id, existing_ids, removed_ids)
           if self._user_epoch != epoch:
             return
-          try:
-            self._request("ENABLE_NETWORK all")
-          except Exception:
-            cloudlog.exception("Failed to re-enable saved networks after connect failure")
-          # Notify the UI when setup fails before SELECT_NETWORK
-          self._clear_pending_connection(ssid)
-          self._set_connecting(None)
+          self._clear_pending_connection(ssid, epoch=epoch)
+          self._set_connecting(None, operation_ssid=ssid)
           self._enqueue_callbacks(self._disconnected)
 
     threading.Thread(target=worker, daemon=True).start()
 
   def forget_connection(self, ssid: str, block: bool = False):
     if self._wifi_state.status == ConnectStatus.CONNECTING and self._wifi_state.ssid == ssid:
-      self._set_connecting(None)
+      self._set_connecting(None, kind=StationOperationKind.FORGET, operation_ssid=ssid)
 
-    def worker():
+    def transition():
+      with self._state_lock:
+        self._station_operation = StationOperation(self._user_epoch, StationOperationKind.FORGET, ssid)
       self._clear_pending_connection(ssid)
 
       try:
@@ -1105,7 +1306,7 @@ class WifiManager:
               was_connected = self._wifi_state.ssid == ssid and self._wifi_state.status == ConnectStatus.CONNECTED
               preserve_selection = self._wifi_state.status == ConnectStatus.CONNECTING and self._wifi_state.ssid != ssid
             if was_connected:
-              self._set_connecting(None)
+              self._set_connecting(None, kind=StationOperationKind.FORGET, operation_ssid=ssid)
               self._clear_station_state()
               self._request("DISCONNECT")
             self._remove_wpa_network(ssid)
@@ -1119,6 +1320,10 @@ class WifiManager:
 
       self._enqueue_callbacks(self._forgotten, ssid)
 
+    def worker():
+      with self._connect_lock:
+        transition()
+
     if block:
       worker()
     else:
@@ -1130,7 +1335,7 @@ class WifiManager:
       return
     with self._state_lock:
       self._station_cleanup_pending |= self._wifi_state.status == ConnectStatus.CONNECTED or self._dhcp_adoption_ssid is not None
-      self._set_connecting(ssid)
+      self._set_connecting(ssid, kind=StationOperationKind.ACTIVATE)
       self._clear_pending_connection()
       epoch = self._user_epoch
 
@@ -1144,19 +1349,16 @@ class WifiManager:
           if self._user_epoch != epoch:
             return
           # Reset inline because _init_wifi_state ignores a missing control socket
-          self._set_connecting(None)
+          self._set_connecting(None, kind=StationOperationKind.ACTIVATE, operation_ssid=ssid)
           self._enqueue_callbacks(self._disconnected)
           return
 
         def reset_to_disconnected():
           if self._user_epoch != epoch:
             return
-          try:
-            self._request("ENABLE_NETWORK all")
-          except Exception:
-            cloudlog.exception("Failed to re-enable saved networks after activation failure")
+          self._restore_station_runtime(None, [], ["activation"])
           # Notify the UI when control-socket recovery fails
-          self._set_connecting(None)
+          self._set_connecting(None, kind=StationOperationKind.ACTIVATE, operation_ssid=ssid)
           self._enqueue_callbacks(self._disconnected)
 
         # Serialize the epoch check with saved-network activation
@@ -1177,6 +1379,7 @@ class WifiManager:
                   entry.get("priority", 0),
                   bssid=entry.get("bssid") or None,
                   profile_uuid=entry.get("uuid"),
+                  security=entry.get("security"),
                 )
                 for entry in profiles
               ]
@@ -1201,8 +1404,15 @@ class WifiManager:
       if not resp.startswith("OK"):
         raise RuntimeError(f"{command} failed: {resp}")
 
-  def _add_and_select_network(self, ssid: str, psk: str = "", hidden: bool = False,
-                              priority: int = 0, bssid: str | None = None, profile_uuid: str | None = None) -> str:
+  def _add_and_select_network(self, ssid: str, psk: str = "", hidden: bool = False, priority: int = 0,
+                              bssid: str | None = None, profile_uuid: str | None = None,
+                              security: SecurityType | None = None) -> str:
+    security = security if security is not None else (SecurityType.WPA if psk else SecurityType.OPEN)
+    if security not in (SecurityType.OPEN, SecurityType.WPA):
+      raise ValueError(f"Unsupported security type: {security!r}")
+    if security == SecurityType.WPA and not is_valid_psk(psk):
+      raise ValueError("Invalid WPA passphrase")
+
     """Add a network and select it. Every SET_NETWORK is checked so a bad PSK/key_mgmt
     surfaces an immediate error instead of a delayed WRONG_KEY; orphans get REMOVE_NETWORK'd."""
     net_id = self._request("ADD_NETWORK").strip()
@@ -1211,7 +1421,7 @@ class WifiManager:
 
     try:
       self._wpa_set_network(net_id, "ssid", format_ssid_value(ssid))
-      if psk:
+      if security == SecurityType.WPA:
         self._wpa_set_network(net_id, "psk", format_psk_value(psk))
       else:
         self._wpa_set_network(net_id, "key_mgmt", "NONE")
@@ -1279,17 +1489,13 @@ class WifiManager:
     epoch = self._tethering_password_epoch
     def transition():
       try:
-        with atomic_write(TETHERING_PASSWORD_FILE, overwrite=True) as f:
-          f.write(password)
+        store = self._require_store()
+        if not store.set_tethering_password(self._tethering_ssid, password):
+          raise OSError("no durable tethering profile")
       except Exception:
         cloudlog.exception("Failed to persist tethering password; runtime state unchanged")
         self._enqueue_callbacks(self._activated if self._tethering_active else self._disconnected)
         return
-      try:
-        if self._store is not None:
-          self._store.set_tethering_password(self._tethering_ssid, password)
-      except Exception:
-        cloudlog.exception("Failed to update NetworkManager tethering profile")
       self._tethering_psk = password
       if self._tethering_active:
         try:
@@ -1312,8 +1518,18 @@ class WifiManager:
           transition()
     threading.Thread(target=worker, daemon=True).start()
 
+  def _apply_ipv4_forward(self, enabled: bool):
+    value = "1" if enabled else "0"
+    subprocess.run(["sudo", "sysctl", f"net.ipv4.ip_forward={value}"], check=True)
+    actual = Path("/proc/sys/net/ipv4/ip_forward").read_text().strip()
+    if actual != value:
+      raise RuntimeError(f"Failed to set net.ipv4.ip_forward={value} (actual={actual!r})")
+
   def set_ipv4_forward(self, enabled: bool):
-    self._ipv4_forward = enabled
+    with self._tethering_lock:
+      self._ipv4_forward = enabled
+      if self._tethering_active:
+        self._apply_ipv4_forward(enabled)
 
   def set_tethering_active(self, active: bool):
     # Report enable immediately and disable after station recovery
@@ -1326,10 +1542,6 @@ class WifiManager:
       if active:
         try:
           self._start_tethering()
-          if not self._ipv4_forward:
-            time.sleep(5)
-            cloudlog.warning("net.ipv4.ip_forward = 0")
-            subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
         except Exception:
           cloudlog.exception("Failed to start tethering, rolling back")
           try:
@@ -1396,7 +1608,9 @@ class WifiManager:
     stop_wpa_supplicant(WPA_SUPPLICANT_CONF)
     stop_wpa_supplicant(WPA_AP_CONF)
     self._dhcp.stop()
+    prepare_wpa_runtime()
     time.sleep(0.5)
+    self._apply_ipv4_forward(self._ipv4_forward)
 
     safe_tether_ssid = sanitize_for_conf(self._tethering_ssid)
     lines = [WPA_CTRL_INTERFACE, "ap_scan=2", "",
@@ -1407,7 +1621,10 @@ class WifiManager:
     with atomic_write(WPA_AP_CONF, overwrite=True) as f:
       f.write(ap_conf)
 
-    subprocess.run(["sudo", "wpa_supplicant", "-B", "-i", "wlan0", "-c", WPA_AP_CONF, "-D", "nl80211"], check=False)
+    subprocess.run([
+      "sudo", "wpa_supplicant", "-B", "-i", "wlan0",
+      "-c", WPA_AP_CONF, "-P", WPA_PID_FILE, "-D", "nl80211",
+    ], check=False)
     time.sleep(1)
 
     subprocess.run(["sudo", "ip", "addr", "flush", "dev", "wlan0"], check=False)
@@ -1421,7 +1638,7 @@ class WifiManager:
       "--bind-interfaces",
       "--dhcp-range=192.168.43.2,192.168.43.254,24h",
       "--dhcp-leasefile=/tmp/dnsmasq.leases",
-      "--no-daemon", "--log-queries",
+      "--no-daemon",
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
       start_new_session=True)
     time.sleep(0.2)
@@ -1430,12 +1647,7 @@ class WifiManager:
       self._dnsmasq_proc = None
       raise RuntimeError(f"dnsmasq exited during tethering bringup (rc={rc})")
 
-    # Flush tagged copies so repeated starts remain idempotent
-    _delete_tethering_firewall_rules()
-    for rule in _tethering_firewall_rules("-A"):
-      subprocess.run(rule, check=True)
-    if self._ipv4_forward:
-      subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=1"], check=True)
+    _install_tethering_firewall_rules()
 
     # Verify that our daemon owns wlan0 in AP mode
     if not wpa_supplicant_running(WPA_AP_CONF):
@@ -1462,8 +1674,8 @@ class WifiManager:
 
   def _clear_tethering_network_state(self):
     try:
-      subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=True)
-    except (OSError, subprocess.CalledProcessError):
+      self._apply_ipv4_forward(False)
+    except (OSError, RuntimeError, subprocess.CalledProcessError):
       cloudlog.exception("Failed to disable IPv4 forwarding during tethering teardown")
 
     try:

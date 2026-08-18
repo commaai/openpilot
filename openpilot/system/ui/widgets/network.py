@@ -221,10 +221,10 @@ class AdvancedNetworkSettings(Widget):
         password = self._keyboard.text
         if password == "":
           # connect without password
-          self._wifi_manager.connect_to_network(ssid, "", hidden=True)
+          self._wifi_manager.connect_to_network(ssid, "", hidden=True, security=SecurityType.OPEN)
           return
 
-        self._wifi_manager.connect_to_network(ssid, password, hidden=True)
+        self._wifi_manager.connect_to_network(ssid, password, hidden=True, security=SecurityType.WPA)
 
       self._keyboard.reset(min_text_size=0)
       self._keyboard.set_title(tr("Enter password"), tr("for \"{}\"").format(ssid))
@@ -442,7 +442,7 @@ class WifiManagerUI(Widget):
     if self._wifi_manager.is_connection_saved(network.ssid) and not password:
       self._wifi_manager.activate_connection(network.ssid)
     else:
-      self._wifi_manager.connect_to_network(network.ssid, password)
+      self._wifi_manager.connect_to_network(network.ssid, password, security=network.security_type)
 
   def forget_network(self, network: Network):
     self.state = UIState.FORGETTING
