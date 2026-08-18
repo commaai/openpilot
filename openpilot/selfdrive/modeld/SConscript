@@ -43,7 +43,12 @@ tg_devices = { # which device to put jit inputs to at runtime
   },
 }
 
-USBGPU = usbgpu_present() and big_model_source_available()
+USBGPU = usbgpu_present()
+
+if USBGPU and not big_model_source_available():
+  print("Big model source unavailable, skipping big model build")
+  USBGPU = False
+
 if USBGPU:
   usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
