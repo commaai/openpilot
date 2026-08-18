@@ -15,6 +15,10 @@ if [ -z "$RELEASE_BRANCH" ]; then
   exit 1
 fi
 
+if [ -n "$INCLUDE_BIG_MODEL" ]; then
+  git -C "$SOURCE_DIR" lfs pull --exclude=""
+fi
+
 BUILD_BRANCH=release-mici-staging
 
 
