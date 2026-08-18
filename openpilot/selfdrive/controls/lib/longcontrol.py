@@ -1,11 +1,14 @@
 import numpy as np
 from opendbc.car.structs import car
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, STOPPING_SPEED
 from openpilot.common.pid import PIDController
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
+
+STOPPING_DECEL_RATE = 0.3  # m/s^2/s while still rolling
+STOPPED_DECEL_RATE = 2.0   # m/s^2/s at a dead stop, to build the holding brake
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -61,8 +64,9 @@ class LongControl:
       output_accel = self.last_output_accel
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
-        # TODO: can we just go straight to stopAccel?
-        output_accel -= 1.0 * DT_CTRL  # m/s^2/s while trying to stop
+        # ramp gently while still rolling, then build the holding brake as we settle
+        decel_rate = float(np.interp(CS.vEgo, [0., STOPPING_SPEED], [STOPPED_DECEL_RATE, STOPPING_DECEL_RATE]))
+        output_accel -= decel_rate * DT_CTRL
       self.reset()
 
     else:  # LongCtrlState.pid
