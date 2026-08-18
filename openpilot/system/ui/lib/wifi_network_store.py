@@ -12,7 +12,7 @@ from enum import IntEnum
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.nm_keyfile import decode_nm_keyfile_ssid, decode_nm_keyfile_string
 from openpilot.common.utils import sudo_read
-from openpilot.system.ui.lib.wpa_ctrl import is_valid_psk, is_valid_ssid
+from openpilot.system.ui.lib.wpa_ctrl import SecurityType, is_valid_psk, is_valid_ssid
 
 
 NM_CONNECTIONS_DIR = "/data/etc/NetworkManager/system-connections"
@@ -32,6 +32,9 @@ _SUPPORTED_IPV4_OPTIONS = {"method", "dns-priority"}
 _SUPPORTED_IPV6_OPTIONS = {"method", "addr-gen-mode"}
 # Preserve NetworkManager's DNS priority for rollback compatibility
 _OPENPILOT_DNS_PRIORITY = "600"
+_TRANSACTION_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-(?:update|forget)-[0-9a-f]{32}$")
+
+
 class MeteredType(IntEnum):
   UNKNOWN = 0
   YES = 1
@@ -111,7 +114,34 @@ class NetworkStore:
     self._mutation_lock = threading.Lock()
     self._networks: dict[str, dict] = {}
     self._profiles: dict[str, list[dict]] = {}
+    self._recover_transaction_remnants()
     self._load()
+
+  def _recover_transaction_remnants(self):
+    directories = dict.fromkeys((
+      self._directory,
+      self._runtime_directory,
+      self._netplan_directory,
+    ))
+    for directory in directories:
+      if directory is None:
+        continue
+      try:
+        filenames = sorted(os.listdir(directory))
+      except OSError:
+        continue
+      for filename in filenames:
+        match = _TRANSACTION_REMNANT_RE.fullmatch(filename)
+        if match is None:
+          continue
+        remnant_path = os.path.join(directory, filename)
+        original_path = os.path.join(directory, match.group("original"))
+        command = ["sudo", "rm", "-f", remnant_path] if os.path.exists(original_path) else [
+          "sudo", "mv", "-f", remnant_path, original_path,
+        ]
+        result = subprocess.run(command, check=False)
+        if result.returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to recover transaction remnant {remnant_path} (rc={result.returncode})")
 
   def _load(self):
     self._networks = {}
@@ -120,14 +150,14 @@ class NetworkStore:
     if self._runtime_directory is not None:
       sources.append((self._runtime_directory, True))
 
-    persistent_ssids: set[str] = set()
+    persistent_uuids: dict[str, set[str]] = {}
     for directory, imported in sources:
       try:
         filenames = sorted(os.listdir(directory))
       except OSError:
         continue
       for fname in filenames:
-        self._load_keyfile(directory, fname, imported, persistent_ssids)
+        self._load_keyfile(directory, fname, imported, persistent_uuids)
 
   def _find_netplan_filename(self, file_uuid: str) -> str | None:
     if self._netplan_directory is None or not file_uuid:
@@ -154,7 +184,7 @@ class NetworkStore:
         return fname
     return expected if read_failed else None
 
-  def _load_keyfile(self, directory: str, fname: str, imported: bool, persistent_ssids: set[str]):
+  def _load_keyfile(self, directory: str, fname: str, imported: bool, persistent_uuids: dict[str, set[str]]):
     if not fname.endswith(".nmconnection"):
       return
     fpath = os.path.join(directory, fname)
@@ -173,8 +203,6 @@ class NetworkStore:
       mode = cp.get("wifi", "mode", fallback="infrastructure")
       if not is_valid_ssid(ssid) or mode != "infrastructure":
         return
-      if not imported:
-        persistent_ssids.add(ssid)
       if {key for key, value in cp.items("wifi") if value} - _SUPPORTED_WIFI_OPTIONS:
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported Wi-Fi options")
         return
@@ -197,22 +225,15 @@ class NetworkStore:
           or unsupported_connection_options):
         cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported connection constraints")
         return
-      # Persistent profiles take precedence over Netplan runtime copies
-      if imported and ssid in persistent_ssids:
-        primary = self._networks.get(ssid)
-        if primary is not None and file_uuid == primary.get("uuid") and primary.get("_runtime_filename") is None:
-          primary["_runtime_filename"] = fname
-          primary["_netplan_filename"] = self._find_netplan_filename(file_uuid)
-        return
-
-      # Skip secured profiles that cannot be reproduced safely
+      # Skip secured profiles that cannot be reproduced safely.
+      security = SecurityType.OPEN
       psk = ""
       if cp.has_section("wifi-security"):
         key_mgmt = cp.get("wifi-security", "key-mgmt", fallback="").lower()
         if key_mgmt not in _SUPPORTED_KEY_MGMT:
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported key-mgmt={key_mgmt!r}")
           return
-        # key-mgmt=none can still represent WEP; never import it as open
+        # key-mgmt=none can still represent WEP; never import it as open.
         wep_keys = ("wep-key0", "wep-key1", "wep-key2", "wep-key3", "wep-key-type", "auth-alg")
         if key_mgmt == "none" and any(cp.has_option("wifi-security", k) for k in wep_keys):
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} (WEP profile, unsupported)")
@@ -223,11 +244,13 @@ class NetworkStore:
         if unsupported_security_options or auth_alg not in ("", "open") or psk_flags != 0:
           cloudlog.warning(f"NetworkStore: skipping {ssid!r} with unsupported security constraints")
           return
-        psk = decode_nm_keyfile_string(cp.get("wifi-security", "psk", fallback=""))
-        # Agent-managed secrets are unavailable to wpa_supplicant
-        if key_mgmt == "wpa-psk" and not is_valid_psk(psk):
-          cloudlog.warning(f"NetworkStore: skipping {ssid!r} (wpa-psk with invalid inline secret)")
-          return
+        if key_mgmt == "wpa-psk":
+          security = SecurityType.WPA
+          psk = decode_nm_keyfile_string(cp.get("wifi-security", "psk", fallback=""))
+          # Agent-managed secrets are unavailable to wpa_supplicant.
+          if not is_valid_psk(psk):
+            cloudlog.warning(f"NetworkStore: skipping {ssid!r} (wpa-psk with invalid inline secret)")
+            return
 
       # Respect disabled autoconnect profiles
       if not cp.getboolean("connection", "autoconnect", fallback=True):
@@ -254,6 +277,7 @@ class NetworkStore:
       # Skip profiles with malformed integer or boolean values
       entry = {
         "psk": psk,
+        "security": security,
         "metered": cp.getint("connection", "metered", fallback=0),
         "priority": cp.getint("connection", "autoconnect-priority", fallback=0),
         "hidden": cp.getboolean("wifi", "hidden", fallback=False),
@@ -268,9 +292,17 @@ class NetworkStore:
         "_netplan_filename": self._find_netplan_filename(file_uuid) if imported else None,
       }
       profiles = self._profiles.setdefault(ssid, [])
-      if file_uuid and any(profile.get("uuid") == file_uuid for profile in profiles):
+      if imported and file_uuid in persistent_uuids.get(ssid, set()):
+        persistent = next((profile for profile in profiles if profile.get("uuid") == file_uuid), None)
+        if persistent is not None and persistent.get("_runtime_filename") is None:
+          persistent["_runtime_filename"] = fname
+          persistent["_netplan_filename"] = self._find_netplan_filename(file_uuid)
+        return
+      if any(profile.get("uuid") == file_uuid for profile in profiles):
         return
       profiles.append(entry)
+      if not imported:
+        persistent_uuids.setdefault(ssid, set()).add(file_uuid)
       self._networks.setdefault(ssid, entry)
     except (configparser.Error, ValueError):
       return
@@ -386,7 +418,8 @@ class NetworkStore:
     cp["wifi"] = wifi
 
     psk = entry.get("psk", "")
-    if psk:
+    security = entry.get("security", SecurityType.WPA if psk else SecurityType.OPEN)
+    if security == SecurityType.WPA:
       cp["wifi-security"] = {
         "key-mgmt": "wpa-psk",
         "psk": _encode_keyfile_string(psk),
@@ -554,33 +587,72 @@ class NetworkStore:
       if netplan_path is not None and not os.path.exists(netplan_path):
         return False
 
-      self._install_keyfile(cp, target_path)
-
-      def cleanup_target_after_failure() -> bool:
-        if target_existed:
-          return True
-        return subprocess.run(["sudo", "rm", "-f", target_path], check=False).returncode == 0
-
-      for source_path in (runtime_path, netplan_path):
-        if source_path is None:
-          continue
-        result = subprocess.run(["sudo", "rm", "-f", source_path], check=False)
+      token = uuid.uuid4().hex
+      target_backup = f"{target_path}.openpilot-update-{token}" if target_existed else None
+      if target_backup is not None:
+        result = subprocess.run([
+          "sudo", "install", "-o", "root", "-g", "root", "-m", "600", target_path, target_backup,
+        ], check=False)
         if result.returncode != 0:
-          if not cleanup_target_after_failure():
-            raise OSError(f"failed to remove {source_path} and roll back {target_path}")
-          raise OSError(f"failed to remove {source_path}")
+          raise OSError(f"failed to back up {target_path}")
+
+      staged_sources: list[tuple[str, str]] = []
+      try:
+        self._install_keyfile(cp, target_path)
+        for source_path in (runtime_path, netplan_path):
+          if source_path is None:
+            continue
+          staged_path = f"{source_path}.openpilot-update-{token}"
+          result = subprocess.run(["sudo", "mv", "-f", source_path, staged_path], check=False)
+          if result.returncode != 0:
+            raise OSError(f"failed to stage {source_path}")
+          staged_sources.append((source_path, staged_path))
+      except Exception as e:
+        rollback_failed = False
+        for source_path, staged_path in reversed(staged_sources):
+          rollback_failed |= subprocess.run(["sudo", "mv", "-f", staged_path, source_path], check=False).returncode != 0
+        if target_backup is not None:
+          rollback_failed |= subprocess.run(["sudo", "mv", "-f", target_backup, target_path], check=False).returncode != 0
+        else:
+          rollback_failed |= subprocess.run(["sudo", "rm", "-f", target_path], check=False).returncode != 0
+        if rollback_failed:
+          raise OSError(f"failed to roll back tethering password update for {ssid}") from e
+        raise
+
+      for _, staged_path in staged_sources:
+        if subprocess.run(["sudo", "rm", "-f", staged_path], check=False).returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to clean up staged tethering source {staged_path}")
+      if target_backup is not None and subprocess.run(["sudo", "rm", "-f", target_backup], check=False).returncode != 0:
+        cloudlog.warning(f"NetworkStore: failed to clean up tethering backup {target_backup}")
       return True
 
-  def save_network(self, ssid: str, psk: str | None = None, metered: int | None = None, hidden: bool | None = None):
+  def save_network(self, ssid: str, psk: str | None = None, metered: int | None = None, hidden: bool | None = None,
+                   security: SecurityType | None = None, profile_uuid: str | None = None):
     with self._mutation_lock:
       with self._lock:
         current = self._networks.get(ssid)
         profiles = list(self._profiles.get(ssid, []))
         existing = dict(current or {})
+        if profile_uuid is not None:
+          canonical_uuid = _parse_uuid(profile_uuid)
+          if canonical_uuid is None:
+            raise ValueError(f"invalid profile UUID: {profile_uuid!r}")
+          if current is not None and current.get("uuid") != canonical_uuid:
+            raise ValueError(f"profile UUID changed for {ssid!r}")
+          existing["uuid"] = canonical_uuid
         if psk is not None:
           existing["psk"] = psk
-        elif "psk" not in existing:
+          existing["security"] = security if security is not None else (SecurityType.WPA if psk else SecurityType.OPEN)
+        else:
+          existing.setdefault("psk", "")
+          if security is not None:
+            existing["security"] = security
+          else:
+            existing.setdefault("security", SecurityType.WPA if existing["psk"] else SecurityType.OPEN)
+        if existing["security"] == SecurityType.OPEN:
           existing["psk"] = ""
+        elif not is_valid_psk(existing["psk"]):
+          raise ValueError(f"invalid WPA PSK for {ssid!r}")
         if metered is not None:
           existing["metered"] = metered
         elif "metered" not in existing:
@@ -605,6 +677,7 @@ class NetworkStore:
             elif psk is not None and not profile.get("bssid"):
               duplicate = dict(profile)
               duplicate["psk"] = psk
+              duplicate["security"] = SecurityType.WPA if psk else SecurityType.OPEN
               duplicate_uuid, duplicate = self._render_nmconnection(ssid, duplicate)
               duplicate["uuid"] = duplicate_uuid
               updated_profiles.append(duplicate)

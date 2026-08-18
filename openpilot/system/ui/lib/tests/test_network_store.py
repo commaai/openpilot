@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 from openpilot.system.ui.lib import wifi_network_store as store_module
 from openpilot.system.ui.lib.wifi_network_store import NetworkStore
-from openpilot.system.ui.lib.wpa_ctrl import generate_wpa_conf
+from openpilot.system.ui.lib.wpa_ctrl import SecurityType, generate_wpa_conf
 
 
 def profile_uuid(name: str) -> str:
@@ -87,6 +87,37 @@ class TestNetworkStore(TestCase):
       Path(command[-1]).unlink(missing_ok=True)
     return MagicMock(returncode=0)
 
+  def test_startup_deletes_stale_update_backup_when_original_exists(self):
+    original = Path(write_profile(
+      self.persistent, "saved.nmconnection", "Saved", file_uuid="saved", psk="new-password",
+    ))
+    remnant = Path(write_profile(
+      self.persistent,
+      f"{original.name}.openpilot-update-{'a' * 32}",
+      "Saved",
+      file_uuid="saved",
+      psk="old-password",
+    ))
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+
+    assert original.exists()
+    assert not remnant.exists()
+    assert require_entry(store, "Saved")["psk"] == "new-password"
+
+  def test_startup_restores_interrupted_forget_stage(self):
+    original = Path(write_profile(self.persistent, "saved.nmconnection", "Saved", file_uuid="saved"))
+    remnant = Path(f"{original}.openpilot-forget-{'b' * 32}")
+    original.replace(remnant)
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+
+    assert original.exists()
+    assert not remnant.exists()
+    assert store.contains("Saved")
+
   def test_loads_persistent_and_open_profiles(self):
     write_profile(self.persistent, "secure.nmconnection", "Secure")
     write_profile(self.persistent, "open.nmconnection", "Open", psk=None)
@@ -96,6 +127,22 @@ class TestNetworkStore(TestCase):
 
     assert require_entry(store, "Secure")["psk"] == "password123"
     assert require_entry(store, "Open")["psk"] == ""
+  def test_explicit_open_security_ignores_stale_psk(self):
+    write_profile(
+      self.persistent,
+      "open.nmconnection",
+      "Open",
+      psk="stale-password",
+      key_mgmt="none",
+    )
+
+    with self.patch_reads():
+      store = self.make_store()
+
+    entry = require_entry(store, "Open")
+    assert entry["security"] == SecurityType.OPEN
+    assert entry["psk"] == ""
+
 
   def test_loads_canonical_networkmanager_sections(self):
     path = Path(write_profile(self.persistent, "canonical.nmconnection", "Canonical"))
@@ -319,6 +366,29 @@ method=ignore
 
     assert "psk = new-password" in path.read_text()
 
+  def test_tethering_update_restores_existing_target_when_runtime_cleanup_fails(self):
+    shared_uuid = "shared-hotspot-uuid"
+    persistent_path = Path(write_profile(
+      self.persistent, "hotspot.nmconnection", "weedle", file_uuid=shared_uuid, psk="old-password", mode="ap",
+    ))
+    runtime_path = Path(write_profile(
+      self.runtime, "runtime-hotspot.nmconnection", "weedle", file_uuid=shared_uuid, psk="old-password", mode="ap",
+    ))
+    original = persistent_path.read_text()
+
+    def run(command, **kwargs):
+      if command[:3] == ["sudo", "mv", "-f"] and command[-2] == str(runtime_path):
+        return MagicMock(returncode=1)
+      return self.run_file_command(command, **kwargs)
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run):
+      store = self.make_store()
+      with self.assertRaises(OSError):
+        store.set_tethering_password("weedle", "new-password")
+
+    assert persistent_path.read_text() == original
+    assert runtime_path.exists()
+
   def test_persists_runtime_tethering_profile_for_rollback(self):
     runtime_path = Path(write_profile(
       self.runtime, "netplan-hotspot.nmconnection", "weedle", file_uuid="hotspot-uuid", psk="old-password", mode="ap",
@@ -350,7 +420,7 @@ method=ignore
 
   def test_persistent_profile_wins_runtime_duplicate(self):
     write_profile(self.persistent, "persistent.nmconnection", "Duplicate", psk="persistent")
-    write_profile(self.runtime, "runtime.nmconnection", "Duplicate", psk="runtime")
+    write_profile(self.runtime, "runtime.nmconnection", "Duplicate", psk="runtime-password")
 
     with self.patch_reads():
       store = self.make_store()
@@ -359,7 +429,7 @@ method=ignore
 
   def test_edit_persistent_profile_removes_shadowed_runtime_copy(self):
     write_profile(self.persistent, "persistent.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="persistent")
-    runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="runtime"))
+    runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="runtime-password"))
     netplan_path = Path(self.netplan, f"90-NM-{profile_uuid('shared-uuid')}.yaml")
     netplan_path.write_text("network:\n  version: 2\n")
 
@@ -533,23 +603,46 @@ method=ignore
     assert not writer.is_alive()
     assert not reader.is_alive()
 
-  def test_unsupported_persistent_profile_blocks_runtime_duplicate(self):
+  def test_unsupported_persistent_profile_does_not_block_valid_runtime_profile(self):
     write_profile(self.persistent, "persistent.nmconnection", "Enterprise", psk=None, key_mgmt="wpa-eap", extra_security="identity=user")
     write_profile(self.runtime, "runtime.nmconnection", "Enterprise")
 
     with self.patch_reads():
       store = self.make_store()
 
-    assert store.get("Enterprise") is None
+    assert require_entry(store, "Enterprise")["psk"] == "password123"
 
-  def test_persistent_profile_with_unsupported_wifi_options_blocks_runtime_duplicate(self):
+  def test_invalid_persistent_wifi_options_do_not_block_valid_runtime_profile(self):
     write_profile(self.persistent, "persistent.nmconnection", "Randomized", extra_wifi="cloned-mac-address=stable")
     write_profile(self.runtime, "runtime.nmconnection", "Randomized")
 
     with self.patch_reads():
       store = self.make_store()
 
-    assert store.get("Randomized") is None
+    assert require_entry(store, "Randomized")["psk"] == "password123"
+
+  def test_runtime_shadow_matches_every_persistent_profile_uuid(self):
+    write_profile(self.persistent, "first.nmconnection", "Duplicate", file_uuid="first-uuid", psk="first-password")
+    write_profile(self.persistent, "second.nmconnection", "Duplicate", file_uuid="second-uuid", psk="second-password")
+    write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="second-uuid", psk="runtime-password")
+
+    with self.patch_reads():
+      store = self.make_store()
+
+    profiles = [entry for ssid, entry in store.get_profiles() if ssid == "Duplicate"]
+    assert len(profiles) == 2
+    second = next(entry for entry in profiles if entry["uuid"] == profile_uuid("second-uuid"))
+    assert second["psk"] == "second-password"
+    assert second["_runtime_filename"] == "runtime.nmconnection"
+
+  def test_new_profile_uses_preallocated_uuid(self):
+    selected_uuid = profile_uuid("selected")
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      store.save_network("Selected", psk="password123", profile_uuid=selected_uuid)
+
+    assert require_entry(store, "Selected")["uuid"] == selected_uuid
+    assert Path(self.persistent, f"{selected_uuid}-Selected.nmconnection").exists()
 
   def test_forget_runtime_profile_removes_netplan_source(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
