@@ -90,6 +90,7 @@ public:
     if (aligned_buf.size() < words_size) {
       aligned_buf = kj::heapArray<capnp::word>(words_size < 512 ? 512 : words_size);
     }
+    aligned_buf[words_size - 1] = capnp::word();
     memcpy(aligned_buf.begin(), data, size);
     return aligned_buf.slice(0, words_size);
   }
