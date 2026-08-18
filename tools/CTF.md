@@ -1,20 +1,19 @@
-## CTF
-Welcome to the first part of the comma CTF!
+# comma CTF
 
-* all the flags are contained in this route: `0c7f0c7f0c7f0c7f|2021-10-13--13-00-00`
+* all the flags are contained in this route: `0c7f0c7f0c7f0c7f|2026-08-18--00-00-00`
 * there's 2 flags in each segment, with roughly increasing difficulty
 * everything you'll need to find the flags is in the openpilot repo
   * grep is also your friend
-  * first, [setup](https://github.com/commaai/openpilot/tree/master/tools) your PC
-  * read the docs & checkout out the tools in openpilot/tools/
-  * tip: once you get the replay and UI up, start by familiarizing yourself with seeking in replay
+  * first, [set up](https://github.com/commaai/openpilot/tree/master/tools) your PC
+  * read the docs and check out the tools in `openpilot/tools/`
+  * tip: once you get replay and the UI up, start by familiarizing yourself with seeking in replay
 
-getting started
+## Getting started
+
 ```bash
 # start the route replay
-cd openpilot/tools/replay
-./replay '0c7f0c7f0c7f0c7f|2021-10-13--13-00-00' --dcam --ecam
+openpilot/tools/replay/replay '0c7f0c7f0c7f0c7f|2026-08-18--00-00-00' --dcam --ecam
 
 # start the UI in another terminal
-openpilot/selfdrive/ui/ui
+cd openpilot/selfdrive/ui && ./ui.py
 ```
