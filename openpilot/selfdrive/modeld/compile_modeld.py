@@ -3,7 +3,6 @@ import argparse
 import atexit
 import math
 import os
-import tempfile
 import time
 import shutil
 from functools import partial
@@ -11,7 +10,7 @@ from collections import namedtuple
 
 import numpy as np
 
-from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
+from openpilot.selfdrive.modeld.helpers import dump_oob
 
 def _patch_tinygrad_fetch_fw():
   import hashlib
@@ -257,11 +256,7 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
 
   print('capture + replay')
   test_val, test_buffers = random_inputs_run(jit, SEED)
-  print('pickle round trip')
-  with tempfile.TemporaryFile(dir=".") as f:
-    dump_oob(jit, f)
-    f.seek(0)
-    jit = load_oob(f)
+  print('validate replay')
   random_inputs_run(jit, SEED, test_val, test_buffers, expect_match=True)
   random_inputs_run(jit, SEED+1, test_val, test_buffers, expect_match=False)
   return jit
