@@ -57,8 +57,13 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, session=Non
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:
+  comma_dir = os.path.realpath(os.path.join(Paths.persist_root(), 'comma'))
   for key in KEYS:
-    if os.path.isfile(Paths.persist_root() + f'/comma/{key}') and os.path.isfile(Paths.persist_root() + f'/comma/{key}.pub'):
-      with open(Paths.persist_root() + f'/comma/{key}') as private, open(Paths.persist_root() + f'/comma/{key}.pub') as public:
+    private_path = os.path.realpath(os.path.join(comma_dir, key))
+    public_path = os.path.realpath(os.path.join(comma_dir, key + '.pub'))
+    if not private_path.startswith(comma_dir + os.sep) or not public_path.startswith(comma_dir + os.sep):
+      continue
+    if os.path.isfile(private_path) and os.path.isfile(public_path):
+      with open(private_path) as private, open(public_path) as public:
         return KEYS[key], private.read(), public.read()
   return None, None, None
