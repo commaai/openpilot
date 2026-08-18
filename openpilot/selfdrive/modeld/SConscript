@@ -7,7 +7,7 @@ from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_exi
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_present, modeld_pkl_path
+from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, big_model_source_available, usbgpu_present, modeld_pkl_path
 
 
 CAMERA_CONFIGS = [
@@ -43,7 +43,7 @@ tg_devices = { # which device to put jit inputs to at runtime
   },
 }
 
-USBGPU = usbgpu_present()
+USBGPU = usbgpu_present() and big_model_source_available()
 if USBGPU:
   usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
