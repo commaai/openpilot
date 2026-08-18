@@ -44,7 +44,6 @@ tg_devices = { # which device to put jit inputs to at runtime
 }
 
 USBGPU = usbgpu_present()
-
 if USBGPU and not big_model_source_available():
   print("Big model source unavailable, skipping big model build")
   USBGPU = False
