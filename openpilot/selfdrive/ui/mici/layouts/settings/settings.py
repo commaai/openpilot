@@ -21,7 +21,7 @@ class SettingsLayout(NavScroller):
     self._params = Params()
 
     toggles_panel = TogglesLayoutMici()
-    toggles_btn = SettingsBigButton("toggles", "", gui_app.texture("icons_mici/settings.png", 64, 64))
+    toggles_btn = SettingsBigButton("toggles12", "", gui_app.texture("icons_mici/settings.png", 64, 64))
     toggles_btn.set_click_callback(lambda: gui_app.push_widget(toggles_panel))
 
     network_panel = NetworkLayoutMici()

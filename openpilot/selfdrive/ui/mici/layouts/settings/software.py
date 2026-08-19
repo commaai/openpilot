@@ -184,16 +184,17 @@ class CheckUpdateButton(BigButton):
 
 class InstallUpdateButton(BigButton):
   def __init__(self):
-    super().__init__("install update", "", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
-    self.set_visible(lambda: ui_state.is_offroad() and ui_state.params.get_bool("UpdateAvailable"))
+    super().__init__("", "updater failed to respond yes it did hehe", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
+    # self.set_visible(lambda: ui_state.is_offroad() and ui_state.params.get_bool("UpdateAvailable"))
 
-  def _update_state(self):
-    super()._update_state()
-
-    desc = _split_description(ui_state.params.get("UpdaterNewDescription") or "")
-    value = f"{desc[0]} ({desc[1]})" if desc is not None else ""
-    if self.get_value() != value:
-      self.set_value(value)
+  # def _update_state(self):
+  #   super()._update_state()
+  #
+  #   desc = _split_description(ui_state.params.get("UpdaterNewDescription") or "")
+  #   value = f"{desc[0]} ({desc[1]})" if desc is not None else ""
+  #   value = 'some value'
+  #   if self.get_value() != value:
+  #     self.set_value(value)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
