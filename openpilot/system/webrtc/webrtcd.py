@@ -347,12 +347,14 @@ class StreamSession:
       if self.bitrate_controller is not None:
         self.bitrate_controller.start()
 
-      cloudlog.warning("webrtcd.session.connected", session_id=self.identifier)
+      with cloudlog.ctx(session_id=self.identifier):
+        cloudlog.warning("webrtcd.session.connected")
       if self.is_body:
         await self.run_body_session()
       else:
         await self.run_normal_session()
-      cloudlog.warning("webrtcd.session.ended", session_id=self.identifier)
+      with cloudlog.ctx(session_id=self.identifier):
+        cloudlog.warning("webrtcd.session.ended")
     except Exception:
       self.logger.exception("Stream session failure")
       with cloudlog.ctx(session_id=self.identifier):
@@ -440,7 +442,8 @@ async def handle_get_stream(state: ServerState, raw_body: bytes, content_type: s
       await session.stop()
       stream_dict.pop(session.identifier, None)
       logging.getLogger("webrtcd").exception("Timed out creating stream answer")
-      cloudlog.warning("webrtcd.session.answer_timeout", session_id=session.identifier)
+      with cloudlog.ctx(session_id=session.identifier):
+        cloudlog.warning("webrtcd.session.answer_timeout")
       raise
     except Exception:
       await session.stop()
