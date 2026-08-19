@@ -395,7 +395,10 @@ def _text_response(text: str, status: int = 200) -> tuple[int, bytes, str]:
   return (status, text.encode(), "text/plain; charset=utf-8")
 
 
-async def handle_get_stream(state: ServerState, raw_body: bytes) -> tuple[int, bytes, str]:
+async def handle_get_stream(state: ServerState, raw_body: bytes, content_type: str) -> tuple[int, bytes, str]:
+  if content_type != "application/json":
+    return _json_response({"error": "unsupported media type"}, status=415)
+
   stream_dict = state.streams
   body = StreamRequestBody(**json.loads(raw_body))
 
@@ -508,7 +511,7 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
         services = parse_qs(parsed.query).get("services", [""])[0]
         result = self._run(handle_get_schema(self.server.state, services))
       elif parsed.path == "/stream":
-        result = self._run(handle_get_stream(self.server.state, self._read_body()))
+        result = self._run(handle_get_stream(self.server.state, self._read_body(), self.headers.get_content_type()))
       else:  # /notify
         try:
           payload = json.loads(self._read_body())
@@ -611,7 +614,7 @@ def webrtcd_thread(host: str, port: int):
 
 def main():
   parser = argparse.ArgumentParser(description="WebRTC daemon")
-  parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to listen on")
+  parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to listen on")
   parser.add_argument("--port", type=int, default=5001, help="Port to listen on")
   args = parser.parse_args()
 
