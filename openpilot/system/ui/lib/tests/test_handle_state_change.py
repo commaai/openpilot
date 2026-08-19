@@ -1344,6 +1344,23 @@ class TestStartupAdoption(TestCase):
 
     activated.assert_called_once()
 
+  def test_hotspot_adoption_preserves_forwarding_until_policy_is_known(self):
+    self.manager._ipv4_forward = None
+    self.manager._apply_ipv4_forward.reset_mock()
+
+    with (
+      patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
+      patch.object(wifi_manager_module, "_tethering_firewall_ready", return_value=True),
+      patch("builtins.open", mock_open(read_data='  psk="hotspot-password"\n')),
+    ):
+      assert self.manager._adopt_ap_state("Hotspot")
+
+    self.manager._apply_ipv4_forward.assert_not_called()
+
+    self.manager.set_ipv4_forward(True)
+
+    self.manager._apply_ipv4_forward.assert_called_once_with(True)
+
   def test_hotspot_password_mismatch_rebuilds_ap(self):
     with (
       patch.object(wifi_manager_module, "tethering_dnsmasq_running", return_value=True),
@@ -1453,6 +1470,7 @@ class TestLifecycle(TestCase):
 
     assert not manager._active
     assert manager._store is None
+    assert manager._ipv4_forward is None
     network_store.assert_not_called()
 
   def test_initialization_loads_network_store_in_worker(self):
@@ -1973,3 +1991,27 @@ class TestTetheringPassword(TestCase):
     assert stop_tethering.call_count == 2
     start_tethering.assert_not_called()
     disconnected.assert_called_once()
+
+  def test_restart_failure_keeps_committed_password(self):
+    manager = build_wifi_manager()
+    manager._tethering_active = True
+    manager._wifi_state = WifiState(manager._tethering_ssid, ConnectStatus.CONNECTED)
+    manager._store.set_tethering_password.return_value = True
+
+    def stop_tethering():
+      manager._tethering_active = False
+      manager._wifi_state = WifiState()
+
+    with (
+      patch.object(manager, "_stop_tethering", side_effect=stop_tethering) as stop_tethering,
+      patch.object(manager, "_start_tethering", side_effect=OSError("restart failed")) as start_tethering,
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+    ):
+      manager.set_tethering_password("replacement-password")
+      thread.call_args.kwargs["target"]()
+
+    assert manager.tethering_password == "replacement-password"
+    manager._store.set_tethering_password.assert_called_once_with("Hotspot", "replacement-password")
+    start_tethering.assert_called_once()
+    assert stop_tethering.call_count == 2
+    assert not manager.is_tethering_active()

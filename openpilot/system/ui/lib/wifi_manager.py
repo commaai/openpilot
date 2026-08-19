@@ -197,7 +197,7 @@ class WifiManager:
     self._associated_epoch: int | None = None
     self._dhcp_adoption_ssid: str | None = None
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
-    self._ipv4_forward = False
+    self._ipv4_forward: bool | None = None
     self._tethering_active = False
     self._tethering_psk = DEFAULT_TETHERING_PASSWORD
     self._dnsmasq_proc: subprocess.Popen | None = None
@@ -735,12 +735,13 @@ class WifiManager:
         cloudlog.warning("AP services are incomplete; refusing adoption and tearing down orphan AP")
         self._stop_tethering()
         return False
-      try:
-        self._apply_ipv4_forward(self._ipv4_forward)
-      except Exception:
-        cloudlog.exception("Failed to enforce IPv4 forwarding policy while adopting AP")
-        self._stop_tethering()
-        return False
+      if self._ipv4_forward is not None:
+        try:
+          self._apply_ipv4_forward(self._ipv4_forward)
+        except Exception:
+          cloudlog.exception("Failed to enforce IPv4 forwarding policy while adopting AP")
+          self._stop_tethering()
+          return False
 
       if not self._ap_config_matches_password():
         cloudlog.warning("Persisted tethering password differs from the running AP; rebuilding hotspot")
@@ -991,7 +992,8 @@ class WifiManager:
         return
 
       try:
-        self._apply_ipv4_forward(self._ipv4_forward)
+        if self._ipv4_forward is not None:
+          self._apply_ipv4_forward(self._ipv4_forward)
         status = parse_status(self._request("STATUS"))
         if (status.get("mode") == "AP" and status.get("wpa_state") == "COMPLETED"
             and tethering_dnsmasq_running() and _tethering_firewall_ready()):
@@ -1643,6 +1645,9 @@ class WifiManager:
     threading.Thread(target=worker, daemon=True).start()
 
   def _start_tethering(self):
+    if self._ipv4_forward is None:
+      raise RuntimeError("IPv4 forwarding policy is not initialized")
+
     self._tethering_active = True
     self._tethering_started = True
     self._set_connecting(self._tethering_ssid, requested=False)

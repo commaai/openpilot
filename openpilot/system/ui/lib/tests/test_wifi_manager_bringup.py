@@ -150,6 +150,14 @@ class TestTetheringFirewall(TestCase):
     assert "  pairwise=CCMP\n" in config
     assert "  group=CCMP\n" in config
 
+  def test_fresh_tethering_start_requires_forwarding_policy(self):
+    manager = build_tethering_manager()
+    manager._ipv4_forward = None
+
+    with tethering_side_effects(manager):
+      with self.assertRaisesRegex(RuntimeError, "forwarding policy"):
+        manager._start_tethering()
+
   def test_ap_config_is_written_atomically(self):
     manager = build_tethering_manager()
     with tethering_side_effects(manager) as (_, _, ap_file, atomic_write, _):
