@@ -7,7 +7,7 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
 from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
-from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
+from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy, _ice_candidates
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
@@ -63,6 +63,19 @@ class TestStreamSession(OpenpilotTestCase):
       assert hasattr(md, msg_type)
 
       mocked_pubmaster.reset_mock()
+
+  def test_ice_candidates(self):
+    sdp = "\r\n".join((
+      "v=0",
+      "a=candidate:offer-host 1 udp 1 192.168.1.2 1234 typ host",
+      "a=ice-ufrag:test",
+      "a=candidate:offer-relay 1 udp 2 1.2.3.4 5678 typ relay",
+    ))
+
+    assert _ice_candidates(sdp) == [
+      "candidate:offer-host 1 udp 1 192.168.1.2 1234 typ host",
+      "candidate:offer-relay 1 udp 2 1.2.3.4 5678 typ relay",
+    ]
 
   def test_livestream_track(self, mocker):
     fake_msg = messaging.new_message("livestreamCabinEncodeData")
