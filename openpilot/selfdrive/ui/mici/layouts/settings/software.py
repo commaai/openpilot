@@ -184,7 +184,7 @@ class CheckUpdateButton(BigButton):
 
 class InstallUpdateButton(BigButton):
   def __init__(self):
-    super().__init__("", "updater failed to respond yes it did hehe", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
+    super().__init__("", "updater failed to respond", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
     # self.set_visible(lambda: ui_state.is_offroad() and ui_state.params.get_bool("UpdateAvailable"))
 
   # def _update_state(self):

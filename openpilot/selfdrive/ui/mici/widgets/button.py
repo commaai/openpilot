@@ -149,11 +149,6 @@ class BigButton(Widget):
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(lambda: touch_callback() and self._grow_animation_until is None)
 
-  # def _width_hint(self) -> int:
-  #   # Single line if scrolling, so hide behind icon if exists
-  #   icon_size = self._txt_icon.width if self._txt_icon and self.value else 0
-  #   return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
-
   def _title_width_hint(self) -> int:
     # Single line if scrolling, so hide behind icon if exists
     icon_size = self._txt_icon.width if self._txt_icon and self._scroll and self.value else 0
