@@ -2,7 +2,6 @@
 import argparse
 import atexit
 import math
-import multiprocessing
 import os
 import time
 import shutil
@@ -31,49 +30,9 @@ _patch_tinygrad_fetch_fw()
 
 
 from tinygrad.tensor import Tensor
-from tinygrad.helpers import Context, ContextVar
+from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-
-def _tinygrad_compile_worker(args):
-  ast, renderer, context = args
-  from tinygrad.codegen import to_program
-  with Context(**{k:v for k,v in context.items() if k in ContextVar._cache}):
-    return to_program(ast, renderer)
-
-def _patch_tinygrad_parallel_compile():
-  from tinygrad import codegen
-  from tinygrad.engine import realize
-  from tinygrad.uop.ops import Ops
-
-  def program_key(ast, renderer):
-    config = (codegen.NOOPT, codegen.EMULATED_DTYPES, codegen.NOLOCALS, codegen.USE_TC, codegen.IMAGE, codegen.DISABLE_FAST_IDIV,
-              codegen.TRANSCENDENTAL, codegen.ALLOW_TF32, codegen.DEFAULT_FLOAT, codegen.DEFAULT_INT)
-    return (ast.key, type(renderer), renderer.target, *[x.value for x in config])
-
-  orig_compile_linear = realize.compile_linear
-  def compile_linear(linear, beam=None, validate=False, input_uops=None, profile=None):
-    workers = int(os.getenv("PARALLEL_COMPILE", "0"))
-    beam_val = realize.BEAM.value if beam is None else beam
-    assert workers <= 1 or beam_val < 1, "PARALLEL_COMPILE and BEAM cannot be enabled together"
-    if workers > 1:
-      jobs = {}
-      for call in linear.src:
-        if call.op is not Ops.CALL or call.src[0].op not in (Ops.SINK, Ops.PROGRAM):
-          continue
-        renderer = Device[call.device if isinstance(call.device, str) else call.device[0]].renderer
-        if (key:=program_key(call.src[0], renderer)) not in codegen.to_program_cache:
-          jobs.setdefault(key, (call.src[0], renderer))
-      if len(jobs) >= 2:
-        context = {k:v.value for k,v in ContextVar._cache.items()}
-        with multiprocessing.get_context("spawn").Pool(min(workers, len(jobs))) as pool:
-          compiled = pool.map(_tinygrad_compile_worker, ((*item, context) for item in jobs.values()), chunksize=1)
-        codegen.to_program_cache.update(zip(jobs, compiled, strict=True))
-    return orig_compile_linear(linear, beam, validate, input_uops, profile)
-  realize.compile_linear = compile_linear
-
-_patch_tinygrad_parallel_compile()
-
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
 WARP_INPUTS = ['tfm', 'big_tfm']
