@@ -800,8 +800,6 @@ def startStream(sdp: str, enabled: bool) -> dict:
     with car.CarParams.from_bytes(cp_bytes) as CP:
       if CP.notCar:
         bridge_services_in.append("testJoystick")
-  else:
-    raise Exception("failed to get CarParamsPersistent")
 
   if params.get_bool("IsOffroad"):
     # manager owns camerad/stream_encoderd/webrtcd; flip the param and let it bring them up.
