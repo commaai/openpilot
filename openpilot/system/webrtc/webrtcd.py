@@ -335,11 +335,7 @@ class StreamSession:
   async def run(self):
     try:
       self.params.put("LivestreamRequestKeyframe", True)
-      try:
-        await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
-      except TimeoutError:
-        cloudlog.event("webrtcd.session.connection_timeout", session_id=self.identifier, timeout_seconds=15, error=True)
-        raise
+      await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
       if self.stream.has_messaging_channel():
         self.stream.set_message_handler(self.message_handler)
         if self.incoming_bridge is not None:
