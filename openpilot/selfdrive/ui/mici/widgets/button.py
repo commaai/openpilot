@@ -155,9 +155,10 @@ class BigButton(Widget):
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _subtitle_width_hint(self) -> int:
-    # Bottom aligned, so it sits below the icon
+    # Single line if scrolling, so hide behind icon if exists
     # TODO: detect when value wraps with icon to reduce width
-    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+    icon_size = self._txt_icon.width if self._txt_icon and self._scroll and self.value else 0
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
     if len(self.text) <= 18:
@@ -321,7 +322,6 @@ class BigMultiToggle(BigToggle):
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
 
   def _subtitle_width_hint(self) -> int:
-    # Pills stack down the right side, so the value has to make room for them too
     return self._title_width_hint()
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
@@ -371,6 +371,12 @@ class GreyBigButton(BigButton):
   @property
   def LABEL_VERTICAL_PADDING(self):
     return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
+
+  def _title_width_hint(self) -> int:
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+
+  def _subtitle_width_hint(self) -> int:
+    return self._title_width_hint()
 
   def _get_label_font_size(self):
     return 36
