@@ -106,6 +106,7 @@ class BigCircleToggle(BigCircleButton):
 class BigButton(Widget):
   LABEL_HORIZONTAL_PADDING = 40
   LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
+  ICON_PADDING = 30
 
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
@@ -160,8 +161,20 @@ class BigButton(Widget):
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _subtitle_width_hint(self) -> int:
-    # Bottom aligned and the title takes the icon's row, so it never needs to make room for the icon
-    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+    # Bottom aligned, so it usually sits below the icon and can use the full width
+    width = int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+    if not self._txt_icon:
+      return width
+
+    # A tall enough value grows up into the icon, so keep it out of the icon's column instead
+    title_height = self._label.get_content_height(self._title_width_hint())
+    available_height = self._rect.height - self.LABEL_VERTICAL_PADDING * 2 - title_height
+    value_height = min(self._sub_label.get_content_height(width), available_height)
+    value_top = self._rect.height - self.LABEL_VERTICAL_PADDING - value_height
+    if value_top >= self.ICON_PADDING + self._txt_icon.height:
+      return width
+
+    return width - self._txt_icon.width
 
   def _get_label_font_size(self):
     if len(self.text) <= 18:
@@ -253,9 +266,9 @@ class BigButton(Widget):
       if self._rotate_icon_t is not None:
         rotation = (rl.get_time() - self._rotate_icon_t) * 180
 
-      # draw top right with 30px padding
-      x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2
-      y = btn_y + 30 + self._txt_icon.height / 2
+      # draw top right
+      x = self._rect.x + self._rect.width - self.ICON_PADDING - self._txt_icon.width / 2
+      y = btn_y + self.ICON_PADDING + self._txt_icon.height / 2
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
