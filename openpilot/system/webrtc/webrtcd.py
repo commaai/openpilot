@@ -335,9 +335,12 @@ class StreamSession:
   async def run(self):
     try:
       self.params.put("LivestreamRequestKeyframe", True)
+
+      # avoid datachannel race by adding messange_handler immediately
+      self.stream.set_message_handler(self.message_handler)
+
       await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
       if self.stream.has_messaging_channel():
-        self.stream.set_message_handler(self.message_handler)
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
         if self.outgoing_bridge is not None:
