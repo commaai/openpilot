@@ -726,7 +726,7 @@ class LPA(LPABase):
       ]
 
   def get_active_profile(self) -> Profile | None:
-    return None
+    return next((profile for profile in self.list_profiles() if profile.enabled), None)
 
   def process_notifications(self) -> None:
     if not system_time_valid():

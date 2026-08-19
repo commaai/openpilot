@@ -160,6 +160,11 @@ class HardwareComma(HardwareBase):
   def get_imei(self):
     return self.get_modem_state().get('imei', '')
 
+  @lru_cache
+  def _is_comma_sim(self, iccid: str) -> bool:
+    profile = self.get_sim_lpa().get_active_profile()
+    return profile is not None and profile.iccid == iccid and profile.provider == 'Webbing'
+
   def get_network_info(self):
     if self.get_device_type() == "mici":
       return None
@@ -208,7 +213,18 @@ class HardwareComma(HardwareBase):
   def get_network_metered(self, network_type) -> bool:
     if network_type in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
       from openpilot.common.params import Params
-      return Params().get_bool("GsmMetered")
+      metered = Params().get_bool("GsmMetered")
+
+      # comma SIMs are always metered. Match the modem's current ICCID against
+      # the enabled local eSIM profile so this decision works without a network.
+      try:
+        iccid = self.get_modem_state().get('iccid', '')
+        if iccid and self._is_comma_sim(iccid):
+          return True
+      except Exception:
+        pass
+
+      return metered
     try:
       if network_type == NetworkType.wifi:
         ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
