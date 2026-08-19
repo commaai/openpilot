@@ -215,11 +215,9 @@ class WifiManager:
     self._callback_queue: list[Callable] = []
     self._callback_lock = threading.Lock()
     self._state_lock = threading.RLock()
-    # All wpa_supplicant and DHCP station mutations share one serialized owner.
-    self._station_lock = threading.RLock()
-    self._connect_lock = self._station_lock
+    # Serialize wlan0, wpa_supplicant, and DHCP lifecycle changes across STA and AP.
+    self._radio_lock = threading.RLock()
     self._station_cleanup_pending = False
-    self._tethering_lock = threading.RLock()
     self._tethering_epoch = 0
     self._tethering_transition_pending = False
     self._tethering_started = False
@@ -273,7 +271,7 @@ class WifiManager:
             cloudlog.exception("Failed to migrate legacy tethering password")
             self._tethering_psk = DEFAULT_TETHERING_PASSWORD
 
-        with self._tethering_lock:
+        with self._radio_lock:
           self._ensure_wpa_supplicant()
 
           # Load signal strength before rendering the connected network
@@ -296,43 +294,46 @@ class WifiManager:
     return self._store
 
   def _ensure_wpa_supplicant(self):
-    self._dhcp_adoption_ssid = None
-    if not wpa_supplicant_running(WPA_AP_CONF):
-      try:
-        generate_wpa_conf(self._require_store())
-      except Exception:
-        cloudlog.exception("Failed to generate wpa_supplicant configuration")
-        return
+    with self._radio_lock:
+      self._dhcp_adoption_ssid = None
+      if not wpa_supplicant_running(WPA_AP_CONF):
+        try:
+          generate_wpa_conf(self._require_store())
+        except Exception:
+          cloudlog.exception("Failed to generate wpa_supplicant configuration")
+          return
 
-    def station_reconfigured(ssid: str):
-      self._dhcp_adoption_ssid = ssid
-    ctrl = ensure_wpa_supplicant(lambda: self._exit, station_reconfigured,
-                                 on_abandoned_ap=self._clear_tethering_network_state)
-    if ctrl is not None:
-      self._ctrl = ctrl
+      def station_reconfigured(ssid: str):
+        self._dhcp_adoption_ssid = ssid
+      ctrl = ensure_wpa_supplicant(lambda: self._exit, station_reconfigured,
+                                   on_abandoned_ap=self._clear_tethering_network_state)
+      if ctrl is not None:
+        self._ctrl = ctrl
 
   def _consume_dhcp_adoption(self, ssid: str) -> bool:
-    adoption_ssid = self._dhcp_adoption_ssid
-    self._dhcp_adoption_ssid = None
-    if adoption_ssid is not None and adoption_ssid != ssid:
-      self._dhcp.clear_ipv6_state()
-    return adoption_ssid == ssid
+    with self._radio_lock:
+      adoption_ssid = self._dhcp_adoption_ssid
+      self._dhcp_adoption_ssid = None
+      if adoption_ssid is not None and adoption_ssid != ssid:
+        self._dhcp.clear_ipv6_state()
+      return adoption_ssid == ssid
 
   def _request(self, cmd: str) -> str:
-    ctrl = self._ctrl
-    if ctrl is None:
-      raise OSError("wpa_supplicant ctrl not attached")
-    try:
-      return ctrl.request(cmd)
-    except OSError:
-      # Restart the monitor because recv may survive daemon death
+    with self._radio_lock:
+      ctrl = self._ctrl
+      if ctrl is None:
+        raise OSError("wpa_supplicant ctrl not attached")
       try:
-        ctrl.close()
-      except Exception:
-        pass
-      self._ctrl = None
-      self._monitor_epoch += 1
-      raise
+        return ctrl.request(cmd)
+      except OSError:
+        # Restart the monitor because recv may survive daemon death
+        try:
+          ctrl.close()
+        except Exception:
+          pass
+        self._ctrl = None
+        self._monitor_epoch += 1
+        raise
 
   def _init_wifi_state(self, block: bool = True):
     def worker():
@@ -460,16 +461,17 @@ class WifiManager:
       self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
   def _clear_station_state(self):
-    self._dhcp.stop()
-    self._dhcp.clear_ipv6_state()
-    self._ipv4_address = ""
-    self._current_network_metered = MeteredType.UNKNOWN
-    with self._state_lock:
-      self._associated_ssid = None
-      self._associated_epoch = None
+    with self._radio_lock:
+      self._dhcp.stop()
+      self._dhcp.clear_ipv6_state()
+      self._ipv4_address = ""
+      self._current_network_metered = MeteredType.UNKNOWN
+      with self._state_lock:
+        self._associated_ssid = None
+        self._associated_epoch = None
 
   def _prepare_connection(self, epoch: int) -> bool:
-    with self._station_lock:
+    with self._radio_lock:
       with self._state_lock:
         if self._user_epoch != epoch:
           return False
@@ -590,7 +592,7 @@ class WifiManager:
       )
 
   def _complete_station_connection(self, ssid: str, epoch: int):
-    with self._station_lock, self._state_lock:
+    with self._radio_lock, self._state_lock:
       if not self._ipv4_address or not self._connected_transition_is_current(ssid, epoch):
         return
       if self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED):
@@ -640,26 +642,24 @@ class WifiManager:
     attach_failures = 0
     while not self._exit:
       if self._ctrl is None:
-        # Avoid spawning STA while tethering is taking over wlan0
-        if self._tethering_active:
-          self._exit_event.wait(1)
+        with self._radio_lock:
+          # Avoid spawning STA while tethering is taking over wlan0
+          if self._ctrl is None and not self._tethering_active:
+            daemon_alive = wpa_supplicant_running(WPA_SUPPLICANT_CONF) or wpa_supplicant_running(WPA_AP_CONF)
+            stale_daemon = daemon_alive and attach_failures >= ATTACH_FAILURES_BEFORE_RESPAWN
+            if daemon_alive and not stale_daemon:
+              ctrl = try_attach_ctrl()
+              if ctrl is None:
+                attach_failures += 1
+              else:
+                self._ctrl = ctrl
+                attach_failures = 0
+            else:
+              self._ensure_wpa_supplicant()
+              attach_failures = 0
+        if self._ctrl is None:
+          self._exit_event.wait(SCAN_PERIOD_SECONDS)
           continue
-        daemon_alive = wpa_supplicant_running(WPA_SUPPLICANT_CONF) or wpa_supplicant_running(WPA_AP_CONF)
-        stale_daemon = daemon_alive and attach_failures >= ATTACH_FAILURES_BEFORE_RESPAWN
-        if daemon_alive and not stale_daemon:
-          ctrl = try_attach_ctrl()
-          if ctrl is None:
-            attach_failures += 1
-            self._exit_event.wait(SCAN_PERIOD_SECONDS)
-            continue
-          self._ctrl = ctrl
-          attach_failures = 0
-        else:
-          self._ensure_wpa_supplicant()
-          attach_failures = 0
-          if self._ctrl is None:
-            self._exit_event.wait(SCAN_PERIOD_SECONDS)
-            continue
       monitor = None
       try:
         epoch = self._monitor_epoch
@@ -673,12 +673,13 @@ class WifiManager:
       except Exception:
         cloudlog.exception("wpa_supplicant monitor error, reconnecting...")
         # Reattach after control-socket failure
-        if self._ctrl is not None:
-          try:
-            self._ctrl.close()
-          except Exception:
-            pass
-          self._ctrl = None
+        with self._radio_lock:
+          if self._ctrl is not None:
+            try:
+              self._ctrl.close()
+            except Exception:
+              pass
+            self._ctrl = None
       finally:
         if monitor is not None:
           try:
@@ -691,7 +692,7 @@ class WifiManager:
   def _adopt_ap_state(self, ssid: str | None) -> bool:
     """Adopt a hotspot only when its DHCP and NAT services are ready. On refusal,
     tear down its network services so the monitor can recover station mode."""
-    with self._tethering_lock:
+    with self._radio_lock:
       if not (tethering_dnsmasq_running() and _tethering_firewall_ready()):
         cloudlog.warning("AP services are incomplete; refusing adoption and tearing down orphan AP")
         self._stop_tethering()
@@ -739,7 +740,7 @@ class WifiManager:
 
   def _handle_connected(self, ssid: str, adopt_dhcp: bool = False, expected_epoch: int | None = None):
     """Handle L2 association. CONNECTED and activation remain IP-ready states."""
-    with self._station_lock:
+    with self._radio_lock:
       with self._state_lock:
         if expected_epoch is not None and self._user_epoch != expected_epoch:
           return
@@ -840,7 +841,7 @@ class WifiManager:
       event_ssid = parse_event_ssid(event)
       event_network_id = parse_event_network_id(event)
       if event_ssid is not None:
-        with self._connect_lock:
+        with self._radio_lock:
           current_ssid = self._wifi_state.ssid
           # The event SSID is authoritative for auto-connect
           connecting_unknown = (
@@ -947,7 +948,7 @@ class WifiManager:
       return
     self._last_connected_recheck = now
 
-    with self._tethering_lock:
+    with self._radio_lock:
       if self._tethering_transition_pending or not self._tethering_active:
         return
 
@@ -1022,19 +1023,23 @@ class WifiManager:
         return
       if wpa_state == "COMPLETED" and status_ssid:
         # Preserve the lease when adopting a roam missed by the monitor
-        self._dhcp.clear_ipv6_state()
-        self._handle_connected(status_ssid, expected_epoch=epoch)
+        with self._radio_lock:
+          self._dhcp.clear_ipv6_state()
+          self._handle_connected(status_ssid, expected_epoch=epoch)
         return
       # Preserve the lease during transient roam and rekey states
       if wpa_state in ("SCANNING", "AUTHENTICATING", "ASSOCIATING", "ASSOCIATED",
                        "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
         return
-      self._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
-      self._dhcp.stop()
-      self._dhcp.clear_ipv6_state()
-      self._ipv4_address = ""
-      self._current_network_metered = MeteredType.UNKNOWN
-      self._enqueue_callbacks(self._disconnected)
+      with self._radio_lock:
+        if self._user_epoch != epoch:
+          return
+        self._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
+        self._dhcp.stop()
+        self._dhcp.clear_ipv6_state()
+        self._ipv4_address = ""
+        self._current_network_metered = MeteredType.UNKNOWN
+        self._enqueue_callbacks(self._disconnected)
       return
 
     if current_state.status != ConnectStatus.CONNECTING:
@@ -1065,7 +1070,7 @@ class WifiManager:
       self._last_scanning_recheck = time.monotonic()
     elif wpa_state in ("DISCONNECTED", "INACTIVE", "SCANNING", "AUTHENTICATING", "ASSOCIATING",
                       "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
-      with self._connect_lock:
+      with self._radio_lock:
         with self._state_lock:
           if self._user_epoch != epoch:
             return
@@ -1211,13 +1216,17 @@ class WifiManager:
       cloudlog.warning(f"Ignoring open-network connect to {ssid!r} with a passphrase")
       return
     with self._state_lock:
-      self._station_cleanup_pending |= self._wifi_state.status == ConnectStatus.CONNECTED or self._dhcp_adoption_ssid is not None
+      self._station_cleanup_pending |= (
+        self._associated_ssid is not None
+        or self._wifi_state.status == ConnectStatus.CONNECTED
+        or self._dhcp_adoption_ssid is not None
+      )
       self._set_connecting(ssid)
       self._set_pending_connection(ssid, password, hidden, security)
       epoch = self._user_epoch
 
     def worker():
-      with self._connect_lock:
+      with self._radio_lock:
         if not self._prepare_connection(epoch):
           return
         if self._ctrl is None:
@@ -1295,7 +1304,7 @@ class WifiManager:
       if not removed:
         cloudlog.warning(f"Trying to forget unknown connection: {ssid}")
 
-      with self._connect_lock:
+      with self._radio_lock:
         try:
           generate_wpa_conf(store)
         except Exception:
@@ -1321,7 +1330,7 @@ class WifiManager:
       self._enqueue_callbacks(self._forgotten, ssid)
 
     def worker():
-      with self._connect_lock:
+      with self._radio_lock:
         transition()
 
     if block:
@@ -1334,13 +1343,17 @@ class WifiManager:
       cloudlog.warning(f"Ignoring activate {ssid!r} while tethering is active")
       return
     with self._state_lock:
-      self._station_cleanup_pending |= self._wifi_state.status == ConnectStatus.CONNECTED or self._dhcp_adoption_ssid is not None
+      self._station_cleanup_pending |= (
+        self._associated_ssid is not None
+        or self._wifi_state.status == ConnectStatus.CONNECTED
+        or self._dhcp_adoption_ssid is not None
+      )
       self._set_connecting(ssid, kind=StationOperationKind.ACTIVATE)
       self._clear_pending_connection()
       epoch = self._user_epoch
 
     def worker():
-      with self._connect_lock:
+      with self._radio_lock:
         if not self._prepare_connection(epoch):
           return
         if self._ctrl is None:
@@ -1513,7 +1526,7 @@ class WifiManager:
             self._enqueue_callbacks(self._disconnected)
 
     def worker():
-      with self._tethering_lock:
+      with self._radio_lock:
         if self._tethering_password_epoch == epoch:
           transition()
     threading.Thread(target=worker, daemon=True).start()
@@ -1526,7 +1539,7 @@ class WifiManager:
       raise RuntimeError(f"Failed to set net.ipv4.ip_forward={value} (actual={actual!r})")
 
   def set_ipv4_forward(self, enabled: bool):
-    with self._tethering_lock:
+    with self._radio_lock:
       self._ipv4_forward = enabled
       if self._tethering_active:
         self._apply_ipv4_forward(enabled)
@@ -1567,7 +1580,7 @@ class WifiManager:
           self._enqueue_callbacks(self._disconnected)
 
     def worker():
-      with self._tethering_lock:
+      with self._radio_lock:
         if self._tethering_epoch == epoch:
           try:
             transition()

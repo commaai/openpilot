@@ -174,6 +174,34 @@ class TestConnectionState(TestCase):
     assert self.manager._pending_connection.ssid == "NextNet"
     self.manager._dhcp.start.assert_called_once()
 
+  def test_connect_cleans_dhcp_when_superseding_an_association(self):
+    self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTING)
+    self.manager._associated_ssid = "CurrentNet"
+    self.manager._associated_epoch = self.manager._user_epoch
+
+    with (
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_add_and_select_network", return_value="1"),
+    ):
+      self.manager.connect_to_network("NextNet", "next-password")
+      thread.call_args.kwargs["target"]()
+
+    self.manager._dhcp.stop.assert_called_once()
+
+  def test_activate_cleans_dhcp_when_superseding_an_association(self):
+    self.manager._wifi_state = WifiState("CurrentNet", ConnectStatus.CONNECTING)
+    self.manager._associated_ssid = "CurrentNet"
+    self.manager._associated_epoch = self.manager._user_epoch
+
+    with (
+      patch.object(self.manager, "_list_network_ids", return_value=["1"]),
+      patch.object(self.manager, "_select_network_ids"),
+    ):
+      self.manager.activate_connection("NextNet", block=True)
+
+    self.manager._dhcp.stop.assert_called_once()
+
   def test_pending_persistence_is_retried_without_restarting_dhcp(self):
     for retry in ("connected", "reconcile"):
       with self.subTest(retry=retry):
@@ -293,7 +321,7 @@ class TestConnectionState(TestCase):
       def __exit__(self, *_):
         lock.release()
 
-    self.manager.__dict__["_station_lock"] = SignalingLock()
+    self.manager.__dict__["_radio_lock"] = SignalingLock()
     worker = threading.Thread(target=self.manager._handle_event, args=("CTRL-EVENT-CONNECTED",))
     worker.start()
     assert waiting_for_lock.wait(1)
@@ -1570,6 +1598,32 @@ class TestLifecycle(TestCase):
 
 
 class TestTetheringTransitions(TestCase):
+  def test_station_transition_does_not_overlap_tethering_start(self):
+    manager = build_wifi_manager()
+    station_entered = threading.Event()
+    release_station = threading.Event()
+    tethering_entered = threading.Event()
+
+    def add_station_network(*_args, **_kwargs):
+      station_entered.set()
+      assert release_station.wait(1)
+      return "1"
+
+    with (
+      patch.object(manager, "_list_network_ids", return_value=[]),
+      patch.object(manager, "_add_and_select_network", side_effect=add_station_network),
+      patch.object(manager, "_start_tethering", side_effect=lambda: tethering_entered.set()),
+    ):
+      manager.connect_to_network("Station", "station-password")
+      assert station_entered.wait(1)
+
+      manager.set_tethering_active(True)
+      try:
+        assert not tethering_entered.wait(0.1)
+      finally:
+        release_station.set()
+      assert tethering_entered.wait(1)
+
   def test_hotspot_adoption_does_not_overlap_tethering_transition(self):
     manager = build_wifi_manager()
     start_entered = threading.Event()
