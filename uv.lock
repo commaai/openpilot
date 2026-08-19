@@ -675,7 +675,7 @@ requires-dist = [
     { name = "rednose", marker = "extra == 'submodules'", editable = "rednose_repo" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
-    { name = "scons" },
+    { name = "scons", specifier = "==4.10.1" },
     { name = "sentry-sdk" },
     { name = "setproctitle" },
     { name = "sounddevice" },
@@ -923,11 +923,11 @@ wheels = [
 
 [[package]]
 name = "scons"
-version = "4.11.0"
+version = "4.10.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/dd/82/3c4e089ac8df2eaee8a7f14e489b2a76f94f4c1d8defa4e46c8ad15cae86/scons-4.11.0.tar.gz", hash = "sha256:5ba48f9e2eb6b9178cabdc9893792418e6970c84f43f4b027e4468e20616a89c", size = 3269126, upload-time = "2026-08-11T04:29:45.62Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/c9/2f430bb39e4eccba32ce8008df4a3206df651276422204e177a09e12b30b/scons-4.10.1.tar.gz", hash = "sha256:99c0e94a42a2c1182fa6859b0be697953db07ba936ecc9817ae0d218ced20b15", size = 3258403, upload-time = "2025-11-16T22:43:39.258Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/ac/a4445bbbd58a5fa6a5c8b3b0458ffbee04e4acaff87677058eab9c6af682/scons-4.11.0-py3-none-any.whl", hash = "sha256:2edc077aaeafc43377ba46ce1fa3e7b40edea59c62db9ef7e39e07dc88b754fa", size = 4123742, upload-time = "2026-08-11T04:29:42.881Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/bf/931fb9fbb87234c32b8b1b1c15fba23472a10777c12043336675633809a7/scons-4.10.1-py3-none-any.whl", hash = "sha256:bd9d1c52f908d874eba92a8c0c0a8dcf2ed9f3b88ab956d0fce1da479c4e7126", size = 4136069, upload-time = "2025-11-16T22:43:35.933Z" },
 ]
 
 [[package]]
