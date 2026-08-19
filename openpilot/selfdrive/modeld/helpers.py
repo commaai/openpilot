@@ -21,10 +21,6 @@ def modeld_pkl_path(usbgpu: bool):
   prefix = 'big_' if usbgpu else ''
   return MODELS_DIR / f'{prefix}driving_tinygrad.pkl'
 
-def big_model_source_available() -> bool:
-  model_path = MODELS_DIR / 'big_driving_supercombo.onnx'
-  return model_path.is_file() and model_path.stat().st_size >= 1024
-
 def dump_oob(obj, f):
   with tempfile.TemporaryFile(dir=".") as tmp:
     def buffer_callback(pb: pickle.PickleBuffer):
