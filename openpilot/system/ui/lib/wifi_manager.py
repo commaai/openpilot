@@ -591,12 +591,49 @@ class WifiManager:
         and self._associated_epoch == epoch
       )
 
-  def _complete_station_connection(self, ssid: str, epoch: int):
+  def _wifi_default_route_ready(self) -> bool:
+    try:
+      result = subprocess.run(
+        ["ip", "-4", "route", "show", "default", "dev", "wlan0"],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=2,
+      )
+    except (OSError, subprocess.TimeoutExpired):
+      return False
+    if result.returncode != 0:
+      return False
+
+    routes = [line.split() for line in result.stdout.splitlines() if line.strip()]
+    if len(routes) != 1:
+      return False
+
+    route = routes[0]
+    try:
+      via_index = route.index("via")
+      dev_index = route.index("dev")
+      metric_index = route.index("metric")
+    except ValueError:
+      return False
+    return (
+      route[0] == "default"
+      and via_index + 1 < len(route)
+      and route[via_index + 1] not in ("dev", "metric")
+      and dev_index + 1 < len(route)
+      and route[dev_index + 1] == "wlan0"
+      and metric_index + 1 < len(route)
+      and route[metric_index + 1] == "600"
+    )
+
+  def _complete_station_connection(self, ssid: str, epoch: int) -> bool:
     with self._radio_lock, self._state_lock:
       if not self._ipv4_address or not self._connected_transition_is_current(ssid, epoch):
-        return
+        return False
+      if not self._wifi_default_route_ready():
+        return False
       if self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED):
-        return
+        return True
       self._requested_ssid = None
       self._last_connecting_at = 0.0
       self._last_scanning_recheck = 0.0
@@ -604,6 +641,7 @@ class WifiManager:
       self._network_not_found_events = 0
       self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTED)
       self._enqueue_callbacks(self._activated)
+      return True
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     with self._callback_lock:
@@ -1151,8 +1189,7 @@ class WifiManager:
         if ssid is None or not self._connected_transition_is_current(ssid, epoch):
           return
         self._update_active_connection_info()
-        if self._ipv4_address:
-          self._complete_station_connection(ssid, epoch)
+        if self._ipv4_address and self._complete_station_connection(ssid, epoch):
           return
         time.sleep(0.2)
     threading.Thread(target=worker, daemon=True).start()

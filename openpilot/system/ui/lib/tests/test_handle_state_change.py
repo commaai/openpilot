@@ -40,6 +40,7 @@ def build_wifi_manager() -> WifiManager:
   manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
   manager._update_active_connection_info = MagicMock()
   manager._poll_for_ip = MagicMock()
+  manager._wifi_default_route_ready = MagicMock(return_value=True)
   manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=TestNet\n"
   return manager
 def complete_station_connection(manager: WifiManager, ssid: str):
@@ -97,6 +98,71 @@ class TestConnectionState(TestCase):
     assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
     assert self.manager.connected_ssid == "TestNet"
     activated.assert_called_once()
+
+  def test_connected_waits_for_metric_600_default_route(self):
+    activated = MagicMock()
+    self.manager.add_callbacks(activated=activated)
+    self.manager._set_connecting("TestNet")
+    epoch = self.manager._user_epoch
+    self.manager._associated_ssid = "TestNet"
+    self.manager._associated_epoch = epoch
+    self.manager._ipv4_address = "192.168.1.20"
+    self.manager._wifi_default_route_ready.return_value = False
+
+    self.manager._complete_station_connection("TestNet", epoch)
+    self.manager.process_callbacks()
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    activated.assert_not_called()
+
+    self.manager._wifi_default_route_ready.return_value = True
+    self.manager._complete_station_connection("TestNet", epoch)
+    self.manager.process_callbacks()
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    activated.assert_called_once()
+
+  def test_ip_poll_continues_until_default_route_is_ready(self):
+    self.manager._set_connecting("TestNet")
+    epoch = self.manager._user_epoch
+    self.manager._associated_ssid = "TestNet"
+    self.manager._associated_epoch = epoch
+    self.manager._ipv4_address = "192.168.1.20"
+    self.manager._wifi_default_route_ready.side_effect = [False, True]
+
+    with (
+      patch.object(wifi_manager_module.threading, "Thread") as thread,
+      patch.object(wifi_manager_module.time, "sleep"),
+    ):
+      WifiManager._poll_for_ip(self.manager, "TestNet", epoch)
+      thread.call_args.kwargs["target"]()
+
+    assert self.manager._update_active_connection_info.call_count == 2
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+
+  def test_wifi_default_route_ready_requires_one_metric_600_gateway(self):
+    cases = (
+      ("default via 192.168.1.1 dev wlan0 metric 600\n", True),
+      ("", False),
+      ("default via 192.168.1.1 dev wlan0 metric 0\n", False),
+      ("default dev wlan0 metric 600\n", False),
+      (
+        "default via 192.168.1.1 dev wlan0 metric 600\ndefault via 192.168.1.2 dev wlan0 metric 600\n",
+        False,
+      ),
+    )
+    for output, expected in cases:
+      with self.subTest(output=output):
+        result = MagicMock(returncode=0, stdout=output)
+        with patch.object(wifi_manager_module.subprocess, "run", return_value=result) as run:
+          assert WifiManager._wifi_default_route_ready(self.manager) is expected
+        run.assert_called_once_with(
+          ["ip", "-4", "route", "show", "default", "dev", "wlan0"],
+          capture_output=True,
+          check=False,
+          text=True,
+          timeout=2,
+        )
 
 
   def test_connected_transitions_are_serialized(self):
