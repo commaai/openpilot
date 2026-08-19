@@ -14,7 +14,7 @@ MAX_LATERAL_JERK = 5.0  # m/s^3
 MAX_LATERAL_ACCEL_NO_ROLL = 3.0  # m/s^2
 
 
-STOPPING_SPEED = 0.25  # m/s, speed at which the car goes into the stopping state
+STOPPING_SPEED = 0.25  # m/s
 
 
 def should_stop(v_ego: float, a_target: float) -> bool:
