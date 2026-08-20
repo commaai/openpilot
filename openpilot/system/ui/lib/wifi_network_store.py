@@ -589,11 +589,58 @@ class NetworkStore:
           continue
     return profiles
 
+  def _create_tethering_profile(self, ssid: str, password: str) -> bool:
+    if not is_valid_ssid(ssid) or not is_valid_psk(password):
+      return False
+
+    file_uuid = str(uuid.uuid4())
+    cp = configparser.ConfigParser(interpolation=None)
+    cp["connection"] = {
+      "id": "Hotspot",
+      "uuid": file_uuid,
+      "type": "wifi",
+      "interface-name": "wlan0",
+      "autoconnect": "false",
+      "autoconnect-retries": "0",
+    }
+    cp["wifi"] = {
+      "ssid": _encode_keyfile_ssid(ssid),
+      "mode": "ap",
+      "band": "bg",
+    }
+    cp["wifi-security"] = {
+      "key-mgmt": "wpa-psk",
+      "psk": _encode_keyfile_string(password),
+      "group": "ccmp;",
+      "pairwise": "ccmp;",
+      "proto": "rsn;",
+    }
+    cp["ipv4"] = {
+      "method": "shared",
+      "address1": "192.168.43.1/24",
+      "never-default": "true",
+    }
+    cp["ipv6"] = {
+      "method": "ignore",
+      "addr-gen-mode": "default",
+    }
+    cp["proxy"] = {}
+
+    subprocess.run(["sudo", "install", "-d", "-o", "root", "-g", "root", "-m", "700", self._directory], check=True)
+    self._install_keyfile(cp, os.path.join(self._directory, _canonical_filename(file_uuid, ssid)))
+    return True
+
+  def ensure_tethering_profile(self, ssid: str, password: str) -> bool:
+    with self._mutation_lock:
+      if self._tethering_profiles(ssid):
+        return True
+      return self._create_tethering_profile(ssid, password)
+
   def set_tethering_password(self, ssid: str, password: str) -> bool:
     with self._mutation_lock:
       profiles = self._tethering_profiles(ssid)
       if not profiles:
-        return False
+        return self._create_tethering_profile(ssid, password)
 
       cp, source_directory, source_filename, file_uuid = profiles[0]
       security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")

@@ -1,3 +1,4 @@
+import configparser
 import os
 import shutil
 import tempfile
@@ -372,6 +373,27 @@ method=ignore
       store = self.make_store()
       assert store.get_tethering_password("weedle") == "custom-password"
     assert store.get("weedle") is None
+
+  def test_creates_tethering_profile_in_empty_store(self):
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      assert store.ensure_tethering_profile("weedle", "fresh-password")
+
+    paths = list(Path(self.persistent).glob("*.nmconnection"))
+    assert len(paths) == 1
+    cp = configparser.ConfigParser(interpolation=None)
+    cp.read(paths[0])
+    assert cp.get("connection", "id") == "Hotspot"
+    assert cp.get("connection", "interface-name") == "wlan0"
+    assert not cp.getboolean("connection", "autoconnect")
+    assert cp.get("wifi", "ssid") == store_module._encode_keyfile_ssid("weedle")
+    assert cp.get("wifi", "mode") == "ap"
+    assert cp.get("wifi-security", "key-mgmt") == "wpa-psk"
+    assert cp.get("wifi-security", "psk") == "fresh-password"
+    assert cp.get("ipv4", "method") == "shared"
+    assert cp.get("ipv4", "address1") == "192.168.43.1/24"
+    assert cp.get("ipv6", "method") == "ignore"
+    assert store.get_tethering_password("weedle") == "fresh-password"
 
   def test_updates_persistent_tethering_password(self):
     path = Path(write_profile(self.persistent, "hotspot.nmconnection", "weedle", psk="old-password", mode="ap"))

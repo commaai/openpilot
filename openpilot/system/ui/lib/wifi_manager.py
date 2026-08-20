@@ -271,6 +271,12 @@ class WifiManager:
             cloudlog.exception("Failed to migrate legacy tethering password")
             self._tethering_psk = DEFAULT_TETHERING_PASSWORD
 
+        try:
+          if not store.ensure_tethering_profile(self._tethering_ssid, self._tethering_psk):
+            cloudlog.warning("Failed to create durable tethering profile")
+        except Exception:
+          cloudlog.exception("Failed to create durable tethering profile")
+
         with self._radio_lock:
           self._ensure_wpa_supplicant()
 

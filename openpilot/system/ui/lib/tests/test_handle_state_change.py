@@ -1496,6 +1496,7 @@ class TestLifecycle(TestCase):
     network_store.assert_called_once()
     assert manager._store is store
     assert manager.tethering_password == "custom-password"
+    store.ensure_tethering_profile.assert_called_once_with("Hotspot", "custom-password")
 
   def test_initial_config_failure_recovers_without_restart(self):
     manager = build_wifi_manager()
