@@ -24,6 +24,7 @@ class DhcpClient:
     self._adopted = False
     self._client_thread: threading.Thread | None = None
     self._client_stop = threading.Event()
+    self._ipv6_enabled: bool | None = None
 
   def _start_client_thread(self):
     self._client_stop.clear()
@@ -90,6 +91,18 @@ class DhcpClient:
           cloudlog.warning(f"Failed to clear {self._iface} IPv6 state (rc={result.returncode})")
       except OSError:
         cloudlog.exception(f"Failed to clear {self._iface} IPv6 state")
+
+  def set_ipv6_enabled(self, enabled: bool):
+    if self._ipv6_enabled == enabled:
+      return
+    disabled = "0" if enabled else "1"
+    subprocess.run(["sudo", "sysctl", f"net.ipv6.conf.{self._iface}.disable_ipv6={disabled}"], check=True)
+    actual = Path(f"/proc/sys/net/ipv6/conf/{self._iface}/disable_ipv6").read_text().strip()
+    if actual != disabled:
+      raise RuntimeError(f"Failed to set IPv6 enabled={enabled} on {self._iface} (actual={actual!r})")
+    self._ipv6_enabled = enabled
+    if not enabled:
+      self.clear_ipv6_state()
 
   def _spawn(self) -> bool:
     if not os.access(DHCP_DEFAULT_SCRIPT, os.X_OK):

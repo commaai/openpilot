@@ -1,5 +1,6 @@
 import threading
 import time
+import uuid
 from typing import cast
 from unittest import TestCase
 from unittest.mock import MagicMock, call, mock_open, patch
@@ -98,6 +99,30 @@ class TestConnectionState(TestCase):
     assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
     assert self.manager.connected_ssid == "TestNet"
     activated.assert_called_once()
+
+  def test_connected_applies_active_profile_ipv6_policy(self):
+    for method, enabled in (("auto", True), ("ignore", False)):
+      with self.subTest(method=method):
+        manager = build_wifi_manager()
+        manager._set_connecting("TestNet")
+        profile_uuid = str(uuid.uuid4())
+        manager._store.get_ipv6_method.return_value = method
+
+        manager._handle_connected("TestNet", profile_uuid=profile_uuid)
+
+        manager._store.get_ipv6_method.assert_called_once_with("TestNet", profile_uuid)
+        manager._dhcp.set_ipv6_enabled.assert_called_once_with(enabled)
+        manager._dhcp.start.assert_called_once()
+
+  def test_connected_retries_after_ipv6_policy_failure(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._dhcp.set_ipv6_enabled.side_effect = OSError("sysctl failed")
+
+    self.manager._handle_connected("TestNet")
+
+    assert self.manager._associated_ssid is None
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    self.manager._dhcp.start.assert_not_called()
 
   def test_connected_waits_for_metric_600_default_route(self):
     activated = MagicMock()

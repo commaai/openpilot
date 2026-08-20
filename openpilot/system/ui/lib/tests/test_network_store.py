@@ -208,6 +208,7 @@ method=ignore
       store = self.make_store()
 
     assert require_entry(store, "SavedNet")["psk"] == "password123"
+    assert store.get_ipv6_method("SavedNet", profile_uuid("SavedNet")) == "ignore"
 
   def test_skips_profiles_with_invalid_uuids(self):
     write_profile(self.persistent, "station.nmconnection", "Station", file_uuid="../../station", valid_uuid=False)

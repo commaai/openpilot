@@ -381,7 +381,7 @@ class WifiManager:
 
       if connection_status == ConnectStatus.CONNECTED and ssid is not None:
         adopt_dhcp = self._consume_dhcp_adoption(ssid)
-        self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch)
+        self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch, profile_uuid=status.get("id_str"))
       else:
         if connection_status == ConnectStatus.CONNECTING and self._last_connecting_at == 0.0:
           self._last_connecting_at = time.monotonic()
@@ -783,7 +783,8 @@ class WifiManager:
       cloudlog.exception("Failed to read running AP configuration")
       return False
 
-  def _handle_connected(self, ssid: str, adopt_dhcp: bool = False, expected_epoch: int | None = None):
+  def _handle_connected(self, ssid: str, adopt_dhcp: bool = False, expected_epoch: int | None = None,
+                        profile_uuid: str | None = None):
     """Handle L2 association. CONNECTED and activation remain IP-ready states."""
     with self._radio_lock:
       with self._state_lock:
@@ -794,15 +795,17 @@ class WifiManager:
         transition_epoch = self._user_epoch
         already_associated = self._connected_transition_is_current(ssid, transition_epoch)
         already_connected = self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
+        previous_operation = self._station_operation
         if not already_associated:
           self._associated_ssid = ssid
           self._associated_epoch = transition_epoch
           pending = self._pending_connection
+          active_profile_uuid = profile_uuid or (pending.profile_uuid if pending is not None and pending.ssid == ssid else None)
           self._station_operation = StationOperation(
             transition_epoch,
             StationOperationKind.ASSOCIATED,
             ssid,
-            profile_uuid=pending.profile_uuid if pending is not None and pending.ssid == ssid else None,
+            profile_uuid=active_profile_uuid,
             runtime_network_id=pending.network_id if pending is not None and pending.ssid == ssid else None,
           )
           self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
@@ -815,6 +818,17 @@ class WifiManager:
         return
 
       if not already_associated:
+        try:
+          ipv6_method = self._store.get_ipv6_method(ssid, active_profile_uuid) if self._store is not None else "auto"
+          self._dhcp.set_ipv6_enabled(ipv6_method != "ignore")
+        except Exception:
+          cloudlog.exception("Failed to apply IPv6 policy for %s", ssid)
+          with self._state_lock:
+            if self._connected_transition_is_current(ssid, transition_epoch):
+              self._associated_ssid = None
+              self._associated_epoch = None
+              self._station_operation = previous_operation
+          return
         if not adopt_dhcp or not self._dhcp.adopt():
           self._ipv4_address = ""
           self._dhcp.start()
@@ -853,7 +867,7 @@ class WifiManager:
       ssid = status.get("ssid")
       if ssid:
         adopt_dhcp = self._consume_dhcp_adoption(ssid)
-        self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch)
+        self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch, profile_uuid=status.get("id_str"))
 
     elif "CTRL-EVENT-DISCONNECTED" in event:
       if self._tethering_active:
@@ -1045,7 +1059,7 @@ class WifiManager:
         # Keep an incomplete AP disconnected so tethering can recover
         return
       if status.get("wpa_state") == "COMPLETED" and status.get("ssid"):
-        self._handle_connected(status["ssid"], expected_epoch=epoch)
+        self._handle_connected(status["ssid"], expected_epoch=epoch, profile_uuid=status.get("id_str"))
       return
 
     # Rate-limit recovery from missed DISCONNECTED events
@@ -1065,13 +1079,13 @@ class WifiManager:
       wpa_state = status.get("wpa_state", "")
       status_ssid = status.get("ssid")
       if wpa_state == "COMPLETED" and status_ssid is not None and status_ssid == current_state.ssid:
-        self._handle_connected(status_ssid, expected_epoch=epoch)
+        self._handle_connected(status_ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
         return
       if wpa_state == "COMPLETED" and status_ssid:
         # Preserve the lease when adopting a roam missed by the monitor
         with self._radio_lock:
           self._dhcp.clear_ipv6_state()
-          self._handle_connected(status_ssid, expected_epoch=epoch)
+          self._handle_connected(status_ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
         return
       # Preserve the lease during transient roam and rekey states
       if wpa_state in ("SCANNING", "AUTHENTICATING", "ASSOCIATING", "ASSOCIATED",
@@ -1110,7 +1124,7 @@ class WifiManager:
     status_ssid = status.get("ssid")
 
     if wpa_state == "COMPLETED" and status_ssid:
-      self._handle_connected(status_ssid, expected_epoch=epoch)
+      self._handle_connected(status_ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
     elif wpa_state == "SCANNING" and self._network_not_found_epoch != epoch:
       # Hidden SSIDs may remain SCANNING beyond the stale timeout
       self._last_scanning_recheck = time.monotonic()

@@ -879,6 +879,14 @@ class NetworkStore:
           return MeteredType.NO
     return MeteredType.UNKNOWN
 
+  def get_ipv6_method(self, ssid: str, profile_uuid: str | None = None) -> str:
+    with self._lock:
+      if profile_uuid is None:
+        entry = self._networks.get(ssid)
+      else:
+        entry = next((profile for profile in self._profiles.get(ssid, []) if profile.get("uuid") == profile_uuid), None)
+      return entry.get("_ipv6", {}).get("method", "auto").lower() if entry is not None else "auto"
+
   def contains(self, ssid: str) -> bool:
     with self._lock:
       return ssid in self._networks

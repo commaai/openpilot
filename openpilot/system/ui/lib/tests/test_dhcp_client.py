@@ -242,3 +242,25 @@ fi
       client.clear_ipv6_state()
 
     warning.assert_not_called()
+
+  def test_ipv6_policy_is_applied_once_per_value(self):
+    client = DhcpClient()
+    with (
+      patch.object(dhcp_client_module.subprocess, "run") as run,
+      patch.object(Path, "read_text", return_value="1\n"),
+      patch.object(client, "clear_ipv6_state") as clear_ipv6_state,
+    ):
+      client.set_ipv6_enabled(False)
+      client.set_ipv6_enabled(False)
+
+    run.assert_called_once_with(["sudo", "sysctl", "net.ipv6.conf.wlan0.disable_ipv6=1"], check=True)
+    clear_ipv6_state.assert_called_once()
+
+  def test_ipv6_policy_verifies_kernel_state(self):
+    client = DhcpClient()
+    with (
+      patch.object(dhcp_client_module.subprocess, "run"),
+      patch.object(Path, "read_text", return_value="1\n"),
+    ):
+      with self.assertRaisesRegex(RuntimeError, "actual='1'"):
+        client.set_ipv6_enabled(True)
