@@ -118,6 +118,22 @@ class TestNetworkStore(TestCase):
     assert not remnant.exists()
     assert store.contains("Saved")
 
+  def test_startup_deletes_committed_forget_stage(self):
+    original = Path(write_profile(self.persistent, "saved.nmconnection", "Saved", file_uuid="saved"))
+    token = "c" * 32
+    remnant = Path(f"{original}.openpilot-forget-{token}")
+    marker = Path(self.persistent, f".openpilot-forget-committed-{token}")
+    original.replace(remnant)
+    marker.touch()
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+
+    assert not original.exists()
+    assert not remnant.exists()
+    assert not marker.exists()
+    assert not store.contains("Saved")
+
   def test_loads_persistent_and_open_profiles(self):
     write_profile(self.persistent, "secure.nmconnection", "Secure")
     write_profile(self.persistent, "open.nmconnection", "Open", psk=None)
@@ -828,6 +844,36 @@ network:
     assert first_path.exists()
     assert second_path.exists()
     assert store.contains("Duplicate")
+
+  def test_forget_cleanup_failure_does_not_resurrect_profile(self):
+    first_path = Path(write_profile(self.persistent, "a.nmconnection", "Duplicate", file_uuid="first-uuid"))
+    second_path = Path(write_profile(self.persistent, "b.nmconnection", "Duplicate", file_uuid="second-uuid"))
+    cleanup_failed = False
+
+    def run(command, **kwargs):
+      nonlocal cleanup_failed
+      if command[:3] == ["sudo", "rm", "-f"] and ".openpilot-forget-" in command[-1] and not cleanup_failed:
+        cleanup_failed = True
+        return MagicMock(returncode=1)
+      return self.run_file_command(command, **kwargs)
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run):
+      store = self.make_store()
+      assert store.remove("Duplicate")
+
+    assert cleanup_failed
+    assert not first_path.exists()
+    assert not second_path.exists()
+    assert not store.contains("Duplicate")
+    assert list(Path(self.persistent).glob("*.openpilot-forget-*"))
+    assert list(Path(self.persistent).glob(".openpilot-forget-committed-*"))
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      recovered = self.make_store()
+
+    assert not recovered.contains("Duplicate")
+    assert not list(Path(self.persistent).glob("*.openpilot-forget-*"))
+    assert not list(Path(self.persistent).glob(".openpilot-forget-committed-*"))
 
   def test_edit_runtime_profile_installs_keyfile_before_removing_netplan(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")

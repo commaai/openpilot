@@ -32,7 +32,9 @@ _SUPPORTED_IPV4_OPTIONS = {"method", "dns-priority"}
 _SUPPORTED_IPV6_OPTIONS = {"method", "addr-gen-mode"}
 # Preserve NetworkManager's DNS priority for rollback compatibility
 _OPENPILOT_DNS_PRIORITY = "600"
-_TRANSACTION_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-(?:update|forget)-[0-9a-f]{32}$")
+_UPDATE_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-update-[0-9a-f]{32}$")
+_FORGET_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-forget-(?P<token>[0-9a-f]{32})$")
+_FORGET_COMMIT_MARKER_RE = re.compile(r"^\.openpilot-forget-committed-(?P<token>[0-9a-f]{32})$")
 
 
 class MeteredType(IntEnum):
@@ -118,30 +120,57 @@ class NetworkStore:
     self._load()
 
   def _recover_transaction_remnants(self):
-    directories = dict.fromkeys((
+    directories = list(dict.fromkeys((
       self._directory,
       self._runtime_directory,
       self._netplan_directory,
-    ))
+    )))
+    directory_filenames: dict[str, list[str]] = {}
+    recovery_complete = True
     for directory in directories:
       if directory is None:
         continue
       try:
-        filenames = sorted(os.listdir(directory))
+        directory_filenames[directory] = sorted(os.listdir(directory))
       except OSError:
-        continue
+        if directory == self._directory:
+          return
+        recovery_complete = False
+
+    committed_markers = {
+      match.group("token"): os.path.join(self._directory, filename)
+      for filename in directory_filenames.get(self._directory, [])
+      if (match := _FORGET_COMMIT_MARKER_RE.fullmatch(filename)) is not None
+    }
+    committed_cleanup_failed: set[str] = set()
+    for directory, filenames in directory_filenames.items():
       for filename in filenames:
-        match = _TRANSACTION_REMNANT_RE.fullmatch(filename)
-        if match is None:
+        update_match = _UPDATE_REMNANT_RE.fullmatch(filename)
+        forget_match = _FORGET_REMNANT_RE.fullmatch(filename)
+        if update_match is None and forget_match is None:
           continue
         remnant_path = os.path.join(directory, filename)
+        match = update_match or forget_match
+        assert match is not None
         original_path = os.path.join(directory, match.group("original"))
-        command = ["sudo", "rm", "-f", remnant_path] if os.path.exists(original_path) else [
+        forget_committed = forget_match is not None and forget_match.group("token") in committed_markers
+        command = ["sudo", "rm", "-f", remnant_path] if forget_committed or os.path.exists(original_path) else [
           "sudo", "mv", "-f", remnant_path, original_path,
         ]
         result = subprocess.run(command, check=False)
         if result.returncode != 0:
           cloudlog.warning(f"NetworkStore: failed to recover transaction remnant {remnant_path} (rc={result.returncode})")
+          if forget_committed:
+            assert forget_match is not None
+            committed_cleanup_failed.add(forget_match.group("token"))
+
+    if recovery_complete:
+      for token, marker_path in committed_markers.items():
+        if token in committed_cleanup_failed:
+          continue
+        result = subprocess.run(["sudo", "rm", "-f", marker_path], check=False)
+        if result.returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to clean up forget commit marker {marker_path} (rc={result.returncode})")
 
   def _load(self):
     self._networks = {}
@@ -732,10 +761,29 @@ class NetworkStore:
                 cloudlog.warning(f"NetworkStore: failed to roll back {original_path} (rc={rollback.returncode})")
             return False
           staged_paths.append((p, staged_path))
+
+        commit_marker = os.path.join(self._directory, f".openpilot-forget-committed-{token}")
+        result = subprocess.run([
+          "sudo", "install", "-o", "root", "-g", "root", "-m", "600", "/dev/null", commit_marker,
+        ], check=False)
+        if result.returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to commit removal of {ssid!r} (rc={result.returncode})")
+          for original_path, rollback_path in reversed(staged_paths):
+            rollback = subprocess.run(["sudo", "mv", "-f", rollback_path, original_path], check=False)
+            if rollback.returncode != 0:
+              cloudlog.warning(f"NetworkStore: failed to roll back {original_path} (rc={rollback.returncode})")
+          return False
+
+        cleanup_failed = False
         for _, staged_path in staged_paths:
           result = subprocess.run(["sudo", "rm", "-f", staged_path], check=False)
           if result.returncode != 0:
+            cleanup_failed = True
             cloudlog.warning(f"NetworkStore: failed to clean up staged profile {staged_path} (rc={result.returncode})")
+        if not cleanup_failed:
+          result = subprocess.run(["sudo", "rm", "-f", commit_marker], check=False)
+          if result.returncode != 0:
+            cloudlog.warning(f"NetworkStore: failed to clean up forget commit marker {commit_marker} (rc={result.returncode})")
       else:
         for p in existing_paths:
           result = subprocess.run(["sudo", "rm", "-f", p], check=False)
