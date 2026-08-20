@@ -290,9 +290,6 @@ class UnifiedLabel(Widget):
     self._cached_line_sizes: list[rl.Vector2] = []
     self._cached_total_height: float | None = None
     self._cached_width: int = -1
-    # visible lines depend on the rect height too, so they get their own guard
-    self._cached_visible: tuple[list[str], list[rl.Vector2]] = ([], [])
-    self._cached_visible_height: float | None = None
 
     # If max_width is set, initialize rect size for Scroller support
     if max_width is not None:
@@ -398,7 +395,6 @@ class UnifiedLabel(Widget):
 
     self._cached_text = text
     self._cached_width = available_width
-    self._cached_visible_height = None
 
     # Determine wrapping width
     content_width = available_width - (self._text_padding * 2)
@@ -434,30 +430,20 @@ class UnifiedLabel(Widget):
 
       self._cached_line_sizes.append(size)
 
-    self._cached_total_height = self._block_height(len(self._cached_line_sizes))
-
-  @property
-  def _line_px(self) -> float:
-    """Every line measures the same height, so line metrics are arithmetic rather than per line sums."""
-    return self._cached_line_sizes[0].y if self._cached_line_sizes else self._font_size * FONT_SCALE
-
-  def _block_height(self, lines: int) -> float:
-    """Height of n stacked lines. The first isn't scaled by line_height since nothing sits above it."""
-    return self._line_px * (1 + (lines - 1) * self._line_height) if lines > 0 else 0.0
-
-  def _visible_lines(self, content_width: int) -> tuple[list[str], list[rl.Vector2]]:
-    """Lines that fit the rect height, with everything dropped reflowed onto the last one."""
-    if self._cached_visible_height != self._rect.height:
-      self._cached_visible_height = self._rect.height
-      # always keep one line, it gets clipped by the scissor if it doesn't fit
-      max_lines = max(int(self._rect.height / (self._line_px * self._line_height)), 1)
-      lines, sizes = self._cached_wrapped_lines[:max_lines], self._cached_line_sizes[:max_lines]
-      if self._elide and len(self._cached_wrapped_lines) > max_lines:
-        # force elide so "..." shows even when the reflowed text happens to fit, to indicate more content
-        lines[-1] = self._elide_line(self._text_from_line(max_lines - 1), content_width, force=True)
-        sizes[-1] = measure_text_cached(self._font, lines[-1], self._font_size, self._spacing_pixels)
-      self._cached_visible = lines, sizes
-    return self._cached_visible
+    # Calculate total height
+    # Each line contributes its measured height * line_height (matching Label's behavior)
+    # This includes spacing to the next line
+    if self._cached_line_sizes:
+      # Match the rendering logic: first line doesn't get line_height scaling
+      total_height = 0.0
+      for idx, size in enumerate(self._cached_line_sizes):
+        if idx == 0:
+          total_height += size.y
+        else:
+          total_height += size.y * self._line_height
+      self._cached_total_height = total_height
+    else:
+      self._cached_total_height = 0.0
 
   def _elide_line(self, line: str, max_width: int, force: bool = False) -> str:
     """Elide a single line if it exceeds max_width. If force is True, always elide even if it fits."""
@@ -488,21 +474,6 @@ class UnifiedLabel(Widget):
         right = mid
     return line[:left - 1] + ellipsis if left > 0 else ellipsis
 
-  def _text_from_line(self, line_idx: int) -> str:
-    """The original text starting at the given wrapped line, collapsed onto one line.
-
-    Walks the source text by non-whitespace character count instead of joining the wrapped lines, so
-    words that wrap_text split mid-word don't get a space inserted into them.
-    """
-    consumed = sum(len(line) - line.count(" ") for line in self._cached_wrapped_lines[:line_idx])
-    text = self.text
-    i = seen = 0
-    while i < len(text) and seen < consumed:
-      if not text[i].isspace():
-        seen += 1
-      i += 1
-    return " ".join(text[i:].split())
-
   def get_content_height(self, max_width: int) -> float:
     """
     Returns the height needed for text at given max_width.
@@ -532,11 +503,62 @@ class UnifiedLabel(Widget):
     if not self._cached_wrapped_lines:
       return
 
-    visible_lines, visible_sizes = self._visible_lines(max(int(available_width - self._text_padding * 2), 1))
+    # Calculate which lines fit in the available height
+    visible_lines: list[str] = []
+    visible_sizes: list[rl.Vector2] = []
+
+    current_height = 0.0
+    broke_early = False
+    for line, size in zip(
+      self._cached_wrapped_lines,
+      self._cached_line_sizes,
+      strict=True):
+
+      # Calculate height needed for this line
+      # Each line contributes its height * line_height (matching Label's behavior)
+      line_height_needed = size.y * self._line_height
+
+      # Check if this line fits
+      if current_height + line_height_needed > self._rect.height:
+        # This line doesn't fit
+        if len(visible_lines) == 0:
+          # First line doesn't fit by height - still show it (will be clipped by scissor if needed)
+          # Continue to add this line below
+          pass
+        else:
+          # We have visible lines and this one doesn't fit - mark that we broke early
+          broke_early = True
+          break
+
+      visible_lines.append(line)
+      visible_sizes.append(size)
+
+      current_height += line_height_needed
+
+    # If we broke early (there are more lines that don't fit) and elide is enabled, elide the last visible line
+    if broke_early and len(visible_lines) > 0 and self._elide:
+      content_width = int(available_width - (self._text_padding * 2))
+      if content_width <= 0:
+        content_width = 1
+
+      last_line_idx = len(visible_lines) - 1
+      last_line = visible_lines[last_line_idx]
+      # Force elide the last line to show "..." even if it fits in width (to indicate more content)
+      elided = self._elide_line(last_line, content_width, force=True)
+      visible_lines[last_line_idx] = elided
+      visible_sizes[last_line_idx] = measure_text_cached(self._font, elided, self._font_size, self._spacing_pixels)
+
     if not visible_lines:
       return
 
-    total_visible_height = self._block_height(len(visible_lines))
+    # Calculate total visible text block height
+    # First line is not changed by line_height scaling
+    total_visible_height = 0.0
+    for idx, size in enumerate(visible_sizes):
+      if idx == 0:
+        total_visible_height += size.y
+      else:
+        total_visible_height += size.y * self._line_height
 
     # Calculate vertical alignment offset
     if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
