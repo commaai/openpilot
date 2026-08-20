@@ -182,6 +182,18 @@ class TestTetheringFirewall(TestCase):
 
     apply_ipv4_forward.assert_called_once_with(False)
 
+  def test_retries_ipv4_forwarding_after_failed_write(self):
+    manager = build_tethering_manager()
+    with patch.object(manager, "_apply_ipv4_forward", side_effect=(RuntimeError("sysctl failed"), None)) as apply_ipv4_forward:
+      with self.assertRaisesRegex(RuntimeError, "sysctl failed"):
+        manager.set_ipv4_forward(False)
+
+      assert manager._ipv4_forward
+      manager.set_ipv4_forward(False)
+
+    assert not manager._ipv4_forward
+    assert apply_ipv4_forward.call_count == 2
+
   def test_ipv4_forwarding_write_has_kernel_postcondition(self):
     manager = build_tethering_manager()
     with (

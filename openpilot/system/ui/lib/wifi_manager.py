@@ -1601,9 +1601,9 @@ class WifiManager:
     with self._radio_lock:
       if self._ipv4_forward == enabled:
         return
-      self._ipv4_forward = enabled
       if self._tethering_active:
         self._apply_ipv4_forward(enabled)
+      self._ipv4_forward = enabled
 
   def set_tethering_active(self, active: bool):
     # Report enable immediately and disable after station recovery
