@@ -7,7 +7,9 @@ from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_exi
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_present, modeld_pkl_path
+from openpilot.selfdrive.modeld.helpers import (
+  BIG_DRIVING_POLICY_PATH, TG_INPUT_DEVICES_PATH, modeld_pkl_path, modeld_warps_pkl_path, usbgpu_present,
+)
 
 
 CAMERA_CONFIGS = [
@@ -67,36 +69,59 @@ modeld_dir = Dir("#openpilot/selfdrive/modeld").abspath
 compile_modeld_script = [
   File(f"{modeld_dir}/compile_modeld.py"),
   File(f"{modeld_dir}/get_model_metadata.py"),
+  File(f"{modeld_dir}/helpers.py"),
   File("#openpilot/system/camerad/cameras/nv12_info.py"),
   File("#openpilot/common/hardware/hw.py"),
 ]
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
+camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
+# CPU 7 is isolated with isolcpus on AGNOS, so explicitly pin the compiler to it.
+taskset = 'taskset -c 7 ' if arch == 'comma_arm64' else ''
+
+def chestnut_ready():
+  from openpilot.system.hardware.chestnut.flash import link_up
+  # chestnut can enumerate before its PCIe link is up due to varying 12V power behavior across cars
+  for _ in range(10):
+    if link_up():
+      return True
+    time.sleep(1)
+  print("Chestnut not ready, skipping USB GPU model build")
+  return False
 
 for usbgpu in [False, True] if USBGPU else [False]:
+  if usbgpu and os.path.isfile(BIG_DRIVING_POLICY_PATH):
+    # Dev override: capture only the platform-local warp for the desktop policy.
+    warps_pkl_path = File(modeld_warps_pkl_path(tg_backend)).abspath
+    warps_cmd = (f'{usbgpu_tg_flags} {mac_brew_string} {taskset}python3 {modeld_dir}/compile_modeld.py '
+                 f'--component warps --model-size {model_w}x{model_h} '
+                 f'--camera-resolutions {camera_res_args} --output {warps_pkl_path}')
+    def do_compile_warps(target, source, env, command=warps_cmd):
+      if not chestnut_ready():
+        return 1
+      return env.Execute(command)
+    usbgpu_node = lenv.Command(
+      warps_pkl_path,
+      tinygrad_files + compile_modeld_script + [Value(warps_cmd), tg_devices_node],
+      Action(do_compile_warps, "  [USBGPU WARP] $TARGET"),
+    )
+    lenv.SideEffect(usbgpu_lock, usbgpu_node)
+    continue
+
   target_pkl_path = File(modeld_pkl_path(usbgpu)).abspath
   # BIG_INTO_SMALL=1 builds the default target from the big model, e.g. to test it without a USB GPU
   file_prefix, cmd_flags = ('big_', usbgpu_tg_flags) if usbgpu else ('big_' if os.getenv('BIG_INTO_SMALL') else '', tg_flags)
-  driving_onnx_deps = get_existing_chunks(File(f"models/{file_prefix}driving_supercombo.onnx").abspath)
-  camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in CAMERA_CONFIGS)
-  # CPU 7 is isolated with isolcpus on AGNOS, so explicitly pin the compiler to it.
-  taskset = 'taskset -c 7 ' if arch == 'comma_arm64' else ''
+  driving_onnx_path = File(f"models/{file_prefix}driving_supercombo.onnx").abspath
+  driving_onnx_deps = get_existing_chunks(driving_onnx_path)
   cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 {modeld_dir}/compile_modeld.py '
         f'--model-size {model_w}x{model_h} '
         f'--camera-resolutions {camera_res_args} '
-        f'--onnx {File(f"models/{file_prefix}driving_supercombo.onnx").abspath} '
+        f'--onnx {driving_onnx_path} '
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_compile(target, source, env, command=cmd, pkl=target_pkl_path, chunks=chunk_targets):
-    from openpilot.system.hardware.chestnut.flash import link_up
-    # chestnut can enumerate before its PCIe link is up due to varying 12V power behavior across cars
-    for _ in range(10):
-      if link_up():
-        break
-      time.sleep(1)
-    else:
-      print("Chestnut not ready, skipping big model build")
+    if not chestnut_ready():
       return
     if ret := env.Execute(command):
       return ret
@@ -106,7 +131,7 @@ for usbgpu in [False, True] if USBGPU else [False]:
   actions = Action(do_compile, "  [USBGPU] $TARGET") if usbgpu else [cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
   node = lenv.Command(
     chunk_targets,
-    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(chunk_targets), chunker_file],
+    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(cmd), Value(chunk_targets), chunker_file, tg_devices_node],
     actions,
   )
   if usbgpu:

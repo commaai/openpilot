@@ -8,6 +8,7 @@ import time
 import shutil
 from functools import partial
 from collections import namedtuple
+from pathlib import Path
 
 import numpy as np
 
@@ -123,16 +124,21 @@ def make_warp_input_queues(vision_input_shapes, frame_skip, device):
   n_frames = img[1] // 6
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
 
+  transform_inputs, npy = make_warp_compile_queues()
+  input_queues = {
+    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    **transform_inputs,
+  }
+  return input_queues, npy
+
+
+def make_warp_compile_queues():
   npy = {
     'tfm': np.zeros((3, 3), dtype=np.float32),
     'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
-  input_queues = {
-    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
-    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
-    **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
-  }
-  return input_queues, npy
+  return {k: Tensor(v, device='NPY').realize() for k, v in npy.items()}, npy
 
 
 def get_policy_npy_shapes(input_shapes):
@@ -176,7 +182,7 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_warp(nv12, model_w, model_h, frame_skip):
+def make_warp(nv12, model_w, model_h):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
 
   def warp(tfm, big_tfm, frame, big_frame):
@@ -186,7 +192,7 @@ def make_warp(nv12, model_w, model_h, frame_skip):
 
     warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
     warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
-    return Tensor.cat(warped_frame, warped_big_frame)
+    return Tensor.cat(warped_frame, warped_big_frame).to(Device.DEFAULT)
 
   return warp
 
@@ -198,8 +204,7 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
 
   def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
     packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
-    warped = warped.to(Device.DEFAULT)
-    Tensor.realize(packed_npy_inputs, warped)
+    packed_npy_inputs.realize()
 
     img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
@@ -224,7 +229,7 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
 def compile_jit(jit, make_random_inputs, input_keys, make_queues):
   SEED = 42
   def random_inputs_run(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy = make_queues(Device.DEFAULT)
+    input_queues, npy = make_queues()
     rng = np.random.default_rng(seed)
     Tensor.manual_seed(seed)
 
@@ -273,7 +278,12 @@ def _parse_size(s):
 
 
 def read_file_chunked_to_disk(path):
-  from openpilot.common.file_chunker import open_file_chunked
+  from openpilot.common.file_chunker import get_manifest_path, open_file_chunked
+
+  path = os.fspath(path)
+  if os.path.isfile(path) and not os.path.isfile(get_manifest_path(path)):
+    return path
+
   tmp_path = f'{path}.unchunked'
   with open(tmp_path, 'wb') as f, open_file_chunked(path) as src:
     shutil.copyfileobj(src, f)
@@ -281,39 +291,77 @@ def read_file_chunked_to_disk(path):
   return tmp_path
 
 
-if __name__ == "__main__":
+def save_jits(jits, output):
+  output_path = Path(output)
+  tmp_path = None
+  try:
+    with tempfile.NamedTemporaryFile(dir=output_path.parent, prefix=f'.{output_path.name}.', suffix='.tmp', delete=False) as f:
+      tmp_path = Path(f.name)
+      dump_oob(jits, f)
+    os.replace(tmp_path, output_path)
+  finally:
+    if tmp_path is not None:
+      tmp_path.unlink(missing_ok=True)
+  print(f"Saved JITs to {output_path} ({output_path.stat().st_size / 1e6:.2f} MB)")
+
+
+def compile_policy(onnx, frame_skip):
   from tinygrad.nn.onnx import OnnxRunner
-  from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
   from openpilot.selfdrive.modeld.get_model_metadata import make_metadata_dict
-  p = argparse.ArgumentParser()
-  p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
-  p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
-                 help='camera resolutions WxH (one or more)')
-  p.add_argument('--onnx', required=True)
-  p.add_argument('--output', required=True)
-  p.add_argument('--frame-skip', type=int, required=True)
-  args = p.parse_args()
 
-  model_path = read_file_chunked_to_disk(args.onnx)
-  model_w, model_h = args.model_size
-
+  model_path = read_file_chunked_to_disk(onnx)
   model_runner = OnnxRunner(model_path)
-  out = {'metadata': make_metadata_dict(model_path)}
+  metadata = make_metadata_dict(model_path)
+  run_policy_jit = TinyJit(make_run_policy(model_runner, metadata, frame_skip), prune=True)
+  make_policy_queues = partial(make_input_queues, metadata['input_shapes'], frame_skip, Device.DEFAULT)
+  make_random_model_inputs = partial(make_random_images, keys=['warped'],
+                                     shape=(2, 6, *metadata['input_shapes']['img'][2:]), device=Device.DEFAULT)
+  return {
+    'metadata': metadata,
+    'run_policy': compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS, make_policy_queues),
+  }
 
-  run_policy_jit = TinyJit(make_run_policy(model_runner, out['metadata'], args.frame_skip), prune=True)
 
-  make_policy_queues = partial(make_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, *out['metadata']['input_shapes']['img'][2:]), device=WARP_DEV)
-  out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
-                                  make_policy_queues)
+def compile_warps(model_size, camera_resolutions):
+  from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
-  for cam_w, cam_h in args.camera_resolutions:
+  model_w, model_h = model_size
+  out = {}
+  for cam_w, cam_h in camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
     make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size, device=WARP_DEV)
-    warp = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
-    make_warp_queues = partial(make_warp_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-    out[(cam_w,cam_h)] = compile_jit(warp, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
+    warp = TinyJit(make_warp(nv12, model_w, model_h), prune=True)
+    out[(cam_w, cam_h)] = compile_jit(warp, make_random_warp_inputs, WARP_INPUTS, make_warp_compile_queues)
+  return out
 
-  with open(args.output, "wb") as f:
-    dump_oob(out, f)
-  print(f"Saved JITs to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
+
+if __name__ == "__main__":
+  p = argparse.ArgumentParser()
+  p.add_argument('--component', choices=('combined', 'policy', 'warps'), default='combined',
+                 help='artifact component to compile (default: combined)')
+  p.add_argument('--model-size', type=_parse_size, help='model input WxH')
+  p.add_argument('--camera-resolutions', type=_parse_size, nargs='+',
+                 help='camera resolutions WxH (one or more)')
+  p.add_argument('--onnx')
+  p.add_argument('--output', required=True)
+  p.add_argument('--frame-skip', type=int)
+  args = p.parse_args()
+
+  with_policy = args.component in ('combined', 'policy')
+  with_warps = args.component in ('combined', 'warps')
+  if with_policy and args.onnx is None:
+    p.error(f"--onnx is required for --component {args.component}")
+  if with_policy and args.frame_skip is None:
+    p.error(f"--frame-skip is required for --component {args.component}")
+  if with_warps and args.model_size is None:
+    p.error(f"--model-size is required for --component {args.component}")
+  if with_warps and not args.camera_resolutions:
+    p.error(f"--camera-resolutions is required for --component {args.component}")
+  if args.component == 'warps' and WARP_DEV is None:
+    p.error("WARP_DEV is required for --component warps")
+
+  out = compile_policy(args.onnx, args.frame_skip) if with_policy else {}
+  if with_warps:
+    out.update(compile_warps(args.model_size, args.camera_resolutions))
+
+  save_jits(out, args.output)
