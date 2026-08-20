@@ -174,6 +174,14 @@ class TestTetheringFirewall(TestCase):
     assert not manager._ipv4_forward
     apply_ipv4_forward.assert_called_once_with(False)
 
+  def test_skips_redundant_ipv4_forwarding_writes(self):
+    manager = build_tethering_manager()
+    with patch.object(manager, "_apply_ipv4_forward") as apply_ipv4_forward:
+      manager.set_ipv4_forward(False)
+      manager.set_ipv4_forward(False)
+
+    apply_ipv4_forward.assert_called_once_with(False)
+
   def test_ipv4_forwarding_write_has_kernel_postcondition(self):
     manager = build_tethering_manager()
     with (

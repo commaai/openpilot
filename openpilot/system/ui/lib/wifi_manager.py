@@ -1599,6 +1599,8 @@ class WifiManager:
 
   def set_ipv4_forward(self, enabled: bool):
     with self._radio_lock:
+      if self._ipv4_forward == enabled:
+        return
       self._ipv4_forward = enabled
       if self._tethering_active:
         self._apply_ipv4_forward(enabled)
