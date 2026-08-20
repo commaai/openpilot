@@ -193,8 +193,7 @@ class ModelState:
       cloudlog.error("model output not finite, dropping frame")
       return None
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
-    if 'prev_feat' in self.npy:
-      self.npy['prev_feat'][:] = model_output[self.output_slices['hidden_state']]
+    self.npy['prev_feat'][:] = model_output[self.output_slices['hidden_state']]
 
     if SEND_RAW_PRED:
       outputs_dict['raw_pred'] = model_output.copy()
