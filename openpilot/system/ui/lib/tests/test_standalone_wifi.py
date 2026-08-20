@@ -52,7 +52,6 @@ class TestStandaloneWifi(TestCase):
     button = WifiButton()
     wifi_ui = WifiUIMici.__new__(WifiUIMici)
     wifi_ui._scroller = MagicMock(items=[button])
-    wifi_ui._pending_auth_ssid = None
     dialog = MagicMock()
 
     with (
@@ -81,7 +80,6 @@ class TestStandaloneWifi(TestCase):
     wifi_ui = WifiUIMici.__new__(WifiUIMici)
     wifi_ui._scroller = MagicMock(items=[button])
     wifi_ui._shown = True
-    wifi_ui._pending_auth_ssid = None
     dialog = MagicMock()
 
     with (
@@ -110,7 +108,6 @@ class TestStandaloneWifi(TestCase):
     wifi_ui = WifiUIMici.__new__(WifiUIMici)
     wifi_ui._scroller = MagicMock(items=[button])
     wifi_ui._shown = False
-    wifi_ui._pending_auth_ssid = None
 
     with (
       patch.object(wifi_ui_module, "WifiButton", WifiButton),
@@ -119,25 +116,32 @@ class TestStandaloneWifi(TestCase):
       wifi_ui._on_need_auth("SavedNet")
 
     button.set_wrong_password.assert_called_once()
-    assert wifi_ui._pending_auth_ssid == "SavedNet"
     push_widget.assert_not_called()
 
-  def test_mici_pending_auth_opens_on_network_tap(self):
+  def test_mici_wrong_password_opens_auth_on_network_tap(self):
     try:
+      from openpilot.selfdrive.ui.mici.layouts.settings.network import wifi_ui as wifi_ui_module
       from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
     except ImportError as e:
       raise SkipTest("mici UI dependencies are unavailable") from e
 
+    class WifiButton:
+      def __init__(self):
+        self.network = MagicMock(ssid="SavedNet")
+        self.wrong_password = True
+
+    button = WifiButton()
     wifi_ui = WifiUIMici.__new__(WifiUIMici)
     wifi_ui._wifi_manager = MagicMock()
     wifi_ui._wifi_manager.is_tethering_active.return_value = False
     wifi_ui._wifi_manager.is_connection_saved.return_value = True
     wifi_ui._networks = {"SavedNet": MagicMock(ssid="SavedNet")}
-    wifi_ui._pending_auth_ssid = "SavedNet"
+    wifi_ui._scroller = MagicMock(items=[button])
     wifi_ui._on_need_auth = MagicMock()
     wifi_ui._move_network_to_front = MagicMock()
 
-    wifi_ui._connect_to_network("SavedNet")
+    with patch.object(wifi_ui_module, "WifiButton", WifiButton):
+      wifi_ui._connect_to_network("SavedNet")
 
     wifi_ui._on_need_auth.assert_called_once_with("SavedNet", False)
     wifi_ui._wifi_manager.activate_connection.assert_not_called()

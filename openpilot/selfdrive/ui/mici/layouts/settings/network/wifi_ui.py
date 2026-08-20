@@ -135,6 +135,10 @@ class WifiButton(BigButton):
     self.trigger_shake()
 
   @property
+  def wrong_password(self) -> bool:
+    return self._wrong_password
+
+  @property
   def network(self) -> Network:
     return self._network
 
@@ -285,7 +289,6 @@ class WifiUIMici(NavScroller):
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
     self._shown = False
-    self._pending_auth_ssid: str | None = None
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -356,7 +359,8 @@ class WifiUIMici(NavScroller):
       cloudlog.warning(f"Trying to connect to unknown network: {ssid}")
       return
 
-    if self._pending_auth_ssid == network.ssid:
+    button = next((btn for btn in self._scroller.items if isinstance(btn, WifiButton) and btn.network.ssid == ssid), None)
+    if button is not None and button.wrong_password:
       self._on_need_auth(network.ssid, False)
       return
     elif self._wifi_manager.is_connection_saved(network.ssid):
@@ -377,17 +381,13 @@ class WifiUIMici(NavScroller):
           break
 
     if not self._shown:
-      self._pending_auth_ssid = ssid
       return
 
-    self._pending_auth_ssid = None
     dlg = BigInputDialog("enter password...", "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
     gui_app.push_widget(dlg)
 
   def _on_forgotten(self, ssid):
-    if self._pending_auth_ssid == ssid:
-      self._pending_auth_ssid = None
     # For eager UI forget
     for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
