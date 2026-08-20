@@ -375,10 +375,10 @@ method=ignore
       assert store.get_tethering_password("weedle") == "custom-password"
     assert store.get("weedle") is None
 
-  def test_creates_tethering_profile_in_empty_store(self):
+  def test_tethering_password_creates_profile_in_empty_store(self):
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
       store = self.make_store()
-      assert store.ensure_tethering_profile("weedle", "fresh-password")
+      assert store.set_tethering_password("weedle", "fresh-password")
 
     paths = list(Path(self.persistent).glob("*.nmconnection"))
     assert len(paths) == 1
@@ -395,6 +395,11 @@ method=ignore
     assert cp.get("ipv4", "address1") == "192.168.43.1/24"
     assert cp.get("ipv6", "method") == "ignore"
     assert store.get_tethering_password("weedle") == "fresh-password"
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      restarted = self.make_store()
+
+    assert restarted.get_tethering_password("weedle") == "fresh-password"
 
   def test_updates_persistent_tethering_password(self):
     path = Path(write_profile(self.persistent, "hotspot.nmconnection", "weedle", psk="old-password", mode="ap"))
