@@ -238,8 +238,7 @@ class BigButton(Widget):
     self._label.render(label_rect)
 
     if self.value:
-      # TODO: can we inspect label rect??
-      label_y = btn_y + self.LABEL_VERTICAL_PADDING + self._label.get_content_height(self._title_width_hint())
+      label_y = label_rect.y + self._label.get_content_height(int(label_rect.width))
       print(label_y, btn_y, self._label.rect.x, self._label.rect.y, self._label.rect.width, self._label.rect.height)
       sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
       sub_label_rect = rl.Rectangle(label_x, label_y, self._subtitle_width_hint(), sub_label_height)
