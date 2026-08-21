@@ -139,16 +139,18 @@ def get_policy_npy_shapes(input_shapes):
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
   tc = input_shapes['traffic_convention']  # (1, 2)
   at = input_shapes['action_t']  # (1, 2)
-  fb = input_shapes['features_buffer']  # (1, 24, 512)
+  fb = input_shapes['features_buffer']  # (1, T-1, ...) e.g. (1, 24, 32, 512) with spatial features
+  feat_dim = math.prod(fb[2:])
   # TODO prev_feat shouldn't exist and be handled inside the JIT, but corrupt on QCOM for now
-  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], fb[2])}
+  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], feat_dim)}
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
 def make_input_queues(input_shapes, frame_skip, device):
   input_queues, npy = make_warp_input_queues(input_shapes, frame_skip, device)
 
-  fb = input_shapes['features_buffer']  # (1, 24, 512), past features only; the model appends the current frame's feature
+  fb = input_shapes['features_buffer']  # (1, T-1, ...), past features only; the model appends the current frame's feature
+  feat_dim = math.prod(fb[2:])
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
 
   shapes, sizes = get_policy_npy_shapes(input_shapes)
@@ -156,7 +158,7 @@ def make_input_queues(input_shapes, frame_skip, device):
   # views into the packed inputs, to be refilled at runtime
   npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)})
   input_queues.update({
-    'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
+    'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], feat_dim), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
     'packed_npy_inputs': Tensor(packed_npy_inputs, device='NPY').realize(),
   })
@@ -211,7 +213,7 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
     inputs = {
       'img': img,
       'big_img': big_img,
-      'features_buffer': feat_buf,
+      'features_buffer': feat_buf.reshape(model_metadata['input_shapes']['features_buffer']),
       'desire_pulse': desire_buf,
       'traffic_convention': traffic_convention,
       'action_t': action_t,
