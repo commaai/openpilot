@@ -1121,6 +1121,83 @@ class TestConnectionState(TestCase):
     complete_station_connection(self.manager, "NextNet")
     assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTED)
 
+  def test_forget_during_reconnect_clears_retained_station_state(self):
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+
+    with (
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(self.manager, "_remove_wpa_network"),
+    ):
+      self.manager.forget_connection("TestNet", block=True)
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager.ipv4_address == ""
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
+  def test_forget_during_reconnect_cleans_before_fresh_connection(self):
+    real_thread = threading.Thread
+    worker_threads = []
+    forget_removing = threading.Event()
+    release_forget = threading.Event()
+
+    class CapturingThread:
+      def __init__(self, *args, **kwargs):
+        self.thread = real_thread(*args, **kwargs)
+        worker_threads.append(self.thread)
+
+      def start(self):
+        self.thread.start()
+
+    def remove_saved_network(ssid):
+      assert ssid == "TestNet"
+      forget_removing.set()
+      assert release_forget.wait(1)
+      return True
+
+    def select_network(*_, **__):
+      self.manager._dhcp.stop.assert_called_once()
+      self.manager._dhcp.clear_ipv6_state.assert_called_once()
+      return "2"
+
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.side_effect = remove_saved_network
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+    self.manager._ctrl.request.reset_mock()
+
+    with (
+      patch.object(wifi_manager_module.threading, "Thread", CapturingThread),
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_remove_wpa_network"),
+      patch.object(self.manager, "_add_and_select_network", side_effect=select_network),
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+    ):
+      self.manager.forget_connection("TestNet")
+      assert forget_removing.wait(1)
+      self.manager.connect_to_network("NextNet", "password123")
+      release_forget.set()
+      for worker_thread in worker_threads:
+        worker_thread.join(1)
+        assert not worker_thread.is_alive()
+
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+    assert call("DISCONNECT") not in self.manager._ctrl.request.call_args_list
+    assert call("REASSOCIATE") not in self.manager._ctrl.request.call_args_list
+
   def test_forget_failure_releases_caller_without_reporting_success(self):
     forgotten = MagicMock()
     forget_failed = MagicMock()
