@@ -20,17 +20,19 @@ Chestnut class models will take significantly more compute power; however, it wi
 
 **Requirements here only include beampilot usage, and does not include BeamNG's requirements.**
 
-### Requirements - Standard
+### Universal Requirements
+* a GPU that supports [tinygrad](tinygrad.org)
+* tinygrad backend driver
+* and the following:
+
+### Standard
 * Linux
 * 4GB VRAM
 * 16GB DRAM
 * Any 6-core desktop CPU
-* a GPU that supports [tinygrad](tinygrad.org)
-* tinygrad backend driver
 
 ### Requirements - Chestnut
 * Linux
 * 8GB VRAM
 * 32GB DRAM
-* a GPU that supports [tinygrad](tinygrad.org)
-* tinygrad backend driver
+* Any 6-core desktop CPU
