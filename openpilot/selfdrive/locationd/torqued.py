@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import numpy as np
 from collections import deque, defaultdict
 
@@ -8,7 +7,7 @@ from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, DT_MDL
+from openpilot.common.realtime import DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, PoseCalibrator, Pose
@@ -242,41 +241,3 @@ class TorqueEstimator(ParameterEstimator):
     lateralTorqueParameters.decay = self.decay
     lateralTorqueParameters.maxResets = self.resets
     return msg
-
-
-def main(demo=False):
-  config_realtime_process([0, 1, 2, 3], 5)
-
-  DEBUG = bool(int(os.getenv("DEBUG", "0")))
-
-  pm = messaging.PubMaster(['lateralTorqueParameters'])
-  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'extrinsicsCalibration', 'deviceMotion', 'lateralDelay'], poll='deviceMotion')
-
-  params = Params()
-  estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
-
-  while True:
-    sm.update()
-    if sm.all_checks():
-      for which in sm.updated.keys():
-        if sm.updated[which]:
-          t = sm.logMonoTime[which] * 1e-9
-          estimator.handle_log(t, which, sm[which])
-
-    # 4Hz driven by deviceMotion
-    if sm.frame % 5 == 0:
-      pm.send('lateralTorqueParameters', estimator.get_msg(valid=sm.all_checks(), with_points=DEBUG))
-
-    # Cache points every 60 seconds while onroad
-    if sm.frame % 240 == 0:
-      msg = estimator.get_msg(valid=sm.all_checks(), with_points=True)
-      params.put("LiveTorqueParameters", msg.to_bytes())
-
-
-if __name__ == "__main__":
-  import argparse
-
-  parser = argparse.ArgumentParser(description='Process the --demo argument.')
-  parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
-  args = parser.parse_args()
-  main(demo=args.demo)
