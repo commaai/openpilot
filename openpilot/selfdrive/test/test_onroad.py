@@ -97,7 +97,7 @@ LOGS_SIZE = {  # MB per segment
   "rlog.zst": 8.1,
   "qcamera.ts": 2.3,
 }
-LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
+LOGS_SIZE.update(dict.fromkeys(['wide_road.hevc', 'narrow_road.hevc', 'cabin.hevc'], 76.5))
 
 
 def cputime_total(ct):

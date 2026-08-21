@@ -93,7 +93,7 @@ class TestFileDownload(OpenpilotTestCase):
     os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/SAFETY.md"
     #  If you want large file to be larger than a chunk
-    #  large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/fcamera.hevc"
+    #  large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/narrow_road.hevc"
 
     #  Load full small file
     self.compare_loads(small_file_url)
