@@ -1815,6 +1815,7 @@ int run(const Options &options) {
     .route_name = options.route_name,
     .data_dir = options.data_dir,
     .dbc_override = {},
+    .migrate = options.migrate,
     .stream_source = StreamSourceConfig{.kind = is_local_stream_address(options.stream_address)
                                                  ? StreamSourceKind::CerealLocal
                                                  : StreamSourceKind::CerealRemote,
