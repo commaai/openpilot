@@ -817,23 +817,28 @@ class WifiManager:
           self._persist_pending_connection(ssid)
         return
 
-      if not already_associated:
-        try:
-          ipv6_method = self._store.get_ipv6_method(ssid, active_profile_uuid) if self._store is not None else "auto"
-          self._dhcp.set_ipv6_enabled(ipv6_method != "ignore")
-        except Exception:
-          cloudlog.exception("Failed to apply IPv6 policy for %s", ssid)
-          with self._state_lock:
-            if self._connected_transition_is_current(ssid, transition_epoch):
-              self._associated_ssid = None
-              self._associated_epoch = None
-              self._station_operation = previous_operation
-          return
-        if not adopt_dhcp or not self._dhcp.adopt():
-          self._ipv4_address = ""
-          self._dhcp.start()
-        if not self._connected_transition_is_current(ssid, transition_epoch):
-          return
+      if already_associated:
+        self._persist_pending_connection(ssid)
+        self._update_active_connection_info()
+        self._complete_station_connection(ssid, transition_epoch)
+        return
+
+      try:
+        ipv6_method = self._store.get_ipv6_method(ssid, active_profile_uuid) if self._store is not None else "auto"
+        self._dhcp.set_ipv6_enabled(ipv6_method != "ignore")
+      except Exception:
+        cloudlog.exception("Failed to apply IPv6 policy for %s", ssid)
+        with self._state_lock:
+          if self._connected_transition_is_current(ssid, transition_epoch):
+            self._associated_ssid = None
+            self._associated_epoch = None
+            self._station_operation = previous_operation
+        return
+      if not adopt_dhcp or not self._dhcp.adopt():
+        self._ipv4_address = ""
+        self._dhcp.start()
+      if not self._connected_transition_is_current(ssid, transition_epoch):
+        return
 
       self._persist_pending_connection(ssid)
       if self._ctrl is not None and self._connected_transition_is_current(ssid, transition_epoch):

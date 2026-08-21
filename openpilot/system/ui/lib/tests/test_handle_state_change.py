@@ -313,6 +313,17 @@ class TestConnectionState(TestCase):
         assert manager._pending_connection is None
         manager._dhcp.start.assert_called_once()
 
+  def test_reconcile_completed_association_does_not_spawn_more_ip_pollers(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+
+    for _ in range(3):
+      self.manager._reconcile_connecting_state()
+
+    self.manager._dhcp.start.assert_called_once()
+    self.manager._poll_for_ip.assert_called_once()
+
   def test_disconnected_event_defers_station_cleanup(self):
     self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
     self.manager._ipv4_address = "192.168.1.20"
