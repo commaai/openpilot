@@ -1094,11 +1094,9 @@ class WifiManager:
       with self._radio_lock:
         if self._user_epoch != epoch:
           return
-        self._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
-        self._dhcp.stop()
-        self._dhcp.clear_ipv6_state()
-        self._ipv4_address = ""
-        self._current_network_metered = MeteredType.UNKNOWN
+        self._wifi_state = WifiState()
+        self._dhcp_adoption_ssid = None
+        self._clear_station_state()
         self._enqueue_callbacks(self._disconnected)
       return
 

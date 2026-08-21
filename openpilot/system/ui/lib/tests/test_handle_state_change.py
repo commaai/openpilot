@@ -370,6 +370,25 @@ class TestConnectionState(TestCase):
     self.manager._dhcp.stop.assert_called_once()
     self.manager._dhcp.clear_ipv6_state.assert_called_once()
 
+  def test_missed_disconnect_clears_association_before_reconnect(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._dhcp.start.reset_mock()
+
+    self.manager._last_connected_recheck = 0.0
+    self.manager._ctrl.request.return_value = "wpa_state=DISCONNECTED\n"
+    self.manager._reconcile_connecting_state()
+
+    self.assertIsNone(self.manager._associated_ssid)
+    self.assertIsNone(self.manager._associated_epoch)
+
+    self.manager._last_connected_recheck = 0.0
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=TestNet\n"
+    self.manager._reconcile_connecting_state()
+
+    self.manager._dhcp.start.assert_called_once()
+
   def test_disconnected_event_does_not_override_user_connection(self):
     self.manager._set_connecting("NextNet")
 
