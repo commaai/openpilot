@@ -9,6 +9,7 @@ from openpilot.system.ui.lib.application import gui_app
 # from openpilot.selfdrive.ui.layouts.main import MainLayout
 # from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle, GreyBigButton
+from openpilot.system.ui.mici_setup import BigPillButton
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -66,6 +67,15 @@ class MainLayout(Scroller):
       BigButton("release3-staging", "", txt_up_to_date, scroll=True),
       # BigButton: title only, no icon, scrolling title (software.py branch picker, other branches)
       BigButton("master-ci", "", None, scroll=True),
+      # BigButton: title, long value, no icon (software.py TargetBranchButton, value is an arbitrary branch)
+      BigButton("target branch", "a-really-long-feature-branch"),
+
+      # BigPillButton: centered middle aligned title, no icon or value (mici_setup.py)
+      BigPillButton("next"),
+      # BigPillButton: multi-line title, disabled background (mici_setup.py)
+      BigPillButton("connect to\ncontinue", disabled_background=True),
+      # BigPillButton: green variant (mici_setup.py)
+      BigPillButton("install openpilot", green=True),
 
       # BigToggle: title only, off (developer.py)
       BigToggle("joystick debug mode"),

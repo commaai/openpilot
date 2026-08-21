@@ -150,13 +150,12 @@ class BigButton(Widget):
     super().set_touch_valid_callback(lambda: touch_callback() and self._grow_animation_until is None)
 
   def _title_width_hint(self) -> int:
-    # Single line if scrolling, so hide behind icon if exists
+    # A value moves the title to the top, where it shares space with the icon
     icon_size = self._txt_icon.width if self._txt_icon and self.value else 0
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _subtitle_width_hint(self) -> int:
-    # Single line if scrolling, so hide behind icon if exists
-    icon_size = self._txt_icon.width if self._txt_icon else 0
+    # Bottom aligned, so it sits below the icon
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _get_label_font_size(self):
@@ -239,7 +238,6 @@ class BigButton(Widget):
 
     if self.value:
       label_y = label_rect.y + self._label.get_content_height(int(label_rect.width))
-      print(label_y, btn_y, self._label.rect.x, self._label.rect.y, self._label.rect.width, self._label.rect.height)
       sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
       sub_label_rect = rl.Rectangle(label_x, label_y, self._subtitle_width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
@@ -318,9 +316,6 @@ class BigMultiToggle(BigToggle):
 
     self.set_value(self._options[0])
 
-  # def _width_hint(self) -> int:
-  #   return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
-
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
     cur_idx = self._options.index(self.value)
@@ -368,9 +363,6 @@ class GreyBigButton(BigButton):
   @property
   def LABEL_VERTICAL_PADDING(self):
     return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
-
-  # def _width_hint(self) -> int:
-  #   return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _get_label_font_size(self):
     return 36
