@@ -223,7 +223,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
 
   size_t j = 0;
   for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-       f <= size_t(cereal::PandaState::FaultType::HEARTBEAT_LOOP_WATCHDOG); f++) {
+       f <= size_t(cereal::PandaState::FaultType::STOCK_ECU_DETECTED); f++) {
     if (fault_bits.test(f)) {
       faults.set(j, cereal::PandaState::FaultType(f));
       j++;
