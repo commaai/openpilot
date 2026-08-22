@@ -1354,6 +1354,7 @@ class TestConnectionState(TestCase):
 
     self.manager._store.contains.return_value = True
     self.manager._store.remove.return_value = True
+    self.manager._ctrl.request.return_value = "OK\n"
 
     with (
       patch.object(self.manager, "_list_network_ids", return_value=[]),
@@ -1393,6 +1394,7 @@ class TestConnectionState(TestCase):
     self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
     self.manager._store.contains.return_value = True
     self.manager._store.remove.side_effect = remove_saved_network
+    self.manager._ctrl.request.return_value = "OK\n"
 
     with (
       patch.object(self.manager, "_list_network_ids", return_value=[]),
@@ -1416,43 +1418,88 @@ class TestConnectionState(TestCase):
     assert call("DISCONNECT") not in self.manager._ctrl.request.call_args_list
     assert call("REASSOCIATE") not in self.manager._ctrl.request.call_args_list
 
-  def test_forget_reports_persistent_success_when_runtime_removal_fails(self):
+  def test_forget_reconfigures_when_targeted_runtime_removal_fails(self):
     forgotten = MagicMock()
     forget_failed = MagicMock()
     self.manager.add_callbacks(forgotten=forgotten, forget_failed=forget_failed)
     self.manager._store.contains.return_value = True
     self.manager._store.remove.return_value = True
+    self.manager._ctrl.request.return_value = "OK\n"
 
-    def request(command):
-      if command == "LIST_NETWORKS":
-        return "network id / ssid / bssid / flags\n0\tSavedNet\tany\t\n"
-      if command == "REMOVE_NETWORK 0":
-        return "FAIL\n"
-      return "OK\n"
-
-    self.manager._ctrl.request.side_effect = request
-    with patch.object(wifi_manager_module, "generate_wpa_conf"):
+    with (
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(self.manager, "_remove_wpa_network", side_effect=RuntimeError("REMOVE_NETWORK failed")),
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+      patch.object(self.manager, "_restart_station_supplicant") as restart,
+    ):
       self.manager.forget_connection("SavedNet", block=True)
 
     self.manager.process_callbacks()
+    assert call("RECONFIGURE") in self.manager._ctrl.request.call_args_list
+    restart.assert_not_called()
     forgotten.assert_called_once_with("SavedNet")
     forget_failed.assert_not_called()
 
-  def test_forget_removes_runtime_when_config_generation_fails(self):
+  def test_forget_restarts_station_when_control_reconciliation_fails(self):
+    forgotten = MagicMock()
+    self.manager.add_callbacks(forgotten=forgotten)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+    self.manager._ctrl.request.return_value = "FAIL\n"
+
+    with (
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(self.manager, "_remove_wpa_network", side_effect=RuntimeError("REMOVE_NETWORK failed")),
+      patch.object(self.manager, "_restart_station_supplicant", return_value=True) as restart,
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+    ):
+      self.manager.forget_connection("SavedNet", block=True)
+
+    self.manager.process_callbacks()
+    restart.assert_called_once()
+    forgotten.assert_called_once_with("SavedNet")
+
+  def test_forget_defers_success_until_configuration_can_be_generated(self):
+    forgotten = MagicMock()
+    self.manager.add_callbacks(forgotten=forgotten)
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = True
+    self.manager._ctrl.request.return_value = "OK\n"
+
+    with (
+      patch.object(wifi_manager_module, "generate_wpa_conf", side_effect=[OSError("read-only"), None]),
+      patch.object(self.manager, "_remove_wpa_network"),
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
+    ):
+      self.manager.forget_connection("SavedNet", block=True)
+      self.manager.process_callbacks()
+      forgotten.assert_not_called()
+      assert "SavedNet" in self.manager._pending_forget_reconciliations
+
+      self.manager._retry_pending_forget_reconciliations(force=True)
+
+    self.manager.process_callbacks()
+    forgotten.assert_called_once_with("SavedNet")
+    assert "SavedNet" not in self.manager._pending_forget_reconciliations
+
+  def test_forget_defers_success_when_runtime_verification_fails(self):
     forgotten = MagicMock()
     self.manager.add_callbacks(forgotten=forgotten)
     self.manager._store.contains.return_value = True
     self.manager._store.remove.return_value = True
 
     with (
-      patch.object(wifi_manager_module, "generate_wpa_conf", side_effect=OSError("read-only")),
-      patch.object(self.manager, "_remove_wpa_network") as remove_wpa_network,
+      patch.object(wifi_manager_module, "generate_wpa_conf"),
+      patch.object(self.manager, "_remove_wpa_network"),
+      patch.object(self.manager, "_list_network_ids", return_value=["0"]),
+      patch.object(self.manager, "_restart_station_supplicant", return_value=True) as restart,
     ):
       self.manager.forget_connection("SavedNet", block=True)
 
     self.manager.process_callbacks()
-    remove_wpa_network.assert_called_once_with("SavedNet")
-    forgotten.assert_called_once_with("SavedNet")
+    restart.assert_called_once()
+    forgotten.assert_not_called()
+    assert "SavedNet" in self.manager._pending_forget_reconciliations
 
   def test_forget_allows_fallback_connection_after_disconnect_event(self):
     self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
@@ -1468,6 +1515,7 @@ class TestConnectionState(TestCase):
     with (
       patch.object(wifi_manager_module, "generate_wpa_conf"),
       patch.object(self.manager, "_remove_wpa_network"),
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
     ):
       self.manager.forget_connection("TestNet", block=True)
 
@@ -1481,6 +1529,7 @@ class TestConnectionState(TestCase):
   def test_forget_during_reconnect_clears_retained_station_state(self):
     self.manager._store.contains.return_value = True
     self.manager._store.remove.return_value = True
+    self.manager._ctrl.request.return_value = "OK\n"
     self.manager._set_connecting("TestNet")
     self.manager._handle_connected("TestNet")
     complete_station_connection(self.manager, "TestNet")
@@ -1491,6 +1540,7 @@ class TestConnectionState(TestCase):
     with (
       patch.object(wifi_manager_module, "generate_wpa_conf"),
       patch.object(self.manager, "_remove_wpa_network"),
+      patch.object(self.manager, "_list_network_ids", return_value=[]),
     ):
       self.manager.forget_connection("TestNet", block=True)
 
@@ -1526,6 +1576,7 @@ class TestConnectionState(TestCase):
 
     self.manager._store.contains.return_value = True
     self.manager._store.remove.side_effect = remove_saved_network
+    self.manager._ctrl.request.return_value = "OK\n"
     self.manager._set_connecting("TestNet")
     self.manager._handle_connected("TestNet")
     complete_station_connection(self.manager, "TestNet")

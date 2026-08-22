@@ -44,6 +44,7 @@ TETHERING_PASSWORD_FILE = "/data/tethering_password"
 SCAN_PERIOD_SECONDS = 5
 CONNECTING_STALE_TIMEOUT_SECONDS = 5
 NETWORK_NOT_FOUND_EVENTS_REQUIRED = 2
+FORGET_RECONCILIATION_RETRY_SECONDS = 5
 # Ignore stale WRONG_KEY events after a fast retry
 WRONG_KEY_DEBOUNCE_SECONDS = 2.0
 
@@ -100,6 +101,14 @@ class PendingConnection:
   epoch: int
   profile_uuid: str
   network_id: str | None = None
+
+
+@dataclass(frozen=True)
+class PendingForgetReconciliation:
+  ssid: str
+  epoch: int
+  forget_active: bool
+  cleanup_required: bool
 
 
 def _iptables_executable() -> str:
@@ -212,6 +221,8 @@ class WifiManager:
     self._last_scanning_recheck: float = 0.0
     self._last_connected_recheck: float = 0.0
     self._last_wrong_key_dispatch: dict[tuple[str, str | None], float] = {}
+    self._pending_forget_reconciliations: dict[str, PendingForgetReconciliation] = {}
+    self._last_forget_reconciliation_attempt = 0.0
     self._callback_queue: list[Callable] = []
     self._callback_lock = threading.Lock()
     self._state_lock = threading.RLock()
@@ -1063,6 +1074,7 @@ class WifiManager:
 
   def _network_scanner(self):
     while not self._exit:
+      self._retry_pending_forget_reconciliations()
       self._reconcile_connecting_state()
       if self._active and not self._tethering_active:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
@@ -1511,37 +1523,11 @@ class WifiManager:
         cloudlog.warning(f"Trying to forget unknown connection: {ssid}")
 
       with self._radio_lock:
-        try:
-          generate_wpa_conf(store)
-        except Exception:
-          cloudlog.exception(f"Failed to regenerate configuration after forgetting {ssid}")
-
-        self._clear_pending_connection(ssid, epoch=forget_epoch)
+        pending = PendingForgetReconciliation(ssid, forget_epoch, forget_active, cleanup_required)
         with self._state_lock:
-          owns_epoch = self._user_epoch == forget_epoch
-          cleanup_epoch = None
-          if forget_active and owns_epoch:
-            self._station_cleanup_pending |= cleanup_required
-            self._set_connecting(None, kind=StationOperationKind.FORGET, operation_ssid=ssid)
-            cleanup_epoch = self._user_epoch
-        owns_runtime = self._prepare_connection(cleanup_epoch) if cleanup_epoch is not None else owns_epoch
-
-        try:
-          if self._ctrl:
-            with self._state_lock:
-              preserve_selection = self._wifi_state.status == ConnectStatus.CONNECTING and self._wifi_state.ssid != ssid
-            if forget_active and owns_runtime:
-              self._request("DISCONNECT")
-            self._remove_wpa_network(ssid)
-            if not preserve_selection:
-              self._request("ENABLE_NETWORK all")
-            # Reassociate only when forgetting the active profile
-            if forget_active and owns_runtime:
-              self._request("REASSOCIATE")
-        except Exception:
-          cloudlog.exception(f"Failed to remove runtime connection after forgetting {ssid}")
-
-      self._enqueue_callbacks(self._forgotten, ssid)
+          self._pending_forget_reconciliations[ssid] = pending
+          self._last_forget_reconciliation_attempt = time.monotonic()
+        self._finish_forget_reconciliation(pending)
 
     def worker():
       with self._radio_lock:
@@ -1551,6 +1537,101 @@ class WifiManager:
       worker()
     else:
       threading.Thread(target=worker, daemon=True).start()
+
+  def _restart_station_supplicant(self) -> bool:
+    with self._radio_lock:
+      ctrl, self._ctrl = self._ctrl, None
+      if ctrl is not None:
+        try:
+          ctrl.close()
+        except Exception:
+          cloudlog.exception("Failed to close station control socket before restart")
+      self._monitor_epoch += 1
+      stop_wpa_supplicant(WPA_SUPPLICANT_CONF)
+      self._ensure_wpa_supplicant()
+      return self._ctrl is not None
+
+  def _reconcile_forgotten_runtime(self, ssid: str) -> bool:
+    try:
+      generate_wpa_conf(self._require_store())
+    except Exception:
+      cloudlog.exception(f"Failed to regenerate configuration after forgetting {ssid}")
+      return False
+
+    restart_required = self._ctrl is None
+    if self._ctrl is not None:
+      try:
+        self._remove_wpa_network(ssid)
+      except Exception:
+        # RECONFIGURE below can still remove the profile from the running daemon.
+        cloudlog.exception(f"Targeted runtime removal failed after forgetting {ssid}")
+
+      try:
+        response = self._request("RECONFIGURE").strip()
+        if not response.startswith("OK"):
+          raise RuntimeError(f"RECONFIGURE failed: {response}")
+      except Exception:
+        cloudlog.exception(f"Failed to reconfigure runtime profiles after forgetting {ssid}")
+        restart_required = True
+
+      if not restart_required:
+        try:
+          if not self._list_network_ids(ssid):
+            return True
+          cloudlog.warning(f"Runtime profile remained after forgetting {ssid}; restarting station daemon")
+        except Exception:
+          cloudlog.exception(f"Failed to verify runtime profile removal after forgetting {ssid}")
+        restart_required = True
+
+    if restart_required:
+      try:
+        if not self._restart_station_supplicant():
+          return False
+        if self._list_network_ids(ssid):
+          cloudlog.error(f"Runtime profile remained after station restart for forgotten network {ssid}")
+          return False
+        return True
+      except Exception:
+        cloudlog.exception(f"Failed to restart station runtime after forgetting {ssid}")
+    return False
+
+  def _finish_forget_reconciliation(self, pending: PendingForgetReconciliation) -> bool:
+    with self._radio_lock:
+      with self._state_lock:
+        if self._pending_forget_reconciliations.get(pending.ssid) is not pending:
+          return False
+      if not self._reconcile_forgotten_runtime(pending.ssid):
+        return False
+
+      self._clear_pending_connection(pending.ssid, epoch=pending.epoch)
+      with self._state_lock:
+        if self._pending_forget_reconciliations.get(pending.ssid) is not pending:
+          return False
+        owns_epoch = self._user_epoch == pending.epoch
+        cleanup_epoch = None
+        if pending.forget_active and owns_epoch:
+          self._station_cleanup_pending |= pending.cleanup_required
+          self._set_connecting(None, kind=StationOperationKind.FORGET, operation_ssid=pending.ssid)
+          cleanup_epoch = self._user_epoch
+        del self._pending_forget_reconciliations[pending.ssid]
+
+      if cleanup_epoch is not None:
+        self._prepare_connection(cleanup_epoch)
+      self._enqueue_callbacks(self._forgotten, pending.ssid)
+      return True
+
+  def _retry_pending_forget_reconciliations(self, force: bool = False):
+    now = time.monotonic()
+    with self._state_lock:
+      if self._tethering_active or self._tethering_transition_pending or not self._pending_forget_reconciliations:
+        return
+      if not force and now - self._last_forget_reconciliation_attempt < FORGET_RECONCILIATION_RETRY_SECONDS:
+        return
+      self._last_forget_reconciliation_attempt = now
+      pending = list(self._pending_forget_reconciliations.values())
+
+    for operation in pending:
+      self._finish_forget_reconciliation(operation)
 
   def activate_connection(self, ssid: str, block: bool = False):
     if self._tethering_active:
