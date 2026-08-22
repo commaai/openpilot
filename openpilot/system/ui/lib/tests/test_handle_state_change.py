@@ -442,6 +442,69 @@ class TestConnectionState(TestCase):
     assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
     self.manager._dhcp.stop.assert_not_called()
 
+  def test_disconnected_event_rechecks_epoch_before_committing(self):
+    self.manager._wifi_state = WifiState("PreviousNet", ConnectStatus.CONNECTED)
+    self.manager._associated_ssid = "PreviousNet"
+    self.manager._associated_epoch = self.manager._user_epoch
+    commit_started = threading.Event()
+    release_commit = threading.Event()
+    original_monotonic = time.monotonic
+    worker = None
+
+    def monotonic():
+      if threading.current_thread() is worker:
+        commit_started.set()
+        assert release_commit.wait(1)
+      return original_monotonic()
+
+    with patch.object(wifi_manager_module.time, "monotonic", side_effect=monotonic):
+      worker = threading.Thread(target=self.manager._handle_event, args=("CTRL-EVENT-DISCONNECTED reason=3",))
+      worker.start()
+      assert commit_started.wait(1)
+
+      with patch.object(wifi_manager_module.threading.Thread, "start"):
+        self.manager.connect_to_network("NextNet", "next-password")
+
+      release_commit.set()
+      worker.join(1)
+
+    assert not worker.is_alive()
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.ssid == "NextNet"
+    assert self.manager._dhcp_adoption_ssid is None
+    self.manager._dhcp.stop.assert_not_called()
+
+  def test_association_progress_rechecks_epoch_before_committing(self):
+    self.manager._ctrl.request.return_value = "wpa_state=ASSOCIATING\nssid=PreviousNet\n"
+    commit_started = threading.Event()
+    release_commit = threading.Event()
+    original_monotonic = time.monotonic
+    worker = None
+
+    def monotonic():
+      if threading.current_thread() is worker:
+        commit_started.set()
+        assert release_commit.wait(1)
+      return original_monotonic()
+
+    with patch.object(wifi_manager_module.time, "monotonic", side_effect=monotonic):
+      worker = threading.Thread(target=self.manager._handle_event, args=("Trying to associate with 00:11:22:33:44:55",))
+      worker.start()
+      assert commit_started.wait(1)
+
+      with patch.object(wifi_manager_module.threading.Thread, "start"):
+        self.manager.connect_to_network("NextNet", "next-password")
+
+      release_commit.set()
+      worker.join(1)
+
+    assert not worker.is_alive()
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.ssid == "NextNet"
+    self.manager._dhcp.stop.assert_not_called()
+
   def test_connected_event_rejects_unconfirmed_or_previous_network(self):
     cases = (
       ("wpa_state=ASSOCIATING\nssid=NextNet\n", "wrong-password"),
@@ -789,6 +852,48 @@ class TestConnectionState(TestCase):
     self.manager._ctrl.request.assert_not_called()
     self.manager._dhcp.stop.assert_not_called()
     need_auth.assert_not_called()
+
+  def test_wrong_key_does_not_cancel_newer_connection_request(self):
+    need_auth = MagicMock()
+    disconnected = MagicMock()
+    self.manager.add_callbacks(need_auth=need_auth, disconnected=disconnected)
+    self.manager._set_connecting("PreviousNet")
+    self.manager._set_pending_connection("PreviousNet", "wrong-password", False, SecurityType.WPA)
+    self.manager._set_pending_network_id("0", self.manager._user_epoch)
+    self.manager._ctrl.request.return_value = "OK"
+    remove_started = threading.Event()
+    release_remove = threading.Event()
+
+    def remove_network(_):
+      remove_started.set()
+      assert release_remove.wait(1)
+
+    with (
+      patch.object(self.manager, "_list_network_ids", return_value=["0"]),
+      patch.object(self.manager, "_remove_wpa_network_id", side_effect=remove_network),
+    ):
+      worker = threading.Thread(
+        target=self.manager._handle_event,
+        args=('CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="PreviousNet" reason=WRONG_KEY',),
+      )
+      worker.start()
+      assert remove_started.wait(1)
+
+      with patch.object(wifi_manager_module.threading.Thread, "start"):
+        self.manager.connect_to_network("NextNet", "next-password")
+
+      release_remove.set()
+      worker.join(1)
+
+    self.manager.process_callbacks()
+    assert not worker.is_alive()
+    assert self.manager.wifi_state == WifiState("NextNet", ConnectStatus.CONNECTING)
+    assert self.manager._pending_connection is not None
+    assert self.manager._pending_connection.ssid == "NextNet"
+    assert self.manager._pending_connection.password == "next-password"
+    self.manager._dhcp.stop.assert_not_called()
+    need_auth.assert_not_called()
+    disconnected.assert_not_called()
 
   def test_wrong_key_exhausts_same_ssid_profiles_before_auth_failure(self):
     need_auth = MagicMock()

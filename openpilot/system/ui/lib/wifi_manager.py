@@ -901,52 +901,57 @@ class WifiManager:
         self._handle_connected(ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
 
     elif "CTRL-EVENT-DISCONNECTED" in event:
-      if self._tethering_active:
-        return  # Ignore disconnects during tethering transitions
+      with self._state_lock:
+        epoch = self._user_epoch
+        expected_state = self._wifi_state
+      now = time.monotonic()
 
-      epoch = self._user_epoch
+      with self._radio_lock, self._state_lock:
+        if (
+          self._tethering_active
+          or self._user_epoch != epoch
+          or self._wifi_state != expected_state
+          or self._wifi_state.status in (ConnectStatus.CONNECTING, ConnectStatus.DISCONNECTED)
+        ):
+          return
 
-      if self._wifi_state.status == ConnectStatus.CONNECTING:
-        return
+        ssid = self._wifi_state.ssid
+        if self._wifi_state.status == ConnectStatus.CONNECTED and ssid is not None:
+          self._dhcp_adoption_ssid = ssid
+          self._last_connecting_at = now
+          self._last_scanning_recheck = 0.0
+          self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
+          return
 
-      if self._user_epoch != epoch:
-        return
-
-      ssid = self._wifi_state.ssid
-      if self._wifi_state.status == ConnectStatus.CONNECTED and ssid is not None:
-        self._dhcp_adoption_ssid = ssid
-        self._last_connecting_at = time.monotonic()
-        self._last_scanning_recheck = 0.0
-        self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
-        return
-
-      if self._wifi_state.status == ConnectStatus.DISCONNECTED:
-        return
-
-      self._wifi_state = WifiState(ssid=None, status=ConnectStatus.DISCONNECTED)
-      self._clear_station_state()
-      self._enqueue_callbacks(self._disconnected)
+        self._wifi_state = WifiState()
+        self._clear_station_state()
+        self._enqueue_callbacks(self._disconnected)
 
     elif "TEMP-DISABLED" in event and "reason=WRONG_KEY" in event:
       event_ssid = parse_event_ssid(event)
       event_network_id = parse_event_network_id(event)
       if event_ssid is not None:
         with self._radio_lock:
-          current_ssid = self._wifi_state.ssid
-          # The event SSID is authoritative for auto-connect
-          connecting_unknown = (
-            self._wifi_state.status == ConnectStatus.CONNECTING
-            and current_ssid is None
-          )
-          if not connecting_unknown and (not current_ssid or event_ssid != current_ssid):
-            return
-
-          pending = self._pending_connection
-          if pending is not None and pending.ssid == event_ssid:
-            if (pending.epoch != self._user_epoch
-                or pending.network_id is None
-                or event_network_id != pending.network_id):
+          with self._state_lock:
+            current_ssid = self._wifi_state.ssid
+            # The event SSID is authoritative for auto-connect
+            connecting_unknown = (
+              self._wifi_state.status == ConnectStatus.CONNECTING
+              and current_ssid is None
+            )
+            if not connecting_unknown and (not current_ssid or event_ssid != current_ssid):
               return
+
+            pending = self._pending_connection
+            if pending is not None and pending.ssid == event_ssid:
+              if (pending.epoch != self._user_epoch
+                  or pending.network_id is None
+                  or event_network_id != pending.network_id):
+                return
+
+            failed_epoch = self._user_epoch
+            failed_operation = self._station_operation
+            failed_pending = pending
 
           # Debounce WRONG_KEY per profile, not per SSID
           dispatch_key = (event_ssid, event_network_id)
@@ -974,45 +979,73 @@ class WifiManager:
                 remaining_ids = []
               if remaining_ids:
                 self._select_network_ids(remaining_ids)
-                self._last_connecting_at = now
-                self._last_scanning_recheck = 0.0
-                self._network_not_found_epoch = None
-                self._network_not_found_events = 0
+                with self._state_lock:
+                  if (
+                    self._user_epoch != failed_epoch
+                    or self._station_operation is not failed_operation
+                    or (failed_pending is not None and self._pending_connection is not failed_pending)
+                  ):
+                    return
+                  self._last_connecting_at = now
+                  self._last_scanning_recheck = 0.0
+                  self._network_not_found_epoch = None
+                  self._network_not_found_events = 0
                 return
               response = self._request("ENABLE_NETWORK all").strip()
               if not response.startswith("OK"):
                 raise RuntimeError(f"ENABLE_NETWORK all failed: {response}")
             except Exception:
               cloudlog.exception("Failed to update saved networks after WRONG_KEY")
-          self._clear_pending_connection(event_ssid)
-          self._enqueue_callbacks(self._need_auth, event_ssid)
-          self._set_connecting(None, kind=StationOperationKind.AUTH_FAILURE, operation_ssid=event_ssid)
+
+          with self._state_lock:
+            if (
+              self._user_epoch != failed_epoch
+              or self._station_operation is not failed_operation
+              or (failed_pending is not None and self._pending_connection is not failed_pending)
+            ):
+              return
+            self._clear_pending_connection(event_ssid, epoch=failed_epoch)
+            self._set_connecting(None, kind=StationOperationKind.AUTH_FAILURE, operation_ssid=event_ssid)
+            auth_epoch = self._user_epoch
+            auth_operation = self._station_operation
           # DISCONNECTED may arrive while CONNECTING and skip cleanup
           self._clear_station_state()
-          self._enqueue_callbacks(self._disconnected)
+          with self._state_lock:
+            if self._user_epoch != auth_epoch or self._station_operation is not auth_operation:
+              return
+            self._enqueue_callbacks(self._need_auth, event_ssid)
+            self._enqueue_callbacks(self._disconnected)
 
     elif "CTRL-EVENT-NETWORK-NOT-FOUND" in event:
-      if self._wifi_state.status != ConnectStatus.CONNECTING:
-        return
-      # Reconciliation disambiguates delayed NETWORK-NOT-FOUND events
-      if time.monotonic() - self._last_connecting_at >= CONNECTING_STALE_TIMEOUT_SECONDS:
-        self._network_not_found_events += 1
-        if self._network_not_found_events >= NETWORK_NOT_FOUND_EVENTS_REQUIRED:
-          self._network_not_found_epoch = self._user_epoch
+      now = time.monotonic()
+      with self._state_lock:
+        if self._wifi_state.status != ConnectStatus.CONNECTING:
+          return
+        # Reconciliation disambiguates delayed NETWORK-NOT-FOUND events
+        if now - self._last_connecting_at >= CONNECTING_STALE_TIMEOUT_SECONDS:
+          self._network_not_found_events += 1
+          if self._network_not_found_events >= NETWORK_NOT_FOUND_EVENTS_REQUIRED:
+            self._network_not_found_epoch = self._user_epoch
 
     elif "Trying to associate with" in event or "Associated with" in event:
-      if self._wifi_state.status == ConnectStatus.DISCONNECTED:
+      with self._state_lock:
         epoch = self._user_epoch
-        ssid = None
-        if self._ctrl:
-          try:
-            status = parse_status(self._request("STATUS"))
-            ssid = status.get("ssid")
-          except Exception:
-            pass
-        if self._user_epoch != epoch:
+        expected_state = self._wifi_state
+      if expected_state.status != ConnectStatus.DISCONNECTED:
+        return
+
+      ssid = None
+      if self._ctrl:
+        try:
+          status = parse_status(self._request("STATUS"))
+          ssid = status.get("ssid")
+        except Exception:
+          pass
+      now = time.monotonic()
+      with self._radio_lock, self._state_lock:
+        if self._user_epoch != epoch or self._wifi_state != expected_state:
           return
-        self._last_connecting_at = time.monotonic()
+        self._last_connecting_at = now
         self._last_scanning_recheck = 0.0
         self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
 
