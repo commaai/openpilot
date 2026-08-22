@@ -67,6 +67,52 @@ ssid=Duplicate
     ):
       assert not HardwareComma().get_network_metered(NetworkType.wifi)
 
+  def test_selected_profile_uuid_is_normalized_for_metering(self):
+    active_uuid = "22222222-2222-4abc-8def-222222222222"
+    profiles = {
+      "first.nmconnection": """
+[connection]
+uuid=11111111-1111-4111-8111-111111111111
+metered=2
+
+[wifi]
+ssid=Duplicate
+""",
+      "second.nmconnection": "",
+    }
+    for raw_uuid in (active_uuid.upper(), f"{{{active_uuid.upper()}}}"):
+      with self.subTest(raw_uuid=raw_uuid):
+        profiles["second.nmconnection"] = f"""
+[connection]
+uuid={raw_uuid}
+metered=1
+
+[wifi]
+ssid=Duplicate
+"""
+        with (
+          patch.object(hardware_module, "wpa_supplicant_cmd", return_value={"ssid": "Duplicate", "id_str": active_uuid}),
+          patch.object(Path, "glob", return_value=[Path(name) for name in profiles]),
+          patch.object(hardware_module, "sudo_read", side_effect=lambda path: profiles[path]),
+        ):
+          assert HardwareComma().get_network_metered(NetworkType.wifi)
+
+  def test_malformed_active_profile_uuid_does_not_fall_back_to_ssid(self):
+    profile = """
+[connection]
+uuid=22222222-2222-4abc-8def-222222222222
+metered=1
+
+[wifi]
+ssid=Duplicate
+"""
+    with (
+      patch.object(hardware_module, "wpa_supplicant_cmd", return_value={"ssid": "Duplicate", "id_str": "not-a-uuid"}),
+      patch.object(Path, "glob", return_value=[Path("profile.nmconnection")]),
+      patch.object(hardware_module, "sudo_read", return_value=profile),
+    ):
+      assert not HardwareComma().get_network_metered(NetworkType.wifi)
+
   def test_hardware_uses_owned_control_socket(self):
     sock = MagicMock()
     sock.__enter__.return_value = sock

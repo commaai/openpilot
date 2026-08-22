@@ -4,6 +4,7 @@ import os
 import socket
 import subprocess
 import time
+import uuid
 from functools import cached_property, lru_cache
 from pathlib import Path
 
@@ -58,6 +59,12 @@ def get_default_route_iface():
   with open("/proc/net/route") as f:
     routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
   return min(routes)[1] if routes else None
+
+def _normalize_uuid(value: str) -> str | None:
+  try:
+    return str(uuid.UUID(value))
+  except ValueError:
+    return None
 
 class HardwareComma(HardwareBase):
   """
@@ -215,6 +222,9 @@ class HardwareComma(HardwareBase):
       if network_type == NetworkType.wifi:
         status = wpa_supplicant_cmd("STATUS")
         profile_uuid = status.get("id_str", "").strip('"')
+        normalized_profile_uuid = _normalize_uuid(profile_uuid) if profile_uuid else None
+        if profile_uuid and normalized_profile_uuid is None:
+          return super().get_network_metered(network_type)
         ssid = decode_wpa_ssid(status.get("ssid", ""))
         if profile_uuid or ssid:
           nm_dirs = ("/data/etc/NetworkManager/system-connections", "/run/NetworkManager/system-connections")
@@ -226,7 +236,7 @@ class HardwareComma(HardwareBase):
             try:
               cp.read_string(raw)
               if profile_uuid:
-                if cp.get("connection", "uuid", fallback="") != profile_uuid:
+                if _normalize_uuid(cp.get("connection", "uuid", fallback="")) != normalized_profile_uuid:
                   continue
               else:
                 wifi_section = "wifi" if cp.has_section("wifi") else "802-11-wireless"
