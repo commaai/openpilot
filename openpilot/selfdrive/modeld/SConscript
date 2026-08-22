@@ -40,7 +40,7 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 USBGPU = usbgpu_present()
 if USBGPU:
-  usbgpu_tg_flags = 'DEBUG=2 DEV=USB+AMD:LLVM FRAME_DEV=CPU FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
+  usbgpu_tg_flags = 'DEBUG=1 DEV=USB+AMD:LLVM FRAME_DEV=CPU FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
 
