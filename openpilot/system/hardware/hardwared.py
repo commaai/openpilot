@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import fcntl
+import math
 import os
 import queue
 import struct
@@ -100,6 +101,9 @@ OFFROAD_DANGER_TEMP = 85 if HARDWARE.get_device_type() == "mici" else 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
+
+def max_valid_temperature(temperatures: list[float]) -> float:
+  return max((t for t in temperatures if math.isfinite(t)), default=0.)
 
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
@@ -303,16 +307,12 @@ def hardware_thread(end_event, hw_queue) -> None:
     set_offroad_alert_if_changed("Offroad_ChestnutBranch", msg.deviceState.chestnutPresent and not big_model_available)
 
     # this subset is only used for offroad
-    temp_sources = [
-      msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC, default=0.),
-      max(msg.deviceState.gpuTempC, default=0.),
-    ]
-    offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
+    temp_sources = [msg.deviceState.memoryTempC, *msg.deviceState.cpuTempC, *msg.deviceState.gpuTempC]
+    offroad_comp_temp = offroad_temp_filter.update(max_valid_temperature(temp_sources))
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
-    all_comp_temp = all_temp_filter.update(max(temp_sources))
+    temp_sources.extend(msg.deviceState.pmicTempC)
+    all_comp_temp = all_temp_filter.update(max_valid_temperature(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
     msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
