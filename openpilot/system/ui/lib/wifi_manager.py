@@ -953,9 +953,8 @@ class WifiManager:
                 self._network_not_found_epoch = None
                 self._network_not_found_events = 0
                 return
-              self._restore_station_runtime(None, [], ["wrong-key"])
             except Exception:
-              cloudlog.exception("Failed to re-enable saved networks after WRONG_KEY")
+              cloudlog.exception("Failed to update saved networks after WRONG_KEY")
           self._clear_pending_connection(event_ssid)
           self._enqueue_callbacks(self._need_auth, event_ssid)
           self._set_connecting(None, kind=StationOperationKind.AUTH_FAILURE, operation_ssid=event_ssid)

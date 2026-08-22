@@ -745,6 +745,7 @@ class TestConnectionState(TestCase):
       patch.object(self.manager, "_list_network_ids", side_effect=[["0", "1"], ["1"]]),
       patch.object(self.manager, "_remove_wpa_network_id") as remove_network,
       patch.object(self.manager, "_select_network_ids") as select_networks,
+      patch.object(self.manager, "_restore_station_runtime") as restore_runtime,
       patch.object(wifi_manager_module.time, "monotonic", return_value=100),
     ):
       self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="TestNet" reason=WRONG_KEY')
@@ -755,9 +756,11 @@ class TestConnectionState(TestCase):
       need_auth.assert_not_called()
 
       self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=1 ssid="TestNet" reason=WRONG_KEY')
+      self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=1 ssid="TestNet" reason=WRONG_KEY')
 
     self.manager.process_callbacks()
     assert remove_network.call_args_list == [call("0"), call("1")]
+    restore_runtime.assert_not_called()
     assert self.manager.wifi_state == WifiState()
     self.manager._dhcp.stop.assert_called_once()
     need_auth.assert_called_once_with("TestNet")
