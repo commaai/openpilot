@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Noto Sans", sans-serif;
+      font-optical-sizing: auto;
+      font-weight: 400;
+      font-style: normal;
+      font-variation-settings: "wdth" 100;
+      font-size: 14px;
+    }
+
+    header {
+      width: 100%;
+      height: 48px;
+      background: #0f1018;
+    }
+
+    #perfetto_frame {
+      width: 100vw;
+      height: calc(100vh - 40px);
+      border: none;
+    }
+
+    #loading_screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0f1018;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: Arial, sans-serif;
+      z-index: 1;
+    }
+
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 5px solid #FFF;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      margin-bottom: 20px;
+      animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #loading_text {
+      font-size: 18px;
+    }
+
+    .floating-container {
+      position: fixed;
+      top: 8px;
+      left: 16px;
+      z-index: 4;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+    }
+    .nav-btn {
+      background-color: #1a1b26;
+      border: 1px solid #4a4b56;
+      color: #f0f0f5;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      font-weight: bold;
+    }
+    .btn {
+      height: 32px;
+      background-color: #1a1b26;
+      border: 1px solid #4a4b56;
+      color: #f0f0f5;
+      border-radius: 8px;
+      cursor: pointer;
+      transition-duration: .5s;
+    }
+    .btn:hover {
+      background-color: #2a2b36;
+      border-color: #5a5b66;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <header></header>
+  <div class="floating-container">
+    <a class="btn nav-btn" href="/">UOps</a>
+  </div>
+
+  <div id="loading_screen">
+    <div class="loader" id="spinner"></div>
+    <div id="loading_text">Loading trace data...</div>
+  </div>
+  
+  <iframe id="perfetto_frame" src="https://ui.perfetto.dev" allow="clipboard-write"></iframe>
+
+  <script type="text/javascript">
+    const ORIGIN = 'https://ui.perfetto.dev';
+    const API_ENDPOINT = '/get_profile';
+    const iframe = document.getElementById('perfetto_frame');
+    const loadingScreen = document.getElementById('loading_screen');
+
+    async function fetchFromApi() {
+      try {
+        const response = await fetch(API_ENDPOINT);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const jsonData = await response.json();
+        
+        // Convert JSON to string and then to blob
+        const jsonString = JSON.stringify(jsonData);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const arrayBuffer = await blob.arrayBuffer();
+        
+        openTrace(arrayBuffer);
+      } catch (error) {
+        document.getElementById('spinner').remove();
+        document.getElementById('loading_text').innerHTML = 'Error loading trace data.<br>Please ensure PROFILE=1 is set and the VIZ server is running.';
+        console.error('Error loading trace:', error);
+      }
+    }
+
+    function openTrace(arrayBuffer) {
+      const timer = setInterval(() => iframe.contentWindow.postMessage('PING', ORIGIN), 50);
+
+      const onMessageHandler = (evt) => {
+        if (evt.data !== 'PONG') return;
+        loadingScreen.style.transition = 'opacity 0.5s';
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+        }, 500);
+
+        window.clearInterval(timer);
+        window.removeEventListener('message', onMessageHandler);
+
+        iframe.contentWindow.postMessage({
+          perfetto: {
+            buffer: arrayBuffer,
+            title: 'Profile Viewer',
+            url: location.href,
+          }
+        }, ORIGIN);
+      };
+
+      window.addEventListener('message', onMessageHandler);
+    }
+
+    window.onload = fetchFromApi;
+  </script>
+</body>
+</html>
