@@ -1358,21 +1358,14 @@ class WifiManager:
         or self._associated_ssid == ssid
         or self._dhcp_adoption_ssid == ssid
       )
-      if forget_active:
-        self._station_cleanup_pending |= (
-          self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
-          or self._associated_ssid == ssid
-          or self._dhcp_adoption_ssid == ssid
-        )
-        self._set_connecting(None, kind=StationOperationKind.FORGET, operation_ssid=ssid)
+      cleanup_required = (
+        self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
+        or self._associated_ssid == ssid
+        or self._dhcp_adoption_ssid == ssid
+      )
       forget_epoch = self._user_epoch
 
     def transition():
-      with self._state_lock:
-        if self._user_epoch == forget_epoch:
-          self._station_operation = StationOperation(forget_epoch, StationOperationKind.FORGET, ssid)
-      self._clear_pending_connection(ssid)
-
       try:
         store = self._require_store()
       except RuntimeError:
@@ -1395,22 +1388,28 @@ class WifiManager:
           generate_wpa_conf(store)
         except Exception:
           cloudlog.exception(f"Failed to regenerate configuration after forgetting {ssid}")
-        if forget_active:
-          owns_epoch = self._prepare_connection(forget_epoch)
-        else:
-          with self._state_lock:
-            owns_epoch = self._user_epoch == forget_epoch
+
+        self._clear_pending_connection(ssid, epoch=forget_epoch)
+        with self._state_lock:
+          owns_epoch = self._user_epoch == forget_epoch
+          cleanup_epoch = None
+          if forget_active and owns_epoch:
+            self._station_cleanup_pending |= cleanup_required
+            self._set_connecting(None, kind=StationOperationKind.FORGET, operation_ssid=ssid)
+            cleanup_epoch = self._user_epoch
+        owns_runtime = self._prepare_connection(cleanup_epoch) if cleanup_epoch is not None else owns_epoch
+
         try:
           if self._ctrl:
             with self._state_lock:
               preserve_selection = self._wifi_state.status == ConnectStatus.CONNECTING and self._wifi_state.ssid != ssid
-            if forget_active and owns_epoch:
+            if forget_active and owns_runtime:
               self._request("DISCONNECT")
             self._remove_wpa_network(ssid)
             if not preserve_selection:
               self._request("ENABLE_NETWORK all")
             # Reassociate only when forgetting the active profile
-            if forget_active and owns_epoch:
+            if forget_active and owns_runtime:
               self._request("REASSOCIATE")
         except Exception:
           cloudlog.exception(f"Failed to remove runtime connection after forgetting {ssid}")

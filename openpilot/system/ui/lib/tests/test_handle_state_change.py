@@ -1054,13 +1054,14 @@ class TestConnectionState(TestCase):
       assert connect_started.wait(1)
 
       self.manager.forget_connection("TestNet")
-      assert self.manager.wifi_state == WifiState()
+      assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
 
       release_connect.set()
       assert connect_added.wait(1)
       assert forget_removed.wait(1)
 
     assert runtime_networks == set()
+    assert self.manager.wifi_state == WifiState()
 
   def test_forget_does_not_disconnect_fresh_connection(self):
     forget_removing = threading.Event()
@@ -1255,6 +1256,52 @@ class TestConnectionState(TestCase):
 
     forgotten.assert_not_called()
     forget_failed.assert_called_once_with("SavedNet")
+
+  def test_forget_failure_preserves_connected_station_state(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    epoch = self.manager._user_epoch
+    operation = self.manager._station_operation
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = False
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+
+    self.manager.forget_connection("TestNet", block=True)
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    assert self.manager._user_epoch == epoch
+    assert self.manager._associated_ssid == "TestNet"
+    assert self.manager._associated_epoch == epoch
+    assert self.manager._station_operation is operation
+    assert not self.manager._station_cleanup_pending
+    self.manager._dhcp.stop.assert_not_called()
+    self.manager._dhcp.clear_ipv6_state.assert_not_called()
+
+  def test_forget_failure_preserves_retained_reconnect_state(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    epoch = self.manager._user_epoch
+    operation = self.manager._station_operation
+    self.manager._store.contains.return_value = True
+    self.manager._store.remove.return_value = False
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+
+    self.manager.forget_connection("TestNet", block=True)
+
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    assert self.manager._user_epoch == epoch
+    assert self.manager._associated_ssid == "TestNet"
+    assert self.manager._associated_epoch == epoch
+    assert self.manager._dhcp_adoption_ssid == "TestNet"
+    assert self.manager._station_operation is operation
+    assert not self.manager._station_cleanup_pending
+    self.manager._dhcp.stop.assert_not_called()
+    self.manager._dhcp.clear_ipv6_state.assert_not_called()
 
   def test_failed_connect_worker_does_not_reset_fresh_selection(self):
     real_thread = threading.Thread
