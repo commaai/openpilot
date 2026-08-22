@@ -1235,7 +1235,10 @@ class WifiManager:
     profile_uuid = None
 
     with self._state_lock:
+      station_epoch = self._user_epoch
       station_ssid = self._associated_ssid
+      associated_epoch = self._associated_epoch
+      station_operation = self._station_operation
       station_active = station_ssid is not None or self._wifi_state.status == ConnectStatus.CONNECTED
 
     if station_active:
@@ -1264,8 +1267,16 @@ class WifiManager:
       if ssid and self._store is not None:
         metered = self._store.get_metered(ssid, profile_uuid)
 
-    self._ipv4_address = ipv4_address
-    self._current_network_metered = metered
+    with self._state_lock:
+      if (
+        self._user_epoch != station_epoch
+        or self._associated_ssid != station_ssid
+        or self._associated_epoch != associated_epoch
+        or self._station_operation is not station_operation
+      ):
+        return
+      self._ipv4_address = ipv4_address
+      self._current_network_metered = metered
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False,
                          security: SecurityType | None = None):

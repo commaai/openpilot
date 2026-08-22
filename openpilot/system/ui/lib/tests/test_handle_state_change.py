@@ -526,6 +526,26 @@ class TestConnectionState(TestCase):
     self.manager._store.get_metered.assert_called_once_with("Duplicate", "second-uuid")
     assert self.manager.current_network_metered == MeteredType.NO
 
+  def test_active_info_does_not_publish_after_station_teardown(self):
+    self.manager._set_connecting("TestNet")
+    epoch = self.manager._user_epoch
+    self.manager._associated_ssid = "TestNet"
+    self.manager._associated_epoch = epoch
+    self.manager._wifi_state = WifiState("TestNet", ConnectStatus.CONNECTED)
+    self.manager._ctrl.request.return_value = (
+      "wpa_state=COMPLETED\nssid=TestNet\nid_str=test-uuid\nip_address=192.168.1.20\n"
+    )
+
+    def get_metered(*_):
+      self.manager._clear_station_state()
+      return MeteredType.YES
+
+    self.manager._store.get_metered.side_effect = get_metered
+    WifiManager._update_active_connection_info(self.manager)
+
+    assert self.manager.ipv4_address == ""
+    assert self.manager.current_network_metered == MeteredType.UNKNOWN
+
   def test_activate_restores_saved_profile_constraints(self):
     cases = (
       ("Preferred", {"psk": "password123", "hidden": False, "priority": 42, "uuid": "preferred-uuid", "security": SecurityType.WPA}, 42, None),
