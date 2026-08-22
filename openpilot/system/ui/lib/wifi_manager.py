@@ -609,16 +609,15 @@ class WifiManager:
     route = routes[0]
     try:
       via_index = route.index("via")
-      dev_index = route.index("dev")
       metric_index = route.index("metric")
     except ValueError:
       return False
+    dev_index = route.index("dev") if "dev" in route else None
     return (
       route[0] == "default"
       and via_index + 1 < len(route)
       and route[via_index + 1] not in ("dev", "metric")
-      and dev_index + 1 < len(route)
-      and route[dev_index + 1] == "wlan0"
+      and (dev_index is None or (dev_index + 1 < len(route) and route[dev_index + 1] == "wlan0"))
       and metric_index + 1 < len(route)
       and route[metric_index + 1] == "600"
     )

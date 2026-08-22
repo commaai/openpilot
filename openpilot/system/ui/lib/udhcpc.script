@@ -26,7 +26,7 @@ case "$1" in
           if ($i == "via" && i < NF) via = $(i + 1)
           if ($i == "metric" && i < NF) metric = $(i + 1)
         }
-        if ($1 != "default" || dev != iface || via != router || metric != target) exit 1
+        if ($1 != "default" || (dev != "" && dev != iface) || via != router || metric != target) exit 1
       }
       END { if (count != 1) exit 1 }
     ' || exit $?

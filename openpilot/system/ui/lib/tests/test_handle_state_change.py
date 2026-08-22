@@ -201,6 +201,7 @@ class TestConnectionState(TestCase):
   def test_wifi_default_route_ready_requires_one_metric_600_gateway(self):
     cases = (
       ("default via 192.168.1.1 dev wlan0 metric 600\n", True),
+      ("default via 192.168.1.1 metric 600\n", True),
       ("", False),
       ("default via 192.168.1.1 dev wlan0 metric 0\n", False),
       ("default dev wlan0 metric 600\n", False),

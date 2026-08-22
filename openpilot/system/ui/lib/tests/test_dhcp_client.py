@@ -122,7 +122,7 @@ class TestDhcpClient(TestCase):
       ip = root / "ip"
       ip.write_text("""#!/bin/sh
 printf "ip %s\\n" "$*" >> "$TRACE"
-[ "$*" = "-4 route show default dev wlan0" ] && printf "default via 192.168.1.1 dev wlan0 metric 600\\n"
+[ "$*" = "-4 route show default dev wlan0" ] && printf "default via 192.168.1.1 metric 600\\n"
 exit 0
 """)
       ip.chmod(0o755)
