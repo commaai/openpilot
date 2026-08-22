@@ -144,6 +144,19 @@ class TestConnectionState(TestCase):
     self.manager._dhcp.start.assert_called_once()
     self.manager._poll_for_ip.assert_called_once()
 
+  def test_connected_to_another_ssid_clears_stale_ipv6_state(self):
+    self.manager._wifi_state = WifiState("PreviousNet", ConnectStatus.CONNECTED)
+    self.manager._associated_ssid = "PreviousNet"
+    self.manager._associated_epoch = self.manager._user_epoch
+    self.manager._ctrl.request.return_value = "wpa_state=COMPLETED\nssid=TestNet\n"
+
+    self.manager._handle_event("CTRL-EVENT-CONNECTED")
+
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+    self.manager._dhcp.start.assert_called_once()
+    assert self.manager._associated_ssid == "TestNet"
+    assert self.manager._associated_epoch == self.manager._user_epoch
+
   def test_connected_waits_for_metric_600_default_route(self):
     activated = MagicMock()
     self.manager.add_callbacks(activated=activated)

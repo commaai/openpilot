@@ -316,14 +316,6 @@ class WifiManager:
       if ctrl is not None:
         self._ctrl = ctrl
 
-  def _consume_dhcp_adoption(self, ssid: str) -> bool:
-    with self._radio_lock:
-      adoption_ssid = self._dhcp_adoption_ssid
-      self._dhcp_adoption_ssid = None
-      if adoption_ssid is not None and adoption_ssid != ssid:
-        self._dhcp.clear_ipv6_state()
-      return adoption_ssid == ssid
-
   def _request(self, cmd: str) -> str:
     with self._radio_lock:
       ctrl = self._ctrl
@@ -380,8 +372,7 @@ class WifiManager:
         return
 
       if connection_status == ConnectStatus.CONNECTED and ssid is not None:
-        adopt_dhcp = self._consume_dhcp_adoption(ssid)
-        self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch, profile_uuid=status.get("id_str"))
+        self._handle_connected(ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
       else:
         if connection_status == ConnectStatus.CONNECTING and self._last_connecting_at == 0.0:
           self._last_connecting_at = time.monotonic()
@@ -783,7 +774,7 @@ class WifiManager:
       cloudlog.exception("Failed to read running AP configuration")
       return False
 
-  def _handle_connected(self, ssid: str, adopt_dhcp: bool = False, expected_epoch: int | None = None,
+  def _handle_connected(self, ssid: str, expected_epoch: int | None = None,
                         profile_uuid: str | None = None):
     """Handle L2 association. CONNECTED and activation remain IP-ready states."""
     with self._radio_lock:
@@ -793,6 +784,17 @@ class WifiManager:
         if self._requested_ssid is not None and self._requested_ssid != ssid:
           return
         transition_epoch = self._user_epoch
+        previous_ssid = self._associated_ssid
+        if previous_ssid is None and self._wifi_state.status == ConnectStatus.CONNECTED:
+          previous_ssid = self._wifi_state.ssid
+        adoption_ssid = self._dhcp_adoption_ssid
+        adopt_dhcp = adoption_ssid == ssid
+        if (
+          (previous_ssid is not None and previous_ssid != ssid)
+          or (adoption_ssid is not None and adoption_ssid != ssid)
+        ):
+          self._dhcp.clear_ipv6_state()
+        self._dhcp_adoption_ssid = None
         already_associated = self._connected_transition_is_current(ssid, transition_epoch)
         already_connected = self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
         previous_operation = self._station_operation
@@ -897,8 +899,7 @@ class WifiManager:
 
       ssid = status.get("ssid")
       if ssid:
-        adopt_dhcp = self._consume_dhcp_adoption(ssid)
-        self._handle_connected(ssid, adopt_dhcp=adopt_dhcp, expected_epoch=epoch, profile_uuid=status.get("id_str"))
+        self._handle_connected(ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
 
     elif "CTRL-EVENT-DISCONNECTED" in event:
       if self._tethering_active:
@@ -1116,9 +1117,7 @@ class WifiManager:
         return
       if wpa_state == "COMPLETED" and status_ssid:
         # Preserve the lease when adopting a roam missed by the monitor
-        with self._radio_lock:
-          self._dhcp.clear_ipv6_state()
-          self._handle_connected(status_ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
+        self._handle_connected(status_ssid, expected_epoch=epoch, profile_uuid=status.get("id_str"))
         return
       # Preserve the lease during transient roam and rekey states
       if wpa_state in ("SCANNING", "AUTHENTICATING", "ASSOCIATING", "ASSOCIATED",
