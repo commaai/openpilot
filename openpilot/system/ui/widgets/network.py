@@ -63,6 +63,7 @@ class NetworkUI(Widget):
     self._advanced_panel = self._child(AdvancedNetworkSettings(wifi_manager))
     self._nav_button = self._child(NavButton(tr("Advanced")))
     self._nav_button.set_click_callback(self._cycle_panel)
+    self._wifi_panel.set_panel_active(True)
 
   def show_event(self):
     super().show_event()
@@ -91,6 +92,7 @@ class NetworkUI(Widget):
 
   def _set_current_panel(self, panel: PanelType):
     self._current_panel = panel
+    self._wifi_panel.set_panel_active(panel == PanelType.WIFI)
 
 
 class AdvancedNetworkSettings(Widget):
@@ -272,6 +274,8 @@ class WifiManagerUI(Widget):
     super().__init__()
     self._wifi_manager = wifi_manager
     self.state: UIState = UIState.IDLE
+    self._page_shown = False
+    self._panel_active = True
     self._state_network: Network | None = None  # for CONNECTING / NEEDS_AUTH / SHOW_FORGET_CONFIRM / FORGETTING
     self._password_retry: bool = False  # for NEEDS_AUTH
     self.btn_width: int = 200
@@ -292,11 +296,16 @@ class WifiManagerUI(Widget):
 
   def show_event(self):
     super().show_event()
+    self._page_shown = True
     self._wifi_manager.set_active(True)
 
   def hide_event(self):
     super().hide_event()
+    self._page_shown = False
     self._wifi_manager.set_active(False)
+
+  def set_panel_active(self, active: bool):
+    self._panel_active = active
 
   def _load_icons(self):
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
@@ -479,7 +488,8 @@ class WifiManagerUI(Widget):
   def _on_forget_failed(self, _):
     if self.state == UIState.FORGETTING:
       self.state = UIState.IDLE
-    gui_app.push_widget(alert_dialog(tr("Failed to forget Wi-Fi network")))
+    if self._page_shown and self._panel_active:
+      gui_app.push_widget(alert_dialog(tr("Failed to forget Wi-Fi network")))
 
   def _on_disconnected(self):
     if self.state == UIState.CONNECTING:

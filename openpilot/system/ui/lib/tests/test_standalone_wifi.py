@@ -26,6 +26,8 @@ class TestStandaloneWifi(TestCase):
   def test_forget_failure_releases_wifi_controls(self):
     wifi_ui = WifiManagerUI.__new__(WifiManagerUI)
     wifi_ui.state = UIState.FORGETTING
+    wifi_ui._page_shown = True
+    wifi_ui._panel_active = True
     dialog = MagicMock()
 
     with (
@@ -36,6 +38,30 @@ class TestStandaloneWifi(TestCase):
 
     assert wifi_ui.state == UIState.IDLE
     push_widget.assert_called_once_with(dialog)
+
+  def test_forget_failure_on_advanced_panel_does_not_open_dialog(self):
+    wifi_ui = WifiManagerUI.__new__(WifiManagerUI)
+    wifi_ui.state = UIState.FORGETTING
+    wifi_ui._page_shown = True
+    wifi_ui._panel_active = False
+
+    with (
+      patch.object(network_module, "alert_dialog", return_value=MagicMock()),
+      patch.object(network_module.gui_app, "push_widget") as push_widget,
+    ):
+      wifi_ui._on_forget_failed("SavedNet")
+
+    assert wifi_ui.state == UIState.IDLE
+    push_widget.assert_not_called()
+
+  def test_network_ui_tracks_active_wifi_panel(self):
+    network_ui = network_module.NetworkUI.__new__(network_module.NetworkUI)
+    network_ui._wifi_panel = MagicMock()
+
+    network_ui._set_current_panel(network_module.PanelType.ADVANCED)
+
+    assert network_ui._current_panel == network_module.PanelType.ADVANCED
+    network_ui._wifi_panel.set_panel_active.assert_called_once_with(False)
 
   def test_mici_forget_failure_restores_button_and_opens_dialog(self):
     try:
