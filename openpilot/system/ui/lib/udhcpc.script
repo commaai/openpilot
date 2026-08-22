@@ -1,0 +1,34 @@
+#!/bin/sh
+
+default_script=${UDHCPC_DEFAULT_SCRIPT:-/etc/udhcpc/default.script}
+# Match NetworkManager's Wi-Fi route metric; AGNOS LTE uses 1000
+wifi_route_metric=600
+"$default_script" "$1"
+status=$?
+
+if [ "$status" -ne 0 ]; then
+  exit "$status"
+fi
+
+case "$1" in
+  bound|renew)
+    router=${router%% *}
+    [ -n "$router" ] || exit 1
+    ip -4 route flush default dev "$interface" || exit $?
+    ip -4 route replace default via "$router" dev "$interface" metric "$wifi_route_metric" || exit $?
+    defaults=$(ip -4 route show default dev "$interface") || exit $?
+    printf '%s\n' "$defaults" | awk -v iface="$interface" -v router="$router" -v target="$wifi_route_metric" '
+      NF {
+        count++
+        dev = via = metric = ""
+        for (i = 1; i <= NF; i++) {
+          if ($i == "dev" && i < NF) dev = $(i + 1)
+          if ($i == "via" && i < NF) via = $(i + 1)
+          if ($i == "metric" && i < NF) metric = $(i + 1)
+        }
+        if ($1 != "default" || (dev != "" && dev != iface) || via != router || metric != target) exit 1
+      }
+      END { if (count != 1) exit 1 }
+    ' || exit $?
+    ;;
+esac
