@@ -1,0 +1,57 @@
+import unittest, sys
+from tinygrad import Tensor, GlobalCounters, dtypes, Context
+from tinygrad.helpers import WINO
+from test.helpers import check_schedule
+
+@unittest.skipIf(sys.platform.startswith("win"), "flaky on Windows")
+class TestWinograd(unittest.TestCase):
+  def setUp(self):
+    self.old = WINO.value
+    WINO.value = 1
+  def tearDown(self):
+    WINO.value = self.old
+
+  def test_forward_kernels(self):
+    x,w = Tensor.rand(1,4,9,9).realize(), Tensor.rand(4,4,3,3).realize()
+    out = Tensor.conv2d(x,w)
+    check_schedule(out, 4)
+
+  def test_backward_counters(self):
+    # contiguous_backward on the pooled input keeps the input-transform adjoint out of the overlap accumulation, so
+    # winograd backward runs in a fraction of the direct-conv flops; NOOPT=1 keeps the raw flop ratio from drifting with the optimizer
+    IC, OC, H = 64, 64, 28
+    x,w = Tensor.empty(1,IC,H,H,device="NULL").realize(), Tensor.empty(OC,IC,3,3,device="NULL").realize()
+    x.requires_grad = w.requires_grad = True
+    def backward_ops(wino):
+      x.grad = w.grad = None
+      GlobalCounters.reset()
+      with Context(NOOPT=1, WINO=wino):
+        Tensor.conv2d(x,w,padding=1).mean().backward()
+        Tensor.realize(x.grad, w.grad)
+      return GlobalCounters.global_ops
+    ops_wino, ops_normal = backward_ops(1), backward_ops(0)
+    print(f"backward ops: normal {ops_normal} wino {ops_wino} ratio {ops_wino/ops_normal:.2f}")
+    self.assertLess(ops_wino/ops_normal, 0.35)
+
+  def test_counters(self):
+    IC, OC, H = 64, 64, 28
+    x,w = Tensor.empty(1,IC,H,H,device="NULL").realize(), Tensor.empty(OC,IC,3,3,device="NULL").realize()
+    GlobalCounters.reset()
+    with Context(NOOPT=0, WINO=1): Tensor.conv2d(x,w).realize()
+    ops_wino = GlobalCounters.global_ops
+    GlobalCounters.reset()
+    with Context(NOOPT=0, WINO=0): Tensor.conv2d(x,w).realize()
+    ops_normal = GlobalCounters.global_ops
+    print(f"ops: normal {ops_normal} wino {ops_wino} ratio {ops_wino/ops_normal:.2f}")
+    self.assertLess(ops_wino/ops_normal, 0.6)
+
+  def test_dtype(self):
+    IC, OC, X, Y = 4,4,9,9
+    x,w = Tensor.empty(1,IC,Y,X), Tensor.empty(OC,IC,3,3)
+    self.assertEqual(Tensor.conv2d(x,w).dtype, dtypes.default_float)
+
+    x,w = Tensor.empty(1,IC,Y,X,dtype=dtypes.half), Tensor.empty(OC,IC,3,3,dtype=dtypes.half)
+    self.assertEqual(Tensor.conv2d(x,w).dtype, dtypes.half)
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)
