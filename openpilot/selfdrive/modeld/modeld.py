@@ -87,7 +87,7 @@ class ChestnutState:
     msg = messaging.new_message('chestnutState')
     state = msg.chestnutState
     self.sends += 1
-    if self.big and "AMD" in Device._opened_devices and self.sends % 100 == 1:
+    if False and self.big and "AMD" in Device._opened_devices and self.sends % 100 == 1:
       try:
         smu = Device["AMD"].iface.dev_impl.smu
         smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
@@ -170,7 +170,10 @@ class ModelState:
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
       cache_key = (key, ptr)
       if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
+        self._blob_cache[cache_key] = Tensor.empty((yuv_size,), dtype='uint8', device=self.WARP_DEV)
+      
+      buf_data = np.frombuffer(bufs[key].data, dtype=np.uint8)[:yuv_size]
+      self._blob_cache[cache_key].assign(buf_data).realize()
       self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge

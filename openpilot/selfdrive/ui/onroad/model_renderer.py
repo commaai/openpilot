@@ -1,4 +1,4 @@
-import colorsys
+import colorsys, time
 import numpy as np
 import pyray as rl
 from openpilot.cereal import messaging

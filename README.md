@@ -4,7 +4,7 @@
 
 <table>
   <tr>
-    <td>Demo in progress</td>
+    <td>Currently inoperative</td>
   </tr>
 </table>
 
@@ -57,3 +57,10 @@ Processes that are incompatible with desktop use or has no use for in desktop si
 Proccesses that are required because of the removed processes have been added.
 * `beamngd` Updates Telemetry (100Hz)
 * `beamcamd` Updates Cameras (20Hz)
+
+## Test Scripts
+`cd beampilot`<br>
+venv `source .venv/bin/activate`<br>
+modeld `OCL_ICD_VENDORS=amdocl64.icd HIP_VISIBLE_DEVICES=0 openpilot/selfdrive/modeld/modeld.py`<br>
+replay `openpilot/tools/replay/replay --demo -b modelV2,drivingModelData,cameraOdometry`<br>
+ui `BIG="1" openpilot/selfdrive/ui/ui.py`

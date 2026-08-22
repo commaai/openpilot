@@ -46,15 +46,7 @@ def load_oob(f):
   return pickle.load(io.BytesIO(opcodes), buffers=buffers())
 
 def usbgpu_present() -> bool:
-  for d in USB_DEVICES_PATH.glob("*"):
-    try:
-      usb_id = (int((d / "idVendor").read_text(), 16), int((d / "idProduct").read_text(), 16))
-      product = (d / "product").read_text().strip()
-      if usb_id in CHESTNUT_USB_IDS and product == f"custom {CHESTNUT_FW_VERSION}-CLEAN":
-        return True
-    except Exception:
-      pass
-  return False
+  return True
 
 def usbgpu_compiled() -> bool:
   return Path(get_manifest_path(modeld_pkl_path(usbgpu=True))).is_file()

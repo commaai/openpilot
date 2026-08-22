@@ -52,7 +52,7 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 USBGPU = usbgpu_present()
 if USBGPU:
-  usbgpu_tg_flags = f'DEBUG=2 DEV=USB+AMD:LLVM WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
+  usbgpu_tg_flags = f'DEBUG=2 DEV=AMD WARP_DEV={tg_backend} FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=0'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   usbgpu_lock = File("models/.usb_gpu.lock").abspath
 
@@ -96,15 +96,6 @@ for usbgpu in [False, True] if USBGPU else [False]:
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
   chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_compile(target, source, env, command=cmd, pkl=target_pkl_path, chunks=chunk_targets):
-    from openpilot.system.hardware.chestnut.flash import link_up
-    # chestnut can enumerate before its PCIe link is up due to varying 12V power behavior across cars
-    for _ in range(10):
-      if link_up():
-        break
-      time.sleep(1)
-    else:
-      print("Chestnut not ready, skipping big model build")
-      return
     if ret := env.Execute(command):
       return ret
     chunk_file(pkl, chunks)
