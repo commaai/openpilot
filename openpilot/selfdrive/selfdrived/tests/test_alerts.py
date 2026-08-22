@@ -70,6 +70,14 @@ class TestAlerts(OpenpilotTestCase):
         if event_type not in (ET.WARNING, ET.PERMANENT, ET.PRE_ENABLE):
           assert a.creation_delay == 0.
 
+  def test_process_not_running_alert_has_priority(self):
+    process_alert = EVENTS[log.OnroadEvent.EventName.processNotRunning][ET.NO_ENTRY](
+      self.CP, self.CS, self.sm, False, 0, None,
+    )
+    steer_alert = EVENTS[log.OnroadEvent.EventName.steerUnavailable][ET.NO_ENTRY]
+
+    assert process_alert.priority > steer_alert.priority
+
   def test_offroad_alerts(self):
     params = Params()
     for a in self.offroad_alerts:
