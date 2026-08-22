@@ -495,6 +495,46 @@ method=ignore
 
     assert "psk = new-password" in path.read_text()
 
+  def test_updates_every_persistent_tethering_profile(self):
+    paths = [
+      Path(write_profile(self.persistent, "hotspot-a.nmconnection", "weedle", file_uuid="hotspot-a", psk="old-password", mode="ap")),
+      Path(write_profile(self.persistent, "hotspot-b.nmconnection", "weedle", file_uuid="hotspot-b", psk="old-password", mode="ap")),
+    ]
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      assert store.set_tethering_password("weedle", "new-password")
+      restarted = self.make_store()
+
+    assert all("psk = new-password" in path.read_text() for path in paths)
+    assert restarted.get_tethering_password("weedle") == "new-password"
+
+  def test_multi_profile_tethering_update_rolls_back_earlier_profiles(self):
+    first_path = Path(write_profile(
+      self.persistent, "hotspot-a.nmconnection", "weedle", file_uuid="hotspot-a", psk="first-password", mode="ap",
+    ))
+    second_path = Path(write_profile(
+      self.persistent, "hotspot-b.nmconnection", "weedle", file_uuid="hotspot-b", psk="second-password", mode="ap",
+    ))
+    originals = {path: path.read_text() for path in (first_path, second_path)}
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      install = store._install_keyfile
+      install_count = 0
+
+      def fail_second_install(cp, path):
+        nonlocal install_count
+        install_count += 1
+        if install_count == 2:
+          raise OSError("write failed")
+        install(cp, path)
+
+      with patch.object(store, "_install_keyfile", side_effect=fail_second_install), self.assertRaises(OSError):
+        store.set_tethering_password("weedle", "new-password")
+
+    assert {path: path.read_text() for path in (first_path, second_path)} == originals
+
   def test_tethering_update_restores_existing_target_when_runtime_cleanup_fails(self):
     shared_uuid = "shared-hotspot-uuid"
     persistent_path = Path(write_profile(
@@ -517,6 +557,27 @@ method=ignore
 
     assert persistent_path.read_text() == original
     assert runtime_path.exists()
+
+  def test_tethering_update_collapses_runtime_shadow_by_uuid(self):
+    shared_uuid = "shared-hotspot-uuid"
+    persistent_path = Path(write_profile(
+      self.persistent, "hotspot.nmconnection", "weedle", file_uuid=shared_uuid, psk="old-password", mode="ap",
+    ))
+    runtime_path = Path(write_profile(
+      self.runtime, "runtime-hotspot.nmconnection", "weedle", file_uuid=shared_uuid, psk="old-password", mode="ap",
+    ))
+    netplan_path = Path(self.netplan, f"90-NM-{profile_uuid(shared_uuid)}.yaml")
+    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {profile_uuid(shared_uuid)}\n")
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      with patch.object(store, "_install_keyfile", wraps=store._install_keyfile) as install:
+        assert store.set_tethering_password("weedle", "new-password")
+
+    install.assert_called_once()
+    assert "psk = new-password" in persistent_path.read_text()
+    assert not runtime_path.exists()
+    assert not netplan_path.exists()
 
   def test_persists_runtime_tethering_profile_for_rollback(self):
     runtime_path = Path(write_profile(

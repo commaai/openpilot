@@ -651,34 +651,52 @@ class NetworkStore:
       if not profiles:
         return self._create_tethering_profile(ssid, password)
 
-      cp, source_directory, source_filename, file_uuid = profiles[0]
-      security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")
-      assert security_section is not None
-      cp[security_section]["psk"] = _encode_keyfile_string(password)
+      profiles_by_uuid: dict[str, list[tuple[configparser.ConfigParser, str, str, str]]] = {}
+      for profile in profiles:
+        profiles_by_uuid.setdefault(profile[3], []).append(profile)
 
-      if source_directory == self._directory:
-        target_path = os.path.join(self._directory, source_filename)
-      else:
-        if not file_uuid:
-          return False
-        target_path = os.path.join(self._directory, _canonical_filename(file_uuid, ssid))
-      runtime_profile = next((profile for profile in profiles
-                              if profile[1] == self._runtime_directory and profile[3] == file_uuid), None)
-      runtime_path = os.path.join(self._runtime_directory, runtime_profile[2]) if self._runtime_directory is not None and runtime_profile is not None else None
-      netplan_filename = self._find_netplan_filename(file_uuid) if runtime_path is not None else None
-      netplan_path = os.path.join(self._netplan_directory, netplan_filename) if self._netplan_directory is not None and netplan_filename else None
-      if netplan_path is not None and not os.path.exists(netplan_path):
-        return False
+      updates: list[tuple[configparser.ConfigParser, str, set[str]]] = []
+      paths: set[str] = set()
+      for file_uuid, representations in sorted(profiles_by_uuid.items()):
+        persistent = sorted(
+          (profile for profile in representations if profile[1] == self._directory),
+          key=lambda profile: profile[2],
+        )
+        source = persistent[0] if persistent else min(representations, key=lambda profile: (profile[1], profile[2]))
+        cp, _, source_filename, _ = source
+        security_section = _keyfile_section(cp, "wifi-security", "802-11-wireless-security")
+        assert security_section is not None
+        cp[security_section]["psk"] = _encode_keyfile_string(password)
 
-      paths = {path for path in (target_path, runtime_path, netplan_path) if path is not None}
+        target_path = (
+          os.path.join(self._directory, source_filename)
+          if persistent
+          else os.path.join(self._directory, _canonical_filename(file_uuid, ssid))
+        )
+        obsolete_paths = {
+          os.path.join(directory, filename)
+          for _, directory, filename, _ in representations
+          if os.path.join(directory, filename) != target_path
+        }
+        if any(directory == self._runtime_directory for _, directory, _, _ in representations):
+          netplan_filename = self._find_netplan_filename(file_uuid)
+          if self._netplan_directory is not None and netplan_filename is not None:
+            netplan_path = os.path.join(self._netplan_directory, netplan_filename)
+            if not os.path.exists(netplan_path):
+              return False
+            obsolete_paths.add(netplan_path)
+
+        updates.append((cp, target_path, obsolete_paths))
+        paths.add(target_path)
+        paths.update(obsolete_paths)
+
       with self._update_transaction(paths, f"tethering profile {ssid!r}"):
-        self._install_keyfile(cp, target_path)
-        for source_path in (runtime_path, netplan_path):
-          if source_path is None:
-            continue
-          result = subprocess.run(["sudo", "rm", "-f", source_path], check=False)
-          if result.returncode != 0:
-            raise OSError(f"failed to remove {source_path}")
+        for cp, target_path, obsolete_paths in updates:
+          self._install_keyfile(cp, target_path)
+          for source_path in sorted(obsolete_paths):
+            result = subprocess.run(["sudo", "rm", "-f", source_path], check=False)
+            if result.returncode != 0:
+              raise OSError(f"failed to remove {source_path}")
       return True
 
   def save_network(self, ssid: str, psk: str | None = None, metered: int | None = None, hidden: bool | None = None,
