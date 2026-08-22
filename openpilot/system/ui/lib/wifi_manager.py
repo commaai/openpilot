@@ -796,11 +796,17 @@ class WifiManager:
         already_associated = self._connected_transition_is_current(ssid, transition_epoch)
         already_connected = self._wifi_state == WifiState(ssid, ConnectStatus.CONNECTED)
         previous_operation = self._station_operation
+        pending = self._pending_connection
+        active_profile_uuid = profile_uuid or (pending.profile_uuid if pending is not None and pending.ssid == ssid else None)
+        previous_profile_uuid = previous_operation.profile_uuid if previous_operation is not None else None
+        profile_changed = (
+          already_associated
+          and active_profile_uuid is not None
+          and active_profile_uuid != previous_profile_uuid
+        )
         if not already_associated:
           self._associated_ssid = ssid
           self._associated_epoch = transition_epoch
-          pending = self._pending_connection
-          active_profile_uuid = profile_uuid or (pending.profile_uuid if pending is not None and pending.ssid == ssid else None)
           self._station_operation = StationOperation(
             transition_epoch,
             StationOperationKind.ASSOCIATED,
@@ -810,11 +816,42 @@ class WifiManager:
           )
           self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
 
+      if not already_associated or profile_changed:
+        try:
+          ipv6_method = self._store.get_ipv6_method(ssid, active_profile_uuid) if self._store is not None else "auto"
+          self._dhcp.set_ipv6_enabled(ipv6_method != "ignore")
+        except Exception:
+          cloudlog.exception("Failed to apply IPv6 policy for %s", ssid)
+          if not already_associated:
+            with self._state_lock:
+              if self._connected_transition_is_current(ssid, transition_epoch):
+                self._associated_ssid = None
+                self._associated_epoch = None
+                self._station_operation = previous_operation
+          return
+
+        if profile_changed:
+          with self._state_lock:
+            if (
+              not self._connected_transition_is_current(ssid, transition_epoch)
+              or self._station_operation is not previous_operation
+            ):
+              return
+            self._station_operation = StationOperation(
+              transition_epoch,
+              StationOperationKind.ASSOCIATED,
+              ssid,
+              profile_uuid=active_profile_uuid,
+              runtime_network_id=previous_operation.runtime_network_id if previous_operation is not None else None,
+            )
+
       if already_connected:
         # Retry persistence after transient filesystem failures.
         pending = self._pending_connection
         if pending is not None and pending.ssid == ssid:
           self._persist_pending_connection(ssid)
+        if profile_changed:
+          self._update_active_connection_info()
         return
 
       if already_associated:
@@ -823,17 +860,6 @@ class WifiManager:
         self._complete_station_connection(ssid, transition_epoch)
         return
 
-      try:
-        ipv6_method = self._store.get_ipv6_method(ssid, active_profile_uuid) if self._store is not None else "auto"
-        self._dhcp.set_ipv6_enabled(ipv6_method != "ignore")
-      except Exception:
-        cloudlog.exception("Failed to apply IPv6 policy for %s", ssid)
-        with self._state_lock:
-          if self._connected_transition_is_current(ssid, transition_epoch):
-            self._associated_ssid = None
-            self._associated_epoch = None
-            self._station_operation = previous_operation
-        return
       if not adopt_dhcp or not self._dhcp.adopt():
         self._ipv4_address = ""
         self._dhcp.start()

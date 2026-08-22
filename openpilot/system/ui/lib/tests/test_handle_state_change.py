@@ -124,6 +124,26 @@ class TestConnectionState(TestCase):
     assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
     self.manager._dhcp.start.assert_not_called()
 
+  def test_same_ssid_profile_switch_reapplies_ipv6_policy(self):
+    first_uuid = str(uuid.uuid4())
+    second_uuid = str(uuid.uuid4())
+    self.manager._store.get_ipv6_method.side_effect = ["ignore", "auto"]
+    self.manager._set_connecting("TestNet")
+
+    self.manager._handle_connected("TestNet", profile_uuid=first_uuid)
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._handle_connected("TestNet", profile_uuid=second_uuid)
+
+    assert self.manager._store.get_ipv6_method.call_args_list == [
+      call("TestNet", first_uuid),
+      call("TestNet", second_uuid),
+    ]
+    assert self.manager._dhcp.set_ipv6_enabled.call_args_list == [call(False), call(True)]
+    assert self.manager._station_operation is not None
+    assert self.manager._station_operation.profile_uuid == second_uuid
+    self.manager._dhcp.start.assert_called_once()
+    self.manager._poll_for_ip.assert_called_once()
+
   def test_connected_waits_for_metric_600_default_route(self):
     activated = MagicMock()
     self.manager.add_callbacks(activated=activated)
