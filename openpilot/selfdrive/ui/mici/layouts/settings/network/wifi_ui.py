@@ -395,7 +395,8 @@ class WifiUIMici(NavScroller):
 
   def _on_forget_failed(self, ssid):
     self._on_forgotten(ssid)
-    gui_app.push_widget(BigDialog("", tr("Failed to forget Wi-Fi network")))
+    if self._shown:
+      gui_app.push_widget(BigDialog("", tr("Failed to forget Wi-Fi network")))
 
   def _move_network_to_front(self, ssid: str | None, scroll: bool = False):
     # Move connecting/connected network to the front with animation
