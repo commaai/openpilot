@@ -979,6 +979,9 @@ class WifiManager:
                 self._network_not_found_epoch = None
                 self._network_not_found_events = 0
                 return
+              response = self._request("ENABLE_NETWORK all").strip()
+              if not response.startswith("OK"):
+                raise RuntimeError(f"ENABLE_NETWORK all failed: {response}")
             except Exception:
               cloudlog.exception("Failed to update saved networks after WRONG_KEY")
           self._clear_pending_connection(event_ssid)

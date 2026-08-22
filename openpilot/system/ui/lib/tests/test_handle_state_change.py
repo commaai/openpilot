@@ -780,26 +780,52 @@ class TestConnectionState(TestCase):
     need_auth = MagicMock()
     self.manager.add_callbacks(need_auth=need_auth)
     self.manager._set_connecting("TestNet")
+    runtime_networks = {"0": "TestNet", "1": "TestNet", "2": "FallbackNet"}
+    enabled_networks = {"0"}
+
+    def list_network_ids(ssid):
+      return [net_id for net_id, network_ssid in runtime_networks.items() if network_ssid == ssid]
+
+    def remove_network(net_id):
+      runtime_networks.pop(net_id)
+      enabled_networks.discard(net_id)
+
+    def select_networks(net_ids):
+      enabled_networks.clear()
+      enabled_networks.update(net_ids)
+
+    def request(command):
+      if command == "ENABLE_NETWORK all":
+        enabled_networks.update(runtime_networks)
+        return "OK"
+      if command == "RECONFIGURE":
+        raise AssertionError("wrong-key recovery must not restore durable credentials")
+      return "OK"
 
     with (
-      patch.object(self.manager, "_list_network_ids", side_effect=[["0", "1"], ["1"]]),
-      patch.object(self.manager, "_remove_wpa_network_id") as remove_network,
-      patch.object(self.manager, "_select_network_ids") as select_networks,
+      patch.object(self.manager, "_list_network_ids", side_effect=list_network_ids),
+      patch.object(self.manager, "_remove_wpa_network_id", side_effect=remove_network) as remove_network_mock,
+      patch.object(self.manager, "_select_network_ids", side_effect=select_networks) as select_networks_mock,
       patch.object(self.manager, "_restore_station_runtime") as restore_runtime,
       patch.object(wifi_manager_module.time, "monotonic", return_value=100),
     ):
+      self.manager._request = MagicMock(side_effect=request)
       self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="TestNet" reason=WRONG_KEY')
       self.manager.process_callbacks()
 
       assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
-      select_networks.assert_called_once_with(["1"])
+      select_networks_mock.assert_called_once_with(["1"])
+      assert enabled_networks == {"1"}
       need_auth.assert_not_called()
 
       self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=1 ssid="TestNet" reason=WRONG_KEY')
       self.manager._handle_event('CTRL-EVENT-SSID-TEMP-DISABLED id=1 ssid="TestNet" reason=WRONG_KEY')
 
     self.manager.process_callbacks()
-    assert remove_network.call_args_list == [call("0"), call("1")]
+    assert remove_network_mock.call_args_list == [call("0"), call("1")]
+    assert runtime_networks == {"2": "FallbackNet"}
+    assert enabled_networks == {"2"}
+    assert call("ENABLE_NETWORK all") in self.manager._request.call_args_list
     restore_runtime.assert_not_called()
     assert self.manager.wifi_state == WifiState()
     self.manager._dhcp.stop.assert_called_once()
