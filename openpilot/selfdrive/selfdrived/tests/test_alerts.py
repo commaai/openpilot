@@ -9,7 +9,7 @@ from opendbc.car.structs import car
 from openpilot.cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET
+from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET, process_not_running_alert
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
 
@@ -71,9 +71,7 @@ class TestAlerts(OpenpilotTestCase):
           assert a.creation_delay == 0.
 
   def test_process_not_running_alert_has_priority(self):
-    process_alert = EVENTS[log.OnroadEvent.EventName.processNotRunning][ET.NO_ENTRY](
-      self.CP, self.CS, self.sm, False, 0, None,
-    )
+    process_alert = process_not_running_alert(self.CP, self.CS, self.sm, False, 0, None)
     steer_alert = EVENTS[log.OnroadEvent.EventName.steerUnavailable][ET.NO_ENTRY]
 
     assert process_alert.priority > steer_alert.priority
