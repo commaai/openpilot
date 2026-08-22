@@ -7,6 +7,7 @@ import threading
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from enum import IntEnum
 
 from openpilot.common.swaglog import cloudlog
@@ -43,6 +44,12 @@ class MeteredType(IntEnum):
   UNKNOWN = 0
   YES = 1
   NO = 2
+
+
+@dataclass(frozen=True)
+class NetplanSource:
+  path: str
+  exclusive: bool
 
 
 def _canonical_filename(file_uuid: str, ssid: str) -> str:
@@ -211,12 +218,10 @@ class NetworkStore:
       for fname in filenames:
         self._load_keyfile(directory, fname, imported, persistent_uuids)
 
-  def _find_netplan_filename(self, file_uuid: str) -> str | None:
+  def _find_netplan_source(self, file_uuid: str) -> NetplanSource | None:
     if self._netplan_directory is None or not file_uuid:
       return None
-    expected = f"90-NM-{file_uuid}.yaml"
-    if os.path.exists(os.path.join(self._netplan_directory, expected)):
-      return expected
+    expected_path = os.path.join(self._netplan_directory, f"90-NM-{file_uuid}.yaml")
     try:
       filenames = sorted(os.listdir(self._netplan_directory))
     except OSError:
@@ -224,17 +229,28 @@ class NetworkStore:
     pattern = re.compile(r"^\s*uuid\s*:\s*['\"]?([^'\"\s#]+)['\"]?\s*(?:#.*)?$", re.MULTILINE)
     yaml_filenames = [fname for fname in filenames if fname.endswith(".yaml")]
     read_failed = False
+    matches: list[tuple[str, set[str | None]]] = []
     for fname in yaml_filenames:
+      path = os.path.join(self._netplan_directory, fname)
       try:
-        raw = sudo_read(os.path.join(self._netplan_directory, fname))
+        raw = sudo_read(path)
       except OSError:
         read_failed = True
         continue
       if not raw:
         read_failed = True
-      elif {_parse_uuid(value) for value in pattern.findall(raw)} == {file_uuid}:
-        return fname
-    return expected if read_failed else None
+        continue
+      source_uuids = {_parse_uuid(value) for value in pattern.findall(raw)}
+      if file_uuid in source_uuids:
+        matches.append((path, source_uuids))
+
+    if matches:
+      path, source_uuids = matches[0]
+      return NetplanSource(path, not read_failed and len(matches) == 1 and source_uuids == {file_uuid})
+    if os.path.exists(expected_path) or read_failed:
+      # A canonical filename or unreadable YAML is not proof of exclusive ownership.
+      return NetplanSource(expected_path, False)
+    return None
 
   def _load_keyfile(self, directory: str, fname: str, imported: bool, persistent_uuids: dict[str, set[str]]):
     if not fname.endswith(".nmconnection"):
@@ -338,17 +354,17 @@ class NetworkStore:
         "_connection": connection,
         "_ipv4": ipv4,
         "_ipv6": ipv6,
-        # Track the source filename for noncanonical profiles
+        # Track persistent, runtime, and Netplan representations separately.
         "_filename": None if imported else fname,
         "_runtime_filename": fname if imported else None,
-        "_netplan_filename": self._find_netplan_filename(file_uuid) if imported else None,
+        "_netplan_source": self._find_netplan_source(file_uuid) if imported else None,
       }
       profiles = self._profiles.setdefault(ssid, [])
       if imported and file_uuid in persistent_uuids.get(ssid, set()):
         persistent = next((profile for profile in profiles if profile.get("uuid") == file_uuid), None)
         if persistent is not None and persistent.get("_runtime_filename") is None:
           persistent["_runtime_filename"] = fname
-          persistent["_netplan_filename"] = self._find_netplan_filename(file_uuid)
+          persistent["_netplan_source"] = self._find_netplan_source(file_uuid)
         return
       if any(profile.get("uuid") == file_uuid for profile in profiles):
         return
@@ -450,9 +466,11 @@ class NetworkStore:
       runtime_filename = profile.get("_runtime_filename")
       if self._runtime_directory is not None and runtime_filename:
         paths.add(os.path.join(self._runtime_directory, runtime_filename))
-      netplan_filename = profile.get("_netplan_filename")
-      if self._netplan_directory is not None and netplan_filename:
-        paths.add(os.path.join(self._netplan_directory, netplan_filename))
+      netplan_source = profile.get("_netplan_source")
+      if isinstance(netplan_source, NetplanSource):
+        if not netplan_source.exclusive:
+          raise OSError(f"refusing to mutate shared Netplan source {netplan_source.path}")
+        paths.add(netplan_source.path)
 
     with self._update_transaction(paths, repr(ssid)):
       yield
@@ -516,15 +534,17 @@ class NetworkStore:
         raise OSError(f"failed to remove {runtime_path}")
       entry["_runtime_filename"] = None
 
-    netplan_filename = entry.get("_netplan_filename")
-    if self._netplan_directory is not None and netplan_filename:
-      netplan_path = os.path.join(self._netplan_directory, netplan_filename)
+    netplan_source = entry.get("_netplan_source")
+    if isinstance(netplan_source, NetplanSource):
+      if not netplan_source.exclusive:
+        raise OSError(f"refusing to mutate shared Netplan source {netplan_source.path}")
+      netplan_path = netplan_source.path
       if not os.path.exists(netplan_path):
         raise OSError(f"failed to find {netplan_path}")
       result = subprocess.run(["sudo", "rm", "-f", netplan_path], check=False)
       if result.returncode != 0:
         raise OSError(f"failed to remove {netplan_path}")
-      entry["_netplan_filename"] = None
+      entry["_netplan_source"] = None
 
     # Keep one canonical filename for noncanonical profiles
     if stored_fname and stored_fname != canonical_fname:
@@ -679,12 +699,11 @@ class NetworkStore:
           if os.path.join(directory, filename) != target_path
         }
         if any(directory == self._runtime_directory for _, directory, _, _ in representations):
-          netplan_filename = self._find_netplan_filename(file_uuid)
-          if self._netplan_directory is not None and netplan_filename is not None:
-            netplan_path = os.path.join(self._netplan_directory, netplan_filename)
-            if not os.path.exists(netplan_path):
+          netplan_source = self._find_netplan_source(file_uuid)
+          if netplan_source is not None:
+            if not netplan_source.exclusive or not os.path.exists(netplan_source.path):
               return False
-            obsolete_paths.add(netplan_path)
+            obsolete_paths.add(netplan_source.path)
 
         updates.append((cp, target_path, obsolete_paths))
         paths.add(target_path)
@@ -782,9 +801,12 @@ class NetworkStore:
         runtime_filename = profile.get("_runtime_filename")
         if self._runtime_directory is not None and runtime_filename:
           paths.add(os.path.join(self._runtime_directory, runtime_filename))
-        netplan_filename = profile.get("_netplan_filename")
-        if self._netplan_directory is not None and netplan_filename:
-          netplan_paths.add(os.path.join(self._netplan_directory, netplan_filename))
+        netplan_source = profile.get("_netplan_source")
+        if isinstance(netplan_source, NetplanSource):
+          if not netplan_source.exclusive:
+            cloudlog.warning(f"NetworkStore: refusing to remove shared Netplan source {netplan_source.path}")
+            return False
+          netplan_paths.add(netplan_source.path)
       for p in netplan_paths:
         if not os.path.exists(p):
           cloudlog.warning(f"NetworkStore: failed to find netplan source {p}")
