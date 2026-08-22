@@ -261,6 +261,8 @@ def dbm_to_percent(dbm: int) -> int:
 
 TEMP_DISABLED_SSID_RE = re.compile(r'\bssid="((?:\\.|[^"])*)"')
 EVENT_NETWORK_ID_RE = re.compile(r"\bid=(\d+)\b")
+WPA_STOP_ATTEMPTS = 60
+WPA_STOP_POLL_INTERVAL_SECONDS = 0.05
 
 
 def normalize_ssid(ssid: str) -> str:
@@ -312,6 +314,27 @@ def wpa_supplicant_running(conf: str) -> bool:
   return _owned_wpa_pid(conf) is not None
 
 
+def _process_start_time(pid: int) -> str | None:
+  try:
+    stat = Path(f"/proc/{pid}/stat").read_text()
+  except OSError:
+    return None
+  end_comm = stat.rfind(")")
+  fields = stat[end_comm + 2:].split() if end_comm != -1 else []
+  return fields[19] if len(fields) > 19 else None
+
+
+def _wait_for_process_exit(pid: int, start_time: str) -> bool:
+  for _ in range(WPA_STOP_ATTEMPTS):
+    current_start_time = _process_start_time(pid)
+    if current_start_time is None:
+      return True
+    if current_start_time != start_time:
+      raise RuntimeError(f"wpa_supplicant PID {pid} was reused before teardown completed")
+    time.sleep(WPA_STOP_POLL_INTERVAL_SECONDS)
+  return False
+
+
 def prepare_wpa_runtime() -> None:
   subprocess.run(["sudo", "install", "-d", "-o", "root", "-g", "netdev", "-m", "775", WPA_CTRL_DIR], check=True)
   subprocess.run(["sudo", "rm", "-f", WPA_PID_FILE, WPA_CTRL_PATH], check=False)
@@ -321,8 +344,17 @@ def stop_wpa_supplicant(conf: str) -> None:
   pid = _owned_wpa_pid(conf)
   if pid is None:
     return
-  subprocess.run(["sudo", "kill", str(pid)], check=False)
-  subprocess.run(["sudo", "rm", "-f", WPA_PID_FILE, WPA_CTRL_PATH], check=False)
+  start_time = _process_start_time(pid)
+  if start_time is None:
+    if os.path.exists(f"/proc/{pid}"):
+      raise RuntimeError(f"failed to capture wpa_supplicant PID {pid} identity")
+  else:
+    subprocess.run(["sudo", "kill", "-TERM", "--", str(pid)], check=False)
+    if not _wait_for_process_exit(pid, start_time):
+      subprocess.run(["sudo", "kill", "-KILL", "--", str(pid)], check=False)
+      if not _wait_for_process_exit(pid, start_time):
+        raise RuntimeError(f"owned wpa_supplicant PID {pid} did not exit")
+  subprocess.run(["sudo", "rm", "-f", WPA_PID_FILE, WPA_CTRL_PATH], check=True)
 
 
 def tethering_dnsmasq_running() -> bool:

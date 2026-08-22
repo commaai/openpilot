@@ -346,17 +346,57 @@ class TestTetheringDnsmasqOwnership(TestCase):
       assert wpa_ctrl_module.wpa_supplicant_running(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
       assert not wpa_ctrl_module.wpa_supplicant_running(wpa_ctrl_module.WPA_AP_CONF)
 
-  def test_stop_targets_only_pidfile_owned_supplicant(self):
+  def test_stop_waits_for_owned_supplicant_before_releasing_paths(self):
     with (
       patch.object(wpa_ctrl_module, "_owned_wpa_pid", return_value=123),
+      patch.object(wpa_ctrl_module, "_process_start_time", return_value="456"),
+      patch.object(wpa_ctrl_module, "_wait_for_process_exit", return_value=True) as wait_for_exit,
+      patch.object(wpa_ctrl_module.subprocess, "run") as run,
+    ):
+      wpa_ctrl_module.stop_wpa_supplicant(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
+
+    wait_for_exit.assert_called_once_with(123, "456")
+    assert [item.args[0] for item in run.call_args_list] == [
+      ["sudo", "kill", "-TERM", "--", "123"],
+      ["sudo", "rm", "-f", wpa_ctrl_module.WPA_PID_FILE, wpa_ctrl_module.WPA_CTRL_PATH],
+    ]
+
+  def test_stop_escalates_to_sigkill_after_timeout(self):
+    with (
+      patch.object(wpa_ctrl_module, "_owned_wpa_pid", return_value=123),
+      patch.object(wpa_ctrl_module, "_process_start_time", return_value="456"),
+      patch.object(wpa_ctrl_module, "_wait_for_process_exit", side_effect=[False, True]),
       patch.object(wpa_ctrl_module.subprocess, "run") as run,
     ):
       wpa_ctrl_module.stop_wpa_supplicant(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
 
     assert [item.args[0] for item in run.call_args_list] == [
-      ["sudo", "kill", "123"],
+      ["sudo", "kill", "-TERM", "--", "123"],
+      ["sudo", "kill", "-KILL", "--", "123"],
       ["sudo", "rm", "-f", wpa_ctrl_module.WPA_PID_FILE, wpa_ctrl_module.WPA_CTRL_PATH],
     ]
+
+  def test_stop_retains_ownership_when_process_survives_sigkill(self):
+    with (
+      patch.object(wpa_ctrl_module, "_owned_wpa_pid", return_value=123),
+      patch.object(wpa_ctrl_module, "_process_start_time", return_value="456"),
+      patch.object(wpa_ctrl_module, "_wait_for_process_exit", return_value=False),
+      patch.object(wpa_ctrl_module.subprocess, "run") as run,
+      self.assertRaises(RuntimeError),
+    ):
+      wpa_ctrl_module.stop_wpa_supplicant(wpa_ctrl_module.WPA_SUPPLICANT_CONF)
+
+    assert [item.args[0] for item in run.call_args_list] == [
+      ["sudo", "kill", "-TERM", "--", "123"],
+      ["sudo", "kill", "-KILL", "--", "123"],
+    ]
+
+  def test_wait_rejects_pid_reuse(self):
+    with (
+      patch.object(wpa_ctrl_module, "_process_start_time", return_value="new-start"),
+      self.assertRaises(RuntimeError),
+    ):
+      wpa_ctrl_module._wait_for_process_exit(123, "old-start")
 
   def test_stop_targets_only_openpilot_tethering(self):
     with patch.object(wpa_ctrl_module.subprocess, "run") as run:
@@ -369,6 +409,21 @@ class TestTetheringDnsmasqOwnership(TestCase):
 
 
 class TestSupplicantBringup(TestCase):
+  def test_bringup_aborts_when_owned_daemon_cannot_stop(self):
+    with (
+      patch.object(wpa_ctrl_module.os.path, "exists", return_value=True),
+      patch.object(wpa_ctrl_module, "wpa_supplicant_running", return_value=False),
+      patch.object(wpa_ctrl_module, "_unmanage_wlan0", return_value=True),
+      patch.object(wpa_ctrl_module, "stop_wpa_supplicant", side_effect=RuntimeError("still running")),
+      patch.object(wpa_ctrl_module, "prepare_wpa_runtime") as prepare_runtime,
+      patch.object(wpa_ctrl_module.subprocess, "run") as run,
+      self.assertRaises(RuntimeError),
+    ):
+      wpa_ctrl_module.ensure_wpa_supplicant(lambda: False)
+
+    prepare_runtime.assert_not_called()
+    assert not any(item.args[0][:2] == ["sudo", "wpa_supplicant"] for item in run.call_args_list)
+
   def test_reconciles_existing_station_configuration(self):
     ctrl = MagicMock()
     ctrl.request.side_effect = lambda command: (
