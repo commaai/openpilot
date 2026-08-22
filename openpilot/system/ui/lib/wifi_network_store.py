@@ -38,6 +38,7 @@ _UPDATE_CREATED_RE = re.compile(r"^(?P<original>.+)\.openpilot-update-created-(?
 _UPDATE_COMMIT_MARKER_RE = re.compile(r"^\.openpilot-update-committed-(?P<token>[0-9a-f]{32})$")
 _FORGET_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-forget-(?P<token>[0-9a-f]{32})$")
 _FORGET_COMMIT_MARKER_RE = re.compile(r"^\.openpilot-forget-committed-(?P<token>[0-9a-f]{32})$")
+_NETPLAN_UUID_RE = re.compile(r"^\s*uuid\s*:\s*['\"]?([^'\"\s#]+)['\"]?\s*(?:#.*)?$", re.MULTILINE)
 
 
 class MeteredType(IntEnum):
@@ -65,6 +66,56 @@ def _parse_uuid(value: str) -> str | None:
     return str(uuid.UUID(value))
   except ValueError:
     return None
+
+
+def _single_profile_netplan_uuid(raw: str) -> str | None:
+  """Return the UUID only when the YAML has one AGNOS-generated Wi-Fi profile.
+
+  This intentionally recognizes a narrow structural subset instead of trying to
+  mutate arbitrary Netplan YAML. Any aliases, flow mappings, sibling profiles,
+  additional top-level sections, or malformed indentation fail closed.
+  """
+  if "\t" in raw:
+    return None
+
+  lines: list[tuple[int, str]] = []
+  for line in raw.splitlines():
+    if not line.strip() or line.lstrip().startswith("#"):
+      continue
+    indent = len(line) - len(line.lstrip(" "))
+    if indent % 2:
+      return None
+    lines.append((indent, line.strip()))
+
+  if [text for indent, text in lines if indent == 0] != ["network:"]:
+    return None
+  level_two = [text for indent, text in lines if indent == 2]
+  if level_two.count("version: 2") != 1 or level_two.count("wifis:") != 1 or len(level_two) != 2:
+    return None
+
+  wifis_index = lines.index((2, "wifis:"))
+  wifis_end = next((i for i in range(wifis_index + 1, len(lines)) if lines[i][0] <= 2), len(lines))
+  profiles = [(i, text) for i, (indent, text) in enumerate(lines[wifis_index + 1:wifis_end], wifis_index + 1)
+              if indent == 4]
+  if len(profiles) != 1:
+    return None
+  profile_index, profile_line = profiles[0]
+  profile_match = re.fullmatch(r"NM-([0-9A-Fa-f-]+):", profile_line)
+  if profile_match is None or (profile_uuid := _parse_uuid(profile_match.group(1))) is None:
+    return None
+
+  profile_end = next((i for i in range(profile_index + 1, wifis_end) if lines[i][0] <= 4), wifis_end)
+  networkmanager = [i for i in range(profile_index + 1, profile_end)
+                    if lines[i] == (6, "networkmanager:")]
+  if len(networkmanager) != 1:
+    return None
+  nm_index = networkmanager[0]
+  nm_end = next((i for i in range(nm_index + 1, profile_end) if lines[i][0] <= 6), profile_end)
+  direct_uuids = [match.group(1) for i in range(nm_index + 1, nm_end)
+                  if lines[i][0] == 8 and (match := _NETPLAN_UUID_RE.fullmatch(lines[i][1])) is not None]
+  if len(direct_uuids) != 1 or _parse_uuid(direct_uuids[0]) != profile_uuid:
+    return None
+  return profile_uuid
 
 
 def _encode_keyfile_string(value: str) -> str:
@@ -226,10 +277,10 @@ class NetworkStore:
       filenames = sorted(os.listdir(self._netplan_directory))
     except OSError:
       return None
-    pattern = re.compile(r"^\s*uuid\s*:\s*['\"]?([^'\"\s#]+)['\"]?\s*(?:#.*)?$", re.MULTILINE)
     yaml_filenames = [fname for fname in filenames if fname.endswith(".yaml")]
     read_failed = False
-    matches: list[tuple[str, set[str | None]]] = []
+    exclusive_matches: list[str] = []
+    ambiguous_matches: list[str] = []
     for fname in yaml_filenames:
       path = os.path.join(self._netplan_directory, fname)
       try:
@@ -240,13 +291,21 @@ class NetworkStore:
       if not raw:
         read_failed = True
         continue
-      source_uuids = {_parse_uuid(value) for value in pattern.findall(raw)}
+      source_uuids = {_parse_uuid(value) for value in _NETPLAN_UUID_RE.findall(raw)}
       if file_uuid in source_uuids:
-        matches.append((path, source_uuids))
+        exclusive_uuid = _single_profile_netplan_uuid(raw)
+        if exclusive_uuid == file_uuid and source_uuids == {file_uuid}:
+          exclusive_matches.append(path)
+        else:
+          ambiguous_matches.append(path)
 
-    if matches:
-      path, source_uuids = matches[0]
-      return NetplanSource(path, not read_failed and len(matches) == 1 and source_uuids == {file_uuid})
+    if exclusive_matches:
+      return NetplanSource(
+        exclusive_matches[0],
+        not read_failed and len(exclusive_matches) == 1 and not ambiguous_matches,
+      )
+    if ambiguous_matches:
+      return NetplanSource(ambiguous_matches[0], False)
     if os.path.exists(expected_path) or read_failed:
       # A canonical filename or unreadable YAML is not proof of exclusive ownership.
       return NetplanSource(expected_path, False)

@@ -61,6 +61,20 @@ def require_entry(store: NetworkStore, ssid: str) -> dict:
   return entry
 
 
+def write_netplan_profile(path: Path, file_uuid: str):
+  path.write_text(f"""\
+network:
+  version: 2
+  wifis:
+    NM-{file_uuid}:
+      renderer: NetworkManager
+      match: {{}}
+      networkmanager:
+        uuid: "{file_uuid}"
+        name: "Test"
+""")
+
+
 class TestNetworkStore(TestCase):
   def setUp(self):
     self.root = tempfile.mkdtemp()
@@ -567,7 +581,7 @@ method=ignore
       self.runtime, "runtime-hotspot.nmconnection", "weedle", file_uuid=shared_uuid, psk="old-password", mode="ap",
     ))
     netplan_path = Path(self.netplan, f"90-NM-{profile_uuid(shared_uuid)}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {profile_uuid(shared_uuid)}\n")
+    write_netplan_profile(netplan_path, profile_uuid(shared_uuid))
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
       store = self.make_store()
@@ -611,7 +625,7 @@ network:
     ))
     hotspot_uuid = profile_uuid("hotspot-uuid")
     netplan_path = Path(self.netplan, f"90-NM-{hotspot_uuid}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {hotspot_uuid}\n")
+    write_netplan_profile(netplan_path, hotspot_uuid)
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
       store = self.make_store()
@@ -648,7 +662,7 @@ network:
     runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="shared-uuid", psk="runtime-password"))
     shared_uuid = profile_uuid("shared-uuid")
     netplan_path = Path(self.netplan, f"90-NM-{shared_uuid}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {shared_uuid}\n")
+    write_netplan_profile(netplan_path, shared_uuid)
 
     with (
       self.patch_reads(),
@@ -668,7 +682,7 @@ network:
     runtime_path = Path(write_profile(self.runtime, "runtime.nmconnection", "Duplicate", file_uuid="runtime-uuid", psk="runtime"))
     runtime_uuid = profile_uuid("runtime-uuid")
     netplan_path = Path(self.netplan, f"90-NM-{runtime_uuid}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {runtime_uuid}\n")
+    write_netplan_profile(netplan_path, runtime_uuid)
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
       store = self.make_store()
@@ -870,7 +884,7 @@ network:
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
     runtime_uuid = profile_uuid("runtime-uuid")
     netplan_path = Path(self.netplan, f"90-NM-{runtime_uuid}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {runtime_uuid}\n")
+    write_netplan_profile(netplan_path, runtime_uuid)
 
     with (
       self.patch_reads(),
@@ -909,7 +923,7 @@ network:
   def test_forget_finds_renamed_netplan_source_by_uuid(self):
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
     netplan_path = Path(self.netplan, "provisioned-wifi.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {profile_uuid('runtime-uuid')}\n")
+    write_netplan_profile(netplan_path, profile_uuid("runtime-uuid"))
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
       store = self.make_store()
@@ -938,6 +952,32 @@ network:
 
     assert runtime_path.exists()
     assert netplan_path.exists()
+    assert store.contains("Runtime")
+
+  def test_forget_refuses_uuidless_sibling_in_renamed_netplan_source(self):
+    runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
+    runtime_uuid = profile_uuid("runtime-uuid")
+    netplan_path = Path(self.netplan, "provisioned-wifi.yaml")
+    original_netplan = f"""\
+network:
+  version: 2
+  wifis:
+    NM-{runtime_uuid}:
+      renderer: NetworkManager
+      networkmanager:
+        uuid: {runtime_uuid}
+    unrelated:
+      dhcp4: true
+"""
+    netplan_path.write_text(original_netplan)
+    original_runtime = runtime_path.read_text()
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      assert not store.remove("Runtime")
+
+    assert runtime_path.read_text() == original_runtime
+    assert netplan_path.read_text() == original_netplan
     assert store.contains("Runtime")
 
   def test_forget_refuses_shared_canonical_netplan_source(self):
@@ -992,6 +1032,36 @@ network:
     assert require_entry(store, "Runtime")["metered"] == 0
     assert require_entry(store, "Runtime")["psk"] == "password123"
 
+  def test_profile_updates_refuse_uuidless_sibling_in_canonical_netplan_source(self):
+    runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
+    runtime_uuid = profile_uuid("runtime-uuid")
+    netplan_path = Path(self.netplan, f"90-NM-{runtime_uuid}.yaml")
+    original_netplan = f"""\
+network:
+  version: 2
+  wifis:
+    NM-{runtime_uuid}:
+      renderer: NetworkManager
+      networkmanager:
+        uuid: {runtime_uuid}
+    unrelated:
+      dhcp4: true
+"""
+    netplan_path.write_text(original_netplan)
+    original_runtime = runtime_path.read_text()
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+      with self.assertRaises(OSError):
+        store.set_metered("Runtime", 1)
+      with self.assertRaises(OSError):
+        store.save_network("Runtime", psk="replacement-password")
+
+    assert runtime_path.read_text() == original_runtime
+    assert netplan_path.read_text() == original_netplan
+    assert require_entry(store, "Runtime")["metered"] == 0
+    assert require_entry(store, "Runtime")["psk"] == "password123"
+
   def test_forget_ignores_unrelated_netplan_source(self):
     runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
     netplan_path = Path(self.netplan, "provisioned-wifi.yaml")
@@ -1031,7 +1101,7 @@ network:
     }
     for path in netplan_paths:
       source_uuid = path.stem.removeprefix("90-NM-")
-      path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {source_uuid}\n")
+      write_netplan_profile(path, source_uuid)
 
     with (
       self.patch_reads(),
@@ -1139,7 +1209,7 @@ network:
     write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid")
     runtime_uuid = profile_uuid("runtime-uuid")
     netplan_path = Path(self.netplan, f"90-NM-{runtime_uuid}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {runtime_uuid}\n")
+    write_netplan_profile(netplan_path, runtime_uuid)
 
     with (
       self.patch_reads(),
@@ -1165,7 +1235,7 @@ network:
     runtime_path = Path(write_profile(self.runtime, "netplan.nmconnection", "Runtime", file_uuid="runtime-uuid"))
     runtime_uuid = profile_uuid("runtime-uuid")
     netplan_path = Path(self.netplan, f"90-NM-{runtime_uuid}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {runtime_uuid}\n")
+    write_netplan_profile(netplan_path, runtime_uuid)
 
     def run(command, **_):
       return MagicMock(returncode=1 if command[-1] == str(runtime_path) else 0)
@@ -1247,7 +1317,7 @@ network:
     original_runtime = runtime_path.read_text()
     runtime_uuid = profile_uuid("runtime-uuid")
     netplan_path = Path(self.netplan, f"90-NM-{runtime_uuid}.yaml")
-    netplan_path.write_text(f"network:\n  version: 2\n  networkmanager:\n    uuid: {runtime_uuid}\n")
+    write_netplan_profile(netplan_path, runtime_uuid)
     original_netplan = netplan_path.read_text()
 
     def run(command, **kwargs):
