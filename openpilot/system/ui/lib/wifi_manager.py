@@ -1111,8 +1111,10 @@ class WifiManager:
     if now - self._last_connecting_at < CONNECTING_STALE_TIMEOUT_SECONDS:
       return
 
-    # Snapshot the epoch before the blocking STATUS request
-    epoch = self._user_epoch
+    # Snapshot the operation before the blocking STATUS request
+    with self._state_lock:
+      epoch = self._user_epoch
+      expected_operation = self._station_operation
     if self._network_not_found_epoch != epoch and now - self._last_scanning_recheck < CONNECTING_STALE_TIMEOUT_SECONDS:
       return
     try:
@@ -1135,7 +1137,11 @@ class WifiManager:
                       "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
       with self._radio_lock:
         with self._state_lock:
-          if self._user_epoch != epoch:
+          if (
+            self._user_epoch != epoch
+            or self._station_operation is not expected_operation
+            or self._associated_epoch == epoch
+          ):
             return
           ssid = current_state.ssid
           pending = self._pending_connection
@@ -1152,7 +1158,12 @@ class WifiManager:
         )
 
         with self._state_lock:
-          if self._user_epoch != epoch or self._pending_connection is not pending:
+          if (
+            self._user_epoch != epoch
+            or self._station_operation is not expected_operation
+            or self._associated_epoch == epoch
+            or self._pending_connection is not pending
+          ):
             return
           self._clear_pending_connection(ssid, epoch=epoch)
           self._set_connecting(None, kind=StationOperationKind.TIMEOUT, operation_ssid=ssid)
