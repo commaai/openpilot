@@ -88,7 +88,7 @@ class TestNetworkStore(TestCase):
       Path(command[-1]).unlink(missing_ok=True)
     return MagicMock(returncode=0)
 
-  def test_startup_deletes_stale_update_backup_when_original_exists(self):
+  def test_startup_restores_uncommitted_update_when_original_exists(self):
     original = Path(write_profile(
       self.persistent, "saved.nmconnection", "Saved", file_uuid="saved", psk="new-password",
     ))
@@ -105,7 +105,92 @@ class TestNetworkStore(TestCase):
 
     assert original.exists()
     assert not remnant.exists()
+    assert require_entry(store, "Saved")["psk"] == "old-password"
+
+  def test_startup_rolls_back_partial_multi_profile_update(self):
+    token = "a" * 32
+    first = Path(write_profile(self.persistent, "first.nmconnection", "Duplicate", file_uuid="first", psk="first-old"))
+    second = Path(write_profile(self.persistent, "second.nmconnection", "Duplicate", file_uuid="second", psk="second-old"))
+    for path in (first, second):
+      shutil.copyfile(path, f"{path}.openpilot-update-{token}")
+    write_profile(self.persistent, first.name, "Duplicate", file_uuid="first", psk="first-new")
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+
+    assert {entry["psk"] for ssid, entry in store.get_profiles() if ssid == "Duplicate"} == {"first-old", "second-old"}
+    assert not list(Path(self.persistent).glob("*.openpilot-update-*"))
+
+  def test_startup_removes_created_path_from_uncommitted_update(self):
+    token = "a" * 32
+    stored = Path(write_profile(
+      self.persistent, "saved.nmconnection", "Saved", file_uuid="saved", psk="old-password",
+    ))
+    backup = Path(f"{stored}.openpilot-update-{token}")
+    shutil.copyfile(stored, backup)
+    canonical = Path(write_profile(
+      self.persistent, f"{profile_uuid('saved')}-Saved.nmconnection", "Saved", file_uuid="saved", psk="new-password",
+    ))
+    created_marker = Path(f"{canonical}.openpilot-update-created-{token}")
+    created_marker.touch()
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+
+    assert stored.exists()
+    assert not backup.exists()
+    assert not canonical.exists()
+    assert not created_marker.exists()
+    assert require_entry(store, "Saved")["psk"] == "old-password"
+
+  def test_startup_keeps_committed_update(self):
+    token = "a" * 32
+    original = Path(write_profile(
+      self.persistent, "saved.nmconnection", "Saved", file_uuid="saved", psk="new-password",
+    ))
+    backup = Path(write_profile(
+      self.persistent, f"{original.name}.openpilot-update-{token}", "Saved", file_uuid="saved", psk="old-password",
+    ))
+    created = Path(write_profile(
+      self.persistent, f"{profile_uuid('created')}-Created.nmconnection", "Created", file_uuid="created", psk="created-password",
+    ))
+    created_marker = Path(f"{created}.openpilot-update-created-{token}")
+    created_marker.touch()
+    marker = Path(self.persistent, f".openpilot-update-committed-{token}")
+    marker.touch()
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+
+    assert original.exists()
+    assert not backup.exists()
+    assert created.exists()
+    assert not created_marker.exists()
+    assert not marker.exists()
     assert require_entry(store, "Saved")["psk"] == "new-password"
+    assert require_entry(store, "Created")["psk"] == "created-password"
+
+  def test_startup_rolls_back_interrupted_tethering_migration(self):
+    token = "a" * 32
+    runtime = Path(write_profile(
+      self.runtime, "tether.nmconnection", "weedle", file_uuid="tether", psk="old-password",
+    ))
+    runtime_backup = Path(f"{runtime}.openpilot-update-{token}")
+    runtime.replace(runtime_backup)
+    persistent = Path(write_profile(
+      self.persistent, f"{profile_uuid('tether')}-weedle.nmconnection", "weedle", file_uuid="tether", psk="new-password",
+    ))
+    created_marker = Path(f"{persistent}.openpilot-update-created-{token}")
+    created_marker.touch()
+
+    with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=self.run_file_command):
+      store = self.make_store()
+
+    assert runtime.exists()
+    assert not runtime_backup.exists()
+    assert not persistent.exists()
+    assert not created_marker.exists()
+    assert require_entry(store, "weedle")["psk"] == "old-password"
 
   def test_startup_restores_interrupted_forget_stage(self):
     original = Path(write_profile(self.persistent, "saved.nmconnection", "Saved", file_uuid="saved"))
@@ -421,7 +506,7 @@ method=ignore
     original = persistent_path.read_text()
 
     def run(command, **kwargs):
-      if command[:3] == ["sudo", "mv", "-f"] and command[-2] == str(runtime_path):
+      if command[:3] == ["sudo", "rm", "-f"] and command[-1] == str(runtime_path):
         return MagicMock(returncode=1)
       return self.run_file_command(command, **kwargs)
 
@@ -503,8 +588,9 @@ method=ignore
     assert runtime_path.exists()
     assert netplan_path.exists()
 
-  def test_failed_noncanonical_cleanup_keeps_profile_copies_equivalent(self):
+  def test_failed_noncanonical_cleanup_rolls_back_profile_update(self):
     stored_path = Path(write_profile(self.persistent, "stored.nmconnection", "Stored", file_uuid="stored-uuid"))
+    original = stored_path.read_text()
 
     def run(command, **kwargs):
       if command[:3] == ["sudo", "rm", "-f"] and command[-1] == str(stored_path):
@@ -513,10 +599,13 @@ method=ignore
 
     with self.patch_reads(), patch.object(store_module.subprocess, "run", side_effect=run):
       store = self.make_store()
-      store.set_metered("Stored", 1)
+      with self.assertRaises(OSError):
+        store.set_metered("Stored", 1)
 
     canonical_path = Path(self.persistent, f"{profile_uuid('stored-uuid')}-Stored.nmconnection")
-    assert canonical_path.read_text() == stored_path.read_text()
+    assert not canonical_path.exists()
+    assert stored_path.read_text() == original
+    assert require_entry(store, "Stored")["metered"] == 0
     assert require_entry(store, "Stored")["_filename"] == "stored.nmconnection"
 
   def test_emits_multiple_profiles_with_the_same_ssid(self):

@@ -32,7 +32,9 @@ _SUPPORTED_IPV4_OPTIONS = {"method", "dns-priority"}
 _SUPPORTED_IPV6_OPTIONS = {"method", "addr-gen-mode"}
 # Preserve NetworkManager's DNS priority for rollback compatibility
 _OPENPILOT_DNS_PRIORITY = "600"
-_UPDATE_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-update-[0-9a-f]{32}$")
+_UPDATE_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-update-(?P<token>[0-9a-f]{32})$")
+_UPDATE_CREATED_RE = re.compile(r"^(?P<original>.+)\.openpilot-update-created-(?P<token>[0-9a-f]{32})$")
+_UPDATE_COMMIT_MARKER_RE = re.compile(r"^\.openpilot-update-committed-(?P<token>[0-9a-f]{32})$")
 _FORGET_REMNANT_RE = re.compile(r"^(?P<original>.+)\.openpilot-forget-(?P<token>[0-9a-f]{32})$")
 _FORGET_COMMIT_MARKER_RE = re.compile(r"^\.openpilot-forget-committed-(?P<token>[0-9a-f]{32})$")
 
@@ -137,35 +139,56 @@ class NetworkStore:
           return
         recovery_complete = False
 
-    committed_markers = {
+    update_committed_markers = {
+      match.group("token"): os.path.join(self._directory, filename)
+      for filename in directory_filenames.get(self._directory, [])
+      if (match := _UPDATE_COMMIT_MARKER_RE.fullmatch(filename)) is not None
+    }
+    forget_committed_markers = {
       match.group("token"): os.path.join(self._directory, filename)
       for filename in directory_filenames.get(self._directory, [])
       if (match := _FORGET_COMMIT_MARKER_RE.fullmatch(filename)) is not None
     }
+    update_cleanup_failed: set[str] = set()
     committed_cleanup_failed: set[str] = set()
     for directory, filenames in directory_filenames.items():
       for filename in filenames:
         update_match = _UPDATE_REMNANT_RE.fullmatch(filename)
+        update_created_match = _UPDATE_CREATED_RE.fullmatch(filename)
         forget_match = _FORGET_REMNANT_RE.fullmatch(filename)
-        if update_match is None and forget_match is None:
+        if update_match is None and update_created_match is None and forget_match is None:
           continue
         remnant_path = os.path.join(directory, filename)
-        match = update_match or forget_match
+        match = update_match or update_created_match or forget_match
         assert match is not None
         original_path = os.path.join(directory, match.group("original"))
-        forget_committed = forget_match is not None and forget_match.group("token") in committed_markers
-        command = ["sudo", "rm", "-f", remnant_path] if forget_committed or os.path.exists(original_path) else [
-          "sudo", "mv", "-f", remnant_path, original_path,
-        ]
-        result = subprocess.run(command, check=False)
+        token = match.group("token")
+        update_committed = (update_match is not None or update_created_match is not None) and token in update_committed_markers
+        forget_committed = forget_match is not None and token in forget_committed_markers
+        if update_created_match is not None and not update_committed:
+          result = subprocess.run(["sudo", "rm", "-f", original_path], check=False)
+          if result.returncode == 0:
+            result = subprocess.run(["sudo", "rm", "-f", remnant_path], check=False)
+        else:
+          command = ["sudo", "rm", "-f", remnant_path] if update_committed or forget_committed else [
+            "sudo", "mv", "-f", remnant_path, original_path,
+          ]
+          result = subprocess.run(command, check=False)
         if result.returncode != 0:
           cloudlog.warning(f"NetworkStore: failed to recover transaction remnant {remnant_path} (rc={result.returncode})")
+          if update_committed:
+            update_cleanup_failed.add(token)
           if forget_committed:
-            assert forget_match is not None
-            committed_cleanup_failed.add(forget_match.group("token"))
+            committed_cleanup_failed.add(token)
 
     if recovery_complete:
-      for token, marker_path in committed_markers.items():
+      for token, marker_path in update_committed_markers.items():
+        if token in update_cleanup_failed:
+          continue
+        result = subprocess.run(["sudo", "rm", "-f", marker_path], check=False)
+        if result.returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to clean up update commit marker {marker_path} (rc={result.returncode})")
+      for token, marker_path in forget_committed_markers.items():
         if token in committed_cleanup_failed:
           continue
         result = subprocess.run(["sudo", "rm", "-f", marker_path], check=False)
@@ -352,11 +375,70 @@ class NetworkStore:
         pass
 
   @contextmanager
-  def _profile_update(self, ssid: str, profiles: list[dict]) -> Iterator[None]:
-    if not profiles:
+  def _update_transaction(self, paths: set[str], description: str) -> Iterator[None]:
+    if not paths:
       yield
       return
 
+    original_paths = {path for path in paths if os.path.exists(path)}
+    created_paths = paths - original_paths
+    token = uuid.uuid4().hex
+    backups: dict[str, str] = {}
+    created_markers = {path: f"{path}.openpilot-update-created-{token}" for path in created_paths}
+    commit_marker = os.path.join(self._directory, f".openpilot-update-committed-{token}")
+    try:
+      for path in sorted(original_paths):
+        backup_path = f"{path}.openpilot-update-{token}"
+        result = subprocess.run([
+          "sudo", "install", "-o", "root", "-g", "root", "-m", "600", path, backup_path,
+        ], check=False)
+        if result.returncode != 0:
+          raise OSError(f"failed to back up {path}")
+        backups[path] = backup_path
+      for marker_path in created_markers.values():
+        result = subprocess.run([
+          "sudo", "install", "-o", "root", "-g", "root", "-m", "600", "/dev/null", marker_path,
+        ], check=False)
+        if result.returncode != 0:
+          raise OSError(f"failed to mark created path for {description}")
+      yield
+      result = subprocess.run([
+        "sudo", "install", "-o", "root", "-g", "root", "-m", "600", "/dev/null", commit_marker,
+      ], check=False)
+      if result.returncode != 0:
+        raise OSError(f"failed to commit update for {description}")
+    except Exception as e:
+      rollback_failed = False
+      rollback_failed |= subprocess.run(["sudo", "rm", "-f", commit_marker], check=False).returncode != 0
+      for path, marker_path in created_markers.items():
+        removed = subprocess.run(["sudo", "rm", "-f", path], check=False).returncode == 0
+        rollback_failed |= not removed
+        if removed:
+          rollback_failed |= subprocess.run(["sudo", "rm", "-f", marker_path], check=False).returncode != 0
+      for path, backup_path in backups.items():
+        rollback_failed |= subprocess.run(["sudo", "mv", "-f", backup_path, path], check=False).returncode != 0
+      if rollback_failed:
+        raise OSError(f"failed to roll back update for {description}") from e
+      raise
+    else:
+      cleanup_failed = False
+      for backup_path in backups.values():
+        result = subprocess.run(["sudo", "rm", "-f", backup_path], check=False)
+        if result.returncode != 0:
+          cleanup_failed = True
+          cloudlog.warning(f"NetworkStore: failed to clean up update backup {backup_path} (rc={result.returncode})")
+      for marker_path in created_markers.values():
+        result = subprocess.run(["sudo", "rm", "-f", marker_path], check=False)
+        if result.returncode != 0:
+          cleanup_failed = True
+          cloudlog.warning(f"NetworkStore: failed to clean up created-path marker {marker_path} (rc={result.returncode})")
+      if not cleanup_failed:
+        result = subprocess.run(["sudo", "rm", "-f", commit_marker], check=False)
+        if result.returncode != 0:
+          cloudlog.warning(f"NetworkStore: failed to clean up update commit marker {commit_marker} (rc={result.returncode})")
+
+  @contextmanager
+  def _profile_update(self, ssid: str, profiles: list[dict]) -> Iterator[None]:
     paths: set[str] = set()
     for profile in profiles:
       file_uuid = profile.get("uuid")
@@ -372,42 +454,8 @@ class NetworkStore:
       if self._netplan_directory is not None and netplan_filename:
         paths.add(os.path.join(self._netplan_directory, netplan_filename))
 
-    original_paths = {path for path in paths if os.path.exists(path)}
-    token = uuid.uuid4().hex
-    backups: dict[str, str] = {}
-    try:
-      for path in sorted(original_paths):
-        backup_path = f"{path}.openpilot-update-{token}"
-        result = subprocess.run([
-          "sudo", "install", "-o", "root", "-g", "root", "-m", "600", path, backup_path,
-        ], check=False)
-        if result.returncode != 0:
-          raise OSError(f"failed to back up {path}")
-        backups[path] = backup_path
-    except Exception as e:
-      cleanup_failed = False
-      for backup_path in backups.values():
-        cleanup_failed |= subprocess.run(["sudo", "rm", "-f", backup_path], check=False).returncode != 0
-      if cleanup_failed:
-        raise OSError(f"failed to clean up profile backups for {ssid}") from e
-      raise
-
-    try:
+    with self._update_transaction(paths, repr(ssid)):
       yield
-    except Exception as e:
-      rollback_failed = False
-      for path in sorted(paths - original_paths):
-        rollback_failed |= subprocess.run(["sudo", "rm", "-f", path], check=False).returncode != 0
-      for path, backup_path in backups.items():
-        rollback_failed |= subprocess.run(["sudo", "mv", "-f", backup_path, path], check=False).returncode != 0
-      if rollback_failed:
-        raise OSError(f"failed to roll back profile update for {ssid}") from e
-      raise
-    else:
-      for backup_path in backups.values():
-        result = subprocess.run(["sudo", "rm", "-f", backup_path], check=False)
-        if result.returncode != 0:
-          cloudlog.warning(f"NetworkStore: failed to clean up profile backup {backup_path} (rc={result.returncode})")
 
   def _render_nmconnection(self, ssid: str, entry: dict) -> tuple[str, dict]:
     file_uuid = entry.get("uuid")
@@ -422,7 +470,6 @@ class NetworkStore:
 
     canonical_fname = _canonical_filename(file_uuid, ssid)
     canonical_path = os.path.join(self._directory, canonical_fname)
-    canonical_existed = os.path.exists(canonical_path)
     stored_fname = entry.get("_filename")
     entry["_filename"] = canonical_fname
 
@@ -459,34 +506,13 @@ class NetworkStore:
     cp["ipv4"] = ipv4
     cp["ipv6"] = entry.get("_ipv6", {"method": "auto"})
 
-    backup_path = None
-    if canonical_existed:
-      backup_path = f"{canonical_path}.openpilot-update-{uuid.uuid4().hex}"
-      result = subprocess.run([
-        "sudo", "install", "-o", "root", "-g", "root", "-m", "600", canonical_path, backup_path,
-      ], check=False)
-      if result.returncode != 0:
-        raise OSError(f"failed to back up {canonical_path}")
-
-    def cleanup_canonical_after_failure() -> bool:
-      if backup_path is not None:
-        return subprocess.run(["sudo", "mv", "-f", backup_path, canonical_path], check=False).returncode == 0
-      return subprocess.run(["sudo", "rm", "-f", canonical_path], check=False).returncode == 0
-
-    try:
-      self._install_keyfile(cp, canonical_path)
-    except Exception as e:
-      if not cleanup_canonical_after_failure():
-        raise OSError(f"failed to install and roll back {canonical_path}") from e
-      raise
+    self._install_keyfile(cp, canonical_path)
 
     runtime_filename = entry.get("_runtime_filename")
     if self._runtime_directory is not None and runtime_filename:
       runtime_path = os.path.join(self._runtime_directory, runtime_filename)
       result = subprocess.run(["sudo", "rm", "-f", runtime_path], check=False)
       if result.returncode != 0:
-        if not cleanup_canonical_after_failure():
-          raise OSError(f"failed to remove {runtime_path} and roll back {canonical_path}")
         raise OSError(f"failed to remove {runtime_path}")
       entry["_runtime_filename"] = None
 
@@ -494,13 +520,9 @@ class NetworkStore:
     if self._netplan_directory is not None and netplan_filename:
       netplan_path = os.path.join(self._netplan_directory, netplan_filename)
       if not os.path.exists(netplan_path):
-        if not cleanup_canonical_after_failure():
-          raise OSError(f"failed to find {netplan_path} and roll back {canonical_path}")
         raise OSError(f"failed to find {netplan_path}")
       result = subprocess.run(["sudo", "rm", "-f", netplan_path], check=False)
       if result.returncode != 0:
-        if not cleanup_canonical_after_failure():
-          raise OSError(f"failed to remove {netplan_path} and roll back {canonical_path}")
         raise OSError(f"failed to remove {netplan_path}")
       entry["_netplan_filename"] = None
 
@@ -508,21 +530,8 @@ class NetworkStore:
     if stored_fname and stored_fname != canonical_fname:
       stored_path = os.path.join(self._directory, stored_fname)
       result = subprocess.run(["sudo", "rm", "-f", stored_path], check=False)
-      # Mirror failed noncanonical cleanup so both copies remain equivalent
       if result.returncode != 0:
-        cloudlog.warning(f"NetworkStore: cleanup of noncanonical {stored_fname} failed; mirroring content to keep both files in sync")
-        try:
-          subprocess.run(["sudo", "install", "-o", "root", "-g", "root", "-m", "600", os.path.join(self._directory, canonical_fname), stored_path], check=True)
-        except Exception:
-          cloudlog.exception("NetworkStore: failed to mirror keyfile to noncanonical path")
-        entry["_filename"] = stored_fname
-
-    if backup_path is not None:
-      result = subprocess.run(["sudo", "rm", "-f", backup_path], check=False)
-      if result.returncode != 0:
-        if not cleanup_canonical_after_failure():
-          raise OSError(f"failed to clean up {backup_path} and roll back {canonical_path}")
-        raise OSError(f"failed to clean up {backup_path}")
+        raise OSError(f"failed to remove noncanonical profile {stored_path}")
 
     return file_uuid, entry
 
@@ -653,8 +662,6 @@ class NetworkStore:
         if not file_uuid:
           return False
         target_path = os.path.join(self._directory, _canonical_filename(file_uuid, ssid))
-      target_existed = os.path.exists(target_path)
-
       runtime_profile = next((profile for profile in profiles
                               if profile[1] == self._runtime_directory and profile[3] == file_uuid), None)
       runtime_path = os.path.join(self._runtime_directory, runtime_profile[2]) if self._runtime_directory is not None and runtime_profile is not None else None
@@ -663,43 +670,15 @@ class NetworkStore:
       if netplan_path is not None and not os.path.exists(netplan_path):
         return False
 
-      token = uuid.uuid4().hex
-      target_backup = f"{target_path}.openpilot-update-{token}" if target_existed else None
-      if target_backup is not None:
-        result = subprocess.run([
-          "sudo", "install", "-o", "root", "-g", "root", "-m", "600", target_path, target_backup,
-        ], check=False)
-        if result.returncode != 0:
-          raise OSError(f"failed to back up {target_path}")
-
-      staged_sources: list[tuple[str, str]] = []
-      try:
+      paths = {path for path in (target_path, runtime_path, netplan_path) if path is not None}
+      with self._update_transaction(paths, f"tethering profile {ssid!r}"):
         self._install_keyfile(cp, target_path)
         for source_path in (runtime_path, netplan_path):
           if source_path is None:
             continue
-          staged_path = f"{source_path}.openpilot-update-{token}"
-          result = subprocess.run(["sudo", "mv", "-f", source_path, staged_path], check=False)
+          result = subprocess.run(["sudo", "rm", "-f", source_path], check=False)
           if result.returncode != 0:
-            raise OSError(f"failed to stage {source_path}")
-          staged_sources.append((source_path, staged_path))
-      except Exception as e:
-        rollback_failed = False
-        for source_path, staged_path in reversed(staged_sources):
-          rollback_failed |= subprocess.run(["sudo", "mv", "-f", staged_path, source_path], check=False).returncode != 0
-        if target_backup is not None:
-          rollback_failed |= subprocess.run(["sudo", "mv", "-f", target_backup, target_path], check=False).returncode != 0
-        else:
-          rollback_failed |= subprocess.run(["sudo", "rm", "-f", target_path], check=False).returncode != 0
-        if rollback_failed:
-          raise OSError(f"failed to roll back tethering password update for {ssid}") from e
-        raise
-
-      for _, staged_path in staged_sources:
-        if subprocess.run(["sudo", "rm", "-f", staged_path], check=False).returncode != 0:
-          cloudlog.warning(f"NetworkStore: failed to clean up staged tethering source {staged_path}")
-      if target_backup is not None and subprocess.run(["sudo", "rm", "-f", target_backup], check=False).returncode != 0:
-        cloudlog.warning(f"NetworkStore: failed to clean up tethering backup {target_backup}")
+            raise OSError(f"failed to remove {source_path}")
       return True
 
   def save_network(self, ssid: str, psk: str | None = None, metered: int | None = None, hidden: bool | None = None,
