@@ -120,8 +120,8 @@ procs = [
   PythonProcess("joystick", "openpilot.tools.joystick.joystick_control", and_(joystick, iscar)),
 
   # beampilot
-  PythonProcess("hardwared", "openpilot.selfdrive.beamngd", always_run),
-  PythonProcess("hardwared", "openpilot.selfdrive.beamcamd", always_run),
+  PythonProcess("beamngd", "openpilot.selfdrive.beamngd.beamngd", always_run),
+  PythonProcess("beamcamd", "openpilot.selfdrive.beamcamd.beamcamd", always_run),
 ]
 
 managed_processes = {p.name: p for p in procs}

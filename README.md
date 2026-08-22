@@ -22,7 +22,7 @@ Chestnut class models will take significantly more compute power; however, it wi
 
 ### Universal Requirements
 * a GPU that supports [tinygrad](tinygrad.org)
-* tinygrad backend driver
+* tinygrad gpu backend driver
 * Any 6-core desktop CPU
 * Linux
 * and the following:
@@ -55,8 +55,5 @@ Processes that are incompatible with desktop use or has no use for in desktop si
 
 ### Added
 Proccesses that are required because of the removed processes have been added.
-* `beamngd`
-(BeamNG CAN/telemetry updater, uses python `BeamNGpy`, 100Hz)
-
-* `beamcamd`
-Updates Cameras (currently just black screen)
+* `beamngd` Updates Telemetry (100Hz)
+* `beamcamd` Updates Cameras (20Hz)

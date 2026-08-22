@@ -88,7 +88,8 @@ class LocationEstimator:
     kf_t = self.kf.t
     invalid = not np.isnan(kf_t) and (kf_t - t) > MAX_FILTER_REWIND_TIME
     if invalid:
-      cloudlog.warning("Observation timestamp is older than the max rewind threshold of the filter")
+      # cloudlog.warning("Observation timestamp is older than the max rewind threshold of the filter")
+      pass
     return not invalid
 
   def _finite_check(self, t: float, new_x: np.ndarray, new_P: np.ndarray):
@@ -317,7 +318,7 @@ def main():
             continue
 
           if res == HandleLogResult.TIMING_INVALID:
-            cloudlog.warning(f"Observation {which} ignored due to failed timing check")
+            # cloudlog.warning(f"Observation {which} ignored due to failed timing check")
             observation_input_invalid[which] += 1
           elif res == HandleLogResult.INPUT_INVALID:
             cloudlog.warning(f"Observation {which} ignored due to failed sanity check")
