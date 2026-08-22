@@ -124,7 +124,9 @@ class TestConnectionState(TestCase):
     assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
     self.manager._dhcp.start.assert_not_called()
 
-  def test_same_ssid_profile_switch_reapplies_ipv6_policy(self):
+  def test_same_ssid_profile_switch_restarts_l3_state(self):
+    activated = MagicMock()
+    self.manager.add_callbacks(activated=activated)
     first_uuid = str(uuid.uuid4())
     second_uuid = str(uuid.uuid4())
     self.manager._store.get_ipv6_method.side_effect = ["ignore", "auto"]
@@ -132,6 +134,12 @@ class TestConnectionState(TestCase):
 
     self.manager._handle_connected("TestNet", profile_uuid=first_uuid)
     complete_station_connection(self.manager, "TestNet")
+    self.manager.process_callbacks()
+    activated.reset_mock()
+    self.manager._ipv4_address = "192.168.1.20"
+    self.manager._current_network_metered = MeteredType.YES
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
     self.manager._handle_connected("TestNet", profile_uuid=second_uuid)
 
     assert self.manager._store.get_ipv6_method.call_args_list == [
@@ -141,8 +149,20 @@ class TestConnectionState(TestCase):
     assert self.manager._dhcp.set_ipv6_enabled.call_args_list == [call(False), call(True)]
     assert self.manager._station_operation is not None
     assert self.manager._station_operation.profile_uuid == second_uuid
-    self.manager._dhcp.start.assert_called_once()
-    self.manager._poll_for_ip.assert_called_once()
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    assert self.manager.ipv4_address == ""
+    assert self.manager.current_network_metered == MeteredType.UNKNOWN
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+    assert self.manager._dhcp.start.call_count == 2
+    assert self.manager._poll_for_ip.call_count == 2
+    self.manager.process_callbacks()
+    activated.assert_not_called()
+
+    self.manager._ipv4_address = "192.168.2.20"
+    self.manager._complete_station_connection("TestNet", self.manager._user_epoch)
+    self.manager.process_callbacks()
+    activated.assert_called_once()
 
   def test_connected_to_another_ssid_clears_stale_ipv6_state(self):
     self.manager._wifi_state = WifiState("PreviousNet", ConnectStatus.CONNECTED)

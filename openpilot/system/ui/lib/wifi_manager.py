@@ -457,12 +457,16 @@ class WifiManager:
       self._station_operation = StationOperation(self._user_epoch, kind, operation_ssid if operation_ssid is not None else ssid)
       self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
-  def _clear_station_state(self):
+  def _clear_station_l3_state(self):
     with self._radio_lock:
       self._dhcp.stop()
       self._dhcp.clear_ipv6_state()
       self._ipv4_address = ""
       self._current_network_metered = MeteredType.UNKNOWN
+
+  def _clear_station_state(self):
+    with self._radio_lock:
+      self._clear_station_l3_state()
       with self._state_lock:
         self._associated_ssid = None
         self._associated_epoch = None
@@ -817,6 +821,16 @@ class WifiManager:
           )
           self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
 
+      if profile_changed:
+        self._clear_station_l3_state()
+        with self._state_lock:
+          if (
+            not self._connected_transition_is_current(ssid, transition_epoch)
+            or self._station_operation is not previous_operation
+          ):
+            return
+          self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTING)
+
       if not already_associated or profile_changed:
         try:
           ipv6_method = self._store.get_ipv6_method(ssid, active_profile_uuid) if self._store is not None else "auto"
@@ -846,22 +860,20 @@ class WifiManager:
               runtime_network_id=previous_operation.runtime_network_id if previous_operation is not None else None,
             )
 
-      if already_connected:
+      if already_connected and not profile_changed:
         # Retry persistence after transient filesystem failures.
         pending = self._pending_connection
         if pending is not None and pending.ssid == ssid:
           self._persist_pending_connection(ssid)
-        if profile_changed:
-          self._update_active_connection_info()
         return
 
-      if already_associated:
+      if already_associated and not profile_changed:
         self._persist_pending_connection(ssid)
         self._update_active_connection_info()
         self._complete_station_connection(ssid, transition_epoch)
         return
 
-      if not adopt_dhcp or not self._dhcp.adopt():
+      if profile_changed or not adopt_dhcp or not self._dhcp.adopt():
         self._ipv4_address = ""
         self._dhcp.start()
       if not self._connected_transition_is_current(ssid, transition_epoch):
