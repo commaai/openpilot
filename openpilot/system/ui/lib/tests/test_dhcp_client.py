@@ -39,6 +39,7 @@ class TestDhcpClient(TestCase):
     client = DhcpClient()
     events = []
     with (
+      patch.object(client, "_owned_pid", return_value=None),
       patch.object(dhcp_client_module.subprocess, "run", side_effect=lambda command, **_: events.append(command)) as run,
       patch.object(dhcp_client_module.subprocess, "Popen", side_effect=lambda *_, **__: events.append("spawn") or MagicMock()) as popen,
       patch.object(dhcp_client_module.threading, "Thread") as thread,
@@ -97,6 +98,7 @@ class TestDhcpClient(TestCase):
 
     with (
       patch.object(client._client_stop, "wait", side_effect=[False, True]),
+      patch.object(client, "_owned_pid", return_value=None),
       patch.object(
         dhcp_client_module.subprocess,
         "run",
@@ -192,7 +194,10 @@ fi
       with self.subTest(has_process_handle=proc is not None):
         client = DhcpClient()
         client._proc = proc
-        with patch.object(dhcp_client_module.subprocess, "run") as run:
+        with (
+          patch.object(client, "_owned_pid", return_value=None),
+          patch.object(dhcp_client_module.subprocess, "run") as run,
+        ):
           client.stop()
 
         assert client._proc is None
@@ -204,18 +209,49 @@ fi
 
   def test_stop_kills_only_pidfile_owned_adopted_client(self):
     client = DhcpClient()
+    events = []
     with (
       patch.object(client, "_owned_pid", return_value=123),
-      patch.object(dhcp_client_module.subprocess, "run") as run,
+      patch.object(dhcp_client_module.os, "getpgid", return_value=456),
+      patch.object(client, "_terminate_process_group", side_effect=lambda pgid: events.append(("terminate", pgid))),
+      patch.object(dhcp_client_module.subprocess, "run", side_effect=lambda command, **_: events.append(command)) as run,
     ):
       client.stop()
 
+    assert events[0] == ("terminate", 456)
     assert [call.args[0] for call in run.call_args_list] == [
-      ["sudo", "kill", "123"],
       ["sudo", "rm", "-f", client._pid_file],
       ["sudo", "ip", "-4", "route", "flush", "dev", "wlan0"],
       ["sudo", "ip", "-4", "addr", "flush", "dev", "wlan0"],
     ]
+
+  def test_stop_terminates_spawned_client_process_group(self):
+    client = DhcpClient()
+    client._proc = MagicMock(pid=123)
+    client._proc.poll.return_value = None
+    with (
+      patch.object(client, "_owned_pid", return_value=456),
+      patch.object(dhcp_client_module.os, "getpgid", return_value=123),
+      patch.object(client, "_terminate_process_group") as terminate,
+      patch.object(dhcp_client_module.subprocess, "run"),
+    ):
+      client.stop()
+
+    terminate.assert_called_once_with(123)
+
+  def test_process_group_termination_escalates_after_timeout(self):
+    client = DhcpClient()
+    with (
+      patch.object(client, "_wait_for_process_group", side_effect=[False, True]) as wait,
+      patch.object(dhcp_client_module.subprocess, "run", return_value=MagicMock(returncode=0)) as run,
+    ):
+      client._terminate_process_group(456)
+
+    assert [call.args[0] for call in run.call_args_list] == [
+      ["sudo", "kill", "-TERM", "--", "-456"],
+      ["sudo", "kill", "-KILL", "--", "-456"],
+    ]
+    assert wait.call_args_list == [((456,),), ((456,),)]
 
   def test_clear_ipv6_state_cleans_global_addresses_and_routes(self):
     client = DhcpClient()

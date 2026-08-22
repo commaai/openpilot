@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import subprocess
 import threading
+import time
 
 from openpilot.common.swaglog import cloudlog
 
@@ -16,6 +17,8 @@ class DhcpClient:
   # Match udhcpc's -T retry timeout
   DISCOVER_TIMEOUT_SECONDS = 3
   DISCOVER_ATTEMPTS = 5
+  STOP_TIMEOUT_SECONDS = 3
+  STOP_POLL_SECONDS = 0.05
 
   def __init__(self, iface: str = "wlan0"):
     self._iface = iface
@@ -60,6 +63,48 @@ class DhcpClient:
     if self._proc is not None and self._proc.poll() is None:
       return True
     return self._owned_pid() is not None
+
+  @staticmethod
+  def _process_group_running(pgid: int) -> bool:
+    try:
+      os.killpg(pgid, 0)
+    except ProcessLookupError:
+      return False
+    except PermissionError:
+      pass
+    return True
+
+  def _owned_process_group(self, pid: int | None) -> int | None:
+    if pid is None:
+      return None
+    try:
+      pgid = os.getpgid(pid)
+    except OSError:
+      return None
+    if pgid <= 1 or pgid == os.getpgrp():
+      return None
+    return pgid
+
+  def _wait_for_process_group(self, pgid: int) -> bool:
+    deadline = time.monotonic() + self.STOP_TIMEOUT_SECONDS
+    wait = threading.Event()
+    while True:
+      if self._proc is not None:
+        self._proc.poll()
+      if not self._process_group_running(pgid):
+        return True
+      remaining = deadline - time.monotonic()
+      if remaining <= 0:
+        return False
+      wait.wait(min(self.STOP_POLL_SECONDS, remaining))
+
+  def _terminate_process_group(self, pgid: int):
+    subprocess.run(["sudo", "kill", "-TERM", "--", f"-{pgid}"], check=False)
+    if self._wait_for_process_group(pgid):
+      return
+    subprocess.run(["sudo", "kill", "-KILL", "--", f"-{pgid}"], check=False)
+    if not self._wait_for_process_group(pgid):
+      cloudlog.warning(f"Failed to stop udhcpc process group {pgid}")
 
   def _prepare_runtime(self):
     subprocess.run(["sudo", "install", "-d", "-o", "root", "-g", "root", "-m", "755", DHCP_RUNTIME_DIR], check=True)
@@ -147,7 +192,13 @@ class DhcpClient:
       self._client_thread.join(timeout=self.DISCOVER_TIMEOUT_SECONDS)
       self._client_thread = None
     owned_pid = self._owned_pid()
-    if self._proc is not None:
+    process_pid = owned_pid
+    if self._proc is not None and self._proc.poll() is None:
+      process_pid = self._proc.pid
+    pgid = self._owned_process_group(process_pid)
+    if pgid is not None:
+      self._terminate_process_group(pgid)
+    elif self._proc is not None:
       try:
         self._proc.terminate()
         self._proc.wait(timeout=3)
@@ -157,9 +208,7 @@ class DhcpClient:
           self._proc.wait()
         except Exception:
           pass
-      self._proc = None
-    if owned_pid is not None:
-      subprocess.run(["sudo", "kill", str(owned_pid)], check=False)
+    self._proc = None
     subprocess.run(["sudo", "rm", "-f", self._pid_file], check=False)
     self._adopted = False
     self._flush_lease()
