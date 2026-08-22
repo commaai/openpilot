@@ -964,37 +964,85 @@ class TestConnectionState(TestCase):
 
   def test_reconcile_does_not_timeout_connection_associated_after_status(self):
     self.manager._set_connecting("TestNet")
-    self.manager._set_pending_connection("TestNet", "password123", False, SecurityType.WPA)
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
     self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
     epoch = self.manager._user_epoch
+    operation = self.manager._station_operation
     status_started = threading.Event()
     release_status = threading.Event()
+    status_requests = 0
 
     def request(command):
+      nonlocal status_requests
       if command == "STATUS":
-        status_started.set()
-        assert release_status.wait(1)
-        return "wpa_state=DISCONNECTED\n"
+        status_requests += 1
+        if status_requests == 1:
+          status_started.set()
+          assert release_status.wait(1)
+          return "wpa_state=DISCONNECTED\n"
+        return "wpa_state=COMPLETED\nssid=TestNet\n"
       return "OK"
 
     self.manager._request = MagicMock(side_effect=request)
     self.manager._restore_station_runtime = MagicMock()
+    self.manager._dhcp.stop.reset_mock()
     worker = threading.Thread(target=self.manager._reconcile_connecting_state)
     worker.start()
     assert status_started.wait(1)
 
-    with patch.object(wifi_manager_module, "generate_wpa_conf"):
-      self.manager._handle_connected("TestNet", expected_epoch=epoch)
+    self.manager._handle_connected("TestNet", expected_epoch=epoch)
+    assert self.manager._station_operation is operation
     release_status.set()
     worker.join(1)
 
     assert not worker.is_alive()
+    assert status_requests == 2
     assert self.manager._associated_ssid == "TestNet"
     assert self.manager._associated_epoch == epoch
-    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTING)
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
     self.manager._dhcp.start.assert_called_once()
     self.manager._dhcp.stop.assert_not_called()
     self.manager._restore_station_runtime.assert_not_called()
+
+  def test_reconcile_times_out_disconnected_established_connection(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._request = MagicMock(return_value="wpa_state=DISCONNECTED\n")
+    self.manager._restore_station_runtime = MagicMock()
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._associated_ssid is None
+    assert self.manager._associated_epoch is None
+    assert self.manager._dhcp_adoption_ssid is None
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
+  def test_reconcile_times_out_disconnected_ip_pending_connection(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    self.manager._handle_event("CTRL-EVENT-DISCONNECTED reason=3")
+    self.manager._last_connecting_at = time.monotonic() - CONNECTING_STALE_TIMEOUT_SECONDS - 1
+    self.manager._request = MagicMock(return_value="wpa_state=DISCONNECTED\n")
+    self.manager._restore_station_runtime = MagicMock()
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager.wifi_state == WifiState()
+    assert self.manager._associated_ssid is None
+    assert self.manager._associated_epoch is None
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
 
   def test_reconcile_times_out_stalled_handshake(self):
     for wpa_state in ("AUTHENTICATING", "ASSOCIATING", "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):

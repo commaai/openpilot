@@ -1165,8 +1165,22 @@ class WifiManager:
           if (
             self._user_epoch != epoch
             or self._station_operation is not expected_operation
-            or self._associated_epoch == epoch
           ):
+            return
+
+        try:
+          latest_status = parse_status(self._request("STATUS"))
+        except Exception:
+          cloudlog.exception("Failed to confirm terminal wifi state from STATUS")
+          return
+        if latest_status.get("wpa_state") == "COMPLETED" and latest_status.get("ssid"):
+          self._handle_connected(
+            latest_status["ssid"], expected_epoch=epoch, profile_uuid=latest_status.get("id_str"),
+          )
+          return
+
+        with self._state_lock:
+          if self._user_epoch != epoch or self._station_operation is not expected_operation:
             return
           ssid = current_state.ssid
           pending = self._pending_connection
@@ -1186,7 +1200,6 @@ class WifiManager:
           if (
             self._user_epoch != epoch
             or self._station_operation is not expected_operation
-            or self._associated_epoch == epoch
             or self._pending_connection is not pending
           ):
             return
