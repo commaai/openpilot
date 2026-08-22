@@ -434,6 +434,61 @@ class TestConnectionState(TestCase):
 
     self.manager._dhcp.start.assert_called_once()
 
+  def test_connected_reconciliation_rechecks_status_before_cleanup(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    self.manager._last_connected_recheck = 0.0
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+    self.manager._request = MagicMock(return_value="wpa_state=DISCONNECTED\n")
+
+    self.manager._reconcile_connecting_state()
+
+    assert self.manager._request.call_args_list == [call("STATUS"), call("STATUS")]
+    assert self.manager.wifi_state == WifiState()
+    self.manager._dhcp.stop.assert_called_once()
+    self.manager._dhcp.clear_ipv6_state.assert_called_once()
+
+  def test_connected_reconciliation_does_not_clear_recovered_station(self):
+    self.manager._set_connecting("TestNet")
+    self.manager._handle_connected("TestNet")
+    complete_station_connection(self.manager, "TestNet")
+    epoch = self.manager._user_epoch
+    self.manager._last_connected_recheck = 0.0
+    self.manager._dhcp.stop.reset_mock()
+    self.manager._dhcp.clear_ipv6_state.reset_mock()
+    status_started = threading.Event()
+    release_status = threading.Event()
+    status_requests = 0
+
+    def request(command):
+      nonlocal status_requests
+      if command != "STATUS":
+        return "OK"
+      status_requests += 1
+      if status_requests == 1:
+        status_started.set()
+        assert release_status.wait(1)
+        return "wpa_state=DISCONNECTED\n"
+      return "wpa_state=COMPLETED\nssid=TestNet\n"
+
+    self.manager._request = MagicMock(side_effect=request)
+    worker = threading.Thread(target=self.manager._reconcile_connecting_state)
+    worker.start()
+    assert status_started.wait(1)
+
+    self.manager._handle_connected("TestNet", expected_epoch=epoch)
+    release_status.set()
+    worker.join(1)
+
+    assert not worker.is_alive()
+    assert status_requests == 2
+    assert self.manager.wifi_state == WifiState("TestNet", ConnectStatus.CONNECTED)
+    assert self.manager._associated_ssid == "TestNet"
+    self.manager._dhcp.stop.assert_not_called()
+    self.manager._dhcp.clear_ipv6_state.assert_not_called()
+
   def test_disconnected_event_does_not_override_user_connection(self):
     self.manager._set_connecting("NextNet")
 

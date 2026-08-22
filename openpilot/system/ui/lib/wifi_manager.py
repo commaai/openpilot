@@ -1134,7 +1134,10 @@ class WifiManager:
       if now - self._last_connected_recheck < SCAN_PERIOD_SECONDS:
         return
       self._last_connected_recheck = now
-      epoch = self._user_epoch
+      with self._state_lock:
+        epoch = self._user_epoch
+        expected_operation = self._station_operation
+        expected_association = (self._associated_ssid, self._associated_epoch)
       try:
         status = parse_status(self._request("STATUS"))
       except Exception:
@@ -1156,12 +1159,41 @@ class WifiManager:
                        "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
         return
       with self._radio_lock:
-        if self._user_epoch != epoch:
+        with self._state_lock:
+          if (
+            self._user_epoch != epoch
+            or self._station_operation is not expected_operation
+            or (self._associated_ssid, self._associated_epoch) != expected_association
+          ):
+            return
+
+        try:
+          latest_status = parse_status(self._request("STATUS"))
+        except Exception:
+          cloudlog.exception("Failed to confirm disconnected wifi state from STATUS")
           return
-        self._wifi_state = WifiState()
-        self._dhcp_adoption_ssid = None
-        self._clear_station_state()
-        self._enqueue_callbacks(self._disconnected)
+        latest_wpa_state = latest_status.get("wpa_state", "")
+        latest_ssid = latest_status.get("ssid")
+        if latest_wpa_state == "COMPLETED" and latest_ssid:
+          self._handle_connected(
+            latest_ssid, expected_epoch=epoch, profile_uuid=latest_status.get("id_str"),
+          )
+          return
+        if latest_wpa_state in ("SCANNING", "AUTHENTICATING", "ASSOCIATING", "ASSOCIATED",
+                                "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
+          return
+
+        with self._state_lock:
+          if (
+            self._user_epoch != epoch
+            or self._station_operation is not expected_operation
+            or (self._associated_ssid, self._associated_epoch) != expected_association
+          ):
+            return
+          self._wifi_state = WifiState()
+          self._dhcp_adoption_ssid = None
+          self._clear_station_state()
+          self._enqueue_callbacks(self._disconnected)
       return
 
     if current_state.status != ConnectStatus.CONNECTING:
