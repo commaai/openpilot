@@ -171,7 +171,7 @@ class ModelState:
       cache_key = (key, ptr)
       if cache_key not in self._blob_cache:
         self._blob_cache[cache_key] = Tensor.empty((yuv_size,), dtype='uint8', device=self.WARP_DEV)
-      
+
       buf_data = np.frombuffer(bufs[key].data, dtype=np.uint8)[:yuv_size]
       self._blob_cache[cache_key].assign(buf_data).realize()
       self.full_frames[key] = self._blob_cache[cache_key]

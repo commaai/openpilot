@@ -1,4 +1,5 @@
 import io
+import os
 import json
 import pickle
 import shutil
@@ -46,7 +47,7 @@ def load_oob(f):
   return pickle.load(io.BytesIO(opcodes), buffers=buffers())
 
 def usbgpu_present() -> bool:
-  return True
+  return os.environ.get("CHESTNUT") == "1"
 
 def usbgpu_compiled() -> bool:
   return Path(get_manifest_path(modeld_pkl_path(usbgpu=True))).is_file()
