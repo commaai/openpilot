@@ -246,6 +246,9 @@ class TargetBranchButton(BigButton):
       self.set_value(target)
 
   def _on_click(self):
+    if not ui_state.params.get("UpdaterAvailableBranches"):
+      gui_app.push_widget(BigDialog("", tr("Please connect to Wi-Fi to switch branches.")))
+      return
     gui_app.push_widget(BranchSelectPage(self._on_select))
 
   def _on_select(self, branch: str):
