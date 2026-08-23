@@ -97,15 +97,20 @@ class CheckUpdateButton(BigButton):
       gui_app.push_widget(dlg)
       return
 
+    self._signal_updater("SIGHUP" if self.get_value() == "download update" else "SIGUSR1")
+
+  def check_for_update(self):
+    self._signal_updater("SIGUSR1")
+
+  def _signal_updater(self, sig: str):
     self.set_enabled(False)
     self._state = UpdaterState.WAITING_FOR_UPDATER
+    self._hide_value_t = None
+    self.set_value("")
     self.set_icon(self._txt_update_icon)
 
     def run():
-      if self.get_value() == "download update":
-        subprocess.run("pkill -SIGHUP -f openpilot.system.updated.updated", shell=True)
-      else:
-        subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
+      subprocess.run(f"pkill -{sig} -f openpilot.system.updated.updated", shell=True)
 
     threading.Thread(target=run, daemon=True).start()
 
@@ -232,8 +237,9 @@ class BranchSelectPage(NavScroller):
 
 
 class TargetBranchButton(BigButton):
-  def __init__(self):
+  def __init__(self, check_update_btn: CheckUpdateButton):
     super().__init__("target branch", ui_state.params.get("UpdaterTargetBranch") or "")
+    self._check_update_btn = check_update_btn
     self.set_click_callback(self._on_click)
     self.set_visible(not ui_state.params.get_bool("IsTestedBranch"))
     self.set_enabled(lambda: ui_state.is_offroad())
@@ -251,7 +257,7 @@ class TargetBranchButton(BigButton):
   def _on_select(self, branch: str):
     ui_state.params.put("UpdaterTargetBranch", branch, block=True)
     self.set_value(branch)
-    subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
+    self._check_update_btn.check_for_update()
 
 
 class SoftwareLayoutMici(NavScroller):
@@ -265,10 +271,11 @@ class SoftwareLayoutMici(NavScroller):
                                                         gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
                                                         uninstall_openpilot_callback, exit_on_confirm=False)
 
+    check_update_btn = CheckUpdateButton()
     self._scroller.add_widgets([
       SoftwareInfoLayoutMici(),
-      CheckUpdateButton(),
+      check_update_btn,
       InstallUpdateButton(),
-      TargetBranchButton(),
+      TargetBranchButton(check_update_btn),
       uninstall_openpilot_btn,
     ])
