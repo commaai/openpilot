@@ -19,18 +19,6 @@ RC_FILE="${HOME}/.$(basename ${SHELL})rc"
 if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
 fi
-function op_install() {
-  echo "Installing op system-wide..."
-  OP_SH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh"
-  CMD=$(cat <<EOF
-alias op='$OP_SH "\$@"'
-_op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
-[ -n "\$BASH_VERSION" ] && complete -F _op_completions -o default op
-EOF
-)
-  grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
-  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
-}
 
 function retry() {
   local attempts=$1
@@ -48,7 +36,7 @@ function retry() {
 }
 
 function op_run_command() {
-  CMD="$@"
+  CMD="$*"
 
   echo -e "${BOLD}Running command →${NC} $CMD │"
   for ((i=0; i<$((19 + ${#CMD})); i++)); do
@@ -57,7 +45,7 @@ function op_run_command() {
   echo -e "┘\n"
 
   if [[ -z "$DRY" ]]; then
-    eval "$CMD"
+    "$@"
   fi
 }
 
@@ -75,7 +63,7 @@ function op_get_openpilot_dir() {
 
   # Fallback to hardcoded directories if not found
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-  for dir in "${SCRIPT_DIR%/tools}" "$HOME/openpilot" "/data/openpilot"; do
+  for dir in "$(readlink -f "$SCRIPT_DIR/../..")" "$HOME/openpilot" "/data/openpilot"; do
     if [[ -f "$dir/launch_openpilot.sh" ]]; then
       OPENPILOT_ROOT="$dir"
       return 0
@@ -99,7 +87,6 @@ function op_check_openpilot_dir() {
     echo -e " ↳ [${GREEN}✔${NC}] openpilot found."
     return 0
   fi
-
   echo -e " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
   echo "       inside the openpilot directory or specify one with the"
   echo "       --dir option!"
@@ -116,7 +103,7 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs files..."
-  if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
+  if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -193,11 +180,33 @@ function op_before_cmd() {
 }
 
 function op_setup() {
+  echo "Installing op system-wide..."
+  OP_SH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh"
+  CMD=$(cat <<EOF
+alias op='$OP_SH "\$@"'
+_op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
+[ -n "\$BASH_VERSION" ] && complete -F _op_completions -o default op
+EOF
+)
+  grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
+  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
+
   op_get_openpilot_dir
   cd $OPENPILOT_ROOT
 
   op_check_openpilot_dir
   op_check_os
+
+  # Submodules must be present before uv sync: pyproject path sources
+  # (pandacan, opendbc, msgq, ...) live in the submodule checkouts.
+  echo "Getting git submodules..."
+  st="$(date +%s)"
+  if ! retry 3 git submodule update --jobs 4 --init --recursive; then
+    echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
+    return 1
+  fi
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
   echo "Installing dependencies..."
   st="$(date +%s)"
@@ -210,15 +219,6 @@ function op_setup() {
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
 
   op_activate_venv
-
-  echo "Getting git submodules..."
-  st="$(date +%s)"
-  if ! retry 3 git submodule update --jobs 4 --init --recursive; then
-    echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
-    return 1
-  fi
-  et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
@@ -234,7 +234,7 @@ function op_setup() {
 
 function op_auth() {
   op_before_cmd
-  op_run_command tools/lib/auth.py "$@"
+  op_run_command openpilot/tools/lib/auth.py "$@"
 }
 
 function op_activate_venv() {
@@ -298,7 +298,7 @@ function op_check() {
 
 function op_esim() {
   op_before_cmd
-  op_run_command system/hardware/esim.py "$@"
+  op_run_command openpilot/common/esim/esim.py "$@"
 }
 
 function op_build() {
@@ -307,47 +307,72 @@ function op_build() {
   cd "$CDIR"
   if [[ -f "/AGNOS" ]]; then
     # needed on AGNOS to not run out of memory
-    op_run_command system/manager/build.py
+    op_run_command openpilot/system/manager/build.py
   else
-    # scons is fine on PC
-    op_run_command scons $@
+    op_run_command scons -u "$@"
   fi
 }
 
 function op_juggle() {
   op_before_cmd
-  op_run_command tools/plotjuggler/juggle.py $@
+  op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
 }
 
 function op_lint() {
   op_before_cmd
-  op_run_command scripts/lint/lint.sh $@
+  op_run_command scripts/lint/lint.sh "$@"
 }
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest $@
+  op_run_command tools/test_runner.py "$@"
 }
 
 function op_replay() {
   op_before_cmd
-  op_run_command tools/replay/replay $@
+  op_run_command openpilot/tools/replay/replay "$@"
 }
 
 function op_cabana() {
   op_before_cmd
-  op_run_command tools/cabana/cabana $@
+  op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
 function op_sim() {
   op_before_cmd
-  op_run_command exec tools/sim/run_bridge.py &
-  op_run_command exec tools/sim/launch_openpilot.sh
+  op_run_command exec openpilot/tools/sim/run_bridge.py &
+  op_run_command exec openpilot/tools/sim/launch_openpilot.sh
 }
 
 function op_clip() {
   op_before_cmd
-  op_run_command tools/clip/run.py $@
+  op_run_command openpilot/tools/clip/run.py "$@"
+}
+
+function op_check_agnos_update() {
+  if [[ ! -f "/AGNOS" ]]; then
+    return 0
+  fi
+
+  local choice current_version target_version
+  current_version="$(< /VERSION)"
+  target_version="$(unset AGNOS_VERSION; source "$OPENPILOT_ROOT/launch_env.sh"; echo "$AGNOS_VERSION")"
+
+  if [[ "$current_version" == "$target_version" ]]; then
+    return 0
+  fi
+
+  echo -e "${BOLD}AGNOS update available:${NC} $current_version → $target_version"
+  if read -r -p "Install it now? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+    op_run_command "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.py" --swap \
+      "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.json"
+
+    if read -r -p "Reboot now to apply the update? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+      op_run_command sudo reboot
+    else
+      echo "Reboot before starting openpilot to apply the AGNOS update."
+    fi
+  fi
 }
 
 function op_switch() {
@@ -377,11 +402,14 @@ function op_switch() {
 
   # remove openpilot update flag if present
   rm -f .overlay_init
+
+  op_check_agnos_update
 }
 
 function op_start() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
+    op_check_agnos_update
     op_run_command sudo systemctl restart comma $@
   fi
 }
@@ -408,9 +436,8 @@ function op_default() {
   echo -e "  ${BOLD}check${NC}        Check the development environment (git, os) to start using openpilot"
   echo -e "  ${BOLD}esim${NC}         Manage eSIM profiles on your comma device"
   echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
-  echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
+  echo -e "  ${BOLD}setup${NC}        Install the 'op' tool and openpilot dependencies"
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
-  echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
   echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)"
   echo -e "  ${BOLD}start${NC}        Starts (or restarts) openpilot"
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
@@ -430,7 +457,7 @@ function op_default() {
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
   echo -e "  ${BOLD}lint${NC}         Run the linter"
   echo -e "  ${BOLD}post-commit${NC}  Install the linter as a post-commit hook"
-  echo -e "  ${BOLD}test${NC}         Run all unit tests from pytest"
+  echo -e "  ${BOLD}test${NC}         Run all unit tests"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"
@@ -476,7 +503,6 @@ function _op() {
     replay )        shift 1; op_replay "$@" ;;
     clip )          shift 1; op_clip "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
-    install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
     start )         shift 1; op_start "$@" ;;
     stop )          shift 1; op_stop "$@" ;;
@@ -489,4 +515,4 @@ function _op() {
   esac
 }
 
-_op $@
+_op "$@"

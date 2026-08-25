@@ -2,7 +2,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-ROOT="$(cd "$DIR/../" && pwd)"
+ROOT="$(git -C "$DIR" rev-parse --show-toplevel)"
 
 function retry() {
   local attempts=$1
@@ -38,13 +38,17 @@ function install_linux_deps() {
     fi
   done
 
-  # normal stuff, this mostly for bare docker images
+  # ------------------------------------------------
+  # dependencies should never be added to this list.
+  # these are only for inflating bare docker images
+  # to their desktop equivalents.
+  # ------------------------------------------------
   if [[ "$missing_linux_deps" -eq 0 ]]; then
     # the native package managers are slow, so skip if we can
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
     $SUDO apt-get update
-    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git
+    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard
   elif command -v dnf > /dev/null 2>&1; then
     $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
   elif command -v yum > /dev/null 2>&1; then
