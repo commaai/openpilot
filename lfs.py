@@ -4,22 +4,33 @@
 import concurrent.futures
 import fcntl
 import hashlib
-import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.parse
+import xml.etree.ElementTree as ET
 
 POINTER_VERSION = "https://git-lfs.github.com/spec/v1"
 POINTER_RE = re.compile(rb"\Aversion " + POINTER_VERSION.encode() + rb"\noid sha256:([0-9a-f]{64})\nsize ([0-9]+)\n\Z")
-ENDPOINT = "https://gitlab.com/commaai/openpilot-lfs.git/info/lfs"
+# Temporary development bucket. Production cutover requires explicit approval.
+BUCKET = "fakelfs-test"
+S3_ENDPOINT = "https://4a5b3dbb5151b29bca371371370cbc54.r2.cloudflarestorage.com"
+PUBLIC_BASE = "https://pub-8fc0b2b05a7e46349231e9c61e182006.r2.dev"
 ZERO = "0" * 40
-TRANSFERS = int(os.environ.get("GIT_XLFS_TRANSFERS", "4"))
-RANGES = int(os.environ.get("GIT_XLFS_RANGES", "4"))
-RANGE_MIN = int(os.environ.get("GIT_XLFS_RANGE_MIN", str(16 << 20)))
+TRANSFERS = 16
+RANGES = 8
+RANGE_MIN = 16 << 20
+MULTIPART_THRESHOLD = 100 << 20
+PART_SIZE = 128 << 20
+UPLOAD_CONCURRENCY = 8
+RETRIES = 5
+EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 
 
 def git(*args, stdin=None, check=True):
@@ -34,13 +45,14 @@ STORE = GIT_DIR / "lfs" / "objects"
 
 
 def install():
+  filter_process_command = shlex.join((sys.executable, str(Path(__file__).resolve()), "filter-process"))
   for key, value in {
-    "filter.lfs.process": "./lfs.py filter-process",
-    "filter.lfs.clean": "./lfs.py clean -- %f",
-    "filter.lfs.smudge": "./lfs.py smudge -- %f",
+    "filter.lfs.process": filter_process_command,
     "filter.lfs.required": "true",
   }.items():
     git("config", "--local", key, value)
+  git("config", "--local", "--unset-all", "filter.lfs.clean", check=False)
+  git("config", "--local", "--unset-all", "filter.lfs.smudge", check=False)
   hook = Path(git("rev-parse", "--git-path", "hooks").decode().strip()) / "pre-push"
   if not hook.is_absolute():
     hook = ROOT / hook
@@ -79,10 +91,6 @@ class Lock:
     self.file.close()
 
 
-class Reauth(Exception):
-  pass
-
-
 def valid(path, oid, size):
   return path.is_file() and path.stat().st_size == size
 
@@ -93,6 +101,22 @@ def hash_file(path):
     while chunk := stream.read(1 << 20):
       digest.update(chunk)
   return digest.hexdigest()
+
+
+def hash_region(path, offset, size):
+  sha256 = hashlib.sha256()
+  md5 = hashlib.md5(usedforsecurity=False)
+  with path.open("rb") as stream:
+    stream.seek(offset)
+    remaining = size
+    while remaining:
+      chunk = stream.read(min(1 << 20, remaining))
+      if not chunk:
+        raise RuntimeError(f"short read from {path}")
+      sha256.update(chunk)
+      md5.update(chunk)
+      remaining -= len(chunk)
+  return sha256.hexdigest(), md5.hexdigest()
 
 
 def store(chunks):
@@ -125,80 +149,126 @@ def store(chunks):
     raise
 
 
-class Client:
-  def __init__(self, operation):
-    self.operation = operation
-    self.auth = {}
-
-  def curl(self, method, url, headers=(), data=None, output=None, byte_range=None, upload=None):
-    args = [
-      "curl",
-      "--silent",
-      "--show-error",
-      "--location",
-      "--retry",
-      "3",
-      "--retry-all-errors",
-      "--connect-timeout",
-      "20",
-      "-X",
-      method,
-      "--write-out",
-      "%{http_code}",
-    ]
-    if output is not None:
-      args += ["-o", str(output)]
-    for key, value in {**self.auth, **dict(headers)}.items():
-      args += ["-H", f"{key}: {value}"]
-    if byte_range:
-      args += ["--range", byte_range]
-    if data is not None:
-      args += ["--data-binary", "@-"]
-    if upload is not None:
-      args += ["--upload-file", str(upload)]
-    raw = subprocess.run(args + [url], input=data, stdout=subprocess.PIPE).stdout
-    return int(raw[-3:] or b"0"), raw[:-3] if output is None else b""
-
-  def ssh_auth(self):
-    result = subprocess.run(["ssh", "git@gitlab.com", "git-lfs-authenticate", "commaai/openpilot-lfs.git", self.operation], stdout=subprocess.PIPE, check=True)
-    reply = json.loads(result.stdout)
-    self.auth = reply.get("header", {})
-
-  def request(self, method, url, headers=(), data=None):
-    status, body = self.curl(method, url, headers, data)
-    if status == 401 and self.operation == "upload":
-      self.ssh_auth()
-      status, body = self.curl(method, url, headers, data)
-    if not 200 <= status < 300:
-      raise RuntimeError(f"HTTP {status} from {url}: {body[:500].decode(errors='replace')}")
-    return body
-
-  def reauth(self):
-    if self.operation != "upload":
-      raise RuntimeError("public LFS download authorization failed")
-    self.ssh_auth()
-
-  def batch(self, objects):
-    body = json.dumps({"operation": self.operation, "transfers": ["basic"], "objects": [{"oid": oid, "size": size} for oid, size in objects]}).encode()
-    headers = {"Accept": "application/vnd.git-lfs+json", "Content-Type": "application/vnd.git-lfs+json"}
-    reply = json.loads(self.request("POST", ENDPOINT + "/objects/batch", headers, body))
-    if reply.get("transfer", "basic") != "basic":
-      raise RuntimeError(f"unsupported transfer adapter: {reply['transfer']}")
-    return reply.get("objects", [])
+def curl_config(headers, credentials=None):
+  values = list(headers.values())
+  if credentials:
+    values.extend(credentials)
+  for value in values:
+    if any(character in value for character in "\\\r\n\""):
+      raise RuntimeError("invalid curl configuration value")
+  fd, name = tempfile.mkstemp(prefix="r2-headers-", suffix=".conf")
+  os.chmod(name, 0o600)
+  with os.fdopen(fd, "w") as config:
+    for key, value in headers.items():
+      config.write(f'header = "{key}: {value}"\n')
+    if credentials:
+      access_key, secret_key = credentials
+      config.write(f'user = "{access_key}:{secret_key}"\n')
+      config.write('aws-sigv4 = "aws:amz:auto:s3"\n')
+  return Path(name)
 
 
-def action_headers(action):
-  return action.get("header", {}).items()
+def parse_headers(path):
+  headers = {}
+  for line in path.read_text(errors="replace").splitlines():
+    if line.startswith("HTTP/"):
+      headers = {}
+    elif ":" in line:
+      key, value = line.split(":", 1)
+      headers[key.lower()] = value.strip()
+  return headers
 
 
-def download_one(client, oid, size, action):
+def curl(method, url, *, headers=None, credentials=None, data=None, output=None, byte_range=None, upload=None, retry=False):
+  header_fd, header_name = tempfile.mkstemp(prefix="curl-headers-", suffix=".tmp")
+  os.close(header_fd)
+  header_path = Path(header_name)
+  if output is None:
+    body_fd, body_name = tempfile.mkstemp(prefix="curl-body-", suffix=".tmp")
+    os.close(body_fd)
+    body_path = Path(body_name)
+  else:
+    body_path = Path(output)
+  config_path = curl_config(headers or {}, credentials) if headers or credentials else None
+  args = [
+    "curl",
+    "--silent",
+    "--show-error",
+    "--connect-timeout",
+    "20",
+    "--speed-limit",
+    "1024",
+    "--speed-time",
+    "30",
+    "--dump-header",
+    str(header_path),
+    "--output",
+    str(body_path),
+    "--write-out",
+    "%{http_code}",
+  ]
+  if retry:
+    args += ["--retry", "3", "--retry-all-errors", "--retry-delay", "1"]
+  if config_path:
+    args += ["--config", str(config_path)]
+  else:
+    args.append("--location")
+  args.append("--head" if method == "HEAD" else "--request")
+  if method != "HEAD":
+    args.append(method)
+  if byte_range:
+    args += ["--range", byte_range]
+  if data is not None:
+    args += ["--data-binary", "@-"]
+  elif upload is not None:
+    args += ["--upload-file", str(upload)]
+  args.append(url)
+
+  try:
+    result = subprocess.run(args, input=data, capture_output=True)
+    status = int(result.stdout[-3:] or b"0") if result.returncode == 0 else 0
+    response_headers = parse_headers(header_path)
+    body = body_path.read_bytes() if output is None else b""
+    return status, response_headers, body
+  finally:
+    header_path.unlink(missing_ok=True)
+    if output is None:
+      body_path.unlink(missing_ok=True)
+    if config_path:
+      config_path.unlink(missing_ok=True)
+
+
+def public_url(oid):
+  return f"{PUBLIC_BASE}/sha256/{oid}"
+
+
+def public_object_exists(oid, size):
+  for attempt in range(RETRIES):
+    status, headers, _body = curl("HEAD", public_url(oid))
+    if status == 200:
+      try:
+        actual_size = int(headers["content-length"])
+      except (KeyError, ValueError) as error:
+        raise RuntimeError(f"missing Content-Length for {oid}") from error
+      if actual_size != size:
+        raise RuntimeError(f"wrong remote size for {oid}: expected {size}, got {actual_size}")
+      return True
+    if status == 404:
+      return False
+    if status not in (0, 429, 500, 502, 503, 504):
+      raise RuntimeError(f"public HEAD returned HTTP {status} for {oid}")
+    time.sleep(min(2**attempt, 8))
+  raise RuntimeError(f"public HEAD failed for {oid}")
+
+
+def download_one(oid, size):
   dst = object_path(oid)
   with Lock(lock_path(oid)):
     if valid(dst, oid, size):
       return dst
     dst.parent.mkdir(parents=True, exist_ok=True)
     tmp = dst.with_name(f"{oid}-{os.getpid()}.tmp")
-    href = action["href"]
+    href = public_url(oid)
     try:
       ranges = min(RANGES, max(1, (size + RANGE_MIN - 1) // RANGE_MIN))
       if ranges > 1:
@@ -207,13 +277,13 @@ def download_one(client, oid, size, action):
 
         def fetch(item):
           part, span = item
-          return client.curl("GET", href, action_headers(action), output=part, byte_range=f"{span[0]}-{span[1]}")[0]
+          return curl("GET", href, output=part, byte_range=f"{span[0]}-{span[1]}", retry=True)[0]
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=ranges) as pool:
           statuses = list(pool.map(fetch, zip(parts, spans, strict=True)))
-        if 401 in statuses:
-          raise Reauth
-        if all(status == 206 and part.stat().st_size == end - start + 1 for status, part, (start, end) in zip(statuses, parts, spans, strict=True)):
+        if all(
+          status == 206 and part.is_file() and part.stat().st_size == end - start + 1 for status, part, (start, end) in zip(statuses, parts, spans, strict=True)
+        ):
           with tmp.open("wb") as out:
             for part in parts:
               with part.open("rb") as stream:
@@ -221,17 +291,13 @@ def download_one(client, oid, size, action):
         else:
           for part in parts:
             part.unlink(missing_ok=True)
-          status, _ = client.curl("GET", href, action_headers(action), output=tmp)
-          if status == 401:
-            raise Reauth
+          status, _headers, _body = curl("GET", href, output=tmp, retry=True)
           if not 200 <= status < 300:
             raise RuntimeError(f"download returned HTTP {status}")
         for part in parts:
           part.unlink(missing_ok=True)
       else:
-        status, _ = client.curl("GET", href, action_headers(action), output=tmp)
-        if status == 401:
-          raise Reauth
+        status, _headers, _body = curl("GET", href, output=tmp, retry=True)
         if not 200 <= status < 300:
           raise RuntimeError(f"download returned HTTP {status}")
       if tmp.stat().st_size != size or hash_file(tmp) != oid:
@@ -246,25 +312,9 @@ def download_many(objects):
   missing = [(oid, size) for oid, size in objects if not valid(object_path(oid), oid, size)]
   if not missing:
     return
-  client = Client("download")
-  for attempt in range(2):
-    actions = {}
-    for start in range(0, len(missing), 100):
-      for obj in client.batch(missing[start : start + 100]):
-        if obj.get("error"):
-          raise RuntimeError(f"{obj['oid']}: {obj['error'].get('message', 'server error')}")
-        if "download" not in obj.get("actions", {}):
-          raise RuntimeError(f"server gave no download action for {obj['oid']}")
-        actions[obj["oid"]] = obj["actions"]["download"]
-    try:
-      with concurrent.futures.ThreadPoolExecutor(max_workers=TRANSFERS) as pool:
-        for future in [pool.submit(download_one, client, oid, size, actions[oid]) for oid, size in missing]:
-          future.result()
-      return
-    except Reauth:
-      if attempt:
-        raise
-      client.reauth()
+  with concurrent.futures.ThreadPoolExecutor(max_workers=TRANSFERS) as pool:
+    for future in [pool.submit(download_one, oid, size) for oid, size in missing]:
+      future.result()
 
 
 def smudge(data):
@@ -356,6 +406,7 @@ def cat_small(oids):
   if not small:
     return {}
   proc = subprocess.Popen(["git", "cat-file", "--batch"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+  assert proc.stdin is not None and proc.stdout is not None
   out = {}
   for oid in small:
     proc.stdin.write((oid + "\n").encode())
@@ -409,22 +460,226 @@ def pull(ref="HEAD", exclude=None):
       git("add", "--renormalize", "--", *materialized)
 
 
-def upload_one(client, oid, size, actions):
+class ObjectExists(Exception):
+  pass
+
+
+class R2Client:
+  def credentials(self):
+    access_key = os.environ.get("R2_ACCESS_KEY_ID")
+    secret_key = os.environ.get("R2_SECRET_ACCESS_KEY")
+    if not access_key or not secret_key:
+      raise RuntimeError("R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are required for uploads")
+    return access_key, secret_key
+
+  def request(self, method, oid, *, query=(), payload_hash=EMPTY_SHA256, data=None, upload=None, content_length=None):
+    path = f"/{BUCKET}/sha256/{oid}"
+    encoded_query = urllib.parse.urlencode(sorted(query))
+    url = S3_ENDPOINT + path
+    if encoded_query:
+      url += "?" + encoded_query
+    headers = {"x-amz-content-sha256": payload_hash}
+    if content_length is not None:
+      headers["Content-Length"] = str(content_length)
+      headers["Expect"] = ""
+    return curl(method, url, headers=headers, credentials=self.credentials(), data=data, upload=upload)
+
+
+def retryable(status):
+  return status in (0, 429, 500, 502, 503, 504)
+
+
+def wait_for_public_object(oid, size, attempts=RETRIES):
+  for attempt in range(attempts):
+    if public_object_exists(oid, size):
+      return True
+    time.sleep(min(2**attempt, 8))
+  return False
+
+
+def xml_value(body, name):
+  try:
+    element = ET.fromstring(body).find(f".//{{*}}{name}")
+  except ET.ParseError as error:
+    raise RuntimeError("R2 returned malformed XML") from error
+  if element is None or element.text is None:
+    raise RuntimeError(f"R2 response has no {name}")
+  return element.text
+
+
+def prepare_part(path, offset, size, part_number):
+  directory = GIT_DIR / "lfs" / "tmp"
+  directory.mkdir(parents=True, exist_ok=True)
+  fd, name = tempfile.mkstemp(prefix=f"r2-part-{part_number}-", suffix=".tmp", dir=directory)
+  part_path = Path(name)
+  sha256 = hashlib.sha256()
+  md5 = hashlib.md5(usedforsecurity=False)
+  try:
+    with path.open("rb") as source, os.fdopen(fd, "wb") as part:
+      source.seek(offset)
+      remaining = size
+      while remaining:
+        chunk = source.read(min(1 << 20, remaining))
+        if not chunk:
+          raise RuntimeError(f"short read from {path}")
+        part.write(chunk)
+        sha256.update(chunk)
+        md5.update(chunk)
+        remaining -= len(chunk)
+    return part_path, sha256.hexdigest(), md5.hexdigest()
+  except BaseException:
+    part_path.unlink(missing_ok=True)
+    raise
+
+
+def create_multipart_upload(client, oid, size):
+  for attempt in range(RETRIES):
+    status, _headers, body = client.request("POST", oid, query=(("uploads", ""),), data=b"", content_length=0)
+    if status == 200:
+      return xml_value(body, "UploadId")
+    if not retryable(status):
+      raise RuntimeError(f"CreateMultipartUpload returned HTTP {status} for {oid}")
+    if public_object_exists(oid, size):
+      raise ObjectExists
+    time.sleep(min(2**attempt, 8))
+  raise RuntimeError(f"CreateMultipartUpload failed for {oid}")
+
+
+def upload_part(client, path, oid, size, upload_id, part_number, offset, part_size):
+  part_path, part_sha256, part_md5 = prepare_part(path, offset, part_size, part_number)
+  query = (("partNumber", part_number), ("uploadId", upload_id))
+  try:
+    for attempt in range(RETRIES):
+      status, headers, _body = client.request(
+        "PUT",
+        oid,
+        query=query,
+        payload_hash=part_sha256,
+        upload=part_path,
+        content_length=part_size,
+      )
+      if status == 200:
+        etag = headers.get("etag", "").strip('"').lower()
+        if etag != part_md5:
+          raise RuntimeError(f"wrong ETag for part {part_number} of {oid}")
+        return part_number, etag
+      if not retryable(status):
+        raise RuntimeError(f"UploadPart {part_number} returned HTTP {status} for {oid}")
+      if public_object_exists(oid, size):
+        raise ObjectExists
+      time.sleep(min(2**attempt, 8))
+    raise RuntimeError(f"UploadPart {part_number} failed for {oid}")
+  finally:
+    part_path.unlink(missing_ok=True)
+
+
+def abort_multipart_upload(client, oid, upload_id):
+  for attempt in range(RETRIES):
+    status, _headers, _body = client.request("DELETE", oid, query=(("uploadId", upload_id),))
+    if status in (204, 404):
+      return
+    if not retryable(status):
+      raise RuntimeError(f"AbortMultipartUpload returned HTTP {status} for {oid}")
+    time.sleep(min(2**attempt, 8))
+  raise RuntimeError(f"AbortMultipartUpload failed for {oid}")
+
+
+def complete_multipart_upload(client, oid, size, upload_id, parts):
+  root = ET.Element("CompleteMultipartUpload")
+  for part_number, etag in sorted(parts):
+    part = ET.SubElement(root, "Part")
+    ET.SubElement(part, "PartNumber").text = str(part_number)
+    ET.SubElement(part, "ETag").text = f'"{etag}"'
+  body = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+  expected_etag = hashlib.md5(b"".join(bytes.fromhex(etag) for _number, etag in sorted(parts)), usedforsecurity=False).hexdigest() + f"-{len(parts)}"
+  query = (("uploadId", upload_id),)
+  for attempt in range(RETRIES):
+    status, _headers, response_body = client.request(
+      "POST",
+      oid,
+      query=query,
+      payload_hash=hashlib.sha256(body).hexdigest(),
+      data=body,
+      content_length=len(body),
+    )
+    if status == 200:
+      etag = xml_value(response_body, "ETag").strip('"').lower()
+      if etag != expected_etag:
+        raise RuntimeError(f"wrong multipart ETag for {oid}")
+      if not wait_for_public_object(oid, size):
+        raise RuntimeError(f"completed object {oid} is not publicly readable")
+      return
+    if not retryable(status):
+      raise RuntimeError(f"CompleteMultipartUpload returned HTTP {status} for {oid}")
+    if wait_for_public_object(oid, size, attempts=2):
+      raise ObjectExists
+    time.sleep(min(2**attempt, 8))
+  raise RuntimeError(f"CompleteMultipartUpload failed for {oid}")
+
+
+def multipart_upload(client, path, oid, size):
+  upload_id = create_multipart_upload(client, oid, size)
+  parts = [(part_number + 1, offset, min(PART_SIZE, size - offset)) for part_number, offset in enumerate(range(0, size, PART_SIZE))]
+  try:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=UPLOAD_CONCURRENCY) as pool:
+      futures = [pool.submit(upload_part, client, path, oid, size, upload_id, part_number, offset, part_size) for part_number, offset, part_size in parts]
+      uploaded_parts = [future.result() for future in futures]
+    complete_multipart_upload(client, oid, size, upload_id, uploaded_parts)
+  except BaseException:
+    abort_multipart_upload(client, oid, upload_id)
+    raise
+
+
+def single_upload(client, path, oid, size):
+  _sha256, expected_etag = hash_region(path, 0, size)
+  for attempt in range(RETRIES):
+    status, headers, _body = client.request("PUT", oid, payload_hash=oid, upload=path, content_length=size)
+    if status == 200:
+      etag = headers.get("etag", "").strip('"').lower()
+      if etag != expected_etag:
+        raise RuntimeError(f"wrong ETag for {oid}")
+      if not wait_for_public_object(oid, size):
+        raise RuntimeError(f"uploaded object {oid} is not publicly readable")
+      return
+    if not retryable(status):
+      raise RuntimeError(f"PutObject returned HTTP {status} for {oid}")
+    if wait_for_public_object(oid, size, attempts=2):
+      return
+    time.sleep(min(2**attempt, 8))
+  raise RuntimeError(f"PutObject failed for {oid}")
+
+
+def upload_one(client, oid, size):
   path = object_path(oid)
   if not valid(path, oid, size):
     raise RuntimeError(f"missing local LFS object {oid}")
-  upload = actions.get("upload")
-  if not upload:
-    return
-  status, _ = client.curl("PUT", upload["href"], action_headers(upload), output=Path(os.devnull), upload=path)
-  if status == 401:
-    raise Reauth
-  if not 200 <= status < 300:
-    raise RuntimeError(f"upload of {oid} returned HTTP {status}")
-  if verify := actions.get("verify"):
-    body = json.dumps({"oid": oid, "size": size}).encode()
-    headers = dict(action_headers(verify)) | {"Content-Type": "application/vnd.git-lfs+json"}
-    client.request("POST", verify["href"], headers, body)
+  if hash_file(path) != oid:
+    raise RuntimeError(f"local sha256 mismatch for {oid}")
+  if public_object_exists(oid, size):
+    return False
+  try:
+    if size < MULTIPART_THRESHOLD:
+      single_upload(client, path, oid, size)
+    else:
+      multipart_upload(client, path, oid, size)
+  except ObjectExists:
+    if not public_object_exists(oid, size):
+      raise
+  return True
+
+
+def upload_many(objects):
+  objects = list(dict.fromkeys(objects))
+  if not objects:
+    return []
+  client = R2Client()
+  with concurrent.futures.ThreadPoolExecutor(max_workers=TRANSFERS) as pool:
+    futures = [pool.submit(upload_one, client, oid, size) for oid, size in objects]
+    return [future.result() for future in futures]
+
+
+def push(ref="HEAD"):
+  upload_many(pointers_for_ref(ref).keys())
 
 
 def pre_push(remote):
@@ -448,50 +703,25 @@ def pre_push(remote):
   object_ids = [line.split(b" ", 1)[0].decode() for line in git(*args).splitlines()]
   contents = cat_small(object_ids)
   objects = list(dict.fromkeys(parsed for data in contents.values() if (parsed := parse_pointer(data))))
-  client = Client("upload")
-  for start in range(0, len(objects), 100):
-    batch = objects[start : start + 100]
-    for attempt in range(2):
-      replies = client.batch(batch)
-      try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=TRANSFERS) as pool:
-          jobs = []
-          for obj in replies:
-            if obj.get("error"):
-              raise RuntimeError(f"{obj['oid']}: {obj['error'].get('message', 'server error')}")
-            jobs.append(pool.submit(upload_one, client, obj["oid"], obj["size"], obj.get("actions", {})))
-          for job in jobs:
-            job.result()
-        break
-      except Reauth:
-        if attempt:
-          raise
-        client.reauth()
+  upload_many(objects)
 
 
 def main():
   command = sys.argv[1] if len(sys.argv) > 1 else ""
   if command == "filter-process":
     filter_process()
-  elif command == "clean":
-    sys.stdout.buffer.write(store(iter(lambda: sys.stdin.buffer.read(1 << 20), b"")))
-  elif command == "smudge":
-    result = smudge(sys.stdin.buffer.read())
-    if isinstance(result, Path):
-      with result.open("rb") as stream:
-        shutil.copyfileobj(stream, sys.stdout.buffer)
-    else:
-      sys.stdout.buffer.write(result)
   elif command == "pull":
     args = sys.argv[2:]
     exclude = next((arg.split("=", 1)[1] for arg in args if arg.startswith("--exclude=")), None)
     pull(next((arg for arg in args if not arg.startswith("--")), "HEAD"), exclude)
+  elif command == "push":
+    push(sys.argv[2] if len(sys.argv) > 2 else "HEAD")
   elif command == "pre-push":
     pre_push(sys.argv[2] if len(sys.argv) > 2 else "origin")
   elif command == "install":
     install()
   else:
-    raise SystemExit("usage: lfs.py {filter-process|clean|smudge|pull|pre-push|install}")
+    raise SystemExit("usage: lfs.py {filter-process|pull|push|pre-push|install}")
 
 
 if __name__ == "__main__":
