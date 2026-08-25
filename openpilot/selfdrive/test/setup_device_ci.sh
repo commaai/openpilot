@@ -63,7 +63,7 @@ pull_lfs() {
   LFS_EXCLUDE="openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"
 
   git config --local lfs.fetchexclude "$LFS_EXCLUDE"
-  ./lfs.py pull --exclude="$LFS_EXCLUDE"
+  ./lfs.py pull
   if git cat-file -e "HEAD:$LFS_EXCLUDE"; then
     rm -f "$LFS_EXCLUDE"
     git checkout -- "$LFS_EXCLUDE"
