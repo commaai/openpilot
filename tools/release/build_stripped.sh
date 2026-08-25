@@ -60,9 +60,9 @@ date: $DATETIME
 master commit: $GIT_HASH
 "
 
-# should be no submodules or LFS files
+# should be no submodules or LFS pointer files
 git submodule status
-if [ ! -z "$(git lfs ls-files)" ]; then
+if git grep -q '^version https://git-lfs.github.com/spec/v1$' HEAD --; then
   echo "LFS files detected!"
   exit 1
 fi

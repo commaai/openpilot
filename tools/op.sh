@@ -73,6 +73,7 @@ function op_get_openpilot_dir() {
 
 function op_install_post_commit() {
   op_get_openpilot_dir
+  "$OPENPILOT_ROOT/lfs.py" install
   if [[ ! -d $OPENPILOT_ROOT/.git/hooks/post-commit.d ]]; then
     mkdir $OPENPILOT_ROOT/.git/hooks/post-commit.d
     mv $OPENPILOT_ROOT/.git/hooks/post-commit $OPENPILOT_ROOT/.git/hooks/post-commit.d 2>/dev/null || true
@@ -102,11 +103,11 @@ function op_check_git() {
     echo -e " ↳ [${GREEN}✔${NC}] git found."
   fi
 
-  echo "Checking for git lfs files..."
+  echo "Checking for LFS files..."
   if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
+    echo -e " ↳ [${GREEN}✔${NC}] LFS files found."
   else
-    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
+    echo -e " ↳ [${RED}✗${NC}] LFS files not found! Run './lfs.py pull'"
     return 1
   fi
 
@@ -194,6 +195,8 @@ EOF
   op_get_openpilot_dir
   cd $OPENPILOT_ROOT
 
+  ./lfs.py install
+
   op_check_openpilot_dir
   op_check_os
 
@@ -220,10 +223,10 @@ EOF
 
   op_activate_venv
 
-  echo "Pulling git lfs files..."
+  echo "Pulling LFS files..."
   st="$(date +%s)"
-  if ! retry 3 git lfs pull; then
-    echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
+  if ! retry 3 ./lfs.py pull; then
+    echo -e " ↳ [${RED}✗${NC}] Pulling LFS files failed!"
     return 1
   fi
   et="$(date +%s)"

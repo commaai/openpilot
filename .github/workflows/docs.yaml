@@ -34,7 +34,8 @@ jobs:
     # Build
     - name: Build docs
       run: |
-        git lfs pull
+        ./lfs.py install
+        ./lfs.py pull
         python docs/serve.py --build
 
     # Push to docs.comma.ai
