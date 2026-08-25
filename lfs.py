@@ -51,18 +51,24 @@ ROOT, GIT_DIR = map(Path, git("rev-parse", "--show-toplevel", "--absolute-git-di
 STORE = GIT_DIR / "lfs" / "objects"
 
 
+def remove_git_lfs_hooks(directory):
+  for name in ("pre-push", "post-checkout", "post-commit", "post-merge"):
+    path = directory / name
+    if not path.is_file() or path.is_symlink() or path.stat().st_size > 1024:
+      continue
+    lines = [line.strip() for line in path.read_text(errors="replace").splitlines() if line.strip()]
+    commands = {f'git lfs {name} "$@"'}
+    if name == "pre-push":
+      commands.update(('git lfs push --stdin $*', 'git lfs push --stdin "$@"'))
+    has_lfs_guard = len(lines) == 3 and lines[1].startswith("command -v git-lfs ")
+    if lines[:1] == ["#!/bin/sh"] and lines[-1] in commands and (len(lines) == 2 or has_lfs_guard):
+      path.unlink()
+
+
 def install():
   filter_process_command = shlex.join((sys.executable, str(Path(__file__).resolve()), "filter-process"))
   legacy_hook = ROOT / Path(git("rev-parse", "--git-path", "hooks/pre-push").decode().strip())
-  git("lfs", "uninstall", "--local", check=False)
-  if legacy_hook.is_file():
-    lines = legacy_hook.read_text(errors="replace").splitlines()
-    command = 'git lfs pre-push "$@"'
-    is_lfs_hook = lines == ["#!/bin/sh", command] or (
-      len(lines) == 3 and lines[0] == "#!/bin/sh" and lines[1].startswith("command -v git-lfs ") and lines[2] == command
-    )
-    if is_lfs_hook:
-      legacy_hook.unlink()
+  remove_git_lfs_hooks(legacy_hook.parent)
   hook = GIT_DIR / "lfs-hooks" / "pre-push"
   if legacy_hook.parent != hook.parent:
     shutil.copytree(legacy_hook.parent, hook.parent, dirs_exist_ok=True, symlinks=True)
