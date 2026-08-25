@@ -7,6 +7,8 @@ from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.software import SoftwareLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayout
+from openpilot.selfdrive.ui.mici.layouts.settings.chestnut import ChestnutLayout
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 
 
@@ -36,6 +38,11 @@ class SettingsLayout(NavScroller):
     software_btn = SettingsBigButton("software", "", gui_app.texture("icons_mici/settings/software.png", 64, 75))
     software_btn.set_click_callback(lambda: gui_app.push_widget(software_panel))
 
+    chestnut_panel = ChestnutLayout()
+    chestnut_btn = SettingsBigButton("chestnut", "", gui_app.texture("icons_mici/egpu.png", 74, 56), icon_offset=(0, 4))
+    chestnut_btn.set_visible(lambda: ui_state.chestnut_visible)
+    chestnut_btn.set_click_callback(lambda: gui_app.push_widget(chestnut_panel))
+
     developer_panel = DeveloperLayoutMici()
     developer_btn = SettingsBigButton("developer", "", gui_app.texture("icons_mici/settings/developer_icon.png", 64, 60))
     developer_btn.set_click_callback(lambda: gui_app.push_widget(developer_panel))
@@ -49,6 +56,7 @@ class SettingsLayout(NavScroller):
       network_btn,
       device_btn,
       software_btn,
+      chestnut_btn,
       PairBigButton(),
       firehose_btn,
       developer_btn,

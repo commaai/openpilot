@@ -109,12 +109,14 @@ class BigButton(Widget):
 
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False):
+  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False,
+               icon_offset: tuple[int, int] = (0, 0)):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
     self._txt_icon = icon
+    self._icon_offset = icon_offset
     self._scroll = scroll
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
@@ -249,8 +251,8 @@ class BigButton(Widget):
         rotation = (rl.get_time() - self._rotate_icon_t) * 180
 
       # draw top right with 30px padding
-      x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2
-      y = btn_y + 30 + self._txt_icon.height / 2
+      x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2 + self._icon_offset[0]
+      y = btn_y + 30 + self._txt_icon.height / 2 + self._icon_offset[1]
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)

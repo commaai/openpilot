@@ -139,8 +139,9 @@ class MiciHomeLayout(Widget):
     self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
-    self._egpu_icon = IconWidget("icons_mici/egpu_green.png", (50, 37))
-    self._egpu_icon_gray = IconWidget("icons_mici/egpu_gray.png", (50, 37))
+    self._egpu_icon = IconWidget("icons_mici/egpu_green.png", (60, 44))
+    self._egpu_icon_orange = IconWidget("icons_mici/egpu_orange.png", (68, 40))
+    self._egpu_icon_fallback = IconWidget("icons_mici/egpu_crossed.png", (54, 47), offset=(0, -1))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
     self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
 
@@ -151,7 +152,8 @@ class MiciHomeLayout(Widget):
       NetworkIcon(),
       self._experimental_icon,
       self._egpu_icon,
-      self._egpu_icon_gray,
+      self._egpu_icon_orange,
+      self._egpu_icon_fallback,
       self._body_icon,
       self._mic_icon,
     ], spacing=18)
@@ -248,8 +250,12 @@ class MiciHomeLayout(Widget):
 
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(ui_state.experimental_mode)
-    self._egpu_icon.set_visible(ui_state.sm["deviceState"].chestnutPresent and ui_state.usbgpu_compiled)
-    self._egpu_icon_gray.set_visible(ui_state.sm["deviceState"].chestnutPresent and not ui_state.usbgpu_compiled)
+    chestnut_visible = ui_state.chestnut_visible
+    self._egpu_icon.set_visible(chestnut_visible and (ui_state.chestnut_ready or ui_state.big_model_loading) and
+                                not ui_state.small_model_fallback)
+    self._egpu_icon_orange.set_visible(chestnut_visible and not ui_state.chestnut_ready and
+                                       not ui_state.big_model_loading and not ui_state.small_model_fallback)
+    self._egpu_icon_fallback.set_visible(chestnut_visible and ui_state.small_model_fallback)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(bool(ui_state.is_body))
 

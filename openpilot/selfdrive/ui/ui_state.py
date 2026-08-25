@@ -12,6 +12,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.hardware import HARDWARE, PC
+from openpilot.common.hardware.usb import is_chestnut_usb_device, is_current_chestnut_firmware
+from openpilot.common.version import CHESTNUT_RELEASE_BRANCHES
 from openpilot.selfdrive.modeld.helpers import usbgpu_compiled
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
@@ -59,6 +61,7 @@ class UIState:
         "vehicleParameters",
         "testJoystick",
         "rawAudioData",
+        "chestnutState",
       ]
     )
 
@@ -81,6 +84,8 @@ class UIState:
     self.usbgpu_compiled: bool = usbgpu_compiled()
     self.usbgpu_active: bool | None = self.params.get("UsbGpuActive")
     self.usbgpu_loading: bool = self.params.get_bool("UsbGpuLoading")
+    self.small_model_fallback: bool = False
+    self.git_branch: str = self.params.get("GitBranch") or ""
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
@@ -116,6 +121,42 @@ class UIState:
 
   def is_offroad(self) -> bool:
     return not self.started
+
+  @property
+  def chestnut_release(self) -> bool:
+    return self.git_branch in CHESTNUT_RELEASE_BRANCHES
+
+  @property
+  def chestnut_visible(self) -> bool:
+    return self.chestnut_release or self.sm["deviceState"].chestnutPresent
+
+  @property
+  def chestnut_device(self):
+    devices = [device for device in self.sm["deviceState"].usbState.devices
+               if is_chestnut_usb_device(device.vendorId, device.productId)]
+    return devices[0] if len(devices) == 1 else None
+
+  @property
+  def chestnut_pcie_connected(self) -> bool:
+    return (self.sm.alive["chestnutState"] and self.sm.valid["chestnutState"] and
+            self.sm["chestnutState"].pcieLtssm == 0x78)
+
+  @property
+  def chestnut_ready(self) -> bool:
+    device = self.chestnut_device
+    return (device is not None and device.speedMbps >= 5000 and is_current_chestnut_firmware(device.product) and
+            self.usbgpu_compiled and self.chestnut_pcie_connected)
+
+  @property
+  def big_model_failed(self) -> bool:
+    return (self.usbgpu_active is False or not self.sm["deviceState"].chestnutPresent or
+            (self.usbgpu_active is True and self.sm.recv_frame["modelV2"] > self.started_frame and
+             not self.sm.alive["modelV2"]) or
+            (self.usbgpu_active is None and self.sm.recv_frame["modelV2"] > self.started_frame))
+
+  @property
+  def big_model_loading(self) -> bool:
+    return self.usbgpu_loading or (self.is_onroad() and self.usbgpu_active is None and not self.big_model_failed)
 
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
@@ -157,6 +198,11 @@ class UIState:
 
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
+    self.usbgpu = self.sm["deviceState"].chestnutPresent or (self.started and self.usbgpu)
+    if (self.engaged and not self._engaged_prev and not self.big_model_loading and self.usbgpu_active is not True and
+        self.sm.recv_frame["modelV2"] > self.started_frame):
+      self.small_model_fallback = True
+    self.small_model_fallback &= self.big_model_failed
 
     # Update body state
     if self.CP is not None and self.is_body != self.CP.notCar:
@@ -208,8 +254,7 @@ class UIState:
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
     self.experimental_mode_confirmed = self.params.get_bool("ExperimentalModeConfirmed")
-    # keep usbgpu UI active until offroad transition when gpu disappears
-    self.usbgpu = self.sm["deviceState"].chestnutPresent or (self.usbgpu and self.started)
+    self.git_branch = self.params.get("GitBranch") or ""
     if not self.usbgpu_compiled:
       self.usbgpu_compiled = usbgpu_compiled()
     self.usbgpu_active = self.params.get("UsbGpuActive")
