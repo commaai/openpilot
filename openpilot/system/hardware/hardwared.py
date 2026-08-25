@@ -20,12 +20,14 @@ from openpilot.selfdrive.modeld.helpers import MODELS_DIR, usbgpu_compiled
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE, PC
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_ROM_USB_IDS, CHESTNUT_USB_IDS, get_usb_state, get_usb_topology, set_usb_state
+from openpilot.common.hardware.usb import (CHESTNUT_FW_VERSION, get_usb_state, get_usb_topology, is_chestnut_usb_device,
+                                           is_current_chestnut_firmware, set_usb_state)
 from openpilot.common.linux import LinuxSystemStats
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.power_monitoring import PowerMonitoring
 from openpilot.system.hardware.fan_controller import FanController
+from openpilot.system.hardware.chestnut.status import ChestnutStatus
 from openpilot.common.version import terms_version, training_version
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
@@ -48,18 +50,21 @@ class Chestnut:
     self.attempts = 0
     self.last_attempt = 0.
     self.flashed = False
+    self.failed = False
 
   def flash(self) -> None:
     ret = subprocess.run(["sudo", sys.executable, os.path.join(BASEDIR, "openpilot/system/hardware/chestnut/flash.py"), CHESTNUT_FW_VERSION],
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
     cloudlog.event("chestnut flash done", returncode=ret.returncode, output=ret.stdout[-1000:], error=ret.returncode != 0)
     self.flashed = ret.returncode == 0
+    self.failed = not self.flashed and self.attempts >= self.MAX_ATTEMPTS
 
   def update(self, offroad: bool, usb_state: list[dict]) -> None:
-    mismatch = any((d["vendorId"], d["productId"]) in CHESTNUT_USB_IDS + CHESTNUT_ROM_USB_IDS and
-                   d["product"] != f"custom {CHESTNUT_FW_VERSION}-CLEAN" for d in usb_state)
+    mismatch = any(is_chestnut_usb_device(d["vendorId"], d["productId"], include_bootloader=True) and
+                   not is_current_chestnut_firmware(d["product"]) for d in usb_state)
     if not mismatch:
       self.flashed = False
+      self.failed = False
       return
 
     if not offroad or self.flashed or self.attempts >= self.MAX_ATTEMPTS:
@@ -189,7 +194,7 @@ def hw_state_thread(end_event, hw_queue):
 
 def hardware_thread(end_event, hw_queue) -> None:
   system_stats = LinuxSystemStats()
-  pm = messaging.PubMaster(['deviceState'])
+  pm = messaging.PubMaster(['deviceState', 'chestnutState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates"], poll="pandaStates")
 
   count = 0
@@ -238,6 +243,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   fan_controller = FanController(int(1./DT_HW))
   chestnut = Chestnut()
+  chestnut_status = ChestnutStatus()
   big_model_available = (MODELS_DIR / 'big_driving_supercombo.onnx').is_file() or usbgpu_compiled()
 
   while not end_event.is_set():
@@ -301,6 +307,14 @@ def hardware_thread(end_event, hw_queue) -> None:
     set_usb_state(msg.deviceState, last_hw_state.usb_state)
     chestnut.update(started_ts is None, last_hw_state.usb_state)
     set_offroad_alert_if_changed("Offroad_ChestnutBranch", msg.deviceState.chestnutPresent and not big_model_available)
+    offroad = started_ts is None
+    chestnut_status.update(offroad, params.get("GitBranch") or "", last_hw_state.usb_state, chestnut.failed,
+                           set_offroad_alert_if_changed)
+    if offroad:
+      chestnut_msg = messaging.new_message('chestnutState', valid=chestnut_status.pcie_state is not None)
+      if chestnut_status.pcie_state is not None:
+        chestnut_msg.chestnutState.pcieLtssm = chestnut_status.pcie_state
+      pm.send('chestnutState', chestnut_msg)
 
     # this subset is only used for offroad
     temp_sources = [

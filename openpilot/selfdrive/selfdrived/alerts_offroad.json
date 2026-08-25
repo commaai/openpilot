@@ -18,7 +18,27 @@
     "_comment": "Set extra field to the failed reason."
   },
   "Offroad_ChestnutBranch": {
-    "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
+    "text": "chestnut detected. Switch to the release-chestnut branch to use chestnut-class models.",
+    "severity": 0
+  },
+  "Offroad_ChestnutNotDetected": {
+    "text": "chestnut not detected. Check USB and 12V power.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUsbLinkSlow": {
+    "text": "USB link too slow. Check the USB cable. Current speed: %1",
+    "severity": 0
+  },
+  "Offroad_ChestnutModelNotCompiled": {
+    "text": "big model not compiled. Keep ignition on and reboot to compile.",
+    "severity": 0
+  },
+  "Offroad_ChestnutPcieLinkUnavailable": {
+    "text": "PCIe link unavailable. Check chestnut 12V power.",
+    "severity": 0
+  },
+  "Offroad_ChestnutFirmwareUpdateFailed": {
+    "text": "chestnut firmware update failed. Check USB cable.",
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {

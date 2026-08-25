@@ -12,6 +12,7 @@ from openpilot.common.git import get_commit, get_origin, get_branch, get_short_b
 
 RELEASE_BRANCHES = ['release-tizi-staging', 'release-mici-staging', 'release-tizi', 'release-mici', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel-staging', 'nightly-dev']
+CHESTNUT_RELEASE_BRANCHES = ('release-chestnut', 'release-chestnut-staging')
 
 BUILD_METADATA_FILENAME = "build.json"
 
