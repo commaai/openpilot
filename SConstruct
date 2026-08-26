@@ -55,6 +55,16 @@ assert arch in [
   "Darwin",       # macOS arm64 (x86 not supported)
 ]
 
+if arch == "comma_arm64":
+  from openpilot.common.utils import sudo_write
+  for cpu in range(4, 8):
+    sudo_write('1', f'/sys/devices/system/cpu/cpu{cpu}/online')
+  for policy in ('0', '4'):
+    governor_path = f'/sys/devices/system/cpu/cpufreq/policy{policy}'
+    sudo_write('performance', f'{governor_path}/scaling_governor')
+    with open(f'{governor_path}/cpuinfo_max_freq') as f:
+      sudo_write(f.read().strip(), f'{governor_path}/scaling_max_freq')
+
 pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
