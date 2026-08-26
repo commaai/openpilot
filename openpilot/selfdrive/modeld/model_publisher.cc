@@ -8,8 +8,6 @@
 
 namespace {
 
-using half = _Float16;
-
 constexpr size_t IDX_N = 33;
 constexpr size_t PLAN_WIDTH = 15;
 constexpr size_t LINE_WIDTH = 2;
@@ -43,25 +41,25 @@ constexpr std::array<float, 5> FCW_THRESHOLDS_5MS2 = {.05, .05, .15, .15, .15};
 constexpr std::array<float, 2> FCW_THRESHOLDS_3MS2 = {.7, .7};
 
 struct ModelOutputs {
-  const half *plan;
-  const half *plan_stds;
-  const half *lane_lines;
-  const half *lane_lines_stds;
-  const half *lane_lines_prob;
-  const half *road_edges;
-  const half *road_edges_stds;
-  const half *lead;
-  const half *lead_stds;
-  const half *lead_prob;
-  const half *desire_state;
-  const half *desire_pred;
-  const half *meta;
-  const half *pose;
-  const half *pose_stds;
-  const half *wide_from_device_euler;
-  const half *wide_from_device_euler_stds;
-  const half *road_transform;
-  const half *road_transform_stds;
+  const float *plan;
+  const float *plan_stds;
+  const float *lane_lines;
+  const float *lane_lines_stds;
+  const float *lane_lines_prob;
+  const float *road_edges;
+  const float *road_edges_stds;
+  const float *lead;
+  const float *lead_stds;
+  const float *lead_prob;
+  const float *desire_state;
+  const float *desire_pred;
+  const float *meta;
+  const float *pose;
+  const float *pose_stds;
+  const float *wide_from_device_euler;
+  const float *wide_from_device_euler_stds;
+  const float *road_transform;
+  const float *road_transform_stds;
   const void *raw_pred;
   size_t raw_pred_size;
 };
@@ -90,7 +88,7 @@ void fill_list(capnp::List<float>::Builder list, const T *values, size_t stride 
   }
 }
 
-void fill_xyzt(cereal::XYZTData::Builder xyzt, const half *values, size_t offset, const half *stds = nullptr) {
+void fill_xyzt(cereal::XYZTData::Builder xyzt, const float *values, size_t offset, const float *stds = nullptr) {
   xyzt.setT(kj::arrayPtr(T_IDXS.data(), T_IDXS.size()));
   fill_list(xyzt.initX(IDX_N), values + offset, PLAN_WIDTH);
   fill_list(xyzt.initY(IDX_N), values + offset + 1, PLAN_WIDTH);
@@ -102,7 +100,7 @@ void fill_xyzt(cereal::XYZTData::Builder xyzt, const half *values, size_t offset
   }
 }
 
-void fill_line(cereal::XYZTData::Builder line, const half *values) {
+void fill_line(cereal::XYZTData::Builder line, const float *values) {
   line.initT(0);
   line.setX(kj::arrayPtr(X_IDXS.data(), X_IDXS.size()));
   fill_list(line.initY(IDX_N), values, LINE_WIDTH);
@@ -160,16 +158,13 @@ void fill_meta(cereal::ModelDataV2::Builder model, const ModelOutputs &outputs, 
     for (size_t i = 0; i < state.disengage_buffer.size() - DISENGAGE_LEN; ++i) {
       state.disengage_buffer[i] = state.disengage_buffer[i + DISENGAGE_LEN];
     }
-    half previous_any = 0;
+    float previous_any = 0;
     for (size_t i = 0; i < DISENGAGE_LEN; ++i) {
-      const half one_minus_brake = static_cast<half>(static_cast<half>(1.) - outputs.meta[2 + i * 6]);
-      const half one_minus_gas = static_cast<half>(static_cast<half>(1.) - outputs.meta[1 + i * 6]);
-      const half one_minus_steer = static_cast<half>(static_cast<half>(1.) - outputs.meta[3 + i * 6]);
-      const half product = static_cast<half>(static_cast<half>(one_minus_brake * one_minus_gas) * one_minus_steer);
-      const half any = static_cast<half>(static_cast<half>(1.) - product);
-      const half independent = i == 0 ? any : static_cast<half>(static_cast<half>(any - previous_any) /
-                                                                static_cast<half>(static_cast<half>(1.) - previous_any));
-      state.disengage_buffer[state.disengage_buffer.size() - DISENGAGE_LEN + i] = static_cast<float>(independent);
+      const float any = 1.f - (1.f - outputs.meta[2 + i * 6]) *
+                              (1.f - outputs.meta[1 + i * 6]) *
+                              (1.f - outputs.meta[3 + i * 6]);
+      const float independent = i == 0 ? any : (any - previous_any) / (1.f - previous_any);
+      state.disengage_buffer[state.disengage_buffer.size() - DISENGAGE_LEN + i] = independent;
       previous_any = any;
     }
   }
@@ -225,8 +220,8 @@ struct ModelPublisher {
 
     auto leads = model.initLeadsV3(3);
     for (size_t i = 0; i < leads.size(); ++i) {
-      const half *lead = outputs.lead + i * LEAD_LEN * LEAD_WIDTH;
-      const half *lead_stds = outputs.lead_stds + i * LEAD_LEN * LEAD_WIDTH;
+      const float *lead = outputs.lead + i * LEAD_LEN * LEAD_WIDTH;
+      const float *lead_stds = outputs.lead_stds + i * LEAD_LEN * LEAD_WIDTH;
       leads[i].setT(kj::arrayPtr(LEAD_T_IDXS.data(), LEAD_T_IDXS.size()));
       fill_list(leads[i].initX(LEAD_LEN), lead, LEAD_WIDTH);
       fill_list(leads[i].initY(LEAD_LEN), lead + 1, LEAD_WIDTH);
