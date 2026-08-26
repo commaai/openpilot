@@ -265,6 +265,8 @@ def main(demo=False):
     params.put_bool("UsbGpuActive", model is not None)
 
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or USBGPU else None
+  if model is not None and small_model is not None:
+    small_model.warmup()
   if model is None:
     model = small_model
   params.put_bool("UsbGpuLoading", False)
@@ -396,7 +398,7 @@ def main(demo=False):
       if chestnut_state is not None:
         chestnut_state.big = False
       run_count = 0
-      model_output = None
+      model_output = model.run(bufs, transforms, inputs)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
