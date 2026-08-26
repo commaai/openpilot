@@ -26,15 +26,15 @@
     "severity": 0
   },
   "Offroad_ChestnutUsbLinkSlow": {
-    "text": "USB link too slow. Check the USB cable. Current speed: %1",
+    "text": "chestnut USB link too slow. Check the USB cable. Current speed: %1",
     "severity": 0
   },
   "Offroad_ChestnutModelNotCompiled": {
-    "text": "big model not compiled. Keep ignition on and reboot to compile.",
+    "text": "chestnut big model not compiled. Keep ignition on and reboot to compile.",
     "severity": 0
   },
   "Offroad_ChestnutPcieLinkUnavailable": {
-    "text": "PCIe link unavailable. Check chestnut 12V power.",
+    "text": "chestnut PCIe link unavailable. Check 12V power.",
     "severity": 0
   },
   "Offroad_ChestnutFirmwareUpdateFailed": {
