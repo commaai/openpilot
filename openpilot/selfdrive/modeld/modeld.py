@@ -27,7 +27,7 @@ from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, nv12_copy_size, MODELD_INPUTS
-from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
+from openpilot.selfdrive.modeld.fill_model_msg import ModelPublisher
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, modeld_pkl_path, load_oob
@@ -40,8 +40,8 @@ MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
 
 
-def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
-                          lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
+def get_action_from_model(model_output: dict[str, np.ndarray], prev_desired_curvature: float, prev_desired_acceleration: float,
+                          lat_action_t: float, long_action_t: float, v_ego: float) -> tuple[float, float, bool]:
   if 'action' not in model_output:
     plan = model_output['plan'][0]
     desired_accel = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0],
@@ -57,15 +57,13 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
     desired_accel = model_output['action'][0,1]
     desired_curvature = model_output['action'][0,0] / (max(1.0, v_ego))**2
   stop = should_stop(v_ego, desired_accel)
-  desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
+  desired_accel = smooth_value(desired_accel, prev_desired_acceleration, LONG_SMOOTH_SECONDS)
   if v_ego > MIN_LAT_CONTROL_SPEED:
-    desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, LAT_SMOOTH_SECONDS)
+    desired_curvature = smooth_value(desired_curvature, prev_desired_curvature, LAT_SMOOTH_SECONDS)
   else:
-    desired_curvature = prev_action.desiredCurvature
+    desired_curvature = prev_desired_curvature
 
-  return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
-                                desiredAcceleration=float(desired_accel),
-                                shouldStop=bool(stop))
+  return float(np.float32(desired_curvature)), float(np.float32(desired_accel)), bool(stop)
 
 
 class ChestnutState:
@@ -272,11 +270,10 @@ def main(demo=False):
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
-  pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutState"] if USBGPU else [])
-  pm = PubMaster(pub_socks)
+  pm = PubMaster(["chestnutState"] if USBGPU else [])
+  model_publisher = ModelPublisher()
   sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"])
 
-  publish_state = PublishState()
   params = Params()
   chestnut_state = ChestnutState(pm, model.usbgpu) if USBGPU else None
 
@@ -302,7 +299,8 @@ def main(demo=False):
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   # TODO Move smooth seconds to action function
   long_delay = CP.longitudinalActuatorDelay + LONG_SMOOTH_SECONDS
-  prev_action = log.ModelDataV2.Action()
+  prev_desired_curvature = 0.
+  prev_desired_acceleration = 0.
 
   DH = DesireHelper()
 
@@ -402,30 +400,17 @@ def main(demo=False):
     model_execution_time = mt2 - mt1
 
     if model_output is not None:
-      modelv2_send = messaging.new_message('modelV2')
-      drivingdata_send = messaging.new_message('drivingModelData')
-      posenet_send = messaging.new_message('cameraOdometry')
-
-      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
-      prev_action = action
-      fill_model_msg(modelv2_send, model_output, action,
-                     publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
-                     frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, extrinsics_calibration_seen)
-      modelv2_send.modelV2.big = model.usbgpu
-
-      desire_state = modelv2_send.modelV2.meta.desireState
-      l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
-      r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
-      lane_change_prob = l_lane_change_prob + r_lane_change_prob
+      desired_curvature, desired_acceleration, stop = get_action_from_model(
+        model_output, prev_desired_curvature, prev_desired_acceleration, lat_action_t, long_action_t, v_ego)
+      prev_desired_curvature, prev_desired_acceleration = desired_curvature, desired_acceleration
+      desire_state = model_output['desire_state'][0]
+      lane_change_prob = float(desire_state[log.Desire.laneChangeLeft]) + float(desire_state[log.Desire.laneChangeRight])
       DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
-      modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
-      modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
-
-      fill_driving_model_data(drivingdata_send, modelv2_send)
-      fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, extrinsics_calibration_seen)
-      pm.send('modelV2', modelv2_send)
-      pm.send('drivingModelData', drivingdata_send)
-      pm.send('cameraOdometry', posenet_send)
+      model_publisher.publish(model_output, desired_curvature, desired_acceleration, stop,
+                              meta_main.frame_id, meta_extra.frame_id, frame_id,
+                              frame_drop_ratio, meta_main.timestamp_eof, model_execution_time,
+                              extrinsics_calibration_seen, model.usbgpu, vipc_dropped_frames,
+                              DH.lane_change_state, DH.lane_change_direction)
     last_vipc_frame_id = meta_main.frame_id
 
     if chestnut_state is not None and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:

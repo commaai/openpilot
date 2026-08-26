@@ -10,9 +10,11 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, usbgpu_present, modeld_pkl_path
 
 
-Import('env', 'arch')
+Import('env', 'arch', 'cereal', 'common', 'messaging')
 chunker_file = File("#openpilot/common/file_chunker.py")
 lenv = env.Clone()
+
+env.SharedLibrary('model_publisher', 'model_publisher.cc', LIBS=[cereal, messaging, common])
 
 tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
