@@ -344,6 +344,7 @@ class SelfdriveD:
     num_events = len(self.events)
 
     if self.big_model_active and big_failed:
+      self.big_model_ready_t = time.monotonic()
       self.events.add(EventName.bigModelFailed)
 
     not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
