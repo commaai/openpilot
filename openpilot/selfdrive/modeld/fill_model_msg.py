@@ -6,6 +6,12 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
+_PATH_FIT = np.polynomial.polynomial.polyfit(
+  np.asarray(ModelConstants.T_IDXS, dtype=np.float64),
+  np.eye(len(ModelConstants.T_IDXS), dtype=np.float64),
+  deg=ModelConstants.POLY_PATH_DEGREE,
+)
+
 ConfidenceClass = log.ModelDataV2.ConfidenceClass
 
 
@@ -42,20 +48,20 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std
   if a_std is not None:
     builder.aStd = a_std.tolist()
 
-def fill_xyz_poly(builder, degree, x, y, z):
-  xyz = np.stack([x, y, z], axis=1)
-  coeffs = np.polynomial.polynomial.polyfit(ModelConstants.T_IDXS, xyz, deg=degree)
+def fill_xyz_poly(builder, xyz):
+  coeffs = _PATH_FIT @ np.asarray(xyz, dtype=np.float64)
   builder.xCoefficients = coeffs[:, 0].tolist()
   builder.yCoefficients = coeffs[:, 1].tolist()
   builder.zCoefficients = coeffs[:, 2].tolist()
 
-def fill_lane_line_meta(builder, lane_lines, lane_line_probs):
-  builder.leftY = lane_lines[1].y[0]
-  builder.leftProb = lane_line_probs[1]
-  builder.rightY = lane_lines[2].y[0]
-  builder.rightProb = lane_line_probs[2]
+def fill_lane_line_meta(builder, net_output_data):
+  builder.leftY = float(net_output_data['lane_lines'][0,1,0,0])
+  builder.leftProb = float(net_output_data['lane_lines_prob'][0,3])
+  builder.rightY = float(net_output_data['lane_lines'][0,2,0,0])
+  builder.rightProb = float(net_output_data['lane_lines_prob'][0,5])
 
-def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelv2_send: capnp._DynamicStructBuilder) -> None:
+def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelv2_send: capnp._DynamicStructBuilder,
+                            net_output_data: dict[str, np.ndarray]) -> None:
   msg.valid = modelv2_send.valid
   modelV2 = modelv2_send.modelV2
   driving_model_data = msg.drivingModelData
@@ -66,8 +72,8 @@ def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelv2_send: capn
   driving_model_data.action = modelV2.action
   driving_model_data.meta.laneChangeState = modelV2.meta.laneChangeState
   driving_model_data.meta.laneChangeDirection = modelV2.meta.laneChangeDirection
-  fill_lane_line_meta(driving_model_data.laneLineMeta, modelV2.laneLines, modelV2.laneLineProbs)
-  fill_xyz_poly(driving_model_data.path, ModelConstants.POLY_PATH_DEGREE, modelV2.position.x, modelV2.position.y, modelV2.position.z)
+  fill_lane_line_meta(driving_model_data.laneLineMeta, net_output_data)
+  fill_xyz_poly(driving_model_data.path, net_output_data['plan'][0,:,Plan.POSITION])
 
 def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, np.ndarray], action: log.ModelDataV2.Action,
                    publish_state: PublishState, vipc_frame_id: int, vipc_frame_id_extra: int,
