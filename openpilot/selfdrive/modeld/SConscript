@@ -40,7 +40,7 @@ tg_devices = { # which device to put jit inputs to at runtime
 
 CHESTNUT = chestnut_present()
 if CHESTNUT:
-  chestnut_tg_flags = 'DEBUG=1 DEV=USB+AMD:LLVM FRAME_DEV=CPU FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
+  chestnut_tg_flags = 'DEBUG=1 DEV=USB+AMD:LLVM FRAME_DEV=CPU PACK_FRAME_INPUT=1 FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2'
   # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
   chestnut_lock = File("models/.chestnut.lock").abspath
 

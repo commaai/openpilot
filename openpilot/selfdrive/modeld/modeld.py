@@ -186,13 +186,18 @@ class ModelState:
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
+    self.pack_frames = jits.get('pack_frames', False)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device)
+    self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
+    self.frame_copy_size = nv12_copy_size(*self.frame_buf_params['img'][:3])
+    self.input_queues, self.npy, self.frame_views = make_input_queues(
+      self.input_shapes, self.frame_skip, device=self.model_device,
+      frame_copy_size=self.frame_copy_size if self.pack_frames else None,
+    )
     self.full_frames: dict[str, Tensor] = {}
     self._blob_cache: dict[tuple[str, int], Tensor] = {}
     self.parser = Parser()
-    self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_model = jits['run_model'][(cam_w,cam_h)]
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
@@ -202,14 +207,18 @@ class ModelState:
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
     for key in bufs.keys():
-      ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
       stride, y_height, uv_height, _ = self.frame_buf_params[key]
       frame_copy_size = nv12_copy_size(stride, y_height, uv_height)
-      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-      cache_key = (key, ptr)
-      if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (frame_copy_size,), dtype='uint8', device=self.frame_device)
-      self.full_frames[key] = self._blob_cache[cache_key]
+      frame = np.frombuffer(bufs[key].data, dtype=np.uint8, count=frame_copy_size)
+      if self.pack_frames:
+        self.frame_views[key][:] = frame
+      else:
+        # There is a ringbuffer of imgs, just cache tensors pointing to all of them
+        ptr = frame.ctypes.data
+        cache_key = (key, ptr)
+        if cache_key not in self._blob_cache:
+          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (frame_copy_size,), dtype='uint8', device=self.frame_device)
+        self.full_frames[key] = self._blob_cache[cache_key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
@@ -220,10 +229,8 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    outs, = self.run_model(
-      **{k: self.input_queues[k] for k in MODELD_INPUTS},
-      frame=self.full_frames['img'], big_frame=self.full_frames['big_img'],
-    )
+    frame_inputs = {} if self.pack_frames else {'frame': self.full_frames['img'], 'big_frame': self.full_frames['big_img']}
+    outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS}, **frame_inputs)
     if after_enqueue is not None:
       after_enqueue()
     model_output = outs.numpy()[0]
@@ -244,7 +251,10 @@ class ModelState:
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
-    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device)
+    self.input_queues, self.npy, self.frame_views = make_input_queues(
+      self.input_shapes, self.frame_skip, device=self.model_device,
+      frame_copy_size=self.frame_copy_size if self.pack_frames else None,
+    )
     self.prev_desire[:] = 0
     self.full_frames.clear()
     self._blob_cache.clear()
