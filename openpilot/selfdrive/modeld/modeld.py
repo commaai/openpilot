@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from collections.abc import Callable
+import ctypes
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
@@ -90,8 +92,10 @@ class ChestnutState:
     if self.big and "AMD" in Device._opened_devices and self.sends % 100 == 1:
       try:
         smu = Device["AMD"].iface.dev_impl.smu
+        metrics_t = smu.smu_mod.SmuMetricsExternal_t
         smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
-        metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+        metrics_buf = bytearray(smu.adev.vram.view(smu.driver_table_paddr, ctypes.sizeof(metrics_t))[:])
+        metrics = metrics_t.from_buffer(metrics_buf).SmuMetrics
         self.metrics = {'tempC': metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT],
                         'memoryTempC': metrics.AvgTemperature[smu.smu_mod.TEMP_MEM],
                         'powerDrawW': metrics.AverageSocketPower,
@@ -163,7 +167,7 @@ class ModelState:
     return parsed_model_outputs
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
-          inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+          inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
     for key in bufs.keys():
       ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
       yuv_size = self.frame_buf_params[key][3]
@@ -187,6 +191,8 @@ class ModelState:
     outs, = self.run_policy(
       **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
     )
+    if after_enqueue is not None:
+      after_enqueue()
     model_output = outs.numpy()[0]
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
@@ -383,7 +389,9 @@ def main(demo=False):
 
     mt1 = time.perf_counter()
     try:
-      model_output = model.run(bufs, transforms, inputs)
+      send_chestnut = (chestnut_state is not None and
+                       run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0)
+      model_output = model.run(bufs, transforms, inputs, chestnut_state.send if send_chestnut else None)
     except Exception:
       if not params.get_bool("ChestnutActive"):
         raise
@@ -424,10 +432,6 @@ def main(demo=False):
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
-
-    if chestnut_state is not None and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:
-      chestnut_state.send()
-
 
 if __name__ == "__main__":
   try:
