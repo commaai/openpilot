@@ -41,13 +41,13 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   restoreState(utils::qbytes(settings.window_state));
 
   // install handlers
+  // handlers are called from download threads
   static auto static_main_win = this;
-  qRegisterMetaType<uint64_t>("uint64_t");
   installDownloadProgressHandler([](uint64_t cur, uint64_t total, bool success) {
-    emit static_main_win->updateProgressBar(cur, total, success);
+    utils::runOnMainThread([=]() { static_main_win->updateDownloadProgress(cur, total, success); });
   });
   installMessageHandler([](ReplyMsgType type, const std::string msg) {
-    emit static_main_win->showMessage(QString::fromStdString(msg), 2000);
+    utils::runOnMainThread([=]() { static_main_win->statusBar()->showMessage(QString::fromStdString(msg), 2000); });
   });
 
   setStyleSheet(QString(R"(QMainWindow::separator {
@@ -55,8 +55,6 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
     height: %1px; /* when horizontal */
   })").arg(style()->pixelMetric(QStyle::PM_SplitterWidth)));
 
-  QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
-  QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   connections_.push_back(dbc()->fileChanged.connect([this]() { DBCFileChanged(); }));
   connections_.push_back(UndoStack::instance()->cleanChanged.connect([this](bool clean) { undoStackCleanChanged(clean); }));
   connections_.push_back(settings.changed.connect([this]() { updateStatus(); }));
@@ -347,6 +345,8 @@ MainWindow::~MainWindow() {
 void MainWindow::openStream(AbstractStream *stream, const QString &dbc_file) {
   wait_dlg_connection_.disconnect();
   stream_connections_.clear();
+  if (wait_dlg_) wait_dlg_->deleteLater();
+  wait_dlg_ = nullptr;
   delete can;
   can = nullptr;
   startStream(stream, dbc_file);
@@ -382,18 +382,16 @@ void MainWindow::startStream(AbstractStream *stream, QString dbc_file) {
   stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
 
   if (has_stream) {
-    auto wait_dlg = new QProgressDialog(
+    wait_dlg_ = new QProgressDialog(
         can->liveStreaming() ? tr("Waiting for the live stream to start...") : tr("Loading segment data..."),
         tr("&Abort"), 0, 100, this);
-    wait_dlg->setWindowModality(Qt::WindowModal);
-    wait_dlg->setFixedSize(400, wait_dlg->sizeHint().height());
-    QObject::connect(wait_dlg, &QProgressDialog::canceled, this, &MainWindow::close);
-    wait_dlg_connection_ = can->eventsMerged.connect([this, wait_dlg](const MessageEventsMap &) {
-      wait_dlg->deleteLater();
+    wait_dlg_->setWindowModality(Qt::WindowModal);
+    wait_dlg_->setFixedSize(400, wait_dlg_->sizeHint().height());
+    QObject::connect(wait_dlg_, &QProgressDialog::canceled, this, &MainWindow::close);
+    wait_dlg_connection_ = can->eventsMerged.connect([this](const MessageEventsMap &) {
+      wait_dlg_->deleteLater();
+      wait_dlg_ = nullptr;
       wait_dlg_connection_.disconnect();
-    });
-    QObject::connect(this, &MainWindow::updateProgressBar, wait_dlg, [=](uint64_t cur, uint64_t total, bool success) {
-      wait_dlg->setValue((int)((cur / (double)total) * 100));
     });
   }
 }
@@ -553,6 +551,7 @@ void MainWindow::remindSaveChanges() {
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
+  if (wait_dlg_) wait_dlg_->setValue((int)((cur / (double)total) * 100));
   if (success && cur < total) {
     progress_bar->setValue((cur / (double)total) * 100);
     progress_bar->setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));

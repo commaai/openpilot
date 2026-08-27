@@ -19,6 +19,8 @@
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
 
+class QProgressDialog;
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -42,10 +44,6 @@ public slots:
   void save();
   void saveAs();
   void saveToClipboard();
-
-signals:
-  void showMessage(const QString &msg, int timeout);
-  void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
   void startStream(AbstractStream *stream, QString dbc_file);
@@ -108,6 +106,7 @@ protected:
   Connections connections_;
   Connections stream_connections_;
   Connection wait_dlg_connection_;
+  QProgressDialog *wait_dlg_ = nullptr;
 };
 
 class HelpOverlay : public QWidget {
