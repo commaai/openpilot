@@ -9,10 +9,8 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 class LiveStream : public AbstractStream {
-  Q_OBJECT
-
 public:
-  LiveStream(QObject *parent);
+  LiveStream();
   virtual ~LiveStream();
   void start() override;
   void stop();

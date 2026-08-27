@@ -11,6 +11,7 @@
 #include <QToolBar>
 #include <QTabBar>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/cameraview.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/logreader.h"
@@ -64,6 +65,7 @@ protected:
   void timeRangeChanged();
   void updateState();
   void updatePlayBtnState();
+  Connections connections_;
   QWidget *createCameraWidget();
   void createPlaybackController();
   void createSpeedDropdown(QToolBar *toolbar);

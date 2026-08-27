@@ -9,9 +9,8 @@ struct SocketCanStreamConfig {
 };
 
 class SocketCanStream : public LiveStream {
-  Q_OBJECT
 public:
-  SocketCanStream(QObject *parent, SocketCanStreamConfig config_ = {});
+  SocketCanStream(SocketCanStreamConfig config_ = {});
   ~SocketCanStream();
   static bool available();
 

@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/detailwidget.h"
@@ -24,6 +25,7 @@ class MainWindow : public QMainWindow {
 
 public:
   MainWindow(AbstractStream *stream, const QString &dbc_file);
+  ~MainWindow();
   void toggleChartsDocking();
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
   void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
@@ -104,6 +106,9 @@ protected:
   QAction *redo_act = nullptr;
   QString car_fingerprint;
   std::vector<uint8_t> default_state;
+  Connections connections_;
+  Connections stream_connections_;
+  Connection wait_dlg_connection_;
 };
 
 class HelpOverlay : public QWidget {

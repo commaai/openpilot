@@ -16,7 +16,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 
-SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
+SocketCanStream::SocketCanStream(SocketCanStreamConfig config_) : config(config_) {
   if (!available()) {
     throw std::runtime_error("SocketCAN not available");
   }
@@ -140,7 +140,7 @@ void OpenSocketCanWidget::refreshDevices() {
 
 AbstractStream *OpenSocketCanWidget::open() {
   try {
-    return new SocketCanStream(qApp, config);
+    return new SocketCanStream(config);
   } catch (std::exception &e) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to SocketCAN device: '%1'").arg(e.what()));
     return nullptr;

@@ -14,6 +14,7 @@
 #include <QTreeView>
 #include <QWheelEvent>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -31,7 +32,7 @@ public:
     DATA,
   };
 
-  MessageListModel(QObject *parent) : QAbstractTableModel(parent) {}
+  MessageListModel(QObject *parent);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return Column::DATA + 1; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -63,6 +64,7 @@ private:
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
   int sort_threshold_ = 0;
+  Connections connections_;
 };
 
 class MessageView : public QTreeView {

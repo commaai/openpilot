@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QToolBar>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/chart/signalselector.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -123,6 +124,7 @@ private:
   QTimer *align_timer;
   int current_theme = 0;
   bool value_tip_visible_ = false;
+  Connections connections_;
   friend class ChartView;
   friend class ChartsContainer;
 };

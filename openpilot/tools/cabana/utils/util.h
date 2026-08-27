@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cmath>
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -22,6 +23,10 @@
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
+
+// needed by QVariant::fromValue() in the Qt views; goes away with QVariant
+Q_DECLARE_METATYPE(MessageId)
+Q_DECLARE_METATYPE(ValueDescription)
 
 inline QColor toQColor(const CabanaColor &color) {
   return QColor(color.r, color.g, color.b, color.a);
@@ -132,6 +137,9 @@ public:
 
 namespace utils {
 
+bool isMainThread();
+// Runs fn inline when called on the main thread, otherwise queues it to the main thread.
+void runOnMainThread(std::function<void()> fn);
 QPixmap icon(const QString &id);
 std::string homePath();
 std::filesystem::path configPath();

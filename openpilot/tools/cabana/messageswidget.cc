@@ -1,5 +1,4 @@
 #include "tools/cabana/messageswidget.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <limits>
 #include <utility>
@@ -43,9 +42,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
   QObject::connect(menu, &QMenu::aboutToShow, this, &MessagesWidget::menuAboutToShow);
   QObject::connect(header, &MessageViewHeader::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
-  QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, model, &MessageListModel::dbcModified);
-  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, model, &MessageListModel::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
@@ -96,7 +92,7 @@ QWidget *MessagesWidget::createToolBar() {
 
   QObject::connect(suppress_add, &QPushButton::clicked, this, &MessagesWidget::suppressHighlighted);
   QObject::connect(suppress_clear, &QPushButton::clicked, this, &MessagesWidget::suppressHighlighted);
-  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, can, &AbstractStream::suppressDefinedSignals);
+  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, this, [](int state) { can->suppressDefinedSignals(state); });
 
   suppressHighlighted();
   return toolbar;
@@ -160,6 +156,12 @@ void MessagesWidget::setMultiLineBytes(bool multi) {
 }
 
 // MessageListModel
+
+MessageListModel::MessageListModel(QObject *parent) : QAbstractTableModel(parent) {
+  connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *msgs, bool has_new_ids) { msgsReceived(msgs, has_new_ids); }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() { dbcModified(); }));
+  connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { dbcModified(); }));
+}
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {

@@ -12,6 +12,7 @@
 #include <QTableWidget>
 #include <QTreeView>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/chart/sparkline.h"
 
@@ -62,6 +63,7 @@ private:
   MessageId msg_id;
   QString filter_str;
   std::unique_ptr<Item> root;
+  Connections connections_;
   friend class SignalView;
   friend class SignalItemDelegate;
 };
@@ -150,4 +152,5 @@ private:
   ChartsWidget *charts;
   QLabel *signal_count_lb;
   SignalItemDelegate *delegate;
+  Connections connections_;
 };

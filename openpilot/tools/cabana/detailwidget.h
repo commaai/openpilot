@@ -6,6 +6,7 @@
 #include <QTextEdit>
 #include <set>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/historylog.h"
@@ -57,6 +58,7 @@ private:
   SignalView *signal_view;
   ChartsWidget *charts;
   QSplitter *splitter;
+  Connections connections_;
 };
 
 class CenterWidget : public QWidget {

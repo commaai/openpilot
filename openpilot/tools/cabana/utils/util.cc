@@ -12,6 +12,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <thread>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -22,6 +23,18 @@
 #include <QPainterPath>
 #include <unordered_map>
 #include "common/util.h"
+
+static const std::thread::id main_thread_id = std::this_thread::get_id();
+
+bool utils::isMainThread() { return std::this_thread::get_id() == main_thread_id; }
+
+void utils::runOnMainThread(std::function<void()> fn) {
+  if (isMainThread()) {
+    fn();
+  } else {
+    QMetaObject::invokeMethod(qApp, std::move(fn), Qt::QueuedConnection);
+  }
+}
 
 // SegmentTree
 

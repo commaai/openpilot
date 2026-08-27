@@ -7,6 +7,7 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -100,5 +101,6 @@ private:
   bool is_message_active = false;
   const cabana::Signal *resize_sig = nullptr;
   const cabana::Signal *hovered_sig = nullptr;
+  Connections connections_;
   friend class BinaryItemDelegate;
 };
