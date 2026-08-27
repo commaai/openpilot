@@ -69,13 +69,9 @@ public:
   SourceSet sources;
 
 protected:
-  // Runs fn on the main thread; dropped if the stream is destroyed first.
-  void postToMainThread(std::function<void()> fn);
-  // Runs fn on the main thread and blocks the calling (non-main) thread until it finishes or cancelWaits() is called.
+  void postToMainThread(std::function<void()> fn);  // dropped if the stream is destroyed first
   void postToMainThreadAndWait(std::function<void()> fn);
-  // Releases threads blocked in waitForSeekFinshed()/postToMainThreadAndWait(). Subclasses must call this
-  // before joining their threads, since the main thread is not pumping events while the stream is destroyed.
-  void cancelWaits();
+  void cancelWaits();  // call before joining threads, the main thread isn't pumping events during destruction
   void requestUpdateLastMessages() { postToMainThread([this]() { updateLastMessages(); }); }
   void mergeEvents(const std::vector<const CanEvent *> &events);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);

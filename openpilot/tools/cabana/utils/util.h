@@ -138,7 +138,7 @@ public:
 namespace utils {
 
 bool isMainThread();
-// Runs fn inline when called on the main thread, otherwise queues it to the main thread.
+// inline on the main thread, queued otherwise
 void runOnMainThread(std::function<void()> fn);
 QPixmap icon(const QString &id);
 std::string homePath();

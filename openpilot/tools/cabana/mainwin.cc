@@ -334,7 +334,7 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   }
 }
 
-// the stream's threads read the global `can` until its destructor joins them, so never null it before delete
+// stream threads read the global `can` until its destructor joins them
 MainWindow::~MainWindow() {
   delete can;
   can = nullptr;

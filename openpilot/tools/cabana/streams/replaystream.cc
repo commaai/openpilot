@@ -24,7 +24,7 @@ ReplayStream::ReplayStream() {
 }
 
 ReplayStream::~ReplayStream() {
-  cancelWaits();  // replay's threads are joined when the replay member is destroyed
+  cancelWaits();
   QObject::disconnect(settings_connection_);
 }
 
@@ -56,7 +56,7 @@ bool ReplayStream::loadRoute(const std::string &route, const std::string &data_d
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
 
-  // Replay callbacks arrive on replay threads; forward them to the main thread.
+  // replay callbacks arrive on replay threads
   replay->onSeeking = [this](double sec) { postToMainThread([this, sec]() { seeking(sec); }); };
   replay->onSeekedTo = [this](double sec) {
     postToMainThread([this, sec]() { seekedTo(sec); });

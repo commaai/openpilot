@@ -13,8 +13,7 @@ struct HandlerTable {
 };
 }  // namespace observable_detail
 
-// RAII handle for an Observable connection. Disconnects on destruction and is
-// safe to keep around after the Observable itself has been destroyed.
+// disconnects on destruction; safe to outlive the Observable
 class Connection {
 public:
   Connection() = default;
@@ -45,8 +44,7 @@ private:
 
 using Connections = std::vector<Connection>;
 
-// Minimal synchronous observer. Not thread-safe: connect and invoke from the main thread only.
-// Handlers may disconnect themselves or other handlers (and destroy the Observable) while being invoked.
+// main thread only. handlers may disconnect (or destroy the Observable) while being invoked.
 template <typename... Args>
 class Observable {
 public:
