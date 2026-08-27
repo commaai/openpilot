@@ -39,7 +39,7 @@ public:
 private:
   void mergeSegments();
   std::unique_ptr<Replay> replay = nullptr;
-  QMetaObject::Connection settings_connection_;
+  Connection settings_connection_;
   std::set<int> processed_segments;
   std::unique_ptr<OpenpilotPrefix> op_prefix;
 };

@@ -59,7 +59,7 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   connections_.push_back(dbc()->fileChanged.connect([this]() { DBCFileChanged(); }));
   connections_.push_back(UndoStack::instance()->cleanChanged.connect([this](bool clean) { undoStackCleanChanged(clean); }));
-  QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
+  connections_.push_back(settings.changed.connect([this]() { updateStatus(); }));
 
   auto *queue_timer = new QTimer(this);
   QObject::connect(queue_timer, &QTimer::timeout, utils::drainMainThreadQueue);

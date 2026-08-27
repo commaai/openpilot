@@ -21,6 +21,7 @@
 #include <QToolButton>
 #include <QValidator>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
 
@@ -184,7 +185,7 @@ public:
     const int metric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     setIconSize({metric, metric});
     theme = settings.theme;
-    connect(&settings, &Settings::changed, this, &ToolButton::updateIcon);
+    settings_connection_ = settings.changed.connect([this]() { updateIcon(); });
   }
   void setIcon(const QString &icon) {
     icon_str = icon;
@@ -193,6 +194,7 @@ public:
 
 private:
   void updateIcon() { if (std::exchange(theme, settings.theme) != theme) setIcon(icon_str); }
+  Connection settings_connection_;
   QString icon_str;
   int theme;
 };

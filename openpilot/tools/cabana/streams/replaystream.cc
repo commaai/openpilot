@@ -18,14 +18,13 @@ ReplayStream::ReplayStream() {
 
   op_prefix = std::make_unique<OpenpilotPrefix>();
 
-  settings_connection_ = QObject::connect(&settings, &Settings::changed, [this]() {
+  settings_connection_ = settings.changed.connect([this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
 }
 
 ReplayStream::~ReplayStream() {
   cancelWaits();
-  QObject::disconnect(settings_connection_);
 }
 
 void ReplayStream::mergeSegments() {

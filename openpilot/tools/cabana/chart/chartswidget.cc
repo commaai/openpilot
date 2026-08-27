@@ -130,7 +130,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(new_plot_btn, &QToolButton::clicked, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QToolButton::clicked, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
-  QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
+  connections_.push_back(settings.changed.connect([this]() { settingChanged(); }));
   QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
   QObject::connect(this, &ChartsWidget::seriesChanged, this, &ChartsWidget::updateTabBar);
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, this, &ChartsWidget::removeTab);
