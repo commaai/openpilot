@@ -9,7 +9,7 @@ from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import ui_state, ChestnutState
 from openpilot.common.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
@@ -139,8 +139,8 @@ class MiciHomeLayout(Widget):
     self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
-    self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (50, 37))
-    self._chestnut_icon_gray = IconWidget("icons_mici/chestnut_gray.png", (50, 37))
+    self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (68, 40))
+    self._chestnut_failed_icon = IconWidget("icons_mici/chestnut_orange.png", (68, 40))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
     self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
 
@@ -151,7 +151,7 @@ class MiciHomeLayout(Widget):
       NetworkIcon(),
       self._experimental_icon,
       self._chestnut_icon,
-      self._chestnut_icon_gray,
+      self._chestnut_failed_icon,
       self._body_icon,
       self._mic_icon,
     ], spacing=18)
@@ -248,8 +248,8 @@ class MiciHomeLayout(Widget):
 
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(ui_state.experimental_mode)
-    self._chestnut_icon.set_visible(ui_state.sm["deviceState"].chestnutPresent and ui_state.chestnut_compiled)
-    self._chestnut_icon_gray.set_visible(ui_state.sm["deviceState"].chestnutPresent and not ui_state.chestnut_compiled)
+    self._chestnut_icon.set_visible(ui_state.chestnut_state in (ChestnutState.READY, ChestnutState.LOADING, ChestnutState.ACTIVE))
+    self._chestnut_failed_icon.set_visible(ui_state.chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED))
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(bool(ui_state.is_body))
 
