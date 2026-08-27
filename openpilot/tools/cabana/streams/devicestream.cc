@@ -61,8 +61,8 @@ void DeviceStream::start() {
     // fails, the child writes errno and the parent aborts stream start.
     int err_pipe[2] = {-1, -1};
     if (::pipe(err_pipe) != 0) {
-      QMessageBox::warning(nullptr, QObject::tr("Error"),
-                           QObject::tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      QMessageBox::warning(nullptr, "Error",
+                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
       return;
     }
 
@@ -79,8 +79,8 @@ void DeviceStream::start() {
     ::close(err_pipe[1]);
     if (pid < 0) {
       ::close(err_pipe[0]);
-      QMessageBox::warning(nullptr, QObject::tr("Error"),
-                           QObject::tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      QMessageBox::warning(nullptr, "Error",
+                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
       return;
     }
 
@@ -91,8 +91,8 @@ void DeviceStream::start() {
       // Child failed to exec; reap and surface the error.
       int status = 0;
       ::waitpid(pid, &status, 0);
-      QMessageBox::warning(nullptr, QObject::tr("Error"),
-                           QObject::tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(exec_errno))));
+      QMessageBox::warning(nullptr, "Error",
+                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(exec_errno))));
       return;
     }
 

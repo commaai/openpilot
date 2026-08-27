@@ -75,18 +75,18 @@ bool ReplayStream::loadRoute(const std::string &route, const std::string &data_d
                   "python3 openpilot/tools/lib/auth.py\n\n"
                   "This will grant access to routes from your comma account.";
       } else {
-        message = QObject::tr("Access Denied. You do not have permission to access route:\n\n%1\n\n"
-                     "This is likely a private route.").arg(QString::fromStdString(route));
+        message = QString("Access Denied. You do not have permission to access route:\n\n%1\n\n"
+                          "This is likely a private route.").arg(QString::fromStdString(route));
       }
-      QMessageBox::warning(nullptr, QObject::tr("Access Denied"), message);
+      QMessageBox::warning(nullptr, "Access Denied", message);
     } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
-      QMessageBox::warning(nullptr, QObject::tr("Network Error"),
-                          QObject::tr("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(QString::fromStdString(route)));
+      QMessageBox::warning(nullptr, "Network Error",
+                          QString("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(QString::fromStdString(route)));
     } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {
-      QMessageBox::warning(nullptr, QObject::tr("Route Not Found"),
-                           QObject::tr("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(QString::fromStdString(route)));
+      QMessageBox::warning(nullptr, "Route Not Found",
+                           QString("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(QString::fromStdString(route)));
     } else {
-      QMessageBox::warning(nullptr, QObject::tr("Route Load Failed"), QObject::tr("Failed to load route: '%1'").arg(QString::fromStdString(route)));
+      QMessageBox::warning(nullptr, "Route Load Failed", QString("Failed to load route: '%1'").arg(QString::fromStdString(route)));
     }
   }
   return success;
