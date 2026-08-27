@@ -6,7 +6,7 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignmentVertical
 from openpilot.common.filter_simple import BounceFilter
 
 if TYPE_CHECKING:
@@ -125,10 +125,10 @@ class BigButton(Widget):
     self._rotate_icon_t: float | None = None
 
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.BOLD,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, scroll=scroll,
+                               text_color=LABEL_COLOR, alignment_vertical=TextAlignmentVertical.BOTTOM, scroll=scroll,
                                line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
-                                   text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+                                   text_color=COMPLICATION_GREY, alignment_vertical=TextAlignmentVertical.BOTTOM)
     self._update_label_layout()
 
     self._load_images()
@@ -149,10 +149,14 @@ class BigButton(Widget):
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(lambda: touch_callback() and self._grow_animation_until is None)
 
-  def _width_hint(self) -> int:
-    # A value moves the title to the top, where it shares space with the icon.
+  def _title_width_hint(self) -> int:
+    # A value moves the title to the top, where it shares space with the icon
     icon_size = self._txt_icon.width if self._txt_icon and self.value else 0
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
+
+  def _subtitle_width_hint(self) -> int:
+    # Bottom aligned, so it sits below the icon
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _get_label_font_size(self):
     if len(self.text) <= 18:
@@ -163,9 +167,9 @@ class BigButton(Widget):
   def _update_label_layout(self):
     self._label.set_font_size(self._get_label_font_size())
     if self.value:
-      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+      self._label.set_alignment_vertical(TextAlignmentVertical.TOP)
     else:
-      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+      self._label.set_alignment_vertical(TextAlignmentVertical.BOTTOM)
 
   def set_text(self, text: str):
     self.text = text
@@ -228,14 +232,14 @@ class BigButton(Widget):
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._width_hint(),
+    label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._title_width_hint(),
                               self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      label_y = btn_y + self.LABEL_VERTICAL_PADDING + self._label.get_content_height(self._width_hint())
+      label_y = label_rect.y + self._label.get_content_height(int(label_rect.width))
       sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
-      sub_label_rect = rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height)
+      sub_label_rect = rl.Rectangle(label_x, label_y, self._subtitle_width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
@@ -312,9 +316,6 @@ class BigMultiToggle(BigToggle):
 
     self.set_value(self._options[0])
 
-  def _width_hint(self) -> int:
-    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
-
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
     cur_idx = self._options.index(self.value)
@@ -355,16 +356,13 @@ class GreyBigButton(BigButton):
     self._sub_label.set_font_size(36)
     self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
     self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
-    self._sub_label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE if not self._label.text else
-                                           rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    self._sub_label.set_alignment_vertical(TextAlignmentVertical.MIDDLE if not self._label.text else
+                                           TextAlignmentVertical.BOTTOM)
     self._sub_label.set_line_height(0.95)
 
   @property
   def LABEL_VERTICAL_PADDING(self):
     return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
-
-  def _width_hint(self) -> int:
-    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _get_label_font_size(self):
     return 36

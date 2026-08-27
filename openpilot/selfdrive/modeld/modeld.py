@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+from collections.abc import Callable
+import ctypes
 from functools import cached_property
 import os
-os.environ['GMMU'] = '0' # for usbgpu fast loading, noop for qcom
+os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
+import usb1
 import struct
 import threading
 import time
@@ -29,8 +32,9 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, nv12_copy_size, MODELD_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
+from openpilot.common.hardware.usb import CHESTNUT_USB_IDS
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import usbgpu_present, usbgpu_compiled, modeld_pkl_path, load_oob
+from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, modeld_pkl_path, load_oob
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
@@ -76,6 +80,37 @@ class ChestnutState:
     self.valid = True
     self.sends = 0
     self.metrics = {}
+    self._asm_usb = None
+
+  def _close_asm_usb(self) -> None:
+    if self._asm_usb is not None:
+      self._asm_usb.close()
+      self._asm_usb = None
+
+  def _open_asm_usb(self):
+    context = usb1.USBContext()
+    for vendor_id, product_id in CHESTNUT_USB_IDS:
+      if (handle := context.openByVendorIDAndProductID(vendor_id, product_id, skip_on_error=True)) is not None:
+        return handle
+    context.close()
+
+  def _read_ina(self) -> tuple[int, int, bool]:
+    if "AMD" in Device._opened_devices and self._asm_usb is None:
+      try:
+        raw = Device["AMD"].iface.pci_dev.usb.usb.control_read(0xC0, 5)
+        return struct.unpack('<Hh?', bytes(raw))
+      except Exception:
+        pass
+    if self._asm_usb is None:
+      self._asm_usb = self._open_asm_usb()
+    if self._asm_usb is None:
+      raise usb1.USBErrorNoDevice
+    try:
+      raw = self._asm_usb.controlRead(0xC0, 0xC0, 0, 0, 5, timeout=100)
+    except usb1.USBError:
+      self._close_asm_usb()
+      raise
+    return struct.unpack('<Hh?', bytes(raw))
 
   @cached_property
   def power_limit(self) -> int:
@@ -89,8 +124,10 @@ class ChestnutState:
     if self.big and "AMD" in Device._opened_devices and self.sends % 100 == 1:
       try:
         smu = Device["AMD"].iface.dev_impl.smu
+        metrics_t = smu.smu_mod.SmuMetricsExternal_t
         smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
-        metrics = smu.read_table(smu.smu_mod.SmuMetricsExternal_t, smu.smu_mod.TABLE_SMU_METRICS).SmuMetrics
+        metrics_buf = bytearray(smu.adev.vram.view(smu.driver_table_paddr, ctypes.sizeof(metrics_t))[:])
+        metrics = metrics_t.from_buffer(metrics_buf).SmuMetrics
         self.metrics = {'tempC': metrics.AvgTemperature[smu.smu_mod.TEMP_HOTSPOT],
                         'memoryTempC': metrics.AvgTemperature[smu.smu_mod.TEMP_MEM],
                         'powerDrawW': metrics.AverageSocketPower,
@@ -109,13 +146,15 @@ class ChestnutState:
         setattr(state, k, v)
 
     asm_valid = False
+    try:
+      # ASM runs on USB-C power, these still read without a gpu
+      state.supplyVoltage, state.supplyCurrent, state.supplyFault = self._read_ina()
+      asm_valid = True
+    except Exception:
+      pass
     if "AMD" in Device._opened_devices:
       try:
-        # ASM runs on USB-C power, these still read without a gpu
-        asm = Device["AMD"].iface.pci_dev.usb
-        state.pcieLtssm = asm.read(0xB450, 1)[0]
-        state.supplyVoltage, state.supplyCurrent = struct.unpack('<Hh', bytes(asm.usb.control_read(0xC0, 5))[:4])
-        asm_valid = True
+        state.pcieLtssm = Device["AMD"].iface.pci_dev.usb.read(0xB450, 1)[0]
       except Exception:
         pass
 
@@ -136,8 +175,8 @@ class FrameMeta:
 class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
-  def __init__(self, cam_w: int, cam_h: int, usbgpu: bool):
-    jits = load_oob(open_file_chunked(modeld_pkl_path(usbgpu)))
+  def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
+    jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
     input_devices = jits['input_devices']
     self.frame_device, self.model_device = input_devices['frame'], input_devices['model']
     metadata = jits['metadata']
@@ -146,7 +185,7 @@ class ModelState:
     self.output_slices = metadata['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
-    self.usbgpu = usbgpu
+    self.chestnut = chestnut
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
     self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device)
@@ -161,7 +200,7 @@ class ModelState:
     return parsed_model_outputs
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
-          inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray] | None:
+          inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
     for key in bufs.keys():
       ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
       stride, y_height, uv_height, _ = self.frame_buf_params[key]
@@ -185,11 +224,11 @@ class ModelState:
       **{k: self.input_queues[k] for k in MODELD_INPUTS},
       frame=self.full_frames['img'], big_frame=self.full_frames['big_img'],
     )
+    if after_enqueue is not None:
+      after_enqueue()
     model_output = outs.numpy()[0]
-    if self.usbgpu and not np.all(np.isfinite(model_output)):
-      # TODO remove with prev_feat
-      cloudlog.error("model output not finite, dropping frame")
-      return None
+    if self.chestnut and not np.all(np.isfinite(model_output)):
+      raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
     self.npy['prev_feat'][:] = model_output[self.output_slices['hidden_state']]
 
@@ -214,12 +253,12 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  USBGPU = usbgpu_present() and usbgpu_compiled()
-  if USBGPU:
+  CHESTNUT = chestnut_present() and chestnut_compiled()
+  if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
-  params.put_bool("UsbGpuLoading", USBGPU)
-  params.remove("UsbGpuActive")
+  params.put_bool("ChestnutLoading", CHESTNUT)
+  params.remove("ChestnutActive")
 
   config_realtime_process(7, 54)
 
@@ -249,7 +288,7 @@ def main(demo=False):
   st = time.monotonic()
   cloudlog.warning("loading model")
   model = None
-  if USBGPU:
+  if CHESTNUT:
     big_model = None
     def load_big():
       nonlocal big_model
@@ -263,22 +302,22 @@ def main(demo=False):
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
     model = big_model
-    params.put_bool("UsbGpuActive", model is not None)
+    params.put_bool("ChestnutActive", model is not None)
 
-  small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or USBGPU else None
+  small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
   if model is None:
     model = small_model
-  params.put_bool("UsbGpuLoading", False)
+  params.put_bool("ChestnutLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
-  pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutState"] if USBGPU else [])
+  pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutState"] if CHESTNUT else [])
   pm = PubMaster(pub_socks)
   sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"])
 
   publish_state = PublishState()
   params = Params()
-  chestnut_state = ChestnutState(pm, model.usbgpu) if USBGPU else None
+  chestnut_state = ChestnutState(pm, model.chestnut) if CHESTNUT else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -386,13 +425,15 @@ def main(demo=False):
 
     mt1 = time.perf_counter()
     try:
-      model_output = model.run(bufs, transforms, inputs)
+      send_chestnut = (chestnut_state is not None and
+                       run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0)
+      model_output = model.run(bufs, transforms, inputs, chestnut_state.send if send_chestnut else None)
     except Exception:
-      if not params.get_bool("UsbGpuActive"):
+      if not params.get_bool("ChestnutActive"):
         raise
       # fallback to small model
       cloudlog.exception("big model failed, fall back to small")
-      params.put_bool("UsbGpuActive", False)
+      params.put_bool("ChestnutActive", False)
       model = small_model
       if chestnut_state is not None:
         chestnut_state.big = False
@@ -411,7 +452,7 @@ def main(demo=False):
       fill_model_msg(modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
                      frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, extrinsics_calibration_seen)
-      modelv2_send.modelV2.big = model.usbgpu
+      modelv2_send.modelV2.big = model.chestnut
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
@@ -427,10 +468,6 @@ def main(demo=False):
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
-
-    if chestnut_state is not None and run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutState'].frequency) == 0:
-      chestnut_state.send()
-
 
 if __name__ == "__main__":
   try:
