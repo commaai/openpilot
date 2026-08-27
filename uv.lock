@@ -209,15 +209,15 @@ wheels = [
 
 [[package]]
 name = "comma-deps-raylib"
-version = "6.0.0.1.post98"
+version = "6.0.0.1.post101"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cffi" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/21/59509b2758e3612c63336df5534ea3b36e472e06c18a50f0b96c32e8e3e0/comma_deps_raylib-6.0.0.1.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:838a6115f508ee4ca0e4c84975c0892d67c10f94b11dd2bc0e023ad65138d010", size = 2004199, upload-time = "2026-07-23T17:03:17.648Z" },
-    { url = "https://files.pythonhosted.org/packages/c2/f5/84e135ac611a6dfe8b95ff989097c200770907907afba78455d4c863981e/comma_deps_raylib-6.0.0.1.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:9347fe18799c209dd1af746a44a94433bae69d4644de10e11dcc307aecd87fb1", size = 7203023, upload-time = "2026-07-23T17:03:21.525Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/1b/ae0959dac622f7169de230ec98c6555870ae0ad4f61e7b8d32922fa960ed/comma_deps_raylib-6.0.0.1.post98-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:f9fd393fbaf1f16d7785be0b2252ef3b14a953c93d89296ed9a67bc7063de882", size = 5055448, upload-time = "2026-07-23T17:03:25.737Z" },
+    { url = "https://files.pythonhosted.org/packages/ff/90/e289acd1725d71c792c33399422f1052c4b0c38aeb4222a866d30c4a2cad/comma_deps_raylib-6.0.0.1.post101-py3-none-macosx_11_0_arm64.whl", hash = "sha256:fa69d5093a92d7d2bfd2714a1afccca63b94d4c55fae88e61b80e8841de6a6cd", size = 1885392, upload-time = "2026-08-27T18:24:37.25Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/17/12977631f6d86d1daa4f67a310cfdf2783ba288f42d444d6a89b2297a0a4/comma_deps_raylib-6.0.0.1.post101-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:c93ff9b45df414620b3011280da77151764c027e2f95d384fe255615d78872cc", size = 21707644, upload-time = "2026-08-27T18:24:41.282Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/ca/ef33aff790b37dfc925f94fbb3a86da19f67929c15b3725ddb18afb91e96/comma_deps_raylib-6.0.0.1.post101-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:8f2a1ffe5f60cac06170b144d6ce84925c91657e7ada3ae35bc5df6ccbe0b461", size = 20722616, upload-time = "2026-08-27T18:24:45.803Z" },
 ]
 
 [[package]]
