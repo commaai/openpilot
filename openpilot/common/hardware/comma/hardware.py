@@ -14,6 +14,7 @@ from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.common.hardware.comma.pins import GPIO
 from openpilot.common.hardware.comma.amplifier import Amplifier
+from openpilot.common.hardware.comma.modem import WEBBING_ICCID_PREFIX
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 
@@ -207,6 +208,8 @@ class HardwareComma(HardwareBase):
 
   def get_network_metered(self, network_type) -> bool:
     if network_type in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
+      if self.get_modem_state().get('iccid', '').startswith(WEBBING_ICCID_PREFIX):
+        return True
       from openpilot.common.params import Params
       return Params().get_bool("GsmMetered")
     try:
