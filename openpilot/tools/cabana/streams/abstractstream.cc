@@ -120,7 +120,6 @@ void AbstractStream::updateLastMessages() {
 
   if (sources.size() != prev_src_size) {
     updateMasks();
-    sourcesUpdated(sources);
   }
   msgsReceived(&msgs, prev_msg_size != last_msgs.size());
 }

@@ -7,7 +7,6 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 
-#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 

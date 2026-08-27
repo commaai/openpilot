@@ -9,7 +9,6 @@
 #include <QTimer>
 #include <QToolBar>
 
-#include "tools/cabana/core/observable.h"
 #include "tools/cabana/chart/signalselector.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"

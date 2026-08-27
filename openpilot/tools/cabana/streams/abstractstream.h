@@ -64,7 +64,6 @@ public:
   Observable<const std::optional<std::pair<double, double>> &> timeRangeChanged;
   Observable<const MessageEventsMap &> eventsMerged;
   Observable<const std::set<MessageId> *, bool> msgsReceived;
-  Observable<const SourceSet &> sourcesUpdated;
 
   SourceSet sources;
 

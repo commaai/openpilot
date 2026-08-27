@@ -11,7 +11,6 @@
 #include <QToolBar>
 #include <QTabBar>
 
-#include "tools/cabana/core/observable.h"
 #include "tools/cabana/cameraview.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/logreader.h"

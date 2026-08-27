@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "tools/cabana/core/observable.h"
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/detailwidget.h"

@@ -12,7 +12,6 @@
 #include <QTableWidget>
 #include <QTreeView>
 
-#include "tools/cabana/core/observable.h"
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/chart/sparkline.h"
 
