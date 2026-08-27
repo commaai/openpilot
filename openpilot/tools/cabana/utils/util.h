@@ -138,8 +138,9 @@ public:
 namespace utils {
 
 bool isMainThread();
-// inline on the main thread, queued otherwise
+// inline on the main thread, queued until drainMainThreadQueue() otherwise
 void runOnMainThread(std::function<void()> fn);
+void drainMainThreadQueue();
 QPixmap icon(const QString &id);
 std::string homePath();
 std::filesystem::path configPath();

@@ -61,6 +61,10 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   connections_.push_back(UndoStack::instance()->cleanChanged.connect([this](bool clean) { undoStackCleanChanged(clean); }));
   QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
 
+  auto *queue_timer = new QTimer(this);
+  QObject::connect(queue_timer, &QTimer::timeout, utils::drainMainThreadQueue);
+  queue_timer->start(10);
+
   QTimer::singleShot(0, this, [=]() { stream ? openStream(stream, dbc_file) : selectAndOpenStream(); });
   show();
 }
