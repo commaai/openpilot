@@ -10,7 +10,7 @@ from opendbc.car.structs import car
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.hardware import COMMA_HARDWARE
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 
@@ -319,7 +319,7 @@ class AlertRenderer(Widget):
     self._alert_text1_label.set_text(alert_text1)
     self._alert_text1_label.set_text_color(color)
     self._alert_text1_label.set_font_size(font_size)
-    self._alert_text1_label.set_alignment(rl.GuiTextAlignment.TEXT_ALIGN_LEFT if icon_side != 'left' else rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
+    self._alert_text1_label.set_alignment(TextAlignment.LEFT if icon_side != 'left' else TextAlignment.RIGHT)
     self._alert_text1_label.render(text_rect1)
 
     alert_text2 = alert.text2.lower()
@@ -351,5 +351,5 @@ class AlertRenderer(Widget):
       self._alert_text2_label.set_text(alert_text2)
       self._alert_text2_label.set_text_color(color)
       self._alert_text2_label.set_font_size(small_font_size)
-      self._alert_text2_label.set_alignment(rl.GuiTextAlignment.TEXT_ALIGN_LEFT if icon_side != 'left' else rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
+      self._alert_text2_label.set_alignment(TextAlignment.LEFT if icon_side != 'left' else TextAlignment.RIGHT)
       self._alert_text2_label.render(text_rect2)
