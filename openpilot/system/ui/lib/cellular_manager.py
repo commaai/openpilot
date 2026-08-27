@@ -3,6 +3,7 @@ import threading
 from collections.abc import Callable
 from dataclasses import replace
 
+from openpilot.common.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.esim.base import LPABase, Profile
 
@@ -10,13 +11,7 @@ from openpilot.common.esim.base import LPABase, Profile
 PROFILE_POLL_INTERVAL_S = 5.0
 
 
-def _get_lpa() -> LPABase:
-  from openpilot.common.hardware import HARDWARE
-  return HARDWARE.get_sim_lpa()
-
-
 def _get_modem_state() -> dict:
-  from openpilot.common.hardware import HARDWARE
   try:
     return HARDWARE.get_modem_state()
   except Exception:
@@ -47,10 +42,6 @@ class CellularManager:
       self._profiles_updated_cbs.append(profiles_updated)
     if operation_error:
       self._operation_error_cbs.append(operation_error)
-
-  @property
-  def modem_ip(self) -> str:
-    return self._modem_state.get("ip_address", "")
 
   @property
   def modem_state(self) -> dict:
@@ -86,7 +77,7 @@ class CellularManager:
 
   def _ensure_lpa(self) -> LPABase:
     if self._lpa is None:
-      self._lpa = _get_lpa()
+      self._lpa = HARDWARE.get_sim_lpa()
     return self._lpa
 
   def _enqueue(self, cb: Callable):
@@ -96,17 +87,21 @@ class CellularManager:
   def _stop_polling(self):
     self._polling = False
 
+  def _set_profiles(self, profiles: list[Profile]):
+    self._profiles = profiles
+    for cb in self._profiles_updated_cbs:
+      cb(profiles)
+
   def _finish(self, profiles: list[Profile] | None = None, error: str | None = None):
     self._busy = False
     if profiles is not None:
-      self._profiles = profiles
-      for cb in self._profiles_updated_cbs:
-        cb(profiles)
+      self._set_profiles(profiles)
     if error is not None:
+      self.refresh_profiles()
       for cb in self._operation_error_cbs:
         cb(error)
 
-  def _run_operation(self, fn: Callable, error_msg: str):
+  def _run_operation(self, fn: Callable[[LPABase], None], error_msg: str, relist: bool = True):
     self._busy = True
 
     def worker():
@@ -114,7 +109,7 @@ class CellularManager:
         with self._lock:
           lpa = self._ensure_lpa()
           fn(lpa)
-          profiles = lpa.list_profiles()
+          profiles = lpa.list_profiles() if relist else None
         self._enqueue(lambda: self._finish(profiles=profiles))
       except Exception as e:
         cloudlog.exception(error_msg)
@@ -124,7 +119,8 @@ class CellularManager:
     threading.Thread(target=worker, daemon=True).start()
 
   def refresh_profiles(self):
-    self._poll_profiles()
+    # next process_callbacks tick polls, respecting busy/polling guards
+    self._last_profile_poll = 0.0
 
   def _poll_profiles(self):
     self._polling = True
@@ -150,27 +146,12 @@ class CellularManager:
     if self._busy:
       return
     self._is_euicc = is_euicc
-    self._profiles = profiles
-    for cb in self._profiles_updated_cbs:
-      cb(profiles)
+    self._set_profiles(profiles)
 
   def switch_profile(self, iccid: str):
-    self._busy = True
-
-    def worker():
-      try:
-        with self._lock:
-          lpa = self._ensure_lpa()
-          lpa.switch_profile(iccid)
-        # avoid list_profiles(): can briefly return stale enabled state
-        profiles = [replace(p, enabled=(p.iccid == iccid)) for p in self._profiles]
-        self._enqueue(lambda: self._finish(profiles=profiles))
-      except Exception as e:
-        cloudlog.exception("Failed to switch eSIM profile")
-        err = str(e)
-        self._enqueue(lambda: self._finish(error=err))
-
-    threading.Thread(target=worker, daemon=True).start()
+    # optimistic: list_profiles() can briefly return stale enabled state after a switch
+    self._set_profiles([replace(p, enabled=(p.iccid == iccid)) for p in self._profiles])
+    self._run_operation(lambda lpa: lpa.switch_profile(iccid), "Failed to switch eSIM profile", relist=False)
 
   def delete_profile(self, iccid: str):
     self._run_operation(lambda lpa: lpa.delete_profile(iccid), "Failed to delete eSIM profile")

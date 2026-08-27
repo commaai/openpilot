@@ -12,7 +12,7 @@ from openpilot.system.ui.widgets.scroller import NavScroller
 
 
 class NetworkLayoutMici(NavScroller):
-  def __init__(self, cellular_manager: CellularManager):
+  def __init__(self):
     super().__init__()
 
     self._wifi_manager = WifiManager()
@@ -67,7 +67,7 @@ class NetworkLayoutMici(NavScroller):
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
     # ******** eSIM ********
-    self._cellular_manager = cellular_manager
+    self._cellular_manager = CellularManager()
     self._esim_ui = EsimUI(self._cellular_manager)
     self._esim_button = EsimNetworkButton(self._cellular_manager)
 
@@ -101,13 +101,12 @@ class NetworkLayoutMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    prime = ui_state.prime_state.get_type()
-    self._wifi_manager.set_ipv4_forward(prime in (PrimeType.NONE, PrimeType.LITE))
+    not_prime = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    self._wifi_manager.set_ipv4_forward(not_prime)
 
     # full prime hides GSM settings only when the comma profile is the active one
     active = self._cellular_manager.active_profile
-    on_comma_profile = active is not None and active.is_comma
-    show_cell_settings = prime in (PrimeType.NONE, PrimeType.LITE) or not on_comma_profile
+    show_cell_settings = not_prime or active is None or not active.is_comma
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)
     self._cellular_metered_btn.set_visible(show_cell_settings)
@@ -115,7 +114,6 @@ class NetworkLayoutMici(NavScroller):
   def show_event(self):
     super().show_event()
     self._wifi_manager.set_active(True)
-    self._cellular_manager.refresh_profiles()
 
     # Process wifi and esim callbacks while at any point in the nav stack
     gui_app.add_nav_stack_tick(self._wifi_manager.process_callbacks)

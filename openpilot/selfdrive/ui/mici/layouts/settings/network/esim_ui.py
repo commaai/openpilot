@@ -2,7 +2,8 @@ import pyray as rl
 from collections.abc import Callable
 
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog, BigDialog, BigInputDialog
+from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import ForgetButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
 from openpilot.common.esim.base import Profile
 from openpilot.system.ui.lib.application import DEFAULT_TEXT_COLOR, FontWeight, MousePos, gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
@@ -12,35 +13,6 @@ from openpilot.system.ui.widgets.scroller import NavScroller
 
 SUB_LABEL_DISABLED = rl.Color(255, 255, 255, int(255 * 0.585))
 CHECK_ICON_COLOR = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
-
-
-class DeleteButton(Widget):
-  SIZE = 63
-  MARGIN = 12
-
-  def __init__(self, delete_callback: Callable):
-    super().__init__()
-    self._delete_callback = delete_callback
-
-    self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", self.SIZE, self.SIZE)
-    self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", self.SIZE, self.SIZE)
-    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 22, 26)
-    self._dialog_trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64)
-    self.set_rect(rl.Rectangle(0, 0, self.SIZE + self.MARGIN * 2, self.SIZE + self.MARGIN * 2))
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-    dlg = BigConfirmationDialog("slide to delete", self._dialog_trash_txt, self._delete_callback, red=True)
-    gui_app.push_widget(dlg)
-
-  def _render(self, _):
-    bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
-    rl.draw_texture_ex(bg_txt, (self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
-                                self._rect.y + (self._rect.height - self._bg_txt.height) / 2), 0, 1.0, rl.WHITE)
-
-    trash_x = self._rect.x + (self._rect.width - self._trash_txt.width) / 2
-    trash_y = self._rect.y + (self._rect.height - self._trash_txt.height) / 2
-    rl.draw_texture_ex(self._trash_txt, (trash_x, trash_y), 0, 1.0, rl.WHITE)
 
 
 class RenameButton(Widget):
@@ -63,8 +35,7 @@ class RenameButton(Widget):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
     rl.draw_texture_ex(bg_txt, (self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
                                 self._rect.y + (self._rect.height - self._bg_txt.height) / 2), 0, 1.0, rl.WHITE)
-    icon_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, self._rect.height)
-    gui_label(icon_rect, "Aa", 32, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    gui_label(self._rect, "Aa", 32, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
 class EsimProfileButton(BigButton):
@@ -83,8 +54,9 @@ class EsimProfileButton(BigButton):
     self._check_txt = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 32, 32)
     self._comma_txt = gui_app.texture("icons_mici/settings/comma_icon.png", 36, 36) if profile.is_comma else None
 
-    self._delete_btn = DeleteButton(lambda: self._cellular_manager.delete_profile(self._profile.iccid))
+    self._delete_btn = ForgetButton(lambda: self._cellular_manager.delete_profile(self._profile.iccid), "slide to delete", size=63)
     self._rename_btn = RenameButton(self._on_rename) if not profile.is_comma else None
+    self.update_profile(profile)
 
   @property
   def profile(self) -> Profile:
@@ -92,8 +64,12 @@ class EsimProfileButton(BigButton):
 
   def update_profile(self, profile: Profile):
     self._profile = profile
-    if profile.display_name != self.text:
-      self.set_text(profile.display_name)
+    active = profile.enabled
+    self.set_text(profile.display_name)
+    self.set_value("active" if active else "switch")
+    self.set_enabled(not active)
+    self._sub_label.set_color(SUB_LABEL_DISABLED if active else DEFAULT_TEXT_COLOR)
+    self._sub_label.set_font_weight(FontWeight.ROMAN if active else FontWeight.SEMI_BOLD)
 
   @property
   def _show_delete_btn(self) -> bool:
@@ -130,7 +106,7 @@ class EsimProfileButton(BigButton):
       label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
       action_w = self._rename_btn.rect.width if self._rename_btn is not None else 0
       # delete sits just inside rename's left edge (overlap their inner margins) so the sub_label has more room
-      action_w += self._delete_btn.rect.width - DeleteButton.MARGIN if self._show_delete_btn else 0
+      action_w += self._delete_btn.rect.width - ForgetButton.MARGIN if self._show_delete_btn else 0
       sub_label_w = self.SUB_LABEL_WIDTH - action_w
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
@@ -157,7 +133,7 @@ class EsimProfileButton(BigButton):
         self._rename_btn.rect.width, self._rename_btn.rect.height,
       ))
     if self._show_delete_btn:
-      btn_x -= self._delete_btn.rect.width - DeleteButton.MARGIN
+      btn_x -= self._delete_btn.rect.width - ForgetButton.MARGIN
       self._delete_btn.render(rl.Rectangle(
         btn_x, btn_bottom - self._delete_btn.rect.height,
         self._delete_btn.rect.width, self._delete_btn.rect.height,
@@ -170,14 +146,6 @@ class EsimProfileButton(BigButton):
     self._delete_btn.set_touch_valid_callback(touch_callback)
     if self._rename_btn:
       self._rename_btn.set_touch_valid_callback(touch_callback)
-
-  def _update_state(self):
-    super()._update_state()
-    active = self._profile.enabled
-    self.set_value("active" if active else "switch")
-    self.set_enabled(not active)
-    self._sub_label.set_color(SUB_LABEL_DISABLED if active else DEFAULT_TEXT_COLOR)
-    self._sub_label.set_font_weight(FontWeight.ROMAN if active else FontWeight.SEMI_BOLD)
 
 
 class EsimUI(NavScroller):
@@ -200,34 +168,25 @@ class EsimUI(NavScroller):
     self._update_buttons()
 
   def _update_buttons(self, re_sort: bool = False):
-    existing = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
-    profiles = self._cellular_manager.profiles
-    current_iccids = {p.iccid for p in profiles}
-
-    for profile in profiles:
-      if profile.iccid in existing:
-        existing[profile.iccid].update_profile(profile)
-      else:
+    existing = {btn.profile.iccid: btn for btn in self._scroller.items}
+    buttons = []
+    for profile in self._cellular_manager.profiles:
+      btn = existing.get(profile.iccid)
+      if btn is None:
         btn = EsimProfileButton(profile, self._cellular_manager)
         btn.set_click_callback(lambda iccid=profile.iccid: self._on_profile_clicked(iccid))
         self._scroller.add_widget(btn)
+      else:
+        btn.update_profile(profile)
+      buttons.append(btn)
 
     if re_sort:
-      btn_map = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
-      self._scroller.items[:] = sorted(
-        [btn_map[iccid] for iccid in current_iccids if iccid in btn_map],
-        key=lambda b: not b.profile.enabled,
-      )
+      self._scroller.items[:] = sorted(buttons, key=lambda b: not b.profile.enabled)
     else:
-      self._scroller.items[:] = [
-        btn for btn in self._scroller.items
-        if not isinstance(btn, EsimProfileButton) or btn.profile.iccid in current_iccids
-      ]
+      self._scroller.items[:] = [btn for btn in self._scroller.items if btn in buttons]
 
   def _move_profile_to_front(self, iccid: str | None, scroll: bool = False):
-    front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
-                          if isinstance(btn, EsimProfileButton) and
-                          btn.profile.iccid == iccid), None) if iccid else None
+    front_btn_idx = next((i for i, btn in enumerate(self._scroller.items) if btn.profile.iccid == iccid), None) if iccid else None
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
@@ -248,9 +207,5 @@ class EsimUI(NavScroller):
   def _on_profile_clicked(self, iccid: str):
     if self._cellular_manager.busy:
       return
-    profile = next((p for p in self._cellular_manager.profiles if p.iccid == iccid), None)
-    if profile is None or profile.enabled:
-      return
-
     self._cellular_manager.switch_profile(iccid)
     self._move_profile_to_front(iccid, scroll=True)

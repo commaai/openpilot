@@ -235,18 +235,21 @@ class WifiButton(BigButton):
 class ForgetButton(Widget):
   MARGIN = 12  # bottom and right
 
-  def __init__(self, forget_network: Callable):
+  def __init__(self, forget_network: Callable, label: str = "slide to forget", size: int = 84):
     super().__init__()
     self._forget_network = forget_network
+    self._label = label
 
-    self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", 84, 84)
-    self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", 84, 84)
-    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 29, 35)
-    self.set_rect(rl.Rectangle(0, 0, 84 + self.MARGIN * 2, 84 + self.MARGIN * 2))
+    trash_w, trash_h = round(29 * size / 84), round(35 * size / 84)
+    self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", size, size)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", size, size)
+    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", trash_w, trash_h)
+    self._dialog_trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64)
+    self.set_rect(rl.Rectangle(0, 0, size + self.MARGIN * 2, size + self.MARGIN * 2))
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    dlg = BigConfirmationDialog("slide to forget", gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64), self._forget_network, red=True)
+    dlg = BigConfirmationDialog(self._label, self._dialog_trash_txt, self._forget_network, red=True)
     gui_app.push_widget(dlg)
 
   def _render(self, _):
