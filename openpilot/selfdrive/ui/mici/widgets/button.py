@@ -6,7 +6,7 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignmentVertical
 from openpilot.common.filter_simple import BounceFilter
 
 if TYPE_CHECKING:
@@ -125,10 +125,10 @@ class BigButton(Widget):
     self._rotate_icon_t: float | None = None
 
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.BOLD,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, scroll=scroll,
+                               text_color=LABEL_COLOR, alignment_vertical=TextAlignmentVertical.BOTTOM, scroll=scroll,
                                line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
-                                   text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+                                   text_color=COMPLICATION_GREY, alignment_vertical=TextAlignmentVertical.BOTTOM)
     self._update_label_layout()
 
     self._load_images()
@@ -167,9 +167,9 @@ class BigButton(Widget):
   def _update_label_layout(self):
     self._label.set_font_size(self._get_label_font_size())
     if self.value:
-      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+      self._label.set_alignment_vertical(TextAlignmentVertical.TOP)
     else:
-      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+      self._label.set_alignment_vertical(TextAlignmentVertical.BOTTOM)
 
   def set_text(self, text: str):
     self.text = text
@@ -356,8 +356,8 @@ class GreyBigButton(BigButton):
     self._sub_label.set_font_size(36)
     self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
     self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
-    self._sub_label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE if not self._label.text else
-                                           rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    self._sub_label.set_alignment_vertical(TextAlignmentVertical.MIDDLE if not self._label.text else
+                                           TextAlignmentVertical.BOTTOM)
     self._sub_label.set_line_height(0.95)
 
   @property

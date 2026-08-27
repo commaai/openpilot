@@ -8,7 +8,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
 from openpilot.selfdrive.ui.ui_state import ui_state, ChestnutState
 from openpilot.common.version import RELEASE_BRANCHES
 
@@ -69,8 +69,8 @@ class AlertsPill(Widget):
 
       count_rect = rl.Rectangle(self.rect.x + self.COUNT_OFFSET, self.rect.y, pill_w - self.COUNT_OFFSET, pill_h)
       gui_label(count_rect, str(alert_count), font_size=36,
-                alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                alignment=TextAlignment.CENTER,
+                alignment_vertical=TextAlignmentVertical.MIDDLE)
 
 
 class NetworkIcon(Widget):
