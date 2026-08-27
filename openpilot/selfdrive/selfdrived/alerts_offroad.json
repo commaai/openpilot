@@ -21,6 +21,34 @@
     "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
     "severity": 0
   },
+  "Offroad_ChestnutNotDetected": {
+    "text": "Chestnut not detected. Check USB and 12V connections.",
+    "severity": 0
+  },
+  "Offroad_ChestnutFansObstructed": {
+    "text": "Chestnut fans obstructed. Check the fans.",
+    "severity": 0
+  },
+  "Offroad_ChestnutOverheated": {
+    "text": "Chestnut overheated. Allow it to cool.",
+    "severity": 0
+  },
+  "Offroad_ChestnutPcieUnavailable": {
+    "text": "Chestnut PCIe unavailable. %1",
+    "severity": 0
+  },
+  "Offroad_ChestnutUncompiled": {
+    "text": "Chestnut model not compiled. Keep ignition on and reboot the comma.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUpdateFailed": {
+    "text": "Chestnut update failed. Check the USB cable.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUsbSlow": {
+    "text": "Chestnut USB link is slow. Check the USB cable. the current speed is %1.",
+    "severity": 0
+  },
   "Offroad_UnregisteredHardware": {
     "text": "Failed to register with comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.",
     "severity": 1
