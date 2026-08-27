@@ -51,7 +51,7 @@ class Updater(Widget):
     self._back_button = Button("Back", click_callback=lambda: self.set_current_screen(Screen.PROMPT))
     self._reboot_button = Button("Reboot", click_callback=lambda: HARDWARE.reboot())
     self._desc_label = UnifiedLabel("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
-                                    "The download size is approximately 1GB.", BODY_FONT_SIZE, line_height=1 / 0.9)
+                                    "The download size is approximately 1GB.", BODY_FONT_SIZE)
 
   def set_current_screen(self, screen: Screen):
     self.current_screen = screen

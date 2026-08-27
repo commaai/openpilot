@@ -38,7 +38,7 @@ class Reset(Widget):
     self._cancel_button = Button("Cancel", gui_app.request_close)
     self._confirm_button = Button("Confirm", self._confirm, button_style=ButtonStyle.PRIMARY)
     self._reboot_button = Button("Reboot", self._reboot)
-    self._body_label = UnifiedLabel(self._get_body_text, 90, line_height=1 / 0.9)
+    self._body_label = UnifiedLabel(self._get_body_text, 90)
 
   @staticmethod
   def _reboot() -> None:
