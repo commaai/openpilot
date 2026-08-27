@@ -4,7 +4,7 @@ import pyray as rl
 from collections.abc import Callable
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.qrcode import make_texture
-from openpilot.system.ui.lib.application import FontWeight, gui_app
+from openpilot.system.ui.lib.application import FontWeight, gui_app, TextAlignment
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.scroller import NavScroller, Scroller
@@ -33,7 +33,7 @@ class CabinCameraSetupDialog(BaseCabinCameraDialog):
 
     if not self._camera_view.frame:
       gui_label(rect, tr("camera starting"), font_size=64, font_weight=FontWeight.BOLD,
-                alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+                alignment=TextAlignment.CENTER)
       rl.end_scissor_mode()
       return
 
