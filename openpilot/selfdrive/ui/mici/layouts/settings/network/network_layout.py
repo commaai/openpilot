@@ -1,6 +1,6 @@
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.mici.layouts.settings.network import EsimNetworkButton, WifiNetworkButton
-from openpilot.selfdrive.ui.mici.layouts.settings.network.esim_ui import EsimUIMici
+from openpilot.selfdrive.ui.mici.layouts.settings.network.esim_ui import EsimUI
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
@@ -68,7 +68,7 @@ class NetworkLayoutMici(NavScroller):
 
     # ******** eSIM ********
     self._cellular_manager = cellular_manager
-    self._esim_ui = EsimUIMici(self._cellular_manager)
+    self._esim_ui = EsimUI(self._cellular_manager)
     self._esim_button = EsimNetworkButton(self._cellular_manager)
 
     self._esim_button.set_click_callback(lambda: gui_app.push_widget(self._esim_ui))

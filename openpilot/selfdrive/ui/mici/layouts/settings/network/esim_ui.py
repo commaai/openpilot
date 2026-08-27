@@ -180,7 +180,7 @@ class EsimProfileButton(BigButton):
     self._sub_label.set_font_weight(FontWeight.ROMAN if active else FontWeight.SEMI_BOLD)
 
 
-class EsimUIMici(NavScroller):
+class EsimUI(NavScroller):
   def __init__(self, cellular_manager: CellularManager):
     super().__init__()
 
