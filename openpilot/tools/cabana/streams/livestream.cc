@@ -21,12 +21,9 @@ struct LiveStream::Logger {
       localtime_r(&start_time, &local_time);
       std::ostringstream date;
       date << std::put_time(&local_time, "%Y-%m-%d--%H-%M-%S");
-      QString dir = QString("%1/%2--%3")
-                        .arg(QString::fromStdString(settings.log_path))
-                        .arg(QString::fromStdString(date.str()))
-                        .arg(n);
-      util::create_directories(dir.toStdString(), 0755);
-      fs.reset(new std::ofstream((dir + "/rlog").toStdString(), std::ios::binary | std::ios::out));
+      std::string dir = settings.log_path + "/" + date.str() + "--" + std::to_string(n);
+      util::create_directories(dir, 0755);
+      fs.reset(new std::ofstream(dir + "/rlog", std::ios::binary | std::ios::out));
     }
 
     auto bytes = data.asBytes();
