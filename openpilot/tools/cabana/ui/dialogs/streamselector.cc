@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/replaystream.h"
@@ -24,14 +25,14 @@ void OpenReplayWidget::draw() {
   inputText("##route", &route_, "Enter route name or browse for local/remote route");
   ImGui::SameLine();
   if (ImGui::Button("Remote route...")) {
-    routes_dialog_.open([this](const std::string &route) {
-      if (!route.empty()) route_ = route;
+    routes_dialog_.open([this, alive = std::weak_ptr<bool>(alive_)](bool accepted, const std::string &route) {
+      if (!alive.expired() && accepted) route_ = route;
     });
   }
   ImGui::SameLine();
   if (ImGui::Button("Local route...")) {
-    FileDialog::getExistingDirectory("Open Local Route", settings.last_route_dir, [this](const std::string &dir) {
-      if (!dir.empty()) {
+    FileDialog::getExistingDirectory("Open Local Route", settings.last_route_dir, [this, alive = std::weak_ptr<bool>(alive_)](const std::string &dir) {
+      if (!alive.expired() && !dir.empty()) {
         route_ = dir;
         settings.last_route_dir = std::filesystem::absolute(dir).parent_path().string();
       }
@@ -190,16 +191,45 @@ std::unique_ptr<AbstractStream> OpenPandaWidget::open() {
 
 // OpenDeviceWidget
 
+namespace {
+
+struct IpInputContext {
+  std::string *text;
+  const std::string *last_valid;
+};
+
+// QRegExpValidator equivalent: only digits and dots get in, and an edit that makes the address Invalid is refused
+int ipInputCallback(ImGuiInputTextCallbackData *data) {
+  auto *ctx = static_cast<IpInputContext *>(data->UserData);
+  if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
+    const ImWchar c = data->EventChar;
+    return ((c >= '0' && c <= '9') || c == '.') ? 0 : 1;
+  }
+  if (data->EventFlag == ImGuiInputTextFlags_CallbackEdit) {
+    if (validateIpAddress(std::string(data->Buf, data->BufTextLen)) == ValidState::Invalid) {
+      data->DeleteChars(0, data->BufTextLen);
+      data->InsertChars(0, ctx->last_valid->c_str());
+    }
+  } else if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+    ctx->text->resize(data->BufTextLen);
+    data->Buf = ctx->text->data();
+  }
+  return 0;
+}
+
+}  // namespace
+
 void OpenDeviceWidget::draw() {
   ImGui::RadioButton("MSGQ", &mode_, 0);
   ImGui::RadioButton("ZMQ", &mode_, 1);
   ImGui::SameLine();
   ImGui::BeginDisabled(mode_ != 1);
   ImGui::SetNextItemWidth(-1.0f);
-  std::string prev = ip_address_;
-  if (inputText("##ip", &ip_address_, "Enter device Ip Address") && validateIpAddress(ip_address_) == ValidState::Invalid) {
-    ip_address_ = prev;
-  }
+  const std::string prev = ip_address_;
+  IpInputContext ctx{&ip_address_, &prev};
+  ImGui::InputTextWithHint("##ip", "Enter device Ip Address", ip_address_.data(), ip_address_.capacity() + 1,
+                           ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackResize,
+                           ipInputCallback, &ctx);
   ImGui::EndDisabled();
 }
 
@@ -319,7 +349,8 @@ void StreamSelector::draw() {
   }
   ImGui::EndDisabled();
   ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) rejected = true;
+  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) rejected = true;
+  if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) rejected = true;
 
   // nested so they stack on this modal
   FileDialog::draw();

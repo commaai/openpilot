@@ -280,16 +280,22 @@ static std::vector<std::string> split(const std::string &s, char sep) {
   return parts;
 }
 
-// QString::toUInt(&ok, base)
+// QString::toUInt(&ok, base): surrounding whitespace is ignored; no sign, no 0x prefix
 static unsigned int toUInt(const std::string &s, bool *ok, int base) {
   size_t begin = 0, end = s.size();
   while (begin < end && std::isspace((unsigned char)s[begin])) ++begin;
   while (end > begin && std::isspace((unsigned char)s[end - 1])) --end;
-  const std::string trimmed = s.substr(begin, end - begin);
-  char *endptr = nullptr;
-  errno = 0;
-  unsigned long v = std::strtoul(trimmed.c_str(), &endptr, base);
-  *ok = !trimmed.empty() && endptr && *endptr == '\0' && errno == 0 && v <= std::numeric_limits<unsigned int>::max();
+  unsigned long long v = 0;
+  *ok = begin < end;
+  for (size_t i = begin; i < end && *ok; ++i) {
+    const unsigned char c = std::tolower((unsigned char)s[i]);
+    int digit = -1;
+    if (c >= '0' && c <= '9') digit = c - '0';
+    else if (c >= 'a' && c <= 'z') digit = c - 'a' + 10;
+    *ok = digit >= 0 && digit < base;
+    v = v * base + std::max(digit, 0);
+    *ok = *ok && v <= std::numeric_limits<unsigned int>::max();
+  }
   return *ok ? (unsigned int)v : 0;
 }
 
@@ -413,15 +419,7 @@ void MessageView::drawRow(int row) {
   const std::vector<uint8_t> *bytes = item.id.source != INVALID_SOURCE ? &m.dat : nullptr;
   const float row_height = delegate_->sizeHint(bytes).y - ImGui::GetStyle().CellPadding.y * 2;
   ImGui::TableNextRow();
-  int pushed_colors = 0;
-  if (inactive) {
-    // palette: Disabled Text, HighlightedText alpha 100
-    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-    ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Header);
-    color.w = 100 / 255.0f;
-    ImGui::PushStyleColor(ImGuiCol_Header, color);
-    pushed_colors = 2;
-  }
+  // inactive: palette Disabled Text, HighlightedText alpha 100 (applied by the delegate)
   ImGui::PushID(row);
 
   // the row selection spans all columns
@@ -461,7 +459,6 @@ void MessageView::drawRow(int row) {
   }
 
   ImGui::PopID();
-  ImGui::PopStyleColor(pushed_colors);
   // the grid lines (row bottom border, column borders) are ImGuiTableFlags_Borders
 }
 
@@ -488,16 +485,26 @@ void MessageView::updateBytesSectionSize() {
     }
   }
   // setUniformRowHeights(!multipleLines()): draw() only uses the clipper with uniform row heights
+  // header()->resizeSection(DATA, ...): the minimum width of the stretched last section
   bytes_section_bytes_ = max_bytes;
-  bytes_section_dirty_ = true;
 }
 
 void MessageView::keyPressEvent() {
   if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) || ImGui::IsAnyItemActive()) return;
+  const int last = model_->rowCount() - 1;
+  if (last < 0) return;
   if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && current_row_ > 0) {
     setCurrentIndex(current_row_ - 1);
-  } else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && current_row_ + 1 < model_->rowCount()) {
+  } else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && current_row_ < last) {
     setCurrentIndex(current_row_ + 1);
+  } else if (ImGui::IsKeyPressed(ImGuiKey_Home)) {
+    setCurrentIndex(0);
+  } else if (ImGui::IsKeyPressed(ImGuiKey_End)) {
+    setCurrentIndex(last);
+  } else if (ImGui::IsKeyPressed(ImGuiKey_PageUp)) {
+    setCurrentIndex(std::max(current_row_ - visible_rows_, 0));
+  } else if (ImGui::IsKeyPressed(ImGuiKey_PageDown)) {
+    setCurrentIndex(std::min(current_row_ + visible_rows_, last));
   }
 }
 
@@ -507,10 +514,13 @@ void MessageView::draw() {
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
                                 ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
-  if (!ImGui::BeginTable("messages", model_->columnCount(), flags)) return;
-
-  ImGui::TableSetupScrollFreeze(0, 2);  // header + filter row
+  // setStretchLastSection: with ScrollX a stretch column needs an explicit inner width
   const float bytes_width = delegate_->sizeForBytes(bytes_section_bytes_).x;
+  const float avail_width = ImGui::GetContentRegionAvail().x - (has_scrollbar_y_ ? ImGui::GetStyle().ScrollbarSize : 0);
+  const float inner_width = std::max(avail_width, fixed_columns_width_ + bytes_width);
+  if (!ImGui::BeginTable("messages", model_->columnCount(), flags, ImVec2(0, 0), inner_width)) return;
+
+  ImGui::TableSetupScrollFreeze(1, 2);  // name column, header + filter row
   for (int i = 0; i < model_->columnCount(); ++i) {
     ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_WidthFixed;
     float width = 0;
@@ -518,16 +528,10 @@ void MessageView::draw() {
       column_flags |= ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_NoHide;
       width = 160;
     } else if (i == MessageListModel::Column::DATA) {
-      column_flags |= ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_NoResize;
-      width = bytes_width;
+      column_flags = ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_NoResize;
     }
     if (header_->isSectionHidden(i)) column_flags |= ImGuiTableColumnFlags_Disabled;
     ImGui::TableSetupColumn(model_->headerData(i).c_str(), column_flags, width);
-  }
-  // header()->resizeSection(DATA, ...): the init width covers the first frame
-  if (bytes_section_dirty_ && !ImGui::GetCurrentTable()->IsInitializing) {
-    ImGui::TableSetColumnWidth(MessageListModel::Column::DATA, bytes_width);
-    bytes_section_dirty_ = false;
   }
 
   if (ImGuiTableSortSpecs *specs = ImGui::TableGetSortSpecs(); specs && specs->SpecsDirty) {
@@ -552,6 +556,13 @@ void MessageView::draw() {
       drawRow(row);
     }
   }
+
+  // for the next frame: the stretch inner width and the page size of keyPressEvent
+  const ImGuiTable *table = ImGui::GetCurrentTable();
+  const ImGuiTableColumn &data_column = table->Columns[MessageListModel::Column::DATA];
+  fixed_columns_width_ = data_column.IsEnabled ? table->ColumnsGivenWidth - data_column.WidthGiven : 0;
+  has_scrollbar_y_ = table->InnerWindow->ScrollbarY;
+  visible_rows_ = std::max(1, (int)(table->InnerWindow->InnerRect.GetHeight() / delegate_->sizeHint(nullptr).y) - 2);
   ImGui::EndTable();
 }
 
@@ -600,7 +611,7 @@ void MessageViewHeader::draw() {
     if (!ImGui::TableSetColumnIndex(i)) continue;
     ImGui::PushID(i);
     ImGui::TableHeader(ImGui::TableGetColumnName(i));
-    if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) customContextMenuRequested = true;
+    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) customContextMenuRequested = true;
     ImGui::PopID();
   }
   // TableHeader opens imgui's default context menu; MessagesWidget shows its own menu instead

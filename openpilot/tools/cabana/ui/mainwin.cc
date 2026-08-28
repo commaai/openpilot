@@ -305,13 +305,20 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
 MainWindow::~MainWindow() {
   installDownloadProgressHandler(nullptr);
   installMessageHandler(nullptr);
+  // the widgets (and the find signal scan thread) read `can`, so they go before the stream
+  tool_dialogs_.clear();
   widget_connections_.clear();
+  charts_widget_.reset();
+  video_widget_.reset();
+  center_widget_.clear();
+  messages_widget_.reset();
   stream_connections_.clear();
   stream_.reset();
   can = nullptr;
 }
 
 void MainWindow::openStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
+  tool_dialogs_.clear();  // their scan threads read the stream
   stream_connections_.clear();
   wait_dlg_connection_.disconnect();
   wait_dlg_open_ = false;
@@ -572,9 +579,7 @@ void MainWindow::finishClose() {
   installMessageHandler(nullptr);
 
   // save states
-  if (messages_widget_) {
-    settings.message_header_state = messages_widget_->saveHeaderState();
-  }
+  // TODO: saveHeaderState() is a stub, keep the Qt frontend's state untouched until it is ported
 
   saveSessionState();
   settings.save();
@@ -673,7 +678,6 @@ void MainWindow::handleShortcuts() {
       }
     }
     if (e.key == GLFW_KEY_Z) shift ? UndoStack::instance()->redo() : UndoStack::instance()->undo();
-    if (e.key == GLFW_KEY_Y) UndoStack::instance()->redo();
     if (e.key == GLFW_KEY_Q) close();
   }
 }
@@ -709,7 +713,7 @@ void MainWindow::drawWaitDialog() {
   if (ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::TextUnformatted(wait_dlg_text_.c_str());
     ImGui::ProgressBar(wait_dlg_value_ / 100.0f, ImVec2(-1.0f, 0.0f));
-    if (ImGui::Button("Abort")) {
+    if (ImGui::Button("Abort") || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       wait_dlg_open_ = false;
       close();
     }
@@ -724,8 +728,20 @@ void MainWindow::drawHelpOverlay() {
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
   ImDrawList *dl = ImGui::GetForegroundDrawList();
   dl->AddRectFilled(viewport->Pos, ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y), IM_COL32(0, 0, 0, 50));
-  for (const auto &[text, rect] : help_texts_) {
-    if (text.empty()) continue;
+  for (const auto &[raw, rect] : help_texts_) {
+    if (raw.empty()) continue;
+    std::string text;
+    bool in_tag = false;
+    for (char c : raw) {
+      if (c == '<') {
+        in_tag = true;
+        if (raw.compare(&c - raw.data(), 6, "<br />") == 0 || raw.compare(&c - raw.data(), 4, "<br>") == 0) text += '\n';
+      } else if (c == '>') {
+        in_tag = false;
+      } else if (!in_tag) {
+        text += c;
+      }
+    }
     const ImVec2 center((rect.Min.x + rect.Max.x) * 0.5f, (rect.Min.y + rect.Max.y) * 0.5f);
     const ImVec2 size = ImGui::CalcTextSize(text.c_str(), nullptr, false, 400.0f);
     const ImVec2 min(center.x - size.x * 0.5f - 8.0f, center.y - size.y * 0.5f - 8.0f);
@@ -805,7 +821,7 @@ void MainWindow::draw() {
   next_frame_.clear();
   for (auto &fn : pending) fn();
 
-  if (!MessageBox::isOpen() && !FileDialog::isOpen() && !stream_selector_.isOpen()) {
+  if (ImGui::GetTopMostPopupModal() == nullptr) {
     handleShortcuts();
   } else {
     takeKeyEvents();  // modal dialogs swallow the shortcuts
@@ -814,7 +830,12 @@ void MainWindow::draw() {
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)
-  if (ImGui::Begin(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) center_widget_.draw();
+  if (ImGui::Begin(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    center_widget_.draw();
+    if (auto *detail = center_widget_.getDetailWidget()) {
+      for (const auto &[text, rect] : detail->helpRects()) help_texts_.emplace_back(text, rect);
+    }
+  }
   ImGui::End();
   if (messages_widget_ && messages_visible_) {
     const std::string name = messages_widget_->title() + MESSAGES_PANEL;
@@ -824,6 +845,7 @@ void MainWindow::draw() {
     }
     ImGui::End();
   }
+  if (video_widget_) video_widget_->setVisible(video_visible_);  // showEvent/hideEvent of the video dock
   if (video_widget_ && video_visible_) {
     const std::string name = video_dock_title_ + VIDEO_PANEL;
     if (ImGui::Begin(name.c_str(), &video_visible_)) {
@@ -831,7 +853,7 @@ void MainWindow::draw() {
       const ImVec2 avail = ImGui::GetContentRegionAvail();
       const bool live = can->liveStreaming();
       float video_h = charts_floating_ ? avail.y : std::clamp(avail.y * video_splitter_ratio_, 1.0f, avail.y - 1.0f);
-      if (live) video_h = 1.0f;  // display video at minimum size.
+      if (live) video_h = ImGui::GetFrameHeightWithSpacing() * 2;  // display video at minimum size.
       ImGui::BeginChild("video", ImVec2(0, video_h));
       help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       video_widget_->draw();

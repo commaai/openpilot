@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/dialogs/filedialog.h"
@@ -32,7 +33,7 @@ void SettingsDialog::draw() {
   ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   if (!ImGui::BeginPopupModal("Settings", nullptr, ImGuiWindowFlags_NoResize)) return;
-  const ImGuiInputTextFlags spin_flags = 0;  // InputInt forbids EnterReturnsTrue
+  const ImGuiInputTextFlags spin_flags = 0;  // InputInt forbids EnterReturnsTrue; it applies the text on every edit
 
   ImGui::SeparatorText("General");
   static const char *themes[] = {"Automatic", "Light", "Dark"};
@@ -69,7 +70,8 @@ void SettingsDialog::draw() {
     done = true;
   }
   ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
+  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) done = true;
+  if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
   FileDialog::draw();  // nested so the directory picker stacks on this modal
   if (done) {
     open_ = false;

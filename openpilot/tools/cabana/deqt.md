@@ -64,6 +64,8 @@ ui/tools/               findsignal, findsimilarbits, routeinfo
 - Do not add Qt. Do not add new CLI options. ASCII only in code. No new third-party dependencies.
 - Verification: `scons openpilot/tools/cabana/_cabana_ui`, then run under Xvfb, drive with xdotool,
   capture with `ffmpeg -f x11grab`; screenshots/GIFs go in the PR. Compare against `_cabana` side by side.
+  Under Xvfb with mesa llvmpipe, pausing a replay can stall the main thread inside `glXSwapBuffers` (a gallium
+  fence wait, ~30% of runs); it is not a cabana bug, unpause before quitting or run with `LP_NUM_THREADS=0`.
 
 # Status
 

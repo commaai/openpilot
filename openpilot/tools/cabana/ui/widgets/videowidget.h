@@ -79,10 +79,12 @@ private:
   void mousePressEvent();
   void paintEvent();
   ImRect handleRect() const;  // QStyle::SC_SliderHandle
+  int pixelPosToRangeValue(float x) const;  // QSliderPrivate::pixelPosToRangeValue
   int minimum_ = 0;
   int maximum_ = 99;
   int value_ = 0;
   bool slider_down_ = false;
+  float click_offset_ = 0;  // QSliderPrivate::clickOffset: where inside the handle the drag started
   bool hovered_ = false;
   bool left_ = false;
   ImRect rect_;
@@ -117,6 +119,9 @@ class VideoWidget {
 public:
   VideoWidget();
   void draw();  // content only; MainWindow puts it in a child region above the charts
+  // QWidget::setVisible of the video dock: MainWindow calls this every frame with the dock visibility so the
+  // camera widget gets its showEvent/hideEvent (vipc thread start/stop) like it did in Qt
+  void setVisible(bool visible);
   void showThumbnail(double seconds);
   std::string whatsThis() const { return whats_this_; }
 
@@ -126,7 +131,6 @@ protected:
   void timeRangeChanged();
   void updateState();
   void updatePlayBtnState();
-  Connections connections_;
   void createCameraWidget();
   void drawCameraWidget();
   void createPlaybackController();
@@ -155,4 +159,5 @@ protected:
   std::unique_ptr<TabBar> camera_tab;
   std::vector<std::unique_ptr<RouteInfoDlg>> route_info_dlgs_;
   std::string whats_this_;
+  Connections connections_;  // last: disconnected before the widgets its handlers dereference are destroyed
 };

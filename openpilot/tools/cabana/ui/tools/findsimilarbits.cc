@@ -49,8 +49,6 @@ bool FindSimilarBitsDlg::draw() {
   if (ImGui::Begin(title_.c_str(), &open_)) {
     std::string bus_labels;
     for (int bus : bus_items) bus_labels += std::to_string(bus) + '\0';
-    std::string msg_labels;
-    for (auto &[name, address] : msg_items) msg_labels += name + '\0';
 
     // src_layout
     ImGui::AlignTextToFramePadding();
@@ -62,17 +60,24 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::Combo("##src_bus", &src_bus_combo, bus_labels.c_str());
     ImGui::SameLine();
     ImGui::SetNextItemWidth(200);
-    ImGui::Combo("##msg", &msg_cb, msg_labels.c_str());
+    if (ImGui::BeginCombo("##msg", msg_cb < (int)msg_items.size() ? msg_items[msg_cb].first.c_str() : "")) {
+      for (int i = 0; i < (int)msg_items.size(); ++i) {
+        ImGui::PushID(i);
+        if (ImGui::Selectable(msg_items[i].first.c_str(), i == msg_cb)) msg_cb = i;
+        ImGui::PopID();
+      }
+      ImGui::EndCombo();
+    }
     ImGui::SameLine();
     ImGui::TextUnformatted("Byte Index");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(50);
-    if (ImGui::InputInt("##byte_idx", &byte_idx_sb, 0, 0)) byte_idx_sb = std::clamp(byte_idx_sb, 0, 63);
+    ImGui::SetNextItemWidth(80);
+    if (ImGui::InputInt("##byte_idx", &byte_idx_sb, 1, 10)) byte_idx_sb = std::clamp(byte_idx_sb, 0, 63);  // byte_idx_sb->setRange(0, 63)
     ImGui::SameLine();
     ImGui::TextUnformatted("Bit Index");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(50);
-    if (ImGui::InputInt("##bit_idx", &bit_idx_sb, 0, 0)) bit_idx_sb = std::clamp(bit_idx_sb, 0, 7);
+    ImGui::SetNextItemWidth(80);
+    if (ImGui::InputInt("##bit_idx", &bit_idx_sb, 1, 10)) bit_idx_sb = std::clamp(bit_idx_sb, 0, 7);  // bit_idx_sb->setRange(0, 7)
 
     // find_layout
     ImGui::AlignTextToFramePadding();
@@ -128,7 +133,8 @@ void FindSimilarBitsDlg::drawTable() {
       ImGui::PushID(i);
       if (ImGui::Selectable(address, false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-          MessageId msg_id = {.source = (uint8_t)bus_items[find_bus_combo], .address = (uint32_t)std::strtoul(address, nullptr, 16)};
+          uint8_t find_bus = find_bus_combo < (int)bus_items.size() ? bus_items[find_bus_combo] : 0;
+          MessageId msg_id = {.source = find_bus, .address = (uint32_t)std::strtoul(address, nullptr, 16)};
           openMessage(msg_id);
         }
       }

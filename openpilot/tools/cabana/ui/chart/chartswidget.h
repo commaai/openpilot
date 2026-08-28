@@ -29,7 +29,7 @@ public:
     scale.setRange(min, max);
     min_ = min;
     max_ = max;
-    setValue(value());
+    setValue(pos_);  // Qt: setValue(QSlider::value()), the raw position is re-mapped as a value
   }
   int value() const { return scale.value(pos_, minimum(), maximum()); }
   void setValue(int v) { pos_ = scale.position(v, minimum(), maximum()); }

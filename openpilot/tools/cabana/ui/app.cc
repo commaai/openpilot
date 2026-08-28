@@ -121,9 +121,11 @@ int run(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
 
     MainWindow win(glfw.window(), std::move(stream), dbc_file);
     while (!win.exited()) {
-      if (glfwWindowShouldClose(glfw.window()) || g_signal_exit.exchange(false)) {
+      if (g_signal_exit.exchange(false)) {
+        printf("\nexiting...\n");
+        win.close();
+      } else if (glfwWindowShouldClose(glfw.window())) {
         glfwSetWindowShouldClose(glfw.window(), GLFW_FALSE);
-        if (g_signal_exit) printf("\nexiting...\n");
         win.close();
       }
       renderFrame(glfw.window(), &win);

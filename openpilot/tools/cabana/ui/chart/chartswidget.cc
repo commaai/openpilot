@@ -259,6 +259,7 @@ void ChartsWidget::drawToolBar() {
   // spacer: right align the rest
   float slider_width = 150.0f;
   float right_width = 0;
+  bool show_range_lb = range_lb_visible, show_range_slider = range_slider_visible;
   if (range_lb_visible) right_width += ImGui::CalcTextSize(range_lb.c_str()).x + style.ItemSpacing.x;
   if (range_slider_visible) right_width += slider_width + style.ItemSpacing.x;
   if (undo_zoom_visible) right_width += buttonWidth(icon::ARROW_COUNTERCLOCKWISE) + style.ItemSpacing.x;
@@ -268,20 +269,29 @@ void ChartsWidget::drawToolBar() {
   right_width += buttonWidth(dock_btn_icon);
   ImGui::SameLine();
   if (range_slider_visible && ImGui::GetContentRegionAvail().x < right_width) {
-    // QSlider shrinks first, the buttons stay pinned to the right edge
+    // QSlider shrinks first (never below 40px), the buttons stay pinned to the right edge
     const float shrink = std::min(slider_width - 40.0f, right_width - ImGui::GetContentRegionAvail().x);
     slider_width -= std::max(shrink, 0.0f);
     right_width -= std::max(shrink, 0.0f);
   }
+  // QToolBar moves what still does not fit into its extension menu; here the range label, then the slider, are hidden
+  if (show_range_lb && ImGui::GetContentRegionAvail().x < right_width) {
+    show_range_lb = false;
+    right_width -= ImGui::CalcTextSize(range_lb.c_str()).x + style.ItemSpacing.x;
+  }
+  if (show_range_slider && ImGui::GetContentRegionAvail().x < right_width) {
+    show_range_slider = false;
+    right_width -= slider_width + style.ItemSpacing.x;
+  }
   const float x = ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width);
   ImGui::SetCursorPosX(x);
 
-  if (range_lb_visible) {
+  if (show_range_lb) {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(range_lb.c_str());
     ImGui::SameLine();
   }
-  if (range_slider_visible) {
+  if (show_range_slider) {
     if (range_slider.draw("##range_slider", slider_width)) setMaxChartRange(range_slider.value());
     ImGui::SetItemTooltip("Set the chart range");
     ImGui::SameLine();
@@ -335,7 +345,7 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
 ChartView *ChartsWidget::createChart(int pos) {
   auto chart = new ChartView(can->timeRange().value_or(display_range), this);
   // fixed height / min width / size policy: see ChartView::draw
-  connections_.push_back(chart->axisYLabelWidthChanged.connect([this](int) { align_timer = true; }));
+  chart->connections_.push_back(chart->axisYLabelWidthChanged.connect([this](int) { align_timer = true; }));  // dropped with the chart
   pos = std::clamp(pos, 0, (int)charts.size());
   charts.insert(charts.begin() + pos, chart);
   currentCharts().insert(currentCharts().begin() + pos, chart);

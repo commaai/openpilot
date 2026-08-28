@@ -3,6 +3,7 @@
 #include <deque>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 
 namespace MessageBox {
 
@@ -17,7 +18,6 @@ struct Box {
 };
 
 std::deque<Box> g_queue;
-bool g_open = false;
 bool g_show_details = false;
 
 void push(Box box) { g_queue.push_back(std::move(box)); }
@@ -36,15 +36,15 @@ void question(const std::string &title, const std::string &text, std::function<v
   push({.title = title, .text = text, .has_cancel = true, .on_result = std::move(on_result)});
 }
 
-bool isOpen() { return g_open || !g_queue.empty(); }
+bool isOpen() { return !g_queue.empty(); }
 
 void draw() {
   if (g_queue.empty()) return;
   Box &box = g_queue.front();
   const std::string popup_id = box.title + "###MessageBox";
-  if (!g_open) {
+  // reopen if imgui closed the popup underneath us (another level-0 popup, host window change)
+  if (!ImGui::IsPopupOpen(popup_id.c_str())) {
     ImGui::OpenPopup(popup_id.c_str());
-    g_open = true;
     g_show_details = false;
   }
   bool result = false, done = false;
@@ -66,7 +66,7 @@ void draw() {
       ImGui::SameLine();
       if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) done = true;
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
+    if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
     if (!box.detailed_text.empty()) {
       ImGui::SameLine();
       if (ImGui::Button(g_show_details ? "Hide Details..." : "Show Details...")) g_show_details = !g_show_details;
@@ -77,7 +77,6 @@ void draw() {
   if (done) {
     Box finished = std::move(g_queue.front());
     g_queue.pop_front();
-    g_open = false;
     if (finished.on_result) finished.on_result(result);
   }
 }

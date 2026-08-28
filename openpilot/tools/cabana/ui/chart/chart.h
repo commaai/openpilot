@@ -137,6 +137,7 @@ private:
   ImRect rubber_rect;
   bool resume_after_scrub = false;
   bool plot_hovered = false;
+  ImGuiID context_menu_id = 0;
 
   bool split_chart_enabled = false;
   TipLabel *tip_label;

@@ -51,6 +51,10 @@ public:
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   VisionStreamType getStreamType() { return active_stream_type; }
   void stopVipcThread();
+  // QWidget::setVisible: runs showEvent()/hideEvent() when the visibility flips. draw() implies visible;
+  // the owner calls setVisible(false) when the widget is no longer drawn so the vipc thread stops like it did in Qt.
+  void setVisible(bool visible);
+  bool isVisible() const { return visible_; }
   // paintEvent + mouseReleaseEvent: draws an item of `size` into the current window
   void draw(const ImVec2 &size);
   const ImRect &rect() const { return rect_; }
@@ -62,7 +66,7 @@ public:
 
 protected:
   void paintEvent();
-  void showEvent();  // starts the vipc thread; called from draw() (the widget is shown while it is drawn)
+  void showEvent();  // starts the vipc thread
   void hideEvent() { stopVipcThread(); }
   void vipcThread();
   void clearFrames();
@@ -73,6 +77,7 @@ protected:
   bool frame_updated = false;  // rgb_frame changed since the last upload; guarded by frame_lock
   GlTexture frame_texture;     // GUI thread only
   ImRect rect_;
+  bool visible_ = false;
 
   std::string stream_name;
   std::atomic<VisionStreamType> active_stream_type;

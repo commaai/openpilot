@@ -64,6 +64,7 @@ public:
   std::pair<std::string, std::vector<std::string>> serializeMessageIds() const;
   void restoreTabs(const std::string &active_msg_id, const std::vector<std::string> &msg_ids);
   std::string whatsThis() const;
+  std::vector<std::pair<std::string, ImRect>> helpRects() const;  // HelpOverlay: (whatsThis, rect) of the binary and signal views
 
 private:
   void createToolBar();
@@ -94,6 +95,7 @@ private:
   bool heatmap_live = true;
   std::string heatmap_all_text = "All";
   float splitter_pos = 192.0f;  // binary_view height; QAbstractScrollArea::sizeHint().height()
+  ImRect binary_view_rect_, signal_view_rect_;  // child window rects of the last drawTabWidget
   std::unique_ptr<LogsWidget> history_log;
   std::unique_ptr<BinaryView> binary_view;
   std::unique_ptr<SignalView> signal_view;

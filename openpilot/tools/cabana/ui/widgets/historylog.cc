@@ -256,12 +256,15 @@ void LogsWidget::draw() {
         filterChanged();
       }
     }
-    ImGui::SameLine(0, 0);
-    // setClearButtonEnabled: QLineEdit::clear() resets isModified, so filterChanged() is a no-op here (Qt quirk)
-    if (ImGui::Button(icon::X)) {
-      value_edit.clear();
-      value_edit_modified = false;
-      filterChanged();
+    // setClearButtonEnabled: the button only shows when the field is non-empty;
+    // QLineEdit::clear() resets isModified, so filterChanged() is a no-op here (Qt quirk)
+    if (!value_edit.empty()) {
+      ImGui::SameLine(0, 0);
+      if (ImGui::Button(icon::X)) {
+        value_edit.clear();
+        value_edit_modified = false;
+        filterChanged();
+      }
     }
     ImGui::SameLine();
   }
@@ -295,7 +298,7 @@ void LogsWidget::drawTable() {
   const float row_height = delegate.sizeForBytes(8).y;
 
   const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg |
-                                ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable;
+                                ImGuiTableFlags_SizingFixedFit;
   bool fetch_more = false;
   if (ImGui::BeginTable("logs", cols, flags, ImVec2(0, 0))) {
     ImGui::TableSetupScrollFreeze(0, 1);

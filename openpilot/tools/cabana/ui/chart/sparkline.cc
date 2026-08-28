@@ -98,11 +98,12 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   if (render_points_.size() > 500) draw_list->Flags &= ~ImDrawListFlags_AntiAliasedLines;
   draw_list->AddPolyline(pts.data(), (int)pts.size(), color_, ImDrawFlags_None, 1.0f);
 
-  // QPen(color, 3) points
+  // QPen(color, 3) points: a 3px SquareCap pen draws a 3x3 square
+  auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color_); };
   if (draw_individual_points_) {
-    for (const auto &p : pts) draw_list->AddCircleFilled(p, 1.5f, color_);
+    for (const auto &p : pts) draw_point(p);
   } else {
-    draw_list->AddCircleFilled(pts.back(), 1.5f, color_);
+    draw_point(pts.back());
   }
   draw_list->Flags = backup_flags;
 }

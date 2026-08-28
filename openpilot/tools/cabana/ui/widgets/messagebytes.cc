@@ -38,7 +38,10 @@ void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool s
 
   // the table already applies the cell padding: rect is the item rect
   const ImRect item_rect = rect;
-  const ImU32 highlighted_color = ImGui::GetColorU32(ImGuiCol_Text);  // no separate HighlightedText in imgui
+  // no separate HighlightedText in imgui; inactive rows fade it (alpha 100)
+  ImVec4 highlighted = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+  if (inactive) highlighted.w = 100 / 255.0f;
+  const ImU32 highlighted_color = ImGui::GetColorU32(highlighted);
   const ImU32 text_color = ImGui::GetColorU32(inactive ? ImGuiCol_TextDisabled : ImGuiCol_Text);
   if (!bytes) {
     ImGui::PushStyleColor(ImGuiCol_Text, selected ? highlighted_color : text_color);

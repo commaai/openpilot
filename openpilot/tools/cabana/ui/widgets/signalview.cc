@@ -333,6 +333,19 @@ SignalItemDelegate::SignalItemDelegate() {
   name_validator = nameValidator;
   node_validator = nodeValidator;
   double_validator = doubleValidator;
+  // updateEditorGeometry runs on the first paint; seed the size of the [plot][remove] widget (two 22px
+  // ToolButtons + PM_ToolBarItemSpacing) so the first updateState() calls already leave room for the sparklines
+  button_size = ImVec2(22 * 2 + TOOLBAR_ITEM_SPACING, 22);
+
+  // the sig pointers die with the signal
+  connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) {
+    if (desc_sig_ == sig) desc_sig_ = nullptr;
+    if (editing_item_ && editing_item_->sig == sig) editing_item_ = nullptr;
+  }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() {
+    desc_sig_ = nullptr;
+    editing_item_ = nullptr;
+  }));
 }
 
 float SignalItemDelegate::textWidth(const std::string &text, float font_size) {
@@ -445,12 +458,12 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     if (ImGui::IsItemActivated()) editing_item_ = item;
     if (editing_item_ == item) edit_text_ = text;
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-      // the QValidator would have rejected the text before the commit
+      // QLineEdit only commits when the validator reports Acceptable
       ValidState state = ValidState::Acceptable;
       if (item->type == SignalModel::Item::Name) state = validateName(edit_text_);
       else if (item->type == SignalModel::Item::Node) state = validateNodes(edit_text_);
       else state = validateDouble(edit_text_);
-      if (state != ValidState::Invalid) setModelData(item, model, edit_text_);
+      if (state == ValidState::Acceptable) setModelData(item, model, edit_text_);
       editing_item_ = nullptr;
     } else if (ImGui::IsItemDeactivated()) {
       editing_item_ = nullptr;
@@ -470,7 +483,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
       items.emplace_back(signalTypeToString(cabana::Signal::Type::Multiplexed), (int)cabana::Signal::Type::Multiplexed);
     }
     std::vector<const char *> names;
-    int current = 0;
+    int current = -1;  // QComboBox::currentIndex() is -1 when the current type is not an item (Multiplexor)
     for (int i = 0; i < items.size(); ++i) {
       names.push_back(items[i].first.c_str());
       if (items[i].second == (int)item->sig->type) current = i;
@@ -505,7 +518,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
 }
 
 void SignalItemDelegate::setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value) const {
-  model->setData(item, value);
+  pending_commit = [item, model, value]() { model->setData(item, value); };
 }
 
 void SignalItemDelegate::drawValueDescriptionDlg(SignalModel *model) {
@@ -547,6 +560,8 @@ SignalView::SignalView(ChartsWidget *charts) : charts(charts) {
   connections_.push_back(model->rowsChanged.connect([this]() { rowsChanged(); }));
   connections_.push_back(dbc()->signalAdded.connect([this](MessageId id, const cabana::Signal *sig) { handleSignalAdded(id, sig); }));
   connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { handleSignalUpdated(sig); }));
+  connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { handleSignalRemoved(sig); }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() { handleSignalRemoved(nullptr); }));
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *msgs, bool) { updateState(msgs); }));
 }
 
@@ -625,6 +640,12 @@ void SignalView::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
 void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = model->signalRow(sig); row != -1)
     updateState();
+}
+
+void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
+  if (!sig || current_sig_ == sig) current_sig_ = nullptr;
+  if (!sig || scroll_to_sig_ == sig) scroll_to_sig_ = nullptr;
+  if (!sig || hovered_sig_ == sig) hovered_sig_ = nullptr;
 }
 
 std::pair<int, int> SignalView::visibleSignalRange() {
@@ -713,6 +734,8 @@ void SignalView::draw() {
   // tree view
   drawTree();
   delegate->drawValueDescriptionDlg(model.get());
+  // model changes run after the tree is drawn: dbc()->signalUpdated/signalRemoved reorder or delete the rows
+  if (delegate->pending_commit) std::exchange(delegate->pending_commit, nullptr)();
   if (pending_action_) std::exchange(pending_action_, nullptr)();
 
   ImGui::EndChild();
@@ -810,7 +833,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width, row_max.y));
   delegate->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
   if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
-      ImGui::IsWindowHovered() && ImGui::BeginTooltip()) {
+      ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && ImGui::BeginTooltip()) {
     ImGui::TextUnformatted(stripHtml(model->toolTip(item, 0)).c_str());
     ImGui::EndTooltip();
   }
@@ -825,7 +848,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   } else if (flags1 & SignalModel::ItemIsUserCheckable) {
     bool checked = model->checkState(item);
     ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
-    if (ImGui::Checkbox("##check", &checked)) model->setData(item, checked);
+    if (ImGui::Checkbox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
   } else if (flags1 & SignalModel::ItemIsEditable) {
     ImGui::SetCursorScreenPos(rect1.Min);
     ImGui::SetNextItemWidth(rect1.GetWidth());
@@ -885,7 +908,8 @@ bool ValueDescriptionDlg::draw() {
   ImGui::SetNextWindowSize(ImVec2(500.0f, 0.0f), ImGuiCond_Appearing);  // setMinimumWidth(500)
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   bool open = true;
-  if (!ImGui::BeginPopupModal(popup_id.c_str(), &open)) return false;
+  // not drawn while the dock is collapsed or another modal is on top; only closed once the popup is gone
+  if (!ImGui::BeginPopupModal(popup_id.c_str(), &open)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
   // toolbar

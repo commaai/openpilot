@@ -4,7 +4,9 @@
 #include <system_error>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
+#include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/imgui_util.h"
 
 namespace fs = std::filesystem;
@@ -17,7 +19,6 @@ enum class Mode { OpenFile, SaveFile, Directory };
 
 struct State {
   bool active = false;
-  bool open = false;
   Mode mode = Mode::OpenFile;
   std::string title;
   std::string extension;
@@ -111,10 +112,8 @@ void draw() {
   State &s = g_state;
   if (!s.active) return;
   const std::string popup_id = s.title + "###FileDialog";
-  if (!s.open) {
-    ImGui::OpenPopup(popup_id.c_str());
-    s.open = true;
-  }
+  // reopen if imgui closed the popup underneath us (another level-0 popup, host window change)
+  if (!ImGui::IsPopupOpen(popup_id.c_str())) ImGui::OpenPopup(popup_id.c_str());
   ImGui::SetNextWindowSize(ImVec2(640.0f, 480.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   if (!ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) return;
@@ -131,7 +130,7 @@ void draw() {
     const auto &entry = s.entries[i];
     const bool is_dir = entry.is_directory(dir_ec);
     const std::string name = entry.path().filename().string();
-    const std::string label = (is_dir ? std::string(u8"  ") : std::string(u8"  ")) + name;
+    const std::string label = (is_dir ? std::string(icon::FOLDER) : std::string(icon::FILE_EARMARK)) + "  " + name;
     ImGui::PushID(static_cast<int>(i));
     const bool selected = !is_dir && name == s.filename;
     if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
@@ -168,7 +167,8 @@ void draw() {
   const char *accept_label = s.mode == Mode::SaveFile ? "Save" : (s.mode == Mode::Directory ? "Choose" : "Open");
   if (ImGui::Button(accept_label, ImVec2(80.0f, 0.0f))) ok = true;
   ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) cancel = true;
+  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) cancel = true;
+  if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) cancel = true;
 
   fs::path result;
   if (ok) {

@@ -70,8 +70,14 @@ void CameraWidget::stopVipcThread() {
   }
 }
 
+void CameraWidget::setVisible(bool visible) {
+  if (visible == visible_) return;
+  visible_ = visible;
+  visible ? showEvent() : hideEvent();
+}
+
 void CameraWidget::draw(const ImVec2 &size) {
-  showEvent();
+  setVisible(true);
   ImGui::InvisibleButton("##camera", ImVec2(std::max(1.0f, size.x), std::max(1.0f, size.y)),
                          ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
   rect_ = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());

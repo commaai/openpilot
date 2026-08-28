@@ -131,6 +131,8 @@ public:
   float rowHeight() const;
   // draws the editor for `item` at the cursor; commits through setModelData (QStyledItemDelegate commit on focus out)
   void createEditor(SignalModel::Item *item, SignalModel *model);
+  // queues the commit in pending_commit: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders
+  // the rows, so the model is only changed after the tree is drawn (see SignalView::draw)
   void setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value) const;
   void drawValueDescriptionDlg(SignalModel *model);  // continuation of the ValueDescriptionDlg exec() in createEditor
   static float textWidth(const std::string &text, float font_size = 0);
@@ -140,12 +142,14 @@ public:
   const float minmax_font = 10.0f;  // QFont pixelSize 10
   const int color_label_width = 18;
   mutable ImVec2 button_size = {};
+  mutable std::function<void()> pending_commit;
 
 private:
   SignalModel::Item *editing_item_ = nullptr;  // the open QLineEdit editor
   std::string edit_text_;
   std::unique_ptr<ValueDescriptionDlg> desc_dlg_;
   const cabana::Signal *desc_sig_ = nullptr;
+  Connections connections_;
 };
 
 class SignalView {
@@ -170,6 +174,7 @@ private:
   void setSparklineRange(int value);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
+  void handleSignalRemoved(const cabana::Signal *sig);  // drops the row pointers to a removed signal (nullptr: all)
   void updateState(const std::set<MessageId> *msgs = nullptr);
   std::pair<int, int> visibleSignalRange();  // top-level rows, -1 when invalid
 

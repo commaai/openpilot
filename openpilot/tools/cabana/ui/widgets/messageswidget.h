@@ -91,8 +91,10 @@ protected:
   MessageBytesDelegate *delegate_ = nullptr;
   int current_row_ = -1;
   bool scroll_to_current_ = false;
-  int bytes_section_bytes_ = 8;  // the DATA section width is applied inside the table
-  bool bytes_section_dirty_ = true;
+  int bytes_section_bytes_ = 8;  // the minimum width of the stretched DATA section
+  float fixed_columns_width_ = 0;  // width of everything but the stretched DATA section
+  bool has_scrollbar_y_ = false;
+  int visible_rows_ = 1;
   Connections connections_;
 };
 

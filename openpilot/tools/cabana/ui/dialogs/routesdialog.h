@@ -8,10 +8,10 @@
 
 #include "tools/cabana/routes.h"
 
-// "Remote routes" browser. on_done gets the selected route name, or "" on cancel.
+// "Remote routes" browser. on_done gets accepted=true with the selected route name ("" if none), accepted=false on cancel.
 class RoutesDialog {
 public:
-  void open(std::function<void(const std::string &route)> on_done);
+  void open(std::function<void(bool accepted, const std::string &route)> on_done);
   void draw();
   bool isOpen() const { return open_; }
 
@@ -35,7 +35,7 @@ private:
   std::vector<RouteItem> routes_;
   int route_index_ = -1;
   std::string empty_text_ = "No items";
-  std::function<void(const std::string &)> on_done_;
+  std::function<void(bool, const std::string &)> on_done_;
   std::atomic<int> fetch_id_{0};
   // expires on destruction; guards main-thread callbacks from detached worker threads
   std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);

@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iterator>
+#include <utility>
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
@@ -104,6 +105,7 @@ std::string BinaryView::whatsThis() const {
 void BinaryView::addShortcuts() {
   const ImGuiIO &io = ImGui::GetIO();
   if (io.WantTextInput || io.KeyCtrl || io.KeySuper) return;
+  if (ImGui::GetTopMostPopupModal() != nullptr) return;  // Qt::WindowShortcut is blocked by a modal dialog
 
   // Delete (x, backspace, delete)
   if (ImGui::IsKeyPressed(ImGuiKey_X, false) || ImGui::IsKeyPressed(ImGuiKey_Backspace, false) || ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
@@ -197,8 +199,8 @@ void BinaryView::highlightPosition(const ImVec2 &pos) {
 
 void BinaryView::mouseMoveEvent(const ImVec2 &pos) {
   highlightPosition(last_mouse_pos = pos);
-  // QAbstractItemView::mouseMoveEvent: drag selecting while the left button is down
-  if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) setSelection();
+  // QAbstractItemView::mouseMoveEvent: drag selecting while the left button is down; flags() makes the hex column unselectable
+  if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && model->isSelectable(indexAt(pos))) setSelection();
 }
 
 void BinaryView::mouseReleaseEvent(const ImVec2 &pos) {
@@ -321,15 +323,14 @@ void BinaryView::draw() {
   const ImVec2 mouse = ImGui::GetMousePos();
   const bool hovered = ImGui::IsItemHovered();
   const bool active = ImGui::IsItemActive();
+  const bool under_mouse = (hovered || active) && ImGui::IsMouseHoveringRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), false);
   if (hovered || active) {
-    under_mouse_ = hovered;
     if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) mousePressEvent(mouse);
     const ImVec2 delta = ImGui::GetIO().MouseDelta;
     if (delta.x != 0.0f || delta.y != 0.0f) mouseMoveEvent(mouse);
-  } else if (under_mouse_) {
-    under_mouse_ = false;
-    leaveEvent();
   }
+  // leaveEvent: the mouse left the widget rect, also while dragging
+  if (std::exchange(under_mouse_, under_mouse) && !under_mouse) leaveEvent();
   if (ImGui::IsItemDeactivated()) mouseReleaseEvent(mouse);
 
   // Qt::ToolTipRole

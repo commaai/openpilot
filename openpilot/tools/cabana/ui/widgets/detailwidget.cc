@@ -153,7 +153,7 @@ void DetailWidget::drawToolBar() {
   ImGui::BeginDisabled(!action_remove_msg_enabled);
   if (ImGui::Button(icon::X_LG)) removeMsg();
   ImGui::EndDisabled();
-  ImGui::SetItemTooltip("Remove Message");
+  if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Remove Message");
 }
 
 void DetailWidget::showTabBarContextMenu(int index) {
@@ -311,12 +311,14 @@ void DetailWidget::drawTabWidget() {
     const float max_height = std::max(avail - 6.0f - ImGui::GetStyle().ItemSpacing.y * 2 - 1.0f, 1.0f);
     const float height = std::clamp(std::max(splitter_pos, min_height), 1.0f, max_height);
     ImGui::BeginChild("binary_view", ImVec2(0, height));
+    binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     binary_view->draw();
     ImGui::EndChild();
     ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, 6.0f));
     if (ImGui::IsItemActive()) splitter_pos = std::clamp(height + ImGui::GetIO().MouseDelta.y, min_height, max_height);
     if (ImGui::IsItemHovered()) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
     ImGui::BeginChild("signal_view", ImVec2(0, 0));
+    signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view->draw();
     ImGui::EndChild();
   } else {
@@ -325,6 +327,7 @@ void DetailWidget::drawTabWidget() {
   ImGui::EndChild();
 
   if (ImGui::BeginTabBar("tab_widget_tabs")) {
+    // the Qt tabs were "&Msg" and "&Logs"; the Alt+M/Alt+L mnemonics are not ported
     const std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Msg", std::string(icon::STOPWATCH) + " Logs"};
     for (int i = 0; i < 2; ++i) {
       if (ImGui::BeginTabItem(labels[i].c_str())) {
@@ -355,7 +358,7 @@ void DetailWidget::draw() {
 
   if (edit_dlg_ && !edit_dlg_->draw()) {
     if (edit_dlg_->accepted()) {
-      UndoStack::instance()->push(new EditMsgCommand(msg_id, trimmed(edit_dlg_->name_edit), edit_dlg_->size_spin,
+      UndoStack::instance()->push(new EditMsgCommand(edit_dlg_->msg_id, trimmed(edit_dlg_->name_edit), edit_dlg_->size_spin,
                                                      trimmed(edit_dlg_->node), trimmed(edit_dlg_->comment_edit)));
     }
     edit_dlg_.reset();
@@ -364,6 +367,16 @@ void DetailWidget::draw() {
 
 std::string DetailWidget::whatsThis() const {
   return binary_view->whatsThis();
+}
+
+// HelpOverlay: the whatsThis text and last drawn rect of the binary view and the signal view
+std::vector<std::pair<std::string, ImRect>> DetailWidget::helpRects() const {
+  std::vector<std::pair<std::string, ImRect>> rects;
+  if (tab_widget_index == 0) {
+    rects.emplace_back(binary_view->whatsThis(), binary_view_rect_);
+    rects.emplace_back(signal_view->whatsThis(), signal_view_rect_);
+  }
+  return rects;
 }
 
 // EditMessageDialog
@@ -470,6 +483,7 @@ DetailWidget* CenterWidget::ensureDetailWidget() {
 
 void CenterWidget::clear() {
   detail_widget.reset();
+  charts_ = nullptr;  // MainWindow recreates the ChartsWidget after startStream
   if (!welcome_widget) {
     welcome_widget = true;
   }

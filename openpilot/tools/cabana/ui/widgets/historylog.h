@@ -79,7 +79,10 @@ public:
 class LogsWidget {
 public:
   LogsWidget();
-  void setMessage(const MessageId &message_id) { model.setMessage(message_id); }
+  void setMessage(const MessageId &message_id) {
+    selected_row = -1;
+    model.setMessage(message_id);
+  }
   void updateState() { model.updateState(); }
   void showEvent() { model.updateState(true); }  // call when the Logs tab becomes visible
   void draw();

@@ -78,11 +78,11 @@ std::string FindSignalModel::data(int row, int column) const {
   return {};
 }
 
-void FindSignalModel::search(std::function<bool(double)> cmp) {
+void FindSignalModel::search(std::function<bool(double)> cmp, const std::atomic<bool> &cancel) {
   std::mutex lock;
   const auto prev_sigs = !histories.empty() ? histories.back() : initial_signals;
-  filtered_signals.clear();
-  filtered_signals.reserve(prev_sigs.size());
+  search_results.clear();
+  search_results.reserve(prev_sigs.size());
 
   unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
   size_t chunk = (prev_sigs.size() + num_threads - 1) / num_threads;
@@ -91,7 +91,7 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
     size_t start = t * chunk;
     size_t end = std::min(start + chunk, (size_t)prev_sigs.size());
     threads.emplace_back([&, start, end]() {
-      for (size_t i = start; i < end; ++i) {
+      for (size_t i = start; i < end && !cancel; ++i) {
         const auto &s = prev_sigs[i];
         const auto &events = can->events(s.id);
         auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
@@ -107,13 +107,17 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
           snprintf(buf, sizeof(buf), "(%.3f, %g)", can->toSeconds((*it)->mono_time), get_raw_value((*it)->dat, (*it)->size, s.sig));
           values.push_back(buf);
           std::lock_guard lk(lock);
-          filtered_signals.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
+          search_results.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
         }
       }
     });
   }
   for (auto &th : threads) th.join();
+}
 
+void FindSignalModel::applySearch() {
+  filtered_signals = std::move(search_results);
+  search_results.clear();
   histories.push_back(filtered_signals);
 }
 
@@ -141,6 +145,7 @@ FindSignalDlg::FindSignalDlg() {
 
 FindSignalDlg::~FindSignalDlg() {
   *alive_ = false;
+  cancel_search_ = true;
   if (search_thread_.joinable()) search_thread_.join();
 }
 
@@ -281,20 +286,18 @@ void FindSignalDlg::drawTable() {
     ImGui::TableSetupColumn(model->headerData(c, true).c_str(), column_flags, c == 0 ? 80.0f : 120.0f);
   }
   ImGui::TableHeadersRow();
-  if (!searching_) {
-    for (int row = 0; row < model->rowCount(); ++row) {
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::PushID(row);
-      if (ImGui::Selectable(model->headerData(row, false).c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
-        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) openMessage(model->filtered_signals[row].id);
-      }
-      customMenuRequested(row);
-      ImGui::PopID();
-      for (int c = 0; c < model->columnCount(); ++c) {
-        ImGui::TableSetColumnIndex(c + 1);
-        ImGui::TextUnformatted(model->data(row, c).c_str());
-      }
+  for (int row = 0; row < model->rowCount(); ++row) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::PushID(row);
+    if (ImGui::Selectable(model->headerData(row, false).c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
+      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) openMessage(model->filtered_signals[row].id);
+    }
+    customMenuRequested(row);
+    ImGui::PopID();
+    for (int c = 0; c < model->columnCount(); ++c) {
+      ImGui::TableSetColumnIndex(c + 1);
+      ImGui::TextUnformatted(model->data(row, c).c_str());
     }
   }
   ImGui::EndTable();
@@ -322,14 +325,16 @@ void FindSignalDlg::search() {
   stats_label_visible = false;
   search_btn_text = "Finding ....";
   // Qt runs model->search() from QTimer::singleShot(0) on the GUI thread (it joins its worker threads);
-  // here it runs off the render thread and posts modelReset back
+  // here it runs off the render thread into model->search_results and applies them with modelReset
   searching_ = true;
   if (search_thread_.joinable()) search_thread_.join();
+  cancel_search_ = false;
   search_thread_ = std::thread([this, cmp, alive = std::weak_ptr<bool>(alive_)]() {
-    model->search(cmp);
+    model->search(cmp, cancel_search_);
     utils::runOnMainThread([this, alive]() {
       if (auto a = alive.lock(); a && *a) {
         searching_ = false;
+        model->applySearch();
         modelReset();
       }
     });

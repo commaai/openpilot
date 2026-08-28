@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
 #include "tools/cabana/utils/util.h"
 
@@ -11,7 +12,7 @@ const char *PERIOD_NAMES[] = {"Last week", "Last 2 weeks", "Last month", "Last 6
 const int PERIOD_DAYS[] = {7, 14, 30, 180, -1};
 }  // namespace
 
-void RoutesDialog::open(std::function<void(const std::string &)> on_done) {
+void RoutesDialog::open(std::function<void(bool, const std::string &)> on_done) {
   on_done_ = std::move(on_done);
   open_ = true;
   show_ = false;
@@ -78,7 +79,7 @@ void RoutesDialog::finish(bool accepted) {
   alive_.reset();
   open_ = false;
   auto on_done = std::move(on_done_);
-  if (on_done) on_done(accepted && route_index_ >= 0 ? routes_[route_index_].name : "");
+  if (on_done) on_done(accepted, accepted && route_index_ >= 0 ? routes_[route_index_].name : "");
 }
 
 void RoutesDialog::draw() {
@@ -91,16 +92,19 @@ void RoutesDialog::draw() {
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   if (!ImGui::BeginPopupModal("Remote routes", nullptr, ImGuiWindowFlags_NoResize)) return;
 
-  ImGui::SetNextItemWidth(-90.0f);
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Device");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(-1.0f);
   if (!devices_loaded_) {
     int idx = 0;
-    ImGui::Combo("Device", &idx, "Loading...\0", 1);
+    ImGui::Combo("##device", &idx, "Loading...\0", 1);
   } else {
     std::string items;
     for (const auto &d : devices_) items += d + '\0';
-    if (ImGui::Combo("Device", &device_index_, items.c_str())) fetchRoutes();
+    if (ImGui::Combo("##device", &device_index_, items.c_str())) fetchRoutes();
   }
-  ImGui::SetNextItemWidth(-90.0f);
+  ImGui::SetNextItemWidth(-1.0f);
   if (ImGui::Combo("##period", &period_index_, PERIOD_NAMES, IM_ARRAYSIZE(PERIOD_NAMES))) fetchRoutes();
 
   bool accepted = false, rejected = false;
@@ -124,7 +128,8 @@ void RoutesDialog::draw() {
 
   if (ImGui::Button("OK", ImVec2(80.0f, 0.0f))) accepted = true;
   ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) rejected = true;
+  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) rejected = true;
+  if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) rejected = true;
   MessageBox::draw();
   if (accepted || rejected || !open_) ImGui::CloseCurrentPopup();
   ImGui::EndPopup();

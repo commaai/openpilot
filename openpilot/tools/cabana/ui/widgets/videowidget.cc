@@ -249,9 +249,11 @@ void VideoWidget::drawSpeedDropdown() {
   const ImGuiStyle &style = ImGui::GetStyle();
   pushBoldFont();
   const float min_width = ImGui::CalcTextSize("0.05x  ").x + style.FramePadding.x * 2 + MENU_BUTTON_INDICATOR;
-  const bool open = ImGui::Button((speed_text_ + "###speed_btn").c_str(), ImVec2(min_width, 0));
+  // QToolButton::InstantPopup opens on press; a press while the menu is open toggles it closed (imgui closes the
+  // popup at the end of the frame of a click outside it, so only open when it is not already open)
+  const bool open = ImGui::ButtonEx((speed_text_ + "###speed_btn").c_str(), ImVec2(min_width, 0), ImGuiButtonFlags_PressedOnClick);
   popBoldFont();
-  if (open) ImGui::OpenPopup("speed_menu");  // QToolButton::InstantPopup
+  if (open && !ImGui::IsPopupOpen("speed_menu")) ImGui::OpenPopup("speed_menu");
   ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y));
   if (ImGui::BeginPopup("speed_menu")) {
     for (int i = 0; i < (int)std::size(speeds); ++i) {
@@ -356,6 +358,10 @@ void VideoWidget::updateState() {
 void VideoWidget::updatePlayBtnState() {
   play_icon_ = can->isPaused() ? icon::PLAY : icon::PAUSE;
   play_tooltip_ = can->isPaused() ? "Play" : "Pause";
+}
+
+void VideoWidget::setVisible(bool visible) {
+  if (cam_widget) cam_widget->setVisible(visible);
 }
 
 void VideoWidget::showThumbnail(double seconds) {
@@ -466,7 +472,8 @@ void Slider::draw() {
   if (ImGui::IsItemActivated()) mousePressEvent();
   if (slider_down_) {
     if (ImGui::IsItemActive()) {
-      setValue(minimum() + (int)(((maximum() - minimum()) * (ImGui::GetMousePos().x - rect_.Min.x)) / width()));
+      // QSlider::mouseMoveEvent: pixelPosToRangeValue(pos - clickOffset), the handle keeps its grab offset
+      setValue(pixelPosToRangeValue(ImGui::GetMousePos().x - click_offset_));
     } else {
       slider_down_ = false;
       sliderReleased();
@@ -480,6 +487,13 @@ ImRect Slider::handleRect() const {
   const int range = std::max(1, maximum() - minimum());
   const float x = rect_.Min.x + (float)(value() - minimum()) / range * std::max(0.0f, width() - handle_width);
   return ImRect(ImVec2(x, rect_.Min.y + 2), ImVec2(x + handle_width, rect_.Max.y - 2));
+}
+
+// QSliderPrivate::pixelPosToRangeValue: handle left edge (window x) -> value over the groove minus the handle width
+int Slider::pixelPosToRangeValue(float x) const {
+  const float handle_width = ImGui::GetStyle().GrabMinSize;
+  const float span = std::max(1.0f, width() - handle_width);
+  return minimum() + (int)std::lround((maximum() - minimum()) * std::clamp((x - rect_.Min.x) / span, 0.0f, 1.0f));
 }
 
 void Slider::paintEvent() {
@@ -530,14 +544,16 @@ void Slider::paintEvent() {
   if (thumbnail_dispaly_time >= 0) {
     float left = rect_.Min.x + (float)((thumbnail_dispaly_time - min) * width() / span) - 1;
     ImRect rc(ImVec2(left, rect_.Min.y + 1), ImVec2(left + 2, rect_.Max.y - 1));
-    p->AddRectFilled(rc.Min, rc.Max, ImGui::GetColorU32(ImGuiCol_CheckMark), 1.5f);  // palette().highlight()
+    p->AddRectFilled(rc.Min, rc.Max, ImGui::GetColorU32(ImGuiCol_Header), 1.5f);  // palette().highlight(): ImGuiCol_Header is the theme highlight (style.cc), as in chart.cc
   }
 }
 
 void Slider::mousePressEvent() {
-  // QSlider::mousePressEvent: a press on the handle starts a drag (isSliderDown)
-  if (handleRect().Contains(ImGui::GetMousePos())) {
+  // QSlider::mousePressEvent: a press on the handle starts a drag (isSliderDown) and remembers the grab offset
+  const ImRect handle_rect = handleRect();
+  if (handle_rect.Contains(ImGui::GetMousePos())) {
     slider_down_ = true;
+    click_offset_ = ImGui::GetMousePos().x - handle_rect.Min.x;
     return;
   }
   if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !isSliderDown()) {

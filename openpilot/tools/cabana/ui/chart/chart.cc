@@ -213,9 +213,9 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
     }
 
     // add top space for the legend and signal values
-    int adjust_top = (y + row_height) - rect.Min.y;
+    int adjust_top = (y + row_height) - rect.Min.y - margins.y;
     adjust_top = std::max<int>(adjust_top, manage_btn_rect.Max.y - rect.Min.y + margins.y);
-    header_bottom = rect.Min.y + adjust_top;
+    header_bottom = rect.Min.y + adjust_top + margins.y;
     // the x-axis label space and the left alignment (align_to) are handled by implot (BeginAlignedPlots)
     resetChartCache();
   }
@@ -371,11 +371,12 @@ double ChartView::niceNumber(double x, bool ceiling) {
 }
 
 void ChartView::contextMenuEvent() {
-  // Qt opens the menu on right press; the release never reaches mouseReleaseEvent's "undo zoom" branch
-  if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
+  // like Qt, the menu opens on right press; a right release with no menu open reaches mouseReleaseEvent
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
       !ImGui::IsAnyItemActive()) {
     ImGui::OpenPopup("context_menu");
   }
+  context_menu_id = ImGui::GetID("context_menu");
   if (ImGui::BeginPopup("context_menu")) {
     drawMenuActions();
     ImGui::Separator();
@@ -388,11 +389,16 @@ void ChartView::contextMenuEvent() {
 }
 
 void ChartView::mousePressEvent() {
-  if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left) || !plot_hovered) return;
   const ImVec2 pos = ImGui::GetMousePos();
+  // a press on the child buttons (close/manage) does not reach the widget in Qt
+  const bool widget_pressed = ImGui::IsMouseClicked(ImGuiMouseButton_Left) && rect.Contains(pos) &&
+                              ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
+                              !close_btn_rect.Contains(pos) && !manage_btn_rect.Contains(pos);
+  if (!widget_pressed) return;
   press_pos = pos;
-  // the move icon press is handled by the grip item (startChartDrag)
-  if (ImGui::GetIO().KeyShift) {
+  if (move_icon_rect.Contains(pos)) {
+    // the move icon press is handled by the grip item (startChartDrag)
+  } else if (ImGui::GetIO().KeyShift) {
     // Save current playback state when scrubbing
     resume_after_scrub = !can->isPaused();
     if (resume_after_scrub) {
@@ -435,8 +441,10 @@ void ChartView::mouseMoveEvent() {
 }
 
 void ChartView::mouseReleaseEvent() {
-  if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left)) return;
-  if (mouse_mode == MouseMode::Rubber) {
+  const bool left_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+  const bool right_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right) && rect.Contains(ImGui::GetMousePos());
+  if (!left_released && !right_released) return;
+  if (left_released && mouse_mode == MouseMode::Rubber) {
     mouse_mode = MouseMode::None;
     // Prevent zooming/seeking past the end of the route
     double min = std::clamp(secondsAtPoint(rubber_rect.Min), can->minSeconds(), can->maxSeconds());
@@ -448,8 +456,11 @@ void ChartView::mouseReleaseEvent() {
       charts_widget->zoom_undo_stack.push(new ZoomCommand({min, max}));
     }
     rubber_rect = ImRect();
+  } else if (left_released && mouse_mode == MouseMode::None && sigs.size() > 1) {
+    // toggling series visibility by clicking a legend entry is handled by the legend items in drawLegend
+  } else if (right_released && !ImGui::IsPopupOpen(context_menu_id, ImGuiPopupFlags_None)) {
+    charts_widget->zoom_undo_stack.undo();
   }
-  // toggling series visibility by clicking a legend entry is handled by the legend items in drawLegend
 
   // Resume playback if we were scrubbing
   if (mouse_mode == MouseMode::Scrub) {
@@ -621,7 +632,8 @@ void ChartView::drawLegend() {
     // toggle series visibility by clicking its legend entry (mouseReleaseEvent)
     ImGui::PushID(i);
     ImGui::SetCursorScreenPos(r.Min);
-    if (ImGui::InvisibleButton("legend", ImVec2(std::max(r.GetWidth(), 1.0f), std::max(r.GetHeight(), 1.0f))) && sigs.size() > 1) {
+    if (ImGui::InvisibleButton("legend", ImVec2(std::max(r.GetWidth(), 1.0f), std::max(r.GetHeight(), 1.0f))) &&
+        mouse_mode == MouseMode::None && sigs.size() > 1) {
       sigs[i].visible = !sigs[i].visible;
       updateAxisY();
       updateTitle();
@@ -731,9 +743,11 @@ void ChartView::drawRubberBandTimeRange() {
   painter->AddRectFilled(rubber_rect.Min, rubber_rect.Max, fill);
   painter->AddRect(rubber_rect.Min, rubber_rect.Max, highlight);
 
-  // time labels at the bottom corners
+  // time labels at the bottom corners (below the plot, so clip to the widget instead of the plot)
   const ImU32 white = IM_COL32_WHITE;
   const ImU32 gray = IM_COL32(0xa0, 0xa0, 0xa4, 0xff);
+  painter = ImGui::GetWindowDrawList();
+  painter->PushClipRect(rect.Min, rect.Max);
   for (const auto &pt : {rubber_rect.GetBL(), rubber_rect.GetBR()}) {
     std::string sec = formatNumber(secondsAtPoint(pt), 2);
     ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, AXIS_X_TOP_MARGIN * 2);
@@ -741,6 +755,7 @@ void ChartView::drawRubberBandTimeRange() {
     painter->AddRectFilled(top_left, top_left + size, gray);
     painter->AddText(top_left + ImVec2(6, AXIS_X_TOP_MARGIN), white, sec.c_str());
   }
+  painter->PopClipRect();
 }
 
 void ChartView::drawTimeline() {

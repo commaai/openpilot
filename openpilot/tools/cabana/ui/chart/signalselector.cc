@@ -42,7 +42,7 @@ bool SignalSelector::draw() {
   // left column
   ImGui::BeginGroup();
   ImGui::TextUnformatted("Available Signals");
-  // editable combo with NoInsert: the text filters the message list
+  // the editable QComboBox (NoInsert) with its completer became a combo popup with a filter box
   const char *preview = msgs_combo_index_ >= 0 ? msgs_combo[msgs_combo_index_].text.c_str() : "Select a msg...";
   ImGui::SetNextItemWidth(column_w);
   if (ImGui::BeginCombo("##msgs_combo", preview)) {
