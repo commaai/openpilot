@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   if (args.msgq) {
     stream = new DeviceStream();
   } else if (!args.zmq.empty()) {
-    stream = new DeviceStream(QString::fromStdString(args.zmq));
+    stream = new DeviceStream(args.zmq);
   } else if (args.panda || !args.panda_serial.empty()) {
     try {
       stream = new PandaStream({.serial = args.panda_serial});
@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) {
     }
     if (!route.isEmpty()) {
       auto replay_stream = std::make_unique<ReplayStream>();
+      Connection err = replay_stream->error.connect([](const std::string &msg) { fprintf(stderr, "%s\n", msg.c_str()); });
       if (!replay_stream->loadRoute(route.toStdString(), args.data_dir, replay_flags, args.auto_source)) {
         return 0;
       }

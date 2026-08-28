@@ -219,5 +219,6 @@ private:
 };
 
 int num_decimals(double num);
+std::filesystem::path executableDir();
 void initApp(int argc, char *argv[], bool disable_hidpi = true);
 QPixmap bootstrapPixmap(const QString &id);

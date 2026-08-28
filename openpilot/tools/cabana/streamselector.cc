@@ -63,6 +63,9 @@ AbstractStream *OpenReplayWidget::open() {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   } else {
     auto replay_stream = std::make_unique<ReplayStream>();
+    Connection err = replay_stream->error.connect([](const std::string &msg) {
+      QMessageBox::warning(nullptr, tr("Error"), QString::fromStdString(msg));
+    });
     uint32_t flags = REPLAY_FLAG_NONE;
     if (cameras[1]->isChecked()) flags |= REPLAY_FLAG_CABIN_CAMERA;
     if (cameras[2]->isChecked()) flags |= REPLAY_FLAG_WIDE_ROAD;
@@ -211,7 +214,7 @@ OpenDeviceWidget::OpenDeviceWidget(QWidget *parent) : AbstractOpenStreamWidget(p
 }
 
 AbstractStream *OpenDeviceWidget::open() {
-  QString ip = ip_address->text().isEmpty() ? "127.0.0.1" : ip_address->text();
+  std::string ip = ip_address->text().isEmpty() ? "127.0.0.1" : ip_address->text().toStdString();
   bool msgq = group->checkedId() == 0;
   return new DeviceStream(msgq ? "" : ip);
 }
