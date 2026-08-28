@@ -1,4 +1,4 @@
-#include "tools/cabana/streams/routes.h"
+#include "tools/cabana/routesdialog.h"
 
 #include <chrono>
 #include <ctime>
@@ -6,7 +6,6 @@
 #include <thread>
 #include <utility>
 
-#include <QApplication>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QListWidget>
@@ -14,6 +13,7 @@
 #include <QPainter>
 
 #include "json11/json11.hpp"
+#include "tools/cabana/utils/util.h"
 #include "tools/replay/py_downloader.h"
 
 namespace {
@@ -113,9 +113,9 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   // Fetch devices
   std::thread([this, alive = std::weak_ptr<bool>(alive_)]() {
     std::string result = PyDownloader::getDevices();
-    QMetaObject::invokeMethod(qApp, [this, alive, r = QString::fromStdString(result), response = checkApiResponse(result)]() {
+    utils::runOnMainThread([this, alive, r = QString::fromStdString(result), response = checkApiResponse(result)]() {
       if (!alive.expired()) parseDeviceList(r, response.first, response.second);
-    }, Qt::QueuedConnection);
+    });
   }).detach();
 }
 
@@ -156,9 +156,9 @@ void RoutesDialog::fetchRoutes() {
   int request_id = ++fetch_id_;
   std::thread([this, alive = std::weak_ptr<bool>(alive_), did, start_ms, end_ms, preserved, request_id]() {
     std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
-    QMetaObject::invokeMethod(qApp, [this, alive, r = QString::fromStdString(result), response = checkApiResponse(result), request_id]() {
+    utils::runOnMainThread([this, alive, r = QString::fromStdString(result), response = checkApiResponse(result), request_id]() {
       if (!alive.expired() && fetch_id_ == request_id) parseRouteList(r, response.first, response.second);
-    }, Qt::QueuedConnection);
+    });
   }).detach();
 }
 
