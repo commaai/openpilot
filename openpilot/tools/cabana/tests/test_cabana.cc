@@ -1,10 +1,13 @@
 
+#include <cstdlib>
+#include <ctime>
 #include <filesystem>
 #include <sstream>
 
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/utils/strings.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
@@ -164,11 +167,10 @@ void test_dbc_manager() {
   int files_changed = 0;
   int signals_added = 0;
   int masks_updated = 0;
-  manager.setCallbacks({
-    .signal_added = [&](MessageId, const cabana::Signal *) { ++signals_added; },
-    .file_changed = [&]() { ++files_changed; },
-    .mask_updated = [&]() { ++masks_updated; },
-  });
+  Connections connections;
+  connections.push_back(manager.signalAdded.connect([&](MessageId, const cabana::Signal *) { ++signals_added; }));
+  connections.push_back(manager.fileChanged.connect([&]() { ++files_changed; }));
+  connections.push_back(manager.maskUpdated.connect([&]() { ++masks_updated; }));
 
   std::string error;
   REQUIRE(manager.open(SOURCE_ALL, "test", "BO_ 160 message: 8 XXX\n", &error));
@@ -186,7 +188,62 @@ void test_dbc_manager() {
   REQUIRE(manager.msg({.source = 0, .address = 160})->sig("speed") != nullptr);
 }
 
+void test_format_seconds() {
+  REQUIRE(utils::formatSeconds(0) == "00:00");
+  REQUIRE(utils::formatSeconds(59.4) == "00:59");
+  REQUIRE(utils::formatSeconds(-1) == "00:00");
+  REQUIRE(utils::formatSeconds(61.234, true) == "01:01.234");
+  REQUIRE(utils::formatSeconds(3599.9) == "59:59");
+  REQUIRE(utils::formatSeconds(3601) == "01:00:01");
+  REQUIRE(utils::formatSeconds(3601.5, true) == "01:00:01.500");
+
+  const char *tz = getenv("TZ");
+  const bool had_tz = tz != nullptr;
+  const std::string saved_tz = had_tz ? tz : "";
+  setenv("TZ", "UTC", 1);
+  tzset();
+  REQUIRE(utils::formatSeconds(0, false, true) == "1970-01-01 00:00:00");
+  REQUIRE(utils::formatSeconds(1700000000.123, true, true) == "2023-11-14 22:13:20.123");
+  if (had_tz) {
+    setenv("TZ", saved_tz.c_str(), 1);
+  } else {
+    unsetenv("TZ");
+  }
+  tzset();
+}
+
+void test_to_hex() {
+  REQUIRE(utils::toHex({}) == "");
+  REQUIRE(utils::toHex({0x00, 0x0f, 0xab, 0xff}) == "000FABFF");
+  REQUIRE(utils::toHex({0x01, 0x02, 0x03}, ' ') == "01 02 03");
+
+  REQUIRE(utils::toHexString(0) == "0x00");
+  REQUIRE(utils::toHexString(0xf) == "0x0F");
+  REQUIRE(utils::toHexString(0x1ab) == "0x1AB");
+  REQUIRE(utils::toHexString(0x1fffffff) == "0x1FFFFFFF");
+}
+
+void test_signal_tooltip() {
+  cabana::Signal sig{};
+  sig.name = "speed";
+  sig.start_bit = 3;
+  sig.size = 12;
+  sig.msb = 14;
+  sig.lsb = 3;
+  sig.is_little_endian = true;
+  sig.is_signed = false;
+  REQUIRE(utils::signalToolTip(&sig) == R"(
+    speed<br /><span font-size:small">
+    Start Bit: 3 Size: 12<br />
+    MSB: 14 LSB: 3<br />
+    Little Endian: Y Signed: N</span>
+  )");
+}
+
 void test_cabana_core() {
+  test_format_seconds();
+  test_to_hex();
+  test_signal_tooltip();
   test_generate_dbc();
   test_comment_order();
   test_preserve_original_header();

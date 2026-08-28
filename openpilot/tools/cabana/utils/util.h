@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cmath>
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -20,8 +21,14 @@
 #include <QToolButton>
 #include <QValidator>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/utils/strings.h"
+
+// needed by QVariant::fromValue() in the Qt views; goes away with QVariant
+Q_DECLARE_METATYPE(MessageId)
+Q_DECLARE_METATYPE(ValueDescription)
 
 inline QColor toQColor(const CabanaColor &color) {
   return QColor(color.r, color.g, color.b, color.a);
@@ -132,6 +139,10 @@ public:
 
 namespace utils {
 
+bool isMainThread();
+// inline on the main thread, queued until drainMainThreadQueue() otherwise
+void runOnMainThread(std::function<void()> fn);
+void drainMainThreadQueue();
 QPixmap icon(const QString &id);
 std::string homePath();
 std::filesystem::path configPath();
@@ -139,21 +150,9 @@ bool getClipboardText(std::string *text);  // false if no clipboard tool is avai
 bool setClipboardText(const std::string &text);
 bool isDarkTheme();
 void setTheme(int theme);
-QString formatSeconds(double sec, bool include_milliseconds = false, bool absolute_time = false);
 inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text) {
   auto size = (r.size() - text.size()) / 2;
   p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
-}
-inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
-  static const char digits[] = "0123456789ABCDEF";
-  QString hex;
-  hex.reserve(dat.size() * (separator ? 3 : 2));
-  for (size_t i = 0; i < dat.size(); ++i) {
-    if (separator && i) hex += QLatin1Char(separator);
-    hex += QLatin1Char(digits[dat[i] >> 4]);
-    hex += QLatin1Char(digits[dat[i] & 0xf]);
-  }
-  return hex;
 }
 
 // boundary conversions for the remaining Qt byte-array based state APIs
@@ -175,7 +174,7 @@ public:
     const int metric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     setIconSize({metric, metric});
     theme = settings.theme;
-    connect(&settings, &Settings::changed, this, &ToolButton::updateIcon);
+    settings_connection_ = settings.changed.connect([this]() { updateIcon(); });
   }
   void setIcon(const QString &icon) {
     icon_str = icon;
@@ -184,6 +183,7 @@ public:
 
 private:
   void updateIcon() { if (std::exchange(theme, settings.theme) != theme) setIcon(icon_str); }
+  Connection settings_connection_;
   QString icon_str;
   int theme;
 };
@@ -214,7 +214,5 @@ private:
 };
 
 int num_decimals(double num);
-QString signalToolTip(const cabana::Signal *sig);
-inline QString toHexString(int value) { return QString("0x%1").arg(QString::number(value, 16).toUpper(), 2, '0'); }
 void initApp(int argc, char *argv[], bool disable_hidpi = true);
 QPixmap bootstrapPixmap(const QString &id);

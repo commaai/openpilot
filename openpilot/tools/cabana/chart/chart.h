@@ -126,5 +126,6 @@ private:
   double tooltip_x = -1;
   QFont signal_value_font;
   ChartsWidget *charts_widget;
+  Connections connections_;
   friend class ChartsWidget;
 };

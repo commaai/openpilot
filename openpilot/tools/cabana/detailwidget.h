@@ -57,6 +57,7 @@ private:
   SignalView *signal_view;
   ChartsWidget *charts;
   QSplitter *splitter;
+  Connections connections_;
 };
 
 class CenterWidget : public QWidget {

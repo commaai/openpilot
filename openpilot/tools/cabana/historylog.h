@@ -22,7 +22,7 @@ class HistoryLogModel : public QAbstractTableModel {
   Q_OBJECT
 
 public:
-  HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
+  HistoryLogModel(QObject *parent);
   void setMessage(const MessageId &message_id);
   void updateState(bool clear = false);
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
@@ -54,6 +54,7 @@ public:
   std::deque<Message> messages;
   std::vector<cabana::Signal *> sigs;
   bool hex_mode = false;
+  Connections connections_;
 };
 
 class LogsWidget : public QFrame {

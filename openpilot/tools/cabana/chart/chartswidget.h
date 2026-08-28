@@ -123,6 +123,7 @@ private:
   QTimer *align_timer;
   int current_theme = 0;
   bool value_tip_visible_ = false;
+  Connections connections_;
   friend class ChartView;
   friend class ChartsContainer;
 };

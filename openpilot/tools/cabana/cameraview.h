@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
@@ -11,11 +12,10 @@
 #include <QWidget>
 
 #include "openpilot/cereal/visionstream.h"
+#include "tools/cabana/core/observable.h"
 #include "msgq/visionipc/visionipc_client.h"
 
 class CameraWidget : public QWidget {
-  Q_OBJECT
-
 public:
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraWidget();
@@ -23,16 +23,14 @@ public:
   VisionStreamType getStreamType() { return active_stream_type; }
   void stopVipcThread();
 
-signals:
-  void clicked();
-  void vipcThreadFrameReceived();
-  void vipcAvailableStreamsUpdated(std::set<VisionStreamType>);
+  Observable<> clicked;
+  Observable<std::set<VisionStreamType>> availableStreamsUpdated;  // invoked on the main thread
 
 protected:
   void paintEvent(QPaintEvent *event) override;
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override { stopVipcThread(); }
-  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  void mouseReleaseEvent(QMouseEvent *event) override { clicked(); }
   void vipcThread();
   void clearFrames();
 
@@ -47,10 +45,5 @@ protected:
   std::thread vipc_thread;
   std::atomic<bool> vipc_exit = false;
   std::mutex frame_lock;
-
-protected slots:
-  void vipcFrameReceived();
-  void availableStreamsUpdated(std::set<VisionStreamType> streams);
+  std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
 };
-
-Q_DECLARE_METATYPE(std::set<VisionStreamType>);

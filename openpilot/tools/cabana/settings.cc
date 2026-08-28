@@ -613,6 +613,6 @@ void SettingsDlg::save() {
   settings.log_livestream = log_livestream->isChecked();
   settings.log_path = log_path->text().toStdString();
   settings.drag_direction = (Settings::DragDirection)drag_direction->currentIndex();
-  emit settings.changed();
+  settings.changed();
   QDialog::accept();
 }
