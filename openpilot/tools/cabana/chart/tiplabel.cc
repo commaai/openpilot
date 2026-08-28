@@ -7,7 +7,7 @@
 #include <QToolTip>
 
 #include "tools/cabana/settings.h"
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/utils/qtutil.h"
 
 TipLabel::TipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::FramelessWindowHint) {
   setAttribute(Qt::WA_ShowWithoutActivating);

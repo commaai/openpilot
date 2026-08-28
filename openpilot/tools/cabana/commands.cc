@@ -1,5 +1,6 @@
 #include "tools/cabana/commands.h"
 
+#include <cassert>
 #include <cmath>
 
 // UndoStack

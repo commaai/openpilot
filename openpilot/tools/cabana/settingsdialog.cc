@@ -9,7 +9,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/settings.h"
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/utils/qtutil.h"
 
 const int MIN_CACHE_MINIUTES = 30;
 const int MAX_CACHE_MINIUTES = 120;

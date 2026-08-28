@@ -9,6 +9,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
+#include "tools/cabana/settings.h"
 
 struct LiveStream::Logger {
   Logger() : start_ts(seconds_since_epoch()), segment_num(-1) {}

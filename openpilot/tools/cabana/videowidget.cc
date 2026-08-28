@@ -12,6 +12,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/tools/routeinfo.h"
+#include "tools/cabana/utils/qtutil.h"
 
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;

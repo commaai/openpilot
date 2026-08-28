@@ -10,6 +10,7 @@
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/utils/qtutil.h"
 
 class HeaderView : public QHeaderView {
 public:
