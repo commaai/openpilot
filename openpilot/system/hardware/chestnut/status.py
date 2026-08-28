@@ -5,6 +5,7 @@ from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 
 
 CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging")
+CHESTNUT_POWERED_VOLTAGE = 5000
 GPU_TEMP_LIMIT = 100.
 MEMORY_TEMP_LIMIT = 95.
 TEMP_HYSTERESIS = 5.
@@ -51,7 +52,7 @@ class ChestnutStatus:
       self.usb_failed = True
 
     if not offroad and state is not None:
-      power_lost = state.supplyFault
+      power_lost = state.supplyFault or state.supplyVoltage < CHESTNUT_POWERED_VOLTAGE
       if self.model_attempted and power_lost and not self.power_lost:
         self.power_unavailable = not self.power_seen
       self.power_seen |= state.pcieLtssm == 0x78
