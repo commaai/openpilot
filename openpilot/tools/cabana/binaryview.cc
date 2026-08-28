@@ -1,5 +1,4 @@
 #include "tools/cabana/binaryview.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 
@@ -36,8 +35,8 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setMouseTracking(true);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &BinaryView::refresh);
-  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &BinaryView::refresh);
+  connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
+  connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { refresh(); }));
 
   addShortcuts();
   setWhatsThis(R"(

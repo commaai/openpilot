@@ -1,5 +1,4 @@
 #include "tools/cabana/chart/signalselector.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <QDialogButtonBox>
 #include <QGridLayout>

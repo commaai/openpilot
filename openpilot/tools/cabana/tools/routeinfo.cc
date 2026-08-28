@@ -6,7 +6,7 @@
 #include "tools/cabana/streams/replaystream.h"
 
 RouteInfoDlg::RouteInfoDlg(QWidget *parent) : QDialog(parent) {
-  auto *replay = qobject_cast<ReplayStream *>(can)->getReplay();
+  auto *replay = dynamic_cast<ReplayStream *>(can)->getReplay();
   setWindowTitle(tr("Route: %1").arg(QString::fromStdString(replay->route().name())));
 
   auto *table = new QTableWidget(replay->route().segments().size(), 7, this);

@@ -24,9 +24,8 @@ struct PandaStreamConfig {
 };
 
 class PandaStream : public LiveStream {
-  Q_OBJECT
 public:
-  PandaStream(QObject *parent, PandaStreamConfig config_ = {});
+  PandaStream(PandaStreamConfig config_ = {});
   ~PandaStream() { stop(); }
   inline std::string routeName() const override {
     return "Panda: " + config.serial;

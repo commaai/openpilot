@@ -164,11 +164,10 @@ void test_dbc_manager() {
   int files_changed = 0;
   int signals_added = 0;
   int masks_updated = 0;
-  manager.setCallbacks({
-    .signal_added = [&](MessageId, const cabana::Signal *) { ++signals_added; },
-    .file_changed = [&]() { ++files_changed; },
-    .mask_updated = [&]() { ++masks_updated; },
-  });
+  Connections connections;
+  connections.push_back(manager.signalAdded.connect([&](MessageId, const cabana::Signal *) { ++signals_added; }));
+  connections.push_back(manager.fileChanged.connect([&]() { ++files_changed; }));
+  connections.push_back(manager.maskUpdated.connect([&]() { ++masks_updated; }));
 
   std::string error;
   REQUIRE(manager.open(SOURCE_ALL, "test", "BO_ 160 message: 8 XXX\n", &error));

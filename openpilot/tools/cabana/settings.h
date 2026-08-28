@@ -9,11 +9,10 @@
 #include <QLineEdit>
 #include <QSpinBox>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/core/settings.h"
 
-class Settings : public QObject, public CabanaSettingsState {
-  Q_OBJECT
-
+class Settings : public CabanaSettingsState {
 public:
   Settings();
   void save();
@@ -24,8 +23,7 @@ public:
   std::vector<uint8_t> window_state;
   std::vector<uint8_t> message_header_state;
 
-signals:
-  void changed();
+  Observable<> changed;
 };
 
 class SettingsDlg : public QDialog {

@@ -62,6 +62,7 @@ private:
   MessageId msg_id;
   QString filter_str;
   std::unique_ptr<Item> root;
+  Connections connections_;
   friend class SignalView;
   friend class SignalItemDelegate;
 };
@@ -150,4 +151,5 @@ private:
   ChartsWidget *charts;
   QLabel *signal_count_lb;
   SignalItemDelegate *delegate;
+  Connections connections_;
 };

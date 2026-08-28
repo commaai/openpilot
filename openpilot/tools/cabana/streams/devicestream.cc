@@ -23,7 +23,7 @@
 
 // DeviceStream
 
-DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(address), LiveStream(parent) {
+DeviceStream::DeviceStream(QString address) : zmq_address(address) {
 }
 
 DeviceStream::~DeviceStream() {
@@ -61,8 +61,8 @@ void DeviceStream::start() {
     // fails, the child writes errno and the parent aborts stream start.
     int err_pipe[2] = {-1, -1};
     if (::pipe(err_pipe) != 0) {
-      QMessageBox::warning(nullptr, tr("Error"),
-                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      QMessageBox::warning(nullptr, "Error",
+                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
       return;
     }
 
@@ -79,8 +79,8 @@ void DeviceStream::start() {
     ::close(err_pipe[1]);
     if (pid < 0) {
       ::close(err_pipe[0]);
-      QMessageBox::warning(nullptr, tr("Error"),
-                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      QMessageBox::warning(nullptr, "Error",
+                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
       return;
     }
 
@@ -91,8 +91,8 @@ void DeviceStream::start() {
       // Child failed to exec; reap and surface the error.
       int status = 0;
       ::waitpid(pid, &status, 0);
-      QMessageBox::warning(nullptr, tr("Error"),
-                           tr("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(exec_errno))));
+      QMessageBox::warning(nullptr, "Error",
+                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(exec_errno))));
       return;
     }
 
@@ -144,5 +144,5 @@ OpenDeviceWidget::OpenDeviceWidget(QWidget *parent) : AbstractOpenStreamWidget(p
 AbstractStream *OpenDeviceWidget::open() {
   QString ip = ip_address->text().isEmpty() ? "127.0.0.1" : ip_address->text();
   bool msgq = group->checkedId() == 0;
-  return new DeviceStream(qApp, msgq ? "" : ip);
+  return new DeviceStream(msgq ? "" : ip);
 }

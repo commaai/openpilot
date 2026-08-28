@@ -10,7 +10,7 @@
 #include <QPushButton>
 #include <QTimer>
 
-PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
+PandaStream::PandaStream(PandaStreamConfig config_) : config(config_) {
   if (!connect()) {
     throw std::runtime_error("Failed to connect to panda");
   }
@@ -181,7 +181,7 @@ void OpenPandaWidget::buildConfigForm() {
 
 AbstractStream *OpenPandaWidget::open() {
   try {
-    return new PandaStream(qApp, config);
+    return new PandaStream(config);
   } catch (std::exception &e) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda: '%1'").arg(e.what()));
     return nullptr;

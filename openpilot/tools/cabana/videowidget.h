@@ -64,6 +64,7 @@ protected:
   void timeRangeChanged();
   void updateState();
   void updatePlayBtnState();
+  Connections connections_;
   QWidget *createCameraWidget();
   void createPlaybackController();
   void createSpeedDropdown(QToolBar *toolbar);
