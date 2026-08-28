@@ -6,63 +6,83 @@ we will repeat this until we're all done.
 # Approach
 
 The Qt-free core (streams/, dbc/, core/, utils/{util,strings,export}, commands, settings, routes, panda)
-is done and shared. Rather than de-Qt the remaining widgets in place, a second frontend is built
-alongside the Qt one in `ui/`, modeled on `tools/jotpluggler` (GLFW + imgui + implot, docking).
-Each Qt widget gets ported into `ui/` as an imgui panel; when the imgui build reaches parity the Qt
-files and the Qt SConscript env are deleted wholesale.
+is done and shared. The frontend is rebuilt as a second binary next to the Qt one, modeled on
+`tools/jotpluggler` (GLFW + imgui + implot, docking):
 
 ```
 _cabana      Qt frontend (mainwin.cc + widgets), unchanged while porting
-_cabana_ui   imgui frontend: tools/cabana/ui/*.cc, built from the base env, no Qt
+_cabana_ui   imgui frontend: tools/cabana/ui/, built from the base env, no Qt
 ```
 
-`ui/` layout (base infra, done):
-- `main.cc`: arg parsing, same options as `cabana.cc`
-- `app.h`: `Options`, `App`/`UiState`, runtime + panel entry points
-- `app.cc`: `GlfwRuntime`, `ImGuiRuntime`, `createStream()` (same stream selection as cabana.cc), `startStream()`/`closeStream()` (own the stream, set `can`), render loop that drains `utils::drainMainThreadQueue()` every frame, SIGINT/SIGTERM exit
-- `style.cc`: light/dark theme from `settings.theme`, Inter/JetBrainsMono fonts with bootstrap icons merged, `pushMonoFont()`/`pushBoldFont()`
-- `layout.cc`: main menu bar, dockspace with default split (Messages left, Detail center, Charts bottom, Video right), status bar, panels, Open Stream / Settings / Error popups, shortcuts
+Every Qt file is ported **line for line** into `ui/`: same file name, same classes, same method names,
+same order of statements, same strings, same edge cases. Only the rendering/event layer changes from
+Qt to imgui. When parity is reached the Qt files and the Qt SConscript env are deleted wholesale.
+Behavior must be 1:1 with the Qt cabana of today; if the Qt code has a quirk, keep it and add a
+one-line comment.
 
-Conventions for ported panels:
-- one `drawXxxPanel(App *)` per Qt widget, in its own `ui/<name>.cc`; per-panel state lives in `UiState` (transient) or `Settings` (persisted), not in statics (immutable caches like the opendbc listing and the font handles are fine)
-- talk to the core through `can`, `dbc()`, `UndoStack::instance()`, `settings`; core observables fire on the main thread (the render loop drains the queue), so handlers can touch UI state directly
-- no `ImGui::GetIO().IniFilename`; layout persistence goes through `Settings` when it is ported
-- verification: run `_cabana_ui --demo` under Xvfb, drive it with xdotool, capture with `ffmpeg -f x11grab`; screenshots/GIFs go in the PR. No test-only CLI options.
+## ui/ layout
+
+```
+ui/main.cc              cabana.cc          arg parsing, stream construction, run()
+ui/app.{h,cc}           (new)              GlfwRuntime, ImGuiRuntime, render loop, signal handling
+ui/style.cc             utils::setTheme    fonts + theme (applyTheme() is safe at runtime)
+ui/imgui_util.h         utils/qtutil.h     imgui helpers shared by all widgets
+ui/mainwin.{h,cc}       mainwin.{h,cc}     MainWindow: menus, dock layout, file/stream actions, status bar
+ui/widgets/             messageswidget, detailwidget, binaryview, signalview, historylog, videowidget, cameraview
+ui/chart/               chart, chartswidget, signalselector, sparkline, tiplabel
+ui/dialogs/             streamselector, routesdialog, settingsdialog + messagebox (QMessageBox), filedialog (QFileDialog)
+ui/tools/               findsignal, findsimilarbits, routeinfo
+```
+
+## Porting conventions (read before porting a file)
+
+- Keep the Qt file's structure: same includes order where applicable, same class names, same methods in the
+  same order, same comments, same user-visible strings (`tr("...")` becomes a plain literal).
+  A reviewer must be able to diff `foo.cc` against `ui/widgets/foo.cc` function by function.
+- Rendering: each widget gets `void draw()` that renders inline into the current imgui window (immediate
+  mode replaces `paintEvent` + event handlers). Top-level dock widgets are opened by `MainWindow`, which
+  owns the `ImGui::Begin/End` and the window title; the widget draws its content. Child widgets are drawn
+  by their parent's `draw()` in the same order the Qt layout added them.
+- Qt signals become `Observable<...>` members with the same name (`tools/cabana/core/observable.h`);
+  `QObject::connect` becomes `connections_.push_back(x.connect(...))`. Slots keep their names.
+- Qt models (`QAbstractTableModel` etc.) become plain classes holding the same `items_`/rows and the same
+  refresh methods; `dataChanged`/`layoutChanged` calls are dropped (imgui redraws every frame).
+- `QTimer::singleShot(0, ...)` -> `MainWindow::nextFrame` / `utils::runOnMainThread` from a thread;
+  periodic `QTimer` -> check `ImGui::GetTime()` in `draw()`.
+- Modal dialogs (`exec()`) are non-blocking: `MessageBox::{information,warning,question}` and
+  `FileDialog::{getOpenFileName,getSaveFileName,getExistingDirectory}` take a continuation; a method that
+  needs the answer takes a `std::function<void()> then` parameter (see `MainWindow::remindSaveChanges`).
+  Non-modal Qt dialogs (`show()`) become objects with `bool draw()` returning false once closed.
+- `QString` -> `std::string` (the core already exposes std::string); `QColor` -> `CabanaColor`/`ImU32`;
+  `QRect/QPoint` -> `ImRect/ImVec2`; `QFont` variants -> `pushMonoFont()`/`pushBoldFont()`.
+- Icons: `utils::icon("name")` -> the bootstrap glyph merged into the fonts (see jotpluggler `icons.cc`);
+  tool buttons are `ImGui::Button`/`SmallButton` with the glyph.
+- `setWhatsThis(...)` -> `std::string whatsThis() const` returning the same text (used by the F1 overlay).
+- Persisted Qt byte-array state (`saveHeaderState`, splitter/geometry) is out of scope for the port;
+  keep the method and return `{}` with a TODO. Session ids (`serializeMessageIds`, `serializeChartIds`)
+  keep working with std::string.
+- Do not add Qt. Do not add new CLI options. ASCII only in code. No new third-party dependencies.
+- Verification: `scons openpilot/tools/cabana/_cabana_ui`, then run under Xvfb, drive with xdotool,
+  capture with `ffmpeg -f x11grab`; screenshots/GIFs go in the PR. Compare against `_cabana` side by side.
 
 # Implementation plan
 
-Each step is a PR. Line counts are the Qt code being replaced.
+Each step is one Qt file (or a tight group) ported line for line and verified against `_cabana`.
+Line counts are the Qt code being ported.
 
-1. Messages panel (`messageswidget.cc`, 467): filter/search row, sortable columns, suppress-bits toggles,
-   byte change coloring from `CanData::colors`, multi-line hex option, right-click menu,
-   persist `settings.active_msg_id` / `selected_msg_ids`. Replaces the table stub in `layout.cc`.
-2. Binary view (`binaryview.cc`, 510): bit grid with per-bit flip counts and signal coloring,
-   drag-select to create a signal (`settings.drag_direction`), hover/tooltips.
-3. Signal view (`signalview.cc`, 719) + sparkline (`chart/sparkline.cc`, 101): collapsible signal editor
-   rows (name, size, endianness, factor/offset, min/max, unit, comment, value descriptions), inline
-   sparkline via implot, add/remove/reorder through `UndoStack` commands.
-4. History log (`historylog.cc`, 251): per-message event table with signal value columns, filter by value, time range follow.
-5. Detail panel (`detailwidget.cc`, 323): tab bar binding 2-4 together, message edit form (name/size/node/comment),
-   remove message, warnings for undefined/overlapping signals.
-6. Video panel (`videowidget.cc`, 434; `cameraview.cc`, 121): VisionIPC frame -> GL texture, camera tabs,
-   timeline slider with engaged/alert bands from the qlog, playback speed, time range (loop) selection,
-   thumbnails on hover, `settings.absolute_time`.
-7. Charts (`chart/chart.cc`, 769; `chartswidget.cc`, 660; `signalselector.cc`, 107; `tiplabel.cc`, 58): implot
-   chart tiles with shared x-axis/zoom, series types (line/step/scatter), column count and range settings,
-   signal selector popup, hover tip, undock to floating window, persist `settings.active_charts`.
-8. Stream selector (`streamselector.cc`, 330; `routesdialog.cc`, 110; `routes.cc` already core): replay tab
-   (route/local file, camera flags), routes browser from the comma API, panda (serial + bus config),
-   device (msgq/zmq), socketcan; replaces the replay-only popup in `layout.cc`.
-9. Settings dialog (`settingsdialog.cc`, 94): all fields of `CabanaSettingsState`, theme switch at runtime via
-   `applyTheme()` (fonts are loaded once in `loadFonts()`, do not reload them), log path.
-10. Tools (`tools/findsignal.cc`, 286; `findsimilarbits.cc`, 161; `routeinfo.cc`, 40): dockable tool windows.
-11. File actions in `mainwin.cc` (752): open/save/save-as DBC (file picker: imgui text path + directory
-    listing, no new native dependency), export CSV, recent files, opendbc list, clipboard, fingerprint ->
-    DBC auto load (`dbc/car_fingerprint_to_dbc.json`), remind-save-changes on close, help overlay, session
-    state (dock layout + geometry persisted in `Settings` instead of the Qt byte arrays), full screen.
-12. Cutover: `cabana` wrapper runs `_cabana_ui`, delete `mainwin.*`, all `*widget*`, `chart/`, `tools/*.cc`
-    Qt files, `utils/qtutil.*`, `utils/elidedlabel.*`, `assets/assets.qrc`, the Qt env in `SConscript`,
-    `Settings` Qt byte-array fields; update README, CI, `tests/`.
+1. `messageswidget.cc` (467) -> `ui/widgets/`
+2. `detailwidget.cc` (323) + `binaryview.cc` (510) -> `ui/widgets/`
+3. `signalview.cc` (719) + `chart/sparkline.cc` (101)
+4. `historylog.cc` (251)
+5. `videowidget.cc` (434) + `cameraview.cc` (121)
+6. `chart/chart.cc` (769), `chart/chartswidget.cc` (660), `chart/signalselector.cc` (107), `chart/tiplabel.cc` (58) -> `ui/chart/`
+7. `tools/findsignal.cc` (286), `tools/findsimilarbits.cc` (161), `tools/routeinfo.cc` (40) -> `ui/tools/`
+8. `utils/qtutil.{h,cc}` leftovers (LogSlider, validators, TabBar) into the widgets that use them; `utils/elidedlabel` -> text clipping helper
+9. Cutover: `cabana` wrapper runs `_cabana_ui`, delete the Qt files, the Qt env in `SConscript`, `assets/assets.qrc`,
+   the `Settings` Qt byte-array fields; update README, CI, `tests/`.
+
+Done: `ui/main.cc`, `ui/app.*`, `ui/style.cc`, `ui/mainwin.*`, `ui/dialogs/*` (stream selector, remote routes,
+settings, message box, file dialog).
 
 # Cabana Qt API inventory
 
@@ -78,6 +98,7 @@ our workflow is:
 some rules
 - do not add more Qt usage ever
 - nothing in `ui/` may include Qt, and nothing in `ui/` may depend on a file that does
+- `ui/` files are line-for-line ports; do not restructure or "improve" while porting
 
 - `QObject`, `QMetaObject`, `QMetaType`
 - `QApplication`, `QCoreApplication`, `QGuiApplication`

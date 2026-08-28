@@ -47,14 +47,14 @@ ui_env['CXXFLAGS'] += [
 ]
 ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
 ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
-ui_objs += ui_env.Glob('ui/*.cc')
+ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc')
 ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
           ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']
 if arch == "Darwin":
   ui_env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'VideoToolbox']
 else:
   ui_libs += ['GL', 'dl']
-ui_env.Program('_cabana_ui', ui_objs, LIBS=ui_libs)
+cabana_ui = ui_env.Program('_cabana_ui', ui_objs, LIBS=ui_libs)
 
 # Detect Qt - skip build if not available
 if arch == "Darwin":
@@ -160,3 +160,4 @@ generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
                                   "python3 openpilot/tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
 cabana_env.Depends(generate_dbc, ["#openpilot/common", '#opendbc_repo', "#openpilot/cereal", "#msgq_repo"])
+ui_env.Depends(cabana_ui, generate_dbc)
