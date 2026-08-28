@@ -19,6 +19,7 @@
 
 #include "json11/json11.hpp"
 #include "tools/cabana/commands.h"
+#include "tools/cabana/settingsdialog.h"
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
 #include "tools/cabana/utils/export.h"
@@ -617,7 +618,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 }
 
 void MainWindow::setOption() {
-  SettingsDlg dlg(this);
+  SettingsDialog dlg(this);
   dlg.exec();
 }
 

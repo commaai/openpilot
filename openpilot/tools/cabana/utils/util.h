@@ -12,9 +12,14 @@
 
 #include <QApplication>
 #include <QColor>
+#include <QComboBox>
+#include <QDialog>
 #include <QFont>
 #include <QFontMetrics>
+#include <QGroupBox>
+#include <QLineEdit>
 #include <QPainter>
+#include <QSpinBox>
 #include <QStaticText>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
