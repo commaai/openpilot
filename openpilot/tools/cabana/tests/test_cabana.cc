@@ -7,6 +7,7 @@
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/routes.h"
 #include "tools/cabana/utils/strings.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
@@ -240,6 +241,64 @@ void test_signal_tooltip() {
   )");
 }
 
+void test_route_timestamps() {
+  REQUIRE(routes::parseIsoToUnixMs("2024-01-02T03:04:05Z") == 1704164645000);
+  REQUIRE(routes::parseIsoToUnixMs("2024-01-02T03:04:05") == 1704164645000);
+  REQUIRE(routes::parseIsoToUnixMs("2024-01-02 03:04:05") == 1704164645000);
+  REQUIRE(routes::parseIsoToUnixMs("2024-01-02T03:04:05.123Z") == 1704164645123);
+  REQUIRE(routes::parseIsoToUnixMs("2024-01-02T03:04:05.4Z") == 1704164645400);
+  REQUIRE(routes::parseIsoToUnixMs("2024-01-02T03:04:05.123456Z") == 1704164645123);
+  REQUIRE(routes::parseIsoToUnixMs("") == 0);
+  REQUIRE(routes::parseIsoToUnixMs("not a timestamp") == 0);
+
+  // formatUnixMs is local time
+  const char *tz = getenv("TZ");
+  const std::string prev_tz = tz ? tz : "";
+  setenv("TZ", "UTC", 1);
+  tzset();
+  REQUIRE(routes::formatUnixMs(1704164645123) == "2024-01-02 03:04:05");
+  if (tz) {
+    setenv("TZ", prev_tz.c_str(), 1);
+  } else {
+    unsetenv("TZ");
+  }
+  tzset();
+}
+
+void test_route_api_response() {
+  REQUIRE(routes::checkApiResponse("") == std::make_pair(false, 500));
+  REQUIRE(routes::checkApiResponse("not json") == std::make_pair(false, 500));
+  REQUIRE(routes::checkApiResponse(R"({"error": "unauthorized"})") == std::make_pair(false, 401));
+  REQUIRE(routes::checkApiResponse(R"({"error": "server error"})") == std::make_pair(false, 500));
+  REQUIRE(routes::checkApiResponse("[]") == std::make_pair(true, 0));
+  REQUIRE(routes::checkApiResponse(R"({"dongle_id": "aaaa"})") == std::make_pair(true, 0));
+}
+
+void test_route_json() {
+  auto devices = routes::parseDevices(R"([{"dongle_id": "aaaa"}, {"dongle_id": "bbbb"}])");
+  REQUIRE(devices.size() == 2);
+  REQUIRE(devices[0].dongle_id == "aaaa");
+  REQUIRE(devices[1].dongle_id == "bbbb");
+  REQUIRE(routes::parseDevices("not json").empty());
+  REQUIRE(routes::parseDevices(R"({"error": "unauthorized"})").empty());
+
+  auto list = routes::parseRoutes(
+      R"([{"fullname": "aaaa|2024-01-02--03-04-05", "start_time_utc_millis": 1704164645000, "end_time_utc_millis": 1704165245000}])", false);
+  REQUIRE(list.size() == 1);
+  REQUIRE(list[0].name == "aaaa|2024-01-02--03-04-05");
+  REQUIRE(list[0].start_ms == 1704164645000);
+  REQUIRE(list[0].end_ms == 1704165245000);
+
+  // preserved routes report ISO-8601 timestamps
+  auto preserved = routes::parseRoutes(
+      R"([{"fullname": "aaaa|2024-01-02--03-04-05", "start_time": "2024-01-02T03:04:05Z", "end_time": "2024-01-02T03:14:05Z"}])", true);
+  REQUIRE(preserved.size() == 1);
+  REQUIRE(preserved[0].start_ms == 1704164645000);
+  REQUIRE(preserved[0].end_ms == 1704165245000);
+
+  REQUIRE(routes::parseRoutes("not json", false).empty());
+}
+
 void test_cabana_core() {
   test_format_seconds();
   test_to_hex();
@@ -251,6 +310,9 @@ void test_cabana_core() {
   test_parse_dbc();
   test_parse_opendbc();
   test_dbc_manager();
+  test_route_timestamps();
+  test_route_api_response();
+  test_route_json();
 }
 
 int main() {
