@@ -31,8 +31,9 @@ void AbstractStream::postToMainThreadAndWait(std::function<void()> fn) {
   std::unique_lock lock(mutex_);
   if (exiting_) return;
   auto done = std::make_shared<bool>(false);
-  postToMainThread([this, done, fn = std::move(fn)]() {
+  postToMainThread([this, alive = std::weak_ptr<bool>(alive_), done, fn = std::move(fn)]() {
     fn();
+    if (alive.expired()) return;  // fn deleted the stream, the waiter was released by cancelWaits()
     std::lock_guard lk(mutex_);
     *done = true;
     wait_cv_.notify_all();

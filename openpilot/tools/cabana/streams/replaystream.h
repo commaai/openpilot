@@ -33,7 +33,7 @@ public:
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
 
-  // Invoked on the main thread.
+  // invoked on the main thread
   Observable<std::shared_ptr<LogReader>> qLogLoaded;
 
 private:

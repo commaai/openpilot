@@ -56,7 +56,7 @@ public:
   void clearSuppressed();
   void suppressDefinedSignals(bool suppress);
 
-  // Invoked on the main thread.
+  // invoked on the main thread
   Observable<> paused;
   Observable<> resume;
   Observable<double> seeking;

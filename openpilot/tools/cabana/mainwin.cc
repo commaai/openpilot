@@ -40,8 +40,7 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   restoreGeometry(utils::qbytes(settings.geometry));
   restoreState(utils::qbytes(settings.window_state));
 
-  // install handlers
-  // handlers are called from download threads
+  // download handlers are called from download threads
   static auto static_main_win = this;
   installDownloadProgressHandler([](uint64_t cur, uint64_t total, bool success) {
     utils::runOnMainThread([=]() { static_main_win->updateDownloadProgress(cur, total, success); });
@@ -59,6 +58,7 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   connections_.push_back(UndoStack::instance()->cleanChanged.connect([this](bool clean) { undoStackCleanChanged(clean); }));
   connections_.push_back(settings.changed.connect([this]() { updateStatus(); }));
 
+  // temporary pump for the non-Qt main thread queue until imgui owns the loop
   auto *queue_timer = new QTimer(this);
   QObject::connect(queue_timer, &QTimer::timeout, utils::drainMainThreadQueue);
   queue_timer->start(10);
@@ -343,7 +343,6 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::openStream(AbstractStream *stream, const QString &dbc_file) {
-  wait_dlg_connection_.disconnect();
   stream_connections_.clear();
   if (wait_dlg_) wait_dlg_->deleteLater();
   wait_dlg_ = nullptr;
