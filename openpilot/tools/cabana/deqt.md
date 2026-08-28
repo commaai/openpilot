@@ -65,24 +65,25 @@ ui/tools/               findsignal, findsimilarbits, routeinfo
 - Verification: `scons openpilot/tools/cabana/_cabana_ui`, then run under Xvfb, drive with xdotool,
   capture with `ffmpeg -f x11grab`; screenshots/GIFs go in the PR. Compare against `_cabana` side by side.
 
-# Implementation plan
+# Status
 
-Each step is one Qt file (or a tight group) ported line for line and verified against `_cabana`.
-Line counts are the Qt code being ported.
+All Qt files are ported into `ui/` and `_cabana_ui` builds and runs the demo route with the full window
+(messages, binary/signal/log views, video with timeline and camera tabs, charts, all dialogs and tools).
+Verified against `_cabana` side by side under Xvfb; remaining work, each one a PR:
 
-1. `messageswidget.cc` (467) -> `ui/widgets/`
-2. `detailwidget.cc` (323) + `binaryview.cc` (510) -> `ui/widgets/`
-3. `signalview.cc` (719) + `chart/sparkline.cc` (101)
-4. `historylog.cc` (251)
-5. `videowidget.cc` (434) + `cameraview.cc` (121)
-6. `chart/chart.cc` (769), `chart/chartswidget.cc` (660), `chart/signalselector.cc` (107), `chart/tiplabel.cc` (58) -> `ui/chart/`
-7. `tools/findsignal.cc` (286), `tools/findsimilarbits.cc` (161), `tools/routeinfo.cc` (40) -> `ui/tools/`
-8. `utils/qtutil.{h,cc}` leftovers (LogSlider, validators, TabBar) into the widgets that use them; `utils/elidedlabel` -> text clipping helper
-9. Cutover: `cabana` wrapper runs `_cabana_ui`, delete the Qt files, the Qt env in `SConscript`, `assets/assets.qrc`,
-   the `Settings` Qt byte-array fields; update README, CI, `tests/`.
-
-Done: `ui/main.cc`, `ui/app.*`, `ui/style.cc`, `ui/mainwin.*`, `ui/dialogs/*` (stream selector, remote routes,
-settings, message box, file dialog).
+1. Known deviations to close (found by the side by side test, all in `ui/`):
+   - dialog button order is `[OK] [Cancel]` left aligned (Qt: `[Cancel] [OK]` right aligned)
+   - sparklines draw a marker per sample (Qt: bare polyline); expanded signal rows use input boxes (Qt: flat labels)
+   - Find Similar Bits has no row number column; the "..." menu uses check marks, the speed menu a check mark (Qt: radio)
+   - binary view hover paints the signal row saturated (Qt tints it); after Close stream every cell is hatch filled
+   - F1 overlay: bold runs are flat; the Message View text was reworded
+   - `OpenPandaWidget` opens the panda in its constructor like the Qt widget does (both connect over USB when the
+     dialog opens); keep an eye on it when a panda is attached
+2. Persisted Qt byte-array state: `saveHeaderState`/`restoreHeaderState`, window geometry, dock layout and the
+   video/charts splitter (`Settings::geometry`, `window_state`, `video_splitter_state`, `message_header_state`)
+   are stubs; store the imgui equivalents in `Settings` and drop the Qt fields.
+3. Cutover: `cabana` wrapper runs `_cabana_ui`, delete the Qt files, the Qt env in `SConscript`, `assets/assets.qrc`;
+   update README, CI, `tests/`.
 
 # Cabana Qt API inventory
 
