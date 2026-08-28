@@ -8,13 +8,6 @@
 #include <unistd.h>
 
 #include <cstdio>
-#include <filesystem>
-#include <fstream>
-
-#include <QFormLayout>
-#include <QHBoxLayout>
-#include <QMessageBox>
-#include <QPushButton>
 
 SocketCanStream::SocketCanStream(SocketCanStreamConfig config_) : config(config_) {
   if (!available()) {
@@ -96,53 +89,5 @@ void SocketCanStream::streamThread() {
     canData[0].setDat(kj::arrayPtr(frame.data, len));
 
     handleEvent(capnp::messageToFlatArray(msg));
-  }
-}
-
-OpenSocketCanWidget::OpenSocketCanWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addStretch(1);
-
-  QFormLayout *form_layout = new QFormLayout();
-
-  QHBoxLayout *device_layout = new QHBoxLayout();
-  device_edit = new QComboBox();
-  device_edit->setFixedWidth(300);
-  device_layout->addWidget(device_edit);
-
-  QPushButton *refresh = new QPushButton(tr("Refresh"));
-  refresh->setFixedWidth(100);
-  device_layout->addWidget(refresh);
-  form_layout->addRow(tr("Device"), device_layout);
-  main_layout->addLayout(form_layout);
-
-  main_layout->addStretch(1);
-
-  QObject::connect(refresh, &QPushButton::clicked, this, &OpenSocketCanWidget::refreshDevices);
-  QObject::connect(device_edit, &QComboBox::currentTextChanged, this, [=]{ config.device = device_edit->currentText().toStdString(); });
-
-  // Populate devices
-  refreshDevices();
-}
-
-void OpenSocketCanWidget::refreshDevices() {
-  device_edit->clear();
-  // Scan /sys/class/net/ for CAN interfaces (type 280 = ARPHRD_CAN)
-  std::error_code ec;
-  for (const auto &entry : std::filesystem::directory_iterator("/sys/class/net", ec)) {
-    std::ifstream type_file(entry.path() / "type");
-    int type = 0;
-    if (type_file >> type && type == 280) {
-      device_edit->addItem(QString::fromStdString(entry.path().filename().string()));
-    }
-  }
-}
-
-AbstractStream *OpenSocketCanWidget::open() {
-  try {
-    return new SocketCanStream(config);
-  } catch (std::exception &e) {
-    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to SocketCAN device: '%1'").arg(e.what()));
-    return nullptr;
   }
 }

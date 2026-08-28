@@ -153,7 +153,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
       if (item->type == Item::Endian) return item->sig->is_little_endian ? Qt::Checked : Qt::Unchecked;
       if (item->type == Item::Signed) return item->sig->is_signed ? Qt::Checked : Qt::Unchecked;
     } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
-      return (index.column() == 0) ? signalToolTip(item->sig) : QString();
+      return (index.column() == 0) ? QString::fromStdString(utils::signalToolTip(item->sig)) : QString();
     }
   }
   return {};
@@ -570,7 +570,7 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
 
 void SignalView::updateToolBar() {
   signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
-  sparkline_label->setText(utils::formatSeconds(settings.sparkline_range));
+  sparkline_label->setText(QString::fromStdString(utils::formatSeconds(settings.sparkline_range)));
 }
 
 void SignalView::setSparklineRange(int value) {

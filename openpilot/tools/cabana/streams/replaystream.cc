@@ -1,16 +1,9 @@
 #include "tools/cabana/streams/replaystream.h"
 
-#include <filesystem>
-
-#include <QLabel>
-#include <QFileDialog>
-#include <QGridLayout>
 #include <QMessageBox>
-#include <QPushButton>
 
 #include "common/timing.h"
 #include "common/util.h"
-#include "tools/cabana/routesdialog.h"
 
 ReplayStream::ReplayStream() {
   unsetenv("ZMQ");
@@ -115,65 +108,4 @@ bool ReplayStream::eventFilter(const Event *event) {
 void ReplayStream::pause(bool pause) {
   replay->pause(pause);
   pause ? paused() : resume();
-}
-
-
-// OpenReplayWidget
-
-OpenReplayWidget::OpenReplayWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
-  QGridLayout *grid_layout = new QGridLayout(this);
-  grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
-  grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
-  route_edit->setPlaceholderText(tr("Enter route name or browse for local/remote route"));
-  auto browse_remote_btn = new QPushButton(tr("Remote route..."), this);
-  grid_layout->addWidget(browse_remote_btn, 0, 2);
-  auto browse_local_btn = new QPushButton(tr("Local route..."), this);
-  grid_layout->addWidget(browse_local_btn, 0, 3);
-
-  QHBoxLayout *camera_layout = new QHBoxLayout();
-  for (auto c : {tr("Road camera"), tr("Driver camera"), tr("Wide road camera")})
-    camera_layout->addWidget(cameras.emplace_back(new QCheckBox(c, this)));
-  cameras[0]->setChecked(true);
-  camera_layout->addStretch(1);
-  grid_layout->addItem(camera_layout, 1, 1);
-
-  setMinimumWidth(550);
-  QObject::connect(browse_local_btn, &QPushButton::clicked, [=]() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), QString::fromStdString(settings.last_route_dir));
-    if (!dir.isEmpty()) {
-      route_edit->setText(dir);
-      settings.last_route_dir = std::filesystem::absolute(dir.toStdString()).parent_path().string();
-    }
-  });
-  QObject::connect(browse_remote_btn, &QPushButton::clicked, [this]() {
-    RoutesDialog route_dlg(this);
-    if (route_dlg.exec()) {
-      route_edit->setText(route_dlg.route());
-    }
-  });
-}
-
-AbstractStream *OpenReplayWidget::open() {
-  QString route = route_edit->text();
-  QString data_dir;
-  if (int idx = route.lastIndexOf('/'); idx != -1 && util::file_exists(route.toStdString())) {
-    data_dir = route.mid(0, idx + 1);
-    route = route.mid(idx + 1);
-  }
-
-  bool is_valid_format = Route::parseRoute(route.toStdString()).str.size() > 0;
-  if (!is_valid_format) {
-    QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
-  } else {
-    auto replay_stream = std::make_unique<ReplayStream>();
-    uint32_t flags = REPLAY_FLAG_NONE;
-    if (cameras[1]->isChecked()) flags |= REPLAY_FLAG_CABIN_CAMERA;
-    if (cameras[2]->isChecked()) flags |= REPLAY_FLAG_WIDE_ROAD;
-    if (flags == REPLAY_FLAG_NONE && !cameras[0]->isChecked()) flags = REPLAY_FLAG_NO_VIPC;
-
-    if (replay_stream->loadRoute(route.toStdString(), data_dir.toStdString(), flags)) {
-      return replay_stream.release();
-    }
-  }
-  return nullptr;
 }

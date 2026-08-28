@@ -14,12 +14,8 @@
 
 #include "openpilot/cereal/services.h"
 
-#include <QButtonGroup>
-#include <QFormLayout>
+#include <QCoreApplication>
 #include <QMessageBox>
-#include <QRadioButton>
-
-#include "tools/cabana/utils/util.h"
 
 // DeviceStream
 
@@ -117,32 +113,4 @@ void DeviceStream::streamThread() {
     }
     handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   }
-}
-
-// OpenDeviceWidget
-
-OpenDeviceWidget::OpenDeviceWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
-  QRadioButton *msgq = new QRadioButton(tr("MSGQ"));
-  QRadioButton *zmq = new QRadioButton(tr("ZMQ"));
-  ip_address = new QLineEdit(this);
-  ip_address->setPlaceholderText(tr("Enter device Ip Address"));
-  ip_address->setValidator(new IpAddressValidator(this));
-
-  group = new QButtonGroup(this);
-  group->addButton(msgq, 0);
-  group->addButton(zmq, 1);
-
-  QFormLayout *form_layout = new QFormLayout(this);
-  form_layout->addRow(msgq);
-  form_layout->addRow(zmq, ip_address);
-  QObject::connect(group, qOverload<QAbstractButton *, bool>(&QButtonGroup::buttonToggled), [=](QAbstractButton *button, bool checked) {
-    ip_address->setEnabled(button == zmq && checked);
-  });
-  zmq->setChecked(true);
-}
-
-AbstractStream *OpenDeviceWidget::open() {
-  QString ip = ip_address->text().isEmpty() ? "127.0.0.1" : ip_address->text();
-  bool msgq = group->checkedId() == 0;
-  return new DeviceStream(msgq ? "" : ip);
 }
