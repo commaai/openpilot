@@ -50,22 +50,22 @@ function op_run_command() {
 }
 
 # be default, assume openpilot dir is in current directory
-OPENPILOT_ROOT=$(pwd)
+BEAMPILOT_ROOT=$(pwd)
 function op_get_openpilot_dir() {
   # First try traversing up the directory tree
-  while [[ "$OPENPILOT_ROOT" != '/' ]];
+  while [[ "$BEAMPILOT_ROOT" != '/' ]];
   do
-    if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
+    if find "$BEAMPILOT_ROOT/launch_beampilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
       return 0
     fi
-    OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
+    BEAMPILOT_ROOT="$(readlink -f "$BEAMPILOT_ROOT/"..)"
   done
 
   # Fallback to hardcoded directories if not found
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
   for dir in "$(readlink -f "$SCRIPT_DIR/../..")" "$HOME/openpilot" "/data/openpilot"; do
-    if [[ -f "$dir/launch_openpilot.sh" ]]; then
-      OPENPILOT_ROOT="$dir"
+    if [[ -f "$dir/launch_beampilot.sh" ]]; then
+      BEAMPILOT_ROOT="$dir"
       return 0
     fi
   done
@@ -73,17 +73,17 @@ function op_get_openpilot_dir() {
 
 function op_install_post_commit() {
   op_get_openpilot_dir
-  if [[ ! -d $OPENPILOT_ROOT/.git/hooks/post-commit.d ]]; then
-    mkdir $OPENPILOT_ROOT/.git/hooks/post-commit.d
-    mv $OPENPILOT_ROOT/.git/hooks/post-commit $OPENPILOT_ROOT/.git/hooks/post-commit.d 2>/dev/null || true
+  if [[ ! -d $BEAMPILOT_ROOT/.git/hooks/post-commit.d ]]; then
+    mkdir $BEAMPILOT_ROOT/.git/hooks/post-commit.d
+    mv $BEAMPILOT_ROOT/.git/hooks/post-commit $BEAMPILOT_ROOT/.git/hooks/post-commit.d 2>/dev/null || true
   fi
-  cd $OPENPILOT_ROOT/.git/hooks
+  cd $BEAMPILOT_ROOT/.git/hooks
   ln -sf ../../scripts/post-commit post-commit
 }
 
 function op_check_openpilot_dir() {
   echo "Checking for openpilot directory..."
-  if [[ -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
+  if [[ -f "$BEAMPILOT_ROOT/launch_beampilot.sh" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] openpilot found."
     return 0
   fi
@@ -103,7 +103,7 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs files..."
-  if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
+  if [[ $(file -b $BEAMPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -112,7 +112,7 @@ function op_check_git() {
 
   echo "Checking for git submodules..."
   for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
-    if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
+    if [[ -z $(ls $BEAMPILOT_ROOT/$name) ]]; then
       echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
@@ -128,10 +128,10 @@ function op_check_os() {
 
 function op_check_venv() {
   echo "Checking for venv..."
-  if [[ -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
+  if [[ -f $BEAMPILOT_ROOT/.venv/bin/activate ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] venv detected."
   else
-    echo -e " ↳ [${RED}✗${NC}] Can't activate venv in $OPENPILOT_ROOT. Assuming global env!"
+    echo -e " ↳ [${RED}✗${NC}] Can't activate venv in $BEAMPILOT_ROOT. Assuming global env!"
   fi
 }
 
@@ -141,7 +141,7 @@ function op_before_cmd() {
   fi
 
   op_get_openpilot_dir
-  cd $OPENPILOT_ROOT
+  cd $BEAMPILOT_ROOT
 
   result="$((op_check_openpilot_dir ) 2>&1)" || (echo -e "$result" && return 1)
   result="${result}\n$(( op_check_git ) 2>&1)" || (echo -e "$result" && return 1)
@@ -170,7 +170,7 @@ EOF
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 
   op_get_openpilot_dir
-  cd $OPENPILOT_ROOT
+  cd $BEAMPILOT_ROOT
 
   op_check_openpilot_dir
   op_check_os
@@ -189,7 +189,7 @@ EOF
   echo "Installing dependencies..."
   st="$(date +%s)"
   SETUP_SCRIPT="tools/setup_dependencies.sh"
-  if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
+  if ! $BEAMPILOT_ROOT/$SETUP_SCRIPT; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     return 1
   fi
@@ -218,30 +218,30 @@ function op_auth() {
 function op_activate_venv() {
   # bash 3.2 can't handle this without the 'set +e'
   set +e
-  source $OPENPILOT_ROOT/.venv/bin/activate &> /dev/null || true
+  source $BEAMPILOT_ROOT/.venv/bin/activate &> /dev/null || true
   set -e
 
   # persist venv on PATH across GitHub Actions steps
   if [ -n "$GITHUB_PATH" ]; then
-    echo "$OPENPILOT_ROOT/.venv/bin" >> "$GITHUB_PATH"
+    echo "$BEAMPILOT_ROOT/.venv/bin" >> "$GITHUB_PATH"
   fi
 }
 
 function op_venv() {
   op_before_cmd
 
-  if [[ ! -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
-    echo -e "No venv found in $OPENPILOT_ROOT"
+  if [[ ! -f $BEAMPILOT_ROOT/.venv/bin/activate ]]; then
+    echo -e "No venv found in $BEAMPILOT_ROOT"
     return 1
   fi
 
   case $SHELL_NAME in
     "zsh")
       ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
-      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate" >> $ZSHRC_DIR/.zshrc
+      echo "source $RC_FILE; source $BEAMPILOT_ROOT/.venv/bin/activate" >> $ZSHRC_DIR/.zshrc
       ZDOTDIR=$ZSHRC_DIR zsh ;;
     *)
-      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate") ;;
+      bash --rcfile <(echo "source $RC_FILE; source $BEAMPILOT_ROOT/.venv/bin/activate") ;;
   esac
 }
 
@@ -319,7 +319,7 @@ function op_cabana() {
 function op_sim() {
   op_before_cmd
   op_run_command exec openpilot/tools/sim/run_bridge.py &
-  op_run_command exec openpilot/tools/sim/launch_openpilot.sh
+  op_run_command exec openpilot/tools/sim/launch_beampilot.sh
 }
 
 function op_clip() {
@@ -334,7 +334,7 @@ function op_check_agnos_update() {
 
   local choice current_version target_version
   current_version="$(< /VERSION)"
-  target_version="$(unset AGNOS_VERSION; source "$OPENPILOT_ROOT/launch_env.sh"; echo "$AGNOS_VERSION")"
+  target_version="$(unset AGNOS_VERSION; source "$BEAMPILOT_ROOT/launch_env.sh"; echo "$AGNOS_VERSION")"
 
   if [[ "$current_version" == "$target_version" ]]; then
     return 0
@@ -342,8 +342,8 @@ function op_check_agnos_update() {
 
   echo -e "${BOLD}AGNOS update available:${NC} $current_version → $target_version"
   if read -r -p "Install it now? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
-    op_run_command "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.py" --swap \
-      "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.json"
+    op_run_command "$BEAMPILOT_ROOT/openpilot/common/hardware/comma/agnos.py" --swap \
+      "$BEAMPILOT_ROOT/openpilot/common/hardware/comma/agnos.json"
 
     if read -r -p "Reboot now to apply the update? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
       op_run_command sudo reboot
@@ -461,7 +461,7 @@ function op_default() {
 function _op() {
   # parse Options
   case $1 in
-    -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
+    -d | --dir )       shift 1; BEAMPILOT_ROOT="$1"; shift 1 ;;
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
   esac
