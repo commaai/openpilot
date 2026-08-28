@@ -101,16 +101,6 @@ private:
   std::unordered_map<MessageId, std::vector<uint8_t>> masks_;
 };
 
-class AbstractOpenStreamWidget : public QWidget {
-  Q_OBJECT
-public:
-  AbstractOpenStreamWidget(QWidget *parent = nullptr) : QWidget(parent) {}
-  virtual AbstractStream *open() = 0;
-
-signals:
-  void enableOpenButton(bool);
-};
-
 class DummyStream : public AbstractStream {
 public:
   std::string routeName() const override { return "No Stream"; }
