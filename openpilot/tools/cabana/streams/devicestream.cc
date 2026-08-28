@@ -9,17 +9,16 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 #include <unistd.h>
 #include <sys/wait.h>
 
 #include "openpilot/cereal/services.h"
-
-#include <QCoreApplication>
-#include <QMessageBox>
+#include "tools/cabana/utils/util.h"
 
 // DeviceStream
 
-DeviceStream::DeviceStream(QString address) : zmq_address(address) {
+DeviceStream::DeviceStream(std::string address) : zmq_address(std::move(address)) {
 }
 
 DeviceStream::~DeviceStream() {
@@ -46,19 +45,16 @@ void DeviceStream::stopBridge() {
 }
 
 void DeviceStream::start() {
-  if (!zmq_address.isEmpty()) {
+  if (!zmq_address.empty()) {
     stopBridge();
-    const std::string path = (std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) /
-                              "../../cereal/messaging/bridge").lexically_normal().string();
-    const std::string addr = zmq_address.toStdString();
+    const std::string path = (executableDir() / "../../cereal/messaging/bridge").lexically_normal().string();
     const char *can_filter = "/\"can/\"";
 
     // Self-pipe: write end is CLOEXEC so it closes on successful exec. If exec
     // fails, the child writes errno and the parent aborts stream start.
     int err_pipe[2] = {-1, -1};
     if (::pipe(err_pipe) != 0) {
-      QMessageBox::warning(nullptr, "Error",
-                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      error(std::string("Failed to start bridge: ") + strerror(errno));
       return;
     }
 
@@ -66,7 +62,7 @@ void DeviceStream::start() {
     if (pid == 0) {
       ::close(err_pipe[0]);
       ::fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
-      execl(path.c_str(), path.c_str(), addr.c_str(), can_filter, static_cast<char *>(nullptr));
+      execl(path.c_str(), path.c_str(), zmq_address.c_str(), can_filter, static_cast<char *>(nullptr));
       const int err = errno;
       (void)!::write(err_pipe[1], &err, sizeof(err));
       _exit(127);
@@ -75,8 +71,7 @@ void DeviceStream::start() {
     ::close(err_pipe[1]);
     if (pid < 0) {
       ::close(err_pipe[0]);
-      QMessageBox::warning(nullptr, "Error",
-                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(errno))));
+      error(std::string("Failed to start bridge: ") + strerror(errno));
       return;
     }
 
@@ -87,8 +82,7 @@ void DeviceStream::start() {
       // Child failed to exec; reap and surface the error.
       int status = 0;
       ::waitpid(pid, &status, 0);
-      QMessageBox::warning(nullptr, "Error",
-                           QString("Failed to start bridge: %1").arg(QString::fromLocal8Bit(strerror(exec_errno))));
+      error(std::string("Failed to start bridge: ") + strerror(exec_errno));
       return;
     }
 
@@ -99,7 +93,7 @@ void DeviceStream::start() {
 }
 
 void DeviceStream::streamThread() {
-  zmq_address.isEmpty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
+  zmq_address.empty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
 
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", "127.0.0.1", false, true, services.at("can").queue_size));

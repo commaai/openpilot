@@ -16,6 +16,9 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 
 #include <QColor>
 #include <QFontDatabase>
@@ -454,27 +457,36 @@ void sigTermHandler(int s) {
   qApp->quit();
 }
 
+std::filesystem::path executableDir() {
+#ifdef __APPLE__
+  char buf[PATH_MAX];
+  uint32_t size = sizeof(buf);
+  if (_NSGetExecutablePath(buf, &size) != 0) return {};
+  std::error_code ec;
+  auto path = std::filesystem::canonical(buf, ec);
+  return (ec ? std::filesystem::path(buf) : path).parent_path();
+#else
+  return std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
+#endif
+}
+
 void initApp(int argc, char *argv[], bool disable_hidpi) {
   // setup signal handlers to exit gracefully
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
 
-  std::filesystem::path app_dir;
 #ifdef __APPLE__
   // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
   QApplication tmp(argc, argv);
-  app_dir = QCoreApplication::applicationDirPath().toStdString();
   if (disable_hidpi) {
     qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio()).toLocal8Bit());
   }
-#else
-  app_dir = std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
 #endif
 
   qputenv("QT_DBL_CLICK_DIST", "150");
   // ensure the current dir matches the exectuable's directory
   std::error_code ec;
-  std::filesystem::current_path(app_dir, ec);
+  std::filesystem::current_path(executableDir(), ec);
 }
 
 // embedded at build time from the bootstrap_icons package (see SConscript)

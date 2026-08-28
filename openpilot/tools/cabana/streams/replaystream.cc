@@ -1,6 +1,6 @@
 #include "tools/cabana/streams/replaystream.h"
 
-#include <QMessageBox>
+#include <string>
 
 #include "common/timing.h"
 #include "common/util.h"
@@ -59,27 +59,25 @@ bool ReplayStream::loadRoute(const std::string &route, const std::string &data_d
 
   bool success = replay->load();
   if (!success) {
+    std::string message;
     if (replay->lastRouteError() == RouteLoadError::Unauthorized) {
       auto auth_content = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
-      QString message;
       if (auth_content.empty()) {
         message = "Authentication Required. Please run the following command to authenticate:\n\n"
                   "python3 openpilot/tools/lib/auth.py\n\n"
                   "This will grant access to routes from your comma account.";
       } else {
-        message = QString("Access Denied. You do not have permission to access route:\n\n%1\n\n"
-                          "This is likely a private route.").arg(QString::fromStdString(route));
+        message = "Access Denied. You do not have permission to access route:\n\n" + route + "\n\n"
+                  "This is likely a private route.";
       }
-      QMessageBox::warning(nullptr, "Access Denied", message);
     } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
-      QMessageBox::warning(nullptr, "Network Error",
-                          QString("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(QString::fromStdString(route)));
+      message = "Unable to load the route:\n\n " + route + ".\n\nPlease check your network connection and try again.";
     } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {
-      QMessageBox::warning(nullptr, "Route Not Found",
-                           QString("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(QString::fromStdString(route)));
+      message = "The specified route could not be found:\n\n " + route + ".\n\nPlease check the route name and try again.";
     } else {
-      QMessageBox::warning(nullptr, "Route Load Failed", QString("Failed to load route: '%1'").arg(QString::fromStdString(route)));
+      message = "Failed to load route: '" + route + "'";
     }
+    error(message);
   }
   return success;
 }

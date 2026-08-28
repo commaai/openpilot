@@ -358,6 +358,9 @@ void MainWindow::startStream(AbstractStream *stream, QString dbc_file) {
   delete video_splitter;
 
   can = stream;  // take ownership
+  stream_connections_.push_back(can->error.connect([this](const std::string &msg) {
+    QMessageBox::warning(this, tr("Error"), QString::fromStdString(msg));
+  }));
   can->start();
 
   loadFile(dbc_file);
