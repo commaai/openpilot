@@ -19,14 +19,10 @@
   },
   "Offroad_ChestnutBranch": {
     "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
-    "severity": 0
+    "severity": -1
   },
   "Offroad_ChestnutNotDetected": {
     "text": "Chestnut not detected. Check USB and 12V connections.",
-    "severity": 0
-  },
-  "Offroad_ChestnutFansObstructed": {
-    "text": "Chestnut fans obstructed. Check the fans.",
     "severity": 0
   },
   "Offroad_ChestnutOverheated": {
@@ -34,7 +30,7 @@
     "severity": 0
   },
   "Offroad_ChestnutPcieUnavailable": {
-    "text": "Chestnut not responding. PCIe link not up. %1",
+    "text": "%1",
     "severity": 0
   },
   "Offroad_ChestnutUncompiled": {
@@ -46,7 +42,7 @@
     "severity": 0
   },
   "Offroad_ChestnutUsbSlow": {
-    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1.",
+    "text": "Chestnut USB link is slow. Check the USB cable. the current speed is %1.",
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {
