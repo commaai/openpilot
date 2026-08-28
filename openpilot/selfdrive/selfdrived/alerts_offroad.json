@@ -42,7 +42,7 @@
     "severity": 0
   },
   "Offroad_ChestnutUsbSlow": {
-    "text": "Chestnut USB link is slow. Check the USB cable. the current speed is %1.",
+    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1.",
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {
