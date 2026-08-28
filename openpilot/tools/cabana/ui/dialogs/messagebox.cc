@@ -4,6 +4,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "tools/cabana/ui/imgui_util.h"
 
 namespace MessageBox {
 
@@ -19,17 +20,27 @@ struct Box {
 
 std::deque<Box> g_queue;
 bool g_show_details = false;
+// draw() is called both nested in a modal dialog and at the root level; only the level that opened the
+// popup may submit it (opening at level 0 would make imgui close the parent modal).
+ImGuiID g_popup_id = 0;
+ImGuiID g_owner_id = 0;
 
 void push(Box box) { g_queue.push_back(std::move(box)); }
 
-}  // namespace
-
-void information(const std::string &title, const std::string &text) {
-  push({.title = title, .text = text});
+std::function<void(bool)> wrap(std::function<void()> on_close) {
+  if (!on_close) return nullptr;
+  return [on_close = std::move(on_close)](bool) { on_close(); };
 }
 
-void warning(const std::string &title, const std::string &text, const std::string &detailed_text) {
-  push({.title = title, .text = text, .detailed_text = detailed_text});
+}  // namespace
+
+void information(const std::string &title, const std::string &text, std::function<void()> on_close) {
+  push({.title = title, .text = text, .on_result = wrap(std::move(on_close))});
+}
+
+void warning(const std::string &title, const std::string &text, const std::string &detailed_text,
+             std::function<void()> on_close) {
+  push({.title = title, .text = text, .detailed_text = detailed_text, .on_result = wrap(std::move(on_close))});
 }
 
 void question(const std::string &title, const std::string &text, std::function<void(bool)> on_result) {
@@ -42,10 +53,21 @@ void draw() {
   if (g_queue.empty()) return;
   Box &box = g_queue.front();
   const std::string popup_id = box.title + "###MessageBox";
-  // reopen if imgui closed the popup underneath us (another level-0 popup, host window change)
-  if (!ImGui::IsPopupOpen(popup_id.c_str())) {
+  ImGuiWindow *window = ImGui::GetCurrentWindow();
+  if (g_popup_id == 0) {
+    // a pending box may only be opened from the call nested in the top-most modal, or from any call when
+    // there is no modal at all
+    ImGuiWindow *modal = ImGui::GetTopMostPopupModal();
+    if (modal != nullptr && modal != window) return;
     ImGui::OpenPopup(popup_id.c_str());
+    g_popup_id = window->GetID(popup_id.c_str());
+    g_owner_id = window->ID;
     g_show_details = false;
+  } else if (g_owner_id != window->ID) {
+    return;
+  } else if (!ImGui::IsPopupOpen(g_popup_id, ImGuiPopupFlags_AnyPopupLevel)) {
+    // reopen if imgui closed the popup underneath us (host window change)
+    ImGui::OpenPopup(popup_id.c_str());
   }
   bool result = false, done = false;
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -58,23 +80,21 @@ void draw() {
                                 ImVec2(480.0f, 160.0f), ImGuiInputTextFlags_ReadOnly);
     }
     ImGui::Separator();
-    if (ImGui::Button("OK", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
-      result = true;
-      done = true;
-    }
-    if (box.has_cancel) {
-      ImGui::SameLine();
-      if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) done = true;
-    }
-    if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
     if (!box.detailed_text.empty()) {
-      ImGui::SameLine();
+      // QMessageBox puts the details button at the left of the button box
       if (ImGui::Button(g_show_details ? "Hide Details..." : "Show Details...")) g_show_details = !g_show_details;
+      ImGui::SameLine();
     }
+    dialogButtons("OK", &result, &done, true, box.has_cancel ? "Cancel" : nullptr);
+    if (ImGui::IsKeyPressed(ImGuiKey_Enter, false)) result = true;
+    if (result) done = true;
+    if (dialogEscapePressed()) done = true;
     if (done) ImGui::CloseCurrentPopup();
     ImGui::EndPopup();
   }
   if (done) {
+    g_popup_id = 0;
+    g_owner_id = 0;
     Box finished = std::move(g_queue.front());
     g_queue.pop_front();
     if (finished.on_result) finished.on_result(result);

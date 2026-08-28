@@ -1,6 +1,7 @@
 #include "tools/cabana/ui/dialogs/filedialog.h"
 
 #include <algorithm>
+#include <cctype>
 #include <system_error>
 
 #include "imgui.h"
@@ -30,6 +31,15 @@ struct State {
 };
 
 State g_state;
+// draw() is called both nested in a modal dialog and at the root level; only the level that opened the
+// popup may submit it (opening at level 0 would make imgui close the parent modal).
+ImGuiID g_popup_id = 0;
+ImGuiID g_owner_id = 0;
+
+std::string toLower(std::string s) {
+  for (char &c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  return s;
+}
 
 void listDir() {
   State &s = g_state;
@@ -46,7 +56,8 @@ void listDir() {
   std::sort(s.entries.begin(), s.entries.end(), [](const auto &a, const auto &b) {
     std::error_code sort_ec;
     const bool da = a.is_directory(sort_ec), db = b.is_directory(sort_ec);
-    return da != db ? da : a.path().filename() < b.path().filename();
+    // QFileDialog sorts case-insensitively
+    return da != db ? da : toLower(a.path().filename().string()) < toLower(b.path().filename().string());
   });
   s.dir_input = s.dir.string();
 }
@@ -74,6 +85,8 @@ void start(Mode mode, const std::string &title, const fs::path &dir, const std::
 void finish(const std::string &path) {
   Callback cb = std::move(g_state.callback);
   g_state = State{};
+  g_popup_id = 0;
+  g_owner_id = 0;
   if (cb) cb(path);
 }
 
@@ -112,8 +125,21 @@ void draw() {
   State &s = g_state;
   if (!s.active) return;
   const std::string popup_id = s.title + "###FileDialog";
-  // reopen if imgui closed the popup underneath us (another level-0 popup, host window change)
-  if (!ImGui::IsPopupOpen(popup_id.c_str())) ImGui::OpenPopup(popup_id.c_str());
+  ImGuiWindow *window = ImGui::GetCurrentWindow();
+  if (g_popup_id == 0) {
+    // a pending dialog may only be opened from the call nested in the top-most modal, or from any call
+    // when there is no modal at all
+    ImGuiWindow *modal = ImGui::GetTopMostPopupModal();
+    if (modal != nullptr && modal != window) return;
+    ImGui::OpenPopup(popup_id.c_str());
+    g_popup_id = window->GetID(popup_id.c_str());
+    g_owner_id = window->ID;
+  } else if (g_owner_id != window->ID) {
+    return;
+  } else if (!ImGui::IsPopupOpen(g_popup_id, ImGuiPopupFlags_AnyPopupLevel)) {
+    // reopen if imgui closed the popup underneath us (host window change)
+    ImGui::OpenPopup(popup_id.c_str());
+  }
   ImGui::SetNextWindowSize(ImVec2(640.0f, 480.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   if (!ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) return;
@@ -165,10 +191,8 @@ void draw() {
     ImGui::TextDisabled("%s", s.extension.empty() ? "*" : ("*" + s.extension).c_str());
   }
   const char *accept_label = s.mode == Mode::SaveFile ? "Save" : (s.mode == Mode::Directory ? "Choose" : "Open");
-  if (ImGui::Button(accept_label, ImVec2(80.0f, 0.0f))) ok = true;
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) cancel = true;
-  if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) cancel = true;
+  dialogButtons(accept_label, &ok, &cancel);
+  if (dialogEscapePressed()) cancel = true;
 
   fs::path result;
   if (ok) {
@@ -183,6 +207,9 @@ void draw() {
     }
   }
   if (ok || cancel) ImGui::CloseCurrentPopup();
+  // nested so the overwrite prompt stacks on this dialog; it may finish the dialog through accept()
+  MessageBox::draw();
+  if (!s.active) ImGui::CloseCurrentPopup();
   ImGui::EndPopup();
   if (cancel) {
     finish("");

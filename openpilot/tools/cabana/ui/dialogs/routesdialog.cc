@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
+#include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/util.h"
 
 namespace {
@@ -40,8 +41,11 @@ void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices,
     device_index_ = 0;
     fetchRoutes();
   } else {
-    MessageBox::warning("Error", error_code == 401 ? "Unauthorized. Authenticate with openpilot/tools/lib/auth.py" : "Network error");
-    finish(false);
+    // Qt shows the box on top of the dialog and rejects it once the box is dismissed
+    MessageBox::warning("Error", error_code == 401 ? "Unauthorized. Authenticate with openpilot/tools/lib/auth.py" : "Network error", "",
+                        [this, alive = std::weak_ptr<bool>(alive_)]() {
+                          if (!alive.expired()) finish(false);
+                        });
   }
 }
 
@@ -69,8 +73,10 @@ void RoutesDialog::setRouteList(const std::vector<routes::RouteInfo> &list, bool
     }
     if (!routes_.empty()) route_index_ = 0;
   } else {
-    MessageBox::warning("Error", "Failed to fetch routes. Check your network connection.");
-    finish(false);
+    MessageBox::warning("Error", "Failed to fetch routes. Check your network connection.", "",
+                        [this, alive = std::weak_ptr<bool>(alive_)]() {
+                          if (!alive.expired()) finish(false);
+                        });
   }
   empty_text_ = "No items";
 }
@@ -126,10 +132,8 @@ void RoutesDialog::draw() {
   }
   ImGui::EndChild();
 
-  if (ImGui::Button("OK", ImVec2(80.0f, 0.0f))) accepted = true;
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) rejected = true;
-  if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) rejected = true;
+  dialogButtons("OK", &accepted, &rejected);
+  if (dialogEscapePressed()) rejected = true;
   MessageBox::draw();
   if (accepted || rejected || !open_) ImGui::CloseCurrentPopup();
   ImGui::EndPopup();

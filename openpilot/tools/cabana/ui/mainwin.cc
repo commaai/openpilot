@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -95,7 +96,7 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem("New DBC File", "Ctrl+N")) newFile();
   if (ImGui::MenuItem("Open DBC File...", "Ctrl+O")) openFile();
 
-  if (ImGui::BeginMenu("Manage DBC Files", has_stream)) {
+  if (ImGui::BeginMenu("Manage DBC Files", manage_dbcs_enabled_)) {
     drawManageDBCsMenu();
     ImGui::EndMenu();
   }
@@ -149,8 +150,9 @@ void MainWindow::drawMenuBar() {
   if (ImGui::BeginMenu("View")) {
     if (ImGui::MenuItem("Full Screen", "F11", full_screen_)) toggleFullScreen();
     ImGui::Separator();
-    ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
-    ImGui::MenuItem(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), nullptr, &video_visible_);
+    // QMenu draws the check indicator of a checkable action on the left of the text
+    if (ImGui::Checkbox(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", &messages_visible_)) ImGui::CloseCurrentPopup();
+    if (ImGui::Checkbox(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), &video_visible_)) ImGui::CloseCurrentPopup();
     ImGui::Separator();
     if (ImGui::MenuItem("Reset Window Layout")) {
       messages_visible_ = video_visible_ = true;
@@ -205,13 +207,15 @@ void MainWindow::updateWindowTitle() {
     title += "(" + toString(dbc()->sources(f)) + ") " + f->name();
   }
   if (window_modified_) title += "*";
-  if (!title.empty()) title += " - ";
+  if (!title.empty()) title += " \xe2\x80\x94 ";  // em dash, QWidget's windowTitle separator
   title += "Cabana";
   glfwSetWindowTitle(window_, title.c_str());
 }
 
 void MainWindow::DBCFileChanged() {
   UndoStack::instance()->clear();
+  // Qt only updates this here, so it stays stale until the next DBC change (e.g. after Close stream, Open Stream)
+  manage_dbcs_enabled_ = dynamic_cast<DummyStream *>(can) == nullptr;
   // the file menu state (save texts, enabled flags) is derived from dbc() when the menu is drawn
   updateWindowTitle();
   nextFrame([this]() { restoreSessionState(); });
@@ -359,6 +363,7 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
       wait_dlg_text_ = can->liveStreaming() ? "Waiting for the live stream to start..." : "Loading segment data...";
       wait_dlg_value_ = 0;
       wait_dlg_open_ = true;
+      wait_dlg_show_at_ = ImGui::GetTime() + 4.0;  // QProgressDialog::minimumDuration
       wait_dlg_connection_ = can->eventsMerged.connect([this](const MessageEventsMap &) {
         wait_dlg_open_ = false;
         wait_dlg_connection_.disconnect();
@@ -706,13 +711,17 @@ void MainWindow::drawStatusBar() {
 
 void MainWindow::drawWaitDialog() {
   const char *id = "###WaitDialog";
-  if (wait_dlg_open_ && !ImGui::IsPopupOpen(id)) ImGui::OpenPopup(id);
+  if (wait_dlg_open_ && !ImGui::IsPopupOpen(id) && ImGui::GetTime() >= wait_dlg_show_at_) ImGui::OpenPopup(id);
   if (!ImGui::IsPopupOpen(id)) return;  // keep submitting until CloseCurrentPopup ran, a stale modal blocks all input
   ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f));
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   if (ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::TextUnformatted(wait_dlg_text_.c_str());
-    ImGui::ProgressBar(wait_dlg_value_ / 100.0f, ImVec2(-1.0f, 0.0f));
+    // QProgressBar shows no text until the progress is set
+    ImGui::ProgressBar(wait_dlg_value_ / 100.0f, ImVec2(-1.0f, 0.0f), wait_dlg_value_ == 0 ? "" : (const char *)nullptr);
+    // QProgressDialog right aligns the cancel button
+    const float button_width = ImGui::CalcTextSize("Abort").x + ImGui::GetStyle().FramePadding.x * 2;
+    ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - button_width));
     if (ImGui::Button("Abort") || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       wait_dlg_open_ = false;
       close();
@@ -732,12 +741,26 @@ void MainWindow::drawHelpOverlay() {
     if (raw.empty()) continue;
     std::string text;
     bool in_tag = false;
-    for (char c : raw) {
+    for (size_t i = 0; i < raw.size(); ++i) {
+      const char c = raw[i];
       if (c == '<') {
         in_tag = true;
-        if (raw.compare(&c - raw.data(), 6, "<br />") == 0 || raw.compare(&c - raw.data(), 4, "<br>") == 0) text += '\n';
+        if (raw.compare(i, 6, "<br />") == 0 || raw.compare(i, 4, "<br>") == 0) text += '\n';
       } else if (c == '>') {
         in_tag = false;
+      } else if (!in_tag && c == '&') {
+        // the few HTML entities the whatsThis texts use
+        static const std::pair<const char *, char> entities[] = {{"&nbsp;", ' '}, {"&lt;", '<'}, {"&gt;", '>'}, {"&amp;", '&'}};
+        bool matched = false;
+        for (const auto &[name, ch] : entities) {
+          if (raw.compare(i, strlen(name), name) == 0) {
+            text += ch;
+            i += strlen(name) - 1;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) text += c;
       } else if (!in_tag) {
         text += c;
       }

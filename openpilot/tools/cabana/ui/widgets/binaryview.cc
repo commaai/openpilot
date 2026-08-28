@@ -288,7 +288,8 @@ BinaryIndex BinaryView::indexAt(const ImVec2 &pos) const {
 ImRect BinaryView::visualRect(const BinaryIndex &index) const {
   const float x = grid_pos_.x + VERTICAL_HEADER_WIDTH + index.column * column_width_;
   const float y = grid_pos_.y + index.row * CELL_HEIGHT;
-  return ImRect(x, y, x + column_width_, y + CELL_HEIGHT);
+  // QTableView keeps a 1px grid line between the cells
+  return ImRect(x, y, x + column_width_ - 1, y + CELL_HEIGHT - 1);
 }
 
 void BinaryView::draw() {
@@ -309,7 +310,7 @@ void BinaryView::draw() {
   // verticalHeader()
   for (int row = 0; row < rows; ++row) {
     const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + VERTICAL_HEADER_WIDTH, grid_pos_.y + (row + 1) * CELL_HEIGHT);
-    painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_TableHeaderBg));
+    painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));  // plain header background
     drawStaticText(painter, r, ImGui::GetFont(), ImGui::GetFontSize(), ImGui::GetColorU32(ImGuiCol_Text), model->headerData(row));
   }
   for (int row = 0; row < rows; ++row) {
@@ -566,28 +567,50 @@ void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
       subtract.emplace_back(rc.Max.x - 3, rc.Max.y - spacing, rc.Max.x, rc.Max.y);
     }
   }
-  painter->PushClipRect(rc.Min, rc.Max, true);
+  // QRegion(rc).subtracted(subtract): rc split into horizontal bands with the notch corners removed
+  std::vector<ImRect> region;
+  {
+    std::vector<float> ys{rc.Min.y, rc.Max.y};
+    for (auto &r : subtract) {
+      ys.push_back(r.Min.y);
+      ys.push_back(r.Max.y);
+    }
+    std::sort(ys.begin(), ys.end());
+    ys.erase(std::unique(ys.begin(), ys.end()), ys.end());
+    for (size_t i = 0; i + 1 < ys.size(); ++i) {
+      const float y0 = ys[i], y1 = ys[i + 1];
+      float x0 = rc.Min.x, x1 = rc.Max.x;
+      for (auto &r : subtract) {
+        if (r.Min.y <= y0 && r.Max.y >= y1) {
+          if (r.Min.x <= x0) x0 = std::max(x0, r.Max.x);
+          else x1 = std::min(x1, r.Min.x);
+        }
+      }
+      if (x1 > x0) region.emplace_back(x0, y0, x1, y1);
+    }
+  }
 
   auto item = &bin_view->model->items[index.row * bin_view->model->columnCount() + index.column];
   CabanaColor color = sig->color;
   color.a = item->bg_color.alpha();
-  // Mixing the signal color with the Base background color to fade it
-  painter->AddRectFilled(rc.Min, rc.Max, paletteBase());
-  painter->AddRectFilled(rc.Min, rc.Max, toImColor(color));
-
-  // Draw edges
   const ImU32 edge = toImColor(sig->color.darker(125));
-  if (draw_left) painter->AddLine(ImVec2(rc.Min.x + 0.5f, rc.Min.y), ImVec2(rc.Min.x + 0.5f, rc.Max.y), edge, 1.0f);
-  if (draw_right) painter->AddLine(ImVec2(rc.Max.x - 0.5f, rc.Min.y), ImVec2(rc.Max.x - 0.5f, rc.Max.y), edge, 1.0f);
-  if (draw_bottom) painter->AddLine(ImVec2(rc.Min.x, rc.Max.y - 0.5f), ImVec2(rc.Max.x, rc.Max.y - 0.5f), edge, 1.0f);
-  if (draw_top) painter->AddLine(ImVec2(rc.Min.x, rc.Min.y + 0.5f), ImVec2(rc.Max.x, rc.Min.y + 0.5f), edge, 1.0f);
 
-  if (!subtract.empty()) {
-    // fill gaps inside corners: the subtracted rects stay unpainted, the 2px pen leaves a 1px halo around them
+  for (const ImRect &clip : region) {
+    painter->PushClipRect(clip.Min, clip.Max, true);
+    // Mixing the signal color with the Base background color to fade it
+    painter->AddRectFilled(rc.Min, rc.Max, paletteBase());
+    painter->AddRectFilled(rc.Min, rc.Max, toImColor(color));
+
+    // Draw edges
+    if (draw_left) painter->AddLine(ImVec2(rc.Min.x + 0.5f, rc.Min.y), ImVec2(rc.Min.x + 0.5f, rc.Max.y), edge, 1.0f);
+    if (draw_right) painter->AddLine(ImVec2(rc.Max.x - 0.5f, rc.Min.y), ImVec2(rc.Max.x - 0.5f, rc.Max.y), edge, 1.0f);
+    if (draw_bottom) painter->AddLine(ImVec2(rc.Min.x, rc.Max.y - 0.5f), ImVec2(rc.Max.x, rc.Max.y - 0.5f), edge, 1.0f);
+    if (draw_top) painter->AddLine(ImVec2(rc.Min.x, rc.Min.y + 0.5f), ImVec2(rc.Max.x, rc.Min.y + 0.5f), edge, 1.0f);
+
+    // fill gaps inside corners: the 2px pen is clipped to the region, only the half outside the notch is painted
     for (auto &r : subtract) {
-      painter->AddRectFilled(r.Min, r.Max, paletteBase());
-      painter->AddRect(ImVec2(r.Min.x - 0.5f, r.Min.y - 0.5f), ImVec2(r.Max.x + 0.5f, r.Max.y + 0.5f), edge, 0.0f, 0, 1.0f);
+      painter->AddRect(r.Min, r.Max, edge, 0.0f, 0, 2.0f);
     }
+    painter->PopClipRect();
   }
-  painter->PopClipRect();
 }

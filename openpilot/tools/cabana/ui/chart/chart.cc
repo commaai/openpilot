@@ -414,8 +414,10 @@ void ChartView::mousePressEvent() {
 void ChartView::mouseMoveEvent() {
   const ImVec2 pos = ImGui::GetMousePos();
   const ImVec2 delta = ImGui::GetIO().MouseDelta;
+  // Qt only sends a move event when the mouse actually moves; a click alone must not hide the tip
+  if (delta.x == 0 && delta.y == 0) return;
   // Qt only delivers move events to the widget under the mouse (or the one holding the implicit grab)
-  if (mouse_mode == MouseMode::None && (!rect.Contains(pos) || (delta.x == 0 && delta.y == 0))) return;
+  if (mouse_mode == MouseMode::None && !rect.Contains(pos)) return;
 
   // Scrubbing
   if (mouse_mode == MouseMode::Scrub && ImGui::GetIO().KeyShift) {
@@ -532,9 +534,11 @@ void ChartView::resetChartCache() {
 void ChartView::draw(float width) {
   ImGui::PushID(this);
   width = std::max(width, (float)CHART_MIN_WIDTH);
+  // the tile geometry is known before the child is entered, so it stays valid when imgui culls a scrolled out chart
+  const ImVec2 tile_pos = ImGui::GetCursorScreenPos();
+  rect = ImRect(tile_pos, tile_pos + ImVec2(width, sizeHint().y));
   if (ImGui::BeginChild("chart", ImVec2(width, sizeHint().y), ImGuiChildFlags_None,
                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    rect = ImGui::GetCurrentWindow()->Rect();
     // the y label width needs the font, so it is measured here instead of in updateAxisY
     if (!sigs.empty() && y_label_width == 0) {
       int max_label_width = 0;
@@ -551,7 +555,9 @@ void ChartView::draw(float width) {
     contextMenuEvent();
   }
   ImGui::EndChild();
-  tip_label->paintEvent();
+  // Qt only paints visible charts: a chart scrolled out of the viewport draws no tip
+  const ImRect visible_rect = charts_widget->chartVisibleRect(this);
+  if (visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label->paintEvent();
   ImGui::PopID();
 }
 
@@ -738,7 +744,8 @@ void ChartView::drawRubberBandTimeRange() {
 
   ImDrawList *painter = ImPlot::GetPlotDrawList();
   // selection rect
-  ImU32 highlight = ImGui::GetColorU32(ImGuiCol_Header);
+  // QPalette::Highlight is opaque; ImGuiCol_Header is not, so the 1px outline is drawn at full alpha
+  ImU32 highlight = ImGui::GetColorU32(ImGuiCol_Header) | IM_COL32_A_MASK;
   ImU32 fill = (highlight & ~IM_COL32_A_MASK) | (50 << IM_COL32_A_SHIFT);
   painter->AddRectFilled(rubber_rect.Min, rubber_rect.Max, fill);
   painter->AddRect(rubber_rect.Min, rubber_rect.Max, highlight);

@@ -20,6 +20,23 @@ static float buttonWidth(const std::string &label) {
   return ImGui::CalcTextSize(label.c_str(), nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
 }
 
+// an auto-raise QToolButton with an InstantPopup menu: flat until hovered, with a dropdown arrow
+static float menuButtonWidth(const std::string &text) {
+  return buttonWidth(text) + ImGui::GetFontSize();
+}
+
+static bool menuButton(const char *id, const std::string &text) {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  bool clicked = ImGui::Button((text + "###" + id).c_str(), ImVec2(menuButtonWidth(text), 0.0f));
+  ImGui::PopStyleColor();
+  ImGui::RenderArrow(ImGui::GetWindowDrawList(),
+                     ImVec2(ImGui::GetItemRectMax().x - style.FramePadding.x - ImGui::GetFontSize(),
+                            ImGui::GetItemRectMin().y + style.FramePadding.y),
+                     ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Down, 0.8f);
+  return clicked;
+}
+
 ChartsWidget::ChartsWidget() {
   // toolbar: see drawToolBar
 
@@ -222,104 +239,146 @@ void ChartsWidget::updateToolBar() {
 void ChartsWidget::drawToolBar() {
   static const std::array<const char *, 3> types{"Line", "Step", "Scatter"};
   const ImGuiStyle &style = ImGui::GetStyle();
+  float slider_width = 150.0f;
 
-  if (toolButton("new_plot_btn", icon::FILE_PLUS, "New Chart")) newChart();
-  ImGui::SameLine();
-  if (toolButton("new_tab_btn", icon::WINDOW_STACK, "New Tab")) newTab();
-  ImGui::SameLine();
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(title_label.c_str());
-  ImGui::SameLine(0, style.ItemSpacing.x * 2);
+  // QToolBar lays the actions out in order; what does not fit goes into the ">>" extension menu
+  struct Item {
+    float width;
+    std::function<void()> draw;
+  };
+  std::vector<Item> left, right;
+
+  left.push_back({buttonWidth(icon::FILE_PLUS), [this]() {
+    if (toolButton("new_plot_btn", icon::FILE_PLUS, "New Chart")) newChart();
+  }});
+  left.push_back({buttonWidth(icon::WINDOW_STACK), [this]() {
+    if (toolButton("new_tab_btn", icon::WINDOW_STACK, "New Tab")) newTab();
+  }});
+  // title_label carries a trailing PM_LayoutHorizontalSpacing content margin
+  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + style.ItemSpacing.x, [this]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(title_label.c_str());
+  }});
 
   // chart type menu
-  std::string chart_type_text = std::string("Type: ") + types[std::clamp(settings.chart_series_type, 0, 2)];
-  if (ImGui::Button((chart_type_text + "###chart_type").c_str())) ImGui::OpenPopup("chart_type_menu");
-  if (ImGui::BeginPopup("chart_type_menu")) {
-    for (int i = 0; i < types.size(); ++i) {
-      if (ImGui::MenuItem(types[i])) {
-        settings.chart_series_type = i;
-        settingChanged();
-      }
-    }
-    ImGui::EndPopup();
-  }
-
-  // columns menu
-  if (columns_action_visible) {
-    ImGui::SameLine();
-    if (ImGui::Button((columns_action_text + "###columns").c_str())) ImGui::OpenPopup("columns_menu");
-    if (ImGui::BeginPopup("columns_menu")) {
-      for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
-        if (ImGui::MenuItem(std::to_string(i + 1).c_str())) setColumnCount(i + 1);
+  const std::string chart_type_text = std::string("Type: ") + types[std::clamp(settings.chart_series_type, 0, 2)];
+  left.push_back({menuButtonWidth(chart_type_text), [this, chart_type_text]() {
+    if (menuButton("chart_type", chart_type_text)) ImGui::OpenPopup("chart_type_menu");
+    if (ImGui::BeginPopup("chart_type_menu")) {
+      for (int i = 0; i < types.size(); ++i) {
+        if (ImGui::MenuItem(types[i])) {
+          settings.chart_series_type = i;
+          settingChanged();
+        }
       }
       ImGui::EndPopup();
     }
+  }});
+
+  // columns menu
+  if (columns_action_visible) {
+    left.push_back({menuButtonWidth(columns_action_text), [this]() {
+      if (menuButton("columns", columns_action_text)) ImGui::OpenPopup("columns_menu");
+      if (ImGui::BeginPopup("columns_menu")) {
+        for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
+          if (ImGui::MenuItem(std::to_string(i + 1).c_str())) setColumnCount(i + 1);
+        }
+        ImGui::EndPopup();
+      }
+    }});
   }
 
-  // spacer: right align the rest
-  float slider_width = 150.0f;
-  float right_width = 0;
-  bool show_range_lb = range_lb_visible, show_range_slider = range_slider_visible;
-  if (range_lb_visible) right_width += ImGui::CalcTextSize(range_lb.c_str()).x + style.ItemSpacing.x;
-  if (range_slider_visible) right_width += slider_width + style.ItemSpacing.x;
-  if (undo_zoom_visible) right_width += buttonWidth(icon::ARROW_COUNTERCLOCKWISE) + style.ItemSpacing.x;
-  if (redo_zoom_visible) right_width += buttonWidth(icon::ARROW_CLOCKWISE) + style.ItemSpacing.x;
-  if (reset_zoom_visible) right_width += buttonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text) + style.ItemSpacing.x;
-  right_width += buttonWidth(icon::X_SQUARE) + style.ItemSpacing.x;
-  right_width += buttonWidth(dock_btn_icon);
-  ImGui::SameLine();
-  if (range_slider_visible && ImGui::GetContentRegionAvail().x < right_width) {
-    // QSlider shrinks first (never below 40px), the buttons stay pinned to the right edge
-    const float shrink = std::min(slider_width - 40.0f, right_width - ImGui::GetContentRegionAvail().x);
-    slider_width -= std::max(shrink, 0.0f);
-    right_width -= std::max(shrink, 0.0f);
+  // the spacer right aligns the rest
+  if (range_lb_visible) {
+    right.push_back({ImGui::CalcTextSize(range_lb.c_str()).x, [this]() {
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted(range_lb.c_str());
+    }});
   }
-  // QToolBar moves what still does not fit into its extension menu; here the range label, then the slider, are hidden
-  if (show_range_lb && ImGui::GetContentRegionAvail().x < right_width) {
-    show_range_lb = false;
-    right_width -= ImGui::CalcTextSize(range_lb.c_str()).x + style.ItemSpacing.x;
+  if (range_slider_visible) {
+    right.push_back({slider_width, [this, &slider_width]() {
+      if (range_slider.draw("##range_slider", slider_width)) setMaxChartRange(range_slider.value());
+      ImGui::SetItemTooltip("Set the chart range");
+    }});
   }
-  if (show_range_slider && ImGui::GetContentRegionAvail().x < right_width) {
-    show_range_slider = false;
-    right_width -= slider_width + style.ItemSpacing.x;
-  }
-  const float x = ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width);
-  ImGui::SetCursorPosX(x);
-
-  if (show_range_lb) {
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(range_lb.c_str());
-    ImGui::SameLine();
-  }
-  if (show_range_slider) {
-    if (range_slider.draw("##range_slider", slider_width)) setMaxChartRange(range_slider.value());
-    ImGui::SetItemTooltip("Set the chart range");
-    ImGui::SameLine();
-  }
-
-  // zoom controls
   if (undo_zoom_visible) {
-    ImGui::BeginDisabled(!undo_zoom_enabled);
-    if (toolButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack.undo();
-    ImGui::EndDisabled();
-    ImGui::SameLine();
+    right.push_back({buttonWidth(icon::ARROW_COUNTERCLOCKWISE), [this]() {
+      ImGui::BeginDisabled(!undo_zoom_enabled);
+      if (toolButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack.undo();
+      ImGui::EndDisabled();
+    }});
   }
   if (redo_zoom_visible) {
-    ImGui::BeginDisabled(!redo_zoom_enabled);
-    if (toolButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack.redo();
-    ImGui::EndDisabled();
-    ImGui::SameLine();
+    right.push_back({buttonWidth(icon::ARROW_CLOCKWISE), [this]() {
+      ImGui::BeginDisabled(!redo_zoom_enabled);
+      if (toolButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack.redo();
+      ImGui::EndDisabled();
+    }});
   }
   if (reset_zoom_visible) {
-    if (toolButton("reset_zoom_btn", icon::ZOOM_OUT, "Reset Zoom", reset_zoom_text.c_str())) zoomReset();
-    ImGui::SameLine();
+    right.push_back({buttonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text), [this]() {
+      if (toolButton("reset_zoom_btn", icon::ZOOM_OUT, "Reset Zoom", reset_zoom_text.c_str())) zoomReset();
+    }});
+  }
+  right.push_back({buttonWidth(icon::X_SQUARE), [this]() {
+    ImGui::BeginDisabled(!remove_all_enabled);
+    if (toolButton("remove_all_btn", icon::X_SQUARE, "Remove all charts")) removeAll();
+    ImGui::EndDisabled();
+  }});
+  right.push_back({buttonWidth(dock_btn_icon), [this]() {
+    if (toolButton("dock_btn", dock_btn_icon, dock_btn_tooltip.c_str())) toggleChartsDocking();
+  }});
+
+  size_t n_left = left.size(), n_right = right.size();
+  auto total_width = [&]() {
+    float w = 0;
+    for (size_t i = 0; i < n_left; ++i) w += left[i].width + style.ItemSpacing.x;
+    for (size_t i = 0; i < n_right; ++i) w += right[i].width + style.ItemSpacing.x;
+    return w;
+  };
+
+  float avail = ImGui::GetContentRegionAvail().x;
+  if (range_slider_visible && total_width() > avail) {
+    // QSlider shrinks first (never below 40px), the buttons stay pinned to the right edge
+    const float shrink = std::min(slider_width - 40.0f, total_width() - avail);
+    if (shrink > 0.0f) {
+      slider_width -= shrink;
+      right[range_lb_visible ? 1 : 0].width = slider_width;
+    }
   }
 
-  ImGui::BeginDisabled(!remove_all_enabled);
-  if (toolButton("remove_all_btn", icon::X_SQUARE, "Remove all charts")) removeAll();
-  ImGui::EndDisabled();
+  const float chevron_w = buttonWidth(">>");
+  bool overflow = total_width() > avail;
+  if (overflow) avail -= chevron_w + style.ItemSpacing.x;
+  while (total_width() > avail && (n_right > 0 || n_left > 0)) {
+    if (n_right > 0) --n_right; else --n_left;
+  }
+
+  float right_width = 0;
+  for (size_t i = 0; i < n_right; ++i) right_width += right[i].width + style.ItemSpacing.x;
+  if (overflow) right_width += chevron_w + style.ItemSpacing.x;
+
+  for (size_t i = 0; i < n_left; ++i) {
+    if (i > 0) ImGui::SameLine();
+    left[i].draw();
+  }
   ImGui::SameLine();
-  if (toolButton("dock_btn", dock_btn_icon, dock_btn_tooltip.c_str())) toggleChartsDocking();
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                       std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width + style.ItemSpacing.x));
+  for (size_t i = 0; i < n_right; ++i) {
+    if (i > 0) ImGui::SameLine();
+    right[i].draw();
+  }
+  if (overflow) {
+    if (n_right > 0) ImGui::SameLine();
+    if (ImGui::Button(">>###toolbar_ext")) ImGui::OpenPopup("toolbar_ext_menu");
+    ImGui::SetItemTooltip("More");
+    if (ImGui::BeginPopup("toolbar_ext_menu")) {
+      for (size_t i = n_left; i < left.size(); ++i) left[i].draw();
+      for (size_t i = n_right; i < right.size(); ++i) right[i].draw();
+      ImGui::EndPopup();
+    }
+  }
 }
 
 void ChartsWidget::settingChanged() {
@@ -427,9 +486,13 @@ void ChartsWidget::setColumnCount(int n) {
 }
 
 void ChartsWidget::updateLayout(bool force) {
+  // the container has not been drawn yet (docked/floated this frame): keep the last known layout
+  const float container_width = charts_container->geometry.GetWidth();
+  if (container_width <= 0) return;
+
   int n = MAX_COLUMN_COUNT;
   for (; n > 1; --n) {
-    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_container->horizontalSpacing()) < charts_container->geometry.GetWidth()) break;
+    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_container->horizontalSpacing()) < container_width) break;
   }
 
   bool show_column_cb = n > 1;
@@ -445,9 +508,12 @@ void ChartsWidget::updateLayout(bool force) {
 void ChartsWidget::startChartDrag(ChartView *chart, const ImVec2 &global_pos) {
   stopAutoScroll();
   drag = {.source = chart, .press_pos = global_pos};
-  // the preview is a list of the chart's signal names instead of a scaled grab of the chart
+  // Qt grabs the chart into a pixmap scaled to CHART_MIN_WIDTH; the ghost keeps that size and shows the header
   drag_preview.clear();
-  for (auto &s : chart->sigs) drag_preview.push_back(s.sig->name);
+  for (auto &s : chart->sigs) {
+    drag_preview.push_back({toImU32(s.color), s.sig->name + " " + msgName(s.msg_id) + " " + s.msg_id.toString()});
+  }
+  drag_preview_size = ImVec2(CHART_MIN_WIDTH, std::max(chart->rect.GetHeight(), (float)settings.chart_height));
 }
 
 void ChartsWidget::dragChartMove(const ImVec2 &global_pos) {
@@ -526,16 +592,24 @@ void ChartsWidget::dragChartRelease(const ImVec2 &global_pos) {
 
 void ChartsWidget::drawDragPreview() {
   if (!drag_preview_visible) return;
+  // Qt drags a translucent snapshot of the whole tile. Re-rendering a live ChartView here is not possible
+  // (the implot plot would re-handle the input), so the tile header is redrawn at half alpha at the tile size.
+  ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
   ImDrawList *dl = ImGui::GetForegroundDrawList();
+  const ImVec2 p0 = drag_preview_pos;
+  const ImVec2 p1 = p0 + drag_preview_size;
+  dl->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_ChildBg));
+  dl->AddRect(p0, p1, ImGui::GetColorU32(ImGuiCol_Border));
   const float line_h = ImGui::GetTextLineHeightWithSpacing();
-  ImVec2 size(CHART_MIN_WIDTH, line_h * std::max<int>(drag_preview.size(), 1) + 8);
-  dl->AddRectFilled(drag_preview_pos, drag_preview_pos + size, ImGui::GetColorU32(ImGuiCol_PopupBg, 0.9f));
-  dl->AddRect(drag_preview_pos, drag_preview_pos + size, ImGui::GetColorU32(ImGuiCol_Border));
-  float y = drag_preview_pos.y + 4;
-  for (const auto &name : drag_preview) {
-    dl->AddText(ImVec2(drag_preview_pos.x + 6, y), ImGui::GetColorU32(ImGuiCol_Text), name.c_str());
+  const float marker = ImGui::GetTextLineHeight() - 4;
+  float y = p0.y + 6;
+  for (const auto &item : drag_preview) {
+    if (y + line_h > p1.y) break;
+    dl->AddRectFilled(ImVec2(p0.x + 6, y + 2), ImVec2(p0.x + 6 + marker, y + 2 + marker), ImGui::GetColorU32(item.color));
+    dl->AddText(ImVec2(p0.x + 6 + marker + 4, y), ImGui::GetColorU32(ImGuiCol_Text), item.name.c_str());
     y += line_h;
   }
+  ImGui::PopStyleVar();
 }
 
 void ChartsWidget::startAutoScroll(const ImVec2 &global_pos) {
@@ -703,6 +777,9 @@ void ChartsWidget::draw() {
     doAutoScroll();
   }
   event();
+  // the drop target and indicator must be resolved before the charts are painted, otherwise the highlight
+  // lags a frame behind the target used on release and the drop lands on the wrong chart
+  eventFilter();
 
   drawToolBar();
   drawTabBar();
@@ -718,7 +795,6 @@ void ChartsWidget::draw() {
   ImGui::EndChild();
   ImGui::PopStyleColor();
 
-  eventFilter();
   drawDragPreview();
 
   if (signal_selector_ && !signal_selector_->draw()) {

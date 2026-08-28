@@ -411,6 +411,9 @@ void MessageListModel::sort(int column, ImGuiSortDirection order) {
 
 // MessageView
 
+// QHeaderView::defaultSectionSize
+static constexpr float DEFAULT_SECTION_SIZE = 100.0f;
+
 void MessageView::drawRow(int row) {
   const auto &item = model_->items_[row];
   const bool selected = row == current_row_;
@@ -422,40 +425,46 @@ void MessageView::drawRow(int row) {
   // inactive: palette Disabled Text, HighlightedText alpha 100 (applied by the delegate)
   ImGui::PushID(row);
 
-  // the row selection spans all columns
-  ImGui::TableSetColumnIndex(MessageListModel::Column::NAME);
-  ImVec2 pos = ImGui::GetCursorScreenPos();
-  float width = ImGui::GetContentRegionAvail().x;
-  // QAbstractItemView selects on press
-  if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick, ImVec2(0, row_height))) {
-    setCurrentIndex(row);
-  }
-  if (selected && scroll_to_current_) {
-    ImGui::SetScrollHereY();
-    scroll_to_current_ = false;
-  }
-  if (ImGui::TableGetHoveredColumn() == MessageListModel::Column::NAME && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
-    const std::string tooltip = model_->toolTip(row, MessageListModel::Column::NAME);
-    const size_t nl = tooltip.find('\n');
-    ImGui::BeginTooltip();
-    ImGui::TextUnformatted(tooltip.c_str(), nl != std::string::npos ? tooltip.c_str() + nl : nullptr);
-    if (nl != std::string::npos) ImGui::TextDisabled("%s", tooltip.c_str() + nl + 1);
-    ImGui::EndTooltip();
-  }
-  delegate_->paint(ImGui::GetWindowDrawList(), ImRect(pos, ImVec2(pos.x + width, pos.y + row_height)), selected, inactive,
-                   model_->data(row, MessageListModel::Column::NAME));
-
-  for (int column = MessageListModel::Column::SOURCE; column < model_->columnCount(); ++column) {
+  bool row_item_submitted = false;
+  for (int column = MessageListModel::Column::NAME; column < model_->columnCount(); ++column) {
     if (!ImGui::TableSetColumnIndex(column)) continue;
-    pos = ImGui::GetCursorScreenPos();
-    width = ImGui::GetContentRegionAvail().x;
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    const float width = ImGui::GetContentRegionAvail().x;
     const ImRect rect(pos, ImVec2(pos.x + width, pos.y + row_height));
+
+    const bool row_item = !row_item_submitted;
+    if (row_item) {
+      // the row selection spans all columns; submit it in the first visible column so that it is not
+      // clipped away when the table is scrolled horizontally
+      row_item_submitted = true;
+      // QAbstractItemView selects on press
+      if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick, ImVec2(0, row_height))) {
+        setCurrentIndex(row);
+      }
+      if (selected && scroll_to_current_) {
+        ImGui::SetScrollHereY();
+        scroll_to_current_ = false;
+      }
+      // the tooltip is on the Name item in Qt; the row carries it here
+      if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+        const std::string tooltip = model_->toolTip(row, MessageListModel::Column::NAME);
+        if (!tooltip.empty()) {
+          const size_t nl = tooltip.find('\n');
+          ImGui::BeginTooltip();
+          ImGui::TextUnformatted(tooltip.c_str(), nl != std::string::npos ? tooltip.c_str() + nl : nullptr);
+          if (nl != std::string::npos) ImGui::TextDisabled("%s", tooltip.c_str() + nl + 1);
+          ImGui::EndTooltip();
+        }
+      }
+    }
+
     if (column == MessageListModel::Column::DATA && bytes) {
       delegate_->paint(ImGui::GetWindowDrawList(), rect, selected, inactive, "", bytes, &m.colors);
     } else {
       delegate_->paint(ImGui::GetWindowDrawList(), rect, selected, inactive, model_->data(row, column));
     }
-    ImGui::Dummy(ImVec2(width, row_height));
+    // the Selectable already sized its cell
+    if (!row_item) ImGui::Dummy(ImVec2(width, row_height));
   }
 
   ImGui::PopID();
@@ -520,15 +529,21 @@ void MessageView::draw() {
   const float inner_width = std::max(avail_width, fixed_columns_width_ + bytes_width);
   if (!ImGui::BeginTable("messages", model_->columnCount(), flags, ImVec2(0, 0), inner_width)) return;
 
-  ImGui::TableSetupScrollFreeze(1, 2);  // name column, header + filter row
+  // QTreeView has no frozen column: only the header and the filter row stay put
+  ImGui::TableSetupScrollFreeze(0, 2);
+  // MessagesWidget shows its own header menu; imgui's default one is never drawn, so clear the flag
+  // TableHeader() leaves behind (it would keep the column header highlighted forever)
+  ImGuiTable *table = ImGui::GetCurrentTable();
+  table->DisableDefaultContextMenu = true;
+  table->IsContextPopupOpen = false;
   for (int i = 0; i < model_->columnCount(); ++i) {
     ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_WidthFixed;
-    float width = 0;
+    float width = DEFAULT_SECTION_SIZE;
     if (i == MessageListModel::Column::NAME) {
       column_flags |= ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_NoHide;
-      width = 160;
     } else if (i == MessageListModel::Column::DATA) {
       column_flags = ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_NoResize;
+      width = 0;
     }
     if (header_->isSectionHidden(i)) column_flags |= ImGuiTableColumnFlags_Disabled;
     ImGui::TableSetupColumn(model_->headerData(i).c_str(), column_flags, width);
@@ -537,6 +552,7 @@ void MessageView::draw() {
   if (ImGuiTableSortSpecs *specs = ImGui::TableGetSortSpecs(); specs && specs->SpecsDirty) {
     if (specs->SpecsCount > 0) model_->sort(specs->Specs[0].ColumnIndex, specs->Specs[0].SortDirection);
     specs->SpecsDirty = false;
+    if (current_row_ >= 0) scroll_to_current_ = true;  // QTreeView::sortByColumn: scrollTo(currentIndex)
   }
 
   header_->draw();
@@ -558,7 +574,6 @@ void MessageView::draw() {
   }
 
   // for the next frame: the stretch inner width and the page size of keyPressEvent
-  const ImGuiTable *table = ImGui::GetCurrentTable();
   const ImGuiTableColumn &data_column = table->Columns[MessageListModel::Column::DATA];
   fixed_columns_width_ = data_column.IsEnabled ? table->ColumnsGivenWidth - data_column.WidthGiven : 0;
   has_scrollbar_y_ = table->InnerWindow->ScrollbarY;
@@ -603,7 +618,6 @@ void MessageViewHeader::updateGeometries() {
 
 void MessageViewHeader::draw() {
   updateGeometries();
-  ImGuiTable *table = ImGui::GetCurrentTable();
 
   // TableHeadersRow, submitted manually to catch the right click
   ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
@@ -611,20 +625,30 @@ void MessageViewHeader::draw() {
     if (!ImGui::TableSetColumnIndex(i)) continue;
     ImGui::PushID(i);
     ImGui::TableHeader(ImGui::TableGetColumnName(i));
-    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) customContextMenuRequested = true;
+    // same timing as TableHeader's own TableOpenContextMenu, so MessagesWidget's menu is opened last
+    // and replaces the (disabled) table context menu in the popup stack
+    if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) customContextMenuRequested = true;
     ImGui::PopID();
   }
-  // TableHeader opens imgui's default context menu; MessagesWidget shows its own menu instead
-  if (customContextMenuRequested) table->IsContextPopupOpen = false;
   updateHeaderPositions();
 
   // the filter editors under the header
+  const ImGuiStyle &style = ImGui::GetStyle();
+  const float clear_width = ImGui::CalcTextSize(icon::X).x + style.FramePadding.x * 2;
   ImGui::TableNextRow();
   for (int i = 0; i < count(); i++) {
     if (!ImGui::TableSetColumnIndex(i)) continue;
     ImGui::PushID(i);
-    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::SetNextItemWidth(editors[i].empty() ? -FLT_MIN : std::max(1.0f, ImGui::GetContentRegionAvail().x - clear_width));
     if (inputText("##filter", &editors[i], placeholders_[i].c_str())) updateFilters();
+    // setClearButtonEnabled: the button only shows when the field is non-empty
+    if (!editors[i].empty()) {
+      ImGui::SameLine(0, 0);
+      if (ImGui::Button(icon::X)) {
+        editors[i].clear();
+        updateFilters();
+      }
+    }
     ImGui::PopID();
   }
 }

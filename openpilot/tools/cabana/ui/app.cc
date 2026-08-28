@@ -1,6 +1,8 @@
 #include "tools/cabana/ui/app.h"
 
+#include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <stdexcept>
 #include <utility>
@@ -20,18 +22,43 @@ namespace {
 
 std::atomic<bool> g_signal_exit{false};
 std::vector<KeyEvent> g_key_events;
+// Qt repaints on demand; imgui needs a few frames after an input event for hover/active state to settle
+int g_input_frames = 0;
+constexpr int SETTLE_FRAMES = 3;
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
   if (action == GLFW_PRESS) g_key_events.push_back({key, mods});
+  g_input_frames = SETTLE_FRAMES;
+}
+void cursorPosCallback(GLFWwindow *w, double x, double y) { ImGui_ImplGlfw_CursorPosCallback(w, x, y); g_input_frames = SETTLE_FRAMES; }
+void cursorEnterCallback(GLFWwindow *w, int entered) { ImGui_ImplGlfw_CursorEnterCallback(w, entered); g_input_frames = SETTLE_FRAMES; }
+void mouseButtonCallback(GLFWwindow *w, int b, int a, int m) { ImGui_ImplGlfw_MouseButtonCallback(w, b, a, m); g_input_frames = SETTLE_FRAMES; }
+void scrollCallback(GLFWwindow *w, double x, double y) { ImGui_ImplGlfw_ScrollCallback(w, x, y); g_input_frames = SETTLE_FRAMES; }
+void charCallback(GLFWwindow *w, unsigned int c) { ImGui_ImplGlfw_CharCallback(w, c); g_input_frames = SETTLE_FRAMES; }
+void windowFocusCallback(GLFWwindow *w, int f) { ImGui_ImplGlfw_WindowFocusCallback(w, f); g_input_frames = SETTLE_FRAMES; }
+void windowSizeCallback(GLFWwindow *, int, int) { g_input_frames = SETTLE_FRAMES; }
+void windowRefreshCallback(GLFWwindow *) { g_input_frames = SETTLE_FRAMES; }
+
+// Paces the loop like Qt's event driven repaints: input renders right away, a playing stream repaints at the
+// rate its data and camera frames arrive, otherwise the window idles.
+double frameInterval() {
+  if (g_input_frames > 0) return 0.0;
+  const bool playing = can != nullptr && dynamic_cast<DummyStream *>(can) == nullptr && !can->isPaused();
+  return playing ? 1.0 / 30.0 : 1.0 / 10.0;
 }
 
 void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
-void renderFrame(GLFWwindow *window, MainWindow *win) {
-  glfwPollEvents();
+void renderFrame(GLFWwindow *window, MainWindow *win, double wait_seconds) {
+  if (wait_seconds > 0) {
+    glfwWaitEventsTimeout(wait_seconds);
+  } else {
+    glfwPollEvents();
+  }
+  if (g_input_frames > 0) --g_input_frames;
   utils::drainMainThreadQueue();
 
   int fb_w = 0, fb_h = 0;
@@ -89,7 +116,16 @@ ImGuiRuntime::ImGuiRuntime(GLFWwindow *window) {
     ImGui::DestroyContext();
     throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
   }
+  // chain the imgui backend callbacks so input marks the next frames dirty
   glfwSetKeyCallback(window, keyCallback);
+  glfwSetCursorPosCallback(window, cursorPosCallback);
+  glfwSetCursorEnterCallback(window, cursorEnterCallback);
+  glfwSetMouseButtonCallback(window, mouseButtonCallback);
+  glfwSetScrollCallback(window, scrollCallback);
+  glfwSetCharCallback(window, charCallback);
+  glfwSetWindowFocusCallback(window, windowFocusCallback);
+  glfwSetWindowSizeCallback(window, windowSizeCallback);
+  glfwSetWindowRefreshCallback(window, windowRefreshCallback);
   if (!ImGui_ImplOpenGL3_Init("#version 330")) {
     ImGui_ImplGlfw_Shutdown();
     ImPlot::DestroyContext();
@@ -120,6 +156,7 @@ int run(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
     applyTheme(settings.theme);
 
     MainWindow win(glfw.window(), std::move(stream), dbc_file);
+    auto last_frame = std::chrono::steady_clock::now();
     while (!win.exited()) {
       if (g_signal_exit.exchange(false)) {
         printf("\nexiting...\n");
@@ -128,7 +165,11 @@ int run(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
         glfwSetWindowShouldClose(glfw.window(), GLFW_FALSE);
         win.close();
       }
-      renderFrame(glfw.window(), &win);
+      // the interval is measured from the start of the previous frame, so render time counts against it
+      const double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - last_frame).count();
+      const double wait_seconds = std::max(0.0, frameInterval() - elapsed);
+      last_frame = std::chrono::steady_clock::now() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(wait_seconds));
+      renderFrame(glfw.window(), &win, wait_seconds);
     }
     return 0;
   } catch (const std::exception &e) {

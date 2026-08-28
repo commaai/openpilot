@@ -36,8 +36,31 @@ public:
   int minimum() const { return min_; }
   int maximum() const { return max_; }
   bool draw(const char *label, float width) {  // valueChanged
+    // Fusion QSlider: a thin groove with the part left of the handle filled; imgui's frame is drawn as that groove
+    const float rounding = ImGui::GetStyle().FrameRounding;
+    const ImU32 groove_col = ImGui::GetColorU32(ImGuiCol_FrameBg);
+    const ImU32 fill_col = ImGui::GetColorU32(ImGuiCol_SliderGrab);
+    const ImU32 handle_col = ImGui::GetColorU32(ImGuiCol_SliderGrabActive);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32_BLACK_TRANS);
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, IM_COL32_BLACK_TRANS);
+    ImGui::PushStyleColor(ImGuiCol_SliderGrab, IM_COL32_BLACK_TRANS);
+    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, IM_COL32_BLACK_TRANS);
     ImGui::SetNextItemWidth(width);
-    return ImGui::SliderInt(label, &pos_, min_, max_, "", ImGuiSliderFlags_NoInput);
+    bool changed = ImGui::SliderInt(label, &pos_, min_, max_, "", ImGuiSliderFlags_NoInput);
+    ImGui::PopStyleColor(5);
+
+    const ImVec2 bb_min = ImGui::GetItemRectMin(), bb_max = ImGui::GetItemRectMax();
+    const float cy = (bb_min.y + bb_max.y) * 0.5f;
+    const float groove_h = 4.0f, handle_w = 10.0f, handle_h = (bb_max.y - bb_min.y) - 2.0f;
+    const float x0 = bb_min.x + handle_w * 0.5f, x1 = bb_max.x - handle_w * 0.5f;
+    const float t = max_ > min_ ? (float)(pos_ - min_) / (float)(max_ - min_) : 0.0f;
+    const float hx = x0 + (x1 - x0) * t;
+    ImDrawList *dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(ImVec2(bb_min.x, cy - groove_h * 0.5f), ImVec2(bb_max.x, cy + groove_h * 0.5f), groove_col, groove_h * 0.5f);
+    dl->AddRectFilled(ImVec2(bb_min.x, cy - groove_h * 0.5f), ImVec2(hx, cy + groove_h * 0.5f), fill_col, groove_h * 0.5f);
+    dl->AddRectFilled(ImVec2(hx - handle_w * 0.5f, cy - handle_h * 0.5f), ImVec2(hx + handle_w * 0.5f, cy + handle_h * 0.5f), handle_col, rounding);
+    return changed;
   }
 
 private:
@@ -164,8 +187,15 @@ private:
     ImVec2 press_pos;  // global
     bool active = false;
   } drag;
-  std::vector<std::string> drag_preview;  // names of the dragged chart's signals
+  // Qt drags a translucent snapshot of the whole chart tile; a live ChartView cannot be re-rendered into a
+  // foreground window (implot would re-handle the input), so the tile header is redrawn at half alpha instead
+  struct DragPreviewItem {
+    ImU32 color;
+    std::string name;
+  };
+  std::vector<DragPreviewItem> drag_preview;
   ImVec2 drag_preview_pos;
+  ImVec2 drag_preview_size;
   bool drag_preview_visible = false;
   ChartView *drop_target = nullptr;
   int auto_scroll_count = 0;

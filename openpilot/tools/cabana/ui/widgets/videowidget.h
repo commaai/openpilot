@@ -36,6 +36,7 @@ public:
   void removeTab(int index);
   void setAutoHide(bool hide) { auto_hide_ = hide; }
   void setExpanding(bool) {}  // imgui tabs never expand
+  void setTabsClosable(bool closable) { tabs_closable_ = closable; }  // QTabBar::setTabsClosable, off by default
   void draw();
 
   Observable<int> currentChanged;
@@ -49,6 +50,7 @@ private:
   int next_id_ = 0;
   bool select_current_ = false;  // programmatic current change, applied at the next draw()
   bool auto_hide_ = false;
+  bool tabs_closable_ = false;
 };
 
 class Slider {
@@ -137,6 +139,7 @@ protected:
   void drawPlaybackController();
   void createSpeedDropdown();
   void drawSpeedDropdown();
+  void drawSpeedMenuItems();
   void loopPlaybackClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
   void showRouteInfo();

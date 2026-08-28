@@ -119,6 +119,8 @@ private:
   std::string progress_text_;
   // "Loading segment data..." dialog
   bool wait_dlg_open_ = false;
+  double wait_dlg_show_at_ = 0;
+  bool manage_dbcs_enabled_ = false;
   std::string wait_dlg_text_;
   int wait_dlg_value_ = 0;
   Connection wait_dlg_connection_;

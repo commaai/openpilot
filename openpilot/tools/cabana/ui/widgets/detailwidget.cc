@@ -174,6 +174,9 @@ void DetailWidget::showTabBarContextMenu(int index) {
 void DetailWidget::drawTabBar() {
   if (tabbar.size() < 2) return;  // setAutoHide(true)
   if (!ImGui::BeginTabBar("tabbar", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_NoTooltip)) return;
+  // TabBar::addTab puts a close button on every tab, not only on the hovered/selected one
+  ImGuiStyle &style = ImGui::GetStyle();
+  const float close_button_min_width = std::exchange(style.TabCloseButtonMinWidthUnselected, -1.0f);
   // setCurrentIndex requests made during this loop are applied on the next frame
   const bool select_current = std::exchange(tabbar_select_current, false);
   for (int i = 0; i < (int)tabbar.size(); ++i) {
@@ -192,6 +195,7 @@ void DetailWidget::drawTabBar() {
       break;
     }
   }
+  style.TabCloseButtonMinWidthUnselected = close_button_min_width;
   ImGui::EndTabBar();
 }
 
@@ -433,14 +437,11 @@ bool EditMessageDialog::draw() {
     const bool comment_active = ImGui::IsItemActive();
 
     // btn_box
-    ImGui::BeginDisabled(!btn_box_ok_enabled);
-    if (ImGui::Button("OK", ImVec2(80.0f, 0.0f))) {
-      accepted_ = true;
+    bool accept = false, reject = false;
+    if (dialogButtons("OK", &accept, &reject, btn_box_ok_enabled)) {
+      accepted_ = accept;
       closed_ = true;
     }
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) closed_ = true;
     // QDialog: Enter triggers the default (OK) button, Escape rejects
     if (!closed_ && btn_box_ok_enabled && !comment_active && ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
       accepted_ = true;

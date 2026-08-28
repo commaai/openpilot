@@ -200,6 +200,7 @@ private:
   int last_visible_row_ = -1;
   float scroll_value_ = 0, scroll_range_ = 0;
   const cabana::Signal *current_sig_ = nullptr;  // currentIndex
+  int current_row_ = -1;                         // row of current_sig_ at the end of the last draw()
   SignalModel::Item::Type current_type_ = SignalModel::Item::Root;
   const cabana::Signal *scroll_to_sig_ = nullptr;
   const cabana::Signal *hovered_sig_ = nullptr;

@@ -169,14 +169,19 @@ bool FindSignalDlg::draw() {
     drawFindGroup();
     ImGui::EndChild();
     if (stats_label_visible) ImGui::TextUnformatted(stats_label.c_str());
+    // QDialog closes on Escape
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false) &&
+        !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
+      open_ = false;
+    }
   }
   ImGui::End();
   return open_;
 }
 
 void FindSignalDlg::drawMessageGroup() {
-  ImGui::TextUnformatted("Messages");
   ImGui::BeginDisabled(!message_group_enabled);
+  ImGui::TextUnformatted("Messages");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Bus");
   ImGui::SameLine(80);
@@ -203,8 +208,8 @@ void FindSignalDlg::drawMessageGroup() {
 }
 
 void FindSignalDlg::drawPropertiesGroup() {
-  ImGui::TextUnformatted("Signal");
   ImGui::BeginDisabled(!properties_group_enabled);
+  ImGui::TextUnformatted("Signal");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Size");
   ImGui::SameLine(80);

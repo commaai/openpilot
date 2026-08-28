@@ -10,6 +10,7 @@
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
+#include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/ui/icons.h"
@@ -643,7 +644,15 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
 }
 
 void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
-  if (!sig || current_sig_ == sig) current_sig_ = nullptr;
+  if (!sig || current_sig_ == sig) {
+    // QItemSelectionModel moves the current index to the row that took the removed one, or to the last row
+    current_sig_ = nullptr;
+    auto &children = model->root->children;
+    if (sig && !children.empty() && current_row_ >= 0) {
+      current_sig_ = children[std::min<int>(current_row_, children.size() - 1)]->sig;
+      current_type_ = SignalModel::Item::Sig;
+    }
+  }
   if (!sig || scroll_to_sig_ == sig) scroll_to_sig_ = nullptr;
   if (!sig || hovered_sig_ == sig) hovered_sig_ = nullptr;
 }
@@ -737,6 +746,7 @@ void SignalView::draw() {
   // model changes run after the tree is drawn: dbc()->signalUpdated/signalRemoved reorder or delete the rows
   if (delegate->pending_commit) std::exchange(delegate->pending_commit, nullptr)();
   if (pending_action_) std::exchange(pending_action_, nullptr)();
+  current_row_ = model->signalRow(current_sig_);  // currentIndex row, used when the row is removed
 
   ImGui::EndChild();
 }
@@ -925,8 +935,11 @@ bool ValueDescriptionDlg::draw() {
   ImGui::EndDisabled();
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-  if (ImGui::BeginTable("table", 2, flags, ImVec2(0.0f, 300.0f))) {
-    ImGui::TableSetupScrollFreeze(0, 1);
+  if (ImGui::BeginTable("table", 3, flags, ImVec2(0.0f, 300.0f))) {
+    ImGui::TableSetupScrollFreeze(1, 1);
+    // vertical header: the 1 based row number
+    ImGui::TableSetupColumn("##row_number", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderLabel,
+                            ImGui::CalcTextSize("000").x + ImGui::GetStyle().CellPadding.x * 2);
     ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 120.0f);
     ImGui::TableSetupColumn("Description", ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableHeadersRow();
@@ -935,9 +948,12 @@ bool ValueDescriptionDlg::draw() {
       ImGui::TableNextRow();
       if (row == current_row) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::GetColorU32(ImGuiCol_Header));
       ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted(std::to_string(row + 1).c_str());
+      ImGui::TableSetColumnIndex(1);
       ImGui::SetNextItemWidth(-FLT_MIN);
       if (Delegate::createEditor(0, &table[row].first)) current_row = row;
-      ImGui::TableSetColumnIndex(1);
+      ImGui::TableSetColumnIndex(2);
       ImGui::SetNextItemWidth(-FLT_MIN);
       if (Delegate::createEditor(1, &table[row].second)) current_row = row;
       ImGui::PopID();
@@ -946,12 +962,9 @@ bool ValueDescriptionDlg::draw() {
   }
 
   // btn_box
-  if (ImGui::Button("Ok", ImVec2(80.0f, 0.0f))) {
-    save();
-    closing = true;
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) {
+  bool accept = false, reject = false;
+  if (dialogButtons("OK", &accept, &reject)) {
+    if (accept) save();
     closing = true;
   }
   if (!open) closing = true;

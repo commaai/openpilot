@@ -85,13 +85,15 @@ bool SignalSelector::draw() {
   ImGui::TextUnformatted("Selected Signals");
   bool remove_dbl = false;
   drawList("##selected_list", selected_list, &selected_row_, true, &remove_dbl, ImVec2(column_w, lists_h + ImGui::GetFrameHeightWithSpacing()));
-  // QDialogButtonBox Ok | Cancel
+  // QDialogButtonBox: [Cancel] [Ok], right aligned
+  const float buttons_w = 80.0f * 2 + ImGui::GetStyle().ItemSpacing.x;
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, column_w - buttons_w));
+  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
+  ImGui::SameLine();
   if (ImGui::Button("OK", ImVec2(80.0f, 0.0f))) {
     done = true;
     accepted_ = true;
   }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
   ImGui::EndGroup();
 
   if ((add_dbl || add_clicked) && available_row_ >= 0 && available_row_ < (int)available_list.size()) {

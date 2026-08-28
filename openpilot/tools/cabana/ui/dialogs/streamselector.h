@@ -96,6 +96,7 @@ public:
 private:
   bool open_ = false;
   bool show_ = false;
+  bool first_frame_ = false;
   std::string dbc_file_;
   std::vector<std::unique_ptr<AbstractOpenStreamWidget>> widgets_;
   Callback on_done_;

@@ -229,8 +229,13 @@ void LogsWidget::draw() {
   delegate.updateFontMetrics();
   const ImGuiStyle &style = ImGui::GetStyle();
 
-  // toolbar
+  // toolbar: the export button is right aligned and never clipped, the value input shrinks first
+  const float export_w = ImGui::CalcTextSize(icon::FILETYPE_CSV).x + style.FramePadding.x * 2;
   if (filters_widget_visible) {
+    const float clear_w = value_edit.empty() ? 0.0f : ImGui::CalcTextSize(icon::X).x + style.FramePadding.x * 2;
+    const float fixed = 90.0f + 160.0f + 50.0f + clear_w + style.ItemSpacing.x * 4 + export_w;
+    const float value_w = std::clamp(ImGui::GetContentRegionAvail().x - fixed, 30.0f, 120.0f);
+
     ImGui::SetNextItemWidth(90.0f);
     if (ImGui::Combo("##display_type", &display_type_cb, "Signal\0Hex\0")) model.setHexMode(display_type_cb);
     ImGui::SetItemTooltip("Display signal value or raw hex value");
@@ -247,7 +252,7 @@ void LogsWidget::draw() {
     ImGui::SetNextItemWidth(50.0f);
     if (ImGui::Combo("##comp", &comp_box, ">\0=\0!=\0<\0")) filterChanged();
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(120.0f);
+    ImGui::SetNextItemWidth(value_w);
     std::string prev = value_edit;
     if (inputText("##value", &value_edit)) {
       value_edit = applyDoubleValidator(prev, value_edit);  // DoubleValidator
@@ -268,7 +273,6 @@ void LogsWidget::draw() {
     }
     ImGui::SameLine();
   }
-  const float export_w = ImGui::CalcTextSize(icon::FILETYPE_CSV).x + style.FramePadding.x * 2;
   ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - export_w));
   ImGui::BeginDisabled(!export_btn_enabled);
   if (ImGui::Button(icon::FILETYPE_CSV)) exportToCSV();
@@ -297,10 +301,15 @@ void LogsWidget::drawTable() {
   // verticalHeader()->setDefaultSectionSize(delegate->sizeForBytes(8).height())
   const float row_height = delegate.sizeForBytes(8).y;
 
-  const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg |
+  // fixed section sizes and a horizontal scrollbar, no alternating row colors
+  const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_BordersInnerV |
                                 ImGuiTableFlags_SizingFixedFit;
+  // inner_width: the sum of the fixed section sizes, so the columns keep their size and the table scrolls
+  float inner_width = 0;
+  for (int i = 0; i < cols; ++i) inner_width += sizes[i].x + style.CellPadding.x * 2;
+
   bool fetch_more = false;
-  if (ImGui::BeginTable("logs", cols, flags, ImVec2(0, 0))) {
+  if (ImGui::BeginTable("logs", cols, flags, ImVec2(0, 0), inner_width)) {
     ImGui::TableSetupScrollFreeze(0, 1);
     for (int i = 0; i < cols; ++i) {
       ImGui::TableSetupColumn(model.headerData(i).c_str(), ImGuiTableColumnFlags_WidthFixed, sizes[i].x);

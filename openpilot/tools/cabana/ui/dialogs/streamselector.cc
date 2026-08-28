@@ -289,6 +289,7 @@ void StreamSelector::open(Callback on_done) {
   on_done_ = std::move(on_done);
   open_ = true;
   show_ = false;
+  first_frame_ = true;
   dbc_file_.clear();
   widgets_.clear();
   widgets_.push_back(std::make_unique<OpenReplayWidget>());
@@ -314,7 +315,9 @@ void StreamSelector::draw() {
   AbstractOpenStreamWidget *current = nullptr;
   if (ImGui::BeginTabBar("streams")) {
     for (auto &w : widgets_) {
-      if (ImGui::BeginTabItem(w->title())) {
+      // Qt builds a fresh dialog every time, so the first tab is always the current one
+      ImGuiTabItemFlags tab_flags = (first_frame_ && w == widgets_.front()) ? ImGuiTabItemFlags_SetSelected : 0;
+      if (ImGui::BeginTabItem(w->title(), nullptr, tab_flags)) {
         current = w.get();
         ImGui::BeginChild("tab", ImVec2(0, 130.0f));
         w->draw();
@@ -324,6 +327,7 @@ void StreamSelector::draw() {
     }
     ImGui::EndTabBar();
   }
+  first_frame_ = false;
 
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("dbc File");
@@ -343,14 +347,12 @@ void StreamSelector::draw() {
 
   bool accepted = false, rejected = false;
   std::unique_ptr<AbstractStream> stream;
-  ImGui::BeginDisabled(current == nullptr || !current->openEnabled());
-  if (ImGui::Button("Open", ImVec2(80.0f, 0.0f))) {
+  bool open_clicked = false;
+  dialogButtons("Open", &open_clicked, &rejected, current != nullptr && current->openEnabled());
+  if (open_clicked) {
     if (stream = current->open(); stream) accepted = true;
   }
-  ImGui::EndDisabled();
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f))) rejected = true;
-  if (ImGui::GetTopMostPopupModal() == ImGui::GetCurrentWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) rejected = true;
+  if (dialogEscapePressed()) rejected = true;
 
   // nested so they stack on this modal
   FileDialog::draw();

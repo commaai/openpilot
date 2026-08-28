@@ -203,25 +203,84 @@ void VideoWidget::drawPlaybackController() {
   // spacer: the remaining actions are right aligned
   auto button_width = [&](const char *label) { return ImGui::CalcTextSize(label).x + style.FramePadding.x * 2; };
   pushBoldFont();
-  float right_width = button_width("0.05x  ") + MENU_BUTTON_INDICATOR;
+  const float speed_width = button_width("0.05x  ") + MENU_BUTTON_INDICATOR;
   popBoldFont();
-  if (!can->liveStreaming()) {
-    right_width += button_width(loop_icon_) + button_width(icon::INFO_CIRCLE) + 1.0f + style.ItemSpacing.x * 3;
-  }
-  ImGui::SameLine();
-  const float right_edge = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x;
-  ImGui::SameLine(std::max(ImGui::GetCursorPosX(), right_edge - right_width));
 
+  enum ToolItem { LOOP, SPEED, SEPARATOR, ROUTE_INFO };
+  std::vector<int> items;
   if (!can->liveStreaming()) {
-    if (toolButton(loop_icon_, "Loop playback", "loop")) loopPlaybackClicked();
-    ImGui::SameLine();
-    drawSpeedDropdown();
-    ImGui::SameLine();
-    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-    ImGui::SameLine();
-    if (toolButton(icon::INFO_CIRCLE, "View route details", "route_info")) showRouteInfo();
+    items = {LOOP, SPEED, SEPARATOR, ROUTE_INFO};
   } else {
-    drawSpeedDropdown();
+    items = {SPEED};
+  }
+  auto item_width = [&](int item) {
+    switch (item) {
+      case LOOP: return button_width(loop_icon_);
+      case SPEED: return speed_width;
+      case SEPARATOR: return 1.0f;
+      default: return button_width(icon::INFO_CIRCLE);
+    }
+  };
+  auto draw_item = [&](int item) {
+    switch (item) {
+      case LOOP: if (toolButton(loop_icon_, "Loop playback", "loop")) loopPlaybackClicked(); break;
+      case SPEED: drawSpeedDropdown(); break;
+      case SEPARATOR: ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); break;
+      default: if (toolButton(icon::INFO_CIRCLE, "View route details", "route_info")) showRouteInfo(); break;
+    }
+  };
+
+  float right_width = 0;
+  for (int item : items) right_width += item_width(item) + style.ItemSpacing.x;
+
+  ImGui::SameLine();
+  const float start_x = ImGui::GetCursorPosX();
+  const float right_edge = start_x + ImGui::GetContentRegionAvail().x;
+
+  // QToolBar: the items that do not fit collapse into a ">>" extension button with a popup menu
+  const float extension_width = button_width(">>");
+  size_t visible = items.size();
+  float x = std::max(start_x, right_edge - right_width);
+  if (right_width > right_edge - start_x) {
+    x = start_x;
+    visible = 0;
+    for (float pos = start_x; visible < items.size(); ++visible) {
+      pos += item_width(items[visible]) + style.ItemSpacing.x;
+      if (pos > right_edge - extension_width) break;
+    }
+  }
+
+  for (size_t i = 0; i < visible; ++i) {
+    i == 0 ? ImGui::SameLine(x) : ImGui::SameLine();
+    draw_item(items[i]);
+  }
+
+  if (visible < items.size()) {
+    ImGui::SameLine(std::max(ImGui::GetCursorPosX(), right_edge - extension_width));
+    if (ImGui::Button(">>###toolbar_extension")) ImGui::OpenPopup("toolbar_extension_menu");
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y));
+    if (ImGui::BeginPopup("toolbar_extension_menu")) {
+      for (size_t i = visible; i < items.size(); ++i) {
+        switch (items[i]) {
+          case LOOP:
+            if (ImGui::MenuItem("Loop")) loopPlaybackClicked();
+            break;
+          case SPEED:
+            if (ImGui::BeginMenu("Speed")) {
+              drawSpeedMenuItems();
+              ImGui::EndMenu();
+            }
+            break;
+          case SEPARATOR:
+            ImGui::Separator();
+            break;
+          default:
+            if (ImGui::MenuItem("Route info")) showRouteInfo();
+            break;
+        }
+      }
+      ImGui::EndPopup();
+    }
   }
 }
 
@@ -251,21 +310,44 @@ void VideoWidget::drawSpeedDropdown() {
   const float min_width = ImGui::CalcTextSize("0.05x  ").x + style.FramePadding.x * 2 + MENU_BUTTON_INDICATOR;
   // QToolButton::InstantPopup opens on press; a press while the menu is open toggles it closed (imgui closes the
   // popup at the end of the frame of a click outside it, so only open when it is not already open)
+  // setAutoRaise(true): flat until hovered
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   const bool open = ImGui::ButtonEx((speed_text_ + "###speed_btn").c_str(), ImVec2(min_width, 0), ImGuiButtonFlags_PressedOnClick);
+  ImGui::PopStyleVar();
+  ImGui::PopStyleColor();
   popBoldFont();
+  // QStyle::PM_MenuButtonIndicator: the menu arrow at the right edge of the button
+  const ImVec2 btn_min = ImGui::GetItemRectMin(), btn_max = ImGui::GetItemRectMax();
+  ImGui::RenderArrow(ImGui::GetWindowDrawList(),
+                     ImVec2(btn_max.x - MENU_BUTTON_INDICATOR, (btn_min.y + btn_max.y) / 2 - ImGui::GetFontSize() * 0.5f),
+                     ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Down, 0.7f);
   if (open && !ImGui::IsPopupOpen("speed_menu")) ImGui::OpenPopup("speed_menu");
-  ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y));
+  ImGui::SetNextWindowPos(ImVec2(btn_min.x, btn_max.y));
   if (ImGui::BeginPopup("speed_menu")) {
-    for (int i = 0; i < (int)std::size(speeds); ++i) {
-      const float speed = speeds[i];
-      if (ImGui::MenuItem(speedText(speed, "").c_str(), nullptr, speed_index_ == i)) {
-        speed_index_ = i;
-        can->setSpeed(speed);
-        speed_text_ = speedText(speed, "  ");
-      }
-    }
+    drawSpeedMenuItems();
     ImGui::EndPopup();
   }
+}
+
+void VideoWidget::drawSpeedMenuItems() {
+  // exclusive QActionGroup: the current speed is marked with a radio bullet on the left
+  const float indent = ImGui::GetFontSize();
+  ImGui::Indent(indent);
+  for (int i = 0; i < (int)std::size(speeds); ++i) {
+    const float speed = speeds[i];
+    if (ImGui::MenuItem(speedText(speed, "").c_str())) {
+      speed_index_ = i;
+      can->setSpeed(speed);
+      speed_text_ = speedText(speed, "  ");
+    }
+    if (speed_index_ == i) {
+      const ImVec2 item_min = ImGui::GetItemRectMin(), item_max = ImGui::GetItemRectMax();
+      ImGui::RenderBullet(ImGui::GetWindowDrawList(), ImVec2(item_min.x - indent / 2, (item_min.y + item_max.y) / 2),
+                          ImGui::GetColorU32(ImGuiCol_Text));
+    }
+  }
+  ImGui::Unindent(indent);
 }
 
 void VideoWidget::createCameraWidget() {
@@ -444,7 +526,7 @@ void TabBar::draw() {
     bool open = true;
     const std::string label = tabs_[i].text + "###tab" + std::to_string(tabs_[i].id);
     const ImGuiTabItemFlags flags = (select_current_ && i == current_index_) ? ImGuiTabItemFlags_SetSelected : 0;
-    if (ImGui::BeginTabItem(label.c_str(), &open, flags)) {
+    if (ImGui::BeginTabItem(label.c_str(), tabs_closable_ ? &open : nullptr, flags)) {
       if (i != current_index_) {
         current_index_ = i;
         currentChanged(i);
@@ -537,9 +619,12 @@ void Slider::paintEvent() {
     }
   }
 
-  // QStyle::SC_SliderHandle
-  p->AddRectFilled(handle_rect.Min, handle_rect.Max,
-                   ImGui::GetColorU32(slider_down_ ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), ImGui::GetStyle().GrabRounding);
+  // QStyle::SC_SliderHandle (Fusion): a white rounded handle with a 1px border
+  const ImU32 handle_color = settings.theme == DARK_THEME
+                                 ? IM_COL32(DarkTheme::button.r, DarkTheme::button.g, DarkTheme::button.b, 255)
+                                 : IM_COL32(255, 255, 255, 255);
+  p->AddRectFilled(handle_rect.Min, handle_rect.Max, handle_color, 2.0f);
+  p->AddRect(handle_rect.Min, handle_rect.Max, ImGui::GetColorU32(ImGuiCol_Border), 2.0f, 0, 1.0f);
 
   if (thumbnail_dispaly_time >= 0) {
     float left = rect_.Min.x + (float)((thumbnail_dispaly_time - min) * width() / span) - 1;
