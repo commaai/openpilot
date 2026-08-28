@@ -20,7 +20,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE, PC
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.git import get_short_branch
-from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_USB_PRODUCT, get_usb_state, get_usb_topology, is_chestnut_usb_device, set_usb_state
+from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_USB_PRODUCT, get_usb_state, get_usb_topology, is_chestnut_usb_id, set_usb_state
 from openpilot.common.linux import LinuxSystemStats
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
@@ -62,7 +62,7 @@ class Chestnut:
     self.flashed = ret.returncode == 0
 
   def update(self, offroad: bool, usb_state: list[dict]) -> None:
-    self.mismatch = any(is_chestnut_usb_device(d["vendorId"], d["productId"], include_bootloader=True) and
+    self.mismatch = any(is_chestnut_usb_id(d["vendorId"], d["productId"], include_bootloader=True) and
                         d["product"] != CHESTNUT_USB_PRODUCT for d in usb_state)
     if not self.mismatch:
       self.flashed = False
