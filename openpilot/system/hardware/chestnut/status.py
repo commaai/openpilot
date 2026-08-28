@@ -54,7 +54,7 @@ class ChestnutStatus:
       power_lost = state.supplyFault
       if self.model_attempted and power_lost and not self.power_lost:
         self.power_unavailable = not self.power_seen
-      self.power_seen |= not power_lost
+      self.power_seen |= state.pcieLtssm == 0x78
 
     if not offroad and self.model_attempted and state is not None:
       self.link_failures = self.link_failures + 1 if state.pcieLtssm != 0x78 else 0
@@ -62,7 +62,7 @@ class ChestnutStatus:
       self.power_lost |= power_lost
 
     if self.pcie_failed and self.power_lost and state is not None:
-      self.power_restored |= not state.supplyFault
+      self.power_restored |= state.pcieLtssm == 0x78
     if self.usb_failed:
       self.pcie_failed = False
       self.power_seen = False
