@@ -1,10 +1,8 @@
 #pragma once
 
-#include <QCheckBox>
 #include <algorithm>
 #include <memory>
 #include <set>
-#include <vector>
 
 #include "common/prefix.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -42,16 +40,4 @@ private:
   Connection settings_connection_;
   std::set<int> processed_segments;
   std::unique_ptr<OpenpilotPrefix> op_prefix;
-};
-
-class OpenReplayWidget : public AbstractOpenStreamWidget {
-  Q_OBJECT
-
-public:
-  OpenReplayWidget(QWidget *parent = nullptr);
-  AbstractStream *open() override;
-
-private:
-  QLineEdit *route_edit;
-  std::vector<QCheckBox *> cameras;
 };
