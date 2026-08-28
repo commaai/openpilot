@@ -19,15 +19,3 @@ protected:
   pid_t bridge_pid = -1;
   const QString zmq_address;
 };
-
-class OpenDeviceWidget : public AbstractOpenStreamWidget {
-  Q_OBJECT
-
-public:
-  OpenDeviceWidget(QWidget *parent = nullptr);
-  AbstractStream *open() override;
-
-private:
-  QLineEdit *ip_address;
-  QButtonGroup *group;
-};
