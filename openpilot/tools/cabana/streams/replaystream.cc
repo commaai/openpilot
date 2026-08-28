@@ -10,7 +10,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
-#include "tools/cabana/streams/routes.h"
+#include "tools/cabana/routesdialog.h"
 
 ReplayStream::ReplayStream() {
   unsetenv("ZMQ");
