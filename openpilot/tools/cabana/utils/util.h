@@ -29,6 +29,8 @@
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/utils/main_thread.h"
+#include "tools/cabana/utils/paths.h"
 #include "tools/cabana/utils/strings.h"
 
 // needed by QVariant::fromValue() in the Qt views; goes away with QVariant
@@ -144,13 +146,7 @@ public:
 
 namespace utils {
 
-bool isMainThread();
-// inline on the main thread, queued until drainMainThreadQueue() otherwise
-void runOnMainThread(std::function<void()> fn);
-void drainMainThreadQueue();
 QPixmap icon(const QString &id);
-std::string homePath();
-std::filesystem::path configPath();
 bool getClipboardText(std::string *text);  // false if no clipboard tool is available
 bool setClipboardText(const std::string &text);
 bool isDarkTheme();
@@ -219,6 +215,5 @@ private:
 };
 
 int num_decimals(double num);
-std::filesystem::path executableDir();
 void initApp(int argc, char *argv[], bool disable_hidpi = true);
 QPixmap bootstrapPixmap(const QString &id);

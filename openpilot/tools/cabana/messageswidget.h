@@ -16,6 +16,7 @@
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/utils/util.h"
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT

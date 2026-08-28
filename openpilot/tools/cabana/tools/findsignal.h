@@ -13,6 +13,7 @@
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/utils/util.h"
 
 class FindSignalModel : public QAbstractTableModel {
 public:

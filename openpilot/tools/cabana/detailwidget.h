@@ -11,6 +11,7 @@
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signalview.h"
 #include "tools/cabana/utils/elidedlabel.h"
+#include "tools/cabana/utils/util.h"
 
 class EditMessageDialog : public QDialog {
 public:

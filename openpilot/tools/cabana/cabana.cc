@@ -9,6 +9,7 @@
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
+#include "tools/cabana/utils/util.h"
 #ifdef __linux__
 #include "tools/cabana/streams/socketcanstream.h"
 #endif

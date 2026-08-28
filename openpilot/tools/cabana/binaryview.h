@@ -4,6 +4,7 @@
 #include <tuple>
 #include <vector>
 
+#include <QStaticText>
 #include <QStyledItemDelegate>
 #include <QTableView>
 

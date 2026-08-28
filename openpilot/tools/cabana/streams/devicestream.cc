@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/devicestream.h"
 
+#include <cassert>
 #include <cerrno>
 #include <chrono>
 #include <csignal>
@@ -14,7 +15,7 @@
 #include <sys/wait.h>
 
 #include "openpilot/cereal/services.h"
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/utils/paths.h"
 
 // DeviceStream
 
@@ -47,7 +48,7 @@ void DeviceStream::stopBridge() {
 void DeviceStream::start() {
   if (!zmq_address.empty()) {
     stopBridge();
-    const std::string path = (executableDir() / "../../cereal/messaging/bridge").lexically_normal().string();
+    const std::string path = (utils::executableDir() / "../../cereal/messaging/bridge").lexically_normal().string();
     const char *can_filter = "/\"can/\"";
 
     // Self-pipe: write end is CLOEXEC so it closes on successful exec. If exec

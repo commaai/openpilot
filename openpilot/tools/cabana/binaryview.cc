@@ -13,6 +13,7 @@
 #include <QToolTip>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/utils/util.h"
 
 // BinaryView
 

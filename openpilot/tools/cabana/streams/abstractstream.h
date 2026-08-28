@@ -17,7 +17,8 @@
 #include "tools/cabana/core/can_data.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/settings.h"
+#include "tools/cabana/utils/main_thread.h"
 #include "tools/replay/util.h"
 
 class AbstractStream {

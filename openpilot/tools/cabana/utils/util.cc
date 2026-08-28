@@ -16,9 +16,6 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#ifdef __APPLE__
-#include <mach-o/dyld.h>
-#endif
 
 #include <QColor>
 #include <QFontDatabase>
@@ -26,30 +23,6 @@
 #include <QPainterPath>
 #include <unordered_map>
 #include "common/util.h"
-
-static const std::thread::id main_thread_id = std::this_thread::get_id();
-static std::mutex main_thread_queue_mutex;
-static std::vector<std::function<void()>> main_thread_queue;
-
-bool utils::isMainThread() { return std::this_thread::get_id() == main_thread_id; }
-
-void utils::runOnMainThread(std::function<void()> fn) {
-  if (isMainThread()) {
-    fn();
-  } else {
-    std::lock_guard lk(main_thread_queue_mutex);
-    main_thread_queue.push_back(std::move(fn));
-  }
-}
-
-void utils::drainMainThreadQueue() {
-  std::vector<std::function<void()>> fns;
-  {
-    std::lock_guard lk(main_thread_queue_mutex);
-    fns.swap(main_thread_queue);
-  }
-  for (auto &fn : fns) fn();
-}
 
 // SegmentTree
 
@@ -332,20 +305,6 @@ QValidator::State DoubleValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 
-std::string homePath() {
-  const char *home = ::getenv("HOME");
-  return home ? home : "";
-}
-
-std::filesystem::path configPath() {
-#ifdef __APPLE__
-  return std::filesystem::path(homePath()) / "Library/Preferences";
-#else
-  const char *xdg = ::getenv("XDG_CONFIG_HOME");
-  return (xdg && xdg[0]) ? std::filesystem::path(xdg) : std::filesystem::path(homePath()) / ".config";
-#endif
-}
-
 #ifdef __APPLE__
 static const char *clipboard_read_cmds[] = {"pbpaste"};
 static const char *clipboard_write_cmds[] = {"pbcopy"};
@@ -457,19 +416,6 @@ void sigTermHandler(int s) {
   qApp->quit();
 }
 
-std::filesystem::path executableDir() {
-#ifdef __APPLE__
-  char buf[PATH_MAX];
-  uint32_t size = sizeof(buf);
-  if (_NSGetExecutablePath(buf, &size) != 0) return {};
-  std::error_code ec;
-  auto path = std::filesystem::canonical(buf, ec);
-  return (ec ? std::filesystem::path(buf) : path).parent_path();
-#else
-  return std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
-#endif
-}
-
 void initApp(int argc, char *argv[], bool disable_hidpi) {
   // setup signal handlers to exit gracefully
   std::signal(SIGINT, sigTermHandler);
@@ -486,7 +432,7 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   qputenv("QT_DBL_CLICK_DIST", "150");
   // ensure the current dir matches the exectuable's directory
   std::error_code ec;
-  std::filesystem::current_path(executableDir(), ec);
+  std::filesystem::current_path(utils::executableDir(), ec);
 }
 
 // embedded at build time from the bootstrap_icons package (see SConscript)
