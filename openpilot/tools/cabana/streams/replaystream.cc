@@ -148,7 +148,7 @@ OpenReplayWidget::OpenReplayWidget(QWidget *parent) : AbstractOpenStreamWidget(p
   QObject::connect(browse_remote_btn, &QPushButton::clicked, [this]() {
     RoutesDialog route_dlg(this);
     if (route_dlg.exec()) {
-      route_edit->setText(route_dlg.route());
+      route_edit->setText(QString::fromStdString(route_dlg.route()));
     }
   });
 }
