@@ -9,6 +9,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
+#include "tools/cabana/settings.h"
 
 struct LiveStream::Logger {
   Logger() : start_ts(seconds_since_epoch()), segment_num(-1) {}
@@ -21,12 +22,9 @@ struct LiveStream::Logger {
       localtime_r(&start_time, &local_time);
       std::ostringstream date;
       date << std::put_time(&local_time, "%Y-%m-%d--%H-%M-%S");
-      QString dir = QString("%1/%2--%3")
-                        .arg(QString::fromStdString(settings.log_path))
-                        .arg(QString::fromStdString(date.str()))
-                        .arg(n);
-      util::create_directories(dir.toStdString(), 0755);
-      fs.reset(new std::ofstream((dir + "/rlog").toStdString(), std::ios::binary | std::ios::out));
+      std::string dir = settings.log_path + "/" + date.str() + "--" + std::to_string(n);
+      util::create_directories(dir, 0755);
+      fs.reset(new std::ofstream(dir + "/rlog", std::ios::binary | std::ios::out));
     }
 
     auto bytes = data.asBytes();
@@ -38,7 +36,7 @@ struct LiveStream::Logger {
   uint64_t start_ts;
 };
 
-LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
+LiveStream::LiveStream() {
   if (settings.log_livestream) {
     logger = std::make_unique<Logger>();
   }
@@ -65,9 +63,9 @@ void LiveStream::stop() {
 void LiveStream::updateThread() {
   while (!exit_) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps_));
-    // coalesce: skip the emit if the main thread hasn't processed the previous one yet.
+    // coalesce: skip the request if the main thread hasn't processed the previous one yet.
     if (!update_pending_.exchange(true)) {
-      emit privateUpdateLastMsgsSignal();
+      requestUpdateLastMessages();
     }
   }
 }
@@ -89,7 +87,7 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
   }
 }
 
-// called on the main thread by the queued privateUpdateLastMsgsSignal connection
+// called on the main thread via requestUpdateLastMessages()
 void LiveStream::updateLastMessages() {
   update_pending_ = false;
   fps_ = settings.fps;
@@ -142,10 +140,10 @@ void LiveStream::seekTo(double sec) {
   first_update_ts = nanos_since_boot();
   current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastest_event_ts);
   post_last_event = (first_event_ts == lastest_event_ts);
-  emit seekedTo((current_event_ts - begin_event_ts) / 1e9);
+  seekedTo((current_event_ts - begin_event_ts) / 1e9);
 }
 
 void LiveStream::pause(bool pause) {
   paused_ = pause;
-  emit(pause ? paused() : resume());
+  pause ? paused() : resume();
 }

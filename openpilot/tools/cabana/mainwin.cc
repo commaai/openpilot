@@ -1,5 +1,4 @@
 #include "tools/cabana/mainwin.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -20,9 +19,11 @@
 
 #include "json11/json11.hpp"
 #include "tools/cabana/commands.h"
+#include "tools/cabana/settingsdialog.h"
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
 #include "tools/cabana/utils/export.h"
+#include "tools/cabana/utils/qtutil.h"
 #include "tools/replay/py_downloader.h"
 #include "tools/replay/util.h"
 
@@ -41,15 +42,13 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
   restoreGeometry(utils::qbytes(settings.geometry));
   restoreState(utils::qbytes(settings.window_state));
 
-  // install handlers
+  // download handlers are called from download threads
   static auto static_main_win = this;
-  qRegisterMetaType<uint64_t>("uint64_t");
-  qRegisterMetaType<SourceSet>("SourceSet");
   installDownloadProgressHandler([](uint64_t cur, uint64_t total, bool success) {
-    emit static_main_win->updateProgressBar(cur, total, success);
+    utils::runOnMainThread([=]() { static_main_win->updateDownloadProgress(cur, total, success); });
   });
   installMessageHandler([](ReplyMsgType type, const std::string msg) {
-    emit static_main_win->showMessage(QString::fromStdString(msg), 2000);
+    utils::runOnMainThread([=]() { static_main_win->statusBar()->showMessage(QString::fromStdString(msg), 2000); });
   });
 
   setStyleSheet(QString(R"(QMainWindow::separator {
@@ -57,11 +56,14 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
     height: %1px; /* when horizontal */
   })").arg(style()->pixelMetric(QStyle::PM_SplitterWidth)));
 
-  QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
-  QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &MainWindow::DBCFileChanged);
-  QObject::connect(undoNotifier(), &QtUndoNotifier::cleanChanged, this, &MainWindow::undoStackCleanChanged);
-  QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
+  connections_.push_back(dbc()->fileChanged.connect([this]() { DBCFileChanged(); }));
+  connections_.push_back(UndoStack::instance()->cleanChanged.connect([this](bool clean) { undoStackCleanChanged(clean); }));
+  connections_.push_back(settings.changed.connect([this]() { updateStatus(); }));
+
+  // temporary pump for the non-Qt main thread queue until imgui owns the loop
+  auto *queue_timer = new QTimer(this);
+  QObject::connect(queue_timer, &QTimer::timeout, utils::drainMainThreadQueue);
+  queue_timer->start(10);
 
   QTimer::singleShot(0, this, [=]() { stream ? openStream(stream, dbc_file) : selectAndOpenStream(); });
   show();
@@ -136,7 +138,7 @@ void MainWindow::createActions() {
   undo_act->setShortcuts(QKeySequence::Undo);
   redo_act = edit_menu->addAction(tr("&Redo"), []() { UndoStack::instance()->redo(); });
   redo_act->setShortcuts(QKeySequence::Redo);
-  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &MainWindow::updateUndoRedoActions);
+  connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { updateUndoRedoActions(); }));
   updateUndoRedoActions();
 
   // View Menu
@@ -259,14 +261,14 @@ void MainWindow::selectAndOpenStream() {
   if (dlg.exec()) {
     openStream(dlg.stream(), dlg.dbcFile());
   } else if (!can) {
-    openStream(new DummyStream(this));
+    openStream(new DummyStream());
   }
 }
 
 void MainWindow::closeStream() {
-  openStream(new DummyStream(this));
+  openStream(new DummyStream());
   if (dbc()->nonEmptyDBCCount() > 0) {
-    emit dbcNotifier()->DBCFileChanged();
+    dbc()->fileChanged();
   }
   statusBar()->showMessage(tr("stream closed"));
 }
@@ -336,13 +338,19 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   }
 }
 
+// stream threads read the global `can` until its destructor joins them
+MainWindow::~MainWindow() {
+  delete can;
+  can = nullptr;
+}
+
 void MainWindow::openStream(AbstractStream *stream, const QString &dbc_file) {
-  if (can) {
-    QObject::connect(can, &QObject::destroyed, this, [=]() { startStream(stream, dbc_file); });
-    can->deleteLater();
-  } else {
-    startStream(stream, dbc_file);
-  }
+  stream_connections_.clear();
+  if (wait_dlg_) wait_dlg_->deleteLater();
+  wait_dlg_ = nullptr;
+  delete can;
+  can = nullptr;
+  startStream(stream, dbc_file);
 }
 
 void MainWindow::startStream(AbstractStream *stream, QString dbc_file) {
@@ -350,8 +358,10 @@ void MainWindow::startStream(AbstractStream *stream, QString dbc_file) {
   delete messages_widget;
   delete video_splitter;
 
-  can = stream;
-  can->setParent(this);  // take ownership
+  can = stream;  // take ownership
+  stream_connections_.push_back(can->error.connect([this](const std::string &msg) {
+    QMessageBox::warning(this, tr("Error"), QString::fromStdString(msg));
+  }));
   can->start();
 
   loadFile(dbc_file);
@@ -373,18 +383,19 @@ void MainWindow::startStream(AbstractStream *stream, QString dbc_file) {
     newFile();
   }
 
-  QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::eventsMerged);
+  stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
 
   if (has_stream) {
-    auto wait_dlg = new QProgressDialog(
+    wait_dlg_ = new QProgressDialog(
         can->liveStreaming() ? tr("Waiting for the live stream to start...") : tr("Loading segment data..."),
         tr("&Abort"), 0, 100, this);
-    wait_dlg->setWindowModality(Qt::WindowModal);
-    wait_dlg->setFixedSize(400, wait_dlg->sizeHint().height());
-    QObject::connect(wait_dlg, &QProgressDialog::canceled, this, &MainWindow::close);
-    QObject::connect(can, &AbstractStream::eventsMerged, wait_dlg, &QProgressDialog::deleteLater);
-    QObject::connect(this, &MainWindow::updateProgressBar, wait_dlg, [=](uint64_t cur, uint64_t total, bool success) {
-      wait_dlg->setValue((int)((cur / (double)total) * 100));
+    wait_dlg_->setWindowModality(Qt::WindowModal);
+    wait_dlg_->setFixedSize(400, wait_dlg_->sizeHint().height());
+    QObject::connect(wait_dlg_, &QProgressDialog::canceled, this, &MainWindow::close);
+    wait_dlg_connection_ = can->eventsMerged.connect([this](const MessageEventsMap &) {
+      wait_dlg_->deleteLater();
+      wait_dlg_ = nullptr;
+      wait_dlg_connection_.disconnect();
     });
   }
 }
@@ -544,6 +555,7 @@ void MainWindow::remindSaveChanges() {
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
+  if (wait_dlg_) wait_dlg_->setValue((int)((cur / (double)total) * 100));
   if (success && cur < total) {
     progress_bar->setValue((cur / (double)total) * 100);
     progress_bar->setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
@@ -610,7 +622,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 }
 
 void MainWindow::setOption() {
-  SettingsDlg dlg(this);
+  SettingsDialog dlg(this);
   dlg.exec();
 }
 

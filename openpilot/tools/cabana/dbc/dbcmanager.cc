@@ -17,7 +17,7 @@ bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name
     return false;
   }
 
-  if (callbacks_.file_changed) callbacks_.file_changed();
+  fileChanged();
   return true;
 }
 
@@ -32,7 +32,7 @@ bool DBCManager::open(const SourceSet &sources, const std::string &name, const s
     return false;
   }
 
-  if (callbacks_.file_changed) callbacks_.file_changed();
+  fileChanged();
   return true;
 }
 
@@ -40,26 +40,26 @@ void DBCManager::close(const SourceSet &sources) {
   for (auto s : sources) {
     dbc_files[s] = nullptr;
   }
-  if (callbacks_.file_changed) callbacks_.file_changed();
+  fileChanged();
 }
 
 void DBCManager::close(DBCFile *dbc_file) {
   for (auto &[_, f] : dbc_files) {
     if (f.get() == dbc_file) f = nullptr;
   }
-  if (callbacks_.file_changed) callbacks_.file_changed();
+  fileChanged();
 }
 
 void DBCManager::closeAll() {
   dbc_files.clear();
-  if (callbacks_.file_changed) callbacks_.file_changed();
+  fileChanged();
 }
 
 void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = msg(id)) {
     if (auto s = m->addSignal(sig)) {
-      if (callbacks_.signal_added) callbacks_.signal_added(id, s);
-      if (callbacks_.mask_updated) callbacks_.mask_updated();
+      signalAdded(id, s);
+      maskUpdated();
     }
   }
 }
@@ -67,8 +67,8 @@ void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
 void DBCManager::updateSignal(const MessageId &id, const std::string &sig_name, const cabana::Signal &sig) {
   if (auto m = msg(id)) {
     if (auto s = m->updateSignal(sig_name, sig)) {
-      if (callbacks_.signal_updated) callbacks_.signal_updated(s);
-      if (callbacks_.mask_updated) callbacks_.mask_updated();
+      signalUpdated(s);
+      maskUpdated();
     }
   }
 }
@@ -76,9 +76,9 @@ void DBCManager::updateSignal(const MessageId &id, const std::string &sig_name, 
 void DBCManager::removeSignal(const MessageId &id, const std::string &sig_name) {
   if (auto m = msg(id)) {
     if (auto s = m->sig(sig_name)) {
-      if (callbacks_.signal_removed) callbacks_.signal_removed(s);
+      signalRemoved(s);
       m->removeSignal(sig_name);
-      if (callbacks_.mask_updated) callbacks_.mask_updated();
+      maskUpdated();
     }
   }
 }
@@ -87,15 +87,15 @@ void DBCManager::updateMsg(const MessageId &id, const std::string &name, uint32_
   auto dbc_file = findDBCFile(id);
   assert(dbc_file);  // This should be impossible
   dbc_file->updateMsg(id, name, size, node, comment);
-  if (callbacks_.msg_updated) callbacks_.msg_updated(id);
+  msgUpdated(id);
 }
 
 void DBCManager::removeMsg(const MessageId &id) {
   auto dbc_file = findDBCFile(id);
   assert(dbc_file);  // This should be impossible
   dbc_file->removeMsg(id);
-  if (callbacks_.msg_removed) callbacks_.msg_removed(id);
-  if (callbacks_.mask_updated) callbacks_.mask_updated();
+  msgRemoved(id);
+  maskUpdated();
 }
 
 std::string DBCManager::newMsgName(const MessageId &id) {

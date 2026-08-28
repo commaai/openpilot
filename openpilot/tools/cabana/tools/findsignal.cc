@@ -10,6 +10,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "tools/cabana/utils/qtutil.h"
+
 // FindSignalModel
 
 QVariant FindSignalModel::headerData(int section, Qt::Orientation orientation, int role) const {

@@ -2,9 +2,12 @@
 
 #include <atomic>
 #include <memory>
+#include <vector>
 
 #include <QComboBox>
 #include <QDialog>
+
+#include "tools/cabana/routes.h"
 
 class RouteListWidget;
 
@@ -12,11 +15,11 @@ class RoutesDialog : public QDialog {
   Q_OBJECT
 public:
   RoutesDialog(QWidget *parent);
-  QString route();
+  std::string route();
 
 protected:
-  void parseDeviceList(const QString &json, bool success, int error_code);
-  void parseRouteList(const QString &json, bool success, int error_code);
+  void setDeviceList(const std::vector<routes::DeviceInfo> &devices, bool success, int error_code);
+  void setRouteList(const std::vector<routes::RouteInfo> &list, bool success);
   void fetchRoutes();
 
   QComboBox *device_list_;

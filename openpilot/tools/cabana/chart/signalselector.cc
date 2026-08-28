@@ -1,5 +1,4 @@
 #include "tools/cabana/chart/signalselector.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <QDialogButtonBox>
 #include <QGridLayout>
@@ -9,6 +8,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/utils/qtutil.h"
 
 SignalSelector::SignalSelector(QString title, QWidget *parent) : QDialog(parent) {
   setWindowTitle(title);

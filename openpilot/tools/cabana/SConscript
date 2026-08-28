@@ -99,10 +99,10 @@ cabana_env.Command(assets, "assets/assets.qrc", f"rcc $SOURCES -o $TARGET")
 cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, "assets/assets.o"]))
 
 cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
-               'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'dbc/dbcqt.cc',
-               'utils/export.cc', 'utils/util.cc', 'utils/elidedlabel.cc',
+               'routesdialog.cc', 'routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
+               'utils/export.cc', 'utils/util.cc', 'utils/qtutil.cc', 'utils/strings.cc', 'utils/elidedlabel.cc',
                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
-               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
+               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'settingsdialog.cc', 'panda.cc',
                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc']
 if arch != "Darwin":
   cabana_srcs += ['streams/socketcanstream.cc']
@@ -119,8 +119,12 @@ if GetOption('extras'):
     dbc_core_test_env.Object('tests/dbc_core_model', 'dbc/dbc.cc'),
     dbc_core_test_env.Object('tests/dbc_core_file', 'dbc/dbcfile.cc'),
     dbc_core_test_env.Object('tests/dbc_core_manager', 'dbc/dbcmanager.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_strings', 'utils/strings.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_util', 'utils/util.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_icons', bootstrap_icons_src),
+    dbc_core_test_env.Object('tests/dbc_core_routes', 'routes.cc'),
   ]
-  dbc_core_test_env.Program('tests/test_dbc_core', dbc_core_test_objects)
+  dbc_core_test_env.Program('tests/test_dbc_core', dbc_core_test_objects, LIBS=[replay_lib, common])
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,

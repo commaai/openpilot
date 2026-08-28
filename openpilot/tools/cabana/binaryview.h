@@ -4,6 +4,7 @@
 #include <tuple>
 #include <vector>
 
+#include <QStaticText>
 #include <QStyledItemDelegate>
 #include <QTableView>
 
@@ -100,5 +101,6 @@ private:
   bool is_message_active = false;
   const cabana::Signal *resize_sig = nullptr;
   const cabana::Signal *hovered_sig = nullptr;
+  Connections connections_;
   friend class BinaryItemDelegate;
 };

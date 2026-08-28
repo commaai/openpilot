@@ -1,5 +1,4 @@
 #include "tools/cabana/historylog.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <functional>
 
@@ -9,6 +8,12 @@
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/utils/export.h"
+
+HistoryLogModel::HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {
+  connections_.push_back(can->seekedTo.connect([this](double) { reset(); }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() { reset(); }));
+  connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { reset(); }));
+}
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   const auto &m = messages[index.row()];
@@ -207,9 +212,6 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(filterChanged()));
   QObject::connect(value_edit, &QLineEdit::textEdited, this, &LogsWidget::filterChanged);
   QObject::connect(export_btn, &QToolButton::clicked, this, &LogsWidget::exportToCSV);
-  QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::reset);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, model, &HistoryLogModel::reset);
-  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, model, &HistoryLogModel::reset);
   QObject::connect(model, &HistoryLogModel::modelReset, this, &LogsWidget::modelReset);
   QObject::connect(model, &HistoryLogModel::rowsInserted, [this]() { export_btn->setEnabled(true); });
 }

@@ -4,6 +4,7 @@
 #include <array>
 #include <condition_variable>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -14,16 +15,15 @@
 
 #include "openpilot/cereal/messaging/messaging.h"
 #include "tools/cabana/core/can_data.h"
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/util.h"
 
-class AbstractStream : public QObject {
-  Q_OBJECT
-
+class AbstractStream {
 public:
-  AbstractStream(QObject *parent);
-  virtual ~AbstractStream() {}
+  AbstractStream();
+  virtual ~AbstractStream() = default;
   virtual void start() = 0;
   virtual bool liveStreaming() const { return true; }
   virtual void seekTo(double ts) {}
@@ -56,21 +56,23 @@ public:
   void clearSuppressed();
   void suppressDefinedSignals(bool suppress);
 
-signals:
-  void paused();
-  void resume();
-  void seeking(double sec);
-  void seekedTo(double sec);
-  void timeRangeChanged(const std::optional<std::pair<double, double>> &range);
-  void eventsMerged(const MessageEventsMap &events_map);
-  void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
-  void sourcesUpdated(const SourceSet &s);
-  void privateUpdateLastMsgsSignal();
+  // invoked on the main thread
+  Observable<> paused;
+  Observable<> resume;
+  Observable<double> seeking;
+  Observable<double> seekedTo;
+  Observable<const std::optional<std::pair<double, double>> &> timeRangeChanged;
+  Observable<const MessageEventsMap &> eventsMerged;
+  Observable<const std::set<MessageId> *, bool> msgsReceived;
+  Observable<const std::string &> error;
 
-public:
   SourceSet sources;
 
 protected:
+  void postToMainThread(std::function<void()> fn);  // dropped if the stream is destroyed first
+  void postToMainThreadAndWait(std::function<void()> fn);
+  void cancelWaits();  // call before joining threads, the main thread isn't pumping events during destruction
+  void requestUpdateLastMessages() { postToMainThread([this]() { updateLastMessages(); }); }
   void mergeEvents(const std::vector<const CanEvent *> &events);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
@@ -87,30 +89,21 @@ private:
   MessageEventsMap events_;
   std::unordered_map<MessageId, CanData> last_msgs;
   std::unique_ptr<MonotonicBuffer> event_buffer_;
+  std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
+  Connections connections_;
 
   // Members accessed in multiple threads. (mutex protected)
   std::mutex mutex_;
-  std::condition_variable seek_finished_cv_;
+  std::condition_variable wait_cv_;
   bool seek_finished_ = false;
+  bool exiting_ = false;
   std::set<MessageId> new_msgs_;
   std::unordered_map<MessageId, CanData> messages_;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks_;
 };
 
-class AbstractOpenStreamWidget : public QWidget {
-  Q_OBJECT
-public:
-  AbstractOpenStreamWidget(QWidget *parent = nullptr) : QWidget(parent) {}
-  virtual AbstractStream *open() = 0;
-
-signals:
-  void enableOpenButton(bool);
-};
-
 class DummyStream : public AbstractStream {
-  Q_OBJECT
 public:
-  DummyStream(QObject *parent) : AbstractStream(parent) {}
   std::string routeName() const override { return "No Stream"; }
   void start() override {}
 };

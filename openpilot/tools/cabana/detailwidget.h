@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialogButtonBox>
+#include <QSpinBox>
 #include <QSplitter>
 #include <QTabWidget>
 #include <QTextEdit>
@@ -11,6 +12,7 @@
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signalview.h"
 #include "tools/cabana/utils/elidedlabel.h"
+#include "tools/cabana/utils/qtutil.h"
 
 class EditMessageDialog : public QDialog {
 public:
@@ -57,6 +59,7 @@ private:
   SignalView *signal_view;
   ChartsWidget *charts;
   QSplitter *splitter;
+  Connections connections_;
 };
 
 class CenterWidget : public QWidget {

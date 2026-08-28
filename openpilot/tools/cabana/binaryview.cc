@@ -1,5 +1,4 @@
 #include "tools/cabana/binaryview.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 
@@ -14,6 +13,7 @@
 #include <QToolTip>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/utils/qtutil.h"
 
 // BinaryView
 
@@ -36,8 +36,8 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setMouseTracking(true);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &BinaryView::refresh);
-  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &BinaryView::refresh);
+  connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
+  connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { refresh(); }));
 
   addShortcuts();
   setWhatsThis(R"(
@@ -386,7 +386,7 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
 
 QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  return role == Qt::ToolTipRole && item && !item->sigs.empty() ? signalToolTip(item->sigs.back()) : QVariant();
+  return role == Qt::ToolTipRole && item && !item->sigs.empty() ? QString::fromStdString(utils::signalToolTip(item->sigs.back())) : QVariant();
 }
 
 // BinaryItemDelegate
