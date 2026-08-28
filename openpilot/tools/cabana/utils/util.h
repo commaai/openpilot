@@ -24,6 +24,7 @@
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/utils/strings.h"
 
 // needed by QVariant::fromValue() in the Qt views; goes away with QVariant
 Q_DECLARE_METATYPE(MessageId)
@@ -149,21 +150,9 @@ bool getClipboardText(std::string *text);  // false if no clipboard tool is avai
 bool setClipboardText(const std::string &text);
 bool isDarkTheme();
 void setTheme(int theme);
-QString formatSeconds(double sec, bool include_milliseconds = false, bool absolute_time = false);
 inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text) {
   auto size = (r.size() - text.size()) / 2;
   p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
-}
-inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
-  static const char digits[] = "0123456789ABCDEF";
-  QString hex;
-  hex.reserve(dat.size() * (separator ? 3 : 2));
-  for (size_t i = 0; i < dat.size(); ++i) {
-    if (separator && i) hex += QLatin1Char(separator);
-    hex += QLatin1Char(digits[dat[i] >> 4]);
-    hex += QLatin1Char(digits[dat[i] & 0xf]);
-  }
-  return hex;
 }
 
 // boundary conversions for the remaining Qt byte-array based state APIs
@@ -225,7 +214,5 @@ private:
 };
 
 int num_decimals(double num);
-QString signalToolTip(const cabana::Signal *sig);
-inline QString toHexString(int value) { return QString("0x%1").arg(QString::number(value, 16).toUpper(), 2, '0'); }
 void initApp(int argc, char *argv[], bool disable_hidpi = true);
 QPixmap bootstrapPixmap(const QString &id);

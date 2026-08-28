@@ -385,7 +385,7 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
 
 QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  return role == Qt::ToolTipRole && item && !item->sigs.empty() ? signalToolTip(item->sigs.back()) : QVariant();
+  return role == Qt::ToolTipRole && item && !item->sigs.empty() ? QString::fromStdString(utils::signalToolTip(item->sigs.back())) : QVariant();
 }
 
 // BinaryItemDelegate
