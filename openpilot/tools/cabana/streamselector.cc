@@ -14,6 +14,7 @@
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/routesdialog.h"
+#include "tools/cabana/utils/qtutil.h"
 
 // OpenReplayWidget
 

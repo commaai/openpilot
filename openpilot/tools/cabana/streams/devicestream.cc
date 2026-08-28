@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/devicestream.h"
 
+#include <cassert>
 #include <cerrno>
 #include <chrono>
 #include <csignal>

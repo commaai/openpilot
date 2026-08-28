@@ -23,6 +23,7 @@
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
 #include "tools/cabana/utils/export.h"
+#include "tools/cabana/utils/qtutil.h"
 #include "tools/replay/py_downloader.h"
 #include "tools/replay/util.h"
 

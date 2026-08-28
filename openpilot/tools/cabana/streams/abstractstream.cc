@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/abstractstream.h"
 
+#include <cassert>
 #include <limits>
 #include <utility>
 

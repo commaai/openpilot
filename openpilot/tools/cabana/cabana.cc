@@ -12,6 +12,7 @@
 #ifdef __linux__
 #include "tools/cabana/streams/socketcanstream.h"
 #endif
+#include "tools/cabana/utils/qtutil.h"
 
 namespace {
 
@@ -134,7 +135,14 @@ int main(int argc, char *argv[]) {
   app.setApplicationDisplayName("Cabana");
   //app.setWindowIcon(QIcon(":cabana-icon.png"));  // TODO: do this in imgui
 
-  UnixSignalHandler signalHandler;
+  // Marshal exit onto the GUI thread (qApp methods are not thread-safe).
+  UnixSignalHandler signalHandler([]() {
+    QMetaObject::invokeMethod(qApp, []() {
+      printf("\nexiting...\n");
+      qApp->closeAllWindows();
+      qApp->exit();
+    }, Qt::QueuedConnection);
+  });
   utils::setTheme(settings.theme);
 
   CabanaArgs args;

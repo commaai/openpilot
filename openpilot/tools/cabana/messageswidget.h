@@ -11,11 +11,13 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QMenu>
+#include <QPushButton>
 #include <QTreeView>
 #include <QWheelEvent>
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/utils/qtutil.h"
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT

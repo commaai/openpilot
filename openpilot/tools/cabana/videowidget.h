@@ -12,7 +12,7 @@
 #include <QTabBar>
 
 #include "tools/cabana/cameraview.h"
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/utils/qtutil.h"
 #include "tools/replay/logreader.h"
 #include "tools/cabana/streams/replaystream.h"
 

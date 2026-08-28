@@ -248,7 +248,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
       }
 
       if (!can->liveStreaming()) {
-        s.segment_tree.build(s.vals);
+        s.segment_tree.build(s.vals.size(), [&vals = s.vals](int i) { return vals[i].y(); });
       }
     }
   }
