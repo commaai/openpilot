@@ -7,7 +7,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <csignal>
-#include <ctime>
 #include <filesystem>
 #include <limits>
 #include <memory>
@@ -442,53 +441,12 @@ void setTheme(int theme) {
   }
 }
 
-QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
-  if (absolute_time) {
-    const auto ms_total = static_cast<int64_t>(std::llround(sec * 1000.0));
-    const std::time_t secs = static_cast<std::time_t>(ms_total / 1000);
-    int millis = static_cast<int>(ms_total % 1000);
-    if (millis < 0) millis = -millis;
-    std::tm tm{};
-    localtime_r(&secs, &tm);
-    char buf[64];
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
-    if (include_milliseconds) {
-      return QString::asprintf("%s.%03d", buf, millis);
-    }
-    return QString::fromUtf8(buf);
-  }
-
-  // Relative duration (not wall-clock).
-  const bool show_hours = sec > 60 * 60;
-  int total_ms = static_cast<int>(std::llround(std::max(0.0, sec) * 1000.0));
-  const int hours = total_ms / (3600 * 1000);
-  const int minutes = (total_ms / (60 * 1000)) % 60;
-  const int seconds = (total_ms / 1000) % 60;
-  const int millis = total_ms % 1000;
-  if (show_hours) {
-    return include_milliseconds ? QString::asprintf("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis)
-                                : QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
-  }
-  return include_milliseconds ? QString::asprintf("%02d:%02d.%03d", minutes, seconds, millis)
-                              : QString::asprintf("%02d:%02d", minutes, seconds);
-}
-
 }  // namespace utils
 
 int num_decimals(double num) {
   const QString string = QString::number(num);
   auto dot_pos = string.indexOf('.');
   return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
-}
-
-QString signalToolTip(const cabana::Signal *sig) {
-  return QObject::tr(R"(
-    %1<br /><span font-size:small">
-    Start Bit: %2 Size: %3<br />
-    MSB: %4 LSB: %5<br />
-    Little Endian: %6 Signed: %7</span>
-  )").arg(QString::fromStdString(sig->name)).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
-     .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }
 
 void sigTermHandler(int s) {

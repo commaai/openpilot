@@ -195,7 +195,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     switch (index.column()) {
       case Column::NAME: return item.name;
       case Column::SOURCE: return item.id.source != INVALID_SOURCE ? QString::number(item.id.source) : NA;
-      case Column::ADDRESS: return toHexString(item.id.address);
+      case Column::ADDRESS: return QString::fromStdString(utils::toHexString(item.id.address));
       case Column::NODE: return item.node;
       case Column::FREQ: return item.id.source != INVALID_SOURCE ? getFreq(can->lastMessage(item.id).freq) : NA;
       case Column::COUNT: return item.id.source != INVALID_SOURCE ? QString::number(can->lastMessage(item.id).count) : NA;
@@ -288,7 +288,7 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
         match = parseRange(txt, item.id.source);
         break;
       case Column::ADDRESS:
-        match = toHexString(item.id.address).contains(txt, Qt::CaseInsensitive);
+        match = QString::fromStdString(utils::toHexString(item.id.address)).contains(txt, Qt::CaseInsensitive);
         match = match || parseRange(txt, item.id.address, 16);
         break;
       case Column::NODE:
@@ -301,7 +301,7 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
         match = parseRange(txt, data.count);
         break;
       case Column::DATA:
-        match = utils::toHex(data.dat).contains(txt, Qt::CaseInsensitive);
+        match = QString::fromStdString(utils::toHex(data.dat)).contains(txt, Qt::CaseInsensitive);
         break;
     }
   }

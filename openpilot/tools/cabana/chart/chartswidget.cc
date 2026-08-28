@@ -245,7 +245,7 @@ void ChartsWidget::setIsDocked(bool docked) {
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   columns_action->setText(tr("Columns: %1").arg(column_count));
-  range_lb->setText(utils::formatSeconds(max_chart_range));
+  range_lb->setText(QString::fromStdString(utils::formatSeconds(max_chart_range)));
 
   bool is_zoomed = can->timeRange().has_value();
   range_lb_action->setVisible(!is_zoomed);
