@@ -6,8 +6,8 @@ from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 
 CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging")
 CHESTNUT_POWERED_VOLTAGE = 5000
-GPU_TEMP_LIMIT = 110.
-MEMORY_TEMP_LIMIT = 108.
+GPU_TEMP_LIMIT = 100.
+MEMORY_TEMP_LIMIT = 95.
 TEMP_HYSTERESIS = 5.
 FAN_START_GPU_TEMP = 60.
 FAN_STOP_GPU_TEMP = 50.
@@ -80,12 +80,11 @@ class ChestnutStatus:
     set_alert("Offroad_ChestnutBranch", not release and len(devices) == 1)
     set_alert("Offroad_ChestnutNotDetected", missing)
     set_alert("Offroad_ChestnutFansObstructed", self.fans_obstructed)
-    set_alert("Offroad_ChestnutOverheated", self.overheated)
+    set_alert("Offroad_ChestnutOverheated", self.overheated, f"{state.tempC:.0f} °C" if state is not None else None)
     set_alert("Offroad_ChestnutUsbSlow", slow_usb, f"{devices[0]['speedMbps']} Mbps" if slow_usb else None)
     if self.power_lost:
-      pcie_action = "12V power was interrupted, possibly by engine start-stop. "
-      pcie_action += ("Cycle ignition to reload the model." if self.power_restored else
-                      "Check 12V, then cycle ignition to reload the model.")
+      pcie_action = ("12V power restored. Cycle ignition to reload the model." if self.power_restored else
+                     "12V power was interrupted, possibly by engine start-stop. Check 12V, then cycle ignition to reload the model.")
     else:
       pcie_action = "Check 12V connection."
     set_alert("Offroad_ChestnutPcieUnavailable", self.pcie_failed, pcie_action)

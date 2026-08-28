@@ -30,11 +30,11 @@
     "severity": 0
   },
   "Offroad_ChestnutOverheated": {
-    "text": "Chestnut overheated. Allow it to cool.",
+    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1.",
     "severity": 0
   },
   "Offroad_ChestnutPcieUnavailable": {
-    "text": "Chestnut PCIe unavailable. %1",
+    "text": "Chestnut not responding. PCIe link not up. %1",
     "severity": 0
   },
   "Offroad_ChestnutUncompiled": {
@@ -46,7 +46,7 @@
     "severity": 0
   },
   "Offroad_ChestnutUsbSlow": {
-    "text": "Chestnut USB link is slow. Check the USB cable. the current speed is %1.",
+    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1.",
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {
