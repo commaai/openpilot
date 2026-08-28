@@ -58,13 +58,13 @@ int64_t parseIsoToUnixMs(const std::string &s) {
   return static_cast<int64_t>(secs) * 1000 + millis;
 }
 
-QString formatUnixMs(int64_t ms) {
+std::string formatUnixMs(int64_t ms) {
   time_t secs = static_cast<time_t>(ms / 1000);
   std::tm tm{};
   localtime_r(&secs, &tm);
   char buf[64];
   std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
-  return QString::fromUtf8(buf);
+  return buf;
 }
 
 }  // namespace
@@ -113,17 +113,18 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   // Fetch devices
   std::thread([this, alive = std::weak_ptr<bool>(alive_)]() {
     std::string result = PyDownloader::getDevices();
-    utils::runOnMainThread([this, alive, r = QString::fromStdString(result), response = checkApiResponse(result)]() {
+    auto response = checkApiResponse(result);
+    utils::runOnMainThread([this, alive, r = std::move(result), response]() {
       if (!alive.expired()) parseDeviceList(r, response.first, response.second);
     });
   }).detach();
 }
 
-void RoutesDialog::parseDeviceList(const QString &json, bool success, int error_code) {
+void RoutesDialog::parseDeviceList(const std::string &json, bool success, int error_code) {
   if (success) {
     device_list_->clear();
     std::string err;
-    auto doc = json11::Json::parse(json.toStdString(), err);
+    auto doc = json11::Json::parse(json, err);
     if (err.empty() && doc.is_array()) {
       for (const auto &device : doc.array_items()) {
         QString dongle_id = QString::fromStdString(device["dongle_id"].string_value());
@@ -156,16 +157,17 @@ void RoutesDialog::fetchRoutes() {
   int request_id = ++fetch_id_;
   std::thread([this, alive = std::weak_ptr<bool>(alive_), did, start_ms, end_ms, preserved, request_id]() {
     std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
-    utils::runOnMainThread([this, alive, r = QString::fromStdString(result), response = checkApiResponse(result), request_id]() {
+    auto response = checkApiResponse(result);
+    utils::runOnMainThread([this, alive, r = std::move(result), response, request_id]() {
       if (!alive.expired() && fetch_id_ == request_id) parseRouteList(r, response.first, response.second);
     });
   }).detach();
 }
 
-void RoutesDialog::parseRouteList(const QString &json, bool success, int error_code) {
+void RoutesDialog::parseRouteList(const std::string &json, bool success, int error_code) {
   if (success) {
     std::string err;
-    auto doc = json11::Json::parse(json.toStdString(), err);
+    auto doc = json11::Json::parse(json, err);
     if (err.empty() && doc.is_array()) {
       for (const auto &route : doc.array_items()) {
         int64_t from_ms = 0, to_ms = 0;
@@ -177,7 +179,7 @@ void RoutesDialog::parseRouteList(const QString &json, bool success, int error_c
           to_ms = static_cast<int64_t>(route["end_time_utc_millis"].number_value());
         }
         const int mins = static_cast<int>((to_ms - from_ms) / 60000);
-        auto item = new QListWidgetItem(QString("%1    %2min").arg(formatUnixMs(from_ms)).arg(mins));
+        auto item = new QListWidgetItem(QString::fromStdString(formatUnixMs(from_ms) + "    " + std::to_string(mins) + "min"));
         item->setData(Qt::UserRole, QString::fromStdString(route["fullname"].string_value()));
         route_list_->addItem(item);
       }
@@ -190,7 +192,7 @@ void RoutesDialog::parseRouteList(const QString &json, bool success, int error_c
   route_list_->setEmptyText(tr("No items"));
 }
 
-QString RoutesDialog::route() {
+std::string RoutesDialog::route() {
   auto current_item = route_list_->currentItem();
-  return current_item ? current_item->data(Qt::UserRole).toString() : "";
+  return current_item ? current_item->data(Qt::UserRole).toString().toStdString() : "";
 }
