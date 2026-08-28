@@ -4,6 +4,7 @@
 #include <cassert>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -15,6 +16,7 @@
 #include "json11/json11.hpp"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
 #include "tools/cabana/ui/imgui_util.h"
@@ -653,25 +655,27 @@ void MainWindow::restoreSessionState() {
 
 void MainWindow::handleShortcuts() {
   const ImGuiIO &io = ImGui::GetIO();
-  const bool ctrl = io.KeyCtrl || io.KeySuper;
-  const bool shift = io.KeyShift;
-  // a focused line edit consumes Space (ShortcutOverride) but not the Ctrl/F-key sequences
-  if (ImGui::IsKeyPressed(ImGuiKey_Space, false) && can && !io.WantTextInput) can->pause(!can->isPaused());
-  if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) onlineHelp();
-  if (ImGui::IsKeyPressed(ImGuiKey_F11, false)) toggleFullScreen();
-  if (!ctrl) return;
-  if (ImGui::IsKeyPressed(ImGuiKey_N, false)) newFile();
-  if (ImGui::IsKeyPressed(ImGuiKey_O, false)) openFile();
-  if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
-    if (shift) {
-      if (dbc()->nonEmptyDBCCount() == 1) saveAs();
-    } else if (dbc()->nonEmptyDBCCount() > 0) {
-      save();
+  for (const KeyEvent &e : takeKeyEvents()) {
+    const bool ctrl = e.mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
+    const bool shift = e.mods & GLFW_MOD_SHIFT;
+    // a focused line edit consumes Space (ShortcutOverride) but not the Ctrl/F-key sequences
+    if (e.key == GLFW_KEY_SPACE && !ctrl && can && !io.WantTextInput) can->pause(!can->isPaused());
+    if (e.key == GLFW_KEY_F1) onlineHelp();
+    if (e.key == GLFW_KEY_F11) toggleFullScreen();
+    if (!ctrl) continue;
+    if (e.key == GLFW_KEY_N) newFile();
+    if (e.key == GLFW_KEY_O) openFile();
+    if (e.key == GLFW_KEY_S) {
+      if (shift) {
+        if (dbc()->nonEmptyDBCCount() == 1) saveAs();
+      } else if (dbc()->nonEmptyDBCCount() > 0) {
+        save();
+      }
     }
+    if (e.key == GLFW_KEY_Z) shift ? UndoStack::instance()->redo() : UndoStack::instance()->undo();
+    if (e.key == GLFW_KEY_Y) UndoStack::instance()->redo();
+    if (e.key == GLFW_KEY_Q) close();
   }
-  if (ImGui::IsKeyPressed(ImGuiKey_Z, false)) shift ? UndoStack::instance()->redo() : UndoStack::instance()->undo();
-  if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) UndoStack::instance()->redo();
-  if (ImGui::IsKeyPressed(ImGuiKey_Q, false)) close();
 }
 
 void MainWindow::drawStatusBar() {
@@ -727,7 +731,33 @@ void MainWindow::drawHelpOverlay() {
     const ImVec2 min(center.x - size.x * 0.5f - 8.0f, center.y - size.y * 0.5f - 8.0f);
     const ImVec2 max(center.x + size.x * 0.5f + 8.0f, center.y + size.y * 0.5f + 8.0f);
     dl->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_PopupBg));
-    dl->AddText(nullptr, 0.0f, ImVec2(min.x + 8.0f, min.y + 8.0f), ImGui::GetColorU32(ImGuiCol_Text), text.c_str(), nullptr, 400.0f);
+    // "#rrggbb" tokens are the color swatches of the Qt HTML table
+    float y = min.y + 8.0f;
+    std::istringstream lines(text);
+    std::string line;
+    while (std::getline(lines, line)) {
+      float x = min.x + 8.0f;
+      size_t pos = 0;
+      while (pos < line.size()) {
+        size_t hash = line.find('#', pos);
+        const std::string chunk = line.substr(pos, hash == std::string::npos ? std::string::npos : hash - pos);
+        dl->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), chunk.c_str());
+        x += ImGui::CalcTextSize(chunk.c_str()).x;
+        if (hash == std::string::npos) break;
+        unsigned rgb = 0;
+        if (hash + 7 <= line.size() && sscanf(line.c_str() + hash + 1, "%6x", &rgb) == 1) {
+          const float sz = ImGui::GetTextLineHeight();
+          dl->AddRectFilled(ImVec2(x, y), ImVec2(x + sz, y + sz), IM_COL32((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, 255));
+          x += sz;
+          pos = hash + 7;
+        } else {
+          dl->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), "#");
+          x += ImGui::CalcTextSize("#").x;
+          pos = hash + 1;
+        }
+      }
+      y += ImGui::GetTextLineHeightWithSpacing();
+    }
   }
   help_texts_.clear();
   if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) help_overlay_ = false;
@@ -775,11 +805,16 @@ void MainWindow::draw() {
   next_frame_.clear();
   for (auto &fn : pending) fn();
 
-  if (!MessageBox::isOpen() && !FileDialog::isOpen() && !stream_selector_.isOpen()) handleShortcuts();
+  if (!MessageBox::isOpen() && !FileDialog::isOpen() && !stream_selector_.isOpen()) {
+    handleShortcuts();
+  } else {
+    takeKeyEvents();  // modal dialogs swallow the shortcuts
+  }
   if (!full_screen_) drawMenuBar();
   drawDockspace();
 
-  if (ImGui::Begin(CENTER_PANEL)) center_widget_.draw();
+  // the central widget has no scrollbars of its own (the views inside scroll)
+  if (ImGui::Begin(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) center_widget_.draw();
   ImGui::End();
   if (messages_widget_ && messages_visible_) {
     const std::string name = messages_widget_->title() + MESSAGES_PANEL;

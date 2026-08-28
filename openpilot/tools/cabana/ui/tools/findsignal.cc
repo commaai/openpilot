@@ -146,7 +146,7 @@ FindSignalDlg::~FindSignalDlg() {
 
 bool FindSignalDlg::draw() {
   if (!open_) return false;
-  ImGui::SetNextWindowSize(ImVec2(700, 650), ImGuiCond_Appearing);
+  ImGui::SetNextWindowSize(ImVec2(900, 650), ImGuiCond_Appearing);
   if (ImGui::Begin(title_.c_str(), &open_)) {
     // Messages group
     float group_w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;

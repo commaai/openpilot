@@ -32,7 +32,7 @@ void SettingsDialog::draw() {
   ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   if (!ImGui::BeginPopupModal("Settings", nullptr, ImGuiWindowFlags_NoResize)) return;
-  const ImGuiInputTextFlags spin_flags = ImGuiInputTextFlags_EnterReturnsTrue;
+  const ImGuiInputTextFlags spin_flags = 0;  // InputInt forbids EnterReturnsTrue
 
   ImGui::SeparatorText("General");
   static const char *themes[] = {"Automatic", "Light", "Dark"};

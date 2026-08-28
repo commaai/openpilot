@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -29,6 +30,14 @@ public:
   ImGuiRuntime(const ImGuiRuntime &) = delete;
   ImGuiRuntime &operator=(const ImGuiRuntime &) = delete;
 };
+
+// key presses with the modifier state at event time (imgui may apply a modifier release in the same frame as
+// the key press it belongs to, which loses fast shortcut sequences); consumed once per frame by MainWindow
+struct KeyEvent {
+  int key;   // GLFW_KEY_*
+  int mods;  // GLFW_MOD_*
+};
+std::vector<KeyEvent> takeKeyEvents();
 
 // style.cc
 void loadFonts();

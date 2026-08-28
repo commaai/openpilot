@@ -593,7 +593,8 @@ void ChartView::drawAxes() {
     ImPlot::SetupFinish();
 
     plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
-    plot_hovered = ImPlot::IsPlotHovered();
+    // ImPlotFlags_NoInputs disables implot's own hover tracking
+    plot_hovered = plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
     mousePressEvent();
     mouseMoveEvent();

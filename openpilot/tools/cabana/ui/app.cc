@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdio>
 #include <stdexcept>
+#include <utility>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -18,6 +19,12 @@
 namespace {
 
 std::atomic<bool> g_signal_exit{false};
+std::vector<KeyEvent> g_key_events;
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+  if (action == GLFW_PRESS) g_key_events.push_back({key, mods});
+}
 
 void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
@@ -82,6 +89,7 @@ ImGuiRuntime::ImGuiRuntime(GLFWwindow *window) {
     ImGui::DestroyContext();
     throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
   }
+  glfwSetKeyCallback(window, keyCallback);
   if (!ImGui_ImplOpenGL3_Init("#version 330")) {
     ImGui_ImplGlfw_Shutdown();
     ImPlot::DestroyContext();
@@ -95,6 +103,10 @@ ImGuiRuntime::~ImGuiRuntime() {
   ImGui_ImplGlfw_Shutdown();
   ImPlot::DestroyContext();
   ImGui::DestroyContext();
+}
+
+std::vector<KeyEvent> takeKeyEvents() {
+  return std::exchange(g_key_events, {});
 }
 
 int run(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {

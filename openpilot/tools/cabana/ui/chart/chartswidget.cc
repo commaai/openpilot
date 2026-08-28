@@ -257,7 +257,7 @@ void ChartsWidget::drawToolBar() {
   }
 
   // spacer: right align the rest
-  const float slider_width = 150.0f;
+  float slider_width = 150.0f;
   float right_width = 0;
   if (range_lb_visible) right_width += ImGui::CalcTextSize(range_lb.c_str()).x + style.ItemSpacing.x;
   if (range_slider_visible) right_width += slider_width + style.ItemSpacing.x;
@@ -267,6 +267,12 @@ void ChartsWidget::drawToolBar() {
   right_width += buttonWidth(icon::X_SQUARE) + style.ItemSpacing.x;
   right_width += buttonWidth(dock_btn_icon);
   ImGui::SameLine();
+  if (range_slider_visible && ImGui::GetContentRegionAvail().x < right_width) {
+    // QSlider shrinks first, the buttons stay pinned to the right edge
+    const float shrink = std::min(slider_width - 40.0f, right_width - ImGui::GetContentRegionAvail().x);
+    slider_width -= std::max(shrink, 0.0f);
+    right_width -= std::max(shrink, 0.0f);
+  }
   const float x = ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width);
   ImGui::SetCursorPosX(x);
 
