@@ -49,9 +49,14 @@ inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGui
 const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);  // Qt::darkGray
 
 // utils::drawStaticText: text centered in r
-void drawStaticText(ImDrawList *p, const ImRect &r, ImFont *font, float font_size, ImU32 col, const std::string &text) {
+void drawStaticText(ImDrawList *p, const ImRect &r, ImFont *font, float font_size, ImU32 col, const std::string &text,
+                    bool bold = false) {
   const ImVec2 size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, text.c_str());
-  p->AddText(font, font_size, ImVec2(r.Min.x + (r.GetWidth() - size.x) / 2, r.Min.y + (r.GetHeight() - size.y) / 2), col, text.c_str());
+  const ImVec2 pos(r.Min.x + (r.GetWidth() - size.x) / 2, r.Min.y + (r.GetHeight() - size.y) / 2);
+  p->AddText(font, font_size, pos, col, text.c_str());
+  // JetBrains Mono ships no bold variant, so emulate one by drawing the glyphs again a fraction of a
+  // pixel to the right. Keeps the monospace advance, unlike switching to the proportional bold face.
+  if (bold) p->AddText(font, font_size, ImVec2(pos.x + 0.6f, pos.y), col, text.c_str());
 }
 
 // QBrush(color, Qt::Dense7Pattern): sparse dots
@@ -507,16 +512,19 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
   auto item = &bin_view->model->items[index.row * bin_view->model->columnCount() + index.column];
   ImFont *font = ImGui::GetFont();
   float font_size = ImGui::GetFontSize();
-  ImU32 pen = IM_COL32(0, 0, 0, 255);  // QPainter default pen, the Qt delegate never sets it for the hex column
+  ImU32 pen = IM_COL32(0, 0, 0, 255);  // QPainter default pen
 
   if (index.column == 8) {
     if (item->valid) {
-      pushMonoFont();  // hex_font (bold variant is not available)
+      pushMonoFont();  // hex_font
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
       painter->AddRectFilled(rect.Min, rect.Max, toImColor(item->bg_color));
     }
+    // the Qt delegate never sets the pen for the hex column, leaving it black. Use the same color as the
+    // bit columns instead, so the two halves of the row read as one.
+    pen = paletteText(bin_view->is_message_active);
   } else if (bin_view->isSelected(index)) {
     auto color = bin_view->resize_sig ? toImColor(bin_view->resize_sig->color) : paletteHighlight();
     painter->AddRectFilled(rect.Min, rect.Max, color);
@@ -543,7 +551,8 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
     fillBDiagPattern(painter, rect, DARK_GRAY);
   }
   if (item->valid) {
-    drawStaticText(painter, rect, font, font_size, pen, index.column == 8 ? hex_text_table[item->val] : bin_text_table[item->val]);
+    drawStaticText(painter, rect, font, font_size, pen,
+                   index.column == 8 ? hex_text_table[item->val] : bin_text_table[item->val], index.column == 8);
   }
   if (item->is_msb || item->is_lsb) {
     const char *text = item->is_msb ? "M" : "L";
