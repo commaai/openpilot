@@ -342,11 +342,11 @@ SignalItemDelegate::SignalItemDelegate() {
   // the sig pointers die with the signal
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) {
     if (desc_sig_ == sig) desc_sig_ = nullptr;
-    if (editing_item_ && editing_item_->sig == sig) editing_item_ = nullptr;
+    if (editing_item_ && editing_item_->sig == sig) closeEditor();
   }));
   connections_.push_back(dbc()->fileChanged.connect([this]() {
     desc_sig_ = nullptr;
-    editing_item_ = nullptr;
+    closeEditor();
   }));
 }
 
@@ -455,21 +455,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     else if (item->type == SignalModel::Item::Node) validator = node_validator;
     else validator = double_validator;
 
-    std::string text = editing_item_ == item ? edit_text_ : model->data(item, 1);
-    validatedInput("##editor", &text, validator);
-    if (ImGui::IsItemActivated()) editing_item_ = item;
-    if (editing_item_ == item) edit_text_ = text;
-    if (ImGui::IsItemDeactivatedAfterEdit()) {
-      // QLineEdit only commits when the validator reports Acceptable
-      ValidState state = ValidState::Acceptable;
-      if (item->type == SignalModel::Item::Name) state = validateName(edit_text_);
-      else if (item->type == SignalModel::Item::Node) state = validateNodes(edit_text_);
-      else state = validateDouble(edit_text_);
-      if (state == ValidState::Acceptable) setModelData(item, model, edit_text_);
-      editing_item_ = nullptr;
-    } else if (ImGui::IsItemDeactivated()) {
-      editing_item_ = nullptr;
-    }
+    lineEditor(item, model, validator);
   } else if (item->type == SignalModel::Item::Size) {
     int v = item->sig->size;
     bool changed = ImGui::InputInt("##editor", &v);
@@ -505,15 +491,71 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
       desc_sig_ = item->sig;
     }
   } else {
-    // QStyledItemDelegate::createEditor: plain QLineEdit
-    std::string text = editing_item_ == item ? edit_text_ : model->data(item, 1);
-    validatedInput("##editor", &text, nullptr);
-    if (ImGui::IsItemActivated()) editing_item_ = item;
-    if (editing_item_ == item) edit_text_ = text;
-    if (ImGui::IsItemDeactivatedAfterEdit()) {
+    // QStyledItemDelegate::createEditor: plain QLineEdit, no validator
+    lineEditor(item, model, nullptr);
+  }
+}
+
+void SignalItemDelegate::closeEditor() {
+  editing_item_ = nullptr;
+  editor_active_ = refocus_editor_ = enter_pressed_ = false;
+}
+
+// QValidator::validate for the editor of `item`; mutates `text` like NameValidator does (spaces -> '_')
+ValidState SignalItemDelegate::validateEditor(const SignalModel::Item *item, std::string &text) {
+  if (item->type == SignalModel::Item::Name) return validateName(text);
+  if (item->type == SignalModel::Item::Node) return validateNodes(text);
+  if (item->type == SignalModel::Item::Offset || item->type == SignalModel::Item::Factor ||
+      item->type == SignalModel::Item::MultiplexValue || item->type == SignalModel::Item::Min ||
+      item->type == SignalModel::Item::Max) {
+    return validateDouble(text);
+  }
+  return ValidState::Acceptable;  // no validator
+}
+
+// QLineEdit editor: Enter and focus out only commit when the validator reports Acceptable (an Intermediate
+// or Invalid value keeps the editor open with the typed text and commits nothing), Escape reverts to the
+// value the editor was opened with.
+void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator) {
+  const bool editing = editing_item_ == item;
+  const bool was_active = editing && editor_active_;  // the editor had the focus at the end of the last frame
+
+  std::string text = editing ? edit_text_ : model->data(item, 1);
+  if (editing && refocus_editor_) {
+    ImGui::SetKeyboardFocusHere();  // QLineEdit keeps the focus when the input is not acceptable
+    refocus_editor_ = false;
+  }
+  validatedInput("##editor", &text, validator);
+  if (ImGui::IsItemActivated()) {
+    editing_item_ = item;
+    edit_original_ = model->data(item, 1);
+  }
+  if (editing_item_ != item) return;
+
+  edit_text_ = text;
+  editor_active_ = ImGui::IsItemActive();
+  if (was_active) {
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+      // closeEditor(RevertModelCache): no commit, the editor is closed and the original value comes back
+      edit_text_ = edit_original_;
+      editing_item_ = nullptr;
+      enter_pressed_ = false;
+      return;
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_Enter, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false)) {
+      enter_pressed_ = true;
+    }
+  }
+  if (ImGui::IsItemDeactivated()) {
+    const bool by_enter = std::exchange(enter_pressed_, false);
+    if (!ImGui::IsItemDeactivatedAfterEdit()) {
+      editing_item_ = nullptr;  // nothing was typed, nothing to commit
+    } else if (validateEditor(item, edit_text_) == ValidState::Acceptable) {
       setModelData(item, model, edit_text_);
       editing_item_ = nullptr;
-    } else if (ImGui::IsItemDeactivated()) {
+    } else if (by_enter) {
+      refocus_editor_ = true;  // the editor stays open with the text the user typed
+    } else {
       editing_item_ = nullptr;
     }
   }

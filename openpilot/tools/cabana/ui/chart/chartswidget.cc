@@ -19,6 +19,8 @@ const int CHART_SPACING = 4;
 const int START_DRAG_DISTANCE = 10;  // QApplication::startDragDistance()
 const float TOOLBAR_ITEM_SPACING = 1.0f;    // QStyle::PM_ToolBarItemSpacing
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizontal margin
+const float MENU_ARROW_SIZE = 6.0f;         // QStyle::PE_IndicatorArrowDown on a toolbutton menu
+const float LAYOUT_HORIZONTAL_SPACING = 6.0f;  // QStyle::PM_LayoutHorizontalSpacing
 const float SLIDER_LENGTH = 13.0f;          // QStyle::PM_SliderLength (Fusion)
 const float SLIDER_THICKNESS = 13.0f;       // QStyle::PM_SliderThickness (Fusion)
 
@@ -26,26 +28,35 @@ static float buttonWidth(const std::string &label) {
   return ImGui::CalcTextSize(label.c_str(), nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
 }
 
-// an auto-raise QToolButton with an InstantPopup menu: flat until hovered, with a dropdown arrow after the text
+// an auto-raise QToolButton with an InstantPopup menu: flat until hovered, with a small dropdown arrow
+// drawn hard against the text (ItemInnerSpacing.x / 2) at the text baseline
 static float menuButtonWidth(const std::string &text) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  return ImGui::CalcTextSize(text.c_str(), nullptr, true).x + style.ItemInnerSpacing.x + ImGui::GetFontSize() +
+  return ImGui::CalcTextSize(text.c_str(), nullptr, true).x + style.ItemInnerSpacing.x * 0.5f + MENU_ARROW_SIZE +
          style.FramePadding.x * 2;
 }
 
-static bool menuButton(const char *id, const std::string &text) {
+static bool menuButton(const char *id, const std::string &text, const char *popup_id) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  // setAutoRaise(true): no frame, transparent until hovered; the text is left aligned so the arrow gets its own space
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  const bool popup_open = ImGui::IsPopupOpen(popup_id);
+  // setAutoRaise(true): no frame, transparent until hovered; the button is drawn pressed while the menu is open
+  ImGui::PushStyleColor(ImGuiCol_Button, popup_open ? style.Colors[ImGuiCol_ButtonActive] : ImVec4(0, 0, 0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
   bool clicked = ImGui::Button((text + "###" + id).c_str(), ImVec2(menuButtonWidth(text), 0.0f));
   ImGui::PopStyleVar(2);
   ImGui::PopStyleColor();
-  ImGui::RenderArrow(ImGui::GetWindowDrawList(),
-                     ImVec2(ImGui::GetItemRectMax().x - style.FramePadding.x - ImGui::GetFontSize(),
-                            ImGui::GetItemRectMin().y + style.FramePadding.y),
-                     ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Down, 0.8f);
+  // a 6 px arrow in the disabled text color, right after the text, sitting on the text baseline
+  const ImVec2 min = ImGui::GetItemRectMin();
+  const float x = min.x + style.FramePadding.x + ImGui::CalcTextSize(text.c_str(), nullptr, true).x +
+                  style.ItemInnerSpacing.x * 0.5f;
+  const float baseline = min.y + style.FramePadding.y + ImGui::GetFontBaked()->Ascent;
+  ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(x, baseline - MENU_ARROW_SIZE * 0.5f),
+                                                ImVec2(x + MENU_ARROW_SIZE, baseline - MENU_ARROW_SIZE * 0.5f),
+                                                ImVec2(x + MENU_ARROW_SIZE * 0.5f, baseline),
+                                                ImGui::GetColorU32(ImGuiCol_TextDisabled));
+  // QToolButton::InstantPopup: the menu drops down from below the button, not at the mouse cursor
+  ImGui::SetNextWindowPos(ImVec2(min.x, ImGui::GetItemRectMax().y), ImGuiCond_Always);
   return clicked;
 }
 
@@ -326,15 +337,17 @@ void ChartsWidget::drawToolBar() {
     if (toolButton("new_tab_btn", icon::WINDOW_STACK, "New Tab")) newTab();
   }});
   // title_label carries a trailing PM_LayoutHorizontalSpacing content margin
-  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + 6.0f, [this]() {
+  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + LAYOUT_HORIZONTAL_SPACING, [this]() {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(title_label.c_str());
+    ImGui::SameLine(0.0f, LAYOUT_HORIZONTAL_SPACING);
+    ImGui::Dummy(ImVec2(0.0f, 0.0f));
   }});
 
   // chart type menu
   const std::string chart_type_text = std::string("Type: ") + types[std::clamp(settings.chart_series_type, 0, 2)];
   left.push_back({menuButtonWidth(chart_type_text), [this, chart_type_text]() {
-    if (menuButton("chart_type", chart_type_text)) ImGui::OpenPopup("chart_type_menu");
+    if (menuButton("chart_type", chart_type_text, "chart_type_menu")) ImGui::OpenPopup("chart_type_menu");
     if (ImGui::BeginPopup("chart_type_menu")) {
       for (int i = 0; i < types.size(); ++i) {
         if (ImGui::MenuItem(types[i])) {
@@ -349,7 +362,7 @@ void ChartsWidget::drawToolBar() {
   // columns menu
   if (columns_action_visible) {
     left.push_back({menuButtonWidth(columns_action_text), [this]() {
-      if (menuButton("columns", columns_action_text)) ImGui::OpenPopup("columns_menu");
+      if (menuButton("columns", columns_action_text, "columns_menu")) ImGui::OpenPopup("columns_menu");
       if (ImGui::BeginPopup("columns_menu")) {
         for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
           if (ImGui::MenuItem(std::to_string(i + 1).c_str())) setColumnCount(i + 1);

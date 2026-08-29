@@ -897,7 +897,9 @@ void MainWindow::drawHelpOverlay() {
     const ImVec2 center((rect.Min.x + rect.Max.x) * 0.5f, (rect.Min.y + rect.Max.y) * 0.5f);
     const ImVec2 min(center.x - size.x * 0.5f - 8.0f, center.y - size.y * 0.5f - 8.0f);
     const ImVec2 max(center.x + size.x * 0.5f + 8.0f, center.y + size.y * 0.5f + 8.0f);
-    dl->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_PopupBg));
+    // QPalette::ToolTipBase: pale yellow in the light theme
+    const ImU32 tooltip_base = settings.theme == DARK_THEME ? ImGui::GetColorU32(ImGuiCol_PopupBg) : IM_COL32(255, 255, 220, 255);
+    dl->AddRectFilled(min, max, tooltip_base);
     float y = min.y + 8.0f;
     for (const auto &line : lines) {
       float x = min.x + 8.0f;

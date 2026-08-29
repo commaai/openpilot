@@ -21,7 +21,7 @@
 // bootstrap glyphs (utils::icon("name") in the Qt frontend)
 
 // ToolButton (utils/qtutil.h): auto-raise icon button with a tooltip
-bool toolButton(const char *icon, const char *tooltip, const char *id);
+bool toolButton(const char *icon, const char *tooltip, const char *id, float width = 0.0f);
 
 // TabBar (utils/qtutil.h): QTabBar whose tabs get an "x" close button
 class TabBar {

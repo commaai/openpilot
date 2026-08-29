@@ -26,6 +26,8 @@ const int THUMBNAIL_MARGIN = 3;
 const float POINT_10_FONT_SIZE = 13.0f;  // QFont(family, 10) at 96 dpi
 const float POINT_16_FONT_SIZE = 21.0f;  // QFont(family, 16) at 96 dpi
 const float MENU_BUTTON_INDICATOR = 12.0f;  // QStyle::PM_MenuButtonIndicator
+const float TOOLBAR_ITEM_SPACING = 1.0f;    // QStyle::PM_ToolBarItemSpacing
+const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizontal margin
 const float SLIDER_LENGTH = 13.0f;     // QStyle::PM_SliderLength (Fusion)
 const float SLIDER_THICKNESS = 13.0f;  // QStyle::PM_SliderThickness (Fusion)
 
@@ -171,17 +173,17 @@ VideoWidget::VideoWidget() {
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &) { timeRangeChanged(); }));
 
   updatePlayBtnState();
-  // setWhatsThis: the HTML table becomes plain text lines with the same entries and colors
-  whats_this_ = "<b>Video</b>\n"
-                "Timeline color\n"
-                "  " + colorName(timeline_colors[(int)TimelineType::None]) + " Disengaged    " +
-                colorName(timeline_colors[(int)TimelineType::Engaged]) + " Engaged\n"
-                "  " + colorName(timeline_colors[(int)TimelineType::UserBookmark]) + " User Flag     " +
-                colorName(timeline_colors[(int)TimelineType::AlertInfo]) + " Info\n"
-                "  " + colorName(timeline_colors[(int)TimelineType::AlertWarning]) + " Warning       " +
-                colorName(timeline_colors[(int)TimelineType::AlertCritical]) + " Critical\n"
-                "Shortcuts\n"
-                "Pause/Resume:  space ";
+  // setWhatsThis: the HTML table becomes one <br /> separated row per table row, with the same entries and colors
+  whats_this_ = "<b>Video</b><br />\n"
+                "<span style=\"color:gray\">Timeline color</span><br />\n" +
+                colorName(timeline_colors[(int)TimelineType::None]) + " Disengaged&nbsp;&nbsp;&nbsp;" +
+                colorName(timeline_colors[(int)TimelineType::Engaged]) + " Engaged<br />\n" +
+                colorName(timeline_colors[(int)TimelineType::UserBookmark]) + " User Flag&nbsp;&nbsp;&nbsp;" +
+                colorName(timeline_colors[(int)TimelineType::AlertInfo]) + " Info<br />\n" +
+                colorName(timeline_colors[(int)TimelineType::AlertWarning]) + " Warning&nbsp;&nbsp;&nbsp;" +
+                colorName(timeline_colors[(int)TimelineType::AlertCritical]) + " Critical<br />\n"
+                "<span style=\"color:gray\">Shortcuts</span><br />\n"
+                "Pause/Resume: <span style=\"background-color:lightGray;color:gray\">&nbsp;space&nbsp;</span>";
 }
 
 void VideoWidget::createPlaybackController() {
@@ -196,9 +198,13 @@ void VideoWidget::createPlaybackController() {
 }
 
 void VideoWidget::drawPlaybackController() {
+  // QToolBar metrics: PM_ToolBarItemSpacing between the items, the buttons only carry the auto raise margin
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(TOOLBAR_ITEM_SPACING, ImGui::GetStyle().ItemSpacing.y));
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, ImGui::GetStyle().FramePadding.y));
   const ImGuiStyle &style = ImGui::GetStyle();
-  // QToolBar item widths: a button is its text plus 2 * FramePadding.x, the items are separated by ItemSpacing.x
-  auto button_width = [&](const char *label) { return ImGui::CalcTextSize(label).x + style.FramePadding.x * 2; };
+  // a button is its text plus 2 * FramePadding.x; the time display is a plain label, so it is just its text
+  auto text_width = [](const char *label) { return ImGui::CalcTextSize(label).x; };
+  auto button_width = [&](const char *label) { return text_width(label) + style.FramePadding.x * 2; };
   pushBoldFont();
   const float speed_width = button_width("0.05x  ") + MENU_BUTTON_INDICATOR;
   popBoldFont();
@@ -221,7 +227,7 @@ void VideoWidget::drawPlaybackController() {
       case PLAY: return button_width(play_icon_);
       case FORWARD: return button_width(icon::FAST_FORWARD);
       case SKIP_END: return button_width(icon::SKIP_END);
-      case TIME_DISPLAY: return button_width(time_text_.c_str());
+      case TIME_DISPLAY: return text_width(time_text_.c_str());
       case LOOP: return button_width(loop_icon_);
       case SPEED: return speed_width;
       case SEPARATOR: return 1.0f;
@@ -245,7 +251,9 @@ void VideoWidget::drawPlaybackController() {
         ImGui::EndDisabled();
         break;
       case TIME_DISPLAY:
-        if (toolButton(time_text_.c_str(), time_tooltip_.c_str(), "time_display")) toggleTimeDisplay();
+        // QLabel: the text with no frame around it
+        if (toolButton(time_text_.c_str(), time_tooltip_.c_str(), "time_display", text_width(time_text_.c_str())))
+          toggleTimeDisplay();
         break;
       case LOOP:
         if (toolButton(loop_icon_, "Loop playback", "loop")) loopPlaybackClicked();
@@ -296,7 +304,8 @@ void VideoWidget::drawPlaybackController() {
     // the extension button sits fully inside the toolbar: its right edge is the content region right edge
     const float extension_x = std::max(start_x, right_edge - extension_width);
     visible == 0 ? ImGui::SetCursorPosX(extension_x) : ImGui::SameLine(extension_x);
-    if (ImGui::Button((std::string(icon::RAQUO) + "###toolbar_extension").c_str())) ImGui::OpenPopup("toolbar_extension_menu");
+    if (ImGui::Button((std::string(icon::RAQUO) + "###toolbar_extension").c_str(), ImVec2(extension_width, 0)))
+      ImGui::OpenPopup("toolbar_extension_menu");
     // the popup opens inward: its right edge is aligned with the button so it stays inside the window
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
     if (ImGui::BeginPopup("toolbar_extension_menu")) {
@@ -337,6 +346,7 @@ void VideoWidget::drawPlaybackController() {
       ImGui::EndPopup();
     }
   }
+  ImGui::PopStyleVar(2);
 }
 
 void VideoWidget::skipToEnd() {
@@ -549,12 +559,12 @@ void VideoWidget::draw() {
 
 // ToolButton
 
-bool toolButton(const char *icon, const char *tooltip, const char *id) {
+bool toolButton(const char *icon, const char *tooltip, const char *id, float width) {
   const std::string label = std::string(icon) + "###" + id;
   // setAutoRaise(true)
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  const bool pressed = ImGui::Button(label.c_str());
+  const bool pressed = ImGui::Button(label.c_str(), ImVec2(width, 0));
   ImGui::PopStyleVar();
   ImGui::PopStyleColor();
   if (tooltip && tooltip[0] && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) ImGui::SetTooltip("%s", tooltip);

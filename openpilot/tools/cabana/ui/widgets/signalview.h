@@ -145,8 +145,17 @@ public:
   mutable std::function<void()> pending_commit;
 
 private:
+  // QLineEdit + QValidator editor; only an Acceptable value is committed
+  void lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator);
+  static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
+  void closeEditor();
+
   SignalModel::Item *editing_item_ = nullptr;  // the open QLineEdit editor
   std::string edit_text_;
+  std::string edit_original_;    // value the editor was opened with, restored by Escape
+  bool editor_active_ = false;   // editor had the keyboard focus last frame
+  bool refocus_editor_ = false;  // reopen the editor rejected by the validator
+  bool enter_pressed_ = false;
   std::unique_ptr<ValueDescriptionDlg> desc_dlg_;
   const cabana::Signal *desc_sig_ = nullptr;
   Connections connections_;
