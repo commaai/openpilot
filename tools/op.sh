@@ -338,6 +338,11 @@ function op_cabana() {
   op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
+function op_cabana2() {
+  op_before_cmd
+  op_run_command openpilot/tools/cabana/_cabana_ui "$@"
+}
+
 function op_sim() {
   op_before_cmd
   op_run_command exec openpilot/tools/sim/run_bridge.py &
@@ -446,6 +451,7 @@ function op_default() {
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo -e "  ${BOLD}cabana2${NC}      Run the new imgui Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
@@ -498,6 +504,7 @@ function _op() {
     build )         shift 1; op_build "$@" ;;
     juggle )        shift 1; op_juggle "$@" ;;
     cabana )        shift 1; op_cabana "$@" ;;
+    cabana2 )       shift 1; op_cabana2 "$@" ;;
     lint )          shift 1; op_lint "$@" ;;
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
