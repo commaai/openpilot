@@ -23,8 +23,6 @@ const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizont
 const float MENU_ARROW_SIZE = 6.0f;         // QStyle::PE_IndicatorArrowDown on a toolbutton menu
 const float MENU_ARROW_SPACING = 5.0f;      // gap between the label and the dropdown arrow
 const float LAYOUT_HORIZONTAL_SPACING = 6.0f;  // QStyle::PM_LayoutHorizontalSpacing
-const float SLIDER_LENGTH = 13.0f;          // QStyle::PM_SliderLength (Fusion)
-const float SLIDER_THICKNESS = 13.0f;       // QStyle::PM_SliderThickness (Fusion)
 
 static float buttonWidth(const std::string &label) {
   return ImGui::CalcTextSize(label.c_str(), nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
@@ -62,56 +60,8 @@ static bool menuButton(const char *id, const std::string &text, const char *popu
   return clicked;
 }
 
-// QStyle::SC_SliderHandle (Fusion): a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
-static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
-  const bool dark = isDarkTheme();
-  // buttonColor.lighter(104) / buttonColor.darker(104)
-  const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
-  const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
-  // QFusionStylePrivate::outline: the top/left edge is one step lighter than the bottom/right edge
-  const ImU32 outline_top = dark ? IM_COL32(0xa3, 0xa3, 0xa3, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
-  const ImU32 outline_bottom = dark ? IM_COL32(0x9c, 0x9c, 0x9c, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
-  p->AddRectFilled(r.Min, r.Max, top, 2.0f);
-  p->AddRectFilled(ImVec2(r.Min.x, r.GetCenter().y), r.Max, bottom, 2.0f, ImDrawFlags_RoundCornersBottom);
-  p->AddRect(r.Min, r.Max, outline_bottom, 2.0f, 0, 1.0f);
-  // the straight edges are drawn as crisp 1 px rects: an antialiased outline washes out to a much lighter grey
-  const float c = 2.0f;  // corner radius
-  p->AddRectFilled(ImVec2(r.Min.x + c, r.Min.y), ImVec2(r.Max.x - c, r.Min.y + 1.0f), outline_top);
-  p->AddRectFilled(ImVec2(r.Min.x, r.Min.y + c), ImVec2(r.Min.x + 1.0f, r.Max.y - c), outline_top);
-  p->AddRectFilled(ImVec2(r.Min.x + c, r.Max.y - 1.0f), ImVec2(r.Max.x - c, r.Max.y), outline_bottom);
-  p->AddRectFilled(ImVec2(r.Max.x - 1.0f, r.Min.y + c), ImVec2(r.Max.x, r.Max.y - c), outline_bottom);
-}
-
 bool LogSlider::draw(const char *label, float width) {
-  // Fusion QSlider: a full width groove with the part left of the handle filled, and a 13x13 handle on top
-  // the groove is a grey track over the full width (QFusionStyle draws it with the outline color)
-  const ImU32 groove_col = isDarkTheme() ? IM_COL32(0x2a, 0x2c, 0x2e, 255) : IM_COL32(0xc4, 0xc4, 0xc4, 255);
-  const ImU32 fill_col = ImGui::GetColorU32(ImGuiCol_SliderGrab);
-  ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
-  ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32_BLACK_TRANS);
-  ImGui::PushStyleColor(ImGuiCol_FrameBgActive, IM_COL32_BLACK_TRANS);
-  ImGui::PushStyleColor(ImGuiCol_SliderGrab, IM_COL32_BLACK_TRANS);
-  ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, IM_COL32_BLACK_TRANS);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);  // a QSlider has no frame
-  ImGui::SetNextItemWidth(width);
-  bool changed = ImGui::SliderInt(label, &pos_, min_, max_, "", ImGuiSliderFlags_NoInput);
-  ImGui::PopStyleVar();
-  ImGui::PopStyleColor(5);
-
-  const ImVec2 bb_min = ImGui::GetItemRectMin(), bb_max = ImGui::GetItemRectMax();
-  const float cy = (bb_min.y + bb_max.y) * 0.5f;
-  const float groove_h = SLIDER_THICKNESS * 0.5f;
-  const float handle_h = std::min(SLIDER_THICKNESS, bb_max.y - bb_min.y);
-  const float x0 = bb_min.x + SLIDER_LENGTH * 0.5f, x1 = bb_max.x - SLIDER_LENGTH * 0.5f;
-  const float t = max_ > min_ ? (float)(pos_ - min_) / (float)(max_ - min_) : 0.0f;
-  const float hx = x0 + (x1 - x0) * t;
-  ImDrawList *dl = ImGui::GetWindowDrawList();
-  const float groove_y0 = cy - groove_h * 0.5f, groove_y1 = cy + groove_h * 0.5f;
-  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(bb_max.x, groove_y1), groove_col, groove_h * 0.5f);
-  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(hx, groove_y1), fill_col, groove_h * 0.5f);
-  drawSliderHandle(dl, ImRect(ImVec2(hx - SLIDER_LENGTH * 0.5f, cy - handle_h * 0.5f),
-                              ImVec2(hx + SLIDER_LENGTH * 0.5f, cy + handle_h * 0.5f)));
-  return changed;
+  return fusionSliderInt(label, &pos_, min_, max_, width);
 }
 
 ChartsWidget::ChartsWidget() {
@@ -866,14 +816,12 @@ void ChartsWidget::draw() {
 
   // charts scroll area
   any_plot_hovered_ = false;
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
   if (ImGui::BeginChild("charts_scroll", ImVec2(0, 0), ImGuiChildFlags_None, 0)) {
     charts_scroll = ImGui::GetCurrentWindow();
     charts_scroll_viewport = charts_scroll->InnerRect;
     charts_container->draw();
   }
   ImGui::EndChild();
-  ImGui::PopStyleColor();
 
   drawDragPreview();
 

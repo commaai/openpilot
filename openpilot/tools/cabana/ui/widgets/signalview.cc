@@ -806,9 +806,8 @@ void SignalView::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(sparkline_label.c_str());
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(slider_width);
   int range = settings.sparkline_range;
-  if (ImGui::SliderInt("##sparkline_range_slider", &range, 1, sparkline_range_max, "")) {
+  if (fusionSliderInt("##sparkline_range_slider", &range, 1, sparkline_range_max, slider_width)) {
     setSparklineRange(range);
   }
   ImGui::SetItemTooltip("Sparkline time range");

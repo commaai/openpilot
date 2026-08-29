@@ -613,6 +613,14 @@ void ChartView::drawAxes() {
   ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(margins.x, AXIS_X_TOP_MARGIN));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
+  // Qt: every tick is a 1 px line in the text color at alpha 50, the edge ticks close the box, no tick marks
+  ImVec4 grid_color = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+  grid_color.w = 50.0f / 255.0f;
+  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, grid_color);
+  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, grid_color);
+  ImPlot::PushStyleColor(ImPlotCol_AxisTick, ImVec4(0, 0, 0, 0));
+  ImPlot::PushStyleColor(ImPlotCol_AxisText, ImGui::GetStyleColorVec4(ImGuiCol_Text));
+  ImPlot::PushStyleVar(ImPlotStyleVar_MajorTickLen, ImVec2(0, 0));
   const ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoMouseText |
                             ImPlotFlags_NoBoxSelect | ImPlotFlags_NoInputs | ImPlotFlags_NoFrame;
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
@@ -641,8 +649,8 @@ void ChartView::drawAxes() {
     drawForeground();
     ImPlot::EndPlot();
   }
-  ImPlot::PopStyleColor(2);
-  ImPlot::PopStyleVar();
+  ImPlot::PopStyleColor(6);
+  ImPlot::PopStyleVar(2);
 }
 
 void ChartView::drawLegend() {
