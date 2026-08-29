@@ -196,6 +196,7 @@ private:
     float name_width = 0;
     float value_column_width = 0;
     bool any_visible = false;
+    bool mouse_on_row = false;
     const cabana::Signal *hovered_sig = nullptr;
   };
   void drawTree();

@@ -838,6 +838,13 @@ void SignalView::drawTree() {
     }
     if (changed) updateState();
 
+    // QAbstractItemView::mousePressEvent: a press on the viewport that hits no row clears the
+    // selection and the current index. clicked() is not emitted, so rowClicked() does not run.
+    if (!ctx.mouse_on_row && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      current_sig_ = nullptr;
+      current_type_ = SignalModel::Item::Root;
+    }
+
     // entered / viewportEntered / leaveEvent
     if (ctx.hovered_sig != hovered_sig_) {
       hovered_sig_ = ctx.hovered_sig;
@@ -868,8 +875,9 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     ImGui::SetScrollHereY(0.0f);
     scroll_to_sig_ = nullptr;
   }
-  if (ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(row_min, row_max)) {
-    ctx.hovered_sig = item->sig;
+  if (ImGui::IsMouseHoveringRect(row_min, row_max)) {
+    ctx.mouse_on_row = true;  // indexAt(pos) is valid
+    if (ImGui::IsWindowHovered()) ctx.hovered_sig = item->sig;
   }
 
   // drawBranches

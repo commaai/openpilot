@@ -640,12 +640,12 @@ void ChartView::drawAxes() {
     ImPlot::SetupAxis(ImAxis_Y1, y_unit.empty() ? nullptr : y_unit.c_str(), axis_flags);
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min, x_max, ImPlotCond_Always);
     ImPlot::SetupAxisLimits(ImAxis_Y1, y_min, y_max, ImPlotCond_Always);
-    // y grid lines and tick labels
-    ImPlot::SetupAxisTicks(ImAxis_Y1, y_min, y_max, y_tick_count);
+    // y grid lines and tick labels (the format must be set before the ticks are generated)
     ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision) + "f").c_str());
+    ImPlot::SetupAxisTicks(ImAxis_Y1, y_min, y_max, y_tick_count);
     // x grid lines and tick labels
-    ImPlot::SetupAxisTicks(ImAxis_X1, x_min, x_max, X_TICK_COUNT);
     ImPlot::SetupAxisFormat(ImAxis_X1, ("%." + std::to_string(xAxisPrecision()) + "f").c_str());
+    ImPlot::SetupAxisTicks(ImAxis_X1, x_min, x_max, X_TICK_COUNT);
     ImPlot::SetupFinish();
 
     plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
