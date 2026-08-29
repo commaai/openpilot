@@ -8,7 +8,7 @@
 
 class Sparkline {
 public:
-  void update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 size);
+  void update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 sz);
   inline double freq() const { return freq_; }
   bool isEmpty() const { return render_points_.empty(); }  // QPixmap::isNull()
   // replaces QPainter::drawPixmap: emits the rendered polyline at pos (top-left, screen coordinates)
@@ -22,7 +22,7 @@ private:
   struct Point {
     double x, y;
   };
-  void render(const CabanaColor &color, int range, ImVec2 size);
+  void render(const CabanaColor &color, int range, ImVec2 sz);
 
   std::vector<Point> points_;
   std::vector<ImVec2> render_points_;

@@ -605,19 +605,15 @@ void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
 }
 
 void SignalView::updateChartState() {
-  int i = 0;
   for (auto item : model->root->children) {
-    bool chart_opened = charts->hasSignal(model->msg_id, item->sig);
-    item->chart_opened = chart_opened;
-    ++i;
+    item->chart_opened = charts->hasSignal(model->msg_id, item->sig);
   }
 }
 
 void SignalView::signalHovered(const cabana::Signal *sig) {
   auto &children = model->root->children;
   for (int i = 0; i < children.size(); ++i) {
-    bool highlight = children[i]->sig == sig;
-    children[i]->highlight = highlight;
+    children[i]->highlight = children[i]->sig == sig;
   }
 }
 

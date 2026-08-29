@@ -4,8 +4,8 @@
 #include <cmath>
 #include <limits>
 
-void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 size) {
-  if (first == last || size.x <= 0 || size.y <= 0) {
+void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 sz) {
+  if (first == last || sz.x <= 0 || sz.y <= 0) {
     render_points_.clear();
     this->size = {};
     return;
@@ -33,10 +33,10 @@ void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIt
   }
 
   freq_ = points_.size() / std::max(points_.back().x - points_.front().x, 1.0);
-  render(sig->color, range, size);
+  render(sig->color, range, sz);
 }
 
-void Sparkline::render(const CabanaColor &color, int range, ImVec2 size) {
+void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz) {
   // Adjust for flat lines
   bool is_flat_line = min_val == max_val;
   if (is_flat_line) {
@@ -45,8 +45,8 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 size) {
   }
 
   // Calculate scaling
-  const double xscale = (size.x - 1) / (double)range;
-  const double yscale = (size.y - 3) / (max_val - min_val);
+  const double xscale = (sz.x - 1) / (double)range;
+  const double yscale = (sz.y - 3) / (max_val - min_val);
   bool draw_individual_points = (points_.back().x * xscale / points_.size()) > 8.0;
 
   // Transform or downsample points
@@ -57,7 +57,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 size) {
       render_points_.emplace_back(p.x * xscale, 1.0 + (max_val - p.y) * yscale);
     }
   } else if (is_flat_line) {
-    double y = size.y / 2.0;
+    double y = sz.y / 2.0;
     render_points_.emplace_back(0.0, y);
     render_points_.emplace_back(points_.back().x * xscale, y);
   } else {
@@ -81,7 +81,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 size) {
   }
 
   // Render to pixmap: imgui redraws every frame, so only the polyline and its style are kept (see draw())
-  this->size = size;
+  this->size = sz;
   color_ = IM_COL32(color.r, color.g, color.b, color.a);
   draw_individual_points_ = draw_individual_points;
 }
