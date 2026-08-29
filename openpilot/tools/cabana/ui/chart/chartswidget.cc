@@ -414,7 +414,7 @@ void ChartsWidget::drawToolBar() {
   }});
 
   size_t n_left = left.size(), n_right = right.size();
-  // QToolBarLayout: the item widths plus one spacing between neighbours
+  // QToolBarLayout: the item widths plus one spacing between neighbors
   auto group_width = [&](const std::vector<Item> &items, size_t count) {
     float w = 0;
     for (size_t i = 0; i < count; ++i) w += items[i].width + (i ? style.ItemSpacing.x : 0);

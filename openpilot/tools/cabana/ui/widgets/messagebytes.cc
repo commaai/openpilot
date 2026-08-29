@@ -39,7 +39,7 @@ void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool s
   // the table already applies the cell padding: rect is the item rect
   const ImRect item_rect = rect;
   // the Qt model never returns Qt::ForegroundRole, so the delegate's "inactive" is always false there:
-  // inactive rows keep their byte colors and only the text is greyed by the view's palette
+  // inactive rows keep their byte colors and only the text is grayed by the view's palette
   // no separate HighlightedText in imgui; inactive rows fade it (alpha 100)
   ImVec4 highlighted = ImGui::GetStyleColorVec4(ImGuiCol_Text);
   if (inactive) highlighted.w = 100 / 255.0f;

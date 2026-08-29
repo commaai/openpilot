@@ -286,7 +286,7 @@ BinaryIndex BinaryView::indexAt(const ImVec2 &pos) const {
 }
 
 ImRect BinaryView::visualRect(const BinaryIndex &index) const {
-  // QHeaderView sections are integral; round the edges so neighbouring cells share them exactly.
+  // QHeaderView sections are integral; round the edges so neighboring cells share them exactly.
   // setShowGrid(false): no grid line between the cells, they are painted edge to edge
   const float x0 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND(index.column * column_width_);
   const float x1 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND((index.column + 1) * column_width_);
