@@ -322,3 +322,10 @@ std::filesystem::path executableDir() {
   return std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
 #endif
 }
+
+void chdirToExecutableDir() {
+  const auto dir = executableDir();
+  std::error_code ec;
+  std::filesystem::current_path(dir, ec);
+  if (!ec) setenv("PWD", dir.c_str(), 1);
+}

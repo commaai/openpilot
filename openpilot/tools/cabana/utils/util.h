@@ -108,3 +108,4 @@ private:
 
 int num_decimals(double num);
 std::filesystem::path executableDir();
+void chdirToExecutableDir();

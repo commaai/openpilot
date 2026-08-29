@@ -222,8 +222,7 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
 
   qputenv("QT_DBL_CLICK_DIST", "150");
   // ensure the current dir matches the exectuable's directory
-  std::error_code ec;
-  std::filesystem::current_path(executableDir(), ec);
+  chdirToExecutableDir();
 }
 
 QPixmap bootstrapPixmap(const QString &id) {
