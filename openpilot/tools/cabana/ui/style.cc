@@ -219,6 +219,10 @@ void applyTheme(int theme) {
     colors[ImGuiCol_PlotHistogram] = highlight;
     colors[ImGuiCol_DragDropTarget] = highlight;
   }
+  // QDialog::exec neither dims the window behind a modal dialog nor animates it in; imgui fades the dim
+  // in over several frames, which reads as the dialog lagging
+  colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0, 0, 0, 0);
+  colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0, 0, 0, 0);
 }
 
 bool isDarkTheme() { return g_dark; }
