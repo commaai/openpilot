@@ -84,11 +84,13 @@ ChartsWidget::~ChartsWidget() {
 }
 
 std::string ChartsWidget::whatsThis() const {
-  return "Chart View\n"
-         "Click: Click to seek to a corresponding time.\n"
-         "Drag: Zoom into the chart.\n"
-         "Shift + Drag: Scrub through the chart to view values.\n"
-         "Right Mouse: Open the context menu.\n";
+  return R"(
+    <b>Chart View</b><br />
+    <b>Click</b>: Click to seek to a corresponding time.<br />
+    <b>Drag</b>: Zoom into the chart.<br />
+    <b>Shift + Drag</b>: Scrub through the chart to view values.<br />
+    <b>Right Mouse</b>: Open the context menu.<br />
+  )";
 }
 
 void ChartsWidget::newTab() {

@@ -761,23 +761,31 @@ std::vector<std::vector<HelpRun>> parseHelpHtml(const std::string &raw) {
   std::vector<std::vector<HelpRun>> lines(1);
   HelpRun style;
   std::vector<HelpRun> span_stack;
-  const bool is_html = raw.find('<') != std::string::npos;
-  bool last_space = true;  // html collapses whitespace; leading whitespace is dropped
-  auto append = [&](const std::string &t) {
-    if (t.empty()) return;
-    HelpRun run = style;
-    run.text = t;
-    lines.back().push_back(run);
-    last_space = t.back() == ' ';
-  };
+  const bool html = raw.find('<') != std::string::npos;
+  bool prev_space = true;  // html collapses whitespace; leading whitespace is dropped
   std::string pending;
-  auto flush = [&]() { append(pending); pending.clear(); };
+  auto flush = [&]() {
+    if (!pending.empty()) {
+      HelpRun run = style;
+      run.text = pending;
+      lines.back().push_back(run);
+      pending.clear();
+    }
+  };
+  auto push_swatch = [&](ImU32 color) {
+    flush();
+    HelpRun run = style;
+    run.swatch = true;
+    if (color) run.color = color;
+    lines.back().push_back(run);
+    prev_space = false;
+  };
   for (size_t i = 0; i < raw.size(); ++i) {
     const char c = raw[i];
     if (c == '<') {
       const size_t close = raw.find('>', i);
       if (close == std::string::npos) break;
-      std::string tag = raw.substr(i + 1, close - i - 1);
+      const std::string tag = raw.substr(i + 1, close - i - 1);
       i = close;
       if (tag.compare(0, 3, "!--") == 0) continue;
       flush();
@@ -787,16 +795,16 @@ std::vector<std::vector<HelpRun>> parseHelpHtml(const std::string &raw) {
         style.bold = false;
       } else if (tag.compare(0, 2, "br") == 0) {
         lines.emplace_back();
-        last_space = true;
+        prev_space = true;
       } else if (tag.compare(0, 4, "span") == 0) {
         span_stack.push_back(style);
         const size_t st = tag.find("style=\"");
         if (st != std::string::npos) {
-          std::string css = tag.substr(st + 7, tag.find('"', st + 7) - st - 7);
+          const std::string css = tag.substr(st + 7, tag.find('"', st + 7) - st - 7);
           size_t pos = 0;
           while (pos < css.size()) {
             const size_t semi = css.find(';', pos);
-            std::string decl = css.substr(pos, semi == std::string::npos ? std::string::npos : semi - pos);
+            const std::string decl = css.substr(pos, semi == std::string::npos ? std::string::npos : semi - pos);
             const size_t colon = decl.find(':');
             if (colon != std::string::npos) {
               const std::string key = decl.substr(0, colon), value = decl.substr(colon + 1);
@@ -819,36 +827,34 @@ std::vector<std::vector<HelpRun>> parseHelpHtml(const std::string &raw) {
       for (const auto &[name, text] : entities) {
         if (raw.compare(i, strlen(name), name) == 0) {
           pending += text;
+          prev_space = false;
           i += strlen(name) - 1;
           matched = true;
           break;
         }
       }
       if (!matched && raw.compare(i, 7, "&#9632;") == 0) {  // the filled square of the byte color legend
-        flush();
-        HelpRun run = style;
-        run.swatch = true;
-        lines.back().push_back(run);
+        push_swatch(0);
         i += 6;
         matched = true;
       }
-      if (!matched) pending += c;
-    } else if (c == '\n' && !is_html) {
+      if (!matched) {
+        pending += c;
+        prev_space = false;
+      }
+    } else if (c == '\n' && !html) {
       flush();
       lines.emplace_back();
-      last_space = true;
+      prev_space = true;
     } else if (isspace(static_cast<unsigned char>(c))) {
-      if (!last_space && !(pending.size() && pending.back() == ' ')) pending += ' ';
+      if (!prev_space) pending += ' ';
+      prev_space = true;
     } else if (c == '#' && i + 6 < raw.size() && helpColor(raw.substr(i, 7)) != 0) {  // #rrggbb legend token
-      flush();
-      HelpRun run = style;
-      run.swatch = true;
-      run.color = helpColor(raw.substr(i, 7));
-      lines.back().push_back(run);
+      push_swatch(helpColor(raw.substr(i, 7)));
       i += 6;
     } else {
       pending += c;
-      last_space = false;
+      prev_space = false;
     }
   }
   flush();
@@ -953,10 +959,6 @@ void MainWindow::draw() {
   next_frame_.clear();
   for (auto &fn : pending) fn();
 
-  if (ImGui::GetTopMostPopupModal() == nullptr && ImGui::IsKeyPressed(ImGuiKey_Escape, false) &&
-      ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
-    ImGui::ClosePopupToLevel(0, true);  // QMenu closes on Escape
-  }
   if (ImGui::GetTopMostPopupModal() == nullptr) {
     handleShortcuts();
   } else {
@@ -1023,4 +1025,14 @@ void MainWindow::draw() {
   FileDialog::draw();
   MessageBox::draw();
   drawHelpOverlay();
+
+  // Escape closes the top-most non-modal popup (a QMenu or a QComboBox popup) on its own; the modal dialogs
+  // handled Escape themselves above when they were on top
+  if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+    ImGuiContext &g = *GImGui;
+    if (g.OpenPopupStack.Size > 0) {
+      ImGuiWindow *top = g.OpenPopupStack.back().Window;
+      if (top != nullptr && !(top->Flags & ImGuiWindowFlags_Modal)) ImGui::ClosePopupToLevel(g.OpenPopupStack.Size - 1, true);
+    }
+  }
 }

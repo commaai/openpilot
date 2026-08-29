@@ -53,7 +53,7 @@ void draw() {
   if (g_queue.empty()) return;
   Box &box = g_queue.front();
   const std::string popup_id = box.title + "###MessageBox";
-  ImGuiWindow *window = ImGui::GetCurrentWindow();
+  ImGuiWindow *window = ImGui::GetCurrentWindowRead();  // GetCurrentWindow() would mark the fallback window as used
   if (g_popup_id == 0) {
     // a pending box may only be opened from the call nested in the top-most modal, or from any call when
     // there is no modal at all

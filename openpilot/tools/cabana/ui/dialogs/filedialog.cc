@@ -16,6 +16,28 @@ namespace FileDialog {
 
 namespace {
 
+// QFileDialog sorts with a case insensitive, numeric aware collation ("mazda_3_2019" before "mazda_2017")
+bool naturalLess(const std::string &a, const std::string &b) {
+  size_t i = 0, j = 0;
+  while (i < a.size() && j < b.size()) {
+    if (isdigit(static_cast<unsigned char>(a[i])) && isdigit(static_cast<unsigned char>(b[j]))) {
+      size_t ie = i, je = j;
+      while (ie < a.size() && isdigit(static_cast<unsigned char>(a[ie]))) ++ie;
+      while (je < b.size() && isdigit(static_cast<unsigned char>(b[je]))) ++je;
+      const unsigned long long na = std::stoull(a.substr(i, ie - i)), nb = std::stoull(b.substr(j, je - j));
+      if (na != nb) return na < nb;
+      i = ie;
+      j = je;
+    } else {
+      const int ca = tolower(static_cast<unsigned char>(a[i])), cb = tolower(static_cast<unsigned char>(b[j]));
+      if (ca != cb) return ca < cb;
+      ++i;
+      ++j;
+    }
+  }
+  return a.size() - i < b.size() - j;
+}
+
 enum class Mode { OpenFile, SaveFile, Directory };
 
 struct State {
@@ -36,10 +58,6 @@ State g_state;
 ImGuiID g_popup_id = 0;
 ImGuiID g_owner_id = 0;
 
-std::string toLower(std::string s) {
-  for (char &c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  return s;
-}
 
 void listDir() {
   State &s = g_state;
@@ -56,8 +74,7 @@ void listDir() {
   std::sort(s.entries.begin(), s.entries.end(), [](const auto &a, const auto &b) {
     std::error_code sort_ec;
     const bool da = a.is_directory(sort_ec), db = b.is_directory(sort_ec);
-    // QFileDialog sorts case-insensitively
-    return da != db ? da : toLower(a.path().filename().string()) < toLower(b.path().filename().string());
+    return da != db ? da : naturalLess(a.path().filename().string(), b.path().filename().string());
   });
   s.dir_input = s.dir.string();
 }
@@ -125,7 +142,7 @@ void draw() {
   State &s = g_state;
   if (!s.active) return;
   const std::string popup_id = s.title + "###FileDialog";
-  ImGuiWindow *window = ImGui::GetCurrentWindow();
+  ImGuiWindow *window = ImGui::GetCurrentWindowRead();  // GetCurrentWindow() would mark the fallback window as used
   if (g_popup_id == 0) {
     // a pending dialog may only be opened from the call nested in the top-most modal, or from any call
     // when there is no modal at all

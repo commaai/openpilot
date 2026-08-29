@@ -150,7 +150,7 @@ VideoWidget::VideoWidget() {
 
   updatePlayBtnState();
   // setWhatsThis: the HTML table becomes plain text lines with the same entries and colors
-  whats_this_ = "Video\n"
+  whats_this_ = "<b>Video</b>\n"
                 "Timeline color\n"
                 "  " + colorName(timeline_colors[(int)TimelineType::None]) + " Disengaged    " +
                 colorName(timeline_colors[(int)TimelineType::Engaged]) + " Engaged\n"
