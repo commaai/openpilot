@@ -34,6 +34,7 @@ const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;   // QStyle::PM_ToolBarSeparatorExt
 const float MENU_ARROW_SIZE = 6.0f;            // QStyle::PE_IndicatorArrowDown on a toolbutton menu
 const float SLIDER_LENGTH = 13.0f;     // QStyle::PM_SliderLength (Fusion)
 const float SLIDER_THICKNESS = 13.0f;  // QStyle::PM_SliderThickness (Fusion)
+const float SLIDER_HEIGHT = 15.0f;     // QSlider::sizeHint height (Fusion): the handle plus a 1 px margin
 
 // Indexed by TimelineType: None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserBookmark
 static const ImU32 timeline_colors[] = {
@@ -475,9 +476,8 @@ void VideoWidget::drawCameraWidget() {
   camera_tab->draw();
 
   // cam_widget: minimum height MIN_VIDEO_HEIGHT, takes the space left by the slider and the toolbar
-  const ImGuiStyle &style = ImGui::GetStyle();
   const ImVec2 avail = ImGui::GetContentRegionAvail();
-  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - ImGui::GetFrameHeight() - toolbarHeight() - style.ItemSpacing.y * 2);
+  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - SLIDER_HEIGHT - toolbarHeight());
   cam_widget->draw(ImVec2(avail.x, cam_height));
 
   slider->draw();
@@ -569,21 +569,24 @@ void VideoWidget::eventFilter() {
 
 float VideoWidget::sizeHintHeight() const {
   // QSizePolicy::Maximum: the camera minimum height plus the slider and the toolbar
-  return MIN_VIDEO_HEIGHT + ImGui::GetFrameHeightWithSpacing() + toolbarHeight() + ImGui::GetStyle().ItemSpacing.y;
+  return MIN_VIDEO_HEIGHT + SLIDER_HEIGHT + toolbarHeight();
 }
 
 // the video pane opens with the camera at its natural aspect ratio, filling the width of the dock
 float VideoWidget::defaultHeight(float width) const {
   const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / cam_widget->frameAspectRatio());
-  const float tab_height = camera_tab->count() >= 2 ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
-  return cam_height + tab_height + ImGui::GetFrameHeightWithSpacing() + toolbarHeight() + ImGui::GetStyle().ItemSpacing.y;
+  const float tab_height = camera_tab->count() >= 2 ? ImGui::GetFrameHeight() : 0.0f;
+  return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
 }
 
 void VideoWidget::draw() {
+  // main_layout->setSpacing(0)
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   if (!can->liveStreaming())
     drawCameraWidget();
 
   drawPlaybackController();
+  ImGui::PopStyleVar();
 
   for (auto it = route_info_dlgs_.begin(); it != route_info_dlgs_.end();) {
     it = (*it)->draw() ? it + 1 : route_info_dlgs_.erase(it);
@@ -656,7 +659,7 @@ Slider::Slider() {
 }
 
 void Slider::draw() {
-  ImGui::InvisibleButton("##slider", ImVec2(std::max(1.0f, ImGui::GetContentRegionAvail().x), ImGui::GetFrameHeight()));
+  ImGui::InvisibleButton("##slider", ImVec2(std::max(1.0f, ImGui::GetContentRegionAvail().x), SLIDER_HEIGHT));
   rect_ = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
   const bool hovered = ImGui::IsItemHovered();
   left_ = hovered_ && !hovered;
@@ -697,12 +700,12 @@ void Slider::paintEvent() {
   ImRect handle_rect = handleRect();
   ImRect groove_rect = rect_;
 
-  // Adjust groove height to match handle height
+  // Adjust groove height to match handle height (QRect::setHeight rounds up to a whole 7 px, on whole pixels)
   float handle_height = handle_rect.GetHeight();
-  const float groove_height = handle_height * 0.5f;
+  const float groove_height = std::ceil(handle_height * 0.5f);
   const float center_y = rect_.GetCenter().y;
-  groove_rect.Min.y = center_y - groove_height / 2;
-  groove_rect.Max.y = center_y + groove_height / 2;
+  groove_rect.Min.y = std::floor(center_y - groove_height / 2);
+  groove_rect.Max.y = groove_rect.Min.y + groove_height;
 
   p->AddRectFilled(groove_rect.Min, groove_rect.Max, timeline_colors[(int)TimelineType::None]);
 
