@@ -73,10 +73,11 @@ All Qt files are ported into `ui/` and `_cabana_ui` builds and runs the demo rou
 (messages, binary/signal/log views, video with timeline and camera tabs, charts, all dialogs and tools).
 Verified against `_cabana` side by side under Xvfb; remaining work, each one a PR:
 
-1. Parity: tracked line by line in the PR description matrix (46 UI lines + performance), verified end to end
-   against `_cabana` under Xvfb; remaining unchecked lines are the ones still being re-verified after fixes.
-   Rendering is event driven like Qt (input, 30 fps while a stream plays, 10 fps idle); on a GPU both apps sit
-   at ~12 % CPU with the demo route.
+1. Parity: tracked line by line in the PR description matrix (55 UI lines + 5 performance lines), verified end
+   to end against `_cabana` under Xvfb with 30 fps recordings as evidence; any unchecked line is still being
+   re-verified after a fix. Rendering is event driven like Qt (input, 30 fps while a stream plays, 10 fps idle);
+   on a GPU both apps sit at ~12 % CPU with the demo route, memory is flat (worker threads share one malloc arena,
+   see `ui/threadpool.h` and `main.cc`), startup is on par.
 2. Persisted Qt byte-array state: `saveHeaderState`/`restoreHeaderState`, window geometry, dock layout and the
    video/charts splitter (`Settings::geometry`, `window_state`, `video_splitter_state`, `message_header_state`)
    are stubs; store the imgui equivalents in `Settings` and drop the Qt fields.
