@@ -11,10 +11,11 @@
 #include <QPainterPath>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/utils/qtutil.h"
 
 // SignalModel
 

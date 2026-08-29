@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <QPainter>
+#include "tools/cabana/utils/qtutil.h"
 
 void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, QSize size) {
   if (first == last || size.isEmpty()) {
