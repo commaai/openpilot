@@ -214,6 +214,7 @@ private:
   float max_value_width = 0;
   float value_column_width = 0;
   float name_column_width = 150;
+  bool editor_open_on_press_ = false;
   int first_visible_row_ = -1;
   int last_visible_row_ = -1;
   float scroll_value_ = 0, scroll_range_ = 0;

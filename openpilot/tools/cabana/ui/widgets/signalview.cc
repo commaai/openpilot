@@ -844,6 +844,8 @@ void SignalView::drawTree() {
     DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, delegate->rowHeight()};
     const float scroll_value = ImGui::GetScrollY();
     const float scroll_range = ImGui::GetScrollMaxY();
+    // the press that closes an open editor is consumed by the focus change, the index widgets never see it
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = delegate->open_item_ != nullptr;
 
     int first_visible = -1, last_visible = -1;
     auto &children = model->root->children;
@@ -905,7 +907,14 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
   const bool row_clicked = ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
   ImGui::PopStyleColor(2);
-  if (row_clicked) {
+  // QTreeView::mousePressEvent: a press on the branch indicator only toggles the expansion, the current
+  // index does not change and clicked() is not emitted
+  const float branch_x = row_min.x + depth * INDENTATION;
+  const bool on_branch = !item->children.empty() && ImGui::GetMousePos().x >= branch_x &&
+                         ImGui::GetMousePos().x < branch_x + INDENTATION;
+  if (row_clicked && on_branch) {
+    item->expanded = !item->expanded;
+  } else if (row_clicked) {
     // setCurrentIndex + clicked
     current_sig_ = item->sig;
     current_type_ = item->type;
@@ -987,14 +996,14 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   const auto sig = item->sig;
   const bool checked = item->chart_opened;
   if (checked) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (ImGui::Button((std::string(icon::GRAPH_UP) + "##plot").c_str(), btn_size)) {
+  if (ImGui::Button((std::string(icon::GRAPH_UP) + "##plot").c_str(), btn_size) && !editor_open_on_press_) {
     item->chart_opened = !checked;
     showChart(model->msg_id, sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
   if (checked) ImGui::PopStyleColor();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nSHIFT click to add to previous opened plot");
   ImGui::SameLine(0.0f, TOOLBAR_ITEM_SPACING);
-  if (ImGui::Button((std::string(icon::X) + "##remove").c_str(), btn_size)) {
+  if (ImGui::Button((std::string(icon::X) + "##remove").c_str(), btn_size) && !editor_open_on_press_) {
     pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model->msg_id, sig)); };
   }
   ImGui::SetItemTooltip("Remove signal");

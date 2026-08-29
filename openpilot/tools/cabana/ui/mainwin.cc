@@ -686,7 +686,8 @@ void MainWindow::handleShortcuts() {
         save();
       }
     }
-    if (e.key == GLFW_KEY_Z) shift ? UndoStack::instance()->redo() : UndoStack::instance()->undo();
+    // a focused line edit swallows Ctrl+Z / Ctrl+Shift+Z
+    if (e.key == GLFW_KEY_Z && !io.WantTextInput) shift ? UndoStack::instance()->redo() : UndoStack::instance()->undo();
     if (e.key == GLFW_KEY_Q) close();
   }
 }

@@ -307,8 +307,10 @@ void LogsWidget::drawTable() {
 
   // fixed section sizes and a horizontal scrollbar, no alternating row colors.
   // QTableView::showGrid defaults to true with Qt::SolidLine: the grid is drawn between rows and columns
-  const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_BordersInner |
-                                ImGuiTableFlags_SizingFixedFit;
+  ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_BordersInner |
+                          ImGuiTableFlags_SizingFixedFit;
+  // an empty viewport draws no grid
+  if (model.rowCount() == 0) flags &= ~ImGuiTableFlags_BordersInnerV;
   // inner_width: the sum of the fixed section sizes, so the columns keep their size and the table scrolls
   float inner_width = 0;
   for (int i = 0; i < cols; ++i) inner_width += sizes[i].x + style.CellPadding.x * 2;

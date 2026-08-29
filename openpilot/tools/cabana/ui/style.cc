@@ -153,6 +153,7 @@ void applyTheme(int theme) {
     style.Colors[ImGuiCol_TableBorderLight] = c(DarkTheme::dark);
     style.Colors[ImGuiCol_TableRowBg] = ImVec4(0, 0, 0, 0);
     style.Colors[ImGuiCol_TableRowBgAlt] = c(DarkTheme::base);
+    style.Colors[ImGuiCol_TextSelectedBg] = c(DarkTheme::highlight);
   } else {
     style.Colors[ImGuiCol_WindowBg] = colorRgb(250, 250, 251);
     style.Colors[ImGuiCol_ChildBg] = colorRgb(255, 255, 255);
@@ -167,6 +168,7 @@ void applyTheme(int theme) {
     style.Colors[ImGuiCol_Header] = colorRgb(highlight.r, highlight.g, highlight.b);
     style.Colors[ImGuiCol_HeaderHovered] = colorRgb(highlight.lighter(115).r, highlight.lighter(115).g, highlight.lighter(115).b);
     style.Colors[ImGuiCol_HeaderActive] = colorRgb(highlight.lighter(130).r, highlight.lighter(130).g, highlight.lighter(130).b);
+    style.Colors[ImGuiCol_TextSelectedBg] = colorRgb(highlight.r, highlight.g, highlight.b);
   }
 }
 
