@@ -410,23 +410,34 @@ void VideoWidget::drawSpeedDropdown() {
 }
 
 void VideoWidget::drawSpeedMenuItems() {
-  // exclusive QActionGroup: the current speed is marked with a radio bullet on the left
+  // exclusive QActionGroup: the current speed is marked with a radio bullet on the left. QMenu highlights the
+  // whole item, so each row is one full width Selectable with the bullet and the label drawn inside it. An
+  // indented MenuItem would start after the bullet and leave that column outside the highlight.
   const float indent = ImGui::GetFontSize();
-  ImGui::Indent(indent);
+  float label_width = 0;
+  for (int i = 0; i < (int)std::size(speeds); ++i) {
+    label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i], "").c_str()).x);
+  }
+  // every row declares the same width, so the popup is exactly as wide as the widest one and all the
+  // highlights reach both edges
+  const ImVec2 item_size(indent + label_width, 0.0f);
+  ImDrawList *painter = ImGui::GetWindowDrawList();
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     const float speed = speeds[i];
-    if (ImGui::MenuItem(speedText(speed, "").c_str())) {
+    ImGui::PushID(i);
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    if (ImGui::Selectable("##speed", false, ImGuiSelectableFlags_None, item_size)) {
       speed_index_ = i;
       can->setSpeed(speed);
       speed_text_ = speedText(speed, "  ");
     }
+    ImGui::PopID();
+    const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
     if (speed_index_ == i) {
-      const ImVec2 item_min = ImGui::GetItemRectMin(), item_max = ImGui::GetItemRectMax();
-      ImGui::RenderBullet(ImGui::GetWindowDrawList(), ImVec2(item_min.x - indent / 2, (item_min.y + item_max.y) / 2),
-                          ImGui::GetColorU32(ImGuiCol_Text));
+      ImGui::RenderBullet(painter, ImVec2(pos.x + indent / 2, pos.y + ImGui::GetTextLineHeight() / 2), color);
     }
+    painter->AddText(ImVec2(pos.x + indent, pos.y), color, speedText(speed, "").c_str());
   }
-  ImGui::Unindent(indent);
 }
 
 void VideoWidget::createCameraWidget() {
