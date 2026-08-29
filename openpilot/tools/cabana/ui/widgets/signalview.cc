@@ -723,7 +723,9 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     ImVec2 size(std::floor(available_width - value_width),
                 std::floor(delegate->button_size.y - V_MARGIN * 2));
 
-    auto [first, last] = can->eventsInRange(model->msg_id, std::make_pair(last_msg.ts -settings.sparkline_range, last_msg.ts));
+    // plain locals: capturing structured bindings in a lambda is C++20
+    const auto range = can->eventsInRange(model->msg_id, std::make_pair(last_msg.ts -settings.sparkline_range, last_msg.ts));
+    const CanEventIter first = range.first, last = range.second;
     std::vector<std::future<void>> futures;
     for (int i = first_visible; i <= last_visible; ++i) {
       auto item = model->root->children[i];

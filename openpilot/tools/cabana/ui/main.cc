@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <malloc.h>
 #include <cstring>
 #include <filesystem>
 #include <memory>
@@ -13,6 +12,10 @@
 #endif
 #include "tools/cabana/ui/app.h"
 #include "tools/cabana/utils/util.h"
+
+#ifdef __GLIBC__
+#include <malloc.h>
+#endif
 
 namespace {
 
@@ -129,9 +132,12 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
 }  // namespace
 
 int main(int argc, char *argv[]) {
+#ifdef __GLIBC__
   // Worker threads (sparklines, chart series, replay) would each get their own glibc malloc arena and the arenas
   // fragment without bound (RSS grew ~3 MB/min with charts open); Qt's build stays flat on one arena as well.
+  // macOS has a single allocator zone, so there is nothing to cap there.
   mallopt(M_ARENA_MAX, 1);
+#endif
   // ensure the current dir matches the executable's directory
   std::error_code ec;
   std::filesystem::current_path(executableDir(), ec);
