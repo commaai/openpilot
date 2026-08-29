@@ -718,9 +718,11 @@ void Slider::paintEvent() {
   auto fillRange = [&](double begin, double end, ImU32 color) {
     if (begin > max || end < min) return;
 
+    // QRect::setLeft/setRight truncate to whole pixels and the right edge is inclusive, so even an event
+    // shorter than a pixel paints one full pixel in its color instead of an anti-aliased smear
     ImRect r = groove_rect;
-    r.Min.x = rect_.Min.x + ((std::max(min, begin) - min) / span) * width();
-    r.Max.x = rect_.Min.x + ((std::min(max, end) - min) / span) * width();
+    r.Min.x = rect_.Min.x + std::floor(((std::max(min, begin) - min) / span) * width());
+    r.Max.x = rect_.Min.x + std::floor(((std::min(max, end) - min) / span) * width()) + 1.0f;
     p->AddRectFilled(r.Min, r.Max, color);
   };
 

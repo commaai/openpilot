@@ -34,7 +34,7 @@ public:
   bool hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const;
   void drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const;
 
-  const float small_font_size = 8.0f;  // small_font.setPixelSize(8)
+  const float small_font_size = 10.0f;  // small_font.setPixelSize(8): Qt hints that up to a 7 px cap height, Inter needs 10 px for it
   std::array<std::string, 256> hex_text_table;
   std::array<std::string, 2> bin_text_table;
 
