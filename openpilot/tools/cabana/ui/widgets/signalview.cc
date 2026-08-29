@@ -635,7 +635,15 @@ SignalView::SignalView(ChartsWidget *charts) : charts(charts) {
 
   connections_.push_back(model->rowsChanged.connect([this]() { rowsChanged(); }));
   // QAbstractItemView::reset() closes the open editors; the items they point at are deleted by refresh()
-  connections_.push_back(model->modelReset.connect([this]() { delegate->closeEditor(); }));
+  connections_.push_back(model->modelReset.connect([this]() {
+    delegate->closeEditor();
+    // QTreeView lays the new rows out before rowsChanged() runs, so its visible range is current. Ours is
+    // computed while drawing; reset it to the top so the sparklines are ready in the frame that paints them.
+    if (first_visible_row_ != -1) {
+      last_visible_row_ = std::min(model->rowCount() - 1, last_visible_row_ - first_visible_row_);
+      first_visible_row_ = 0;
+    }
+  }));
   connections_.push_back(dbc()->signalAdded.connect([this](MessageId id, const cabana::Signal *sig) { handleSignalAdded(id, sig); }));
   connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { handleSignalUpdated(sig); }));
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { handleSignalRemoved(sig); }));

@@ -140,7 +140,7 @@ public:
   static float textWidth(const std::string &text, float font_size = 0);
 
   ImGuiInputTextCallback name_validator, double_validator, node_validator;
-  const float label_font = 11.0f;   // QFont pointSize 8
+  const float label_font = 12.0f;   // QFont pointSize 8: 8 px tall digits, Inter needs 12 px for that
   const float minmax_font = 10.0f;  // QFont pixelSize 10
   const int color_label_width = 18;
   mutable ImVec2 button_size = {};
