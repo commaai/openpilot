@@ -1,7 +1,7 @@
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.selfdrived.state import StateMachine, SOFT_DISABLE_TIME
+from openpilot.selfdrive.selfdrived.state import StateMachine, SOFT_DISABLE_TIME, should_report_comm_issue
 from openpilot.selfdrive.selfdrived.events import Events, ET, EVENTS, NormalPermanentAlert
 
 State = log.SelfdriveState.OpenpilotState
@@ -81,6 +81,15 @@ class TestStateMachine(OpenpilotTestCase):
     self.events.add(make_event([ET.NO_ENTRY, ET.PRE_ENABLE]))
     self.state_machine.update(self.events)
     assert self.state_machine.state == State.preEnabled
+
+  def test_comm_issue_relevance(self):
+    assert not should_report_comm_issue(False, self.events)
+
+    self.events.add(make_event([ET.ENABLE]))
+    assert should_report_comm_issue(False, self.events)
+
+    self.events.clear()
+    assert should_report_comm_issue(True, self.events)
 
   def test_maintain_states(self):
     # Given current state's event type, we should maintain state
