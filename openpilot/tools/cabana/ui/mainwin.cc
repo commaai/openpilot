@@ -967,6 +967,12 @@ void MainWindow::drawDockspace() {
   ImGui::End();
 }
 
+static void setNextWindowFloatsOut() {
+  ImGuiWindowClass window_class;
+  window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
+  ImGui::SetNextWindowClass(&window_class);
+}
+
 void MainWindow::draw() {
   auto pending = std::move(next_frame_);
   next_frame_.clear();
@@ -990,6 +996,7 @@ void MainWindow::draw() {
   ImGui::End();
   if (messages_widget_ && messages_visible_) {
     const std::string name = messages_widget_->title() + MESSAGES_PANEL;
+    setNextWindowFloatsOut();
     if (ImGui::Begin(name.c_str(), &messages_visible_)) {
       help_texts_.emplace_back(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       messages_widget_->draw();
@@ -999,6 +1006,7 @@ void MainWindow::draw() {
   if (video_widget_) video_widget_->setVisible(video_visible_);  // showEvent/hideEvent of the video dock
   if (video_widget_ && video_visible_) {
     const std::string name = video_dock_title_ + VIDEO_PANEL;
+    setNextWindowFloatsOut();
     if (ImGui::Begin(name.c_str(), &video_visible_)) {
       // splitter between video and charts
       const ImVec2 avail = ImGui::GetContentRegionAvail();
@@ -1036,6 +1044,7 @@ void MainWindow::draw() {
   if (charts_widget_ && charts_floating_) {
     bool open = true;
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);
+    setNextWindowFloatsOut();
     if (ImGui::Begin(CHARTS_WINDOW, &open)) charts_widget_->draw();
     ImGui::End();
     if (!open) toggleChartsDocking();

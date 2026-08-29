@@ -107,7 +107,6 @@ ImGuiRuntime::ImGuiRuntime(GLFWwindow *window) {
   ImGuiIO &io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-  io.ConfigViewportsNoAutoMerge = true;
   io.ConfigViewportsNoDecoration = false;
   io.IniFilename = nullptr;
   io.LogFilename = nullptr;
