@@ -73,14 +73,10 @@ All Qt files are ported into `ui/` and `_cabana_ui` builds and runs the demo rou
 (messages, binary/signal/log views, video with timeline and camera tabs, charts, all dialogs and tools).
 Verified against `_cabana` side by side under Xvfb; remaining work, each one a PR:
 
-1. Known deviations to close (found by the side by side test, all in `ui/`):
-   - dialog button order is `[OK] [Cancel]` left aligned (Qt: `[Cancel] [OK]` right aligned)
-   - sparklines draw a marker per sample (Qt: bare polyline); expanded signal rows use input boxes (Qt: flat labels)
-   - Find Similar Bits has no row number column; the "..." menu uses check marks, the speed menu a check mark (Qt: radio)
-   - binary view hover paints the signal row saturated (Qt tints it); after Close stream every cell is hatch filled
-   - F1 overlay: bold runs are flat; the Message View text was reworded
-   - `OpenPandaWidget` opens the panda in its constructor like the Qt widget does (both connect over USB when the
-     dialog opens); keep an eye on it when a panda is attached
+1. Parity: tracked line by line in the PR description matrix (46 UI lines + performance), verified end to end
+   against `_cabana` under Xvfb; remaining unchecked lines are the ones still being re-verified after fixes.
+   Rendering is event driven like Qt (input, 30 fps while a stream plays, 10 fps idle); on a GPU both apps sit
+   at ~12 % CPU with the demo route.
 2. Persisted Qt byte-array state: `saveHeaderState`/`restoreHeaderState`, window geometry, dock layout and the
    video/charts splitter (`Settings::geometry`, `window_state`, `video_splitter_state`, `message_header_state`)
    are stubs; store the imgui equivalents in `Settings` and drop the Qt fields.
