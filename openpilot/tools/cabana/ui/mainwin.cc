@@ -695,6 +695,11 @@ void MainWindow::handleShortcuts() {
 void MainWindow::drawStatusBar() {
   ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_MenuBarBg]);
   ImGui::BeginChild("status_bar", ImVec2(0, ImGui::GetFrameHeight()), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+  // a borderless child gets no WindowPadding, so both ends sit flush against the edge and clip. Inset by
+  // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
+  const float width = ImGui::GetContentRegionAvail().x;
+  const float pad = ImGui::GetStyle().WindowPadding.x;
+  ImGui::SetCursorPosX(pad);
   ImGui::AlignTextToFramePadding();
   // a temporary message hides the normal widgets, permanent widgets stay on the right
   if (!status_message_.empty() && (status_message_until_ == 0 || ImGui::GetTime() < status_message_until_)) {
@@ -703,7 +708,7 @@ void MainWindow::drawStatusBar() {
     status_message_.clear();
     ImGui::TextUnformatted("For Help, Press F1");
   }
-  float right = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(status_label_.c_str()).x;
+  float right = width - pad - ImGui::CalcTextSize(status_label_.c_str()).x;
   if (progress_visible_) {
     ImGui::SameLine(right - 300.0f - ImGui::GetStyle().ItemSpacing.x);
     ImGui::ProgressBar(progress_value_, ImVec2(300.0f, 16.0f), progress_text_.c_str());
