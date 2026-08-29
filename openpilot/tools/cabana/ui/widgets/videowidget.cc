@@ -574,6 +574,7 @@ float VideoWidget::sizeHintHeight() const {
 
 // the video pane opens with the camera at its natural aspect ratio, filling the width of the dock
 float VideoWidget::defaultHeight(float width) const {
+  if (!cam_widget) return toolbarHeight();  // live streams have no camera or slider
   const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / cam_widget->frameAspectRatio());
   const float tab_height = camera_tab->count() >= 2 ? ImGui::GetFrameHeight() : 0.0f;
   return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
