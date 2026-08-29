@@ -282,7 +282,7 @@ void FindSignalDlg::drawFindGroup() {
 }
 
 void FindSignalDlg::drawTable() {
-  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
+  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
   if (!ImGui::BeginTable("view", model->columnCount() + 1, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
   ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 40.0f);  // vertical header: row number

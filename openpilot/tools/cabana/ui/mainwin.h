@@ -103,10 +103,11 @@ private:
   bool full_screen_ = false;
   int windowed_rect_[4] = {0, 0, 1600, 900};
   bool charts_floating_ = false;
-  float video_splitter_ratio_ = 0.5f;
+  float video_splitter_ratio_ = 0.0f;  // 0: the video widget is at its size hint, like the Qt splitter
   std::vector<std::pair<std::string, ImRect>> help_texts_;
   std::vector<std::unique_ptr<ToolDialog>> tool_dialogs_;
   bool help_overlay_ = false;
+  int help_overlay_frame_ = -1;
   bool closing_ = false;
   bool exited_ = false;
   bool window_modified_ = false;

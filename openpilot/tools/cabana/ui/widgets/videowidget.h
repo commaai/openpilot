@@ -121,6 +121,7 @@ class VideoWidget {
 public:
   VideoWidget();
   void draw();  // content only; MainWindow puts it in a child region above the charts
+  float sizeHintHeight() const;
   // QWidget::setVisible of the video dock: MainWindow calls this every frame with the dock visibility so the
   // camera widget gets its showEvent/hideEvent (vipc thread start/stop) like it did in Qt
   void setVisible(bool visible);

@@ -228,7 +228,7 @@ void VideoWidget::drawPlaybackController() {
       case PLAY: return button_width(play_icon_);
       case FORWARD: return button_width(icon::FAST_FORWARD);
       case SKIP_END: return button_width(icon::SKIP_END);
-      case TIME_DISPLAY: return text_width(time_text_.c_str());
+      case TIME_DISPLAY: return button_width(time_text_.c_str());
       case LOOP: return button_width(loop_icon_);
       case SPEED: return speed_width;
       case SEPARATOR: return 1.0f;
@@ -252,8 +252,7 @@ void VideoWidget::drawPlaybackController() {
         ImGui::EndDisabled();
         break;
       case TIME_DISPLAY:
-        // QLabel: the text with no frame around it
-        if (toolButton(time_text_.c_str(), time_tooltip_.c_str(), "time_display", text_width(time_text_.c_str())))
+        if (toolButton(time_text_.c_str(), time_tooltip_.c_str(), "time_display"))
           toggleTimeDisplay();
         break;
       case LOOP:
@@ -328,19 +327,14 @@ void VideoWidget::drawPlaybackController() {
             if (ImGui::MenuItem(time_text_.c_str())) toggleTimeDisplay();
             break;
           case LOOP:
-            if (ImGui::MenuItem("Loop")) loopPlaybackClicked();
+            if (ImGui::MenuItem("Loop playback")) loopPlaybackClicked();
             break;
+          // the QToolBar extension popup only carries actions: the speed button widget and the separator are dropped
           case SPEED:
-            if (ImGui::BeginMenu("Speed")) {
-              drawSpeedMenuItems();
-              ImGui::EndMenu();
-            }
-            break;
           case SEPARATOR:
-            ImGui::Separator();
             break;
           default:
-            if (ImGui::MenuItem("Route info")) showRouteInfo();
+            if (ImGui::MenuItem("View route details")) showRouteInfo();
             break;
         }
       }
@@ -556,6 +550,11 @@ void VideoWidget::eventFilter() {
   } else if (slider->mouseLeft()) {  // QEvent::Leave
     showThumbnail(-1);
   }
+}
+
+float VideoWidget::sizeHintHeight() const {
+  // QSizePolicy::Maximum: the camera minimum height plus the slider and the toolbar
+  return MIN_VIDEO_HEIGHT + ImGui::GetFrameHeightWithSpacing() * 2;
 }
 
 void VideoWidget::draw() {

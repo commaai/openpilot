@@ -150,7 +150,7 @@ void MainWindow::drawMenuBar() {
 
   // View Menu
   if (ImGui::BeginMenu("View")) {
-    if (ImGui::MenuItem("Full Screen", "F11", full_screen_)) toggleFullScreen();
+    if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
     ImGui::Separator();
     // QMenu draws the check indicator of a checkable action on the left of the text
     if (ImGui::Checkbox(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", &messages_visible_)) ImGui::CloseCurrentPopup();
@@ -612,6 +612,7 @@ void MainWindow::findSignal() {
 
 void MainWindow::onlineHelp() {
   help_overlay_ = !help_overlay_;
+  help_overlay_frame_ = ImGui::GetFrameCount();
 }
 
 void MainWindow::toggleFullScreen() {
@@ -674,7 +675,7 @@ void MainWindow::handleShortcuts() {
     // a focused line edit consumes Space (ShortcutOverride) but not the Ctrl/F-key sequences
     if (e.key == GLFW_KEY_SPACE && !ctrl && can && !io.WantTextInput) can->pause(!can->isPaused());
     if (e.key == GLFW_KEY_F1) onlineHelp();
-    if (e.key == GLFW_KEY_F11) toggleFullScreen();
+    if (e.key == GLFW_KEY_F11 && ctrl) toggleFullScreen();
     if (!ctrl) continue;
     if (e.key == GLFW_KEY_N) newFile();
     if (e.key == GLFW_KEY_O) openFile();
@@ -921,7 +922,8 @@ void MainWindow::drawHelpOverlay() {
     }
   }
   help_texts_.clear();
-  if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) help_overlay_ = false;
+  // ignore the release of the click that opened the overlay
+  if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::GetFrameCount() != help_overlay_frame_) help_overlay_ = false;
 }
 
 void MainWindow::drawDockspace() {
@@ -1000,7 +1002,8 @@ void MainWindow::draw() {
       // splitter between video and charts
       const ImVec2 avail = ImGui::GetContentRegionAvail();
       const bool live = can->liveStreaming();
-      float video_h = charts_floating_ ? avail.y : std::clamp(avail.y * video_splitter_ratio_, 1.0f, avail.y - 1.0f);
+      const float video_hint = video_splitter_ratio_ > 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->sizeHintHeight();
+      float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 1.0f, avail.y - 1.0f);
       if (live) video_h = ImGui::GetFrameHeightWithSpacing() * 2;  // display video at minimum size.
       ImGui::BeginChild("video", ImVec2(0, video_h));
       help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());

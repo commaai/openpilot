@@ -112,13 +112,15 @@ bool FindSimilarBitsDlg::draw() {
 }
 
 void FindSimilarBitsDlg::drawTable() {
-  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
-  if (!ImGui::BeginTable("table", 6, flags, ImVec2(0, 0))) return;
+  // columns are set by find(); the table is blank until then
+  if (!table_has_columns) return;
+  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
+  if (!ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
   static const char *headers[] = {"address", "byte idx", "bit idx", "mismatches", "total msgs", "% mismatched"};
+  ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 40.0f);  // vertical header: row number
   for (int c = 0; c < 6; ++c) {
-    // headers are set by find(); the table is blank until then
-    ImGui::TableSetupColumn(table_has_columns ? headers[c] : "", c == 5 ? ImGuiTableColumnFlags_WidthStretch : ImGuiTableColumnFlags_WidthFixed, 100.0f);
+    ImGui::TableSetupColumn(headers[c], c == 5 ? ImGuiTableColumnFlags_WidthStretch : ImGuiTableColumnFlags_WidthFixed, 100.0f);
   }
   ImGui::TableHeadersRow();
   ImGuiListClipper clipper;
@@ -131,7 +133,7 @@ void FindSimilarBitsDlg::drawTable() {
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::PushID(i);
-      if (ImGui::Selectable(address, false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
+      if (ImGui::Selectable(std::to_string(i + 1).c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
           uint8_t find_bus = find_bus_combo < (int)bus_items.size() ? bus_items[find_bus_combo] : 0;
           MessageId msg_id = {.source = find_bus, .address = (uint32_t)std::strtoul(address, nullptr, 16)};
@@ -140,14 +142,16 @@ void FindSimilarBitsDlg::drawTable() {
       }
       ImGui::PopID();
       ImGui::TableSetColumnIndex(1);
-      ImGui::Text("%u", m.byte_idx);
+      ImGui::TextUnformatted(address);
       ImGui::TableSetColumnIndex(2);
-      ImGui::Text("%u", m.bit_idx);
+      ImGui::Text("%u", m.byte_idx);
       ImGui::TableSetColumnIndex(3);
-      ImGui::Text("%u", m.mismatches);
+      ImGui::Text("%u", m.bit_idx);
       ImGui::TableSetColumnIndex(4);
-      ImGui::Text("%u", m.total);
+      ImGui::Text("%u", m.mismatches);
       ImGui::TableSetColumnIndex(5);
+      ImGui::Text("%u", m.total);
+      ImGui::TableSetColumnIndex(6);
       ImGui::Text("%.2f", m.perc);
     }
   }

@@ -31,7 +31,7 @@ bool RouteInfoDlg::draw() {
   float min_h = row_h * (std::min((int)rows_.size(), 13) + 1) + ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().WindowPadding.y * 2;
   ImGui::SetNextWindowSize(ImVec2(520, min_h), ImGuiCond_Appearing);
   if (ImGui::Begin(title_.c_str(), &open_)) {
-    const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit;
+    const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit;
     if (ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) {
       ImGui::TableSetupScrollFreeze(0, 1);
       for (int c = 0; c < 7; ++c) ImGui::TableSetupColumn(headers[c]);
