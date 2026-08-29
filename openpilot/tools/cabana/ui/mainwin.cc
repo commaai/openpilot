@@ -931,11 +931,14 @@ void MainWindow::drawDockspace() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
-                                 ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground;
+                                 ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
+                                 ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
   ImGui::Begin("##host", nullptr, flags);
   ImGui::PopStyleVar(3);
 
-  const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight();
+  // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
+  // otherwise the host window is a few pixels taller than the viewport and scrolls (QMainWindow never scrolls)
+  const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
   if (reset_layout_) {
