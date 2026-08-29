@@ -468,7 +468,6 @@ void writeSetting(json11::Json::object &settings_json, const char *key, const st
 template <class Store, class SettingOperation>
 void settingsOp(Store &s, SettingOperation op) {
   op(s, "absolute_time", settings.absolute_time);
-  op(s, "fps", settings.fps);
   op(s, "max_cached_minutes", settings.max_cached_minutes);
   op(s, "chart_height", settings.chart_height);
   op(s, "chart_range", settings.chart_range);
@@ -508,7 +507,6 @@ Settings::Settings() {
       settingsOp(legacy_settings, [](const auto &s, const char *key, auto &value) { readLegacySetting(s, key, value); });
     }
   }
-  fps = std::clamp(fps, 1, 100);
 }
 
 // Must be called before main() returns: json11's internal statistics are constructed on first

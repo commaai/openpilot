@@ -36,7 +36,6 @@ void formRow(const char *label, float label_width) {
 
 void SettingsDialog::open() {
   theme_ = settings.theme;
-  fps_ = settings.fps;
   cached_minutes_ = settings.max_cached_minutes;
   drag_direction_ = settings.drag_direction;
   chart_height_ = settings.chart_height;
@@ -66,8 +65,6 @@ void SettingsDialog::draw() {
   formRow("Color Theme", label_width);
   ImGui::Combo("##Color Theme", &theme_, themes, 3);
   ImGui::SetItemTooltip("You may need to restart cabana after changes theme");
-  formRow("FPS", label_width);
-  if (ImGui::InputInt("##FPS", &fps_, 10, 10, spin_flags)) fps_ = std::clamp(fps_, 10, 100);
   formRow("Max Cached Minutes", label_width);
   if (ImGui::InputInt("##Max Cached Minutes", &cached_minutes_, 1, 10, spin_flags)) {
     cached_minutes_ = std::clamp(cached_minutes_, MIN_CACHE_MINIUTES, MAX_CACHE_MINIUTES);
@@ -115,7 +112,6 @@ void SettingsDialog::save() {
     // set theme before emit changed
     applyTheme(settings.theme);
   }
-  settings.fps = fps_;
   settings.max_cached_minutes = cached_minutes_;
   settings.chart_height = chart_height_;
   settings.log_livestream = log_livestream_;

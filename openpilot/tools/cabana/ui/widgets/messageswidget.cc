@@ -395,7 +395,7 @@ bool MessageListModel::filterAndSort() {
 
 void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids) {
   if (has_new_ids || ((filters_.count(Column::FREQ) || filters_.count(Column::COUNT) || filters_.count(Column::DATA)) &&
-                      ++sort_threshold_ == settings.fps)) {
+                      ++sort_threshold_ == STREAM_UPDATE_FPS)) {
     sort_threshold_ = 0;
     if (filterAndSort()) return;
   }

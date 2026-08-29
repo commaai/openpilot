@@ -25,11 +25,6 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent) {
   theme->addItems({tr("Automatic"), tr("Light"), tr("Dark")});
   theme->setCurrentIndex(settings.theme);
 
-  form_layout->addRow("FPS", fps = new QSpinBox(this));
-  fps->setRange(10, 100);
-  fps->setSingleStep(10);
-  fps->setValue(settings.fps);
-
   form_layout->addRow(tr("Max Cached Minutes"), cached_minutes = new QSpinBox(this));
   cached_minutes->setRange(MIN_CACHE_MINIUTES, MAX_CACHE_MINIUTES);
   cached_minutes->setSingleStep(1);
@@ -83,7 +78,6 @@ void SettingsDialog::save() {
     // set theme before emit changed
     utils::setTheme(settings.theme);
   }
-  settings.fps = fps->value();
   settings.max_cached_minutes = cached_minutes->value();
   settings.chart_height = chart_height->value();
   settings.log_livestream = log_livestream->isChecked();

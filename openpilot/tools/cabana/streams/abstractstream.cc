@@ -164,7 +164,7 @@ bool AbstractStream::isMessageActive(const MessageId &id) const {
     return delta < 1.5;
   }
 
-  return delta < (5.0 / m.freq) + (1.0 / settings.fps);
+  return delta < (5.0 / m.freq) + (1.0 / STREAM_UPDATE_FPS);
 }
 
 void AbstractStream::updateLastMsgsTo(double sec) {

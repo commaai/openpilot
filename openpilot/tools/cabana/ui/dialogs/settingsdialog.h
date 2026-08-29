@@ -15,7 +15,6 @@ private:
   bool open_ = false;
   bool show_ = false;
   int theme_ = 0;
-  int fps_ = 0;
   int cached_minutes_ = 0;
   int drag_direction_ = 0;
   int chart_height_ = 0;

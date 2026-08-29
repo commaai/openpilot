@@ -566,7 +566,7 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 }
 
 void MainWindow::updateStatus() {
-  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
+  status_label->setText(tr("Cached Minutes:%1").arg(settings.max_cached_minutes));
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {

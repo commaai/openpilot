@@ -6,12 +6,12 @@
 constexpr int AUTO_THEME = 0;
 constexpr int LIGHT_THEME = 1;
 constexpr int DARK_THEME = 2;
+constexpr int STREAM_UPDATE_FPS = 30;  // rate the streams publish message updates to the UI
 
 struct CabanaSettingsState {
   enum DragDirection { MsbFirst, LsbFirst, AlwaysLE, AlwaysBE };
 
   bool absolute_time = false;
-  int fps = 30;
   int max_cached_minutes = 30;
   int chart_height = 200;
   int chart_column_count = 1;

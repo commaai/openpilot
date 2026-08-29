@@ -193,7 +193,7 @@ void MainWindow::createDockWidgets() {
 }
 
 void MainWindow::updateStatus() {
-  status_label_ = "Cached Minutes:" + std::to_string(settings.max_cached_minutes) + " FPS:" + std::to_string(settings.fps);
+  status_label_ = "Cached Minutes:" + std::to_string(settings.max_cached_minutes);
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
