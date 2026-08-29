@@ -1011,7 +1011,7 @@ void MainWindow::draw() {
       // splitter between video and charts
       const ImVec2 avail = ImGui::GetContentRegionAvail();
       const bool live = can->liveStreaming();
-      const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->sizeHintHeight();
+      const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->defaultHeight(avail.x);
       float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
       if (live) video_h = ImGui::GetFrameHeightWithSpacing() * 2;  // display video at minimum size.
       // QSplitter collapses a child dragged below half of its minimum size and never shrinks it below it

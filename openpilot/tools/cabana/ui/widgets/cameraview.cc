@@ -86,6 +86,13 @@ void CameraWidget::draw(const ImVec2 &size) {
   if (ImGui::IsItemDeactivated()) clicked();
 }
 
+float CameraWidget::frameAspectRatio() const {
+  if (frame_texture.width > 0 && frame_texture.height > 0) {
+    return (float)frame_texture.width / frame_texture.height;
+  }
+  return 1928.0f / 1208.0f;  // the road camera, until the first frame arrives
+}
+
 void CameraWidget::paintEvent() {
   ImDrawList *p = ImGui::GetWindowDrawList();
   p->AddRectFilled(rect_.Min, rect_.Max, bg);

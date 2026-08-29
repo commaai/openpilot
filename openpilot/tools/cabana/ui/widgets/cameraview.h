@@ -58,6 +58,7 @@ public:
   // paintEvent + mouseReleaseEvent: draws an item of `size` into the current window
   void draw(const ImVec2 &size);
   const ImRect &rect() const { return rect_; }
+  float frameAspectRatio() const;
   float width() const { return rect_.GetWidth(); }
   float height() const { return rect_.GetHeight(); }
 

@@ -557,6 +557,13 @@ float VideoWidget::sizeHintHeight() const {
   return MIN_VIDEO_HEIGHT + ImGui::GetFrameHeightWithSpacing() * 2;
 }
 
+// the video pane opens with the camera at its natural aspect ratio, filling the width of the dock
+float VideoWidget::defaultHeight(float width) const {
+  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / cam_widget->frameAspectRatio());
+  const float tab_height = camera_tab->count() >= 2 ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
+  return cam_height + tab_height + ImGui::GetFrameHeightWithSpacing() * 2;
+}
+
 void VideoWidget::draw() {
   if (!can->liveStreaming())
     drawCameraWidget();
