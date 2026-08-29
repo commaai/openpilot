@@ -11,7 +11,7 @@ struct CabanaSettingsState {
   enum DragDirection { MsbFirst, LsbFirst, AlwaysLE, AlwaysBE };
 
   bool absolute_time = false;
-  int fps = 10;
+  int fps = 30;
   int max_cached_minutes = 30;
   int chart_height = 200;
   int chart_column_count = 1;
