@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+constexpr int AUTO_THEME = 0;
 constexpr int LIGHT_THEME = 1;
 constexpr int DARK_THEME = 2;
 

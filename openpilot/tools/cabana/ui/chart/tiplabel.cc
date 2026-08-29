@@ -6,6 +6,7 @@
 
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/imgui_util.h"
 
 TipLabel::TipLabel() {
@@ -54,7 +55,7 @@ void TipLabel::paintEvent() {
   if (!visible_) return;
 
   ImDrawList *p = ImGui::GetForegroundDrawList();
-  const bool dark = settings.theme == DARK_THEME;
+  const bool dark = isDarkTheme();
   const ImU32 bg = dark ? ImGui::GetColorU32(ImGuiCol_PopupBg) : ImGui::GetColorU32(ImGuiCol_ChildBg);
   const ImU32 fg = dark ? ImGui::GetColorU32(ImGuiCol_Text) : IM_COL32(0x40, 0x40, 0x44, 0xff);  // same color as chart label brush
   // PE_PanelTipLabel: filled panel with a 1px frame

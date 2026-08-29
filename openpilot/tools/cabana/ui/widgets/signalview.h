@@ -129,6 +129,7 @@ public:
              const std::string &text, float viewport_x) const;
   float sizeHint(const SignalModel::Item *item, int column, float widget_width, const std::string &text) const;  // column width
   float rowHeight() const;
+  float signalRowHeight() const;
   // draws the editor for `item` at the cursor; commits through setModelData (QStyledItemDelegate commit on focus out)
   void createEditor(SignalModel::Item *item, SignalModel *model);
   // queues the commit in pending_commit: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders

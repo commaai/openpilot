@@ -23,6 +23,8 @@ namespace {
 constexpr float INDENTATION = 20.0f;
 constexpr float H_MARGIN = 3.0f;
 constexpr float V_MARGIN = 2.0f;
+// signal rows are taller than a frame so the sparklines have room to read
+constexpr float ROW_HEIGHT_SCALE = 1.5f;
 constexpr float TOOLBAR_ITEM_SPACING = 4.0f;
 
 std::string trimmed(const std::string &s) {
@@ -358,6 +360,11 @@ float SignalItemDelegate::textWidth(const std::string &text, float font_size) {
 
 float SignalItemDelegate::rowHeight() const {
   return ImGui::GetFrameHeight();
+}
+
+// only the top level signal rows are taller; the expanded sub-rows keep the Qt row height
+float SignalItemDelegate::signalRowHeight() const {
+  return ImGui::GetFrameHeight() * ROW_HEIGHT_SCALE;
 }
 
 float SignalItemDelegate::sizeHint(const SignalModel::Item *item, int column, float widget_width, const std::string &text) const {
@@ -721,7 +728,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     float available_width = value_column_width - delegate->button_size.x;
     float value_width = std::min<float>(max_value_width + min_max_width, available_width / 2);
     ImVec2 size(std::floor(available_width - value_width),
-                std::floor(delegate->button_size.y - V_MARGIN * 2));
+                std::floor(delegate->signalRowHeight() - V_MARGIN * 2));
 
     // plain locals: capturing structured bindings in a lambda is C++20
     const auto range = can->eventsInRange(model->msg_id, std::make_pair(last_msg.ts -settings.sparkline_range, last_msg.ts));
@@ -858,14 +865,15 @@ void SignalView::drawTree() {
 bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) {
   const int flags = model->flags(item, 0);
   const bool selected = item->sig == current_sig_ && item->type == current_type_;
+  const float row_height = item->type == SignalModel::Item::Sig ? delegate->signalRowHeight() : ctx.row_height;
   const ImVec2 row_min = ImGui::GetCursorScreenPos();
-  const ImVec2 row_max(row_min.x + ctx.width, row_min.y + ctx.row_height);
+  const ImVec2 row_max(row_min.x + ctx.width, row_min.y + row_height);
   const bool row_visible = ImGui::IsRectVisible(row_min, row_max);
   ctx.any_visible |= row_visible;
 
   ImGui::PushID(item);
   ImGui::BeginDisabled(!(flags & SignalModel::ItemIsEnabled));
-  if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, ctx.row_height))) {
+  if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height))) {
     // setCurrentIndex + clicked
     current_sig_ = item->sig;
     current_type_ = item->type;
@@ -883,7 +891,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   // drawBranches
   if (!item->children.empty()) {
     const float arrow_size = ImGui::GetFontSize() * 0.7f;
-    ImGui::RenderArrow(ctx.draw_list, ImVec2(row_min.x + depth * INDENTATION + 4.0f, row_min.y + (ctx.row_height - arrow_size) * 0.5f),
+    ImGui::RenderArrow(ctx.draw_list, ImVec2(row_min.x + depth * INDENTATION + 4.0f, row_min.y + (row_height - arrow_size) * 0.5f),
                        ImGui::GetColorU32(ImGuiCol_Text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
   }
 
@@ -931,7 +939,7 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3.0f, 2.0f));
   const ImVec2 btn_size(ImGui::CalcTextSize(icon::GRAPH_UP).x + 6.0f, ImGui::GetFrameHeight());
   const ImVec2 size(btn_size.x * 2 + TOOLBAR_ITEM_SPACING, btn_size.y);
-  ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + V_MARGIN));
+  ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 
   const auto sig = item->sig;
   const bool checked = item->chart_opened;

@@ -9,6 +9,7 @@
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/export.h"
@@ -161,7 +162,7 @@ void HeaderView::paintSection(ImDrawList *painter, const ImRect &rect, int logic
     painter->AddRectFilled(rect.Min, rect.Max, IM_COL32(bg->r, bg->g, bg->b, bg->a));
   }
   std::string text = headerText(model->headerData(logicalIndex));
-  const ImU32 color = settings.theme == DARK_THEME
+  const ImU32 color = isDarkTheme()
                           ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
                           : ImGui::GetColorU32(ImGuiCol_Text);
   // defaultAlignment: AlignRight | TextWordWrap, one line at a time

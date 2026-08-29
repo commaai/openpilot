@@ -1,6 +1,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS  // ImVec2 arithmetic, must precede imgui.h
 #include "tools/cabana/ui/chart/chartswidget.h"
 
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/threadpool.h"
 
 #include <algorithm>
@@ -62,7 +63,7 @@ static bool menuButton(const char *id, const std::string &text, const char *popu
 
 // QStyle::SC_SliderHandle (Fusion): a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
 static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
-  const bool dark = settings.theme == DARK_THEME;
+  const bool dark = isDarkTheme();
   // buttonColor.lighter(104) / buttonColor.darker(104)
   const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
   const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
@@ -83,7 +84,7 @@ static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
 bool LogSlider::draw(const char *label, float width) {
   // Fusion QSlider: a full width groove with the part left of the handle filled, and a 13x13 handle on top
   // the groove is a grey track over the full width (QFusionStyle draws it with the outline color)
-  const ImU32 groove_col = settings.theme == DARK_THEME ? IM_COL32(0x2a, 0x2c, 0x2e, 255) : IM_COL32(0xc4, 0xc4, 0xc4, 255);
+  const ImU32 groove_col = isDarkTheme() ? IM_COL32(0x2a, 0x2c, 0x2e, 255) : IM_COL32(0xc4, 0xc4, 0xc4, 255);
   const ImU32 fill_col = ImGui::GetColorU32(ImGuiCol_SliderGrab);
   ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32_BLACK_TRANS);

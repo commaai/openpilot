@@ -17,6 +17,7 @@ extern "C" {
 #include <capnp/serialize.h>
 
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
@@ -59,13 +60,13 @@ static ImU32 withAlpha(ImU32 c, int alpha) {
 
 // palette().color(QPalette::BrightText)
 static ImU32 brightText() {
-  return settings.theme == DARK_THEME ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
-                                      : IM_COL32(255, 255, 255, 255);
+  return isDarkTheme() ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
+                       : IM_COL32(255, 255, 255, 255);
 }
 
 // QStyle::SC_SliderHandle (Fusion): a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
 static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
-  const bool dark = settings.theme == DARK_THEME;
+  const bool dark = isDarkTheme();
   // buttonColor.lighter(104) / buttonColor.darker(104)
   const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
   const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);

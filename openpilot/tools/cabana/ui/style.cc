@@ -8,9 +8,30 @@
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/util.h"
 
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace {
+// Qt's "Automatic" theme is QStyle::standardPalette(), which follows the system appearance on macOS
+// and stays light elsewhere. Match that so both frontends pick the same theme.
+bool systemPrefersDark() {
+#ifdef __APPLE__
+  bool dark = false;
+  if (CFPropertyListRef v = CFPreferencesCopyAppValue(CFSTR("AppleInterfaceStyle"), kCFPreferencesAnyApplication)) {
+    dark = CFGetTypeID(v) == CFStringGetTypeID() &&
+           CFStringCompare((CFStringRef)v, CFSTR("Dark"), kCFCompareCaseInsensitive) == kCFCompareEqualTo;
+    CFRelease(v);
+  }
+  return dark;
+#else
+  return false;
+#endif
+}
+
+bool g_dark = false;
 ImFont *g_ui_font = nullptr;
 ImFont *g_bold_font = nullptr;
 ImFont *g_mono_font = nullptr;
@@ -53,7 +74,8 @@ void loadFonts() {
 }
 
 void applyTheme(int theme) {
-  const bool dark = theme == DARK_THEME;
+  const bool dark = theme == DARK_THEME || (theme == AUTO_THEME && systemPrefersDark());
+  g_dark = dark;
   if (dark) {
     ImGui::StyleColorsDark();
     ImPlot::StyleColorsDark();
@@ -75,17 +97,62 @@ void applyTheme(int theme) {
   style.ItemSpacing = ImVec2(8.0f, 5.0f);
 
   if (dark) {
+    // the whole palette comes from DarkTheme, so no imgui default dark colors bleed through
     auto c = [](const CabanaColor &col) { return colorRgb(col.r, col.g, col.b); };
+    auto lighter = [&c](const CabanaColor &col, int f) { return c(col.lighter(f)); };
     style.Colors[ImGuiCol_WindowBg] = c(DarkTheme::window);
     style.Colors[ImGuiCol_ChildBg] = c(DarkTheme::base);
-    style.Colors[ImGuiCol_FrameBg] = c(DarkTheme::base);
     style.Colors[ImGuiCol_PopupBg] = c(DarkTheme::base);
     style.Colors[ImGuiCol_Text] = c(DarkTheme::text);
     style.Colors[ImGuiCol_TextDisabled] = c(DarkTheme::disabled_text);
-    style.Colors[ImGuiCol_Button] = c(DarkTheme::button);
-    style.Colors[ImGuiCol_Header] = c(DarkTheme::highlight);
-    style.Colors[ImGuiCol_MenuBarBg] = c(DarkTheme::window);
     style.Colors[ImGuiCol_Border] = c(DarkTheme::light);
+    style.Colors[ImGuiCol_BorderShadow] = ImVec4(0, 0, 0, 0);
+
+    style.Colors[ImGuiCol_FrameBg] = c(DarkTheme::base);
+    style.Colors[ImGuiCol_FrameBgHovered] = lighter(DarkTheme::base, 115);
+    style.Colors[ImGuiCol_FrameBgActive] = lighter(DarkTheme::base, 130);
+
+    style.Colors[ImGuiCol_Button] = c(DarkTheme::button);
+    style.Colors[ImGuiCol_ButtonHovered] = lighter(DarkTheme::button, 115);
+    style.Colors[ImGuiCol_ButtonActive] = lighter(DarkTheme::button, 130);
+    style.Colors[ImGuiCol_CheckMark] = c(DarkTheme::bright_text);
+    style.Colors[ImGuiCol_SliderGrab] = c(DarkTheme::highlight);
+    style.Colors[ImGuiCol_SliderGrabActive] = lighter(DarkTheme::highlight, 115);
+
+    style.Colors[ImGuiCol_Header] = c(DarkTheme::highlight);
+    style.Colors[ImGuiCol_HeaderHovered] = lighter(DarkTheme::highlight, 115);
+    style.Colors[ImGuiCol_HeaderActive] = lighter(DarkTheme::highlight, 130);
+
+    style.Colors[ImGuiCol_MenuBarBg] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_TitleBg] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_TitleBgActive] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_TitleBgCollapsed] = c(DarkTheme::window);
+
+    style.Colors[ImGuiCol_ScrollbarBg] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_ScrollbarGrab] = c(DarkTheme::light);
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = lighter(DarkTheme::light, 115);
+    style.Colors[ImGuiCol_ScrollbarGrabActive] = lighter(DarkTheme::light, 130);
+
+    style.Colors[ImGuiCol_Separator] = c(DarkTheme::light);
+    style.Colors[ImGuiCol_SeparatorHovered] = c(DarkTheme::highlight);
+    style.Colors[ImGuiCol_SeparatorActive] = c(DarkTheme::highlight);
+    style.Colors[ImGuiCol_ResizeGrip] = c(DarkTheme::light);
+    style.Colors[ImGuiCol_ResizeGripHovered] = c(DarkTheme::highlight);
+    style.Colors[ImGuiCol_ResizeGripActive] = c(DarkTheme::highlight);
+
+    style.Colors[ImGuiCol_Tab] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_TabHovered] = lighter(DarkTheme::base, 115);
+    style.Colors[ImGuiCol_TabSelected] = c(DarkTheme::base);
+    style.Colors[ImGuiCol_TabDimmed] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_TabDimmedSelected] = c(DarkTheme::base);
+    style.Colors[ImGuiCol_DockingEmptyBg] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_DockingPreview] = c(DarkTheme::highlight);
+
+    style.Colors[ImGuiCol_TableHeaderBg] = c(DarkTheme::window);
+    style.Colors[ImGuiCol_TableBorderStrong] = c(DarkTheme::light);
+    style.Colors[ImGuiCol_TableBorderLight] = c(DarkTheme::dark);
+    style.Colors[ImGuiCol_TableRowBg] = ImVec4(0, 0, 0, 0);
+    style.Colors[ImGuiCol_TableRowBgAlt] = c(DarkTheme::base);
   } else {
     style.Colors[ImGuiCol_WindowBg] = colorRgb(250, 250, 251);
     style.Colors[ImGuiCol_ChildBg] = colorRgb(255, 255, 255);
@@ -97,6 +164,8 @@ void applyTheme(int theme) {
     style.Colors[ImGuiCol_DockingEmptyBg] = colorRgb(244, 246, 248);
   }
 }
+
+bool isDarkTheme() { return g_dark; }
 
 void pushMonoFont() { if (g_mono_font) ImGui::PushFont(g_mono_font); }
 void popMonoFont() { if (g_mono_font) ImGui::PopFont(); }

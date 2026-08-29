@@ -9,6 +9,7 @@
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
@@ -42,7 +43,7 @@ inline ImU32 toImColor(const CabanaColor &color) {
 inline ImU32 paletteHighlight() { return ImGui::GetColorU32(ImGuiCol_Header); }
 inline ImU32 paletteBase() { return ImGui::GetColorU32(ImGuiCol_ChildBg); }
 inline ImU32 paletteBrightText() {
-  return settings.theme == DARK_THEME ? toImColor(DarkTheme::bright_text) : IM_COL32(255, 255, 255, 255);
+  return isDarkTheme() ? toImColor(DarkTheme::bright_text) : IM_COL32(255, 255, 255, 255);
 }
 inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGuiCol_Text : ImGuiCol_TextDisabled); }
 const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);  // Qt::darkGray

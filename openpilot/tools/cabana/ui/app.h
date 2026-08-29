@@ -42,3 +42,4 @@ std::vector<KeyEvent> takeKeyEvents();
 // style.cc
 void loadFonts();
 void applyTheme(int theme);  // utils::setTheme equivalent, safe to call at runtime
+bool isDarkTheme();  // the theme applyTheme() resolved, so AUTO_THEME reports what is on screen

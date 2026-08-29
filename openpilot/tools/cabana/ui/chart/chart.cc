@@ -10,6 +10,7 @@
 
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/imgui_util.h"
 
@@ -814,7 +815,7 @@ void ChartView::drawTimeline() {
   std::string time_str = formatNumber(cur_sec, 2);
   ImVec2 time_str_size = ImGui::CalcTextSize(time_str.c_str()) + ImVec2(8, 2);
   ImVec2 time_str_pos(x - time_str_size.x / 2.0f, plot_area.Max.y + AXIS_X_TOP_MARGIN);
-  const bool dark = settings.theme == DARK_THEME;
+  const bool dark = isDarkTheme();
   painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, dark ? IM_COL32(0x80, 0x80, 0x80, 0xff) : IM_COL32(0xa0, 0xa0, 0xa4, 0xff), 3.0f);
   painter->AddText(time_str_pos + ImVec2(4, 1), IM_COL32_WHITE, time_str.c_str());  // BrightText
 }
