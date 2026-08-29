@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cctype>
+#include <cfloat>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -269,10 +271,11 @@ void MainWindow::loadFile(const std::string &fn, SourceSet s, std::function<void
       if (dbc()->open(s, fn, &error)) {
         updateRecentFiles(fn);
         showStatusMessage("DBC File " + fn + " loaded", 2000);
+        if (then) then();
       } else {
-        MessageBox::warning("Failed to load DBC file", "Failed to parse DBC file " + fn, error);
+        // QMessageBox::exec() blocks the caller until the box is dismissed
+        MessageBox::warning("Failed to load DBC file", "Failed to parse DBC file " + fn, error, then);
       }
-      if (then) then();
     });
   } else if (then) {
     then();
@@ -731,71 +734,177 @@ void MainWindow::drawWaitDialog() {
   }
 }
 
-// HelpOverlay: dims the window and shows each widget's whatsThis text at its center; any click closes it
+// HelpOverlay: dims the window and shows each widget's whatsThis text at its center; any click closes it.
+// The texts are the Qt rich text snippets: <b>, <br />, <span style="color:..;background-color:..">, &entities;
+// and #rrggbb tokens (the video legend) are rendered, everything else is ignored like QTextDocument would.
+namespace {
+struct HelpRun {
+  std::string text;
+  bool bold = false;
+  bool chip = false;    // background-color:lightGray
+  bool swatch = false;  // a colored square
+  ImU32 color = 0;      // 0 = default text color
+};
+
+ImU32 helpColor(const std::string &name) {
+  if (name == "gray") return IM_COL32(128, 128, 128, 255);
+  if (name == "blue") return IM_COL32(0, 0, 255, 255);
+  if (name == "red") return IM_COL32(255, 0, 0, 255);
+  unsigned rgb = 0;
+  if (name.size() == 7 && name[0] == '#' && sscanf(name.c_str() + 1, "%6x", &rgb) == 1) {
+    return IM_COL32((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, 255);
+  }
+  return 0;
+}
+
+std::vector<std::vector<HelpRun>> parseHelpHtml(const std::string &raw) {
+  std::vector<std::vector<HelpRun>> lines(1);
+  HelpRun style;
+  std::vector<HelpRun> span_stack;
+  const bool is_html = raw.find('<') != std::string::npos;
+  bool last_space = true;  // html collapses whitespace; leading whitespace is dropped
+  auto append = [&](const std::string &t) {
+    if (t.empty()) return;
+    HelpRun run = style;
+    run.text = t;
+    lines.back().push_back(run);
+    last_space = t.back() == ' ';
+  };
+  std::string pending;
+  auto flush = [&]() { append(pending); pending.clear(); };
+  for (size_t i = 0; i < raw.size(); ++i) {
+    const char c = raw[i];
+    if (c == '<') {
+      const size_t close = raw.find('>', i);
+      if (close == std::string::npos) break;
+      std::string tag = raw.substr(i + 1, close - i - 1);
+      i = close;
+      if (tag.compare(0, 3, "!--") == 0) continue;
+      flush();
+      if (tag == "b") {
+        style.bold = true;
+      } else if (tag == "/b") {
+        style.bold = false;
+      } else if (tag.compare(0, 2, "br") == 0) {
+        lines.emplace_back();
+        last_space = true;
+      } else if (tag.compare(0, 4, "span") == 0) {
+        span_stack.push_back(style);
+        const size_t st = tag.find("style=\"");
+        if (st != std::string::npos) {
+          std::string css = tag.substr(st + 7, tag.find('"', st + 7) - st - 7);
+          size_t pos = 0;
+          while (pos < css.size()) {
+            const size_t semi = css.find(';', pos);
+            std::string decl = css.substr(pos, semi == std::string::npos ? std::string::npos : semi - pos);
+            const size_t colon = decl.find(':');
+            if (colon != std::string::npos) {
+              const std::string key = decl.substr(0, colon), value = decl.substr(colon + 1);
+              if (key == "color") style.color = helpColor(value);
+              if (key == "background-color") style.chip = true;
+            }
+            if (semi == std::string::npos) break;
+            pos = semi + 1;
+          }
+        }
+      } else if (tag == "/span") {
+        if (!span_stack.empty()) {
+          style = span_stack.back();
+          span_stack.pop_back();
+        }
+      }
+    } else if (c == '&') {
+      static const std::pair<const char *, const char *> entities[] = {{"&nbsp;", " "}, {"&lt;", "<"}, {"&gt;", ">"}, {"&amp;", "&"}};
+      bool matched = false;
+      for (const auto &[name, text] : entities) {
+        if (raw.compare(i, strlen(name), name) == 0) {
+          pending += text;
+          i += strlen(name) - 1;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched && raw.compare(i, 7, "&#9632;") == 0) {  // the filled square of the byte color legend
+        flush();
+        HelpRun run = style;
+        run.swatch = true;
+        lines.back().push_back(run);
+        i += 6;
+        matched = true;
+      }
+      if (!matched) pending += c;
+    } else if (c == '\n' && !is_html) {
+      flush();
+      lines.emplace_back();
+      last_space = true;
+    } else if (isspace(static_cast<unsigned char>(c))) {
+      if (!last_space && !(pending.size() && pending.back() == ' ')) pending += ' ';
+    } else if (c == '#' && i + 6 < raw.size() && helpColor(raw.substr(i, 7)) != 0) {  // #rrggbb legend token
+      flush();
+      HelpRun run = style;
+      run.swatch = true;
+      run.color = helpColor(raw.substr(i, 7));
+      lines.back().push_back(run);
+      i += 6;
+    } else {
+      pending += c;
+      last_space = false;
+    }
+  }
+  flush();
+  for (auto &line : lines) {  // trim the collapsed whitespace at the line ends
+    if (!line.empty() && !line.back().text.empty() && line.back().text.back() == ' ') line.back().text.pop_back();
+    if (!line.empty() && !line.front().text.empty() && line.front().text.front() == ' ') line.front().text.erase(0, 1);
+  }
+  while (!lines.empty() && lines.back().empty()) lines.pop_back();
+  return lines;
+}
+}  // namespace
+
 void MainWindow::drawHelpOverlay() {
   if (!help_overlay_) return;
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
   ImDrawList *dl = ImGui::GetForegroundDrawList();
   dl->AddRectFilled(viewport->Pos, ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y), IM_COL32(0, 0, 0, 50));
+  pushBoldFont();
+  ImFont *bold_font = ImGui::GetFont();
+  popBoldFont();
+  ImFont *font = ImGui::GetFont();
+  const float font_size = ImGui::GetFontSize();
+  const float line_h = ImGui::GetTextLineHeightWithSpacing();
+  auto run_width = [&](const HelpRun &r) {
+    if (r.swatch) return font_size;
+    return (r.bold ? bold_font : font)->CalcTextSizeA(font_size, FLT_MAX, 0.0f, r.text.c_str()).x;
+  };
   for (const auto &[raw, rect] : help_texts_) {
     if (raw.empty()) continue;
-    std::string text;
-    bool in_tag = false;
-    for (size_t i = 0; i < raw.size(); ++i) {
-      const char c = raw[i];
-      if (c == '<') {
-        in_tag = true;
-        if (raw.compare(i, 6, "<br />") == 0 || raw.compare(i, 4, "<br>") == 0) text += '\n';
-      } else if (c == '>') {
-        in_tag = false;
-      } else if (!in_tag && c == '&') {
-        // the few HTML entities the whatsThis texts use
-        static const std::pair<const char *, char> entities[] = {{"&nbsp;", ' '}, {"&lt;", '<'}, {"&gt;", '>'}, {"&amp;", '&'}};
-        bool matched = false;
-        for (const auto &[name, ch] : entities) {
-          if (raw.compare(i, strlen(name), name) == 0) {
-            text += ch;
-            i += strlen(name) - 1;
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) text += c;
-      } else if (!in_tag) {
-        text += c;
-      }
+    const auto lines = parseHelpHtml(raw);
+    float width = 0;
+    for (const auto &line : lines) {
+      float w = 0;
+      for (const auto &r : line) w += run_width(r);
+      width = std::max(width, w);
     }
+    const ImVec2 size(width, lines.size() * line_h);
     const ImVec2 center((rect.Min.x + rect.Max.x) * 0.5f, (rect.Min.y + rect.Max.y) * 0.5f);
-    const ImVec2 size = ImGui::CalcTextSize(text.c_str(), nullptr, false, 400.0f);
     const ImVec2 min(center.x - size.x * 0.5f - 8.0f, center.y - size.y * 0.5f - 8.0f);
     const ImVec2 max(center.x + size.x * 0.5f + 8.0f, center.y + size.y * 0.5f + 8.0f);
     dl->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_PopupBg));
-    // "#rrggbb" tokens are the color swatches of the Qt HTML table
     float y = min.y + 8.0f;
-    std::istringstream lines(text);
-    std::string line;
-    while (std::getline(lines, line)) {
+    for (const auto &line : lines) {
       float x = min.x + 8.0f;
-      size_t pos = 0;
-      while (pos < line.size()) {
-        size_t hash = line.find('#', pos);
-        const std::string chunk = line.substr(pos, hash == std::string::npos ? std::string::npos : hash - pos);
-        dl->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), chunk.c_str());
-        x += ImGui::CalcTextSize(chunk.c_str()).x;
-        if (hash == std::string::npos) break;
-        unsigned rgb = 0;
-        if (hash + 7 <= line.size() && sscanf(line.c_str() + hash + 1, "%6x", &rgb) == 1) {
-          const float sz = ImGui::GetTextLineHeight();
-          dl->AddRectFilled(ImVec2(x, y), ImVec2(x + sz, y + sz), IM_COL32((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, 255));
-          x += sz;
-          pos = hash + 7;
+      for (const auto &r : line) {
+        const float w = run_width(r);
+        const ImU32 color = r.color ? r.color : ImGui::GetColorU32(ImGuiCol_Text);
+        if (r.swatch) {
+          dl->AddRectFilled(ImVec2(x + 2, y + 3), ImVec2(x + font_size - 2, y + font_size - 1), color);
         } else {
-          dl->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), "#");
-          x += ImGui::CalcTextSize("#").x;
-          pos = hash + 1;
+          if (r.chip) dl->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + font_size), IM_COL32(211, 211, 211, 255));  // lightGray
+          dl->AddText(r.bold ? bold_font : font, font_size, ImVec2(x, y), color, r.text.c_str());
         }
+        x += w;
       }
-      y += ImGui::GetTextLineHeightWithSpacing();
+      y += line_h;
     }
   }
   help_texts_.clear();
@@ -844,6 +953,10 @@ void MainWindow::draw() {
   next_frame_.clear();
   for (auto &fn : pending) fn();
 
+  if (ImGui::GetTopMostPopupModal() == nullptr && ImGui::IsKeyPressed(ImGuiKey_Escape, false) &&
+      ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
+    ImGui::ClosePopupToLevel(0, true);  // QMenu closes on Escape
+  }
   if (ImGui::GetTopMostPopupModal() == nullptr) {
     handleShortcuts();
   } else {

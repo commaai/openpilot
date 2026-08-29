@@ -54,14 +54,16 @@ MessagesWidget::MessagesWidget() : view(&view_), header(&header_), delegate(&del
 }
 
 std::string MessagesWidget::whatsThis() const {
-  // the Qt text is HTML; the help overlay draws plain text
-  return R"(Message View
-Byte color
-  gray: constant changing
-  blue: increasing
-  red: decreasing
-Shortcuts
-Horizontal Scrolling: shift+wheel)";
+  return R"(
+    <b>Message View</b><br/>
+    <!-- TODO: add description here -->
+    <span style="color:gray">Byte color</span><br />
+    <span style="color:gray;">&#9632; </span> constant changing<br />
+    <span style="color:blue;">&#9632; </span> increasing<br />
+    <span style="color:red;">&#9632; </span> decreasing<br />
+    <span style="color:gray">Shortcuts</span><br />
+    Horizontal Scrolling: <span style="background-color:lightGray;color:gray">&nbsp;shift+wheel&nbsp;</span>
+  )";
 }
 
 void MessagesWidget::createToolBar() {
