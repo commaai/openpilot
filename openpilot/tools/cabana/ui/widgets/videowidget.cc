@@ -29,6 +29,9 @@ const float POINT_16_FONT_SIZE = 21.0f;  // QFont(family, 16) at 96 dpi
 const float MENU_BUTTON_INDICATOR = 12.0f;  // QStyle::PM_MenuButtonIndicator
 const float TOOLBAR_ITEM_SPACING = 1.0f;    // QStyle::PM_ToolBarItemSpacing
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizontal margin
+const float TOOLBAR_BUTTON_PADDING_Y = 10.0f;  // QToolBar is 36 px tall at the 16 px font, the items are centered in it
+const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;   // QStyle::PM_ToolBarSeparatorExtent
+const float MENU_ARROW_SIZE = 6.0f;            // QStyle::PE_IndicatorArrowDown on a toolbutton menu
 const float SLIDER_LENGTH = 13.0f;     // QStyle::PM_SliderLength (Fusion)
 const float SLIDER_THICKNESS = 13.0f;  // QStyle::PM_SliderThickness (Fusion)
 
@@ -198,10 +201,12 @@ void VideoWidget::createPlaybackController() {
   createSpeedDropdown();
 }
 
+static float toolbarHeight() { return ImGui::GetFontSize() + TOOLBAR_BUTTON_PADDING_Y * 2; }
+
 void VideoWidget::drawPlaybackController() {
   // QToolBar metrics: PM_ToolBarItemSpacing between the items, the buttons only carry the auto raise margin
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(TOOLBAR_ITEM_SPACING, ImGui::GetStyle().ItemSpacing.y));
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, ImGui::GetStyle().FramePadding.y));
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, TOOLBAR_BUTTON_PADDING_Y));
   const ImGuiStyle &style = ImGui::GetStyle();
   // a button is its text plus 2 * FramePadding.x; the time display is a plain label, so it is just its text
   auto text_width = [](const char *label) { return ImGui::CalcTextSize(label).x; };
@@ -231,7 +236,7 @@ void VideoWidget::drawPlaybackController() {
       case TIME_DISPLAY: return button_width(time_text_.c_str());
       case LOOP: return button_width(loop_icon_);
       case SPEED: return speed_width;
-      case SEPARATOR: return 1.0f;
+      case SEPARATOR: return TOOLBAR_SEPARATOR_EXTENT;
       default: return button_width(icon::INFO_CIRCLE);
     }
   };
@@ -259,7 +264,14 @@ void VideoWidget::drawPlaybackController() {
         if (toolButton(loop_icon_, "Loop playback", "loop")) loopPlaybackClicked();
         break;
       case SPEED: drawSpeedDropdown(); break;
-      case SEPARATOR: ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); break;
+      case SEPARATOR: {
+        // QToolBar separator: a 1 px line centered in PM_ToolBarSeparatorExtent, inset from the top and bottom
+        const ImVec2 min = ImGui::GetCursorScreenPos();
+        ImGui::Dummy(ImVec2(TOOLBAR_SEPARATOR_EXTENT, ImGui::GetFrameHeight()));
+        const float x = std::floor(min.x + TOOLBAR_SEPARATOR_EXTENT * 0.5f);
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y + 4.0f), ImVec2(x, min.y + ImGui::GetFrameHeight() - 4.0f), ImGui::GetColorU32(ImGuiCol_Separator));
+        break;
+      }
       default:
         if (toolButton(icon::INFO_CIRCLE, "View route details", "route_info")) showRouteInfo();
         break;
@@ -392,9 +404,12 @@ void VideoWidget::drawSpeedDropdown() {
   popBoldFont();
   // QStyle::PM_MenuButtonIndicator: the menu arrow at the right edge of the button
   const ImVec2 btn_min = ImGui::GetItemRectMin(), btn_max = ImGui::GetItemRectMax();
-  ImGui::RenderArrow(ImGui::GetWindowDrawList(),
-                     ImVec2(btn_max.x - MENU_BUTTON_INDICATOR, (btn_min.y + btn_max.y) / 2 - ImGui::GetFontSize() * 0.5f),
-                     ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Down, 0.7f);
+  // a small arrow centered in the indicator area, sitting on the text baseline (Fusion draws it bottom right)
+  const float ax = btn_max.x - MENU_BUTTON_INDICATOR * 0.5f;
+  const float ay = btn_min.y + style.FramePadding.y + ImGui::GetFontSize() - 2.0f;
+  ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(ax - MENU_ARROW_SIZE * 0.5f, ay - MENU_ARROW_SIZE * 0.5f),
+                                                ImVec2(ax + MENU_ARROW_SIZE * 0.5f, ay - MENU_ARROW_SIZE * 0.5f),
+                                                ImVec2(ax, ay), ImGui::GetColorU32(ImGuiCol_Text));
   if (open && !ImGui::IsPopupOpen("speed_menu")) ImGui::OpenPopup("speed_menu");
   ImGui::SetNextWindowPos(ImVec2(btn_min.x, btn_max.y));
   if (ImGui::BeginPopup("speed_menu")) {
@@ -462,7 +477,7 @@ void VideoWidget::drawCameraWidget() {
   // cam_widget: minimum height MIN_VIDEO_HEIGHT, takes the space left by the slider and the toolbar
   const ImGuiStyle &style = ImGui::GetStyle();
   const ImVec2 avail = ImGui::GetContentRegionAvail();
-  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - ImGui::GetFrameHeight() * 2 - style.ItemSpacing.y * 2);
+  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - ImGui::GetFrameHeight() - toolbarHeight() - style.ItemSpacing.y * 2);
   cam_widget->draw(ImVec2(avail.x, cam_height));
 
   slider->draw();
@@ -554,14 +569,14 @@ void VideoWidget::eventFilter() {
 
 float VideoWidget::sizeHintHeight() const {
   // QSizePolicy::Maximum: the camera minimum height plus the slider and the toolbar
-  return MIN_VIDEO_HEIGHT + ImGui::GetFrameHeightWithSpacing() * 2;
+  return MIN_VIDEO_HEIGHT + ImGui::GetFrameHeightWithSpacing() + toolbarHeight() + ImGui::GetStyle().ItemSpacing.y;
 }
 
 // the video pane opens with the camera at its natural aspect ratio, filling the width of the dock
 float VideoWidget::defaultHeight(float width) const {
   const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / cam_widget->frameAspectRatio());
   const float tab_height = camera_tab->count() >= 2 ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
-  return cam_height + tab_height + ImGui::GetFrameHeightWithSpacing() * 2;
+  return cam_height + tab_height + ImGui::GetFrameHeightWithSpacing() + toolbarHeight() + ImGui::GetStyle().ItemSpacing.y;
 }
 
 void VideoWidget::draw() {
