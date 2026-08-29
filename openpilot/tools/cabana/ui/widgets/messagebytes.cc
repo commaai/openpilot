@@ -1,5 +1,7 @@
 #include "tools/cabana/ui/widgets/messagebytes.h"
 
+#include <cmath>
+
 #include <algorithm>
 #include <cstdio>
 
@@ -15,12 +17,13 @@ MessageBytesDelegate::MessageBytesDelegate(bool multiple_lines) : multiple_lines
 
 void MessageBytesDelegate::updateFontMetrics() {
   pushMonoFont();
-  byte_size = ImGui::CalcTextSize("00 ");
-  byte_size.y += 2;
+  // QFontMetrics::size: the width of "00 " by QFontMetrics::height (Qt 5: ascent + descent + 1), not the font size
+  const ImFontBaked *baked = ImGui::GetFontBaked();
+  byte_size = ImVec2(ImGui::CalcTextSize("00 ").x, std::ceil(baked->Ascent) - std::floor(baked->Descent) + 1 + 2);
   popMonoFont();
-  // PM_FocusFrameHMargin/VMargin + 1: the table's cell padding
-  h_margin = ImGui::GetStyle().CellPadding.x;
-  v_margin = ImGui::GetStyle().CellPadding.y;
+  // PM_FocusFrameHMargin/VMargin + 1: one more than the table's cell padding
+  h_margin = ImGui::GetStyle().CellPadding.x + 1;
+  v_margin = ImGui::GetStyle().CellPadding.y + 1;
 }
 
 ImVec2 MessageBytesDelegate::sizeForBytes(int n) const {

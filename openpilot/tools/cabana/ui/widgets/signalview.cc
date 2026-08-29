@@ -24,7 +24,7 @@ constexpr float INDENTATION = 20.0f;
 constexpr float H_MARGIN = 3.0f;
 constexpr float V_MARGIN = 2.0f;
 // signal rows are taller than a frame so the sparklines have room to read
-constexpr float ROW_HEIGHT_SCALE = 1.5f;
+constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the QToolButton in the row makes it 27 px tall at the 16 px font
 constexpr float TOOLBAR_ITEM_SPACING = 4.0f;
 
 std::string trimmed(const std::string &s) {
@@ -366,7 +366,7 @@ float SignalItemDelegate::rowHeight() const {
 
 // only the top level signal rows are taller; the expanded sub-rows keep the Qt row height
 float SignalItemDelegate::signalRowHeight() const {
-  return ImGui::GetFrameHeight() * ROW_HEIGHT_SCALE;
+  return ImGui::GetFrameHeight() + SIGNAL_ROW_EXTRA;
 }
 
 float SignalItemDelegate::sizeHint(const SignalModel::Item *item, int column, float widget_width, const std::string &text) const {
