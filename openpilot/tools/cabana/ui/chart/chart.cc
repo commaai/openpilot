@@ -382,9 +382,15 @@ void ChartView::contextMenuEvent() {
     const float indent = ImGui::GetFontSize();
     ImGui::Indent(indent);
     ImGui::Separator();
-    if (ImGui::MenuItem("Undo Zoom", nullptr, false, charts_widget->zoom_undo_stack.canUndo())) charts_widget->zoom_undo_stack.undo();
-    if (ImGui::MenuItem("Redo Zoom", nullptr, false, charts_widget->zoom_undo_stack.canRedo())) charts_widget->zoom_undo_stack.redo();
-    ImGui::Separator();
+    // the zoom actions come from the toolbar, where they are only visible while zoomed
+    // (QMenu draws a single separator when they are hidden)
+    if (can->timeRange().has_value()) {
+      const std::string undo_text = std::string(icon::ARROW_COUNTERCLOCKWISE) + " Undo Zoom";
+      const std::string redo_text = std::string(icon::ARROW_CLOCKWISE) + " Redo Zoom";
+      if (ImGui::MenuItem(undo_text.c_str(), nullptr, false, charts_widget->zoom_undo_stack.canUndo())) charts_widget->zoom_undo_stack.undo();
+      if (ImGui::MenuItem(redo_text.c_str(), nullptr, false, charts_widget->zoom_undo_stack.canRedo())) charts_widget->zoom_undo_stack.redo();
+      ImGui::Separator();
+    }
     if (ImGui::MenuItem("Close")) charts_widget->removeChart(this);
     ImGui::Unindent(indent);
     ImGui::EndPopup();
@@ -610,7 +616,9 @@ void ChartView::drawAxes() {
   const ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoMouseText |
                             ImPlotFlags_NoBoxSelect | ImPlotFlags_NoInputs | ImPlotFlags_NoFrame;
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
-  if (ImPlot::BeginPlot("##plot", ImVec2(rect.GetWidth(), plot_h), flags)) {
+  // reserve room for the right half of the last x tick label (QFontMetrics size + {5, 5} in Qt)
+  const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max, xAxisPrecision()).c_str()).x + 5;
+  if (ImPlot::BeginPlot("##plot", ImVec2(rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
     ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
     ImPlot::SetupAxis(ImAxis_Y1, y_unit.empty() ? nullptr : y_unit.c_str(), axis_flags);
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min, x_max, ImPlotCond_Always);

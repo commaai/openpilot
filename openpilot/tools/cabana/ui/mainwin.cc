@@ -1002,13 +1002,17 @@ void MainWindow::draw() {
       // splitter between video and charts
       const ImVec2 avail = ImGui::GetContentRegionAvail();
       const bool live = can->liveStreaming();
-      const float video_hint = video_splitter_ratio_ > 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->sizeHintHeight();
-      float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 1.0f, avail.y - 1.0f);
+      const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->sizeHintHeight();
+      float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
       if (live) video_h = ImGui::GetFrameHeightWithSpacing() * 2;  // display video at minimum size.
-      ImGui::BeginChild("video", ImVec2(0, video_h));
-      help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-      video_widget_->draw();
-      ImGui::EndChild();
+      // QSplitter collapses a child dragged below its minimum size
+      if (!charts_floating_ && !live && video_h < ImGui::GetFrameHeightWithSpacing()) video_h = 0.0f;
+      if (video_h > 0.0f) {
+        ImGui::BeginChild("video", ImVec2(0, video_h));
+        help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+        video_widget_->draw();
+        ImGui::EndChild();
+      }
       if (!charts_floating_) {
         ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, 6.0f));
         if (ImGui::IsItemActive() && !live) video_splitter_ratio_ = std::clamp((ImGui::GetMousePos().y - ImGui::GetWindowPos().y) / avail.y, 0.0f, 1.0f);

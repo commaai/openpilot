@@ -46,7 +46,10 @@ bool SignalSelector::draw() {
   const char *preview = msgs_combo_index_ >= 0 ? msgs_combo[msgs_combo_index_].text.c_str() : "Select a msg...";
   ImGui::SetNextItemWidth(column_w);
   if (ImGui::BeginCombo("##msgs_combo", preview)) {
-    if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+    if (ImGui::IsWindowAppearing()) {
+      msgs_combo_filter_.clear();  // QComboBox reopens showing the full list
+      ImGui::SetKeyboardFocusHere();
+    }
     ImGui::SetNextItemWidth(-FLT_MIN);
     inputText("##msgs_filter", &msgs_combo_filter_, "Select a msg...");
     std::string filter = msgs_combo_filter_;

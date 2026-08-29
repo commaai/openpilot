@@ -509,7 +509,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
 }
 
 void SignalItemDelegate::closeEditor() {
-  editing_item_ = nullptr;
+  editing_item_ = open_item_ = nullptr;
   editor_active_ = refocus_editor_ = enter_pressed_ = false;
 }
 
@@ -551,7 +551,7 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
     if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       // closeEditor(RevertModelCache): no commit, the editor is closed and the original value comes back
       edit_text_ = edit_original_;
-      editing_item_ = nullptr;
+      editing_item_ = open_item_ = nullptr;
       enter_pressed_ = false;
       return;
     }
@@ -562,14 +562,14 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
   if (ImGui::IsItemDeactivated()) {
     const bool by_enter = std::exchange(enter_pressed_, false);
     if (!ImGui::IsItemDeactivatedAfterEdit()) {
-      editing_item_ = nullptr;  // nothing was typed, nothing to commit
+      editing_item_ = open_item_ = nullptr;  // nothing was typed, nothing to commit
     } else if (validateEditor(item, edit_text_) == ValidState::Acceptable) {
       setModelData(item, model, edit_text_);
-      editing_item_ = nullptr;
+      editing_item_ = open_item_ = nullptr;
     } else if (by_enter) {
       refocus_editor_ = true;  // the editor stays open with the text the user typed
     } else {
-      editing_item_ = nullptr;
+      editing_item_ = open_item_ = nullptr;
     }
   }
 }
@@ -880,7 +880,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   ImGui::PushID(item);
   ImGui::BeginDisabled(!(flags & SignalModel::ItemIsEnabled));
   // QTreeView has no hover highlight, only the selection background
-  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
   ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
   const bool row_clicked = ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
   ImGui::PopStyleColor(2);
@@ -889,7 +889,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     current_sig_ = item->sig;
     current_type_ = item->type;
     // AllEditTriggers: currentChanged opens the editor of the new current item
-    delegate->focus_item_ = item;
+    delegate->focus_item_ = delegate->open_item_ = item;
     rowClicked(item);
   }
   if (item->type == SignalModel::Item::Sig && item->sig == scroll_to_sig_) {
@@ -932,7 +932,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     if (ImGui::Checkbox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
   } else if (flags1 & SignalModel::ItemIsEditable) {
     // QAbstractItemView only creates the editor for the current item; the others paint through the delegate
-    if (selected) {
+    if (selected && delegate->open_item_ == item) {
       ImGui::SetCursorScreenPos(rect1.Min);
       ImGui::SetNextItemWidth(rect1.GetWidth());
       delegate->createEditor(item, model.get());

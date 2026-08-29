@@ -145,6 +145,8 @@ public:
   mutable ImVec2 button_size = {};
   // AllEditTriggers/CurrentChanged: the editor is created for the item that just became current and takes the focus
   SignalModel::Item *focus_item_ = nullptr;
+  // the item whose editor is open; closeEditor() returns the cell to the painted text while the row stays current
+  SignalModel::Item *open_item_ = nullptr;
   mutable std::function<void()> pending_commit;
 
 private:
