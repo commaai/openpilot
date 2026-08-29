@@ -184,6 +184,7 @@ void SignalModel::refresh() {
       }
     }
   }
+  modelReset();
   rowsChanged();  // modelReset
 }
 
@@ -344,7 +345,8 @@ SignalItemDelegate::SignalItemDelegate() {
   // the sig pointers die with the signal
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) {
     if (desc_sig_ == sig) desc_sig_ = nullptr;
-    if (editing_item_ && editing_item_->sig == sig) closeEditor();
+    if ((editing_item_ && editing_item_->sig == sig) || (open_item_ && open_item_->sig == sig) ||
+        (focus_item_ && focus_item_->sig == sig)) closeEditor();
   }));
   connections_.push_back(dbc()->fileChanged.connect([this]() {
     desc_sig_ = nullptr;
@@ -469,11 +471,23 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
   } else if (item->type == SignalModel::Item::Size) {
     int v = item->sig->size;
     if (take_focus) ImGui::SetKeyboardFocusHere();
-    bool changed = ImGui::InputInt("##editor", &v);
+    bool changed = ImGui::InputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
       setModelData(item, model, std::clamp(v, 1, CAN_MAX_DATA_BYTES));
     }
+    // Enter, Escape and a click outside close the editor; the step buttons keep it open like QSpinBox
+    if (ImGui::IsItemDeactivated() && (!ImGui::IsItemHovered() || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
+                                       ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false))) {
+      open_item_ = nullptr;
+    }
   } else if (item->type == SignalModel::Item::SignalType) {
+    // the QComboBox editor is closed by Enter and Escape; the cell is painted as text again next frame
+    if (combo_focused_ && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
+                           ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false))) {
+      open_item_ = nullptr;
+      combo_focused_ = false;
+      return;
+    }
     std::vector<std::pair<std::string, int>> items;
     items.emplace_back(signalTypeToString(cabana::Signal::Type::Normal), (int)cabana::Signal::Type::Normal);
     if (!dbc()->msg(model->msg_id)->multiplexor) {
@@ -487,9 +501,14 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
       names.push_back(items[i].first.c_str());
       if (items[i].second == (int)item->sig->type) current = i;
     }
+    const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, ImGui::GetID("##editor"));
+    if (take_focus) ImGui::SetKeyboardFocusHere();
     if (ImGui::Combo("##editor", &current, names.data(), names.size())) {
       setModelData(item, model, items[current].second);
+      open_item_ = nullptr;  // activated: commitData + closeEditor
     }
+    combo_focused_ = ImGui::IsItemFocused() || ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
+    if (!take_focus && !combo_focused_) open_item_ = nullptr;  // the editor is closed when it loses the focus
   } else if (item->type == SignalModel::Item::Desc) {
     ImGui::PushStyleColor(ImGuiCol_Header, (ImU32)0);
     const bool clicked = ImGui::Selectable("##editor", false, 0, ImVec2(0, rowHeight()));
@@ -509,8 +528,8 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
 }
 
 void SignalItemDelegate::closeEditor() {
-  editing_item_ = open_item_ = nullptr;
-  editor_active_ = refocus_editor_ = enter_pressed_ = false;
+  editing_item_ = open_item_ = focus_item_ = nullptr;
+  editor_active_ = refocus_editor_ = enter_pressed_ = combo_focused_ = false;
 }
 
 // QValidator::validate for the editor of `item`; mutates `text` like NameValidator does (spaces -> '_')
@@ -538,7 +557,7 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
     ImGui::SetKeyboardFocusHere();  // QLineEdit keeps the focus when the input is not acceptable
     refocus_editor_ = false;
   }
-  validatedInput("##editor", &text, validator);
+  validatedInput("##editor", &text, validator, "", ImGuiInputTextFlags_AutoSelectAll);
   if (ImGui::IsItemActivated()) {
     editing_item_ = item;
     edit_original_ = model->data(item, 1);
@@ -615,6 +634,8 @@ SignalView::SignalView(ChartsWidget *charts) : charts(charts) {
   updateToolBar();
 
   connections_.push_back(model->rowsChanged.connect([this]() { rowsChanged(); }));
+  // QAbstractItemView::reset() closes the open editors; the items they point at are deleted by refresh()
+  connections_.push_back(model->modelReset.connect([this]() { delegate->closeEditor(); }));
   connections_.push_back(dbc()->signalAdded.connect([this](MessageId id, const cabana::Signal *sig) { handleSignalAdded(id, sig); }));
   connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { handleSignalUpdated(sig); }));
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { handleSignalRemoved(sig); }));
@@ -888,8 +909,12 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     // setCurrentIndex + clicked
     current_sig_ = item->sig;
     current_type_ = item->type;
-    // AllEditTriggers: currentChanged opens the editor of the new current item
-    delegate->focus_item_ = delegate->open_item_ = item;
+    // AllEditTriggers: currentChanged opens the editor of the new current item. The name column is not
+    // editable, so a click there only makes the cell current.
+    delegate->closeEditor();
+    if (ImGui::GetMousePos().x >= row_min.x + name_column_width) {
+      delegate->focus_item_ = delegate->open_item_ = item;
+    }
     rowClicked(item);
   }
   if (item->type == SignalModel::Item::Sig && item->sig == scroll_to_sig_) {

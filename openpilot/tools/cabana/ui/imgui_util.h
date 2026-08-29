@@ -56,6 +56,21 @@ inline bool dialogButtons(const char *accept_label, bool *accepted, bool *reject
   return pressed;
 }
 
+// QHeaderView::defaultAlignment: horizontal header labels are centered
+inline void tableHeadersRow() {
+  ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+  for (int c = 0, count = ImGui::TableGetColumnCount(); c < count; ++c) {
+    if (!ImGui::TableSetColumnIndex(c)) continue;
+    const char *name = ImGui::TableGetColumnName(c);
+    if (!name) name = "";
+    const float offset = (ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(name).x) * 0.5f;
+    if (offset > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+    ImGui::PushID(c);
+    ImGui::TableHeader(name);
+    ImGui::PopID();
+  }
+}
+
 inline bool comboBox(const char *label, int *index, const char *const items[], int count) {
   return ImGui::Combo(label, index, items, count);
 }

@@ -5,6 +5,7 @@
 
 #include "imgui.h"
 #include "tools/cabana/streams/replaystream.h"
+#include "tools/cabana/ui/imgui_util.h"
 
 RouteInfoDlg::RouteInfoDlg() {
   auto *replay = dynamic_cast<ReplayStream *>(can)->getReplay();
@@ -35,7 +36,7 @@ bool RouteInfoDlg::draw() {
     if (ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) {
       ImGui::TableSetupScrollFreeze(0, 1);
       for (int c = 0; c < 7; ++c) ImGui::TableSetupColumn(headers[c]);
-      ImGui::TableHeadersRow();
+      tableHeadersRow();
       for (int row = 0; row < (int)rows_.size(); ++row) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);

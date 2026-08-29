@@ -287,8 +287,10 @@ void LogsWidget::draw() {
 void LogsWidget::drawTable() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const int cols = model.columnCount();
-  // rect().width() is the header viewport: the table's cell padding and the vertical scrollbar are not part of it
-  header.width = ImGui::GetContentRegionAvail().x - style.CellPadding.x * 2 * cols - style.ScrollbarSize;
+  // rect().width() is the header viewport: the table's cell padding and the vertical scrollbar (only when
+  // shown, one frame behind) are not part of it
+  header.width = ImGui::GetContentRegionAvail().x - style.CellPadding.x * 2 * cols -
+                 (vscrollbar_visible_ ? style.ScrollbarSize : 0.0f);
 
   // HeaderView::ResizeToContents
   std::vector<ImVec2> sizes(cols);
@@ -339,7 +341,7 @@ void LogsWidget::drawTable() {
           // QTableView selects items, not rows (SelectionBehavior::SelectItems)
           const bool cell_selected = selected_row == row && selected_col == col;
           // QTableView has no hover highlight, only the selection background
-          ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+          ImGui::PushStyleColor(ImGuiCol_HeaderHovered, cell_selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
           ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
           ImGui::PushID(col);
           if (ImGui::Selectable("##cell", cell_selected, ImGuiSelectableFlags_AllowOverlap,
@@ -359,6 +361,7 @@ void LogsWidget::drawTable() {
       if (clipper.DisplayEnd >= model.rowCount()) fetch_more = true;
     }
     if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) fetch_more = true;
+    vscrollbar_visible_ = table->InnerWindow->ScrollbarY;
     ImGui::EndTable();
   }
   if (fetch_more && model.canFetchMore()) {

@@ -84,6 +84,7 @@ public:
   int signalRow(const cabana::Signal *sig) const;
 
   Observable<> rowsChanged;  // modelReset, rowsInserted and rowsRemoved
+  Observable<> modelReset;   // the items are gone: the view closes its editors
 
 private:
   void insertItem(SignalModel::Item *root_item, int pos, const cabana::Signal *sig);
@@ -148,12 +149,12 @@ public:
   // the item whose editor is open; closeEditor() returns the cell to the painted text while the row stays current
   SignalModel::Item *open_item_ = nullptr;
   mutable std::function<void()> pending_commit;
+  void closeEditor();
 
 private:
   // QLineEdit + QValidator editor; only an Acceptable value is committed
   void lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator);
   static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
-  void closeEditor();
 
   SignalModel::Item *editing_item_ = nullptr;  // the open QLineEdit editor
   std::string edit_text_;
@@ -162,6 +163,7 @@ private:
   bool refocus_editor_ = false;  // reopen the editor rejected by the validator
   bool take_focus_ = false;      // the editor was just created and takes the focus
   bool enter_pressed_ = false;
+  bool combo_focused_ = false;  // the SignalType combo had the focus last frame
   std::unique_ptr<ValueDescriptionDlg> desc_dlg_;
   const cabana::Signal *desc_sig_ = nullptr;
   Connections connections_;

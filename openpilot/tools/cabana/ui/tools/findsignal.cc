@@ -285,12 +285,13 @@ void FindSignalDlg::drawTable() {
   const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
   if (!ImGui::BeginTable("view", model->columnCount() + 1, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
-  ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 40.0f);  // vertical header: row number
+  // vertical header: row number. QHeaderView has no width while the model is empty
+  ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed | (model->rowCount() ? 0 : ImGuiTableColumnFlags_Disabled), 40.0f);
   for (int c = 0; c < model->columnCount(); ++c) {
     auto column_flags = c == model->columnCount() - 1 ? ImGuiTableColumnFlags_WidthStretch : ImGuiTableColumnFlags_WidthFixed;
     ImGui::TableSetupColumn(model->headerData(c, true).c_str(), column_flags, c == 0 ? 80.0f : 120.0f);
   }
-  ImGui::TableHeadersRow();
+  tableHeadersRow();
   for (int row = 0; row < model->rowCount(); ++row) {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);

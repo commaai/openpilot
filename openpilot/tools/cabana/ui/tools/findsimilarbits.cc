@@ -112,17 +112,24 @@ bool FindSimilarBitsDlg::draw() {
 }
 
 void FindSimilarBitsDlg::drawTable() {
-  // columns are set by find(); the table is blank until then
-  if (!table_has_columns) return;
+  // columns are set by find(); until then the QTableWidget is an empty frame
+  if (!table_has_columns) {
+    ImGui::BeginChild("table", ImVec2(0, 0), ImGuiChildFlags_Borders);
+    ImGui::EndChild();
+    return;
+  }
   const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
   if (!ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
   static const char *headers[] = {"address", "byte idx", "bit idx", "mismatches", "total msgs", "% mismatched"};
-  ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 40.0f);  // vertical header: row number
+  // the fixed widths are section sizes: imgui adds the cell padding on top of the column width
+  const float padding = ImGui::GetStyle().CellPadding.x * 2;
+  ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 40.0f - padding);  // vertical header: row number
   for (int c = 0; c < 6; ++c) {
-    ImGui::TableSetupColumn(headers[c], c == 5 ? ImGuiTableColumnFlags_WidthStretch : ImGuiTableColumnFlags_WidthFixed, 100.0f);
+    ImGui::TableSetupColumn(headers[c], c == 5 ? ImGuiTableColumnFlags_WidthStretch : ImGuiTableColumnFlags_WidthFixed,
+                            100.0f - padding);
   }
-  ImGui::TableHeadersRow();
+  tableHeadersRow();
   ImGuiListClipper clipper;
   clipper.Begin((int)table.size());
   while (clipper.Step()) {

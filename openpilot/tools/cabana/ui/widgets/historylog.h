@@ -100,6 +100,7 @@ private:
   bool filters_widget_visible = true;
   bool export_btn_enabled = false;
   int selected_row = -1, selected_col = -1;
+  bool vscrollbar_visible_ = false;
   HeaderView header;
   MessageBytesDelegate delegate;
   Connections connections_;
