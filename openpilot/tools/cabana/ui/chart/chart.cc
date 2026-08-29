@@ -66,7 +66,6 @@ static void addTextEllipsis(ImDrawList *dl, const FontInfo &f, ImU32 col, const 
 ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
     : x_min(x_range.first), x_max(x_range.second), charts_widget(parent) {
   series_type = (SeriesType)settings.chart_series_type;
-  align_to = 50;
   tip_label = new TipLabel();
   // createToolButtons: the buttons are immediate mode, drawn from paintEvent
 
@@ -190,49 +189,45 @@ void ChartView::resizeEvent() {
   close_btn_rect.Max = close_btn_rect.Min + close_size;
   manage_btn_rect = ImRect(ImVec2(close_btn_rect.Min.x - manage_size.x - ImGui::GetStyle().ItemSpacing.x, rect.Min.y + margins.y), ImVec2(0, 0));
   manage_btn_rect.Max = manage_btn_rect.Min + manage_size;
-  updatePlotArea(align_to, true);
+  updatePlotArea();
 }
 
-void ChartView::updatePlotArea(int left_pos, bool force) {
-  if (align_to != left_pos || force) {
-    align_to = left_pos;
-    if (!ImGui::GetCurrentContext() || !ImGui::GetCurrentWindowRead()) return;  // layout is recomputed from draw()
+void ChartView::updatePlotArea() {
+  if (!ImGui::GetCurrentContext() || !ImGui::GetCurrentWindowRead()) return;  // layout is recomputed from draw()
 
-    const auto margins = layoutMargins();
-    const FontInfo bfm = boldFont();
-    const float fm_height = ImGui::GetTextLineHeight();
-    const int marker_size = fm_height - 4;
-    const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + signal_value_font height
-    const int legend_left = move_icon_rect.Max.x + margins.x;
-    const int legend_right = std::max<int>(manage_btn_rect.Min.x - margins.z, legend_left + 10);
+  const auto margins = layoutMargins();
+  const FontInfo bfm = boldFont();
+  const float fm_height = ImGui::GetTextLineHeight();
+  const int marker_size = fm_height - 4;
+  const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + signal_value_font height
+  const int legend_left = move_icon_rect.Max.x + margins.x;
+  const int legend_right = std::max<int>(manage_btn_rect.Min.x - margins.z, legend_left + 10);
 
-    // layout legend entries left-to-right, wrapping between the move icon and the buttons
-    legend_rects.clear();
-    int x = legend_left, y = rect.Min.y + margins.y;
-    for (auto &s : sigs) {
-      int w = marker_size + 5 + bfm.font->CalcTextSizeA(bfm.size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
-              ImGui::CalcTextSize((" " + msgName(s.msg_id) + " " + s.msg_id.toString()).c_str()).x;
-      w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
-      if (x + w > legend_right && x > legend_left) {
-        x = legend_left;
-        y += row_height;
-      }
-      legend_rects.emplace_back(ImVec2(x, y), ImVec2(x + w, y + std::max<int>(marker_size, fm_height)));
-      x += w + 12;
+  // layout legend entries left-to-right, wrapping between the move icon and the buttons
+  legend_rects.clear();
+  int x = legend_left, y = rect.Min.y + margins.y;
+  for (auto &s : sigs) {
+    int w = marker_size + 5 + bfm.font->CalcTextSizeA(bfm.size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
+            ImGui::CalcTextSize((" " + msgName(s.msg_id) + " " + s.msg_id.toString()).c_str()).x;
+    w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
+    if (x + w > legend_right && x > legend_left) {
+      x = legend_left;
+      y += row_height;
     }
-
-    // add top space for the legend and signal values
-    int adjust_top = (y + row_height) - rect.Min.y - margins.y;
-    adjust_top = std::max<int>(adjust_top, manage_btn_rect.Max.y - rect.Min.y + margins.y);
-    header_bottom = rect.Min.y + adjust_top + margins.y;
-    // the x-axis label space and the left alignment (align_to) are handled by implot (BeginAlignedPlots)
-    resetChartCache();
+    legend_rects.emplace_back(ImVec2(x, y), ImVec2(x + w, y + std::max<int>(marker_size, fm_height)));
+    x += w + 12;
   }
+
+  // add top space for the legend and signal values
+  int adjust_top = (y + row_height) - rect.Min.y - margins.y;
+  adjust_top = std::max<int>(adjust_top, manage_btn_rect.Max.y - rect.Min.y + margins.y);
+  header_bottom = rect.Min.y + adjust_top + margins.y;
+  // the x-axis label space and the y axis alignment across charts are handled by implot (BeginAlignedPlots)
 }
 
 void ChartView::updateTitle() {
   split_chart_enabled = sigs.size() > 1;
-  updatePlotArea(align_to, true);
+  updatePlotArea();
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -245,7 +240,6 @@ void ChartView::updatePlot(double cur, double min, double max) {
     if (tooltip_x >= 0) {
       showTip(secondsAtPoint({(float)tooltip_x, 0}));
     }
-    resetChartCache();
   }
 }
 
@@ -331,20 +325,15 @@ void ChartView::updateAxisY() {
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
 
-  if (y_unit != unit) {
-    y_unit = unit;
-    y_label_width = 0;  // recalc width
-  }
+  y_unit = unit;
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, 3);
-  if (min_y != y_min || max_y != y_max || y_label_width == 0) {
+  if (min_y != y_min || max_y != y_max) {
     y_min = min_y;
     y_max = max_y;
     y_tick_count = tick_count;
     y_precision = std::max(int(-std::floor(std::log10((max_y - min_y) / (tick_count - 1)))), 0);
-    // the label width needs the font: measured in draw() on the ui thread (updateSeries runs in worker threads)
-    y_label_width = 0;
   }
 }
 
@@ -411,9 +400,9 @@ void ChartView::mousePressEvent() {
                               !close_btn_rect.Contains(pos) && !manage_btn_rect.Contains(pos);
   if (!widget_pressed) return;
   press_pos = pos;
-  if (move_icon_rect.Contains(pos)) {
-    // the move icon press is handled by the grip item (startChartDrag)
-  } else if (ImGui::GetIO().KeyShift) {
+  if (move_icon_rect.Contains(pos)) return;  // the move icon press is handled by the grip item (startChartDrag)
+
+  if (ImGui::GetIO().KeyShift) {
     // Save current playback state when scrubbing
     resume_after_scrub = !can->isPaused();
     if (resume_after_scrub) {
@@ -544,10 +533,6 @@ void ChartView::hideTip() {
   tip_label->hide();
 }
 
-void ChartView::resetChartCache() {
-  // no static layer cache in imgui; the chart is redrawn every frame
-}
-
 void ChartView::draw(float width) {
   ImGui::PushID(this);
   width = std::max(width, (float)CHART_MIN_WIDTH);
@@ -557,17 +542,6 @@ void ChartView::draw(float width) {
   rect = ImRect(tile_pos, tile_pos + ImVec2(width, sizeHint().y));
   if (ImGui::BeginChild("chart", ImVec2(width, sizeHint().y), ImGuiChildFlags_None,
                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    // the y label width needs the font, so it is measured here instead of in updateAxisY
-    if (!sigs.empty() && y_label_width == 0) {
-      int max_label_width = 0;
-      for (int i = 0; i < y_tick_count; i++) {
-        double value = y_min + (i * (y_max - y_min) / (y_tick_count - 1));
-        max_label_width = std::max<int>(max_label_width, ImGui::CalcTextSize(formatNumber(value, y_precision).c_str()).x);
-      }
-      int title_spacing = y_unit.empty() ? 0 : ImGui::GetTextLineHeight();
-      y_label_width = title_spacing + max_label_width + 15;
-      axisYLabelWidthChanged(y_label_width);
-    }
     resizeEvent();
     paintEvent();
     contextMenuEvent();

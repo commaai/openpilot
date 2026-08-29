@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -85,7 +84,6 @@ public:
 private:
   ImVec2 minimumSizeHint() const;
   void event();
-  void alignCharts();
   void newChart();
   ChartView *createChart(int pos = 0);
   void removeChart(ChartView *chart);
@@ -171,7 +169,6 @@ private:
   ImVec2 auto_scroll_pos;
   bool auto_scroll_timer_active = false;
   double auto_scroll_timer_next = 0;
-  std::atomic<bool> align_timer{false};  // single shot, fired from draw()
   int current_theme = 0;
   bool value_tip_visible_ = false;
   bool any_plot_hovered_ = false;

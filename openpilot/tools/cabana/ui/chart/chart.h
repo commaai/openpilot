@@ -52,7 +52,7 @@ public:
   void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
-  void updatePlotArea(int left, bool force = false);
+  void updatePlotArea();
   void showTip(double sec);
   void hideTip();
   void draw(float width);  // paintEvent + mouse events, one chart of settings.chart_height
@@ -74,8 +74,6 @@ public:
     double max = 0;
   };
 
-  Observable<int> axisYLabelWidthChanged;
-
 private:
   void signalUpdated(const cabana::Signal *sig);
   void manageSignals();
@@ -94,7 +92,6 @@ private:
   ImVec2 sizeHint() const;
   void updateAxisY();
   void updateTitle();
-  void resetChartCache();
   void paintEvent();
   void drawStaticLayer();
   void drawAxes();
@@ -132,8 +129,6 @@ private:
   int y_tick_count = 3;
   int y_precision = 0;
   std::string y_unit;
-  int y_label_width = 0;
-  int align_to = 0;
   // interaction
   enum class MouseMode { None, Rubber, Scrub };
   MouseMode mouse_mode = MouseMode::None;

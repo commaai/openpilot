@@ -482,7 +482,6 @@ void ChartsWidget::settingChanged() {
   for (auto c : charts) {
     // the fixed height (settings.chart_height) is read in ChartView::draw
     c->setSeriesType((SeriesType)settings.chart_series_type);
-    c->resetChartCache();
   }
 }
 
@@ -495,7 +494,6 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
 ChartView *ChartsWidget::createChart(int pos) {
   auto chart = new ChartView(can->timeRange().value_or(display_range), this);
   // fixed height / min width / size policy: see ChartView::draw
-  chart->connections_.push_back(chart->axisYLabelWidthChanged.connect([this](int) { align_timer = true; }));  // dropped with the chart
   pos = std::clamp(pos, 0, (int)charts.size());
   charts.insert(charts.begin() + pos, chart);
   currentCharts().insert(currentCharts().begin() + pos, chart);
@@ -530,7 +528,6 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
     src_chart->updateAxisY();
     src_chart->updateTitle();
     updateState();
-    src_chart->resetChartCache();
   }
 }
 
@@ -773,7 +770,6 @@ void ChartsWidget::removeChart(ChartView *chart) {
   }
   updateToolBar();
   updateLayout(true);
-  alignCharts();
   seriesChanged();
 }
 
@@ -799,18 +795,6 @@ void ChartsWidget::removeAll() {
     seriesChanged();
   }
   zoomReset();
-}
-
-void ChartsWidget::alignCharts() {
-  int plot_left = 0;
-  for (auto c : charts) {
-    plot_left = std::max(plot_left, c->y_label_width);
-  }
-  plot_left = std::max((plot_left / 10) * 10 + 10, 50);
-  // the actual y axis alignment is done by ImPlot::BeginAlignedPlots in ChartsContainer::draw
-  for (auto c : charts) {
-    c->updatePlotArea(plot_left);
-  }
 }
 
 void ChartsWidget::eventFilter() {
@@ -867,7 +851,6 @@ void ChartsWidget::draw() {
   }
   ImGui::PushID(this);
   // timers
-  if (align_timer.exchange(false)) alignCharts();
   if (auto_scroll_timer_active && ImGui::GetTime() >= auto_scroll_timer_next) {
     auto_scroll_timer_next = ImGui::GetTime() + 0.05;
     doAutoScroll();
