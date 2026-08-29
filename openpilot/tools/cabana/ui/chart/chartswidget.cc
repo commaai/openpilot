@@ -21,6 +21,7 @@ const int START_DRAG_DISTANCE = 10;  // QApplication::startDragDistance()
 const float TOOLBAR_ITEM_SPACING = 1.0f;    // QStyle::PM_ToolBarItemSpacing
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizontal margin
 const float MENU_ARROW_SIZE = 6.0f;         // QStyle::PE_IndicatorArrowDown on a toolbutton menu
+const float MENU_ARROW_SPACING = 5.0f;      // gap between the label and the dropdown arrow
 const float LAYOUT_HORIZONTAL_SPACING = 6.0f;  // QStyle::PM_LayoutHorizontalSpacing
 const float SLIDER_LENGTH = 13.0f;          // QStyle::PM_SliderLength (Fusion)
 const float SLIDER_THICKNESS = 13.0f;       // QStyle::PM_SliderThickness (Fusion)
@@ -30,10 +31,10 @@ static float buttonWidth(const std::string &label) {
 }
 
 // an auto-raise QToolButton with an InstantPopup menu: flat until hovered, with a small dropdown arrow
-// drawn hard against the text (ItemInnerSpacing.x / 2) at the text baseline
+// drawn after the text at the text baseline
 static float menuButtonWidth(const std::string &text) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  return ImGui::CalcTextSize(text.c_str(), nullptr, true).x + style.ItemInnerSpacing.x * 0.5f + MENU_ARROW_SIZE +
+  return ImGui::CalcTextSize(text.c_str(), nullptr, true).x + MENU_ARROW_SPACING + MENU_ARROW_SIZE +
          style.FramePadding.x * 2;
 }
 
@@ -50,7 +51,7 @@ static bool menuButton(const char *id, const std::string &text, const char *popu
   // a 6 px arrow in the disabled text color, right after the text, sitting on the text baseline
   const ImVec2 min = ImGui::GetItemRectMin();
   const float x = min.x + style.FramePadding.x + ImGui::CalcTextSize(text.c_str(), nullptr, true).x +
-                  style.ItemInnerSpacing.x * 0.5f;
+                  MENU_ARROW_SPACING;
   const float baseline = min.y + style.FramePadding.y + ImGui::GetFontBaked()->Ascent;
   ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(x, baseline - MENU_ARROW_SIZE * 0.5f),
                                                 ImVec2(x + MENU_ARROW_SIZE, baseline - MENU_ARROW_SIZE * 0.5f),
@@ -297,7 +298,7 @@ void ChartsWidget::setIsDocked(bool docked) {
 
 void ChartsWidget::updateToolBar() {
   title_label = "Charts: " + std::to_string(charts.size());
-  columns_action_text = "Columns: " + std::to_string(column_count);
+  columns_action_text = "Columns:  " + std::to_string(column_count);
   range_lb = utils::formatSeconds(max_chart_range);
 
   bool is_zoomed = can->timeRange().has_value();
@@ -346,7 +347,7 @@ void ChartsWidget::drawToolBar() {
   }});
 
   // chart type menu
-  const std::string chart_type_text = std::string("Type: ") + types[std::clamp(settings.chart_series_type, 0, 2)];
+  const std::string chart_type_text = std::string("Type:  ") + types[std::clamp(settings.chart_series_type, 0, 2)];
   left.push_back({menuButtonWidth(chart_type_text), [this, chart_type_text]() {
     if (menuButton("chart_type", chart_type_text, "chart_type_menu")) ImGui::OpenPopup("chart_type_menu");
     if (ImGui::BeginPopup("chart_type_menu")) {

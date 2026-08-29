@@ -918,10 +918,10 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     // setCurrentIndex + clicked
     current_sig_ = item->sig;
     current_type_ = item->type;
-    // AllEditTriggers: currentChanged opens the editor of the new current item. The name column is not
-    // editable, so a click there only makes the cell current.
+    // AllEditTriggers: currentChanged opens the editor of the new current item. The name column and the
+    // non-editable cells (signal rows, check boxes) have no editor, so a click there only makes the cell current.
     delegate->closeEditor();
-    if (ImGui::GetMousePos().x >= row_min.x + name_column_width) {
+    if ((model->flags(item, 1) & SignalModel::ItemIsEditable) && ImGui::GetMousePos().x >= row_min.x + name_column_width) {
       delegate->focus_item_ = delegate->open_item_ = item;
     }
     rowClicked(item);
