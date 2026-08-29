@@ -340,7 +340,7 @@ function op_cabana() {
 
 function op_cabana2() {
   op_before_cmd
-  op_run_command openpilot/tools/cabana/_cabana_ui "$@"
+  op_run_command openpilot/tools/cabana/cabana2 "$@"
 }
 
 function op_sim() {
