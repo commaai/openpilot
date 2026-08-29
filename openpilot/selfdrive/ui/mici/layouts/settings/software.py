@@ -17,6 +17,10 @@ from openpilot.system.ui.widgets.scroller import NavScroller
 
 UPDATER_TIMEOUT = 10.0  # seconds to wait for updater to respond
 
+UPDATER_PROC = "openpilot.system.updated.updated"
+SIGNAL_CHECK_FOR_UPDATE = "SIGUSR1"
+SIGNAL_DOWNLOAD_UPDATE = "SIGHUP"
+
 
 def _split_description(desc: str) -> tuple[str, str, str, str] | None:
   # UpdaterCurrentDescription/UpdaterNewDescription format: "version / branch / commit / date"
@@ -102,10 +106,8 @@ class CheckUpdateButton(BigButton):
     self.set_icon(self._txt_update_icon)
 
     def run():
-      if self.get_value() == "download update":
-        subprocess.run("pkill -SIGHUP -f openpilot.system.updated.updated", shell=True)
-      else:
-        subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
+      sig = SIGNAL_DOWNLOAD_UPDATE if self.get_value() == "download update" else SIGNAL_CHECK_FOR_UPDATE
+      subprocess.run(f"pkill -{sig} -f {UPDATER_PROC}", shell=True)
 
     threading.Thread(target=run, daemon=True).start()
 
@@ -251,7 +253,7 @@ class TargetBranchButton(BigButton):
   def _on_select(self, branch: str):
     ui_state.params.put("UpdaterTargetBranch", branch, block=True)
     self.set_value(branch)
-    subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
+    subprocess.run(f"pkill -{SIGNAL_CHECK_FOR_UPDATE} -f {UPDATER_PROC}", shell=True)
 
 
 class SoftwareLayoutMici(NavScroller):
