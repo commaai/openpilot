@@ -7,6 +7,10 @@ from collections import namedtuple
 
 W, H = 1928, 1208
 
+# panda3d/OpenGL contexts can't be inherited across fork(), so the sim always spawns. every
+# object shared with a sim process has to come from this same context.
+SIM_MP_CTX = multiprocessing.get_context("spawn")
+
 
 vec3 = namedtuple("vec3", ["x", "y", "z"])
 
@@ -65,11 +69,11 @@ class World(ABC):
   def __init__(self, dual_camera):
     self.dual_camera = dual_camera
 
-    self.image_lock = multiprocessing.Semaphore(value=0)
+    self.image_lock = SIM_MP_CTX.Semaphore(value=0)
     self.road_image = np.zeros((H, W, 3), dtype=np.uint8)
     self.wide_road_image = np.zeros((H, W, 3), dtype=np.uint8)
 
-    self.exit_event = multiprocessing.Event()
+    self.exit_event = SIM_MP_CTX.Event()
 
   @abstractmethod
   def apply_controls(self, steer_sim, throttle_out, brake_out, /):
