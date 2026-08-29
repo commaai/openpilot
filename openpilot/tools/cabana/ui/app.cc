@@ -32,6 +32,13 @@ void scrollCallback(GLFWwindow *w, double x, double y) { ImGui_ImplGlfw_ScrollCa
 void charCallback(GLFWwindow *w, unsigned int c) { ImGui_ImplGlfw_CharCallback(w, c); }
 void windowFocusCallback(GLFWwindow *w, int f) { ImGui_ImplGlfw_WindowFocusCallback(w, f); }
 
+void hookViewportCallbacks() {
+  for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
+    if (viewport->PlatformHandle == nullptr || viewport == ImGui::GetMainViewport()) continue;
+    glfwSetKeyCallback((GLFWwindow *)viewport->PlatformHandle, keyCallback);
+  }
+}
+
 void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
@@ -57,6 +64,14 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
   glClearColor(bg.x, bg.y, bg.z, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+  if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    GLFWwindow *backup_context = glfwGetCurrentContext();
+    ImGui::UpdatePlatformWindows();
+    hookViewportCallbacks();
+    ImGui::RenderPlatformWindowsDefault();
+    glfwMakeContextCurrent(backup_context);
+  }
   glfwSwapBuffers(window);
 }
 
@@ -91,6 +106,9 @@ ImGuiRuntime::ImGuiRuntime(GLFWwindow *window) {
   ImPlot::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+  io.ConfigViewportsNoAutoMerge = true;
+  io.ConfigViewportsNoDecoration = false;
   io.IniFilename = nullptr;
   io.LogFilename = nullptr;
   if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
