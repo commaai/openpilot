@@ -23,8 +23,11 @@
 // qtutil.h ToolButton: auto-raise icon button with a tooltip
 inline bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr) {
   std::string label = text && *text ? std::string(icon) + " " + text + "###" + id : std::string(icon) + "###" + id;
+  // setAutoRaise(true): no frame, transparent until hovered
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   bool clicked = ImGui::Button(label.c_str());
+  ImGui::PopStyleVar();
   ImGui::PopStyleColor();
   if (tooltip && *tooltip) ImGui::SetItemTooltip("%s", tooltip);
   return clicked;
@@ -53,6 +56,7 @@ public:
   void showTip(double sec);
   void hideTip();
   void draw(float width);  // paintEvent + mouse events, one chart of settings.chart_height
+  void drawGhost(float width);  // QWidget::grab(): the same tile rendered again, without handling any input
   double secondsAtPoint(const ImVec2 &pt) const {
     return x_min + (pt.x - plot_area.Min.x) * (x_max - x_min) / std::max(plot_area.GetWidth(), 1.0f);
   }
@@ -137,6 +141,7 @@ private:
   ImRect rubber_rect;
   bool resume_after_scrub = false;
   bool plot_hovered = false;
+  bool drawing_ghost = false;  // drawing the drag pixmap: no mouse handling, no tip
   ImGuiID context_menu_id = 0;
 
   bool split_chart_enabled = false;

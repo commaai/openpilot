@@ -416,6 +416,13 @@ void MessageListModel::sort(int column, ImGuiSortDirection order) {
 // QHeaderView::defaultSectionSize
 static constexpr float DEFAULT_SECTION_SIZE = 100.0f;
 
+// The Fusion style draws a down pointing arrow for AscendingOrder, imgui draws an up arrow for
+// ImGuiSortDirection_Ascending. Feed imgui the opposite direction so the glyph matches Qt and flip it
+// back before it reaches the model.
+static inline ImGuiSortDirection flipSortDirection(ImGuiSortDirection dir) {
+  return dir == ImGuiSortDirection_Ascending ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending;
+}
+
 void MessageView::drawRow(int row) {
   const auto &item = model_->items_[row];
   const bool selected = row == current_row_;
@@ -439,12 +446,26 @@ void MessageView::drawRow(int row) {
       // the row selection spans all columns; submit it in the first visible column so that it is not
       // clipped away when the table is scrolled horizontally
       row_item_submitted = true;
-      // QAbstractItemView selects on press
+      // QAbstractItemView selects on press. QTreeView has no hover highlight, only the selection background.
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+      ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
       if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick, ImVec2(0, row_height))) {
         setCurrentIndex(row);
       }
+      ImGui::PopStyleColor(2);
       if (selected && scroll_to_current_) {
-        ImGui::SetScrollHereY();
+        // scrollTo(EnsureVisible): only scroll when the row is outside the viewport, and only far enough
+        const ImGuiTable *table = ImGui::GetCurrentTable();
+        const ImGuiWindow *inner = table->InnerWindow;
+        const float view_top = inner->InnerClipRect.Min.y + inner->DecoInnerSizeY1;
+        const float view_bottom = inner->InnerClipRect.Max.y;
+        const ImVec2 item_min = ImGui::GetItemRectMin();
+        const ImVec2 item_max = ImGui::GetItemRectMax();
+        if (item_min.y < view_top) {
+          ImGui::SetScrollHereY(0.0f);
+        } else if (item_max.y > view_bottom) {
+          ImGui::SetScrollHereY(1.0f);
+        }
         scroll_to_current_ = false;
       }
       // the tooltip is on the Name item in Qt; the row carries it here
@@ -524,7 +545,7 @@ void MessageView::draw() {
   keyPressEvent();
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
-                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
+                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders;
   // setStretchLastSection: with ScrollX a stretch column needs an explicit inner width
   const float bytes_width = delegate_->sizeForBytes(bytes_section_bytes_).x;
   const float avail_width = ImGui::GetContentRegionAvail().x - (has_scrollbar_y_ ? ImGui::GetStyle().ScrollbarSize : 0);
@@ -539,7 +560,8 @@ void MessageView::draw() {
   table->DisableDefaultContextMenu = true;
   table->IsContextPopupOpen = false;
   for (int i = 0; i < model_->columnCount(); ++i) {
-    ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_WidthFixed;
+    // PreferSortDescending: with the flipped direction the first click on a section sorts ascending, like QHeaderView
+    ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
     float width = DEFAULT_SECTION_SIZE;
     if (i == MessageListModel::Column::NAME) {
       column_flags |= ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_NoHide;
@@ -552,7 +574,7 @@ void MessageView::draw() {
   }
 
   if (ImGuiTableSortSpecs *specs = ImGui::TableGetSortSpecs(); specs && specs->SpecsDirty) {
-    if (specs->SpecsCount > 0) model_->sort(specs->Specs[0].ColumnIndex, specs->Specs[0].SortDirection);
+    if (specs->SpecsCount > 0) model_->sort(specs->Specs[0].ColumnIndex, flipSortDirection(specs->Specs[0].SortDirection));
     specs->SpecsDirty = false;
     if (current_row_ >= 0) scroll_to_current_ = true;  // QTreeView::sortByColumn: scrollTo(currentIndex)
   }

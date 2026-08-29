@@ -11,6 +11,7 @@
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
 #include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/ui/icons.h"
@@ -684,8 +685,9 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     std::vector<std::future<void>> futures;
     for (int i = first_visible; i <= last_visible; ++i) {
       auto item = model->root->children[i];
-      futures.push_back(std::async(std::launch::async,
-          &Sparkline::update, &item->sparkline, item->sig, first, last, settings.sparkline_range, size));
+      futures.push_back(ThreadPool::instance().run([item, first, last, size]() {
+        item->sparkline.update(item->sig, first, last, settings.sparkline_range, size);
+      }));
     }
     for (auto &f : futures) f.get();
   }
@@ -982,8 +984,12 @@ void ValueDescriptionDlg::save() {
 
 bool ValueDescriptionDlg::Delegate::createEditor(int column, std::string *text) {
   // QLineEdit editor; column 0 has a DoubleValidator. Returns true when the cell was clicked (row selection).
+  // the two cells of a row share the row's id scope, so each editor needs its own column id
+  ImGui::PushID(column);
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   validatedInput("##edit", text, column == 0 ? doubleValidator : nullptr);
   ImGui::PopStyleVar();
-  return ImGui::IsItemActivated() || ImGui::IsItemClicked();
+  const bool clicked = ImGui::IsItemActivated() || ImGui::IsItemClicked();
+  ImGui::PopID();
+  return clicked;
 }

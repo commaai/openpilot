@@ -18,8 +18,16 @@ namespace {
 
 // QFileDialog sorts with a case insensitive, numeric aware collation ("mazda_3_2019" before "mazda_2017")
 bool naturalLess(const std::string &a, const std::string &b) {
+  // like the locale collation QFileDialog uses: punctuation is ignored at the first level ("FORD_CADS_64" before
+  // "FORD_CADS.dbc"), digit runs compare numerically, case is ignored; ties fall back to a plain comparison
+  auto skip = [](const std::string &s, size_t &i) {
+    while (i < s.size() && !isalnum(static_cast<unsigned char>(s[i]))) ++i;
+  };
   size_t i = 0, j = 0;
-  while (i < a.size() && j < b.size()) {
+  for (;;) {
+    skip(a, i);
+    skip(b, j);
+    if (i >= a.size() || j >= b.size()) break;
     if (isdigit(static_cast<unsigned char>(a[i])) && isdigit(static_cast<unsigned char>(b[j]))) {
       size_t ie = i, je = j;
       while (ie < a.size() && isdigit(static_cast<unsigned char>(a[ie]))) ++ie;
@@ -35,7 +43,9 @@ bool naturalLess(const std::string &a, const std::string &b) {
       ++j;
     }
   }
-  return a.size() - i < b.size() - j;
+  const bool a_done = i >= a.size(), b_done = j >= b.size();
+  if (a_done != b_done) return a_done;
+  return a < b;
 }
 
 enum class Mode { OpenFile, SaveFile, Directory };

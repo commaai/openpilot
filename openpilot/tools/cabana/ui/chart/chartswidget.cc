@@ -1,6 +1,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS  // ImVec2 arithmetic, must precede imgui.h
 #include "tools/cabana/ui/chart/chartswidget.h"
 
+#include "tools/cabana/ui/threadpool.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -15,26 +17,88 @@
 const int MAX_COLUMN_COUNT = 4;
 const int CHART_SPACING = 4;
 const int START_DRAG_DISTANCE = 10;  // QApplication::startDragDistance()
+const float TOOLBAR_ITEM_SPACING = 1.0f;    // QStyle::PM_ToolBarItemSpacing
+const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizontal margin
+const float SLIDER_LENGTH = 13.0f;          // QStyle::PM_SliderLength (Fusion)
+const float SLIDER_THICKNESS = 13.0f;       // QStyle::PM_SliderThickness (Fusion)
 
 static float buttonWidth(const std::string &label) {
   return ImGui::CalcTextSize(label.c_str(), nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
 }
 
-// an auto-raise QToolButton with an InstantPopup menu: flat until hovered, with a dropdown arrow
+// an auto-raise QToolButton with an InstantPopup menu: flat until hovered, with a dropdown arrow after the text
 static float menuButtonWidth(const std::string &text) {
-  return buttonWidth(text) + ImGui::GetFontSize();
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::CalcTextSize(text.c_str(), nullptr, true).x + style.ItemInnerSpacing.x + ImGui::GetFontSize() +
+         style.FramePadding.x * 2;
 }
 
 static bool menuButton(const char *id, const std::string &text) {
   const ImGuiStyle &style = ImGui::GetStyle();
+  // setAutoRaise(true): no frame, transparent until hovered; the text is left aligned so the arrow gets its own space
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
   bool clicked = ImGui::Button((text + "###" + id).c_str(), ImVec2(menuButtonWidth(text), 0.0f));
+  ImGui::PopStyleVar(2);
   ImGui::PopStyleColor();
   ImGui::RenderArrow(ImGui::GetWindowDrawList(),
                      ImVec2(ImGui::GetItemRectMax().x - style.FramePadding.x - ImGui::GetFontSize(),
                             ImGui::GetItemRectMin().y + style.FramePadding.y),
                      ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Down, 0.8f);
   return clicked;
+}
+
+// QStyle::SC_SliderHandle (Fusion): a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
+static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
+  const bool dark = settings.theme == DARK_THEME;
+  // buttonColor.lighter(104) / buttonColor.darker(104)
+  const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
+  const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
+  // QFusionStylePrivate::outline: the top/left edge is one step lighter than the bottom/right edge
+  const ImU32 outline_top = dark ? IM_COL32(0xa3, 0xa3, 0xa3, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
+  const ImU32 outline_bottom = dark ? IM_COL32(0x9c, 0x9c, 0x9c, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
+  p->AddRectFilled(r.Min, r.Max, top, 2.0f);
+  p->AddRectFilled(ImVec2(r.Min.x, r.GetCenter().y), r.Max, bottom, 2.0f, ImDrawFlags_RoundCornersBottom);
+  p->AddRect(r.Min, r.Max, outline_bottom, 2.0f, 0, 1.0f);
+  // the straight edges are drawn as crisp 1 px rects: an antialiased outline washes out to a much lighter grey
+  const float c = 2.0f;  // corner radius
+  p->AddRectFilled(ImVec2(r.Min.x + c, r.Min.y), ImVec2(r.Max.x - c, r.Min.y + 1.0f), outline_top);
+  p->AddRectFilled(ImVec2(r.Min.x, r.Min.y + c), ImVec2(r.Min.x + 1.0f, r.Max.y - c), outline_top);
+  p->AddRectFilled(ImVec2(r.Min.x + c, r.Max.y - 1.0f), ImVec2(r.Max.x - c, r.Max.y), outline_bottom);
+  p->AddRectFilled(ImVec2(r.Max.x - 1.0f, r.Min.y + c), ImVec2(r.Max.x, r.Max.y - c), outline_bottom);
+}
+
+bool LogSlider::draw(const char *label, float width) {
+  // Fusion QSlider: a full width groove with the part left of the handle filled, and a 13x13 handle on top
+  // the groove is a grey track over the full width (QFusionStyle draws it with the outline color)
+  const ImU32 groove_col = settings.theme == DARK_THEME ? IM_COL32(0x2a, 0x2c, 0x2e, 255) : IM_COL32(0xc4, 0xc4, 0xc4, 255);
+  const ImU32 fill_col = ImGui::GetColorU32(ImGuiCol_SliderGrab);
+  ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
+  ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32_BLACK_TRANS);
+  ImGui::PushStyleColor(ImGuiCol_FrameBgActive, IM_COL32_BLACK_TRANS);
+  ImGui::PushStyleColor(ImGuiCol_SliderGrab, IM_COL32_BLACK_TRANS);
+  ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, IM_COL32_BLACK_TRANS);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);  // a QSlider has no frame
+  ImGui::SetNextItemWidth(width);
+  bool changed = ImGui::SliderInt(label, &pos_, min_, max_, "", ImGuiSliderFlags_NoInput);
+  ImGui::PopStyleVar();
+  ImGui::PopStyleColor(5);
+
+  const ImVec2 bb_min = ImGui::GetItemRectMin(), bb_max = ImGui::GetItemRectMax();
+  const float cy = (bb_min.y + bb_max.y) * 0.5f;
+  const float groove_h = SLIDER_THICKNESS * 0.5f;
+  const float handle_h = std::min(SLIDER_THICKNESS, bb_max.y - bb_min.y);
+  const float x0 = bb_min.x + SLIDER_LENGTH * 0.5f, x1 = bb_max.x - SLIDER_LENGTH * 0.5f;
+  const float t = max_ > min_ ? (float)(pos_ - min_) / (float)(max_ - min_) : 0.0f;
+  const float hx = x0 + (x1 - x0) * t;
+  ImDrawList *dl = ImGui::GetWindowDrawList();
+  const float groove_y0 = cy - groove_h * 0.5f, groove_y1 = cy + groove_h * 0.5f;
+  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(bb_max.x, groove_y1), groove_col, groove_h * 0.5f);
+  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(hx, groove_y1), fill_col, groove_h * 0.5f);
+  drawSliderHandle(dl, ImRect(ImVec2(hx - SLIDER_LENGTH * 0.5f, cy - handle_h * 0.5f),
+                              ImVec2(hx + SLIDER_LENGTH * 0.5f, cy + handle_h * 0.5f)));
+  return changed;
 }
 
 ChartsWidget::ChartsWidget() {
@@ -153,7 +217,7 @@ void ChartsWidget::drawTabBar() {
 void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
   std::vector<std::future<void>> futures;
   for (auto c : charts) {
-    futures.push_back(std::async(std::launch::async, &ChartView::updateSeries, c, nullptr, &new_events));
+    futures.push_back(ThreadPool::instance().run([c, &new_events]() { c->updateSeries(nullptr, &new_events); }));
   }
   for (auto &f : futures) f.get();
 }
@@ -175,6 +239,7 @@ ImRect ChartsWidget::chartVisibleRect(ChartView *chart) {
 }
 
 void ChartsWidget::showValueTip(double sec) {
+  if (chartDragActive()) sec = -1;  // Qt shows no value tip while a drag is in progress
   showTip(sec);
   if (sec < 0 && !value_tip_visible_) return;
 
@@ -213,6 +278,7 @@ void ChartsWidget::setMaxChartRange(int value) {
 
 void ChartsWidget::setIsDocked(bool docked) {
   is_docked = docked;
+  if (!docked) float_window_init_ = true;
   dock_btn_icon = is_docked ? icon::ARROW_UP_RIGHT_SQUARE : icon::ARROW_DOWN_LEFT_SQUARE;
   dock_btn_tooltip = is_docked ? "Float the charts window" : "Dock the charts window";
 }
@@ -240,6 +306,9 @@ void ChartsWidget::updateToolBar() {
 
 void ChartsWidget::drawToolBar() {
   static const std::array<const char *, 3> types{"Line", "Step", "Scatter"};
+  // QToolBar metrics: the items sit next to each other, the buttons only carry the auto raise margin
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(TOOLBAR_ITEM_SPACING, ImGui::GetStyle().ItemSpacing.y));
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, ImGui::GetStyle().FramePadding.y));
   const ImGuiStyle &style = ImGui::GetStyle();
   float slider_width = 150.0f;
 
@@ -257,7 +326,7 @@ void ChartsWidget::drawToolBar() {
     if (toolButton("new_tab_btn", icon::WINDOW_STACK, "New Tab")) newTab();
   }});
   // title_label carries a trailing PM_LayoutHorizontalSpacing content margin
-  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + style.ItemSpacing.x, [this]() {
+  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + 6.0f, [this]() {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(title_label.c_str());
   }});
@@ -332,10 +401,15 @@ void ChartsWidget::drawToolBar() {
   }});
 
   size_t n_left = left.size(), n_right = right.size();
-  auto total_width = [&]() {
+  // QToolBarLayout: the item widths plus one spacing between neighbours
+  auto group_width = [&](const std::vector<Item> &items, size_t count) {
     float w = 0;
-    for (size_t i = 0; i < n_left; ++i) w += left[i].width + style.ItemSpacing.x;
-    for (size_t i = 0; i < n_right; ++i) w += right[i].width + style.ItemSpacing.x;
+    for (size_t i = 0; i < count; ++i) w += items[i].width + (i ? style.ItemSpacing.x : 0);
+    return w;
+  };
+  auto total_width = [&]() {
+    float w = group_width(left, n_left) + group_width(right, n_right);
+    if (n_left > 0 && n_right > 0) w += style.ItemSpacing.x;
     return w;
   };
 
@@ -349,38 +423,39 @@ void ChartsWidget::drawToolBar() {
     }
   }
 
-  const float chevron_w = buttonWidth(">>");
+  const float chevron_w = buttonWidth(icon::RAQUO);
   bool overflow = total_width() > avail;
   if (overflow) avail -= chevron_w + style.ItemSpacing.x;
   while (total_width() > avail && (n_right > 0 || n_left > 0)) {
     if (n_right > 0) --n_right; else --n_left;
   }
 
-  float right_width = 0;
-  for (size_t i = 0; i < n_right; ++i) right_width += right[i].width + style.ItemSpacing.x;
-  if (overflow) right_width += chevron_w + style.ItemSpacing.x;
+  float right_width = group_width(right, n_right);
+  if (overflow) right_width += (n_right > 0 ? style.ItemSpacing.x : 0) + chevron_w;
 
   for (size_t i = 0; i < n_left; ++i) {
     if (i > 0) ImGui::SameLine();
     left[i].draw();
   }
   ImGui::SameLine();
-  ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
-                       std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width + style.ItemSpacing.x));
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width));
   for (size_t i = 0; i < n_right; ++i) {
     if (i > 0) ImGui::SameLine();
     right[i].draw();
   }
   if (overflow) {
     if (n_right > 0) ImGui::SameLine();
-    if (ImGui::Button(">>###toolbar_ext")) ImGui::OpenPopup("toolbar_ext_menu");
+    if (ImGui::Button((std::string(icon::RAQUO) + "###toolbar_ext").c_str())) ImGui::OpenPopup("toolbar_ext_menu");
     ImGui::SetItemTooltip("More");
+    // the popup opens inward: its right edge is aligned with the button so it stays inside the window
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
     if (ImGui::BeginPopup("toolbar_ext_menu")) {
       for (size_t i = n_left; i < left.size(); ++i) left[i].draw();
       for (size_t i = n_right; i < right.size(); ++i) right[i].draw();
       ImGui::EndPopup();
     }
   }
+  ImGui::PopStyleVar(2);
 }
 
 void ChartsWidget::settingChanged() {
@@ -510,12 +585,9 @@ void ChartsWidget::updateLayout(bool force) {
 void ChartsWidget::startChartDrag(ChartView *chart, const ImVec2 &global_pos) {
   stopAutoScroll();
   drag = {.source = chart, .press_pos = global_pos};
-  // Qt grabs the chart into a pixmap scaled to CHART_MIN_WIDTH; the ghost keeps that size and shows the header
-  drag_preview.clear();
-  for (auto &s : chart->sigs) {
-    drag_preview.push_back({toImU32(s.color), s.sig->name + " " + msgName(s.msg_id) + " " + s.msg_id.toString()});
-  }
-  drag_preview_size = ImVec2(CHART_MIN_WIDTH, std::max(chart->rect.GetHeight(), (float)settings.chart_height));
+  showValueTip(-1);  // Qt shows no value tip while a drag is in progress
+  // Qt grabs the chart into a pixmap scaled to CHART_MIN_WIDTH; the ghost re-renders the tile at that width
+  drag_preview_size = ImVec2(CHART_MIN_WIDTH, (float)settings.chart_height);
 }
 
 void ChartsWidget::dragChartMove(const ImVec2 &global_pos) {
@@ -593,25 +665,22 @@ void ChartsWidget::dragChartRelease(const ImVec2 &global_pos) {
 }
 
 void ChartsWidget::drawDragPreview() {
-  if (!drag_preview_visible) return;
-  // Qt drags a translucent snapshot of the whole tile. Re-rendering a live ChartView here is not possible
-  // (the implot plot would re-handle the input), so the tile header is redrawn at half alpha at the tile size.
+  if (!drag_preview_visible || !drag.source) return;
+  // Qt drags a 50% alpha pixmap of the whole tile (header + axes + plot): the tile is re-rendered into a
+  // window that takes no input, so the live chart keeps handling the mouse.
+  ImGui::SetNextWindowPos(drag_preview_pos);
+  ImGui::SetNextWindowSize(drag_preview_size);
   ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-  ImDrawList *dl = ImGui::GetForegroundDrawList();
-  const ImVec2 p0 = drag_preview_pos;
-  const ImVec2 p1 = p0 + drag_preview_size;
-  dl->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_ChildBg));
-  dl->AddRect(p0, p1, ImGui::GetColorU32(ImGuiCol_Border));
-  const float line_h = ImGui::GetTextLineHeightWithSpacing();
-  const float marker = ImGui::GetTextLineHeight() - 4;
-  float y = p0.y + 6;
-  for (const auto &item : drag_preview) {
-    if (y + line_h > p1.y) break;
-    dl->AddRectFilled(ImVec2(p0.x + 6, y + 2), ImVec2(p0.x + 6 + marker, y + 2 + marker), ImGui::GetColorU32(item.color));
-    dl->AddText(ImVec2(p0.x + 6 + marker + 4, y), ImGui::GetColorU32(ImGuiCol_Text), item.name.c_str());
-    y += line_h;
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  const ImGuiWindowFlags flags = ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoDecoration |
+                                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+                                 ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking;
+  if (ImGui::Begin("##chart_drag_ghost", nullptr, flags)) {
+    drag.source->drawGhost(drag_preview_size.x);
   }
-  ImGui::PopStyleVar();
+  ImGui::End();
+  ImGui::PopStyleVar(3);
 }
 
 void ChartsWidget::startAutoScroll(const ImVec2 &global_pos) {
@@ -746,6 +815,8 @@ void ChartsWidget::eventFilter() {
   const ImVec2 delta = ImGui::GetIO().MouseDelta;
   if ((delta.x != 0 || delta.y != 0) && !any_plot_hovered_) {
     showValueTip(-1);
+  } else if (!any_plot_hovered_ && !ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)) {
+    showValueTip(-1);  // QEvent::Leave: the mouse is not over the (floating) charts window anymore
   }
 }
 
@@ -771,6 +842,15 @@ void ChartsWidget::event() {
 
 void ChartsWidget::draw() {
   deleted_charts_.clear();
+  // the floating window is a top level window sized to its contents: keep it inside the main viewport so its
+  // toolbar stays reachable, then let the user resize it
+  if (float_window_init_ && !is_docked) {
+    float_window_init_ = false;
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    const ImVec2 size(viewport->WorkSize.x * 0.6f, viewport->WorkSize.y * 0.6f);
+    ImGui::SetWindowSize(size);
+    ImGui::SetWindowPos(viewport->WorkPos + (viewport->WorkSize - size) * 0.5f);
+  }
   ImGui::PushID(this);
   // timers
   if (align_timer.exchange(false)) alignCharts();
@@ -834,7 +914,7 @@ void ChartsContainer::draw() {
     ImGui::SetCursorScreenPos(pos);
     current_charts[i]->draw(width);
     bottom = std::max(bottom, pos.y + settings.chart_height);
-    if (current_charts[i]->plot_area.Contains(ImGui::GetMousePos())) charts_widget->any_plot_hovered_ = true;
+    if (current_charts[i]->plot_hovered) charts_widget->any_plot_hovered_ = true;  // the window must be hovered too
   }
   if (aligned) ImPlot::EndAlignedPlots();
   ImGui::SetCursorScreenPos(ImVec2(origin.x, bottom));

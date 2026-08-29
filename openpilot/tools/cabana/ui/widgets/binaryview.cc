@@ -286,10 +286,12 @@ BinaryIndex BinaryView::indexAt(const ImVec2 &pos) const {
 }
 
 ImRect BinaryView::visualRect(const BinaryIndex &index) const {
-  const float x = grid_pos_.x + VERTICAL_HEADER_WIDTH + index.column * column_width_;
+  // QHeaderView sections are integral; round the edges so neighbouring cells share them exactly.
+  // setShowGrid(false): no grid line between the cells, they are painted edge to edge
+  const float x0 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND(index.column * column_width_);
+  const float x1 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND((index.column + 1) * column_width_);
   const float y = grid_pos_.y + index.row * CELL_HEIGHT;
-  // QTableView keeps a 1px grid line between the cells
-  return ImRect(x, y, x + column_width_ - 1, y + CELL_HEIGHT - 1);
+  return ImRect(x0, y, x1, y + CELL_HEIGHT);
 }
 
 void BinaryView::draw() {
@@ -328,7 +330,14 @@ void BinaryView::draw() {
   if (hovered || active) {
     if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) mousePressEvent(mouse);
     const ImVec2 delta = ImGui::GetIO().MouseDelta;
-    if (delta.x != 0.0f || delta.y != 0.0f) mouseMoveEvent(mouse);
+    if (delta.x != 0.0f || delta.y != 0.0f) {
+      mouseMoveEvent(mouse);
+    } else {
+      // Qt keeps the hovered signal from the last mouse move event; imgui only reports a delta on the
+      // frames the mouse actually moves, so recompute it every frame the mouse is inside the widget.
+      // Without this the shortcuts stay inert after a click until the mouse is moved again.
+      highlightPosition(last_mouse_pos = mouse);
+    }
   }
   // leaveEvent: the mouse left the widget rect, also while dragging
   if (std::exchange(under_mouse_, under_mouse) && !under_mouse) leaveEvent();

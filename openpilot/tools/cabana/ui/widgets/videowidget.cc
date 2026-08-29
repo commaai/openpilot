@@ -26,6 +26,8 @@ const int THUMBNAIL_MARGIN = 3;
 const float POINT_10_FONT_SIZE = 13.0f;  // QFont(family, 10) at 96 dpi
 const float POINT_16_FONT_SIZE = 21.0f;  // QFont(family, 16) at 96 dpi
 const float MENU_BUTTON_INDICATOR = 12.0f;  // QStyle::PM_MenuButtonIndicator
+const float SLIDER_LENGTH = 13.0f;     // QStyle::PM_SliderLength (Fusion)
+const float SLIDER_THICKNESS = 13.0f;  // QStyle::PM_SliderThickness (Fusion)
 
 // Indexed by TimelineType: None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserBookmark
 static const ImU32 timeline_colors[] = {
@@ -57,6 +59,26 @@ static ImU32 withAlpha(ImU32 c, int alpha) {
 static ImU32 brightText() {
   return settings.theme == DARK_THEME ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
                                       : IM_COL32(255, 255, 255, 255);
+}
+
+// QStyle::SC_SliderHandle (Fusion): a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
+static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
+  const bool dark = settings.theme == DARK_THEME;
+  // buttonColor.lighter(104) / buttonColor.darker(104)
+  const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
+  const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
+  // QFusionStylePrivate::outline: the top/left edge is one step lighter than the bottom/right edge
+  const ImU32 outline_top = dark ? IM_COL32(0xa3, 0xa3, 0xa3, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
+  const ImU32 outline_bottom = dark ? IM_COL32(0x9c, 0x9c, 0x9c, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
+  p->AddRectFilled(r.Min, r.Max, top, 2.0f);
+  p->AddRectFilled(ImVec2(r.Min.x, r.GetCenter().y), r.Max, bottom, 2.0f, ImDrawFlags_RoundCornersBottom);
+  p->AddRect(r.Min, r.Max, outline_bottom, 2.0f, 0, 1.0f);
+  // the straight edges are drawn as crisp 1 px rects: an antialiased outline washes out to a much lighter grey
+  const float c = 2.0f;  // corner radius
+  p->AddRectFilled(ImVec2(r.Min.x + c, r.Min.y), ImVec2(r.Max.x - c, r.Min.y + 1.0f), outline_top);
+  p->AddRectFilled(ImVec2(r.Min.x, r.Min.y + c), ImVec2(r.Min.x + 1.0f, r.Max.y - c), outline_top);
+  p->AddRectFilled(ImVec2(r.Min.x + c, r.Max.y - 1.0f), ImVec2(r.Max.x - c, r.Max.y), outline_bottom);
+  p->AddRectFilled(ImVec2(r.Max.x - 1.0f, r.Min.y + c), ImVec2(r.Max.x, r.Max.y - c), outline_bottom);
 }
 
 // QPixmap::loadFromData(..., "jpeg") via libavcodec (already linked for the replay video decoder)
@@ -175,46 +197,31 @@ void VideoWidget::createPlaybackController() {
 
 void VideoWidget::drawPlaybackController() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  if (toolButton(icon::REWIND, "Seek backward", "rewind")) can->seekTo(can->currentSec() - 1);
-  ImGui::SameLine();
-  if (toolButton(play_icon_, play_tooltip_.c_str(), "play")) can->pause(!can->isPaused());
-  ImGui::SameLine();
-  if (toolButton(icon::FAST_FORWARD, "Seek forward", "fast-forward")) can->seekTo(can->currentSec() + 1);
-
-  if (can->liveStreaming()) {
-    ImGui::SameLine();
-    ImGui::BeginDisabled(!skip_to_end_enabled_);
-    if (toolButton(icon::SKIP_END, "Skip to the end", "skip-end")) {
-      // set speed to 1.0
-      speed_index_ = 7;  // like the Qt code this only checks the menu entry; the speed and the button text are unchanged
-      can->pause(false);
-      can->seekTo(can->maxSeconds() + 1);
-    }
-    ImGui::EndDisabled();
-  }
-
-  ImGui::SameLine();
-  if (toolButton(time_text_.c_str(), time_tooltip_.c_str(), "time_display")) {
-    settings.absolute_time = !settings.absolute_time;
-    time_tooltip_ = settings.absolute_time ? "Elapsed time" : "Absolute time";
-    updateState();
-  }
-
-  // spacer: the remaining actions are right aligned
+  // QToolBar item widths: a button is its text plus 2 * FramePadding.x, the items are separated by ItemSpacing.x
   auto button_width = [&](const char *label) { return ImGui::CalcTextSize(label).x + style.FramePadding.x * 2; };
   pushBoldFont();
   const float speed_width = button_width("0.05x  ") + MENU_BUTTON_INDICATOR;
   popBoldFont();
 
-  enum ToolItem { LOOP, SPEED, SEPARATOR, ROUTE_INFO };
-  std::vector<int> items;
+  enum ToolItem { REWIND, PLAY, FORWARD, SKIP_END, TIME_DISPLAY, LOOP, SPEED, SEPARATOR, ROUTE_INFO };
+  std::vector<int> items = {REWIND, PLAY, FORWARD};
+  if (can->liveStreaming()) items.push_back(SKIP_END);
+  items.push_back(TIME_DISPLAY);
+  // the expanding spacer: the items after it are right aligned as long as everything fits
+  const size_t spacer_index = items.size();
   if (!can->liveStreaming()) {
-    items = {LOOP, SPEED, SEPARATOR, ROUTE_INFO};
+    items.insert(items.end(), {LOOP, SPEED, SEPARATOR, ROUTE_INFO});
   } else {
-    items = {SPEED};
+    items.push_back(SPEED);
   }
-  auto item_width = [&](int item) {
+
+  auto item_width = [&](int item) -> float {
     switch (item) {
+      case REWIND: return button_width(icon::REWIND);
+      case PLAY: return button_width(play_icon_);
+      case FORWARD: return button_width(icon::FAST_FORWARD);
+      case SKIP_END: return button_width(icon::SKIP_END);
+      case TIME_DISPLAY: return button_width(time_text_.c_str());
       case LOOP: return button_width(loop_icon_);
       case SPEED: return speed_width;
       case SEPARATOR: return 1.0f;
@@ -223,45 +230,93 @@ void VideoWidget::drawPlaybackController() {
   };
   auto draw_item = [&](int item) {
     switch (item) {
-      case LOOP: if (toolButton(loop_icon_, "Loop playback", "loop")) loopPlaybackClicked(); break;
+      case REWIND:
+        if (toolButton(icon::REWIND, "Seek backward", "rewind")) can->seekTo(can->currentSec() - 1);
+        break;
+      case PLAY:
+        if (toolButton(play_icon_, play_tooltip_.c_str(), "play")) can->pause(!can->isPaused());
+        break;
+      case FORWARD:
+        if (toolButton(icon::FAST_FORWARD, "Seek forward", "fast-forward")) can->seekTo(can->currentSec() + 1);
+        break;
+      case SKIP_END:
+        ImGui::BeginDisabled(!skip_to_end_enabled_);
+        if (toolButton(icon::SKIP_END, "Skip to the end", "skip-end")) skipToEnd();
+        ImGui::EndDisabled();
+        break;
+      case TIME_DISPLAY:
+        if (toolButton(time_text_.c_str(), time_tooltip_.c_str(), "time_display")) toggleTimeDisplay();
+        break;
+      case LOOP:
+        if (toolButton(loop_icon_, "Loop playback", "loop")) loopPlaybackClicked();
+        break;
       case SPEED: drawSpeedDropdown(); break;
       case SEPARATOR: ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); break;
-      default: if (toolButton(icon::INFO_CIRCLE, "View route details", "route_info")) showRouteInfo(); break;
+      default:
+        if (toolButton(icon::INFO_CIRCLE, "View route details", "route_info")) showRouteInfo();
+        break;
     }
   };
 
-  float right_width = 0;
-  for (int item : items) right_width += item_width(item) + style.ItemSpacing.x;
+  auto group_width = [&](size_t begin, size_t end) {
+    float w = 0;
+    for (size_t i = begin; i < end; ++i) w += item_width(items[i]) + (i > begin ? style.ItemSpacing.x : 0);
+    return w;
+  };
+  const float left_width = group_width(0, spacer_index);
+  const float right_width = group_width(spacer_index, items.size());
 
-  ImGui::SameLine();
   const float start_x = ImGui::GetCursorPosX();
-  const float right_edge = start_x + ImGui::GetContentRegionAvail().x;
+  const float avail = ImGui::GetContentRegionAvail().x;
+  const float right_edge = start_x + avail;
+  const float extension_width = button_width(icon::RAQUO);
 
-  // QToolBar: the items that do not fit collapse into a ">>" extension button with a popup menu
-  const float extension_width = button_width(">>");
+  // QToolBarLayout: when everything fits the spacer takes the slack, otherwise the extension button is
+  // reserved at the right edge and the items are packed from the left until the next one does not fit
+  const bool fits = left_width + style.ItemSpacing.x + right_width <= avail;
   size_t visible = items.size();
-  float x = std::max(start_x, right_edge - right_width);
-  if (right_width > right_edge - start_x) {
-    x = start_x;
-    visible = 0;
-    for (float pos = start_x; visible < items.size(); ++visible) {
-      pos += item_width(items[visible]) + style.ItemSpacing.x;
-      if (pos > right_edge - extension_width) break;
+  if (!fits) {
+    const float usable = avail - (extension_width + style.ItemSpacing.x);
+    float used = 0;
+    for (visible = 0; visible < items.size(); ++visible) {
+      const float w = item_width(items[visible]) + (visible ? style.ItemSpacing.x : 0);
+      if (used + w > usable) break;
+      used += w;
     }
   }
 
   for (size_t i = 0; i < visible; ++i) {
-    i == 0 ? ImGui::SameLine(x) : ImGui::SameLine();
+    if (i == 0) ImGui::SetCursorPosX(start_x);
+    else if (fits && i == spacer_index) ImGui::SameLine(right_edge - right_width);
+    else ImGui::SameLine();
     draw_item(items[i]);
   }
 
   if (visible < items.size()) {
-    ImGui::SameLine(std::max(ImGui::GetCursorPosX(), right_edge - extension_width));
-    if (ImGui::Button(">>###toolbar_extension")) ImGui::OpenPopup("toolbar_extension_menu");
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y));
+    // the extension button sits fully inside the toolbar: its right edge is the content region right edge
+    const float extension_x = std::max(start_x, right_edge - extension_width);
+    visible == 0 ? ImGui::SetCursorPosX(extension_x) : ImGui::SameLine(extension_x);
+    if (ImGui::Button((std::string(icon::RAQUO) + "###toolbar_extension").c_str())) ImGui::OpenPopup("toolbar_extension_menu");
+    // the popup opens inward: its right edge is aligned with the button so it stays inside the window
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
     if (ImGui::BeginPopup("toolbar_extension_menu")) {
       for (size_t i = visible; i < items.size(); ++i) {
         switch (items[i]) {
+          case REWIND:
+            if (ImGui::MenuItem("Seek backward")) can->seekTo(can->currentSec() - 1);
+            break;
+          case PLAY:
+            if (ImGui::MenuItem(play_tooltip_.c_str())) can->pause(!can->isPaused());
+            break;
+          case FORWARD:
+            if (ImGui::MenuItem("Seek forward")) can->seekTo(can->currentSec() + 1);
+            break;
+          case SKIP_END:
+            if (ImGui::MenuItem("Skip to the end", nullptr, false, skip_to_end_enabled_)) skipToEnd();
+            break;
+          case TIME_DISPLAY:
+            if (ImGui::MenuItem(time_text_.c_str())) toggleTimeDisplay();
+            break;
           case LOOP:
             if (ImGui::MenuItem("Loop")) loopPlaybackClicked();
             break;
@@ -282,6 +337,19 @@ void VideoWidget::drawPlaybackController() {
       ImGui::EndPopup();
     }
   }
+}
+
+void VideoWidget::skipToEnd() {
+  // set speed to 1.0
+  speed_index_ = 7;  // like the Qt code this only checks the menu entry; the speed and the button text are unchanged
+  can->pause(false);
+  can->seekTo(can->maxSeconds() + 1);
+}
+
+void VideoWidget::toggleTimeDisplay() {
+  settings.absolute_time = !settings.absolute_time;
+  time_tooltip_ = settings.absolute_time ? "Elapsed time" : "Absolute time";
+  updateState();
 }
 
 static const float speeds[] = {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1., 2., 3., 5.};
@@ -565,15 +633,17 @@ void Slider::draw() {
 }
 
 ImRect Slider::handleRect() const {
-  const float handle_width = ImGui::GetStyle().GrabMinSize;
+  const float handle_width = SLIDER_LENGTH;
+  const float handle_height = std::min(SLIDER_THICKNESS, rect_.GetHeight());
   const int range = std::max(1, maximum() - minimum());
   const float x = rect_.Min.x + (float)(value() - minimum()) / range * std::max(0.0f, width() - handle_width);
-  return ImRect(ImVec2(x, rect_.Min.y + 2), ImVec2(x + handle_width, rect_.Max.y - 2));
+  const float y = rect_.GetCenter().y - handle_height / 2;
+  return ImRect(ImVec2(x, y), ImVec2(x + handle_width, y + handle_height));
 }
 
 // QSliderPrivate::pixelPosToRangeValue: handle left edge (window x) -> value over the groove minus the handle width
 int Slider::pixelPosToRangeValue(float x) const {
-  const float handle_width = ImGui::GetStyle().GrabMinSize;
+  const float handle_width = SLIDER_LENGTH;
   const float span = std::max(1.0f, width() - handle_width);
   return minimum() + (int)std::lround((maximum() - minimum()) * std::clamp((x - rect_.Min.x) / span, 0.0f, 1.0f));
 }
@@ -619,12 +689,7 @@ void Slider::paintEvent() {
     }
   }
 
-  // QStyle::SC_SliderHandle (Fusion): a white rounded handle with a 1px border
-  const ImU32 handle_color = settings.theme == DARK_THEME
-                                 ? IM_COL32(DarkTheme::button.r, DarkTheme::button.g, DarkTheme::button.b, 255)
-                                 : IM_COL32(255, 255, 255, 255);
-  p->AddRectFilled(handle_rect.Min, handle_rect.Max, handle_color, 2.0f);
-  p->AddRect(handle_rect.Min, handle_rect.Max, ImGui::GetColorU32(ImGuiCol_Border), 2.0f, 0, 1.0f);
+  drawSliderHandle(p, handle_rect);
 
   if (thumbnail_dispaly_time >= 0) {
     float left = rect_.Min.x + (float)((thumbnail_dispaly_time - min) * width() / span) - 1;

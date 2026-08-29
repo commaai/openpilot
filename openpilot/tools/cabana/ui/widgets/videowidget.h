@@ -137,6 +137,8 @@ protected:
   void drawCameraWidget();
   void createPlaybackController();
   void drawPlaybackController();
+  void skipToEnd();
+  void toggleTimeDisplay();
   void createSpeedDropdown();
   void drawSpeedDropdown();
   void drawSpeedMenuItems();

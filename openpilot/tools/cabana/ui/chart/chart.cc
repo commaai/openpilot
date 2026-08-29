@@ -80,16 +80,24 @@ ChartView::~ChartView() {
 }
 
 void ChartView::drawMenuActions() {
-  // series types
+  // series types: an exclusive QActionGroup, the current one is marked with a radio bullet on the left
   static const char *types[] = {"Line", "Step Line", "Scatter"};
+  const float indent = ImGui::GetFontSize();
+  ImGui::Indent(indent);
   for (int i = 0; i < 3; ++i) {
-    if (ImGui::MenuItem(types[i], nullptr, i == (int)series_type)) {
+    if (ImGui::MenuItem(types[i])) {
       setSeriesType((SeriesType)i);
+    }
+    if (i == (int)series_type) {
+      const ImVec2 item_min = ImGui::GetItemRectMin(), item_max = ImGui::GetItemRectMax();
+      ImGui::RenderBullet(ImGui::GetWindowDrawList(), ImVec2(item_min.x - indent / 2, (item_min.y + item_max.y) / 2),
+                          ImGui::GetColorU32(ImGuiCol_Text));
     }
   }
   ImGui::Separator();
   if (ImGui::MenuItem("Manage Signals")) manageSignals();
   if (ImGui::MenuItem("Split Chart", nullptr, false, split_chart_enabled)) charts_widget->splitChart(this);
+  ImGui::Unindent(indent);
 }
 
 // immediate mode: the buttons (and their menus) are drawn every frame from paintEvent, after resizeEvent placed them
@@ -371,6 +379,7 @@ double ChartView::niceNumber(double x, bool ceiling) {
 }
 
 void ChartView::contextMenuEvent() {
+  if (drawing_ghost) return;
   // like Qt, the menu opens on right press; a right release with no menu open reaches mouseReleaseEvent
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
       !ImGui::IsAnyItemActive()) {
@@ -379,16 +388,21 @@ void ChartView::contextMenuEvent() {
   context_menu_id = ImGui::GetID("context_menu");
   if (ImGui::BeginPopup("context_menu")) {
     drawMenuActions();
+    // the menu holds checkable actions, so every entry keeps the same left margin
+    const float indent = ImGui::GetFontSize();
+    ImGui::Indent(indent);
     ImGui::Separator();
     if (ImGui::MenuItem("Undo Zoom", nullptr, false, charts_widget->zoom_undo_stack.canUndo())) charts_widget->zoom_undo_stack.undo();
     if (ImGui::MenuItem("Redo Zoom", nullptr, false, charts_widget->zoom_undo_stack.canRedo())) charts_widget->zoom_undo_stack.redo();
     ImGui::Separator();
     if (ImGui::MenuItem("Close")) charts_widget->removeChart(this);
+    ImGui::Unindent(indent);
     ImGui::EndPopup();
   }
 }
 
 void ChartView::mousePressEvent() {
+  if (drawing_ghost) return;
   const ImVec2 pos = ImGui::GetMousePos();
   // a press on the child buttons (close/manage) does not reach the widget in Qt
   const bool widget_pressed = ImGui::IsMouseClicked(ImGuiMouseButton_Left) && rect.Contains(pos) &&
@@ -412,6 +426,7 @@ void ChartView::mousePressEvent() {
 }
 
 void ChartView::mouseMoveEvent() {
+  if (drawing_ghost) return;
   const ImVec2 pos = ImGui::GetMousePos();
   const ImVec2 delta = ImGui::GetIO().MouseDelta;
   // Qt only sends a move event when the mouse actually moves; a click alone must not hide the tip
@@ -443,6 +458,7 @@ void ChartView::mouseMoveEvent() {
 }
 
 void ChartView::mouseReleaseEvent() {
+  if (drawing_ghost) return;
   const bool left_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
   const bool right_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right) && rect.Contains(ImGui::GetMousePos());
   if (!left_released && !right_released) return;
@@ -534,6 +550,7 @@ void ChartView::resetChartCache() {
 void ChartView::draw(float width) {
   ImGui::PushID(this);
   width = std::max(width, (float)CHART_MIN_WIDTH);
+  plot_hovered = false;
   // the tile geometry is known before the child is entered, so it stays valid when imgui culls a scrolled out chart
   const ImVec2 tile_pos = ImGui::GetCursorScreenPos();
   rect = ImRect(tile_pos, tile_pos + ImVec2(width, sizeHint().y));
@@ -557,8 +574,30 @@ void ChartView::draw(float width) {
   ImGui::EndChild();
   // Qt only paints visible charts: a chart scrolled out of the viewport draws no tip
   const ImRect visible_rect = charts_widget->chartVisibleRect(this);
-  if (visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label->paintEvent();
+  if (!drawing_ghost && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label->paintEvent();
   ImGui::PopID();
+}
+
+void ChartView::drawGhost(float width) {
+  // the ghost is drawn in its own window: keep the geometry of the live tile so hit testing stays correct
+  drawing_ghost = true;
+  const ImRect saved_rect = rect, saved_plot_area = plot_area, saved_move = move_icon_rect;
+  const ImRect saved_close = close_btn_rect, saved_manage = manage_btn_rect;
+  const std::vector<ImRect> saved_legend = legend_rects;
+  const float saved_header_bottom = header_bottom;
+  const bool saved_plot_hovered = plot_hovered;
+
+  draw(width);
+
+  rect = saved_rect;
+  plot_area = saved_plot_area;
+  move_icon_rect = saved_move;
+  close_btn_rect = saved_close;
+  manage_btn_rect = saved_manage;
+  legend_rects = saved_legend;
+  header_bottom = saved_header_bottom;
+  plot_hovered = saved_plot_hovered;
+  drawing_ghost = false;
 }
 
 void ChartView::paintEvent() {

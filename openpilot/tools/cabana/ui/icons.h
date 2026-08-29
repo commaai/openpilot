@@ -25,6 +25,7 @@ constexpr const char PAUSE[]                  = "\xef\x93\x84";
 constexpr const char PENCIL[]                 = "\xef\x93\x8b";
 constexpr const char PLAY[]                   = "\xef\x93\xb5";
 constexpr const char PLUS[]                   = "\xef\x93\xbe";
+constexpr const char RAQUO[]                  = "\xc2\xbb";  // U+00BB (not a bootstrap icon): the QToolBar extension button
 constexpr const char REPEAT[]                 = "\xef\xa0\x93";
 constexpr const char REPEAT_1[]               = "\xef\xa0\x92";
 constexpr const char REWIND[]                 = "\xef\xa0\x99";

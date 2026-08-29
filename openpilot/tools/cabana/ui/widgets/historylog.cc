@@ -301,8 +301,9 @@ void LogsWidget::drawTable() {
   // verticalHeader()->setDefaultSectionSize(delegate->sizeForBytes(8).height())
   const float row_height = delegate.sizeForBytes(8).y;
 
-  // fixed section sizes and a horizontal scrollbar, no alternating row colors
-  const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_BordersInnerV |
+  // fixed section sizes and a horizontal scrollbar, no alternating row colors.
+  // QTableView::showGrid defaults to true with Qt::SolidLine: the grid is drawn between rows and columns
+  const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_BordersInner |
                                 ImGuiTableFlags_SizingFixedFit;
   // inner_width: the sum of the fixed section sizes, so the columns keep their size and the table scrolls
   float inner_width = 0;
@@ -334,10 +335,14 @@ void LogsWidget::drawTable() {
         for (int col = 0; col < cols; ++col) {
           if (!ImGui::TableSetColumnIndex(col)) continue;
           if (col == 0) {
+            // QTableView has no hover highlight, only the selection background
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
             if (ImGui::Selectable("##row", selected_row == row, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap,
                                   ImVec2(0, row_height - style.CellPadding.y * 2))) {
               selected_row = row;
             }
+            ImGui::PopStyleColor(2);
           }
           const bool hex_cell = model.isHexMode() && col == 1;
           delegate.paint(painter, ImGui::TableGetCellBgRect(table, col), selected_row == row, false,

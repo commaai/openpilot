@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <malloc.h>
 #include <cstring>
 #include <filesystem>
 #include <memory>
@@ -128,6 +129,9 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
 }  // namespace
 
 int main(int argc, char *argv[]) {
+  // Worker threads (sparklines, chart series, replay) would each get their own glibc malloc arena and the arenas
+  // fragment without bound (RSS grew ~3 MB/min with charts open); Qt's build stays flat on one arena as well.
+  mallopt(M_ARENA_MAX, 1);
   // ensure the current dir matches the executable's directory
   std::error_code ec;
   std::filesystem::current_path(executableDir(), ec);

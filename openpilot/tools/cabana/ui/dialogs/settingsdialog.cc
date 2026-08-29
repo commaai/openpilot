@@ -1,5 +1,6 @@
 #include "tools/cabana/ui/dialogs/settingsdialog.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "imgui.h"
@@ -12,6 +13,26 @@
 
 const int MIN_CACHE_MINIUTES = 30;
 const int MAX_CACHE_MINIUTES = 120;
+
+namespace {
+
+// QFormLayout: the label sits in the left column, the field in the right one, all fields aligned
+const char *kFormLabels[] = {"Color Theme", "FPS", "Max Cached Minutes", "Drag Direction", "Chart Height"};
+
+float formLabelWidth() {
+  float w = 0.0f;
+  for (const char *label : kFormLabels) w = std::max(w, ImGui::CalcTextSize(label).x);
+  return w + ImGui::GetStyle().ItemSpacing.x * 2;  // QFormLayout keeps a horizontal spacing between label and field
+}
+
+void formRow(const char *label, float label_width) {
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted(label);
+  ImGui::SameLine(label_width);
+  ImGui::SetNextItemWidth(-FLT_MIN);
+}
+
+}  // namespace
 
 void SettingsDialog::open() {
   theme_ = settings.theme;
@@ -38,21 +59,28 @@ void SettingsDialog::draw() {
   // QSpinBox refuses a keystroke that would leave the range (typing 999 into FPS keeps 99); InputInt takes
   // no character filter, so out of range text is clamped after the edit instead
 
+  const float label_width = formLabelWidth();
+
   ImGui::SeparatorText("General");
   static const char *themes[] = {"Automatic", "Light", "Dark"};
-  ImGui::Combo("Color Theme", &theme_, themes, 3);
+  formRow("Color Theme", label_width);
+  ImGui::Combo("##Color Theme", &theme_, themes, 3);
   ImGui::SetItemTooltip("You may need to restart cabana after changes theme");
-  if (ImGui::InputInt("FPS", &fps_, 10, 10, spin_flags)) fps_ = std::clamp(fps_, 10, 100);
-  if (ImGui::InputInt("Max Cached Minutes", &cached_minutes_, 1, 10, spin_flags)) {
+  formRow("FPS", label_width);
+  if (ImGui::InputInt("##FPS", &fps_, 10, 10, spin_flags)) fps_ = std::clamp(fps_, 10, 100);
+  formRow("Max Cached Minutes", label_width);
+  if (ImGui::InputInt("##Max Cached Minutes", &cached_minutes_, 1, 10, spin_flags)) {
     cached_minutes_ = std::clamp(cached_minutes_, MIN_CACHE_MINIUTES, MAX_CACHE_MINIUTES);
   }
 
   ImGui::SeparatorText("New Signal Settings");
   static const char *directions[] = {"MSB First", "LSB First", "Always Little Endian", "Always Big Endian"};
-  ImGui::Combo("Drag Direction", &drag_direction_, directions, 4);
+  formRow("Drag Direction", label_width);
+  ImGui::Combo("##Drag Direction", &drag_direction_, directions, 4);
 
   ImGui::SeparatorText("Chart");
-  if (ImGui::InputInt("Chart Height", &chart_height_, 10, 10, spin_flags)) chart_height_ = std::clamp(chart_height_, 100, 500);
+  formRow("Chart Height", label_width);
+  if (ImGui::InputInt("##Chart Height", &chart_height_, 10, 10, spin_flags)) chart_height_ = std::clamp(chart_height_, 100, 500);
 
   ImGui::Checkbox("Enable live stream logging", &log_livestream_);
   ImGui::BeginDisabled(!log_livestream_);

@@ -1,5 +1,6 @@
 #include "tools/cabana/ui/dialogs/streamselector.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 
@@ -222,7 +223,11 @@ int ipInputCallback(ImGuiInputTextCallbackData *data) {
 void OpenDeviceWidget::draw() {
   ImGui::RadioButton("MSGQ", &mode_, 0);
   ImGui::RadioButton("ZMQ", &mode_, 1);
-  ImGui::SameLine();
+  // QFormLayout: the radio buttons are the label column, the ip address is the field column
+  const float label_width = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x +
+                            std::max(ImGui::CalcTextSize("MSGQ").x, ImGui::CalcTextSize("ZMQ").x) +
+                            ImGui::GetStyle().ItemInnerSpacing.x;
+  ImGui::SameLine(label_width);
   ImGui::BeginDisabled(mode_ != 1);
   ImGui::SetNextItemWidth(-1.0f);
   const std::string prev = ip_address_;
