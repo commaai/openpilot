@@ -388,7 +388,7 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
 
   ImRect rect(option_rect.Min.x + h_margin, option_rect.Min.y + v_margin, option_rect.Max.x - h_margin, option_rect.Max.y - v_margin);
   // selection background is painted by the row's Selectable
-  const ImU32 text_color = ImGui::GetColorU32(ImGuiCol_Text);
+  const ImU32 text_color = selected ? highlightedTextColor() : ImGui::GetColorU32(ImGuiCol_Text);
 
   if (column == 0) {
     if (item->type == SignalModel::Item::Sig) {
@@ -454,6 +454,8 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
 }
 
 void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *model) {
+  const bool take_focus = focus_item_ == item;
+  if (take_focus) focus_item_ = nullptr;
   if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Node || item->type == SignalModel::Item::Offset ||
       item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::MultiplexValue ||
       item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
@@ -462,9 +464,11 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     else if (item->type == SignalModel::Item::Node) validator = node_validator;
     else validator = double_validator;
 
+    take_focus_ = take_focus;
     lineEditor(item, model, validator);
   } else if (item->type == SignalModel::Item::Size) {
     int v = item->sig->size;
+    if (take_focus) ImGui::SetKeyboardFocusHere();
     bool changed = ImGui::InputInt("##editor", &v);
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
       setModelData(item, model, std::clamp(v, 1, CAN_MAX_DATA_BYTES));
@@ -491,14 +495,15 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     const bool clicked = ImGui::Selectable("##editor", false, 0, ImVec2(0, rowHeight()));
     ImGui::PopStyleColor();
     drawElidedText(ImGui::GetWindowDrawList(), ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()), model->data(item, 1),
-                   ImGui::GetColorU32(ImGuiCol_Text), false);
-    if (clicked) {
+                   highlightedTextColor(), false);
+    if (clicked || take_focus) {
       desc_dlg_ = std::make_unique<ValueDescriptionDlg>(item->sig->val_desc);
       desc_dlg_->title = item->sig->name;
       desc_sig_ = item->sig;
     }
   } else {
     // QStyledItemDelegate::createEditor: plain QLineEdit, no validator
+    take_focus_ = take_focus;
     lineEditor(item, model, nullptr);
   }
 }
@@ -528,6 +533,7 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
   const bool was_active = editing && editor_active_;  // the editor had the focus at the end of the last frame
 
   std::string text = editing ? edit_text_ : model->data(item, 1);
+  if (std::exchange(take_focus_, false)) ImGui::SetKeyboardFocusHere();
   if (editing && refocus_editor_) {
     ImGui::SetKeyboardFocusHere();  // QLineEdit keeps the focus when the input is not acceptable
     refocus_editor_ = false;
@@ -873,10 +879,17 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 
   ImGui::PushID(item);
   ImGui::BeginDisabled(!(flags & SignalModel::ItemIsEnabled));
-  if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height))) {
+  // QTreeView has no hover highlight, only the selection background
+  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+  ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
+  const bool row_clicked = ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
+  ImGui::PopStyleColor(2);
+  if (row_clicked) {
     // setCurrentIndex + clicked
     current_sig_ = item->sig;
     current_type_ = item->type;
+    // AllEditTriggers: currentChanged opens the editor of the new current item
+    delegate->focus_item_ = item;
     rowClicked(item);
   }
   if (item->type == SignalModel::Item::Sig && item->sig == scroll_to_sig_) {
@@ -918,9 +931,14 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
     if (ImGui::Checkbox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
   } else if (flags1 & SignalModel::ItemIsEditable) {
-    ImGui::SetCursorScreenPos(rect1.Min);
-    ImGui::SetNextItemWidth(rect1.GetWidth());
-    delegate->createEditor(item, model.get());
+    // QAbstractItemView only creates the editor for the current item; the others paint through the delegate
+    if (selected) {
+      ImGui::SetCursorScreenPos(rect1.Min);
+      ImGui::SetNextItemWidth(rect1.GetWidth());
+      delegate->createEditor(item, model.get());
+    } else {
+      delegate->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
+    }
   } else {
     delegate->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
   }

@@ -71,6 +71,10 @@ void draw() {
   }
   bool result = false, done = false;
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  // AlwaysAutoResize sizes the popup from its contents; keep the title bar text from being clipped
+  const ImGuiStyle &style = ImGui::GetStyle();
+  const float min_width = ImGui::CalcTextSize(box.title.c_str()).x + style.FramePadding.x * 2 + style.WindowPadding.x * 2;
+  ImGui::SetNextWindowSizeConstraints(ImVec2(min_width, 0.0f), ImVec2(FLT_MAX, FLT_MAX));
   if (ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 480.0f);
     ImGui::TextUnformatted(box.text.c_str());

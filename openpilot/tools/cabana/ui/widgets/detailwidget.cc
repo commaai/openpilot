@@ -432,7 +432,7 @@ bool EditMessageDialog::draw() {
     const std::string node_before = node;
     if (inputText("##node", &node)) applyNameValidator(node, node_before);
     row("Comment");
-    ImGui::InputTextMultiline("##comment", comment_edit.data(), comment_edit.capacity() + 1, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 4),
+    ImGui::InputTextMultiline("##comment", comment_edit.data(), comment_edit.capacity() + 1, ImVec2(-FLT_MIN, 185.0f),  // QTextEdit default sizeHint
                               ImGuiInputTextFlags_CallbackResize, imguiResizeCallback, &comment_edit);
     const bool comment_active = ImGui::IsItemActive();
 

@@ -40,10 +40,9 @@ void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool s
   const ImRect item_rect = rect;
   // the Qt model never returns Qt::ForegroundRole, so the delegate's "inactive" is always false there:
   // inactive rows keep their byte colors and only the text is grayed by the view's palette
-  // no separate HighlightedText in imgui; inactive rows fade it (alpha 100)
-  ImVec4 highlighted = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-  if (inactive) highlighted.w = 100 / 255.0f;
-  const ImU32 highlighted_color = ImGui::GetColorU32(highlighted);
+  // inactive rows fade the highlighted text (alpha 100)
+  ImU32 highlighted_color = highlightedTextColor();
+  if (inactive) highlighted_color = (highlighted_color & ~IM_COL32_A_MASK) | ((ImU32)100 << IM_COL32_A_SHIFT);
   const ImU32 text_color = ImGui::GetColorU32(inactive ? ImGuiCol_TextDisabled : ImGuiCol_Text);
   if (!bytes) {
     ImGui::PushStyleColor(ImGuiCol_Text, selected ? highlighted_color : text_color);

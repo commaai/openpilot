@@ -162,10 +162,20 @@ void applyTheme(int theme) {
     style.Colors[ImGuiCol_Tab] = colorRgb(219, 224, 230);
     style.Colors[ImGuiCol_TabSelected] = colorRgb(250, 251, 253);
     style.Colors[ImGuiCol_DockingEmptyBg] = colorRgb(244, 246, 248);
+    // QPalette::Highlight is opaque in Qt; the imgui light defaults are translucent
+    const CabanaColor highlight{48, 140, 198};
+    style.Colors[ImGuiCol_Header] = colorRgb(highlight.r, highlight.g, highlight.b);
+    style.Colors[ImGuiCol_HeaderHovered] = colorRgb(highlight.lighter(115).r, highlight.lighter(115).g, highlight.lighter(115).b);
+    style.Colors[ImGuiCol_HeaderActive] = colorRgb(highlight.lighter(130).r, highlight.lighter(130).g, highlight.lighter(130).b);
   }
 }
 
 bool isDarkTheme() { return g_dark; }
+
+ImU32 highlightedTextColor() {
+  return g_dark ? IM_COL32(DarkTheme::window_text.r, DarkTheme::window_text.g, DarkTheme::window_text.b, 255)
+                : IM_COL32(255, 255, 255, 255);
+}
 
 void pushMonoFont() { if (g_mono_font) ImGui::PushFont(g_mono_font); }
 void popMonoFont() { if (g_mono_font) ImGui::PopFont(); }

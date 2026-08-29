@@ -99,7 +99,7 @@ private:
   bool value_edit_modified = false;  // QLineEdit::isModified
   bool filters_widget_visible = true;
   bool export_btn_enabled = false;
-  int selected_row = -1;
+  int selected_row = -1, selected_col = -1;
   HeaderView header;
   MessageBytesDelegate delegate;
   Connections connections_;

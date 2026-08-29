@@ -470,8 +470,10 @@ void MessageView::drawRow(int row) {
         }
         scroll_to_current_ = false;
       }
-      // the tooltip is on the Name item in Qt; the row carries it here
-      if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+      // the tooltip is on the Name item in Qt, so only show it while the mouse is over the Name column
+      const ImGuiTableColumn &name_col = ImGui::GetCurrentTable()->Columns[MessageListModel::Column::NAME];
+      const float mouse_x = ImGui::GetIO().MousePos.x;
+      if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && mouse_x >= name_col.MinX && mouse_x < name_col.MaxX) {
         const std::string tooltip = model_->toolTip(row, MessageListModel::Column::NAME);
         if (!tooltip.empty()) {
           const size_t nl = tooltip.find('\n');

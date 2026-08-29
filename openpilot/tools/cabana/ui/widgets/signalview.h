@@ -143,6 +143,8 @@ public:
   const float minmax_font = 10.0f;  // QFont pixelSize 10
   const int color_label_width = 18;
   mutable ImVec2 button_size = {};
+  // AllEditTriggers/CurrentChanged: the editor is created for the item that just became current and takes the focus
+  SignalModel::Item *focus_item_ = nullptr;
   mutable std::function<void()> pending_commit;
 
 private:
@@ -156,6 +158,7 @@ private:
   std::string edit_original_;    // value the editor was opened with, restored by Escape
   bool editor_active_ = false;   // editor had the keyboard focus last frame
   bool refocus_editor_ = false;  // reopen the editor rejected by the validator
+  bool take_focus_ = false;      // the editor was just created and takes the focus
   bool enter_pressed_ = false;
   std::unique_ptr<ValueDescriptionDlg> desc_dlg_;
   const cabana::Signal *desc_sig_ = nullptr;

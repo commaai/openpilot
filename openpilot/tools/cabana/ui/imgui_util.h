@@ -60,6 +60,7 @@ inline bool comboBox(const char *label, int *index, const char *const items[], i
   return ImGui::Combo(label, index, items, count);
 }
 
+ImU32 highlightedTextColor();  // QPalette::HighlightedText
 void pushMonoFont();
 void popMonoFont();
 void pushBoldFont();

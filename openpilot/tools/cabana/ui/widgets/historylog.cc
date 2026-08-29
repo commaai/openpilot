@@ -200,6 +200,7 @@ void LogsWidget::modelReset() {
   value_edit.clear();
   value_edit_modified = false;
   comp_box = 0;
+  selected_row = selected_col = -1;  // QAbstractItemView clears the selection on a model reset
   filters_widget_visible = !model.sigs.empty();
 }
 
@@ -262,13 +263,12 @@ void LogsWidget::draw() {
         filterChanged();
       }
     }
-    // setClearButtonEnabled: the button only shows when the field is non-empty;
-    // QLineEdit::clear() resets isModified, so filterChanged() is a no-op here (Qt quirk)
+    // setClearButtonEnabled: the button only shows when the field is non-empty
     if (!value_edit.empty()) {
       ImGui::SameLine(0, 0);
       if (ImGui::Button(icon::X)) {
         value_edit.clear();
-        value_edit_modified = false;
+        value_edit_modified = true;  // QLineEdit::clear() pushes an undo state, isModified stays true
         filterChanged();
       }
     }
@@ -287,7 +287,8 @@ void LogsWidget::draw() {
 void LogsWidget::drawTable() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const int cols = model.columnCount();
-  header.width = ImGui::GetContentRegionAvail().x;
+  // rect().width() is the header viewport: the table's cell padding and the vertical scrollbar are not part of it
+  header.width = ImGui::GetContentRegionAvail().x - style.CellPadding.x * 2 * cols - style.ScrollbarSize;
 
   // HeaderView::ResizeToContents
   std::vector<ImVec2> sizes(cols);
@@ -335,21 +336,21 @@ void LogsWidget::drawTable() {
         ImGui::PushID(row);
         for (int col = 0; col < cols; ++col) {
           if (!ImGui::TableSetColumnIndex(col)) continue;
-          if (col == 0) {
-            // QTableView has no hover highlight, only the selection background. Selectable() prefers
-            // HeaderHovered over Header whenever the row is hovered, even when it is selected, so the selected
-            // row has to keep the selection color as its hover color or it looks unselected.
-            ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                                  selected_row == row ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
-            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
-            if (ImGui::Selectable("##row", selected_row == row, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap,
-                                  ImVec2(0, row_height - style.CellPadding.y * 2))) {
-              selected_row = row;
-            }
-            ImGui::PopStyleColor(2);
+          // QTableView selects items, not rows (SelectionBehavior::SelectItems)
+          const bool cell_selected = selected_row == row && selected_col == col;
+          // QTableView has no hover highlight, only the selection background
+          ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+          ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
+          ImGui::PushID(col);
+          if (ImGui::Selectable("##cell", cell_selected, ImGuiSelectableFlags_AllowOverlap,
+                                ImVec2(0, row_height - style.CellPadding.y * 2))) {
+            selected_row = row;
+            selected_col = col;
           }
+          ImGui::PopID();
+          ImGui::PopStyleColor(2);
           const bool hex_cell = model.isHexMode() && col == 1;
-          delegate.paint(painter, ImGui::TableGetCellBgRect(table, col), selected_row == row, false,
+          delegate.paint(painter, ImGui::TableGetCellBgRect(table, col), cell_selected, false,
                          hex_cell ? std::string() : model.data(row, col), hex_cell ? &m.data : nullptr, hex_cell ? &m.colors : nullptr);
         }
         ImGui::PopID();
