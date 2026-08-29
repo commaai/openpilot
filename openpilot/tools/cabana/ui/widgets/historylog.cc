@@ -336,8 +336,11 @@ void LogsWidget::drawTable() {
         for (int col = 0; col < cols; ++col) {
           if (!ImGui::TableSetColumnIndex(col)) continue;
           if (col == 0) {
-            // QTableView has no hover highlight, only the selection background
-            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+            // QTableView has no hover highlight, only the selection background. Selectable() prefers
+            // HeaderHovered over Header whenever the row is hovered, even when it is selected, so the selected
+            // row has to keep the selection color as its hover color or it looks unselected.
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
+                                  selected_row == row ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
             ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
             if (ImGui::Selectable("##row", selected_row == row, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap,
                                   ImVec2(0, row_height - style.CellPadding.y * 2))) {

@@ -447,7 +447,9 @@ void MessageView::drawRow(int row) {
       // clipped away when the table is scrolled horizontally
       row_item_submitted = true;
       // QAbstractItemView selects on press. QTreeView has no hover highlight, only the selection background.
-      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 0, 0, 0));
+      // Selectable() prefers HeaderHovered over Header whenever the row is hovered, even when it is selected,
+      // so the selected row has to keep the selection color as its hover color or it looks unselected.
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
       ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
       if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick, ImVec2(0, row_height))) {
         setCurrentIndex(row);
