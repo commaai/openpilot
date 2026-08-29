@@ -14,8 +14,6 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "implot.h"
-#include "implot_internal.h"
 #include <GLFW/glfw3.h>
 
 #include "json11/json11.hpp"
@@ -1037,20 +1035,6 @@ void MainWindow::draw() {
   FileDialog::draw();
   MessageBox::draw();
   drawHelpOverlay();
-  {
-    static double dbg_t = 0;
-    if (ImGui::GetTime() - dbg_t > 10.0) {
-      dbg_t = ImGui::GetTime();
-      ImGuiContext &g = *GImGui;
-      size_t conns = 0;
-      ImFontAtlas *atlas = g.IO.Fonts;
-      fprintf(stderr, "DBG t=%.0f windows=%d byid=%d tables=%d tabbars=%d settings=%d plots=%d items=%d atlas=%dx%d baked=%d texlist=%d\n", ImGui::GetTime(), g.Windows.Size,
-              g.WindowsById.Data.Size, g.Tables.GetAliveCount(), g.TabBars.GetAliveCount(), (int)g.SettingsWindows.size(),
-              GImPlot ? GImPlot->Plots.GetAliveCount() : -1, GImPlot ? GImPlot->CurrentItems ? GImPlot->CurrentItems->ItemPool.GetAliveCount() : 0 : -1,
-              atlas->TexData ? atlas->TexData->Width : 0, atlas->TexData ? atlas->TexData->Height : 0, atlas->Builder ? atlas->Builder->BakedPool.Size : -1, atlas->TexList.Size);
-      (void)conns;
-    }
-  }
 
   // Escape closes the top-most non-modal popup (a QMenu or a QComboBox popup) on its own; the modal dialogs
   // handled Escape themselves above when they were on top
