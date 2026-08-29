@@ -82,7 +82,7 @@ void SettingsDialog::draw() {
   formRow("Chart Height", label_width);
   if (ImGui::InputInt("##Chart Height", &chart_height_, 10, 10, spin_flags)) chart_height_ = std::clamp(chart_height_, 100, 500);
 
-  ImGui::Checkbox("Enable live stream logging", &log_livestream_);
+  checkBox("Enable live stream logging", &log_livestream_);
   ImGui::BeginDisabled(!log_livestream_);
   ImGui::SetNextItemWidth(-90.0f);
   ImGui::InputText("##log_path", log_path_.data(), log_path_.size() + 1, ImGuiInputTextFlags_ReadOnly);

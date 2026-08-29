@@ -39,11 +39,11 @@ void OpenReplayWidget::draw() {
       }
     });
   }
-  ImGui::Checkbox("Road camera", &cameras_[0]);
+  checkBox("Road camera", &cameras_[0]);
   ImGui::SameLine();
-  ImGui::Checkbox("Driver camera", &cameras_[1]);
+  checkBox("Driver camera", &cameras_[1]);
   ImGui::SameLine();
-  ImGui::Checkbox("Wide road camera", &cameras_[2]);
+  checkBox("Wide road camera", &cameras_[2]);
   routes_dialog_.draw();
 }
 
@@ -164,7 +164,7 @@ void OpenPandaWidget::draw() {
     }
     if (has_fd_) {
       ImGui::SameLine();
-      ImGui::Checkbox("CAN-FD", &config.bus_config[i].can_fd);
+      checkBox("CAN-FD", &config.bus_config[i].can_fd);
       ImGui::SameLine();
       ImGui::TextUnformatted("Data Speed (kbps):");
       ImGui::SameLine();

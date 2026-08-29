@@ -962,7 +962,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   } else if (flags1 & SignalModel::ItemIsUserCheckable) {
     bool checked = model->checkState(item);
     ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
-    if (ImGui::Checkbox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
+    if (checkBox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
   } else if (flags1 & SignalModel::ItemIsEditable) {
     // QAbstractItemView only creates the editor for the current item; the others paint through the delegate
     if (selected && delegate->open_item_ == item) {

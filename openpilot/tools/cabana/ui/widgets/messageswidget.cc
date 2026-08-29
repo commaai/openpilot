@@ -86,7 +86,7 @@ void MessagesWidget::createToolBar() {
   ImGui::SetCursorPosX(std::max(x, ImGui::GetCursorPosX()));
 
   bool suppress_defined_signals = settings.suppress_defined_signals;
-  if (ImGui::Checkbox("Suppress Signals", &suppress_defined_signals)) can->suppressDefinedSignals(suppress_defined_signals);
+  if (checkBox("Suppress Signals", &suppress_defined_signals)) can->suppressDefinedSignals(suppress_defined_signals);
   ImGui::SetItemTooltip("Suppress defined signals");
   ImGui::SameLine();
 

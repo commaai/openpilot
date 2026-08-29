@@ -153,8 +153,8 @@ void MainWindow::drawMenuBar() {
     if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
     ImGui::Separator();
     // QMenu draws the check indicator of a checkable action on the left of the text
-    if (ImGui::Checkbox(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", &messages_visible_)) ImGui::CloseCurrentPopup();
-    if (ImGui::Checkbox(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), &video_visible_)) ImGui::CloseCurrentPopup();
+    if (checkBox(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", &messages_visible_)) ImGui::CloseCurrentPopup();
+    if (checkBox(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), &video_visible_)) ImGui::CloseCurrentPopup();
     ImGui::Separator();
     if (ImGui::MenuItem("Reset Window Layout")) {
       messages_visible_ = video_visible_ = true;

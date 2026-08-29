@@ -221,9 +221,9 @@ void FindSignalDlg::drawPropertiesGroup() {
   ImGui::SetNextItemWidth(70);
   if (ImGui::InputInt("##max_size", &max_size, 1, 10)) max_size = std::clamp(max_size, 1, 64);
   ImGui::SameLine();
-  ImGui::Checkbox("Little endian", &litter_endian);
+  checkBox("Little endian", &litter_endian);
   ImGui::SameLine();
-  ImGui::Checkbox("Signed", &is_signed);
+  checkBox("Signed", &is_signed);
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Factor");
   ImGui::SameLine(80);
