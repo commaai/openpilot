@@ -260,13 +260,14 @@ struct AsyncRouteLoader::Impl {
     join();
   }
 
-  void start(const std::string &route_name_value, const std::string &data_dir_value, const std::string &dbc_name_value) {
+  void start(const std::string &route_name_value, const std::string &data_dir_value, const std::string &dbc_name_value, bool migrate_value) {
     join();
     {
       std::lock_guard<std::mutex> lock(mutex);
       route_name = route_name_value;
       data_dir = data_dir_value;
       dbc_name = dbc_name_value;
+      migrate = migrate_value;
       result.reset();
       error_text.clear();
     }
@@ -282,7 +283,7 @@ struct AsyncRouteLoader::Impl {
 
     worker = std::thread([this]() {
       try {
-        RouteData route_data = load_route_data(route_name, data_dir, dbc_name, [this](const RouteLoadProgress &progress) {
+        RouteData route_data = load_route_data(route_name, data_dir, dbc_name, migrate, [this](const RouteLoadProgress &progress) {
           total_segments.store(progress.total_segments > 0 ? progress.total_segments : progress.segment_count);
           segments_downloaded.store(progress.segments_downloaded);
           segments_parsed.store(progress.segments_parsed);
@@ -346,6 +347,7 @@ struct AsyncRouteLoader::Impl {
   std::string route_name;
   std::string data_dir;
   std::string dbc_name;
+  bool migrate = true;
   std::string error_text;
   std::atomic<bool> active{false};
   std::atomic<bool> completed{false};
@@ -361,8 +363,8 @@ AsyncRouteLoader::AsyncRouteLoader(bool enable_terminal_progress)
 
 AsyncRouteLoader::~AsyncRouteLoader() = default;
 
-void AsyncRouteLoader::start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name) {
-  impl_->start(route_name, data_dir, dbc_name);
+void AsyncRouteLoader::start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name, bool migrate) {
+  impl_->start(route_name, data_dir, dbc_name, migrate);
 }
 
 RouteLoadSnapshot AsyncRouteLoader::snapshot() const {
