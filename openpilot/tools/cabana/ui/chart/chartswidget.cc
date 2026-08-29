@@ -20,6 +20,7 @@ const int CHART_SPACING = 4;
 const int START_DRAG_DISTANCE = 10;  // QApplication::startDragDistance()
 const float TOOLBAR_ITEM_SPACING = 1.0f;    // QStyle::PM_ToolBarItemSpacing
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizontal margin
+const float TOOLBAR_MARGIN = 4.0f;          // QToolBar layout margin: the items are inset from the frame
 const float MENU_ARROW_SIZE = 6.0f;         // QStyle::PE_IndicatorArrowDown on a toolbutton menu
 const float MENU_ARROW_SPACING = 5.0f;      // gap between the label and the dropdown arrow
 const float LAYOUT_HORIZONTAL_SPACING = 6.0f;  // QStyle::PM_LayoutHorizontalSpacing
@@ -378,7 +379,7 @@ void ChartsWidget::drawToolBar() {
     return w;
   };
 
-  float avail = ImGui::GetContentRegionAvail().x;
+  float avail = ImGui::GetContentRegionAvail().x - TOOLBAR_MARGIN * 2;
   if (range_slider_visible && total_width() > avail) {
     // QSlider shrinks first (never below 40px), the buttons stay pinned to the right edge
     const float shrink = std::min(slider_width - 40.0f, total_width() - avail);
@@ -398,12 +399,13 @@ void ChartsWidget::drawToolBar() {
   float right_width = group_width(right, n_right);
   if (overflow) right_width += (n_right > 0 ? style.ItemSpacing.x : 0) + chevron_w;
 
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TOOLBAR_MARGIN);
   for (size_t i = 0; i < n_left; ++i) {
     if (i > 0) ImGui::SameLine();
     left[i].draw();
   }
   ImGui::SameLine();
-  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width));
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width - TOOLBAR_MARGIN));
   for (size_t i = 0; i < n_right; ++i) {
     if (i > 0) ImGui::SameLine();
     right[i].draw();

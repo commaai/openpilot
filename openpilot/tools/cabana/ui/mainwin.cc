@@ -1007,6 +1007,9 @@ void MainWindow::draw() {
   if (video_widget_ && video_visible_) {
     const std::string name = video_dock_title_ + VIDEO_PANEL;
     setNextWindowFloatsOut();
+    // the video and charts widgets are QFrames with zero layout margins: the camera, slider and chart cards
+    // run edge to edge and the toolbars carry their own QToolBar margin
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, ImGui::GetStyle().WindowPadding.y));
     if (ImGui::Begin(name.c_str(), &video_visible_)) {
       // splitter between video and charts
       const ImVec2 avail = ImGui::GetContentRegionAvail();
@@ -1040,6 +1043,7 @@ void MainWindow::draw() {
       }
     }
     ImGui::End();
+    ImGui::PopStyleVar();
   }
   if (charts_widget_ && charts_floating_) {
     bool open = true;
