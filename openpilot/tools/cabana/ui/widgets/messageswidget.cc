@@ -14,7 +14,7 @@
 #include "imgui_internal.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
 
 MessagesWidget::MessagesWidget() : view(&header), delegate(settings.multiple_lines_hex) {

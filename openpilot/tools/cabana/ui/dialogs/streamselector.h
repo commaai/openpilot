@@ -11,7 +11,7 @@
 #include "tools/cabana/streams/socketcanstream.h"
 #endif
 #include "tools/cabana/ui/dialogs/routesdialog.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 class AbstractOpenStreamWidget {
 public:

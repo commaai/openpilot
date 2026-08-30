@@ -4,7 +4,7 @@
 #include <cmath>
 #include <limits>
 
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 sz,
                        double window_end) {

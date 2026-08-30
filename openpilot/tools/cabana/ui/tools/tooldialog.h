@@ -5,7 +5,7 @@
 
 #include "imgui.h"
 #include "tools/cabana/core/observable.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 // non-modal dialogs drawn by MainWindow every frame until closed
 class ToolDialog {

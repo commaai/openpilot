@@ -6,7 +6,7 @@
 
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 ImVec2 TipLabel::sizeHint() const {
   ImVec2 size(0, 0);

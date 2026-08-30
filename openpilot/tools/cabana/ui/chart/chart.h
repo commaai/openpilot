@@ -17,7 +17,7 @@
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/ui/icons.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 enum class SeriesType {
   Line = 0,

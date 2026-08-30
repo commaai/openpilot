@@ -6,7 +6,7 @@
 #include "imgui.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
 
 // QIntValidator: optional sign followed by digits

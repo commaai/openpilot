@@ -11,7 +11,7 @@
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;

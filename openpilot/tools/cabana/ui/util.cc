@@ -1,4 +1,4 @@
-#pragma once
+#include "tools/cabana/ui/util.h"
 
 #include <cctype>
 #include <string>
@@ -7,24 +7,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include "tools/cabana/core/color.h"
-#include "tools/cabana/utils/util.h"
-
-inline ImVec4 colorRgb(int r, int g, int b, float alpha = 1.0f) {
-  return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
-}
-
-inline ImU32 toImU32(const CabanaColor &c) { return IM_COL32(c.r, c.g, c.b, c.a); }
-inline ImVec4 toImVec4(const CabanaColor &c) { return ImVec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f); }
-
-struct InputContext {
-  std::string *str;
-  ImGuiInputTextCallback validator;
-  ValidState (*validate)(const std::string &) = nullptr;
-  const std::string *last_valid = nullptr;
-};
-
-inline int inputCallback(ImGuiInputTextCallbackData *data) {
+int inputCallback(ImGuiInputTextCallbackData *data) {
   auto *ctx = static_cast<InputContext *>(data->UserData);
   if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
     return ctx->validator ? ctx->validator(data) : 0;
@@ -43,20 +26,15 @@ inline int inputCallback(ImGuiInputTextCallbackData *data) {
   return 0;
 }
 
-// text input with an optional validator; `s` grows through the resize callback
-inline bool validatedInput(const char *label, std::string *s, ImGuiInputTextCallback validator, const char *hint = "",
-                           ImGuiInputTextFlags flags = 0) {
+bool validatedInput(const char *label, std::string *s, ImGuiInputTextCallback validator, const char *hint,
+                    ImGuiInputTextFlags flags) {
   InputContext ctx{s, validator};
   flags |= ImGuiInputTextFlags_CallbackResize;
   if (validator) flags |= ImGuiInputTextFlags_CallbackCharFilter;
   return ImGui::InputTextWithHint(label, hint, s->data(), s->capacity() + 1, flags, inputCallback, &ctx);
 }
 
-inline bool inputText(const char *label, std::string *s, const char *hint = "", ImGuiInputTextFlags flags = 0) {
-  return validatedInput(label, s, nullptr, hint, flags);
-}
-
-inline bool comboBox(const char *label, int *index, const std::vector<std::string> &items) {
+bool comboBox(const char *label, int *index, const std::vector<std::string> &items) {
   bool changed = false;
   const int count = (int)items.size();
   if (ImGui::BeginCombo(label, *index >= 0 && *index < count ? items[*index].c_str() : "")) {
@@ -74,29 +52,8 @@ inline bool comboBox(const char *label, int *index, const std::vector<std::strin
   return changed;
 }
 
-// numeric items (bus ids, bus speeds) are formatted as they are drawn
-template <typename T>
-inline bool comboBox(const char *label, int *index, const T *values, int count) {
-  bool changed = false;
-  const std::string preview = *index >= 0 && *index < count ? std::to_string(values[*index]) : "";
-  if (ImGui::BeginCombo(label, preview.c_str())) {
-    for (int i = 0; i < count; ++i) {
-      ImGui::PushID(i);
-      if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
-        *index = i;
-        changed = true;
-      }
-      if (i == *index) ImGui::SetItemDefaultFocus();
-      ImGui::PopID();
-    }
-    ImGui::EndCombo();
-  }
-  return changed;
-}
-
-// Qt validator: an edit that makes the text Invalid is refused inside the imgui buffer, like QLineEdit
-inline bool validatedText(const char *label, std::string *s, ValidState (*validate)(const std::string &),
-                          const char *hint = "", ImGuiInputTextCallback filter = nullptr) {
+bool validatedText(const char *label, std::string *s, ValidState (*validate)(const std::string &),
+                   const char *hint, ImGuiInputTextCallback filter) {
   const std::string last_valid = *s;  // a refused edit never reaches *s
   InputContext ctx{s, filter, validate, &last_valid};
   ImGuiInputTextFlags flags = ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackEdit;
@@ -105,9 +62,7 @@ inline bool validatedText(const char *label, std::string *s, ValidState (*valida
   return *s != last_valid;
 }
 
-// InputText char filters; the std::string validators in utils/util.h are run again when the edit is committed
-
-inline int nameValidator(ImGuiInputTextCallbackData *data) {
+int nameValidator(ImGuiInputTextCallbackData *data) {
   // [A-Za-z0-9_], spaces rewritten to '_'
   if (data->EventChar == ' ') {
     data->EventChar = '_';
@@ -116,30 +71,29 @@ inline int nameValidator(ImGuiInputTextCallbackData *data) {
   return (data->EventChar < 128 && (std::isalnum((int)data->EventChar) || data->EventChar == '_')) ? 0 : 1;
 }
 
-inline int nodeValidator(ImGuiInputTextCallbackData *data) {
+int nodeValidator(ImGuiInputTextCallbackData *data) {
   // \w+(,\w+)*
   return (data->EventChar < 128 && (std::isalnum((int)data->EventChar) || data->EventChar == '_' || data->EventChar == ',')) ? 0 : 1;
 }
 
-inline int doubleValidator(ImGuiInputTextCallbackData *data) {
+int doubleValidator(ImGuiInputTextCallbackData *data) {
   // C-locale floating-point
   const ImWchar c = data->EventChar;
   return (c < 128 && (std::isdigit((int)c) || c == '+' || c == '-' || c == '.' || c == 'e' || c == 'E')) ? 0 : 1;
 }
 
-inline int ipValidator(ImGuiInputTextCallbackData *data) {
+int ipValidator(ImGuiInputTextCallbackData *data) {
   // [0-9.]
   const ImWchar c = data->EventChar;
   return ((c >= '0' && c <= '9') || c == '.') ? 0 : 1;
 }
 
-inline int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
+int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
   // \S+
   return (data->EventChar < 128 && std::isspace((int)data->EventChar)) ? 1 : 0;
 }
 
-// auto-raise icon button with a tooltip
-inline bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr) {
+bool toolButton(const char *id, const char *icon, const char *tooltip, const char *text) {
   std::string label = text && *text ? std::string(icon) + " " + text + "###" + id : std::string(icon) + "###" + id;
   // no frame, transparent until hovered
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -151,10 +105,7 @@ inline bool toolButton(const char *id, const char *icon, const char *tooltip = n
   return clicked;
 }
 
-// QMenu exclusive action: the bullet sits in the check column and the whole row highlights, so it is one
-// Selectable with the bullet and the label drawn inside it. `width` is the minimum row width, so a narrow
-// popup stays wide enough for every row while the highlight always spans the popup.
-inline bool radioMenuItem(const char *label, bool checked, float width = 0.0f) {
+bool radioMenuItem(const char *label, bool checked, float width) {
   const float indent = ImGui::GetFontSize();
   const ImVec2 pos = ImGui::GetCursorScreenPos();
   const bool clicked = ImGui::Selectable((std::string("##") + label).c_str(), false, ImGuiSelectableFlags_None,
@@ -166,45 +117,33 @@ inline bool radioMenuItem(const char *label, bool checked, float width = 0.0f) {
   return clicked;
 }
 
-// A queued modal popup submitted from whichever call site is nested in the top-most modal. draw() is called
-// both nested in a modal dialog and at the root level; only the level that opened the popup may submit it
-// (opening at level 0 would make imgui close the parent modal).
-struct PopupOwner {
-  ImGuiID popup_id = 0, owner_id = 0;
-
-  // false: this call site must skip the popup this frame
-  bool begin(const char *id) {
-    ImGuiWindow *window = ImGui::GetCurrentWindowRead();  // GetCurrentWindow() would mark the fallback window as used
-    if (popup_id == 0) {
-      // a pending popup may only be opened from the call nested in the top-most modal, or from any call
-      // when there is no modal at all
-      ImGuiWindow *modal = ImGui::GetTopMostPopupModal();
-      if (modal != nullptr && modal != window) return false;
-      ImGui::OpenPopup(id);
-      popup_id = window->GetID(id);
-      owner_id = window->ID;
-    } else if (owner_id != window->ID) {
-      return false;
-    } else if (!ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_AnyPopupLevel)) {
-      // reopen if imgui closed the popup underneath us (host window change)
-      ImGui::OpenPopup(id);
-    }
-    return true;
+bool PopupOwner::begin(const char *id) {
+  ImGuiWindow *window = ImGui::GetCurrentWindowRead();  // GetCurrentWindow() would mark the fallback window as used
+  if (popup_id == 0) {
+    // a pending popup may only be opened from the call nested in the top-most modal, or from any call
+    // when there is no modal at all
+    ImGuiWindow *modal = ImGui::GetTopMostPopupModal();
+    if (modal != nullptr && modal != window) return false;
+    ImGui::OpenPopup(id);
+    popup_id = window->GetID(id);
+    owner_id = window->ID;
+  } else if (owner_id != window->ID) {
+    return false;
+  } else if (!ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_AnyPopupLevel)) {
+    // reopen if imgui closed the popup underneath us (host window change)
+    ImGui::OpenPopup(id);
   }
+  return true;
+}
 
-  void reset() { popup_id = owner_id = 0; }
-};
-
-// Escape closes a dialog only when nothing is open above it: a combo drops its list first.
-inline bool dialogEscapePressed() {
+bool dialogEscapePressed() {
   if (!ImGui::IsKeyPressed(ImGuiKey_Escape, false)) return false;
   ImGuiContext &g = *GImGui;
   return g.OpenPopupStack.Size > 0 && g.OpenPopupStack.back().Window == ImGui::GetCurrentWindow();
 }
 
-// [Cancel] [Accept], right aligned. reject_label = nullptr for an accept-only box.
-inline bool dialogButtons(const char *accept_label, bool *accepted, bool *rejected, bool accept_enabled = true,
-                          const char *reject_label = "Cancel") {
+bool dialogButtons(const char *accept_label, bool *accepted, bool *rejected, bool accept_enabled,
+                   const char *reject_label) {
   const float button_width = 80.0f;
   const int count = reject_label ? 2 : 1;
   const float total = button_width * count + ImGui::GetStyle().ItemSpacing.x * (count - 1);
@@ -227,8 +166,7 @@ inline bool dialogButtons(const char *accept_label, bool *accepted, bool *reject
   return pressed;
 }
 
-// horizontal header labels are centered
-inline void tableHeadersRow() {
+void tableHeadersRow() {
   ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
   for (int c = 0, count = ImGui::TableGetColumnCount(); c < count; ++c) {
     if (!ImGui::TableSetColumnIndex(c)) continue;
@@ -242,10 +180,7 @@ inline void tableHeadersRow() {
   }
 }
 
-// no hover highlight, only the selection background. Selectable() prefers HeaderHovered over Header
-// whenever the row is hovered, even when it is selected, so a selected row has to keep the selection color
-// as its hover color or it looks unselected.
-inline bool viewSelectable(const char *label, bool selected, ImGuiSelectableFlags flags, const ImVec2 &size) {
+bool viewSelectable(const char *label, bool selected, ImGuiSelectableFlags flags, const ImVec2 &size) {
   ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
   ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
   const bool clicked = ImGui::Selectable(label, selected, flags, size);
@@ -253,10 +188,7 @@ inline bool viewSelectable(const char *label, bool selected, ImGuiSelectableFlag
   return clicked;
 }
 
-// a 16px box vertically centered in the frame height so rows keep their layout; ImGui::Checkbox draws a
-// frame height (22 px) square.
-const float CHECKBOX_SIZE = 16.0f;
-inline bool checkBox(const char *label, bool *v) {
+bool checkBox(const char *label, bool *v) {
   ImGuiWindow *window = ImGui::GetCurrentWindow();
   if (window->SkipItems) return false;
   const ImGuiStyle &style = ImGui::GetStyle();
@@ -286,42 +218,16 @@ inline bool checkBox(const char *label, bool *v) {
   return pressed;
 }
 
-void loadFonts();
-void applyTheme(int theme);  // safe to call at runtime
-bool isDarkTheme();  // the theme applyTheme() resolved, so AUTO_THEME reports what is on screen
-
-ImU32 highlightedTextColor();
-ImU32 paletteBrightText();
-
-// the next window is a real OS window instead of being drawn inside the main one
-inline void setNextWindowFloatsOut() {
+void setNextWindowFloatsOut() {
   ImGuiWindowClass window_class;
   window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
   ImGui::SetNextWindowClass(&window_class);
 }
 
-// centered modal dialog. false when the popup is not submitted this frame.
-inline bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size) {
+bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size) {
   if (!owner->begin(id)) return false;
   ImGui::SetNextWindowSize(size, ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   setNextWindowFloatsOut();
   return ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoResize);
 }
-
-const float TOOLBAR_ITEM_SPACING = 1.0f;  // Fusion PM_ToolBarItemSpacing
-const float SLIDER_LENGTH = 13.0f;
-const float SLIDER_THICKNESS = 13.0f;
-
-// a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
-void drawSliderHandle(ImDrawList *p, const ImRect &r);
-
-// full width groove, filled left of the handle, 13x13 handle (style.cc)
-bool fusionSliderInt(const char *label, int *v, int min, int max, float width);
-
-void pushMonoFont();
-void popMonoFont();
-void pushBoldFont();
-void popBoldFont();
-void pushLargeFont();
-void popLargeFont();

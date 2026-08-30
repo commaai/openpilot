@@ -7,7 +7,7 @@
 #include "imgui.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/ui/chart/chart.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 SignalSelector::SignalSelector(std::string title) : title_(std::move(title)) {
   for (const auto &[id, _] : can->lastMessages()) {

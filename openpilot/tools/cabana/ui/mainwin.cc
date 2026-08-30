@@ -30,7 +30,7 @@ void objc_msgSend(void);
 #include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/export.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/py_downloader.h"

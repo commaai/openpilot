@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 
 MessageBytesDelegate::MessageBytesDelegate(bool multiple_lines) : multiple_lines(multiple_lines) {
   for (int i = 0; i < 256; ++i) {

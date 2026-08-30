@@ -11,7 +11,7 @@
 
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chart.h"
-#include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
 
 const int MAX_COLUMN_COUNT = 4;

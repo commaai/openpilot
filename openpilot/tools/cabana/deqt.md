@@ -26,7 +26,7 @@ one-line comment.
 ui/main.cc              cabana.cc          arg parsing, stream construction, run()
 ui/app.{h,cc}           (new)              GlfwRuntime, ImGuiRuntime, render loop, signal handling
 ui/style.cc             utils::setTheme    fonts + theme (applyTheme() is safe at runtime)
-ui/imgui_util.h         utils/qtutil.h     imgui helpers shared by all widgets
+ui/util.{h,cc}          utils/qtutil.h     imgui helpers shared by all widgets
 ui/mainwin.{h,cc}       mainwin.{h,cc}     MainWindow: menus, dock layout, file/stream actions, status bar
 ui/widgets/             messageswidget, detailwidget, binaryview, signalview, historylog, videowidget, cameraview
 ui/chart/               chart, chartswidget, signalselector, sparkline, tiplabel
