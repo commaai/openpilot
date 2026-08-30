@@ -126,6 +126,10 @@ inline bool comboBox(const char *label, int *index, const char *const items[], i
   return ImGui::Combo(label, index, items, count);
 }
 
+void loadFonts();
+void applyTheme(int theme);  // safe to call at runtime
+bool isDarkTheme();  // the theme applyTheme() resolved, so AUTO_THEME reports what is on screen
+
 ImU32 highlightedTextColor();
 ImU32 paletteBrightText();
 

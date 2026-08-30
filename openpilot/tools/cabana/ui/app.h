@@ -38,8 +38,3 @@ struct KeyEvent {
   int mods;  // GLFW_MOD_*
 };
 std::vector<KeyEvent> takeKeyEvents();
-
-// style.cc
-void loadFonts();
-void applyTheme(int theme);  // safe to call at runtime
-bool isDarkTheme();  // the theme applyTheme() resolved, so AUTO_THEME reports what is on screen

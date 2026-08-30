@@ -14,6 +14,7 @@
 #include <GLFW/glfw3.h>
 
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/ui/mainwin.h"
 #include "tools/cabana/utils/util.h"
 

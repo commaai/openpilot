@@ -1,7 +1,6 @@
 #define IMGUI_DEFINE_MATH_OPERATORS  // ImVec2 arithmetic, must precede imgui.h
 #include "tools/cabana/ui/chart/chartswidget.h"
 
-#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/threadpool.h"
 
 #include <algorithm>

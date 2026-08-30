@@ -9,7 +9,6 @@
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
-#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"

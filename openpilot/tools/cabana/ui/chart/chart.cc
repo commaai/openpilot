@@ -10,7 +10,6 @@
 
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
-#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/imgui_util.h"
 
