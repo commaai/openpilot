@@ -444,7 +444,9 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
       rect.Max.x -= button_size.x;
       if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, true);
     } else {
-      if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, false);
+      // no sparkline yet: the value still belongs against the buttons, where it sits once there is one
+      rect.Max.x -= button_size.x;
+      if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, true);
     }
   }
 }
