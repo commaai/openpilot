@@ -8,14 +8,14 @@
 
 #include "tools/cabana/core/observable.h"
 
-// a tab bar whose tabs get an "x" close button
+// QTabBar: tabs are closable when setTabsClosable(true)
 class TabBar {
 public:
   TabBar() = default;
   int addTab(const std::string &text);
   int count() const { return (int)tabs_.size(); }
-  void setTabText(int index, const std::string &text) { tabs_[index].text = text; }
-  void setTabData(int index, int data) { tabs_[index].data = data; }
+  void setTabText(int index, const std::string &text) { if (index >= 0 && index < count()) tabs_[index].text = text; }
+  void setTabData(int index, int data) { if (index >= 0 && index < count()) tabs_[index].data = data; }
   int tabData(int index) const { return index >= 0 && index < count() ? tabs_[index].data : 0; }
   int currentIndex() const { return current_index_; }
   void setCurrentIndex(int index);
@@ -31,7 +31,6 @@ public:
   Observable<int> tabCloseRequested;
 
 private:
-  void closeTabClicked(int index) { tabCloseRequested(index); }
   struct Tab { std::string text; int data = 0; int id = 0; ImRect rect; };
   std::vector<Tab> tabs_;
   int current_index_ = -1;

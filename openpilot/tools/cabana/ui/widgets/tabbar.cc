@@ -1,11 +1,11 @@
 #include "tools/cabana/ui/widgets/tabbar.h"
 
 #include <algorithm>
+#include <utility>
 
 int TabBar::addTab(const std::string &text) {
   tabs_.push_back({text, 0, next_id_++});
   int index = count() - 1;
-  // the "x" close button is drawn by BeginTabItem(p_open) and reports through closeTabClicked()
   if (current_index_ == -1) {  // the first tab is current
     current_index_ = index;
     select_current_ = true;
@@ -42,21 +42,34 @@ void TabBar::removeTab(int index) {
 
 void TabBar::draw() {
   if (auto_hide_ && count() < 2) return;  // auto hidden with fewer than two tabs
-  if (!ImGui::BeginTabBar("##tabbar", scroll_buttons_ ? ImGuiTabBarFlags_FittingPolicyScroll : 0)) return;
+  ImGui::PushID(this);
+  if (!ImGui::BeginTabBar("##tabbar", scroll_buttons_ ? ImGuiTabBarFlags_FittingPolicyScroll : 0)) {
+    ImGui::PopID();
+    return;
+  }
+  // every tab gets a close button, not only the hovered/selected one
+  ImGuiStyle &style = ImGui::GetStyle();
+  const float close_button_min_width = tabs_closable_ ? std::exchange(style.TabCloseButtonMinWidthUnselected, -1.0f) : 0.0f;
+  // setCurrentIndex requests are applied on the next frame
+  const bool select_current = std::exchange(select_current_, false);
+  int close_index = -1;
   for (int i = 0; i < count(); ++i) {
     bool open = true;
     const std::string label = tabs_[i].text + "###tab" + std::to_string(tabs_[i].id);
-    const ImGuiTabItemFlags flags = (select_current_ && i == current_index_) ? ImGuiTabItemFlags_SetSelected : 0;
+    const ImGuiTabItemFlags flags = (select_current && i == current_index_) ? ImGuiTabItemFlags_SetSelected : 0;
     if (ImGui::BeginTabItem(label.c_str(), tabs_closable_ ? &open : nullptr, flags)) {
-      if (i != current_index_) {
+      // a programmatic selection takes effect on the next frame, ignore the old tab until then
+      if (!select_current && i != current_index_) {
         current_index_ = i;
         currentChanged(i);
       }
       ImGui::EndTabItem();
     }
     tabs_[i].rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-    if (!open) closeTabClicked(i);
+    if (!open) close_index = i;
   }
-  select_current_ = false;
+  if (tabs_closable_) style.TabCloseButtonMinWidthUnselected = close_button_min_width;
   ImGui::EndTabBar();
+  ImGui::PopID();
+  if (close_index >= 0) tabCloseRequested(close_index);
 }
