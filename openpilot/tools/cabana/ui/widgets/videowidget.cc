@@ -27,7 +27,6 @@ const int THUMBNAIL_MARGIN = 3;
 const float POINT_10_FONT_SIZE = 13.0f;  // 10 pt at 96 dpi
 const float POINT_16_FONT_SIZE = 21.0f;  // 16 pt at 96 dpi
 const float MENU_BUTTON_INDICATOR = 12.0f;
-const float TOOLBAR_ITEM_SPACING = 1.0f;
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // auto raise button horizontal margin
 const float TOOLBAR_MARGIN = 4.0f;          // the toolbar items are inset from the frame
 const float TOOLBAR_BUTTON_PADDING_Y = 10.0f;  // the toolbar is 36 px tall at the 16 px font, the items are centered in it

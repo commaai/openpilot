@@ -17,7 +17,6 @@
 const int MAX_COLUMN_COUNT = 4;
 const int CHART_SPACING = 4;
 const int START_DRAG_DISTANCE = 10;
-const float TOOLBAR_ITEM_SPACING = 1.0f;
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // auto raise button horizontal margin
 const float TOOLBAR_MARGIN = 4.0f;          // the toolbar items are inset from the frame
 const float MENU_ARROW_SIZE = 6.0f;         // dropdown arrow on a menu button

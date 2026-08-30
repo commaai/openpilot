@@ -22,7 +22,6 @@ constexpr float H_MARGIN = 3.0f;
 constexpr float V_MARGIN = 2.0f;
 // signal rows are taller than a frame so the sparklines have room to read
 constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it 27 px tall at the 16 px font
-constexpr float TOOLBAR_ITEM_SPACING = 4.0f;
 constexpr float SIGNAL_ROW_SCALE = 1.25f;
 
 void drawElidedText(ImDrawList *painter, const ImRect &rect, const std::string &text, ImU32 color, bool align_right) {

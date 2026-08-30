@@ -309,6 +309,7 @@ inline bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size) {
   return ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoResize);
 }
 
+const float TOOLBAR_ITEM_SPACING = 1.0f;  // Fusion PM_ToolBarItemSpacing
 const float SLIDER_LENGTH = 13.0f;
 const float SLIDER_THICKNESS = 13.0f;
 
