@@ -8,6 +8,7 @@
 
 #include "imgui.h"
 #include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
 // revert the edit when the new text is not a valid double
@@ -19,39 +20,6 @@ static bool doubleEdit(const char *label, std::string *text) {
     changed = false;
   }
   return changed;
-}
-
-// 0 when the text is not a valid number
-static double toDouble(const std::string &s) {
-  char *end = nullptr;
-  double v = std::strtod(s.c_str(), &end);
-  return (end != s.c_str() && *end == '\0') ? v : 0.0;
-}
-
-// 0 when the text is not fully consumed
-static unsigned long toULong(const std::string &s, int base = 10) {
-  char *end = nullptr;
-  unsigned long v = std::strtoul(s.c_str(), &end, base);
-  return (end != s.c_str() && *end == '\0') ? v : 0;
-}
-
-static std::string trimmed(const std::string &s) {
-  auto start = s.find_first_not_of(" \t\r\n");
-  if (start == std::string::npos) return "";
-  auto end = s.find_last_not_of(" \t\r\n");
-  return s.substr(start, end - start + 1);
-}
-
-static std::vector<std::string> split(const std::string &s, char sep) {
-  std::vector<std::string> parts;
-  size_t start = 0;
-  while (true) {
-    size_t pos = s.find(sep, start);
-    parts.push_back(s.substr(start, pos == std::string::npos ? std::string::npos : pos - start));
-    if (pos == std::string::npos) break;
-    start = pos + 1;
-  }
-  return parts;
 }
 
 std::string FindSignalModel::headerData(int section, bool horizontal) const {
@@ -307,8 +275,8 @@ void FindSignalDlg::search() {
   if (model->histories.empty()) {
     setInitialSignals();
   }
-  auto v1 = toDouble(value1);
-  auto v2 = toDouble(value2);
+  auto v1 = utils::toDouble(value1);
+  auto v2 = utils::toDouble(value2);
   std::function<bool(double)> cmp = nullptr;
   switch (compare_cb) {
     case 0: cmp = [v1](double v) { return v == v1;}; break;
@@ -342,25 +310,25 @@ void FindSignalDlg::search() {
 
 void FindSignalDlg::setInitialSignals() {
   std::set<unsigned short> buses;
-  for (auto bus : split(trimmed(bus_edit), ',')) {
-    bus = trimmed(bus);
-    if (!bus.empty()) buses.insert((unsigned short)toULong(bus));
+  for (auto bus : utils::split(utils::trimmed(bus_edit), ',')) {
+    bus = utils::trimmed(bus);
+    if (!bus.empty()) buses.insert((unsigned short)utils::toULong(bus));
   }
 
   std::set<uint32_t> addresses;
-  for (auto addr : split(trimmed(address_edit), ',')) {
-    addr = trimmed(addr);
-    if (!addr.empty()) addresses.insert(toULong(addr, 16));
+  for (auto addr : utils::split(utils::trimmed(address_edit), ',')) {
+    addr = utils::trimmed(addr);
+    if (!addr.empty()) addresses.insert(utils::toULong(addr, 16));
   }
 
   cabana::Signal sig{};
   sig.is_little_endian = litter_endian;
   sig.is_signed = is_signed;
-  sig.factor = toDouble(factor_edit);
-  sig.offset = toDouble(offset_edit);
+  sig.factor = utils::toDouble(factor_edit);
+  sig.offset = utils::toDouble(offset_edit);
 
-  double first_time_val = toDouble(first_time_edit);
-  double last_time_val = toDouble(last_time_edit);
+  double first_time_val = utils::toDouble(first_time_edit);
+  double last_time_val = utils::toDouble(last_time_edit);
   auto [first_sec, last_sec] = std::minmax(first_time_val, last_time_val);
   uint64_t first_time = can->toMonoTime(first_sec);
   model->last_time = std::numeric_limits<uint64_t>::max();

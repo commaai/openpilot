@@ -253,22 +253,6 @@ void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
     std::stable_sort(items.begin(), items.end(), compare);
 }
 
-static bool containsCI(const std::string &s, const std::string &txt) {
-  auto it = std::search(s.begin(), s.end(), txt.begin(), txt.end(),
-                        [](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); });
-  return it != s.end();
-}
-
-static std::vector<std::string> split(const std::string &s, char sep) {
-  std::vector<std::string> parts;
-  size_t start = 0;
-  for (size_t pos; (pos = s.find(sep, start)) != std::string::npos; start = pos + 1) {
-    parts.push_back(s.substr(start, pos - start));
-  }
-  parts.push_back(s.substr(start));
-  return parts;
-}
-
 // surrounding whitespace is ignored; no sign, no 0x prefix
 static unsigned int toUInt(const std::string &s, bool *ok, int base) {
   size_t begin = 0, end = s.size();
@@ -292,7 +276,7 @@ static bool parseRange(const std::string &filter, uint32_t value, int base = 10)
   // parse the filter string into a range: "1" -> {1, 1}, "1-3" -> {1, 3}, "1-" -> {1, inf}
   unsigned int min = std::numeric_limits<unsigned int>::min();
   unsigned int max = std::numeric_limits<unsigned int>::max();
-  auto s = split(filter, '-');
+  auto s = utils::split(filter, '-');
   bool ok = s.size() >= 1 && s.size() <= 2;
   if (ok && !s[0].empty()) min = toUInt(s[0], &ok, base);
   if (ok && s.size() == 1) {
@@ -313,11 +297,11 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
     const std::string &txt = it->second;
     switch (it->first) {
       case Column::NAME: {
-        match = containsCI(item.name, txt);
+        match = utils::containsCI(item.name, txt);
         if (!match) {
           const auto m = dbc()->msg(item.id);
           match = m && std::any_of(m->sigs.cbegin(), m->sigs.cend(),
-                                   [&txt](const auto &s) { return containsCI(s->name, txt); });
+                                   [&txt](const auto &s) { return utils::containsCI(s->name, txt); });
         }
         break;
       }
@@ -325,11 +309,11 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
         match = parseRange(txt, item.id.source);
         break;
       case Column::ADDRESS:
-        match = containsCI(utils::toHexString(item.id.address), txt);
+        match = utils::containsCI(utils::toHexString(item.id.address), txt);
         match = match || parseRange(txt, item.id.address, 16);
         break;
       case Column::NODE:
-        match = containsCI(item.node, txt);
+        match = utils::containsCI(item.node, txt);
         break;
       case Column::FREQ:
         match = parseRange(txt, data.freq);
@@ -338,7 +322,7 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
         match = parseRange(txt, data.count);
         break;
       case Column::DATA:
-        match = containsCI(utils::toHex(data.dat), txt);
+        match = utils::containsCI(utils::toHex(data.dat), txt);
         break;
     }
   }

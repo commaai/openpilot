@@ -9,6 +9,7 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/utils/strings.h"
 
 // optional sign followed by digits
 static bool validInt(const std::string &s) {
@@ -17,13 +18,6 @@ static bool validInt(const std::string &s) {
     if (s[i] < '0' || s[i] > '9') return false;
   }
   return true;
-}
-
-// 0 when the text is not a valid number
-static int toInt(const std::string &s) {
-  char *end = nullptr;
-  long v = std::strtol(s.c_str(), &end, 10);
-  return (end != s.c_str() && *end == '\0') ? (int)v : 0;
 }
 
 FindSimilarBitsDlg::FindSimilarBitsDlg() {
@@ -171,7 +165,7 @@ void FindSimilarBitsDlg::find() {
   uint8_t src_bus = src_bus_combo < (int)bus_items.size() ? bus_items[src_bus_combo] : 0;
   uint8_t find_bus = find_bus_combo < (int)bus_items.size() ? bus_items[find_bus_combo] : 0;
   auto msg_mismatched = calcBits(src_bus, selected_address, byte_idx_sb, bit_idx_sb,
-                                 find_bus, equal_combo == 0, toInt(min_msgs));
+                                 find_bus, equal_combo == 0, utils::toInt(min_msgs));
   table = std::move(msg_mismatched);
   table_has_columns = true;
   search_btn_enabled = true;

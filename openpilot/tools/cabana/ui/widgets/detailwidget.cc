@@ -10,17 +10,10 @@
 #include "imgui_internal.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
 namespace {
-
-std::string trimmed(const std::string &s) {
-  const char *ws = " \t\n\r\f\v";
-  auto b = s.find_first_not_of(ws);
-  if (b == std::string::npos) return "";
-  auto e = s.find_last_not_of(ws);
-  return s.substr(b, e - b + 1);
-}
 
 bool iequals(const std::string &a, const std::string &b) {
   return a.size() == b.size() &&
@@ -48,7 +41,7 @@ std::string elidedText(const std::string &text, float width) {
 
 }  // namespace
 
-ElidedLabel::ElidedLabel(const std::string &text) : text_(trimmed(text)) {}
+ElidedLabel::ElidedLabel(const std::string &text) : text_(utils::trimmed(text)) {}
 
 void ElidedLabel::draw(float width) {
   if (width != lastWidth_) {
@@ -344,8 +337,8 @@ void DetailWidget::draw() {
 
   if (edit_dlg_ && !edit_dlg_->draw()) {
     if (edit_dlg_->accepted()) {
-      UndoStack::instance()->push(new EditMsgCommand(edit_dlg_->msg_id, trimmed(edit_dlg_->name_edit), edit_dlg_->size_spin,
-                                                     trimmed(edit_dlg_->node), trimmed(edit_dlg_->comment_edit)));
+      UndoStack::instance()->push(new EditMsgCommand(edit_dlg_->msg_id, utils::trimmed(edit_dlg_->name_edit), edit_dlg_->size_spin,
+                                                     utils::trimmed(edit_dlg_->node), utils::trimmed(edit_dlg_->comment_edit)));
     }
     edit_dlg_.reset();
   }

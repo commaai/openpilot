@@ -13,6 +13,7 @@
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/export.h"
+#include "tools/cabana/utils/strings.h"
 
 HistoryLogModel::HistoryLogModel() {
   connections_.push_back(can->seekedTo.connect([this](double) { reset(); }));
@@ -73,10 +74,7 @@ void HistoryLogModel::setHexMode(bool hex) {
 
 void HistoryLogModel::setFilter(int sig_idx, const std::string &value, std::function<bool(double, double)> cmp) {
   filter_sig_idx = sig_idx;
-  // 0 unless the whole string is a number
-  char *end = nullptr;
-  double v = std::strtod(value.c_str(), &end);
-  filter_value = (!value.empty() && end && *end == '\0') ? v : 0;
+  filter_value = utils::toDouble(value);
   filter_cmp = value.empty() ? nullptr : cmp;
   updateState(true);
 }

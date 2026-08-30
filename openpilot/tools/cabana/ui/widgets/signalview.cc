@@ -27,37 +27,6 @@ constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it
 constexpr float TOOLBAR_ITEM_SPACING = 4.0f;
 constexpr float SIGNAL_ROW_SCALE = 1.25f;
 
-std::string trimmed(const std::string &s) {
-  size_t b = s.find_first_not_of(" \t\n\r\f\v");
-  if (b == std::string::npos) return "";
-  size_t e = s.find_last_not_of(" \t\n\r\f\v");
-  return s.substr(b, e - b + 1);
-}
-
-bool containsCaseInsensitive(const std::string &text, const std::string &sub) {
-  auto it = std::search(text.begin(), text.end(), sub.begin(), sub.end(),
-                        [](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); });
-  return it != text.end();
-}
-
-std::string toString(double v) {
-  char buf[32];
-  snprintf(buf, sizeof(buf), "%g", v);
-  return buf;
-}
-
-// drop the tags of a rich text tooltip for the plain text imgui tooltip
-std::string stripHtml(const std::string &s) {
-  std::string out;
-  bool in_tag = false;
-  for (char c : s) {
-    if (c == '<') in_tag = true;
-    else if (c == '>') in_tag = false;
-    else if (!in_tag) out += c;
-  }
-  return trimmed(out);
-}
-
 void drawElidedText(ImDrawList *painter, const ImRect &rect, const std::string &text, ImU32 color, bool align_right) {
   const ImVec2 size = ImGui::CalcTextSize(text.c_str());
   const float y = rect.Min.y + (rect.GetHeight() - size.y) * 0.5f;
@@ -176,7 +145,7 @@ void SignalModel::refresh() {
   root.reset(new SignalModel::Item);
   if (auto msg = dbc()->msg(msg_id)) {
     for (auto s : msg->getSignals()) {
-      if (filter_str.empty() || containsCaseInsensitive(s->name, filter_str)) {
+      if (filter_str.empty() || utils::containsCI(s->name, filter_str)) {
         insertItem(root.get(), root->children.size(), s);
       }
     }
@@ -227,7 +196,7 @@ std::string SignalModel::data(const Item *item, int column) const {
           std::string val_desc;
           for (auto &[val, desc] : item->sig->val_desc) {
             if (!val_desc.empty()) val_desc += " ";
-            val_desc += toString(val) + " \"" + desc + "\"";
+            val_desc += utils::toString(val) + " \"" + desc + "\"";
           }
           return val_desc;
         }
@@ -256,7 +225,7 @@ bool SignalModel::setData(Item *item, const ItemValue &value) {
   switch (item->type) {
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
-    case Item::Node: s.receiver_name = trimmed(value.toString()); break;
+    case Item::Node: s.receiver_name = utils::trimmed(value.toString()); break;
     case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt(); break;
     case Item::MultiplexValue: s.multiplex_value = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
@@ -301,7 +270,7 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
       int i = dbc()->msg(msg_id)->indexOf(sig);
       insertItem(root.get(), i, sig);
       rowsChanged();
-    } else if (containsCaseInsensitive(sig->name, filter_str)) {
+    } else if (utils::containsCI(sig->name, filter_str)) {
       refresh();
     }
   }
@@ -426,8 +395,8 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
         rect.Min.x += 5;
         rect.Min.y -= v_margin;
         rect.Max.y += v_margin;
-        std::string min = toString(item->sparkline.min_val);
-        std::string max = toString(item->sparkline.max_val);
+        std::string min = utils::toString(item->sparkline.min_val);
+        std::string max = utils::toString(item->sparkline.max_val);
         drawSmallText(painter, rect, minmax_font, max, text_color, -1);
         drawSmallText(painter, rect, minmax_font, min, text_color, 1);
         value_adjust = std::max(textWidth(min, minmax_font), textWidth(max, minmax_font)) + 5;
@@ -951,7 +920,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   delegate->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
   if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
       ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && ImGui::BeginTooltip()) {
-    ImGui::TextUnformatted(stripHtml(model->toolTip(item, 0)).c_str());
+    ImGui::TextUnformatted(utils::stripHtml(model->toolTip(item, 0)).c_str());
     ImGui::EndTooltip();
   }
 
@@ -1014,7 +983,7 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
 
 ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions) {
   for (auto &[val, desc] : descriptions) {
-    table.emplace_back(toString(val), desc);
+    table.emplace_back(utils::toString(val), desc);
   }
 }
 
@@ -1083,8 +1052,8 @@ bool ValueDescriptionDlg::draw() {
 
 void ValueDescriptionDlg::save() {
   for (int i = 0; i < table.size(); ++i) {
-    std::string val = trimmed(table[i].first);
-    std::string desc = trimmed(table[i].second);
+    std::string val = utils::trimmed(table[i].first);
+    std::string desc = utils::trimmed(table[i].second);
     if (!val.empty() && !desc.empty()) {
       val_desc.push_back({std::atof(val.c_str()), desc});
     }

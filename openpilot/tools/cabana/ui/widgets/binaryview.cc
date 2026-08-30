@@ -14,19 +14,6 @@
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
-// drop the tags of a rich text tooltip for the plain text imgui tooltip
-static std::string stripHtml(const std::string &s) {
-  std::string out;
-  bool in_tag = false;
-  for (char c : s) {
-    if (c == '<') in_tag = true;
-    else if (c == '>') in_tag = false;
-    else if (!in_tag) out += c;
-  }
-  size_t b = out.find_first_not_of(" \n"), e = out.find_last_not_of(" \n");
-  return b == std::string::npos ? std::string() : out.substr(b, e - b + 1);
-}
-
 const int CELL_HEIGHT = 36;
 const int VERTICAL_HEADER_WIDTH = 30;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
@@ -336,7 +323,7 @@ void BinaryView::draw() {
 
   if (hovered && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
     const std::string tip = model->data(indexAt(mouse));
-    if (!tip.empty()) ImGui::SetTooltip("%s", stripHtml(tip).c_str());
+    if (!tip.empty()) ImGui::SetTooltip("%s", utils::stripHtml(tip).c_str());
   }
 
   addShortcuts();
