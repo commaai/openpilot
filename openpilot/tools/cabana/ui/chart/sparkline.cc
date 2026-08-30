@@ -24,9 +24,20 @@ void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIt
   double value = 0.0;
   for (auto it = first; it != last; ++it) {
     if (sig->getValue((*it)->dat, (*it)->size, &value)) {
-      min_val = std::min(min_val, value);
-      max_val = std::max(max_val, value);
-      points_.push_back({can->toSeconds((*it)->mono_time) - window_start, value});
+      double x = can->toSeconds((*it)->mono_time) - window_start;
+      // the caller hands over a bit of data from before the window so the oldest samples walk out under
+      // the clip rect instead of vanishing at the left edge; they must not move the scale though
+      if (x >= 0.0) {
+        min_val = std::min(min_val, value);
+        max_val = std::max(max_val, value);
+      }
+      points_.push_back({x, value});
+    }
+  }
+  if (min_val > max_val) {  // nothing inside the window, the lead in is all there is
+    for (const auto &p : points_) {
+      min_val = std::min(min_val, p.y);
+      max_val = std::max(max_val, p.y);
     }
   }
 

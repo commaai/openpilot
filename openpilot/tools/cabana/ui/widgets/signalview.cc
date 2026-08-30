@@ -758,8 +758,11 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     // message of this id arrives, so a slow message held the sparkline still for several updates and
     // then jumped it, which reads as a hitch at the message rate
     const double window_end = can->currentSec();
+    // a little data from before the window: the sparkline clips it, so the oldest samples and their
+    // points slide off the left edge instead of disappearing the moment they age out
+    const double lead_in = settings.sparkline_range * 0.05;
     // plain locals: capturing structured bindings in a lambda is C++20
-    const auto range = can->eventsInRange(model->msg_id, std::make_pair(window_end - settings.sparkline_range, window_end));
+    const auto range = can->eventsInRange(model->msg_id, std::make_pair(window_end - settings.sparkline_range - lead_in, window_end));
     const CanEventIter first = range.first, last = range.second;
     std::vector<std::future<void>> futures;
     for (int i = first_visible; i <= last_visible; ++i) {
