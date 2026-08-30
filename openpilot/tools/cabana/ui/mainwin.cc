@@ -7,7 +7,6 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -57,7 +56,6 @@ MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> strea
     }
   }
   std::sort(opendbc_names_.begin(), opendbc_names_.end());
-  updateStatus();
 
   // download handlers are called from download threads
   static auto static_main_win = this;
@@ -73,10 +71,9 @@ MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> strea
     window_modified_ = !clean;
     updateWindowTitle();
   }));
-  connections_.push_back(settings.changed.connect([this]() { updateStatus(); }));
 
-  nextFrame([this, s = std::shared_ptr<std::unique_ptr<AbstractStream>>(new std::unique_ptr<AbstractStream>(std::move(stream))), dbc_file]() {
-    *s ? openStream(std::move(*s), dbc_file) : selectAndOpenStream();
+  nextFrame([this, s = stream.release(), dbc_file]() {
+    s ? openStream(std::unique_ptr<AbstractStream>(s), dbc_file) : selectAndOpenStream();
   });
 }
 
@@ -191,10 +188,6 @@ void MainWindow::createDockWidgets() {
   video_widget_ = std::make_unique<VideoWidget>();
   widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
   widget_connections_.push_back(charts_widget_->showTip.connect([this](double sec) { video_widget_->showThumbnail(sec); }));
-}
-
-void MainWindow::updateStatus() {
-  status_label_ = "Cached Minutes:" + std::to_string(settings.max_cached_minutes);
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
@@ -385,40 +378,32 @@ void MainWindow::eventsMerged() {
   }
 }
 
-void MainWindow::save(std::function<void()> then) {
-  // Save all open DBC files
+void MainWindow::saveFiles(bool as, std::function<void()> then) {
   std::vector<DBCFile *> files;
   for (auto dbc_file : dbc()->allDBCFiles()) {
     if (dbc_file->isEmpty()) continue;
     files.push_back(dbc_file);
   }
   auto next = std::make_shared<std::function<void(size_t)>>();
-  *next = [this, files, next, then](size_t i) {
+  *next = [this, as, files, next, then](size_t i) {
     if (i >= files.size()) {
       if (then) then();
       return;
     }
-    saveFile(files[i], [next, i]() { (*next)(i + 1); });
+    auto cb = [next, i]() { (*next)(i + 1); };
+    as ? saveFileAs(files[i], cb) : saveFile(files[i], cb);
   };
   (*next)(0);
 }
 
+void MainWindow::save(std::function<void()> then) {
+  // Save all open DBC files
+  saveFiles(false, std::move(then));
+}
+
 void MainWindow::saveAs(std::function<void()> then) {
   // Save as all open DBC files. Should not be called with more than 1 file open
-  std::vector<DBCFile *> files;
-  for (auto dbc_file : dbc()->allDBCFiles()) {
-    if (dbc_file->isEmpty()) continue;
-    files.push_back(dbc_file);
-  }
-  auto next = std::make_shared<std::function<void(size_t)>>();
-  *next = [this, files, next, then](size_t i) {
-    if (i >= files.size()) {
-      if (then) then();
-      return;
-    }
-    saveFileAs(files[i], [next, i]() { (*next)(i + 1); });
-  };
-  (*next)(0);
+  saveFiles(true, std::move(then));
 }
 
 void MainWindow::closeFile(SourceSet s, std::function<void()> then) {
@@ -582,9 +567,6 @@ void MainWindow::close() {
 }
 
 void MainWindow::finishClose() {
-  installDownloadProgressHandler(nullptr);
-  installMessageHandler(nullptr);
-
   // TODO: saveHeaderState() is a stub; the persisted header state is not written yet
   saveSessionState();
   settings.save();
@@ -721,13 +703,14 @@ void MainWindow::drawStatusBar() {
     status_message_.clear();
     ImGui::TextUnformatted("For Help, Press F1");
   }
-  float right = width - pad - ImGui::CalcTextSize(status_label_.c_str()).x;
+  const std::string status_label = "Cached Minutes:" + std::to_string(settings.max_cached_minutes);
+  float right = width - pad - ImGui::CalcTextSize(status_label.c_str()).x;
   if (progress_visible_) {
     ImGui::SameLine(right - 300.0f - ImGui::GetStyle().ItemSpacing.x);
     ImGui::ProgressBar(progress_value_, ImVec2(300.0f, 16.0f), progress_text_.c_str());
   }
   ImGui::SameLine(right);
-  ImGui::TextUnformatted(status_label_.c_str());
+  ImGui::TextUnformatted(status_label.c_str());
   ImGui::EndChild();
   ImGui::PopStyleColor();
 }
@@ -781,7 +764,6 @@ std::vector<std::vector<HelpRun>> parseHelpHtml(const std::string &raw) {
   std::vector<std::vector<HelpRun>> lines(1);
   HelpRun style;
   std::vector<HelpRun> span_stack;
-  const bool html = raw.find('<') != std::string::npos;
   bool prev_space = true;  // html collapses whitespace; leading whitespace is dropped
   std::string pending;
   auto flush = [&]() {
@@ -842,7 +824,7 @@ std::vector<std::vector<HelpRun>> parseHelpHtml(const std::string &raw) {
         }
       }
     } else if (c == '&') {
-      static const std::pair<const char *, const char *> entities[] = {{"&nbsp;", " "}, {"&lt;", "<"}, {"&gt;", ">"}, {"&amp;", "&"}};
+      static const std::pair<const char *, const char *> entities[] = {{"&nbsp;", " "}};
       bool matched = false;
       for (const auto &[name, text] : entities) {
         if (raw.compare(i, strlen(name), name) == 0) {
@@ -862,10 +844,6 @@ std::vector<std::vector<HelpRun>> parseHelpHtml(const std::string &raw) {
         pending += c;
         prev_space = false;
       }
-    } else if (c == '\n' && !html) {
-      flush();
-      lines.emplace_back();
-      prev_space = true;
     } else if (isspace(static_cast<unsigned char>(c))) {
       if (!prev_space) pending += ' ';
       prev_space = true;

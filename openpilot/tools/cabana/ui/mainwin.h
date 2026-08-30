@@ -50,6 +50,7 @@ private:
   void remindSaveChanges(std::function<void()> then);
   void closeFile(SourceSet s, std::function<void()> then);
   void closeFile(DBCFile *dbc_file);
+  void saveFiles(bool as, std::function<void()> then);
   void saveFile(DBCFile *dbc_file, std::function<void()> then = {});
   void saveFileAs(DBCFile *dbc_file, std::function<void()> then = {});
   void saveFileToClipboard(DBCFile *dbc_file);
@@ -63,7 +64,6 @@ private:
   void findSignal();
   void onlineHelp();
   void toggleFullScreen();
-  void updateStatus();
   void updateWindowTitle();
   void eventsMerged();
   void saveSessionState();
@@ -115,7 +115,6 @@ private:
   // status bar
   std::string status_message_;
   double status_message_until_ = 0;
-  std::string status_label_;
   bool progress_visible_ = false;
   float progress_value_ = 0;
   std::string progress_text_;
