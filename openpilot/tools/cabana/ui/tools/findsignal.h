@@ -45,7 +45,6 @@ public:
 
 private:
   void search();
-  void modelReset();
   void setInitialSignals();
   void customMenuRequested(int row);
   void drawMessageGroup();
@@ -58,11 +57,8 @@ private:
   int compare_cb = 0;
   int min_size = 8, max_size = 8;
   bool litter_endian = true, is_signed = false;
-  bool search_btn_enabled = true, reset_btn_enabled = false, undo_btn_enabled = false;
-  std::string search_btn_text = "Find";
-  bool properties_group_enabled = true, message_group_enabled = true;
-  bool to_label_visible = false, stats_label_visible = false;
-  std::string stats_label;
+  bool to_label_visible = false;
+  bool searched_ = false;  // a search/undo/reset ran, so the stats line is shown
   std::unique_ptr<FindSignalModel> model;
   std::string title_;
   bool open_ = true;

@@ -109,7 +109,7 @@ bool FindSignalDlg::draw() {
     auto cmp = std::move(pending_cmp_);
     pending_cmp_ = nullptr;
     model->search(cmp);
-    modelReset();
+    searched_ = true;
   }
   if (!open_) return false;
   ImGui::SetNextWindowSize(ImVec2(900, 650), ImGuiCond_Appearing);
@@ -123,11 +123,14 @@ bool FindSignalDlg::draw() {
     ImGui::BeginChild("Signal", ImVec2(group_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     drawPropertiesGroup();
     ImGui::EndChild();
-    float footer = stats_label_visible ? ImGui::GetTextLineHeightWithSpacing() : 0;
+    float footer = searched_ ? ImGui::GetTextLineHeightWithSpacing() : 0;
     ImGui::BeginChild("Find signal", ImVec2(0, -footer), ImGuiChildFlags_Borders);
     drawFindGroup();
     ImGui::EndChild();
-    if (stats_label_visible) ImGui::TextUnformatted(stats_label.c_str());
+    if (searched_) {
+      ImGui::Text("%zu matches. right click on an item to create signal. double click to open message",
+                  model->filtered_signals.size());
+    }
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false) &&
         !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
       open_ = false;
@@ -138,7 +141,7 @@ bool FindSignalDlg::draw() {
 }
 
 void FindSignalDlg::drawMessageGroup() {
-  ImGui::BeginDisabled(!message_group_enabled);
+  ImGui::BeginDisabled(!model->histories.empty());
   ImGui::TextUnformatted("Messages");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Bus");
@@ -166,7 +169,7 @@ void FindSignalDlg::drawMessageGroup() {
 }
 
 void FindSignalDlg::drawPropertiesGroup() {
-  ImGui::BeginDisabled(!properties_group_enabled);
+  ImGui::BeginDisabled(!model->histories.empty());
   ImGui::TextUnformatted("Signal");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Size");
@@ -218,21 +221,22 @@ void FindSignalDlg::drawFindGroup() {
     doubleEdit("##value2", &value2);
   }
   ImGui::SameLine();
-  ImGui::BeginDisabled(!undo_btn_enabled);
+  const bool first = model->histories.empty();
+  ImGui::BeginDisabled(model->histories.size() <= 1);
   if (ImGui::Button("Undo prev find")) {
     model->undo();
-    modelReset();
+    searched_ = true;
   }
   ImGui::EndDisabled();
   ImGui::SameLine();
-  ImGui::BeginDisabled(!search_btn_enabled);
-  if (ImGui::Button(search_btn_text.c_str())) search();
+  ImGui::BeginDisabled(pending_cmp_ || (model->rowCount() == 0 && !first));
+  if (ImGui::Button(pending_cmp_ ? "Finding ...." : (first ? "Find" : "Find Next"))) search();
   ImGui::EndDisabled();
   ImGui::SameLine();
-  ImGui::BeginDisabled(!reset_btn_enabled);
+  ImGui::BeginDisabled(first);
   if (ImGui::Button("Reset")) {
     model->reset();
-    modelReset();
+    searched_ = true;
   }
   ImGui::EndDisabled();
 
@@ -283,11 +287,7 @@ void FindSignalDlg::search() {
     case 5: cmp = [v1](double v) { return v <= v1;}; break;
     case 6: cmp = [v1, v2](double v) { return v >= v1 && v <= v2;}; break;
   }
-  properties_group_enabled = false;
-  message_group_enabled = false;
-  search_btn_enabled = false;
-  stats_label_visible = false;
-  search_btn_text = "Finding ....";
+  searched_ = false;
   pending_cmp_ = cmp;
 }
 
@@ -339,17 +339,6 @@ void FindSignalDlg::setInitialSignals() {
       }
     }
   }
-}
-
-void FindSignalDlg::modelReset() {
-  properties_group_enabled = model->histories.empty();
-  message_group_enabled = model->histories.empty();
-  search_btn_text = model->histories.empty() ? "Find" : "Find Next";
-  reset_btn_enabled = !model->histories.empty();
-  undo_btn_enabled = model->histories.size() > 1;
-  search_btn_enabled = model->rowCount() > 0 || model->histories.empty();
-  stats_label_visible = true;
-  stats_label = std::to_string(model->filtered_signals.size()) + " matches. right click on an item to create signal. double click to open message";
 }
 
 void FindSignalDlg::customMenuRequested(int row) {
