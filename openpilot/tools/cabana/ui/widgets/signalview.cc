@@ -381,8 +381,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     else if (item->type == SignalModel::Item::Node) validator = node_validator;
     else validator = double_validator;
 
-    take_focus_ = take_focus;
-    lineEditor(item, model, validator);
+    lineEditor(item, model, validator, take_focus);
   } else if (item->type == SignalModel::Item::Size) {
     int v = item->sig->size;
     if (take_focus) ImGui::SetKeyboardFocusHere();
@@ -437,8 +436,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     }
   } else {
     // plain text input, no validator
-    take_focus_ = take_focus;
-    lineEditor(item, model, nullptr);
+    lineEditor(item, model, nullptr, take_focus);
   }
 }
 
@@ -463,29 +461,25 @@ ValidState SignalItemDelegate::validateEditor(const SignalModel::Item *item, std
 // Enter and focus out only commit when the validator reports Acceptable (an Intermediate or Invalid value
 // keeps the editor open with the typed text and commits nothing), Escape reverts to the value the editor
 // was opened with.
-void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator) {
+void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator, bool take_focus) {
   const bool editing = editing_item_ == item;
   const bool was_active = editing && editor_active_;  // the editor had the focus at the end of the last frame
 
   std::string text = editing ? edit_text_ : model->data(item, 1);
-  if (std::exchange(take_focus_, false)) ImGui::SetKeyboardFocusHere();
+  if (take_focus) ImGui::SetKeyboardFocusHere();
   if (editing && refocus_editor_) {
     ImGui::SetKeyboardFocusHere();  // keep the focus when the input is not acceptable
     refocus_editor_ = false;
   }
   validatedInput("##editor", &text, validator, "", ImGuiInputTextFlags_AutoSelectAll);
-  if (ImGui::IsItemActivated()) {
-    editing_item_ = item;
-    edit_original_ = model->data(item, 1);
-  }
+  if (ImGui::IsItemActivated()) editing_item_ = item;
   if (editing_item_ != item) return;
 
   edit_text_ = text;
   editor_active_ = ImGui::IsItemActive();
   if (was_active) {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
-      // no commit, the editor is closed and the original value comes back
-      edit_text_ = edit_original_;
+      // InputText already reverted the text; only the commit has to be skipped
       editing_item_ = open_item_ = nullptr;
       enter_pressed_ = false;
       return;

@@ -142,15 +142,13 @@ public:
 
 private:
   // only an Acceptable value is committed
-  void lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator);
+  void lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator, bool take_focus);
   static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
 
   SignalModel::Item *editing_item_ = nullptr;  // the open text editor
   std::string edit_text_;
-  std::string edit_original_;    // value the editor was opened with, restored by Escape
   bool editor_active_ = false;   // editor had the keyboard focus last frame
   bool refocus_editor_ = false;  // reopen the editor rejected by the validator
-  bool take_focus_ = false;      // the editor was just created and takes the focus
   bool enter_pressed_ = false;
   bool combo_focused_ = false;  // the SignalType combo had the focus last frame
   std::unique_ptr<ValueDescriptionDlg> desc_dlg_;
