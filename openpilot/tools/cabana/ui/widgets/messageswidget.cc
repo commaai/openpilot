@@ -23,9 +23,6 @@ MessagesWidget::MessagesWidget() : view(&header), delegate(settings.multiple_lin
   header.setModel(&model);
   model.sort(MessageListModel::Column::NAME, ImGuiSortDirection_Ascending);
 
-  // must be called before setting any header parameters to avoid overriding
-  restoreHeaderState(settings.message_header_state);
-
   connections_.push_back(model.modelReset.connect([this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
@@ -489,7 +486,8 @@ void MessageView::draw() {
   keyPressEvent();
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
-                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders;
+                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders |
+                                ImGuiTableFlags_Hideable;
   // with ScrollX a stretch column needs an explicit inner width
   const float bytes_width = delegate_->sizeForBytes(bytes_section_bytes_).x;
   const float avail_width = ImGui::GetContentRegionAvail().x - (has_scrollbar_y_ ? ImGui::GetStyle().ScrollbarSize : 0);
@@ -513,9 +511,9 @@ void MessageView::draw() {
       column_flags = ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_NoResize;
       width = 0;
     }
-    if (header_->isSectionHidden(i)) column_flags |= ImGuiTableColumnFlags_Disabled;
     ImGui::TableSetupColumn(model_->headerData(i).c_str(), column_flags, width);
   }
+  header_->applyPendingHidden();
 
   if (ImGuiTableSortSpecs *specs = ImGui::TableGetSortSpecs(); specs && specs->SpecsDirty) {
     if (specs->SpecsCount > 0) model_->sort(specs->Specs[0].ColumnIndex, flipSortDirection(specs->Specs[0].SortDirection));
@@ -568,7 +566,15 @@ void MessageViewHeader::updateHeaderPositions() {
   ImGuiTable *table = ImGui::GetCurrentTable();
   for (int i = 0; i < (int)editors.size(); i++) {
     display_order_[i] = table->DisplayOrderToIndex[i];
+    hidden_[i] = !(ImGui::TableGetColumnFlags(i) & ImGuiTableColumnFlags_IsEnabled);
   }
+}
+
+void MessageViewHeader::applyPendingHidden() {
+  for (const auto &[logical_index, hide] : pending_hidden_) {
+    ImGui::TableSetColumnEnabled(logical_index, !hide);
+  }
+  pending_hidden_.clear();
 }
 
 void MessageViewHeader::draw() {

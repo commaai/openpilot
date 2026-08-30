@@ -7,6 +7,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "imgui.h"
@@ -100,20 +101,22 @@ public:
   void setModel(MessageListModel *model) { model_ = model; }
   MessageListModel *model() const { return model_; }
   void updateHeaderPositions();
+  void applyPendingHidden();  // must run inside the table
   void updateFilters();
   void draw();  // the header row and the filter editors row, inside the table
 
   int count() const { return (int)editors.size(); }
   int logicalIndex(int visual_index) const { return display_order_[visual_index]; }
   bool isSectionHidden(int logical_index) const { return hidden_[logical_index]; }
-  void setSectionHidden(int logical_index, bool hide) { hidden_[logical_index] = hide; }
+  void setSectionHidden(int logical_index, bool hide) { pending_hidden_.emplace_back(logical_index, hide); }
   bool customContextMenuRequested = false;  // set for one frame by a right click on the header
 
   std::array<std::string, MessageListModel::Column::DATA + 1> editors;
 
 private:
   MessageListModel *model_ = nullptr;
-  std::array<bool, MessageListModel::Column::DATA + 1> hidden_ = {};
+  std::array<bool, MessageListModel::Column::DATA + 1> hidden_ = {};  // mirror of the table's enabled columns, refreshed every frame
+  std::vector<std::pair<int, bool>> pending_hidden_;
   std::array<int, MessageListModel::Column::DATA + 1> display_order_ = {};
 };
 
@@ -122,14 +125,6 @@ public:
   MessagesWidget();
   void draw();  // content only; MainWindow does ImGui::Begin/End with the dock title
   void selectMessage(const MessageId &message_id);
-  std::vector<uint8_t> saveHeaderState() const {
-    // TODO: the persisted header state is not ported yet
-    return {};
-  }
-  bool restoreHeaderState(const std::vector<uint8_t> &state) const {
-    // TODO: the persisted header state is not ported yet
-    return false;
-  }
   void suppressHighlighted(bool from_suppress_add = false);
   const std::string &title() const { return title_; }
   std::string whatsThis() const;

@@ -955,7 +955,7 @@ bool ValueDescriptionDlg::draw() {
   bool open = true;
   // not drawn while the dock is collapsed or another modal is on top; only closed once the popup is gone
   setNextWindowFloatsOut();
-  if (!ImGui::BeginPopupModal(popup_id.c_str(), &open)) return ImGui::IsPopupOpen(popup_id.c_str());
+  if (!ImGui::BeginPopupModal(popup_id.c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
   if (ImGui::Button(icon::PLUS)) {

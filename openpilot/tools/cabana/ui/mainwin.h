@@ -99,7 +99,7 @@ private:
   std::string video_dock_title_;
   bool messages_visible_ = true;
   bool video_visible_ = true;
-  bool reset_layout_ = true;
+  bool reset_layout_ = false;
   bool full_screen_ = false;
 #ifndef __APPLE__
   int windowed_rect_[4] = {0, 0, 1600, 900};

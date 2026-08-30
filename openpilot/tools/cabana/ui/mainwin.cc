@@ -30,6 +30,7 @@ void objc_msgSend(void);
 #include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
+#include "tools/cabana/ui/inistate.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/export.h"
 #include "tools/cabana/utils/util.h"
@@ -46,6 +47,9 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) : window_(window) {
   can = &dummy_;
+  video_splitter_ratio_ = inistate::main_window.video_splitter_ratio;
+  messages_visible_ = inistate::main_window.messages_visible;
+  video_visible_ = inistate::main_window.video_visible;
   loadFingerprints();
   // the opendbc list is read once
   std::error_code ec;
@@ -567,7 +571,25 @@ void MainWindow::close() {
 }
 
 void MainWindow::finishClose() {
-  // TODO: saveHeaderState() is a stub; the persisted header state is not written yet
+  // save states
+  auto &state = inistate::main_window;
+  state.maximized = glfwGetWindowAttrib(window_, GLFW_MAXIMIZED);
+  if (full_screen_) {
+#ifndef __APPLE__
+    // macOS full screen is the native Cocoa toggle, keep the loaded geometry there
+    state.pos[0] = windowed_rect_[0]; state.pos[1] = windowed_rect_[1];
+    state.size[0] = windowed_rect_[2]; state.size[1] = windowed_rect_[3];
+#endif
+  } else if (!state.maximized) {
+    glfwGetWindowPos(window_, &state.pos[0], &state.pos[1]);
+    glfwGetWindowSize(window_, &state.size[0], &state.size[1]);
+  }
+  state.has_geometry = state.size[0] > 0 && state.size[1] > 0;
+  state.video_splitter_ratio = video_splitter_ratio_;
+  state.messages_visible = messages_visible_;
+  state.video_visible = video_visible_;
+  settings.ui_state = inistate::save();
+
   saveSessionState();
   settings.save();
   exited_ = true;
@@ -936,7 +958,7 @@ void MainWindow::drawDockspace() {
   const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
-  if (reset_layout_) {
+  if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr) {
     // messages left, video (with charts) right, center widget in the middle
     ImGui::DockBuilderRemoveNode(dock_id);
     ImGui::DockBuilderAddNode(dock_id, ImGuiDockNodeFlags_DockSpace);
@@ -1038,7 +1060,7 @@ void MainWindow::draw() {
     bool open = true;
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);
     setNextWindowFloatsOut();
-    if (ImGui::Begin(CHARTS_WINDOW, &open)) charts_widget_->draw();
+    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings)) charts_widget_->draw();
     ImGui::End();
     if (!open) toggleChartsDocking();
   }

@@ -225,7 +225,7 @@ void FindSignalDlg::drawFindGroup() {
 }
 
 void FindSignalDlg::drawTable() {
-  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
+  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
   if (!ImGui::BeginTable("view", model->columnCount() + 1, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
   // vertical header: row number, no width while the model is empty

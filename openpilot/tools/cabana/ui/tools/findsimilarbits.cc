@@ -95,7 +95,7 @@ void FindSimilarBitsDlg::drawTable() {
     ImGui::EndChild();
     return;
   }
-  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
+  const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
   if (!ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
   static const char *headers[] = {"address", "byte idx", "bit idx", "mismatches", "total msgs", "% mismatched"};

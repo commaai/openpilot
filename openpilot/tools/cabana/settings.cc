@@ -479,6 +479,7 @@ void settingsOp(Store &s, SettingOperation op) {
   op(s, "video_splitter_state", settings.video_splitter_state);
   op(s, "recent_files", settings.recent_files);
   op(s, "message_header_state", settings.message_header_state);
+  op(s, "ui_state", settings.ui_state);
   op(s, "chart_series_type", settings.chart_series_type);
   op(s, "theme", settings.theme);
   op(s, "sparkline_range", settings.sparkline_range);

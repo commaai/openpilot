@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "tools/cabana/core/observable.h"
@@ -16,6 +17,9 @@ public:
   std::vector<uint8_t> video_splitter_state;
   std::vector<uint8_t> window_state;
   std::vector<uint8_t> message_header_state;
+
+  // UI layout state (dock layout, window geometry, table state), owned by the imgui frontend
+  std::string ui_state;
 
   Observable<> changed;
 };

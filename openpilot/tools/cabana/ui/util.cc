@@ -229,5 +229,5 @@ bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size) {
   ImGui::SetNextWindowSize(size, ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   setNextWindowFloatsOut();
-  return ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoResize);
+  return ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings);
 }

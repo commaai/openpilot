@@ -152,6 +152,7 @@ if GetOption('extras'):
     dbc_core_test_env.Object('tests/dbc_core_util', 'utils/util.cc'),
     dbc_core_test_env.Object('tests/dbc_core_icons', bootstrap_icons_src),
     dbc_core_test_env.Object('tests/dbc_core_routes', 'routes.cc'),
+    dbc_core_test_env.Object('tests/dbc_core_qtstate', 'ui/qtstate.cc'),
   ]
   dbc_core_test_env.Program('tests/test_dbc_core', dbc_core_test_objects, LIBS=[replay_lib, common])
 
