@@ -60,7 +60,6 @@ struct CabanaColor {
     return r == other.r && g == other.g && b == other.b && a == other.a;
   }
 
-private:
   struct Hsv { float hue; float saturation; float value; };
   Hsv hsv() const {
     const float red = r / 255.0f, green = g / 255.0f, blue = b / 255.0f;

@@ -4,6 +4,8 @@
 #include <cmath>
 #include <limits>
 
+#include "tools/cabana/ui/app.h"
+
 void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 sz,
                        double window_end) {
   if (first == last || sz.x <= 0 || sz.y <= 0) {
@@ -95,7 +97,12 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
   }
 
   this->size = sz;
-  color_ = IM_COL32(color.r, color.g, color.b, color.a);
+  CabanaColor line_color = color;
+  if (!isDarkTheme()) {
+    auto [h, s, v] = color.hsv();
+    line_color = CabanaColor::fromHsv(h, std::min(1.0f, s * 2.0f), v * 0.7f, color.a / 255.0f);
+  }
+  color_ = IM_COL32(line_color.r, line_color.g, line_color.b, line_color.a);
   draw_individual_points_ = draw_individual_points;
   window_end_ = window_end;
   xscale_ = xscale;
