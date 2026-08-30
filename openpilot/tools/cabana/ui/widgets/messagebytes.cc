@@ -58,13 +58,12 @@ void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool s
     const ImVec2 r_min(pt.x + column * byte_size.x, pt.y + row * byte_size.y);
     const ImRect r(r_min, ImVec2(r_min.x + byte_size.x, r_min.y + byte_size.y));
 
+    // a colored unselected byte keeps text_pen: the Qt delegate leaves the pen the row's other cells set
     ImU32 pen = text_pen;
     if (colors && i < (int)colors->size() && (*colors)[i].alpha() > 0) {
       if (selected) {
         pen = ImGui::GetColorU32(ImGuiCol_Text);
         painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));
-      } else {
-        pen = IM_COL32(0, 0, 0, 255);  // QPainter default pen, the Qt delegate never sets it for a colored byte
       }
       painter->AddRectFilled(r.Min, r.Max, toImU32((*colors)[i]));
     }
