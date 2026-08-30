@@ -67,13 +67,11 @@ bool LogSlider::draw(const char *label, float width) {
 ChartsWidget::ChartsWidget() {
   range_slider.setRange(1, settings.max_cached_minutes * 60);
 
-  charts_container = new ChartsContainer(this);
   tabbar.setAutoHide(true);
   tabbar.setExpanding(false);
   tabbar.setUsesScrollButtons(true);
   tabbar.setTabsClosable(true);
 
-  current_theme = settings.theme;
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = std::make_pair(can->minSeconds(), can->minSeconds() + max_chart_range);
@@ -97,7 +95,6 @@ ChartsWidget::ChartsWidget() {
 
 ChartsWidget::~ChartsWidget() {
   for (auto c : charts) delete c;
-  delete charts_container;
 }
 
 std::string ChartsWidget::whatsThis() const {
@@ -363,8 +360,6 @@ void ChartsWidget::drawToolBar() {
 }
 
 void ChartsWidget::settingChanged() {
-  if (std::exchange(current_theme, settings.theme) != current_theme) {
-  }
   if (range_slider.maximum() != settings.max_cached_minutes * 60) {
     range_slider.setRange(1, settings.max_cached_minutes * 60);
   }
@@ -458,12 +453,12 @@ void ChartsWidget::setColumnCount(int n) {
 
 void ChartsWidget::updateLayout() {
   // the container has not been drawn yet (docked/floated this frame): keep the last known layout
-  const float container_width = charts_container->geometry.GetWidth();
+  const float container_width = charts_container.geometry.GetWidth();
   if (container_width <= 0) return;
 
   int n = MAX_COLUMN_COUNT;
   for (; n > 1; --n) {
-    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_container->horizontalSpacing()) < container_width) break;
+    if ((n * CHART_MIN_WIDTH + (n - 1) * CHART_SPACING) < container_width) break;
   }
 
   columns_action_visible = n > 1;
@@ -505,8 +500,8 @@ void ChartsWidget::dragChartMove(const ImVec2 &global_pos) {
     for (auto c : charts) c->setDropHighlight(c == target);
   }
   bool in_viewport = charts_scroll_viewport.Contains(global_pos);
-  bool on_background = !target && in_viewport && !charts_container->childAt(container_pos);
-  charts_container->drawDropIndicator(on_background ? container_pos : ImVec2());
+  bool on_background = !target && in_viewport && !charts_container.childAt(container_pos);
+  charts_container.drawDropIndicator(on_background ? container_pos : ImVec2());
 
   if (in_viewport) {
     startAutoScroll(global_pos);
@@ -517,7 +512,7 @@ void ChartsWidget::cancelChartDrag() {
   drag = {};
   stopAutoScroll();
   drag_preview_visible = false;
-  charts_container->drawDropIndicator({});
+  charts_container.drawDropIndicator({});
   if (auto target = std::exchange(drop_target, nullptr)) target->setDropHighlight(false);
 }
 
@@ -533,9 +528,9 @@ void ChartsWidget::dragChartRelease(const ImVec2 &global_pos) {
   if (target) {
     // merge source into target
     target->takeSignalsFrom(source);
-  } else if (in_viewport && !charts_container->childAt(container_pos)) {
+  } else if (in_viewport && !charts_container.childAt(container_pos)) {
     // reorder within the current tab
-    auto w = charts_container->getDropAfter(container_pos);
+    auto w = charts_container.getDropAfter(container_pos);
     if (w != source) {
       for (auto &[_, list] : tab_charts) {
         list.erase(std::remove(list.begin(), list.end(), source), list.end());
@@ -604,10 +599,6 @@ void ChartsWidget::doAutoScroll() {
     // refresh the drop indicator/target at the new scroll position
     dragChartMove(auto_scroll_pos);
   }
-}
-
-ImVec2 ChartsWidget::minimumSizeHint() const {
-  return ImVec2(CHART_MIN_WIDTH * 1.5, 0);
 }
 
 void ChartsWidget::newChart() {
@@ -733,7 +724,7 @@ void ChartsWidget::draw() {
   if (ImGui::BeginChild("charts_scroll", ImVec2(0, 0), ImGuiChildFlags_None, 0)) {
     charts_scroll = ImGui::GetCurrentWindow();
     charts_scroll_viewport = charts_scroll->InnerRect;
-    charts_container->draw();
+    charts_container.draw();
   }
   ImGui::EndChild();
 
@@ -750,10 +741,6 @@ void ChartsWidget::draw() {
 
 ChartsContainer::ChartsContainer(ChartsWidget *parent) : charts_widget(parent) {}
 
-int ChartsContainer::horizontalSpacing() const {
-  return CHART_SPACING;
-}
-
 void ChartsContainer::draw() {
   ImGuiWindow *window = ImGui::GetCurrentWindow();
   const ImVec2 start = ImGui::GetCursorScreenPos();
@@ -761,7 +748,7 @@ void ChartsContainer::draw() {
   charts_widget->updateLayout();
 
   const int n = std::max(charts_widget->current_column_count, 1);
-  const float spacing = horizontalSpacing();
+  const float spacing = CHART_SPACING;
   const float width = (geometry.GetWidth() - (n - 1) * spacing) / n;
   const ImVec2 origin = ImGui::GetCursorScreenPos() + ImVec2(0, CHART_SPACING);
   auto current_charts = charts_widget->currentCharts();  // copy: drawing may remove charts

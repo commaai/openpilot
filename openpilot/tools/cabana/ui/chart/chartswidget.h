@@ -55,7 +55,6 @@ public:
   void paintEvent();
   ChartView *getDropAfter(const ImVec2 &pos) const;
   ChartView *childAt(const ImVec2 &pos) const;
-  int horizontalSpacing() const;
 
   ImRect geometry;  // screen coordinates
   ChartsWidget *charts_widget;
@@ -83,7 +82,6 @@ public:
   Observable<double> showTip;
 
 private:
-  ImVec2 minimumSizeHint() const;
   void event();
   void newChart();
   ChartView *createChart(int pos = 0);
@@ -125,7 +123,7 @@ private:
   std::vector<ChartView *> charts;
   std::unordered_map<int, std::vector<ChartView *>> tab_charts;
   TabBar tabbar;
-  ChartsContainer *charts_container;
+  ChartsContainer charts_container{this};
   ImGuiWindow *charts_scroll = nullptr;  // the scroll area child window
   ImRect charts_scroll_viewport;
   uint32_t max_chart_range = 0;
@@ -147,7 +145,6 @@ private:
   ImVec2 auto_scroll_pos;
   bool auto_scroll_timer_active = false;
   double auto_scroll_timer_next = 0;
-  int current_theme = 0;
   bool value_tip_visible_ = false;
   bool any_plot_hovered_ = false;
   std::vector<std::unique_ptr<ChartView>> deleted_charts_;  // freed at the start of the next draw()
