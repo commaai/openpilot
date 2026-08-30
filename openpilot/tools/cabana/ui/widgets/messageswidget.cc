@@ -2,8 +2,8 @@
 
 #include <cctype>
 #include <cerrno>
-#include <charconv>
 #include <cfloat>
+#include <charconv>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -550,6 +550,7 @@ void MessageView::draw() {
 }
 
 MessageViewHeader::MessageViewHeader() {
+  std::iota(display_order_.begin(), display_order_.end(), 0);
 }
 
 void MessageViewHeader::updateFilters() {

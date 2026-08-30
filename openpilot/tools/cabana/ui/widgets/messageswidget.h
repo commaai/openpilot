@@ -114,7 +114,7 @@ public:
 private:
   MessageListModel *model_ = nullptr;
   std::array<bool, MessageListModel::Column::DATA + 1> hidden_ = {};
-  std::array<int, MessageListModel::Column::DATA + 1> display_order_ = {0, 1, 2, 3, 4, 5, 6};
+  std::array<int, MessageListModel::Column::DATA + 1> display_order_ = {};
 };
 
 class MessagesWidget {
