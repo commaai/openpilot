@@ -445,6 +445,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
 void SignalItemDelegate::closeEditor() {
   editing_item_ = open_item_ = focus_item_ = nullptr;
   editor_active_ = refocus_editor_ = enter_pressed_ = combo_focused_ = false;
+  pending_commit = nullptr;  // the items it captured are deleted by the caller
 }
 
 // validate the editor of `item`; mutates `text` like the name validator does (spaces -> '_')
