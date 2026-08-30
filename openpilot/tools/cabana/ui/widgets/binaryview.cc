@@ -550,28 +550,19 @@ void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
       subtract.emplace_back(rc.Max.x - 3, rc.Max.y - spacing, rc.Max.x, rc.Max.y);
     }
   }
-  // rc split into horizontal bands with the notch corners removed
+  // rc split into horizontal bands with the notch corners removed: at most one notch in the top band and
+  // one in the bottom band
+  const ImRect *top_notch = !subtract.empty() && subtract.front().Min.y == rc.Min.y ? &subtract.front() : nullptr;
+  const ImRect *bottom_notch = !subtract.empty() && subtract.back().Min.y != rc.Min.y ? &subtract.back() : nullptr;
   std::vector<ImRect> region;
-  {
-    std::vector<float> ys{rc.Min.y, rc.Max.y};
-    for (auto &r : subtract) {
-      ys.push_back(r.Min.y);
-      ys.push_back(r.Max.y);
-    }
-    std::sort(ys.begin(), ys.end());
-    ys.erase(std::unique(ys.begin(), ys.end()), ys.end());
-    for (size_t i = 0; i + 1 < ys.size(); ++i) {
-      const float y0 = ys[i], y1 = ys[i + 1];
-      float x0 = rc.Min.x, x1 = rc.Max.x;
-      for (auto &r : subtract) {
-        if (r.Min.y <= y0 && r.Max.y >= y1) {
-          if (r.Min.x <= x0) x0 = std::max(x0, r.Max.x);
-          else x1 = std::min(x1, r.Min.x);
-        }
-      }
-      if (x1 > x0) region.emplace_back(x0, y0, x1, y1);
-    }
-  }
+  auto band = [&](const ImRect *notch, float y0, float y1) {
+    const float x0 = notch && notch->Min.x == rc.Min.x ? notch->Max.x : rc.Min.x;
+    const float x1 = notch && notch->Min.x != rc.Min.x ? notch->Min.x : rc.Max.x;
+    if (x1 > x0 && y1 > y0) region.emplace_back(x0, y0, x1, y1);
+  };
+  if (top_notch) band(top_notch, rc.Min.y, rc.Min.y + spacing);
+  band(nullptr, rc.Min.y + (top_notch ? spacing : 0), rc.Max.y - (bottom_notch ? spacing : 0));
+  if (bottom_notch) band(bottom_notch, rc.Max.y - spacing, rc.Max.y);
 
   auto item = &bin_view->model->items[index.row * bin_view->model->columnCount() + index.column];
   CabanaColor color = sig->color;
