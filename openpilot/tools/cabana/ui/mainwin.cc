@@ -374,7 +374,8 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
 }
 
 void MainWindow::eventsMerged() {
-  if (!can->liveStreaming() && std::exchange(car_fingerprint_, can->carFingerprint()) != car_fingerprint_) {
+  const std::string fingerprint = can->carFingerprint();
+  if (!can->liveStreaming() && std::exchange(car_fingerprint_, fingerprint) != fingerprint) {
     video_dock_title_ = "ROUTE: " + can->routeName() + "  FINGERPRINT: " + (car_fingerprint_.empty() ? "Unknown Car" : car_fingerprint_);
     // Don't overwrite already loaded DBC
     auto it = fingerprint_to_dbc_.find(car_fingerprint_);
@@ -890,6 +891,7 @@ void MainWindow::drawHelpOverlay() {
   if (!help_overlay_) return;
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
   ImDrawList *dl = ImGui::GetForegroundDrawList();
+  const ImRect work_rect(viewport->WorkPos, ImVec2(viewport->WorkPos.x + viewport->WorkSize.x, viewport->WorkPos.y + viewport->WorkSize.y));
   dl->AddRectFilled(viewport->Pos, ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y), IM_COL32(0, 0, 0, 50));
   pushBoldFont();
   ImFont *bold_font = ImGui::GetFont();
@@ -912,6 +914,7 @@ void MainWindow::drawHelpOverlay() {
     }
     const ImVec2 size(width, lines.size() * line_h);
     const ImVec2 center((rect.Min.x + rect.Max.x) * 0.5f, (rect.Min.y + rect.Max.y) * 0.5f);
+    if (!work_rect.Contains(center)) continue;  // a torn off panel is in another viewport
     const ImVec2 min(center.x - size.x * 0.5f - 8.0f, center.y - size.y * 0.5f - 8.0f);
     const ImVec2 max(center.x + size.x * 0.5f + 8.0f, center.y + size.y * 0.5f + 8.0f);
     // pale yellow in the light theme
@@ -1000,7 +1003,7 @@ void MainWindow::draw() {
   // the central widget has no scrollbars of its own (the views inside scroll)
   if (ImGui::Begin(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     center_widget_.draw();
-    if (auto *detail = center_widget_.getDetailWidget()) {
+    if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_) {
       for (const auto &[text, rect] : detail->helpRects()) help_texts_.emplace_back(text, rect);
     }
   }
@@ -1009,7 +1012,7 @@ void MainWindow::draw() {
     const std::string name = messages_widget_->title() + MESSAGES_PANEL;
     setNextWindowFloatsOut();
     if (ImGui::Begin(name.c_str(), &messages_visible_)) {
-      help_texts_.emplace_back(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      if (help_overlay_) help_texts_.emplace_back(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       messages_widget_->draw();
     }
     ImGui::End();
@@ -1034,7 +1037,7 @@ void MainWindow::draw() {
       }
       if (video_h > 0.0f) {
         ImGui::BeginChild("video", ImVec2(0, video_h));
-        help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+        if (help_overlay_) help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         video_widget_->draw();
         ImGui::EndChild();
       }
@@ -1047,7 +1050,7 @@ void MainWindow::draw() {
         }
         if (ImGui::IsItemHovered() && !live) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
         ImGui::BeginChild("charts", ImVec2(0, 0));
-        help_texts_.emplace_back(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+        if (help_overlay_) help_texts_.emplace_back(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         charts_widget_->draw();
         ImGui::EndChild();
       }
