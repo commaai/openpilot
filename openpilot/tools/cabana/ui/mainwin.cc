@@ -995,7 +995,7 @@ void MainWindow::draw() {
     }
     ImGui::End();
   }
-  if (video_widget_) video_widget_->setVisible(video_visible_);
+  if (video_widget_ && !video_visible_) video_widget_->setVisible(false);
   if (video_widget_ && video_visible_) {
     const std::string name = video_dock_title_ + VIDEO_PANEL;
     setNextWindowFloatsOut();
@@ -1018,6 +1018,8 @@ void MainWindow::draw() {
         if (help_overlay_) help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         video_widget_->draw();
         ImGui::EndChild();
+      } else {
+        video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
       }
       if (!charts_floating_) {
         ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, 6.0f));
