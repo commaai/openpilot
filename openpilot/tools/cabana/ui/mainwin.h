@@ -83,6 +83,7 @@ private:
   void drawHelpOverlay();
 
   GLFWwindow *window_;
+  std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame
   std::unique_ptr<AbstractStream> stream_;  // `can` points here, or at dummy_ when no stream is open
   DummyStream dummy_;
   std::unique_ptr<MessagesWidget> messages_widget_;

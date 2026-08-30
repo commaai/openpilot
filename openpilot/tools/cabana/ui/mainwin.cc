@@ -72,8 +72,9 @@ MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> strea
     updateWindowTitle();
   }));
 
-  nextFrame([this, s = stream.release(), dbc_file]() {
-    s ? openStream(std::unique_ptr<AbstractStream>(s), dbc_file) : selectAndOpenStream();
+  startup_stream_ = std::move(stream);
+  nextFrame([this, dbc_file]() {
+    startup_stream_ ? openStream(std::move(startup_stream_), dbc_file) : selectAndOpenStream();
   });
 }
 
