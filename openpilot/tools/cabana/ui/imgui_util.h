@@ -136,6 +136,20 @@ inline bool toolButton(const char *id, const char *icon, const char *tooltip = n
   return clicked;
 }
 
+// QMenu exclusive action: the bullet sits in the check column and the whole row highlights, so it is one
+// Selectable with the bullet and the label drawn inside it. `width` keeps every row of a menu equally wide.
+inline bool radioMenuItem(const char *label, bool checked, float width = 0.0f) {
+  const float indent = ImGui::GetFontSize();
+  const ImVec2 pos = ImGui::GetCursorScreenPos();
+  const bool clicked = ImGui::Selectable((std::string("##") + label).c_str(), false, ImGuiSelectableFlags_None,
+                                         ImVec2(width, 0.0f));
+  const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
+  ImDrawList *painter = ImGui::GetWindowDrawList();
+  if (checked) ImGui::RenderBullet(painter, ImVec2(pos.x + indent / 2, pos.y + ImGui::GetTextLineHeight() / 2), color);
+  painter->AddText(ImVec2(pos.x + indent, pos.y), color, label);
+  return clicked;
+}
+
 // A queued modal popup submitted from whichever call site is nested in the top-most modal. draw() is called
 // both nested in a modal dialog and at the root level; only the level that opened the popup may submit it
 // (opening at level 0 would make imgui close the parent modal).

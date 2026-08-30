@@ -78,18 +78,15 @@ void ChartView::drawMenuActions() {
   // the current series type is marked with a radio bullet on the left
   static const char *types[] = {"Line", "Step Line", "Scatter"};
   const float indent = ImGui::GetFontSize();
-  ImGui::Indent(indent);
+  float label_width = ImGui::CalcTextSize("Manage Signals").x;
+  for (const char *type : types) label_width = std::max(label_width, ImGui::CalcTextSize(type).x);
   for (int i = 0; i < 3; ++i) {
-    if (ImGui::MenuItem(types[i])) {
+    if (radioMenuItem(types[i], i == (int)series_type, indent + label_width + indent)) {
       setSeriesType((SeriesType)i);
-    }
-    if (i == (int)series_type) {
-      const ImVec2 item_min = ImGui::GetItemRectMin(), item_max = ImGui::GetItemRectMax();
-      ImGui::RenderBullet(ImGui::GetWindowDrawList(), ImVec2(item_min.x - indent / 2, (item_min.y + item_max.y) / 2),
-                          ImGui::GetColorU32(ImGuiCol_Text));
     }
   }
   ImGui::Separator();
+  ImGui::Indent(indent);
   if (ImGui::MenuItem("Manage Signals")) manageSignals();
   if (ImGui::MenuItem("Split Chart", nullptr, false, split_chart_enabled)) charts_widget->splitChart(this);
   ImGui::Unindent(indent);

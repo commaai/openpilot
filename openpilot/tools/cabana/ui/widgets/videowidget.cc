@@ -309,33 +309,20 @@ void VideoWidget::drawSpeedDropdown(float width) {
 }
 
 void VideoWidget::drawSpeedMenuItems() {
-  // the current speed is marked with a radio bullet on the left. The whole item highlights, so each row is
-  // one full width Selectable with the bullet and the label drawn inside it; an indented MenuItem would
-  // start after the bullet and leave that column outside the highlight.
+  // every row declares the same width, so the popup is exactly as wide as the widest one and all the
+  // highlights reach both edges; the label is padded on the right as much as the check column on the left
   const float indent = ImGui::GetFontSize();
   float label_width = 0;
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i], "").c_str()).x);
   }
-  // every row declares the same width, so the popup is exactly as wide as the widest one and all the
-  // highlights reach both edges; the label is padded on the right as much as the check column on the left
-  const ImVec2 item_size(indent + label_width + indent, 0.0f);
-  ImDrawList *painter = ImGui::GetWindowDrawList();
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     const float speed = speeds[i];
-    ImGui::PushID(i);
-    const ImVec2 pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Selectable("##speed", false, ImGuiSelectableFlags_None, item_size)) {
+    if (radioMenuItem(speedText(speed, "").c_str(), speed_index_ == i, indent + label_width + indent)) {
       speed_index_ = i;
       can->setSpeed(speed);
       speed_text_ = speedText(speed, "  ");
     }
-    ImGui::PopID();
-    const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
-    if (speed_index_ == i) {
-      ImGui::RenderBullet(painter, ImVec2(pos.x + indent / 2, pos.y + ImGui::GetTextLineHeight() / 2), color);
-    }
-    painter->AddText(ImVec2(pos.x + indent, pos.y), color, speedText(speed, "").c_str());
   }
 }
 
