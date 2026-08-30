@@ -92,7 +92,7 @@ FindSignalDlg::FindSignalDlg() {
 }
 
 bool FindSignalDlg::draw() {
-  if (pending_cmp_) {
+  if (open_ && pending_cmp_ && pending_painted_) {
     auto cmp = std::move(pending_cmp_);
     pending_cmp_ = nullptr;
     model->search(cmp);
@@ -120,7 +120,7 @@ bool FindSignalDlg::draw() {
 }
 
 void FindSignalDlg::drawMessageGroup() {
-  ImGui::BeginDisabled(!model->histories.empty());
+  ImGui::BeginDisabled(pending_cmp_ || !model->histories.empty());
   ImGui::TextUnformatted("Messages");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Bus");
@@ -148,7 +148,7 @@ void FindSignalDlg::drawMessageGroup() {
 }
 
 void FindSignalDlg::drawPropertiesGroup() {
-  ImGui::BeginDisabled(!model->histories.empty());
+  ImGui::BeginDisabled(pending_cmp_ || !model->histories.empty());
   ImGui::TextUnformatted("Signal");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Size");
@@ -180,6 +180,8 @@ void FindSignalDlg::drawPropertiesGroup() {
 void FindSignalDlg::drawFindGroup() {
   static const char *compare_items[] = {"=", ">", ">=", "!=", "<", "<=", "between"};
   const int compare_count = IM_ARRAYSIZE(compare_items);
+  const bool pending = pending_cmp_ != nullptr;
+  pending_painted_ = pending;
   ImGui::TextUnformatted("Find signal");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Value");
@@ -201,18 +203,18 @@ void FindSignalDlg::drawFindGroup() {
   }
   ImGui::SameLine();
   const bool first = model->histories.empty();
-  ImGui::BeginDisabled(model->histories.size() <= 1);
+  ImGui::BeginDisabled(pending || model->histories.size() <= 1);
   if (ImGui::Button("Undo prev find")) {
     model->undo();
     searched_ = true;
   }
   ImGui::EndDisabled();
   ImGui::SameLine();
-  ImGui::BeginDisabled(pending_cmp_ || (model->rowCount() == 0 && !first));
-  if (ImGui::Button(pending_cmp_ ? "Finding ...." : (first ? "Find" : "Find Next"))) search();
+  ImGui::BeginDisabled(pending || (model->rowCount() == 0 && !first));
+  if (ImGui::Button(pending ? "Finding ...." : (first ? "Find" : "Find Next"))) search();
   ImGui::EndDisabled();
   ImGui::SameLine();
-  ImGui::BeginDisabled(first);
+  ImGui::BeginDisabled(pending || first);
   if (ImGui::Button("Reset")) {
     model->reset();
     searched_ = true;
