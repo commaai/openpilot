@@ -26,36 +26,18 @@ void applyNameValidator(std::string &input, const std::string &before) {
   input = ::validateName(fixed) == ValidState::Invalid ? before : fixed;
 }
 
-// elide `text` on the right to fit `width`
-std::string elidedText(const std::string &text, float width) {
-  if (ImGui::CalcTextSize(text.c_str()).x <= width) return text;
-  const float dots = ImGui::CalcTextSize("...").x;
-  size_t n = text.size();
-  while (n > 0) {
-    --n;
-    while (n > 0 && (text[n] & 0xC0) == 0x80) --n;  // keep UTF-8 sequences whole
-    if (ImGui::CalcTextSize(text.c_str(), text.c_str() + n).x + dots <= width) break;
-  }
-  return text.substr(0, n) + "...";
-}
-
 }  // namespace
 
 ElidedLabel::ElidedLabel(const std::string &text) : text_(utils::trimmed(text)) {}
 
 void ElidedLabel::draw(float width) {
-  if (width != lastWidth_) {
-    lastWidth_ = width;
-    lastText_ = elidedText_ = "";
+  ImGuiWindow *window = ImGui::GetCurrentWindow();
+  const ImVec2 pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
+  const ImRect bb(pos, ImVec2(pos.x + width, pos.y + ImGui::GetTextLineHeight()));
+  ImGui::ItemSize(bb.GetSize(), 0.0f);
+  if (ImGui::ItemAdd(bb, 0)) {
+    ImGui::RenderTextEllipsis(window->DrawList, bb.Min, bb.Max, bb.Max.x, text_.c_str(), nullptr, nullptr);
   }
-
-  const std::string &curText = text_;
-  if (curText != lastText_) {
-    elidedText_ = elidedText(curText, width);
-    lastText_ = curText;
-  }
-
-  ImGui::TextUnformatted(elidedText_.c_str());
   if (!tooltip_.empty()) ImGui::SetItemTooltip("%s", tooltip_.c_str());
   if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
     clicked();

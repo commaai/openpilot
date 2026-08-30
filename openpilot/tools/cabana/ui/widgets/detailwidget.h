@@ -25,8 +25,6 @@ public:
 
 private:
   std::string text_, tooltip_;
-  std::string lastText_, elidedText_;
-  float lastWidth_ = -1;
 };
 
 // modal, non-blocking: DetailWidget::draw() polls draw() and applies the result once it returns false
