@@ -15,6 +15,7 @@
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/ui/icons.h"
+#include "tools/cabana/ui/widgets/videowidget.h"
 
 // bootstrap glyphs merged into the fonts (utils::icon("name") in Qt); file local, other widgets define their own
 
@@ -807,7 +808,7 @@ void SignalView::draw() {
   const float slider_width = 120.0f;
   const ImGuiStyle &style = ImGui::GetStyle();
   const float right_width = ImGui::CalcTextSize(sparkline_label.c_str()).x + style.ItemSpacing.x + slider_width + style.ItemSpacing.x +
-                            ImGui::CalcTextSize(icon::DASH_SQUARE).x + style.FramePadding.x * 2;
+                            ImGui::GetFont()->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, icon::DASH_SQUARE).x + style.FramePadding.x * 2;
   ImGui::SameLine();
   const float right_x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - right_width;
   if (right_x > ImGui::GetCursorPosX()) ImGui::SetCursorPosX(right_x);
@@ -820,8 +821,11 @@ void SignalView::draw() {
   }
   ImGui::SetItemTooltip("Sparkline time range");
   ImGui::SameLine();
-  if (ImGui::SmallButton(icon::DASH_SQUARE)) collapseAll();
-  ImGui::SetItemTooltip("Collapse All");
+  // auto-raise ToolButton with setIconSize({12, 12})
+  ImGui::PushFont(ImGui::GetFont(), 12.0f);
+  const bool collapse = toolButton(icon::DASH_SQUARE, "Collapse All", "collapse_all");
+  ImGui::PopFont();
+  if (collapse) collapseAll();
 
   // tree view
   drawTree();
