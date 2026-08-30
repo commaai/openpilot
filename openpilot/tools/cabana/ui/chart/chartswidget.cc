@@ -205,22 +205,23 @@ void ChartsWidget::drawToolBar() {
   const ImGuiStyle &style = ImGui::GetStyle();
   float slider_width = 150.0f;
   const bool is_zoomed = can->timeRange().has_value();
-  const std::string title_label = "Charts: " + std::to_string(charts.size());
 
-  // the items are laid out in order; what does not fit goes into the ">>" extension menu
+  // the items are laid out in order, the left group then the right one; what does not fit goes into the
+  // ">>" extension menu. the labels are captured by reference, they outlive the draw calls below
   struct Item {
     float width;
     std::function<void()> draw;
   };
-  std::vector<Item> left, right;
+  std::vector<Item> items;
 
-  left.push_back({buttonWidth(icon::FILE_PLUS), [this]() {
+  items.push_back({buttonWidth(icon::FILE_PLUS), [this]() {
     if (toolButton("new_plot_btn", icon::FILE_PLUS, "New Chart")) newChart();
   }});
-  left.push_back({buttonWidth(icon::WINDOW_STACK), [this]() {
+  items.push_back({buttonWidth(icon::WINDOW_STACK), [this]() {
     if (toolButton("new_tab_btn", icon::WINDOW_STACK, "New Tab")) newTab();
   }});
-  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + LAYOUT_HORIZONTAL_SPACING, [title_label]() {
+  const std::string title_label = "Charts: " + std::to_string(charts.size());
+  items.push_back({ImGui::CalcTextSize(title_label.c_str()).x + LAYOUT_HORIZONTAL_SPACING, [&title_label]() {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(title_label.c_str());
     ImGui::SameLine(0.0f, LAYOUT_HORIZONTAL_SPACING);
@@ -228,7 +229,7 @@ void ChartsWidget::drawToolBar() {
   }});
 
   const std::string chart_type_text = std::string("Type:  ") + types[std::clamp(settings.chart_series_type, 0, 2)];
-  left.push_back({menuButtonWidth(chart_type_text), [this, chart_type_text]() {
+  items.push_back({menuButtonWidth(chart_type_text), [this, &chart_type_text]() {
     if (menuButton("chart_type", chart_type_text, "chart_type_menu")) ImGui::OpenPopup("chart_type_menu");
     if (ImGui::BeginPopup("chart_type_menu")) {
       for (int i = 0; i < types.size(); ++i) {
@@ -241,9 +242,9 @@ void ChartsWidget::drawToolBar() {
     }
   }});
 
+  const std::string columns_action_text = "Columns:  " + std::to_string(column_count);
   if (columns_action_visible) {
-    const std::string columns_action_text = "Columns:  " + std::to_string(column_count);
-    left.push_back({menuButtonWidth(columns_action_text), [this, columns_action_text]() {
+    items.push_back({menuButtonWidth(columns_action_text), [this, &columns_action_text]() {
       if (menuButton("columns", columns_action_text, "columns_menu")) ImGui::OpenPopup("columns_menu");
       if (ImGui::BeginPopup("columns_menu")) {
         for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
@@ -255,60 +256,57 @@ void ChartsWidget::drawToolBar() {
   }
 
   // the spacer right aligns the rest
+  const size_t left_count = items.size();
+  size_t slider_index = 0;
+  const std::string range_lb = is_zoomed ? std::string() : utils::formatSeconds(max_chart_range);
+  std::string reset_zoom_text;
   if (!is_zoomed) {
-    const std::string range_lb = utils::formatSeconds(max_chart_range);
-    right.push_back({ImGui::CalcTextSize(range_lb.c_str()).x, [range_lb]() {
+    items.push_back({ImGui::CalcTextSize(range_lb.c_str()).x, [&range_lb]() {
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted(range_lb.c_str());
     }});
-  }
-  if (!is_zoomed) {
-    right.push_back({slider_width, [this, &slider_width]() {
+    slider_index = items.size();
+    items.push_back({slider_width, [this, &slider_width]() {
       if (range_slider.draw("##range_slider", slider_width)) setMaxChartRange(range_slider.value());
       ImGui::SetItemTooltip("Set the chart range");
     }});
-  }
-  if (is_zoomed) {
-    right.push_back({buttonWidth(icon::ARROW_COUNTERCLOCKWISE), [this]() {
+  } else {
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.2f-%.2f", can->timeRange()->first, can->timeRange()->second);
+    reset_zoom_text = buf;
+    items.push_back({buttonWidth(icon::ARROW_COUNTERCLOCKWISE), [this]() {
       ImGui::BeginDisabled(!zoom_undo_stack.canUndo());
       if (toolButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack.undo();
       ImGui::EndDisabled();
     }});
-  }
-  if (is_zoomed) {
-    right.push_back({buttonWidth(icon::ARROW_CLOCKWISE), [this]() {
+    items.push_back({buttonWidth(icon::ARROW_CLOCKWISE), [this]() {
       ImGui::BeginDisabled(!zoom_undo_stack.canRedo());
       if (toolButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack.redo();
       ImGui::EndDisabled();
     }});
-  }
-  if (is_zoomed) {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%.2f-%.2f", can->timeRange()->first, can->timeRange()->second);
-    const std::string reset_zoom_text = buf;
-    right.push_back({buttonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text), [this, reset_zoom_text]() {
+    items.push_back({buttonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text), [this, &reset_zoom_text]() {
       if (toolButton("reset_zoom_btn", icon::ZOOM_OUT, "Reset Zoom", reset_zoom_text.c_str())) zoomReset();
     }});
   }
-  right.push_back({buttonWidth(icon::X_SQUARE), [this]() {
+  items.push_back({buttonWidth(icon::X_SQUARE), [this]() {
     ImGui::BeginDisabled(charts.empty());
     if (toolButton("remove_all_btn", icon::X_SQUARE, "Remove all charts")) removeAll();
     ImGui::EndDisabled();
   }});
   const char *dock_btn_icon = is_docked ? icon::ARROW_UP_RIGHT_SQUARE : icon::ARROW_DOWN_LEFT_SQUARE;
-  right.push_back({buttonWidth(dock_btn_icon), [this, dock_btn_icon]() {
+  items.push_back({buttonWidth(dock_btn_icon), [this, dock_btn_icon]() {
     if (toolButton("dock_btn", dock_btn_icon, is_docked ? "Float the charts window" : "Dock the charts window")) toggleChartsDocking();
   }});
 
-  size_t n_left = left.size(), n_right = right.size();
+  size_t n_left = left_count, n_right = items.size() - left_count;
   // the item widths plus one spacing between neighbors
-  auto group_width = [&](const std::vector<Item> &items, size_t count) {
+  auto group_width = [&](size_t first, size_t count) {
     float w = 0;
-    for (size_t i = 0; i < count; ++i) w += items[i].width + (i ? style.ItemSpacing.x : 0);
+    for (size_t i = 0; i < count; ++i) w += items[first + i].width + (i ? style.ItemSpacing.x : 0);
     return w;
   };
   auto total_width = [&]() {
-    float w = group_width(left, n_left) + group_width(right, n_right);
+    float w = group_width(0, n_left) + group_width(left_count, n_right);
     if (n_left > 0 && n_right > 0) w += style.ItemSpacing.x;
     return w;
   };
@@ -319,7 +317,7 @@ void ChartsWidget::drawToolBar() {
     const float shrink = std::min(slider_width - 40.0f, total_width() - avail);
     if (shrink > 0.0f) {
       slider_width -= shrink;
-      right[1].width = slider_width;
+      items[slider_index].width = slider_width;
     }
   }
 
@@ -330,19 +328,19 @@ void ChartsWidget::drawToolBar() {
     if (n_right > 0) --n_right; else --n_left;
   }
 
-  float right_width = group_width(right, n_right);
+  float right_width = group_width(left_count, n_right);
   if (overflow) right_width += (n_right > 0 ? style.ItemSpacing.x : 0) + chevron_w;
 
   ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TOOLBAR_MARGIN);
   for (size_t i = 0; i < n_left; ++i) {
     if (i > 0) ImGui::SameLine();
-    left[i].draw();
+    items[i].draw();
   }
   ImGui::SameLine();
   ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width - TOOLBAR_MARGIN));
   for (size_t i = 0; i < n_right; ++i) {
     if (i > 0) ImGui::SameLine();
-    right[i].draw();
+    items[left_count + i].draw();
   }
   if (overflow) {
     if (n_right > 0) ImGui::SameLine();
@@ -351,8 +349,8 @@ void ChartsWidget::drawToolBar() {
     // the popup opens inward: its right edge is aligned with the button so it stays inside the window
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
     if (ImGui::BeginPopup("toolbar_ext_menu")) {
-      for (size_t i = n_left; i < left.size(); ++i) left[i].draw();
-      for (size_t i = n_right; i < right.size(); ++i) right[i].draw();
+      for (size_t i = n_left; i < left_count; ++i) items[i].draw();
+      for (size_t i = left_count + n_right; i < items.size(); ++i) items[i].draw();
       ImGui::EndPopup();
     }
   }
