@@ -67,13 +67,6 @@ bool LogSlider::draw(const char *label, float width) {
 ChartsWidget::ChartsWidget() {
   range_slider.setRange(1, settings.max_cached_minutes * 60);
 
-  undo_zoom_enabled = false;
-  redo_zoom_enabled = false;
-  connections_.push_back(zoom_undo_stack.indexChanged.connect([this]() {
-    undo_zoom_enabled = zoom_undo_stack.canUndo();
-    redo_zoom_enabled = zoom_undo_stack.canRedo();
-  }));
-
   charts_container = new ChartsContainer(this);
 
   current_theme = settings.theme;
@@ -81,7 +74,6 @@ ChartsWidget::ChartsWidget() {
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = std::make_pair(can->minSeconds(), can->minSeconds() + max_chart_range);
   range_slider.setValue(max_chart_range);
-  updateToolBar();
 
   connections_.push_back(dbc()->fileChanged.connect([this]() { removeAll(); }));
   connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
@@ -176,7 +168,6 @@ void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
 }
 
 void ChartsWidget::timeRangeChanged(const std::optional<std::pair<double, double>> &time_range) {
-  updateToolBar();
   updateState();
 }
 
@@ -225,36 +216,12 @@ void ChartsWidget::updateState() {
 
 void ChartsWidget::setMaxChartRange(int value) {
   max_chart_range = settings.chart_range = range_slider.value();
-  updateToolBar();
   updateState();
 }
 
 void ChartsWidget::setIsDocked(bool docked) {
   is_docked = docked;
   if (!docked) float_window_init_ = true;
-  dock_btn_icon = is_docked ? icon::ARROW_UP_RIGHT_SQUARE : icon::ARROW_DOWN_LEFT_SQUARE;
-  dock_btn_tooltip = is_docked ? "Float the charts window" : "Dock the charts window";
-}
-
-void ChartsWidget::updateToolBar() {
-  title_label = "Charts: " + std::to_string(charts.size());
-  columns_action_text = "Columns:  " + std::to_string(column_count);
-  range_lb = utils::formatSeconds(max_chart_range);
-
-  bool is_zoomed = can->timeRange().has_value();
-  range_lb_visible = !is_zoomed;
-  range_slider_visible = !is_zoomed;
-  undo_zoom_visible = is_zoomed;
-  redo_zoom_visible = is_zoomed;
-  reset_zoom_visible = is_zoomed;
-  if (is_zoomed) {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%.2f-%.2f", can->timeRange()->first, can->timeRange()->second);
-    reset_zoom_text = buf;
-  } else {
-    reset_zoom_text = "";
-  }
-  remove_all_enabled = !charts.empty();
 }
 
 void ChartsWidget::drawToolBar() {
@@ -264,6 +231,8 @@ void ChartsWidget::drawToolBar() {
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, ImGui::GetStyle().FramePadding.y));
   const ImGuiStyle &style = ImGui::GetStyle();
   float slider_width = 150.0f;
+  const bool is_zoomed = can->timeRange().has_value();
+  const std::string title_label = "Charts: " + std::to_string(charts.size());
 
   // the items are laid out in order; what does not fit goes into the ">>" extension menu
   struct Item {
@@ -278,7 +247,7 @@ void ChartsWidget::drawToolBar() {
   left.push_back({buttonWidth(icon::WINDOW_STACK), [this]() {
     if (toolButton("new_tab_btn", icon::WINDOW_STACK, "New Tab")) newTab();
   }});
-  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + LAYOUT_HORIZONTAL_SPACING, [this]() {
+  left.push_back({ImGui::CalcTextSize(title_label.c_str()).x + LAYOUT_HORIZONTAL_SPACING, [title_label]() {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(title_label.c_str());
     ImGui::SameLine(0.0f, LAYOUT_HORIZONTAL_SPACING);
@@ -300,7 +269,8 @@ void ChartsWidget::drawToolBar() {
   }});
 
   if (columns_action_visible) {
-    left.push_back({menuButtonWidth(columns_action_text), [this]() {
+    const std::string columns_action_text = "Columns:  " + std::to_string(column_count);
+    left.push_back({menuButtonWidth(columns_action_text), [this, columns_action_text]() {
       if (menuButton("columns", columns_action_text, "columns_menu")) ImGui::OpenPopup("columns_menu");
       if (ImGui::BeginPopup("columns_menu")) {
         for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
@@ -312,44 +282,49 @@ void ChartsWidget::drawToolBar() {
   }
 
   // the spacer right aligns the rest
-  if (range_lb_visible) {
-    right.push_back({ImGui::CalcTextSize(range_lb.c_str()).x, [this]() {
+  if (!is_zoomed) {
+    const std::string range_lb = utils::formatSeconds(max_chart_range);
+    right.push_back({ImGui::CalcTextSize(range_lb.c_str()).x, [range_lb]() {
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted(range_lb.c_str());
     }});
   }
-  if (range_slider_visible) {
+  if (!is_zoomed) {
     right.push_back({slider_width, [this, &slider_width]() {
       if (range_slider.draw("##range_slider", slider_width)) setMaxChartRange(range_slider.value());
       ImGui::SetItemTooltip("Set the chart range");
     }});
   }
-  if (undo_zoom_visible) {
+  if (is_zoomed) {
     right.push_back({buttonWidth(icon::ARROW_COUNTERCLOCKWISE), [this]() {
-      ImGui::BeginDisabled(!undo_zoom_enabled);
+      ImGui::BeginDisabled(!zoom_undo_stack.canUndo());
       if (toolButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack.undo();
       ImGui::EndDisabled();
     }});
   }
-  if (redo_zoom_visible) {
+  if (is_zoomed) {
     right.push_back({buttonWidth(icon::ARROW_CLOCKWISE), [this]() {
-      ImGui::BeginDisabled(!redo_zoom_enabled);
+      ImGui::BeginDisabled(!zoom_undo_stack.canRedo());
       if (toolButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack.redo();
       ImGui::EndDisabled();
     }});
   }
-  if (reset_zoom_visible) {
-    right.push_back({buttonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text), [this]() {
+  if (is_zoomed) {
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.2f-%.2f", can->timeRange()->first, can->timeRange()->second);
+    const std::string reset_zoom_text = buf;
+    right.push_back({buttonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text), [this, reset_zoom_text]() {
       if (toolButton("reset_zoom_btn", icon::ZOOM_OUT, "Reset Zoom", reset_zoom_text.c_str())) zoomReset();
     }});
   }
   right.push_back({buttonWidth(icon::X_SQUARE), [this]() {
-    ImGui::BeginDisabled(!remove_all_enabled);
+    ImGui::BeginDisabled(charts.empty());
     if (toolButton("remove_all_btn", icon::X_SQUARE, "Remove all charts")) removeAll();
     ImGui::EndDisabled();
   }});
-  right.push_back({buttonWidth(dock_btn_icon), [this]() {
-    if (toolButton("dock_btn", dock_btn_icon, dock_btn_tooltip.c_str())) toggleChartsDocking();
+  const char *dock_btn_icon = is_docked ? icon::ARROW_UP_RIGHT_SQUARE : icon::ARROW_DOWN_LEFT_SQUARE;
+  right.push_back({buttonWidth(dock_btn_icon), [this, dock_btn_icon]() {
+    if (toolButton("dock_btn", dock_btn_icon, is_docked ? "Float the charts window" : "Dock the charts window")) toggleChartsDocking();
   }});
 
   size_t n_left = left.size(), n_right = right.size();
@@ -366,12 +341,12 @@ void ChartsWidget::drawToolBar() {
   };
 
   float avail = ImGui::GetContentRegionAvail().x - TOOLBAR_MARGIN * 2;
-  if (range_slider_visible && total_width() > avail) {
+  if (!is_zoomed && total_width() > avail) {
     // the slider shrinks first (never below 40px), the buttons stay pinned to the right edge
     const float shrink = std::min(slider_width - 40.0f, total_width() - avail);
     if (shrink > 0.0f) {
       slider_width -= shrink;
-      right[range_lb_visible ? 1 : 0].width = slider_width;
+      right[1].width = slider_width;
     }
   }
 
@@ -434,7 +409,6 @@ ChartView *ChartsWidget::createChart(int pos) {
   charts.insert(charts.begin() + pos, chart);
   currentCharts().insert(currentCharts().begin() + pos, chart);
   updateLayout(true);
-  updateToolBar();
   return chart;
 }
 
@@ -504,7 +478,6 @@ void ChartsWidget::setColumnCount(int n) {
   n = std::clamp(n, 1, MAX_COLUMN_COUNT);
   if (column_count != n) {
     column_count = settings.chart_column_count = n;
-    updateToolBar();
     updateLayout();
   }
 }
@@ -703,7 +676,6 @@ void ChartsWidget::removeChart(ChartView *chart) {
   for (auto &[_, list] : tab_charts) {
     list.erase(std::remove(list.begin(), list.end(), chart), list.end());
   }
-  updateToolBar();
   updateLayout(true);
   seriesChanged();
 }
@@ -726,7 +698,6 @@ void ChartsWidget::removeAll() {
     }
     charts.clear();
     drop_target = nullptr;
-    updateToolBar();
     seriesChanged();
   }
   zoomReset();

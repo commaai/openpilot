@@ -100,7 +100,6 @@ private:
   void startAutoScroll(const ImVec2 &global_pos);
   void stopAutoScroll();
   void doAutoScroll();
-  void updateToolBar();
   void drawToolBar();
   void updateTabBar();
   void drawTabBar();
@@ -117,25 +116,12 @@ private:
   void execSignalSelector(std::unique_ptr<SignalSelector> dlg, ChartView *owner, std::function<void(SignalSelector &)> accepted);
   void drawDragPreview();
 
-  std::string title_label;
-  std::string range_lb;
   LogSlider range_slider{1000};
-  bool range_lb_visible = true;
-  bool range_slider_visible = true;
   bool is_docked = true;
   bool float_window_init_ = false;  // the floating window geometry is set once, right after undocking
-  const char *dock_btn_icon = "";
-  std::string dock_btn_tooltip;
 
-  bool undo_zoom_enabled = false;
-  bool redo_zoom_enabled = false;
-  bool undo_zoom_visible = false;
-  bool redo_zoom_visible = false;
-  bool reset_zoom_visible = false;
-  std::string reset_zoom_text;
   UndoStack zoom_undo_stack;
 
-  bool remove_all_enabled = false;
   std::vector<ChartView *> charts;
   std::unordered_map<int, std::vector<ChartView *>> tab_charts;
   struct Tab {
@@ -151,7 +137,6 @@ private:
   ImRect charts_scroll_viewport;
   uint32_t max_chart_range = 0;
   std::pair<double, double> display_range;
-  std::string columns_action_text;
   bool columns_action_visible = false;
   int column_count = 1;
   int current_column_count = 0;
