@@ -3,6 +3,7 @@
 #include <string>
 
 #include "tools/cabana/core/settings.h"
+#include "tools/cabana/ui/imgui_util.h"
 
 class SettingsDialog {
 public:
@@ -13,7 +14,7 @@ private:
   void save();
 
   bool open_ = false;
-  bool show_ = false;
+  PopupOwner popup_;
   int theme_ = 0;
   int cached_minutes_ = 0;
   int drag_direction_ = 0;

@@ -62,10 +62,11 @@ inline bool comboBox(const char *label, int *index, const std::vector<std::strin
   if (ImGui::BeginCombo(label, *index >= 0 && *index < count ? items[*index].c_str() : "")) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (ImGui::Selectable(items[i].c_str(), i == *index)) {
+      if (ImGui::Selectable(items[i].c_str(), i == *index) && *index != i) {
         *index = i;
         changed = true;
       }
+      if (i == *index) ImGui::SetItemDefaultFocus();
       ImGui::PopID();
     }
     ImGui::EndCombo();
@@ -81,10 +82,11 @@ inline bool comboBox(const char *label, int *index, const T *values, int count) 
   if (ImGui::BeginCombo(label, preview.c_str())) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index)) {
+      if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
         *index = i;
         changed = true;
       }
+      if (i == *index) ImGui::SetItemDefaultFocus();
       ImGui::PopID();
     }
     ImGui::EndCombo();
@@ -137,13 +139,12 @@ inline int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
 }
 
 // auto-raise icon button with a tooltip
-inline bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr,
-                       float width = 0.0f) {
+inline bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr) {
   std::string label = text && *text ? std::string(icon) + " " + text + "###" + id : std::string(icon) + "###" + id;
   // no frame, transparent until hovered
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  bool clicked = ImGui::Button(label.c_str(), ImVec2(width, 0));
+  bool clicked = ImGui::Button(label.c_str());
   ImGui::PopStyleVar();
   ImGui::PopStyleColor();
   if (tooltip && *tooltip) ImGui::SetItemTooltip("%s", tooltip);
@@ -151,12 +152,13 @@ inline bool toolButton(const char *id, const char *icon, const char *tooltip = n
 }
 
 // QMenu exclusive action: the bullet sits in the check column and the whole row highlights, so it is one
-// Selectable with the bullet and the label drawn inside it. `width` keeps every row of a menu equally wide.
+// Selectable with the bullet and the label drawn inside it. `width` is the minimum row width, so a narrow
+// popup stays wide enough for every row while the highlight always spans the popup.
 inline bool radioMenuItem(const char *label, bool checked, float width = 0.0f) {
   const float indent = ImGui::GetFontSize();
   const ImVec2 pos = ImGui::GetCursorScreenPos();
   const bool clicked = ImGui::Selectable((std::string("##") + label).c_str(), false, ImGuiSelectableFlags_None,
-                                         ImVec2(width, 0.0f));
+                                         ImVec2(ImMax(width, ImGui::GetContentRegionAvail().x), 0.0f));
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
   ImDrawList *painter = ImGui::GetWindowDrawList();
   if (checked) ImGui::RenderBullet(painter, ImVec2(pos.x + indent / 2, pos.y + ImGui::GetTextLineHeight() / 2), color);
@@ -298,15 +300,9 @@ inline void setNextWindowFloatsOut() {
   ImGui::SetNextWindowClass(&window_class);
 }
 
-// centered modal dialog; `show` latches the OpenPopup. false when the popup is not submitted this frame.
-inline bool beginDialog(const char *id, bool *show, const ImVec2 &size) {
-  if (!*show) {
-    ImGui::OpenPopup(id);
-    *show = true;
-  } else if (!ImGui::IsPopupOpen(id)) {
-    // reopen if imgui closed the popup underneath us (host window change)
-    ImGui::OpenPopup(id);
-  }
+// centered modal dialog. false when the popup is not submitted this frame.
+inline bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size) {
+  if (!owner->begin(id)) return false;
   ImGui::SetNextWindowSize(size, ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   setNextWindowFloatsOut();

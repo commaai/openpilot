@@ -11,6 +11,7 @@
 #include "tools/cabana/streams/socketcanstream.h"
 #endif
 #include "tools/cabana/ui/dialogs/routesdialog.h"
+#include "tools/cabana/ui/imgui_util.h"
 
 class AbstractOpenStreamWidget {
 public:
@@ -94,7 +95,7 @@ public:
 
 private:
   bool open_ = false;
-  bool show_ = false;
+  PopupOwner popup_;
   bool first_frame_ = false;
   std::string dbc_file_;
   std::vector<std::unique_ptr<AbstractOpenStreamWidget>> widgets_;

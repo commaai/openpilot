@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "tools/cabana/routes.h"
+#include "tools/cabana/ui/imgui_util.h"
 
 // "Remote routes" browser. on_done gets accepted=true with the selected route name ("" if none), accepted=false on cancel.
 class RoutesDialog {
@@ -26,7 +27,7 @@ private:
   };
 
   bool open_ = false;
-  bool show_ = false;
+  PopupOwner popup_;
   bool devices_loaded_ = false;
   std::vector<std::string> devices_;
   int device_index_ = 0;

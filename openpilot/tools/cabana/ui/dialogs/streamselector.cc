@@ -244,7 +244,7 @@ std::unique_ptr<AbstractStream> OpenSocketCanWidget::open() {
 void StreamSelector::open(Callback on_done) {
   on_done_ = std::move(on_done);
   open_ = true;
-  show_ = false;
+  popup_.reset();
   first_frame_ = true;
   dbc_file_.clear();
   widgets_.clear();
@@ -260,7 +260,7 @@ void StreamSelector::open(Callback on_done) {
 
 void StreamSelector::draw() {
   if (!open_) return;
-  if (!beginDialog("Open stream", &show_, ImVec2(640.0f, 0.0f))) return;
+  if (!beginDialog("Open stream", &popup_, ImVec2(640.0f, 0.0f))) return;
 
   AbstractOpenStreamWidget *current = nullptr;
   if (ImGui::BeginTabBar("streams")) {

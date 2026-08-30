@@ -41,12 +41,12 @@ void SettingsDialog::open() {
   log_livestream_ = settings.log_livestream;
   log_path_ = settings.log_path;
   open_ = true;
-  show_ = false;
+  popup_.reset();
 }
 
 void SettingsDialog::draw() {
   if (!open_) return;
-  if (!beginDialog("Settings", &show_, ImVec2(400.0f, 0.0f))) return;
+  if (!beginDialog("Settings", &popup_, ImVec2(400.0f, 0.0f))) return;
   const float label_width = formLabelWidth();
 
   ImGui::SeparatorText("General");
