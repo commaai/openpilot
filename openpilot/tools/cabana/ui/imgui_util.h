@@ -23,6 +23,20 @@ inline bool inputText(const char *label, std::string *s, const char *hint = "", 
                                   flags | ImGuiInputTextFlags_CallbackResize, imguiResizeCallback, s);
 }
 
+// auto-raise icon button with a tooltip
+inline bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr,
+                       float width = 0.0f) {
+  std::string label = text && *text ? std::string(icon) + " " + text + "###" + id : std::string(icon) + "###" + id;
+  // no frame, transparent until hovered
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  bool clicked = ImGui::Button(label.c_str(), ImVec2(width, 0));
+  ImGui::PopStyleVar();
+  ImGui::PopStyleColor();
+  if (tooltip && *tooltip) ImGui::SetItemTooltip("%s", tooltip);
+  return clicked;
+}
+
 // Escape closes a dialog only when nothing is open above it: a combo drops its list first.
 inline bool dialogEscapePressed() {
   if (!ImGui::IsKeyPressed(ImGuiKey_Escape, false)) return false;

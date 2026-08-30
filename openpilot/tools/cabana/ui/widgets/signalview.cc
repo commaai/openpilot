@@ -15,7 +15,6 @@
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/ui/icons.h"
-#include "tools/cabana/ui/widgets/videowidget.h"
 
 // bootstrap glyphs merged into the fonts; file local, other widgets define their own
 
@@ -821,7 +820,7 @@ void SignalView::draw() {
   ImGui::SameLine();
   // auto-raise tool button with a 12x12 icon
   ImGui::PushFont(ImGui::GetFont(), 12.0f);
-  const bool collapse = toolButton(icon::DASH_SQUARE, "Collapse All", "collapse_all");
+  const bool collapse = toolButton("collapse_all", icon::DASH_SQUARE, "Collapse All");
   ImGui::PopFont();
   if (collapse) collapseAll();
 

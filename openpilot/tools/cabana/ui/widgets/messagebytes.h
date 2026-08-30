@@ -33,11 +33,3 @@ private:
   float h_margin = 0, v_margin = 0;
 };
 
-// auto-raise button showing a bootstrap glyph with a tooltip
-inline bool toolButton(const char *icon, const char *tooltip = "") {
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-  bool clicked = ImGui::Button(icon);
-  ImGui::PopStyleColor();
-  if (tooltip && tooltip[0]) ImGui::SetItemTooltip("%s", tooltip);
-  return clicked;
-}

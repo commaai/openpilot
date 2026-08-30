@@ -83,7 +83,7 @@ void MessagesWidget::createToolBar() {
   ImGui::SetItemTooltip("Suppress defined signals");
   ImGui::SameLine();
 
-  if (toolButton(icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
+  if (toolButton("view_btn", icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
 }
 
 void MessagesWidget::updateTitle() {

@@ -18,9 +18,6 @@
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/ui/icons.h"
 
-// auto-raise icon button with a tooltip
-bool toolButton(const char *icon, const char *tooltip, const char *id, float width = 0.0f);
-
 // a tab bar whose tabs get an "x" close button
 class TabBar {
 public:

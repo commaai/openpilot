@@ -242,25 +242,25 @@ void VideoWidget::drawPlaybackController() {
   auto draw_item = [&](int item) {
     switch (item) {
       case REWIND:
-        if (toolButton(icon::REWIND, "Seek backward", "rewind")) can->seekTo(can->currentSec() - 1);
+        if (toolButton("rewind", icon::REWIND, "Seek backward")) can->seekTo(can->currentSec() - 1);
         break;
       case PLAY:
-        if (toolButton(play_icon_, play_tooltip_.c_str(), "play")) can->pause(!can->isPaused());
+        if (toolButton("play", play_icon_, play_tooltip_.c_str())) can->pause(!can->isPaused());
         break;
       case FORWARD:
-        if (toolButton(icon::FAST_FORWARD, "Seek forward", "fast-forward")) can->seekTo(can->currentSec() + 1);
+        if (toolButton("fast-forward", icon::FAST_FORWARD, "Seek forward")) can->seekTo(can->currentSec() + 1);
         break;
       case SKIP_END:
         ImGui::BeginDisabled(!skip_to_end_enabled_);
-        if (toolButton(icon::SKIP_END, "Skip to the end", "skip-end")) skipToEnd();
+        if (toolButton("skip-end", icon::SKIP_END, "Skip to the end")) skipToEnd();
         ImGui::EndDisabled();
         break;
       case TIME_DISPLAY:
-        if (toolButton(time_text_.c_str(), time_tooltip_.c_str(), "time_display"))
+        if (toolButton("time_display", time_text_.c_str(), time_tooltip_.c_str()))
           toggleTimeDisplay();
         break;
       case LOOP:
-        if (toolButton(loop_icon_, "Loop playback", "loop")) loopPlaybackClicked();
+        if (toolButton("loop", loop_icon_, "Loop playback")) loopPlaybackClicked();
         break;
       case SPEED: drawSpeedDropdown(); break;
       case SEPARATOR: {
@@ -272,7 +272,7 @@ void VideoWidget::drawPlaybackController() {
         break;
       }
       default:
-        if (toolButton(icon::INFO_CIRCLE, "View route details", "route_info")) showRouteInfo();
+        if (toolButton("route_info", icon::INFO_CIRCLE, "View route details")) showRouteInfo();
         break;
     }
   };
@@ -582,18 +582,6 @@ void VideoWidget::draw() {
   for (auto it = route_info_dlgs_.begin(); it != route_info_dlgs_.end();) {
     it = (*it)->draw() ? it + 1 : route_info_dlgs_.erase(it);
   }
-}
-
-bool toolButton(const char *icon, const char *tooltip, const char *id, float width) {
-  const std::string label = std::string(icon) + "###" + id;
-  // no frame, transparent until hovered
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  const bool pressed = ImGui::Button(label.c_str(), ImVec2(width, 0));
-  ImGui::PopStyleVar();
-  ImGui::PopStyleColor();
-  if (tooltip && tooltip[0] && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) ImGui::SetTooltip("%s", tooltip);
-  return pressed;
 }
 
 int TabBar::addTab(const std::string &text) {
