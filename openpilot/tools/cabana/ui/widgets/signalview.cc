@@ -738,12 +738,17 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
   if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
 
+  float widest_value = 0;
   for (auto item : model->root->children) {
     double value = 0;
     if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
-      max_value_width = std::max(max_value_width, SignalItemDelegate::textWidth(item->sig_val));
+      widest_value = std::max(widest_value, SignalItemDelegate::textWidth(item->sig_val));
     }
+  }
+  const float value_slack = SignalItemDelegate::textWidth("00");
+  if (widest_value > max_value_width || widest_value + value_slack < max_value_width) {
+    max_value_width = widest_value;
   }
 
   auto [first_visible, last_visible] = visibleSignalRange();
