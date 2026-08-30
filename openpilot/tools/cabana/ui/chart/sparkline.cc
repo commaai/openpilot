@@ -4,7 +4,8 @@
 #include <cmath>
 #include <limits>
 
-void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 sz) {
+void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, ImVec2 sz,
+                       double window_end) {
   if (first == last || sz.x <= 0 || sz.y <= 0) {
     render_points_.clear();
     this->size = {};
@@ -16,13 +17,16 @@ void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIt
   max_val = std::numeric_limits<double>::lowest();
   points_.reserve(std::distance(first, last));
 
-  uint64_t start_time = (*first)->mono_time;
+  // x runs from the start of the time window, not from the first sample in it: the oldest sample drops
+  // out at its own rate, so anchoring to it slid the whole curve sideways by the sample spacing on every
+  // update and the sparkline jittered left and right instead of scrolling with the clock
+  const double window_start = window_end - range;
   double value = 0.0;
   for (auto it = first; it != last; ++it) {
     if (sig->getValue((*it)->dat, (*it)->size, &value)) {
       min_val = std::min(min_val, value);
       max_val = std::max(max_val, value);
-      points_.push_back({((*it)->mono_time - start_time) / 1e9, value});
+      points_.push_back({can->toSeconds((*it)->mono_time) - window_start, value});
     }
   }
 
@@ -45,7 +49,8 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz) {
 
   const double xscale = (sz.x - 1) / (double)range;
   const double yscale = (sz.y - 3) / (max_val - min_val);
-  bool draw_individual_points = (points_.back().x * xscale / points_.size()) > 8.0;
+  const double span = points_.back().x - points_.front().x;
+  bool draw_individual_points = (span * xscale / points_.size()) > 8.0;
 
   // transform or downsample the points
   render_points_.reserve(points_.size());
@@ -56,7 +61,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz) {
     }
   } else if (is_flat_line) {
     double y = sz.y / 2.0;
-    render_points_.emplace_back(0.0, y);
+    render_points_.emplace_back(points_.front().x * xscale, y);
     render_points_.emplace_back(points_.back().x * xscale, y);
   } else {
     double prev_y = points_.front().y;

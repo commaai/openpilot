@@ -758,8 +758,9 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     std::vector<std::future<void>> futures;
     for (int i = first_visible; i <= last_visible; ++i) {
       auto item = model->root->children[i];
-      futures.push_back(ThreadPool::instance().run([item, first, last, size]() {
-        item->sparkline.update(item->sig, first, last, settings.sparkline_range, size);
+      const double window_end = last_msg.ts;
+      futures.push_back(ThreadPool::instance().run([item, first, last, size, window_end]() {
+        item->sparkline.update(item->sig, first, last, settings.sparkline_range, size, window_end);
       }));
     }
     for (auto &f : futures) f.get();
