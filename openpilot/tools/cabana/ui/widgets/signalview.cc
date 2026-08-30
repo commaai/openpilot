@@ -16,8 +16,6 @@
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/ui/icons.h"
 
-// bootstrap glyphs merged into the fonts; file local, other widgets define their own
-
 namespace {
 constexpr float INDENTATION = 20.0f;
 constexpr float H_MARGIN = 3.0f;
@@ -163,9 +161,9 @@ bool SignalModel::checkState(const Item *item) const {
   return false;
 }
 
-std::string SignalModel::toolTip(const Item *item, int column) const {
+std::string SignalModel::toolTip(const Item *item) const {
   if (item && item->type == Item::Sig) {
-    return (column == 0) ? utils::signalToolTip(item->sig) : std::string();
+    return utils::signalToolTip(item->sig);
   }
   return {};
 }
@@ -283,18 +281,14 @@ float SignalItemDelegate::signalRowHeight() const {
   return std::floor((ImGui::GetFrameHeight() + SIGNAL_ROW_EXTRA) * SIGNAL_ROW_SCALE);
 }
 
-float SignalItemDelegate::sizeHint(const SignalModel::Item *item, int column, float widget_width, const std::string &text) const {
-  float width = widget_width / 2;
-  if (column == 0) {
-    float spacing = INDENTATION + color_label_width + 8;
-    std::string txt = text;
-    if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
-      txt += item->sig->type == cabana::Signal::Type::Multiplexor ? std::string(" M ") : " m" + std::to_string(item->sig->multiplex_value) + " ";
-      spacing += H_MARGIN * 2;
-    }
-    width = std::min<float>(widget_width / 3.0, textWidth(txt) + spacing);
+float SignalItemDelegate::sizeHint(const SignalModel::Item *item, float widget_width, const std::string &text) const {
+  float spacing = INDENTATION + color_label_width + 8;
+  std::string txt = text;
+  if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
+    txt += item->sig->type == cabana::Signal::Type::Multiplexor ? std::string(" M ") : " m" + std::to_string(item->sig->multiplex_value) + " ";
+    spacing += H_MARGIN * 2;
   }
-  return width;
+  return std::min<float>(widget_width / 3.0, textWidth(txt) + spacing);
 }
 
 void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, const SignalModel::Item *item, int column,
@@ -340,7 +334,7 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
       // min-max value
       rect.Min.x += sparkline_size.x + 1;
       float value_adjust = 10;
-      if (!item->sparkline.isEmpty() && (item->highlight || selected)) {
+      if (item->highlight || selected) {
         painter->AddLine(rect.Min, ImVec2(rect.Min.x, rect.Max.y), text_color);
         rect.Min.x += 5;
         rect.Min.y -= v_margin;
@@ -350,7 +344,7 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
         drawSmallText(painter, rect, minmax_font, max, text_color, -1);
         drawSmallText(painter, rect, minmax_font, min, text_color, 1);
         value_adjust = std::max(textWidth(min, minmax_font), textWidth(max, minmax_font)) + 5;
-      } else if (!item->sparkline.isEmpty() && item->sig->type == cabana::Signal::Type::Multiplexed) {
+      } else if (item->sig->type == cabana::Signal::Type::Multiplexed) {
         // display freq of multiplexed signal
         char freq[64];
         snprintf(freq, sizeof(freq), "%.2g hz", item->sparkline.freq());
@@ -842,12 +836,12 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   }
 
   const std::string text0 = model->data(item, 0);
-  ctx.name_width = std::max(ctx.name_width, delegate->sizeHint(item, 0, ctx.width, text0));
+  ctx.name_width = std::max(ctx.name_width, delegate->sizeHint(item, ctx.width, text0));
   const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width, row_max.y));
   delegate->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
   if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
       ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && ImGui::BeginTooltip()) {
-    ImGui::TextUnformatted(utils::stripHtml(model->toolTip(item, 0)).c_str());
+    ImGui::TextUnformatted(utils::stripHtml(model->toolTip(item)).c_str());
     ImGui::EndTooltip();
   }
 

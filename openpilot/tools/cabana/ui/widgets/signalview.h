@@ -19,10 +19,8 @@
 class ItemValue {
 public:
   ItemValue(const std::string &s) : str_(s) {}
-  ItemValue(const char *s) : str_(s) {}
   ItemValue(int v) : str_(std::to_string(v)) {}
   ItemValue(bool v) : str_(v ? "1" : "0") {}
-  ItemValue(double v) : str_(doubleToString(v)) {}
   ItemValue(const ValueDescription &v) : val_desc_(v) {}
   std::string toString() const { return str_; }
   int toInt() const { return std::atoi(str_.c_str()); }
@@ -61,10 +59,9 @@ public:
 
   SignalModel();
   int rowCount() const { return root->children.size(); }
-  int columnCount() const { return 2; }
   std::string data(const Item *item, int column) const;
   bool checkState(const Item *item) const;  // column 1
-  std::string toolTip(const Item *item, int column) const;
+  std::string toolTip(const Item *item) const;
   int flags(const Item *item, int column) const;
   bool setData(Item *item, const ItemValue &value);
   void setMessage(const MessageId &id);
@@ -117,7 +114,7 @@ public:
   // viewport_x: left edge of the tree viewport
   void paint(ImDrawList *painter, const ImRect &rect, const SignalModel::Item *item, int column, bool selected,
              const std::string &text, float viewport_x) const;
-  float sizeHint(const SignalModel::Item *item, int column, float widget_width, const std::string &text) const;  // column width
+  float sizeHint(const SignalModel::Item *item, float widget_width, const std::string &text) const;  // column 0 width
   float rowHeight() const;
   float signalRowHeight() const;
   // draws the editor for `item` at the cursor; commits through setModelData on focus out
