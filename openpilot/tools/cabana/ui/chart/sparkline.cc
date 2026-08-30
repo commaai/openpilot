@@ -90,9 +90,8 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   pts.reserve(render_points_.size());
   for (const auto &p : render_points_) pts.emplace_back(pos.x + p.x, pos.y + p.y);
 
-  // antialiasing is off above 500 points
-  const ImDrawListFlags backup_flags = draw_list->Flags;
-  if (render_points_.size() > 500) draw_list->Flags &= ~ImDrawListFlags_AntiAliasedLines;
+  // an aliased 1 px segment between two columns rounds into one of them and the rounding flips as the
+  // window slides, so the thin peaks sparkle; antialiasing spreads it over both and the motion is smooth
   draw_list->AddPolyline(pts.data(), (int)pts.size(), color_, ImDrawFlags_None, 1.0f);
 
   // a point is a 3x3 square
@@ -102,5 +101,4 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   } else {
     draw_point(pts.back());
   }
-  draw_list->Flags = backup_flags;
 }
