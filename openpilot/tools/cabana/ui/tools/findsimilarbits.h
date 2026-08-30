@@ -33,6 +33,5 @@ private:
   int msg_cb = 0;
   int equal_combo = 0;
   int byte_idx_sb = 0, bit_idx_sb = 0;
-  bool search_btn_enabled = true;
   std::string min_msgs = "100";
 };

@@ -1,8 +1,6 @@
 #include "tools/cabana/ui/tools/findsimilarbits.h"
 
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib>
 #include <unordered_map>
 
 #include "imgui.h"
@@ -83,9 +81,7 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::SetNextItemWidth(80);
     validatedText("##min_msgs", &min_msgs, validateInt);
     ImGui::SameLine();
-    ImGui::BeginDisabled(!search_btn_enabled);
     if (ImGui::Button("Find")) find();
-    ImGui::EndDisabled();
 
     drawTable();
   }
@@ -116,21 +112,19 @@ void FindSimilarBitsDlg::drawTable() {
   while (clipper.Step()) {
     for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
       auto &m = table[i];
-      char address[32];
-      snprintf(address, sizeof(address), "%x", m.address);
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::PushID(i);
       if (ImGui::Selectable(std::to_string(i + 1).c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
           uint8_t find_bus = find_bus_combo < (int)bus_items.size() ? bus_items[find_bus_combo] : 0;
-          MessageId msg_id = {.source = find_bus, .address = (uint32_t)std::strtoul(address, nullptr, 16)};
+          MessageId msg_id = {.source = find_bus, .address = m.address};
           openMessage(msg_id);
         }
       }
       ImGui::PopID();
       ImGui::TableSetColumnIndex(1);
-      ImGui::TextUnformatted(address);
+      ImGui::Text("%x", m.address);
       ImGui::TableSetColumnIndex(2);
       ImGui::Text("%u", m.byte_idx);
       ImGui::TableSetColumnIndex(3);
@@ -147,7 +141,6 @@ void FindSimilarBitsDlg::drawTable() {
 }
 
 void FindSimilarBitsDlg::find() {
-  search_btn_enabled = false;
   table.clear();
   uint32_t selected_address = msg_cb < (int)msg_items.size() ? msg_items[msg_cb].second : 0;
   uint8_t src_bus = src_bus_combo < (int)bus_items.size() ? bus_items[src_bus_combo] : 0;
@@ -156,7 +149,6 @@ void FindSimilarBitsDlg::find() {
                                  find_bus, equal_combo == 0, utils::toInt(min_msgs));
   table = std::move(msg_mismatched);
   table_has_columns = true;
-  search_btn_enabled = true;
 }
 
 std::vector<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx,
