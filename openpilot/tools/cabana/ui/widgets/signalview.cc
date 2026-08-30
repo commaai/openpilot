@@ -835,37 +835,42 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
                        ImGui::GetColorU32(ImGuiCol_Text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
   }
 
+  // every row is measured, the header sizes column 0 to the contents of the whole tree
   const std::string text0 = model->data(item, 0);
   ctx.name_width = std::max(ctx.name_width, delegate->sizeHint(item, ctx.width, text0));
-  const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width, row_max.y));
-  delegate->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
-  if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
-      ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && ImGui::BeginTooltip()) {
-    ImGui::TextUnformatted(utils::stripHtml(model->toolTip(item)).c_str());
-    ImGui::EndTooltip();
-  }
-
   const ImRect rect1(ImVec2(row_min.x + name_column_width, row_min.y), row_max);
   ctx.value_column_width = rect1.GetWidth();
-  const int flags1 = model->flags(item, 1);
-  if (item->type == SignalModel::Item::Sig) {
-    delegate->paint(ctx.draw_list, rect1, item, 1, selected, item->sig_val, ctx.viewport_x);
-    drawIndexWidget(item, rect1);
-  } else if (flags1 & SignalModel::ItemIsUserCheckable) {
-    bool checked = model->checkState(item);
-    ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
-    if (checkBox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
-  } else if (flags1 & SignalModel::ItemIsEditable) {
-    // only the current item gets an editor; the others paint through the delegate
-    if (selected && delegate->open_item_ == item) {
-      ImGui::SetCursorScreenPos(rect1.Min);
-      ImGui::SetNextItemWidth(rect1.GetWidth());
-      delegate->createEditor(item, model.get());
+
+  // a row outside the viewport is not painted and has no index widget, like a QTreeView row
+  if (row_visible) {
+    const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width, row_max.y));
+    delegate->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
+    if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
+        ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && ImGui::BeginTooltip()) {
+      ImGui::TextUnformatted(utils::stripHtml(model->toolTip(item)).c_str());
+      ImGui::EndTooltip();
+    }
+
+    const int flags1 = model->flags(item, 1);
+    if (item->type == SignalModel::Item::Sig) {
+      delegate->paint(ctx.draw_list, rect1, item, 1, selected, item->sig_val, ctx.viewport_x);
+      drawIndexWidget(item, rect1);
+    } else if (flags1 & SignalModel::ItemIsUserCheckable) {
+      bool checked = model->checkState(item);
+      ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
+      if (checkBox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
+    } else if (flags1 & SignalModel::ItemIsEditable) {
+      // only the current item gets an editor; the others paint through the delegate
+      if (selected && delegate->open_item_ == item) {
+        ImGui::SetCursorScreenPos(rect1.Min);
+        ImGui::SetNextItemWidth(rect1.GetWidth());
+        delegate->createEditor(item, model.get());
+      } else {
+        delegate->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
+      }
     } else {
       delegate->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
     }
-  } else {
-    delegate->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
   }
   ImGui::EndDisabled();
   ImGui::PopID();
