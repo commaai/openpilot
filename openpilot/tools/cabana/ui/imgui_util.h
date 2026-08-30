@@ -8,6 +8,7 @@
 #include "imgui_internal.h"
 
 #include "tools/cabana/core/color.h"
+#include "tools/cabana/utils/util.h"
 
 inline ImVec4 colorRgb(int r, int g, int b, float alpha = 1.0f) {
   return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
@@ -78,6 +79,18 @@ inline bool comboBox(const char *label, int *index, const T *values, int count) 
       ImGui::PopID();
     }
     ImGui::EndCombo();
+  }
+  return changed;
+}
+
+// Qt validator: revert the edit when the new text is Invalid
+inline bool validatedText(const char *label, std::string *s, ValidState (*validate)(const std::string &),
+                          const char *hint = "") {
+  std::string prev = *s;
+  bool changed = inputText(label, s, hint);
+  if (changed && validate(*s) == ValidState::Invalid) {
+    *s = prev;
+    changed = false;
   }
   return changed;
 }

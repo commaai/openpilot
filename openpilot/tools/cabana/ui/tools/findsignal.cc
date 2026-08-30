@@ -11,17 +11,6 @@
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
-// revert the edit when the new text is not a valid double
-static bool doubleEdit(const char *label, std::string *text) {
-  std::string prev = *text;
-  bool changed = inputText(label, text);
-  if (changed && validateDouble(*text) == ValidState::Invalid) {
-    *text = prev;
-    changed = false;
-  }
-  return changed;
-}
-
 std::string FindSignalModel::headerData(int section, bool horizontal) const {
   static std::string titles[] = {"Id", "Start Bit, size", "(time, value)"};
   return horizontal ? titles[section] : std::to_string(section + 1);
@@ -147,12 +136,12 @@ void FindSignalDlg::drawMessageGroup() {
   ImGui::TextUnformatted("Time");
   ImGui::SameLine(80);
   ImGui::SetNextItemWidth(70);
-  doubleEdit("##first_time", &first_time_edit);
+  validatedText("##first_time", &first_time_edit, validateDouble);
   ImGui::SameLine();
   ImGui::TextUnformatted("-");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(70);
-  doubleEdit("##last_time", &last_time_edit);
+  validatedText("##last_time", &last_time_edit, validateDouble);
   ImGui::SameLine();
   ImGui::TextUnformatted("seconds");
   ImGui::EndDisabled();
@@ -179,12 +168,12 @@ void FindSignalDlg::drawPropertiesGroup() {
   ImGui::TextUnformatted("Factor");
   ImGui::SameLine(80);
   ImGui::SetNextItemWidth(100);
-  doubleEdit("##factor", &factor_edit);
+  validatedText("##factor", &factor_edit, validateDouble);
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Offset");
   ImGui::SameLine(80);
   ImGui::SetNextItemWidth(100);
-  doubleEdit("##offset", &offset_edit);
+  validatedText("##offset", &offset_edit, validateDouble);
   ImGui::EndDisabled();
 }
 
@@ -202,13 +191,13 @@ void FindSignalDlg::drawFindGroup() {
   ImGui::SameLine();
   ImGui::SetNextItemWidth(80);
   if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
-  doubleEdit("##value1", &value1);
+  validatedText("##value1", &value1, validateDouble);
   if (to_label_visible) {
     ImGui::SameLine();
     ImGui::TextUnformatted("-");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    doubleEdit("##value2", &value2);
+    validatedText("##value2", &value2, validateDouble);
   }
   ImGui::SameLine();
   const bool first = model->histories.empty();

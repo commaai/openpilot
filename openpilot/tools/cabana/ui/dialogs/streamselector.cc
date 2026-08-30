@@ -180,34 +180,6 @@ std::unique_ptr<AbstractStream> OpenPandaWidget::open() {
   }
 }
 
-namespace {
-
-struct IpInputContext {
-  std::string *text;
-  const std::string *last_valid;
-};
-
-// only digits and dots get in, and an edit that makes the address invalid is refused
-int ipInputCallback(ImGuiInputTextCallbackData *data) {
-  auto *ctx = static_cast<IpInputContext *>(data->UserData);
-  if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
-    const ImWchar c = data->EventChar;
-    return ((c >= '0' && c <= '9') || c == '.') ? 0 : 1;
-  }
-  if (data->EventFlag == ImGuiInputTextFlags_CallbackEdit) {
-    if (validateIpAddress(std::string(data->Buf, data->BufTextLen)) == ValidState::Invalid) {
-      data->DeleteChars(0, data->BufTextLen);
-      data->InsertChars(0, ctx->last_valid->c_str());
-    }
-  } else if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-    ctx->text->resize(data->BufTextLen);
-    data->Buf = ctx->text->data();
-  }
-  return 0;
-}
-
-}  // namespace
-
 void OpenDeviceWidget::draw() {
   ImGui::RadioButton("MSGQ", &mode_, 0);
   ImGui::RadioButton("ZMQ", &mode_, 1);
@@ -218,11 +190,7 @@ void OpenDeviceWidget::draw() {
   ImGui::SameLine(label_width);
   ImGui::BeginDisabled(mode_ != 1);
   ImGui::SetNextItemWidth(-1.0f);
-  const std::string prev = ip_address_;
-  IpInputContext ctx{&ip_address_, &prev};
-  ImGui::InputTextWithHint("##ip", "Enter device Ip Address", ip_address_.data(), ip_address_.capacity() + 1,
-                           ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackResize,
-                           ipInputCallback, &ctx);
+  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device Ip Address");
   ImGui::EndDisabled();
 }
 

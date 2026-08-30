@@ -11,13 +11,13 @@
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/strings.h"
 
-// optional sign followed by digits
-static bool validInt(const std::string &s) {
+// QIntValidator: optional sign followed by digits
+static ValidState validateInt(const std::string &s) {
   size_t i = (!s.empty() && (s[0] == '-' || s[0] == '+')) ? 1 : 0;
   for (; i < s.size(); ++i) {
-    if (s[i] < '0' || s[i] > '9') return false;
+    if (s[i] < '0' || s[i] > '9') return ValidState::Invalid;
   }
-  return true;
+  return ValidState::Acceptable;
 }
 
 FindSimilarBitsDlg::FindSimilarBitsDlg() {
@@ -81,10 +81,7 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::TextUnformatted("Min msg count");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    std::string prev = min_msgs;
-    if (inputText("##min_msgs", &min_msgs) && !validInt(min_msgs)) {
-      min_msgs = prev;
-    }
+    validatedText("##min_msgs", &min_msgs, validateInt);
     ImGui::SameLine();
     ImGui::BeginDisabled(!search_btn_enabled);
     if (ImGui::Button("Find")) find();
