@@ -42,7 +42,7 @@ void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices,
     fetchRoutes();
   } else {
     // the box shows on top of the dialog, which is rejected once the box is dismissed
-    MessageBox::warning("Error", error_code == 401 ? "Unauthorized. Authenticate with openpilot/tools/lib/auth.py" : "Network error", "",
+    MessageBox::warning("Error", error_code == 401 ? "Unauthorized. Authenticate with openpilot/tools/lib/auth.py" : "Network error",
                         [this, alive = std::weak_ptr<bool>(alive_)]() {
                           if (!alive.expired()) finish(false);
                         });
@@ -73,7 +73,7 @@ void RoutesDialog::setRouteList(const std::vector<routes::RouteInfo> &list, bool
     }
     if (!routes_.empty()) route_index_ = 0;
   } else {
-    MessageBox::warning("Error", "Failed to fetch routes. Check your network connection.", "",
+    MessageBox::warning("Error", "Failed to fetch routes. Check your network connection.",
                         [this, alive = std::weak_ptr<bool>(alive_)]() {
                           if (!alive.expired()) finish(false);
                         });
